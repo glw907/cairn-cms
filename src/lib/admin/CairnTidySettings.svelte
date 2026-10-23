@@ -28,10 +28,10 @@ The save commits the conventions block to the same committed YAML the nav editor
 home), diffable and shared across editors.
 
 The header band is `PageHeader`, its `meta`
-line carrying the lede this screen already stated; Save stays in the form's own foot, the screen's
+line carrying the lede this screen already stated; Save stays in the form's foot, the screen's
 form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
 re-express on `StatusChip` at a neutral tone (a Tidy pill never
-reaches past neutral/warning), each still wrapped in its own `role="status" aria-live="polite"`
+reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
 bespoke: a single-use control, not a repeated device.
 -->
@@ -72,8 +72,8 @@ bespoke: a single-use control, not a repeated device.
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
   // every fresh error so the region text always mutates and the screen reader speaks again; this is
   // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
   // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function nonce(): string {
@@ -370,7 +370,7 @@ bespoke: a single-use control, not a repeated device.
         <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
              inline before the value at a fixed column width, today's composition. Each label is a
              glyph plus a word, so it carries cairn-icon-label rather than a bare inline-flex: the
-             recipe is what makes the label report its own TEXT baseline to the sm+ row above,
+             recipe is what makes the label report its TEXT baseline to the sm+ row above,
              instead of the icon's bottom edge (cairn-admin.css carries the mechanic). -->
         <div class="mt-2.5 flex flex-col gap-1.5">
           <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
@@ -404,7 +404,7 @@ bespoke: a single-use control, not a repeated device.
       </div>
       <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead.
            The pill is a painted box in a top-aligned row against a block several lines deep, so it
-           sits in a one-line-tall slot carrying the heading's own type role: that levels the pill's
+           sits in a one-line-tall slot carrying the heading's type role: that levels the pill's
            padding box on the heading's first line box, which is what the eye reads. Levelling the
            two on a baseline instead would move the wrong thing (cairn-admin.css carries why). -->
       <span class="cairn-line-slot type-meta hidden flex-none sm:flex">
@@ -506,9 +506,9 @@ bespoke: a single-use control, not a repeated device.
                   <div class="mt-3 flex flex-col gap-2">
                     <div id={`tidy-var-${String(row.key)}`} class="type-label font-semibold uppercase tracking-wide text-muted">{row.variantLabel}</div>
                     <!-- `overflow-hidden` clipped the corners of the end buttons to the container's
-                         own rounded-field radius, but it also clipped a keyboard focus ring on
-                         either end button, drawn outside the button's own border box (S3 Q20). Each
-                         end button now rounds its own outer corners directly instead, so the
+                         rounded-field radius, but it also clipped a keyboard focus ring on
+                         either end button, drawn outside the button's border box (S3 Q20). Each
+                         end button now rounds its outer corners directly instead, so the
                          container needs no clip at all. -->
                     <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start rounded-field border border-[var(--cairn-card-border)] bg-base-100">
                       {#each row.variants as variant, vi (variant.value)}

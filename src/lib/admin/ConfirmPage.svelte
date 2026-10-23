@@ -29,7 +29,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   <title>Confirm sign-in · Cairn</title>
   <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
-  <!-- The view owns its document's referrer policy, so a site that mounts it in its own shell still
+  <!-- The view owns its document's referrer policy, so a site that mounts it in its shell still
        sends the real Origin on the confirm POST and never sends the token's path in a Referer. -->
   <meta name="referrer" content="strict-origin" />
 </svelte:head>
@@ -40,7 +40,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   <!-- The packaged admin sheet resets the real host body margin to zero itself (cairn-admin.css's
        build, guarded to fire only while an admin theme root is mounted), so this box needs no
        compensating margin of its own; the fix holds whether the host's ambient body margin was the
-       UA's 8px default or already 0. A host's own unlayered author rule on body margin still wins
+       UA's 8px default or already 0. A host's unlayered author rule on body margin still wins
        over this base-layer reset, which is the host's explicit choice and needs no `!important`
        to hold. -->
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">

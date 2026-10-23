@@ -1,4 +1,4 @@
-// cairn-cms: the tidy flow's own state and action driver, out of EditPage.svelte.
+// cairn-cms: the tidy flow's state and action driver, out of EditPage.svelte.
 
 import { untrack } from 'svelte';
 import { postFormAction } from './client-action.js';
@@ -7,7 +7,7 @@ import type { Change } from './tidy-diff.js';
 import type { EditorApi } from './MarkdownEditor.svelte';
 
 // The client-side tidy deadline (spec 2.1): a slow call becomes a cancel/retry rather than a
-// hung review. Set above the action's own 30s Worker deadline so the server's retryable fail lands
+// hung review. Set above the action's 30s Worker deadline so the server's retryable fail lands
 // first when the model is merely slow; this catches a stalled connection past that.
 const TIDY_CLIENT_TIMEOUT_MS = 45_000;
 
@@ -33,7 +33,7 @@ export interface TidyControllerParams {
   getId: () => string;
   /**
    * The site's tidy config for this entry (spec 2.5): whether tidy is on and which model runs.
-   *  Undefined degrades to disabled, the same tolerance the shell's own read carried.
+   *  Undefined degrades to disabled, the same tolerance the shell's read carried.
    */
   getTidy: () => { enabled: boolean; model: string } | undefined;
   /** The CSRF token reader from the admin layout context. */
@@ -76,7 +76,7 @@ export function createTidyController(params: TidyControllerParams) {
       // RESET_BLOCK_START (src/tests/unit/edit-page-state-reset-coverage.test.ts parses this
       // span's assignment targets against the RESET_EXEMPT list below; every $state / $state.raw
       // name this module declares must appear in one list or the other). `controller` is a plain
-      // `let`, not `$state` (see its own declaration above), so its abort/null here is outside
+      // `let`, not `$state` (see its declaration above), so its abort/null here is outside
       // the gate's scope, not a name the enumeration test tracks.
       mode = false;
       busy = false;
@@ -143,7 +143,7 @@ export function createTidyController(params: TidyControllerParams) {
 
     busy = true;
     // Captured locally: the entry-hop reset (the effect above) nulls the module-level `controller`
-    // on an entry hop, but this run must keep reading its OWN signal and must only clear the shared
+    // on an entry hop, but this run must keep reading its signal and must only clear the shared
     // flags in `finally` if it is still the current run (a reset already tore down a superseded one).
     const ac = new AbortController();
     controller = ac;
@@ -161,13 +161,13 @@ export function createTidyController(params: TidyControllerParams) {
         },
       );
       // Supersession guard, before any state write: an entry-hop reset can null the shared
-      // `controller` while this call is still in flight (the reset's own abort() does not
+      // `controller` while this call is still in flight (the reset's abort() does not
       // guarantee the awaited fetch actually rejects; a stub or a race can still resolve it as a
       // success). Once superseded, this run must never write review/mode/noop/message for an
       // entry the host has already navigated away from, nor hand its offsets to the new editor.
       if (controller !== ac) return;
       if (!outcome.ok) {
-        // An abort (Cancel or the client timeout) resolves through the round-trip helper's own
+        // An abort (Cancel or the client timeout) resolves through the round-trip helper's
         // fail-closed catch with no way to tell it apart from a genuine network failure; read the
         // signal directly so Cancel stays silent instead of showing the generic retry message
         // below. A response that was actually received (outcome.ok) is processed on its own merits

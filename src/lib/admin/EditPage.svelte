@@ -7,7 +7,7 @@ remaining fields group behind the Details slide-over (a fixed panel below the ba
 the band's Details trigger or Ctrl+.) under Details, Visibility (the draft boolean as the Hidden
 toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
 swap the editing surface for the rendered preview inside the same card; every visit lands on
-Write. Preview renders inside a sandboxed iframe that links the site's own stylesheets (the
+Write. Preview renders inside a sandboxed iframe that links the site's stylesheets (the
 adapter's `preview` knob), takes the full content width (the sidebar hides until Write), and
 sizes to a persisted device width picked from the toolbar's capsule. A sticky glass header
 carries the breadcrumb, the status badges, the save-state indicator,
@@ -15,7 +15,7 @@ and the lifecycle actions: Save, Publish (always present, riding the same form v
 guarded rather than hidden when there is nothing new to publish), and an overflow menu for
 Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
-count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's own
+count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's
 persistent "?" carries Markdown help).
 -->
 <script lang="ts">
@@ -107,7 +107,7 @@ persistent "?" carries Markdown help).
      *  outside a real editing session (the reproductions seam mounts several on one page). Present,
      *  it wins over the stored per-browser preference and the footer toggle, so `false` opens an
      *  editor that never starts the spellcheck Worker or fetches its wasm and dictionary. Absent,
-     *  the author's own preference decides exactly as before.
+     *  the author's preference decides exactly as before.
      */
     spellcheckOverride?: boolean;
   }
@@ -132,14 +132,14 @@ persistent "?" carries Markdown help).
   const topbar = useTopbar();
   // The narrow-width theme-toggle fold (audit finding 2): CairnAdminShell mirrors the live theme
   // and its toggle into the same holder, in the reverse direction from desk/zen above, so the
-  // overflow menu below can offer the control the shell hides past its own width cutoff.
+  // overflow menu below can offer the control the shell hides past its width cutoff.
   const themeToggleFold = $derived(topbar?.toggleTheme);
   const currentTheme = $derived(topbar?.theme);
   $effect(() => {
     if (!topbar) return;
     topbar.desk = desk;
     // Zen drops the band: CairnAdminShell reads this flag to remove the whole topbar element, so the
-    // desk's clusters and CairnAdminShell's own chrome (the drawer toggle, the breadcrumb) all slide
+    // desk's clusters and CairnAdminShell's chrome (the drawer toggle, the breadcrumb) all slide
     // away together. The effect tracks `zen`, so a toggle reaches the band live.
     topbar.zen = prefs.zen;
     return () => {
@@ -167,7 +167,7 @@ persistent "?" carries Markdown help).
   // a refusal returned) describe an earlier request and no longer describe the editor. Cleared only
   // by the reload a successful save ends in, or by hopping to another entry.
   let failedInPlace = $state(false);
-  // The editor's own message for a failure the server did not word: a network failure, a non-JSON
+  // The editor's message for a failure the server did not word: a network failure, a non-JSON
   // answer, a refusal that carries no text, or a redirect that sent the request to sign-in. Cleared
   // when the next attempt starts.
   let failureNotice = $state('');
@@ -191,7 +191,7 @@ persistent "?" carries Markdown help).
   }
   // The edit form submits through the enhanced path, so a failed save answers in place and the
   // author keeps the text. The request waits for the pending personal-dictionary commit, which
-  // resolves fail-closed (an add that does not land stays pending for the next save) under its own
+  // resolves fail-closed (an add that does not land stays pending for the next save) under its
   // deadline, so the wait never blocks the save on a dictionary failure or a stalled request.
   const onEditSubmit: SubmitFunction = async ({ submitter }) => {
     const formaction = submitter?.getAttribute('formaction');
@@ -248,7 +248,7 @@ persistent "?" carries Markdown help).
       assertiveNonce++;
     };
   };
-  // Guards the Publish button's own click: aria-disabled blocks nothing by itself (it is not the
+  // Guards the Publish button's click: aria-disabled blocks nothing by itself (it is not the
   // native disabled attribute), so a guarded click must cancel the button's default action here,
   // before it submits the form via its ?/publish formaction. An actionable click passes through
   // untouched and reaches onEditSubmit as an ordinary submit.
@@ -267,7 +267,7 @@ persistent "?" carries Markdown help).
   // full-page blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip
   // a flag on any input event, and the navigation a save triggers reloads the page, which resets
   // both. After a failure answered in place the baseline is the loaded text whatever the refusal
-  // echoed: the echo is the editor's own unsaved text, not something committed.
+  // echoed: the echo is the editor's unsaved text, not something committed.
   const bodyBaseline = $derived(failedInPlace ? data.body : (form?.body ?? data.body));
   const bodyDirty = $derived(body !== bodyBaseline);
   let fieldsDirty = $state(false);
@@ -279,7 +279,7 @@ persistent "?" carries Markdown help).
   // the control stays discoverable and its reason reaches assistive technology.
   const publishActionable = $derived(dirty || data.pending || data.isNew);
   // Without JavaScript the edit form posts full-page, so a validation fail() re-runs editLoad at the
-  // POST's own URL, not the page's original one. A browser resolves an action of only "?/save"
+  // POST's URL, not the page's original one. A browser resolves an action of only "?/save"
   // against the current document URL by replacing its whole query (RFC 3986 5.3), so `?new=1` (and
   // the form's hidden field, which the load never reads) would otherwise vanish from the URL a
   // fresh entry's first failed save reloads at: editLoad reads isNew from the URL alone, so it
@@ -289,7 +289,7 @@ persistent "?" carries Markdown help).
   const saveFormAction = $derived(data.isNew ? '?/save&new=1' : '?/save');
   const publishFormAction = $derived(data.isNew ? '?/publish&new=1' : '?/publish');
   // The guarded reason, undefined while actionable so the button carries no extra title or
-  // aria-label beyond its own "Publish"/"Publishing…" text. The accessible name keeps the visible
+  // aria-label beyond its "Publish"/"Publishing…" text. The accessible name keeps the visible
   // "Publish" label in front of the reason (WCAG 2.5.3, label in name), so a focused guarded
   // button still announces what it is before why it is inactive; the title carries the bare
   // reason, since the tooltip renders beside the visible label.
@@ -316,7 +316,7 @@ persistent "?" carries Markdown help).
   // The header's Publish submitter, for the Ctrl/Cmd+Shift+S shortcut: requesting submit through it
   // carries the ?/publish formaction and trips the busy flags down the existing submit path. Publish
   // always renders now, so this ref always exists; the chord guards on publishActionable itself,
-  // the same condition the button's own aria-disabled reads.
+  // the same condition the button's aria-disabled reads.
   let publishButton = $state<HTMLButtonElement | null>(null);
 
   // A required field hidden from the browser's validation report cannot take it: an invisible
@@ -391,7 +391,7 @@ persistent "?" carries Markdown help).
       }
       if (e.shiftKey && key === 's') {
         // Publish rides the header's Publish submitter so the ?/publish formaction and the busy
-        // flags follow the existing submit path; the chord mirrors the button's own guard
+        // flags follow the existing submit path; the chord mirrors the button's guard
         // (publishActionable), so it no-ops when there is nothing new to publish.
         e.preventDefault();
         if (busy || inDialog || !publishActionable) return;
@@ -460,14 +460,14 @@ persistent "?" carries Markdown help).
   let discardDialog = $state<HTMLDialogElement | null>(null);
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
   // landing tab. Preview is read-only, so the insert controls the page renders into the toolbar
-  // disable with the strip's own format buttons; `insertDisabled` below (declared after
-  // `tidyController` exists, since it also reads the module's own tidy-mode flag) is the shared
+  // disable with the strip's format buttons; `insertDisabled` below (declared after
+  // `tidyController` exists, since it also reads the module's tidy-mode flag) is the shared
   // derivation every insert control reads.
   let mode = $state<'write' | 'preview'>('write');
   let previewHtml = $state('');
   // True after a render call threw, so the preview pane can say so instead of going blank.
   let previewFailed = $state(false);
-  // The preview frame's device width, a per-browser preference under its own key (the legacy
+  // The preview frame's device width, a per-browser preference under its key (the legacy
   // 'cairn-admin:preview' key from the removed split-pane preview stays untouched). Desktop is
   // the default; the storage read sits in an effect so it never runs during SSR, and it tracks
   // nothing reactive, so it runs once.
@@ -485,8 +485,8 @@ persistent "?" carries Markdown help).
   // zen: storage-backed per-browser preferences, owned by editor-preferences.svelte.ts.
   const prefs = createEditorPreferences();
   // What the editor actually runs with: a mounting context's override when it supplies one, this
-  // page's own preference otherwise. The stored read below and the footer toggle keep writing the
-  // author's own value, so removing the override restores exactly what the author chose.
+  // page's preference otherwise. The stored read below and the footer toggle keep writing the
+  // author's value, so removing the override restores exactly what the author chose.
   const spellcheck = $derived(spellcheckOverride ?? prefs.ownSpellcheck);
   // Whether this page offers the spellcheck flip at all. Under an override it does not: the toggle
   // would announce an aria-pressed state it cannot change (WCAG 4.1.2) and would overwrite the
@@ -556,17 +556,17 @@ persistent "?" carries Markdown help).
       (editorCard?.querySelector('.cm-content') as HTMLElement | null)?.focus();
     }
   }
-  // The zen chip's own mount lifecycle, kept apart from setZen() above so that function's
+  // The zen chip's mount lifecycle, kept apart from setZen() above so that function's
   // flushSync focus sequence stays untouched. Entering zen mounts the chip at once, the same
-  // instant an `{#if prefs.zen}` gate would; leaving zen keeps it mounted through its own CSS
+  // instant an `{#if prefs.zen}` gate would; leaving zen keeps it mounted through its CSS
   // exit fade and unmounts only once that fade has had time to play, so the exit the chip's
   // style block describes is a transition a reader actually sees rather than an instant removal.
   // The wait is a fixed timer rather than a `transitionend` listener: the class removal that
   // starts the fade and the effect that would attach the listener both run inside the same
-  // reactive flush, which can race the browser's own transition-start bookkeeping and drop the
+  // reactive flush, which can race the browser's transition-start bookkeeping and drop the
   // event under load, where a timer cannot be dropped. The margin sits just past the exit
   // duration token above (110ms), not the CSS transition itself, so a JS scheduling delay never
-  // truncates the fade a reader actually sees, while keeping the chip's own dead-click tail
+  // truncates the fade a reader actually sees, while keeping the chip's dead-click tail
   // (mitigated separately by `pointer-events: none` on the exiting chip, see the style block
   // below) as short as the fade allows. A reduced-motion reader gets no fade in either direction
   // and unmounts at once instead of waiting out a timer with nothing to show.
@@ -595,14 +595,14 @@ persistent "?" carries Markdown help).
   // A segment of the bordered posture control (the mockup's .seg). The shared group border carries
   // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
   // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.
-  // shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
+  // shrink-0 and whitespace-nowrap hold each segment to its single-line footprint: at
   // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
-  // shrink a segment until its own label wraps mid-word.
+  // shrink a segment until its label wraps mid-word.
   // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
   // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
   // this footer's type-meta (13px) segment/toggle labels sit in the <= 13px semibold band once
   // pressed (design arc 2026-07-15). The pressed wash and hairline itself is the shared
-  // segmentTintClass grammar (segmented-control.ts); each helper composes it with its own layout
+  // segmentTintClass grammar (segmented-control.ts); each helper composes it with its layout
   // and hover classes rather than restating the tint literally, so a future tune of the tint
   // reaches this footer too.
   function segButtonClass(pressed: boolean): string {
@@ -622,11 +622,11 @@ persistent "?" carries Markdown help).
   // editor mounts and, identity-guarded, from the moment it is destroyed (see `bindEditorGrant`
   // below and MarkdownEditor's `registerEditor` doc). Every consumer below reads through it with
   // an optional chain, so each stays a no-op (or its declared default) until a live grant exists,
-  // the same as when each capability had its own `$state.raw` holder.
+  // the same as when each capability had its `$state.raw` holder.
   let editor = $state.raw<EditorApi | null>(null);
 
   /** Builds one `registerEditor` handler for a single `MarkdownEditor` mount, so revocation stays
-   *  identity-guarded: `{#key entryKey}` gives every mount its own fresh call to
+   *  identity-guarded: `{#key entryKey}` gives every mount its fresh call to
    *  this factory (proven non-reactive, so it runs exactly once per mount, never re-invoked for an
    *  unrelated reactive update on the parent), and the closure it returns remembers only the api
    *  reference IT granted. On mount it both records that reference and updates the shared holder;
@@ -634,7 +634,7 @@ persistent "?" carries Markdown help).
    *  the exact reference this closure granted (a reference compare), so a stale destroy from a
    *  superseded instance, arriving after a newer instance has already registered, no-ops instead
    *  of clobbering the live grant. A destroy with no prior grant (SSR teardown, or a remount torn
-   *  down before its own async mount ever registered) also no-ops, since `granted` stays null. */
+   *  down before its async mount ever registered) also no-ops, since `granted` stays null. */
   function bindEditorGrant(): (api: EditorApi | null) => void {
     let granted: EditorApi | null = null;
     return (api) => {
@@ -758,7 +758,7 @@ persistent "?" carries Markdown help).
   // the field, not the body scanner (findMediaImagesNeedingAlt), and its remediation focuses the
   // alt input, never a source range (selectRange). The records are keyed by field name; a stale
   // key from a same-route concept hop never lingers, since heroRows below filters against the
-  // INCOMING concept's own imageFields and each surviving MediaHeroField re-reports its
+  // INCOMING concept's imageFields and each surviving MediaHeroField re-reports its
   // needs-alt status on mount, so a key an outgoing concept's fields no longer name is simply
   // never read (no per-key cleanup on unmount is needed).
   let heroNeedsAlt = $state<Record<string, boolean>>({});
@@ -770,7 +770,7 @@ persistent "?" carries Markdown help).
   let uploadedRecords = $state<MediaEntry[]>([]);
   // A headless dialog instance, typed structurally over its exported open() (the linkPicker idiom).
   type DialogHandle = { open: () => void };
-  // The toolbar's insert dialogs. Each holds its own <form>, so they mount outside the edit form
+  // The toolbar's insert dialogs. Each holds its <form>, so they mount outside the edit form
   // (a form nested in a form is invalid HTML the parser repairs by dropping the outer tag, which
   // breaks SSR and hydration); the toolbar snippet renders plain triggers that open them here.
   let webLinkDialog = $state<DialogHandle | null>(null);
@@ -800,7 +800,7 @@ persistent "?" carries Markdown help).
   // The publish blast-radius line (ratified verdict 5): only a fragment being published carries a
   // count, since publishing any other concept never ripples into another entry's rendered output.
   // data.inboundLinks already holds this fragment's includers (content-routes-entry-read.ts's editLoad
-  // reads inboundIncludes for the Fragments concept, the same data the sidebar's own Included in
+  // reads inboundIncludes for the Fragments concept, the same data the sidebar's Included in
   // group renders), so this reuses that load rather than a new fetch. It renders in the role="status"
   // notice region below, the same publish-adjacent-awareness recipe the needs-alt notice uses: an
   // always-present live region, non-blocking, muted rather than alert-warning since this is not a
@@ -866,7 +866,7 @@ persistent "?" carries Markdown help).
   // async, so a slow check could resolve after a newer caret move; guard latest-wins on the
   // shared SeqArbiter shape, only applying a result when no newer caret move has started a fresh
   // check. The arbiter alone is not enough: it is bumped only when the effect itself reruns
-  // (the teardown below, or the next run's own call), which Svelte schedules asynchronously, so a
+  // (the teardown below, or the next run's call), which Svelte schedules asynchronously, so a
   // slow check for the block the caret just left can still resolve before that rerun happens. The
   // live `caretComponent` read is the belt to the arbiter's suspenders: it reflects the caret's
   // real position the instant it changes, independent of when the effect gets around to noticing.
@@ -939,7 +939,7 @@ persistent "?" carries Markdown help).
   // Open the figure control over the media image at the caret: prepare the prefill through
   // figureEditor, then show the dialog it renders from. figureEditor never touches figureDialog
   // itself (see its doc comment), so the shell composes the DOM call around the state prep, the
-  // same split setZen uses for its own DOM choreography.
+  // same split setZen uses for its DOM choreography.
   function openFigure() {
     figureEditor.openFigure();
     if (figureEditor.figurePrefill) figureDialog?.showModal();
@@ -960,7 +960,7 @@ persistent "?" carries Markdown help).
   // main, whether or not it has a pending branch yet), Edited (a pending branch over a published
   // copy), and Published (main matches, nothing pending). `data.pending` alone cannot carry this:
   // a brand-new entry is `pending: false, published: false` and must still read New, not Published.
-  // All three render on StatusChip's quiet register, the same mapping ConceptList's own status
+  // All three render on StatusChip's quiet register, the same mapping ConceptList's status
   // column uses: the label text itself carries the distinguishing signal, not a fill color, so the
   // desk band and the concept list speak one chip vocabulary instead of two.
   const status = $derived.by(() => {
@@ -970,7 +970,7 @@ persistent "?" carries Markdown help).
 
   // The below-sm compact band has room for exactly one status pill, never the
   // desktop's separate status badge, Hidden badge, and save-state text side by side (audit
-  // finding 1's 320px triple: Published + Hidden + a dirty edit). The pill's own visible content
+  // finding 1's 320px triple: Published + Hidden + a dirty edit). The pill's visible content
   // carries the eye-off glyph and the dirty dot (see the desk snippet below); this aria-label
   // spells the same three signals out as one phrase (e.g. "Published, hidden, unsaved changes"),
   // so the accessible name says everything the two dropped badges used to say on their own.
@@ -991,7 +991,7 @@ persistent "?" carries Markdown help).
   // is the narrow composition with no post-mount swap. `narrow` drives which branch is reachable:
   // the inactive one carries `inert`, which removes it from the accessibility tree and from
   // role-based locators regardless of which branch CSS happens to show, so exactly one Save and
-  // one Publish control is ever reachable. Defaults false (matching the wide composition's own
+  // one Publish control is ever reachable. Defaults false (matching the wide composition's
   // rendering at first paint); the effect corrects it once mounted.
   let narrow = $state(false);
   $effect(() => {
@@ -1110,7 +1110,7 @@ persistent "?" carries Markdown help).
       : []),
   ]);
 
-  // The entry's singular noun, defaulting to label the way ConceptList's own refusedNoun/createNoun
+  // The entry's singular noun, defaulting to label the way ConceptList's refusedNoun/createNoun
   // do (EditData.singular is typed required, but this is the one path an author already hit
   // something going wrong on: a plain-JS caller that skips the type and omits it should degrade to
   // the plural rather than throw mid-refusal). Every read of the entry's singular noun below shares
@@ -1126,7 +1126,7 @@ persistent "?" carries Markdown help).
   const deleteRefusedByInclusion = $derived(form?.inboundKind === 'include');
 
   // The shared failure summary, rendered only when no richer banner claims the failure: the save
-  // and delete guards get their own banners from brokenLinks and inboundLinks below, so this
+  // and delete guards get their banners from brokenLinks and inboundLinks below, so this
   // surfaces the rest (a rename refusal, today).
   const formError = $derived(
     form?.error && !form.brokenLinks?.length && !form.inboundLinks?.length ? form.error : '',
@@ -1165,15 +1165,15 @@ persistent "?" carries Markdown help).
       // B's save payload (:1400ish media-library merge, the hidden `media` form field, and the
       // save action's read of it): uploadedRecords is per-entry content, not chrome.
       uploadedRecords = [];
-      // ShareLinkPanel owns its own share/revoke state and mounts inside the {#key} block below,
+      // ShareLinkPanel owns its share/revoke state and mounts inside the {#key} block below,
       // so an entry hop clears it by remount, not by an explicit reset here. tidyController and
-      // figureEditor (both born once, not remounted) own their own entry-key-scoped resets
+      // figureEditor (both born once, not remounted) own their entry-key-scoped resets
       // internally instead, keyed on this same entryKey through their getEntryKey getter.
       // The one EditorApi holder: the {#key} block this reset backs remounts MarkdownEditor
       // itself, destroying the outgoing entry's CodeMirror view. Nulling it here covers the
-      // ordinary case; MarkdownEditor's own identity-guarded null delivery on destroy (see
+      // ordinary case; MarkdownEditor's identity-guarded null delivery on destroy (see
       // `bindEditorGrant` below) is what closes the gap for the case this reset cannot see, a
-      // toolbar action clicked between this remount and the incoming entry's own async
+      // toolbar action clicked between this remount and the incoming entry's async
       // registerEditor call (MarkdownEditor's onMount awaits a long chain of dynamic imports
       // before it fires).
       editor = null;
@@ -1199,7 +1199,7 @@ persistent "?" carries Markdown help).
   // nulls out itself when the {#key} remount destroys the bound node (tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, and figureDialog are this group: the tidy and figure STATE
   // that used to sit beside them moved fully into tidy-controller.svelte.ts and
-  // figure-editor.svelte.ts, each owning its own entry-key-scoped reset there, so their
+  // figure-editor.svelte.ts, each owning its entry-key-scoped reset there, so their
   // names no longer appear in this file's declared list at all; detailsPanel joins this group the
   // same way: heroFieldRefs moved fully into DetailsPanel.svelte, which resets by remount
   // since it mounts inside the {#key entryKey} block below, so its name is also gone from this
@@ -1365,7 +1365,7 @@ persistent "?" carries Markdown help).
   // inert literal-prose fallback, which is exactly what the build ships for those bodies; a
   // dangling id resolves to undefined too, which the render step turns into the missing-fragment
   // notice. previewTitle rides alongside the same lookup: it is the marker resolve-include.ts reads
-  // to know this is the preview's own resolver (never the build's), so the spliced blocks gain the
+  // to know this is the preview's resolver (never the build's), so the spliced blocks gain the
   // preview-only boundary cue (ratified 4B). A resolver-not-found title falls back to the id inside
   // resolve-include.ts, not here, so both paths share the same fallback rule. The entry key rides
   // along too, so an include.missing raised from this preview names the entry being edited.
@@ -1540,12 +1540,12 @@ persistent "?" carries Markdown help).
           </a>
         </Tooltip>
         <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
-        <!-- The chip is now the toolkit's own StatusChip, which publishes no `role` and no
+        <!-- The chip is now the toolkit's StatusChip, which publishes no `role` and no
              `aria-label` prop, so both live on this wrapping span instead. `role="status"` gives
              the wrapper a non-generic role so `aria-label` actually reaches assistive tech:
              ARIA-in-HTML drops aria-label on a plain span's default `generic` role, and nothing
              else here carries the accessible name. `status` is also the right semantics (a live
-             summary of transient document state), unlike StatusChip's own sr-only-legend pattern,
+             summary of transient document state), unlike StatusChip's sr-only-legend pattern,
              which fits a self-explanatory visible label plus optional clarifying text rather than
              a name that must fully replace three icon-only signals at once. -->
         <span class="inline-flex shrink-0 items-center gap-1" role="status" aria-label={pillAriaLabel}>
@@ -1641,7 +1641,7 @@ persistent "?" carries Markdown help).
       </Tooltip>
       <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
            display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
-           list-role rule, rendered mode). The two menu-divider <li> keep their own role="separator"
+           list-role rule, rendered mode). The two menu-divider <li> keep their role="separator"
            instead: that role is a deliberate, different reading, not a listitem. -->
       <ul
         bind:this={actionsMenu}
@@ -1721,12 +1721,12 @@ persistent "?" carries Markdown help).
              on the figure-control pattern this repo already owns: aria-disabled (never the native
              attribute, so the control stays focusable and its reason reaches assistive technology),
              the cairn-btn-guarded marker so the tooltip survives DaisyUI's pointer-events
-             kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's own [aria-disabled]
+             kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's [aria-disabled]
              rule supplies the dimming, so no opacity utility rides on top (a second dimming would
              halve the focus ring on this still-focusable control). Native disabled is reserved for
              busy (mid-submit), the one case the guidance sanctions, and aria-disabled is emitted
              only while guarded so the two never contradict. onPublishClick cancels a guarded click's
-             own submit, since aria-disabled alone blocks nothing. The guard reason reaches a mouse
+             submit, since aria-disabled alone blocks nothing. The guard reason reaches a mouse
              and a keyboard user through the wrapping Tooltip, never a native title attribute. -->
         <Tooltip text={publishGuardReason ?? ''}>
           <button
@@ -1756,7 +1756,7 @@ persistent "?" carries Markdown help).
 
 <!-- The below-sm fixed bottom action bar must stay above an open on-screen
      keyboard, and the admin owns this route's <svelte:head> even though the surrounding app shell
-     is a consumer's own SvelteKit layout. `interactive-widget=resizes-content` (the CSS Viewport
+     is a consumer's SvelteKit layout. `interactive-widget=resizes-content` (the CSS Viewport
      spec's viewport-meta descriptor, shipped in Chromium since ~M108) tells the browser to shrink
      the LAYOUT viewport itself when the keyboard opens, not only the visual one; without it a
      `position: fixed; bottom: 0` element's containing block never shrinks, so the bar sits under
@@ -1764,10 +1764,10 @@ persistent "?" carries Markdown help).
      `visualViewport`/`innerHeight` report, leaving fixed layout untouched). SvelteKit
      concatenates every ancestor's <svelte:head> into one document head in tree order, with the
      deepest component's tags landing last; every shipping browser resolves a duplicate
-     `<meta name="viewport">` by taking the last one, so this tag wins over a consumer's own root
+     `<meta name="viewport">` by taking the last one, so this tag wins over a consumer's root
      layout even though cairn does not own that layout. Limits: neither desktop nor iOS Safari
      implements `interactive-widget` as of this writing, so the fix is Chromium-only there; iOS
-     Safari's own keyboard-resize behavior varies by version and is not separately patched here (a
+     Safari's keyboard-resize behavior varies by version and is not separately patched here (a
      `visualViewport` resize listener would cover it, at the cost of a listener running for the
      life of every edit session, judged not worth it for a chrome sliver). -->
 <svelte:head>
@@ -1789,7 +1789,7 @@ persistent "?" carries Markdown help).
   </div>
 {/if}
 <!-- The site's publish-actions next-step links (docs/reference/sveltekit.md#the-publish-actions-seam):
-     quiet links beside the publish-success strip, never their own alert. They render only alongside
+     quiet links beside the publish-success strip, never their alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
 {#if !failedInPlace && data.publishedFlash && data.publishActions.length}
   <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
@@ -1798,7 +1798,7 @@ persistent "?" carries Markdown help).
     {/each}
   </div>
 {/if}
-<!-- The editor's own failure notice describes the latest attempt, so while it shows, the earlier
+<!-- The editor's failure notice describes the latest attempt, so while it shows, the earlier
      attempt's server message and broken-link list stand down rather than read as current. -->
 {#if failureNotice}
   <div class="alert alert-warning mb-4 type-body">
@@ -1910,10 +1910,10 @@ persistent "?" carries Markdown help).
 
 <!-- The role="status" live region renders unconditionally (present and empty at load), so when the
      first notice appears it announces; a region conditionally mounted with its first content may not
-     be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
+     be observed by assistive tech (WCAG 4.1.3). The notices gate on their presence, so an empty
      region shows nothing. A plain wrapper (not display:contents) carries the role, since some
      assistive tech drops a role off a display:contents box. The fragment blast-radius line (ratified
-     verdict 5) shares this region rather than getting its own: a plain muted line, not an
+     verdict 5) shares this region rather than getting a separate one: a plain muted line, not an
      alert-warning box, since it names a fact rather than a problem to fix. -->
 <div role="status">
   {@render advisoryNotices(renderNotices)}
@@ -1963,7 +1963,7 @@ persistent "?" carries Markdown help).
            mirrors that geometry (the editor face at the prose size, the measure, auto margins).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
-      <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
+      <!-- cairn-audit-disable-next-line type-scale -- the editor's prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
       <!-- Chrome fade, the carve-out band: the title leaves but stays nearby, ready to reappear, so
            it fades at quick on the admin root's default standard curve rather than the exit
            curve's one-band reduction the offset itself takes. cairn-chrome-fade's rule
@@ -1972,7 +1972,7 @@ persistent "?" carries Markdown help).
            zen, never on the first paint that mounts this title with nothing to return from. The
            departure is instant, since the title leaves the DOM outright. -->
       <div class={prefs.surface === 'prose' ? 'cairn-chrome-fade mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'cairn-chrome-fade mb-4 w-full px-5'}>
-        <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
+        <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
           class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {prefs.focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
@@ -2002,7 +2002,7 @@ persistent "?" carries Markdown help).
         onHelp={() => helpDialog?.open()}
       >
         {#snippet insertControls()}
-          <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
+          <!-- Plain triggers only: the dialogs they open hold their <form> elements, so the
                dialogs themselves mount outside the edit form at the bottom of this component.
                Icon buttons like the format strip beside them: the labels live in aria-label and
                a Tooltip, so the Insert group reads as part of one instrument strip. -->
@@ -2117,7 +2117,7 @@ persistent "?" carries Markdown help).
                enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
                not the native disabled attribute, so the control stays focusable and its reason reaches
                assistive technology; openFigure() early-returns so the dead click is inert. The dimming
-               rides daisyUI's own [aria-disabled] treatment (icon color, plus the cairn-btn-guarded
+               rides daisyUI's [aria-disabled] treatment (icon color, plus the cairn-btn-guarded
                background raise in cairn-admin.css for this ghost variant), like Publish; no opacity
                utility rides on top, since a second dimming here is what read as a rendering gap
                (audit finding 7). cursor-not-allowed still names the non-interactive state, and never
@@ -2141,13 +2141,13 @@ persistent "?" carries Markdown help).
         {#snippet moreExtra(closeMenu: () => void)}
           <!-- Below sm only: the toolbar's one overflow is where Write/Preview, the
                postures, the writing modes, and the word count all land once the card footer stops
-               rendering at this width (see the footer's own sm:flex gate above). Markdown help
-               does NOT fold in here: the toolbar's own persistent "?" control
+               rendering at this width (see the footer's sm:flex gate above). Markdown help
+               does NOT fold in here: the toolbar's persistent "?" control
                already reaches it at every width, so this popover would otherwise carry a second,
                redundant "Markdown help" affordance. Each remaining item mirrors an existing
                sm-and-up control's handler exactly, so picking one here has the identical effect as
                its standing counterpart; closeMenu dismisses the popover the way EditorToolbar's
-               own moreItems picks do. sm:hidden on every <li> here keeps them out of the way at sm
+               moreItems picks do. sm:hidden on every <li> here keeps them out of the way at sm
                and up, where the real controls stand on their own. -->
           {@render moreDivider()}
           {@render moreToggle('Write', mode === 'write', () => { setMode('write'); closeMenu(); })}
@@ -2255,16 +2255,16 @@ persistent "?" carries Markdown help).
            frame never jumps between tabs and the count keeps reading while proofing. The strip
            carries the writing environment (the count, the persisted writing modes) while the top
            toolbar acts on the text; the toggles live here visible rather than buried in an
-           overflow menu. Markdown help lives in the toolbar's own persistent "?" control now,
+           overflow menu. Markdown help lives in the toolbar's persistent "?" control now,
            not here: a second copy in the footer would just be a width-dependent
            duplicate of an affordance that already reaches every width from one place. sm and up
-           only: below sm this composition drops the strip outright (its own toolbar row already
+           only: below sm this composition drops the strip outright (its toolbar row already
            scrolls, so wrapping it further was the wrong fix) and moves every one of its remaining
-           controls, word count included, into the toolbar's own More popover (EditorToolbar's
+           controls, word count included, into the toolbar's More popover (EditorToolbar's
            moreExtra snippet below), so nothing here is lost, only relocated. Gated on the live
            `narrow` match rather than a CSS hidden/sm:flex toggle: a plain-text query (getByText)
            does not consult computed visibility, so a CSS-hidden word count here would read as a
-           second, ambiguous copy of the popover's own moreExtra line even while this strip sits
+           second, ambiguous copy of the popover's moreExtra line even while this strip sits
            display:none (the same reasoning EditorToolbar's moreExtra mount-gate documents for the
            More popover). -->
       {#if !prefs.zen && !narrow}
@@ -2282,7 +2282,7 @@ persistent "?" carries Markdown help).
         <span class="flex shrink-0 items-center gap-1.5">
           <span class="tabular-nums">{wordLabel}</span>
           <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
-               already speaks this settled count in its own polite live region, so exposing this
+               already speaks this settled count in its polite live region, so exposing this
                span too would announce the same information twice (WCAG 4.1.3 speaks to exactly
                this: one designed channel per piece of status information). -->
           <span aria-hidden="true" class="opacity-50">·</span>
@@ -2318,8 +2318,8 @@ persistent "?" carries Markdown help).
             </button>
           </div>
           <!-- Focus mode and Typewriter are standalone check-and-tint toggles, no border. This
-               group also wraps its own toggles onto a further row if the group's whole natural
-               width still does not fit its own line, so a single toggle never shrinks below its
+               group also wraps its toggles onto a further row if the group's whole natural
+               width still does not fit its line, so a single toggle never shrinks below its
                single-line footprint even at the narrowest supported phone width. -->
           <div class="flex shrink-0 flex-wrap items-center gap-0.5">
             <button
@@ -2400,7 +2400,7 @@ persistent "?" carries Markdown help).
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
     </div>
-    <!-- Three labeled groups. Each group is its own fieldset so its eyebrow is a real legend that
+    <!-- Three labeled groups. Each group is its fieldset so its eyebrow is a real legend that
          screen readers announce with the fields it holds. -->
     <div class="flex flex-col gap-section">
       <DetailsPanel
@@ -2443,7 +2443,7 @@ persistent "?" carries Markdown help).
       </fieldset>
       <ShareLinkPanel conceptId={data.conceptId} entryId={data.id} {csrf} {previewMint} />
       {#if data.conceptId === FRAGMENTS_CONCEPT_ID}
-        <!-- The where-used surface (spec section on reuse): a fragment's own edit screen names its
+        <!-- The where-used surface (spec section on reuse): a fragment's edit screen names its
              consumers, the same data.inboundLinks the delete guard blocks on, so an author sees the
              blast radius before publishing rather than only when a delete refuses. Read-only, no new
              colors or badges, following the group idiom above. -->
@@ -2472,7 +2472,7 @@ persistent "?" carries Markdown help).
 <!-- The below-sm fixed bottom action bar: Save and Publish leave the band below sm
      (audit finding 1: the top-right pair measured 31-32px there, under the 44px floor, and sat in
      the one-handed dead zone) for a bar fixed to the bottom of the visual viewport, each button at
-     least 44px tall (min-h-11). Both ride form="cairn-edit-form" the way the band's own pair does
+     least 44px tall (min-h-11). Both ride form="cairn-edit-form" the way the band's pair does
      (see the desk snippet above), including the identical guarded-Publish pattern and reason
      (publishButton binds here too; both Publish buttons carry the same formaction, so it makes
      no difference which one a `bind:this` on two always-mounted elements lands on). Both branches
@@ -2482,7 +2482,7 @@ persistent "?" carries Markdown help).
      locator, and a real screen reader, never sees two controls sharing one accessible name. The
      sr-only default submit in the band always precedes this bar in tree order (the band renders
      ahead of this form-external bar), so Enter-in-a-field keeps saving rather than publishing
-     either way. The bar's own vertical padding plus env(safe-area-inset-bottom) keeps it off the
+     either way. The bar's vertical padding plus env(safe-area-inset-bottom) keeps it off the
      physical screen edge (a bar flush against the bottom edge reads as hard-smashed); staying
      above an open keyboard depends on the interactive-widget viewport hint above. The `{#if}`
      here gates only zen, which drops the whole chrome (topbar, sidebar, this bar) at every width
@@ -2529,7 +2529,7 @@ persistent "?" carries Markdown help).
      WordPress/Ghost rule says never disappear under zen, the live save state and the way out. The
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It mounts on entering zen and
-     stays mounted, `inert`, through its own exit fade before the chipMounted effect above unmounts
+     stays mounted, `inert`, through its exit fade before the chipMounted effect above unmounts
      it, so it never disappears mid-fade the way an `{#if prefs.zen}` gate would. -->
 {#if chipMounted}
   <div
@@ -2555,7 +2555,7 @@ persistent "?" carries Markdown help).
   </div>
 {/if}
 
-<!-- The toolbar's insert dialogs, mounted headless outside the edit form: each holds its own
+<!-- The toolbar's insert dialogs, mounted headless outside the edit form: each holds its
      <form>, and a form nested in a form is invalid HTML the parser repairs by dropping the outer
      tag, which breaks the SSR'd document and hydration. The toolbar snippet's triggers drive them
      through their exported open(). -->
@@ -2592,7 +2592,7 @@ persistent "?" carries Markdown help).
 />
 
 <!-- The figure control's host dialog, mounted headless outside the edit form (the control holds its
-     own <form>). The toolbar Figure control opens it through openFigure(), pre-filled from the caret
+     <form>). The toolbar Figure control opens it through openFigure(), pre-filled from the caret
      snapshot. The control is keyed on figureEditor.figurePrefill so it remounts fresh per open,
      seeding its fields from the new caption/role. The native <dialog> gives the focus trap and Escape
      for free, and the close event (the X, the backdrop, Escape, and the apply path all fire it) clears
@@ -2756,7 +2756,7 @@ persistent "?" carries Markdown help).
 <style>
   /* Naming hooks with no visual role of their own: each element's real styling rides on the
      Tailwind utilities already in its class attribute. Each rule carries only an inert custom
-     property, never read anywhere, since an empty ruleset both fails svelte-check's own lint and
+     property, never read anywhere, since an empty ruleset both fails svelte-check's lint and
      (were it `all: revert` instead) would sit unlayered and outrank the sibling Tailwind
      utilities the cascade layers otherwise protect. This is a co-located, self-documenting
      declaration of the class name, replacing a JSON allowlist entry a rename would silently
@@ -2767,12 +2767,12 @@ persistent "?" carries Markdown help).
     --cairn-naming-hook: true;
   }
 
-  /* EditorToolbar.svelte's own .menu-divider carries the identical naming hook and reason. */
+  /* EditorToolbar.svelte's .menu-divider carries the identical naming hook and reason. */
   .menu-divider {
     --cairn-naming-hook: true;
   }
 
-  /* The zen-mode toggle's own naming hook; it also happens to be the unrelated localStorage
+  /* The zen-mode toggle's naming hook; it also happens to be the unrelated localStorage
      preference key of the same name (coincidence, not a dependency). */
   .cairn-editor-zen {
     --cairn-naming-hook: true;
@@ -2781,14 +2781,14 @@ persistent "?" carries Markdown help).
   /* The zen chip's real entrance and exit, the two things WordPress/Ghost say never disappear
      under zen carried on a surface that itself appears and disappears. The zen-active class
      (bound to prefs.zen, not to whether the chip is mounted) carries the direction: its absence
-     is the resting-hidden state the chip's own script keeps the element mounted through on the
+     is the resting-hidden state the chip's script keeps the element mounted through on the
      way out, at quick on the exit curve with no delay, since the finger that opened the exit is
      already on the glass; its presence is the state the chip animates to on mount, at base on
      the entrance curve after a 110ms delay so the chip does not compete with the chrome regions
      leaving the same frame. @starting-style targets only the zen-active state, since that is the
      one a fresh mount actually reaches (the chip only ever mounts already zen-active). The
      entrance delay lives inside a prefers-reduced-motion: no-preference guard; a reduced-motion
-     reader gets transition: none in both directions and the chip's own script unmounts it at
+     reader gets transition: none in both directions and the chip's script unmounts it at
      once rather than waiting out a fade timer with nothing to show. */
   .cairn-zen-chip {
     opacity: 0;

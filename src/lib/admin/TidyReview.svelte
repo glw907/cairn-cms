@@ -13,8 +13,8 @@ batched transaction (one undoable step), so the whole tidy is one move back. Can
 leave the document byte-identical.
 
 The category of each hunk is inferred LOCALLY from the diff shape and the enabled config, never a claim
-the model made and never a count of the author's own usage. A normalization names ONLY the config
-setting that authorized it; counting the author's own habit is the harmonize-to-author judgment cairn
+the model made and never a count of the author's usage. A normalization names ONLY the config
+setting that authorized it; counting the author's habit is the harmonize-to-author judgment cairn
 must never make, so no such count exists.
 -->
 <script lang="ts">
@@ -65,7 +65,7 @@ must never make, so no such count exists.
   let { changes, original, conventions, model, title, api, onclose, onshow }: Props = $props();
 
   // One hunk per change, with its locally-inferred category, line label, diff rows, and because-line.
-  // Computed once from the immutable inputs; the disposition lives in its own reactive array so the
+  // Computed once from the immutable inputs; the disposition lives in its reactive array so the
   // rows do not recompute on every toggle.
   interface Hunk {
     index: number;
@@ -137,7 +137,7 @@ must never make, so no such count exists.
   // The keyboard step-through cursor: the focused hunk's array position. j/k move; a/r act on it.
   let focusedPos = $state(0);
 
-  // Two live regions, the same shape MediaPicker's own results-count/narration pair uses but not
+  // Two live regions, the same shape MediaPicker's results-count/narration pair uses but not
   // shared with it: the tally region (role=status) speaks only on a bulk action; the action region
   // (aria-live=polite) narrates the single per-hunk action and each cursor move. A live region
   // re-announces only when its text changes, so a deterministic message (the same hunk, the same
@@ -149,7 +149,7 @@ must never make, so no such count exists.
 
   // An invisible suffix that flips on every call, so a repeated identical announcement still changes
   // the region text and re-fires the live region. It is a zero-width space, never voiced, so the heard
-  // sentence is unchanged. Each region keeps its own parity through the shared counter.
+  // sentence is unchanged. Each region keeps its parity through the shared counter.
   function nonce(): string {
     return announceNonce++ % 2 === 0 ? '' : '​';
   }
@@ -272,7 +272,7 @@ must never make, so no such count exists.
   }
 
   // The Accept/Reject pair's pressed tint composes the shared segmentTintClass grammar
-  // (segmented-control.ts) with this control's own hover class, rather than restating the tint
+  // (segmented-control.ts) with this control's hover class, rather than restating the tint
   // literally, so a future tune of the tint reaches this dialog too.
   function actClass(pressed: boolean): string {
     return pressed ? segmentTintClass(pressed) : 'text-muted hover:bg-base-content/[0.06]';

@@ -108,7 +108,7 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
   const builder = new RangeSetBuilder<Decoration>();
   // The caret's container, one helper call over the cached scan per rebuild. Line decorations
   // at the same position must enter the builder in add order, so the caret-block class goes in
-  // as its own line decoration just ahead of the row's depth decoration.
+  // as its line decoration just ahead of the row's depth decoration.
   const caretLine = view.state.doc.lineAt(view.state.selection.main.head).number - 1;
   const caret = caretContainerRange(scan, caretLine);
   for (const { from, to } of view.visibleRanges) {

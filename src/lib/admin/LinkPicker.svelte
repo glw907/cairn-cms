@@ -18,7 +18,7 @@ The plain-URL link is the toolbar's Web link dialog; this is for an internal tar
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
     /** Render the built-in Link to page trigger. False mounts only the dialog, for a host that
-     *  supplies its own trigger and opens the dialog through the exported open(). */
+     *  supplies its trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
   }
 

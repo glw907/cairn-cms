@@ -206,7 +206,7 @@ export interface TidyApi {
 
 /**
  * The tidy extension: the StateField holding the change set and its decorations. The host adds it to
- *  the initial editor state (in its own compartment beside media and folding), then builds the driving
+ *  the initial editor state (in its compartment beside media and folding), then builds the driving
  *  api with tidyApi once the view exists.
  */
 export function cairnTidy(): Extension {

@@ -100,7 +100,7 @@ function directiveSignature(text: string): string {
 
 /**
  * The heading signature: every ATX heading's level in document order. Parsed as mdast so a `#`
- *  inside a code block or an escaped one is never counted, and the level is the parser's own depth.
+ *  inside a code block or an escaped one is never counted, and the level is the parser's depth.
  *  Two texts share a heading structure when these are equal, so an added, removed, or relevelled
  *  heading fails the comparison.
  */
@@ -142,7 +142,7 @@ function multisetEqual(a: string[], b: string[]): boolean {
 
 // The changed token amount: the count of tokens the diff marked inserted or deleted, against the
 // total tokens in the original. An equal run contributes nothing; an inserted or deleted run counts
-// its own tokens. This is the rewrite measure, deliberately coarse, since the structure/token/code
+// its tokens. This is the rewrite measure, deliberately coarse, since the structure/token/code
 // checks are the exact backstop and this only catches a wholesale rewrite that slipped past them.
 function divergence(original: string, corrected: string): { changed: number; total: number } {
   const runs = diffTokens(original, corrected);

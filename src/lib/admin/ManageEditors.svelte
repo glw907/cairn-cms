@@ -1,13 +1,13 @@
 <!--
 @component
 The owner-gated editor management surface, built on the admin toolkit: a table of editors with
-role-flip and remove actions, and an add-editor form. The acting owner's own row disables its
+role-flip and remove actions, and an add-editor form. The acting owner's row disables its
 destructive controls; the last-owner anti-lockout rule itself is enforced server-side
 (editors-routes). Actions post to the named `?/editorSetRole`, `?/editorRemove`, and `?/editorAdd`
 actions, the names the single-mount dispatcher defines.
 
 The header band is `PageHeader`, mounted
-with no action slot: the add-editor form stays its own row below the table, the screen's one
+with no action slot: the add-editor form stays its row below the table, the screen's one
 form-semantic primary action. The role badge stays a plain daisy `badge` (by design): it names an identity, not a stateful standing, so `StatusChip` does not apply.
 -->
 <script lang="ts">
@@ -62,8 +62,8 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
   // (a second submit failing the same way) would otherwise go silent. An invisible nonce flips on
   // every fresh error so the region text always mutates and the screen reader speaks again; this is
   // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
   // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function nonce(): string {
@@ -107,7 +107,7 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
         <tr>
           <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
                primary identifying cell, so it alone carries type-subtitle at font-medium; the
-               other cells stay at the table's own type. -->
+               other cells stay at the table's type. -->
           <td class="pl-6 py-2 type-subtitle font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>

@@ -14,8 +14,8 @@ export type ShortcutRow = { label: string; keys: string };
  * handler that implements it: Save / Publish / Details panel / Zen / Write-Preview / Focus mode and
  * This sheet ride EditPage's window keydown; Bold / Italic / Inline code / Web link / the heading
  * pair / Quote / the list pair ride EditPage's card keydown; Fold / unfold and Next / previous issue
- * ride MarkdownEditor's own CodeMirror keymap (the latter binds the stock `\@codemirror/lint`
- * `nextDiagnostic` / `previousDiagnostic` commands); Undo / redo rides CodeMirror's own
+ * ride MarkdownEditor's CodeMirror keymap (the latter binds the stock `\@codemirror/lint`
+ * `nextDiagnostic` / `previousDiagnostic` commands); Undo / redo rides CodeMirror's
  * `historyKeymap`, wired alongside the lint keymap; the command palette rides CairnAdminShell's
  * Ctrl K, which the shell excludes while an editable target (an input, textarea, select, or
  * contenteditable surface) has focus; Continue list / quote is the built-in markdown keymap on

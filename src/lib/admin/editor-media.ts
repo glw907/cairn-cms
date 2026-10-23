@@ -138,7 +138,7 @@ class MediaChipWidget extends WidgetType {
     return chip;
   }
 
-  // The chip carries its own interactive intent only through the surrounding atomic range; clicks on
+  // The chip carries its interactive intent only through the surrounding atomic range; clicks on
   // it should fall through to CodeMirror so the caret lands beside the atomic token.
   ignoreEvent(): boolean {
     return false;
@@ -182,8 +182,8 @@ function matchesInLine(text: string, lineFrom: number, library: MediaLibrary): M
  *  enclosing figure role. One {@link fenceScan} over the whole document feeds the cheap per-token
  *  figure detection (no remark parse on the per-rebuild chip path); the visible lines are scanned
  *  for tokens, then each token's line index drives {@link figureRoleAtLine}. A line inside a fenced
- *  code block is skipped entirely: a documented `media:` example there is the block's own literal
- *  text, never a live reference the renderer resolves, matching the include chip's own
+ *  code block is skipped entirely: a documented `media:` example there is the block's literal
+ *  text, never a live reference the renderer resolves, matching the include chip's
  *  {@link FenceScan.inCode} gate (editor-include.ts).
  */
 function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatch[] {
@@ -274,7 +274,7 @@ export function cairnMediaDecorations(
     },
     {
       decorations: (v) => v.decorations,
-      // atomicRanges reads the plugin's own atomic set, so the unit the caret skips matches the
+      // atomicRanges reads the plugin's atomic set, so the unit the caret skips matches the
       // decorated tokens exactly.
       provide: (plugin) =>
         EditorView.atomicRanges.of((view) => view.plugin(plugin)?.atomic ?? Decoration.none),

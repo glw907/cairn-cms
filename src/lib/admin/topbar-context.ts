@@ -21,7 +21,7 @@ export interface TopbarHolder {
   /**
    * The live admin theme and its toggle, mirrored here by CairnAdminShell (the direction reverses
    * from `desk`/`zen`: the shell writes, the desk document reads). Below the width cutoff where
-   * CairnAdminShell hides its standalone theme button, EditPage's own overflow menu folds a
+   * CairnAdminShell hides its standalone theme button, EditPage's overflow menu folds a
    * "Toggle theme" item in from these, so the control stays reachable rather than merely hidden.
    * Undefined outside a themed shell (a bare component-test harness) leaves the fold absent.
    */

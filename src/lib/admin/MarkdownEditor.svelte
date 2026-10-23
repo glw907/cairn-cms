@@ -115,7 +115,7 @@ Swapping the editor stays a one-file change.
     siteDictionary?: ReadonlyArray<string>;
   }
 
-  /** `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
+  /** `EditPage`'s wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
    *  rather than wrapping it, with no stability promise across minors: a site that reaches past
    *  `EditPage` for one of these should expect it to move or change shape. */
   export interface UnstableEditorProps {
@@ -224,31 +224,31 @@ Swapping the editor stays a one-file change.
   // browser. The type-only `import(...)` annotation is erased; the value import is dynamic in onMount,
   // so the server bundle never pulls CodeMirror (guarded by the editor-boundary test).
   let view: import('@codemirror/view').EditorView | null = null;
-  // The writing-mode extensions live in their own compartments so the toolbar toggles swap them
+  // The writing-mode extensions live in their compartments so the toolbar toggles swap them
   // in and out of the mounted editor without rebuilding it. Assigned in onMount with the rest of
   // the dynamic editor modules.
   let modes: typeof import('./editor-modes.js') | null = null;
   let focusCompartment: import('@codemirror/state').Compartment | null = null;
   let typewriterCompartment: import('@codemirror/state').Compartment | null = null;
   let surfaceCompartment: import('@codemirror/state').Compartment | null = null;
-  // The media: source decoration lives in its own compartment, reconfigured when the mediaLibrary
+  // The media: source decoration lives in its compartment, reconfigured when the mediaLibrary
   // prop changes so a just-uploaded image decorates the moment it joins the library. The media
   // module loads with the other dynamic editor modules in onMount.
   let mediaCompartment: import('@codemirror/state').Compartment | null = null;
   let mediaMod: typeof import('./editor-media.js') | null = null;
-  // The include: source decoration lives in its own compartment, reconfigured when the
+  // The include: source decoration lives in its compartment, reconfigured when the
   // fragmentTitles prop changes, mirroring the media compartment above. The include module loads
   // with the other dynamic editor modules in onMount.
   let includeCompartment: import('@codemirror/state').Compartment | null = null;
   let includeMod: typeof import('./editor-include.js') | null = null;
-  // The spellcheck lint source (and the objective-error layer it bundles) live in their own
+  // The spellcheck lint source (and the objective-error layer it bundles) live in their
   // compartment, reconfigured to empty when the footer toggle turns spellcheck off. Both surfaces ride
   // the one extension cairnSpellcheck returns, so one compartment gates both. The extension is built
   // asynchronously (it lazy-imports CodeMirror and the lint modules), so it is held here once resolved
   // and the on/off effect reconfigures against it.
   let spellcheckCompartment: import('@codemirror/state').Compartment | null = null;
   let spellcheckExt: import('@codemirror/state').Extension | null = null;
-  // The tidy decoration field lives in its own compartment (entering and leaving tidy is a reconfigure,
+  // The tidy decoration field lives in its compartment (entering and leaving tidy is a reconfigure,
   // not a rebuild) beside the media and fold decorations. A second compartment carries the read-only +
   // edit-disable extension while a review is open, so the author cannot edit underneath a pending
   // review (the same posture Preview takes on the toolbar). Both load with the other editor modules.
@@ -268,14 +268,14 @@ Swapping the editor stays a one-file change.
   function surfaceTheme(posture: 'prose' | 'markup'): import('@codemirror/state').Extension {
     return (posture === 'prose' ? proseTheme : markupTheme) ?? [];
   }
-  // The base theme lives in its own compartment because CodeMirror's dark flag is baked into a
+  // The base theme lives in its compartment because CodeMirror's dark flag is baked into a
   // theme extension at construction, and the admin theme can flip under a mounted editor (the
   // topbar toggle, or a host driving CairnAdminShell's themeOverride). A flip rebuilds all three
   // themes at the new polarity and reconfigures this compartment and the surface one together, so
   // the base chrome the admin sheet does not reach (the autocomplete tooltip, the panels) follows
   // the theme instead of holding its first-mount polarity. The observer below is what notices.
   let themeCompartment: import('@codemirror/state').Compartment | null = null;
-  // The history annotation an insert carries so it is its own undo step. Assigned in onMount with
+  // The history annotation an insert carries so it is its undo step. Assigned in onMount with
   // the rest of the dynamic editor modules; the mounted insert path only runs after that.
   let isolateHistory: typeof import('@codemirror/commands').isolateHistory | null = null;
   let themeObserver: MutationObserver | null = null;
@@ -302,7 +302,7 @@ Swapping the editor stays a one-file change.
     if (!host) return;
 
     const { EditorView, keymap } = viewMod;
-    // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
+    // Mirror the admin theme into CodeMirror's dark flag, so its base chrome (the autocomplete
     // tooltip above all) renders dark-on-dark instead of light-on-dark. The theme root is an
     // ancestor element, not a prop, so the value is read from the DOM and re-read whenever that
     // element's attribute changes; themeRoot is held for the observer set up after the view exists.
@@ -322,7 +322,7 @@ Swapping the editor stays a one-file change.
     const railFallbacks = ['72%', '82%', '92%'];
     const railColor = (step: number | 'active', fallback: string) =>
       `color-mix(in oklab, var(--color-accent) var(--cairn-directive-rail-${step}, ${fallback}), transparent)`;
-    // With `active`, the row's own (deepest) bar takes the full-strength -active mix at the same
+    // With `active`, the row's (deepest) bar takes the full-strength -active mix at the same
     // 2px width. The emphasis is strength only: a rail column carrying both an active and a
     // quiet segment (two sibling containers at one depth) keeps one weight top to bottom. A paired
     // opener row paints its full rail like any other fence row; the fold chevron lives in the gutter
@@ -363,7 +363,7 @@ Swapping the editor stays a one-file change.
         // entry is short, and because the contenteditable content area carries the height, a
         // click in the empty space below the text still lands in the editor and focuses it.
         // No inner measure cap: the surface fills the card the way a code editor fills its
-        // pane, and the card's own width (the host caps it near 89ch of this face) is the one
+        // pane, and the card's width (the host caps it near 89ch of this face) is the one
         // constraint. The surface carries tables, attributed directives, and long URLs, so the
         // ceiling leans toward the code-editor end of the ergonomic band rather than the
         // long-form ideal; paragraphs wrap comfortably below it.
@@ -392,7 +392,7 @@ Swapping the editor stays a one-file change.
         // it there (higher specificity than the bare rule above wins regardless of source order),
         // but keep a real focus indicator for actual keyboard navigation: .cm-content is the
         // element that receives DOM focus, so :focus-visible applies to it directly, no :has()
-        // needed. The `.cairn-editor-zen` marker is the editor card's own class, toggled by
+        // needed. The `.cairn-editor-zen` marker is the editor card's class, toggled by
         // EditPage's `zen` state.
         '.cairn-editor-zen &.cm-focused': { outline: 'none' },
         '.cairn-editor-zen & .cm-content:focus-visible': {
@@ -401,7 +401,7 @@ Swapping the editor stays a one-file change.
         },
         '.cm-line': { padding: '0' },
         // A quote or list line hangs its wrapped continuation under the content: padding-left
-        // holds the marker width (the --cairn-hang the decoration sets) and the line's own
+        // holds the marker width (the --cairn-hang the decoration sets) and the line's
         // negative text-indent (set inline) pulls the first line back, so the marker sits in the
         // indent. This rule sits before the gutter rule so a container content line, which
         // carries both classes, takes the gutter-plus-hang rule below.
@@ -569,7 +569,7 @@ Swapping the editor stays a one-file change.
         // and border so the column blends into the quiet surface.
         // Neutralize the gutter wrapper so the column blends in. This assumes the fold gutter is the
         // only gutter (it is today: no lineNumbers or foldGutter in the build); a future line-number
-        // or lint gutter would need its own chrome and a narrower selector here.
+        // or lint gutter would need its chrome and a narrower selector here.
         '.cm-gutters': { backgroundColor: 'transparent', border: '0', color: 'inherit' },
         // 24px wide so the cell clears the WCAG 2.5.8 target-size floor unconditionally.
         '.cm-cairn-fold-gutter': { width: '24px' },
@@ -779,7 +779,7 @@ Swapping the editor stays a one-file change.
       // pending-additions set so an add-to-dictionary choice records here for the host to commit.
       siteWords: siteDictionary,
       pendingAdditions,
-      // Hand the lint source the editor's own CodeMirror module instances so its extension lands on the
+      // Hand the lint source the editor's CodeMirror module instances so its extension lands on the
       // same copies; a separate dynamic import can resolve to a different instance and break instanceof.
       modules: { lint: lintMod, language: languageMod, view: viewMod, state: stateMod },
       // The test seam: a deterministic fake Worker and the skip-ready flag, both straight through to the
@@ -823,18 +823,18 @@ Swapping the editor stays a one-file change.
           // upload leaves the source untouched (open risk 2). Placed after folding so a placeholder
           // landing inside a directive composes with the rails.
           placeholderMod.cairnImagePlaceholders(),
-          // The media: source decoration, in its own compartment so a mediaLibrary prop change
+          // The media: source decoration, in its compartment so a mediaLibrary prop change
           // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
           // library; an empty library decorates nothing.
           mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary, mediaBase)),
-          // The include: source decoration, in its own compartment so a fragmentTitles prop change
+          // The include: source decoration, in its compartment so a fragmentTitles prop change
           // reconfigures it without rebuilding the editor. A resolved include line always chips,
           // named by its title when the lookup has one and by its raw id otherwise.
           includeCompartment.of(includeMod.cairnIncludeDecorations(fragmentTitles)),
           // The spellcheck and objective-error lint sources plus the locked amber underline theme, in
-          // their own compartment so the footer toggle gates both surfaces at once. Empty when off.
+          // their compartment so the footer toggle gates both surfaces at once. Empty when off.
           spellcheckCompartment.of(spellcheck ? spellcheckExt : []),
-          // The tidy decoration field, in its own compartment so entering and leaving a review is a
+          // The tidy decoration field, in its compartment so entering and leaving a review is a
           // reconfigure beside the media and fold decorations. The api the host drives is built below.
           tidyCompartment.of(tidyMod.cairnTidy()),
           // The read-only posture while a review is open, empty until the host sets tidyMode.
@@ -870,7 +870,7 @@ Swapping the editor stays a one-file change.
               // Rich-text paste conversion: a clipboard carrying a text/html flavor converts its
               // headings, bold/italic, links, lists, and paragraphs to markdown; everything else
               // degrades to plain text (paste-html-to-markdown.ts). getData returns '' when the
-              // flavor is absent, which is also what the browser's own paste-as-plain-text chord
+              // flavor is absent, which is also what the browser's paste-as-plain-text chord
               // leaves behind, so both cases fall through to CodeMirror's default paste below.
               const html = event.clipboardData?.getData('text/html') ?? '';
               const markdown = html ? htmlToMarkdown(html) : '';
@@ -885,7 +885,7 @@ Swapping the editor stays a one-file change.
             },
           }),
           // No native text-correction override here. The old `spellcheck: 'true'` is gone, so
-          // the content node falls back to CodeMirror's own defaults: spellcheck "false", autocorrect
+          // the content node falls back to CodeMirror's defaults: spellcheck "false", autocorrect
           // "off", autocapitalize "off". The cairn lint source replaces the browser's spellcheck
           // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
           // never silently rewrites a `media:` token, a directive name, or frontmatter.
@@ -981,14 +981,14 @@ Swapping the editor stays a one-file change.
     themeObserver?.disconnect();
     view?.destroy();
     // Revoke the grant unconditionally, even when this instance never reached the mount branch
-    // above (an SSR teardown, or a remount superseded before its own dynamic imports resolved):
+    // above (an SSR teardown, or a remount superseded before its dynamic imports resolved):
     // a host holding no grant from this instance treats the null as a no-op, per the identity
     // guard documented on the prop above.
     registerEditor?.(null);
   });
 
   // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,
-  // and the doc-equality guard ignores the updateListener's own writes so the two never feed back.
+  // and the doc-equality guard ignores the updateListener's writes so the two never feed back.
   $effect(() => {
     const incoming = value;
     if (!view) return;

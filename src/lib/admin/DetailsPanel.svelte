@@ -15,8 +15,8 @@ so an entry hop destroys and recreates the instance; that remount, not an explic
 what keeps one entry's hero refs from surviving onto another entry's panel.
 
 `heroNeedsAlt` and `uploadedRecords` stay host-owned: `onheroneedsalt` and `onuploaded` are
-forwarded straight through, unchanged from `FieldInput`'s own callback shape, since both have
-consumers beyond this panel (the host's needs-alt notice derived, the media slide-over's own
+forwarded straight through, unchanged from `FieldInput`'s callback shape, since both have
+consumers beyond this panel (the host's needs-alt notice derived, the media slide-over's
 upload path, and the save form's hidden `media` input).
 -->
 <script lang="ts">
@@ -57,7 +57,7 @@ upload path, and the save form's hidden `media` input).
     $props();
 
   // The rendered hero fields' refs, for the needs-alt notice's "Add alt text" action (focusHeroAlt
-  // below). Local to this component: each FieldInput image arm reports its own ref in through
+  // below). Local to this component: each FieldInput image arm reports its ref in through
   // registerHeroField rather than mutating this map by reference, so Svelte never sees a prop
   // mutated outside its owner.
   let heroFieldRefs: Record<string, MediaHeroField> = {};
@@ -72,7 +72,7 @@ upload path, and the save form's hidden `media` input).
     else if (!owned || heroFieldRefs[name] === owned) delete heroFieldRefs[name];
   }
 
-  /** The needs-alt remediation jump for a frontmatter hero: focuses the named field's own alt
+  /** The needs-alt remediation jump for a frontmatter hero: focuses the named field's alt
    *  input. The host's needs-alt notice row calls this by field name. */
   export function focusHeroAlt(name: string): void {
     heroFieldRefs[name]?.focusAlt();
@@ -81,7 +81,7 @@ upload path, and the save form's hidden `media` input).
 
 {#if fields.length}
   <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
-    <!-- The slide-over's own header already shows the "Details" eyebrow, so this group's legend
+    <!-- The slide-over's header already shows the "Details" eyebrow, so this group's legend
          stays for the screen-reader grouping but hides visually, the way the mockup carries it once. -->
     <legend class="sr-only">Details</legend>
     {#each fields as field (field.name)}

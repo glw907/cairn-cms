@@ -4,7 +4,7 @@
 // render is individually mountable here, so a site on the advanced per-route mounting reaches the
 // same component the single-mount facade would have rendered. A general-purpose, domain-agnostic
 // primitive (a formatter, a table shell, a labeled input) belongs on `/admin-toolkit` instead, even
-// one this barrel's own screens compose internally; this barrel is for the admin's OWN views and
+// one this barrel's screens compose internally; this barrel is for the admin's views and
 // their composed parts, never a reusable building block a site's custom screen would reach for on
 // its own. The Warm Stone theme ships as a CSS side effect imported by the components that set
 // `data-theme="cairn-admin"`.

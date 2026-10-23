@@ -3,12 +3,12 @@
    components carry the values as plain Tailwind utilities, and this comment is the scale's one
    documented vocabulary. 8px (gap-2/mb-2) hugs elements within one group; 12px (gap-3/mb-3)
    marks an element that belongs to its neighbor (a triage bar to the card below it); 16px
-   (gap-4/mb-4) is a zone's own internal spacing; 32px (mb-8) separates two zones; 40px (mb-10)
+   (gap-4/mb-4) is a zone's internal spacing; 32px (mb-8) separates two zones; 40px (mb-10)
    is the page gap, reserved for the page's one loose element (a header standing apart from its
    content). ConceptList.svelte is the first surface built to it; propagation to the rest of the
    office pages happens at the kit. */
 
-/* Cairn's own typefaces, self-hosted so the admin needs no external font request. IBM Plex Sans carries
+/* Cairn's typefaces, self-hosted so the admin needs no external font request. IBM Plex Sans carries
    the body and UI (friendly, highly legible at small sizes); Bricolage Grotesque gives the brand and
    the page headings a distinct voice; iA Writer Mono is the editor writing surface. The first two are
    variable (one file spans the weight range), the editor face ships four static files, and all three
@@ -32,7 +32,7 @@
    theme block. A grammar token names a RELATIONSHIP (a heading's role, a control-to-control gap),
    not a palette choice, so it holds across light and dark: a consuming site re-tunes the
    `--color-*` palette tokens above and never redeclares one of these. Values are measured from
-   the current call sites (spec section 4), not invented. The audit rule, the reference docs page, and this file's own
+   the current call sites (spec section 4), not invented. The audit rule, the reference docs page, and this file's
    definition test all read the single inventory at src/lib/design/grammar-tokens.ts; keep the two
    in sync by name. This is a plain :root rule, so the build's scoper is what confines it to the
    admin theme roots at compile time, and check:custom-surface (which pins only rules anchored on
@@ -76,16 +76,16 @@
   --cairn-gap-section: 1.5rem;
 }
 
-/* Warm Stone: the cairn admin theme, in two parts. daisyUI's own theme variables (surfaces, brand,
+/* Warm Stone: the cairn admin theme, in two parts. daisyUI's theme variables (surfaces, brand,
    status fills, radii, sizes, border, depth, noise) sit in daisyUI's documented theme format, a
    `@plugin "daisyui/theme"` block carrying exactly the keys of daisyUI's theme object
    (admin-theme-completeness.test.ts). daisyUI emits the block in `@layer base`. Everything else
-   the root sets sits in the plain rule after the block, unlayered, so a host's own unlayered
+   the root sets sits in the plain rule after the block, unlayered, so a host's unlayered
    element rule cannot outrank it (admin-theme-equivalence.test.ts, its hostile run). The
    block's values carry no top-level comma, since Tailwind's `@plugin` option
    parser splits a value there and keeps only the last part, silently; a comma-bearing value (a
    font stack, a layered shadow) belongs in the plain rule. `default` and `prefersdark` stay off:
-   the admin themes apply only under their own data-theme wrapper. The block exists only at
+   the admin themes apply only under their data-theme wrapper. The block exists only at
    compile time; a browser drops the unknown at-rule, so nothing renders this source partial
    directly (the component tests read the compiled sheet). */
 @plugin "daisyui/theme" {
@@ -100,7 +100,7 @@
   --color-primary-content: oklch(98% 0.012 293);
   --color-secondary: oklch(45% 0.02 75);
   --color-secondary-content: oklch(98% 0.004 75);
-  /* 54% holds AA for the editor's directive ink on base-100 (5.28:1) and on its own 8% accent
+  /* 54% holds AA for the editor's directive ink on base-100 (5.28:1) and on its 8% accent
      tint (4.75:1); 58% failed the tint at 4.04:1. A locked margin, like the dark nav pair. */
   --color-accent: oklch(54% 0.16 300);
   --color-accent-content: oklch(98% 0.012 300);
@@ -145,22 +145,22 @@
   --cairn-ease-standard: cubic-bezier(0.2, 0, 0.38, 0.9);
   --cairn-ease-entrance: cubic-bezier(0, 0, 0.38, 0.9);
   --cairn-ease-exit: cubic-bezier(0.2, 0, 1, 0.9);
-  /* Repoints Tailwind's own transition defaults at the token set above. This rule is unlayered
+  /* Repoints Tailwind's transition defaults at the token set above. This rule is unlayered
      (cairn-admin.css imports with no `layer(...)`), so it outranks Tailwind's `@layer theme`
      declaration of the same two properties regardless of specificity; every unmarked
      transition-* utility under this root now animates on the base duration and the standard
      curve instead of Tailwind's stock 150ms/ease-in-out pair. The duration value is unchanged
-     (Tailwind's own default already matches --cairn-dur-base); the curve is the real change. */
+     (Tailwind's default already matches --cairn-dur-base); the curve is the real change. */
   --default-transition-duration: var(--cairn-dur-base);
   --default-transition-timing-function: var(--cairn-ease-standard);
 
   /* The frame offset, the persistent-frame case of the motion language's one documented
      allowance: an element carrying data-cairn-motion="frame-offset" may transition margin-left
      and nothing else (cairn-audit's motion-property rule keys the exception on the attribute
-     plus the property, not on this selector, so a consumer claims the same allowance in its own
+     plus the property, not on this selector, so a consumer claims the same allowance in its
      sheet with no theme-root prelude required). Nested under the theme root rather than authored
-     as its own top-level rule, so it never adds a new entry to check:custom-surface's pinned
-     unlayered-rule set, which is already full. The shell's own lg:ml-56/xl:ml-56 toggles choose
+     as its top-level rule, so it never adds a new entry to check:custom-surface's pinned
+     unlayered-rule set, which is already full. The shell's lg:ml-56/xl:ml-56 toggles choose
      the margin value; the sibling data-cairn-frame-open marker (present once that margin is
      restored) is what this pair keys its direction off, rather than the ml-56 classes themselves:
      cairn-audit's class-join scan resolves every class a component uses, so a compound selector
@@ -174,7 +174,7 @@
      after mount: a reader whose zen preference restores from localStorage carries an SSR/first-
      paint frame at the non-zen margin that then snaps to the zen margin the instant hydration's
      effects flush, and with no such gate that snap animated too, a 224px slide during hydration
-     the spec's own case table rules must snap instead. Deferring the marker past first paint means
+     the spec's case table rules must snap instead. Deferring the marker past first paint means
      the transition only ever plays for a toggle a reader actually triggers after mount. */
   [data-cairn-motion="frame-offset"][data-cairn-frame-ready] {
     transition: margin-left var(--cairn-dur-shift) var(--cairn-ease-entrance);
@@ -194,7 +194,7 @@
      zen was ever used, so a plain mount-driven rule fades in on every load. Keying under
      data-cairn-zen-used restricts both the transition and its @starting-style entrance to a
      chrome region remounting after a return from zen, which is the one case the fade is for.
-     Nested under the theme root rather than authored as its own top-level rule, so it never adds
+     Nested under the theme root rather than authored as its top-level rule, so it never adds
      a new entry to check:custom-surface's pinned unlayered-rule set, the same reasoning the
      frame offset above documents. */
   [data-cairn-zen-used] .cairn-chrome-fade {
@@ -225,7 +225,7 @@
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklab, var(--color-base-content) 55%, transparent) transparent;
   /* A faint themed press wash, not a bare removal: some interactive elements (segmented-control
-     segments, plain text-link buttons) carry no styled :active state, so the tap needs its own
+     segments, plain text-link buttons) carry no styled :active state, so the tap needs its
      acknowledgment rather than losing touch feedback outright. */
   -webkit-tap-highlight-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
 
@@ -253,9 +253,9 @@
   --cairn-error-ink: oklch(50% 0.19 25);
   --cairn-error-tint: oklch(96% 0.03 25);
   --cairn-error-border: oklch(85% 0.06 25);
-  /* The on-surface INFO ink, for the info alert's small text over its own tinted panel. Tuned as
+  /* The on-surface INFO ink, for the info alert's small text over its tinted panel. Tuned as
      readable small text the same way the warning and positive inks are, rather than the fill
-     --color-info is tuned as. Locked: on base-100 measures 7.30:1, on the alert's own 7% info
+     --color-info is tuned as. Locked: on base-100 measures 7.30:1, on the alert's 7% info
      panel 6.64:1, both clearing the 4.5:1 AA floor (WCAG 1.4.3). Do not lighten without
      re-checking both. */
   --cairn-info-ink: oklch(44% 0.12 240);
@@ -285,7 +285,7 @@
   --cairn-directive-rail-1: 72%;
   --cairn-directive-rail-2: 82%;
   --cairn-directive-rail-3: 92%;
-  /* Cursor-aware emphasis: the caret container's own bar steps to a full-strength accent rail
+  /* Cursor-aware emphasis: the caret container's bar steps to a full-strength accent rail
      at the same 2px width (strength only) and an ink one notch past depth 3. Locked pairs on
      base-100: rail = solid accent (5.28:1, non-text floor 3:1), ink 46% (7.47:1). Do not
      lighten without re-checking. */
@@ -297,7 +297,7 @@
   /* The chip register tuning percentages (second generation): how much of the tone color mixes into the base-200 anchor for
      the `quiet`/`warning` chip fills. One custom property per register per theme, referenced by
      the single shared `.cairn-chip-quiet`/`.cairn-chip-warning` rule below, so the SAME rule (and
-     StatusChip's own scoped mirror) resolves a theme-appropriate percentage instead of forking into
+     StatusChip's scoped mirror) resolves a theme-appropriate percentage instead of forking into
      a light rule and a dark rule; declaration-for-declaration parity (status-chip-register-
      parity.test.ts) depends on there being exactly one rule per class. Measured by canvas readback
      (paint the fill, then read the pixel) against both this theme's row grounds, plain (base-100)
@@ -462,7 +462,7 @@
   --cairn-error-tint: oklch(28% 0.06 25);
   --cairn-error-border: oklch(40% 0.09 25);
   /* The on-surface INFO ink on dark, the counterpart to the light root's. Locked: on dark base-100
-     measures 9.54:1, on the alert's own 12% info panel 7.95:1, both clearing the 4.5:1 AA floor.
+     measures 9.54:1, on the alert's 12% info panel 7.95:1, both clearing the 4.5:1 AA floor.
      Do not darken without re-checking both. */
   --cairn-info-ink: oklch(82% 0.08 240);
 
@@ -487,7 +487,7 @@
   --cairn-directive-rail-1: 62%;
   --cairn-directive-rail-2: 74%;
   --cairn-directive-rail-3: 86%;
-  /* Cursor-aware emphasis on dark: the caret container's own bar steps to a solid accent rail
+  /* Cursor-aware emphasis on dark: the caret container's bar steps to a solid accent rail
      at the same 2px width (strength only) and an ink one notch past depth 3. Locked pairs on
      base-100: rail = solid accent (5.86:1, non-text floor 3:1), ink 82% (8.84:1, priced on the
      gamut-clipped sRGB render; the 0.14 chroma sits outside sRGB at this lightness). Do not
@@ -500,7 +500,7 @@
   --cairn-code-chip: oklch(29.5% 0.012 75);
   /* The chip register tuning percentages on dark, the counterpart to the light root's. Dark needs
      different percentages, not the light root's mirrored, because the mix anchor (base-200) sits
-     BRIGHTER than dark's own base-100/base-200 grounds relative to how base-300 sits in light, so
+     BRIGHTER than dark's base-100/base-200 grounds relative to how base-300 sits in light, so
      the same percentage does not land the same band on both themes. Measured: dark quiet
      1.182/1.407, dark warning 1.208/1.437 (plain/zebra), both inside the 1.16-1.47:1 band. Do not
      change without re-measuring. */
@@ -537,7 +537,7 @@
    These rules are the structural half of the Tier-2 floor. The embed-anywhere reset substitutes for the
    omitted global Preflight; the @layer components block carries the anchor reset and the focus ring below
    the utilities layer so a utility still wins; the cairn-idiom sublayer (nested inside utilities, ordered
-   after daisyUI's own sublayers so it outranks them instead) carries the primary-button lift and the
+   after daisyUI's sublayers so it outranks them instead) carries the primary-button lift and the
    modal-box repair; the twelve UNLAYERED rules at the end (starting with `.menu li > :is(button, a):focus-visible`)
    are the only sanctioned unlayered scoped rules, pinned by exact selector in admin-css-build.test.ts and
    check:custom-surface.
@@ -557,17 +557,17 @@
 
 /* The `base` cascade layer (closes findings 1 and 6): the UA reset the
    embed-anywhere box-sizing rule above never covered. scripts/admin-css.input.css orders it
-   `theme, base, components, utilities`, so a rule here loses to daisyUI's own component classes
+   `theme, base, components, utilities`, so a rule here loses to daisyUI's component classes
    and to any consumer override, while still beating the browser's UA defaults (author origin
    always wins over UA regardless of layer). Every selector below is bare; the build's
    postcss-prefix-selector scopes it under the two admin theme roots the same way it scopes the
    rest of the sheet (the `:root` rule uses the same trick the grammar-token block above does: the
    build maps a bare `:root` selector to the scope itself). The admin wrapper also hosts the
    editor's rendered markdown preview, so this reset never touches a bare `ul`, `ol`, heading, or
-   `p`; only form controls, `dialog`, `fieldset`/`legend`, and daisyUI's own `.list` container. */
+   `p`; only form controls, `dialog`, `fieldset`/`legend`, and daisyUI's `.list` container. */
 @layer base {
   /* 1. The admin body face on the scoped root itself, the same --font-body token the type-body
-     role's text renders in. Un-classed text already inherits this from the theme root's own
+     role's text renders in. Un-classed text already inherits this from the theme root's
      unlayered font-family declaration above; declaring it again here, in the base layer, keeps
      the reset self-contained and gives item 2 below a stable ancestor value to inherit from. */
   :root {
@@ -594,7 +594,7 @@
   }
 
   /* 4. Bare fieldset loses the UA border, margin, and padding; legend loses UA padding. DaisyUI's
-     own `.fieldset` class styling is unaffected: it lives in the components layer, which wins. */
+     `.fieldset` class styling is unaffected: it lives in the components layer, which wins. */
   fieldset {
     border: none;
     margin: 0;
@@ -614,11 +614,11 @@
     border: none;
   }
 
-  /* 6. The UA's 40px bullet-marker reservation on daisyUI's own `.list` container. Scoped to
+  /* 6. The UA's 40px bullet-marker reservation on daisyUI's `.list` container. Scoped to
      `.list`, never a bare `ul`/`ol`: the admin wrapper hosts the editor's rendered markdown
      preview, and a bare list-element reset would strip its bullets too. No list-style reset:
      `list-style: none` removes list semantics from the accessibility tree in WebKit/VoiceOver
-     (WCAG 1.3.1), and it is not needed here anyway. daisyUI's own `.list-row` renders
+     (WCAG 1.3.1), and it is not needed here anyway. daisyUI's `.list-row` renders
      `display: grid`, and a list item whose used display value is not one of the list-item
      variants generates no marker box regardless of list-style, so the padding reset alone
      already leaves no visible gutter and no stray marker. */
@@ -629,11 +629,11 @@
 
   /* 7. `.toolkit-list` (2026-08-27 admin sheet fixes; rewritten 2026-08-27 review, since the
      original ruling's marker claim was false): a SEPARATE opt-in from `.list` above, deliberately
-     not folded into it. `.list` is daisyUI's OWN structured-rows component (`.list { display:
+     not folded into it. `.list` is daisyUI's structured-rows component (`.list { display:
      flex; flex-direction: column; font-size: .875rem }`), not a general plain-bullet-list reset,
      and reusing it for an ordinary bulleted content list carries `.list`'s real baggage: the
      forced flex/column layout (wrong for prose, which wants normal block flow between items) and
-     the forced .875rem font-size (wrong for prose that wants to inherit its own). Rendered against
+     the forced .875rem font-size (wrong for prose that wants to inherit its size). Rendered against
      the compiled sheet, `ul.list > li` still paints a marker: a flex item with a `list-item`
      computed display keeps its `::marker` box in Chromium, so the earlier "suppressed marker,
      zero px offset" claim was false. The zero px IS real, but it comes from `padding-inline-start:
@@ -653,12 +653,12 @@
   }
 
   /* 8. A radio or checkbox `.join-item` (the input-as-button join pattern) leaves a seam a plain
-     `<button>` join never shows: the browser's own UA stylesheet gives `input[type='radio']` and
+     `<button>` join never shows: the browser's UA stylesheet gives `input[type='radio']` and
      `input[type='checkbox']` a non-zero margin on all four sides (measured in Chromium: 3px 3px 0
      5px for radio, 3px 3px 3px 4px for checkbox), while a `<button>`'s UA margin is already zero.
-     DaisyUI's own `.join-item` rule sets only the leading edge's margin (the negative overlap that
+     DaisyUI's `.join-item` rule sets only the leading edge's margin (the negative overlap that
      fuses the seam), so the trailing edge's UA margin survives untouched and reopens a 1-2px gap.
-     Resetting the full shorthand here, in `base`, still loses on the leading edge to DaisyUI's own
+     Resetting the full shorthand here, in `base`, still loses on the leading edge to DaisyUI's
      `utilities`-layer declaration (layers resolve before specificity, and `utilities` sorts after
      `base`), so only the trailing edges this rule alone declares take effect. */
   .join-item:is(input[type='radio'], input[type='checkbox']) {
@@ -668,7 +668,7 @@
 
 /* Anchors inherit their color and drop the underline by default, which the omitted Preflight used to
    do. This lives in the `components` layer, below `utilities`, so a Tailwind utility (a `text-*`
-   color, a `hover:underline`) and DaisyUI's own `.link`/`.breadcrumbs` rules (which sit in the
+   color, a `hover:underline`) and DaisyUI's `.link`/`.breadcrumbs` rules (which sit in the
    utilities layer) all override it. Cascade layers resolve before specificity, so an unlayered reset
    here would instead beat every utility and silently kill those hover and link affordances. */
 @layer components {
@@ -703,7 +703,7 @@
      focus, including the links, nav items, and summaries that the browser would otherwise outline in
      its default color. Only keyboard focus triggers it.
      Truthfulness note (pre-existing, no behavior change): a daisyUI
-     `.btn` does not actually pick up the brand violet here. DaisyUI's own `.btn` rule sets
+     `.btn` does not actually pick up the brand violet here. DaisyUI's `.btn` rule sets
      `outline-color: var(--btn-color, var(--color-base-content))` inside the layered `daisyui`
      sublayers, which, being a later-declared layer, outranks this `components`-layer rule
      regardless of specificity. A focused button therefore outlines in `--btn-color` (or
@@ -725,7 +725,7 @@
 
   /* Under focus mode the document title eases back with the rest of the context: at 30px bold
      it would otherwise be the strongest ink on the page and pull the eye off the lit
-     paragraph. Its own focus restores full ink, so editing the title is never dimmed. */
+     paragraph. Its focus restores full ink, so editing the title is never dimmed. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-doc-title-dim:not(:focus) {
     color: var(--cairn-focus-dim-ink);
   }
@@ -763,7 +763,7 @@
      action bar (EditPage.svelte) is the same kind of obscuring band from the other edge: its
      button now measures 45px tall (--size-field's density step carries its --size past the
      min-h-11 floor, so the field height wins over the minimum), and that button plus the bar's
-     own pt-2/pb-2 padding and border measure about 3.9rem before env(safe-area-inset-bottom), so
+     pt-2/pb-2 padding and border measure about 3.9rem before env(safe-area-inset-bottom), so
      the bottom margin rounds up with slack for that inset too. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
@@ -772,8 +772,8 @@
 
   /* Hit-slop for the checkbox-in-label pattern (boolean fields, closed-taxonomy tag pickers): a
      bare checkbox-sm plus its label has no min-height, so its effective touch target sits near
-     22.5-24px (the checkbox's own --size-selector-derived box at the low end, the label's type
-     line-height at the high end). Padding grows the label's own border box (what the browser
+     22.5-24px (the checkbox's --size-selector-derived box at the low end, the label's type
+     line-height at the high end). Padding grows the label's border box (what the browser
      hit-tests) while the equal, opposite margin keeps its contribution to the surrounding flow
      unchanged, so the visible checkbox size and the row-to-row spacing both stay exactly as
      authored. */
@@ -790,7 +790,7 @@
      row declaring `items-baseline` levels the WORD 2.5px high: measured at three call sites in
      CairnTidySettings.svelte, a quarter of the 10px cap height both members render.
 
-     Baseline-aligning the label's own items is the fix. The word is the one item with a real
+     Baseline-aligning the label's items is the fix. The word is the one item with a real
      baseline, so it becomes the baseline the label reports.
 
      The two rules do DIFFERENT jobs, and the second is load-bearing for a reason worth reading
@@ -798,7 +798,7 @@
      `auto` and the label-vs-value baseline delta still measures 0.00px, because Chromium aligns
      the svg's synthesised baseline INTO the group rather than reporting it as the container's, so
      the label's first baseline is the word's either way. What the second rule holds is the
-     GLYPH'S OWN PLACEMENT: drop it and the glyph rides 2.50px high (-0.29px to -2.79px against
+     GLYPH'S PLACEMENT: drop it and the glyph rides 2.50px high (-0.29px to -2.79px against
      the first line's cap centre), a new defect of exactly the size the first rule removes.
 
      `align-self: start` plus `min-height: 1lh`, not `align-self: center`, because a centred glyph
@@ -827,16 +827,16 @@
   }
 
   /* A PAINTED BOX LEVELS ON A LINE, NOT ON A BLOCK'S TOP EDGE (same inventory). A chip beside a
-     heading is read as a box, because its border and fill draw ink at its own edges: what the eye
+     heading is read as a box, because its border and fill draw ink at its edges: what the eye
      levels is its padding-box centre against the centre of the line it labels. A row that
      top-aligns the two instead leaves the chip low by half the difference in their heights, 5px
      for the 23px "Set by your developer" pill against the 17px heading line beside it. Levelling
-     the two on a BASELINE is the wrong repair for the same reason: the chip's own baseline is an
+     the two on a BASELINE is the wrong repair for the same reason: the chip's baseline is an
      accident of the type inside it.
 
      This slot is one line box tall and centres whatever it holds on that line, letting a taller
      chip overflow it symmetrically. The height comes from `1lh` rather than a token so it follows
-     whatever leading the slot's own type role resolves to, which means the caller gives the slot
+     whatever leading the slot's type role resolves to, which means the caller gives the slot
      the SAME type role as the line it levels on; nothing about the block beside it is reachable
      from here. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-line-slot {
@@ -849,26 +849,26 @@
      line weight, keyed on the rendered attribute value rather than the lucide class alone, so a
      deliberately heavier stroke (an explicit strokeWidth of 2.2, 2.4, 2.5, or 3, or an
      absoluteStrokeWidth icon at a size other than 24, which computes strokeWidth * size / 24) keeps
-     its own computed value untouched. lucide is Lucide's stable class name across every icon;
-     lucide-icon carries an upstream removal TODO (@lucide/svelte's own Icon.svelte comment) and is
+     its computed value untouched. lucide is Lucide's stable class name across every icon;
+     lucide-icon carries an upstream removal TODO (@lucide/svelte's Icon.svelte comment) and is
      not this rule's anchor. This lives in components, not cairn-idiom: it overrides no daisyUI
-     declaration, only Lucide's own default attribute value, so it only needs to sort before the
-     utilities layer, not after daisyUI's own sublayers inside it; a markup stroke-[2.5] utility (an
+     declaration, only Lucide's default attribute value, so it only needs to sort before the
+     utilities layer, not after daisyUI's sublayers inside it; a markup stroke-[2.5] utility (an
      unnested Tailwind class) still wins from that later, unnested position regardless.
-     WATCH: this rule keys on Lucide's own default attribute value (stroke-width="2"); a future
+     WATCH: this rule keys on Lucide's default attribute value (stroke-width="2"); a future
      @lucide/svelte release that changes that default would make this selector silently stop
      matching. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) svg.lucide[stroke-width='2'] {
     stroke-width: 1.75;
   }
 
-  /* The admin root's own page ground. A page taller in scrollable overflow than the themed
-     layout's own flow height (a forced-open dropdown menu is the common case, since daisyUI
+  /* The admin root's page ground. A page taller in scrollable overflow than the themed
+     layout's flow height (a forced-open dropdown menu is the common case, since daisyUI
      positions dropdown-content absolutely, outside normal flow) leaves that extra height painted
      by the real, unthemed document canvas, white in every browser. Fixed positioning pins this
      pseudo-element to the viewport rather than the document's scroll height, so it keeps covering
-     the full canvas at any scroll position without needing the theme root's own box to grow past
-     its content; the negative z-index keeps it behind the admin's own chrome, which sets none of
+     the full canvas at any scroll position without needing the theme root's box to grow past
+     its content; the negative z-index keeps it behind the admin's chrome, which sets none of
      its own. This overrides no daisyUI declaration; it only paints where daisyUI paints nothing. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])::before {
     content: '';
@@ -881,14 +881,14 @@
 }
 
 /* The cairn-idiom sublayer: every rule that overrides a daisyUI declaration lives here, in
-   utilities.cairn-idiom, the sublayer build-admin-css.mjs registers after daisyUI's own
+   utilities.cairn-idiom, the sublayer build-admin-css.mjs registers after daisyUI's
    utilities.daisyui sublayers. Cascade layers resolve before specificity, so an unconditional rule
-   here outranks any daisyUI rule on the same property regardless of that daisyUI rule's own
+   here outranks any daisyUI rule on the same property regardless of that daisyUI rule's
    pseudo-class, including one daisyUI restates at :hover, :focus-visible, :checked, or :active. A
    rule meant to hold one value across every interaction state therefore needs no per-state
-   selector of its own; it only needs a selector narrow enough that daisyUI's own behavior still
+   selector of its own; it only needs a selector narrow enough that daisyUI's behavior still
    shows through where it should (a disabled control, a variant this rule is not meant to
-   restyle). A markup utility still wins over every rule here: Tailwind compiles its own utility
+   restyle). A markup utility still wins over every rule here: Tailwind compiles its utility
    classes directly into the utilities layer, unnested in any named sublayer, and an unnested
    declaration always outranks a nested one regardless of layer order. Each rule sets a daisyUI
    component variable rather than the property it feeds, for the same reason, wherever daisyUI
@@ -896,13 +896,13 @@
 @layer utilities {
   @layer cairn-idiom {
     /* The primary action's warm lift. It lives here, not in @layer components, because daisyUI
-       compiles its own component rules into named sublayers of utilities, which outrank every
+       compiles its component rules into named sublayers of utilities, which outrank every
        components-layer rule. Setting --btn-shadow rather than box-shadow keeps a markup
        shadow-none utility, which sets box-shadow directly, still winning: the property itself
-       still reads through var(--btn-shadow) from daisyUI's own .btn rule. The lift holds one value
+       still reads through var(--btn-shadow) from daisyUI's .btn rule. The lift holds one value
        across rest, hover, focus-visible, and active, since a shadow that grows on interaction read
        as the primary action fidgeting rather than lifting; the two theme-scoped rules below share
-       the lift's geometry and alpha and differ only in hue, the dark theme's own warmer, darker
+       the lift's geometry and alpha and differ only in hue, the dark theme's warmer, darker
        shadow tint (matching --cairn-shadow's dark value) in place of light's. The :not() list
        excludes every daisyUI variant and disabled form that already zeroes --btn-shadow itself
        (.btn-soft, .btn-outline, .btn-dash, .btn-ghost, .btn-link, .btn-disabled, :disabled,
@@ -938,12 +938,12 @@
     }
 
     /* The .modal-box repair: daisyUI ships .modal-box with a single flat, theme-invariant black
-       shadow and no border, in its own utilities sublayer, which only a rule in this sublayer
+       shadow and no border, in its utilities sublayer, which only a rule in this sublayer
        outranks. It brings the modal into
        the theme-adaptive elevation vocabulary every other floating surface (card, dropdown,
-       slide-over) already carries. daisyUI's own .modal-box sets box-shadow directly, with no
+       slide-over) already carries. daisyUI's .modal-box sets box-shadow directly, with no
        variable to set instead, so this restates the property; a markup shadow utility on a
-       .modal-box still wins, from the same unnested utilities-layer position Tailwind's own
+       .modal-box still wins, from the same unnested utilities-layer position Tailwind's
        utilities compile into. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .modal-box {
       border: 1px solid var(--cairn-card-border);
@@ -961,7 +961,7 @@
        button is left to whatever rule or daisyUI default already governs it. --btn-color is never
        set: daisyUI draws the focus ring in --btn-color, and a base-100 ring would vanish on a
        base-100 card. join-item segments are included; a join is a layout composition of plain
-       buttons, not a variant of its own. focus-visible falls back to this rule's own rest value
+       buttons, not a variant of its own. focus-visible falls back to this rule's rest value
        because the focus ring itself already carries that state. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn:not(
@@ -1027,7 +1027,7 @@
     /* The same fill step's hover copy, at the identical value: gated on @media (hover: hover)
        because a touch device fires :hover on tap-and-hold with no release event, so an ungated
        hover fill could strand on the last-tapped button. The active copy above stays outside the
-       guard, since a touch tap still needs its own pressed fill. */
+       guard, since a touch tap still needs its pressed fill. */
     @media (hover: hover) {
       :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
         .btn:not(
@@ -1058,15 +1058,15 @@
       }
     }
 
-    /* The bare .badge edge: daisyUI's own uncolored badge border falls back to
+    /* The bare .badge edge: daisyUI's uncolored badge border falls back to
        var(--color-base-200), which measures about 1.05:1 against the card, so the chip reads as
-       loose text rather than a bounded control. --badge-color also feeds --badge-bg's own
+       loose text rather than a bounded control. --badge-color also feeds --badge-bg's
        fallback, so overriding that variable would tint the fill too; this sets border-color
-       directly instead, the same longhand daisyUI's own border shorthand sets, which this
+       directly instead, the same longhand daisyUI's border shorthand sets, which this
        sublayer's layer order still outranks regardless of specificity, leaving an uncolored
        badge's fill untouched. One value, no state table: a badge is not interactive, so its edge
        never needs to move. The exclusion list is every color and style variant daisyUI ships,
-       each of which already carries its own deliberate border treatment. */
+       each of which already carries its deliberate border treatment. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .badge:not(
         .badge-primary,
@@ -1086,11 +1086,11 @@
     }
 
     /* The emphasis ladder's opener: btn-neutral hovers one step into --cairn-ink-hover (the same
-       ink each theme root already defines for its own state hover), while its rest, focus-visible,
+       ink each theme root already defines for its state hover), while its rest, focus-visible,
        and active fills stay daisyUI's stock .btn-neutral. A mouse press still matches :hover in
-       addition to :active, and this sublayer outranks daisyUI's own :active rule regardless of
+       addition to :active, and this sublayer outranks daisyUI's :active rule regardless of
        specificity, so without the :not(:active) guard a held press would keep showing this hover
-       ink instead of daisyUI's own pressed fill. @media (hover: hover) keeps the step off a touch
+       ink instead of daisyUI's pressed fill. @media (hover: hover) keeps the step off a touch
        device for the same reason the fill step above is gated: tap-and-hold fires :hover with no
        release event, and :not(:active) still applies inside the guard, since a mouse held down on
        a hover-capable device also matches :hover. */
@@ -1102,10 +1102,10 @@
 
     /* Button type: daisyUI sets every .btn label at weight 600 with no variable to redirect, so a
        plain or ghost button needs a direct property override to read lighter. btn-primary,
-       btn-neutral, btn-soft.btn-primary, and btn-error keep daisyUI's own 600 by simply not being
+       btn-neutral, btn-soft.btn-primary, and btn-error keep daisyUI's 600 by simply not being
        matched here (nothing else in this sheet touches font-weight for them). The exclusion list
        also carries the five selected-control forms, so a selected plain or ghost segment is left
-       at daisyUI's own 600 rather than this rule's 500, matching the same weight every other
+       at daisyUI's 600 rather than this rule's 500, matching the same weight every other
        selected control keeps. A markup font-semibold utility still wins, since Tailwind compiles
        it unnested while this rule lives in a nested sublayer. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
@@ -1131,22 +1131,22 @@
       font-weight: 500;
     }
 
-    /* btn-sm's padding grows 2px per side, from daisyUI's own 0.75rem default to 0.875rem. The
-       rule targets btn-sm only, not --btn-p globally, so the default btn keeps its own 1rem. */
+    /* btn-sm's padding grows 2px per side, from daisyUI's 0.75rem default to 0.875rem. The
+       rule targets btn-sm only, not --btn-p globally, so the default btn keeps its 1rem. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-sm {
       --btn-p: 0.875rem;
     }
 
-    /* Soft primary, the tinted act-on state: daisyUI's own .btn-soft reads color off
+    /* Soft primary, the tinted act-on state: daisyUI's .btn-soft reads color off
        --btn-rest-fg/--btn-color at rest but swaps to a direct color: var(--btn-fg) declaration at
        hover, focus-visible, active, and :checked, and .btn-primary sets --btn-fg to
-       --color-primary-content, so a stock soft-primary button swaps its own tinted-primary text
+       --color-primary-content, so a stock soft-primary button swaps its tinted-primary text
        for primary-content the moment it is touched. Pinning --btn-fg to var(--color-primary)
-       itself removes the swap regardless of which of daisyUI's own declarations reads it. The edge
+       itself removes the swap regardless of which of daisyUI's declarations reads it. The edge
        stays transparent and --btn-fg stays pinned across every state (the same one-value pattern
        used above); only --btn-bg steps, one depth at rest, one deeper at hover and focus-visible
        (grouped into one selector, since both share the same value), and deepest at active, which
-       is declared last so a held press (which still matches :hover) reads its own deeper step
+       is declared last so a held press (which still matches :hover) reads its deeper step
        rather than the hover/focus-visible one. Disabled is left to daisyUI entirely. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn-soft.btn-primary:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
@@ -1158,7 +1158,7 @@
        Q17): a focus-visible ring is keyboard/AT-triggered regardless of device, so it steps
        unconditionally; :hover alone gates on @media (hover: hover), since a touch tap fires
        :hover with no release event and could otherwise strand this deeper wash on the
-       last-tapped button, the same reasoning the selected segment's own hover step documents
+       last-tapped button, the same reasoning the selected segment's hover step documents
        below. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn-soft.btn-primary:not(
@@ -1192,18 +1192,18 @@
        through weight rather than hue (the July segment ruling, "neutral wash + semibold"), the
        same device in both themes now, so EditorToolbar's mode switch and Pagination's current-page
        segment render identically either theme. The wash alone measures only about 1.16:1 against a
-       resting sibling's own base-100 fill, under the WCAG 1.4.11 non-text floor a state a control's
-       meaning depends on, so an inset hairline rides --btn-border below, the design system's own
+       resting sibling's base-100 fill, under the WCAG 1.4.11 non-text floor a state a control's
+       meaning depends on, so an inset hairline rides --btn-border below, the design system's
        pressed-state device. btn-link also sits in this rule's exclusion list, alongside every
        color variant and btn-outline/btn-dash, so a nav or breadcrumb link marked current keeps
-       daisyUI's own link look rather than the neutral wash. --btn-fg resets to the plain ink:
-       daisyUI's own :checked rule sets --btn-fg to --color-primary-content on any checked .btn
+       daisyUI's link look rather than the neutral wash. --btn-fg resets to the plain ink:
+       daisyUI's :checked rule sets --btn-fg to --color-primary-content on any checked .btn
        regardless of variant, and this
-       rule's own exclusion list already keeps every color variant out, so the reset only ever
+       rule's exclusion list already keeps every color variant out, so the reset only ever
        touches the plain checked case (a checked radio styled as a join segment), never a variant
-       control's own accent. The wash, ink, and weight carry no pseudo-class,
+       control's accent. The wash, ink, and weight carry no pseudo-class,
        so this unconditional rule holds them across focus-visible and active too, the same
-       one-value-across-every-state pattern the plain hairline above uses; only hover gets its own
+       one-value-across-every-state pattern the plain hairline above uses; only hover gets its
        step, in the rule below. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .btn:not(
@@ -1237,7 +1237,7 @@
     /* The selected segment's state hairline, light: seeded from the identical 55% base-content mix
        segmented-control.ts's segmentTintClass already compiles to from ring-base-content/55. The
        seed itself clears 3:1 against base-100 (3.579:1), but the pair table also measures the
-       hairline against a resting sibling's own 22% edge composited on base-100 (the plain button
+       hairline against a resting sibling's 22% edge composited on base-100 (the plain button
        hairline), and there the 55% seed reads only 2.303:1, under the floor. Moved in lightness
        only, deeper into base-content, to 65%, which clears both rows (4.873:1 against base-100,
        3.136:1 against the resting sibling), and is still the same color-mix family the seed uses,
@@ -1269,12 +1269,12 @@
       --btn-border: color-mix(in oklab, var(--color-base-content) 65%, transparent);
     }
 
-    /* The selected segment's state hairline, dark: seeded from the superseded rule's own locked
+    /* The selected segment's state hairline, dark: seeded from the superseded rule's locked
        oklch(57% 0.012 75), the same literal that rule carried. That seed clears 3:1 against
-       base-100 (3.661:1), but reads only 1.935:1 against a resting sibling's own 22% edge
+       base-100 (3.661:1), but reads only 1.935:1 against a resting sibling's 22% edge
        composited on base-100 (the plain button hairline), under the floor. Moved in lightness only,
        to 70%, which clears both rows (6.115:1 against base-100, 3.233:1 against the resting
-       sibling), keeping the seed's own hue and chroma (BtnActiveDarkGround.test.ts). */
+       sibling), keeping the seed's hue and chroma (BtnActiveDarkGround.test.ts). */
     :where([data-theme='cairn-admin-dark'])
       .btn:not(
         .btn-primary,
@@ -1302,8 +1302,8 @@
       --btn-border: oklch(70% 0.012 75);
     }
 
-    /* The selected segment's own hover step: the rest rule above carries no pseudo-class, so it
-       also beats daisyUI's own layered :hover attempt at --btn-bg regardless of specificity,
+    /* The selected segment's hover step: the rest rule above carries no pseudo-class, so it
+       also beats daisyUI's layered :hover attempt at --btn-bg regardless of specificity,
        leaving no visible hover feedback without a second, higher-specificity rule scoped to
        :hover. :not(:active) keeps a held press, which still matches :hover, reading the resting
        wash instead, the same guard the btn-neutral hover step above uses, so active holds the
@@ -1340,19 +1340,19 @@
       }
     }
 
-    /* The uncolored outline/dash wash, S3 Q5: daisyUI's own selected-control rule
+    /* The uncolored outline/dash wash, S3 Q5: daisyUI's selected-control rule
        (`.btn-active`/aria-pressed/etc., in daisyui.l1.l2) fills an outline or dashed button with
        `color-mix(in oklab, var(--btn-color, var(--color-base-200)) , #000 5%)`, and with no color
        variant `--btn-color` is unset, so the fallback is a straight 5% BLACK mix into base-200:
        barely visible in light (base-200 already near-white) and a near-black hole in dark (base-200
        already dark), one wash reading two different directions across the two themes. Excluding
-       every color variant (a colored outline keeps daisyUI's own tinted fill, matching the ink
-       repair rule below) and reusing the neutral wash's own warm-tinted recipe instead gives the
+       every color variant (a colored outline keeps daisyUI's tinted fill, matching the ink
+       repair rule below) and reusing the neutral wash's warm-tinted recipe instead gives the
        plain selected outline/dash the identical one-direction wash the plain selected button
        already carries. --btn-fg resets to the plain ink for the same reason the neutral wash rule
-       above resets it: daisyUI's own :checked rule sets --btn-color to --color-primary and --btn-fg
+       above resets it: daisyUI's :checked rule sets --btn-color to --color-primary and --btn-fg
        to --color-primary-content on ANY checked .btn regardless of variant (a checked radio styled
-       as a join segment, this rule's own :checked form), and this rule's own --btn-bg already
+       as a join segment, this rule's :checked form), and this rule's --btn-bg already
        overrides that primary tint on the fill; leaving --btn-fg unreset would pair a
        primary-content ink against this neutral wash instead of against the primary fill it was
        meant to sit on, failing contrast outright. */
@@ -1386,12 +1386,12 @@
     /* The outline/dash ink repair for a selected control, widened: moved out of the unlayered
        block and widened from .btn-active alone to every one of the five selected forms, since the
        selected-segment rule above now keys on all five and an outline or dashed button selected by
-       attribute would otherwise keep its own stock ink while its .btn-active twin does not.
-       daisyUI fills an outline or dashed button carrying any of the five forms (its own selected
+       attribute would otherwise keep its stock ink while its .btn-active twin does not.
+       daisyUI fills an outline or dashed button carrying any of the five forms (its selected
        rule sits directly in daisyui.l1.l2, which outranks .btn-outline/.btn-dash in the nested
-       daisyui.l1.l2.l3) but leaves color at the variant's own --btn-color, so
+       daisyui.l1.l2.l3) but leaves color at the variant's --btn-color, so
        `btn-outline btn-primary btn-active` painted primary ink on a primary-derived fill.
-       Restating color off --btn-fg completes what daisyUI's own fill already intends, and is a
+       Restating color off --btn-fg completes what daisyUI's fill already intends, and is a
        no-op for every non-outline, non-dash variant, which reads its ink through --btn-fg already.
        No color variant is excluded here, unlike the wash rule above: a variant outline or dash
        control (`btn-outline btn-primary`) needs this same ink repair, not the neutral wash. */
@@ -1409,10 +1409,10 @@
     /* The switch is exempt from the corner ladder: daisyUI derives both the track and knob radii
        from --radius-selector (`border-radius: calc(var(--radius-selector) + ...)` on .toggle,
        `border-radius: var(--radius-selector)` on .toggle:before), and a fully round pill is the
-       shape a switch reads as regardless of the ladder's own tightened box/field/selector scale.
+       shape a switch reads as regardless of the ladder's tightened box/field/selector scale.
        Unconditional and carrying no color-variant or state exclusion: shape does not change with
        color, checked state, or disabled state, so a rounded-none utility on either element still
-       wins from the utilities layer's own unnested position. */
+       wins from the utilities layer's unnested position. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .toggle,
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .toggle::before {
       border-radius: 9999px;
@@ -1420,9 +1420,9 @@
 
     /* Checked fills the track with --color-neutral, on all three forms daisyUI itself treats as
        checked (:checked, [aria-checked='true'], and :has(> input:checked), the wrapped-icon
-       toggle recipe's own device), for a toggle carrying none of the eight color modifiers; a
-       toggle-primary and its seven siblings keep daisyUI's own --input-color-driven fill,
-       unaffected by the exclusion list. :not(:disabled) mirrors daisyUI's own disabled selector for
+       toggle recipe's device), for a toggle carrying none of the eight color modifiers; a
+       toggle-primary and its seven siblings keep daisyUI's --input-color-driven fill,
+       unaffected by the exclusion list. :not(:disabled) mirrors daisyUI's disabled selector for
        .toggle exactly (`.toggle:disabled{opacity:.3}`, no [disabled] or [aria-disabled] form of its
        own), so this rule leaves a disabled checked switch to that same opacity-only dimming instead
        of painting a full-strength fill through a later sublayer regardless of it. */
@@ -1441,10 +1441,10 @@
       background-color: var(--color-neutral);
     }
 
-    /* The knob's own fill, the identical exclusion list: daisyUI draws the knob from currentColor
-       (`.toggle:before{background-color:currentColor}`), the same currentColor its own
+    /* The knob's fill, the identical exclusion list: daisyUI draws the knob from currentColor
+       (`.toggle:before{background-color:currentColor}`), the same currentColor its
        :focus-visible rule draws the ring from (`outline: 2px solid`, no explicit color of its own).
-       Turning the knob base-100 through --input-color, the property daisyUI's own checked rule
+       Turning the knob base-100 through --input-color, the property daisyUI's checked rule
        already restates to --color-base-content and the value color itself (and so currentColor)
        reads from, would turn the ring base-100 too, and a base-100 ring vanishes on a base-100
        card. Setting the knob directly on ::before instead decouples the two, so the ring stays
@@ -1464,16 +1464,16 @@
       background-color: var(--color-base-100);
     }
 
-    /* Concentric corners: daisyUI's own .menu item rule reads `border-radius: var(--radius-field)`
+    /* Concentric corners: daisyUI's .menu item rule reads `border-radius: var(--radius-field)`
        but .menu never declares that variable itself, so an item inside a padded dropdown panel
        otherwise takes whatever --radius-field the ambient page happens to carry rather than one
-       sized to its own panel. Keyed on the dropdown-content/menu pair specifically (a developer's
-       own `<ul class="dropdown-content menu">`), since a plain sidebar or inline .menu with no
+       sized to its panel. Keyed on the dropdown-content/menu pair specifically (a developer's
+       `<ul class="dropdown-content menu">`), since a plain sidebar or inline .menu with no
        dropdown-content already reads the ambient value correctly and needs no adjustment. Sets the
-       variable, not border-radius directly, so an item's own rounded-none utility still wins.
-       The same rule also carries the warm elevation vocabulary onto the panel: daisyUI's own
+       variable, not border-radius directly, so an item's rounded-none utility still wins.
+       The same rule also carries the warm elevation vocabulary onto the panel: daisyUI's
        `.dropdown-content` sets no box-shadow of its own (a developer reaches for a Tailwind
-       `shadow-sm` for that, the theme-kit fixture's own prior markup did), which paints DaisyUI's
+       `shadow-sm` for that, the theme-kit fixture's prior markup did), which paints DaisyUI's
        stock achromatic shadow rather than the theme's warm one; `.modal-box` gets the identical
        repair below for the same reason. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .dropdown-content.menu {
@@ -1482,24 +1482,24 @@
     }
 
     /* The unchecked checkbox/radio edge, moved out of the unlayered block: a components-layer rule
-       cannot outrank daisyUI's own utilities-layer border declaration regardless of specificity,
+       cannot outrank daisyUI's utilities-layer border declaration regardless of specificity,
        which is why this used to have to sit outside every layer, and an unlayered rule, while it
        can outrank daisyUI, also outranks every markup utility along with it, the same class of
        defect an earlier unlayered `.btn-active` override once caused elsewhere in this file. The
-       cairn-idiom sublayer outranks daisyUI's own
+       cairn-idiom sublayer outranks daisyUI's
        utilities.daisyui sublayers (build-admin-css.mjs registers it after them) while still losing
-       to Tailwind's own unnested utilities, so a border-error utility on a field now wins where it
+       to Tailwind's unnested utilities, so a border-error utility on a field now wins where it
        could not before. The selectors, the 55% color-mix, and the exclusions carry over unchanged:
-       daisyUI's own .checkbox/.radio border reads `var(--input-color, color-mix(in oklab,
+       daisyUI's .checkbox/.radio border reads `var(--input-color, color-mix(in oklab,
        var(--color-base-content) 20%, transparent))` at rest, under the WCAG 1.4.11 non-text 3:1
        floor when no color variant supplies --input-color, which no admin call site does; 55% clears
        it (3.586:1 light / 4.959:1 dark against base-100) and holds through hover unaided, since
-       neither daisyUI's own rule nor this one restates border-color there. `.checkbox` excludes
+       neither daisyUI's rule nor this one restates border-color there. `.checkbox` excludes
        `:indeterminate` in addition to `:checked`/`[aria-checked='true']`: a checked control already
-       carries its own solid fill or currentColor border, and an unnamed, ungrouped radio matches
+       carries its solid fill or currentColor border, and an unnamed, ungrouped radio matches
        `:indeterminate` too (the HTML spec's radio-button-group algorithm), so `.radio` deliberately
        carries no such exclusion. Disabled is left alone: it is exempt from the 1.4.11 floor, and
-       daisyUI's own `:disabled` opacity step already communicates the state. */
+       daisyUI's `:disabled` opacity step already communicates the state. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .checkbox:not(:checked, :indeterminate, [aria-checked='true']),
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
@@ -1510,17 +1510,17 @@
     /* The unfocused .input/.select/.textarea edge, moved out of the unlayered block for the
        identical reason the checkbox/radio rule above was. The selectors, the 55% mix, and every
        exclusion (`:focus`, `:focus-within`, `:disabled`, `[disabled]`, the
-       `.toolkit-toolbar-select` carve-out, and daisyUI's own error family) carry over unchanged: a
-       focused field already sets --input-color to full --color-base-content through daisyUI's own
+       `.toolkit-toolbar-select` carve-out, and daisyUI's error family) carry over unchanged: a
+       focused field already sets --input-color to full --color-base-content through daisyUI's
        focus rule, a far stronger edge this rule would otherwise outrank too since a nested-sublayer
        rule beats a nested-sublayer rule regardless of pseudo-class specificity; a disabled field is
-       exempt from the WCAG 1.4.11 floor by daisyUI's own opacity dimming; and an error-marked
-       field's own red border is a distinct semantic signal this rule has no business flattening to
+       exempt from the WCAG 1.4.11 floor by daisyUI's opacity dimming; and an error-marked
+       field's red border is a distinct semantic signal this rule has no business flattening to
        the generic gray edge. `.select` additionally excludes `.toolkit-toolbar-select`
-       (`ListToolbar.svelte`'s own scoped `--input-color` override, harmonizing that facet with its
-       menu sibling's own hairline vocabulary), which this rule's own longhand border-color would
+       (`ListToolbar.svelte`'s scoped `--input-color` override, harmonizing that facet with its
+       menu sibling's hairline vocabulary), which this rule's longhand border-color would
        otherwise still outrank from the same sublayer. A border-error utility, or
-       `.toolkit-toolbar-select`'s own scoped rule, now wins where it could not before, the same win
+       `.toolkit-toolbar-select`'s scoped rule, now wins where it could not before, the same win
        the checkbox/radio move above grants. */
     :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
       .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
@@ -1532,14 +1532,14 @@
     }
 
     /* Alerts: the four color variants become a tinted panel with a hairline edge and an
-       on-surface ink, in place of daisyUI's solid slab. daisyUI's own `.alert` rule reads its
+       on-surface ink, in place of daisyUI's solid slab. daisyUI's `.alert` rule reads its
        panel and edge through `var(--alert-color, ...)`/`var(--alert-border-color, ...)` at the
-       plain, unnested `.alert` selector position (background-color sits inside its own nested
+       plain, unnested `.alert` selector position (background-color sits inside its nested
        sublayer and so is reachable directly, but border-color does not), so the panel and edge
        are set through the two variables rather than background-color/border-color themselves;
-       the ink is a plain `color` declaration, since daisyUI's own alert-variant color lives
-       inside a nested sublayer this rule already outranks. Every variant excludes daisyUI's own
-       style variants (`alert-soft`, `alert-outline`, `alert-dash`), so a developer's own styled
+       the ink is a plain `color` declaration, since daisyUI's alert-variant color lives
+       inside a nested sublayer this rule already outranks. Every variant excludes daisyUI's
+       style variants (`alert-soft`, `alert-outline`, `alert-dash`), so a developer's styled
        alert keeps daisyUI's stock look; a bare `.alert` sets neither variable and stays
        untouched. A markup `color` utility still wins, since Tailwind compiles it unlayered while
        this rule lives in a nested sublayer. */
@@ -1562,7 +1562,7 @@
 
     /* The success and info panels mix a stronger percentage on dark (12% against light's 7%), so
        the tint still reads against dark's darker base-100; the edge mix (30%) holds the same
-       percentage in both themes. Split per root for the panel's own differing percentage. */
+       percentage in both themes. Split per root for the panel's differing percentage. */
     :where([data-theme='cairn-admin']) .alert-success:not(.alert-soft, .alert-outline, .alert-dash) {
       --alert-color: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100));
       --alert-border-color: color-mix(in oklab, var(--color-success) 30%, var(--color-base-100));
@@ -1608,14 +1608,14 @@
    marked guarded button. Deliberately UNLAYERED, the same mechanism as the .menu focus override above:
    no layered rule can outrank daisyUI's utilities-layer rule.
    The same rule also raises the resting emphasis of a guarded GHOST button (audit finding 7): daisyUI's
-   own [aria-disabled] selector dims the background only for `:not(.btn-link,.btn-ghost)`, since a ghost
+   [aria-disabled] selector dims the background only for `:not(.btn-link,.btn-ghost)`, since a ghost
    button carries no resting fill to dim, but the toolbar's icon-only Figure button IS a ghost square with
-   no border either, so the exclusion plus its own already-faint 20%-alpha disabled icon color read as an
+   no border either, so the exclusion plus its already-faint 20%-alpha disabled icon color read as an
    empty gap rather than a disabled control. Re-declaring the identical 10% background daisyUI already
    gives every outline/filled guarded button (Publish) closes that gap for the ghost case and is a no-op
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
-   halved this control's visibility again on top of daisyUI's own dimming.
+   halved this control's visibility again on top of daisyUI's dimming.
    PINNED unlayered rule 2 of 14 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
@@ -1631,7 +1631,7 @@
    production report of the sidebar "scrolling slightly" alongside a long entry list. Fixed positioning
    is anchored to the viewport outright and carries no such drift, the same mechanism the mobile overlay
    variant of this same element already uses (the un-prefixed `.drawer-side` base rule, above). An
-   out-of-flow sidebar no longer reserves its own column width in the drawer's grid, so
+   out-of-flow sidebar no longer reserves its column width in the drawer's grid, so
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
@@ -1644,7 +1644,7 @@
 /* The desk rider's `.xl:drawer-open` companion to the rule above: a desk route (an open document)
    persists its sidebar at `xl` instead of `lg` (spec §5), and that sidebar needs the same fixed-
    positioning fix for the same scroll-bleed reason. Grepping the built CSS confirmed Tailwind 4
-   generates the `xl:drawer-open` utility from this component's own class usage (no config change
+   generates the `xl:drawer-open` utility from this component's class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
    PINNED unlayered rule 4 of 14 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
@@ -1653,7 +1653,7 @@
   position: fixed;
 }
 
-/* Re-asserts daisyUI's OWN intended reset, which its own selector cannot deliver. Its base rule
+/* Re-asserts daisyUI's intended reset, which its selector cannot deliver. Its base rule
    `.drawer-side > :not(.drawer-overlay)` sets `will-change: transform` so the off-canvas panel is
    promoted and ready to slide, specificity (0,2,0). Its release,
    `:where(.drawer-toggle:checked ~ .drawer-side) { & > :not(.drawer-overlay) { will-change: auto } }`,
@@ -1691,27 +1691,27 @@
    state needing attention), and `outline` (hairline border, transparent fill, the successor of
    `bounded`, for a transient or reversible absence) are the whole chip vocabulary; there is no
    chip-level danger tier. All three normalize to `font-weight: 400`.
-   Every fill is tuned to a 1.16-1.47:1 contrast band against its own row ground (plain and zebra,
+   Every fill is tuned to a 1.16-1.47:1 contrast band against its row ground (plain and zebra,
    both admin themes: 3 registers x 2 themes x 2 grounds = 12 combinations, standing proof in
    status-chip-register-tuning.test.ts), a deliberately LOW band: a chip that competed at
    badge-ghost's old strength melted into one ground or read as a clickable button on the other, and
    the documented recipe is a quiet presence, not a bounded object. The outline border
    holds the unrelated >= 3:1 non-text floor (WCAG 1.4.11); the warning register's ink additionally
-   holds a >= 4.5:1 text floor (WCAG 1.4.3) against its own tinted ground, reusing the on-surface
+   holds a >= 4.5:1 text floor (WCAG 1.4.3) against its tinted ground, reusing the on-surface
    `--cairn-warning-ink` token already locked for this exact purpose elsewhere in this file. Values
    are measured against the built sheet, not invented. All three are UNLAYERED for the same reason
-   the rules above are: badge/badge-outline's own border-color and background-color are
+   the rules above are: badge/badge-outline's border-color and background-color are
    utilities-layer declarations, which a components-layer rule cannot outrank regardless of
-   specificity (cascade layers resolve before specificity). StatusChip's own scoped <style> carries
-   the identical three recipes for its own markup (a Svelte scoped rule is unlayered by
+   specificity (cascade layers resolve before specificity). StatusChip's scoped <style> carries
+   the identical three recipes for its markup (a Svelte scoped rule is unlayered by
    construction, so it needs no selector here); these three classes are the same vocabulary for
    every OTHER admin surface that composes a chip by hand instead of through the StatusChip
    component (EditPage's status pill, the CairnAdminShell brand-band CMS pill,
    ReferenceField/MediaCaptureCard/ManageEditors's bare chips).
-   KNOWN INTERACTION, stated rather than fixed: the tinted band's own upper bound (1.47:1) sits
+   KNOWN INTERACTION, stated rather than fixed: the tinted band's upper bound (1.47:1) sits
    under `chip-ground-collision`'s 1.5:1 advisory floor (chip-ground-collision.ts:102), so a
    `quiet`/`warning` chip on some row/theme pairs measures as an advisory "camouflaged" finding by
-   design. That rule is already advisory (its own reshape, `audit-cli-chip-ground-collision-rendered-
+   design. That rule is already advisory (its reshape, `audit-cli-chip-ground-collision-rendered-
    rule`, engine-rulings.md) pending a chroma-aware repair that can tell a hue-distinct low-contrast
    tint from a truly invisible one; that repair is not reopened here, the position is only recorded
    so a measured "violation" here reads as expected rather than as a regression.
@@ -1763,9 +1763,9 @@
 
 /* The stacked field register's width hook (closes finding 3): a control
    inside a `.cairn-field-stacked` wrapper (FieldLabel's stacked register, the admin-toolkit default)
-   fills its container instead of clamping to daisyUI's own fixed 20rem preferred width, so a
+   fills its container instead of clamping to daisyUI's fixed 20rem preferred width, so a
    consumer cannot forget `w-full` and a stacked field in a wide multi-column grid track fills its
-   own cell edge-to-edge. DaisyUI's `.input`/`.select`/`.textarea` width declarations are themselves
+   cell edge-to-edge. DaisyUI's `.input`/`.select`/`.textarea` width declarations are themselves
    utilities-layer rules (`@layer utilities { @layer daisyui.l1.l2.l3 { ... } }`), which a
    components-layer rule cannot outrank regardless of specificity (cascade layers resolve before
    specificity, the same reason the three chip rules above are unlayered); this is UNLAYERED for the
@@ -1773,7 +1773,7 @@
    The `>` is deliberate, not `.cairn-field-stacked`'s descendant space: a stacked field's control
    is always a direct child of the label FieldLabel renders, so scoping the hook to a direct child
    lets a consumer nest a compact row (a flex wrapper holding two or more narrower controls side
-   by side) inside a stacked label and keep that row's own width choice; a descendant selector
+   by side) inside a stacked label and keep that row's width choice; a descendant selector
    reached through the wrapper and forced every nested control to 100% regardless.
    PINNED unlayered rule 9 of 14 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
@@ -1784,7 +1784,7 @@
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's
-   own hover transitions otherwise animate regardless. Scoped to the admin roots, so it never
+   hover transitions otherwise animate regardless. Scoped to the admin roots, so it never
    reaches the host's pages. */
 @media (prefers-reduced-motion: reduce) {
   [data-theme='cairn-admin'],

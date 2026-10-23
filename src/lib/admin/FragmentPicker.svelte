@@ -17,7 +17,7 @@ dialog at all.
 
   interface Props {
     /** The site's published fragments, from `EditData.fragmentTargets`. Null hides the trigger and
-     *  the dialog, and covers both a site with no fragments concept and a fragment's own edit
+     *  the dialog, and covers both a site with no fragments concept and a fragment's edit
      *  screen; an empty array shows the honest empty state. */
     fragmentTargets: FragmentTarget[] | null;
     /** Insert the directive text at the editor cursor (the generic insertAtCursor seam). */
@@ -25,7 +25,7 @@ dialog at all.
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
     /** Render the built-in Include a fragment trigger. False mounts only the dialog, for a host that
-     *  supplies its own trigger and opens the dialog through the exported open(). */
+     *  supplies its trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
   }
 

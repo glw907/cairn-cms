@@ -3,9 +3,9 @@
 The per-entry publish-history screen (spec "Part 1: entry history"). A version is a
 publish: the list renders `historyLoad`'s bounded, newest-first commit read under the heading
 "Recent versions", never a completeness claim, since the commits API's path filter restarts at a
-rename and the view has no way to know its own list fell short of the entry's real lifetime. A
+rename and the view has no way to know its list fell short of the entry's real lifetime. A
 synthetic draft row pins on top when the entry carries an open pending branch; it carries no
-revert affordance, since it is not itself a publish. Each publish row's own revert affordance is a
+revert affordance, since it is not itself a publish. Each publish row's revert affordance is a
 form posting `?/revert` with two hidden fields: `ref`, the row's full commit sha, and `head`, the
 default branch's head sha the page rendered against. `revertAction` re-validates `ref` against a
 fresh history read and refuses a stale `head` rather than silently reverting over a publish that
@@ -14,7 +14,7 @@ before a since-published revert) still renders a revert form whose `head` no lon
 `main`; `revertAction` is the authority that catches that, this screen only carries the value it
 was given. A refusal renders as an alert above the table, naming what blocked it: `draft-exists`
 names the blocking draft's author and last-save date, `history-stale` and `ref-unknown` each name
-what moved, and an unexpected failure falls back to its own bare message.
+what moved, and an unexpected failure falls back to its bare message.
 -->
 <script lang="ts">
   import type { HistoryData, RevertOutcome } from '../sveltekit/types.js';
@@ -40,10 +40,10 @@ what moved, and an unexpected failure falls back to its own bare message.
 
   /**
    * The refused revert's message, naming the blocker: a `draft-exists` refusal names the
-   * draft's own author and last-save date and instructs the editor to publish or discard it
+   * draft's author and last-save date and instructs the editor to publish or discard it
    * first (spec "Part 2: revert"); `history-stale` and `ref-unknown` each name what moved out
    * from under the posted form. `viewAction`'s generic `{ error }` catch-all falls through to
-   * its own message unchanged. Null when there is nothing to report (no `form`, or a bare-error
+   * its message unchanged. Null when there is nothing to report (no `form`, or a bare-error
    * shape this branch never reaches).
    */
   const revertRefusal = $derived.by(() => {
@@ -97,7 +97,7 @@ what moved, and an unexpected failure falls back to its own bare message.
           {#if data.draft}
             <!-- The synthetic draft row: an honest live element with no revert affordance, since
                  it is not a publish. Below sm the Date column hides, so its "Last saved" line
-                 stacks under the editor name instead, keeping the row's own date legible rather
+                 stacks under the editor name instead, keeping the row's date legible rather
                  than dropping it. -->
             <tr>
               <td class="py-2 pl-6"><StatusChip label="Draft" size="xs" /></td>

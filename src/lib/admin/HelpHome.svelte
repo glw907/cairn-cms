@@ -6,7 +6,7 @@ wrapper and imports no CSS: the layout owns the theme and `cairn-admin.css`, and
 consumes the Warm Stone tokens through its scoped `<style>` block.
 
 The content is one calm column: a masthead (the admin toolkit's `PageHeader`), then three co-equal
-eyebrow-plus-display sections that stay their own hand-written recipe this wave.
+eyebrow-plus-display sections that stay their hand-written recipe this wave.
 
   - Getting started reads `data.gettingStarted`, the count derived from the committed manifest and
     the open edit branches (never a stored count). At 3 of 3 the whole section is omitted, never
@@ -102,7 +102,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
 <div class="cairn-help-content">
   <div class="help-col">
     <!-- The masthead is PageHeader, mounted for the masthead only. The three section sub-headers
-         below stay their own eyebrow-plus-display recipe. -->
+         below stay their eyebrow-plus-display recipe. -->
     <PageHeader
       eyebrow="Help"
       title="Find formatting help and get your site set up."
@@ -543,7 +543,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     line-height: 1.45;
   }
 
-  /* a not-done step routes to where it completes through its own short action link */
+  /* a not-done step routes to where it completes through its short action link */
   .step-act {
     flex: none;
     margin-left: auto;

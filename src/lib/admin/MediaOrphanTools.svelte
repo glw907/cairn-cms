@@ -9,7 +9,7 @@ bulk apply), and a typed-count confirm reserved for this path. The scan fails CL
 detection: a 503 routes to the blocked surface (no dry-run, no collect action), because
 under-reporting orphans could feed an unrecoverable purge.
 
-Self-contained: it fetches its own CSRF token from the admin context and owns every scan/purge
+Self-contained: it fetches its CSRF token from the admin context and owns every scan/purge
 state. The host opens it through the exported `open(origin)`, passing the click origin so focus
 restores there on close.
 -->
@@ -54,7 +54,7 @@ restores there on close.
   let orphanKeys = $state(new Set<string>());
   // The section-level select-all checkbox, set to indeterminate in an effect when some-but-not-all rows
   // are selected. Load-bearing, not incidental bookkeeping: this checkbox is a control the user can
-  // click, and Svelte's own DOM-diff skips rewriting a property back to a value it already holds
+  // click, and Svelte's DOM-diff skips rewriting a property back to a value it already holds
   // (the memo AdminTable's header checkbox works around with `preventDefault` instead, since that
   // control is also user-clickable); the unconditional write here is what keeps `checked` and
   // `indeterminate` from drifting out of sync with the derived counts after a click toggles them.
@@ -147,12 +147,12 @@ restores there on close.
       orphanScan = outcome.data;
       orphanKeys = new Set<string>();
       orphanPhase = 'result';
-      // Each phase renders its own h2, so the prior one's focus does not carry over; move focus
-      // explicitly so a screen reader is carried to the new surface (the delete summary's own recipe).
+      // Each phase renders its h2, so the prior one's focus does not carry over; move focus
+      // explicitly so a screen reader is carried to the new surface (the delete summary's recipe).
       void tick().then(() => orphanTitle?.focus());
     } else {
       // A network throw and a parsed failure both block the scan; a network throw carries no data, so
-      // orphanBlockedError falls back to '' and the surface shows its own framing with no server message.
+      // orphanBlockedError falls back to '' and the surface shows its framing with no server message.
       const failure = outcome.data as MediaBulkFailure | undefined;
       orphanBlockedError = failure?.error ?? '';
       orphanPhase = 'blocked';

@@ -26,7 +26,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
 The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated. The ledger below stays hand-rolled: it is an
 editable grid of rename inputs and guarded deletes, not a data table, so it does not adopt
-`AdminTable`; the "Your tags" count chip stays its own section device, per the pass's adoption map.
+`AdminTable`; the "Your tags" count chip stays its section device, per the pass's adoption map.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -134,8 +134,8 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
   // every fresh error so the region text always mutates and the screen reader speaks again; this is
   // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
   // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function errorNonce(): string {
@@ -204,7 +204,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       />
       <!-- Outline, not filled: the page's one accent fill is the footer's Save, the action that
            actually persists the working list (one-filled-action, docs/internal/admin-design-system.md
-           "the ink story"). Add stays the accent hue so it still reads as the card's own primary
+           "the ink story"). Add stays the accent hue so it still reads as the card's primary
            control, just not a second competing fill. -->
       <button type="button" class="btn btn-outline btn-primary btn-sm flex-none" onclick={add}>
         <PlusIcon class="h-4 w-4" aria-hidden="true" />Add tag

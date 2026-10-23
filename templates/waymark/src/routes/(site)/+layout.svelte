@@ -3,17 +3,17 @@ The public chrome for the showcase: an owned, token-driven header, main, and foo
 route group. The group is URL-transparent, so these pages keep their paths, and the chrome never
 wraps /admin, which lives outside the group. The chrome is built from `SiteHeader` and `SiteFooter`,
 copy-in components a site owner edits, styled on the public theme (`theme.css`, DaisyUI/Tailwind on
-the cairn token layer); the admin self-styles independently with its own scoped sheet. Both
+the cairn token layer); the admin self-styles independently with its scoped sheet. Both
 stylesheets link by their ?url-resolved URL rather than a static import, so the editor's preview
 frame can link the very same assets (the header comment in site.css explains why a static import
 would break that).
 
 The wrapper is a flex column at least the viewport tall (`cairn-site-shell`, chassis/composition.css),
 and `<main>` grows to fill it (`cairn-site-main`), so a short page still pushes the footer to the
-viewport bottom instead of leaving its own background exposed as a seam below it.
+viewport bottom instead of leaving its background exposed as a seam below it.
 
 Navigation carries a root cross-fade view transition and a scroll-reset guard, each degrading to a
-no-op under its own failure condition; see the comments above `onNavigate` and
+no-op under its failure condition; see the comments above `onNavigate` and
 `beforeNavigate`/`afterNavigate` below.
 -->
 <script lang="ts">
@@ -27,7 +27,7 @@ no-op under its own failure condition; see the comments above `onNavigate` and
   // SvelteKit's documented View Transitions recipe: a plain root cross-fade (~180ms, theme.css's
   // `::view-transition-old/new(root)` rule) on every internal navigation, no-op where the browser
   // has no `document.startViewTransition` and skipped outright under `prefers-reduced-motion` (the
-  // CSS rule's own media query is the second, independent guard). This lives only in the (site)
+  // CSS rule's media query is the second, independent guard). This lives only in the (site)
   // group's layout, so the admin never cross-fades.
   onNavigate((navigation) => {
     if (!document.startViewTransition) return;
@@ -40,10 +40,10 @@ no-op under its own failure condition; see the comments above `onNavigate` and
     });
   });
 
-  // Brackets SvelteKit's own post-navigation scroll reset with `cairn-router-scrolling` (site.css's
-  // own comment on the class has the full CSSOM View reasoning): the router's scroll happens
+  // Brackets SvelteKit's post-navigation scroll reset with `cairn-router-scrolling` (site.css's
+  // comment on the class has the full CSSOM View reasoning): the router's scroll happens
   // strictly before `afterNavigate`'s callbacks run, so the class is still present when it fires and
-  // is removed only once it has already resolved, leaving a reader's own in-page anchor jump or
+  // is removed only once it has already resolved, leaving a reader's in-page anchor jump or
   // focused-heading scroll, neither of which is a navigation, still smooth.
   //
   // A navigation that is cancelled or superseded before it commits never reaches `afterNavigate`

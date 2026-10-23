@@ -16,7 +16,7 @@ CREATE TABLE preview_tokens (
 );
 
 -- The sweep on mint (insertPreviewToken) reads by expires_at, the same no-cron idiom
--- idx_magic_token_email and idx_session_email back for their own tables. The revoke action and
+-- idx_magic_token_email and idx_session_email back for their tables. The revoke action and
 -- the rename/delete/discard lifecycle cleanup both delete by (concept, entry_id); indexes are
 -- free now and a second migration against every adopter later.
 CREATE INDEX idx_preview_tokens_expires_at ON preview_tokens (expires_at);

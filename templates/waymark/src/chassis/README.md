@@ -4,9 +4,9 @@ The boundary rule: **a theme is everything that isn't chassis.** `src/chassis/` 
 genre-free layer this site's theme (Waymark, living in `src/theme/`, plus the route files
 under `src/routes/` that SvelteKit's filesystem routing pins in place) mounts onto: the plumbing
 no site skips regardless of what it looks like, and the composition primitives a theme reaches for
-instead of hand-rolling its own. Everything outside `src/chassis/` (the concrete adapter config,
+instead of hand-rolling one. Everything outside `src/chassis/` (the concrete adapter config,
 the chrome components, the home and article composition, the theme's color and type values) is
-the theme's own content. A theme file reaches chassis only through its exported seams: the
+the theme's content. A theme file reaches chassis only through its exported seams: the
 `#chassis` subpath import in `.ts`/`.svelte` files, or a relative `@import` in `.css` (CSS
 imports stay relative), always naming one of the files in the table below. `npm run
 check:chassis-boundary` (root) enforces this: it fails on any import that resolves into
@@ -16,7 +16,7 @@ exports would.
 The chassis is deliberately generous, not minimal: the point is a developer's
 ease building a theme on top, not the fewest lines here. Every default this layer ships is
 designed to be overridden, and each override seam is documented below. A theme that wants the
-chassis default as-is changes nothing; a theme that wants its own look overrides the value, never
+chassis default as-is changes nothing; a theme that wants a different look overrides the value, never
 the mechanism.
 
 ## What lives here
@@ -40,7 +40,7 @@ the mechanism.
 The SvelteKit route files that touch delivery plumbing (`feed.xml`, `feed.json`, `sitemap.xml`,
 `robots.txt`, `media/[...path]`, `healthz`, the `/admin` mount) stay in `src/routes/`, since
 SvelteKit's routing is filesystem-based; they import chassis logic through the `#chassis` subpath import
-(declared in `package.json`) instead of duplicating it. The same route files reach the theme's own content
+(declared in `package.json`) instead of duplicating it. The same route files reach the theme's content
 (the adapter config, the site config) through a second subpath import, `#theme` (`src/theme/`), the mirror
 image of `#chassis` for everything that is not genre-free.
 
@@ -57,11 +57,11 @@ belong to `cairn-hero`. The chassis render code stamps `cairn-head` and `cairn-i
 `cairn-head-title` is a sub-element of `cairn-head`, and `cairn-alert-body` is the alert wrapper,
 both chassis-owned and outside that registry. `cairn-router-scrolling` is the one theme class in
 this prefix (`src/theme/site.css` and the `(site)` layout). A theme colors a `cairn-*` class
-through tokens and never restyles its structure. `site-*` is the theme's own chrome and page
+through tokens and never restyles its structure. `site-*` is the theme's chrome and page
 classes and custom properties (`site-main`, `site-shell`, `site-header`, `--site-figure-max-height`).
-`sg-*` is the styleguide route's own demo classes, scoped to `/styleguide` and never read anywhere
+`sg-*` is the styleguide route's demo classes, scoped to `/styleguide` and never read anywhere
 else. A directive class with no prefix at all (`.callout`, `.alert`, `.banner`) comes from the
-theme's own `markdown-components.ts`, which stamps it in each component's `build()`; a theme may
+theme's `markdown-components.ts`, which stamps it in each component's `build()`; a theme may
 rename it, and it never collides with anything the engine fixes. `.card` is not a directive, and the
 chassis primitive is `.cairn-card`. The names the engine itself fixes are `figure` with
 `cairn-place-*`, `.table-scroll`, `pre.shiki` with `.cairn-tok-*`, and `include`; the registry is the
@@ -69,9 +69,9 @@ chassis primitive is `.cairn-card`. The names the engine itself fixes are `figur
 
 ## Every override seam
 
-**Adapter and delivery wiring.** `content.ts`, `feed.ts`, and `cairn.server.ts` take a theme's own
+**Adapter and delivery wiring.** `content.ts`, `feed.ts`, and `cairn.server.ts` take a theme's
 `cairn.config.ts` adapter (concepts, fields, registered components, backend) as input; none of
-them declares any content model or component of their own. A theme with a different set of
+them declares any content model or component. A theme with a different set of
 concepts or fields changes only `cairn.config.ts`; a different set of registered components
 changes `markdown-components.ts` (and `icons.ts` for a different glyph set).
 
@@ -80,7 +80,7 @@ right after Tailwind. The engine owns the roles that file carries: the status in
 (`--cairn-*-ink`), the shadow (`--cairn-shadow`), the focus ring, the code-highlight ramp
 (`--cairn-code-*`), `--flow-space`, `--color-muted`, and `--color-card-border`. Each one is a
 generic default that resolves under any theme's colors with no tuning. A theme overrides one by
-declaring it in its own `:root` or daisyUI block, since a later or unlayered declaration beats the
+declaring it in its `:root` or daisyUI block, since a later or unlayered declaration beats the
 engine's `@layer theme` default. An override of a status ink is hand-tuning, and a theme that
 retunes a fill without overriding its ink gets the derived ink for free, since the engine mixes each
 ink from its fill.
@@ -88,37 +88,37 @@ ink from its fill.
 `tokens.css` itself declares the design-scale keys (`--font-*`, `--text-step-*`, `--spacing-*`,
 `--leading-*`, `--tracking-*`, `--container-measure*`, `--font-weight-heading`) inside `@theme`
 with a generic default. A theme `@import`s `tokens.css` first, then redeclares the same keys in its
-own later `@theme` block with its real numbers; cascade order does the override (`theme.css` is the
+later `@theme` block with its real numbers; cascade order does the override (`theme.css` is the
 worked example). The CTA panel keys (`--cairn-cta-*`) and `--cairn-caption-tracking` stay
 site-owned: the chassis holds no default for them, and a theme that uses them defines them. The
 named DaisyUI themes themselves (`@plugin "daisyui/theme"`, every role color and geometry value)
-are never declared here: that is 100% a theme's own choice, light and dark. The `.cairn-tok-*`
+are never declared here: that is 100% a theme's choice, light and dark. The `.cairn-tok-*`
 syntax-highlight class contract and the `pre.shiki` binding are pure structure and never need a
 theme's edit at all; only the token values they read do.
 
 **Custom-property namespaces.** A custom property takes its name from the role it plays. daisyUI's
-own names go to daisyUI's keys (`--color-primary`, `--radius-box`). A key that generates a Tailwind
+names go to daisyUI's keys (`--color-primary`, `--radius-box`). A key that generates a Tailwind
 utility takes that utility's namespace (`--font-*`, `--text-step-*`, `--spacing-*`,
 `--container-*`, `--color-muted`), so `text-muted` and `max-w-measure` exist. Every other role takes
 `--cairn-*` (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-heading-case`).
-`--flow-space` is grandfathered under no prefix. A theme's own properties take `--site-*`. The
+`--flow-space` is grandfathered under no prefix. A theme's properties take `--site-*`. The
 "Class namespaces" section above covers classes only.
 
-A Tailwind v4 trap this file's own key names sit inside: `--spacing-3xs`, `--spacing-2xs`,
+A Tailwind v4 trap this file's key names sit inside: `--spacing-3xs`, `--spacing-2xs`,
 `--spacing-xs`, `--spacing-xl`, and `--spacing-2xl` share a suffix with five of Tailwind's built-in
 `--container-*` scale keys, and Tailwind resolves `max-w-<key>` against a theme's `--spacing-<key>`
-variable when one exists, silently shadowing its own built-in container width with the spacing value
+variable when one exists, silently shadowing its built-in container width with the spacing value
 instead (`max-w-2xl` compiles to `max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default)
 with no warning; declaring a matching `--container-<key>` override does not win the utility back
 (verified directly against `@tailwindcss/node`'s compiler). The Foxi port hit this while composing a
-marketing page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own
+marketing page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's
 reading-measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same
 and never reach for `max-w-3xs`, `max-w-2xs`, `max-w-xs`, `max-w-xl`, or `max-w-2xl`, since those five
 key names are already spoken for.
 
 **Cascade layers: an unlayered site rule always beats a layered Tailwind utility.** Tailwind v4's
-own utilities live inside `@layer utilities`, and CSS cascade layers make an unlayered rule win
-over any layered one unconditionally, regardless of source order or specificity. A theme's own
+utilities live inside `@layer utilities`, and CSS cascade layers make an unlayered rule win
+over any layered one unconditionally, regardless of source order or specificity. A theme's
 `site.css` typically declares plain, unlayered container classes (`.site-main`, `.site-wide`), and
 if one of those classes sets `margin: 0 auto` (the shorthand, which also zeroes the block/top-bottom
 margins) on the same element as a Tailwind `mt-*`/`mb-*` utility, the shorthand's implicit
@@ -127,7 +127,7 @@ no warning. Both the gallery and the Foxi ports hit this for real (a home-page h
 a featured-card-to-grid gap both measured 0px of computed margin despite a `mb-l`/`mt-l` class being
 present); the fix in both is `margin-inline: auto` instead of the `margin: 0 auto` shorthand, which
 centers the container without touching the block axis at all, leaving it free for a composing
-utility class to set. A theme writing its own unlayered container or layout class should reach for
+utility class to set. A theme writing an unlayered container or layout class should reach for
 the single-axis longhand (`margin-inline`, `padding-inline`, and so on) whenever that class might
 combine with a Tailwind spacing utility on the same element, rather than a shorthand that quietly
 claims the other axis too.
@@ -138,12 +138,12 @@ edit here. The one signature identity this file carries (the cairn-glyph horizon
 diamond list bullet, the margin-hanging pull quote) sits behind `.prose[data-flourish]`, off by
 default; a theme opts in by adding one `data-flourish` attribute to its `.prose` root, no CSS edit.
 
-**Component-grammar wiring (`render.ts`).** `makeIconRenderer(icons)` wires a theme's own icon set
+**Component-grammar wiring (`render.ts`).** `makeIconRenderer(icons)` wires a theme's icon set
 into the engine's `renderGlyph` helper; a theme's `defineComponent()` build functions call the
 returned function and never import `renderGlyph` directly. This file also exports `headRow`, the
 icon-plus-heading head a titled component's `build()` calls (the alert directive is the one call
 site); both helpers are chassis-owned, not engine exports. `headRow` stamps `cairn-head-title` on
-its heading element, and the alert directive's own build function (`markdown-components.ts`)
+its heading element, and the alert directive's build function (`markdown-components.ts`)
 stamps `cairn-alert-body` on its wrapper; both are chassis-owned class names, not part of the
 engine's emitted-classes registry (`docs/reference/render.md`). Swapping the icon set (the
 `icons: IconSet` object in `icons.ts`) never touches a component's `build()`.
@@ -158,9 +158,9 @@ both the public render and the editor's live preview inherit it.
 
 **The theme-toggle mechanism (`theme-toggle.ts`).** `resolveTheme`/`applyTheme`/`toggleTheme` know
 nothing about which two DaisyUI theme names or which cookie name a theme uses; every call site
-passes its own `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). A theme with
+passes its `ThemeToggleConfig` (`SiteHeader.svelte` is the worked example). A theme with
 differently named themes, or a second theme entirely, reuses this module unchanged by supplying
-its own config. With no `data-theme` on `<html>`, `resolveTheme` reads the root's computed
+its config. With no `data-theme` on `<html>`, `resolveTheme` reads the root's computed
 `color-scheme`, so a dark-first theme needs no edit to `app.html`; a computed value other than
 exactly `light` or `dark` (`normal`, or `light dark`) leaves the system scheme to decide. This
 theme's config lives in `src/theme/theme-names.ts`, which `SiteHeader.svelte` imports. Two places
@@ -173,63 +173,63 @@ system scheme) and the `name:` values of the two `@plugin "daisyui/theme"` block
 generating the `font-heading` utility) and `--cairn-heading-case` (default `none`, a plain role in
 `@layer theme`, applied by the `heading-case` utility) are the two keys every heading reads.
 `prose.css`'s `h1`/`h2`/`h3` rules and the chrome's titles use them in place of a literal weight, so
-a theme sets them once, in its own `@theme` block and `:root`, to move every heading. Chrome markup
+a theme sets them once, in its `@theme` block and `:root`, to move every heading. Chrome markup
 applies `font-heading heading-case`; a scoped `<style>` rule reads the two keys directly with
-`var()`. An eyebrow keeps its own `uppercase tracking-eyebrow` and weight, and a bold run, a
+`var()`. An eyebrow keeps its `uppercase tracking-eyebrow` and weight, and a bold run, a
 label, or a control keeps a literal weight, since none of them is a heading.
 
-**The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's own knob, not a chassis
+**The archive page size (`archive.ts`).** `ARCHIVE_PAGE_SIZE` is a site's knob, not a chassis
 constant tuned for this site: `paginateArchive` reads it as a default, and both the home
 page's featured segment and the `/archive/[page]` route pass no override, so raising or lowering
 it changes pagination everywhere at once. The scaffold ships fourteen sample posts, sized so the
 pagination block stays hidden until a fifteenth post crosses the page boundary; a site with a
-larger corpus, or one that wants a shorter page, sets its own value here.
+larger corpus, or one that wants a shorter page, sets a different value here.
 
 **Composition primitives (`composition.css`).** `.cairn-card`, `.cairn-band`, `.cairn-section`,
 `.cairn-hero`, `.cairn-sidebar-layout` make the chassis's generosity concrete: a
-theme reaches for one of these instead of hand-rolling its own card or two-column layout from
+theme reaches for one of these instead of hand-rolling a card or two-column layout from
 scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
 `.index` is `.cairn-section`, and the root error page's message block is
 `.cairn-band`. `.cairn-card` and `.cairn-sidebar-layout` have no real site use in this theme
 (the members pages are template-excluded fixtures, the home lead is not a card, and `related`
 renders as a block in the reading flow rather than a sidebar-shaped region), so they are
-demonstrated on the styleguide's own Composition section instead, a demonstration rather than a
+demonstrated on the styleguide's Composition section instead, a demonstration rather than a
 composition claim; adopting either elsewhere is a theme's choice, never a requirement. Each
-primitive exposes its own `--cairn-<primitive>-*` custom
+primitive exposes its `--cairn-<primitive>-*` custom
 properties (for example `--cairn-card-padding`, `--cairn-band-bg`, `--cairn-sidebar-width`) for a
 per-instance override, layered on top of the shared design-scale tokens they default from. A media
 query condition cannot read a custom property, so `.cairn-sidebar-layout`'s 48rem breakpoint is a
-fixed value, not a token seam; its own comment says so.
+fixed value, not a token seam; its comment says so.
 
 `.cairn-site-shell`/`.cairn-site-main` is a sticky-footer flex column (header, growing main,
-footer) that also bakes in a fix for a flex-item width bug; see the pair's own comment in
+footer) that also bakes in a fix for a flex-item width bug; see the pair's comment in
 `composition.css` for the mechanism.
 
 ## The themed-404 pattern
 
 A fully static theme (every page under `(site)` set to `export const prerender = true`, this
-site's own shape) needs two pieces working together to serve a themed 404, not one. The
-failure mode, found the hard way porting Foxi: a fully prerendered site strips its own
+site's shape) needs two pieces working together to serve a themed 404, not one. The
+failure mode, found the hard way porting Foxi: a fully prerendered site strips its
 `[...path]` catch-all out of the runtime-routable manifest entirely, so a request for an
 unmatched path matches no route at all. That means the `(site)` group's layout never runs, and
 an in-group `(site)/+error.svelte` never mounts for this case (it still correctly renders an
-in-route `error(404, ...)` thrown from a matched route's own `load`, an entirely different code
+in-route `error(404, ...)` thrown from a matched route's `load`, an entirely different code
 path). Only a **root-level `src/routes/+error.svelte`**, a sibling of the route group rather than
 a file inside it, renders for an unmatched path, and only if the request reaches the Worker in the
 first place.
 
 Whether it reaches the Worker is the wrangler-config half. `assets.not_found_handling` gates it:
-`"none"` (the schema's own default, and what this site's `wrangler.jsonc` now sets explicitly)
-passes an unmatched request through to the Worker, which falls through to SvelteKit's own
+`"none"` (the schema's default, and what this site's `wrangler.jsonc` now sets explicitly)
+passes an unmatched request through to the Worker, which falls through to SvelteKit's
 built-in default-404 handling and renders the root `+error.svelte` through a real SSR response.
 `"404-page"` does the opposite: it makes the adapter write a static file to the assets directory
 and serve it straight from Cloudflare's edge, which never invokes the Worker at all, so no
 `+error.svelte` of any kind ever runs. A `fallback: 'spa'` adapter option compounds the same
-mistake, generating a client shell whose own data fetch has nothing to resolve for an unmatched
+mistake, generating a client shell whose data fetch has nothing to resolve for an unmatched
 path.
 
 A theme adopting this chassis on the same fully-prerendered-plus-catch-all shape needs both
-pieces: a root `+error.svelte` that rebuilds its own chrome (it has no shared layout to inherit
+pieces: a root `+error.svelte` that rebuilds its chrome (it has no shared layout to inherit
 from, so both stylesheets and the theme's header/footer components import directly, the same way
 `src/routes/+error.svelte` does here) and `assets.not_found_handling` left at, or set explicitly
 to, `"none"`. A theme with any non-prerendered route (a `/admin` mount, a dynamic API route) needs
@@ -241,24 +241,24 @@ since the whole point of `"none"` is what already happens once nothing else over
 The chassis is site-owned code over the versioned engine API: an ultra-light
 theme builder may rebuild, ditch, or modify any of it, or simply remove an element it never uses.
 Organization backs this up: one concern per file, and anything load-bearing for more than one
-element lives in its own file rather than hiding inside a sibling, so removing one element's file
+element lives in a separate file rather than hiding inside a sibling, so removing one element's file
 never breaks another's. Each row below names the file's real dependents (found by grepping the
 tree, not assumed) and exactly what a removal touches. A note that lies (a dependent it misses,
-a build it silently breaks) fails this file's own promise.
+a build it silently breaks) fails this file's promise.
 
 | File | Real dependents | Removal note |
 | --- | --- | --- |
-| `content.ts` | Every delivery route: `+page.server.ts` (site and `[...path]`), `robots.txt`, `feed.json`, `feed.xml`, `sitemap.xml`. | Not a bare deletion: it is the one content-index builder every delivery route reads. A theme dropping it must replace all six route imports with its own index logic in the same change, never delete it alone. |
-| `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's own mapping); nothing else references it. |
+| `content.ts` | Every delivery route: `+page.server.ts` (site and `[...path]`), `robots.txt`, `feed.json`, `feed.xml`, `sitemap.xml`. | Not a bare deletion: it is the one content-index builder every delivery route reads. A theme dropping it must replace all six route imports with the theme's index logic in the same change, never delete it alone. |
+| `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |
-| `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
-| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example), through `src/theme/theme-names.ts`'s `ThemeToggleConfig`. | Delete the file, `SiteHeader.svelte`'s imports of it and of `theme-names.ts`, its `theme` state and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block; delete `theme-names.ts` and `theme-names.test.ts` with them. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
-| `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
-| `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
+| `render.ts` | `markdown-components.ts` (the `makeIconRenderer` and `headRow` imports) and `cairn.config.ts` (the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon and `headRow` imports (inlining `headRow`'s icon-plus-heading shape at its one call site), and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or a remark plugin instead), needs nothing else. |
+| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example), through `src/theme/theme-names.ts`'s `ThemeToggleConfig`. | Delete the file, `SiteHeader.svelte`'s imports of it and of `theme-names.ts`, its `theme` state and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block; delete `theme-names.ts` and `theme-names.test.ts` with them. A theme with no light/dark switch, or a switch built from scratch, needs nothing else. |
+| `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with the theme's slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
+| `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
-| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte` (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with its own flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point); `(site)/+layout.svelte` and `+error.svelte` (`.cairn-site-shell`/`.cairn-site-main`); `(site)/styleguide/+page.svelte` (`.cairn-hero` on the masthead, `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-sidebar-layout` on the Composition section); `(site)/+page.svelte` (`.cairn-section`); `+error.svelte` (`.cairn-band`). | Not a bare deletion while the site shell and the composition primitives are in use: a theme dropping this file replaces the shell markup at both call sites with the theme's flex column, replaces the hero, section, and band markup at their real call sites with hand-rolled equivalents, and drops the styleguide's Composition section (its `.cairn-card`/`.cairn-sidebar-layout` demonstration has no other call site in this theme). |
 
 ## Adding a new primitive or seam
 

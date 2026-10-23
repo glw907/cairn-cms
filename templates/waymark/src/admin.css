@@ -5,7 +5,7 @@
 @source "./lib/admin";
 /* The site sheet and the engine's packaged sheet share one utilities layer, so within that
    layer only source order decides a collision, and Tailwind emits a base utility before its
-   own responsive variant. Importing the engine's own sources file here makes the site sheet a
-   superset of the engine's utility set in Tailwind's own order, so every engine variant this
+   responsive variant. Importing the engine's sources file here makes the site sheet a
+   superset of the engine's utility set in Tailwind's order, so every engine variant this
    sheet also compiles still follows its base utility instead of landing ahead of it. */
 @import "@glw907/cairn-cms/admin-sources.css";

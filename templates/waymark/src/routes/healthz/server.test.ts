@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The route's own wiring is what is under test: how it maps loadHealth's payload to a status. The
+// The route's wiring is what is under test: how it maps loadHealth's payload to a status. The
 // engine's health check and the site's runtime are stood in for, since neither needs the full
 // adapter chain this standalone vitest config cannot parse.
 const health = vi.hoisted(() => ({ loadHealth: vi.fn() }));

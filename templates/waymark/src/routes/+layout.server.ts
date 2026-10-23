@@ -5,7 +5,7 @@
 // beside, and outside that layout respectively, so only a root-level load reaches all of them).
 // SvelteKit never ships a `+layout.server.ts` module (or anything it imports) to the client, so
 // this reads the theme's island registry and its lean site-config reader directly with no
-// client-bundle cost; the root layout's own client script imports only the returned boolean,
+// client-bundle cost; the root layout's client script imports only the returned boolean,
 // never the registry module itself (see `#theme/islands/registry.js` for why importing the
 // registry client-side stays gated behind that flag rather than happening unconditionally).
 // `site-config.ts`, not `#theme/cairn.config.js`, is the import for the nav and the site name on

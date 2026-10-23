@@ -16,7 +16,7 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 // and assert the structured value round-trips through reload.
 //
 // The fresh-post isolation mirrors the reference and media specs: a save persists the entry's pending
-// branch on the one-worker shared backend, so each part creates its own post and never touches a seed
+// branch on the one-worker shared backend, so each part creates a separate post and never touches a seed
 // branch another spec depends on.
 
 // A real, decodable 8x8 RGBA PNG (the same proven bytes the media-hero spec uploads). A content-hash

@@ -2,7 +2,7 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // This suite drives the shipped ./auth-channel subpath through a real browser against the
 // showcase's members login fixture (src/members/channel.ts, the worked exemplar behind
-// docs/extend/add-a-second-sign-in-group.md). Each of the five specs below uses its OWN roster contact
+// docs/extend/add-a-second-sign-in-group.md). Each of the five specs below uses a separate roster contact
 // (src/members/channel.ts's MEMBER_ROSTER): this is a requirement, not a convenience. The
 // escalation gate and the per-window send ceiling both key on the bare contact identity, so two
 // specs sharing a contact would share one budget, and CI's `retries: 2` multiplies whatever a
@@ -16,7 +16,7 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 // dev delivery path).
 //
 // Assertions go through the rendered UI and the `/test/last-otp` readback route, never the D1
-// tables directly: the fixture proves the same surface a consumer's own e2e would exercise.
+// tables directly: the fixture proves the same surface a consumer's e2e would exercise.
 
 test.beforeAll(async ({ request }) => {
   // Reset once for the whole file. A locally reused wrangler dev server (playwright's

@@ -2,7 +2,7 @@
 // channel end to end (docs/extend/add-a-second-sign-in-group.md): instead of sending
 // anything, it remembers the last code and a delivery count per contact in module state, so the
 // /test/last-otp route can read a code back without polling a real inbox or the
-// database directly. It carries devDelivery's own in-body refusal
+// database directly. It carries devDelivery's in-body refusal
 // (ctx.env.CAIRN_DEV_BACKEND === '1'), checked inside this function so a wrapper cannot bypass
 // it, which also keeps a default showcase deploy from holding OTP codes in Worker memory.
 import type { DeliverContext } from '@glw907/cairn-cms/auth-channel';
@@ -20,7 +20,7 @@ const captures = new Map<string, Capture>();
 
 /**
  * The member channel's `deliver`: records `code` for `contact` instead of sending it anywhere,
- * refusing unless `ctx.env.CAIRN_DEV_BACKEND === '1'` (mirroring `devDelivery`'s own precedent).
+ * refusing unless `ctx.env.CAIRN_DEV_BACKEND === '1'` (mirroring `devDelivery`'s precedent).
  * Keys both the code and the count per contact, so two roster members requesting concurrently
  * never see each other's code.
  * @throws Error when `ctx.env.CAIRN_DEV_BACKEND` is not `'1'`.

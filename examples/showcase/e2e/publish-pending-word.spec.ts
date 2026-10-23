@@ -55,7 +55,7 @@ test('a publish with a pending dictionary word lands without a conflict and comm
   await popover.getByRole('button', { name: 'Add to dictionary' }).click();
   await expect(underlines).toHaveCount(0, { timeout: 10_000 });
 
-  // The word is pending, uncommitted. Publish straight from the page's own submit.
+  // The word is pending, uncommitted. Publish straight from the page's submit.
   await page.locator('.navbar').getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page).toHaveURL(/published=1/, { timeout: 10_000 });
   await expect(
@@ -63,7 +63,7 @@ test('a publish with a pending dictionary word lands without a conflict and comm
   ).toBeVisible();
   await expect(page.locator('.alert', { hasText: 'Publish again' })).toHaveCount(0);
 
-  // The pending word reached main in its own commit.
+  // The pending word reached main in its commit.
   const dictionary = await request.get(
     `/test/branch-file?branch=main&path=${encodeURIComponent(DICTIONARY_PATH)}`,
   );

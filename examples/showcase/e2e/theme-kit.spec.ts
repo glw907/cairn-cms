@@ -1,12 +1,12 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // The G1 fixture spec: a custom /admin route written only in plain daisyUI classes and cairn's
-// role utilities gets the admin's look with no per-element idiom of its own. Every assertion here
+// role utilities gets the admin's look with no per-element idiom. Every assertion here
 // reads the compiled admin sheet through the fixture at examples/showcase/src/routes/admin/theme-kit,
 // by the same cairn-admin-theme cookie admin-visual.spec.ts sets, never a hand-typed serialized
 // color: a color-mix(...)/var(...) expression is always resolved by painting it on a throwaway
 // probe appended inside the element under test (the same oracle discipline
-// starter-outline-pin.spec.ts uses for the starter's own pin), so a probe placed inside an alert or
+// starter-outline-pin.spec.ts uses for the starter's pin), so a probe placed inside an alert or
 // a button also inherits any custom property that rule sets locally on that element.
 
 type Theme = 'cairn-admin' | 'cairn-admin-dark';
@@ -29,9 +29,9 @@ async function gotoThemed(
 /**
  * Paints a CSS declaration on a throwaway `<span>` appended INSIDE the given element and reads
  * back its resolved value, so a `color-mix()`/`var()` expression resolves exactly as the browser
- * computes it in that element's own cascade (a custom property a rule sets locally, such as an
+ * computes it in that element's cascade (a custom property a rule sets locally, such as an
  * alert's `--alert-color`, inherits into the probe the same way it reaches the element itself). A
- * replaced form control (`<input>`) has no rendered content model of its own, so the probe goes
+ * replaced form control (`<input>`) has no rendered content model, so the probe goes
  * beside it, as a child of its parent, instead; neither of the two rules this file reads through a
  * form-control input (`--color-neutral`, `--color-base-100`, the 55% checkbox/radio edge mix) is
  * ever set locally on the input itself, only inherited from the theme root, so the parent placement
@@ -155,7 +155,7 @@ for (const theme of THEMES) {
         .toBe(hovered);
     });
 
-    // S3 Q17: the rest rule's hover/focus-visible step split into its own :focus-visible copy
+    // S3 Q17: the rest rule's hover/focus-visible step split into a separate :focus-visible copy
     // (unconditional) and a :hover copy gated on @media (hover: hover), so a keyboard-only reader
     // on a device that reports no hover capability still gets the step. Tabbing in from a
     // preceding element, never a mouse move, is what makes Chromium treat this as :focus-visible
@@ -227,9 +227,9 @@ for (const theme of THEMES) {
       await expect.poll(() => modal.evaluate((e) => getComputedStyle(e).boxShadow)).toBe(warm);
     });
 
-    // daisyUI's own `.modal-box` is `opacity: 0; scale: .95` at rest, visible only
+    // daisyUI's `.modal-box` is `opacity: 0; scale: .95` at rest, visible only
     // as a `.modal[open] > .modal-box`/`.modal.modal-open > .modal-box` child. The fixture renders
-    // the box standalone (proving the warm shadow, not a full modal), so it carries its own
+    // the box standalone (proving the warm shadow, not a full modal), so it carries its
     // `opacity-100 scale-100` to stay visible; the shadow test above already proved the computed
     // box-shadow, invisible until this fix, since a computed style reads regardless of opacity.
     test("the statically open modal box renders visible, not hidden at daisyUI's rest opacity", async ({
@@ -296,8 +296,8 @@ for (const theme of THEMES) {
       await expect.poll(() => item.evaluate((e) => getComputedStyle(e).borderRadius)).toBe('4px');
     });
 
-    // S3 Q6: the dropdown panel carries no box-shadow utility of its own (removed from this
-    // fixture's markup), so a bare `.dropdown-content.menu` must supply the theme's own warm
+    // S3 Q6: the dropdown panel carries no box-shadow utility (removed from this
+    // fixture's markup), so a bare `.dropdown-content.menu` must supply the theme's warm
     // elevation, the same var the modal box reads, in place of no shadow at all.
     test('the dropdown panel carries the warm elevation vocabulary', async ({ page }) => {
       const content = page.getByTestId('tk-dropdown-content');
@@ -305,7 +305,7 @@ for (const theme of THEMES) {
       await expect.poll(() => content.evaluate((e) => getComputedStyle(e).boxShadow)).toBe(warm);
     });
 
-    // S3 Q4: a radio join-item keeps the browser's own UA margin on every edge daisyUI's own
+    // S3 Q4: a radio join-item keeps the browser's UA margin on every edge daisyUI's
     // `.join-item` rule does not restate (every edge but the leading one), which reopens a seam a
     // button join, whose UA margin is already zero, never shows. The two radios must sit exactly
     // one (negative, overlapping) border apart, the same gap the plain button join keeps.
@@ -315,15 +315,15 @@ for (const theme of THEMES) {
       const firstBox = await first.evaluate((e) => e.getBoundingClientRect());
       const secondBox = await second.evaluate((e) => e.getBoundingClientRect());
       const border = await first.evaluate((e) => parseFloat(getComputedStyle(e).borderRightWidth));
-      // The second radio's left edge sits exactly one border-width inside the first radio's own
-      // right edge (the join's own -1px overlap); a reopened UA-margin seam would land it several
+      // The second radio's left edge sits exactly one border-width inside the first radio's
+      // right edge (the join's -1px overlap); a reopened UA-margin seam would land it several
       // pixels further right instead.
       await expect
         .poll(() => secondBox.left - (firstBox.left + firstBox.width))
         .toBeCloseTo(-border, 0);
     });
 
-    // S3 Q5: an uncolored selected outline/dash button used to fall through to daisyUI's own
+    // S3 Q5: an uncolored selected outline/dash button used to fall through to daisyUI's
     // `--color-base-200` + 5% black mix, a wash that reads opposite directions across the two
     // themes (a pale step in light, a near-black hole in dark). It now takes the identical
     // warm-tinted neutral wash the plain selected button already carries, one direction in both
@@ -349,7 +349,7 @@ for (const theme of THEMES) {
 }
 
 // S3 Q19: the fixture is the page developers are pointed at as the plain-daisyUI idiom proof, so
-// its own a11y gaps (a missing document title, unnamed sections, a forced-open dropdown trigger
+// its a11y gaps (a missing document title, unnamed sections, a forced-open dropdown trigger
 // with no aria-expanded) are fixed on the page itself.
 test('the fixture page is titled, its sections are named, and its dropdown trigger states its own expanded state', async ({
   page,
@@ -375,15 +375,15 @@ test('the rendered admin nav carries no link to the fixture screen', async ({ pa
   ).toHaveCount(0);
 });
 
-// Review focus 2: a hostile host stylesheet, and the public showcase's own compiled sheet, each
-// injected once before and once after the admin sheet in the page's own <head>. Neither order may
+// Review focus 2: a hostile host stylesheet, and the public showcase's compiled sheet, each
+// injected once before and once after the admin sheet in the page's <head>. Neither order may
 // move the plain button, btn-sm's height, or the three radii; the two outline buttons are recorded
 // in each order, since rule 11 (the selected-outline ink repair) is the one property a losing layer
-// order could plausibly take from a host's own site-theme sublayer.
+// order could plausibly take from a host's site-theme sublayer.
 const HOSTILE_CSS =
   'div { font-family: Georgia; -webkit-font-smoothing: auto; scrollbar-width: auto; color-scheme: dark }';
 
-/** Finds the `<link rel="stylesheet">` whose fetched text carries the admin sheet's own fingerprint. */
+/** Finds the `<link rel="stylesheet">` whose fetched text carries the admin sheet's fingerprint. */
 async function findAdminStylesheetHref(page: Page): Promise<string> {
   const hrefs = await page.evaluate(() =>
     Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(
@@ -401,7 +401,7 @@ async function findAdminStylesheetHref(page: Page): Promise<string> {
  * Fetches every stylesheet the public homepage links, concatenated into one CSS text blob.
  *
  * The served HTML is parsed as a document, never matched with a regex, because the attribute order
- * differs by source: the showcase's own head writes `rel` before `href`, while SvelteKit emits its
+ * differs by source: the showcase's head writes `rel` before `href`, while SvelteKit emits its
  * route stylesheets as `href` before `rel`. The list must be non-empty, or the host-CSS check below
  * would pass without injecting any host CSS at all.
  */
@@ -428,7 +428,7 @@ async function fetchHomepageCss(page: Page, baseURL: string): Promise<string> {
   return texts.join('\n');
 }
 
-/** Inserts a `<style>` element immediately before or after the admin sheet's own `<link>`. */
+/** Inserts a `<style>` element immediately before or after the admin sheet's `<link>`. */
 async function injectAroundAdminSheet(
   page: Page,
   adminHref: string,
@@ -437,7 +437,7 @@ async function injectAroundAdminSheet(
 ): Promise<void> {
   await page.evaluate(
     (args) => {
-      // The DOM link's own href PROPERTY is the browser-resolved absolute URL (what
+      // The DOM link's href PROPERTY is the browser-resolved absolute URL (what
       // findAdminStylesheetHref read), while its href ATTRIBUTE is whatever relative or absolute
       // string the page shipped; comparing the resolved property is what makes the two agree
       // regardless of which form the markup used.
@@ -544,7 +544,7 @@ test('review focus 3: the ladder join in RTL at 320px keeps its logical corners,
     .poll(() => last.evaluate((e) => getComputedStyle(e).borderTopRightRadius))
     .toBe('0px');
 
-  // The selected segment (aria-current, this join's own middle-free third segment) keeps its
+  // The selected segment (aria-current, this join's middle-free third segment) keeps its
   // state hairline regardless of direction.
   const hairline = await resolveOn(
     last,
@@ -554,9 +554,9 @@ test('review focus 3: the ladder join in RTL at 320px keeps its logical corners,
   await expect.poll(() => last.evaluate((e) => getComputedStyle(e).borderColor)).toBe(hairline);
 });
 
-// Fix-round finding: the fixture's own error-alert markup had drifted from ConceptList's fixed
+// Fix-round finding: the fixture's error-alert markup had drifted from ConceptList's fixed
 // `max-sm:grid-flow-row max-sm:grid-cols-1` form, so it still rendered the pre-fix crushed column
-// at 320. Same shape ConceptList.test.ts already proves for the engine's own banner.
+// at 320. Same shape ConceptList.test.ts already proves for the engine's banner.
 test('the error alert body spans the alert width at 320, not a crushed column', async ({
   page,
   context,

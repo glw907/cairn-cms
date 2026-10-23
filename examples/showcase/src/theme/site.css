@@ -21,7 +21,7 @@
      - Tier 2 (owned): the `.banner*` demo block below. It reads the theme info tokens, so re-skinning
        the theme re-skins the demo along with the rest of the page. */
 
-/* The three size literals this sheet's own rules use, none of which the chassis design scale
+/* The three size literals this sheet's rules use, none of which the chassis design scale
    already names: the figure image height cap, the banner's accent-rule width, and the banner's
    corner radius. Named here rather than inlined so a re-skin edits one place, even though this
    theme currently holds them at these defaults. */
@@ -45,7 +45,7 @@ html {
 
   /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
      focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
-     the gap to the header from the same tokens the header uses: the nav links' own `min-h-11` touch
+     the gap to the header from the same tokens the header uses: the nav links' `min-h-11` touch
      target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
      `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
      1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
@@ -64,17 +64,17 @@ html {
   }
 }
 
-/* SvelteKit's own post-navigation scroll reset (client.js) is a bare `window.scrollTo(x, y)`; the
+/* SvelteKit's post-navigation scroll reset (client.js) is a bare `window.scrollTo(x, y)`; the
    CSSOM View spec animates ANY scroll on an element whose computed scroll-behavior is smooth, that
-   call included, not only a reader's own anchor jump. Left alone, `scroll-behavior: smooth` above
+   call included, not only a reader's anchor jump. Left alone, `scroll-behavior: smooth` above
    turns every route change into a multi-hundred-millisecond glide back to the top, with SvelteKit's
-   own post-scroll focus reset landing mid-glide. The (site) group's own layout
+   post-scroll focus reset landing mid-glide. The (site) group's layout
    (`routes/(site)/+layout.svelte`) brackets exactly the window the router's scroll happens in with
-   a beforeNavigate/afterNavigate pair that toggles this class, so only the router's own scroll
+   a beforeNavigate/afterNavigate pair that toggles this class, so only the router's scroll
    goes instant; an in-page anchor jump or a focused heading, which never fires a navigation, still
    glides (the admin never carries this class or this stylesheet at all). Verified
    against @sveltejs/kit client.js: the scroll call runs strictly before afterNavigate's callbacks
-   fire, so the class is still present when the router's own scroll happens and only removed once
+   fire, so the class is still present when the router's scroll happens and only removed once
    it has already resolved. */
 .cairn-router-scrolling {
   scroll-behavior: auto;
@@ -86,7 +86,7 @@ html {
    reproduces. */
 .site-main {
   /* margin-inline, not the margin: 0 auto shorthand: the shorthand also zeroes the block
-     (top/bottom) margins, which would silently beat a future sibling's own Tailwind `mt-*`/`mb-*`
+     (top/bottom) margins, which would silently beat a future sibling's Tailwind `mt-*`/`mb-*`
      utility (an unlayered plain CSS rule always wins over a layered one; see the chassis README's
      cascade-layers note, hit for real on the Foxi and gallery ports). */
   max-width: var(--container-measure);
@@ -127,7 +127,7 @@ body {
 /* Hero, wide, and full figures run at the column or the viewport width with no height limit, so an
    extreme-ratio photo (a tall portrait crop, a rare panorama) can blow the column height out. Cap the
    box and let object-fit: cover crop only what the cap cannot hold, so a normal-ratio photo (like every
-   image in this site's content) renders at its own proportions, well under the cap, completely
+   image in this site's content) renders at its proportions, well under the cap, completely
    unaffected; cover never stretches, so even a capped image keeps its true aspect. The centered figure
    (below) is exempt: it is already bounded to a small width for a portrait or a detail shot, and
    forcing a landscape crop there would defeat that shape. */
@@ -167,7 +167,7 @@ body {
 }
 /* The gutter the caption returns to (see the figcaption comment above for why the selector also
    catches the plain-<p> fallback): without it, a full-bleed figure's caption inherited the figure's
-   own 100vw breakout with no inset of its own, so its text ran to the literal viewport edge (x=0)
+   100vw breakout with no inset, so its text ran to the literal viewport edge (x=0)
    instead of reading as a line under the image. */
 .site-main .cairn-place-full figcaption,
 .site-main .cairn-place-full > * + * {

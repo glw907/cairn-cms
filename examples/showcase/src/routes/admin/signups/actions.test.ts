@@ -44,10 +44,10 @@ function signupsEvent(options: {
 describe('the signups screen actions', () => {
   it('refuses a non-owner remove through the section action rather than throwing', async () => {
     const result = await actions.remove(signupsEvent({ capability: 'editor', body: { id: '1' } }));
-    // The section action's own refusal channel returns fail(403) with the shared denial copy; a
+    // The section action's refusal channel returns fail(403) with the shared denial copy; a
     // bare requireOwner would have thrown error(403, 'Owner access required') instead, so
     // resolving at all is half of what this asserts. The returned failure is compared by shape
-    // rather than through SvelteKit's own isActionFailure: the engine resolves @sveltejs/kit from
+    // rather than through SvelteKit's isActionFailure: the engine resolves @sveltejs/kit from
     // the repo root while this test resolves it from the showcase, so the two ActionFailure
     // classes are distinct and an instanceof check would answer false for a real failure.
     expect(result).toMatchObject({

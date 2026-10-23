@@ -109,12 +109,12 @@ test('orphan round-trip: the orphaned byte purges with the typed confirm, the br
   ).toBeVisible();
 
   // The Orphaned files section lists the orphaned byte by its R2 key. Target it specifically rather
-  // than asserting a total, since other specs may leave their own byte-rows behind.
+  // than asserting a total, since other specs may leave byte-rows behind.
   const orphanList = dialog.getByRole('list', { name: 'Orphaned files' });
   await expect(orphanList.getByText(ORPHAN_BYTE.key, { exact: true })).toBeVisible();
 
   // The read-only Broken references section lists the missing-bytes record by its slug, with no
-  // checkbox and no purge control of its own.
+  // checkbox and no purge control.
   const broken = dialog.getByTestId('cairn-broken-refs');
   await expect(broken.getByText(MISSING.slug, { exact: true })).toBeVisible();
   await expect(broken.getByRole('checkbox')).toHaveCount(0);

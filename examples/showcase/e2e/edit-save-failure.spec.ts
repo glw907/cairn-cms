@@ -12,7 +12,7 @@ import { stringify } from 'devalue';
 const ENTRY = '/admin/posts/2026-06-hello?saved=1';
 const TYPED = 'Words that must survive a failed save.';
 
-/** The word "Saved" as its own word; "Unsaved changes" must not count. */
+/** The word "Saved" as a standalone word; "Unsaved changes" must not count. */
 const SAVED = /\bSaved\b/;
 
 /** A SvelteKit action envelope for a `fail()` result, the shape the client deserializes. */

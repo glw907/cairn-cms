@@ -7,10 +7,10 @@
      amendment gets re-tested against this same page rather than a new one.
 
      Deliberately un-cairn: no `cairn-admin.css`, no `admin-toolkit` import, no
-     grammar token (`type-*`/`gap-*`), no `StatusChip`. `probe-craft.css` is this route's own
+     grammar token (`type-*`/`gap-*`), no `StatusChip`. `probe-craft.css` is this route's
      from-scratch Tailwind/DaisyUI build, the stock defaults a fresh build reaches for first.
 
-     `?theme=dark` switches the DaisyUI theme server-side (both are DaisyUI's own bundled themes,
+     `?theme=dark` switches the DaisyUI theme server-side (both are DaisyUI's bundled themes,
      `light`/`dark`), so a screenshot needs no client script or interaction to settle: navigate to
      `/probe-craft` for light and `/probe-craft?theme=dark` for dark. The "Switch to ..." link
      exists for a human or agent exploring the fixture directly in a browser.

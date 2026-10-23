@@ -5,10 +5,10 @@
 // The showcase's member login route, request and confirm as two named form actions on one page,
 // as "Build the login route" in docs/extend/add-a-second-sign-in-group.md lays out; logout lives
 // on the members page. Both actions pass the raw SvelteKit `RequestEvent`
-// straight to `memberChannel.actions.*`: it satisfies the actions' own `CairnEvent` constraint
+// straight to `memberChannel.actions.*`: it satisfies the actions' `CairnEvent` constraint
 // structurally, and the factory owns every cookie, origin, and challenge check itself. The
 // request action consumes the engine's ChannelRequestOutcome and the confirm action its
-// ChannelConfirmOutcome, and each returns a two-outcome ActionData of its own; both switch on
+// ChannelConfirmOutcome, and each returns a separate two-outcome ActionData; both switch on
 // outcome, never on a boolean, which is the lesson this route stands for.
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -28,11 +28,11 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   /**
    * Mint and deliver a code for the posted `contact`. Always answers `sent` for a well-formed
-   * contact, known or not (the factory's own anti-enumeration discipline), so this action never
+   * contact, known or not (the factory's anti-enumeration discipline), so this action never
    * distinguishes a roster hit from a miss either.
    */
   request: async (event) => {
-    // A clone, never the original request: `memberChannel.actions.request` reads its own clone
+    // A clone, never the original request: `memberChannel.actions.request` reads a clone
     // of the same body, and a request's `formData()` can only be consumed once.
     const form = await event.request.clone().formData();
     const contact = String(form.get('contact') ?? '');

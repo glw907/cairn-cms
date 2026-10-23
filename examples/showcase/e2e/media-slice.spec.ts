@@ -8,7 +8,7 @@ import { parse as devalueParse } from 'devalue';
 //   1. Ingest: the upload action stores a PNG under the fake R2 bucket and returns a `media:`
 //      reference and a server-owned record, committing nothing to git.
 //   2. Render: overlaying that record into a createMediaResolver and rendering the inserted `media:`
-//      reference through the site's own adapter render rewrites it to its delivery `/media/...`
+//      reference through the site's adapter render rewrites it to its delivery `/media/...`
 //      path (the leg the /test/render-media fixture exercises).
 //   3. Save: saving the entry with the body and the optimistic record commits the body and a
 //      media.json carrying the row in one commit on the entry's branch.
@@ -101,7 +101,7 @@ test('the media slice: upload stores and returns a reference, the record renders
   expect(record.alt).toBe('A quiet shore');
 
   // 2. Render. Overlay the record into a fresh resolver and render a body that inserts the
-  //    reference, through the site's own adapter render. The image src rewrites to the delivery
+  //    reference, through the site's adapter render. The image src rewrites to the delivery
   //    path: <base>/<slug>.<hash>.<ext> under /media.
   const body = `An inline image: ![${record.alt}](${reference})\n`;
   const renderRes = await request.post('/test/render-media', { data: { body, record } });

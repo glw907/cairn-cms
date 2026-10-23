@@ -49,7 +49,7 @@ async function waitForServer(url, timeoutMs = 30_000) {
 }
 
 /** Start the showcase's `preview` script on the default port and resolve once it answers, or null
- *  if BASE_URL was already reachable (nothing to tear down). The child leads its own process
+ *  if BASE_URL was already reachable (nothing to tear down). The child leads a separate process
  *  group so `stopServer` reaches wrangler and the workerd it started, not only npm. */
 async function ensureServer() {
   if (await waitForServer(BASE_URL, 1000)) return null;
@@ -133,7 +133,7 @@ async function checkStrayCorner(page, path, offenders) {
       if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
       if (cs.visibility === 'hidden' || cs.display === 'none' || cs.opacity === '0') continue;
       const r = el.getBoundingClientRect();
-      // A visually-hidden accessibility node (SvelteKit's own `#svelte-announcer` aria-live
+      // A visually-hidden accessibility node (SvelteKit's `#svelte-announcer` aria-live
       // region, or a hand-rolled sr-only span) renders as a 1x1 point; that is not the
       // meaningfully-sized stray element this check is hunting for.
       if (r.width <= 4 || r.height <= 4) continue;
@@ -176,12 +176,12 @@ async function checkUnstyledBandLists(page, path, offenders) {
 }
 
 /** Check (e), soft: on a band-composed page, adjacent full-width bands must not repeat the
- *  identical background. A section with no background (transparent, the page's own ground
+ *  identical background. A section with no background (transparent, the page's ground
  *  showing through) never counts as a "band" for this comparison; only two visibly-tinted
  *  neighbors repeating the same color are worth a human's eyes. */
 async function checkBandAlternation(page, path, warnings) {
   const sequence = await page.evaluate(() => {
-    // `.home-shell` marks a band-composed page's root element; a theme's own stylesheet can key
+    // `.home-shell` marks a band-composed page's root element; a theme's stylesheet can key
     // off the same class (for example to cancel a shared page-level box for that one route). A
     // page with no such root simply yields an empty sequence below.
     const root = document.querySelector('.home-shell');

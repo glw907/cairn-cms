@@ -13,7 +13,7 @@
      @import './theme.css';
      @import './cairn.css';
 
-   No markup change is needed. Import order matters for the base-ladder tokens below (see their own
+   No markup change is needed. Import order matters for the base-ladder tokens below (see their
    comment); every other rule here wins over Waymark's neutral default regardless of order. See
    docs/extend/theme-your-public-site.md for the full walkthrough.
    ============================================================================ */
@@ -23,7 +23,7 @@
    the parity rule theme.css documents: the author sees the same face as the reader. */
 @import '@fontsource-variable/fraunces/opsz.css';
 
-/* Waymark's own `@theme` block puts --font-display and --text-step-* in Tailwind's `theme`
+/* Waymark's `@theme` block puts --font-display and --text-step-* in Tailwind's `theme`
    cascade layer. A plain, unlayered custom-property declaration always beats a layered one
    regardless of specificity or source order, since the cascade sorts layer position before
    specificity, so this block needs no `!important` and no ordering care. */
@@ -73,10 +73,10 @@
   --color-base-content: oklch(92% 0.007 80) !important;
 }
 
-/* The three signature prose gestures, enabled unconditionally. cairn's own opt-in mechanism scopes
+/* The three signature prose gestures, enabled unconditionally. cairn's opt-in mechanism scopes
    these under `.prose[data-flourish]` in prose.css, inside prose.css's `@layer components`; because
    the rules below are unlayered, they win over that layered default with no markup change and no
-   `data-flourish` attribute on the `.prose` root. Each rule is copied from cairn's own
+   `data-flourish` attribute on the `.prose` root. Each rule is copied from cairn's
    `[data-flourish]` variant, with the attribute stripped. */
 
 /* The hanging pull-quote: the whole quote outdents into the left margin past 64rem. */

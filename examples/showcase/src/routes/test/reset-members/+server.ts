@@ -5,13 +5,13 @@
 //
 // Clears `cairn_channel_code`, `cairn_channel_session`, and `cairn_channel_budget`, the three
 // tables that accumulate request-scoped state. `cairn_channel_meta` is deliberately left alone:
-// it carries `schema_version` (verifySchema's own read) and the lazily-provisioned
+// it carries `schema_version` (verifySchema's read) and the lazily-provisioned
 // `identity_salt`, and `memberChannel` is a module-level singleton that caches a positive check
 // of each forever (src/lib/auth-channel/factory.ts's `schemaVerified`/`cachedSalt`). Deleting
 // `schema_version` after the first request would make every subsequent `verifySchema` call fail
 // (no row to read), and every login would answer `unavailable`.
 //
-// The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
+// The refusal lives in the body, `devDelivery`'s precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -30,7 +30,7 @@ export const POST: RequestHandler = async ({ url }) => {
   if (!db) {
     error(404, 'Not found');
   }
-  // One batch, so the three deletes commit together or not at all, as the channel's own sweep does.
+  // One batch, so the three deletes commit together or not at all, as the channel's sweep does.
   await db.batch([
     db.prepare('DELETE FROM cairn_channel_code'),
     db.prepare('DELETE FROM cairn_channel_session'),

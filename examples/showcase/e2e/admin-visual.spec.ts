@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 // The five-viewport responsive bar (320, 390, 768, 1440, 2560), in both color schemes. Signups
-// (the consumer's own custom admin screen, the in-repo proof that a developer's route built on
+// (the consumer's custom admin screen, the in-repo proof that a developer's route built on
 // the packaged admin toolkit, `@glw907/cairn-cms/admin-toolkit`, meets the family's responsive
-// standard the same way the engine's own admin screens do) was the first surface swept across
-// this bar; the six motion surfaces below reuse the same array rather than declaring their own.
+// standard the same way the engine's admin screens do) was the first surface swept across
+// this bar; the six motion surfaces below reuse the same array rather than declaring another.
 const WIDTH_BAR = [320, 390, 768, 1440, 2560];
 
 // The SSR theme is selected by the `cairn-admin-theme` COOKIE, not by emulateMedia: the server reads the
@@ -249,19 +249,19 @@ for (const width of WIDTH_BAR) {
 // The edit page in zen: Ctrl+Shift+. toggles it at every width (the footer toggle itself is
 // hidden on a narrow viewport, so the keyboard chord is the one route that reaches every width in
 // this bar). The page settles on the entry heading rather than the Write tab (the plain edit page
-// pair's own settle signal): below sm the tab folds into the toolbar's own overflow menu, so it is
-// never a tab role at every width this bar sweeps. The floating "Exit zen" chip is zen's own
+// pair's settle signal): below sm the tab folds into the toolbar's overflow menu, so it is
+// never a tab role at every width this bar sweeps. The floating "Exit zen" chip is zen's
 // settle signal. The heading is server-rendered, so it shows before the page hydrates, while the
 // chord's keydown listener attaches only on the client, and a press in that gap is dropped.
 // CodeMirror mounts `.cm-content` client-side after hydration, so the press waits on it, the same
-// readiness signal golden-path.spec.ts waits on before its own keyboard input. Entering zen from
+// readiness signal golden-path.spec.ts waits on before its keyboard input. Entering zen from
 // the keyboard moves focus into the mounted editor, which paints its keyboard focus hairline; the
 // test checks that focus landed there, then blurs the editor so the capture shows zen's layout
 // unfocused, the same no-focus convention the plain edit page pair above follows. Unmasked, unlike
-// the plain edit page pair above: zen drops the band entirely, so the manuscript's own bounding
+// the plain edit page pair above: zen drops the band entirely, so the manuscript's bounding
 // box grows to meet the fixed zen chip at a narrow width (a mask paints its locator's bounding box
 // onto the final image regardless of stacking order, which would paint over the chip too); the
-// dev seed's own static "The original body." is what a mask would have hidden, not live input.
+// dev seed's static "The original body." is what a mask would have hidden, not live input.
 for (const width of WIDTH_BAR) {
   test(`admin edit page zen — light — ${width}px`, async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -294,10 +294,10 @@ for (const width of WIDTH_BAR) {
   });
 }
 
-// The drawer open as an overlay: the office shell's own "Open menu" button, below each route's
+// The drawer open as an overlay: the office shell's "Open menu" button, below each route's
 // persist breakpoint, flips the checkbox that makes the nav an APG modal dialog over the
 // document. Above the persist breakpoint the toggle is hidden (the persistent sidebar already
-// stands in for it), so the click is conditional on the trigger's own visibility rather than
+// stands in for it), so the click is conditional on the trigger's visibility rather than
 // forcing a state the shell does not offer at that width. The run-to-run variance this
 // `maxDiffPixels` was widened for had one cause, daisyUI leaving the open panel compositor-
 // promoted, and `cairn-admin.css` now closes it (the drawer `will-change` rule, guarded by
@@ -340,9 +340,9 @@ for (const width of WIDTH_BAR) {
   });
 }
 
-// The persistent sidebar: the office shell's resting nav at whatever state the width's own
+// The persistent sidebar: the office shell's resting nav at whatever state the width's
 // breakpoint puts it in, distinct from the overlay pair above only in that this one never clicks
-// the toggle. `.drawer-side`'s presence in the DOM is unconditional; only its own responsive CSS
+// the toggle. `.drawer-side`'s presence in the DOM is unconditional; only its responsive CSS
 // decides whether it reads as the fixed column or the off-canvas overlay this width bar sweeps.
 for (const width of WIDTH_BAR) {
   test(`admin sidebar persistent — light — ${width}px`, async ({ page, context, baseURL }) => {
@@ -370,12 +370,12 @@ for (const width of WIDTH_BAR) {
   });
 }
 
-// A dialog open: DeleteDialog, the smallest instance, opened from the edit page's own More
+// A dialog open: DeleteDialog, the smallest instance, opened from the edit page's More
 // actions popover. Its role="alertdialog" is the settle signal. Unmasked, unlike the plain edit
 // page pair above: the modal-box sits centered over the same screen region the CodeMirror content
 // occupies, so masking `.cm-content` here would paint over the dialog itself (a mask paints its
 // locator's bounding box onto the final image regardless of stacking order); the sliver of
-// manuscript the dialog leaves visible is the dev seed's own static "The original body.", not live
+// manuscript the dialog leaves visible is the dev seed's static "The original body.", not live
 // input, so nothing here is exposed that a mask exists to guard.
 for (const width of WIDTH_BAR) {
   test(`admin delete dialog — light — ${width}px`, async ({ page, context, baseURL }) => {
@@ -407,9 +407,9 @@ for (const width of WIDTH_BAR) {
   });
 }
 
-// The command palette open: the office shell's own quick jump-to, opened from its band trigger
-// (visible at every width in this bar, unlike the desk band's own trigger which folds away below
-// sm). The dialog's own aria-label is the settle signal.
+// The command palette open: the office shell's quick jump-to, opened from its band trigger
+// (visible at every width in this bar, unlike the desk band's trigger which folds away below
+// sm). The dialog's aria-label is the settle signal.
 for (const width of WIDTH_BAR) {
   test(`admin command palette — light — ${width}px`, async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -438,7 +438,7 @@ for (const width of WIDTH_BAR) {
   });
 }
 
-// The media library with a selection: the grid's own per-tile checkbox opens the sticky
+// The media library with a selection: the grid's per-tile checkbox opens the sticky
 // "Selection actions" bar, distinct from the detail slide-over pair above, which opens by
 // clicking the tile itself rather than its checkbox.
 for (const width of WIDTH_BAR) {
@@ -558,7 +558,7 @@ test('admin edit page zen toggle — reduced motion samples at most two margin-l
 });
 
 // The G1 fixture screen (theme-kit.spec.ts), captured at 1440 and 390 only: it is a CSS proof
-// screen, not a real page in the responsive bar's own swept surface, so it skips 320/768/2560.
+// screen, not a real page in the responsive bar's swept surface, so it skips 320/768/2560.
 // New baselines; expected missing until the settle step regenerates them on CI.
 for (const width of [1440, 390]) {
   test(`admin theme kit — light — ${width}px`, async ({ page, context, baseURL }) => {

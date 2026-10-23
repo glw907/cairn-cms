@@ -20,7 +20,7 @@ prerender crawler skips a target that answers every crawl-time request with a 40
 The theme toggle sets `data-theme` on `<html>` between `cairn` and `cairn-dark` and persists the
 choice to a `cairn-site-theme` cookie (path `/`, a year); the inline script in `app.html` reads that
 cookie before first paint so a returning visitor's choice never flashes the system default. With no
-stored choice, `theme.css`'s own `prefers-color-scheme` block follows the OS setting live, with no
+stored choice, `theme.css`'s `prefers-color-scheme` block follows the OS setting live, with no
 JS: the toggle is a standing override from the first explicit choice on, never a tri-state control.
 
 The layout is no-JS-first responsive, with a deliberate two-row lockup below the `md` breakpoint
@@ -51,7 +51,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
 
   /**
    * Whether a nav item points at the page being viewed. The home link matches only the exact root;
-   * a deeper link matches its own path or anything nested under it, so an article page still lights
+   * a deeper link matches its path or anything nested under it, so an article page still lights
    * its section.
    */
   function isCurrent(href: string): boolean {
@@ -83,7 +83,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
       class="brand-link inline-flex min-h-11 items-center text-base-content no-underline"
       aria-label={siteName || 'Home'}
     >
-      <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
+      <!-- Nowrap keeps the name on one line at any width; the header's flex-wrap (above) is what
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
       <span
         class="whitespace-nowrap font-display font-heading heading-case text-step-1 tracking-tight"
@@ -92,7 +92,7 @@ rather than an unplanned wrap; see the markup comment above the nav/toggle group
     </a>
 
     <!-- Below md this group is `contents`: it disappears from the box model, so the nav and the
-         toggle rejoin the outer row's own flex flow as flat siblings of the wordmark, where `order`
+         toggle rejoin the outer row's flex flow as flat siblings of the wordmark, where `order`
          puts the toggle on row one beside the wordmark and the full-width nav on row two beneath it.
          At md and up the group becomes a real flex box again, and `order-none` restores the source
          order (nav, then toggle) as one unit, which is the original single-row composition: wordmark

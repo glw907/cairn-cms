@@ -12,7 +12,7 @@ exemplar: extenders/sanity-custom-tool
 **Why they arrive:**
 - They built the site by hand and want editors to share a draft through a link that opens it as a page of the site, in the site's own chrome and styles. :fact[gvim4v] :fact[6c3amx]
 - Their site came from `create-cairn-site`, and they want to know which pieces the tree already carries and what is left to do. The scaffold carries the migration file, the preview route, and the banner page. :fact[gepykz] :fact[6c3amx] :fact[6hmgmv]
-- Their editors already see a Share preview group that answers "The preview_tokens table is missing." on every use, and they want to finish the setup or hide the group. :fact[6gmzt1] :fact[rr00qr]
+- Their editors already see a Share preview group that answers "The preview_tokens table is missing." on every revoke and on every mint of an entry with a saved draft, and they want to finish the setup or hide the group. :fact[6gmzt1] :fact[rr00qr]
 - Their site runs its own review workflow on a custom admin screen, and they want that screen to mint and revoke links. :fact[nssepj]
 
 **What they already know.** SvelteKit route groups, layouts, server `load` functions, and form actions; Wrangler's D1 migration commands; and the site's own public entry routes. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
@@ -25,7 +25,7 @@ The editor's half already ships: every edit screen shows the Share preview group
 It then splits the work between the editor's half that ships and the pieces the site adds, and states the contract: apply the preview migration, mount the preview route inside your entry pages' layout group, render the banner, and check that a minted link opens the draft in your site's own styles. :fact[6gmzt1] :fact[049lo2] :fact[gvim4v]
 It tells a scaffolded site's developer that the tree already carries the migration file, the route, and the banner page, so that developer applies the migration and goes on to verify. :fact[gepykz] :fact[6c3amx] :fact[6hmgmv]
 It names the other reasons to arrive, each with the heading that answers it: an editor meeting the missing-table message goes to Keep or hide the Share preview group, and a site minting from its own screen goes to Mint and revoke from your own admin route. :fact[rr00qr] :fact[nssepj]
-A Note follows the introduction: the link is the credential, so anyone who holds it reads the draft with no sign-in until it expires, an editor revokes it, or a change to the entry ends it, and a forwarded link forwards that access. A draft that only signed-in editors may read is not one to share this way. :fact[afkvsb] :fact[76m2vf] :fact[pimnjy]
+A Note follows the introduction: the link is the credential, so anyone who holds it reads the draft with no sign-in until it expires, an editor revokes it, a change to the entry ends it, or the editor who minted it is removed, and a forwarded link forwards that access. A draft that only signed-in editors may read is not one to share this way. :fact[afkvsb] :fact[76m2vf] :fact[pimnjy] :fact[sp9rem]
 
 **What it leaves to other pages:**
 - Building the public entry route the preview mirrors, which belongs to Build the public routes.
@@ -63,7 +63,7 @@ A Note follows the introduction: the link is the credential, so anyone who holds
 *Lets a site that is not ready for previews hide the group its editors already see, before any setup.*
 
 - Every edit screen shows the Share preview group in the Details slide-over by default, because `EditPage`'s `previewMint` prop defaults to `true` and `createCairnAdmin` wires both actions. :fact[6gmzt1] :fact[bydgww]
-- Until the migration runs, each mint or revoke from the group answers "The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again." :fact[rr00qr]
+- Until the migration runs, each revoke from the group, and each mint of an entry with a saved draft, answers "The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again." :fact[rr00qr]
 - A site adopting previews keeps the default and goes on to the migration.
 - If your site is not ready to share previews, in `src/routes/admin/[...path]/+page.svelte`, pass `previewMint={false}` to `CairnAdmin`. :fact[dqe7ij] :fact[sp3scf]
 - A site that renders `EditPage` itself passes the same prop to `EditPage`. :fact[6gmzt1]
@@ -161,7 +161,7 @@ export const load: PageServerLoad = (event) =>
 *Points the banner's colors and radius at the site's own tokens when its defaults clash with the theme.*
 
 - The banner reads five custom properties and declares none of them on its own element, so a declaration on `:root` wins with no specificity fight. :fact[xssf06]
-- Their defaults are daisyUI 5 role tokens with no color literal, so on a daisyUI site the banner already follows the theme in every color scheme. A site without daisyUI points the color properties at its own tokens. :fact[xssf06]
+- Their color defaults are daisyUI 5 role tokens, apart from the ended state's link, which reads cairn's own `--cairn-info-ink` before falling back to a daisyUI role. None is a color literal, so on a daisyUI site the banner already follows the theme in every color scheme. A site without daisyUI points the color properties at its own tokens. :fact[xssf06]
 - Each property sets one part of the banner:
 - `--cairn-preview-bg` and `--cairn-preview-border` set the background and the border in both states. :fact[74ls5e]
 - `--cairn-preview-fg` sets the text. :fact[74ls5e]
@@ -233,7 +233,7 @@ x-frame-options: DENY
 
 5. In the Share preview group, select **Revoke all links**. The group reports how many links it revoked and clears the link it showed. :fact[sp1mbt] :fact[pimnjy]
 6. In the private window, reload the page. The page answers 404. :fact[l4waby]
-- If the link answers an error at any step, its logged reason names the cause. :fact[rdwesf]
+- If the link answers an error at any step, the `reason` on its `preview.refused` record names the cause. A token of the wrong shape writes no record. :fact[rdwesf] :fact[czkfg9]
 - See [Diagnose a refused link](#diagnose-a-refused-link).
 
 ## The lifecycle of a shared link
@@ -256,7 +256,7 @@ x-frame-options: DENY
 - A refused link answers 404, or 503 when `AUTH_DB` is missing, so the `reason` on its `preview.refused` record is the diagnosis. :fact[rdwesf] :fact[2awy1w]
 - A link whose token has the wrong shape answers 404 and writes no record. :fact[czkfg9]
 - See [Find the records](debug-your-site.md#find-the-records).
-- The reasons, in the order `loadPreview` checks them: :fact[2awy1w]
+- The reasons, in the order `loadPreview` checks them, with `branch_gone` and `draft_invalid` as the two outcomes of the last check, the branch read: :fact[2awy1w]
 
 :::row
 **Symptom.** `bindings_missing`, and the link answers 503.

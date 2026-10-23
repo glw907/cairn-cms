@@ -19,9 +19,9 @@ exemplar: extenders/django-custom-management-commands
 
 **Background.** The public pages are route files in the site's SvelteKit app, and each route is a few lines around an engine builder. :fact[j0ut9n] :fact[pkt8i6] :fact[pvk6h5]
 The entry, twin, archive, feed, sitemap, and robots routes prerender from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. The preview route renders at request time and reads the entry's holding branch. :fact[1mkckz] :fact[8k9xwm] :fact[jdz8hj]
-The routes read two shared inputs: one set of typed indexes from `createSiteIndexes`, and one origin string. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
+Two inputs are shared across the routes: one set of typed indexes from `createSiteIndexes`, and one origin string. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
 
-**What the page does for them.** The introduction opens on that model: the routes are site files that read the shared index, the origin, or both, most of them through an engine builder. :fact[pkt8i6] :fact[yef4lo]
+**What the page does for them.** The introduction opens on that model: the routes are site files built on the engine's builders and on two shared inputs, the index and the origin. :fact[pkt8i6] :fact[yef4lo]
 It states the task: build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build. :fact[pkt8i6] :fact[8k9xwm]
 It tells the scaffolded reader that the tree holds these routes already, except the tag page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
 It names where the engine's head stops: it covers entry pages, and it reads the hero from the frontmatter key `image`. :fact[k7nln3] :fact[k5uws5]

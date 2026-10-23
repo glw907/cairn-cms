@@ -27,7 +27,7 @@ list toolbar each register.
 All three register from the instance body, so they are live before any child exists and hold from
 first paint. None depends on a pose, which a consumer runs and this component never does.
 
-Mount this in a document dedicated to one reproduction, its route inside an `<iframe>`, never
+Mount this in a document dedicated to one reproduction, on a separate route inside an `<iframe>`, never
 beside a live admin surface. The window firewall reaches the whole document rather than the wrapper,
 and it wins by registration order rather than by phase, so a listener already on `window` when this
 component mounts still answers first. On a shared page it takes away every keyboard shortcut, every

@@ -233,7 +233,7 @@ x-frame-options: DENY
 
 5. In the Share preview group, select **Revoke all links**. The group reports how many links it revoked and clears the link it showed. :fact[sp1mbt] :fact[pimnjy]
 6. In the private window, reload the page. The page answers 404. :fact[l4waby]
-- If the link answers an error at any step, the `reason` on its `preview.refused` record names the cause. A token of the wrong shape writes no record. :fact[rdwesf] :fact[czkfg9]
+- If the link answers 404 or 503 at any step, the `reason` on its `preview.refused` record names the cause. A token of the wrong shape writes no record, and neither does an unhandled failure such as a failed GitHub read. :fact[rdwesf] :fact[czkfg9]
 - See [Diagnose a refused link](#diagnose-a-refused-link).
 
 ## The lifecycle of a shared link

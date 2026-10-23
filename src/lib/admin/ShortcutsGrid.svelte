@@ -2,7 +2,7 @@
 @component
 The two-column shortcut grid, the shared body of both discoverability sheets (ShortcutsDialog and
 the Markdown help dialog). Each row pairs a label with its chord, read from the single
-editor-shortcuts source. The host wraps it with its own heading and any closing line.
+editor-shortcuts source. The host wraps it with its heading and any closing line.
 -->
 <script lang="ts">
   import { editorShortcuts } from './editor-shortcuts.js';

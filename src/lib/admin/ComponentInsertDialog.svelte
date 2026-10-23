@@ -13,14 +13,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   const SEARCH_THRESHOLD = 8;
 
   /** Whether a def carries a schema (any attribute or slot), so it opens the guided form rather
-   *  than inserting a bare template. Exported so a host deciding on its own guided-edit affordance
+   *  than inserting a bare template. Exported so a host deciding on its guided-edit affordance
    *  (the edit page's Edit-block control) reads the same notion the dialog lists and chooses by. */
   export function hasSchema(def: ComponentDef): boolean {
     return Object.keys(def.attributes ?? {}).length > 0 || (def.slots?.length ?? 0) > 0;
   }
   /** The registry's pickable components. A def is actionable when a schema opens the guided form or
    *  a template inserts directly; a def with neither is not listed. A `hidden` def is then dropped,
-   *  so the hidden filter applies after the actionable one. Exported so a host rendering its own
+   *  so the hidden filter applies after the actionable one. Exported so a host rendering its
    *  trigger (the edit page's toolbar) can hide it under the same condition the dialog uses. */
   export function insertableDefs(registry?: ComponentRegistry): ComponentDef[] {
     return (registry?.defs ?? []).filter(
@@ -79,12 +79,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
      *  host that passes none simply gets no preview pane. */
     render?: SiteRender;
     /** The adapter's resolved preview knob (stylesheets and container class), threaded to
-     *  buildPreviewDoc so the preview frame links the site's own CSS, the same as EditPage. */
+     *  buildPreviewDoc so the preview frame links the site's CSS, the same as EditPage. */
     preview?: ResolvedPreview | null;
     /** Disable the trigger; the host sets it while Preview shows. */
     disabled?: boolean;
     /** Render the built-in Insert block trigger. False mounts only the dialog, for a host that
-     *  supplies its own trigger and opens the dialog through the exported open(). */
+     *  supplies its trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
   }
 
@@ -210,7 +210,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     resetPreview();
     dialog?.showModal();
     // Focus the search box on open when it shows, so an editor with a large catalog types straight
-    // into the filter. The dialog's own focus trap already lands focus on the first row otherwise.
+    // into the filter. The dialog's focus trap already lands focus on the first row otherwise.
     if (showSearch) {
       void tick().then(() => searchInput?.focus());
     }
@@ -247,7 +247,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     if (hasSchema(def)) {
       resetPreview();
       picked = def;
-      // ComponentForm focuses its own first field on mount.
+      // ComponentForm focuses its first field on mount.
     } else {
       insert(def.insertTemplate ?? '');
       close();
@@ -265,7 +265,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   }
 
   // The native <dialog> turns Escape into a close. At the configure step Escape should step back to
-  // the catalog instead (one level), matching the catalog's own Back control; from the catalog it
+  // the catalog instead (one level), matching the catalog's Back control; from the catalog it
   // closes. Handling cancel (the event the dialog fires on Escape) lets us preventDefault and
   // intercept the first level.
   function onCancel(e: Event) {
@@ -480,11 +480,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 {/if}
 
 <style>
-  /* cairn-glyph is the public render pipeline's own class (src/lib/render/glyph.ts): the admin
+  /* cairn-glyph is the public render pipeline's class (src/lib/render/glyph.ts): the admin
      preview reuses the exact class the embed-card glyph ships with on a public page, deliberately
      outside the admin sheet since public render output stays design-agnostic. The glyph's fill
      rides currentColor from the surrounding markup. The rule carries only an inert custom
-     property, never read anywhere, since an empty ruleset fails svelte-check's own lint. */
+     property, never read anywhere, since an empty ruleset fails svelte-check's lint. */
   .cairn-glyph {
     --cairn-naming-hook: true;
   }

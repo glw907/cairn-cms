@@ -106,7 +106,7 @@ interface PreparedFold {
 // The pill placeholder: a real focusable button counting the hidden lines, the screen-reader story
 // for a fold. preparePlaceholder computes the count, the resolved label, the opener's title
 // attribute, and the tooltip off the folded char range so placeholderDOM renders all four without
-// re-deriving. Clicking unfolds through CodeMirror's own onclick handler.
+// re-deriving. Clicking unfolds through CodeMirror's onclick handler.
 function preparePlaceholder(
   state: EditorState,
   range: { from: number; to: number },
@@ -136,7 +136,7 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   pill.type = 'button';
   pill.className = 'cm-cairn-fold-pill';
   if (prepared.label) {
-    // The label carries its own truncating span (CSS ellipsis past ~24 characters, see
+    // The label carries its truncating span (CSS ellipsis past ~24 characters, see
     // cairn-admin's fold-pill rule) so a long component label never crowds out the title or the
     // count; both sit outside the span, as a bare text node, so neither can ever truncate.
     const labelSpan = document.createElement('span');
@@ -148,7 +148,7 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
     pill.textContent = `${prepared.lines} lines`;
   }
   // A folded row is only ever rendered while folded, so aria-expanded is always false here; the
-  // redundancy with the gutter chevron's own aria-expanded is intended (spec 2026-06-30).
+  // redundancy with the gutter chevron's aria-expanded is intended (spec 2026-06-30).
   pill.setAttribute('aria-expanded', 'false');
   const ariaName = prepared.label ? `${prepared.label} section` : 'section';
   // The title rides the aria-label too (not just the visible text), so the chip carries the same
@@ -157,7 +157,7 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   // learn the container's title while it stays folded.
   const ariaTitle = prepared.title ? `, “${prepared.title}”` : '';
   pill.setAttribute('aria-label', `${ariaName}${ariaTitle}, ${prepared.lines} hidden lines`);
-  // The registry's `use` line carries the pill's native tooltip; the opener's own {title="..."}
+  // The registry's `use` line carries the pill's native tooltip; the opener's {title="..."}
   // attribute now rides the visible chip text and the aria-label above instead.
   if (prepared.use) pill.title = prepared.use;
   pill.addEventListener('click', onclick);
@@ -241,7 +241,7 @@ function caretInside(state: EditorState, range: ContainerRange): boolean {
 }
 
 // The keymap: Ctrl+Shift+[ folds, Ctrl+Shift+] unfolds, the innermost container at the caret. No
-// fold-all, no chords. (CodeMirror's own foldKeymap binds the same keys to its tree-folding
+// fold-all, no chords. (CodeMirror's foldKeymap binds the same keys to its tree-folding
 // commands; this module replaces them with the container-aware versions and never adds foldKeymap.)
 // At Prec.high so it resolves the shifted bracket ahead of the default keymap's Ctrl-[ indentLess,
 // which the same keystroke also matches on the non-shift lookup.
@@ -305,7 +305,7 @@ const flashField = StateField.define<DecorationSet>({
 
 const FLASH_MS = 400;
 
-// The safety invariant, in one transactionExtender. CodeMirror's own fold field already clears a
+// The safety invariant, in one transactionExtender. CodeMirror's fold field already clears a
 // fold the selection head sits inside and a fold a delete touches; this covers the rest: an insert
 // touching a fold boundary, a paste across it, an undo/redo landing inside, and a selection range
 // (not just its head) extending into hidden text. It walks the start state's folds, maps each
@@ -313,7 +313,7 @@ const FLASH_MS = 400;
 // fold's outside), and appends an unfold effect for any the change or new selection touches. A
 // replace inside a fold leaves it open afterward, which falls out of the same rule.
 //
-// foldCharRange now starts the fold at the opener line's own start, so the opener's fence
+// foldCharRange now starts the fold at the opener line's start, so the opener's fence
 // machinery folds away into the chip along with the body and the closer (the absorbed-opener
 // chip). That widening is what makes this one invariant cover an edit landing on the (now-hidden)
 // opener line too, with no separate mechanism: a rename dispatched while a container is folded
@@ -427,7 +427,7 @@ class FoldMarker extends GutterMarker {
     readonly folded: boolean,
     readonly active: boolean,
     // The resolved block name, computed once by the caller (lineMarker) from the opener line's
-    // current text. Carried as its own identity field, not re-derived in toDOM, so a directive
+    // current text. Carried as its identity field, not re-derived in toDOM, so a directive
     // renamed in place (same span, same fold state) is not mistaken for the same marker by eq
     // and does not reuse cached DOM carrying the old name.
     readonly name: string,

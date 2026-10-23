@@ -28,7 +28,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
      *  show the incomplete state and the host can mirror the disabled Insert. */
     incomplete?: boolean;
     /** Seed the working values from these instead of the schema's preview sample. The dialog passes
-     *  it in edit mode to re-open a placed component into its own values; the catalog insert path
+     *  it in edit mode to re-open a placed component into its values; the catalog insert path
      *  leaves it unset and keeps the previewValues seed. */
     initial?: ComponentValues;
     /** The submit button's label. The dialog passes 'Update' in edit mode; the insert path keeps
@@ -151,7 +151,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
    *  attribute below. The chain's final `{:else}` stays a runtime fallback (an icon attribute with
    *  no `icons` prop reaches it too, since that branch's extra `&& icons` guard narrows no type
    *  away), so the compiler cannot prove the chain exhaustive from the template alone; this
-   *  function lists every `FieldDescriptor` arm as its own case so a sixteenth arm fails
+   *  function lists every `FieldDescriptor` arm as its case so a sixteenth arm fails
    *  `npm run check` here. multiselect, image, object, reference, and array never reach a real
    *  component attribute (`checkComponentAttributes` rejects them at `defineComponent`), but `def.attributes`
    *  is still typed over the full union, so this proof covers them too. Never called: the

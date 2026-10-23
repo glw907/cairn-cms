@@ -9,7 +9,7 @@
 // are erased at build time.
 import type { MediaEntry } from '../media/manifest.js';
 // `UploadResult` retired from the public barrel (the verify-wins resolution over the
-// ranked relocate to `/media`); still exported at its declaring module for this file's own typing.
+// ranked relocate to `/media`); still exported at its declaring module for this file's typing.
 import type { UploadResult } from '../sveltekit/content-routes-media-ingest.js';
 import type { IngestFailureKind } from './client-ingest.js';
 import { formatMediaToken } from '../media/reference.js';
@@ -43,12 +43,12 @@ export type UploadEnvelope =
   | { type: 'error'; status?: number }
   | { type: 'opaqueredirect'; status?: number };
 
-// The server's snake_case refuse reasons mapped to a card kind. `too_large` keeps its own card; an
+// The server's snake_case refuse reasons mapped to a card kind. `too_large` keeps its card; an
 // unsupported type reads as a decode failure to the author (the bytes the browser sent are a type
-// the server will not store); `session_expired` is its own outcome. Every other reason
+// the server will not store); `session_expired` is its outcome. Every other reason
 // (`binding_missing`, `media_disabled`, `csrf`, `length_required`, `hash_collision`) is an
 // operational refusal with no author-actionable specifics, so it collapses to the generic card.
-// The map's values are this client-only UploadFailureKind vocabulary, kebab-case by its own
+// The map's values are this client-only UploadFailureKind vocabulary, kebab-case by its
 // convention (client-ingest.ts's IngestFailureKind), not the server wire reason: the two
 // vocabularies are independent and only the keys need to track the server's grammar.
 const REFUSE_TO_FAILURE: Record<string, UploadFailureKind | 'session-expired'> = {
@@ -61,7 +61,7 @@ const REFUSE_TO_FAILURE: Record<string, UploadFailureKind | 'session-expired'> =
  * Map a parsed upload envelope to the single outcome the calling upload surface acts on. A
  * success envelope yields an `inserted` outcome carrying the reference, the record, and the
  * dedup flag. A failure envelope maps its refuse reason to a typed card, with `session-expired`
- * lifted to its own outcome. An opaque or status-0 response (the guard's `redirect: 'manual'`
+ * lifted to its outcome. An opaque or status-0 response (the guard's `redirect: 'manual'`
  * 303) is a session-expired signal, as is any redirect-typed result. An error-typed result with
  * a real status is a generic failure.
  */

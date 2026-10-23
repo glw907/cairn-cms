@@ -28,12 +28,12 @@ export interface PaddedInsertSpan {
 /**
  * The text after `pos` in `doc`, with only the whitespace that separates the caret from the next
  *  non-blank content removed. At a genuine line start (`pos` is 0 or follows a newline), a
- *  non-blank first line, including its own leading indentation, is left untouched: that
+ *  non-blank first line, including its leading indentation, is left untouched: that
  *  indentation belongs to the line's content, not to the caret's separator. The same holds when
  *  the caret sits inside that indentation, so the whole line comes back from its start. Mid-line,
  *  only the inline whitespace immediately after the caret is dropped, since it once sat between
  *  two words on the same line. A blank first line, and any further whole blank lines after it, are
- *  dropped up to the first non-blank line, whose own indentation is always kept.
+ *  dropped up to the first non-blank line, whose indentation is always kept.
  */
 function stripAfter(doc: string, pos: number): string {
   const after = doc.slice(pos);
@@ -100,7 +100,7 @@ export function paddedInsertSpan(doc: string, pos: number, text: string): Padded
   const trailing = after.length > 0 ? '\n\n' : '';
   const finalNewline = after.length === 0 && doc.endsWith('\n');
   const from = before.length;
-  // The document's own final newline stays outside the changed range: the insert ends just before it.
+  // The document's final newline stays outside the changed range: the insert ends just before it.
   const to = doc.length - after.length - (finalNewline ? 1 : 0);
   return { from, to, insert: `${leading}${text}${trailing}`, caret: from + leading.length + text.length };
 }

@@ -41,7 +41,7 @@ import type { NavIcon } from '../sveltekit/admin-nav.js';
 /**
  * Maps each allowed navLayout icon name, or navLayout engine-ref icon override, to its Lucide
  *  component, for the shell to render. `image` and `settings` reuse the same components
- *  {@link ENGINE_NAV_ICONS} carries for its own fixed screens; one Lucide glyph, two allowlists.
+ *  {@link ENGINE_NAV_ICONS} carries for its fixed screens; one Lucide glyph, two allowlists.
  */
 export const ADMIN_NAV_ICONS: Record<NavIcon, Component> = {
   anchor: AnchorIcon,
@@ -79,7 +79,7 @@ export const ADMIN_NAV_FALLBACK_ICON = ListIcon;
 /**
  * Maps each of the engine's fixed utility screen ids to its Lucide icon; a content concept's id is
  *  never a key here, with one exception: `fragments` is the engine-reserved concept id
- *  ({@link FRAGMENTS_CONCEPT_ID} in content/concepts.ts), so it carries its own glyph (layers,
+ *  ({@link FRAGMENTS_CONCEPT_ID} in content/concepts.ts), so it carries its glyph (layers,
  *  "one thing present in many places"; puzzle stays reserved for component blocks). Every other
  *  concept's glyph follows its kind instead: dated concepts take {@link ENGINE_CONCEPT_DATED_ICON}
  *  and undated ones {@link ENGINE_NAV_FALLBACK_ICON}, so adjacent concepts (Posts beside Pages)

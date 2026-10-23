@@ -42,7 +42,7 @@ const WRAP: Record<WrapKind, string> = { bold: '**', italic: '_', code: '`', str
 
 /**
  * Per-kind line-prefix behavior. `prefix` builds the marker for the line's 0-based index (only ol
- * varies by line). `exact` matches a line already carrying this kind's own marker; when every
+ * varies by line). `exact` matches a line already carrying this kind's marker; when every
  * selected line matches, the format toggles off. `strip` matches a competing marker to replace
  * before prefixing, so h2 on an h3 line swaps the level instead of stacking. Quote and ul keep
  * their original add-only behavior, so they carry neither regex.
@@ -395,7 +395,7 @@ function readCaption(doc: string, figure: ContainerDirective, image: Image): str
     const end = child.position?.end?.offset;
     return start != null && end != null && start <= imageStart && end >= imageEnd;
   });
-  // No-blank-line form: caption text trails the token inside the image's own paragraph.
+  // No-blank-line form: caption text trails the token inside the image's paragraph.
   const blockEnd = imageBlock?.position?.end?.offset;
   if (blockEnd != null && doc.slice(imageEnd, blockEnd).trim() !== '') {
     return finishCaption(doc.slice(imageEnd, blockEnd));

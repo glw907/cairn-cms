@@ -1,5 +1,5 @@
 // cairn-cms: the check-and-tint class fragment shared by every admin segmented control (a
-// bordered pick-one radiogroup, a standalone toggle). Each control composes its own layout
+// bordered pick-one radiogroup, a standalone toggle). Each control composes its layout
 // classes (padding, gap, text size, hover treatment), which vary by screen; only the tint that
 // marks the active segment is identical everywhere, so this is the one piece worth sharing. The
 // non-color cue (a check glyph rendered alongside the tint) stays local to each caller, since its
@@ -16,7 +16,7 @@
  * light and 1.773:1 dark, under the floor, which is why the ring is 55% and not 20%. The wash
  * beside it, `bg-base-content/[0.07]`, is deliberately not raised: it is a fill tone rather than
  * the 1.4.11-bearing cue, and raising it would change every caller's fill weight for no
- * conformance gain. `false` returns the muted, untinted ink. A caller appends this to its own
+ * conformance gain. `false` returns the muted, untinted ink. A caller appends this to its
  * layout classes.
  */
 export function segmentTintClass(active: boolean): string {

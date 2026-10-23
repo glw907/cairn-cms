@@ -5,7 +5,7 @@ toolbar partitions by publish state (a segmented filter with live counts) beside
 Hidden filter. The list is a sortable table of one-line rows composed at the document list's 3xl
 natural measure: the title, the date, the publish-state chip, and a quiet delete action. A draft
 row de-emphasizes and carries an eye-off Hidden tag inline beside the title. The header's New
-button is the one create affordance on a populated list (the empty state carries its own CTA).
+button is the one create affordance on a populated list (the empty state carries its CTA).
 Filtering, sorting, and paging run over the loaded entries in component state.
 -->
 <script lang="ts">
@@ -26,7 +26,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
   // itemNoun retired from the `/admin-toolkit` barrel (zero external consumers), so this internal
-  // caller reaches it at its own module instead of through the subpath a site importer would use.
+  // caller reaches it at its module instead of through the subpath a site importer would use.
   import { itemNoun } from '../admin-toolkit/format.js';
 
   interface Props {
@@ -78,7 +78,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   });
 
   // The three publish-state segments, in display order. Each names its partition value, its label,
-  // and the count axis it shows; the toolbar's segmented filter loops these as its own options.
+  // and the count axis it shows; the toolbar's segmented filter loops these as its options.
   const segments: { value: Partition; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => counts.all },
     { value: 'pending', label: 'Pending edits', count: () => counts.pending },
@@ -125,7 +125,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // The toolbar's two independent segmented filters (the admin toolkit's ListToolbar): the
   // publish-state partition and the orthogonal Hidden filter. Both ride the same graduated
   // segmented-display contract (an ARIA radiogroup, roving tabindex, a non-color check glyph)
-  // ConceptList's own pre-toolbar segmented control originated.
+  // ConceptList's pre-toolbar segmented control originated.
   const partitionFilter: ListToolbarFilter = $derived({
     id: 'partition',
     label: 'Filter by publish state',
@@ -209,7 +209,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // through the toolkit's shared `itemNoun` grammar (the same one/many selector Pagination and
   // ListToolbar's count lines use) rather than a bespoke fallback. A count of 1 always resolves to
   // `one` when `singular` is set, and passing a bare string through `itemNoun` returns it unchanged
-  // for a `singular`-less older caller on the descriptor's own default, which is the label (plural).
+  // for a `singular`-less older caller on the descriptor's default, which is the label (plural).
   const createNoun = $derived(itemNoun(1, data.singular ?? data.label));
   // A delete refusal is about the one entry the author tried to delete, so its copy reads in the
   // singular too ("This post could not be deleted."), on the same fallback as the create noun
@@ -217,16 +217,16 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // drift apart.
   const refusedNoun = $derived((data.singular ?? data.label).toLowerCase());
 
-  // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
+  // Shared column-header typography: small uppercase muted labels. The sort buttons add their
   // flex layout and a hover affordance on top of this.
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
   // `relative` plus the `before:` hit-area pair expand the button's EFFECTIVE tap region past its
-  // own 16px-tall painted box, an outward `::before` inset (touch-targets' own sanctioned
+  // 16px-tall painted box, an outward `::before` inset (touch-targets' sanctioned
   // technique) rather than inflating the type-label font size to reach the 24px floor, and a
-  // negative z-index keeps the expanded plate from painting over the button's own text and hover
+  // negative z-index keeps the expanded plate from painting over the button's text and hover
   // color. There is deliberately no explicit before-content utility here: Tailwind's `before:`
   // variant already emits `content: var(--tw-content)` on every `before:`-prefixed utility, and
-  // the sheet's own universal reset sets that custom property to an empty string on every
+  // the sheet's universal reset sets that custom property to an empty string on every
   // element, so the pseudo-element still paints without a utility naming the content explicitly.
   // Naming the utility here (even in a comment) would also compile it back into the built sheet,
   // since Tailwind's scanner reads comment text the same as markup.
@@ -243,11 +243,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   );
 
   // The visible banner for the last submit: a blocked create's fail() leads, then the publish-all
-  // survivor's relayed formError. Null while a delete refusal owns the screen, which renders its own
+  // survivor's relayed formError. Null while a delete refusal owns the screen, which renders its
   // blockers panel below instead.
   const submitError = $derived(deleteRefused ? null : (form?.error ?? data.formError));
 
-  // The one lifecycle error to announce (the visible alerts below keep their own styling). A blocked
+  // The one lifecycle error to announce (the visible alerts below keep their styling). A blocked
   // delete leads, then a blocked create's fail() (form?.error), then the publish-all survivor's
   // relayed formError, then a load error, since the refusal is the most recent and most actionable
   // outcome of the last submit. The refusal announcement carries the blocker count, so a screen
@@ -323,12 +323,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
        so the author sees why without re-opening a dialog. The polite region above announces it, so
        the box itself carries no role or label (a bare div with an aria-label gets no accessible name).
        `flex-col` was inert: daisyUI's `.alert` is `display: grid`, laying its three children out as
-       grid columns (an icon-plus-message alert's own intended shape). Below `sm`, `grid-flow-row`
+       grid columns (an icon-plus-message alert's intended shape). Below `sm`, `grid-flow-row`
        plus a single-column template stack the title, the body paragraph, and the link list instead
        of crushing them into a narrow auto-sized column; at `sm` and above the alert keeps its
        existing column layout. Each stacked `<p>` carries `m-0`: the admin omits global Preflight, so
-       a bare `<p>` keeps the browser's own UA block margin, which does not collapse between CSS grid
-       items and so stacks on top of the grid's own 1rem gap, roughly tripling the title-to-body
+       a bare `<p>` keeps the browser's UA block margin, which does not collapse between CSS grid
+       items and so stacks on top of the grid's 1rem gap, roughly tripling the title-to-body
        space. -->
   <div class="alert alert-error mb-4 max-sm:grid-flow-row max-sm:grid-cols-1 items-start type-body">
     <p class="m-0 font-medium">This {refusedNoun} could not be deleted.</p>
@@ -374,7 +374,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     <AdminTable density="sm" rowCount={pageRows.length}>
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
-             the card's only white rows; the first column insets to the card's own corner radius. -->
+             the card's only white rows; the first column insets to the card's corner radius. -->
         <th class="pl-6" scope="col" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
           <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
             Title
@@ -411,10 +411,10 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                    title-status-date, so the summary line stays off the office list and the
                    Hidden tag sits inline beside the title. -->
               <div class="flex items-center gap-2">
-                <!-- `py-1` grows the link's own box past its 19px line-height to the 24px touch-target
+                <!-- `py-1` grows the link's box past its 19px line-height to the 24px touch-target
                      floor: real padding on the anchor's border box, not a font-size bump. `::before`
                      expansion (ConceptList's other touch-target fix, above) does not reach here since
-                     `truncate`'s own `overflow: hidden` would clip an outward pseudo-element. -->
+                     `truncate`'s `overflow: hidden` would clip an outward pseudo-element. -->
                 <a class="truncate py-1 type-subtitle font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an

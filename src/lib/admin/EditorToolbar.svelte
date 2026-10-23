@@ -5,7 +5,7 @@ code), Structure (headings, lists, quote, table, plus the More overflow), and In
 insert/edit/link/image/figure/Tidy controls), each divided by a hairline and, at sm and up, topped
 with a presentational micro-eyebrow naming it (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md, "grouped micro-eyebrows"). Each cluster wrapper carries `role="group"` with an `aria-label` matching
 its eyebrow, so the grouping reaches assistive tech even though the eyebrow text itself is
-`aria-hidden`. "Blocks" never labels a cluster: cairn's own vocabulary already uses block for a
+`aria-hidden`. "Blocks" never labels a cluster: cairn's vocabulary already uses block for a
 component (Insert block / Edit block), so the word appears only inside those two existing control
 labels, never as a group name. A persistent 44px "?" control sits at the strip's right end at every
 width (a glyph plus a sr-only "Markdown help" label) and calls the host's `onHelp`; it never
@@ -22,7 +22,7 @@ viewBox, `currentColor`, round caps).
 Below sm the scrolling region becomes
 one horizontally scrolling row instead of wrapping, every square control grows to a 44px floor,
 the micro-eyebrow labels disappear (the hairlines alone still divide the three clusters), the
-Write/Preview tablist hides, and the host's `moreExtra` snippet appends its own items to the
+Write/Preview tablist hides, and the host's `moreExtra` snippet appends its items to the
 existing More-formatting popover, so the toolbar carries exactly one overflow trigger at that
 width. The "?" help control sits outside that scrolling region, so none of this touches it: it
 stays pinned at the row's right end, reachable at every width.
@@ -182,14 +182,14 @@ stays pinned at the row's right end, reachable at every width.
 
   let toolbarEl = $state<HTMLDivElement | null>(null);
   // The roving tab stop's position among the strip's enabled top-level controls. The Write/Preview
-  // tabs join the toolbar's roving order instead of managing their own arrow keys: the ARIA toolbar
+  // tabs join the toolbar's roving order instead of managing their arrow keys: the ARIA toolbar
   // pattern allows either, and one arrow model over the whole strip is the simpler of the two. The
   // persistent "?" help control joins the same order (it lives inside the toolbar element, just
-  // outside the scrolling region), so it never needs its own tab stop.
+  // outside the scrolling region), so it never needs its tab stop.
   let roving = $state(0);
 
   /** The strip's top-level controls in DOM order: every enabled button outside the More menu's
-   *  popover and outside the insert controls' dialogs. The host's insertControls render their own
+   *  popover and outside the insert controls' dialogs. The host's insertControls render their
    *  buttons, so the set is queried, not declared. */
   function rovingControls(): HTMLElement[] {
     if (!toolbarEl) return [];
@@ -265,14 +265,14 @@ stays pinned at the row's right end, reachable at every width.
        label beside it, not two visually joined segments. A plain btn in its place was tried and
        measured worse on both themes, dropping light's selected-to-unselected separation from
        1.32:1 to 1.23:1 and flattening dark's unselected hover step from 1.20:1 to 1.01:1, which
-       is the only hover feedback an unselected tab has; the selected tab's own visibility rides
+       is the only hover feedback an unselected tab has; the selected tab's visibility rides
        on the cairn-admin.css hairline instead.
-       Each tab keeps all four of its own corners rounded at rest: a prior
+       Each tab keeps all four of its corners rounded at rest: a prior
        unconditional rounded-r-none/rounded-l-none pair squared write's right and preview's left
        corner regardless of which tab was actually painting a border, so the selected tab always
        showed one flat edge next to nothing. The scoped stylesheet below squares a tab's shared
        corner (and collapses the 1px seam) only in the states where BOTH tabs paint a border at
-       once, selected plus the ghost sibling's own hover/focus-visible fill, the one case a
+       once, selected plus the ghost sibling's hover/focus-visible fill, the one case a
        doubled border or a stray rounded notch could actually show. Preview's right corner still
        squares unconditionally against the device trigger, a persistent sibling control, not a
        transient hover state. Manual corner-squaring rather than daisyUI's .join, because join
@@ -292,15 +292,15 @@ stays pinned at the row's right end, reachable at every width.
     class:rounded-r-none={m === 'preview' && showDeviceTrigger}
     onclick={() => onMode(m)}
   >
-    <!-- The check glyph is always rendered, so the tab's own box reserves its width in every
+    <!-- The check glyph is always rendered, so the tab's box reserves its width in every
          state (selected or not). Selecting a tab used to add 22px of
-         glyph-plus-gap to that tab's box on click, so the Preview tab's own box, and everything
+         glyph-plus-gap to that tab's box on click, so the Preview tab's box, and everything
          after it on the row, shifted; toggling visibility instead of presence keeps the layout
-         identical across the swap, matching this tab's own widest (glyph-plus-label) state at
+         identical across the swap, matching this tab's widest (glyph-plus-label) state at
          rest. Invisible rather than removed, so the reserved space survives and a screen reader
-         still skips it (the icon inside already carries its own aria-hidden). -->
+         still skips it (the icon inside already carries its aria-hidden). -->
     <!-- The wrapper is inline-flex, never a bare span (2026-08 vertical-alignment inventory): a
-         bare span makes the glyph an INLINE box, which sits on the wrapper's own text baseline
+         bare span makes the glyph an INLINE box, which sits on the wrapper's text baseline
          rather than on the row, and the icon rode 2.33px above the label's cap centre against
          thirteen sibling icon-in-button rows at -0.5 to -0.75px. A flex wrapper is the same
          geometry as putting the glyph straight into the button, which is what every one of those
@@ -353,7 +353,7 @@ stays pinned at the row's right end, reachable at every width.
              places the panel under its trigger. Preview no longer disables the trigger itself when
              the host supplies moreExtra: below sm, Write/Preview folds into this
              same popover as the ONLY way back out of Preview, so the trigger must stay reachable
-             there; only the trigger's OWN formatting items (moreItems below), meaningless on
+             there; only the trigger's formatting items (moreItems below), meaningless on
              read-only content, gate on Preview individually. Without a host-supplied moreExtra
              this menu holds only formatting, so the trigger keeps its original
              Preview-disables-everything behavior. -->
@@ -374,7 +374,7 @@ stays pinned at the row's right end, reachable at every width.
     </div>
     <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at display: flex,
          which strips the implicit list role in WebKit/VoiceOver (cairn-audit's list-role rule,
-         rendered mode). The divider <li> keeps its own role="separator" instead: a deliberate,
+         rendered mode). The divider <li> keeps its role="separator" instead: a deliberate,
          different reading, not a listitem. -->
     <ul
       bind:this={moreMenu}
@@ -396,7 +396,7 @@ stays pinned at the row's right end, reachable at every width.
              popover is natively excluded from the accessibility tree (no CSS needed, the same reason
              the Details/theme-toggle band fold is safe), but a plain text query (getByText) does not
              consult that tree at all, so a passive line like the word count here would otherwise
-             read as a second, ambiguous copy of the host's own visible one even while this popover
+             read as a second, ambiguous copy of the host's visible one even while this popover
              sits closed. Gating the mount on moreOpen keeps every moreExtra node, text or control,
              out of the DOM until an editor actually opens this menu. -->
         {@render moreExtra(() => hideMenu(moreMenu))}
@@ -407,10 +407,10 @@ stays pinned at the row's right end, reachable at every width.
       <div class="w-px self-stretch bg-[var(--cairn-card-border)] max-sm:shrink-0" aria-hidden="true"></div>
       <div class={clusterClass} role="group" aria-label="Insert">
         <span class={eyebrowClass} aria-hidden="true">Insert</span>
-        <!-- The host's controls carry their own disabled state in Preview; this wrapper just keeps
+        <!-- The host's controls carry their disabled state in Preview; this wrapper just keeps
              any stray pointer target in the snippet inert while the pane is read-only. Below sm
              every insert control grows to the same 44px floor the glyph buttons take below sm,
-             applied here rather than per-button in the host's own snippet. -->
+             applied here rather than per-button in the host's snippet. -->
         <div
           class="flex items-center gap-1 max-sm:[&_button]:min-h-11 max-sm:[&_button]:min-w-11 max-sm:[&_button]:shrink-0"
           class:pointer-events-none={mode === 'preview'}
@@ -500,22 +500,22 @@ stays pinned at the row's right end, reachable at every width.
 </div>
 
 <style>
-  /* A naming hook distinguishing this custom divider <li> from daisyUI's own .divider; the line
+  /* A naming hook distinguishing this custom divider <li> from daisyUI's .divider; the line
      itself is drawn by the accompanying Tailwind utilities in the same class attribute. The rule
      carries only an inert custom property, never read anywhere, since an empty ruleset fails
-     svelte-check's own lint. EditPage.svelte's own .menu-divider carries the identical rule. */
+     svelte-check's lint. EditPage.svelte's .menu-divider carries the identical rule. */
   .menu-divider {
     --cairn-naming-hook: true;
   }
 
   /* The Write/Preview pair only reads as a joined capsule in the states where
      both tabs actually paint a border, the selected tab (always bordered, aria-selected) beside
-     its ghost sibling's own hover/focus-visible fill. `write` and `preview` render as adjacent
+     its ghost sibling's hover/focus-visible fill. `write` and `preview` render as adjacent
      siblings inside the tablist, so the shared corner and the 1px seam collapse only then; at
-     rest, whichever tab is selected keeps all four of its own corners rounded, since nothing
+     rest, whichever tab is selected keeps all four of its corners rounded, since nothing
      paints beside it to share an edge with. `aria-selected` and `:focus-visible` are state- and
      keyboard/AT-driven, so they square the seam unconditionally below; `:hover` alone gates on
-     `@media (hover: hover)` in its own copy further down (the modality-gate ruling, S3 Q18): a
+     `@media (hover: hover)` in its copy further down (the modality-gate ruling, S3 Q18): a
      touch tap fires `:hover` with no release event and could otherwise strand the squared corner
      on the last-tapped tab. */
   [role='tab']:is([aria-selected='true'], :focus-visible)

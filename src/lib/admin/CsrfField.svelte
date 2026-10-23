@@ -5,7 +5,7 @@ or omit it inside the authed shell, where CairnAdminShell provides the token thr
 omits this field fails the guard's token check, which is the intended fail-closed signal.
 
 The field mirrors its value into `defaultValue`, so the token survives a native form reset (the
-one `use:enhance` fires after a successful submit) without depending on a hidden input's own
+one `use:enhance` fires after a successful submit) without depending on a hidden input's
 reset-to-attribute-value semantics.
 -->
 <script lang="ts">

@@ -1,7 +1,7 @@
 // cairn-cms: the pure per-hash usage and alt-status fact helpers the Media Library shell and its
 // extracted bulk-delete dialog read (the shell reads all six; MediaBulkDeleteDialog reads only
 // usageCount). Each takes its data explicitly (the usage overlay, or an asset) rather than closing
-// over a component's own `data` prop, so a caller other than the shell can share one implementation
+// over a component's `data` prop, so a caller other than the shell can share one implementation
 // instead of a second copy.
 
 import type { MediaLibraryEntry } from '../media/library-entry.js';

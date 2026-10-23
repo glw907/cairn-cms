@@ -14,7 +14,7 @@ dialog's a11y conventions.
   // Per-instance, because more than one EntryPicker mounts on a single edit page (the link picker,
   // the fragment picker, and one per reference field). A constant id here would give every dialog
   // the same aria-labelledby target, and IDREF resolution takes the first match in tree order, so
-  // each dialog would announce the first picker's heading whatever its own heading says.
+  // each dialog would announce the first picker's heading whatever its heading says.
   const titleId = $props.id();
 
   interface Props {
@@ -27,7 +27,7 @@ dialog's a11y conventions.
     /** Ids the host already holds; matching rows render as already-selected and do not re-fire choose. */
     selectedIds?: string[];
     /** Render the built-in trigger button. False mounts only the dialog, for a host that supplies its
-     *  own trigger and opens the dialog through the exported open(). */
+     *  trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
     /** The dialog title. Defaults to the editor link control's wording; a reference field passes a
      *  concept-appropriate heading. */
@@ -95,7 +95,7 @@ dialog's a11y conventions.
     query = '';
     dialog?.showModal();
     // showModal() lands focus on the first focusable element (the header Close button), so move it
-    // to the search box the picker exists for (WCAG 2.4.3). A microtask defers past the dialog's own
+    // to the search box the picker exists for (WCAG 2.4.3). A microtask defers past the dialog's
     // focus handling, matching RenameDialog.
     queueMicrotask(() => searchInput?.focus());
   }

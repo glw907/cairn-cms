@@ -11,7 +11,7 @@ import { formatCairnToken, escapeLinkText } from '../content/links.js';
 // instead (a CompletionSource may return a Promise), cached after the first completion.
 let langMod: typeof import('@codemirror/language') | null = null;
 
-/** The known concepts in display order; an unlisted concept sorts after these under its own name. */
+/** The known concepts in display order; an unlisted concept sorts after these under its name. */
 const CONCEPT_SECTIONS: Record<string, { name: string; rank: number }> = {
   pages: { name: 'Pages', rank: 0 },
   posts: { name: 'Posts', rank: 1 },

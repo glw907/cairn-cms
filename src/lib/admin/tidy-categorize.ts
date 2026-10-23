@@ -1,7 +1,7 @@
 // The local tidy category taxonomy and the because-line builder (spec 2.5, decision 9). The tidy
 // action returns a corrected STRING; the diff turns it into changes; this module infers each
 // change's category and safety rank LOCALLY from the diff shape and the enabled config, never from a
-// claim the model made and never from a count of the author's own usage. It is pure: the inputs are a
+// claim the model made and never from a count of the author's usage. It is pure: the inputs are a
 // change, the captured original, and the resolved conventions, and the outputs are a category and an
 // optional because-line. Approximate by design, so it is unit-tested rather than trusted.
 //
@@ -194,7 +194,7 @@ export function categorize(change: Change, original: string, conventions: TidyCo
   // second, so the change reads as a deletion of "<whitespace><word>" with an empty replacement, where
   // that word equals the word immediately before the change in the original. The look-back at the
   // preceding word is what tells a doubled word from a plain deletion; it reads the original text, never
-  // a usage count. (A change whose own run already holds both copies, "word word" to "word", is the
+  // a usage count. (A change whose run already holds both copies, "word word" to "word", is the
   // fallback form, handled by the same word-equality test.)
   const removedWords = words(removed);
   const addedWords = words(added);
@@ -256,7 +256,7 @@ export function categorize(change: Change, original: string, conventions: TidyCo
 // change's shape is what that convention produces AND the config has it enabled, else null. The
 // signatures are deliberately narrow: each recognizes only the unambiguous form of its convention, so
 // a false match is rare and a missed match falls to the shape-based category (never to a normalization
-// the config did not authorize). Never counts the author's own usage; the only gate is the config.
+// the config did not authorize). Never counts the author's usage; the only gate is the config.
 function matchNormalization(
   removed: string,
   added: string,
@@ -364,7 +364,7 @@ export interface BecauseLine {
 /**
  * Build the because-line for a normalization category. Its ONLY data source is the config-declared
  * setting that authorized the hunk: the convention key indexes the enabled variant on the conventions,
- * and the line names that setting and variant. It NEVER counts the author's own usage. Counting the
+ * and the line names that setting and variant. It NEVER counts the author's usage. Counting the
  * author's habit to justify a change is the harmonize-to-author judgment cairn must never make, so no
  * code path here reads the buffer or any usage statistic; the conventions are the sole input. Returns
  * null when the convention is somehow not enabled (defensive: categorize never produces such a hunk).

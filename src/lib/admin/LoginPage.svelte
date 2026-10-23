@@ -70,7 +70,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   <title>{title}</title>
   <link rel="icon" href={cairnFaviconHref} />
   <meta name="robots" content="noindex, nofollow" />
-  <!-- The view owns its document's referrer policy, so a site that mounts it in its own shell still
+  <!-- The view owns its document's referrer policy, so a site that mounts it in its shell still
        sends the real Origin on the sign-in POST. -->
   <meta name="referrer" content="strict-origin" />
 </svelte:head>
@@ -91,13 +91,13 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
   <!-- The packaged admin sheet resets the real host body margin to zero itself (cairn-admin.css's
        build, guarded to fire only while an admin theme root is mounted), so this box needs no
        compensating margin of its own; the fix holds whether the host's ambient body margin was the
-       UA's 8px default or already 0. A host's own unlayered author rule on body margin still wins
+       UA's 8px default or already 0. A host's unlayered author rule on body margin still wins
        over this base-layer reset, which is the host's explicit choice and needs no `!important`
        to hold. -->
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if isIdentity(data)}
-      <!-- The hand-off page: identity mode's own gate is the sign-in surface, so this renders no
+      <!-- The hand-off page: identity mode's gate is the sign-in surface, so this renders no
            form and mints nothing. data-cairn-identity is the marker the doctor's login probe
            reads (docs/reference/doctor.md) to tell this page apart from the magic-link one. -->
       <div class="mb-6 flex justify-center">{@render brand()}</div>
@@ -109,7 +109,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       </p>
     {:else if (form?.outcome === 'sent' || form?.sent) && !dismissed}
       <!-- No role="status" here: the block mounts fresh on this branch switch, so a live region
-           on it would never observe its own first content (WCAG 4.1.3). The "Check your email"
+           on it would never observe its first content (WCAG 4.1.3). The "Check your email"
            heading is what carries the announcement, the same way a fresh page's title does. -->
       <div class="flex flex-col items-center text-center">
         <div class="mb-7">{@render brand()}</div>

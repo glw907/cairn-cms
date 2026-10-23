@@ -42,7 +42,7 @@ entry's minted link from surviving onto another entry's panel.
   const MINT_FAILED = 'Could not create a preview link. Try again.';
   const REVOKE_FAILED = 'Could not revoke preview links. Try again.';
 
-  /** Render a preview link's millisecond expiry as a human date and time (the store's own unit,
+  /** Render a preview link's millisecond expiry as a human date and time (the store's unit,
    *  an epoch-ms `expires_at`). */
   function formatExpiry(expiresAt: number): string {
     return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
@@ -61,7 +61,7 @@ entry's minted link from surviving onto another entry's panel.
   }
 
   /** The message a refused preview round trip shows: the expired-session line, else the server's
-   *  own actionable refusal when it sent one, else `generic`. A bare `'csrf'` is the guard's
+   *  actionable refusal when it sent one, else `generic`. A bare `'csrf'` is the guard's
    *  diagnostic code rather than author-facing copy, so it falls through to `generic` too. */
   function previewFailureMessage(outcome: { data?: unknown; sessionExpired?: boolean }, expired: string, generic: string): string {
     if (outcome.sessionExpired) return expired;
@@ -71,7 +71,7 @@ entry's minted link from surviving onto another entry's panel.
   }
 
   /** Mint a preview link for this entry's pending draft. A refusal (no draft to share, the
-   *  migration not yet applied) shows the server's own actionable message; a network failure or an
+   *  migration not yet applied) shows the server's actionable message; a network failure or an
    *  expired session shows a generic retry line. */
   async function mintPreview() {
     if (shareBusy) return;
@@ -109,9 +109,9 @@ entry's minted link from surviving onto another entry's panel.
     }
   }
 
-  // The copy confirmation's own auto-dismiss: shareCopied already resets on a fresh mint or a
+  // The copy confirmation's auto-dismiss: shareCopied already resets on a fresh mint or a
   // revoke, but a copy with no further action must also stop claiming "Copied" after a few
-  // seconds, both on the button's own label and the role="status" line below.
+  // seconds, both on the button's label and the role="status" line below.
   const COPIED_RESET_MS = 2000;
   let copiedTimer: ReturnType<typeof setTimeout> | undefined;
   $effect(() => {
@@ -119,7 +119,7 @@ entry's minted link from surviving onto another entry's panel.
   });
 
   /** Copy the minted URL to the clipboard. A denied or unavailable clipboard falls back to selecting
-   *  the field's text, so a manual copy still works. The Media Library's own copy affordance answers
+   *  the field's text, so a manual copy still works. The Media Library's copy affordance answers
    *  the same failure with a notice instead, since the reference it copies sits in no field. The
    *  unavailable case is a guard before the call, not a `.catch`: an insecure context or an older
    *  browser exposes no `navigator.clipboard` at all, so there is no promise to reject and catch. */
@@ -182,7 +182,7 @@ entry's minted link from surviving onto another entry's panel.
       <!-- Native disabled, not the guarded-control pattern: mint and revoke are waits (a short
            round trip that resolves on its own), not refusals, so the control truly cannot be
            activated again until it resolves and needs no reason attached. The always-mounted
-           role="status" region below carries the result rather than the button's own label
+           role="status" region below carries the result rather than the button's label
            mutation, so a screen reader already tracking the region hears the update without a
            fresh-mount announcement race. -->
       <button
@@ -205,7 +205,7 @@ entry's minted link from surviving onto another entry's panel.
     {#if shareResult}
       <!-- The Copy button is a real interactive control, so it stays OUT of the role="status"
            region below: AT support for a control inside a live region is inconsistent, and the
-           button's own label mutation would otherwise re-trigger the whole region's announcement
+           button's label mutation would otherwise re-trigger the whole region's announcement
            on every copy. Its "Copied to clipboard" confirmation instead renders as a plain text
            line inside the region. -->
       <div class="flex flex-col gap-1.5">
@@ -245,7 +245,7 @@ entry's minted link from surviving onto another entry's panel.
       {/if}
     </div>
     <!-- Two always-mounted role="alert" wrappers (present and empty at load), the EditPage
-         role="status" region's own recipe: a region conditionally mounted with its first content
+         role="status" region's recipe: a region conditionally mounted with its first content
          may not be observed by assistive tech (WCAG 4.1.3). Each message gates on its own
          presence inside, so an empty wrapper shows nothing. -->
     <div role="alert">

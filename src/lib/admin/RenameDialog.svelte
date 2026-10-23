@@ -16,7 +16,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
     id: string;
     /**
      * The singular noun for the entry being renamed, e.g. "Post", used in the title and the
-     *  "Entries that include this X" copy; mirrors DeleteDialog's own doc voice.
+     *  "Entries that include this X" copy; mirrors DeleteDialog's doc voice.
      */
     singular: string;
     /** The current slug, prefilled into the input. */
@@ -28,7 +28,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
      */
     routable?: boolean;
     /** Render the built-in Change URL trigger. False mounts only the dialog, for a host that
-     *  supplies its own trigger and opens the dialog through the exported open(). */
+     *  supplies its trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
     /** Called when the rename form submits, before the document navigates. The edit page uses it
      *  to stand down its leave guard while the POST is in flight. */
@@ -37,7 +37,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
 
   let { conceptId, id, singular, slug, routable = true, trigger = true, onsubmitting }: Props = $props();
 
-  // The entry's own noun, for the title and the non-routable "Entries that include this X" copy.
+  // The entry's noun, for the title and the non-routable "Entries that include this X" copy.
   const noun = $derived(singular.toLowerCase());
 
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -52,7 +52,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
     dialog?.showModal();
     // showModal() lands focus on the first focusable element (the header Close button), so move
     // it to the slug input the dialog exists for, and select the prefill so the author can replace
-    // it in one keystroke (WCAG 2.4.3). A microtask defers past the dialog's own focus handling.
+    // it in one keystroke (WCAG 2.4.3). A microtask defers past the dialog's focus handling.
     queueMicrotask(() => {
       slugInput?.focus();
       slugInput?.select();

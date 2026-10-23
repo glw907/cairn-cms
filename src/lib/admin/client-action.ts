@@ -20,7 +20,7 @@ export type ActionOutcome<T> =
 /**
  * POST `init` to `url` and parse the response as a SvelteKit `ActionResult` envelope via
  * `deserialize`. A network throw and a non-success envelope both resolve to `{ ok: false }` (the
- * fail-closed branch), so the caller's own default-failure object handles both uniformly; a
+ * fail-closed branch), so the caller's default-failure object handles both uniformly; a
  * success envelope with falsy `data` also resolves fail-closed, matching the action-result
  * contract (a success always carries data here). A caller that posts with `redirect: 'manual'`
  * sees the guard's expired-session 303 as an opaque, status-0 response with no parseable body;

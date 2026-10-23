@@ -63,7 +63,7 @@ full-page POST to `?/mediaReplace` navigates away.
     dimensions: (asset: MediaLibraryEntry) => string;
     /** Formats a byte count for display. */
     formatBytes: (bytes: number) => string;
-    /** The shared section-heading class, the same token the host's own headings use. */
+    /** The shared section-heading class, the same token the host's headings use. */
     headerLabel: string;
     /** Called just before the apply form's full-page POST navigates away. Deliberately unwired by
      *  the host today; the prop stays for a future host that needs the pre-navigate signal. */
@@ -227,7 +227,7 @@ full-page POST to `?/mediaReplace` navigates away.
   }
 
   // A per-call request guard drops the preview fetch's response if it lands on a closed or reopened
-  // dialog. Svelte reactivity does not track reads below the first `await`, so each call pins its own
+  // dialog. Svelte reactivity does not track reads below the first `await`, so each call pins its
   // token at entry and bails after the await if a newer call (a reopen, or a "Check usage again"
   // double-click) has since superseded it.
   const replacePreviewGuard = createRequestGuard();
@@ -418,7 +418,7 @@ full-page POST to `?/mediaReplace` navigates away.
 
           <!-- Mounted unconditionally so a later upload still announces (the needs-alt notice's
                live-region rule, WCAG 4.1.3): a region conditionally mounted with its first content
-               is not reliably observed by assistive tech. This announces the upload step's own
+               is not reliably observed by assistive tech. This announces the upload step's
                working state, a distinct event from the sr-only review-impact region above. Its
                content renders in the exclusive chain below rather than beside it, so the working
                branch there stays empty. The wrapper is display: contents so an empty region

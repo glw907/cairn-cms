@@ -141,7 +141,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   // The triage segments, in display order, each naming its value, label, and live count. The
   // admin toolkit's ListToolbar renders these as a segmented filter, an ARIA radiogroup with the
-  // roving-tabindex keyboard pattern this triage originated (see ListToolbar's own header comment).
+  // roving-tabindex keyboard pattern this triage originated (see ListToolbar's header comment).
   const segments: { value: Triage; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => triageCounts.all },
     { value: 'needs-alt', label: 'Needs alt', count: () => triageCounts.needsAlt },
@@ -221,14 +221,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // {#if selected} slide-over stays closed for a delete-only intent.
   let deleteOnly = $state(false);
 
-  // The component's own root element, bound below on the wrapping <div>. It scopes the Escape
+  // The component's root element, bound below on the wrapping <div>. It scopes the Escape
   // open-dialog query (onWindowKeydown) to this component's subtree; see that function's comment
   // for the two-scope rationale it shares with MediaUploadDialog's libraryDropBusy.
   let rootEl = $state<HTMLElement | undefined>();
 
-  // The extracted dialog components, opened imperatively from the shell's own trigger buttons.
+  // The extracted dialog components, opened imperatively from the shell's trigger buttons.
   // Typed structurally over their exported open()-shaped API (the EditPage DialogHandle idiom);
-  // MediaUploadDialog's openUpload/onPageDragover/onPageDrop are its own variant of the same shape.
+  // MediaUploadDialog's openUpload/onPageDragover/onPageDrop are its variant of the same shape.
   let bulkDeleteDialog = $state<{ open: (hashes: string[], origin?: HTMLElement | null) => void } | null>(null);
   let orphanTools = $state<{ open: (origin?: HTMLElement | null) => void } | null>(null);
   let replaceDialogRef = $state<{ open: (asset: MediaLibraryEntry, origin?: HTMLElement | null) => void; close: () => void } | null>(null);
@@ -268,10 +268,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // panel exactly as the user left it, while an Escape with focus in the panel still closes it.
   // Escape precedence (no overlap): an open dialog claims Escape natively (its showModal owns it, so
   // this handler stands down while any dialog is open); else an open slide-over with focus inside it
-  // closes (today's behavior); else a non-empty selection is cleared. The search box keeps its own
+  // closes (today's behavior); else a non-empty selection is cleared. The search box keeps its
   // native Escape-to-clear: the selection clear fires only when focus is NOT in the search input.
   //
-  // The open-dialog check is scoped to THIS component's own subtree (rootEl), not document-wide. Five
+  // The open-dialog check is scoped to THIS component's subtree (rootEl), not document-wide. Five
   // of the six dialogs it must see now render from a child component (MediaReplaceDialog,
   // MediaAltFillDialog, MediaBulkDeleteDialog, MediaOrphanTools, MediaUploadDialog; only deleteDialog
   // is host-owned), so a check by named ref cannot reach them; a rootEl-scoped query still finds them,
@@ -280,7 +280,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // Escape must never stand down because a wholly unrelated dialog elsewhere on the page happens to be
   // open. MediaUploadDialog's libraryDropBusy makes the opposite call on purpose for a different
   // question (drag-drop should stand down for ANY open dialog, the palette included), so it stays
-  // document-scoped; see its own comment for that half of the split.
+  // document-scoped; see its comment for that half of the split.
   function onWindowKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return;
     if (rootEl?.querySelector('dialog[open]')) return;
@@ -323,7 +323,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The Library upload flow (choosing, dropping, capturing, and committing a new asset) lives in
   // MediaUploadDialog, mounted below with uploadDialogRef bound. The header and empty-state Upload
   // buttons call its exported openUpload(origin); the page-wide drop target below wires its exported
-  // onPageDragover/onPageDrop onto this component's own <svelte:window>.
+  // onPageDragover/onPageDrop onto this component's <svelte:window>.
 
   // --- the where-used overlay the slide-over and the dialog read, grouped published-then-branch,
   // over media-library-helpers.ts's pure functions (shared with MediaBulkDeleteDialog's usageCount) ---
@@ -611,9 +611,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
 
-  // The header's meta line (the office recipe's live count line, PageHeader's own home for a
+  // The header's meta line (the office recipe's live count line, PageHeader's home for a
   // page-level count outside a toolbar): the library's total image count, its used count, and its
-  // total stored bytes, unaffected by the toolbar's own search/triage scope below.
+  // total stored bytes, unaffected by the toolbar's search/triage scope below.
   const libraryMeta = $derived(
     `${triageCounts.all} ${triageCounts.all === 1 ? 'image' : 'images'}, ${usedCount} used on the site · ${formatBytes(totalBytes)} stored`,
   );
@@ -626,7 +626,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 />
 
 <!-- The wrapping element rootEl binds to, so onWindowKeydown's Escape open-dialog check can scope
-     itself to this component's own subtree instead of the whole document (see that function's
+     itself to this component's subtree instead of the whole document (see that function's
      comment). Plain, unstyled: every visual and layout class stays exactly where it already was. -->
 <div bind:this={rootEl}>
 {#snippet uploadAction()}
@@ -751,7 +751,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <!-- The selection checkbox, top-left: a real native checkbox in a soft chip so it reads on
                  any thumbnail. Clicking it toggles the selection only; it never opens the slide-over.
                  The wrapper is one step larger than daisyUI v5's default 24px `.checkbox` (h-7/w-7,
-                 not h-6/w-6): at h-6 the checkbox exactly fills the plate and its own ring has no
+                 not h-6/w-6): at h-6 the checkbox exactly fills the plate and its ring has no
                  room to paint, leaving no visible contrast plate at all. -->
             <span class="absolute left-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-field bg-base-100/90 shadow-sm">
               <input
@@ -787,18 +787,18 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 />
               {/if}
             </div>
-            <!-- flex-wrap plus the name's own min-width floor give the name priority at the
+            <!-- flex-wrap plus the name's min-width floor give the name priority at the
                  narrowest card widths: the fixed-width badge wraps to its own row underneath
                  rather than squeezing the name down to one letter (audit finding, the optical
                  ledger's 320/390 media-library entry). -->
             <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-[var(--cairn-card-border)] px-2.5 py-2">
               <span class="cairn-ml-name min-w-[5rem] flex-1 truncate type-meta font-medium">{asset.displayName}</span>
-              <!-- The alt-status marker reserves a fixed width, comfortably past either label's own
+              <!-- The alt-status marker reserves a fixed width, comfortably past either label's
                    natural width ("Needs alt" vs "Described", each with its glyph), and never
                    shrinks, so the title's flex-1 truncation reads the same available width
                    regardless of which state renders (audit finding 10: today the title only
                    truncates for whichever label happens to be narrower). A flex item's default
-                   min-width:auto otherwise lets its own content override a smaller explicit width,
+                   min-width:auto otherwise lets its content override a smaller explicit width,
                    so the reserve must exceed the content, not merely match it. -->
               <span class="w-24 shrink-0 text-right">
                 {#if missing}
@@ -824,7 +824,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         {#snippet header()}
           <!-- Frame zone (the column-header row) carries the office band grammar (design arc
                2026-07-15, propagated from ConceptList), and the first column insets to the card's
-               own corner radius. -->
+               corner radius. -->
           <th class="w-10 pl-6"><span class="sr-only">Select</span></th>
           <th class={headerLabel}>Asset</th>
           <th class="{headerLabel} w-32">Alt status</th>
@@ -900,7 +900,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   <!-- The selection-count live region: a dedicated sr-only role=status node that mirrors "N selected"
        on every toggle. It never shares a node with the flash, copy, or Showing regions, so the three
-       polite regions never collide (the announced count is its own surface). -->
+       polite regions never collide (the announced count is its surface). -->
   <div class="sr-only" role="status" aria-live="polite">{selectedCount > 0 ? `${selectedCount} selected.` : ''}</div>
 
   {#if selectedCount > 0}
@@ -1257,9 +1257,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 </div>
 
 <style>
-  /* A test-selector hook (CairnMediaLibrary.test.ts queries it directly); the visible name's own
+  /* A test-selector hook (CairnMediaLibrary.test.ts queries it directly); the visible name's
      styling rides on the Tailwind utilities in the same class attribute. The rule carries only an
-     inert custom property, never read anywhere, since an empty ruleset fails svelte-check's own
+     inert custom property, never read anywhere, since an empty ruleset fails svelte-check's
      lint; this is a co-located declaration of the class name rather than an entry in a JSON
      allowlist a rename would silently orphan. */
   .cairn-ml-name {
@@ -1270,7 +1270,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      picked up the size step's `--size-field` bump the neighboring `btn-sm` orphan-scan trigger
      reads automatically. The eye reads the toggle's bordered outer frame, so the frame itself takes
      that neighbor's height (the same `--size-field` * 8 a `btn-sm` resolves to, the technique
-     ListToolbar's own 'menu' facet chrome uses for the identical reason). The frame is
+     ListToolbar's 'menu' facet chrome uses for the identical reason). The frame is
      border-box, so its border and padding come out of that height; the two buttons stretch to fill
      what is left and stay square through their aspect ratio, at any `--size-field` value. */
   [aria-label='Layout density'] {

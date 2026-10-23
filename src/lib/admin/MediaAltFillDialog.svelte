@@ -394,7 +394,7 @@ form's full-page POST to `?/mediaAltPropagate` navigates away.
           </div>
 
           {#if (altPlan?.branchDelta?.length ?? 0) > 0}
-            <!-- The report-only branch delta: open cairn/* edits keep their own alt until they publish. -->
+            <!-- The report-only branch delta: open cairn/* edits keep their alt until they publish. -->
             <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
               <div class="mb-1.5 flex items-center gap-2">
                 <GitBranchIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />

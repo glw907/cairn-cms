@@ -1,4 +1,4 @@
-// cairn-cms: the figure-at-caret editing surface's own state, out of EditPage.svelte.
+// cairn-cms: the figure-at-caret editing surface's state, out of EditPage.svelte.
 
 import { untrack } from 'svelte';
 import { unwrapFigure, updateFigure, wrapImageInFigure, type FigureAtImage, type FigureRole } from './markdown-format.js';
@@ -8,7 +8,7 @@ import type { EditorApi } from './MarkdownEditor.svelte';
  * The host-supplied reads `createFigureEditor` needs. Every value is a getter, never a captured
  * snapshot: `caretComponent`/`mediaAtCaret` are written by the shell from `MarkdownEditor`'s
  * `onComponentAtCaret`/`onMediaImageAtCaret` callbacks and stay shell-owned; the shell resets both
- * to null in its own entry-key `RESET_BLOCK` (rather than this module owning a reset for them),
+ * to null in its entry-key `RESET_BLOCK` (rather than this module owning a reset for them),
  * since those callbacks fire only when the caret's reported identity changes from the last one
  * seen and an incoming entry whose caret lands off any component or image never fires either one.
  * The `EditorApi` grant is `$state.raw`, which loses reactivity when passed by value into a
@@ -124,7 +124,7 @@ export function createFigureEditor(params: FigureEditorParams) {
    * Write a figure transform's result back to the editor: overwrite the whole doc through the
    *  replaceRange seam, then place the selection the transform chose (the seam alone drops the caret
    *  at the end). replaceRange dispatches the doc change and focuses the surface; selectRange then
-   *  dispatches a selection-only transaction, which CodeMirror's history does not record as its own
+   *  dispatches a selection-only transaction, which CodeMirror's history does not record as its
    *  undoable event, so one undo reverts the whole figure write.
    */
   function writeFigureResult(result: { doc: string; from: number; to: number }) {

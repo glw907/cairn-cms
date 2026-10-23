@@ -329,7 +329,7 @@ export type OwnerGuardOutcome =
  * already-normalized address. Both {@link deleteEditor} and {@link removeOwnerIfNotLast} call it
  * after their session/magic-token batch.
  *
- * It runs as its statement, deliberately outside that batch: `preview_tokens` is additive
+ * It runs as a separate statement, deliberately outside that batch: `preview_tokens` is additive
  * (migrations/0003_preview.sql), and every site with `AUTH_DB` wired but that migration unapplied
  * (today, every consumer site) must still remove an editor cleanly. A single `db.batch()` fails
  * the WHOLE batch on one statement's "no such table", which would regress that site's editor

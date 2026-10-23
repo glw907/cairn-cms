@@ -76,7 +76,7 @@
     { "text": "The engine sniffs each upload's bytes and refuses a sniffed HEIC or unrecognized file as `unsupported_type` whatever the list says.", "id": "f:enuyhg" },
     { "text": "It also refuses an upload declared as SVG, HTML, or XML, or one whose first non-whitespace byte is `<`.", "id": "f:enuyhg" },
     { "text": "Listing another type adds nothing.", "id": "f:enuyhg" },
-    { "text": "Cloudflare caps a Worker's request body by the account plan and answers a larger request with a 413.", "id": "f:9awije" },
+    { "text": "Cloudflare caps a Worker's request body by the account plan and answers a larger request with its own 413.", "id": "f:9awije" },
     { "text": "The effective ceiling is the lower of `maxUploadBytes` and that cap, so raising `maxUploadBytes` past the cap does nothing.", "id": ["f:ett331", "f:9awije"] },
     { "text": "Cloudflare's [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-limits) page gives the cap for each plan.", "id": "f:9awije" },
     { "text": "`publicBase` moves every URL the engine writes, in rendered pages, the editor, and the Library, but it doesn't move the route.", "id": "f:ex4hss" },

@@ -45,7 +45,7 @@
 // (generate-norms-manifest.mjs), so this rule resizes to the same viewport before measuring and
 // restores the caller's original afterward, the same borrow-and-return idiom `touch-targets` and
 // `viewport-overflow` use for their pinned widths. A page whose viewport is the context's
-// rather than its has no original to restore, so the resize is skipped entirely and the run
+// rather than the page's has no original to restore, so the resize is skipped entirely and the run
 // says so: borrowing a viewport this rule could never give back left every rule registered after it
 // measuring at a width this one chose.
 import { loadNormsManifest, NORM_PRECISION, type NormBand, type NormEntry, type NormsManifest } from '../../norms.js';

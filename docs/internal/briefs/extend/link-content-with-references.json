@@ -115,7 +115,7 @@
     { "text": "[Reuse content across entries](reuse-content-across-entries.md) covers that check.", "id": "no-claim" },
     { "text": "A reference held in an unpublished draft still counts.", "id": "f:8on7h4" },
     { "text": "It blocks the delete or rename of its target even though nothing about the reference is live yet.", "id": "f:8on7h4" },
-    { "text": "A rename refuses, naming the blocking entries, when an open branch other than the entry's holds an inbound reference.", "id": "f:re5qlm" },
+    { "text": "A rename refuses, naming the blocking entries, when an open branch other than the one the entry is on holds an inbound reference.", "id": "f:re5qlm" },
     { "text": "Otherwise, it rewrites each referencing entry's stored id by splicing in the new id, and no other byte of the frontmatter changes.", "id": "f:gk88bv" },
     { "text": "[Renames](content-model.md#renames) in Content model covers the rest of what a rename refuses and rewrites.", "id": "no-claim" },
     { "text": "Next, compare a reference with a link written in an entry's body.", "id": "no-claim" },

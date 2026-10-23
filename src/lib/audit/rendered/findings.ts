@@ -57,7 +57,7 @@ export function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' |
  * `(exempt: ...)` beside a finding that gates would be a report contradicting itself.
  */
 export function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, allowlisted = false): Finding {
-  // The exemption rides in the message rather than in a field of its on `Finding`, because
+  // The exemption rides in the message rather than in a separate field on `Finding`, because
   // the report's whole job with a suppressed line is to print it: an allowlisted finding's reason
   // lives in the config a reader can open, and a rule's exception has no such file.
   let note = '';

@@ -131,7 +131,7 @@ bytes and refuses a sniffed HEIC or unrecognized file as `unsupported_type` what
 It also refuses an upload declared as SVG, HTML, or XML, or one whose first non-whitespace byte is
 `<`. Listing another type adds nothing.
 
-Cloudflare caps a Worker's request body by the account plan and answers a larger request with a 413. The effective ceiling is the lower of `maxUploadBytes` and that cap, so raising
+Cloudflare caps a Worker's request body by the account plan and answers a larger request with its own 413. The effective ceiling is the lower of `maxUploadBytes` and that cap, so raising
 `maxUploadBytes` past the cap does nothing. Cloudflare's
 [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-limits) page gives
 the cap for each plan.

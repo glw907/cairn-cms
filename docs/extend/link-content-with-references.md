@@ -305,8 +305,8 @@ Deleting a fragment runs the same action with one more check, for includes.
 A reference held in an unpublished draft still counts. It blocks the delete or rename of its target
 even though nothing about the reference is live yet.
 
-A rename refuses, naming the blocking entries, when an open branch other than the entry's holds
-an inbound reference. Otherwise, it rewrites each referencing entry's stored id by splicing in the
+A rename refuses, naming the blocking entries, when an open branch other than the one the entry is on
+holds an inbound reference. Otherwise, it rewrites each referencing entry's stored id by splicing in the
 new id, and no other byte of the frontmatter changes.
 [Renames](content-model.md#renames) in Content model covers the rest of what a rename refuses and
 rewrites.

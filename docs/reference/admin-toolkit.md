@@ -217,8 +217,8 @@ let { label, size = 'sm', register = 'quiet', legend }: {
 The toolkit's one surface allowed a semantic status color, second generation. `register`
 alone now carries both shape and color; there is no separate `tone` prop, and there is no
 chip-level danger tier. `size` defaults `'sm'`, matching AdminTable's density tier names. `sm`
-keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no minimum
-of its, so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
+keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no minimum,
+so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
 width against its short vocabulary rather than a floor sized for a longer label. `register`
 picks which of the three documented chip recipes the badge renders in: `'quiet'` (the default) tints
 the ground for a settled state that should recede, such as Published; `'warning'` tints the same
@@ -469,7 +469,7 @@ that does is reinventing a register `AdminTable` already carries.
 where a caller stores the new set. A caller wanting a select-all control adds it to `batchBar`
 itself, since `AdminTable` can't build one without the full row-id list. `batchBar` words its
 visible count; the component's status region carries the count for assistive technology, so a
-caller doesn't add a second live region of its.
+caller doesn't add a second live region.
 
 ### `ListToolbar`
 
@@ -889,7 +889,7 @@ other cairn admin load is; mount `MediaPicker` on an `/admin` route (inside `Cai
 site's authenticated custom route), never on a public page. `onselect` receives a
 `MediaSelection`: the chosen entry, its `media:<slug>.<hash>` reference token to write into content,
 and the asset's manifest alt to prefill a placement. The picker never mutates the array and holds no
-selection of its, so the caller owns what a pick does next.
+selection, so the caller owns what a pick does next.
 
 **Contract term, the delivery base.** Option thumbnails compose their `src` under the delivery base
 the mounting context supplies through cairn's internal `MEDIA_BASE_CONTEXT_KEY` Svelte context.

@@ -265,7 +265,7 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
     // ever applied. Document coordinates are what the guard always meant.
     if (!clipped && isParkedOffCanvas(control, own)) continue;
     // WCAG 2.5.8's inline exception: a link inside running prose, where the line of text carries
-    // the tappable area rather than the link glyph alone. A link with no text of its is not in
+    // the tappable area rather than the link glyph alone. A link with no text is not in
     // a sentence and the exception does not reach it; without that narrowing an icon-only 10x10
     // image link inside a `<p>` passed silently.
     if (

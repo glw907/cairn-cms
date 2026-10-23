@@ -1,7 +1,7 @@
 // cairn-audit's suppression idiom: a co-located comment silences one rule over one construct, and
 // the run counts every one of them. The design replaces the file-plus-token JSON allowlists the repo
 // gates used, whose entries orphaned silently on rename and exempted whole files. Three properties
-// carry the weight, and each is a finding of its when it fails: a directive names a reason, a
+// carry the weight, and each is a separate finding when it fails: a directive names a reason, a
 // directive that silences nothing is dead, and neither of those errors can itself be suppressed. An
 // agent under completion pressure silences gates, so a build that passes by suppression has to read
 // as one.

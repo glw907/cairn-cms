@@ -213,7 +213,7 @@ A media-enabled site also checks
 the adapter turns media on.
 
 A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
-`<html data-theme>`) keeps it by sequencing the engine guard after its:
+`<html data-theme>`) keeps it by sequencing the engine guard after it:
 
 ```ts
 // src/hooks.server.ts

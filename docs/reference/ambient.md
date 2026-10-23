@@ -74,7 +74,7 @@ publishes.
 The same import declares one global, `const __CAIRN_DEV_BUILD__: boolean`. The
 [`cairnManifest()`](./vite.md#cairnmanifest) plugin defines it as a literal, `true` under `vite dev`
 and in a `VITE_CAIRN_E2E=1` build and `false` in a default build, and each call site that names it
-directly folds where it is written. A site that reads the global needs no declaration of its.
+directly folds where it is written. A site that reads the global needs no declaration.
 
 The subpath exports nothing at runtime (its JS module is empty), so the import is safe in a
 declaration file and free everywhere else.

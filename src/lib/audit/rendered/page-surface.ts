@@ -316,7 +316,7 @@ function installPageHelpers(): void {
 
     // `inheritedSelector` is the nearest enclosing style rule's selector, which a trailing
     // `CSSNestedDeclarations` block (bare declarations after a nested rule, inside the same
-    // parent) has no selector of its and inherits.
+    // parent) has no selector and inherits.
     function walk(rules: Iterable<CSSRule>, inheritedSelector: string | null, file: string): void {
       for (const rule of Array.from(rules)) {
         const kind = rule.constructor ? rule.constructor.name : '';

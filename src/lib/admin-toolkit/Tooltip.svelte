@@ -342,8 +342,8 @@ hover/focus mechanics never opened, matching how `aria-describedby` resolves eve
 </script>
 
 <!-- The wrapper is deliberately non-interactive (no role, no tabindex): its hover/focus/pointer
-     listeners are delegation over whatever the children snippet renders, not an affordance of
-     their an AT user should be told about, matching ToolbarDisclosure's containing
+     listeners are delegation over whatever the children snippet renders, not an affordance
+     an AT user should be told about, matching ToolbarDisclosure's containing
      element. The click listener only ever hides a bubble the trigger's activation would
      otherwise strand, so it adds no keyboard affordance to duplicate. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->

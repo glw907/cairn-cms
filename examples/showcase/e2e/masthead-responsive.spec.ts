@@ -30,7 +30,7 @@ for (const width of [320, 360, 390]) {
     expect(wordmarkBox!.x).toBeGreaterThanOrEqual(0);
     expect(wordmarkBox!.x + wordmarkBox!.width).toBeLessThanOrEqual(width);
 
-    // Scoped to the header: the footer reuses the `.site-nav` class for its, separate nav.
+    // Scoped to the header: the footer reuses the `.site-nav` class for a separate nav.
     const navLinks = page.locator('.site-header nav.site-nav a');
     const count = await navLinks.count();
     expect(count).toBeGreaterThan(0);

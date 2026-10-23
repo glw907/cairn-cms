@@ -324,7 +324,7 @@ function readChipGrounds(): ChipGroundReading {
  * "distinct" is the overstatement it replaced. A false negative ships a chip that reads as blank
  * against its row (the StatusChip evidence line, `badge-ghost` melting into a zebra stripe), and a
  * false positive would flag the correct `badge-outline` pattern (see the file header), so a chip
- * with no fill of its is skipped rather than compared.
+ * with no fill is skipped rather than compared.
  *
  * DEMOTED TO ADVISORY: the formula had no chroma term
  * and could not see hue, so a hue-distinct chip a sighted user reads as plainly bounded still

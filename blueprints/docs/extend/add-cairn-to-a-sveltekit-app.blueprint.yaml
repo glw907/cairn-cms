@@ -2165,7 +2165,7 @@ sections:
           the scaffold history and the rebuild detail.
       - id: db-preview-link
         kind: link
-        target: share-a-draft-preview.md#apply-the-preview-migration
+        target: build-the-public-routes.md#mount-the-draft-preview-route
       - id: db-audit
         kind: fact
         fact: f:pkrwom

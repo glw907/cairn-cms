@@ -153,7 +153,7 @@ const schedule = defineFieldset({
 - The engine uses the following keys:
 - `title` is the entry's title, and an entry without one falls back to its id. :fact[69j91g]
 - `date` is the entry's date, which a dated permalink's tokens resolve from. :fact[69j91g] :fact[zce3pt]
-- `updated` is the sitemap's `lastmod` and the feed's modified date. :fact[69j91g]
+- `updated` is the sitemap's `lastmod` and the entry page's modified time in its SEO head. A feed carries a modified date only when the site's feed route passes an item's `updated`, which the scaffold's feed doesn't. :fact[69j91g]
 - `description` is the entry's excerpt. :fact[69j91g]
 - `draft` set to `true` leaves the entry out of a concept index's listings and the sitemap, and a boolean field named `draft` is the edit page's **Hidden** toggle. :fact[69j91g] :fact[xcqr2v]
 - `description`, `image`, `robots`, and `author`, each read as a string, are the SEO head fields the public route factory reads, and a key the fieldset does not declare never reaches the head. :fact[becf0c]
@@ -171,7 +171,7 @@ const schedule = defineFieldset({
 - The id is `2026-08-14-my-post`. :fact[46edxb]
 - The slug is `my-post`. :fact[46edxb]
 - The filename's date prefix only feeds the slug: the entry's date comes from its own `date` field, which is why a dated permalink makes `date` a required field. :fact[zce3pt]
-- An entry created in the admin starts with the two dates equal, since the create action builds the id from the date picked in the create dialog and seeds that date into the form. Neither a save nor a rename changes the prefix afterward, so the two can come to differ. :fact[ilcgl4]
+- An entry created in the admin starts with a filename prefix cut from the date picked in the create dialog to the concept's `datePrefix`, and with that date seeded into the form, so the two agree to the prefix's granularity. Neither a save nor a rename changes the prefix afterward, so the two can come to differ. :fact[ilcgl4]
 - Ids are lowercase ASCII letters, digits, and single hyphens, so `slugify` turns a title in a non-Latin script into an empty address that the create action refuses, and treats an accented letter as a separator, so `résumé` becomes `r-sum`. :fact[7m8nd4]
 - See [Define an adapter and schema](define-an-adapter-and-schema.md).
 
@@ -207,7 +207,7 @@ const schedule = defineFieldset({
 - Its id, concept, title, date, and permalink. :fact[t5ebsr]
 - Its summary and its draft flag. :fact[t5ebsr]
 - Its outbound `cairn:` links, the internal links its body makes to other entries. :fact[t5ebsr]
-- Its reference-field edges, tags, and included fragments, when it has them. :fact[t5ebsr]
+- Its media refs, reference-field edges, tags, included fragments, and first-publish stamp, when it has them. :fact[t5ebsr]
 - A save to the entry's pending branch commits no manifest change, and a publish patches the entry's row in the same commit as the content change. :fact[t5ebsr]
 - The `cairnManifest` Vite plugin rebuilds the manifest from the files when a build starts and fails the build when the committed file has drifted, and the `cairn-manifest` command writes a regenerated file. :fact[6e8kwx]
 - A `reference` field holds a typed `{ concept, id }` pointer, and the manifest records each entry's outbound reference edges, from which the engine reads who points at an entry. :fact[a8ecm0]

@@ -106,7 +106,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A site that runs a review workflow of its own can mint and revoke links from a custom admin screen on the same table and route, as [Mint and revoke from your own admin route](#mint-and-revoke-from-your-own-admin-route) shows.",
+      "text": "A site that runs a review workflow can mint and revoke links from a custom admin screen on the same table and route, as [Mint and revoke from your admin route](#mint-and-revoke-from-your-admin-route) shows.",
       "id": "f:nssepj"
     },
     {
@@ -437,7 +437,7 @@
       "id": "f:xssf06"
     },
     {
-      "text": "A site without daisyUI points the color properties at its own tokens.",
+      "text": "A site without daisyUI points the color properties at its tokens.",
       "id": "f:74ls5e"
     },
     {
@@ -827,7 +827,7 @@
       "id": "f:r2qi1y"
     },
     {
-      "text": "A site with a review workflow of its own can mint and revoke links from a custom admin route.",
+      "text": "A site with a review workflow can mint and revoke links from a custom admin route.",
       "id": "no-claim"
     },
     {

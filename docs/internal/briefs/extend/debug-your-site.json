@@ -48,7 +48,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The developer is building a query, an alert, or records of their own on the same record shape.",
+      "text": "The developer is building a query, an alert, or records on the same record shape.",
       "id": "no-claim"
     },
     {
@@ -552,7 +552,7 @@
       "id": "f:r3l7eq"
     },
     {
-      "text": "That sink catches its own failures before `audit.sink.call_failed` can fire.",
+      "text": "That sink catches its failures before `audit.sink.call_failed` can fire.",
       "id": "f:r3l7eq"
     },
     {
@@ -696,7 +696,7 @@
       "id": "f:vq8cta"
     },
     {
-      "text": "The `/log` subpath exports `createLogger`, so a site's own events share the engine's record shape and redaction.",
+      "text": "The `/log` subpath exports `createLogger`, so a site's events share the engine's record shape and redaction.",
       "id": "f:mreycz"
     },
     {

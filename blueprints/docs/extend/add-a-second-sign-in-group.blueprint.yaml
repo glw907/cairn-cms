@@ -5,7 +5,7 @@ argument: |
   capability: its people use the editors' magic link, the role is declared once on the adapter and
   read by the guard from the composed runtime, and `/admin` sends them to a screen the site builds,
   which checks the session's role itself. An auth channel built with `createAuthChannel` is a
-  separate login over a numeric code, with its own D1 binding, migration, cookie, and sessions that
+  separate login over a numeric code, with its D1 binding, migration, cookie, and sessions that
   never become an editor's, so the site builds the login route and the member area outside
   `/admin` and supplies the delivery, the roster lookup, the normalizer, and the bot challenge the
   factory cannot. Either way cairn signs the people in and the site models them. Each path runs
@@ -22,7 +22,7 @@ introduction:
     member or a member is, and the records kept about them, stay the site's code. It then names
     where each mechanism sits: a declared role joins the editors' roster in `AUTH_DB` at `none`
     capability and lands on a screen the site builds under `/admin`; an auth channel is a separate
-    login with its own database and sessions, whose area is the site's routes outside `/admin`.
+    login with its database and sessions, whose area is the site's routes outside `/admin`.
     It says why the channel exists: for people the owner and editor sign-in was never meant to
     model, with the factory owning the login's security discipline and the site supplying the
     delivery, the roster lookup, and the check that a requester is human. The contract sentence:
@@ -70,7 +70,7 @@ framing:
          which mechanism to use.
        - Knows: the site, SvelteKit, and that editors sign in by magic link.
        - Lacks: that cairn offers exactly two mechanisms, where each lives (inside `/admin` or on the
-         site's own routes; `AUTH_DB` or a database of the group's own), and that what the group is
+         site's routes; `AUTH_DB` or a database for the group), and that what the group is
          stays the site's code.
     2. **The developer sent from Restrict admin access.**
        - Arrives from: that page's roles section, which sends a role that signs in but reaches no
@@ -118,20 +118,20 @@ framing:
       provider: `docs/extend/replace-magic-links-with-cloudflare-access.md`.
     - A developer assessing the channel's threats: `docs/extend/security-model.md#the-auth-channels-threat-surface`.
     - A developer looking for how cairn models members, signups, or a directory: no cairn page; the site's
-      own code (f:nguseg).
+      code (f:nguseg).
   background: |
-    1. **Why the default is owners and editors.** cairn's own sign-in exists only to gate the admin,
+    1. **Why the default is owners and editors.** cairn's sign-in exists only to gate the admin,
        and its zero-config identity is the owner/editor pair on the emailed magic link (f:zxdoaf,
        f:nz890r). cairn never names or models a domain actor beyond those two; members, customers,
        assets, and a directory are the site's to build (f:nguseg). So a second group is the site's to
        define, and cairn's part is signing it in.
-    2. **The general model: two mechanisms.** A declared role puts the group in the editors' own roster
+    2. **The general model: two mechanisms.** A declared role puts the group in the editors' roster
        in `AUTH_DB` at `none` capability: the same magic link, the engine's content and roster screens
        closed, and `/admin` sending the person to the role's `home` or a welcome screen (f:b3l3t0,
        f:4673n6, f:7n28wc). A channel built with `createAuthChannel` is a separate login over a
-       numeric code, with its own subject, D1 binding, and sessions, and its sessions never populate
+       numeric code, with its subject, D1 binding, and sessions, and its sessions never populate
        `locals.cairnEditor` (f:b3l3t0, f:we2lmp, f:rcpe0n, f:q7fj6p).
-    3. **Why the channel exists.** The `/auth-channel` subpath exists for a site's own login for a group
+    3. **Why the channel exists.** The `/auth-channel` subpath exists for a site's login for a group
        the owner/editor sign-in was never meant to model. The factory owns every security discipline
        (code minting and consumption, budgets, sessions, revocation), and the site supplies delivery,
        roster lookup, identifier shape, and a bot challenge (f:qqy4uq, f:cf1avu).
@@ -141,11 +141,11 @@ framing:
        need a screen under the admin and no content: an owner adds them on `/admin/editors`, and
        `/admin` sends them to the role's `home` (f:4673n6, f:nj0nfm, f:mbx6q1, f:7n28wc, f:pvs115).
     5. **Where SvelteKit fits.** The role's home is a SvelteKit route under `/admin`, the custom-screen
-       seam. The channel ships no route or UI, so its login page and member area are the site's own
+       seam. The channel ships no route or UI, so its login page and member area are the site's
        SvelteKit routes outside `/admin`: form actions call the channel's actions, and a `load` calls
        `resolveSubject` (f:q7fj6p, f:265s4t).
     6. **Where Cloudflare fits.** Both mechanisms rest on D1. The role reuses `AUTH_DB` (f:b3l3t0); the
-       channel needs a D1 binding and a migrations directory of its own (f:rcpe0n, f:5rkxfp). The
+       channel needs a D1 binding and a migrations directory (f:rcpe0n, f:5rkxfp). The
        example's bot challenge is Cloudflare Turnstile through `verifyTurnstile` (f:ez788q, f:69xbyh);
        the introduction leaves Turnstile to [[before-you-begin]], since the factory requires only a
        challenge function and Turnstile is the example's choice.
@@ -188,22 +188,22 @@ framing:
        - Opening: some sites need people besides editors to sign in, to reach screens or pages made
          for them. (`no-claim`: the reader's situation; the page opens on the job, with no invented
          cast.)
-       - cairn's own sign-in exists to gate the admin, so out of the box it knows only the people who
+       - cairn's sign-in exists to gate the admin, so out of the box it knows only the people who
          work there, owners and editors, and signs them in by an emailed magic link (f:zxdoaf,
          f:nz890r).
        - For a second group, cairn supplies the sign-in through one of two mechanisms, and the people
          themselves stay the site's: what a staff member or a member is, and the records kept about
-         them, are the site's own code (f:b3l3t0, f:nguseg). If the drafter uses the phrase "A site's
+         them, are the site's code (f:b3l3t0, f:nguseg). If the drafter uses the phrase "A site's
          domain is the site's", the sentence must cite f:nguseg, its owner-tier key phrase. No "not X
          but Y" frame.
     2. **The two mechanisms, where each sits, and why the channel exists.**
-       - A declared role adds the group to the editors' own roster in `AUTH_DB`, the D1 database behind
+       - A declared role adds the group to the editors' roster in `AUTH_DB`, the D1 database behind
          editor sign-in, at `none` capability. Its people sign in by the same magic link, find the
          engine's content screens closed, and land on a screen the site builds under `/admin`
          (f:b3l3t0, f:4673n6, f:7n28wc).
-       - An auth channel, built with `createAuthChannel`, gives the group a login of its own: a numeric
-         code sent over the site's own transport, sessions in a D1 database apart from `AUTH_DB`, and an
-         area made of the site's own SvelteKit routes outside `/admin`, since a channel session never
+       - An auth channel, built with `createAuthChannel`, gives the group a separate login: a numeric
+         code sent over the site's transport, sessions in a D1 database apart from `AUTH_DB`, and an
+         area made of the site's SvelteKit routes outside `/admin`, since a channel session never
          becomes an editor's (f:we2lmp, f:cf1avu, f:rcpe0n, f:q7fj6p, f:b3l3t0).
        - cairn ships the channel for people its owner/editor sign-in was never meant to model. The
          factory owns the login's security discipline, minting and consuming codes, rate budgets,
@@ -211,7 +211,7 @@ framing:
          check that a requester is human (f:qqy4uq, f:cf1avu).
     3. **The contract, the running examples, and the decided reader.**
        - Contract, the anatomy's one-line contract inside the framing: whichever mechanism you choose,
-         by the end the group signs in on your deployed site and lands in an area of its own
+         by the end the group signs in on your deployed site and lands in a separate area
          (`no-claim`: the page's promise; both paths end in a deploy and a verification on the
          deployed site).
        - The running examples: a `staff` role whose `home` is `/admin/staff`, the declaration the
@@ -386,7 +386,7 @@ sections:
         use: |
           Only the opening sentence's claim: a declared role, whose members sign in by the same magic link
           and live as rows in `AUTH_DB`'s `editor` table, or `createAuthChannel`, a separate login
-          with its own subject, D1 binding, and session.
+          with its subject, D1 binding, and session.
       - id: ch-table
         kind: sentence
         mode: claim
@@ -753,7 +753,7 @@ sections:
           Only the opening, the copy step, and its caution: the migration is needed once a site
           declares a vocabulary beyond owner and editor; the scaffold ships it, so a scaffolded
           site already has the file, and an existing site without it copies it from the package;
-          the rebuild keeps only the engine's four `editor` columns, so a site that added its own
+          the rebuild keeps only the engine's four `editor` columns, so a site that added its
           columns carries them across first. Omit the `0003_preview.sql` clause.
       - id: s-copy-roles
         kind: step
@@ -1480,7 +1480,7 @@ sections:
         fact: f:q7fj6p
         use: |
           Only the opening's claim: channel sessions never populate `locals.cairnEditor`, so a site builds
-          the member area as its own routes outside `/admin`, gated by `resolveSubject(event)`.
+          the member area as its routes outside `/admin`, gated by `resolveSubject(event)`.
       - id: g-load
         kind: step
         text: |
@@ -1678,7 +1678,7 @@ sections:
       - id: c-test
         kind: code
         text: |
-          Illustrative test, modeled on the engine's own run of the double: `vi.hoisted` holds a
+          Illustrative test, modeled on the engine's run of the double: `vi.hoisted` holds a
           mocked Worker env and a `waitUntil` that collects promises; `vi.mock('cloudflare:workers')`
           supplies both; the double, built with `createChannelDb` from
           `migrations-members/0000_channel.sql`, goes on the mocked env as `MEMBER_DB` with no

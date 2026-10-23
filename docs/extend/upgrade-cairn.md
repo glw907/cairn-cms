@@ -22,14 +22,14 @@ A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.
 2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
    `CHANGELOG.md` ships in the package (`node_modules/@glw907/cairn-cms/CHANGELOG.md`, or the
    repository itself) and carries one dated section per released version, each stating what a
-   consumer must do or explicitly stating nothing. A caret range admits only its own minor, so a
+   consumer must do or explicitly stating nothing. A caret range admits only its minor, so a
    site more than one minor behind crosses several of these lists in one jump, and each applies in
    order. [Migration notes](./migration-notes.md) is the running record of which recent versions
    carried a real action, if you want the short list before opening the full file.
 
 3. **Make the changes each crossed `Consumers must:` line names.** Most are a rename, a type
    widening, or a config addition; a few are structural. Do them in the order the changelog states
-   them when a version's own list is ordered, since a later rename sometimes depends on an earlier
+   them when a version's list is ordered, since a later rename sometimes depends on an earlier
    one already compiling. If a version shipped a D1 migration, apply it by hand with `wrangler d1
    migrations apply`: a Cloudflare Workers Builds deploy on push has no equivalent step for a
    database schema change, so nothing runs a new migration for you.
@@ -54,7 +54,7 @@ A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.
    `cairn-cms[bot]` commit lands on `main` to prove those. See [`cairn
    doctor`](../reference/cli-cairn-doctor.md) for what each check verifies.
 
-6. **Typecheck and test your own site** before deploying. The doctor checks configuration; it does
+6. **Typecheck and test your site** before deploying. The doctor checks configuration; it does
    not typecheck your adapter or your custom routes against the new version's types.
 
 ## When your range crosses the public stylesheet export
@@ -159,7 +159,7 @@ these steps, in order, after step 3:
    Give every `publishActions` entry a distinct `label`.
 3. Make every `sanitizeSchema` callback return a schema with a `tagNames` array. Move any markup that
    needed `<script>` into a registered component or an island.
-4. Delete your own `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
+4. Delete your `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
    The `cairnManifest()` plugin defines the flag, and `@glw907/cairn-cms/ambient` declares it.
 5. Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine.
 6. Drop `seedContent` from `devBackendHandle`. Pass `content: 'fixtures'` when the dev backend runs
@@ -170,12 +170,12 @@ these steps, in order, after step 3:
 
 ## You know it worked when
 
-`npm run check` (or your site's own type-check script) passes, `cairn doctor` reports every check
+`npm run check` (or your site's type-check script) passes, `cairn doctor` reports every check
 passed or skipped, and the admin loads and saves an entry without a new error.
 
 ## If something goes wrong
 
-A doctor failure names its own condition and remedy. A type error after the bump usually traces
+A doctor failure names its condition and remedy. A type error after the bump usually traces
 directly to a `Consumers must:` line you haven't applied yet; re-read the changelog section for the
 version the error's import or field name last appeared in. See [Debug your site](./debug-your-site.md)
 for a runtime symptom that only shows up after deploy.

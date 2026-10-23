@@ -23,7 +23,7 @@ They also assume familiarity with the SvelteKit routes a custom screen adds unde
 
 To deny a route rather than hide its link, see [Restrict admin access](restrict-admin-access.md).
 To build the screen a site entry links to, see [Add a custom admin screen](add-a-custom-admin-screen.md).
-For the public site's own menu, see [Build the public routes](build-the-public-routes.md).
+For the public site's menu, see [Build the public routes](build-the-public-routes.md).
 
 ## Before you begin
 
@@ -132,7 +132,7 @@ The next section narrows a section to named roles.
 
 ## Narrow a section by role
 
-A section's `roles` list renders its children only for an editor whose role it names, on top of each child's own gate.
+A section's `roles` list renders its children only for an editor whose role it names, on top of each child's gate.
 It narrows what a role sees and never widens it.
 
 To narrow a section, follow this step:
@@ -143,7 +143,7 @@ Each name must be one the adapter declares, or the server fails to start.
 A section's `roles` hides its links only, and the routes behind them stay live.
 Denying those routes is the access map's job, in [Restrict admin access](restrict-admin-access.md).
 
-A site entry carries its own `roles`, independent of any section's.
+A site entry carries its `roles`, independent of any section's.
 `ownerOnly: true` on a site entry hides it from every non-owner session.
 Like a section's `roles`, it gates nothing on the server, and its route needs a separate gate from [Restrict admin access](restrict-admin-access.md).
 An engine reference takes only `label`, `hidden`, and `icon`.

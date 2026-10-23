@@ -100,7 +100,7 @@
       "id": "f:rv9gdc"
     },
     {
-      "text": "The channel path replaces that transport with a `deliver` for your own.",
+      "text": "The channel path replaces that transport with a `deliver` you write.",
       "id": "f:rv9gdc"
     },
     {
@@ -729,7 +729,7 @@
       "id": "f:nls26c"
     },
     {
-      "text": "The module's own `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.",
+      "text": "The module's `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.",
       "id": [
         "f:pe4vuc",
         "f:dbh3aj"
@@ -885,7 +885,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A channel session never populates `locals.cairnEditor`, so the member area lives in the site's own routes outside `/admin`.",
+      "text": "A channel session never populates `locals.cairnEditor`, so the member area lives in the site's routes outside `/admin`.",
       "id": "f:q7fj6p"
     },
     {

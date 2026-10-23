@@ -179,7 +179,7 @@
     {"text": "If the id is off shape or already written, see [Name each file by its id](#name-each-file-by-its-id).", "id": "no-claim"},
     {"text": "If the build fails on a stale content manifest, rerun `npx cairn-manifest`.", "id": "f:fdtgh5"},
     {"text": "If the build stops with one line per invalid field, each `<dir>/<id>: <field>: <message>`, follow the matching row of [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build).", "id": "f:kv3qen"},
-    {"text": "A migration adds two causes of its own:", "id": "no-claim"},
+    {"text": "A migration adds two more causes:", "id": "no-claim"},
     {"text": "If a `date` field is listed, the old date carried a time part.", "id": "f:ivhuyc"},
     {"text": "See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd).", "id": "f:ivhuyc"},
     {"text": "If a required text-like field is listed although the old file had a value, that value was an unquoted number, date, or boolean.", "id": "f:gh4ckg"},

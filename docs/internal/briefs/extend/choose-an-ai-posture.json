@@ -110,7 +110,7 @@
       "id": "f:6g7mpp"
     },
     {
-      "text": "Before the `Sitemap` line, each token in the training-crawler table takes its own `User-agent` group with `Disallow: /`.",
+      "text": "Before the `Sitemap` line, each token in the training-crawler table takes a separate `User-agent` group with `Disallow: /`.",
       "id": "f:6g7mpp"
     },
     {

@@ -77,7 +77,7 @@ framing:
        - Knows: that the key is suspect; possibly little of how cairn uses it.
        - Lacks: that the old key stays valid until it is deleted (`f:ixr3ny`), and that the page
          deletes it only after the live token check confirms the new key, which skips the
-         55-minute token cache and waits at most the minute its own 60-second result lasts
+         55-minute token cache and waits at most the minute its 60-second result lasts
          (`f:ejuoh6`, `f:1pb077`). The exposure window runs from the push to that check.
 
     3. **The hand-built site's developer.** A developer who built the site through
@@ -131,7 +131,7 @@ framing:
        (`f:ixr3ny`, `f:zoekqt`), so the key a site signs with stays in service until its developer
        replaces it, on demand (`f:72yc97`). GitHub names a suspected compromise as the occasion, and
        its plan is the same three moves: generate a new key, switch the app to it, delete the old one
-       (`f:s90j7l`). A scheduled rotation is the reader's own reason, and the
+       (`f:s90j7l`). A scheduled rotation is the reader's reason, and the
        introduction states it as that, with no claim of a recommended cadence; no source states one.
        Why the default holds the key as one Worker secret is custody reasoning that belongs to the
        security model, and the introduction only routes to it.
@@ -156,7 +156,7 @@ framing:
        route is a SvelteKit route at the site root (`f:paotzb`). It enters at [[before-you-begin]] and
        [[verify-the-new-key]], not in the introduction.
     6. **What the overlap costs.** Little time: the live token check mints from the key the
-       Worker holds and skips the 55-minute cache, and its own settled result lasts 60 seconds, so
+       Worker holds and skips the 55-minute cache, and its settled result lasts 60 seconds, so
        its one wait is a minute after any earlier live response (`f:1pb077`, `f:ejuoh6`). The old
        key can go as soon as the check passes. The plain `/healthz` request cannot replace it, since its check makes
        no network call (`f:5dwnh1`; body only). Both keys stay valid until the old one is deleted
@@ -229,7 +229,7 @@ framing:
        still works and a failed new key can be rolled back (`f:ixr3ny`, `f:sszb7b`). After it,
        GitHub restores nothing, and the recovery is a third key (`f:lg2ae8`).
     3. **What the order costs, reader by reader.** The proof is quick: the live token check skips
-       the Worker's 55-minute token cache, its one wait is the minute its own result cache lasts,
+       the Worker's 55-minute token cache, its one wait is the minute its result cache lasts,
        and the old key can be deleted as soon as the check passes (`f:1pb077`, `f:ejuoh6`). State that a
        publish proves nothing in the first 55 minutes, since the Worker may still run on a token
        the old key minted (`f:vg42j3`), and leave "per isolate" and warm versus cold to
@@ -1392,7 +1392,7 @@ constraints:
   - |
     Never use a publish as the verification signal, and never tell the reader to wait 55 minutes
     before deleting the old key: the live check bypasses the cache, and its one wait is a minute
-    after any earlier live response, for its own 60-second result (`f:1pb077`). Never say the
+    after any earlier live response, for its 60-second result (`f:1pb077`). Never say the
     live check proves a key at once or with no wait. The cache explains why a
     publish proves nothing in that window and why an editor-visible failure can lag the push.
   - |

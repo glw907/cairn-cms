@@ -3,29 +3,28 @@ argument: |
   An access map is a narrowing layer over the capability floor cairn already enforces, declared
   once on the adapter and read by every enforcement point: the engine's screens, their write
   actions, and the sidebar read it through the composed runtime, and the guard attaches the same
-  map to every admin request for the site's own routes. The engine gates its own screens, but the
-  guard decides no per-route authorization, so a site's own route enforces the map itself, on its
+  map to every admin request for the site's routes. The engine gates its screens, but the
+  guard decides no per-route authorization, so a site's route enforces the map itself, on its
   read and on every write, because SvelteKit runs a form action without its page's `load`. The two
   enforcement points read a target the map leaves out in opposite ways (an engine screen stays
   open, a route that opted in refuses everyone), which is what makes the map safe to add
   incrementally and dangerous to forget on a new route. One running example carries the page: a
   webmaster role with editor capability that alone, with owners, reaches the media library and the
   example site's signups screen at `/admin/signups`, declared on the adapter, enforced on the
-  reader's own route's load and actions (the signups screen shows the finished form), deployed with the roles migration, assigned on the roster, and proved
-  on the deployed site by a test editor who meets the admin's own error page wherever the map
+  reader's route's load and actions (the signups screen shows the finished form), deployed with the roles migration, assigned on the roster, and proved
+  on the deployed site by a test editor who meets the admin's error page wherever the map
   excludes their role.
 introduction:
   covers: |
     The introduction frames the page from above, then states the contract. It opens on the model,
-    as statements: everyone who signs in to the admin has a role; the site declares its own role
-    names, or uses the default pair, `owner` and `editor`; each role resolves to one capability,
+    as statements: everyone who signs in to the admin has a role; the site declares role names, or uses the default pair, `owner` and `editor`; each role resolves to one capability,
     `owner`, `editor`, or `none`, and capability is the floor cairn enforces. The access map, the
     site's declaration keyed by engine screen or `/admin` route, narrows which editor-capability
     roles reach each target. An owner reaches every mapped target, and the one widening is a `none`
     role, which only a route rule naming it admits. It then says where the map sits: declared once,
     as the adapter's `access` member, and read by the engine's screens, the sidebar, and, through
-    the guard, the site's own routes. The contract sentence: the steps declare a role vocabulary
-    and an access map on the adapter, enforce the map on your own screen's reads and writes, deploy
+    the guard, the site's routes. The contract sentence: the steps declare a role vocabulary
+    and an access map on the adapter, enforce the map on your screen's reads and writes, deploy
     the change with the roles migration, assign the new role, and verify each role's reach. Then
     the running example in one sentence (a webmaster role that alone, with owners, reaches the
     media library and the example site's signups screen). It names the readers who arrive: one
@@ -57,16 +56,16 @@ framing:
     statement of the model, neither an imperative nor a sentence about the page.
 
     1. **The model.** Open on statements: everyone who signs in to the admin has a role; the site
-       declares its own role names, or uses the default pair, `owner` and `editor`; each role
+       declares role names, or uses the default pair, `owner` and `editor`; each role
        resolves to one capability, `owner`, `editor`, or `none`, and capability is the floor cairn
        enforces (`f:zjglk8`). The access map, the site's declaration keyed by engine screen or
        `/admin` route, narrows which editor-capability roles reach each target. An owner reaches
        every mapped target, and the one widening is a `none` role, which only a route rule naming it
        admits (`f:p1xmp5`).
     2. **Where the map sits, and the contract.** The map is declared once, as the adapter's `access`
-       member, and read by the engine's screens, the sidebar, and, through the guard, the site's own
+       member, and read by the engine's screens, the sidebar, and, through the guard, the site's
        routes (`f:cvzb8z`). Then the contract sentence: the steps declare a role vocabulary and an
-       access map on the adapter, enforce the map on your own screen's reads and writes, deploy the
+       access map on the adapter, enforce the map on your screen's reads and writes, deploy the
        change with the roles migration, assign the new role, and verify each role's reach.
     3. **The running example and the readers.** The running example in one sentence: a webmaster
        role that alone, with owners, reaches the media library and the example site's signups
@@ -109,11 +108,10 @@ sections:
   - id: before-you-begin
     heading: Before you begin
     why: |
-      The reader learns before any step what the task needs: an admin route of the site's own
-      whose reads and writes do not yet check the access map, and a deployed site with a second
+      The reader learns before any step what the task needs: an admin route in the site whose reads and writes do not yet check the access map, and a deployed site with a second
       person to sign in as, since the dev backend mints an owner editor on `/admin`.
     opens: |
-      The steps need a site with an admin route of its own that does not yet check the access map,
+      The steps need a site with an admin route that does not yet check the access map,
       and the checks need a deployed site you can redeploy and a second person to sign in as.
     items:
       - id: bb-list
@@ -122,7 +120,7 @@ sections:
         text: |
           A bulleted list of four preconditions, each with a link to what produces it where a page
           does: a site that `create-cairn-site` scaffolded (or a hand-built site), with or without
-          an `access` member on its adapter; a route of the site's own under `/admin` whose `load`
+          an `access` member on its adapter; a site route under `/admin` whose `load`
           and form actions do not yet check the access map, such as one whose `load` calls
           `requireEditor`; a deployed site with a way to redeploy it; and an email address for a
           test editor besides the owner's, with a second browser to sign in as that editor.
@@ -411,17 +409,17 @@ sections:
       - id: map-handoff
         kind: handoff
         text: |
-          The engine now enforces the map on its own screens, and your own routes enforce it
+          The engine now enforces the map on its screens, and your routes enforce it
           through two calls.
   - id: enforce-the-map-on-your-routes
     heading: Enforce the map on your routes
     why: |
       `requireAccess` and `createSectionAction` read the map the guard attaches, so the route's
       checks follow the map that holds its key; with the key declared first, the route's
-      `requireAccess` call never refuses everyone. The steps edit the reader's own route, and the
+      `requireAccess` call never refuses everyone. The steps edit the reader's route, and the
       example site's signups screen shows the form they produce.
     opens: |
-      Your own routes check the map themselves, with `requireAccess` in each `load` and a
+      Your routes check the map themselves, with `requireAccess` in each `load` and a
       `createSectionAction` wrapper around each form action.
     items:
       - id: enf-guard-split
@@ -508,7 +506,7 @@ sections:
   - id: decide-what-the-map-leaves-open
     heading: Decide what the map leaves open
     why: |
-      Its claim compares the engine's screens with the site's own routes, so it comes once both
+      Its claim compares the engine's screens with the site's routes, so it comes once both
       enforcement points are known.
     opens: |
       An unnamed engine screen stays open to every editor-capability role, while an unnamed route
@@ -582,14 +580,14 @@ sections:
       Whether a target counts as unnamed depends on how a key matches a route id, so the matching
       rule follows the rule for unnamed targets.
     opens: |
-      A route key governs its own path and every path beneath it, matched by the deepest
+      A route key governs its path and every path beneath it, matched by the deepest
       whole-segment prefix the map holds.
     items:
       - id: nest-prefix
         kind: fact
         fact: f:uhoyun
         use: |
-          Only the matching rule, with the fact's own paths. Omit the nav half, which
+          Only the matching rule, with the fact's paths. Omit the nav half, which
           [[sidebar-entries]] carries.
       - id: nest-route-id
         kind: fact
@@ -863,8 +861,8 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The checks name the example site's signups screen at `/admin/signups`. On your own site,
-          open the route you gated in its place, and run its own actions in place of the signups
+          The checks name the example site's signups screen at `/admin/signups`. On your site,
+          open the route you gated in its place, and run its actions in place of the signups
           add and delete; a route with no owner-only action skips the delete check.
         facts:
           - f:onqm6k
@@ -1382,7 +1380,7 @@ constraints:
     which refuses every session, owner included (`f:zo034s`). In the example, the theme-kit key
     stays.
   - |
-    The reader arrives with a route of the site's own under `/admin` whose `load` and form actions
+    The reader arrives with a site route under `/admin` whose `load` and form actions
     do not yet check the access map, and with or without an `access` member on the adapter
     (`f:3z1uxv`). The page never presupposes the route's map key, its `requireAccess` call, or its
     `createSectionAction` wrappers: [[declare-the-access-map]] adds the key and

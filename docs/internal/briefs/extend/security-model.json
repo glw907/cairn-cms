@@ -72,7 +72,7 @@
       "id": "f:y3ljm0"
     },
     {
-      "text": "A developer can replace those defaults, the owner and editor roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and reads an owner or editor identity through a defined hand-off.",
+      "text": "A developer can replace those defaults, the owner and editor roles and magic-link sign-in, with a different auth framework, after which cairn mints no session and reads an owner or editor identity through a defined hand-off.",
       "id": "f:y3ljm0"
     },
     {
@@ -386,7 +386,7 @@
       ]
     },
     {
-      "text": "SvelteKit's check refuses that post on the site's own forms, and every auth channel action refuses it through its own `Origin` check.",
+      "text": "SvelteKit's check refuses that post on the site's forms, and every auth channel action refuses it through its own `Origin` check.",
       "id": [
         "f:ix10bm",
         "f:x2stjk",
@@ -785,7 +785,7 @@
       "id": "f:21by9u"
     },
     {
-      "text": "An editor's edits reach the repository through the engine's own credential, and [The GitHub App's reach](#the-github-apps-reach) sets out what that credential can write.",
+      "text": "An editor's edits reach the repository through the engine's credential, and [The GitHub App's reach](#the-github-apps-reach) sets out what that credential can write.",
       "id": "no-claim"
     },
     {
@@ -819,7 +819,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Every defense of the built-in design assumes cairn's own sign-in, and a site that replaces it with [an identity gate](#identity-modes-threat-surface) or adds [an auth channel](#the-auth-channels-threat-surface) moves some of them.",
+      "text": "Every defense of the built-in design assumes cairn's sign-in, and a site that replaces it with [an identity gate](#identity-modes-threat-surface) or adds [an auth channel](#the-auth-channels-threat-surface) moves some of them.",
       "id": "no-claim"
     },
     {
@@ -875,7 +875,7 @@
       "id": "f:jha9f7"
     },
     {
-      "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) sets up the gate these risks belong to, and the other seam a site can add, an auth channel, has [a threat surface of its own](#the-auth-channels-threat-surface).",
+      "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) sets up the gate these risks belong to, and the other seam a site can add, an auth channel, has [a separate threat surface](#the-auth-channels-threat-surface).",
       "id": "no-claim"
     },
     {
@@ -895,7 +895,7 @@
       "id": "f:7idpoq"
     },
     {
-      "text": "Eviction keys on the requester's bucket, so a caller crowds out only its own pending rows.",
+      "text": "Eviction keys on the requester's bucket, so a caller crowds out only its pending rows.",
       "id": "f:k6u4g2"
     },
     {
@@ -907,7 +907,7 @@
       "id": "f:wu8x70"
     },
     {
-      "text": "The channel keeps its own check because SvelteKit's origin check does not run under `vite dev` and admits any origin a site lists in `csrf.trustedOrigins`, and because the guard adds no `Origin` check of its own on any route.",
+      "text": "The channel keeps its own check because SvelteKit's origin check does not run under `vite dev` and admits any origin a site lists in `csrf.trustedOrigins`, and because the guard adds no `Origin` check on any route.",
       "id": "f:8u4iiv"
     },
     {

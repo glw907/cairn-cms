@@ -9,8 +9,8 @@ argument: |
   several files and the state the setup command left outside the repository.
 introduction:
   covers: |
-    A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in its own
-    GitHub repository, already deployed as a Cloudflare Worker, in which every file belongs to the
+    A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in a GitHub
+    repository, already deployed as a Cloudflare Worker, in which every file belongs to the
     site and the engine, `@glw907/cairn-cms`, is one dependency. A new owner needs three answers
     for each file and directory: what it does, whether it is theirs to change freely, and whether
     the engine or a build or CI check reads it, because nothing in the tree says which is which.
@@ -19,7 +19,7 @@ introduction:
     lists the subjects in body order: what the scaffold is and who owns it; the file tree, with the
     files the engine or a check reads marked; the root files, the build and deploy configuration
     with the Worker's one D1 database, and the database migrations, with why a database the site
-    adds takes its own directory; the routes and the server hook, including what the local dev
+    adds takes a separate directory; the routes and the server hook, including what the local dev
     server runs; the theme, chassis, content, and style sheets; the settings a new owner edits by
     hand; the build's crawl rules and the themed 404 page; and the state the setup command left
     outside the repository.
@@ -40,11 +40,11 @@ framing:
     | Reader | Arrives from | Came for | Knows | Lacks |
     | --- | --- | --- | --- | --- |
     | A. The inheritor (the job's reader): a Svelte-fluent developer who took over a site someone else scaffolded | `docs/extend/architecture.md` paragraph 3 ("maps each file the command writes") and its related resources; the extend index's Start group once the page is listed; a search for a file the tree holds (`cairn-audit.config.json`, `wrangler.jsonc`, `check.yml`) | What each file does, whether it may change it, and what the engine or a gate depends on | SvelteKit, Vite, enough Wrangler to read `wrangler.jsonc`; that the site is live and editors may already publish to it (`f:kldwss`, `f:cjonmm`) | The setup run's history: the saved record sits in the home directory of whoever ran the command (`f:3m0oxs`), and a Workers Builds connection deploys on a token that person pasted (`f:3bbeia`, `f:qca0t0`); which files carry a contract; that no engine release rewrites the tree (`f:rxj43c`, `f:jtl15v`); what `.claude/` is for (`f:qlgggh`; the guidance detail is subordinated to the guidance reference) |
-    | B. The runner: a developer who ran `create-cairn-site` and now opens the tree to change it | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2 ("explains what it writes"); the extend index; a search after the run. The command's hand-over text names `.github/workflows/check.yml`, `.claude/`, and `npx cairn-guidance check` but links no page (`packages/create-cairn-site/src/scaffold.mjs:230-264`, `f:kouawx`), so the output itself is not an arrival path | Why each file the command wrote is there, starting with the three the hand-over named | Their own answers to the setup prompts; they hold the state file | The file map; which files carry a contract; why the CI's guidance step never fails a build (`f:jd54ph`; the check's own exit rules are subordinated to the guidance reference) |
+    | B. The runner: a developer who ran `create-cairn-site` and now opens the tree to change it | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2 ("explains what it writes"); the extend index; a search after the run. The command's hand-over text names `.github/workflows/check.yml`, `.claude/`, and `npx cairn-guidance check` but links no page (`packages/create-cairn-site/src/scaffold.mjs:230-264`, `f:kouawx`), so the output itself is not an arrival path | Why each file the command wrote is there, starting with the three the hand-over named | Their answers to the setup prompts; they hold the state file | The file map; which files carry a contract; why the CI's guidance step never fails a build (`f:jd54ph`; the check's exit rules are subordinated to the guidance reference) |
     | C. The chooser: a developer deciding between the setup command and the by-hand build | `docs/extend/add-cairn-to-a-sveltekit-app.md` paragraph 2, which names this page as the account of what the command writes | A look at what the command would give them before choosing | SvelteKit; little of cairn | A scaffold to look at; the page shows it through the file tree and the ownership statement |
     | D. The architecture reader: a developer mapping the engine's import points and seams onto real files | `docs/extend/architecture.md`, the crossLink "A scaffolded reader maps the architecture onto their own files" | Where the adapter, the server hook, the admin mount, and the bindings sit in the tree | The model: one adapter, the seams, the data tiers (`f:j0ut9n`) | File locations; the body's tree and per-file entries answer it |
     | E. The theme reader: a developer working on the public design | `docs/extend/theme-your-public-site.md` lines 36 and 510 ("maps every file the setup command writes") | The files around the theme, and which ones outside it they may touch | Theming: tokens, cascade layers, Waymark on the chassis (`f:s23sk0`) | The rest of the tree; theming depth stays on their page, which the out-of-scope list names |
-    | F. Wrong place, routed: a developer adding cairn to an app they already run, or building without Waymark | A search, or the Start group, where this page sits third | Steps to wire cairn in | Their own app | That the setup command writes only into a missing or empty directory (`f:9slxqf`), and that the npm package carries no template (`f:rxj43c`); they belong on `docs/extend/add-cairn-to-a-sveltekit-app.md`, which the out-of-scope list's first item names |
+    | F. Wrong place, routed: a developer adding cairn to an app they already run, or building without Waymark | A search, or the Start group, where this page sits third | Steps to wire cairn in | Their app | That the setup command writes only into a missing or empty directory (`f:9slxqf`), and that the npm package carries no template (`f:rxj43c`); they belong on `docs/extend/add-cairn-to-a-sveltekit-app.md`, which the out-of-scope list's first item names |
     | G. Wrong place, unroutable for now: a technical non-developer who ran or inherited the setup command's site | A search, since the admin arm (`docs/admin/`) holds no page yet; the register's admin track claims this reader ("inheriting a running site someone else created") | How to run the site without code | The setup command's prompts | A page in their track. The intro's prior-knowledge sentence tells them the page expects SvelteKit; no admin page exists to route them to |
     | H. Minor, not addressed by the intro: an engine contributor reading the showcase | `examples/showcase/README.md` line 23; old links through the redirect from `docs/extend/what-the-scaffold-wrote.md` | What the scaffold carries out of the showcase | The showcase and its exclude list | Nothing the intro owes them; the tree and [[the-scaffold]] answer it |
 
@@ -52,15 +52,14 @@ framing:
     the reference index only (`templates/waymark/.claude/cairn/CLAUDE.md:79-81`), and the register's
     scripter-or-agent profile reads the reference arm.
   background: |
-    - **The general model.** A scaffolded site is an ordinary SvelteKit project in its own GitHub
-      repository, built into one Cloudflare Worker, with the engine installed as an ordinary npm
+    - **The general model.** A scaffolded site is an ordinary SvelteKit project in a GitHub repository, built into one Cloudflare Worker, with the engine installed as an ordinary npm
       dependency (`f:j0ut9n`, `f:o47i0q`). The same run that wrote the tree created the site's GitHub
       App, its repository, and its Cloudflare bindings, and deployed it (`f:kldwss`), so a new owner
       meets a live site, not a starter to deploy.
     - **What the tree is, and why it exists.** The setup command bakes Waymark, cairn's reference
       reading theme, on a chassis of design-neutral plumbing, from the same tree the engine tests
       itself against, with test-only material pruned (`f:n2skkz`, `f:rxj43c`). Waymark is the only
-      template shipped (`f:u705t5`). The scaffold exists so a site starts from the engine's own
+      template shipped (`f:u705t5`). The scaffold exists so a site starts from the engine's
       reference wiring, already deployed, rather than from a by-hand build (`f:kldwss`, `f:9slxqf`).
     - **Why the site owns every file.** The npm package's `files` list carries neither Waymark nor the
       chassis (`f:rxj43c`), so an engine upgrade moves the `@glw907/cairn-cms` range and leaves the
@@ -91,7 +90,7 @@ framing:
       Email Sending binding, and an R2 bucket (`f:o47i0q`, `f:n7t4bn`, `f:l3cxgc`), with Workers Logs
       on (`f:prb2os`);
       `migrations/` is that database's one migrations directory (`f:gepykz`), and a database the
-      site adds would take its own (`f:nv0ok0`, general rule only). The setup run deploys the site
+      site adds would take a separate one (`f:nv0ok0`, general rule only). The setup run deploys the site
       once (`f:kldwss`); Workers Builds deploys on every push to the default branch only when the
       same run's Workers Builds chapter connected it rather than recording a decline (`--connect`
       only re-enters that chapter for a site already past its first deploy, `f:qca0t0`), on the
@@ -145,8 +144,7 @@ framing:
     page. First mention is `create-cairn-site`, then "the setup command" (register, "Names").
 
     1. **The scaffolded site and where the platforms fit.** Open on the subject: a site that
-       `create-cairn-site` scaffolded arrives as a complete SvelteKit project in its own GitHub
-       repository, already deployed as a Cloudflare Worker, with the engine as one npm dependency
+       `create-cairn-site` scaffolded arrives as a complete SvelteKit project in a GitHub repository, already deployed as a Cloudflare Worker, with the engine as one npm dependency
        (`f:kldwss`, `f:o47i0q`, `f:j0ut9n`). One sentence says what the tree is: Waymark, cairn's
        reference reading theme, on the chassis, baked from the same tree the engine tests itself
        against (`f:n2skkz`, `f:rxj43c`); the definition proper waits for [[the-scaffold]]. Then at most two
@@ -230,11 +228,11 @@ sections:
         fact: f:n2skkz
         use: |
           Only the source tree, `examples/showcase`, the material the copy leaves out, and what the
-          bake writes in place of the showcase's own files. Name every group the exclude list
+          bake writes in place of the showcase's files. Name every group the exclude list
           removes, including the `admin/signups` screen with its `migrations-app/`, the
           `admin/error-fixture` route, `src/lib/env-check.ts`,
           `src/routes/(site)/+layout.server.ts`, the members fixture with `migrations-members/`,
-          and 13 of the showcase's 27 posts, so the scaffold keeps the other 14. Then say that the bake writes its own `README.md`,
+          and 13 of the showcase's 27 posts, so the scaffold keeps the other 14. Then say that the bake writes its `README.md`,
           `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the
           showcase's, so the scaffold still carries those files.
       - id: scaffold-one-template
@@ -249,7 +247,7 @@ sections:
         use: |
           Only the run's outcome: the GitHub App, the repository, the Cloudflare bindings, and the
           deploy, so the tree arrives already live. Leave the Workers Builds connection, which the
-          same run offers in its own chapter, to [[setup-state-outside-the-tree]].
+          same run offers in a separate chapter, to [[setup-state-outside-the-tree]].
       - id: scaffold-ownership
         kind: sentence
         mode: claim
@@ -288,7 +286,7 @@ sections:
         text: |
           One plain-text tree in directory-listing order: the root fully listed, `src/` one level
           deep, `src/content/` and `src/theme/` expanded one more level, and `src/routes/` collapsed
-          to one line (the routes section draws its own tree). Markers, each resting on a cited
+          to one line (the routes section draws a separate tree). Markers, each resting on a cited
           fact: `.github/workflows/check.yml` [gate]; `cairn-audit.config.json` [gate];
           `package.json` [gate]; `migrations/` [engine]; `src/admin.css` [gate];
           `src/content/.cairn/` [engine] [gate]; `src/content/posts/`, `pages/`, and `fragments/`
@@ -412,7 +410,7 @@ sections:
     level: 3
     opens: |
       The audit's config names both compiled admin sheets, so the static audit sees every class
-      that a site's own admin route writes.
+      that a site's admin route writes.
     items:
       - id: audit-config-sheets
         kind: fact
@@ -425,7 +423,7 @@ sections:
   - id: gitignore
     heading: '`.gitignore`'
     why: |
-      The `.gitignore` gets its own entry because the setup command renames it, and it hides paths
+      The `.gitignore` gets a separate entry because the setup command renames it, and it hides paths
       other entries name: `.dev.vars` and the `.cairn/` directory that holds the compiled admin
       sheet.
     level: 3
@@ -438,7 +436,7 @@ sections:
         fact: f:qfv5iw
         use: |
           Only the rename, the loud failure when the file is absent, and `.gitattributes` shipping
-          under its own name.
+          unrenamed.
       - id: gitignore-devvars
         kind: fact
         fact: f:nls26c
@@ -454,7 +452,7 @@ sections:
   - id: other-root-files
     heading: Other root files
     why: |
-      The remaining root entries carry no contract of their own, so one entry closes the root group.
+      The remaining root entries carry no contract, so one entry closes the root group.
     level: 3
     opens: |
       The remaining root entries are a plain project's files, plus a generated types file and the
@@ -521,7 +519,7 @@ sections:
         kind: fact
         fact: f:wnsv5x
         use: |
-          Only the `#lib/*` mapping and its one file, `log.ts`, the site's own `createLogger`
+          Only the `#lib/*` mapping and its one file, `log.ts`, the site's `createLogger`
           instance.
       - id: pkg-log-link
         kind: link
@@ -548,7 +546,7 @@ sections:
         fact: f:mrv24k
         use: |
           Only the `check:cairn` row: the compile, then `cairn-audit`'s exit condition, its
-          advisories, and its missing-peer message. One row; the rules belong to the audit's own
+          advisories, and its missing-peer message. One row; the rules belong to the audit's
           page.
       - id: pkg-rendered
         kind: fact
@@ -608,7 +606,7 @@ sections:
         fact: f:xluud1
         use: |
           Only the `cairnManifest` plugin's build check, the `__CAIRN_DEV_BUILD__` define its
-          `config` hook sets, and that the scaffold's config sets no define of its own.
+          `config` hook sets, and that the scaffold's config sets no define.
       - id: vite-noexternal
         kind: fact
         fact: f:2pv4r5
@@ -701,7 +699,7 @@ sections:
         fact: f:nv0ok0
         use: |
           Only the general rule, never the example site's directory: a database the site adds takes
-          its own migrations directory, and why.
+          a separate migrations directory, and why.
   - id: routes-and-the-server-hook
     heading: Routes and the server hook
     why: |
@@ -770,7 +768,7 @@ sections:
         fact: f:zzjrza
         use: |
           Only the scaffold's half: the hook passes no `content` option, so a new site's dev admin
-          lists the site's own entries from the working tree.
+          lists the site's entries from the working tree.
       - id: hook-content-modes
         kind: fact
         fact: f:p1v88s
@@ -869,7 +867,7 @@ sections:
         fact: f:qtvesq
         use: |
           Only that `media/[...path]/` exports the `createMediaRoute` handler, which validates and
-          streams from `MEDIA_BUCKET` with its own security headers because the route sits outside
+          streams from `MEDIA_BUCKET` with security headers because the route sits outside
           `/admin`. Omit the key format and the validation detail, which the reference carries.
       - id: endpoints-media-link
         kind: link
@@ -878,7 +876,7 @@ sections:
         kind: fact
         fact: f:paotzb
         use: |
-          Only the route's own behavior: outside the guard, the JSON payload with its 200 or 503,
+          Only the route's behavior: outside the guard, the JSON payload with its 200 or 503,
           the fixed detail on a thrown error, `cache-control: no-store`, and `prerender = false`.
       - id: endpoints-healthz-link
         kind: link
@@ -982,7 +980,7 @@ sections:
         fact: f:rxj43c
         use: |
           Only that the setup command bakes the chassis into the tree and the engine's package
-          carries none, so the chassis is the site's own like every other file.
+          carries none, so the chassis belongs to the site like every other file.
       - id: chassis-boundary-link
         kind: link
         target: theme-your-public-site.md#the-chassis-boundary
@@ -1012,7 +1010,7 @@ sections:
     heading: '`src/content/.cairn/`'
     why: |
       The committed manifests sit inside the content directory and are written by the engine and its
-      build tools, so they get their own entry after it.
+      build tools, so they get a separate entry after it.
     level: 3
     opens: |
       This directory holds three committed files that the engine and its build tools write.
@@ -1434,12 +1432,12 @@ dispositions:
     reference: ../reference/sveltekit.md#loadhealth
     reason: |
       What the signing check proves is `loadHealth`'s contract, linked from the `/healthz` entry so
-      the page states only the route's own behavior (`f:paotzb`).
+      the page states only the route's behavior (`f:paotzb`).
   - fact: f:3jpoi3
     disposition: subordinated
     reference: rotate-the-github-app-key.md
     reason: |
-      Key rotation is a separate task with its own guide; the page names the key only as the
+      Key rotation is a separate task with its guide; the page names the key only as the
       placeholder in the Deploy-button tree's `.dev.vars.example`, in [[dev-vars-example]].
   - fact: f:gcuj1j
     disposition: cut
@@ -1508,7 +1506,7 @@ constraints:
   - |
     The table in [[package-json]] has two columns, the script and what it runs. Its lead-in
     (`pkg-table-lead`) claims no completeness, since `check`, `preview`, `build:admin-css`, and
-    `dev:admin-css` carry no fact of their own and stay out of the table. The list in
+    `dev:admin-css` carry no fact and stay out of the table. The list in
     [[src-theme]] after `theme-files-lead` is a bulleted list with one file or directory per item.
   - |
     Hand-offs: the page places one (`scaffold-handoff`), and the headings do the rest of the

@@ -88,7 +88,7 @@ To gate the screen's read, follow this step:
 
 The signups `load` calls `requireAccess` before it reads the `signups` table through `APP_DB`, and it fails closed with a 500 when the binding is absent.
 
-<!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
+<!-- snippet-check-skip: imports cloudflare:workers, which a site's Worker types declare -->
 ```ts
 // src/routes/admin/signups/+page.server.ts
 import type { PageServerLoad } from './$types';
@@ -212,7 +212,7 @@ To wire the sink, follow these steps:
 1. In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink`.
 2. In the same file, compose that handle after `createAuthGuard` through `sequence`.
 
-<!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it, reading env.AUDIT_DB, which only the site's own generated Env declares -->
+<!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it, reading env.AUDIT_DB, which only the site's generated Env declares -->
 ```ts
 // src/hooks.server.ts (excerpt)
 import { building } from '$app/env';
@@ -245,7 +245,7 @@ A caller that holds an `ExecutionContext`, such as a Cron `scheduled` handler, p
 The unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.
 The sink returns before the insert settles and logs a rejected insert, so a failed insert never fails the audited action.
 
-The wrapper writes an audit row for every refusal its own checks make, so a refused caller can fill a persisted audit table cheaply.
+The wrapper writes an audit row for every refusal its checks make, so a refused caller can fill a persisted audit table cheaply.
 A section bounds that cost by setting the `rateLimit` option, whose members and fallback the [`createSectionAction`](../reference/sveltekit.md#createsectionaction) entry states.
 The 429 the wrapper returns for an exceeded limit writes no row, and neither do the session and CSRF refusals underneath it.
 
@@ -303,7 +303,7 @@ alt: Reproduction of a minimal Events screen, showing PageHeader, AdminTable, an
 caption: The screen renders below the shell's topbar. The page header carries the eyebrow, title, and count, and each row's status renders as a status chip.
 ```
 
-The wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`, because `AdminTable` sets its own horizontal scroll.
+The wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`, because `AdminTable` sets the horizontal scroll.
 
 The toolkit admits general-purpose primitives only, and a component that renders one of cairn's content concepts, such as an `EditPage` field, does not belong in it.
 A primitive graduates into the toolkit from a site's screens once it has a second real consumer, as `ExpandableRow` did.
@@ -356,7 +356,7 @@ To build the dialog form, follow these steps:
 
 3. Inside the dialog, add the action form with `enhance` applied, as a separate form element and never inside a `<form method="dialog">`.
 
-   A `<form method="dialog">` is a form element of its own, and nested forms are invalid HTML.
+   A `<form method="dialog">` is itself a form element, and nested forms are invalid HTML.
 
 4. In the `enhance` callback, handle each of the four result types, and never call `update()` on `'error'`.
 

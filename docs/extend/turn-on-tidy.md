@@ -19,7 +19,7 @@ the Worker's env when a call arrives. The site-config file is committed, and the
 developer edited the file or an editor saved the conventions on `/admin/settings`. The tidy action
 belongs to the admin routes that `createCairnAdmin` builds, and the site writes no route for it.
 Instead, the server module's `createCairnAdmin` call takes a second, separate `tidy` block, which
-holds the call's deadline and, for a site that needs one, a client of its own.
+holds the call's deadline and, for a site that needs one, a client.
 
 A developer turning tidy on for their editors works through the sections in order, from
 [Before you begin](#before-you-begin) to
@@ -29,7 +29,7 @@ where the defaults don't fit. `/admin/settings` and one tidy run confirm that ti
 deployed site. A developer whose editors report a refusal, a **Tidy** button that vanished, or a
 call that timed out can start at [Diagnose a refusal](#diagnose-a-refusal) and the Settings states in
 [Verify tidy on the deployed site](#verify-tidy-on-the-deployed-site). A developer who routes
-Anthropic traffic through a gateway of their own, or whose calls need longer than the default
+Anthropic traffic through a gateway, or whose calls need longer than the default
 deadline, can start at
 [Configure the tidy call's deadline and client](#configure-the-tidy-calls-deadline-and-client). A
 developer weighing whether to offer tidy at all can start at
@@ -210,7 +210,7 @@ When no file is at that path, the save answers 404 `Site config not found`, and 
 path. With tidy off, the save answers 404 `Tidy is not enabled for this site` before it reads the
 file.
 
-A save rewrites only its own block and keeps every other key, comment, and key order. A comment
+A save rewrites only its block and keeps every other key, comment, and key order. A comment
 inside `tidy.conventions` is lost, so notes about the conventions belong outside that block.
 
 The save commits to the default branch as `Update tidy settings`. Tidy calls and the **Settings** screen
@@ -218,12 +218,11 @@ read the runtime's copy of the site config, never the committed file. A saved ch
 only once that commit deploys. On a site that deploys on every push to the default branch, that is
 the next deploy.
 
-Next, set the deadline for a tidy call and, if you need one, your own client.
+Next, set the deadline for a tidy call and, if you need one, a custom client.
 
 ## Configure the tidy call's deadline and client
 
-The `tidy` block of `createCairnAdmin` sets each tidy call's deadline and, for a site with its own
-gateway, the client it calls.
+The `tidy` block of `createCairnAdmin` sets each tidy call's deadline and, for a site with a gateway, the client it calls.
 
 This block lives in the server module, not the site config. `createCairnAdmin` takes it as
 `CairnAdminConfig.tidy` and forwards it to the content routes. On a scaffolded site, the server
@@ -250,7 +249,7 @@ export const admin = createCairnAdmin({ runtime, tidy: { client, timeoutMs: 60_0
 On the add-cairn tutorial's site, which passes no `tidy` block yet, the same deadline is
 `tidy: { timeoutMs: 60_000 }`.
 
-A site that reaches Anthropic through a gateway of its own passes a `tidy.client` factory that takes
+A site that reaches Anthropic through a gateway passes a `tidy.client` factory that takes
 `{ apiKey }` and returns a `TidyClient`. The dev stub in
 [Run tidy in local development](#run-tidy-in-local-development) uses the same seam. Without a gateway
 or a dev stub to wire, go on to [Limits on a tidy result](#limits-on-a-tidy-result).
@@ -261,7 +260,7 @@ The [`TidyClient`](../reference/sveltekit.md#types) and
 [`ContentRoutesConfig`](../reference/sveltekit.md#contentroutesconfig) rows give the full contract.
 Left unset, `client` is the real Anthropic SDK client, built lazily from the key.
 
-To route tidy through your own client, follow these steps:
+To route tidy through a custom client, follow these steps:
 
 1. In the server module, write a factory that takes `{ apiKey }` and returns a `TidyClient`.
 2. In the same module, pass the factory to `createCairnAdmin` as `tidy: { client }`.
@@ -348,7 +347,7 @@ export const admin = createCairnAdmin({ runtime, tidy: { client } });
 ```
 
 `createFakeAnthropic()` returns the client factory itself. The import is dynamic and sits inside
-the gate. `devBackendOptIn()` is the scaffold's own helper, true when `CAIRN_DEV_BACKEND` is `'1'`
+the gate. `devBackendOptIn()` is the scaffold's helper, true when `CAIRN_DEV_BACKEND` is `'1'`
 on the Worker env or in `process.env`.
 
 To use the stub on the add-cairn tutorial's site, follow these steps:

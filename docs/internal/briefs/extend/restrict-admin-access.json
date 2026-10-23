@@ -6,7 +6,7 @@
       "id": "f:p1xmp5"
     },
     {
-      "text": "The site declares its own role names, or uses the default pair, `owner` and `editor`.",
+      "text": "The site declares role names, or uses the default pair, `owner` and `editor`.",
       "id": "f:4xrx5f"
     },
     {
@@ -42,7 +42,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Inside the site's SvelteKit app the map has two readers, since the engine checks its own screens and the site's own routes under `/admin` check themselves.",
+      "text": "Inside the site's SvelteKit app the map has two readers, since the engine checks its screens and the site's routes under `/admin` check themselves.",
       "id": [
         "f:cvzb8z",
         "f:9xthnq"
@@ -75,7 +75,7 @@
       "id": "f:iwf4nu"
     },
     {
-      "text": "They then enforce the map on your own screens' reads and writes and verify each role's reach.",
+      "text": "They then enforce the map on your screens' reads and writes and verify each role's reach.",
       "id": "f:iwf4nu"
     },
     {
@@ -317,7 +317,7 @@
       "id": "f:3z48zf"
     },
     {
-      "text": "The engine's screens and your own routes treat a target the map leaves out in opposite ways, as [Decide what the map leaves open](#decide-what-the-map-leaves-open) describes.",
+      "text": "The engine's screens and your routes treat a target the map leaves out in opposite ways, as [Decide what the map leaves open](#decide-what-the-map-leaves-open) describes.",
       "id": "f:zo034s"
     },
     {
@@ -424,7 +424,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Your own routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.",
+      "text": "Your routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.",
       "id": [
         "f:cvzb8z",
         "f:5pyozi"
@@ -439,7 +439,7 @@
       "id": "f:onqm6k"
     },
     {
-      "text": "The steps that follow apply to a route of your own.",
+      "text": "The steps that follow apply to a route you add.",
       "id": "no-claim"
     },
     {
@@ -482,7 +482,7 @@
       ]
     },
     {
-      "text": "To enforce the map on a route of your own, follow these steps:",
+      "text": "To enforce the map on a route you add, follow these steps:",
       "id": "no-claim"
     },
     {
@@ -569,7 +569,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A route key governs its own path and every path beneath it, matched by the deepest whole-segment prefix the map holds.",
+      "text": "A route key governs its path and every path beneath it, matched by the deepest whole-segment prefix the map holds.",
       "id": "f:uhoyun"
     },
     {

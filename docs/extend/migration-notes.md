@@ -1,12 +1,12 @@
 # Migration notes
 
 The per-version record of what a consumer must do to take a cairn upgrade, distilled from
-`CHANGELOG.md`'s own `Consumers must:` lines. `CHANGELOG.md` is the authoritative, gate-checked
+`CHANGELOG.md`'s `Consumers must:` lines. `CHANGELOG.md` is the authoritative, gate-checked
 source; this page exists so you can scan the versions that carried a real action without reading
 the whole file. A version not listed here stated no consumer action for that release.
 
 This record starts at `0.84.4`, the oldest version among the sites that depend on cairn today (per
-`CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
+`CHANGELOG.md`'s `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
@@ -14,10 +14,10 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 - **Move `editor.nav.configPath` to `editor.siteConfigPath`.** The nav editor, Settings, and Tags all read the one site-config file the adapter names, which defaults to `src/theme/site.config.yaml`. Set the member when your file lives elsewhere. A site that builds a `CairnRuntime` by hand adds `siteConfigPath` to it.
 - **Remove `itemLabel` from any `behavior` table, rename any concept whose id names an engine view, and make publish-action labels unique.** `itemLabel` stays on the `array` field descriptor. Composition now throws on a concept id of `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and on two publish actions that share a label.
 - **Return a `tagNames` array from every `sanitizeSchema` callback.** The callback now gets a copy of the safe schema, and the engine strips `script` after it returns, so a callback can no longer admit author script. Use a registered component or island for that markup, or `unsafeDisableSanitize` to turn the floor off.
-- **Delete your own `devBuildDefine` plugin and `__CAIRN_DEV_BUILD__` declaration.** The `cairnManifest()` plugin defines the flag now and `/ambient` declares it. A site that keeps both still builds, because a define the site sets wins.
+- **Delete your `devBuildDefine` plugin and `__CAIRN_DEV_BUILD__` declaration.** The `cairnManifest()` plugin defines the flag now and `/ambient` declares it. A site that keeps both still builds, because a define the site sets wins.
 - **Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`.** The package ships built JavaScript that imports `cloudflare:workers`. Without the entry, `vite dev` hands it to Node, which rejects the scheme, and `/admin` answers 500.
-- **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's own content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
-- **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its own entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.
+- **Drop `seedContent` from `devBackendHandle`, and pass `content: 'fixtures'` when the dev backend runs under `wrangler dev`.** The option never did anything, and the dev backend now serves your site's content from the working tree by default. That mode needs a filesystem, so it throws under workerd.
+- **Pass `content: 'fixtures'` to keep the seeded dev content.** A site that runs the dev backend without ever naming `seedContent` now sees its entries instead of the sample posts. Edits stay in memory either way, and the admin says so in one persistent notice.
 - **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**
   The engine's peer ranges become `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and a SvelteKit 2 site
   can't run it. The site also needs Vite `^8.0.12`, `@sveltejs/vite-plugin-svelte` `^7`, and Node
@@ -51,7 +51,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 - **Serve a built site with `wrangler dev`, not `vite preview`.** `vite preview` fails on adapter 8
   output with `ERR_UNSUPPORTED_ESM_URL_SCHEME` (sveltejs/kit#17271). Run
   `wrangler dev .svelte-kit/cloudflare/_worker.js`.
-- **Add your own caching if you relied on adapter 7's.** Adapter 7's worker put every response that
+- **Add caching if you relied on adapter 7's.** Adapter 7's worker put every response that
   carried a public `Cache-Control` into `caches.default`, `/media` and public SSR pages included.
   Adapter 8's worker does not, and the engine adds no replacement. `/media` answers `max-age=31536000,
   immutable`, so browsers still hold the bytes. A site that needs edge caching adds it, for example
@@ -62,7 +62,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   external.
 - **Serve `strict-origin-when-cross-origin` or `strict-origin` if your site sets `no-referrer`
   site-wide.** Under `no-referrer` a browser sends `Origin: null` on a form POST, and SvelteKit's
-  check refuses your own forms and `createAuthChannel` forms. cairn's admin documents pin
+  check refuses your forms and `createAuthChannel` forms. cairn's admin documents pin
   `strict-origin` with a header and a meta tag, so the admin keeps working unless a meta placed
   after `%sveltekit.head%` in `app.html` overrides it.
 - **Have a server-to-server POST carry a `Content-Type`.** SvelteKit 3 refuses a POST with no
@@ -85,7 +85,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   `roles` and `access` once on the adapter.** The three factories take one bag with a required
   `runtime`, where `runtime` is `composeRuntime({ adapter, siteConfig })` (the scaffold exports it
   from its runtime module), and a bare call is now a type error. They read `runtime.roles`
-  and `runtime.access`, so their own `roles` and `access` options are gone. Declare both as members
+  and `runtime.access`, so their `roles` and `access` options are gone. Declare both as members
   of the adapter (`defineAdapter({ roles, access })`). If the hooks and the adapter held different
   maps, reconcile them first: the adapter's governs every reader now, so a map only the hooks carried
   starts gating the engine's screens. A scaffolded site that kept `src/access.ts` folds the map into
@@ -159,7 +159,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   compiled sheet is now `dist/admin/cairn-admin.css`. Check an audit config's `sheet` (including a
   config you pass with `--config`) and any site script that names the old path.
 - **Know what the audit no longer reads.** `src/lib/components` left `DEFAULT_STATIC_SCOPE`, so
-  the rules that read it by default stop reading your own components there unless you restore the
+  the rules that read it by default stop reading your components there unless you restore the
   root with `static.scope`, as above. `stripe-trim-parity` and `unlayered-font-clobber` read only the admin roots in
   `static.scope`, so they never read your public components. The
   [`cairn-audit` reference](../reference/cairn-audit.md) states the same restore form.
@@ -184,7 +184,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   names the rule and gives a reason. `radius-scale` and the three retired-button-patch arms stay
   advisory until `0.99.0`.
 - **Re-check any custom admin screen.** Nothing is required, but the admin now takes its look
-  from daisyUI's theme layer. A plain daisyUI class on your own screen renders cairn's corner
+  from daisyUI's theme layer. A plain daisyUI class on your screen renders cairn's corner
   ladder and hairline edges, a plain `btn` is a hairline button, and a checked or pressed `btn`
   renders as the selected segment. Controls also grow one size step: a default control is 45px
   tall instead of 40px, a `btn-sm` or `input-sm` 36px instead of 32px, and badges, checkboxes,
@@ -256,7 +256,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   after an adapter change) fails the build the same way a stale content manifest does.
 - **`createLogger` (`/log`) takes an optional options bag.** Nothing to change: a
   `createLogger<MyEvent>()` call is unaffected. `createLogger<MyEvent>({ redactKeys: ['memberNumber']
-  })` adds your own field names to the redaction, unioned with `REDACTED_LOG_KEYS` rather than
+  })` adds your field names to the redaction, unioned with `REDACTED_LOG_KEYS` rather than
   replacing it. Redaction also recurses three levels into plain objects and arrays now, so a record
   that nested a secret inside a headers bag or a row array starts reading `<redacted>` where it used
   to carry the value.
@@ -265,7 +265,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `cairn-manifest`) now answer `--help`. A CI job piping `cairn-manifest`'s output no longer risks
   a truncated error message. A script that already passes no arguments or only valid flags needs
   no change. `cairn-audit`'s rendered harness also gains a redirect-trap refusal: a run with every
-  configured page resolving to the login route's own title and landmark now throws and exits 2,
+  configured page resolving to the login route's title and landmark now throws and exits 2,
   naming `CAIRN_AUDIT_COOKIES`, instead of silently reporting a clean run.
 - **Apply migration `0004` before deploying.** A magic link now only signs in the browser that
   requested it: `cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/`,
@@ -273,7 +273,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   login outage with no second channel, since every confirm names the new `nonce_hash` column. No
   command checks this before you deploy; confirm the migration applied with
   `npx wrangler d1 migrations list <auth-db> --remote`, valid only after the preceding copy step,
-  since it reads your local migrations directory against D1's own ledger, not the column itself: a
+  since it reads your local migrations directory against D1's ledger, not the column itself: a
   database where you hand-ran the SQL instead still reports `0004` unapplied, and re-applying it
   then fails with a duplicate-column error.
 - **`createContentRoutes` and `createCairnAdmin` (`/sveltekit`) take one config bag, not two
@@ -318,7 +318,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `{ env }` context parameter to a hand-rolled `lookup` and `verify`, reading the D1 binding off
   `ctx.env` instead of a captured closure. Copy
   `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql` into the channel binding's
-  own `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`, then run
+  `migrations_dir` in place of any file transcribed from `CHANNEL_SCHEMA_SQL`, then run
   `npx wrangler d1 migrations apply <channel-db>`; every statement is idempotent, so applying it
   against an already-provisioned database is a safe no-op. `revokeSessions(db, subject)` is
   unchanged.
@@ -335,8 +335,8 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `previewMint` (`/sveltekit`) to `mintPreview`, `previewRevoke` (`/sveltekit`) to `revokePreview`,
   `previewLoad` (`/sveltekit`) to `loadPreview`, and `healthLoad` (`/sveltekit`) to `loadHealth` at
   any call site; every signature, return type, and thrown error is unchanged. `loadHealth` reaches
-  every site's own `src/routes/healthz/+server.ts`; `loadPreview` reaches a site that mounts a
-  preview route, in its own `src/routes/(site)/preview/[token]/+page.server.ts`.
+  every site's `src/routes/healthz/+server.ts`; `loadPreview` reaches a site that mounts a
+  preview route, in its `src/routes/(site)/preview/[token]/+page.server.ts`.
 - **Four discriminated results move onto the `outcome` idiom, every discriminant value restated in
   kebab case.** `RequestResult` (`/sveltekit`) renames to `RequestOutcome`: a login form switches
   from `form.status` to `form.outcome`, and from `'send_error'` to `'send-error'`; `form.sent` is
@@ -347,8 +347,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   values `'sent'` and `'confirmed'`. A `result.ok` or `result.error` read fails the build, but `if
   ('error' in result)` still compiles and now always reads false, silently treating every refusal
   as a success; grep for `'error' in` against a held `createAuthChannel` result and rewrite each
-  to `result.outcome !== 'sent'` / `result.outcome !== 'confirmed'`. The example site's own
-  `src/routes/members/login/+page.server.ts` carried the `'error' in result` pattern before this
+  to `result.outcome !== 'sent'` / `result.outcome !== 'confirmed'`. The example site's `src/routes/members/login/+page.server.ts` carried the `'error' in result` pattern before this
   pass rewrote it, so check a copy of that route first. `RevertFailure` (`/sveltekit`) renames to `RevertOutcome`: a
   history screen switches from `form.reason` to `form.outcome`, and from
   `'draft_exists'`/`'ref_unknown'`/`'history_stale'` to
@@ -377,9 +376,9 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `UploadResult`, `MediaBulkDeleteResult`, `MediaOrphanPurgeResult`, `MediaOrphanScanResult`,
   `MediaReplacePreviewPlan`, `MediaReplacePreviewEntry`, `MediaAltPreviewPlan`,
   `MediaAltPreviewEntry`, `TidyResult`, and `DictionaryAddResult` also retire from `/sveltekit`; a
-  site importing one to annotate its own action reads the action's return type through inference
+  site importing one to annotate its action reads the action's return type through inference
   instead, since none of these ten media-janitorial and settings/tidy/dictionary actions are
-  reachable outside `createCairnAdmin`'s own composition. See `CHANGELOG.md`'s entries for the
+  reachable outside `createCairnAdmin`'s composition. See `CHANGELOG.md`'s entries for the
   full list, grouped by family.
 - **`validateReproFence` (`@glw907/cairn-cms/reproductions/manifest`) gains an
   `options?: ValidateReproFenceOptions` third parameter, and `ReproFenceValidation` retires.** A
@@ -407,14 +406,14 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   (`ComponentContext`). Inline `iconSpan`'s body (`role === 'secondary' ? ['cairn-icon',
   'cairn-icon-secondary'] : ['cairn-icon']` then `h('span', { className }, [glyphEl])`) and
   `cardShell`'s body (`h('section', { className: classes }, [h('div', { className:
-  ['cairn-alert-body'] }, body)])`) at their call sites, and re-home `headRow` as your own code
+  ['cairn-alert-body'] }, body)])`) at their call sites, and re-home `headRow` as your code
   with its signature unchanged; see `CHANGELOG.md`'s entry for the exact shape. The removed
   `cardShell` and `headRow` helpers carried the `card-body` and `card-title` literals. The
   preceding worked example already shows the rename the DaisyUI collision requires
   (`cairn-alert-body`/`cairn-head-title`), so if you keep DaisyUI's `card` component enabled for
-  other markup, carry that same rename into your own re-homed code and update any prose CSS that
+  other markup, carry that same rename into your re-homed code and update any prose CSS that
   targets it. Re-homing the helpers verbatim, literals included, moves `card-body`/`card-title`
-  into your own Tailwind-scanned source, where DaisyUI's own `.card-body`/`.card-title` rules
+  into your Tailwind-scanned source, where DaisyUI's `.card-body`/`.card-title` rules
   restyle the alert.
 - **Seventeen type-only names moved to their canonical home.** The engine now publishes each
   exported name from exactly one subpath. Re-point these imports away from
@@ -445,7 +444,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   and `hero` presets are now the whole vocabulary. Drop any `variants:` key from a `media` block
   (it's a type error now, not a silent no-op); a site needing a size beyond the four built-ins
   builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL
-  format, since cairn's own URL builder was never public surface.
+  format, since cairn's URL builder was never public surface.
 - **`StatusChip`'s register grammar moved to its second generation.** `register` is now
   `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the status dot, and the
   STATUS_CHIP_DOT_CLASS export are all removed. Replace `register="bounded"` with
@@ -453,7 +452,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `neutral`/`info`/`success` to `register="quiet"` (or omit `register`, now the default) and
   `warning`/`danger` to `register="warning"`. A former `tone="danger"` chip now renders identically
   to a `tone="warning"` one (there is no chip-level danger tier in the second generation); the
-  chip's own label text is the differentiator between the two states, not its color.
+  chip's label text is the differentiator between the two states, not its color.
 - **The `status-<tone>` classes no longer compile into the shipped admin sheet.** Stop relying on
   `status-neutral`/`status-info`/`status-success`/`status-warning`/`status-error` (and their size
   variants) in hand-authored admin markup.
@@ -487,28 +486,28 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   every editor-capability session; the warning names exactly which ones on the next server start,
   and `docs/extend/security-model.md#allowlist-semantics-from-an-exhaustive-map` gives the
   exhaustive-map recipe to close the gap.
-- **Two log event names change to match the vocabulary's own grammar.** taxonomy.unmarked_field
+- **Two log event names change to match the vocabulary's grammar.** taxonomy.unmarked_field
   becomes `content.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.
 - **`mintPreview` replaces `mintPreviewToken`** (`/sveltekit`), taking
   `(runtime, config, event, { concept, entryId })` and performing the entry-scoped authorization
   and draft check itself, rather than leaving them to the caller. It returns a discriminated
   `PreviewMintOutcome` (`minted`, `unknown-concept`, `invalid-id`, `no-draft`) instead of throwing
-  for a bad target. A site calling `mintPreviewToken` from its own workflow route switches to
+  for a bad target. A site calling `mintPreviewToken` from its workflow route switches to
   `mintPreview` and its new signature and outcome shape.
 - **`TidyClient` (`/sveltekit`) narrows to an engine-owned contract**: `tidy(request, options)`
   takes `{ model, system, text, effort? }` and returns `{ corrected, refused, tokens: { input,
   output } }`, dropping the transcribed Anthropic wire fields (`max_tokens`, `output_config.effort`,
   `stop_reason`, `usage.*`). A hand-rolled `TidyClient` fake (through
   `ContentRoutesConfig.tidy.client`) implements the narrower shape instead of `messages.create`'s
-  wire body. `TidyResult.model` (the action's own return, separate from `TidyClient`) is unaffected:
+  wire body. `TidyResult.model` (the action's return, separate from `TidyClient`) is unaffected:
   it still names the requested model, never one the client or Anthropic resolved it to.
 - **`ComponentContext` (`/render`) gains `attr(key)`; `strAttr` retires.** Replace
   `strAttr(ctx, key)` with `ctx.attr(key)`.
 - **`HistoryData.draft.startedAt` renames to `lastSavedAt`, and `RevertFailure`'s
   `draft_exists.draftStartedAt` renames to `draftLastSavedAt`.** Rename both field reads.
 - **`formatTimestamp` (`/admin-toolkit`) now accepts only two input shapes**: a SQLite
-  `datetime('now')`-shaped string and a full ISO 8601 string carrying its own `Z` suffix or an
+  `datetime('now')`-shaped string and a full ISO 8601 string carrying a `Z` suffix or an
   explicit `±hh:mm` offset. Supply a zone (`Z` or a `±hh:mm` offset) on any near-ISO timestamp
   passed to `formatTimestamp`; a zone-less near-ISO string now passes through unformatted, where
   published `0.96.0` rendered it as UTC.
@@ -521,7 +520,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 - **`ReproContext` (`/reproductions`) gains a `mediaBase` prop; `fixtureMediaBase` retires from
   `/reproductions/manifest`.** Pass `mediaBase` to `ReproContext` instead of importing
   `fixtureMediaBase`; a site deployed under a SvelteKit `paths.base` composes fixture image URLs
-  inside its own namespace by passing that prefix.
+  inside its namespace by passing that prefix.
 - **`MarkdownEditor`'s thirteen `register*` props retire in favor of one `registerEditor`
   callback.** `registerInsert`, `registerInsertLink`, `registerInsertImage`,
   `registerCaretCoords`, `registerFocusEditor`, `registerImagePlaceholders`,
@@ -554,7 +553,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   unchanged and every record's field set is unchanged.
 - **`OfficeList` (`/admin-toolkit`) is retired.** Replace an `<OfficeList>` composition with
   `PageHeader` beside `AdminTable` inside a bare `overflow-hidden card-shell card-shadow` div (no
-  `overflow-x-auto` on that div; `AdminTable`'s own wrapper already carries the horizontal
+  `overflow-x-auto` on that div; `AdminTable`'s wrapper already carries the horizontal
   scroll, and `overflow-hidden` clips the table's square edges to the card's rounded corners):
 
   ```svelte
@@ -615,12 +614,11 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   technology. The reduced-motion pin on `::-webkit-progress-value` goes with the transition it
   pinned.
 - **Three utility classes leave the packaged admin sheet, because their last call sites go:**
-  `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose own markup carries
+  `transition-all`, `transition-[width]`, and `duration-[250ms]`. A site whose markup carries
   any of the three was relying on the engine's sheet to compile it; add the class to that site's
-  own Tailwind content or restate the declaration.
+  Tailwind content or restate the declaration.
 - **A native `title` on an admin action control is replaced by `admin-toolkit`'s `Tooltip`.** No
-  action, unless your own admin copied the `cairn-btn-guarded` marker class from the engine's own
-  markup; no site has. `cairn-audit`'s `stock-default-hazards` rule now names that
+  action, unless your admin copied the `cairn-btn-guarded` marker class from the engine's markup; no site has. `cairn-audit`'s `stock-default-hazards` rule now names that
   class retired, reported at advisory tier until `0.98.0` promotes the finding to error; the class
   itself stays compiled until a later release removes it.
 - **`cairn-doctor` loses `--fix`, the `skill.admin-screens` check, and the
@@ -648,15 +646,15 @@ See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 The release step sets the version number at the cut and renames this section to match it. This
 window raises three toolchain floors.
 
-- **Run Node 24 or later on your build machine.** `create-cairn-site`'s own preflight now refuses
+- **Run Node 24 or later on your build machine.** `create-cairn-site`'s preflight now refuses
   a Node 22 install; the engine, the scaffolder, and the dev backend package all raised
   `engines.node` from `>=22` to `>=24`.
 - **The `@sveltejs/kit` and `svelte` floors moved to the versions cairn now develops and tests
   against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
   before installing; npm's default peer resolution refuses the install otherwise.
 - **`@cloudflare/workers-types` is now a peer dependency at `^5`.** Install
-  `@cloudflare/workers-types@^5` as a devDependency, even if you generate your own binding types
-  with `wrangler types`: cairn's own shipped `.d.ts` files import named types directly from this
+  `@cloudflare/workers-types@^5` as a devDependency, even if you generate binding types
+  with `wrangler types`: cairn's shipped `.d.ts` files import named types directly from this
   package, so skipping the install silently loses every cairn-typed binding signature to an
   unresolvable-import `any` under `skipLibCheck: true`, and npm's default peer resolution refuses
   the install without it.
@@ -666,20 +664,19 @@ One more entry carries a conditional action. The exported `TidyClient` type gain
 body fields.
 
 Three fixes need no consumer action but are worth knowing about. `previewLoad` (`/sveltekit`) now
-reads `$app/environment` through a dynamic import guarded by `try`/`catch`, esbuild's own
-documented escape hatch for downgrading an unresolvable specifier from a bundle-time error to a
+reads `$app/environment` through a dynamic import guarded by `try`/`catch`, esbuild's documented escape hatch for downgrading an unresolvable specifier from a bundle-time error to a
 runtime concern, so a site that added a Wrangler alias for `$app/environment` to work around the
 barrel failing to resolve in a raw, non-Vite esbuild bundle (a Cron handler wired outside Vite,
 for example) can remove that workaround. `previewLoad` now also strips `canonical`, `og:url`, and
 `jsonLd.url` from the `seo` it returns, so a site that already stripped those fields itself before
-rendering a preview can drop its own strip. `PreviewBanner` (`/components`) now renders its expiry
+rendering a preview can drop that strip. `PreviewBanner` (`/components`) now renders its expiry
 as a fixed UTC string instead of the visitor's locale, closing a possible hydration mismatch; a
-site wanting its own date vocabulary can pass the new optional `formatExpiry` prop.
+site wanting a different date vocabulary can pass the new optional `formatExpiry` prop.
 
 Nothing else in this window asks anything of a consumer. The dependency bumps stay inside their
-own ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is
+ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is
 unaffected. A newly scaffolded site starts on `compatibility_date` `2026-08-21` without the
-redundant `nodejs_compat` flag; an existing site keeps its own. The rest is documentation, gates,
+redundant `nodejs_compat` flag; an existing site keeps its flag. The rest is documentation, gates,
 and internal tooling that ships in no tarball.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md#0960).
@@ -704,7 +701,7 @@ errors rather than runtime failures, and one operational fact.
   `parseSiteConfig` was already refusing those same unknown keys at runtime.
 - **`AdminShellData` gained a required `mediaBase`, and `EditData` a required `singular`.** Both
   arrive populated through `shellLoad` and `editLoad`, so a site reaching them the normal way does
-  nothing. A site that hand-builds either payload, including in its own tests, adds the field.
+  nothing. A site that hand-builds either payload, including in its tests, adds the field.
 - **`DeleteDialog` and `RenameDialog` renamed their `label` prop to `singular`.** Pass the concept's
   singular noun rather than its plural label: these dialogs write sentences about one entry, and the
   plural rendered "Delete this posts?"
@@ -714,7 +711,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#0950).
 ## 0.95.0-rc.1
 
 - **The tidy action's SDK dependency moved.** `@anthropic-ai/sdk` is now an optional peer
-  dependency instead of a plain one. A site using the tidy action adds it to its own dependencies
+  dependency instead of a plain one. A site using the tidy action adds it to its dependencies
   (`npm install @anthropic-ai/sdk`); a site not using tidy does nothing, and its install gets
   lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#0950-rc1).
 
@@ -724,7 +721,7 @@ A large, deliberately consolidated breaking release: a rename-and-type sweep acr
 shape, the role type, the deps types, the admin-action refusal channels, the admin-toolkit field
 names, and the `navLayout` types finalized after 0.86.0's introduction; a route-factory action-name
 rekey; and an access-map rekey for a parameterized `createSectionAction` route. `CHANGELOG.md`
-carries its own ordered, numbered checklist for this version rather than scattering the steps
+carries an ordered, numbered checklist for this version rather than scattering the steps
 across prose, specifically so a consumer crossing it has one list to work from. Read [that
 checklist](../../CHANGELOG.md#0940) directly rather than this page's summary; it is long enough
 that reproducing it here would only create a second copy to keep in sync.
@@ -742,7 +739,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#0920) for the full entries.
 
 ## 0.91.0
 
-- **`badge-ghost` retired from cairn's own tree.** Replace any own `badge-ghost` usage with
+- **`badge-ghost` retired from cairn's tree.** Replace any `badge-ghost` usage with
   `StatusChip register="quiet"` (`@glw907/cairn-cms/admin-toolkit`) or the equivalent
   `.cairn-chip-quiet` recipe; `cairn-audit`'s `stock-default-hazards` check now errors on
   `badge-ghost` directly.

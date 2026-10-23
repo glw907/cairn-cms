@@ -1,10 +1,10 @@
 # Add cairn to a SvelteKit app
 
-cairn is a markdown CMS embedded in a SvelteKit site that runs on Cloudflare Workers. The engine is an npm package the site installs and wires in through its own SvelteKit files. A route mounts the admin at `/admin`, a server hook guards it, and a Vite plugin indexes the markdown content at build time. In the admin, editors sign in from an emailed link, and each publish commits their edit to the site's repository through a GitHub App the site registers for itself. In production, the engine keeps its editors, sessions, and sign-in tokens in a D1 database bound to the site's Worker, and it sends sign-in mail through the Worker's Email Sending binding.
+cairn is a markdown CMS embedded in a SvelteKit site that runs on Cloudflare Workers. The engine is an npm package the site installs and wires in through its SvelteKit files. A route mounts the admin at `/admin`, a server hook guards it, and a Vite plugin indexes the markdown content at build time. In the admin, editors sign in from an emailed link, and each publish commits their edit to the site's repository through a GitHub App the site registers for itself. In production, the engine keeps its editors, sessions, and sign-in tokens in a D1 database bound to the site's Worker, and it sends sign-in mail through the Worker's Email Sending binding.
 
 The usual way to start a cairn site is the setup command, `npx create-cairn-site`, which scaffolds a complete starter site with Waymark, cairn's public reading theme, already wired in. For a new site it is the much easier route, since it also creates the GitHub App, the repository, and the Cloudflare bindings and deploys the site, all in one run. [Scaffolded site files](scaffolded-site-files.md) explains what it writes.
 
-This tutorial adds cairn by hand, for the readers the setup command leaves out. A developer with an existing SvelteKit app needs that route. The setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists. A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own. A developer curious about what cairn does underneath can read the tutorial through without building anything. It shows every file the engine needs and why.
+This tutorial adds cairn by hand, for the readers the setup command leaves out. A developer with an existing SvelteKit app needs that route. The setup command scaffolds only into a missing or empty directory and never adds cairn to an app that already exists. A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings one. A developer curious about what cairn does underneath can read the tutorial through without building anything. It shows every file the engine needs and why.
 
 The tutorial carries one example throughout: Field Notes, a site with one post. By the end, Field Notes runs in production, and an editor can sign in, edit the post, and publish it to the deployed site.
 
@@ -888,7 +888,7 @@ To see the refusal, follow these steps:
 
 ### Register the GitHub App
 
-Each site registers its own GitHub App, with one repository permission, **Contents** at **Read and write**, and no webhook. The engine ships no App and no shared credential, and cairn never receives a webhook.
+Each site registers a GitHub App, with one repository permission, **Contents** at **Read and write**, and no webhook. The engine ships no App and no shared credential, and cairn never receives a webhook.
 
 To register and install the App, follow these steps:
 

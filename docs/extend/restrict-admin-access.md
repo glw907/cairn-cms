@@ -1,19 +1,19 @@
 # Restrict admin access
 
 Everyone who signs in to a cairn admin has a role.
-The site declares its own role names, or uses the default pair, `owner` and `editor`.
+The site declares role names, or uses the default pair, `owner` and `editor`.
 Each role resolves to one capability, `owner`, `editor`, or `none`, and cairn enforces capability first.
 The access map declares which roles reach each engine screen and each route under `/admin`, and it can only narrow what a capability allows.
 Whatever the map says, a role with `none` capability stays out, and an owner reaches every target the map names.
 The map decides only which editor-capability roles reach each target.
 
 An organization's site needs that narrowing when, for example, volunteers write posts while one webmaster manages the media library and the signups list.
-Inside the site's SvelteKit app the map has two readers, since the engine checks its own screens and the site's own routes under `/admin` check themselves.
+Inside the site's SvelteKit app the map has two readers, since the engine checks its screens and the site's routes under `/admin` check themselves.
 The engine reads the map from the adapter, and the site's routes read it from the hook handle in `src/hooks.server.ts`.
 In a build, that handle is the guard, `createAuthGuard`.
 Under `npm run dev`, it's `devBackendHandle`.
 The steps that follow declare a role vocabulary and an access map and give the map to both readers.
-They then enforce the map on your own screens' reads and writes and verify each role's reach.
+They then enforce the map on your screens' reads and writes and verify each role's reach.
 One example runs through every step.
 It declares a webmaster role, and only webmasters and owners reach the media library and the scaffold's signups screen.
 
@@ -106,7 +106,7 @@ It throws on an empty map, a role outside the vocabulary, and a malformed key.
 It also throws on an empty role list, so an owner-only rule is written `['owner']`.
 Composition also throws on a route key that collides with a built-in admin view.
 The [`defineAccess`](../reference/core.md#defineaccess) entry gives the key-shape rules in full.
-The engine's screens and your own routes treat a target the map leaves out in opposite ways, as [Decide what the map leaves open](#decide-what-the-map-leaves-open) describes.
+The engine's screens and your routes treat a target the map leaves out in opposite ways, as [Decide what the map leaves open](#decide-what-the-map-leaves-open) describes.
 
 ## Pass the map to the adapter and the guard
 
@@ -156,10 +156,10 @@ handle = createAuthGuard({ roles, access });
 
 ## Enforce the map on your routes
 
-Your own routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.
+Your routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.
 The example needs no edit here, since the scaffold's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.
 Its destructive `remove` action also sets `ownerOnly: true`.
-The steps that follow apply to a route of your own.
+The steps that follow apply to a route you add.
 
 `requireAccess` checks `event.route.id`, never the request URL, since a parameterized route's URL is chosen by whoever sends the request.
 It returns the session, and it redirects to sign-in when there is none.
@@ -173,7 +173,7 @@ Its target defaults to the route id with route groups dropped.
 `ownerOnly` adds an owner-capability check after the map's rule passes.
 In the example, a webmaster session adds a signup, and only an owner removes one.
 
-To enforce the map on a route of your own, follow these steps:
+To enforce the map on a route you add, follow these steps:
 
 1. In `src/access.ts`, add a key for the route, listing the roles that reach it.
 
@@ -208,7 +208,7 @@ The first check under [Verify each role's reach](#verify-each-roles-reach) reads
 
 ## Key nested and parameterized routes
 
-A route key governs its own path and every path beneath it, matched by the deepest whole-segment prefix the map holds.
+A route key governs its path and every path beneath it, matched by the deepest whole-segment prefix the map holds.
 A key `/admin/money` governs `/admin/money/refunds` unless the map also holds that deeper key, and `/admin/moneyx` never matches `/admin/money`.
 
 A route's default target is its route id with route groups dropped, so the route id `/admin/(app)/roster` reads as `/admin/roster`.

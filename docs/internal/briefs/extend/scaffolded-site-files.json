@@ -2,7 +2,7 @@
   "page": "docs/extend/scaffolded-site-files.md",
   "sentences": [
     {
-      "text": "A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in its own GitHub repository, already deployed as a Cloudflare Worker, with the engine, `@glw907/cairn-cms`, listed as one ordinary dependency in `package.json`.",
+      "text": "A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in a GitHub repository, already deployed as a Cloudflare Worker, with the engine, `@glw907/cairn-cms`, listed as one ordinary dependency in `package.json`.",
       "id": [
         "f:kldwss",
         "f:j0ut9n"
@@ -360,7 +360,7 @@
       "id": "f:qfv5iw"
     },
     {
-      "text": "The `.gitattributes` file ships under its own name.",
+      "text": "The `.gitattributes` file ships unrenamed.",
       "id": "f:qfv5iw"
     },
     {
@@ -583,7 +583,7 @@
       "id": "f:n7t4bn"
     },
     {
-      "text": "Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per database.",
+      "text": "Each D1 binding names its `migrations_dir`, so the site carries one migration directory per database.",
       "id": "f:nv0ok0"
     },
     {
@@ -721,7 +721,7 @@
       "id": "f:4cet3p"
     },
     {
-      "text": "The `media/[...path]/` route exports the `createMediaRoute` handler, which streams uploaded media from `MEDIA_BUCKET` at content-addressed keys with its own security headers, since the route sits outside `/admin`.",
+      "text": "The `media/[...path]/` route exports the `createMediaRoute` handler, which streams uploaded media from `MEDIA_BUCKET` at content-addressed keys with security headers, since the route sits outside `/admin`.",
       "id": "f:qtvesq"
     },
     {
@@ -1108,7 +1108,7 @@
       "id": "f:skp1jv"
     },
     {
-      "text": "A new owner can create an API token of their own and select it there, as Cloudflare's [build configuration page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) describes.",
+      "text": "A new owner can create an API token and select it there, as Cloudflare's [build configuration page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) describes.",
       "id": "f:skp1jv"
     },
     {

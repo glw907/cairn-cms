@@ -20,7 +20,7 @@ re-skins it by changing about fourteen color and type values, which suits a site
 layouts already fit. A developer with a design the site already has ports it onto the same chassis
 in Waymark's place. A site built by hand from `sv create`, as in [Add cairn to a SvelteKit
 app](add-cairn-to-a-sveltekit-app.md), starts with neither Waymark nor the chassis and brings its
-own theme, so after the preconditions its work begins at [Theme a hand-built
+theme, so after the preconditions its work begins at [Theme a hand-built
 site](#theme-a-hand-built-site). A scaffolded site skips that section and works through the chassis
 boundary, the token tiers, the local loop, and one of the two recipes. The recipe leads into styling
 rendered markdown and the editor preview, then verifying the theme and resolving any audit finding.
@@ -123,7 +123,7 @@ compositions. The setup command copies the chassis and Waymark into the site's t
 package ships neither, so an engine upgrade leaves these files unchanged.
 
 A re-skin edits no chassis file, and a port edits one only where a step or a convention in
-[Port your own theme onto the chassis](#port-your-own-theme-onto-the-chassis) names the edit. Both
+[Port your theme onto the chassis](#port-your-theme-onto-the-chassis) names the edit. Both
 recipes still read the engine's roles from `cairn-public.css`, and
 [Token tiers and cascade order](#token-tiers-and-cascade-order) states which declaration of a role
 wins.
@@ -273,7 +273,7 @@ reference gives the formula, and the fix when a derived ink fails on the theme's
 With the status colors rebranded, return to [Re-skin Waymark](#re-skin-waymark) and run the checks
 in [Verify the theme](#verify-the-theme).
 
-## Port your own theme onto the chassis
+## Port your theme onto the chassis
 
 A port replaces Waymark's style sheets, chrome components, and page compositions with the new
 theme's, and keeps `src/chassis/`. The port reaches the chassis through its exported seams. It

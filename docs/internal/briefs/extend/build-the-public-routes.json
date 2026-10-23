@@ -383,7 +383,7 @@
       "id": "no-claim"
     },
     {
-      "text": "In a module of its own (`src/chassis/public-routes.ts` on a scaffolded site), export one `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`.",
+      "text": "In a separate module (`src/chassis/public-routes.ts` on a scaffolded site), export one `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`.",
       "id": [
         "f:pkt8i6",
         "f:s4prb0",
@@ -978,7 +978,7 @@
       "id": "f:k7nln3"
     },
     {
-      "text": "A page that writes its own `<script>` in place of `CairnHead` serializes its JSON-LD with `renderJsonLdScript`.",
+      "text": "A page that writes a `<script>` in place of `CairnHead` serializes its JSON-LD with `renderJsonLdScript`.",
       "id": [
         "f:nibegw",
         "f:fvi8rk"

@@ -108,7 +108,7 @@ To build the render function, follow these steps:
    });
    ```
 
-The preview and the public routes each pass their own resolvers, and `render` forwards every one it
+The preview and the public routes each pass resolvers, and `render` forwards every one it
 receives. The [`SiteRender`](../reference/core.md#siterender) entry lists which
 resolver each caller passes. The `resolveFragment` wiring belongs to
 [Reuse content across entries](reuse-content-across-entries.md#forward-resolvefragment-from-your-render),

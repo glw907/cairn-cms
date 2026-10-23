@@ -39,7 +39,7 @@
     { "text": "In the adapter file, call `createRenderer` once with the site's registry, and keep the `renderMarkdown` it returns.", "id": ["f:dmn2uu", "f:qvj951"] },
     { "text": "The tutorial's site already calls it over `defineRegistry({ components: [] })`, which [Register the component](#register-the-component) replaces.", "id": "f:uqytbb" },
     { "text": "In the adapter's `rendering` group, set `render` to pass `body` and the three resolvers to `renderMarkdown`.", "id": ["f:ps54gh", "f:3l7f56"] },
-    { "text": "The preview and the public routes each pass their own resolvers, and `render` forwards every one it receives.", "id": ["f:ps54gh", "f:qvj951"] },
+    { "text": "The preview and the public routes each pass resolvers, and `render` forwards every one it receives.", "id": ["f:ps54gh", "f:qvj951"] },
     { "text": "The [`SiteRender`](../reference/core.md#siterender) entry lists which resolver each caller passes.", "id": "f:ps54gh" },
     { "text": "The `resolveFragment` wiring belongs to [Reuse content across entries](reuse-content-across-entries.md#forward-resolvefragment-from-your-render), and the `resolveMedia` wiring to [Configure media](configure-media.md).", "id": "f:ps54gh" },
     { "text": "On a scaffolded site, `render` also falls back to the public media resolver when its caller passes none.", "id": "f:u4cfvv" },

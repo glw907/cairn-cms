@@ -224,7 +224,7 @@ lists every routable entry for the prerenderer, and `entryLoad`, which loads one
 
 To wire the entry pages, follow these steps:
 
-1. In a module of its own (`src/chassis/public-routes.ts` on a scaffolded site), export one
+1. In a separate module (`src/chassis/public-routes.ts` on a scaffolded site), export one
    `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`.
 2. In `src/routes/(site)/[...path]/+page.server.ts`, export `prerender = true`, the factory's
    `entries`, and a load that returns the result of `entryLoad`.
@@ -710,7 +710,7 @@ export const load: PageServerLoad = () => ({
 ```
 
 The [`buildSeoMeta`](../reference/delivery-data.md#buildseometa) entry lists every input. A page that
-writes its own `<script>` in place of `CairnHead` serializes its JSON-LD with `renderJsonLdScript`.
+writes a `<script>` in place of `CairnHead` serializes its JSON-LD with `renderJsonLdScript`.
 `buildExcerpt` cuts a description from a markdown body. The `titleTemplate` rule from
 [Wire the entry pages](#wire-the-entry-pages) applies here too.
 

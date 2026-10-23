@@ -664,7 +664,7 @@
       "id": "f:93iwom"
     },
     {
-      "text": "A `behavior[field].validate(value, siblings)` function runs only for a field that passed its own checks.",
+      "text": "A `behavior[field].validate(value, siblings)` function runs only for a field that passed its checks.",
       "id": "f:93iwom"
     },
     {
@@ -796,7 +796,7 @@
       "id": "f:97c6g1"
     },
     {
-      "text": "An array of leaf items summarizes each row by its own value and ignores `itemLabel`.",
+      "text": "An array of leaf items summarizes each row by its value and ignores `itemLabel`.",
       "id": [
         "f:97c6g1",
         "f:fe46lo"

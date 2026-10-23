@@ -461,7 +461,7 @@
       "id": "f:ff3l1u"
     },
     {
-      "text": "The wrapper writes an audit row for every refusal its own checks make, so a refused caller can fill a persisted audit table cheaply.",
+      "text": "The wrapper writes an audit row for every refusal its checks make, so a refused caller can fill a persisted audit table cheaply.",
       "id": "f:da6d2z"
     },
     {
@@ -525,7 +525,7 @@
       "id": "f:clyg9r"
     },
     {
-      "text": "The wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`, because `AdminTable` sets its own horizontal scroll.",
+      "text": "The wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`, because `AdminTable` sets the horizontal scroll.",
       "id": "f:8x0qpa"
     },
     {
@@ -668,7 +668,7 @@
       ]
     },
     {
-      "text": "A `<form method=\"dialog\">` is a form element of its own, and nested forms are invalid HTML.",
+      "text": "A `<form method=\"dialog\">` is itself a form element, and nested forms are invalid HTML.",
       "id": "f:ho6dxa"
     },
     {

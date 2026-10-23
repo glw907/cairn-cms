@@ -22,7 +22,7 @@ your site with the route's headers.
 
 Two other readers need one part of the page. A developer building an admin screen that uploads
 finds the raw-body request the upload action takes, and its refusals, in
-[Upload from your own screen](#upload-from-your-own-screen). A developer building the site's render
+[Upload from your screen](#upload-from-your-screen). A developer building the site's render
 finds where the resolver it forwards comes from in
 [Resolve media on public pages](#resolve-media-on-public-pages), and what a miss renders in
 [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset).
@@ -131,8 +131,7 @@ bytes and refuses a sniffed HEIC or unrecognized file as `unsupported_type` what
 It also refuses an upload declared as SVG, HTML, or XML, or one whose first non-whitespace byte is
 `<`. Listing another type adds nothing.
 
-Cloudflare caps a Worker's request body by the account plan and answers a larger request with a 413
-of its own. The effective ceiling is the lower of `maxUploadBytes` and that cap, so raising
+Cloudflare caps a Worker's request body by the account plan and answers a larger request with a 413. The effective ceiling is the lower of `maxUploadBytes` and that cap, so raising
 `maxUploadBytes` past the cap does nothing. Cloudflare's
 [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-limits) page gives
 the cap for each plan.
@@ -199,7 +198,7 @@ A different `publicBase` renames the `media` directory.
 
 The route reads only the last path segment's hash and extension, and it ignores the slug and any
 fan-out directory. It checks for a 16-character hex hash and an allow-listed image extension before
-it reads the bucket. Because it sits outside `/admin`, it sets its own security headers on every
+it reads the bucket. Because it sits outside `/admin`, it sets security headers on every
 response that serves an object:
 
 - `X-Content-Type-Options: nosniff`
@@ -337,10 +336,10 @@ HTML block, or a code span is not counted. Deleting an asset that only an uncoun
 leaves its page with a missing asset, the case [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset)
 covers.
 
-If your site uploads from a screen of its own, build that request next; otherwise, go on to the
+If your site uploads from a custom screen, build that request next; otherwise, go on to the
 verification.
 
-## Upload from your own screen
+## Upload from your screen
 
 The `mediaUpload` action takes the file's raw bytes as a `text/plain` body. The action
 belongs to the `/admin/media` view, and the request needs `Content-Length` and `X-Cairn-CSRF`
@@ -420,7 +419,7 @@ verification reaches them:
    refusal. A `too_large` refusal points at `maxUploadBytes` in
    [Set the options](#set-the-options) and at the plan's request-body cap. A `length_required`
    refusal points at the `Content-Length` header in
-   [Upload from your own screen](#upload-from-your-own-screen). An `unsupported_type` refusal points
+   [Upload from your screen](#upload-from-your-screen). An `unsupported_type` refusal points
    at `allowedTypes` and the five types the engine stores.
 2. The page shows a literal `media:` reference. The entry route has no resolver, and the
    [`media.resolver_absent`](debug-your-site.md#mediaresolver_absent) entry covers the fix.

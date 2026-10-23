@@ -37,7 +37,7 @@ export interface ListToolbarFilter {
    */
   label: string;
   options: ListToolbarFilterOption[];
-  /** The filter's current value, one of `options`' own values. */
+  /** The filter's current value, one of `options`' values. */
   value: string;
   /**
    * Called with the new value on every change, including a pill's remove control (which

@@ -31,7 +31,7 @@ kind of panel content that implies.
 
 Focus-into-panel-on-open is a generic fallback: the first focusable descendant of whatever the
 panel snippet renders (button, link, form control, or an explicit `tabindex`) receives focus once
-the panel is visible. A caller with its more specific idea of what "first" means (a menu's own
+the panel is visible. A caller with its more specific idea of what "first" means (a menu's
 roving-tabindex option, say) still gets it for free, since focusing that same first element fires
 its `onfocus` handler, if it has one, the same way a real Tab keypress would. An instance whose
 `open` starts `true` (a caller that seeds an already-open disclosure) never yanks focus at mount:
@@ -299,7 +299,7 @@ not an affordance of their own an AT user should be told about, so they attach i
      `hidden` attribute (set via `ToolbarDisclosurePanelAttrs`, above) is the primary hiding
      mechanism now; this rule stays as defense in depth for a caller's `dropdown-content` panel
      root, since `hidden` and a `display` value both applying is harmless. Only the hidden state
-     needs a rule here; the open state shows the panel via its natural CSS (the caller's own
+     needs a rule here; the open state shows the panel via its natural CSS (the caller's
      `dropdown-content`/`menu` classes, or whatever else its panel snippet renders), not a
      `display` value this component would have to guess and re-assert. */
   .toolkit-toolbar-disclosure:not(.dropdown-open) :global(.dropdown-content) {

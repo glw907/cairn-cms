@@ -420,7 +420,7 @@ reflows its neighboring characters.
 <style>
   /* Layout only: shape and color come from the daisyUI classes above, except the facet's
      applied treatment (mixed from --color-primary, since no daisy utility carries that ratio),
-     the facet container's height, and the muted count line, matching `Pagination`'s own
+     the facet container's height, and the muted count line, matching `Pagination`'s
      range-line color. Values stay literal where there's no shared token that survives an
      `/admin/**` route, per the compiled-CSS constraint the header comment documents. Recomposed
      per the refuter-verified recipe: flex row, one control height across the row, the menu
@@ -596,7 +596,7 @@ reflows its neighboring characters.
 
   /* The inline clear affordance: its sibling element, never a button nested inside the
      trigger button (a nested interactive control is invalid markup and unreliable to activate).
-     Its own left border reuses the applied border's tint, so the divider reads as part of the
+     Its left border reuses the applied border's tint, so the divider reads as part of the
      same applied treatment rather than a separate control. */
   .toolkit-toolbar-facet-clear {
     display: inline-flex;

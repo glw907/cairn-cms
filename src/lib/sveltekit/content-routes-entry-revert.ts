@@ -1,6 +1,6 @@
 // cairn-cms: the entry revert cluster (revertAction). Starts a fresh pending branch from an
 // earlier publish rather than rewriting history; draftExistsFailure and revertSchemaDrift exist
-// only for revertAction's use, and BUILTIN_FRONTMATTER_KEYS is revertSchemaDrift's own
+// only for revertAction's use, and BUILTIN_FRONTMATTER_KEYS is revertSchemaDrift's
 // primitive, so all three stay module-internal.
 // createEntryRevertActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every

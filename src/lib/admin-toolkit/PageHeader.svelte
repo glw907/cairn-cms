@@ -11,7 +11,7 @@ The meta line is the toolkit's one home for a page-level count outside a toolbar
 `computeCountLine` covers a screen with a search/filter toolbar row, and this component's
 `meta` line covers a screen with none (a stats-prose summary, a scope note). Search never lives in
 this band; a screen that needs search mounts `ListToolbar` below this header instead. The line
-renders at `type-meta` (13px), the size its prop name already promises, so a screen's own
+renders at `type-meta` (13px), the size its prop name already promises, so a screen's
 toolbar count line matches it when both appear on one screen.
 
 The default `<h1>`/`<p>` margins do not collapse inside this flex column, so both elements zero

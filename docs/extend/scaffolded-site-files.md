@@ -177,7 +177,7 @@ config in depth.
 
 Because npm's packlist drops a file named `.gitignore`, the setup command's package stores this file
 as `gitignore`. The setup command renames it after copying and stops with an error when it is
-absent. The `.gitattributes` file ships unrenamed. Among its entries, `.gitignore` excludes
+absent. The `.gitattributes` file ships under its real name. Among its entries, `.gitignore` excludes
 the local `.dev.vars` and the compiled `.cairn/admin.css`, which the pre-scripts rebuild.
 
 ### Other root files

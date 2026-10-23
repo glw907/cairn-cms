@@ -276,7 +276,7 @@ an unresolved id instead of throwing. The
 [Manifest format, parse, and verify](../reference/core.md#manifest-format-parse-and-verify) entry
 documents `verifyReferences`.
 
-Before a change reaches the build, the admin runs separate checks.
+Before a change reaches the build, the admin checks it too.
 
 ## The admin's reference guards
 

@@ -99,7 +99,7 @@
     { "text": "A dangling reference that reaches the build fails it.", "id": ["f:l32sb1", "f:6ggh4v"] },
     { "text": "The route in [Resolve the targets on the entry route](#resolve-the-targets-on-the-entry-route) can therefore drop an unresolved id instead of throwing.", "id": "f:mpdshq" },
     { "text": "The [Manifest format, parse, and verify](../reference/core.md#manifest-format-parse-and-verify) entry documents `verifyReferences`.", "id": "f:6ggh4v" },
-    { "text": "Before a change reaches the build, the admin runs separate checks.", "id": "no-claim" },
+    { "text": "Before a change reaches the build, the admin checks it too.", "id": "no-claim" },
     { "text": "The admin checks references at three points in an entry's life.", "id": ["f:bz5j8f", "f:2zl9zw", "f:re5qlm"] },
     { "text": "A save with a bad target only warns, while a delete or rename that would strand a reference refuses.", "id": ["f:bz5j8f", "f:2g0v8u", "f:re5qlm"] },
     { "text": "A save whose `reference` field names a missing or still-draft target commits with a warning.", "id": "f:bz5j8f" },

@@ -24,7 +24,7 @@ export interface NormRole {
   family: NormFamily;
   /** CSS selector the generator matches against a rendered admin page. */
   selector: string;
-  /** What the role is, in the design system's own terms. */
+  /** What the role is, in the design system's terms. */
   description: string;
 }
 
@@ -85,7 +85,7 @@ export const NORM_ROLES: readonly NormRole[] = [
   {
     id: 'nav-item',
     family: 'text',
-    // Scoped to the shell's own nav landmark, not a bare `.menu a`. The command palette's result
+    // Scoped to the shell's nav landmark, not a bare `.menu a`. The command palette's result
     // list is a `.menu` too, and folding its type into this role widened the band until the
     // sidebar's ruled 15px step no longer read as the norm.
     selector: 'nav[aria-label="Site content"] .menu a',
@@ -195,7 +195,7 @@ export interface NormsManifest {
 export interface RatifiedNorm {
   role: string;
   property: string;
-  /** Every value the ratified decision allows, in the manifest's own units. */
+  /** Every value the ratified decision allows, in the manifest's units. */
   values: readonly (number | string)[];
   /** Where the decision is on record. */
   reference: string;
@@ -290,7 +290,7 @@ export interface RoleRecipe {
   /**
    * The {@link NORM_ROLES} id this recipe stands in for, when it demonstrates one of the ratified
    * roles. Unset for a recipe outside the ratified set: a plain button, the ink opener, the soft
-   * primary, and the selected segment are all real patterns with no norm role of their own.
+   * primary, and the selected segment are all real patterns with no norm role.
    */
   role?: string;
 }
@@ -304,7 +304,7 @@ export const RECIPE_MODEL =
 
 // Every Write string here is copied verbatim from docs/internal/admin-design-system.md or from the
 // /admin/theme-kit fixture route, never invented: norms.test.ts checks every token against
-// the committed admin sheet inventory or the fixture's own source, so a hand-typed row cannot drift
+// the committed admin sheet inventory or the fixture's source, so a hand-typed row cannot drift
 // from what actually compiles. The table lives here, read at print time the way findRatified reads
 // RATIFIED_NORMS, rather than inside the norms manifest: it is guidance data, not a measurement, and
 // norms:check never regenerates it.
@@ -312,7 +312,7 @@ export const RECIPE_MODEL =
  * Every recipe the shipped guidance and `cairn-audit norms <role>` teach: one row per ratified
  * role, plus the four hand-authored button patterns and the three corner-ladder patterns the
  * ratified roles do not otherwise demonstrate. This table is internal to the audit module and
- * carries no package export of its own.
+ * carries no package export.
  */
 export const ROLE_RECIPES: readonly RoleRecipe[] = [
   {
@@ -424,7 +424,7 @@ const PALETTE_NEUTRAL_KEYWORDS = new Set([
 /**
  * Whether a palette-dependent expression stays a relationship rather than a resolved Warm Stone
  * value. A consumer re-tunes the palette, so a manifest that stored the resolved value would teach
- * that consumer a number their own theme never produces.
+ * that consumer a number their theme never produces.
  *
  * A custom property is the usual route, and `currentcolor` is the other one: StatusChip's hairline
  * is `color-mix(in oklab, currentColor 35%, transparent)`, which names no palette value at all and
@@ -640,7 +640,7 @@ export function buildManifest(source: NormsSource, tables: NormsTables = {}): No
  * check needs neither, and it reads the production tables on every run, which is also what keeps
  * the default-parameter wiring below load-bearing the moment a design question is opened.
  *
- * `tables` overrides the production tables; a fixture proving a discipline passes its own rows
+ * `tables` overrides the production tables; a fixture proving a discipline passes its rows
  * rather than depending on whichever real question happens to be open.
  */
 export function checkManifestDisciplines(manifest: NormsManifest, tables: NormsTables = {}): string[] {

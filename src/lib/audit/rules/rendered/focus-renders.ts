@@ -2,7 +2,7 @@
 // actually render a focus indicator, not merely does a `:focus-visible` selector exist somewhere in
 // the sheet. The static `focus-parity` rule proves a selector pair exists in source text; it cannot
 // see the cascade resolving at render time, so a later layer (DaisyUI's `.menu` items quieting
-// `:focus-visible` before cairn-admin.css's own unlayered override restores it, section 6.2's
+// `:focus-visible` before cairn-admin.css's unlayered override restores it, section 6.2's
 // `focus-parity` evidence line) reads as covered in source while a real keyboard user sees nothing.
 //
 // Two demonstrated failures shaped what this rule became, both fixture-covered in
@@ -17,9 +17,9 @@
 // And "indicator" is wider than `outline`. The first build scoped itself to `outline` on the stated
 // grounds that the admin uses nothing else, which is false: MediaPicker, ComponentInsertDialog, and
 // CairnMediaLibrary all render a Tailwind `ring` (a `box-shadow`) and clear the outline, so an
-// outline-only check reports three error-tier false positives against cairn's own components. The
+// outline-only check reports three error-tier false positives against cairn's components. The
 // bar is now the honest one: focus must CHANGE something a sighted user can see. Each stop's
-// focused paint is compared against that same element's own resting paint, so a permanent
+// focused paint is compared against that same element's resting paint, so a permanent
 // decorative shadow cannot be mistaken for a focus ring, and a real ring in any mechanism counts.
 import { resolveColors } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
@@ -48,9 +48,9 @@ interface FocusStop {
   /** Why this stop cannot be judged from outside, or the empty string when it can. */
   unreadable: string;
   /**
-   * The focused element's own paint first, then each near ancestor's. daisyUI renders an input's
-   * focus ring on the WRAPPING label through `:focus-within` and clears the input's own outline,
-   * which cairn's own ListToolbar search field uses, so an element-only read reports a false
+   * The focused element's paint first, then each near ancestor's. daisyUI renders an input's
+   * focus ring on the WRAPPING label through `:focus-within` and clears the input's outline,
+   * which cairn's ListToolbar search field uses, so an element-only read reports a false
    * positive on a ring a keyboard user can plainly see.
    */
   chain: { id: number; paint: FocusPaint }[];
@@ -97,7 +97,7 @@ function readFocusedStop(depth: number): FocusStop | null {
   }
 
   // A frame or a shadow root reports the CONTAINER as the active element, never the descendant a
-  // user is actually on, so judging the container's own paint would flag a deliberate tab stop
+  // user is actually on, so judging the container's paint would flag a deliberate tab stop
   // (EditPage's sandboxed preview iframe) for a style that was never the indicator.
   let unreadable = '';
   if (el.tagName === 'IFRAME') {
@@ -157,7 +157,7 @@ function paintChanged(focused: FocusPaint, rest: FocusPaint | null): boolean {
  * Every tab stop must render a focus indicator: a real computed outline, or any other paint the
  * element does not carry at rest. Error tier: a false negative ships a control that is invisible to
  * a keyboard user, and a false positive costs a developer real time chasing a ring that was never
- * broken, so the outline's rendered color and the element's own resting paint are both consulted
+ * broken, so the outline's rendered color and the element's resting paint are both consulted
  * before this rule raises a finding.
  */
 export const focusRenders: RenderedRule = {

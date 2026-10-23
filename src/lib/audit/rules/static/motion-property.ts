@@ -4,16 +4,16 @@
 // the errors this admin has already shipped and removed once, so their message names the hazard
 // directly, and anything neither allowlisted nor named still fails as outside the language, with a
 // different message, because it is a construct nobody has reasoned about yet. `transition: all` and
-// `transition-all` are motion-band's own construct and are never re-reported here; `transition:
+// `transition-all` are motion-band's construct and are never re-reported here; `transition:
 // none` names no property to check at all, the idiom for disabling a rule's transitions outright.
 //
-// Three surfaces feed the same classification. Hand-authored CSS (a component's own scoped
-// `<style>` block, or a file `static.cssFiles` names) is read in full: authored code owns its own
+// Three surfaces feed the same classification. Hand-authored CSS (a component's scoped
+// `<style>` block, or a file `static.cssFiles` names) is read in full: authored code owns its
 // property choice. A Tailwind class the built admin sheet compiles is read through the class join,
 // exempting the recorded vendor component classes rather than fixing them: `conditions` alone
-// cannot attribute a declaration to DaisyUI's own plugin output, since cairn's own rules share the
+// cannot attribute a declaration to DaisyUI's plugin output, since cairn's rules share the
 // same `@layer components` and the same theme-root prelude, so the fallback is the explicit class
-// list below. The class join also exempts Tailwind's own compiled `transition-property` utility
+// list below. The class join also exempts Tailwind's compiled `transition-property` utility
 // group (`transition`, `transition-all`, `transition-colors`, `transition-opacity`,
 // `transition-shadow`, `transition-transform`): the same vendor category as the DaisyUI classes,
 // since `.transition-colors` compiles to ten names the shipped sheet chose, not the class author.
@@ -91,8 +91,8 @@ const NAMED_ERROR = new Set([
 // transitioning `margin`, `padding`, and `border-width`, `.collapse ::details-content` transitioning
 // `min-height`, `padding`, and `height`, `.toggle:before` transitioning `inset-inline-start`, `.btn`
 // declaring five properties on one `transition-property` list (over the three-property cap),
-// `.modal` and `.dropdown` each carrying their own vendor timing on a vendor-chosen property list,
-// `.modal-box`'s own four-property open/close transition (over the cap), `.dropdown-content`'s
+// `.modal` and `.dropdown` each carrying their vendor timing on a vendor-chosen property list,
+// `.modal-box`'s four-property open/close transition (over the cap), `.dropdown-content`'s
 // `display`/`overlay` pair (neither allowlisted nor named), `.menu`'s `block-size`/
 // `content-visibility` disclosure transition, `.checkbox:before`'s `clip-path` check-mark motion,
 // and `.card`'s `outline` shorthand focus transition.
@@ -111,7 +111,7 @@ const DAISYUI_VENDOR_CLASSES = new Set([
   'toggle',
 ]);
 
-// Tailwind's own compiled `transition-property` utility group. Each name here compiles a fixed,
+// Tailwind's compiled `transition-property` utility group. Each name here compiles a fixed,
 // vendor-chosen property list the class author does not type; `transition-[width]` and any other
 // bracketed arbitrary form are deliberately absent, since their bracket names the property the
 // author chose, the same authored decision the allowlist exists to check.
@@ -138,7 +138,7 @@ type Verdict = 'ok' | 'named-error' | 'outside';
 
 /**
  * Where one transition or animation property name sits against the closed allowlist. A
- * `display` or `overlay` entry additionally passes when its own declaration entry carries
+ * `display` or `overlay` entry additionally passes when its declaration entry carries
  * `allow-discrete`; every other caller (an animation keyframe declaration, a frame-offset
  * property) passes `false`, since neither surface carries a transition-behavior keyword.
  */
@@ -175,13 +175,13 @@ function capMessage(declProperty: string, declValue: string, count: number): str
   );
 }
 
-/** Whether a declaration's own property carries a comma list of transitioned property names. */
+/** Whether a declaration's property carries a comma list of transitioned property names. */
 function isTransitionListProperty(property: string): boolean {
   return property === 'transition' || property === 'transition-property';
 }
 
 /**
- * One `transition` value's own comma-separated entries, split at the top level only. A comma
+ * One `transition` value's comma-separated entries, split at the top level only. A comma
  * inside parentheses belongs to a function's argument list, never to the transition list: both
  * `var(--cairn-dur-base, 150ms)` (a custom property with a literal fallback, the discipline every
  * `admin-toolkit` component follows) and `cubic-bezier(0.2, 0, 1, 0.9)` carry one, and a naive
@@ -206,7 +206,7 @@ function topLevelEntries(value: string): string[] {
 
 /**
  * The transitioned property names a `transition`/`transition-property` value lists, `all` and
- * `none` both cleared: `all` is motion-band's own construct (never re-reported here), and `none`
+ * `none` both cleared: `all` is motion-band's construct (never re-reported here), and `none`
  * names no property at all, the CSS idiom for disabling every transition on a rule rather than a
  * property named "none".
  */
@@ -265,7 +265,7 @@ function declarationMessages(decl: { property: string; value: string }): string[
   return messages;
 }
 
-/** The CSS-family surface: a component's own `<style>` block, plus every `cssFiles` entry. */
+/** The CSS-family surface: a component's `<style>` block, plus every `cssFiles` entry. */
 function checkCssFamily(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];
   for (const scope of cssScopeRules(ctx)) {
@@ -297,7 +297,7 @@ function checkClassJoin(ctx: StaticRuleContext): Finding[] {
   return findings;
 }
 
-/** The keyframe name a `--animate-*` custom property names, read off its own declared value. */
+/** The keyframe name a `--animate-*` custom property names, read off its declared value. */
 function resolveKeyframeName(sheet: CompiledSheet, customProperty: string): string | undefined {
   return customPropertyValue(sheet, customProperty)?.split(/\s+/)[0];
 }
@@ -357,7 +357,7 @@ function propertiesOf(scope: { rule: { declarations: { property: string; value: 
  * earns the allowance. A second layout property on the declaring rule is never exempt, and a
  * second carrying element loses the allowance entirely, both convicted the same as an ordinary
  * finding. The declaring rule and the carrying element are read from independent surfaces (a
- * shell's own component markup and its packaged CSS file are typically not the same file), so
+ * shell's component markup and its packaged CSS file are typically not the same file), so
  * the carrying search runs across every file the run parses, not just the one the declaring rule
  * came from.
  *
@@ -365,7 +365,7 @@ function propertiesOf(scope: { rule: { declarations: { property: string; value: 
  * interpolated `data-cairn-motion` value, an attribute applied through a spread, or a carrying
  * component outside `ctx.files` all leave the carrying set empty. When that happens, nothing has
  * earned the exception, so every declared property, including `margin-left`, is convicted at the
- * declaring CSS rule's own position rather than silently passing.
+ * declaring CSS rule's position rather than silently passing.
  */
 function checkFrameOffset(ctx: StaticRuleContext): Finding[] {
   const findings: Finding[] = [];

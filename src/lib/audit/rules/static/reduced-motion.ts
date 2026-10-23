@@ -1,17 +1,17 @@
-// cairn-audit's reduced-motion rule: every selector whose own CSS declares a transition or
+// cairn-audit's reduced-motion rule: every selector whose CSS declares a transition or
 // animation (and does not merely neutralize one with `none`) has a matching rule, in the same
-// source, inside an `@media (prefers-reduced-motion: reduce)` guard. HelpHome's own
+// source, inside an `@media (prefers-reduced-motion: reduce)` guard. HelpHome's
 // `.step-act`/`.btn-quiet` pair is the shipped, passing example this rule locks in as a regression
-// gate: a single guarded rule names both selectors as a comma list, and each is read as its own
+// gate: a single guarded rule names both selectors as a comma list, and each is read as a
 // selector alternative (`sheet.ts`'s `splitSelectorList`) so neither has to repeat the whole list.
 //
-// A guard discharges a bearing rule's declared property under two conditions: the guard's own
+// A guard discharges a bearing rule's declared property under two conditions: the guard's
 // selector must match the bearing rule's selector (selector-text equality, file-scoped, unchanged;
-// or a blanket universal-descendant selector like cairn-admin.css's own reduced-motion block,
+// or a blanket universal-descendant selector like cairn-admin.css's reduced-motion block,
 // which covers every selector in its file rather than naming one), and the guard must declare the
 // property the bearing rule declares. A clause that discharged the whole file the moment any guard
 // existed would make this rule vacuous over a file with one blanket guard, so a bearing rule
-// declaring only `transition-timing-function` still owes its own guarded sibling when the blanket
+// declaring only `transition-timing-function` still owes a guarded sibling when the blanket
 // guard never zeroes that property.
 import { splitSelectorList } from '../../sheet.js';
 import { cssRulePosition, cssScopeRules, normalizeSelector } from './css-scope.js';
@@ -21,8 +21,8 @@ import type { Finding, StaticRule } from '../../types.js';
 
 /**
  * One selector alternative that carries motion, with the CSS rule it was declared on and the
- * motion properties its own declarations name. A declaration whose value is `none` neutralizes its
- * own motion rather than carrying it, so it never joins this set.
+ * motion properties its declarations name. A declaration whose value is `none` neutralizes its
+ * motion rather than carrying it, so it never joins this set.
  */
 interface BearingSite {
   scope: CssScopeRule;
@@ -63,7 +63,7 @@ function impliedProperties(property: string): string[] {
   return [property];
 }
 
-/** Whether a floor's own declared properties discharge one property a bearing rule declares. */
+/** Whether a floor's declared properties discharge one property a bearing rule declares. */
 function dischargedByFloor(floor: FloorSite, property: string): boolean {
   return impliedProperties(property).some((implied) => floor.properties.has(implied));
 }

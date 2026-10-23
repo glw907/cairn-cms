@@ -1,4 +1,4 @@
-// The rendered run's own bootstrap: resolving BASE_URL (the run never starts a server, only checks
+// The rendered run's bootstrap: resolving BASE_URL (the run never starts a server, only checks
 // one already answers), loading Playwright by dynamic import (deferred so a consumer install never
 // pays for it unless a rendered run actually executes), parsing `CAIRN_AUDIT_COOKIES` into the extra
 // cookies a browser context carries, and computing which interaction states the registered rules
@@ -85,10 +85,10 @@ export function resolveExtraCookies(raw: string | undefined): { name: string; va
 /**
  * The real dynamic import `loadPlaywrightModule` falls back to absent an injected loader. Playwright
  * is never imported at the top level: `import('playwright')` resolves from wherever this file
- * executes, which is cairn's own devDependency during cairn's own tests but a CONSUMER's install
- * once this ships in dist and a site's own audit run imports it. That is the deliberate difference
+ * executes, which is cairn's devDependency during cairn's tests but a CONSUMER's install
+ * once this ships in dist and a site's audit run imports it. That is the deliberate difference
  * from scripts/lab/generate-norms-manifest.mjs, which imports the ROOT `playwright` because it is
- * cairn's own build tool pinned by cairn's own lockfile; do not "harmonize" the two import styles,
+ * cairn's build tool pinned by cairn's lockfile; do not "harmonize" the two import styles,
  * they serve different trees on purpose.
  */
 export async function defaultLoadPlaywright(): Promise<PlaywrightModule> {

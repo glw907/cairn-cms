@@ -39,7 +39,7 @@ function filePaths(root: string, dir: string, extensions: readonly string[]): st
  * scope carries the identical existence rule: a configured path the tree does not have throws,
  * since honoring a misspelled one as an empty scan is the silent green the spec rejected the
  * ESLint route over, while a default path a given tree does not have is skipped, since the
- * default spans the library and a consumer site. `missingScope` builds that error's own message,
+ * default spans the library and a consumer site. `missingScope` builds that error's message,
  * which names the config key the caller's scope came from. `keep` narrows the walk to the paths a
  * scope actually claims, before any file is read.
  */
@@ -196,10 +196,10 @@ export function selectRules<T extends { id: string }>(rules: T[], ids: string[] 
 
 /**
  * Run the static audit. `rules` defaults to the shipped registry and is injectable so a test can
- * drive the pipeline with a rule of its own.
+ * drive the pipeline with a rule.
  */
 export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules()): AuditReport {
-  // A public-scope rule reads the site's own stylesheet chain, never the compiled admin sheet, so
+  // A public-scope rule reads the site's stylesheet chain, never the compiled admin sheet, so
   // a selection made only of them runs with none built and none named, and the static scope those
   // rules never read is not required to hold a file.
   const readsStaticScope = rules.some((rule) => !rule.publicScope);

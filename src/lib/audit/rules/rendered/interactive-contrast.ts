@@ -1,15 +1,15 @@
-// cairn-audit's interactive-contrast rule: an interactive element's own text color has to read
+// cairn-audit's interactive-contrast rule: an interactive element's text color has to read
 // against whatever actually paints behind it, not the white the browser falls back to when nothing
 // upstream declares a background. This graduates the numeric probe from
 // scripts/checks/check-interactive-contrast.mjs (the 2026-07-17 Waymark final design review audit's
-// invisible-CTA lesson: a control that technically renders but reads as blank against its own
+// invisible-CTA lesson: a control that technically renders but reads as blank against its
 // ground until hovered or selected). The floor, 1.5, is deliberately looser than the WCAG text
 // floor (4.5 normal text, 3.0 large text): this rule is not proving legibility, only that a control
 // is not accidentally camouflaged against itself.
 //
 // Composited matters, which is the whole reason this is a RENDERED rule and not a static one: an
-// element's own background-color is very often transparent (a button that inherits its card's
-// paint, a link with no background of its own), so the ground under its text is whatever the
+// element's background-color is very often transparent (a button that inherits its card's
+// paint, a link with no background), so the ground under its text is whatever the
 // nearest opaque ancestor, walking up from the element itself, actually resolves to. The DOM walk
 // that answers this can only happen in a live browser; the arithmetic does not need one, so the
 // browser half reads raw color strings and every measurement runs back in Node against
@@ -29,7 +29,7 @@
 //  3. The candidate net required a DIRECT text child, which misses every label wrapped in a
 //     `<span>` (ComponentInsertDialog's picker rows are exactly this shape) and every form control,
 //     since an `<input>` has no child nodes at all. The walk now starts from text nodes and reads
-//     an input's own value or placeholder.
+//     an input's value or placeholder.
 //  4. Gradient-clipped text (`background-clip: text` with a transparent `color`) rendered
 //     perfectly and was flagged at ratio 1.00, because its paint is the background, not the color.
 //     Those elements are now recognized and skipped.
@@ -59,7 +59,7 @@ import {
 } from '../../color.js';
 
 /**
- * Below this contrast ratio, an interactive element's own text and its composited background are
+ * Below this contrast ratio, an interactive element's text and its composited background are
  * close enough to read as camouflaged rather than merely low-contrast. RATIFIED
  * alongside `chip-ground-collision`, which borrowed this exact number from the
  * graduated probe this rule itself graduates from. The shared rationale, now on the record so
@@ -71,7 +71,7 @@ import {
  * covered. This 1.5 is deliberately looser than every one of those numbers, because "camouflaged"
  * and "legible" are different claims and only the first one is being made.
  *
- * Treat this floor as load-bearing, not a rounding nicety: `chip-ground-collision`'s own
+ * Treat this floor as load-bearing, not a rounding nicety: `chip-ground-collision`'s
  * `RATIO_FLOOR` doc records how an always-opaque canvas default there manufactured a measured
  * ratio of 1.514 against this same 1.5 line, one hundredth over it, and silently dropped two real
  * dark-theme collisions from the report while every other gate passed. Both rules share the same
@@ -91,11 +91,11 @@ interface ContrastReading {
 /** One candidate's raw paint data, read in-browser and left unparsed. */
 interface ContrastCandidate {
   selector: string;
-  /** Up to 60 characters of the candidate's own trimmed text, for the finding message. */
+  /** Up to 60 characters of the candidate's trimmed text, for the finding message. */
   text: string;
   /** The computed color the text is painted in, unparsed. */
   color: string;
-  /** The candidate's own paint layer, then every ancestor's, nearest first up to the document root. */
+  /** The candidate's paint layer, then every ancestor's, nearest first up to the document root. */
   layers: PaintLayer[];
 }
 
@@ -107,7 +107,7 @@ interface ContrastCandidate {
  * owns the text is the candidate, provided it sits inside something interactive. That is what
  * reaches a label wrapped in a `<span>`, which an element-first walk requiring a direct text child
  * cannot see. Form controls carry no text nodes at all, so they are collected separately from their
- * own value or placeholder.
+ * value or placeholder.
  */
 function readContrastCandidates(): ContrastReading {
   const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, summary';
@@ -198,7 +198,7 @@ function readContrastCandidates(): ContrastReading {
 }
 
 /**
- * Interactive text must read against its own composited background at a ratio of at least
+ * Interactive text must read against its composited background at a ratio of at least
  * {@link RATIO_FLOOR}. Error tier: a false negative ships the invisible-CTA shape this rule
  * graduates from (a control that technically renders but reads as blank), and a false positive
  * costs a developer real time chasing a control that was never actually camouflaged, so both
@@ -215,7 +215,7 @@ export const interactiveContrast: RenderedRule = {
 
     // The canvas leads the batch so it is normalized the same way every layer color is. It is what
     // the chains resolve onto, and it is measured rather than assumed: a chain that paints nothing
-    // of its own sits on a near-black canvas under `color-scheme: dark`, where assuming white
+    // of its sits on a near-black canvas under `color-scheme: dark`, where assuming white
     // reports dark-on-dark text as high contrast.
     const flat = [
       reading.canvas ?? '',

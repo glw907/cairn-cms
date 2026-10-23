@@ -7,7 +7,7 @@
 // Every file and every `@import` statement is read through `sheet.ts`, never a regex over raw
 // text. A package specifier resolves the way a CSS bundler resolves it: the package's `exports`
 // map under the `style` condition, then its `style` field, and the plain file path when the
-// package has no `exports` field. It never uses Node's own resolution, which sends `tailwindcss`
+// package has no `exports` field. It never uses Node's resolution, which sends `tailwindcss`
 // to `dist/lib.js` instead of `index.css`. An import that cannot be read is recorded as unread and
 // never raises a finding, since a font package a site has not installed is not a conformance error.
 import { readFileSync } from 'node:fs';
@@ -48,7 +48,7 @@ export interface ChainFile {
 
 /**
  * What became of one `@import` statement. `skipped` is an import the audit deliberately does not
- * follow (`tailwindcss`, whose variables the rule reads from its own theme file, and a remote URL);
+ * follow (`tailwindcss`, whose variables the rule reads from its theme file, and a remote URL);
  * `non-css` resolved to a file that is not a stylesheet and was never parsed.
  */
 export type ImportStatus = 'read' | 'unread' | 'skipped' | 'non-css';

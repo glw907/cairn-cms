@@ -1,5 +1,5 @@
 // The rendered runner's finding vocabulary: every builder that turns a raw rule verdict or an
-// allowlist-bookkeeping fact into the report's own `Finding` shape, plus `resolveRenderedFindings`,
+// allowlist-bookkeeping fact into the report's `Finding` shape, plus `resolveRenderedFindings`,
 // the pure resolver that reconciles raw findings against the allowlist. A live page carries no
 // source text, so every finding here is positionless (`line`/`start`/`end` all zero); that is the
 // one fact `positionless` writes down once for every builder in this file.
@@ -14,9 +14,9 @@ const PAGE_IDENTITY_RULE_ID = 'rendered.page-identity-mismatch';
 const STATE_UNREACHABLE_RULE_ID = 'rendered.state-unreachable';
 
 /**
- * States whose unreachability gets its own report line, on top of {@link RenderedPageVisit.statesUnreached}
+ * States whose unreachability gets a separate report line, on top of {@link RenderedPageVisit.statesUnreached}
  * already recording it for the allowlist path. `menu-open` is deliberately absent: most admin pages
- * carry no menu trigger, and giving every one of those its own advisory line would drown the report
+ * carry no menu trigger, and giving every one of those its advisory line would drown the report
  * in noise nobody asked for; that stays the pre-existing, silent skip. `row-expanded` is different
  * because the whole reason it exists is `panel-width`'s motivating half, and a reader of a clean
  * report needs to know the panel half never got a chance to run on a page with no `ExpandableRow`,
@@ -43,7 +43,7 @@ export function stateUnreachableFinding(pagePath: string, state: InteractionStat
 }
 
 /**
- * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
+ * A rendered finding in the report's `Finding` shape. A live page carries no source text, so
  * every position is zero; this is the one place that fact is written down.
  */
 export function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' | 'message'>): Finding {
@@ -57,9 +57,9 @@ export function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' |
  * `(exempt: ...)` beside a finding that gates would be a report contradicting itself.
  */
 export function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, allowlisted = false): Finding {
-  // The exemption rides in the message rather than in a field of its own on `Finding`, because
+  // The exemption rides in the message rather than in a field of its on `Finding`, because
   // the report's whole job with a suppressed line is to print it: an allowlisted finding's reason
-  // lives in the config a reader can open, and a rule's own exception has no such file.
+  // lives in the config a reader can open, and a rule's exception has no such file.
   let note = '';
   if (rf.exemption !== undefined) {
     if (exemptionHonored) {
@@ -213,13 +213,13 @@ export function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr:
 
 /**
  * Resolve raw rendered findings against the allowlist: an exact page+selector match suppresses, and
- * every allowlist entry that never matched anything the run actually visited becomes its own
+ * every allowlist entry that never matched anything the run actually visited becomes a
  * finding rather than silently doing nothing. An entry whose selector the browser refused to parse
  * is reported separately and advisory, since "unreadable" is a different claim from "stale" (see
  * {@link unprobeableFinding}), and an entry that still matches an element while suppressing nothing
  * is reported as dead (see {@link deadFinding}).
  *
- * An ADVISORY rule may also exempt its own finding by giving it a reason
+ * An ADVISORY rule may also exempt its finding by giving it a reason
  * ({@link RenderedFinding.exemption}), which suppresses it here rather than inside the rule. The
  * routing is deliberately the same one the allowlist takes: an exception is a finding that was
  * raised, counted, and printed, never a branch a rule took before constructing one. On an
@@ -235,7 +235,7 @@ export function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr:
  * covers only some of the registry), the same shape the static runner's `applySuppressions`
  * reads. An unspent entry naming a rule outside that set is skipped rather than judged: the run
  * never executed that rule, so neither stale nor dead is a claim this resolver can stand behind.
- * Defaults to `ruleTiers`'s own keys, so a caller that only ever built `ruleTiers` from the rules
+ * Defaults to `ruleTiers`'s keys, so a caller that only ever built `ruleTiers` from the rules
  * it ran (the ordinary case) needs no second argument.
  *
  * This is a pure function over already-collected data, so the allowlist contract is testable

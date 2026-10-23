@@ -1,6 +1,6 @@
 // cairn-audit's viewport-overflow rule: nothing on an admin page renders wider than the viewport,
 // at 390px AND at 320px, the family's composition floor (docs/internal/public-design-system.md).
-// The motivating finding, ExpandableRow's own overflow, was rediscovered independently by two
+// The motivating finding, ExpandableRow's overflow, was rediscovered independently by two
 // consumers before this rule existed, which is the fail-open this rule closes: a layout that fits
 // at 390 can still overflow at 320, so checking one width and calling the floor covered is exactly
 // the shape of clean-because-it-never-looked report this rule exists to rule out.
@@ -13,10 +13,10 @@
 //     a URL) overflowed by hundreds of pixels with no element rect exceeding the viewport and the
 //     page reported clean, while wrapping that identical string in a `<code>` made it visible. For
 //     a CMS that is the primary overflow vector, since the overflowing string is what an editor
-//     typed. The scan now also reports an element whose own CONTENT is wider than its box, which is
+//     typed. The scan now also reports an element whose CONTENT is wider than its box, which is
 //     the same read that catches an absolutely positioned pseudo-element bleeding past its parent.
 //  2. `getBoundingClientRect` reports unclipped geometry, so every child of a deliberate
-//     `overflow-x: auto` scroll container was flagged. Both instances are cairn's own idioms
+//     `overflow-x: auto` scroll container was flagged. Both instances are cairn's idioms
 //     (AdminTable's table wrapper, EditorToolbar's small-screen rail), and the
 //     only remedy would have been an allowlist entry keyed on a selector the real defect shares,
 //     which would have silenced the real defect permanently. The whole scan is now gated on the
@@ -31,7 +31,7 @@
 //     listeners and transitions had settled the layout, so it reported transient overflow at 390
 //     and 320 that varied from run to run. Each resize now waits for a stable layout (see
 //     `waitForStableLayout`) and a finding from a layout that never settled says so.
-//  5. A content origin was reported whenever its content was wider than its own box, even when that
+//  5. A content origin was reported whenever its content was wider than its box, even when that
 //     content still ended inside the viewport ("overflows by -11px"). Only content whose right edge
 //     is past the viewport is reported now.
 //
@@ -54,7 +54,7 @@ interface OverflowOrigin {
   selector: string;
   /** The right edge the element reaches, in viewport coordinates. */
   right: number;
-  /** Whether the element's own box overflows, or its content overflows the element's own box. */
+  /** Whether the element's box overflows, or its content overflows the element's box. */
   kind: 'box' | 'content';
 }
 
@@ -101,7 +101,7 @@ function waitForStableLayout(timeoutMs: number): Promise<boolean> {
 
 /**
  * Every element that originates real horizontal overflow at the current viewport. Playwright
- * serializes this into the page, so it stays self-contained: no references outside its own body.
+ * serializes this into the page, so it stays self-contained: no references outside its body.
  */
 function findOverflowOrigins(): OverflowOrigin[] {
   function signature(el: Element): string {
@@ -139,11 +139,11 @@ function findOverflowOrigins(): OverflowOrigin[] {
 
   const all = Array.from(document.querySelectorAll('body, body *'));
 
-  // An element whose own box clears the viewport while its parent's does not is where the overflow
+  // An element whose box clears the viewport while its parent's does not is where the overflow
   // originates; a nested descendant of an already-reported ancestor repeats the same fact.
   const boxOrigins = all.filter((el) => reportable(el) && !reportable(el.parentElement));
 
-  // An element whose content is wider than its own box overflows even though its border box does
+  // An element whose content is wider than its box overflows even though its border box does
   // not, which is the bare-text and bleeding-pseudo-element case. The deepest such element is the
   // origin, and one that already contains a box origin has been named more precisely there.
   const contentCandidates = all.filter(

@@ -1,4 +1,4 @@
-// cairn-audit's relational-spacing rule: the admin's own gap-role scale
+// cairn-audit's relational-spacing rule: the admin's gap-role scale
 // (`--cairn-gap-label/control/group/section`, 4/8/16/24px, `docs/internal/admin-design-system.md`'s
 // grammar-tokens section) encodes a claim about HIERARCHY, not just about which literal a
 // declaration uses. A field's label sits closer to its control than one field sits to the next, and
@@ -8,17 +8,17 @@
 // proves the token chosen matches the RELATIONSHIP the markup renders, which a single declaration
 // can never see on its own.
 //
-// Advisory by the spec's own ruling (6.3), and the reason is stated as a warning about this rule's
-// own confidence, not a formality: no shipped design-system linter infers hierarchy from an
+// Advisory by the spec's ruling (6.3), and the reason is stated as a warning about this rule's
+// confidence, not a formality: no shipped design-system linter infers hierarchy from an
 // arbitrary live DOM (the adversarial review, M5, names this rule by name as unsolved in general).
 // Three narrow, DOM-shape heuristics carry the actual measurement, and each is named here exactly
 // because a wrong guess here is not "camouflaged text" or "unreachable focus", it is a false claim
 // about what a builder's markup means:
 //
 //  1. GAP-ROLE NESTING, PER AXIS. An element is a "gap-role container" only when it is a flex or
-//     grid box whose own resolved `gap` lands, within a small tolerance, on one of the four token
-//     values read live off the page's own `--cairn-gap-*` custom properties (never hardcoded, so a
-//     consumer's own re-tuned structural scale, should one ever exist, is still what gets measured
+//     grid box whose resolved `gap` lands, within a small tolerance, on one of the four token
+//     values read live off the page's `--cairn-gap-*` custom properties (never hardcoded, so a
+//     consumer's re-tuned structural scale, should one ever exist, is still what gets measured
 //     against). A container whose gap does not land on the scale at all is out of scope for this
 //     rule entirely; that off-scale literal is `gap-scale`'s finding, not this one's. Row gap and
 //     column gap are read as two independent rhythms and each is compared only to the SAME axis on
@@ -34,16 +34,16 @@
 //     idiom and a fixed command palette both reported a containment violation for a panel nothing
 //     visually contains.
 //     A bare form control (`<input>`/`<select>`/`<textarea>`) never plays the container role
-//     itself, even when its own display is flex: a real admin run caught daisyUI's own `.input`
+//     itself, even when its display is flex: a real admin run caught daisyUI's `.input`
 //     (`gap: .5rem` for its internal icon slot) as a spurious "gap-control rhythm nested inside
-//     gap-label" on every text field in the admin. A widget's own chrome is not a layout region.
-//  2. LABEL-TO-CONTROL DISTANCE, VERTICAL ONLY. Scoped to cairn's own shipped shape (FieldInput's
+//     gap-label" on every text field in the admin. A widget's chrome is not a layout region.
+//  2. LABEL-TO-CONTROL DISTANCE, VERTICAL ONLY. Scoped to cairn's shipped shape (FieldInput's
 //     `<label class="flex flex-col gap-label"><span>Field name</span><input></label>`): a
-//     column-direction flex box with EXACTLY two painted children, the first carrying its own
+//     column-direction flex box with EXACTLY two painted children, the first carrying its
 //     visible text and no form control ANYWHERE in its subtree, the second being the control itself
 //     or its one wrapped child. The distance between them is geometric rather than the declared
 //     `gap`, so a margin-driven mismatch is caught the same as a wrong gap utility, and each side's
-//     own margins are SUBTRACTED, so a user-agent default no author wrote never counts against the
+//     margins are SUBTRACTED, so a user-agent default no author wrote never counts against the
 //     design: Chromium ships `input[type=checkbox] { margin: 3px 3px 3px 4px }`, and a correctly
 //     authored `gap-label` checkbox row therefore measured 8px and was reported as `gap-control`,
 //     with the verdict changing on the control type rather than on anything the author wrote.
@@ -62,7 +62,7 @@
 //     median of two put the OUTLIER at the norm and blamed a conforming row. Each consecutive pair
 //     is classified before it is measured. Boxes that do not overlap on the cross axis straddle a
 //     WRAP and carry no rhythm claim; boxes that do overlap and still measure negative are an
-//     OVERLAP and are reported as one. The remaining gaps are compared against the group's own
+//     OVERLAP and are reported as one. The remaining gaps are compared against the group's
 //     median, and an outlier beyond the larger of 2px or 20% of that median is reported.
 //     A median of zero (the flush, divider-separated list idiom) is a legitimate rhythm rather than
 //     a reason to abstain; the absolute floor carries that case.
@@ -77,7 +77,7 @@ import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../r
 
 /**
  * Two measured pixel values within this distance of each other are treated as the same
- * measurement, absorbing the sub-pixel rounding a browser's own layout engine introduces. The four
+ * measurement, absorbing the sub-pixel rounding a browser's layout engine introduces. The four
  * gap tokens are spaced at least 4px apart, so this tolerance cannot conflate two different roles.
  */
 const TOLERANCE_PX = 1.5;
@@ -193,10 +193,10 @@ function readRelationalSpacing(args: { tolerancePx: number; siblingRelTolerance:
   // column gap is exactly `gap-group`. Comparing each axis to the same axis one level up keeps the
   // asymmetric case measurable without ever comparing a column rhythm to a row one.
   //
-  // A bare form control never plays the container role, even when its own display is flex:
-  // daisyUI's `.input` sets `gap: .5rem` for its own icon slot, an implementation detail of one
+  // A bare form control never plays the container role, even when its display is flex:
+  // daisyUI's `.input` sets `gap: .5rem` for its icon slot, an implementation detail of one
   // leaf widget, and a real admin run reported it as "a gap-control rhythm nested inside gap-label"
-  // on every text field in the admin. A widget's own chrome is not a layout region.
+  // on every text field in the admin. A widget's chrome is not a layout region.
   type Axis = 'row' | 'column';
   interface GapBox {
     el: Element;
@@ -258,7 +258,7 @@ function readRelationalSpacing(args: { tolerancePx: number; siblingRelTolerance:
     });
   }
 
-  // Heuristic 2: label-to-control distance, cairn's own two-slot label shape, VERTICAL ONLY.
+  // Heuristic 2: label-to-control distance, cairn's two-slot label shape, VERTICAL ONLY.
   //
   // The horizontal form is dropped, and the evidence for dropping it is that the design system
   // never states it. The label-gap rule names the distance from a label to the control BELOW it;
@@ -266,10 +266,10 @@ function readRelationalSpacing(args: { tolerancePx: number; siblingRelTolerance:
   // finding on every horizontal caption/control row in the admin (a pagination count beside its
   // page-size select) with a message claiming the grammar names that distance. It does not.
   //
-  // The measurement also subtracts each side's own margins, so a user-agent default no author
+  // The measurement also subtracts each side's margins, so a user-agent default no author
   // wrote never counts against the design. Chromium ships `input[type=checkbox] { margin: 3px 3px
   // 3px 4px }`, and a perfectly-authored `gap-label` checkbox row therefore measured 8px
-  // edge-to-edge and was reported as `gap-control`: the finding's own diagnosis was wrong, and the
+  // edge-to-edge and was reported as `gap-control`: the finding's diagnosis was wrong, and the
   // verdict changed with the control TYPE rather than with anything the author wrote.
   for (const container of document.querySelectorAll('*')) {
     if (!isPainted(container)) continue;
@@ -315,7 +315,7 @@ function readRelationalSpacing(args: { tolerancePx: number; siblingRelTolerance:
   // silenced the whole group rather than the one pair that could not be read:
   //
   //  - ONE negative gap discarded the entire group. A wrapping same-signature card grid (the media
-  //    library's own shape) produces one negative gap per wrap, so every such group abstained no
+  //    library's shape) produces one negative gap per wrap, so every such group abstained no
   //    matter how broken its rhythm was, and an overlap earlier in a list erased a genuine finding
   //    later in it. A pair is now classified: boxes that do not overlap on the cross axis are a
   //    WRAP boundary and carry no rhythm claim, while boxes that do overlap and still measure
@@ -388,9 +388,9 @@ function readRelationalSpacing(args: { tolerancePx: number; siblingRelTolerance:
 
 /**
  * Gap monotonicity (a nested rhythm never opens wider than the rhythm containing it), label-to-
- * control distance, and same-level sibling gap equality, over cairn's own `--cairn-gap-*` scale.
+ * control distance, and same-level sibling gap equality, over cairn's `--cairn-gap-*` scale.
  * Advisory by spec ruling: every measurement here rests on a DOM-shape heuristic inferring which
- * elements play "label", "same level", or "nested rhythm" (documented above, in this file's own
+ * elements play "label", "same level", or "nested rhythm" (documented above, in this file's
  * header), and no shipped design-system linter has ever attempted that inference, so a wrong guess
  * is a real, standing possibility rather than a settled edge case. Reporting the guess rather than
  * gating on it is what lets it be graded honestly.

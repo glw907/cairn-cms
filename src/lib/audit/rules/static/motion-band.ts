@@ -1,5 +1,5 @@
 // cairn-audit's motion-band rule, graduated from check:invisible-craft: every transition/animation
-// duration a component's own CSS declares lands in the admin's 70-400ms band, the span the token
+// duration a component's CSS declares lands in the admin's 70-400ms band, the span the token
 // set's five durations cover, and `transition: all` never ships (it re-animates every property a
 // future edit adds, including ones that should snap). motion-band is the one owner of
 // `transition: all` and the `transition-all` utility class it compiles from, so any other rule
@@ -26,7 +26,7 @@ function durationsIn(value: string): number[] {
   return out;
 }
 
-/** Whether a property's own value names `all` as the transitioned property, not a duration. */
+/** Whether a property's value names `all` as the transitioned property, not a duration. */
 function transitionsAll(property: string, value: string): boolean {
   if (!ALL_PROPERTY.test(property)) return false;
   return value.split(',').some((part) => part.trim().split(/\s+/)[0] === 'all');

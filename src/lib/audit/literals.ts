@@ -1,7 +1,7 @@
 // cairn-audit's literal-detection core: the one place that decides whether a CSS value spells out a
 // color or an absolute font size instead of reading a token. `token-colors` (the admin's error-tier
 // rule) and `public-literals` (the public scope's advisory rule) both classify through it, so the
-// two never disagree about what a literal is. `token-colors` keeps its own narrower verdict set
+// two never disagree about what a literal is. `token-colors` keeps its narrower verdict set
 // (hex, rgb, named colors, and the achromatic function forms) by choosing which of the forms
 // reported here it acts on; `public-literals` acts on every one.
 //
@@ -236,7 +236,7 @@ function utilityOf(token: string): string {
  * The literal a Tailwind arbitrary value carries, or null. Two shapes: an arbitrary property
  * (`[color:#abc]`, judged as the declaration it writes) and a utility with a bracketed value
  * (`bg-[#abc]` for any color, `text-[14px]` for a size). Only the `text-` utility sets a font
- * size, so `w-[14px]` and `p-[1rem]` pass. Tailwind's own scale (`text-sm`, `bg-red-500`) has no
+ * size, so `w-[14px]` and `p-[1rem]` pass. Tailwind's scale (`text-sm`, `bg-red-500`) has no
  * bracket and is never read.
  */
 export function arbitraryValueHazard(token: string): LiteralHazard | null {

@@ -4,7 +4,7 @@
 // cascade (schemes.ts), and resolves each pair with the contrast core (contrast.ts).
 //
 // The text pairs, at 4.5:1: body text on `base-100` and `base-200`; `primary` on `base-100`, the
-// link color; each role's `-content` on its own fill; muted on `base-100` and `base-200`; each
+// link color; each role's `-content` on its fill; muted on `base-100` and `base-200`; each
 // status ink on `base-100`, `base-200`, and its callout tint; and each `--cairn-code-*` role on
 // `--cairn-code-bg`. One non-text pair, at 3:1: `primary`, the focus-ring color, on `base-100` and
 // `base-200`. A callout tint is the highest-percentage `color-mix(in oklab, ...)` or
@@ -17,7 +17,7 @@
 // reported as unmeasured, never passed. The rendered checks
 // (`interactive-contrast`, and the rendered page itself) stay the ground truth; this rule catches a
 // failing pair before anything renders. The rule needs `daisyui`, since a block named after a
-// built-in theme takes that theme's own values where it is silent.
+// built-in theme takes that theme's values where it is silent.
 import { lineAt } from '../../markup.js';
 import { compositeOver, dualGamutRatio, resolveColor } from '../../contrast.js';
 import { loadDaisyThemeKeys, nodePeers } from '../../peers.js';
@@ -384,7 +384,7 @@ export function formatContrastTable(measurement: ContrastMeasurement): string {
 
 /**
  * Build the theme-contrast rule over a given peer access. The registered rule reads the real
- * installed daisyUI; a test injects its own to drive the missing-peer failure.
+ * installed daisyUI; a test injects a substitute to drive the missing-peer failure.
  */
 export function createThemeContrast(peers: PeerAccess = nodePeers): StaticRule {
   return {

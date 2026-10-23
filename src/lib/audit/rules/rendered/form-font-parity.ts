@@ -1,9 +1,9 @@
 // cairn-audit's form-font-parity rule: every rendered `input`, `select`, `textarea`, and `button`
-// computes the same first `font-family` as the admin's own `[data-theme]` root. This is the UA
+// computes the same first `font-family` as the admin's `[data-theme]` root. This is the UA
 // reset layer's regression tripwire, closing findings 1 and 6: the reset's
 // `button, input, select, textarea, optgroup { font: inherit; ... }` rule is what stops a bare
 // control from falling back to the browser's UA monospace/serif default, and this rule is what
-// notices if that reset ever fails to load, whether cairn's own build drops it or a consumer's
+// notices if that reset ever fails to load, whether cairn's build drops it or a consumer's
 // bundler strips the sheet before the page renders.
 //
 // The comparison is string equality on the FIRST family in the computed list, never a threshold: a
@@ -12,13 +12,13 @@
 // stack) is deliberate: a control that resolves the same primary face as the root, with a different
 // fallback chain behind it, is not the regression this rule exists to catch.
 //
-// SCOPE. The walk is scoped to the theme root's own subtree, not the
+// SCOPE. The walk is scoped to the theme root's subtree, not the
 // whole document: a page that mounts more than one theme wrapper, or that renders unthemed chrome
 // alongside the admin surface, has no business comparing a control outside the root against a face
 // declared on the root. A control that opts INTO a different face on purpose is exempt for the same
 // reason a color the developer chose deliberately is never a regression: CairnMediaLibrary's slug
 // input and its two type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all
-// declare their own monospace face this way and are mismatches by construction, not by omission.
+// declare their monospace face this way and are mismatches by construction, not by omission.
 //
 // EXEMPTION NET CLOSED, THREE SHAPES: the net used to match only a bare `font-mono` class or the
 // Tailwind v3 arbitrary-value form `font-[family-name:...]`, which false-positived on three
@@ -32,13 +32,13 @@
 // (`[&:hover]:font-mono`, `has-[:checked]:font-mono`) is not a bare word-character run, so the
 // strip above leaves it whole and the base-utility test misses it; a trailing Tailwind 4
 // important-modifier bang (`font-mono!`) fails the exact `base === 'font-mono'` match for the same
-// reason. Both would still false-positive as a mismatch today; neither blocks the docket's own
+// reason. Both would still false-positive as a mismatch today; neither blocks the docket's
 // closure, since the docket named neither.
 //
 // Registered PROVISIONALLY at advisory. The intended tier is error, since a
 // consumer whose sheet never loaded is exactly the silent-fail-open shape this engine exists to
 // rule out, but a rule validated only on this workstation is not trusted to gate a build until a
-// CI re-check confirms the rendered suite is green against cairn's own admin and showcase on
+// CI re-check confirms the rendered suite is green against cairn's admin and showcase on
 // the CI runner (the local visual suite diverges from CI by dozens of threshold-marginal
 // comparisons, and font resolution is exactly the kind of measurement a runner's installed font set
 // can move). If CI disagrees with the workstation, this stays advisory and the divergence is
@@ -54,7 +54,7 @@ interface FontMismatch {
   family: string;
 }
 
-/** What the in-page walk found: the root's own first family, and every control that disagrees. */
+/** What the in-page walk found: the root's first family, and every control that disagrees. */
 interface FontParityResult {
   rootFamily: string;
   mismatches: FontMismatch[];
@@ -76,7 +76,7 @@ function readFontParity(): FontParityResult {
     return first.trim().replace(/^['"]|['"]$/g, '').toLowerCase();
   }
 
-  /** A control carrying a class that declares its own face on purpose, exempt from the reset check. */
+  /** A control carrying a class that declares its face on purpose, exempt from the reset check. */
   function hasExplicitFace(el: Element): boolean {
     for (const className of el.classList) {
       // Strip any leading variant prefixes (`md:`, `dark:md:`) before testing the base utility, so
@@ -91,8 +91,8 @@ function readFontParity(): FontParityResult {
     return false;
   }
 
-  // The admin's own theme shape: `data-theme` sits on a bare wrapper inside body
-  // (docs/internal/admin-design-system.md's load-bearing rule), which is where the reset's own
+  // The admin's theme shape: `data-theme` sits on a bare wrapper inside body
+  // (docs/internal/admin-design-system.md's load-bearing rule), which is where the reset's
   // body-face declaration lands. A page with no such wrapper (a bespoke route rendering outside the
   // admin theme entirely) falls back to body, then the document root, so the rule still answers.
   const themeRoot =

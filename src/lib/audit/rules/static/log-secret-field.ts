@@ -4,7 +4,7 @@
 // `createLogger` instance, `console`, or another library's logger: only when the call goes through
 // a cairn logger does a property whose key matches a member of `REDACTED_LOG_KEYS`
 // (`src/lib/log/create.js`) already have its VALUE replaced at runtime. On a bare `console` call
-// or another library's own logger, the value ships exactly as written. Either way the finding is
+// or another library's logger, the value ships exactly as written. Either way the finding is
 // worth a developer's attention for two reasons the runtime redaction, where it applies, cannot
 // cover: the same value is often written into the message string beside the field, where no
 // redaction runs, and a field named for a secret usually wants a count or a boolean instead of the
@@ -13,7 +13,7 @@
 // Matching mirrors the runtime: the key is lowercased, its `-` and `_` separators are stripped, and
 // the result is compared whole, so `apiKey` and `x-api-key` resolve the same way they do in
 // `create.ts`. `tokenCount` and `tokens` are not a match, since the comparison is against the whole
-// key. Only the fields object's own top-level keys are read: the runtime redacts three levels deep,
+// key. Only the fields object's top-level keys are read: the runtime redacts three levels deep,
 // and matching that here would mean parsing nested object literals out of source text, which is out
 // of scope for a heuristic this cheap.
 import { REDACTED_LOG_KEYS, normalizeKey } from '../../../log/create.js';
@@ -29,7 +29,7 @@ interface Span {
   end: number;
 }
 
-/** One `{ key ... }` field name, positioned at its own key text. */
+/** One `{ key ... }` field name, positioned at its key text. */
 interface FieldKey {
   name: string;
   start: number;
@@ -89,10 +89,10 @@ function splitArgs(source: string, openIndex: number): Span[] | null {
     }
     i++;
   }
-  return null; // the call's own closing paren never showed up: a truncated or unparsed fixture
+  return null; // the call's closing paren never showed up: a truncated or unparsed fixture
 }
 
-/** The property keys one `{ ... }` object literal declares at its own top level. */
+/** The property keys one `{ ... }` object literal declares at its top level. */
 function objectLiteralKeys(source: string, brace: Span): FieldKey[] {
   const keys: FieldKey[] = [];
   let depth = 0;
@@ -111,9 +111,9 @@ function objectLiteralKeys(source: string, brace: Span): FieldKey[] {
       end: keyStart + keyText.length,
     });
   };
-  // `brace.end - 1` is the object literal's own closing brace, excluded from the scan: the loop
+  // `brace.end - 1` is the object literal's closing brace, excluded from the scan: the loop
   // only ever walks the literal's inner content, so that brace is never mistaken for a nested
-  // close and folded into the last property's own key text.
+  // close and folded into the last property's key text.
   let i = brace.start + 1;
   while (i < brace.end - 1) {
     const ch = source[i];

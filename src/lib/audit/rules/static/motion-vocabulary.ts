@@ -3,7 +3,7 @@
 // three curves the admin theme roots carry. motion-band already polices a declaration's raw
 // duration span (70-400ms) and `transition: all`; this rule polices the AUTHORING FORM a duration
 // or an easing curve is written in, literal versus a `var(--cairn-dur-*)`/`var(--cairn-ease-*)`
-// reference, on both surfaces a declaration can appear: a component's own hand-authored CSS (and
+// reference, on both surfaces a declaration can appear: a component's hand-authored CSS (and
 // any `static.cssFiles` entry) and the compiled Tailwind class join.
 //
 // The companion assertion is part of this rule, not a separate check. A `transition-*` class with
@@ -24,24 +24,24 @@
 // backward every repeat, which is why the carve-out names one keyword rather than widening to the
 // token set.
 //
-// Four shapes record a note instead of a finding. Three because this rule's own hand-rolled
+// Four shapes record a note instead of a finding. Three because this rule's hand-rolled
 // parsing genuinely cannot resolve the value, not because the construct is presumed legal: a
-// var() occupying the shorthand's own property slot (the first token of `transition`/`animation`
+// var() occupying the shorthand's property slot (the first token of `transition`/`animation`
 // is dynamic, so which construct is even being described is unknown); a calc() expression over a
 // variable this rule does not own (the resolved millisecond value is unknowable statically); and a
 // shorthand carrying an `allow-discrete` keyword (CSS Transitions Level 2's extra token, which this
 // rule does not attempt to parse around). The fourth is positive rather than a parsing limit: a
 // `transition-duration` or `animation-duration` of `0.01ms` inside `@media (prefers-reduced-motion:
 // reduce)` is the shipped floor a reduced-motion preference snaps every duration to, not a literal
-// this rule's own vocabulary governs, so it is read by intent rather than convicted as an
+// this rule's vocabulary governs, so it is read by intent rather than convicted as an
 // off-token value. `motionVocabularyAbstentions` exposes every note separately, since
 // `StaticRule.check` carries only findings.
 //
-// The vendor-class exemption mirrors motion-property's own discriminator and its own limit: the
+// The vendor-class exemption mirrors motion-property's discriminator and its limit: the
 // compiled sheet's `conditions` cannot attribute a declaration to DaisyUI's plugin output (cairn's
 // own rules share the same `@layer components` prelude), so the working discriminator is the
 // explicit DaisyUI class-name list below, not the attribution `conditions` was hoped to carry. Its
-// fallback limit is the same limit motion-property's own class-name list carries: a cairn-authored
+// fallback limit is the same limit motion-property's class-name list carries: a cairn-authored
 // class that happens to share a name with a listed DaisyUI component would be wrongly exempted,
 // which is why the list stays short and reviewed rather than pattern-matched.
 //
@@ -58,7 +58,7 @@
 //   reads.
 // - A cross-component pair, a duration class on one component and its paired easing class on a
 //   sibling component the two never share a file with, is out of reach: this rule (like every
-//   static rule) reads one component's own markup and CSS at a time.
+//   static rule) reads one component's markup and CSS at a time.
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import { animateCustomProperty, customPropertyValue } from './motion.js';
 import { utilityBase } from './utility.js';
@@ -110,9 +110,9 @@ const DEFAULT_RIDING_VAR = /var\(\s*--(?:tw-duration|tw-ease|default-transition-
 // file that re-exports it): the built sheet's `conditions` cannot attribute a rule to DaisyUI's
 // plugin output, so the explicit class-name list is the only discriminator that actually works.
 // `.btn` is measured at five properties across 19 elements at rest on `/admin/posts`; `.modal` and
-// `.dropdown` each carry their own vendor timing and curve; `.modal-box`, `.dropdown-content`,
+// `.dropdown` each carry vendor timing and curve; `.modal-box`, `.dropdown-content`,
 // `.menu`, `.select`, `.radio`, `.checkbox`, and `.card` each carry a literal duration, easing
-// curve, or both on their own vendor motion, measured against the shipped admin sheet the same
+// curve, or both on their vendor motion, measured against the shipped admin sheet the same
 // hand run that found the rest of this list.
 const DAISYUI_VENDOR_CLASSES = new Set([
   'btn',
@@ -206,7 +206,7 @@ function companionAssertionOk(sheet: CompiledSheet): boolean {
   return ADMIN_ROOT_SELECTORS.every((selector) =>
     sheet.rules.some(
       (rule) =>
-        // A theme root's own rule can share its selector list with another selector (the
+        // A theme root's rule can share its selector list with another selector (the
         // reduced-motion blanket rule's `[data-theme='cairn-admin'], [data-theme='cairn-admin'] *`,
         // for instance), so each comma-separated alternative is checked on its own rather than the
         // whole list compared as one string, which would never match unless the root were the
@@ -430,7 +430,7 @@ export const motionVocabulary: StaticRule = {
 
 /**
  * The abstention notes {@link motionVocabulary} records instead of a finding, one per declaration
- * matching one of the rule's own doc comment's four abstention shapes. Exposed separately because
+ * matching one of the rule's doc comment's four abstention shapes. Exposed separately because
  * {@link StaticRule.check} carries only findings, and a check that skips itself needs a visible
  * trace for a test to hold it to.
  */

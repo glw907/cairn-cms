@@ -1,32 +1,32 @@
 // cairn-audit's rendered list-role rule: the static `list-role`'s counterpart, closing the gap its
-// own header names. The static rule resolves an item's display change through a class-token-to-
+// header names. The static rule resolves an item's display change through a class-token-to-
 // compiled-declaration lookup, which only sees a class the ITEM ITSELF carries. DaisyUI often
-// styles list items through descendant selectors scoped to the LIST's own class instead (`.menu
+// styles list items through descendant selectors scoped to the LIST's class instead (`.menu
 // :where(li) { display: flex }`, `.breadcrumbs > ul > li { display: flex }`), so a classless <li>
 // under one of those never registers there even though its rendered display is not `list-item`.
 // The robust fix is a rendered-mode check of the item's actual computed `display` in a live
 // browser: this check measures the computed VALUE, never the selector that produced it, so a
 // finding names a descendant selector as the LIKELY source (the shape this rule exists to catch),
 // not an asserted one; the same computed value could in principle come from an inline style or a
-// class the static rule's own lookup already covers.
+// class the static rule's lookup already covers.
 //
-// This rule deliberately does NOT re-derive the list's own marker suppression (`list-style-type:
+// This rule deliberately does NOT re-derive the list's marker suppression (`list-style-type:
 // none`) in rendered mode: a consumer that imports daisyUI's base layer gets `list-style: none` on
 // every bare <ul>/<ol>/<menu> for free (`menu,ol,ul{list-style:none}`), and a naive computed-style
 // check on that property alone would fire on nearly every list on such a site, a completely
 // different and far larger rule than the descendant-selector gap this one exists to close. That
-// claim scopes to a daisyUI-base-importing consumer: cairn's OWN admin sheet carries no bare
+// claim scopes to a daisyUI-base-importing consumer: cairn's admin sheet carries no bare
 // ul/ol/menu reset, deliberately, so it is not itself an instance of the exemption it is arguing
 // for. Marker suppression stays the static rule's job, scoped to a class the compiled sheet
 // resolves DIRECTLY (never a bare base-layer element reset).
 //
 // HTML-AAM maps a bare <li> to role listitem by its parent relationship: a direct child of
-// <ul>/<ol>/<menu>, or of an element carrying role="list". An item whose own computed display
+// <ul>/<ol>/<menu>, or of an element carrying role="list". An item whose computed display
 // already strips its `list-item` box is exposed to the same rendering-engine risk the list itself
 // is (the WebKit/VoiceOver bug this whole rule family guards against ties AX exposure to CSS box
 // generation), so this rule recommends role="listitem" on each affected item alongside role="list"
 // on the list, as a defensive fix rather than relying on the parent-relationship mapping alone. An
-// item that already carries its own explicit role (a `menu-divider`'s `role="separator"`, say) is
+// item that already carries an explicit role (a `menu-divider`'s `role="separator"`, say) is
 // left alone: that role is a deliberate, different reading, the same carve-out the static rule
 // gives the list itself.
 //
@@ -41,7 +41,7 @@ import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../r
 
 /**
  * One `<ul>`/`<ol>`/`<menu>` whose items render at a display other than `list-item`, with no role
- * attribute of its own.
+ * attribute.
  */
 interface ListRoleViolation {
   listSelector: string;
@@ -51,14 +51,14 @@ interface ListRoleViolation {
    */
   displayValues: string[];
   changedCount: number;
-  /** Signatures of the changed items that carry no role attribute of their own. */
+  /** Signatures of the changed items that carry no role attribute. */
   listitemCandidates: string[];
 }
 
 /**
  * Every list on the current page whose items' actual computed display strips their `list-item`
- * box, and which carries no role attribute of its own. Playwright serializes this into the page,
- * so it stays self-contained: no references outside its own body.
+ * box, and which carries no role attribute. Playwright serializes this into the page,
+ * so it stays self-contained: no references outside its body.
  */
 function findListRoleViolations(): ListRoleViolation[] {
   const LIST_ITEM_DISPLAY = 'list-item';

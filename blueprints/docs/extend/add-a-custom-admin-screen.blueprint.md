@@ -8,10 +8,10 @@ exemplar: extenders/sanity-custom-tool
 # Add a custom admin screen
 
 :::reader
-**Who reads it.** A developer who wants an administrative function of their own in `/admin`, beside the editors' screens. It might be a report, a tool, or a dashboard, and it might or might not keep data outside the markdown content, such as signups or members in a D1 database the site binds. A second reader has opened the example site's signups screen at `examples/showcase/src/routes/admin/signups/` and wants to know what each call in it is for, to change it or copy it. :fact[onqm6k]
+**Who reads it.** A developer who wants an administrative function in `/admin`, beside the editors' screens. It might be a report, a tool, or a dashboard, and it might or might not keep data outside the markdown content, such as signups or members in a D1 database the site binds. A second reader has opened the example site's signups screen at `examples/showcase/src/routes/admin/signups/` and wants to know what each call in it is for, to change it or copy it. :fact[onqm6k]
 
 **Why they arrive:**
-- Their site needs an administrative function the engine doesn't provide, with or without data of its own.
+- Their site needs an administrative function the engine doesn't provide, with or without data.
 - They read the architecture page's seams table, whose custom admin routes row points here.
 - They opened the example site's `signups/` screen and want to know why it calls `requireAccess`, `createSectionAction`, and `ctx.audit`. :fact[pyt58u]
 - They have another kind of markdown content, which needs a concept rather than a screen, and the introduction routes them to Define an adapter and schema.
@@ -20,14 +20,14 @@ exemplar: extenders/sanity-custom-tool
 **What they already know.** SvelteKit routes, `load` functions, form actions, `enhance`, and server hooks (`handle` and `sequence`); Svelte 5 snippets and runes; and Cloudflare D1 bindings in `wrangler.jsonc`. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
 **What the page does for them.** The introduction opens on what a custom admin screen is: a route under `src/routes/admin/` that renders inside `CairnAdminShell`, can adopt the admin toolkit, and sits behind the same `/admin` sign-in guard as the engine's screens. :fact[9xthnq]
-Right after that, it gives a few examples of what a custom screen is for. Some keep data of their own: the example site's list of signups in a D1 database, or a members directory. Others keep none: a form that sends a newsletter through the site's own mail service, a report built from records the site already holds, or a button that calls an outside service, such as one that clears a CDN cache. :fact[onqm6k]
+Right after that, it gives a few examples of what a custom screen is for. Some keep data: the example site's list of signups in a D1 database, or a members directory. Others keep none: a form that sends a newsletter through the site's mail service, a report built from records the site already holds, or a button that calls an outside service, such as one that clears a CDN cache. :fact[onqm6k]
 After the examples, it routes a reader with another kind of markdown content to a concept instead, in Define an adapter and schema.
 It then says why the screen's duties exist. The route's location gives the shell and the sign-in guard, and the guard decides nothing per route, so the access check is the screen's. :fact[2sd4if]
 An entry's history comes from git, while a screen's actions sit outside it, whether they write a site database or call an outside service, so the audit trail is their record. Every wrapped action that succeeds must emit a record, and both wrappers audit an access refusal. :fact[hcydfe] :fact[pgy0mr] :fact[wnvqlz] :fact[07efts] :fact[xbjxit]
-`cairn-audit` holds the screen to the engine's own rules. :fact[326755]
+`cairn-audit` holds the screen to the engine's rules. :fact[326755]
 The contract sentence follows: the steps build a screen that renders inside the admin shell, enforces your site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
 It names the example site's signups screen as the worked example and says a scaffolded site does not ship it. It says the dialog form, row detail, and animation sections apply only to a screen with that feature. :fact[onqm6k]
-It never says the engine's own screens write audit records.
+It never says the engine's screens write audit records.
 
 **What it leaves to other pages:**
 - Declaring the access map and changing who reaches a screen, which belong to Restrict admin access and are named in the introduction.
@@ -45,12 +45,12 @@ It never says the engine's own screens write audit records.
 - Your site's access map needs a rule for the screen's route, declared once as the adapter's `access` member. :fact[iwf4nu]
 - A scaffolded site's adapter declares no `access` member. The example site's adapter declares `'/admin/signups': ['owner']`, which admits only owners to its signups screen. :fact[3z1uxv]
 - See [Restrict admin access](restrict-admin-access.md).
-- A screen that keeps data of its own reads and writes a D1 database your site binds in `wrangler.jsonc`, with its own migrations directory. A screen with no data of its own skips this item. A screen that uses no database binding wraps its actions in `createAdminAction` with its `access` option set, since `createSectionAction` requires a binding resolver. :fact[hroqbu] :fact[xbjxit] `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
+- A screen that keeps data reads and writes a D1 database your site binds in `wrangler.jsonc`, with its migrations directory. A screen with no data skips this item. A screen that uses no database binding wraps its actions in `createAdminAction` with its `access` option set, since `createSectionAction` requires a binding resolver. :fact[hroqbu] :fact[xbjxit] `wrangler d1 migrations apply` walks one directory per database. :fact[nv0ok0]
 - The scaffold's `wrangler.jsonc` binds no database beyond the engine's `AUTH_DB`. The example site's `APP_DB`, which backs its signups screen, is not part of the scaffold. :fact[n7t4bn]
 - See [the D1 Worker API](https://developers.cloudflare.com/d1/worker-api/).
 - The audit trail needs a D1 database that holds the `audit_log` table from the engine's opt-in `0002_audit.sql` migration. :fact[wnvqlz]
 - See [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink).
-- The admin is two pairs of route files: the layout pair that renders `CairnAdminShell` and the `[...path]` catch-all pair, with the admin's own `+error.svelte` beside them. :fact[b8rkq9]
+- The admin is two pairs of route files: the layout pair that renders `CairnAdminShell` and the `[...path]` catch-all pair, with the admin's `+error.svelte` beside them. :fact[b8rkq9]
 - The example site, `examples/showcase`, adds a `signups/` screen beside the catch-all. A scaffolded site does not ship it. :fact[onqm6k]
 - The tree below shows the files the page touches in `src/`, with the `signups/` directory marked as the new screen, named after the example site's screen. :fact[b8rkq9] :fact[vkfd7b]
 
@@ -139,7 +139,7 @@ export const load: PageServerLoad = async (event) => {
 ```
 
 - A route with no rule in the map refuses every session, owner included. The owner has no exemption from a missing rule. :fact[3lbdl6]
-- A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it needs its own call. The access map matches by deepest prefix, so the screen's key covers the nested route, with one exception. When the nested route starts with a dynamic segment and the map holds a deeper key under the screen's, it resolves to no rule. Otherwise it needs its own entry only for a different rule. :fact[lmtfkt]
+- A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it needs its call. The access map matches by deepest prefix, so the screen's key covers the nested route, with one exception. When the nested route starts with a dynamic segment and the map holds a deeper key under the screen's, it resolves to no rule. Otherwise it needs its entry only for a different rule. :fact[lmtfkt]
 - Load row detail on demand applies this to a detail endpoint.
 - See [Load row detail on demand](#load-row-detail-on-demand).
 
@@ -162,7 +162,7 @@ export const load: PageServerLoad = async (event) => {
 *Build one wrapper for the section and wrap each form action in it. Show the example site's two actions.*
 
 - `createSectionAction<Env, Db>({ resolveDb })` builds one reusable wrapper for the section. `resolveDb` reads your site's binding off the Worker env the engine passes it. :fact[3j02dk]
-- `Env` is a type parameter for your site's own bindings. The engine ships no `Env` type, and the example site passes the `Env` that its `worker-configuration.d.ts` generates. :fact[esp93u]
+- `Env` is a type parameter for your site's bindings. The engine ships no `Env` type, and the example site passes the `Env` that its `worker-configuration.d.ts` generates. :fact[esp93u]
 
 1. In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` whose parameter is annotated `Env | undefined`. :fact[esp93u] :fact[pmmtdv]
 
@@ -215,7 +215,7 @@ export const actions: Actions = {
 ```
 
 - Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`. :fact[pyt58u]
-- The audit record takes its `action` and `entity` from the wrapper's options unless the handler's `ctx.audit` call passes its own. :fact[6vy0ka]
+- The audit record takes its `action` and `entity` from the wrapper's options unless the handler's `ctx.audit` call passes one. :fact[6vy0ka]
 - Underneath, the wrapper runs `createAdminAction`'s editor identity, CSRF, and single form-read work. A section never calls `createAdminAction` directly. :fact[lblh3u]
 - Every successful path through a handler calls `ctx.audit` before it returns. A handler that rejects with `fail()` before it writes owes no record. :fact[07efts]
 - Resolve a missing audit record traces a record that never arrives.
@@ -258,7 +258,7 @@ handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 
 - Inside a request, pass `createD1AuditSink` the `waitUntil` that `cloudflare:workers` exports, unbound. A Cron `scheduled` handler binds `ctx.waitUntil` first. :fact[ph6kjg]
 - The sink is fail-open: a failed insert never fails the action being audited, and the failure is logged. :fact[ff3l1u]
-- `createSectionAction` audits each refusal its own checks make, except a rate-limit refusal. The session and CSRF refusals underneath it leave no audit record. :fact[da6d2z]
+- `createSectionAction` audits each refusal its checks make, except a rate-limit refusal. The session and CSRF refusals underneath it leave no audit record. :fact[da6d2z]
 - See [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink).
 - The server side is complete, and the screen's markup comes next.
 
@@ -266,7 +266,7 @@ handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 
 *Build the markup from the admin toolkit's primitives and mount a CSRF field in every form. Show a small Events screen as an aside.*
 
-- The admin toolkit is the set of general-purpose primitives your screen composes in place of a hand-rolled table, list, or field. The engine's own screens compose it too: `ManageEditors` builds from its `PageHeader` and `AdminTable`. :fact[5t1i7o]
+- The admin toolkit is the set of general-purpose primitives your screen composes in place of a hand-rolled table, list, or field. The engine's screens compose it too: `ManageEditors` builds from its `PageHeader` and `AdminTable`. :fact[5t1i7o]
 - Each primitive has one job: `PageHeader` the eyebrow, title, and meta band; `AdminTable` the table chrome around your header and row markup; `ListToolbar` the search and filter band; `ToolbarDisclosure` a trigger that opens a floating panel; `Pagination` page navigation; `StatusChip` a status chip; `EmptyState` the centered empty state; `FieldLabel` a control's label wrapper; `ExpandableRow` a summary row with an expand-in-place panel; `MediaPicker` a picker over the media library; and `Tooltip` a hover and focus description for an icon-only control. :fact[clyg9r]
 
 1. In the screen's `+page.svelte`, import the primitives it needs from `@glw907/cairn-cms/admin-toolkit`.
@@ -311,7 +311,7 @@ alt: Reproduction of a minimal Events screen, showing PageHeader, AdminTable, an
 caption: The screen renders below the shell's topbar. The page header carries the eyebrow, title, and count, and each row's status renders as a status chip.
 ```
 
-- `AdminTable` sets its own horizontal scroll. The wrapping `div` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`. :fact[8x0qpa]
+- `AdminTable` sets the horizontal scroll. The wrapping `div` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`. :fact[8x0qpa]
 - Each primitive ships its compiled classes and its scoped styles with the package. A later release still renders it under your route with no change on your side. :fact[7m5o61]
 - The admin toolkit reference lists every export with its props, and the admin components reference lists the engine components a screen can mount beside the toolkit.
 - See [the admin toolkit reference](../reference/admin-toolkit.md).
@@ -327,7 +327,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 
 1. Keep every file that holds the screen's markup under `src/routes/admin` or `src/lib/admin`. :fact[vkfd7b]
 
-- The admin is built with daisyUI and Tailwind, so your own screens use the same classes. :fact[k6aopn]
+- The admin is built with daisyUI and Tailwind, so your screens use the same classes. :fact[k6aopn]
 - Every daisyUI component and utility class except calendar compiles into the admin sheet, with no safelist entry. :fact[9rxw92]
 - Both admin themes set daisyUI's radius tokens: `--radius-selector` 0.25rem for chips and small markers, `--radius-field` 0.375rem for controls, and `--radius-box` 0.5rem for cards and dialogs. :fact[9oa6sk]
 
@@ -336,7 +336,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 - A fixed Tailwind radius still compiles but does not follow the corner ladder. :fact[2babfl]
 - `cairn-audit`'s norms follow the ladder: 6px for ghost and primary buttons, text inputs, and selects, and 8px for cards. :fact[39sn8c]
 - A bare `btn` with no color, style, or state renders as a hairline button. :fact[gc0hx3]
-- A `btn` in a selected form, such as `.btn-active` or `aria-pressed="true"`, renders as the selected segment. `btn-link`, the color variants, `btn-outline`, and `btn-dash` keep their own look. :fact[5stbq2]
+- A `btn` in a selected form, such as `.btn-active` or `aria-pressed="true"`, renders as the selected segment. `btn-link`, the color variants, `btn-outline`, and `btn-dash` keep their look. :fact[5stbq2]
 
 3. For warning or success ink, use `cairn-text-warning` or `cairn-text-success`, the named classes the packaged admin sheet defines for those inks. :fact[q4jyat]
 
@@ -355,9 +355,9 @@ caption: The screen renders below the shell's topbar. The page header carries th
 1. In the screen's markup, add a `<dialog class="modal">` whose `aria-labelledby` points at the dialog's heading. :fact[tskfz1]
 2. In the handler of the button that opens the dialog, call `showModal()`. :fact[ho6dxa]
 
-- A dialog opened with `showModal()` closes on Escape without script. A `<form method="dialog">` is its own form element, and forms never nest. :fact[ho6dxa]
+- A dialog opened with `showModal()` closes on Escape without script. A `<form method="dialog">` is its form element, and forms never nest. :fact[ho6dxa]
 
-3. Inside the dialog, add the action form with `enhance` applied, as its own form element and never inside a `<form method="dialog">`. :fact[ho6dxa]
+3. Inside the dialog, add the action form with `enhance` applied, as its form element and never inside a `<form method="dialog">`. :fact[ho6dxa]
 4. In the `enhance` callback, handle each of the four result types, and never call `update()` on `'error'`. :fact[jra92k] :fact[9fwsz5]
 5. In the form, mount an empty `role="alert"` paragraph for the failure message. :fact[tkqoia]
 
@@ -368,7 +368,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 8. On the submit button, set `disabled` while the request is pending. :fact[5vn194]
 
 - The input's description then reads the error with its field when focus moves to it, and a disabled submit cannot fire the action a second time. :fact[5vn194]
-- The example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's own dialog confirms a removal and has no visible field, only a hidden `id` input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
+- The example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's dialog confirms a removal and has no visible field, only a hidden `id` input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
 
 ```svelte
 <script lang="ts">
@@ -442,13 +442,13 @@ caption: The screen renders below the shell's topbar. The page header carries th
 
 4. In the screen's markup, render each row as an `ExpandableRow` inside the `AdminTable`. :fact[vao0dd]
 
-- `ExpandableRow` renders your summary cells plus one trailing trigger cell of its own. The `colspan` you pass counts that trigger cell, and the panel snippet receives the row's `datum`. :fact[vao0dd]
+- `ExpandableRow` renders your summary cells plus one trailing trigger cell. The `colspan` you pass counts that trigger cell, and the panel snippet receives the row's `datum`. :fact[vao0dd]
 - The trigger cell has no visible heading. Your `header` snippet matches it with a `<th scope="col">` whose text sits in an `sr-only` span, as the signups table does for its actions column. :fact[n2bhjw]
 - A click inside an element carrying `data-cairn-inert-cell` does not toggle the row. An interactive summary cell wraps its content in that attribute rather than calling `stopPropagation()`. :fact[pswc3n]
 
 5. In the same file, keep the expanded row's id in state, and pass each `ExpandableRow` its `expanded` value and an `onToggle` callback. :fact[xqz3ov]
 
-- `ExpandableRow` holds no expand state of its own. Both its trigger button and a click on the summary row call `onToggle`. :fact[xqz3ov]
+- `ExpandableRow` holds no expand state. Both its trigger button and a click on the summary row call `onToggle`. :fact[xqz3ov]
 - See [`ExpandableRow`](../reference/admin-toolkit.md#expandablerow).
 
 6. In the same file, write an open handler that `onToggle` calls when a row opens.
@@ -540,7 +540,7 @@ async function openDetail(id: number, url: string): Promise<unknown> {
 
 5. In the site directory, run `npm run check:cairn`. :fact[mrv24k]
 
-- The script compiles the admin sheet and runs `cairn-audit` over the same static rules the engine's own screens meet, with `src/routes/admin` in the default scope. :fact[mrv24k] :fact[326755]
+- The script compiles the admin sheet and runs `cairn-audit` over the same static rules the engine's screens meet, with `src/routes/admin` in the default scope. :fact[mrv24k] :fact[326755]
 
 :::row
 **Symptom.** `npm run check:cairn` exits 1.

@@ -43,7 +43,7 @@ exemplar: core/rust-analyzer-architecture
 
 *Set out the premise the rest of the page builds on: one adapter declaration, composed into one runtime that every server handle reads.*
 
-- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The adapter declares every concept, content directory, and field. The engine keeps a few names of its own, such as the manifest paths under `src/content/.cairn/` and the segments its admin screens own under `/admin`, which no concept id may take. :fact[4esdoz]
+- A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin screen, and delivery helper reads its behavior from it. The adapter declares every concept, content directory, and field. The engine keeps a few names, such as the manifest paths under `src/content/.cairn/` and the segments its admin screens own under `/admin`, which no concept id may take. :fact[4esdoz]
 - The root barrel's `composeRuntime` folds the adapter into one composed runtime. `createCairnAdmin` closes over that runtime, and the site's hooks module hands the same runtime to `createAuthGuard`, or, under the dev backend, to `devBackendHandle` from the `@glw907/cairn-cms-dev` package. :fact[3rb362] :fact[f21bcz] :fact[7cv105]
 - A role vocabulary or an access map declared once on the adapter therefore reaches every handle that reads it. :fact[7cv105] :fact[gun084]
 - The adapter and its runtime reach the engine through a few files in the site.
@@ -79,7 +79,7 @@ exemplar: core/rust-analyzer-architecture
 - See [the `cairnManifest` reference](../reference/vite.md#cairnmanifest).
 - A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron Worker, needs no alias for `$app/env`. `loadPreview`, on the same subpath, imports that module dynamically at call time. :fact[ppqu4v]
 - See [the `loadPreview` reference](../reference/sveltekit.md#loadpreview).
-- The map says where each export lives, and the seams say which exports take a site's own code or data.
+- The map says where each export lives, and the seams say which exports take a site's code or data.
 
 ## Seams
 
@@ -91,7 +91,7 @@ exemplar: core/rust-analyzer-architecture
 - The `content` map: a `ConceptConfig` for each concept, whose `fields` member holds the fieldset built with `defineFieldset`, documented in Content model. :fact[i87sd3]
 - `render`, in the adapter's `rendering` group: a renderer built with `createRenderer`, documented in Configure rendering. :fact[i87sd3]
 - Roles and the access map: a role vocabulary in which each role the site names maps to one capability, `none`, `editor`, or `owner`, and an access map that narrows what an editor capability reaches and can admit a `none` role only through a route rule that names it, documented in Restrict admin access. :fact[3pposq] :fact[p1xmp5] :fact[i87sd3]
-- The `identity` option on `createAuthGuard`: the site's own gate proves the editor's email in place of the built-in sign-in path, and the guard still looks that email up in the roster, documented in Replace magic links with Cloudflare Access. :fact[fhit7f] :fact[hk24xs]
+- The `identity` option on `createAuthGuard`: the site's gate proves the editor's email in place of the built-in sign-in path, and the guard still looks that email up in the roster, documented in Replace magic links with Cloudflare Access. :fact[fhit7f] :fact[hk24xs]
 - Custom admin routes: a route file under `src/routes/admin/`, which SvelteKit resolves ahead of the `[...path]` catch-all and which renders inside the `CairnAdminShell` chrome through the shared admin layout with no registration, documented in Add a custom admin screen. :fact[03zj56] :fact[brfitv] :fact[6a32oy]
 - `navLayout`: a site entry under `editor.navLayout` that lists a custom screen in the sidebar, documented in Arrange the admin sidebar. :fact[i87sd3] :fact[6a32oy]
 - `media`: an `AssetConfig` for the media store, documented in Configure media. :fact[i87sd3]
@@ -112,8 +112,8 @@ exemplar: core/rust-analyzer-architecture
 
 - The access map is the adapter's `access` member, and `composeRuntime` carries it onto the runtime beside the role vocabulary. A site has no second copy to pass to the guard. :fact[iwf4nu]
 - On every admin path where it signs an editor in, `createAuthGuard` reads the vocabulary from `runtime.roles` and sets `locals.cairnAccess` to the runtime's map, beside `locals.cairnEditor`. With no roles declared on the adapter, it falls back to the owner and editor pair. `devBackendHandle` attaches the same map. :fact[iwf4nu] :fact[gun084]
-- The engine's own screens, their write actions, and the sidebar read the map through the runtime, and `requireAccess` and `createSectionAction` read the same map from `locals.cairnAccess`. :fact[cvzb8z]
-- Because the engine's screens and a site's own routes read one declaration, the two cannot be gated by different maps. :fact[cvzb8z]
+- The engine's screens, their write actions, and the sidebar read the map through the runtime, and `requireAccess` and `createSectionAction` read the same map from `locals.cairnAccess`. :fact[cvzb8z]
+- Because the engine's screens and a site's routes read one declaration, the two cannot be gated by different maps. :fact[cvzb8z]
 - The roster screen's routes validate a posted role against `runtime.roles`. The admin mount forwards its runtime to them, and a site passes `runtime` itself only when it wires `createEditorRoutes` by hand. :fact[mbx6q1]
 - The guard's `runtime` option is required and has no default: a call without it is a type error. :fact[4xrx5f]
 - The access map decides which admin actions an editor can run, and every action that changes content travels one path to the live site.
@@ -181,7 +181,7 @@ exemplar: core/rust-analyzer-architecture
 
 ## Data tiers
 
-*Place each kind of state in its store, say what reads it there, and say where a site's own data goes.*
+*Place each kind of state in its store, say what reads it there, and say where a site's data goes.*
 
 - The engine keeps state in three tiers, git, D1, and R2, and places each kind of state by what reads it. :fact[pgy0mr]
 - A table lists what each tier holds. Git holds the content entries, the content manifest, and the media manifest; D1 holds the `editor`, `magic_token`, and `session` tables, plus the opt-in `audit_log` and `preview_tokens` tables; and R2 holds uploaded media bytes, deduplicated by content hash. :fact[b6gquz]
@@ -196,7 +196,7 @@ exemplar: core/rust-analyzer-architecture
 - See [the auth store reference](../reference/auth-store.md).
 - R2 holds the media bytes, and the delivery route streams them directly. :fact[pgy0mr]
 - See [Configure media](configure-media.md).
-- A site keeps its own data, such as a member roster or an event schedule, wherever it chooses, and cairn assigns it no tier. The engine reserves the `cairn_` prefix for cookie names, and its auth-channel tables take `cairn_channel_*` names. :fact[qrwncf]
+- A site keeps its data, such as a member roster or an event schedule, wherever it chooses, and cairn assigns it no tier. The engine reserves the `cairn_` prefix for cookie names, and its auth-channel tables take `cairn_channel_*` names. :fact[qrwncf]
 - Each of these stores is a platform the engine depends on outright, and only the content store has a seam that replaces it.
 
 ## Hard dependencies
@@ -204,7 +204,7 @@ exemplar: core/rust-analyzer-architecture
 *Name the platforms the engine depends on outright, and the one dependency a site can swap.*
 
 - The engine builds on SvelteKit and Cloudflare directly, with no framework- or host-agnostic layer. :fact[er18kk] :fact[hk24xs]
-- `svelte` and `@sveltejs/kit` are peer dependencies of the package, and the islands runtime mounts components with Svelte's own `mount()` and `unmount()`. :fact[er18kk]
+- `svelte` and `@sveltejs/kit` are peer dependencies of the package, and the islands runtime mounts components with Svelte's `mount()` and `unmount()`. :fact[er18kk]
 - See [Supported toolchain](../reference/supported-toolchain.md).
 - The admin and the public pages are SvelteKit route files over the engine's `/sveltekit` and `/delivery` factories, so every entry point assumes SvelteKit. :fact[3rb362] :fact[40pxcq]
 - The engine's environment contract is Cloudflare Worker bindings, such as the `AUTH_DB` D1 database and the Email Sending binding. A production site built on cairn runs on Cloudflare Workers. :fact[i74t7g]

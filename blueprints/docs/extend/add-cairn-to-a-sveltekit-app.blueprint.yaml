@@ -3,8 +3,8 @@ argument: |
   A developer can add cairn to a SvelteKit app by hand in four milestones, each ending with a check
   the reader runs: a bare site deployed to Cloudflare, a post on disk rendered at its permalink, the
   admin signed in on the dev backend over that post, and the production site publishing an edit
-  through the developer's own GitHub App. Content comes before the admin because the dev backend
-  serves the site's own content from the working tree and the `cairnManifest` plugin supplies
+  through the developer's GitHub App. Content comes before the admin because the dev backend
+  serves the site's content from the working tree and the `cairnManifest` plugin supplies
   the build-time flag the dev backend's hook reads, so a reader who builds in this order never wires
   a step whose prerequisite does not exist yet. Every file the engine needs appears once, in the
   milestone that needs it, with the reason it exists, so a reader who only wants to see what cairn
@@ -12,7 +12,7 @@ argument: |
 introduction:
   covers: |
     An overview in second person, opening on the reader's situation and never on the page. It frames
-    the model first: the engine is an npm package that a SvelteKit site wires in through its own files
+    the model first: the engine is an npm package that a SvelteKit site wires in through its files
     (an admin route mounted at `/admin`, a server hook that guards it, and a Vite plugin that indexes
     the markdown content at build time); editors sign in from an emailed link; each publish commits
     the editor's change to the site's repository through a GitHub App the site registers; in
@@ -39,7 +39,7 @@ introduction:
     adapter option (Define an adapter and schema); the security reasoning behind the GitHub App's
     repository-wide write and the CSRF design (Security model); the delivery routes beyond the entry
     catch-all (Build the public routes); rotating the App's private key later (Rotate the GitHub App
-    key); a custom sender's own code (the SvelteKit reference's types section). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
+    key); a custom sender's code (the SvelteKit reference's types section). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
   facts:
     - f:kldwss
     - f:9slxqf
@@ -501,7 +501,7 @@ sections:
     heading: Install the engine and render an entry
     why: |
       Content comes before the admin: the dev backend in [[mount-the-admin-on-the-dev-backend]]
-      reads the site's own entries and committed manifest, `createCairnAdmin` needs the runtime the
+      reads the site's entries and committed manifest, `createCairnAdmin` needs the runtime the
       adapter feeds, and the `cairnManifest` plugin this milestone adds supplies the define the dev
       backend's hook reads.
     opens: |
@@ -524,7 +524,7 @@ sections:
         kind: reason
         text: |
           The content comes before the admin because the dev backend that milestone 3 wires reads
-          the site's own entries and its committed manifest from the working tree, and the Vite
+          the site's entries and its committed manifest from the working tree, and the Vite
           plugin this milestone adds also supplies the flag that the dev backend's hook reads.
   - id: install-the-engine-and-let-vite-compile-it
     heading: Install the engine and let Vite compile it
@@ -852,7 +852,7 @@ sections:
   - id: render-the-entry
     heading: Render the entry
     why: |
-      A rendered entry gives the content milestone its own check, the page loading at its URL, and
+      A rendered entry gives the content milestone a separate check, the page loading at its URL, and
       the route needs the content module [[index-the-content-and-commit-its-manifest]] writes.
     level: 3
     opens: |
@@ -1303,7 +1303,7 @@ sections:
         text: |
           The layout: `CairnAdminShell` over `data.shell`, rendering `children`. It imports no
           style sheet, unlike the template, whose `.cairn/admin.css` import serves the scaffold's
-          own admin screens.
+          admin screens.
         source: ../../templates/waymark/src/routes/admin/+layout.svelte
       - id: m-root-layout
         kind: fact
@@ -1351,7 +1351,7 @@ sections:
         use: |
           Only the define the `cairnManifest` plugin already in `vite.config.ts` supplies, its value
           under `vite dev`, under a `VITE_CAIRN_E2E=1` build, and in a default build, and that a
-          define the site sets would win, so the site writes none of its own.
+          define the site sets would win, so the site writes none.
       - id: d-noexternal
         kind: fact
         fact: f:2pv4r5
@@ -1841,7 +1841,7 @@ sections:
       creates.
     level: 3
     opens: |
-      Each site registers its own GitHub App, with one repository permission, **Contents** at
+      Each site registers a GitHub App, with one repository permission, **Contents** at
       **Read and write**, and no webhook.
     items:
       - id: ga-own
@@ -2108,7 +2108,7 @@ sections:
         kind: fact
         fact: f:xxtooz
         use: |
-          Only the shipped `migrations/` directory, the copy into the site's own `migrations_dir`,
+          Only the shipped `migrations/` directory, the copy into the site's `migrations_dir`,
           and the apply command's `--remote` and `--local` flags.
       - id: db-create
         kind: fact
@@ -2170,8 +2170,8 @@ sections:
         kind: fact
         fact: f:pkrwom
         use: |
-          Only the recommendation, not a requirement, that `0002_audit.sql` go on its own D1
-          binding with its own `migrations_dir`, and the reason for it.
+          Only the recommendation, not a requirement, that `0002_audit.sql` go on a separate D1
+          binding with its `migrations_dir`, and the reason for it.
       - id: db-audit-link
         kind: link
         target: ../reference/sveltekit.md#created1auditsink
@@ -2625,7 +2625,7 @@ sections:
         use: |
           Only `branding` through `createCairnAdmin`: a partial of its three members, each
           defaulting to the runtime's site name and sender, with a supplied member overriding only
-          its own default. Omit `createAuthRoutes`.
+          its default. Omit `createAuthRoutes`.
       - id: s-branding
         kind: step
         text: |
@@ -2735,7 +2735,7 @@ sections:
           One or two paragraphs, in different words from the overview's objectives, of what the
           reader now knows: the engine compiles as part of the site and reads one runtime built from
           the adapter and site config; every build checks the committed manifest against the
-          markdown; the dev backend works on the site's own content in memory and never reaches a
+          markdown; the dev backend works on the site's content in memory and never reaches a
           production bundle because the hook names the build-time flag directly; in production the
           editors sign in against the D1 database the reader created and their edits commit through
           the App the reader registered, reaching the public page on the next build and deploy.
@@ -2805,7 +2805,7 @@ dispositions:
     reference: ../reference/admin-routes.md#the-guard-and-the-ambient-type
     reason: |
       The split between the guard's subtree gate and per-route authorization matters to a site with
-      its own admin routes or an access map, which this tutorial builds neither of; the admin-routes
+      its admin routes or an access map, which this tutorial builds neither of; the admin-routes
       reference states it.
   - fact: f:35s2dk
     disposition: cut
@@ -2911,7 +2911,7 @@ dispositions:
     disposition: subordinated
     reference: migration-notes.md#unreleased
     reason: |
-      The scaffold's and the example site's hooks are not this site's; the tutorial's own hooks
+      The scaffold's and the example site's hooks are not this site's; the tutorial's hooks
       pass no `content` option, and the page states the default through `f:p1v88s`.
 constraints:
   - |

@@ -3,7 +3,7 @@
 A type-only module whose import side effect augments SvelteKit's `App.Locals` with the five
 fields the engine reads and writes on every admin request, and nothing else: a type a site
 consumes directly, `CairnEnv`, `Editor`, and so on, belongs on [Core](./core.md) or
-[SvelteKit](./sveltekit.md) instead, even one this augmentation's own members reference, since
+[SvelteKit](./sveltekit.md) instead, even one this augmentation's members reference, since
 this module's whole contract is its import side effect, not a name a site imports from it. A site
 imports it once, in `src/app.d.ts`, instead of hand-writing the `declare global` block:
 
@@ -35,8 +35,7 @@ namespace to peel back first.
 
 `Editor`, `Backend`, `AdminActionAuditSink`, and `AccessMap` are exports of the same names:
 `Editor`, `Backend`, and `AccessMap` from [core](./core.md), and `AdminActionAuditSink` from
-[sveltekit](./sveltekit.md#adminactionauditsink). `cairnIdentity`'s shape has no export row of
-its own; it's the inline object [`createAuthGuard`'s `identity` option](./sveltekit.md#createauthguard)
+[sveltekit](./sveltekit.md#adminactionauditsink). `cairnIdentity`'s shape has no export row; it's the inline object [`createAuthGuard`'s `identity` option](./sveltekit.md#createauthguard)
 publishes.
 
 - **`cairnEditor`** is the signed-in admin identity. `createAuthGuard` sets it on every
@@ -51,8 +50,8 @@ publishes.
   sets it, and the real provider connects instead.
 
 - **`cairnAuditSink`** is the site-supplied persistence seam
-  [`createAdminAction`](./sveltekit.md#createadminaction) forwards every audit record through, and a site's own
-  domain code may also call it directly with its own events. A site that wants its own audit trail
+  [`createAdminAction`](./sveltekit.md#createadminaction) forwards every audit record through, and a site's
+  domain code may also call it directly with its events. A site that wants its audit trail
   assigns it in a hooks handle; a site that never assigns it still logs `admin.action.audited` on
   every `ctx.audit` emit. [`createD1AuditSink`](./sveltekit.md#created1auditsink) is the packaged
   implementation of this seam.
@@ -75,7 +74,7 @@ publishes.
 The same import declares one global, `const __CAIRN_DEV_BUILD__: boolean`. The
 [`cairnManifest()`](./vite.md#cairnmanifest) plugin defines it as a literal, `true` under `vite dev`
 and in a `VITE_CAIRN_E2E=1` build and `false` in a default build, and each call site that names it
-directly folds where it is written. A site that reads the global needs no declaration of its own.
+directly folds where it is written. A site that reads the global needs no declaration of its.
 
 The subpath exports nothing at runtime (its JS module is empty), so the import is safe in a
 declaration file and free everywhere else.

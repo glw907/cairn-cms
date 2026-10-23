@@ -1,7 +1,7 @@
 # Reference
 
 One page per package export subpath, plus the CLI commands and the internal contracts that carry
-no subpath of their own. The TypeScript types in `src/lib` are the source of truth for the
+no subpath. The TypeScript types in `src/lib` are the source of truth for the
 export-keyed pages.
 
 Two gates hold every export-keyed page to that source of truth. `check:reference` verifies a page
@@ -12,7 +12,7 @@ the code fails the build.
 
 ## Stability tiers
 
-Every export carries exactly one stability tier, marked either inline on its own section
+Every export carries exactly one stability tier, marked either inline in its section
 (`Stability tier: <tier> API.`) or as the Stability column of a Types table row. `check:reference`
 enforces this both ways: every enumerated export must carry a tier, and a name that appears in a
 Types table row, a bare export heading, or a `declare` signature but is no longer a real export
@@ -22,12 +22,12 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
   runtime's read surface, the single-mount facade, and the components a site mounts directly.
   Breaking it after the beta freeze is a deliberate major-version event, not an everyday one.
 - **Scaffold API.** Also frozen, but for the copied wiring a scaffolded site owns rather than a
-  seam it imports and calls: the shape a `create-cairn-site` template writes into a consumer's own
+  seam it imports and calls: the shape a `create-cairn-site` template writes into a consumer's
   route files, which the same major-version discipline covers.
 - **Unstable API.** Importable today, with no stability promise across minor versions: it may
   change shape or leave the package in any release with no deprecation window. This covers the
   advanced per-view components and the piecewise per-route factories (the recomposition seam a
-  site uses only when it mounts routes by hand instead of the single-mount facade), their own
+  site uses only when it mounts routes by hand instead of the single-mount facade), their
   config, deps, and result types, and any other export whose shape is not yet committed.
 
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
@@ -35,22 +35,22 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.
 - [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
   vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
-  site's own theming respects.
+  site's theming respects.
 - [The admin components (`/admin`)](./admin.md): the admin Svelte UI.
 - [The public components (`/public`)](./public.md): every built-in public component that renders
   styled markup.
 - [The public stylesheet (`/cairn-public.css`)](./public-css.md): the engine's role defaults, the rules it ships for the classes the engine emits, and the layer and nesting behavior a public theme relies on.
 - [Reproductions (`/reproductions`)](./reproductions.md): the story registry backing a docs page's `repro` fence, and its node-safe manifest at `/reproductions/manifest`.
 - [The `site-facts.json` contract](./site-facts.md): the adapter-derived file a Go process reads, written by `cairn-manifest` and verified by the `cairnManifest` plugin.
-- [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's own custom `/admin/` screen composes.
+- [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's custom `/admin/` screen composes.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
 - [Islands (`/islands`)](./islands.md): the client runtime that mounts a site's live components over the static fallbacks.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Media (`/media`)](./media.md): the node-safe media surface: the config normalizer, the manifest functions, the naming and transform-URL helpers, the `media:` codec, and the render resolver.
 - [Auth store (`/auth-store`)](./auth-store.md): the server-only editor-provisioning functions backing D1.
-- [Auth channel (`/auth-channel`)](./auth-channel.md): the server-only factory for a site's own login channel for a second sign-in group, request/confirm/logout over a site-owned D1 binding.
-- [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's own auth flow for a second sign-in group.
+- [Auth channel (`/auth-channel`)](./auth-channel.md): the server-only factory for a site's login channel for a second sign-in group, request/confirm/logout over a site-owned D1 binding.
+- [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's auth flow for a second sign-in group.
 - [Cloudflare (`/cloudflare`)](./cloudflare.md): the server-only Turnstile verification and rate-limit wrapper for Cloudflare-native platform primitives.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
 - [Ambient types (`/ambient`)](./ambient.md): the `App.Locals` augmentation for a site's `app.d.ts`, naming `cairnEditor`, `cairnBackend`, `cairnAuditSink`, `cairnAccess`, and `cairnIdentity`.
@@ -65,31 +65,31 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [The `cairn doctor` command](./cli-cairn-doctor.md): the credential-free directory preflight,
   what each of its checks reads, and the payload it writes.
 - [Log (`/log`)](./log.md): `createLogger`, `CAIRN_LOG_EVENTS`, and `REDACTED_LOG_KEYS`, for a
-  site that wants its own structured logs in the engine's own record shape.
+  site that wants its structured logs in the engine's record shape.
 - [Admin sources (`/admin-sources.css`)](./cairn-audit.md#configuration): the engine-owned
   Tailwind `@source` manifest a site's `src/admin.css` imports instead of naming the engine's
   `dist` layout directly.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
 - [Supported toolchain](./supported-toolchain.md): a gated target-stack table naming the
   SvelteKit, Svelte, TypeScript, and Node versions the package promises against and the
-  Cloudflare tooling versions its own CI proves, plus the deliberate-floor reasoning behind each.
+  Cloudflare tooling versions its CI proves, plus the deliberate-floor reasoning behind each.
 
 ## Reading indexed-access forms
 
-A member of a documented shape sometimes names a type that carries no export row of its own: it
+A member of a documented shape sometimes names a type that carries no export row: it
 is not importable by name from the subpath, yet it still appears structurally, nested inside a
 type the page does document. Every such member carries a parenthetical, beside its row, giving the
 exact expression a consumer types to name the type anyway, by indexed access off the containing
 exported type. `EntrySummary` is one example: it names the element type of `ListData['entries']`,
 so a consumer references it as `Extract<AdminData, { view: 'list' }>['page']['entries'][number]`.
 This is not a second export or an alternate spelling; it is the one way to name a type TypeScript
-lets a consumer reach structurally when the package chooses not to give it its own barrel entry.
+lets a consumer reach structurally when the package chooses not to give it its barrel entry.
 `check:reference` enforces the parenthetical wherever a page prints such a member.
 
 ## Also for site admins
 
 Two of the preceding pages serve a second reader beyond the extending developer: a site admin
-running a deployed site day to day, following the admin track's own setup and troubleshooting
+running a deployed site day to day, following the admin track's setup and troubleshooting
 pages back to the underlying contract rather than a page that repeats it.
 
 - [Log events](./log-events.md)

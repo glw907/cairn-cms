@@ -54,11 +54,11 @@ and each `gap-*` utility sets `gap`. Neither sets anything else:
 | `gap-section` | `gap` | `--cairn-gap-section` |
 
 A `type-*` utility's `line-height` declaration reads `var(--tw-leading, ...)`, the same custom
-property that Tailwind's own named `text-*` steps (`text-sm`, `text-2xl`, and so on) read. So an
+property that Tailwind's named `text-*` steps (`text-sm`, `text-2xl`, and so on) read. So an
 element that also carries an explicit `leading-*` utility keeps that leading, whichever of the two
 rules compiles later in the sheet.
 
-A type role is a size paired with its own leading, not a full recipe. Weight, case, tracking, and
+A type role is a size paired with its leading, not a full recipe. Weight, case, tracking, and
 color are never part of a type role: they belong to the component recipes in the admin design
 system (the eyebrow, the nav item, the wordmark), and color is a palette choice, so it stays a
 separate `text-muted` or `text-subtle` class on the element.
@@ -83,7 +83,7 @@ them as `rounded-selector`, `rounded-field`, and `rounded-box`. A fixed Tailwind
 `card-shadow` is its elevation, kept as a separate utility because the split is real: a nested
 surface inside an already-shadowed container (the media library's picked tiles, its row-link
 cards) takes `card-shell` alone, since a shadow on a surface already inside a shadowed one reads
-as a stray outline rather than elevation. Markup composes `overflow-*` and its own padding
+as a stray outline rather than elevation. Markup composes `overflow-*` and its padding
 directly. Neither role sets them, because they differ per call site.
 
 A component writes `card-shell` and, where the surface floats free, `card-shadow`, never the
@@ -104,7 +104,7 @@ instead of a bracketed `var()` wrapper.
 
 Both read the on-surface TEXT ink for their tone, never the FILL tone (`--color-warning`,
 `--color-success`) a bare `text-warning`/`text-success` would otherwise resolve to if Tailwind's
-own core color utilities compiled them. The fills are tuned for a badge or alert background, not
+core color utilities compiled them. The fills are tuned for a badge or alert background, not
 small text: `--color-warning` measures about 2.2:1 as text on `base-100`, well under the 4.5:1
 WCAG 1.4.3 floor. `--cairn-warning-ink` and `--color-positive-ink` are the already-locked,
 measured, readable-small-text counterparts (see "The accessibility text inks" in
@@ -131,7 +131,7 @@ templates, not scoped styles.
 ## The boundary: grammar holds, palette is the brand layer
 
 A consuming site re-tunes the palette tokens (`--color-*`, the Warm Stone hues and their
-derivatives) to its own brand. It never redeclares a grammar token. Grammar names structure: a
+derivatives) to its brand. It never redeclares a grammar token. Grammar names structure: a
 heading's size, a gap's relationship. That structure holds across light and dark, and across every
 site built on cairn. Palette is the layer a site changes.
 
@@ -139,7 +139,7 @@ Re-tuning the palette is a constrained operation, not a free one. cairn's craft 
 specific Warm Stone values in ways that are not visible in the token names alone: warm-tinted
 shadows keyed to a particular hue, and several text/surface pairs sitting near the accessible
 contrast floor rather than comfortably above it. A site that moves the palette away from Warm
-Stone inherits none of those relationships for free and has to re-prove them against its own
+Stone inherits none of those relationships for free and has to re-prove them against its
 values. The acceptance test for a re-tuned palette is a clean consumer-side `npx cairn-audit
 --rendered` run, which renders every configured page under both themes.
 
@@ -171,15 +171,15 @@ Each one carries a counted, reasoned directive at its call site:
 | Site | Value | Why it is exempt |
 |---|---|---|
 | The brand wordmark, three sites | 22px | The keming fix raised the wordmark off the nearest step because the `rn` pair merged and `Cairn` read `Caim`. |
-| The editor document title | 30px | The editor canvas sets its own scale, deliberately larger than the admin chrome. |
-| The editor prose surface | 18px | The editor's own canvas in the editor face. Its size coincides with `type-heading`, but it is body text, not a heading. |
+| The editor document title | 30px | The editor canvas sets its scale, deliberately larger than the admin chrome. |
+| The editor prose surface | 18px | The editor's canvas in the editor face. Its size coincides with `type-heading`, but it is body text, not a heading. |
 
 The count is the contract. `cairn-audit` reports the total, and a total above the exception list
 means something was suppressed rather than resolved.
 
-Two cautions if you add a value of your own. A bracketed arbitrary size such as `text-[1.5rem]` sets
+Two cautions if you add a value. A bracketed arbitrary size such as `text-[1.5rem]` sets
 `font-size` only, while a named Tailwind step such as `text-2xl` sets `line-height` too, so
 converting between the two silently changes leading. And a class used only in a directory the admin
 stylesheet does not scan never compiles at all, so it resolves to nothing at runtime rather than
-failing a build. Every daisyUI class compiles regardless; this caution covers Tailwind's own
+failing a build. Every daisyUI class compiles regardless; this caution covers Tailwind's
 utilities.

@@ -39,7 +39,7 @@ function isAdminPath(pathname: string): boolean {
 }
 
 /**
- * Configuration for `createAuthGuard`: the composed runtime, plus the guard's own response and
+ * Configuration for `createAuthGuard`: the composed runtime, plus the guard's response and
  * identity options.
  */
 export interface AuthGuardConfig {
@@ -51,9 +51,9 @@ export interface AuthGuardConfig {
    *
    * With no `roles` declared, the guard resolves every session against the implicit owner/editor
    *  pair. With no `access` declared, it attaches an empty map to `locals.cairnAccess`; the
-   *  engine's own screens, gated through {@link requireEngineAccess}'s `canReach` check, then stay
+   *  engine's screens, gated through {@link requireEngineAccess}'s `canReach` check, then stay
    *  open to any editor-capability session, so a zero-config site sees no behavior change there. A
-   *  {@link requireAccess} call on a site's own route reads the opposite way: with no rule for its
+   *  {@link requireAccess} call on a site's route reads the opposite way: with no rule for its
    *  target it refuses every session, owner included, since that helper's contract is a route that
    *  opted in but found nothing.
    */
@@ -73,7 +73,7 @@ export interface AuthGuardConfig {
    */
   includeSubDomains?: boolean;
   /**
-   * Replace magic-link session resolution with the site's own identity gate (Cloudflare Access
+   * Replace magic-link session resolution with the site's identity gate (Cloudflare Access
    * or any other reverse proxy that authenticates the request before it reaches this Worker).
    * Omitted, the guard resolves the session cookie exactly as today.
    */
@@ -81,7 +81,7 @@ export interface AuthGuardConfig {
 }
 
 /**
- * A site's own identity gate, replacing the guard's session-cookie resolution. `resolve` proves
+ * A site's identity gate, replacing the guard's session-cookie resolution. `resolve` proves
  * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
  * page and the admin.login-probe-failed condition.
  */
@@ -116,7 +116,7 @@ export interface IdentityRefusal {
   ok: false;
   /**
    * For the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`,
-   * `'expired'`, `'no_email'`, `'keys'`, or a site's own word; every reason is snake_case.
+   * `'expired'`, `'no_email'`, `'keys'`, or a site's word; every reason is snake_case.
    */
   reason: string;
 }
@@ -171,13 +171,13 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
 /**
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
  *
- * Annotated `: Handle`, kit's own type, under the interop carve-out
+ * Annotated `: Handle`, kit's type, under the interop carve-out
  * (`convention-interop-carve-out`): a host-ecosystem return type satisfies the engine's
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
 // WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
-// heuristic, which reads a site's own createAuthGuard call for its argument shape.
+// heuristic, which reads a site's createAuthGuard call for its argument shape.
 export function createAuthGuard(config: AuthGuardConfig): Handle {
   const { runtime, includeSubDomains, identity } = config;
   const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;
@@ -266,7 +266,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
     // decides outright when it was SENT at all, matching or not: a valid X-Cairn-CSRF header clears
     // the request without cloning the body, which is how the raw-body media upload (a text/plain
     // POST) passes CSRF, and a header that was sent but wrong (a stale value on a raw-body endpoint)
-    // rejects on its own verdict rather than falling through to the field path, whose "no csrf field"
+    // rejects on its verdict rather than falling through to the field path, whose "no csrf field"
     // failure would misreport the real cause. A custom header cannot be set cross-origin without a
     // CORS preflight, so it is as strong a token witness as the form field. Only with NO header sent
     // at all does the form-field path run and clone the body to read the token, the unchanged path
@@ -309,7 +309,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       }
 
       // identity mode replaces session-cookie resolution entirely: resolveSession is never
-      // called, and the site's own gate proves who is asking. A throw from resolve() is an
+      // called, and the site's gate proves who is asking. A throw from resolve() is an
       // operator fault (a misbehaving gate), never a 500: log it and refuse the same as any
       // other identity refusal.
       let resolved: ResolvedIdentity | IdentityRefusal;
@@ -330,7 +330,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       if (typeof resolved.email !== 'string' || resolved.email.trim() === '') {
         return refuseIdentity('warn', 'invalid');
       }
-      // Normalized again inside findEditor, the store's own invariant; normalizing here too
+      // Normalized again inside findEditor, the store's invariant; normalizing here too
       // keeps the log record and the unrostered page showing what the lookup actually matched
       // against.
       const email = resolved.email.trim().toLowerCase();
@@ -388,7 +388,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
  * Fail loudly (throw) rather than fall back to a soft `fail(403)` when an untyped caller passes
  * no cookie jar at all. `CairnEvent.cookies` is already typed `CookieJar` (non-nullable), so this
  * only fires for a caller outside the type system; narrows the return to a definite `CookieJar`
- * so the caller's own CSRF check needs no further guard (`convention-auth-loud-postures`). The
+ * so the caller's CSRF check needs no further guard (`convention-auth-loud-postures`). The
  * exported CSRF helpers keep their strict, non-nullable `cookies: CookieJar` parameter type
  * deliberately: widening it to accept `undefined` would trade this compile-time contract for a
  * runtime throw, the inverse of the platform convention. The thrown message names only the jar,
@@ -399,14 +399,14 @@ export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
   // non-nullable, so it is untested by construction. It goes live the moment CookieJar (or this
   // parameter) widens to admit null or undefined, and the consequence is worth remembering
   // before that happens: a hand-mounted route calling the CSRF helpers directly gets a raw 500
-  // here rather than the 403 the guard's own path produces.
+  // here rather than the 403 the guard's path produces.
   if (!event.cookies) throw new Error('cairn: no cookie jar on this event');
   return event.cookies;
 }
 
 /**
  * For a protected load/action: the session the guard already resolved, or a login redirect.
- *  Takes {@link CairnEvent}, so every engine load/action and a site's own real event satisfy it.
+ *  Takes {@link CairnEvent}, so every engine load/action and a site's real event satisfy it.
  */
 export function requireSession(event: CairnEvent): Editor {
   const editor = event.locals.cairnEditor;
@@ -424,10 +424,10 @@ export function requireOwner(event: CairnEvent): Editor {
 }
 
 /**
- * For the engine's own content and admin-mutation surfaces: a signed-in owner or editor, or 403
+ * For the engine's content and admin-mutation surfaces: a signed-in owner or editor, or 403
  * for a none-capability session. The none contract (spec section 4): a none session still
  * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
- * `CairnAdminShell` custom-route seam untouched; only the engine's own content and roster loads
+ * `CairnAdminShell` custom-route seam untouched; only the engine's content and roster loads
  * and actions call this and refuse it.
  */
 export function requireEditor(event: CairnEvent): Editor {
@@ -437,19 +437,19 @@ export function requireEditor(event: CairnEvent): Editor {
 }
 
 /**
- * For one of the engine's own content or admin-mutation surfaces, beside its existing
+ * For one of the engine's content or admin-mutation surfaces, beside its existing
  * `requireEditor` call: refuse with 403 when the site's declared access map denies this session's
  * role for `target` (a concept id or one of the fixed engine screens `validateAccessComposition`
  * enforces). A target absent from the map, or no map at all, always admits (`canReach`'s
  * zero-config floor), so a site that declares nothing sees no behavior change. Every denial emits
  * `auth.access.refused` with the editor's email, role, `target`, and `reason: 'role'`, the same
  * shape `requireAccess` emits. Unlike `requireAccess`, an unmapped target is never a fail-closed
- * misconfiguration here: an engine screen's own route is always a legitimate destination, mapped or
+ * misconfiguration here: an engine screen's route is always a legitimate destination, mapped or
  * not.
  *
- * Posture: permissive, mirroring `canReach`'s own unmapped-target default; an engine screen's
+ * Posture: permissive, mirroring `canReach`'s unmapped-target default; an engine screen's
  * mutations (save, publish, upload, and the rest) stay reachable to any editor-capability session
- * until a site names that screen in its own map.
+ * until a site names that screen in its map.
  */
 export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
   if (canReach(access, editor, target)) return;
@@ -464,7 +464,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * alongside `editor`), or a 403. `target` defaults to `event.route.id`, never
  * `event.url.pathname`: on a catch-all route the request path is attacker-chosen while the route
  * id is not (the same reasoning `createSectionAction`'s `SectionActionOptions.target` follows, so
- * a route's load and its own POST action agree on what they are checking). The derived default
+ * a route's load and its POST action agree on what they are checking). The derived default
  * drops route-group segments (`/admin/(app)/roster` reads as `/admin/roster`), so a map stays
  * keyed by URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a
  * map keyed by its prefix still matches; a declared `target` is used exactly as given, never
@@ -485,7 +485,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * the parameter's, so it can never be reached, and admitting through the shallower key instead
  * would silently make the deeper rule dead code (see `matchHrefKey`, `auth/access.ts`). A site
  * relying on such a route must declare `target` explicitly, the same warning
- * `SectionActionOptions.target` carries for its own POST half.
+ * `SectionActionOptions.target` carries for its POST half.
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);

@@ -57,11 +57,11 @@ const realClock: CheckClock = {
 /** How long a settled verdict answers every later live call in the isolate. */
 const VERDICT_TTL_MS = 60_000;
 
-/** The mint's own abort deadline, and the age at which an in-flight slot is dead. */
+/** The mint's abort deadline, and the age at which an in-flight slot is dead. */
 const MINT_TIMEOUT_MS = 5_000;
 
 /**
- * How long past the mint's own deadline each caller waits. A mint that lands at its deadline, or
+ * How long past the mint's deadline each caller waits. A mint that lands at its deadline, or
  * aborts there and classifies itself, answers the caller rather than losing a tie to a guess.
  */
 const CALLER_GRACE_MS = 500;
@@ -107,11 +107,11 @@ interface InstallationState {
  * Sharing an in-flight promise is safe here only because no caller waits on it unbounded. Under
  * workerd a request's subrequests are canceled once its response completes, which can leave the
  * shared mint's promise never settling. Each caller therefore races it against a timer created in
- * its own request and reads `unreachable` when the timer wins; a slot at or past the timeout counts
- * as empty, so the next caller starts a fresh mint; and only the mint's own settlement writes the
+ * its request and reads `unreachable` when the timer wins; a slot at or past the timeout counts
+ * as empty, so the next caller starts a fresh mint; and only the mint's settlement writes the
  * verdict or clears the slot, so a caller giving up never caches a guess. A mint that settles after
  * a newer one replaced it writes nothing, so a late refusal never overwrites a fresher verdict. Each
- * caller's timer runs a short grace past the mint's own deadline, so the mint's classification wins
+ * caller's timer runs a short grace past the mint's deadline, so the mint's classification wins
  * when it lands at that deadline. The starter hands the mint to `keepAlive` so a settled verdict
  * outlives the starter's response.
  */

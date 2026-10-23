@@ -26,8 +26,8 @@ export interface SecurityHeaderOptions {
  * Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
  * design. frame-ancestors is the modern clickjacking control and the one CSP directive included.
  * Referrer-Policy is `strict-origin`. A same-origin form POST keeps its real `Origin` header, which
- * SvelteKit's own origin check reads; `no-referrer` would send `Origin: null` and refuse the
- * editor's own submit. The policy still sends no path, so the magic-link token in the confirm
+ * SvelteKit's origin check reads; `no-referrer` would send `Origin: null` and refuse the
+ * editor's submit. The policy still sends no path, so the magic-link token in the confirm
  * page's query string never reaches a referrer. Each admin view also emits a matching referrer
  * `meta` tag: a site's outer handle or a zone rule that sets `no-referrer` site-wide would
  * otherwise lock every editor out, and the browser takes the last-processed meta. Only an
@@ -62,7 +62,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
  * `includeSubDomains` opt-in, and a `max-age`-only header would replace a pinned policy rather than
  * merely restate a weaker one (see {@link SecurityHeaderOptions.omitHsts}). The CSRF rejection is
  * reachable by any cross-site POST with no session, so a site that opted in would otherwise hand any
- * page on the web a repeatable way to unpin its sibling subdomains. The guard's own resolve path
+ * page on the web a repeatable way to unpin its sibling subdomains. The guard's resolve path
  * still sends the header on every response it returns, which is what keeps the admin host pinned.
  * The https-required page is served over http, where RFC 6797 forbids the header anyway.
  */

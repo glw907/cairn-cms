@@ -61,17 +61,17 @@ export function parseAdminPath(
     if (head === 'login') return { view: 'login' };
     if (head === 'editors') return { view: 'editors' };
     if (head === 'nav') return { view: 'nav' };
-    // media is its own view, a peer of editors and nav, so it is decided here before the
+    // media is a separate view, a peer of editors and nav, so it is decided here before the
     // reserved-no-view check. /admin/media/<anything> 404s because media is in the reserved set,
     // which is the correct shape.
     if (head === 'media') return { view: 'media' };
-    // settings is its own view, a peer of editors and nav. /admin/settings/<anything> 404s naturally
+    // settings is a separate view, a peer of editors and nav. /admin/settings/<anything> 404s naturally
     // (the two-segment branch never matches settings), which is the correct shape.
     if (head === 'settings') return { view: 'settings' };
-    // vocabulary is its own view (the tag-admin screen), a peer of settings. It is also in the
+    // vocabulary is a separate view (the tag-admin screen), a peer of settings. It is also in the
     // reserved set so /admin/vocabulary/<anything> 404s and no concept can claim the segment.
     if (head === 'vocabulary') return { view: 'vocabulary' };
-    // help is its own view (the Help home), decided here like settings. It is
+    // help is a separate view (the Help home), decided here like settings. It is
     // also in the reserved set so /admin/help/<anything> 404s and no concept can claim the segment.
     if (head === 'help') return { view: 'help' };
     if (RESERVED_SEGMENTS.has(head)) return null;

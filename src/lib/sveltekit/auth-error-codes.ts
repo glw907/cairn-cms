@@ -17,7 +17,7 @@
  * that reproduces the failure for someone clicking on a second device.
  *
  * Exported so `LoginPage` and `ConfirmPage` branch on this value rather than on a duplicated
- * string literal. The wire format is the literal below, so a site rendering its own login page
+ * string literal. The wire format is the literal below, so a site rendering its login page
  * may compare `data.error` against it too.
  */
 export const NO_PENDING_REQUEST_ERROR = 'no-pending-request';

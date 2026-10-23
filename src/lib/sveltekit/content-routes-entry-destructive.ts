@@ -1,8 +1,8 @@
 // cairn-cms: the entry destructive cluster (deleteAction, listDeleteAction, renameAction). All
 // three share deleteEntry, the block-until-clean delete core both delete entry points call with an
-// already-validated id; rename is unrelated to delete's own core but sits here as this cluster's
+// already-validated id; rename is unrelated to delete's core but sits here as this cluster's
 // second branch-lifecycle-adjacent verb (both mutate main directly, unlike the write cluster's
-// pending-branch saves or the revert cluster's own branch-collision handling).
+// pending-branch saves or the revert cluster's branch-collision handling).
 // createEntryDestructiveActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
 // sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
@@ -198,7 +198,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       // The entry is gone from main; the straggler shows as a pending row until discarded.
     }
     // The entry is gone from both main and its branch; any outstanding preview link would 404 on
-    // its own (branch_gone), but clearing here closes the id-reuse window instead of leaving it to
+    // its (branch_gone), but clearing here closes the id-reuse window instead of leaving it to
     // that natural expiry. Deliberately run for both success exits above: both delete paths route
     // through deleteEntry, the sole delete-path caller of clearPreviewTokens, so the list-initiated
     // delete (listDeleteAction) cannot bypass it.
@@ -300,7 +300,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     // The moved file keeps its content, except a self-token rewrite and a self-reference rewrite.
     let movedRaw = rewriteCairnLink(entryRaw, oldHref, newHref);
     // The moved entry is excluded from inboundReferences, so it must repoint its OWN frontmatter
-    // self-references (e.g. `related` listing its own old id), or the re-derived row would carry the
+    // self-references (e.g. `related` listing its old id), or the re-derived row would carry the
     // old id and verifyReferences would flag a dangling edge at the deploy gate.
     for (const f of concept.fields) {
       if (f.type === 'reference' || (f.type === 'array' && f.item.type === 'reference')) {
@@ -360,7 +360,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, hasInclude: false, fields: linker.fields });
     }
     // A fragment id is unique across the site, so inboundIncludes only matters when the renamed
-    // entry IS a fragment; gated the same way the delete guard gates its own inboundIncludes call.
+    // entry IS a fragment; gated the same way the delete guard gates its inboundIncludes call.
     if (concept.id === FRAGMENTS_CONCEPT_ID) {
       for (const includer of inboundIncludes(manifest, id)) {
         const includerConcept = findConcept(runtime.concepts, includer.concept);
@@ -402,7 +402,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       } satisfies RenameFailure);
     }
     // Keyed to the OLD id: renaming refuses above while a pending branch exists, so a live preview
-    // link for this entry (if any survived an earlier discard/publish's own cleanup) would now
+    // link for this entry (if any survived an earlier discard/publish's cleanup) would now
     // resolve to whatever NEW draft later reuses the old id, an id-reuse collision closed here.
     await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);

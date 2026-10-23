@@ -49,7 +49,7 @@ export interface ListData {
   /**
    * Whether this concept is routable (`concept.routing.routable`), for the create form: a
    *  non-routable concept (the Fragments concept) has no permalink, so the form asks for a name
-   *  rather than an address, matching the edit screen's own treatment.
+   *  rather than an address, matching the edit screen's treatment.
    */
   routable: boolean;
   entries: EntrySummary[];

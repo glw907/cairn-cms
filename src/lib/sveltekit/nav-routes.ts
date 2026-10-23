@@ -131,8 +131,8 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     try {
       tree = validateNavTree(JSON.parse(String(form.get('tree') ?? '[]')), maxDepth);
     } catch (err) {
-      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its own message
-      // (V8's own diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
+      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its message
+      // (V8's diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
       // content into the alert; NavValidationError's messages are all engine-authored fixed
       // strings, safe to surface directly.
       if (err instanceof SyntaxError) {

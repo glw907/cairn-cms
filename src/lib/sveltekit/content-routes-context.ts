@@ -62,7 +62,7 @@ export interface TidyClient {
    *  only `tidy` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades to
    *  'unknown' when a client omits it rather than throwing. The signal rides the second argument,
    *  mirroring `tidy`'s options shape (save-500-hardening), so the probe is bounded by the same
-   *  deadline as a tidy call instead of the SDK's own multi-minute default.
+   *  deadline as a tidy call instead of the SDK's multi-minute default.
    */
   models?: {
     list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown>;
@@ -70,7 +70,7 @@ export interface TidyClient {
 }
 
 /**
- * The Anthropic SDK's own wire shape for a Messages create call, kept internal to
+ * The Anthropic SDK's wire shape for a Messages create call, kept internal to
  *  {@link lazyAnthropicClient} so a vendor field rename or a parameter reshape stays contained to
  *  this adapter rather than becoming a cairn break. Never exported.
  */
@@ -100,7 +100,7 @@ interface AnthropicWireClient {
 /**
  * The `max_tokens` ceiling the adapter sends on every tidy call: comfortably exceeds the input
  *  token count so a proofread is never capped mid-response. A proofread runs at roughly input
- *  length, and the tidy action's own request cap (content-routes-tidy.ts's `MAX_TIDY_CHARS`,
+ *  length, and the tidy action's request cap (content-routes-tidy.ts's `MAX_TIDY_CHARS`,
  *  24,000 characters) is at most about 8,000 input tokens even at Sonnet 5's higher-density
  *  tokenizer, so this ceiling stays generous. Internal: the public {@link TidyClient} contract
  *  carries no vendor-shaped `max_tokens` field.
@@ -112,7 +112,7 @@ const MAX_OUTPUT_TOKENS = 16_000;
  *  site means the optional peer is not installed. It stays distinct from every other tidy failure
  *  because the remedy differs: an auth or model error is the site's key or Anthropic's problem,
  *  while this one is a missing install the developer fixes with one command, so the tidy action
- *  answers it with its own refusal rather than the retryable "try again" voice. Engine-internal
+ *  answers it with its refusal rather than the retryable "try again" voice. Engine-internal
  *  (no package subpath re-exports it), so the action's `instanceof` test is sound: only this
  *  module ever constructs one.
  */
@@ -137,7 +137,7 @@ function lazyAnthropicClient(opts: { apiKey: string }): TidyClient {
   async function connect(): Promise<AnthropicWireClient> {
     // The rejection handler wraps the import expression alone, never the construction below, so it
     // cannot be widened by accident: a constructor failure from a real, installed SDK is not a
-    // missing install and must keep its own error for tidyClientErrorStatus to classify.
+    // missing install and must keep its error for tidyClientErrorStatus to classify.
     const { default: Anthropic } = await import('@anthropic-ai/sdk').catch((err: unknown) => {
       throw new TidySdkMissingError(err);
     });
@@ -201,7 +201,7 @@ export interface ContentRoutesConfig {
      */
     client?: (opts: { apiKey: string }) => TidyClient;
     /**
-     * The tidy action's own request deadline in milliseconds, set shorter than the platform limit
+     * The tidy action's request deadline in milliseconds, set shorter than the platform limit
      *  so a slow model call becomes a clean retryable fail(502) rather than a platform timeout.
      *  Defaults to {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline
      *  path without waiting.
@@ -215,9 +215,9 @@ export interface ContentRoutesConfig {
    *  entries, engine references included; a declared layout's arrangement or, absent one, today's
    *  default) and the signed-in editor, and returns the items to render, same shape. `fallback`,
    *  the trailing group of engine screens the layout never referenced, never passes through this
-   *  seam: it is engine-only and already gated, and a site hides one of its own doors with
-   *  `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside
-   *  cairn (a role stored in its own D1, say) uses this to hide a section or an item from an
+   *  seam: it is engine-only and already gated, and a site hides one of its doors with
+   *  `hidden: true` inside its `navLayout` instead. A site whose gating lives outside
+   *  cairn (a role stored in its D1, say) uses this to hide a section or an item from an
    *  editor who fails that check, rather than teasing a link the route then refuses. Awaited fresh
    *  on every request; the engine never caches its result. Absent, the shell renders exactly the
    *  arranged, gated tree, unchanged from before this seam existed.
@@ -230,13 +230,13 @@ export interface ContentRoutesConfig {
    * Per-session pending-work counts for the shell's nav badges (a queue of unread asset
    *  requests, say), awaited fresh every request and never cached by the engine, exactly once,
    *  after nav resolution and `navFilter` have both already run. The site computes items from its
-   *  own domain queues; the engine then drops anything the session cannot act on before any
+   *  domain queues; the engine then drops anything the session cannot act on before any
    *  rendering or summing, so a count never leaks to a role that cannot see its nav entry (counts
    *  are information; CWE-200). An item is dropped when its `count` is non-positive, when its
    *  `href` matches no visible nav entry (an engine door or a site entry, resolved-and-filtered
    *  set), or when it duplicates an earlier item's `href` (first wins, silently). Absent, the
    *  shell payload serializes an empty record and renders exactly as before this seam existed. A
-   *  dep that throws fails the shell load loudly; the site owns its own callback's errors.
+   *  dep that throws fails the shell load loudly; the site owns its callback's errors.
    */
   attention?: (ctx: {
     editor: Editor;
@@ -244,7 +244,7 @@ export interface ContentRoutesConfig {
   }) => AttentionItem[] | Promise<AttentionItem[]>;
   /**
    * The preview-link lifetime `previewMintAction` mints against. Absent resolves to
-   *  {@link PreviewTokenConfig}'s own default (seven days).
+   *  {@link PreviewTokenConfig}'s default (seven days).
    */
   preview?: PreviewTokenConfig;
 }
@@ -290,7 +290,7 @@ export interface ContentRoutesContext {
    *  or a test's injected fake (`deps.tidy.client`).
    */
   anthropicClient: (opts: { apiKey: string }) => TidyClient;
-  /** The tidy action's own request deadline in milliseconds. */
+  /** The tidy action's request deadline in milliseconds. */
   tidyTimeoutMs: number;
   /**
    * Resolve the live content backend for one request. The dev double's `event.locals.cairnBackend`
@@ -311,7 +311,7 @@ export interface ContentRoutesContext {
   dictionaryFilePath(): string;
   /**
    * The shared commit catch for the entry and media actions: log the failure, then answer a
-   *  conflict in place with `fail(409, payload)` carrying the caller's own screen failure shape,
+   *  conflict in place with `fail(409, payload)` carrying the caller's screen failure shape,
    *  and rethrow anything else.
    */
   commitFailure<T>(
@@ -383,7 +383,7 @@ export function createContentRoutesContext(config: ContentRoutesConfig): Content
 
   /**
    * Parse a committed media.json body to a plain value for parseMediaManifest, degrading a missing
-   *  or corrupt file to null (an empty manifest). The committed file is always our own serialization,
+   *  or corrupt file to null (an empty manifest). The committed file is always our serialization,
    *  so the catch only guards a hand-edited or truncated file rather than a normal path.
    */
   function parseMediaJson(raw: string | null): unknown {

@@ -47,7 +47,7 @@ export type {
   ContentRoutesConfig,
   AttentionItem,
   ContentFormFailure,
-  // Every type a route factory's return type names, down to its own nested shapes, is importable
+  // Every type a route factory's return type names, down to its nested shapes, is importable
   // from this subpath.
   TidyClient,
   TidyEffort,
@@ -81,7 +81,7 @@ export {
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
 // `RateLimitLike`'s canonical home is `/cloudflare`; a recorded R4 re-export here because
-// `SectionActionConfig`'s own budget field names it.
+// `SectionActionConfig`'s budget field names it.
 export {
   createSectionAction,
   type RateLimitLike,
@@ -111,11 +111,11 @@ export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from 
 // The binding-shaped types a site's generated `Env` satisfies; /sveltekit is their canonical home.
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
 
-// Every remaining type a factory or wrapper's own signature names is re-exported here so a site
+// Every remaining type a factory or wrapper's signature names is re-exported here so a site
 // importing only from this subpath can still name the value it holds, except two documented
 // cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
 // `loadPreview`'s second parameter names, and `EntryData`, which `PreviewData` extends.
-// `CairnRuntime`'s own structural body in turn names most of the rest below it, the same
+// `CairnRuntime`'s structural body in turn names most of the rest below it, the same
 // recursive closure `/delivery` and root carry.
 //
 // Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
@@ -144,7 +144,7 @@ export type {
   ValidationIssue,
 } from '../content/types.js';
 export type { FieldDescriptor } from '../content/fields.js';
-// `FieldDescriptor`'s own union names each of its fifteen arms.
+// `FieldDescriptor`'s union names each of its fifteen arms.
 export type {
   TextField,
   TextareaField,

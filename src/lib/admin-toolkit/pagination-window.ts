@@ -1,7 +1,7 @@
 // cairn-cms: Pagination's pure windowing and range arithmetic, graduated from a consumer site's
 // admin toolkit module context. Kept in a plain module (rather than only inside
 // Pagination.svelte) so the unit test project, which runs in Node with no Svelte plugin, can
-// exercise the arithmetic directly; Pagination.svelte imports both for its own internal use, the
+// exercise the arithmetic directly; Pagination.svelte imports both for its internal use, the
 // same split `list-toolbar.ts` establishes for `ListToolbar`. Neither publishes from the
 // `/admin-toolkit` barrel any longer: zero consumers reached them independently of the component.
 

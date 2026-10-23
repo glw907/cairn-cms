@@ -36,7 +36,7 @@ export interface CairnAdminConfig {
   runtime: CairnRuntime;
   /**
    * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here.
-   *  `branding` is a partial override merged over the runtime's own site name and sender, so
+   *  `branding` is a partial override merged over the runtime's site name and sender, so
    *  `{ siteName }` alone keeps the runtime's `from` and `replyTo`. See `AuthRoutesConfig`.
    */
   auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & { branding?: Partial<AuthBranding> };
@@ -46,8 +46,8 @@ export interface CairnAdminConfig {
    */
   tidy?: ContentRoutesConfig['tidy'];
   /**
-   * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
-   *  stored in its own D1, say) injects this to hide a section or an item from the arranged
+   * Forwarded to the content routes verbatim; a site whose gating lives outside cairn (a role
+   *  stored in its D1, say) injects this to hide a section or an item from the arranged
    *  sidebar for an editor who fails that check. See `ContentRoutesConfig['navFilter']`.
    */
   navFilter?: ContentRoutesConfig['navFilter'];
@@ -66,7 +66,7 @@ export interface CairnAdminConfig {
 
 /**
  * One admin view's data, discriminated for the admin page component's switch. Every member
- * carries just its view's own page data; the shared chrome (nav, user, theme, pending count)
+ * carries just its view's page data; the shared chrome (nav, user, theme, pending count)
  * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
  */
 export type AdminData =
@@ -86,17 +86,17 @@ export type AdminData =
 /**
  * Compose every admin surface (auth, content, editors, nav) into the bundle a site mounts at its
  * catch-all `/admin/[...path]` route: one `load` that dispatches on the parsed path to the
- * matching view's own data, the full `actions` record (every named admin action, each parsing
- * and validating its own view before delegating), and a separate `shellLoad` for
+ * matching view's data, the full `actions` record (every named admin action, each parsing
+ * and validating its view before delegating), and a separate `shellLoad` for
  * `/admin/+layout.server.ts`'s shared chrome. `config.runtime` is the composed runtime the bundle
  * closes over; `config`'s other members override only the seams a site actually needs (auth
  * send/bootstrap, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
  *
  * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
  *  reachable from no package subpath, so its `actions` record is free to carry every one of the
- *  ten media-janitorial actions the engine's own Media Library screen needs, which the public
+ *  ten media-janitorial actions the engine's Media Library screen needs, which the public
  *  {@link createCairnAdmin}'s declared {@link CairnAdminRoutes} narrows away. Module-internal
- *  callers (this module's own single caller, `createCairnAdmin`, and a test proving the wide
+ *  callers (this module's single caller, `createCairnAdmin`, and a test proving the wide
  *  shape directly) import it by relative path; no barrel re-exports it.
  */
 export function createCairnAdminInternal(config: CairnAdminConfig) {
@@ -143,7 +143,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
 
   /**
    * Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
-   *  Each authed view loads only its own page data; the shared chrome rides the separate shell
+   *  Each authed view loads only its page data; the shared chrome rides the separate shell
    *  load (`/admin/+layout.server.ts`), so this load no longer re-fetches the nav per view.
    */
   async function load(event: CairnEvent): Promise<AdminData> {
@@ -206,7 +206,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
    *  as load does, 404 on a null parse or a view outside the allowed set, then hand the
    *  narrowed view to the delegate. An unexpected throw from the delegate (a bug, not a
    *  validated refusal the action already turned into a redirect or a `fail()`) never escapes
-   *  as SvelteKit's raw 500: a redirect or an `HttpError` is the action's own deliberate control
+   *  as SvelteKit's raw 500: a redirect or an `HttpError` is the action's deliberate control
    *  flow and passes through untouched (an `ActionFailure` from `fail()` is a return value, not
    *  a throw, so it already passes through with no help from this wrapper); anything else logs
    *  `admin.action.failed` (the action name, the concept and id when the view carries them, the
@@ -216,8 +216,8 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
    *  action keeps the editor on the page with the submitted body intact instead of navigating
    *  away, and a script-posted action (tidy, a dictionary word, an upload, all of which fetch
    *  with `redirect: 'manual'`) never sees a redirect it would otherwise fold into a false "your
-   *  session expired" message. The wrapper's own return type unions in the plain shape this arm
-   *  actually produces, rather than a narrowing cast to the delegate's own `R`: a delegate whose
+   *  session expired" message. The wrapper's return type unions in the plain shape this arm
+   *  actually produces, rather than a narrowing cast to the delegate's `R`: a delegate whose
    *  declared failure shape carries more than a bare error message (a save's broken-link list,
    *  say) never actually gets those extra fields back from this arm, so the type says exactly
    *  that, rather than promising a shape this arm cannot produce (a consumer's generated
@@ -271,7 +271,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
    *  validate the view, synthesize the params the wrapped action reads, delegate. The
    *  editor actions gate themselves with requireOwner, so no second gate is added here.
    *
-   *  A delegate that only ever throws keeps its own declared `Promise<never>` and needs no
+   *  A delegate that only ever throws keeps its declared `Promise<never>` and needs no
    *  widening annotation at the call site: `viewAction` adds `ActionFailure<{ error: string }>`
    *  to every wrapper's return unconditionally (see the `R` note above), and `never` vanishes
    *  from that union. Confirm, logout, discard, and publishAll are the four, each ending in a
@@ -368,15 +368,15 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  * What `createCairnAdmin` returns: the one load, the shared shell load, and the deliberately
  *  narrowed action vocabulary a site wiring the single-mount admin actually dispatches to.
  *
- *  Ten media-janitorial actions are absent on purpose, mirroring `ContentRoutes`'s own
+ *  Ten media-janitorial actions are absent on purpose, mirroring `ContentRoutes`'s
  *  narrowing exactly (`content-routes.ts`): `mediaDelete`, `mediaUpdate`, `mediaLibraryUpload`,
  *  `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`, `mediaAltPropagate`,
  *  `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`. Each wraps one of `ContentRoutes`'s
- *  own ten excluded internal actions, reachable only from the engine's own Media Library screen.
+ *  ten excluded internal actions, reachable only from the engine's Media Library screen.
  *  `mediaUpload` stays: it wraps the SAME `uploadAction` the kept `upload` action wraps (the one
  *  `ContentRoutes` itself exposes), just gated to the media view instead of the edit view.
  *
- *  The narrowing is TYPE-LEVEL, not a runtime boundary, exactly as `ContentRoutes`'s own doc
+ *  The narrowing is TYPE-LEVEL, not a runtime boundary, exactly as `ContentRoutes`'s doc
  *  comment states: `createCairnAdmin` returns the internal object itself, so every action is
  *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
  *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always

@@ -2,23 +2,23 @@
 @component
 The label wrapper every admin field composes, in either of two registers (a third, the group
 legend, is a `<legend>` rather than this component; `docs/internal/admin-design-system.md`'s
-form-row/label register section has the full three). `stacked` (the default: label on its own
+form-row/label register section has the full three). `stacked` (the default: label on its
 line above the control, `flex flex-col gap-label`, the individual-field-label recipe) is the
-robust shape for any multi-column form grid, since a stacked label never competes with its own
-control for a shared row's width (the finding-3 defect: an inline label's own text is the more
+robust shape for any multi-column form grid, since a stacked label never competes with its
+control for a shared row's width (the finding-3 defect: an inline label's text is the more
 shrinkable of a flex row's two children, so a long label wraps once the row narrows). `inline`
 (label beside its control on one line, `flex items-center gap-1.5 type-body`, muted) stays
 available as the explicit, control-adjacent exception: a toolbar filter, a compact panel, a row
 already scoped tightly enough by a group legend that a full stacked label would be excess. The
 toolkit's one field primitive (merged from the retired `admin-fields` subpath); compose it
-directly around a bare custom control when a site's own field needs the
+directly around a bare custom control when a site's field needs the
 admin's label rhythm.
 
 WHAT `children` MAY HOLD: the control, and nothing that is not the control. This component renders
 a real `<label>` wrapping its content, so every piece of text inside it joins the field's
 accessible name. An action affordance therefore goes BESIDE the field, never in it: a button, a
 link, a clear or reset control, a unit switcher. Put one inside and a screen reader announces the
-field as "Venue Add", and the affordance also inherits the label's own click-to-focus
+field as "Venue Add", and the affordance also inherits the label's click-to-focus
 behavior. A caller composing that pair hand-rolls a bottom-aligned row (`display: flex;
 align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)`, the recipe the retired `FieldRow`
 component shipped): the alignment the eye reads when the labelled child is a whole label taller
@@ -58,7 +58,7 @@ row levelling on that edge then levels the wrong thing.
      to render as separate {#if}/{:else} branches, so a live register flip destroyed and recreated
      this label, including the composed control inside `children()`, dropping the control's focus
      and any in-progress IME composition. A single element with a conditional class list keeps the
-     control's own DOM node stable across the flip. -->
+     control's DOM node stable across the flip. -->
 <label class={labelClass}>
   <span class={textClass}>{label}</span>
   {@render children()}

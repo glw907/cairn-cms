@@ -53,9 +53,9 @@ export type { SettingsData, VocabularyData } from './content-routes-settings.js'
 export type { DictionaryAddFailure } from './content-routes-dictionary.js';
 
 /**
- * Build every admin content route the engine's own screens need, closed over the composed runtime.
+ * Build every admin content route the engine's screens need, closed over the composed runtime.
  *  This is the WIDE shape, and `cairn-admin.ts` is its only caller: the single-mount composer drives
- *  all of it, including the ten media-janitorial actions that reach no further than the engine's own
+ *  all of it, including the ten media-janitorial actions that reach no further than the engine's
  *  Media Library screen. The public `createContentRoutes` below presents the narrow view of the same
  *  object. Reachable from no package subpath, so its shape is free to grow with the admin.
  */
@@ -127,7 +127,7 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  by admin surface, not by the internal domain split above), which `check:surface` pins as the
  *  public contract.
  *
- * Ten media-janitorial actions are absent on purpose. They are reachable only from the engine's own
+ * Ten media-janitorial actions are absent on purpose. They are reachable only from the engine's
  *  Media Library screen, so a site that wants them mounts `createCairnAdmin` instead of wiring them
  *  one by one.
  *

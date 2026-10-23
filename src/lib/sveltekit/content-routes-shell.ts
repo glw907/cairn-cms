@@ -52,7 +52,7 @@ export type AdminShellData =
        * The site's whole arranged, filtered sidebar for this request: a declared `navLayout`
        *  resolved and gated (engine capability, `ownerOnly`, declarative `roles`), or, absent one,
        *  today's default arrangement synthesized through the same resolver, then narrowed further
-       *  by the site's own `deps.navFilter` when configured.
+       *  by the site's `deps.navFilter` when configured.
        */
       nav: ResolvedNavLayout;
       pathname: string;
@@ -74,14 +74,14 @@ export type AdminShellData =
        */
       pendingEntries: Promise<{ concept: string; id: string }[] | null>;
       /**
-       * Present only while the dev backend serves the site's own content from memory (its backend
+       * Present only while the dev backend serves the site's content from memory (its backend
        *  sets `ephemeral`), so the shell can say edits are discarded when the dev server stops.
        *  Absent on a production request, which carries no per-request backend, and under the
        *  seeded fixtures.
        */
       contentEphemeral?: true;
       /**
-       * Per-session pending-work counts from the site's own `deps.attention`, keyed by the visible
+       * Per-session pending-work counts from the site's `deps.attention`, keyed by the visible
        *  nav href they decorate; an entry absent from the resolved-and-filtered `nav` (an engine
        *  door or a site entry alike) never appears here, so a count cannot leak to a role that
        *  cannot see it. Empty when the site configures no dep.
@@ -184,7 +184,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
     // The whole arranged sidebar for this request: a declared navLayout resolves and gates as
     // written (engine capability, ownerOnly, declarative roles), or, absent one, the resolver
     // synthesizes today's default arrangement through the same code path, so the two can never
-    // drift. The site's own navFilter, if configured, then narrows the arranged items only;
+    // drift. The site's navFilter, if configured, then narrows the arranged items only;
     // fallback is engine-only and already gated, so it never passes through that seam.
     const capability = editor.capability;
     const resolved = resolveNavLayout({
@@ -197,7 +197,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
     const nav: ResolvedNavLayout = ctx.deps.navFilter
       ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }
       : resolved;
-    // The site's own attention dep, awaited exactly once (after nav resolution and navFilter, both
+    // The site's attention dep, awaited exactly once (after nav resolution and navFilter, both
     // of which already ran above), then filtered against the same resolved-and-filtered visible
     // href set so a count can never leak past a nav entry the session cannot see: an unreachable
     // queue's item is dropped before any rendering or summing.

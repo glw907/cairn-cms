@@ -21,7 +21,7 @@ export const REASON_CONDITION = {
 /**
  * The unrostered-identity condition id, spelled once here so the guard's second identity-branch
  * switch case and this renderer never drift onto different strings. It carries no `guard.refused`
- * reason: an unrostered but resolved identity refuses through its own path, not the reason table
+ * reason: an unrostered but resolved identity refuses through its path, not the reason table
  * above.
  */
 export const IDENTITY_UNKNOWN_CONDITION = 'auth.identity-unknown' as const;

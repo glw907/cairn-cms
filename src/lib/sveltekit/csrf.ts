@@ -1,5 +1,5 @@
-// SvelteKit's own Origin check runs on every route ahead of any handle; cairn adds the admin's
-// double-submit token on top. These helpers back the guard's token check, the auth channel's own
+// SvelteKit's Origin check runs on every route ahead of any handle; cairn adds the admin's
+// double-submit token on top. These helpers back the guard's token check, the auth channel's
 // Origin compare, and the loads that issue the token.
 import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
@@ -7,7 +7,7 @@ import { env } from './workers-env.js';
 import type { CairnEvent, CookieJar } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-// SvelteKit 3's own form-content set (`is_form_content_type` in kit's utils/http.js), its binary
+// SvelteKit 3's form-content set (`is_form_content_type` in kit's utils/http.js), its binary
 // remote-form type included. Kit screens a request with no Content-Type at all as well, which
 // isUnsafeFormRequest handles before it consults this set.
 const FORM_CONTENT_TYPES = new Set([
@@ -21,20 +21,20 @@ const FORM_CONTENT_TYPES = new Set([
 // this module and importing back would be circular; the shared module is a leaf that imports
 // nothing, so the cycle no longer exists.
 //
-// What this call site decides, which is not what the dev-backend tripwire's own call decides:
+// What this call site decides, which is not what the dev-backend tripwire's call decides:
 // under csrfSecure's monotonic rule the hostname is consulted only for a NON-https request, where
 // it chooses between the bare dev cookie and the PUBLIC_ORIGIN branch. On an https request the
 // hostname is never consulted at all, so it cannot weaken a cookie the browser is already
 // receiving over TLS. On a non-https request the client-supplied Host header does still select the
 // bare name over the PUBLIC_ORIGIN answer, but that is not attacker-reachable through a victim's
-// own browser, which derives Host from the URL it is actually visiting. That is why this stays on
+// browser, which derives Host from the URL it is actually visiting. That is why this stays on
 // the bare hostname predicate rather than `isDeployedHost`.
 
 /**
  * Decide the Secure bit for one request's cairn-owned cookies, the single source every writer and
  * reader is meant to route through: the CSRF pair ({@link issueCsrfToken},
  * {@link validateCsrfHeader}, {@link validateCsrfToken}, `admin-action.ts`'s inline
- * defense-in-depth check) and the session cookie's own four call sites (`guard.ts`'s two reads,
+ * defense-in-depth check) and the session cookie's four call sites (`guard.ts`'s two reads,
  * `auth-routes.ts`'s `confirmAction` and `logoutAction`), which used to derive `secure` from the
  * bare `event.url.protocol` and now route through this same function, so the two cookies can no
  * longer disagree on one request. Feed the result to `csrfCookieName`/`sessionCookieName` for the
@@ -87,7 +87,7 @@ export function isUnsafeFormRequest(request: Request): boolean {
   return FORM_CONTENT_TYPES.has(header.split(';', 1)[0].trim().toLowerCase());
 }
 
-/** The faithful framework check: the Origin header equals the request's own origin. */
+/** The faithful framework check: the Origin header equals the request's origin. */
 export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boolean {
   return event.request.headers.get('origin') === event.url.origin;
 }
@@ -98,11 +98,11 @@ export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boole
  * field still matches the cookie, since re-anchoring only re-sends the existing value with a fresh
  * expiry and never rotates it. HttpOnly, `SameSite=Lax` (explicit, never attribute-omission: an
  * omitted `SameSite` gets Chrome's Lax-allowing-unsafe treatment for two minutes, and this token
- * mints moments before the form's own POST), `Max-Age` matching the session's own lifetime, and
+ * mints moments before the form's POST), `Max-Age` matching the session's lifetime, and
  * `__Host-` when {@link csrfSecure} resolves this request as Secure.
  *
  * The two cookies are not one lifetime. This one's expiry re-anchors on every issue while the
- * session cookie's own thirty days run from sign-in, and its value rotates at exactly two moments:
+ * session cookie's thirty days run from sign-in, and its value rotates at exactly two moments:
  * a successful login (`auth-routes.ts`'s `confirmAction`, which mints a fresh value once the
  * session exists) and a logout (which deletes it). Nothing else ever changes the value.
  *
@@ -146,7 +146,7 @@ function verdictFromWitness(cookie: string | undefined, submitted: string | unde
 /**
  * The header-witness verdict {@link validateCsrfHeader} boolean-wraps: the same constant-time
  * double-submit compare, plus {@link CsrfRejectionDetail} naming why a failure failed. See
- * `validateCsrfHeader`'s own docstring for the header's security rationale.
+ * `validateCsrfHeader`'s docstring for the header's security rationale.
  */
 export function csrfHeaderVerdict(event: { url: URL; request: Request; cookies: CookieJar }): CsrfVerdict {
   const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
@@ -156,8 +156,8 @@ export function csrfHeaderVerdict(event: { url: URL; request: Request; cookies: 
 
 /**
  * The field-witness verdict against an already-parsed form, for a caller that already read the
- * request body for its own purposes (`createAdminAction`) and so has no need for
- * {@link csrfTokenVerdict}'s own body clone. `form.has('csrf')` discriminates an absent field from
+ * request body for its purposes (`createAdminAction`) and so has no need for
+ * {@link csrfTokenVerdict}'s body clone. `form.has('csrf')` discriminates an absent field from
  * a submitted-empty one; a plain `form.get('csrf') ?? ''` collapses that distinction.
  */
 export function csrfFieldVerdict(cookie: string | undefined, form: FormData): CsrfVerdict {
@@ -166,7 +166,7 @@ export function csrfFieldVerdict(cookie: string | undefined, form: FormData): Cs
 
 /**
  * The field-witness verdict {@link validateCsrfToken} boolean-wraps, reading the token from a body
- * clone. See `validateCsrfToken`'s own docstring for why a clone, not a direct read.
+ * clone. See `validateCsrfToken`'s docstring for why a clone, not a direct read.
  */
 export async function csrfTokenVerdict(event: CairnEvent): Promise<CsrfVerdict> {
   const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));

@@ -3,6 +3,25 @@ version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
         accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
+    docs/extend/add-a-custom-admin-screen.md:
+        page: 420d6440a24b7e827106bee15ee469f288d620cc
+        blueprint: 3d57f90a33c7de2c3ce70d1d0505ba0f3e6eaee6
+        sections:
+            _intro: sha256:00eada8aad13c18e8404624df94dc28303705511640edf9aff77d1886fefdcc2
+            animate-the-screen: sha256:836923140878c6c1431363f9463e925aa3ebb1806063ba4b62b3f5711c2c34ea
+            before-you-begin: sha256:b1b568479527f1abc4e956c43f4e885f7d59a562b91bc12ffa3fb16d981abf38
+            build-the-dialog-form: sha256:241670d63cf4a7657b52a24076f5f03a8ee0862c41f836aa94761496f387fedc
+            choose-the-action-wrapper: sha256:1d140174c2405fd83113529bf516028b84ae976e86ac212f7b86d8be4a4fb35d
+            compose-the-screen-from-the-toolkit: sha256:781778b69fdae5dc5f3e8a19e7697b82c978f94e53ad9617352c7e52c252bd39
+            gate-it: sha256:40a7029270e4b2badc30f360c79efcb4c68a541a152154e209281244829717a9
+            load-row-detail-on-demand: sha256:93888e237c80118ed37b8724d9d35ed3289450355926ac7142ba31110e03c279
+            place-the-route: sha256:c6a7ed87768ac82143021297803e7ba20161c730a81b678cbfa09aeb25590f93
+            resolve-a-missing-audit-record: sha256:887b52f884d63d91838738dd827271770ef8434db58e0fd6a56c35f3bd3cf3bf
+            see-also: sha256:441dbb91da1c53a443040fc8c25bf6faa4b536b94dec303ca67be75a675c835e
+            style-the-screen: sha256:3e11a5659932fc67950ede26cd2b6cc3bd0e4c81a2f8b6d69763dbeb7d5c9f58
+            verify-the-screen: sha256:2c94be4b70c642b90c68b7adbc3c5237d23a13cc4e9950471729cb169ffbf0e9
+            wire-the-audit-sink: sha256:52f51a3704d98303c0050eaa1f5db802becbb344798667d147f51aa0fc02f291
+            wrap-the-actions: sha256:2ee8d7808603b337ffe5e06c28aaabf3ff308c9a4b06575eaff0f42f9d82cea5
     docs/extend/add-a-second-sign-in-group.md:
         page: 16ad2daf773233d3ff59f80d6d7ed0a593f8afd7
         blueprint: e61f10b26c19c796e94af31abfc523b933021f15
@@ -65,6 +84,25 @@ pages:
             verify-the-rendered-entry: sha256:df781e49e6e9979080427b4b71307454740bf31f549e21d32c566a72d6c10dcd
             verify-the-sign-in-email: sha256:caa6957a894c3397b689fd4f2d8ac5bfb064573aa98453acf02b2a5ece99b82d
             write-the-site-config-and-a-minimal-adapter: sha256:f00bd4046b73fc086c4434b5af7145ee0a7fbf774afbf46246acf64c6b72cfe0
+    docs/extend/architecture.md:
+        page: 24a4a977c99a3aa81ad1f4c2fd1896d8d5f65678
+        blueprint: b5a8ff3f190843a33ef384476e9d6b60c86aa254
+        sections:
+            _intro: sha256:6d858d22935cfb0bcff808912385fa661cb2005b4970d4df865df11a9a8910c4
+            backend-contract: sha256:ceff43db61e5af0d4e10b0cd19573355edaf46297743fb6b883a9596e4b63035
+            build-verification: sha256:21078c8aecd6f95a4e6656cfd27e2276dad888b520de880379222431ea7e89fa
+            concurrent-writes: sha256:3cb315e2b9f089a7471b45a886cb1a6c57f68a589e3dd11943cf53deb0e2af26
+            data-tiers: sha256:a3c70b95eb21af61fe4c9a30129813135a81a9cd76c76923336d4f4d1a8d5d15
+            entry-points: sha256:5f15268ebfa7938ecf42702ab281e8576a024a50303705924333f7c12d8e2df2
+            export-map: sha256:4149b6661e9ec8c2cca92c8898cc82307ba700aba8272a81b833d42060f706bf
+            hard-dependencies: sha256:599d9a9998c1a0ea017e3d33aa0d8b96ad3cd1441af6f48888011e0e526cefa6
+            read-path: sha256:10134bf2bc0cf4714b44b504317cf124ae7557c087f8bc1e13b7c4e691724791
+            related-resources: sha256:16a210fb8a354f715502b69cb1bd89aedde555f3216a4cd68d97bec542be14af
+            seams: sha256:26a26163c93ac986c6433bb47213f439f285dca313b074769521169f24d950cb
+            stability-tiers: sha256:66b19b0eb13043f479cf28a5c6511d270809b8eafbe741124f135aa00ab4f313
+            the-holding-branch: sha256:a36a3d213a451a2b0e33712e496987cacf06ab7d64ba7e66073f83a3c893542b
+            the-publish-commit: sha256:148d5847aaab7dd6eb31c2aecf23d00b067674d7c9e30b377376f5262293ce4a
+            write-path: sha256:70168f1fa735094eb310ac1c05862f90c0b0e62ec18d75bc35ad717b1a4dfc4d
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792
@@ -92,6 +130,20 @@ pages:
             read-the-structured-logs: sha256:1f28b328ce7bdf9e37e57c6a7d2079a5ec33fec7198e59a58eb187de971880d7
             see-also: sha256:dc24301d5774787bac12189ee9a1e82c0e53355824b2469b07aafd8af9655f5e
             site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
+    docs/extend/replace-magic-links-with-cloudflare-access.md:
+        page: 523a620f6acb5a50234f23fa11be13e6b2c1c5f7
+        blueprint: 39d985b5306add3ea92cc95226d5fc20aec5beff
+        sections:
+            _intro: sha256:1021a713f1662851f55f67465e8037da5a06ca90c6976706301a3ca570f96dd8
+            before-you-begin: sha256:9c3159f647dbae5050e450f04df1311f7ffc6b47ce08ca10d2b18b8d3bb93209
+            close-the-exposures-outside-the-application: sha256:34bc65ce9a8e0090c3460964177a47a934c02a4d8359e2987658a1236a1b7e36
+            create-the-access-application: sha256:e30673b7f390588ca6980ed2f455621f5cef50dcd8da807e506f25cc68bb0726
+            prepare-the-roster: sha256:dd98471857a57db496ca23d55bbcdfde22cef0133d3a5570eee449e85f385b1c
+            resolve-a-refused-sign-in: sha256:39a2977c82ee21513886b711d34ea2532f93ffb5b2cf87eb60c6ed85a37e2690
+            see-also: sha256:e984801c5270c72fdeb56beb02432adbe20ad6834d46d6b950c8df8479107b63
+            verify-the-gate: sha256:6b4d80420af7a7141dc4065aa628e2f7710cf455dc4fda0dfaef8cbad5d55e6d
+            wire-the-resolver-and-deploy-the-worker: sha256:dbdd0f74e10e12dfa6723f22891f73d8b1bf233ad6dd631e051d1b2feef3ec51
+            write-the-verifier: sha256:c37f6c638b814a490cc7c866ab649769df3b731da184d8e394557847b9adab77
     docs/extend/restrict-admin-access.md:
         page: 1d4a936b532f457b25760d8bfa6dfc3270e17acf
         blueprint: 68d14d7543b2f532625bd3b8dfa33cd6a43a5d96

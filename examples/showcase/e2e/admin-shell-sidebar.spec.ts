@@ -4,15 +4,15 @@ import { test, expect } from '@playwright/test';
 // guarded here against the real preview build, not a mock.
 //
 // 1. Scroll bleed: at desktop width the sidebar rode `position: sticky`, computed relative to
-//    document-level scroll. A host that omits Preflight (cairn's own embed-anywhere default) leaves
+//    document-level scroll. A host that omits Preflight (cairn's embed-anywhere default) leaves
 //    the UA's default body margin in place, so the whole shell sat a few px off the viewport origin;
 //    sticky's "before it sticks" travel is computed from that offset, so the sidebar visibly moved a
-//    few px at the top and bottom of a page scroll. The fix (cairn-admin.css) overrides daisyUI's own
+//    few px at the top and bottom of a page scroll. The fix (cairn-admin.css) overrides daisyUI's
 //    `position: sticky` with `position: fixed` for the persistent desktop sidebar, the same mechanism
 //    the mobile overlay variant already used, which is anchored to the viewport outright and carries
 //    no such drift.
 // 2. Sidebar auto-collapse on navigate: `isDeskRoute` classified any three-segment `/admin` path as
-//    an open document and receded the persistent desktop sidebar, but a developer's own custom nav
+//    an open document and receded the persistent desktop sidebar, but a developer's custom nav
 //    can be just as deep (a section entry like `/admin/team/events`) without being a document editor.
 //    Navigating to a route that merely happened to sit three segments deep receded the sidebar to the
 //    mobile toggle-controlled overlay, which read as the sidebar sliding away at desktop width. The
@@ -28,7 +28,7 @@ test('at desktop width, scrolling a long entry list never moves the sidebar', as
   const sidebar = page.locator('.drawer-side');
   const before = await sidebar.boundingBox();
 
-  // Ten ticks comfortably scrolls past the seeded post list's own height and to the very bottom of
+  // Ten ticks comfortably scrolls past the seeded post list's height and to the very bottom of
   // the document, the full range across which the sidebar's old sticky math could drift.
   for (let i = 0; i < 10; i += 1) {
     await page.mouse.wheel(0, 150);
@@ -74,7 +74,7 @@ test('at mobile width, the drawer still opens on demand and auto-closes after a 
   await expect(sidebar).toBeHidden();
 });
 
-// daisyUI's own open-drawer reset of `will-change` loses to its own base rule on specificity, so
+// daisyUI's open-drawer reset of `will-change` loses to its base rule on specificity, so
 // without cairn's override the open panel stays compositor-promoted and Chromium re-picks its text
 // raster per run. cairn-admin.css restores `will-change: auto`; these two read the computed value
 // against the real preview build, the one surface where the packaged sheet and daisyUI meet.
@@ -132,8 +132,8 @@ test('at 768, a desk route recedes the sidebar behind the toggle, same as below 
 //    `margin-inline-start: -.25rem` against a `.breadcrumbs > ul` `padding-inline-start: .25rem`,
 //    so the crumb list's content box lost 4px inside a wrapper that sizes to the crumbs. The flex
 //    line then overflowed by exactly that 4px and every crumb shrank, which `truncate` turned into
-//    an ellipsis: "Posts" read "Pos..." beside free space. The fix cancels only the nav's own
-//    margin with `ms-0`, the same opt-out the nav's own `p-0` already makes; the list keeps its
+//    an ellipsis: "Posts" read "Pos..." beside free space. The fix cancels only the nav's
+//    margin with `ms-0`, the same opt-out the nav's `p-0` already makes; the list keeps its
 //    padding, the room the first crumb's focus ring needs. Read against the real preview build,
 //    since the component project loads the variables-only stylesheet and carries no daisyUI rules.
 test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page }) => {
@@ -143,7 +143,7 @@ test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page
 
   const labels = page.locator('nav[aria-label="Breadcrumb"] li span');
   await expect(labels).toHaveCount(2);
-  // scrollWidth past clientWidth is the DOM's own record that `truncate` clipped the label.
+  // scrollWidth past clientWidth is the DOM's record that `truncate` clipped the label.
   const overflow = await labels.evaluateAll((nodes) =>
     nodes.map((node) => ({
       text: node.textContent,
@@ -156,9 +156,9 @@ test('at desktop width, a breadcrumb that fits is not ellipsized', async ({ page
   ]);
 });
 
-// 4. The breadcrumb's own keyboard focus ring needs room on its left side: `.breadcrumbs` scroll-
+// 4. The breadcrumb's keyboard focus ring needs room on its left side: `.breadcrumbs` scroll-
 //    clips (overflow-x: auto), so a ring drawn flush against the nav's left padding-box edge has
-//    its left stroke clipped. The list's 4px inline padding (daisyUI's own `.breadcrumbs > ul`
+//    its left stroke clipped. The list's 4px inline padding (daisyUI's `.breadcrumbs > ul`
 //    rule, kept once `ps-0` was removed from the call site) is what holds that room; this reads
 //    the admin sheet's real `:focus-visible` outline-width and outline-offset rather than a fixed
 //    pixel count, so the assertion tracks the rule instead of a guess at its values.

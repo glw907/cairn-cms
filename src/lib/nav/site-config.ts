@@ -1,7 +1,7 @@
 // The navigation tree and its YAML site-config. A menu lives in the site's git-committed config
 // under `menus.<name>`, read at build time by the public layout and edited from /admin/nav, which
 // commits the file back through the GitHub-App pipeline. This module is pure: parse, validate, and
-// rewrite only. The engine returns data; each site renders the tree with its own markup.
+// rewrite only. The engine returns data; each site renders the tree with its markup.
 import { parse as parseYaml, parseDocument } from 'yaml';
 import { CairnError } from '../diagnostics/index.js';
 

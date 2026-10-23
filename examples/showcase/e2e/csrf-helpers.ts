@@ -8,10 +8,10 @@ export const ORIGINS = {
   loopback: `http://127.0.0.1:${PORT}`,
 } as const;
 
-/** The exact body SvelteKit's own Origin check answers with. */
+/** The exact body SvelteKit's Origin check answers with. */
 export const KIT_CROSS_SITE_BODY = 'Cross-site POST form submissions are forbidden';
 
-/** A fragment of the auth channel's own origin refusal, which a cairn-served 403 would carry. */
+/** A fragment of the auth channel's origin refusal, which a cairn-served 403 would carry. */
 export const FACTORY_ORIGIN_FRAGMENT = 'origin mismatch';
 
 /** Matches the referrer meta every cairn admin view emits, whatever its attribute spacing. */
@@ -20,7 +20,7 @@ const CAIRN_REFERRER_META = /<meta\s+name="referrer"\s+content="strict-origin"\s
 /**
  * Submit a form the way a browser does with JavaScript out of the picture: a native navigation
  * POST, never a handler's fetch. `action` retargets the form first, which is how a page loaded
- * from one origin posts to another. Resolves with the POST's own response, so a caller can read
+ * from one origin posts to another. Resolves with the POST's response, so a caller can read
  * the status and body of a refusal the browser then renders.
  */
 export async function submitNatively(

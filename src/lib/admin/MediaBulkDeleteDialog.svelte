@@ -32,7 +32,7 @@ moment so a background re-render never shifts the dry-run.
     /** The per-hash usage overlay, to split the pinned selection into will-delete/will-skip. */
     usage: Record<string, MediaUsageInfo>;
     /** Called after a delete completes and the summary's Done is pressed, so the host can clear
-     *  its own selection. Not called on a plain Cancel or a post-action-failure Close. */
+     *  its selection. Not called on a plain Cancel or a post-action-failure Close. */
     onfinished: () => void;
   }
 

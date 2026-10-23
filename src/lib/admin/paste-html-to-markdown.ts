@@ -1,10 +1,10 @@
 /**
  * Rich-text paste conversion: turns a clipboard `text/html` payload into markdown for the
- * structures the editor already offers through its own toolbar and typed syntax: headings,
+ * structures the editor already offers through its toolbar and typed syntax: headings,
  * bold and italic emphasis (including Google Docs' style-attribute spans, which carry no `<b>`
  * or `<i>` tag at all), links, bulleted and numbered lists, and paragraphs. Every other
  * element (a table, an image, inline or block code, a blockquote, strikethrough, an embed) is
- * treated as plain text: its own markup drops away and only its text content survives, so a
+ * treated as plain text: its markup drops away and only its text content survives, so a
  * rich paste never introduces a mark the toolbar cannot also produce and never leaves the
  * document in a state the markdown parser cannot read back.
  *
@@ -13,7 +13,7 @@
  * vendor namespaces, conditional comments, unclosed tags); a hand-rolled tokenizer would have
  * to reimplement that tolerance itself for a feature this size. `rehype-remark` walks the
  * parsed tree to markdown, and `remark-stringify` (already a dependency) renders it with this
- * project's own list and emphasis marker conventions. `rehype-parse` and `rehype-remark` are
+ * project's list and emphasis marker conventions. `rehype-parse` and `rehype-remark` are
  * the two new dependencies this adds; both are official unified.js packages already in the
  * same family as `rehype-sanitize` and `remark-rehype`, which this project depends on for
  * `render()`.
@@ -38,7 +38,7 @@ function styleOf(node: Element): string {
 /**
  * Whether `style` declares a bold or non-bold weight, or null when it says nothing either way.
  * Recognizes the keyword and numeric CSS forms (`bold`, `700`); a numeric weight of 600 or more
- * reads as bold, matching the browser's own bold threshold.
+ * reads as bold, matching the browser's bold threshold.
  */
 function weightIsBold(style: string): boolean | null {
   const match = /font-weight\s*:\s*([a-z0-9]+)/.exec(style);
@@ -61,9 +61,9 @@ function styleIsItalic(style: string): boolean | null {
 
 /**
  * Build a handler for a bold- or italic-carrying element (`b`, `strong`, `i`, `em`, or a bare
- * `span`) that reads the element's own inline style before falling back to the tag's default.
+ * `span`) that reads the element's inline style before falling back to the tag's default.
  * A Google Docs paste carries every run in a `<span style="font-weight:700;...">`, sometimes
- * inside an outer `<b style="font-weight:normal">` wrapper that cancels the tag's own default,
+ * inside an outer `<b style="font-weight:normal">` wrapper that cancels the tag's default,
  * so the style always wins over the tag when it says something explicit.
  */
 function styledWrap(defaultBold: boolean, defaultItalic: boolean): ElementHandle {
@@ -73,7 +73,7 @@ function styledWrap(defaultBold: boolean, defaultItalic: boolean): ElementHandle
     const italic = styleIsItalic(style) ?? defaultItalic;
     // b/strong/i/em/span are all inline elements, so their converted children are always
     // phrasing content; mdast's Emphasis and Strong nodes require that narrower type for
-    // their own children, which state.all's general RootContent[] return does not carry.
+    // their children, which state.all's general RootContent[] return does not carry.
     let children = state.all(node) as PhrasingContent[];
     if (italic) children = [{ type: 'emphasis', children }];
     if (bold) children = [{ type: 'strong', children }];
@@ -81,10 +81,10 @@ function styledWrap(defaultBold: boolean, defaultItalic: boolean): ElementHandle
   };
 }
 
-/** Drop the element's own markup and keep its text content, unwrapped into the surrounding flow. */
+/** Drop the element's markup and keep its text content, unwrapped into the surrounding flow. */
 const plainInline: ElementHandle = (state, node) => state.all(node);
 
-/** Drop the element's own markup and keep its content as its own block(s) of plain paragraphs. */
+/** Drop the element's markup and keep its content as its block(s) of plain paragraphs. */
 const plainBlock: ElementHandle = (state, node) => state.toFlow(state.all(node));
 
 /** Drop the element entirely (a rule, a form control, an embed with no useful text). */

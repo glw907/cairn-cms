@@ -11,7 +11,7 @@ orphan-scan dialogs.
 Three trigger sites open it: the host's header and empty-state Upload buttons call the
 exported `openUpload(origin)`, which opens the native file chooser through a hidden input
 owned here; the page-wide drop target is the third, reached through the exported
-`onPageDragover`/`onPageDrop`, which the host wires onto its own `<svelte:window>` (the
+`onPageDragover`/`onPageDrop`, which the host wires onto its `<svelte:window>` (the
 Library has no single drop element, so the handlers live at the window level). All three
 converge on the same capture step once a file is in hand. The upload posts to the
 media-scoped `?/mediaLibraryUpload` action, which stores and commits in one step; on success
@@ -47,7 +47,7 @@ the new asset appears.
   const LIBRARY_UPLOAD_URL = '?/mediaLibraryUpload';
   const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again to upload the image.';
 
-  /** The record MediaCaptureCard emits on submit; matches its own local (unexported) shape. */
+  /** The record MediaCaptureCard emits on submit; matches its local (unexported) shape. */
   interface CaptureRecord {
     file: File;
     displayName: string;
@@ -60,7 +60,7 @@ the new asset appears.
   // The button that opened the dialog (a header/empty-state Upload click, or null for a page drop),
   // so focus restores to it on close; a null origin (the drop case) falls back to the active element.
   let uploadOrigin: HTMLElement | null = null;
-  // The dialog's own Cancel control, the initial focus on open (the Replace/Alt dialog recipe).
+  // The dialog's Cancel control, the initial focus on open (the Replace/Alt dialog recipe).
   let uploadCancelButton = $state<HTMLButtonElement | null>(null);
   let uploadCaptureFile = $state<File | null>(null);
   type LibraryUploadStatus =
@@ -111,20 +111,20 @@ the new asset appears.
   }
 
   // The page-wide drop target: the empty-state copy promises a drop anywhere on the page, so the
-  // handlers are exported for the host's own <svelte:window> rather than bound to one element here.
+  // handlers are exported for the host's <svelte:window> rather than bound to one element here.
   // They stand down while this capture dialog or any other dialog is already open, so a drop never
   // fights with an in-progress upload.
   function libraryDropBusy(): boolean {
     // Deliberately DOCUMENT-scoped: drag-drop should stand down for ANY open dialog anywhere on the
     // page, the admin shell's command palette included, since dropping a file while an unrelated
-    // dialog covers the screen would stack the capture dialog behind it. CairnMediaLibrary's own
+    // dialog covers the screen would stack the capture dialog behind it. CairnMediaLibrary's
     // Escape handling (onWindowKeydown) makes the opposite call for a different question (a foreign
     // dialog must never steal Escape from the library), so the two checks land on different scopes
     // on purpose; see that function's comment for that half of the split. Testing for the open
     // attribute directly stays correct as dialogs are added, unlike enumerating them by name.
     return document.querySelector('dialog[open]') !== null;
   }
-  /** The page-wide dragover handler; the host wires this onto its own `<svelte:window>`. */
+  /** The page-wide dragover handler; the host wires this onto its `<svelte:window>`. */
   export function onPageDragover(e: DragEvent) {
     if (libraryDropBusy()) return;
     // dataTransfer.files is empty during dragover (the HTML DnD spec's protected mode), so
@@ -133,7 +133,7 @@ the new asset appears.
     // valid drop target (without it, drop never fires and the browser navigates to the raw file).
     if (e.dataTransfer?.types.includes('Files')) guardDropTarget(e);
   }
-  /** The page-wide drop handler; the host wires this onto its own `<svelte:window>`. */
+  /** The page-wide drop handler; the host wires this onto its `<svelte:window>`. */
   export function onPageDrop(e: DragEvent) {
     if (libraryDropBusy()) return;
     const file = e.dataTransfer ? firstImageFile(e.dataTransfer) : null;

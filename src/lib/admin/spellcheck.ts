@@ -49,7 +49,7 @@ export interface ExtractedWord {
 //     QuoteMark), which are punctuation, never prose.
 // Note the spec listed "link destinations, autolinks, link labels, reference definitions"; the real
 // node names for those are URL, Autolink, LinkLabel, and LinkReference. LinkTitle is added because
-// the grammar emits the definition's quoted title as its own node and it is machinery, not prose.
+// the grammar emits the definition's quoted title as its node and it is machinery, not prose.
 const SKIP_NODES = new Set<string>([
   'InlineCode',
   'FencedCode',
@@ -358,7 +358,7 @@ let stateMod: typeof import('@codemirror/state') | null = null;
 /**
  * The narrow Worker surface the lint source drives: it posts check, suggest, addWord, and ignoreWord
  *  messages and listens for the answers. A `suggest` answer is a one-shot, so the source removes its
- *  own listener once it lands. A test injects a fake; production injects a real Worker.
+ *  listener once it lands. A test injects a fake; production injects a real Worker.
  */
 export interface SpellWorker {
   postMessage(message: unknown): void;
@@ -379,7 +379,7 @@ export function createSpellWorker(): SpellWorker {
 // The wasm and dictionary URLs are resolved module-relative with `import.meta.url`, the same
 // mechanism createSpellWorker uses for the worker. The spike (docs/internal/design/
 // 2026-06-20-editor-copyedit-spike-result.md) proved Vite's `?worker`/`?url` package-subpath imports
-// from CONSUMER app code; the library's own source cannot self-import by package name, so it uses the
+// from CONSUMER app code; the library's source cannot self-import by package name, so it uses the
 // portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. The
 // showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
 // only these two URL lines change. The dictionary filename is the dialect-resolved one the main thread
@@ -458,7 +458,7 @@ export interface SpellcheckOptions {
   assumeReady?: boolean;
   /**
    * The already-loaded CodeMirror modules to reuse instead of importing them again. The editor
-   *  component loads `@codemirror/view`/`@codemirror/language` for its own extensions, so passing them
+   *  component loads `@codemirror/view`/`@codemirror/language` for its extensions, so passing them
    *  here keeps the lint source on the SAME module instances; a second dynamic import can resolve to a
    *  separate copy (the test bundler's dedup quirk), and CodeMirror's instanceof checks then reject the
    *  extension. When omitted, the source imports them itself (the standalone path). `@codemirror/lint`
@@ -479,11 +479,11 @@ export interface SpellcheckOptions {
 // same color. The wavy underline uses a CSS text-decoration so the locked token resolves at render
 // rather than being baked into a static SVG.
 //
-// The built-in @codemirror/lint tooltip is suppressed (tooltipFilter, above); cairn renders its own
+// The built-in @codemirror/lint tooltip is suppressed (tooltipFilter, above); cairn renders its
 // `.cairn-cm-suggest` recipe popover through the public showTooltip facet (editor-suggestion-popover.ts).
 // The theme's only sanctioned internal-class touch is neutralizing `.cm-tooltip`, the class CodeMirror
-// force-adds to every tooltip it mounts (its own border and background would otherwise show through the
-// recipe DOM); everything else under `.cairn-cm-suggest*` is cairn's own class, not a CodeMirror internal.
+// force-adds to every tooltip it mounts (its border and background would otherwise show through the
+// recipe DOM); everything else under `.cairn-cm-suggest*` is cairn's class, not a CodeMirror internal.
 function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').EditorView): Extension {
   return EditorViewMod.theme({
     // The amber wavy underline, the one spellcheck underline color across the feature.
@@ -497,7 +497,7 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
     // The one sanctioned internal-class touch: CodeMirror force-adds `.cm-tooltip` and paints a border and
     // a background; neutralize it so the recipe DOM owns the surface. Allow-listed by name in the gate.
     '.cm-tooltip': { border: 'none', backgroundColor: 'transparent', padding: '0' },
-    // The recipe popover surface (cairn's own class, not a CodeMirror internal). Visual values from the
+    // The recipe popover surface (cairn's class, not a CodeMirror internal). Visual values from the
     // frontend-design mockup; the structure is the admin popover recipe.
     '.cairn-cm-suggest': {
       fontFamily: 'var(--font-body)',
@@ -544,7 +544,7 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
  * so a single on/off toggle gates both surfaces by reconfiguring this one extension.
  */
 export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<Extension> {
-  // Reuse the caller's already-loaded modules when supplied (the editor passes its own view/language
+  // Reuse the caller's already-loaded modules when supplied (the editor passes its view/language
   // copies so the lint extension lands on the same instances), else lazily value-import them. The lazy
   // imports keep CodeMirror off the server bundle (the boundary the editor relies on) and match how
   // link-completion.ts resolves @codemirror/language inside its source.
@@ -596,13 +596,13 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // never collide on a shared counter.
   let suggestSeq = 0;
 
-  // @codemirror/lint's own doc comment for `tooltipFilter` promises "No tooltip will appear if the
+  // @codemirror/lint's doc comment for `tooltipFilter` promises "No tooltip will appear if the
   // empty set is returned", but `lintTooltip` gates on `!found`, and an empty array is JS-truthy, so
   // `() => []` still mounts an empty tooltip list (the `cm-tooltip-lint` class) on hover (verified against the installed
   // @codemirror/lint 6.9.7: hovering with `tooltipFilter: () => []` renders `<ul class="cm-tooltip-lint">`
   // with zero children rather than nothing). Returning `null` takes the `!found` branch the doc
   // describes; the cast compensates for `DiagnosticFilter`'s non-nullable `Diagnostic[]` return type,
-  // which does not reflect the library's own falsy-return contract.
+  // which does not reflect the library's falsy-return contract.
   const suppressTooltip = (): Diagnostic[] => null as unknown as Diagnostic[];
 
   // Re-run the lint at once after a state change that is not a doc edit (the Worker became ready, or a
@@ -754,7 +754,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     // only re-runs on a doc change, so an add-to-dictionary would never clear the standing underlines.
     needsRefresh: (update) =>
       update.transactions.some((tr) => tr.effects.some((e) => e.is(relintEffect))),
-    // Suppress @codemirror/lint's built-in tooltip; cairn renders its own recipe popover via showTooltip
+    // Suppress @codemirror/lint's built-in tooltip; cairn renders its recipe popover via showTooltip
     // (editor-suggestion-popover.ts). Every diagnostic here is cairn's, so filter to none. markerFilter is
     // untouched, so the underline stays.
     tooltipFilter: suppressTooltip,
@@ -774,7 +774,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     source,
     objectiveSource,
     lockedUnderlineTheme(EditorView),
-    // The recipe popover: cairn's own DOM through the public showTooltip facet, replacing the built-in
+    // The recipe popover: cairn's DOM through the public showTooltip facet, replacing the built-in
     // lint tooltip (suppressed above via tooltipFilter). The module handles are non-null at the return.
     cairnSuggestionPopover({ view: viewMod!, state: stateMod!, lint: lintMod! }),
   ];

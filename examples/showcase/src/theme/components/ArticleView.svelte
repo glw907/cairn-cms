@@ -28,7 +28,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
     /** True on the preview route: suppresses canonical, og:url, and the `.md` twin link. Defaults to false (the public route). */
     preview?: boolean;
     /**
-     * Forwarded to `CairnHead`'s own `titleTemplate`: wraps the entry's raw title in the caller's
+     * Forwarded to `CairnHead`'s `titleTemplate`: wraps the entry's raw title in the caller's
      * title-suffix convention. Left unset on preview, so a minted preview keeps the entry's bare
      * title rather than reading as a published page.
      */
@@ -38,7 +38,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
   let { data, preview = false, titleTemplate }: Props = $props();
 
   // Belt and suspenders: loadPreview already strips canonical/og:url/jsonLd.url from data.seo, so
-  // this filter is a no-op against that caller. It stays so this component's own contract does not
+  // this filter is a no-op against that caller. It stays so this component's contract does not
   // depend on the specific caller's behavior, and so a site rendering preview data from any other
   // source still gets the strip.
   const seo = $derived(
@@ -66,7 +66,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
 
   /**
    * A raw external `image.src` URL (a plain `https://...` link, not a `media:` token), rendered
-   * directly since the engine's own heroImage projection only resolves a `media:` token (raw-URL
+   * directly since the engine's heroImage projection only resolves a `media:` token (raw-URL
    * hero images bypass the R2 delivery pipeline by design). Undefined once `data.heroImage` is set,
    * so this never overrides the resolved projection.
    */
@@ -108,7 +108,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
 <article class="prose">
   {#if hero}
     <!-- The site template owns the hero layout: the engine ships the resolved data (or, for a raw
-         external URL the engine's own projection does not resolve, the fallback above), this renders
+         external URL the engine's projection does not resolve, the fallback above), this renders
          it. The root-relative url feeds the img; the absolute form is the og:image (in the head above). -->
     <figure class="hero">
       <img src={hero.url} alt={hero.alt} />
@@ -121,7 +121,7 @@ identically) depends on everything else staying byte-for-byte the same. -->
   {#if data.entry.date || author}
     <!-- The one meta line every article carries: the date in the site's shared vocabulary, and the
          resolved author edge when the entry sets one. The author link's text is the target page's
-         own title, read from the resolved reference, so it matches that page's own heading. -->
+         title, read from the resolved reference, so it matches that page's heading. -->
     <p class="meta">
       {#if data.entry.date}
         <time datetime={data.entry.date}>{formatDate(data.entry.date)}</time>
@@ -149,10 +149,10 @@ identically) depends on everything else staying byte-for-byte the same. -->
 </article>
 
 <style>
-  /* The article's one meta line: the archive index's own date/muted register (step--1, tabular
+  /* The article's one meta line: the archive index's date/muted register (step--1, tabular
      figures) so the two surfaces read as one shared vocabulary rather than two independent
      treatments. `.prose > h1 + *`'s spacing rule (prose.css) already gives this its air below the
-     title; this only sets its own typography and color. */
+     title; this only sets its typography and color. */
   .meta {
     font-size: var(--text-step--1);
     color: var(--color-muted);

@@ -5,7 +5,7 @@ import { parseSiteConfig, readMenu } from '@glw907/cairn-cms';
 
 // Proves the public header renders from site.config.yaml's menus.primary rather than a hardcoded
 // array in SiteHeader.svelte: read the same YAML file the site parses, extract the same menu the
-// engine's own readMenu resolves, and assert the header shows exactly those entries, in order.
+// engine's readMenu resolves, and assert the header shows exactly those entries, in order.
 // A hardcoded header can only pass this test by coincidence of matching content; a menu entry
 // added to the YAML with nothing else changed proves the wiring (see the plan's red-state note).
 

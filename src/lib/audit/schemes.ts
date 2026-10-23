@@ -4,10 +4,10 @@
 // order the chain loader read them.
 //
 // Schemes come from the daisyUI theme blocks (`@plugin "daisyui/theme"`), never from hard-coded
-// names. A block compiles the way daisyUI's own plugin compiles it, into `@layer base`: every block
+// names. A block compiles the way daisyUI's plugin compiles it, into `@layer base`: every block
 // on `[data-theme="<name>"]`, the default block also on `:where(:root)`, and the `prefersdark` block
 // also on `:root:not([data-theme])` under `@media (prefers-color-scheme: dark)`. A block named
-// after a built-in daisyUI theme is completed from that theme's own values, as daisyUI merges it.
+// after a built-in daisyUI theme is completed from that theme's values, as daisyUI merges it.
 //
 // Each scheme is measured in the root states a visitor reaches it by: the page naming it through
 // `data-theme`, and, for the default block and the dark-preference block, the page naming none
@@ -98,7 +98,7 @@ const ALL_STATES: RootState[] = [
 ];
 /** The daisyUI plugin options, which are not custom properties of the theme. */
 const BLOCK_OPTIONS = new Set(['name', 'default', 'prefersdark', 'color-scheme', 'root']);
-/** Tailwind's own layer order; any other layer sorts after these, in order of first appearance. */
+/** Tailwind's layer order; any other layer sorts after these, in order of first appearance. */
 const KNOWN_LAYERS = ['theme', 'base', 'components', 'utilities'];
 const UNLAYERED = 1000;
 const IMPORTANT = /\s*!\s*important\s*$/i;
@@ -335,7 +335,7 @@ export interface ThemeCascade {
 
 /**
  * Read the chain's custom properties into a cascade, and its daisyUI theme blocks into schemes.
- * `builtInThemes` is daisyUI's own theme object, the values a block named after a built-in theme
+ * `builtInThemes` is daisyUI's theme object, the values a block named after a built-in theme
  * is completed from.
  */
 export function readThemeCascade(files: ChainFile[], builtInThemes: Record<string, Record<string, string>>): ThemeCascade {
@@ -392,7 +392,7 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
         }
         const base = layerOf('base');
         // daisyUI emits the dark-preference copy first, on `<root>:not([data-theme])`, then the
-        // block's own selector list.
+        // block's selector list.
         if (block.prefersDark) {
           const specificity = add(rootElement.specificity, [0, 1, 0]);
           for (const [property, value] of values) push(property, value, base, specificity, (s) => s.theme === null && s.dark);
@@ -415,7 +415,7 @@ export function readThemeCascade(files: ChainFile[], builtInThemes: Record<strin
       }
       const custom = rule.declarations.filter((d) => d.property.startsWith('--'));
       if (custom.length === 0) continue;
-      // A group nested directly in a style rule declares for that rule's selector, under its own
+      // A group nested directly in a style rule declares for that rule's selector, under its
       // condition; any other at-rule holding declarations is not a root rule.
       const group = selector.startsWith('@');
       if (group && rule.parents.length === 0) continue;

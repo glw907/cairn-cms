@@ -1,26 +1,26 @@
 // cairn-audit's screen-anatomy rule: the mechanical floor under the office screen shape spec 6.3
 // names, "One PageHeader with one h1; the primary action sits in the header slot; content sits in
-// the card region." Three checks, each tied to a markup fact the admin toolkit's own recipes make
+// the card region." Three checks, each tied to a markup fact the admin toolkit's recipes make
 // mechanically readable rather than a class-name guess:
 //
-//  1. Exactly one rendered `<h1>` on the page, PageHeader's own "display-face heading"
+//  1. Exactly one rendered `<h1>` on the page, PageHeader's "display-face heading"
 //     (`PageHeader.svelte`'s doc comment). Zero or several is a structural anatomy break, whichever
 //     component produced it.
-//  2. That h1 renders inside a `<header>` landmark: PageHeader's own wrapper
+//  2. That h1 renders inside a `<header>` landmark: PageHeader's wrapper
 //     (`<header class="mb-10 ...">…<h1 class="page-h1">`). An h1 with no header ancestor is a
 //     heading PageHeader did not produce, or a header PageHeader failed to render around it.
 //  3. Every ACCENT- or INK-filled, text-carrying action control inside `<main>` that sits outside
 //     BOTH the header and any `.card-shell` region is a buried primary action: the "old trailing
-//     foot row that duplicated" the header's own New button, the exact defect `ConceptList`'s own
+//     foot row that duplicated" the header's New button, the exact defect `ConceptList`'s
 //     history names (`docs/internal/admin-design-system.md`, "Office list (the concept list view)",
 //     2026-07-15). "Filled" is read the same way `one-filled-action` reads it, not as "any opaque
-//     background": each candidate's own computed `background-color` is compared, via the shared
+//     background": each candidate's computed `background-color` is compared, via the shared
 //     canvas normalizer, against `--color-primary` and `--color-neutral` as THAT element inherits
 //     them, the two fills the design system reserves for a loud, attention-carrying action
-//     (`one-filled-action.ts`'s own header: the accent fill and "the sanctioned ink fill"). An
+//     (`one-filled-action.ts`'s header: the accent fill and "the sanctioned ink fill"). An
 //     adversarial pass against the real admin demonstrated why a raw opacity floor cannot stand in
 //     for this: `CairnMediaLibrary`'s "Find orphaned files" control is a quiet bordered office
-//     button on `bg-base-100`, opaque but deliberately NOT a primary action (its own comment: "NEVER
+//     button on `bg-base-100`, opaque but deliberately NOT a primary action (its comment: "NEVER
 //     the danger family"), and a floor keyed to opacity alone flagged it as buried. Matching the
 //     two sanctioned fills exactly is what `one-filled-action` already proved catches the real
 //     accent/ink cases without also catching every merely-opaque secondary control. A candidate this
@@ -29,29 +29,29 @@
 //     drops that one candidate from consideration.
 //
 //     `role="radio"` is excluded from candidacy outright: an adversarial pass against the real admin
-//     also found `ListToolbar`'s own segmented publish-state and Hidden filters (both
+//     also found `ListToolbar`'s segmented publish-state and Hidden filters (both
 //     `role="radiogroup"` with `role="radio"` options, one option always accent-filled via
 //     `.btn-active`) firing on every office list, five false positives per theme. A radio option is
 //     a SELECTION control, not an action, and the toolbar sits outside the card by design
 //     (`docs/internal/admin-design-system.md`, "the toolbar belongs to the card below it"); ARIA
 //     marks the distinction structurally, so reading it is not a guess. The same pass caught a
-//     genuine positive alongside both false-positive classes: `VocabularyAdmin`'s own footer
+//     genuine positive alongside both false-positive classes: `VocabularyAdmin`'s footer
 //     `<form>` renders its accent-filled "Save changes" outside both the header and any card-shell,
 //     a real, currently-shipped instance of the anatomy this rule polices.
 //
-// DESK ROUTES ARE EXEMPT (spec 6.3): an open document's own topbar-and-manuscript shape carries no
+// DESK ROUTES ARE EXEMPT (spec 6.3): an open document's topbar-and-manuscript shape carries no
 // PageHeader at all (docs/internal/admin-design-system.md, "The context model: office and desk").
 // The exemption is read off the RENDER, never off the path, and that is the whole point. The first
-// cut used path depth, which `CairnAdminShell.svelte`'s own comment names by name as the wrong
-// signal that already caused a shipped bug: "a developer's own custom nav can route just as deep
+// cut used path depth, which `CairnAdminShell.svelte`'s comment names by name as the wrong
+// signal that already caused a shipped bug: "a developer's custom nav can route just as deep
 // (a section entry like /admin/team/events) without opening a document". An adversarial pass drove
 // that exactly, injecting three real anatomy defects into `/admin/posts`'s DOM and getting three
 // findings under a 2-segment path and ZERO under a 3-segment one, on identical markup.
 //
-// The shell already projects its own concept-confirmed `isDeskRoute` into the DOM, at
+// The shell already projects its concept-confirmed `isDeskRoute` into the DOM, at
 // `CairnAdminShell.svelte:534-535`: the drawer carries `lg:drawer-open` on an office route and
 // `xl:drawer-open` on a desk one, resolved at SSR from the same predicate. Reading that is reading
-// the shell's own answer rather than re-deriving it from a path the audit cannot interpret. A page
+// the shell's answer rather than re-deriving it from a path the audit cannot interpret. A page
 // carrying no drawer at all is not running inside the shell, so it is office by default.
 //
 // A page with no `<main>` landmark at all is skipped, not flagged. `CairnAdminShell` is the only
@@ -67,7 +67,7 @@ import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../r
 interface StrayActionCandidate {
   selector: string;
   name: string;
-  /** The control's own computed `background-color`, unparsed. */
+  /** The control's computed `background-color`, unparsed. */
   background: string;
   /** `--color-primary` as it inherits onto this control, unparsed; empty when the theme is absent. */
   accent: string;
@@ -82,7 +82,7 @@ interface ScreenAnatomySnapshot {
   /** Whether the shell rendered its desk drawer, which exempts the page from the office anatomy. */
   isDesk: boolean;
   h1Selectors: string[];
-  /** The lone h1's own selector, meaningful only when `h1Selectors.length === 1`. */
+  /** The lone h1's selector, meaningful only when `h1Selectors.length === 1`. */
   h1Selector: string;
   /** Whether the lone h1 renders inside a `<header>` landmark; `null` when there is not exactly one. */
   h1HasHeaderAncestor: boolean | null;
@@ -101,14 +101,14 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
   const isRendered = (el: Element) => (helpers ? helpers.isVisible(el) : true);
   const selectorFor = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
 
-  // The shell's own SSR answer, not a re-derivation from the path: office routes get
+  // The shell's SSR answer, not a re-derivation from the path: office routes get
   // `lg:drawer-open`, desk routes `xl:drawer-open` (CairnAdminShell.svelte:534-535). A page with no
   // drawer is not running inside the shell, so it is judged as an office screen.
   const drawer = document.querySelector('.drawer');
   const isDesk = drawer !== null && !drawer.classList.contains('lg:drawer-open');
 
   // Scoped to `<main>`, matching every other check in this walk. A document-wide count reported a
-  // false positive for a visible heading a developer's own custom shell renders beside main.
+  // false positive for a visible heading a developer's custom shell renders beside main.
   const h1s = Array.from(mainEl.querySelectorAll('h1')).filter(isRendered);
   const h1Selectors = h1s.map(selectorFor);
   const h1Selector = h1s.length === 1 ? h1Selectors[0] : '';
@@ -117,7 +117,7 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
 
   const hasCardRegion = Array.from(mainEl.querySelectorAll('.card-shell')).some(isRendered);
 
-  // `label.btn` is daisyUI's canonical dialog and drawer opener, and cairn's own shell ships one
+  // `label.btn` is daisyUI's canonical dialog and drawer opener, and cairn's shell ships one
   // (CairnAdminShell.svelte:582). A bare `<a>` is included too, without requiring `.btn`: a
   // hand-rolled accent-filled link is exactly the buried primary action this check exists for, and
   // the fill comparison below is what filters the ordinary links back out.
@@ -126,14 +126,14 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
   const strayCandidates: StrayActionCandidate[] = [];
   for (const el of mainEl.querySelectorAll(CONTROL_SELECTOR)) {
     if (!isRendered(el)) continue;
-    // Only PageHeader's own header exempts, not any `<header>` an ancestor happens to be. A nested
+    // Only PageHeader's header exempts, not any `<header>` an ancestor happens to be. A nested
     // section-level `<header>` laundered a buried primary action past this check entirely.
     if (pageHeader && pageHeader.contains(el)) continue;
     if (!pageHeader && el.closest('header')) continue;
     // `closest` includes the element itself, so a control that carried `card-shell` exempted
     // ITSELF from the card-region test. The region is something a control sits inside.
     if (el.parentElement?.closest('.card-shell')) continue;
-    // A radio option is a SELECTION control (which filter is active, ListToolbar's own segmented
+    // A radio option is a SELECTION control (which filter is active, ListToolbar's segmented
     // publish-state and Hidden toggles), not an action, and the toolbar sits outside the card by
     // design (docs/internal/admin-design-system.md, "the toolbar belongs to the card below it").
     // ARIA marks this distinction structurally (`role="radio"` inside a `role="radiogroup"`), so
@@ -163,7 +163,7 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
  * The office screen's mechanical anatomy floor: one PageHeader h1, the primary action in its
  * header slot, content in the card region. Advisory tier: a false positive here (a legitimate
  * screen this rule cannot special-case, such as a whole-concept empty state that deliberately
- * drops its card, `docs/internal/admin-design-system.md`'s own "Empty state" section) is a
+ * drops its card, `docs/internal/admin-design-system.md`'s "Empty state" section) is a
  * candidate for a human to triage via the rendered allowlist, never a build breaker; the mechanical
  * floor is a nudge toward the recipe, not a proof the recipe was violated.
  */

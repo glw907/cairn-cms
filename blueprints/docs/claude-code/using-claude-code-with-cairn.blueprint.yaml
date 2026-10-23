@@ -45,7 +45,7 @@ introduction:
     - f:pmmtrm
 framing:
   readers: |
-    The page has no register track of its own, so its reader is the extend track's profile, per
+    The page has no register track, so its reader is the extend track's profile, per
     the outline's `job`: a Svelte-fluent web developer building an organization's site on cairn's
     seams, who has chosen Claude Code as their coding assistant. Two arrivals:
 
@@ -116,7 +116,7 @@ exemplars:
   - source: core/workers-sdk-agents-md/
     slice: Core
     manifestType: Agent-facing contributor file
-    take: Take the idea of pointing at the authoritative source instead of copying it (the guidance tree states this about its own VERSION and MANIFEST); leave the monorepo commands and the file's own agent-addressed voice, which this human page never uses.
+    take: Take the idea of pointing at the authoritative source instead of copying it (the guidance tree states this about its VERSION and MANIFEST); leave the monorepo commands and the file's agent-addressed voice, which this human page never uses.
 sections:
   - id: before-you-begin
     heading: Before you begin
@@ -144,7 +144,7 @@ sections:
         mode: claim
         text: |
           Claude Code installed and able to start a session in the site's root is the second
-          precondition, linked to Claude Code's own installation page and never restated.
+          precondition, linked to Claude Code's installation page and never restated.
       - id: pre-claude-link
         kind: link
         target: https://code.claude.com/docs/en/setup#install-claude-code
@@ -182,11 +182,11 @@ sections:
         fact: f:6ro1n9
         use: |
           Only the root `CLAUDE.md`'s shape: the one import line, then a `# Your site` section for
-          the site's own guidance.
+          the site's guidance.
       - id: r-tree-own-guidance
         kind: reason
         text: |
-          The site's own guidance for Claude Code belongs under `# Your site` in the root
+          The site's guidance for Claude Code belongs under `# Your site` in the root
           `CLAUDE.md`, because that file is the site's and the fragment under `.claude/cairn/` is
           the package's to refresh.
         facts:
@@ -384,7 +384,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The hook runs the site's own `check:cairn` script under `--if-present`, so on a site
+          The hook runs the site's `check:cairn` script under `--if-present`, so on a site
           without that script the hook runs nothing and reports nothing, which is why the step
           above checks for it.
         facts:
@@ -775,7 +775,7 @@ sections:
       and its limitations. The outline's one concept page on this subject is Scaffolded site
       files, which explains the scaffolded tree the guidance sits in. The outline holds no
       limitations page for the guidance tree or for Claude Code, so the section links none, and
-      the page's own limits are the introduction's `notCovered` list, whose other homes the
+      the page's limits are the introduction's `notCovered` list, whose other homes the
       remaining links reach: the audit, the upgrade, and the `cairn-guidance` reference.
     opens: |
       The following pages explain the scaffolded tree around the guidance and cover the work this
@@ -823,7 +823,7 @@ constraints:
     The page addresses the human developer in the docs voice, never Claude Code. It does not
     borrow the agent-addressed voice of the fragment, the skills, or the review agent.
   - |
-    Claude Code's own behavior (when a `Stop` hook fires, how skills are discovered, where hook
+    Claude Code's behavior (when a `Stop` hook fires, how skills are discovered, where hook
     output appears) gets a link to Claude Code's docs, never a restated detail, per the vendor
     rule. The `Stop` timing sentence in [[wire-the-stop-hook]] stays at "when a Claude Code turn
     ends" with the hooks link beside it.
@@ -841,7 +841,7 @@ constraints:
     that could not be made refusing the destination beside it; the realpath and lstat mechanics,
     the exclusive no-follow open, and `InstallReport.writeErrors` stay on the reference page.
   - |
-    The review agent is one bullet in [[the-guidance-tree]], with no heading of its own: its
+    The review agent is one bullet in [[the-guidance-tree]], with no heading: its
     location (f:0ygumq) and the reference link `l-agent-ref`, nothing on what it reviews or how it
     relates to `cairn-audit` until a fact states that.
   - |

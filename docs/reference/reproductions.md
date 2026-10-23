@@ -21,7 +21,7 @@ except in Firefox under `inert`. A page that embeds a story therefore records
 `document.activeElement` before the frame loads and restores it after. Nothing inside the frame can
 stand in for that. The `loading` attribute, a `sandbox` value if the page wants one, the `noindex`
 meta tag, and the no-JavaScript fallback are the site's too. A `sandbox` value must keep
-`allow-same-origin`, which the theme sync and the frame's own focus release both need.
+`allow-same-origin`, which the theme sync and the frame's focus release both need.
 
 ```ts
 import { getStory, ReproContext } from '@glw907/cairn-cms/reproductions';
@@ -40,9 +40,9 @@ build (cairn.pub's docs), and its shape is not yet committed across minor versio
 ## Why two subpaths
 
 The registry splits across two entry points because its two consumers need different things from
-it. A build-time gate (this engine's own `check:visuals`, and cairn.pub's fence validation at
+it. A build-time gate (this engine's `check:visuals`, and cairn.pub's fence validation at
 build time) needs to read story ids, declared heights, and marker keys from a bare `node` process,
-with no bundler and no Svelte runtime in the way. A docs route and this engine's own story-mount
+with no bundler and no Svelte runtime in the way. A docs route and this engine's story-mount
 test need the opposite: the real components, their fixture props, and the poses that drive them
 into the states a page contracts to show.
 
@@ -82,16 +82,16 @@ is the smallest package component that contains what the story shows. `host` is 
 story mounted inside `CairnAdminShell` with the fixture nav layout, or `'bare'` for one mounted on
 its own. `shellData` overrides fields of the fixture shell payload for a `'shell'` story whose
 subject depends on shell-derived chrome (the desk pathname, the pending-publish set) rather than on
-`props` alone; a `'bare'` story ignores it. `props` is the full prop bag the mounted component's own
+`props` alone; a `'bare'` story ignores it. `props` is the full prop bag the mounted component's
 contract takes. `context` supplies session-shaped fixture values (a signed-in editor, a capability)
 as Svelte context before mounting; a component that reads no context beyond what
 [`ReproContext`](#reprocontext) already supplies unconditionally leaves it unset. `settle` waits
 for a client-only surface to exist at all before `pose` runs, for a story whose contracted content
-does not appear in the server render. `pose` drives a state that lives in the component's own
+does not appear in the server render. `pose` drives a state that lives in the component's
 internal state rather than a prop. Both take `root`, the element `ReproContext` mounted the story
 into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
 that element rather than appended to `document.body`, so a `settle` or `pose` that queries
-`document` instead of `root` misses them. `pose` also takes the mounted component's own exports,
+`document` instead of `root` misses them. `pose` also takes the mounted component's exports,
 for a story the real admin reaches by calling an exported method rather than by clicking, such as
 the insert panel the editor mounts headless and opens from its toolbar. That parameter's type is
 `ReproInstance`. It carries no export row of its own: a consumer reaches it as
@@ -125,30 +125,30 @@ let { story, theme, oninstance, mediaBase }: {
 };
 ```
 
-The one mounting wrapper both a docs route and this engine's own story-mount test render a story
+The one mounting wrapper both a docs route and this engine's story-mount test render a story
 through, so the two can never disagree about what a story needs to render correctly. It applies
 `story.context`, supplies the fixture media base and a CSRF-token getter to every mounted media
 surface, hosts a `'shell'` story inside `CairnAdminShell` with the fixture nav layout, and carries
 the admin stylesheet unconditionally. `theme` is the admin theme the mounting page owns; absent, it
-falls back to the light admin theme. A `'bare'` story that resolves no theme root of its own (every
+falls back to the light admin theme. A `'bare'` story that resolves no theme root of its (every
 row except the two auth pages) gets one from `ReproContext` itself, painted with the admin surface
 colors, so it renders correctly wherever it mounts rather than only inside a host that happens to
 supply a theme root.
 
 `mediaBase` is the path segment every fixture media URL mounts under, so a docs site deployed
-under a SvelteKit `paths.base` composes fixture image URLs inside its own namespace instead of a
-hardcoded default; absent, it falls back to `/repro-assets`, cairn.pub's own asset route. It
+under a SvelteKit `paths.base` composes fixture image URLs inside its namespace instead of a
+hardcoded default; absent, it falls back to `/repro-assets`, cairn.pub's asset route. It
 threads to both places a mounted story reaches its media base: the reserved context key below, and,
-for a `'shell'` story, the shell payload's own `mediaBase` field, which feeds `CairnAdminShell`'s
+for a `'shell'` story, the shell payload's `mediaBase` field, which feeds `CairnAdminShell`'s
 identical, shadowing context of the same key.
 
-`oninstance` fires once as the mount happens, with the mounted component's own exports, the same
+`oninstance` fires once as the mount happens, with the mounted component's exports, the same
 `ReproInstance` shape [`ReproStory`](#reprostory) describes. A host that runs poses passes it and
 hands the value back to `story.pose`. A host that only renders a resting story needs none of it.
 The callback runs inside the mount rather than from an effect, so a host that mounts and
 immediately poses reads a real instance rather than `undefined`.
 
-Mount `ReproContext` in a document dedicated to one reproduction, its own route inside an `iframe`,
+Mount `ReproContext` in a document dedicated to one reproduction, its route inside an `iframe`,
 never on a page that carries anything else. Its containment is not scoped to what it renders: it
 takes over `keydown`, `pointerdown`, `dragover`, `drop`, and `beforeunload` for the whole document,
 for as long as the instance lives, and it takes them over ahead of anything registered after it. On
@@ -168,7 +168,7 @@ missing `{#key}` fails loudly rather than rendering a mismatched story.
 
 The media-base and CSRF context keys `ReproContext` sets (the media base from the preceding
 `mediaBase` prop) are reserved: `ReproContext` applies `story.context` first and then sets both
-unconditionally, so a story's own `context` entry under either key is shadowed by the value
+unconditionally, so a story's `context` entry under either key is shadowed by the value
 `ReproContext` supplies, never the other way around.
 
 ---
@@ -215,8 +215,8 @@ the string a `repro` fence names, `<group>/<name>`, with exactly one slash. `hei
 declared iframe heights above. `markerKeys` are the stable keys the page's numbered callout list
 cites, one per rendered chip; empty for a story with no callouts. `pose` is whether the story needs
 a post-mount step to reach the state its page contract names. `host` is `'shell'` or `'bare'`,
-matching the story's own `ReproStory.host`. `ownThemeRoot` is whether the mounted component
-resolves its own theme rather than inheriting the repro route's theme wrapper; true for the two
+matching the story's `ReproStory.host`. `ownThemeRoot` is whether the mounted component
+resolves its theme rather than inheriting the repro route's theme wrapper; true for the two
 auth pages and for every `'shell'`-hosted story, since `CairnAdminShell` is itself an own-theme-root
 component.
 
@@ -228,7 +228,7 @@ Stability tier: Unstable API.
 declare const manifest: ReproManifestEntry[];
 ```
 
-The full registry's node-safe view, in the spec inventory's own order. Adding, removing, or
+The full registry's node-safe view, in the spec inventory's order. Adding, removing, or
 renaming an entry is a spec-level change: a consuming docs page cites these ids by name, and a
 `repro` fence naming an id the installed manifest does not carry fails the consumer's build.
 
@@ -241,7 +241,7 @@ declare const fixtureMediaFiles: string[];
 ```
 
 The fixture media bytes' filenames, exactly as packaged under `dist/reproductions/fixtures/`. A
-consuming site's own asset route enumerates this list to serve the bytes without ever importing the
+consuming site's asset route enumerates this list to serve the bytes without ever importing the
 Svelte-carrying `/reproductions` half of this module, at the path segment the mounting page passed
 [`ReproContext`](#reprocontext) as its `mediaBase` prop (`/repro-assets` when it passed none).
 
@@ -265,7 +265,7 @@ that story's manifest entry actually declares a height for. Caller-owned, checke
 closed key set. See [The fence schema](#the-fence-schema) below for the full rule set and
 [`ValidateReproFenceOptions`](#validatereprofenceoptions) for the caller-owned half. One
 implementation backs both this engine's `check:visuals` gate and a consuming site's build-time
-fence validation, so the two cannot drift apart; `check:visuals` supplies this engine's own
+fence validation, so the two cannot drift apart; `check:visuals` supplies this engine's
 published-docs register (`"Reproduction"`-prefixed English alt, 150 characters, no key beyond the
 four the schema names), and a consuming site supplies its own.
 
@@ -281,7 +281,7 @@ interface ValidateReproFenceOptions {
 }
 ```
 
-The caller's own register, layered on top of `validateReproFence`'s engine-owned rules. None of
+The caller's register, layered on top of `validateReproFence`'s engine-owned rules. None of
 the three carries a baked-in default: omitting a member skips the check it backs entirely, so a
 site with no alt-text convention, no length ceiling, or an open key set simply doesn't supply
 that member. `altPrefix` tests against `alt.trim()`; `maxAltLength` bounds `alt.length`;
@@ -294,23 +294,23 @@ any key outside that combined set is flagged.
 
 A `repro` fence's body is YAML with four keys. `story`, `caption`, and `width` are engine-owned,
 checked unconditionally by `validateReproFence`; `alt`'s prefix and length ceiling, and the closed
-key set, are this engine's own [`ValidateReproFenceOptions`](#validatereprofenceoptions) register,
+key set, are this engine's [`ValidateReproFenceOptions`](#validatereprofenceoptions) register,
 which `check:visuals` supplies for the pages below and a consuming site supplies for its own:
 
 | Key | Required | Meaning |
 | --- | --- | --- |
 | `story` | yes | A registry id, `<group>/<name>`, exactly one slash. Must exist in the installed manifest. |
-| `alt` | yes | The accessible name. Names the kind ("Reproduction of ...") and stays at or under 150 characters, this engine's own register. Becomes the iframe's `title` attribute. |
+| `alt` | yes | The accessible name. Names the kind ("Reproduction of ...") and stays at or under 150 characters, this engine's register. Becomes the iframe's `title` attribute. |
 | `caption` | yes | Rendered as the figure's caption. States what the render cannot show on its own. |
 | `width` | no | `narrow` (390px), `desktop` (860px), or `wide` (1280px). Absent means the responsive default, filling the docs content column. |
 
 A malformed body, a missing required key, an unlisted `width` value, or a `story` the installed
 manifest does not carry fails validation unconditionally; an unknown key or a non-conforming `alt`
-fails validation whenever the caller's own register checks for it. One issue per violated rule.
+fails validation whenever the caller's register checks for it. One issue per violated rule.
 
 ### The width rule
 
-`width`, when given, must name a width the fence's own story declares a height for in
+`width`, when given, must name a width the fence's story declares a height for in
 [`ReproHeights`](#reproheights): `validateReproFence` looks the story's manifest entry up by
 `story` and checks `heights[width]` is a number. A story that cannot show its subject at some width
 simply declares no height for that width, and the schema refuses any fence that pins it there.

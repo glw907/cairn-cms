@@ -1,11 +1,11 @@
 // The chassis's light/dark theme-toggle mechanism: read the live `data-theme` (or the scheme the
 // root renders in, with no explicit choice yet), flip it, and persist the choice to a cookie so it
 // survives a reload. The mechanism knows nothing about which two DaisyUI theme names a theme
-// declares; every call site passes its own ThemeToggleConfig, so a differently-named theme (or a
+// declares; every call site passes its ThemeToggleConfig, so a differently-named theme (or a
 // second theme entirely) reuses this module unchanged. Every function here assumes it runs in the
 // browser (guard with `$app/env`'s `browser` at the call site); none of it is SSR-safe.
 
-/** A theme's own light/dark DaisyUI theme names and the cookie that persists the visitor's choice. */
+/** A theme's light/dark DaisyUI theme names and the cookie that persists the visitor's choice. */
 export interface ThemeToggleConfig<T extends string> {
   /** The DaisyUI theme name applied in light mode. */
   light: T;
@@ -62,7 +62,7 @@ const FLIP_TRANSITION_CLASS = 'theme-flip-transition';
 
 /**
  * How long (ms) the transition class stays applied before a safety-net removal, a little past
- * theme.css's own ~200ms cross-fade so a `transitionend` race never clears it early.
+ * theme.css's ~200ms cross-fade so a `transitionend` race never clears it early.
  */
 const FLIP_TRANSITION_TIMEOUT_MS = 300;
 

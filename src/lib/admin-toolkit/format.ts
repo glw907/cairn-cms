@@ -1,18 +1,18 @@
 // cairn-cms: the admin toolkit's formatter primitives, graduated from a consumer site's admin
 // toolkit ("Formatters as citizens" -- no consuming admin screen should hand-roll civil-date or
 // timestamp arithmetic). Every formatter takes its locale and time zone as
-// an option with a neutral default rather than assuming any one site's own locale or zone, so a
+// an option with a neutral default rather than assuming any one site's locale or zone, so a
 // second consumer in another zone or locale is a parameter, not a fork.
 //
 // `formatTimestamp` differs from the graduated consumer-site original on one point, deliberately:
-// its `timeZone` default is `'UTC'`, not a consumer's own local zone (for example
+// its `timeZone` default is `'UTC'`, not a consumer's local zone (for example
 // `'America/Denver'`). A shared engine formatter cannot default to one consumer's zone; a site
-// that wants its own local time passes `timeZone` explicitly.
+// that wants its local time passes `timeZone` explicitly.
 //
 // Every display formatter in this file (formatCivilDate, formatTimestamp) accepts a nullish input
 // and takes a `fallback?: string` option defaulting to `''`. The point is uniformity: a caller
 // rendering a possibly-absent value never has to remember which formatter tolerates nullish and
-// which throws, nor which one carries its own opinion about what absence looks like.
+// which throws, nor which one carries its opinion about what absence looks like.
 
 /** Options for {@link formatCivilDate}. */
 export interface FormatCivilDateOptions {
@@ -49,8 +49,8 @@ export function formatCivilDate(iso: string | null | undefined, options: FormatC
 /** Options for {@link formatTimestamp}. */
 export interface FormatTimestampOptions {
   /**
-   * An IANA time zone name. Defaults to `'UTC'`, the neutral zone a Cloudflare Worker's own
-   * runtime already reads in; a site passes its own zone (`'America/Denver'`, say) explicitly
+   * An IANA time zone name. Defaults to `'UTC'`, the neutral zone a Cloudflare Worker's
+   * runtime already reads in; a site passes its zone (`'America/Denver'`, say) explicitly
    * rather than inheriting one from this formatter.
    */
   timeZone?: string;
@@ -64,10 +64,10 @@ export interface FormatTimestampOptions {
 // offset.
 const SQLITE_DATETIME = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
 
-// A full ISO 8601 string that names its own zone: seconds are optional, the zone is a `Z`/`z`
+// A full ISO 8601 string that names its zone: seconds are optional, the zone is a `Z`/`z`
 // suffix or an explicit `+hh:mm` / `-hh:mm` offset with the colon optional (`+0200` as well as
 // `+02:00`). A zone-less near-ISO shape (no `Z`, no offset) does NOT match this, and is passed
-// through unchanged rather than handed to `new Date()`, which would parse it in the runtime's own
+// through unchanged rather than handed to `new Date()`, which would parse it in the runtime's
 // local zone; that fall-through is exactly what let a Worker's SSR and a browser's hydration
 // render different text for the same input.
 const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|z|[+-]\d{2}:?\d{2})$/;
@@ -82,12 +82,12 @@ function toCanonicalIso(input: string): string {
 }
 
 /**
- * Format a timestamp as a date and time in `timeZone`, accepting every shape that names its own
+ * Format a timestamp as a date and time in `timeZone`, accepting every shape that names its
  * zone (a full or seconds-less ISO 8601 string with a `Z`/`z` suffix or a colon or colonless
  * `+hh:mm` offset) plus the SQLite `datetime('now')`-shaped UTC string with no offset
  * (`"YYYY-MM-DD HH:MM:SS"`), which this function assumes UTC for. Any other shape, including a
- * zone-less near-ISO string, is returned unchanged: the input's own moment is always read from its
- * own text, a zone it names or the UTC this function assumes for the SQLite shape, and NEVER from
+ * zone-less near-ISO string, is returned unchanged: the input's moment is always read from its
+ * text, a zone it names or the UTC this function assumes for the SQLite shape, and NEVER from
  * the runtime's local zone, so a Worker's SSR and a browser's hydration render identical text for
  * every shape this function accepts. A non-standard zone spelling (a colonless offset, a lowercase
  * `z`) is normalized to its canonical ECMAScript Date Time String Format spelling before parsing,

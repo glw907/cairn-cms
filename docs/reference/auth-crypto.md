@@ -14,18 +14,18 @@ lives. A Workers deploy resolves the real module.
 This subpath carries the stateless Web Crypto primitives, token, hash, compare, and cookie-name
 functions, a login flow for a second sign-in group would otherwise copy by hand. It re-exports the token
 generator, the token hash, the constant-time compare, and the `__Host-` cookie-name primitive the
-engine's own magic-link guard uses, for a site that
+engine's magic-link guard uses, for a site that
 authenticates a second sign-in group: member magic-link sessions, offer tokens, an OTP flow. A site
 building that flow stops copying the engine's cryptography by hand and reuses the same primitives
-the engine's own login proves in production. A stateful provisioning read or write belongs on
+the engine's login proves in production. A stateful provisioning read or write belongs on
 [`/auth-store`](./auth-store.md) instead, even one built on the same hashes this subpath produces.
 
 What stays out: the TTL constants and the send-cooldown constant, since a token or session
-lifetime is the site's own ruling, not the engine's; the engine's own cookie-name functions,
+lifetime is the site's ruling, not the engine's; the engine's cookie-name functions,
 which stay internal because no site needs the engine's exact cookie names and colliding with
 them is the two-stores blur the `cairn_` reservation below warns against; and every auth-flow
 and store function. Audience semantics, the store schema, and the rule that a second sign-in group's
-session store never blurs with the engine's own stay entirely site-owned.
+session store never blurs with the engine's stay entirely site-owned.
 
 ```ts
 import { generateToken, hashToken, buildCookieName } from '@glw907/cairn-cms/auth-crypto';
@@ -45,7 +45,7 @@ A fresh 256-bit, URL-safe token, drawn from `crypto.getRandomValues`. Use it for
 token, an offer token, a session identifier, or a double-submit CSRF token: the same generator
 serves all four, since a longer or shorter identifier is a parameter on one function, never a
 second public name. Pair it with `tokensMatch` for double-submit CSRF protection on a second
-audience's own form routes.
+audience's form routes.
 
 ## Hashing and comparing tokens
 
@@ -112,21 +112,21 @@ reverse proxy or a platform edge, `url.protocol` is not that scheme; derive `sec
 externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto` header the
 platform sets.
 
-The engine's own two cookies derive `secure` the same way now: an `https` request always resolves
+The engine's two cookies derive `secure` the same way now: an `https` request always resolves
 `Secure` outright, and only a non-`https` request falls back further, to a local-host check and
 then the site's configured `PUBLIC_ORIGIN` rather than a header, since a site already declares
 that value and a configured origin can't be spoofed by an intermediate hop the way a
 forwarded-proto header can. It never downgrades an `https` request, whatever that value says. Both
 cookies route through this one derivation (`csrfSecure`, internal to `/sveltekit`), so they can no
 longer resolve different `secure` values on the same request; see [The session
-cookie](../extend/security-model.md#the-session-cookie). A site building its own second sign-in group's
+cookie](../extend/security-model.md#the-session-cookie). A site building its second sign-in group's
 cookie without an equivalent configured origin reaches for the preceding header-based derivation
 instead.
 
 `base` must not already carry a `__Host-` or `__Secure-` prefix (double-prefixing produces a
 cookie the browser silently rejects, so this throws instead of shipping a cookie that never
 sets) and must contain only characters in the RFC 6265 cookie-name token set. A base starting
-`cairn_` is the engine's own reserved namespace: the engine's own session and CSRF cookie names
+`cairn_` is the engine's reserved namespace: the engine's session and CSRF cookie names
 delegate through this same function, so a site base in that namespace does not throw, but risks
 colliding with an engine cookie.
 
@@ -143,11 +143,11 @@ function memberSessionCookieName(request: Request): string {
 ## The discipline these primitives assume
 
 These functions are building blocks, not a session system. A site composing them into a working
-login flow needs the surrounding discipline the engine's own magic-link guard follows:
+login flow needs the surrounding discipline the engine's magic-link guard follows:
 
 - Store only `hashToken`'s digest for a token or session lookup value, never the raw value.
 - Consume a one-time token in one atomic statement, with the expiry check inside the same
-  `WHERE` clause, so two concurrent requests cannot both consume it. The engine's own token
+  `WHERE` clause, so two concurrent requests cannot both consume it. The engine's token
   consume is the pattern to copy:
 
   ```sql
@@ -158,21 +158,21 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
 
   The third predicate is the same-browser binding: the third parameter is the hash of the nonce
   the confirming browser carries in its pending-login cookie, so a link opened anywhere else
-  matches no row and the requesting browser's own link survives. `nonce_hash IS NULL` keeps a row
+  matches no row and the requesting browser's link survives. `nonce_hash IS NULL` keeps a row
   written before that column existed confirmable. Comparing in SQL rather than in TypeScript is
   deliberate: no `===` runs against a secret.
 
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser
   history, and the `Referer` header of any outbound link the landing page renders.
 - Set `Referrer-Policy: same-origin` on the landing page that consumes the token, not
-  `no-referrer`. The engine's own `/admin` responses use `strict-origin`, which keeps `Origin`
+  `no-referrer`. The engine's `/admin` responses use `strict-origin`, which keeps `Origin`
   on a same-origin POST and sends no path in a `Referer`. SvelteKit's origin check covers a
-  second sign-in group's own routes, so they need `Origin` to survive a same-origin POST, and
+  second sign-in group's routes, so they need `Origin` to survive a same-origin POST, and
   `same-origin` still keeps it out of a cross-origin `Referer`.
-  The engine's own admin guard applies a fuller security-header set, but only under `/admin`; a
-  second sign-in group's own routes are the site's responsibility to head the same way.
+  The engine's admin guard applies a fuller security-header set, but only under `/admin`; a
+  second sign-in group's routes are the site's responsibility to head the same way.
 - Pair `generateToken` with `tokensMatch` for double-submit CSRF protection on the second
-  audience's own form routes, the same double-submit pattern the engine's own admin actions use.
+  audience's form routes, the same double-submit pattern the engine's admin actions use.
 - Rate limit both by email and by IP, so a token-request endpoint cannot be used to flood one
   inbox or to brute-force a short-lived code.
 

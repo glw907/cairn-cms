@@ -1,13 +1,13 @@
 <!--
 @component
-The admin toolkit's centered first-run empty state, graduated from the recipe the engine's own
+The admin toolkit's centered first-run empty state, graduated from the recipe the engine's
 admin already repeats three times (`ConceptList`, `CairnMediaLibrary`, `WelcomeView`): a centered
-fill on the content area, the cairn mark (or a caller's own icon), a heading, muted copy, and an
+fill on the content area, the cairn mark (or a caller's icon), a heading, muted copy, and an
 optional action.
 
 This is the whole-concept-empty state only (a fresh "no posts yet" screen), never the
 filtered-to-zero state (a search or filter narrowed a non-empty list to nothing): that recipe
-stays a smaller, in-card notice inside `AdminTable`'s own `empty` snippet (or a grid's own status
+stays a smaller, in-card notice inside `AdminTable`'s `empty` snippet (or a grid's status
 block), never a page-owning fill.
 
 Props stay data-plus-slots: `heading`/`message` are plain strings, and `icon`/`action` are
@@ -15,7 +15,7 @@ snippets the caller fully authors, so this component carries no domain knowledge
 or what the action does.
 
 `headingLevel` (additive, defaults `'p'`, the original contract unchanged) selects the heading's
-own element: a screen that sits under a `PageHeader` (whose own `h1` already names the page) keeps
+element: a screen that sits under a `PageHeader` (whose `h1` already names the page) keeps
 the default `<p>`, while a screen that renders this component as its ONLY content, with no
 `PageHeader` of its own (`WelcomeView`, the none-capability landing, and the admin error page),
 passes `'h1'` so the page still carries a real heading in its accessible tree. An `'h1'` heading
@@ -24,13 +24,13 @@ changes the semantics and never leaves the browser's default heading size; every
 its semibold heading as it was.
 
 Typography and layout classes only, no daisyUI component class. The tokens here match
-`ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-state markup, which is where this
+`ConceptList.svelte`'s and `WelcomeView.svelte`'s empty-state markup, which is where this
 recipe was lifted from. See the scan-scope note on `PageHeader` for why an older version of this
 comment framed that as a compile constraint: `src/lib/admin-toolkit` is inside the `@source` roots
 now, so a class used only here compiles.
 -->
 <script module lang="ts">
-  /** The heading's own element. Defaults to `'p'`, the original contract; pass `'h1'`/`'h2'`/`'h3'`
+  /** The heading's element. Defaults to `'p'`, the original contract; pass `'h1'`/`'h2'`/`'h3'`
    *  when this component is a screen's only content and needs a real heading in the a11y tree. */
   export type EmptyStateHeadingLevel = 'p' | 'h1' | 'h2' | 'h3';
 </script>
@@ -40,11 +40,11 @@ now, so a class used only here compiles.
   import CairnLogo from '../admin/CairnLogo.svelte';
 
   interface Props {
-    /** A custom icon replacing the default cairn mark, for a site's own custom section. */
+    /** A custom icon replacing the default cairn mark, for a site's custom section. */
     icon?: Snippet;
     /** The empty state's heading (e.g. `'No posts yet'`). */
     heading: string;
-    /** The heading's own element. Defaults to `'p'`: a screen already carrying its own `h1` (a
+    /** The heading's element. Defaults to `'p'`: a screen already carrying its `h1` (a
      *  `PageHeader`) keeps the default, while a screen with no heading of its own passes `'h1'`. */
     headingLevel?: EmptyStateHeadingLevel;
     /** The muted explanatory copy beneath the heading. */

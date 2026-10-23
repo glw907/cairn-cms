@@ -16,7 +16,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     id: string;
     /**
      * The singular noun for the entry being deleted, e.g. "Post", used in "Delete this X?" and
-     *  the confirm prompts; mirrors ListData.singular's own doc voice.
+     *  the confirm prompts; mirrors ListData.singular's doc voice.
      */
     singular: string;
     /** The entries that link to (or include) this one; non-empty blocks the delete. */
@@ -27,7 +27,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     /** True when the entry has unpublished edits, which the delete discards along with it. */
     pending?: boolean;
     /** Render the built-in Delete trigger. False mounts only the dialog, for a host that supplies
-     *  its own trigger and opens the dialog through the exported open(). */
+     *  its trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
     /** Called when the delete confirm submits, before the document navigates. The edit page uses
      *  it to stand down its leave guard while the POST is in flight. */
@@ -38,7 +38,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
-  // The deleted entry's own noun, for "Delete this X?" and the confirm prompts only.
+  // The deleted entry's noun, for "Delete this X?" and the confirm prompts only.
   const noun = $derived(singular.toLowerCase());
   // One inbound link reads "1 entry links here ... repoint it"; many reads "2 entries link
   // here ... repoint them". The subject-verb agreement inverts the usual plural-s, so derive each
@@ -47,7 +47,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
   const verb = $derived(single ? 'links' : 'link');
   const pronoun = $derived(single ? 'it' : 'them');
   // Both the link count and the inclusion count name an anonymous "entry"/"entries" noun rather
-  // than the deleted entry's own singular: a linker or includer can belong to a wholly different
+  // than the deleted entry's singular: a linker or includer can belong to a wholly different
   // concept than the one being deleted (a page linking to a post, several concepts including one
   // fragment), so "entry"/"entries" is the only noun that stays accurate regardless of what
   // points here.

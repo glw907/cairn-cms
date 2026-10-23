@@ -1,17 +1,17 @@
-// cairn-audit's chip-ground-collision rule: a chip's own painted background must not be
+// cairn-audit's chip-ground-collision rule: a chip's painted background must not be
 // CAMOUFLAGED against the background of whatever it sits on, the "badge-ghost melting into the zebra
-// stripe" failure StatusChip's own header comment documents and the static stock-default-hazards
+// stripe" failure StatusChip's header comment documents and the static stock-default-hazards
 // rule catches only by class name (a rewritten equivalent could still collide). This rule proves
-// the actual rendered result instead of trusting a class name: it composites the chip's own
+// the actual rendered result instead of trusting a class name: it composites the chip's
 // background over the ambient color behind it (the admin runs both zebra and plain table rows, so
 // there is no single "row background" constant to compare against) and measures whether the two
 // are still distinguishable.
 //
-// A chip with no fill of its own (StatusChip's `badge-outline`, alpha 0 on its own
+// A chip with no fill (StatusChip's `badge-outline`, alpha 0 on its
 // background-color, its border carries the tone instead) has nothing to collide with by
 // definition: the ambient color shows straight through it, which is the deliberate outcome
 // `badge-outline` was chosen for. Border-vs-ground contrast is a different question (WCAG 1.4.11,
-// the advisory `border-contrast` rule); this rule only ever compares a chip's own FILL against its
+// the advisory `border-contrast` rule); this rule only ever compares a chip's FILL against its
 // ground, so a filled-but-see-through chip is skipped rather than flagged.
 //
 // Four failures demonstrated against the real admin, all closed here and all fixture-covered in
@@ -25,7 +25,7 @@
 //     through the shared canvas normalizer.
 //  2. `opacity` was tested for exactly zero and never composited, so a chip painted at 4% opacity
 //     was scored as an opaque fill. Opacity now multiplies down the whole layer chain.
-//  3. The `.badge` selector missed cairn's own unclassed pills. Seven shipped sites
+//  3. The `.badge` selector missed cairn's unclassed pills. Seven shipped sites
 //     (CairnMediaLibrary, VocabularyAdmin, CairnTidySettings) render a filled `rounded-full`
 //     chip carrying no daisyUI badge class at all. "Chip" is now a RENDERED shape rather than a
 //     class name, which is the same reason this rule reads paint instead of markup: a pill-radius,
@@ -34,24 +34,24 @@
 //     moved every shipped chip off the pill geometry onto the theme's `--radius-selector` token, a
 //     value far short of half the box height once a chip is taller than about 8px, so the shape
 //     test now resolves that token itself instead of assuming a pill.
-//  4. The chip's own translucent fill was resolved against an assumed white canvas rather than
+//  4. The chip's translucent fill was resolved against an assumed white canvas rather than
 //     against the ground it paints on, so a 90%-alpha chip came back lightened by that white. Under
 //     a light ground the assumption is close enough to leave the verdict intact, which is why the
 //     light half kept firing while both real dark-theme collisions on /admin/media and
 //     /admin/vocabulary went silent at a manufactured 1.51 against a true 1.11. The backdrop is now
-//     required by `resolveGround` rather than defaulted, and the chip's fill resolves onto its own
+//     required by `resolveGround` rather than defaulted, and the chip's fill resolves onto its
 //     ground.
-//  5. The chip's fill was resolved at the chip's OWN opacity while its ground was resolved at the
+//  5. The chip's fill was resolved at the chip's opacity while its ground was resolved at the
 //     whole chain's, so an ancestor `opacity` washed out one side of the comparison and not the
 //     other: a chip under a 25%-opacity wrapper measured 4.4:1 where the painted pixels, read off a
-//     screenshot, measure 1.18:1. The chip's own color is now the WHOLE chain resolved onto the
+//     screenshot, measure 1.18:1. The chip's color is now the WHOLE chain resolved onto the
 //     canvas, and `resolveGround` itself was corrected to composite a subtree before dimming it,
 //     which is what `opacity` actually does.
 //  6. The ground was taken from the ancestor chain even where something else paints behind the
 //     chip. `CairnMediaLibrary` renders its usage chip as an absolutely positioned sibling of the
 //     thumbnail `<img>`, so the rule composited the card fill and reported a constant 1.06 error on
 //     a chip measuring 12.98 against the image it actually sits on. An overlapping painter outside
-//     the chip's own ancestors now makes the ground indeterminate, which is advisory, because
+//     the chip's ancestors now makes the ground indeterminate, which is advisory, because
 //     "cannot measure" is a different claim from "this collides".
 //  7. The formula had no chroma term at all: two colors of plainly different hue
 //     but similar luminance measured as a collision, one of the two named mechanisms behind the
@@ -65,7 +65,7 @@
 //     needs measured pixel data from a real consumer admin audit run this repo does not carry (see
 //     ROADMAP.md).
 //
-// Only the `rest` state is read (no interaction reveals or hides a chip's own background), so no
+// Only the `rest` state is read (no interaction reveals or hides a chip's background), so no
 // `states` field is declared; the runner's default `['rest']` already covers this rule.
 import {
   ensurePageHelpers,
@@ -87,19 +87,19 @@ import {
 /**
  * Below this contrast ratio, a chip's composited fill and the ground behind it are close enough
  * to read as the same color. RATIFIED: the original spec named no
- * number here, so the value is borrowed from `interactive-contrast`'s own probe-derived floor,
+ * number here, so the value is borrowed from `interactive-contrast`'s probe-derived floor,
  * a borrow confirmed on review rather than left as an open question. The shared
  * rationale, now on the record so neither rule re-litigates it: both rules test "not accidentally
  * camouflaged," and neither is a contrast standard. Legibility is WCAG 1.4.3 Contrast (Minimum),
  * AA, at 4.5:1 for normal text and 3:1 for large, and NO rule in this engine measures it. Do not
  * redirect a reader to `border-contrast` for it, which an earlier draft of this paragraph did: that
  * rule measures a border stroke against the surfaces it separates and never measures text at all.
- * This 1.5 sits well under every one of those numbers and never tries to clear one. The admin's own
+ * This 1.5 sits well under every one of those numbers and never tries to clear one. The admin's
  * measured chip collisions run 1.01 to 1.12, far below all of them, so the floor is not a close call
  * in practice.
  *
  * WHAT THIS RULE STILL DOES NOT PROVE about a chip, worth naming because the number invites the
- * assumption: not its label's contrast against its own fill (1.4.3), and not its status cue, which
+ * assumption: not its label's contrast against its fill (1.4.3), and not its status cue, which
  * engages 1.4.1 Use of Color (Level A) where hue alone carries the state and 1.4.11 Graphical
  * Objects at 3:1 where the fill is what identifies it. None of the three is checked anywhere here.
  *
@@ -107,7 +107,7 @@ import {
  * always-opaque canvas default this file's header describes (closed by making
  * `GroundOptions.canvas` required in `color.ts`) manufactured a measured ratio of 1.514 against
  * this exact 1.5 line, one hundredth over it, and that one hundredth silently took two real
- * collisions (chips measuring 1.11 and 1.12 against their own ground, both invisible to a sighted
+ * collisions (chips measuring 1.11 and 1.12 against their ground, both invisible to a sighted
  * user) out of the report while every other gate stayed green. `rulings.chip-ground-collision.test.ts`
  * pins this line against real Chromium from both sides: an opaque pair one sRGB channel step either
  * side of 1.5 pins the NUMBER, and a translucent chip over a ground the page canvas differs from
@@ -126,12 +126,12 @@ const RATIO_FLOOR = 1.5;
  * false negative this floor does not correct for.
  *
  * Anchored by measured pairs at both ends, not the middle: two grays (any luminance) and two
- * shades of one hue both measure exactly 0, which is every fixture `RATIO_FLOOR`'s own pinned
- * tests exercise. Cairn's own dark-theme neutral tokens (`cairn-admin.css`'s dark palette, real
+ * shades of one hue both measure exactly 0, which is every fixture `RATIO_FLOOR`'s pinned
+ * tests exercise. Cairn's dark-theme neutral tokens (`cairn-admin.css`'s dark palette, real
  * Chromium measurements) sit close beside that zero: `base-200` on `base-100` measures 0.89,
  * `base-300` on `base-100` measures 1.77, `base-300` on `base-200` measures 2.66, all genuinely
  * near-neutral pairs with no hue for this term to see. A genuinely hue-distinct pair (a lavender
- * chip on a warm-neutral ground, cairn's own `--color-warning` tint against a near-neutral zebra
+ * chip on a warm-neutral ground, cairn's `--color-warning` tint against a near-neutral zebra
  * row) measures 24 to 28. `10` sits inside that gap, but the gap itself, roughly 3 to 24, is
  * unsampled: no measured pair from a real theme falls there, so this floor is a provisional pick
  * inside a wide margin rather than a value pinned by evidence on both sides of it. Reopens on a
@@ -140,16 +140,16 @@ const RATIO_FLOOR = 1.5;
  */
 const CHROMA_DISTINCT_FLOOR = 10;
 
-/** Below this alpha, a chip's own background-color is treated as no fill at all. */
+/** Below this alpha, a chip's background-color is treated as no fill at all. */
 const NO_FILL_ALPHA = 0.02;
 
 /** One chip's raw paint data, read in-browser and left unparsed. */
 interface ChipGroundCandidate {
   selector: string;
-  /** The chip's own paint layer, first, then every ancestor's up to the document root. */
+  /** The chip's paint layer, first, then every ancestor's up to the document root. */
   layers: PaintLayer[];
   /**
-   * How an element outside the chip's own ancestor chain paints behind it, when one does; `null`
+   * How an element outside the chip's ancestor chain paints behind it, when one does; `null`
    * when the ancestor chain really is what the chip sits on.
    */
   overlaps: string | null;
@@ -167,7 +167,7 @@ interface ChipGroundReading {
  * helper is nested and no constant is referenced from module scope.
  *
  * A chip is daisyUI's `.badge`, or any element that RENDERS as one: filled, no taller than a chip,
- * carrying text, and rounded at the theme's own resolved `--radius-selector` on all four corners.
+ * carrying text, and rounded at the theme's resolved `--radius-selector` on all four corners.
  * The admin theme moved every shipped chip, tag, and count off the pill geometry
  * (`rounded-full`) onto `rounded-selector`, so this rule resolves the token itself rather than
  * keying on a literal pixel value or the old pill-shape test (every corner at least half the box
@@ -188,7 +188,7 @@ function readChipGrounds(): ChipGroundReading {
   }
 
   /**
-   * The theme's own `--radius-selector`, resolved (never assumed) by painting it on a throwaway
+   * The theme's `--radius-selector`, resolved (never assumed) by painting it on a throwaway
    * probe mounted as `el`'s child, the same technique `_idiom-probe.ts`'s `resolveColor` uses for a
    * color expression. Mounting under `el` itself, rather than under a fixed root, means a nested
    * theme override (or a page with no `--radius-selector` declared at all, which resolves to the
@@ -211,7 +211,7 @@ function readChipGrounds(): ChipGroundReading {
     const radiusSelector = resolveRadiusSelectorPx(el);
     // A page with no `--radius-selector` declared resolves the probe to the `border-radius`
     // initial value, 0, which every plain unstyled ancestor (an unstyled table row or a bare div
-    // wrapping a filled descendant) ALSO measures as its own corner radius. Matching a real
+    // wrapping a filled descendant) ALSO measures as its corner radius. Matching a real
     // element's corners against a token that was never actually declared is not what "at the
     // resolved token" means, so a resolved value of 0 or less never reads as a chip's shape.
     if (Number.isNaN(radiusSelector) || radiusSelector <= 0) return false;
@@ -228,7 +228,7 @@ function readChipGrounds(): ChipGroundReading {
   }
 
   /**
-   * A button, input, select, textarea, or link answers to its own interaction affordance, never a
+   * A button, input, select, textarea, or link answers to its interaction affordance, never a
    * status pill, whatever its resolved corner radius happens to be. daisyUI also builds controls on
    * other tags (`label.input`, `span.btn`), so an element carrying a daisyUI control class or an
    * explicit button role counts too.
@@ -258,12 +258,12 @@ function readChipGrounds(): ChipGroundReading {
   }
 
   // What paints behind a chip is its ancestor chain ONLY while nothing else is layered under it.
-  // The admin's own media grid breaks that: `CairnMediaLibrary` renders the usage chip as an
+  // The admin's media grid breaks that: `CairnMediaLibrary` renders the usage chip as an
   // absolutely positioned SIBLING of the thumbnail `<img>`, so the pixels behind it belong to the
   // image and no ancestor carries them. The rule composited the card fill instead and reported a
   // constant 1.06 collision on a chip that measures 12.98 against the thumbnail, at error tier, on
   // every media row whatever the image contains. An element painting content this arithmetic cannot
-  // read (a replaced element, or a background-image) that overlaps the chip's own box and is not in
+  // read (a replaced element, or a background-image) that overlaps the chip's box and is not in
   // its ancestor chain is named here, and the rule reports the measurement as impossible rather
   // than answering it with a ground that is not there.
   // Collected once for the whole page rather than per chip: the second half needs a computed style
@@ -285,9 +285,9 @@ function readChipGrounds(): ChipGroundReading {
   // whose box happens to intersect a button's or an icon's downgrades to an advisory "could not
   // measure": a count badge positioned over a `.btn`, or a `join` group sharing a row band with one.
   // Narrowing this (requiring the painter to sit earlier in paint order, or restricting the
-  // background-image half to elements whose own background-color is fully transparent) is a real
+  // background-image half to elements whose background-color is fully transparent) is a real
   // repair and is filed in ROADMAP; it is not taken here because loosening a gating rule's downgrade
-  // path deserves its own adversarial pass rather than a gate-stage edit.
+  // path deserves its adversarial pass rather than a gate-stage edit.
   function overlappingPainter(el: Element): string | null {
     const rect = el.getBoundingClientRect();
     for (const painter of painters) {
@@ -319,19 +319,19 @@ function readChipGrounds(): ChipGroundReading {
 }
 
 /**
- * A chip's own painted background must not be camouflaged against whatever it sits on. At 1.5:1 two
+ * A chip's painted background must not be camouflaged against whatever it sits on. At 1.5:1 two
  * surfaces are not distinct, only not identical, so "not camouflaged" is the verb throughout and
  * "distinct" is the overstatement it replaced. A false negative ships a chip that reads as blank
  * against its row (the StatusChip evidence line, `badge-ghost` melting into a zebra stripe), and a
  * false positive would flag the correct `badge-outline` pattern (see the file header), so a chip
- * with no fill of its own is skipped rather than compared.
+ * with no fill is skipped rather than compared.
  *
  * DEMOTED TO ADVISORY: the formula had no chroma term
  * and could not see hue, so a hue-distinct chip a sighted user reads as plainly bounded still
  * flagged. As coded then it could not serve as a consumer gate. This was a tier change only at the
  * time; the formula itself was untouched, on the discipline that a gating rule's repair
- * earns its own dedicated fix rather than a gate-stage patch. Sequencing also argued for demoting first:
- * the rule's own domain moved with the chip recipe StatusChip ships, and repairing the
+ * earns a dedicated fix rather than a gate-stage patch. Sequencing also argued for demoting first:
+ * the rule's domain moved with the chip recipe StatusChip ships, and repairing the
  * formula before that recipe settled would have fit it twice.
  *
  * CHROMA-AWARE REPAIR LANDED, HUE HALF ONLY: the check below now
@@ -342,7 +342,7 @@ function readChipGrounds(): ChipGroundReading {
  * no hue for this term to rescue and stays open: it needs the filed floor-recalibration half of the
  * repair, which needs measured pixel data from a real consumer admin audit run (see ROADMAP.md), not
  * something derivable here. **Stays advisory regardless**: promotion to
- * error is a separate, later act on its own re-measured evidence, not a consequence of either half
+ * error is a separate, later act on its re-measured evidence, not a consequence of either half
  * of this repair landing.
  */
 export const chipGroundCollision: RenderedRule = {
@@ -379,7 +379,7 @@ export const chipGroundCollision: RenderedRule = {
       const colors = resolved.slice(cursor, cursor + candidate.layers.length);
       cursor += candidate.layers.length;
 
-      // The ground comes first because the chip's own fill resolves ONTO it. Resolving that fill
+      // The ground comes first because the chip's fill resolves ONTO it. Resolving that fill
       // against the page canvas instead handed back the chip lightened by an assumed white, which
       // is only harmless when the ground is itself near-white: in dark theme it lifted a 1.11
       // collision to a passing 1.51 and reported the chip clean.
@@ -387,14 +387,14 @@ export const chipGroundCollision: RenderedRule = {
         canvas,
         firstLayerIs: 'ancestor',
       });
-      // The chip's own painted color is its WHOLE chain resolved onto the canvas, chip layer
+      // The chip's painted color is its WHOLE chain resolved onto the canvas, chip layer
       // included, not its fill sliced out and resolved against the ground. The slice was the first
-      // fix for an assumed-white canvas and it carried its own error: an ancestor's `opacity` is a
+      // fix for an assumed-white canvas and it carried its error: an ancestor's `opacity` is a
       // group operation, so slicing dropped it from the chip while leaving it in the ground, and a
       // chip under a 25%-opacity wrapper measured 4.4 where the painted pixels measure 1.18.
       const own = resolveGround(candidate.layers, colors, { canvas });
-      // The chip's own layer is reported first when both are unmeasurable, so a gradient the chip
-      // paints on itself is named as its own rather than as an ancestor's.
+      // The chip's layer is reported first when both are unmeasurable, so a gradient the chip
+      // paints on itself is named as the chip's rather than as an ancestor's.
       if (own.kind === 'indeterminate') {
         findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, own.reason));
         continue;
@@ -403,7 +403,7 @@ export const chipGroundCollision: RenderedRule = {
         findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, ground.reason));
         continue;
       }
-      // A chip with no fill of its own shows the ground straight through, which is what
+      // A chip with no fill of its shows the ground straight through, which is what
       // `badge-outline` is for. `own.color` is the ground itself in that case, so the unresolved
       // alpha, not the returned color, is what answers "was there a fill at all".
       if ((colors[0]?.a ?? 0) * cumulativeOpacity(candidate.layers) < NO_FILL_ALPHA) continue;

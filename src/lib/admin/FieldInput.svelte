@@ -51,7 +51,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
      *  exact instance this component granted, so the host deletes its map entry only when it
      *  still holds that same instance (two rows swapping index-derived names on the same render
      *  must never let one row's teardown drop the other row's live ref). The host owns the ref
-     *  map; this component only ever reports its own ref through the callback, never mutates a
+     *  map; this component only ever reports its ref through the callback, never mutates a
      *  shared map by reference. */
     registerHeroField: (name: string, ref: MediaHeroField | null, owned?: MediaHeroField | null) => void;
     /** Called with the server-owned record on a successful upload, so the host merges it. */
@@ -98,7 +98,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 
   // The image arm's hero-field ref, LOCAL to this component (never a mutated prop): an effect
   // reports it out through registerHeroField on mount and change, then reports null on teardown,
-  // so the host's ref map is written only by its own owner (the fix for the ownership_invalid_
+  // so the host's ref map is written only by its owner (the fix for the ownership_invalid_
   // mutation warning a shared bind:this target used to log). Scoped to the image arm: every
   // other arm never mounts MediaHeroField, so heroRef stays null and the effect is a no-op.
   // $state.raw: the whole component instance is replaced wholesale on each bind:this update,
@@ -111,7 +111,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     // can change `name` for a surviving row, or hand a NEW row the OLD row's key, before this
     // effect's teardown runs. Reading `name` or `heroRef` fresh at teardown would deregister the
     // wrong key or report the wrong instance; the closure must deregister the same key with the
-    // same instance it registered, so the host can tell its own teardown apart from a newer
+    // same instance it registered, so the host can tell its teardown apart from a newer
     // row's already-live registration under the same key.
     const key = name;
     const owned = heroRef;
@@ -129,7 +129,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 
   // Native `required` on every checkbox in a closed multiselect would lie ("check every box").
   // This sets a custom validity message on the group's first checkbox by hand instead, so the
-  // browser's own invalid report (and EditPage's capture-phase reveal) fires exactly like every
+  // browser's invalid report (and EditPage's capture-phase reveal) fires exactly like every
   // other required arm. It runs on every group change, not just a check, so unchecking the only
   // checked box re-arms the message instead of leaving a valid group that has none checked.
   function updateMultiselectValidity(): void {
@@ -177,7 +177,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
    *  chain's final `{:else}` stays a runtime fallback (an icon field with no `icons` prop reaches
    *  it too, since that branch's extra `&& icons` guard narrows no type away), so the compiler
    *  cannot prove the chain exhaustive from the template alone; this function lists every
-   *  `FieldDescriptor` arm as its own case so a sixteenth arm fails `npm run check` here, before it
+   *  `FieldDescriptor` arm as its case so a sixteenth arm fails `npm run check` here, before it
    *  silently renders through the generic fallback. Never called: the compile-time check is its
    *  only purpose. Deliberately unused; keep it despite looking like dead code.
    */

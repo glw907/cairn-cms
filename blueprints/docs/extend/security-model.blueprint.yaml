@@ -59,7 +59,7 @@ framing:
       from `architecture.md` ("security properties of each piece"), the extend README's "Auth and
       access" group, or a search for cairn security. Wants: who can change the site, what attacker
       cairn assumes, what it leaves to the site. Knows SvelteKit and probably Workers. Lacks: why cairn
-      runs its own sign-in at all, where cairn's identity lives (D1), how edits reach GitHub (the App,
+      runs its sign-in at all, where cairn's identity lives (D1), how edits reach GitHub (the App,
       not the editor's credential).
     - **Curious setter-up.** Met one design choice while building a site (add-cairn links here for "the
       GitHub App's repository-wide write and the CSRF design"). Wants the reasoning behind that one
@@ -109,7 +109,7 @@ orderReason: |
   gap the previous one leaves, then what a signed-in editor reaches, from the narrowest control
   outward. The two seams follow the whole built-in design, because each is read against it.
   [[the-site-s-responsibilities]] gathers what each section leaves to the site, and
-  [[related-resources]] ends the page. Each component section with a residual ends in its own
+  [[related-resources]] ends the page. Each component section with a residual ends in its
   Limits subsection.
 exemplars:
   - source: evaluators/cloudflare-workers-security-model/
@@ -119,7 +119,7 @@ exemplars:
   - source: evaluators/syncthing-security/
     slice: Evaluators
     manifestType: 'Concept page: security model'
-    take: Take one subsection per exposed component, the "In short" verdict, and the closing list of the operator's own responsibilities; leave the TLS protocol detail.
+    take: Take one subsection per exposed component, the "In short" verdict, and the closing list of the operator's responsibilities; leave the TLS protocol detail.
 sections:
   - id: scope-and-threat-position
     heading: Scope and threat position
@@ -333,7 +333,7 @@ sections:
         kind: fact
         fact: f:an087n
         use: |
-          Only the three sources of unbound rows, and that the engine's own request action always
+          Only the three sources of unbound rows, and that the engine's request action always
           writes a hash.
       - id: bb-first-link
         kind: sentence
@@ -432,7 +432,7 @@ sections:
         kind: fact
         fact: f:8u4iiv
         use: |
-          Only the guard's half: the guard applies no `Origin` check of its own on any route, and
+          Only the guard's half: the guard applies no `Origin` check on any route, and
           its CSRF protection is the double-submit token on unsafe `/admin` form posts. The auth
           channel's reasons belong to [[the-auth-channels-threat-surface]].
       - id: cs-sveltekit
@@ -467,7 +467,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          The admin sets `strict-origin` so that its own form posts keep the real `Origin` that
+          The admin sets `strict-origin` so that its form posts keep the real `Origin` that
           SvelteKit's check needs, while a cross-origin request carries no path.
         facts:
           - f:x2stjk
@@ -509,7 +509,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          SvelteKit's check refuses such a post on the site's own forms, and every auth channel
+          SvelteKit's check refuses such a post on the site's forms, and every auth channel
           action refuses it through its own `Origin` compare.
         facts:
           - f:3cekcy
@@ -845,7 +845,7 @@ sections:
         kind: fact
         fact: f:xothz1
         use: |
-          Only where the site's two plugin lists run: `remarkPlugins` after cairn's own remark
+          Only where the site's two plugin lists run: `remarkPlugins` after cairn's remark
           steps and before the remark-to-rehype conversion, so before the sanitize floor, and
           `rehypePlugins` last of all, after the table-scroll wrap. Omit the floor's and the
           anchor-rel step's placement, which `rs-floor` and `rs-anchor` carry.
@@ -927,7 +927,7 @@ sections:
       - id: rs-handoff
         kind: handoff
         text: |
-          An editor's edits reach the repository through the engine's own credential; turn to
+          An editor's edits reach the repository through the engine's credential; turn to
           [[the-github-apps-reach]], which sets out what that credential can write.
   - id: the-github-apps-reach
     heading: The GitHub App's reach
@@ -974,7 +974,7 @@ sections:
       - id: ga-handoff
         kind: handoff
         text: |
-          Every defense so far assumes cairn's own sign-in; a site that replaces it with an
+          Every defense so far assumes cairn's sign-in; a site that replaces it with an
           identity gate or adds an auth channel moves some of them. Link
           [[identity-modes-threat-surface]] and [[the-auth-channels-threat-surface]].
   - id: identity-modes-threat-surface
@@ -983,7 +983,7 @@ sections:
     why: |
       Each seam is read against the whole built-in design, so the seams follow it. The identity
       gate comes first because it replaces the sign-in defenses the early sections state and
-      changes the editors' own path.
+      changes the editors' path.
     opens: |
       A site that replaces magic-link sign-in with an identity gate leaves every sign-in defense
       to the gate, and cairn's part in sign-in reduces to the roster lookup.
@@ -1063,7 +1063,7 @@ sections:
     anchor: the-auth-channels-threat-surface
     why: |
       The auth channel adds a separate sign-in group that shares none of the built-in sign-in
-      defenses, so it is read last, after the seam that changes the editors' own path.
+      defenses, so it is read last, after the seam that changes the editors' path.
     opens: |
       An auth channel's sign-in form takes a contact from an unauthenticated caller, so the channel
       rests on one rule: no control keyed on the victim's identity may deny, delay, or destroy
@@ -1414,7 +1414,7 @@ dispositions:
     disposition: subordinated
     reference: ../reference/sveltekit.md#no_pending_request_error
     reason: |
-      The exported error-code constant is a reference detail for a site rendering its own login
+      The exported error-code constant is a reference detail for a site rendering its login
       page; the reference entry states it, and the binding section links it.
   - fact: f:9pmipf
     disposition: subordinated
@@ -1457,7 +1457,7 @@ dispositions:
   - fact: f:eiaqkh
     disposition: cut
     reason: |
-      The example site's hooks wiring. The same selection on a scaffolded site, the reader's own
+      The example site's hooks wiring. The same selection on a scaffolded site, the reader's
       case, is placed through `f:f21bcz`, and no published page owns the example site's hooks.
   - fact: f:gun084
     disposition: subordinated
@@ -1560,12 +1560,11 @@ constraints:
     fact.
   - |
     The heading of [[the-dev-backend-flags-two-refusals]] keeps "two refusals" for its slug; the body states the two
-    engine refusals first and the dev package's own third refusal as a separate sentence, so the
+    engine refusals first and the dev package's third refusal as a separate sentence, so the
     heading stays true.
   - |
     The first body mention of an auth channel, in [[scope-and-threat-position]] (`sc-seams`),
-    defines it in one clause (the seam a site adds to sign in a second sign-in group on its own
-    routes); later mentions use the term without redefining it. The first mention of the setup command names
+    defines it in one clause (the seam a site adds to sign in a second sign-in group on its routes); later mentions use the term without redefining it. The first mention of the setup command names
     `create-cairn-site` once, then "the setup command".
   - |
     Vendor specifics get a link, never a copy: SvelteKit's CSRF and CSP options, the Fetch

@@ -3,7 +3,7 @@
 This subpath is type-only: `ComponentContext`, the structured input a component's `build(ctx)`
 receives. The render pipeline itself stays behind `createRenderer` on the package root, the one
 public, safe-by-default render path; see [Core](./core.md). A component's `build(ctx)` constructs
-its own hast directly with hastscript's `h()`; the engine ships no hast-building helper toolkit of
+its hast directly with hastscript's `h()`; the engine ships no hast-building helper toolkit of
 its own.
 
 ```ts
@@ -24,7 +24,7 @@ Stability tier: Extension API.
 
 `createRenderer`'s `sanitizeSchema` callback receives a fresh copy of cairn's default schema, so a
 change to that copy never reaches another renderer. After the callback returns, cairn removes
-`script` from `tagNames` and merges the default `strip` list into the callback's own `strip`
+`script` from `tagNames` and merges the default `strip` list into the callback's `strip`
 entries. The floor a callback can't lower is exactly that: no `<script>` element survives, and
 neither does the body text of any element on the default `strip` list, which holds `script`.
 Attributes and URL protocols are the callback's
@@ -37,18 +37,18 @@ admits every element. To turn the floor off, set `unsafeDisableSanitize` instead
 
 Stability tier: Extension API.
 
-This is the fixed set of class names the render pipeline and a site's own component grammar build
+This is the fixed set of class names the render pipeline and a site's component grammar build
 toward, so a site's prose CSS can target them consistently. The engine writes some of them itself,
-and a site's own chassis code stamps the others. Each entry says who styles the class. "The sheet"
-means [`cairn-public.css`](./public-css.md), which a site imports. "A theme" means the site's own
+and a site's chassis code stamps the others. Each entry says who styles the class. "The sheet"
+means [`cairn-public.css`](./public-css.md), which a site imports. "A theme" means the site's
 reading-surface CSS, which must cover the class or leave it unstyled on purpose. A theme that
 replaces the chassis `prose.css` reads this list to learn what its sheet must cover.
 
 - `cairn-head` is the icon-plus-heading row of a card or an alert; a site typically builds it in
-  its own chassis code (see, for example, `examples/showcase/src/chassis/render.ts`'s `headRow`).
+  its chassis code (see, for example, `examples/showcase/src/chassis/render.ts`'s `headRow`).
   A theme styles it.
 - `cairn-icon` and its `cairn-icon-secondary` modifier wrap a built glyph; the modifier lands when
-  a site's own icon-rendering code passes a secondary role. A theme styles both.
+  a site's icon-rendering code passes a secondary role. A theme styles both.
 - `cairn-glyph` (`renderGlyph`) is the inline SVG glyph itself. A theme styles it.
 - `cairn-grid` (`markFirstList`) marks the first `<ul>` inside a component's stamped children.
   `markFirstList` has no public export, but the class it stamps is still a real, emitted name. A
@@ -69,13 +69,12 @@ replaces the chassis `prose.css` reads this list to learn what its sheet must co
   scrolls instead of squeezing its columns. The sheet styles its structural pair, `display: block`
   and `overflow-x: auto`. A theme adds any design, such as scroll-edge shading or a focus ring.
 
-A site's own component code stamps its own additional classes on top of these. The alert
-directive in the example adapter stamps its own inner classes (`cairn-alert-body`,
+A site's component code stamps its additional classes on top of these. The alert
+directive in the example adapter stamps its inner classes (`cairn-alert-body`,
 `cairn-head-title`) as one instance. They are chassis-owned, not engine-emitted, so they are
 documented in `examples/showcase/src/chassis/README.md` rather than here.
 
-**Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its
-own `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in
+**Registration.** `cairn-*` is a shared namespace. The admin sheet also owns roughly sixty of its `cairn-*` classes (`cairn-type-*`, `cairn-chip-*`, and similar), documented in
 [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md). This page is the emitted-markup
 side's registry; a new name on either side should check the other's list before landing, so the
 two vocabularies never collide. `cairn-icon-label`, an admin toolkit label class, is an

@@ -1,5 +1,5 @@
 // cairn-cms islands (@glw907/cairn-cms/islands): the type contract shared by the adapter and the client
-// runtime. Kept in its own runtime-free module so the adapter types can import it without pulling
+// runtime. Kept in its runtime-free module so the adapter types can import it without pulling
 // Svelte's mount() into the server graph.
 import type { Component } from 'svelte';
 

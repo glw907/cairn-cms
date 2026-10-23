@@ -14,7 +14,7 @@ import type { ThemeToggleConfig } from '#chassis/theme-toggle.js';
 /** The two explicit theme choices; `theme.css` defines both as named daisyUI themes. */
 export type Theme = 'cairn' | 'cairn-dark';
 
-/** This theme's own names and cookie, fed to the chassis toggle mechanism. */
+/** This theme's names and cookie, fed to the chassis toggle mechanism. */
 export const themeConfig: ThemeToggleConfig<Theme> = {
   light: 'cairn',
   dark: 'cairn-dark',

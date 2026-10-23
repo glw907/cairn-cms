@@ -1,7 +1,7 @@
 // cairn-cms: the render pipeline's sanitize-schema builder and its three rehype hardening steps
 // (anchor rel, the interactive-sink guard, task-list a11y). `buildSanitizeSchema` is the pipeline's
 // last line of defense against unsafe HTML from any source (an author's raw markdown, a plugin, a
-// site's own `extend`), so every allowance it grants is deliberate and named below.
+// site's `extend`), so every allowance it grants is deliberate and named below.
 import { defaultSchema, type Schema } from 'hast-util-sanitize';
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
@@ -24,7 +24,7 @@ const CORE_STRIP: readonly string[] = Object.freeze([...(defaultSchema.strip ?? 
  * dataAttr<Key> markers derived from the registry) survive so the dispatch reads its stamps after
  * the floor. The benign author tags real content uses (nav, details, summary) and class/target/rel
  * on anchors are admitted. figure/figcaption join the base so the engine's placed figure survives
- * the floor on every site, including one that supplies its own `sanitizeSchema` extension.
+ * the floor on every site, including one that supplies its `sanitizeSchema` extension.
  *
  * A site extends the result through `extend`, which receives a fresh deep copy of this safe base, so
  * no mutation it makes reaches the module default or a later build. After it returns, the engine
@@ -51,7 +51,7 @@ export function buildSanitizeSchema(
   );
   // defaultSchema's `img` entry carries only aria attrs, longDesc, and src (its `*` wildcard already
   // admits alt/title/width/height). srcSet and sizes are the render step's new responsive-delivery
-  // attributes and are not in the wildcard, so img needs its own explicit admission.
+  // attributes and are not in the wildcard, so img needs its explicit admission.
   const imgAttrs = [...(attributes.img ?? []), 'srcSet', 'sizes'];
   // Admit the inert `cairn:` href scheme on top of the default protocol allowlist. The render
   // resolver rewrites a `cairn:` link to a live permalink before delivery; an unresolved one
@@ -196,8 +196,8 @@ function isSafeSrcset(value: unknown): boolean {
   });
 }
 
-// Decide whether one URL-bearing property value is safe to keep. srcset has its own
-// multi-candidate grammar. A non-string value carries no scheme to abuse, so the floor's own
+// Decide whether one URL-bearing property value is safe to keep. srcset has its
+// multi-candidate grammar. A non-string value carries no scheme to abuse, so the floor's
 // handling stands and the guard leaves it alone.
 function isSafeUrlProp(key: string, value: unknown): boolean {
   if (key === 'srcSet') return isSafeSrcset(value);

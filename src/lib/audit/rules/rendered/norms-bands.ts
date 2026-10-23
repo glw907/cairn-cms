@@ -1,4 +1,4 @@
-// cairn-audit's norms-bands rule: a component's own measurements read against the bands the
+// cairn-audit's norms-bands rule: a component's measurements read against the bands the
 // norms manifest observed across the admin. It is the consumer side of the manifest (`norms.ts`
 // derives and ships it, `cairn-audit norms` prints it for a builder to read before it composes) and
 // it stays advisory BY PRINCIPLE, not by an unfinished promotion: a legitimately novel component may
@@ -11,12 +11,12 @@
 //
 //  - An entry flagged `open-question` is treated as UNBANDED. Checking a live measurement against a
 //    band that rests on an unsettled design question would launder that question as decided, which
-//    is exactly what the manifest's own provenance rules exist to prevent.
+//    is exactly what the manifest's provenance rules exist to prevent.
 //  - An entry flagged `ratified-drift` is treated as UNBANDED for the same reason, and this one was
 //    demonstrated rather than reasoned: the flag means "a ratified decision governs this pair and
 //    the render no longer agrees with it", so the band holds the DRIFTED observation. Honoring it
 //    blessed the drift and reported the ratified value as the deviation. An adversarial pass drove
-//    exactly that against a drifted `card/border-radius`: the 40px drift passed and cairn's own
+//    exactly that against a drifted `card/border-radius`: the 40px drift passed and cairn's
 //    ratified 16px card was the thing flagged, with the message calling the drifted band "observed
 //    across 14 sites".
 //  - A band flagged `single-observation` rests on one element site, not a distribution, and the
@@ -44,15 +44,15 @@
 // Geometry moves with the viewport, and the manifest was generated at a pinned 1440x900
 // (generate-norms-manifest.mjs), so this rule resizes to the same viewport before measuring and
 // restores the caller's original afterward, the same borrow-and-return idiom `touch-targets` and
-// `viewport-overflow` use for their own pinned widths. A page whose viewport is the context's
-// rather than its own has no original to restore, so the resize is skipped entirely and the run
+// `viewport-overflow` use for their pinned widths. A page whose viewport is the context's
+// rather than the page's has no original to restore, so the resize is skipped entirely and the run
 // says so: borrowing a viewport this rule could never give back left every rule registered after it
 // measuring at a width this one chose.
 import { loadNormsManifest, NORM_PRECISION, type NormBand, type NormEntry, type NormsManifest } from '../../norms.js';
 import { ensurePageHelpers } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
 
-/** The viewport the manifest was measured at; mirrors the generator's own pinned size. */
+/** The viewport the manifest was measured at; mirrors the generator's pinned size. */
 const VIEWPORT = { width: 1440, height: 900 };
 
 /**
@@ -63,7 +63,7 @@ const VIEWPORT = { width: 1440, height: 900 };
 const UNBANDED_FLAGS = ['open-question', 'ratified-drift'] as const;
 
 /**
- * The manifest properties this rule checks, spec 6.3's four categories in the manifest's own
+ * The manifest properties this rule checks, spec 6.3's four categories in the manifest's
  * property names. Deliberately narrower than every non-color property the manifest carries; see
  * this file's header for what is excluded and why.
  */
@@ -80,7 +80,7 @@ const CHECKED_PROPERTIES = new Set([
 
 /**
  * The manifest families this rule reads. `control` carries the height and padding-to-type
- * relationship, `container` carries the border and radius vocabulary, per `norms.ts`'s own
+ * relationship, `container` carries the border and radius vocabulary, per `norms.ts`'s
  * `NormFamily` doc. `text` and `icon` are excluded: a `text` role has no property in
  * {@link CHECKED_PROPERTIES} at all, and `icon` has `height`, which would read as a control height
  * under a bare property-name filter without this.
@@ -117,12 +117,12 @@ export interface NormsBandCandidate {
  * band it is checked against came from the same recipe. Two deliberate departures from that
  * parity, both demonstrated rather than assumed:
  *
- *  - Candidacy is the generator's own predicate, a nonzero box and nothing more, NOT the shared
+ *  - Candidacy is the generator's predicate, a nonzero box and nothing more, NOT the shared
  *    `isVisible`. The rule shipped with the stricter reading and therefore audited a strict subset
- *    of the population its own bands were derived from: the admin's picker dialogs render their
+ *    of the population its bands were derived from: the admin's picker dialogs render their
  *    contents at `visibility: hidden` with a full box, so the generator measured them and the rule
  *    could not. On `/admin/posts` and `/admin/pages` that left ZERO auditable `button-primary` and
- *    `input-text` elements, and the `button-primary/height` band's own 30.5px minimum came from an
+ *    `input-text` elements, and the `button-primary/height` band's 30.5px minimum came from an
  *    element the rule refused to look at. A rule and its reference must see the same population.
  *  - Border treatments are read on all four sides, where the generator reads only the top. The band
  *    is still the generator's, and a uniform border is the norm it encodes; reading one side let
@@ -194,8 +194,8 @@ function measureNormsBandCandidates(
 }
 
 // Rounding through a step multiplier reintroduces binary floating-point noise, matching the same
-// fix norms.ts's own private `roundTo` applies; a live measurement has to round exactly the way the
-// band's own edges were rounded, or a value that is genuinely inside the band reads as outside it by
+// fix norms.ts's private `roundTo` applies; a live measurement has to round exactly the way the
+// band's edges were rounded, or a value that is genuinely inside the band reads as outside it by
 // a fraction of a step.
 function roundToStep(value: number, step: number): number {
   return Number((Math.round(value / step) * step).toFixed(4));
@@ -208,7 +208,7 @@ function formatCandidateValue(kind: NormsBandCandidate['kind'], value: number | 
 }
 
 // Only ever called with a length, ratio, or keyword band: `isOutsideBand` guards every call site by
-// first checking `band.kind` against the candidate's own kind, and a candidate's kind is never
+// first checking `band.kind` against the candidate's kind, and a candidate's kind is never
 // `'relationship'` (this rule measures geometry, never a color). The exhaustive branch on
 // `'relationship'` exists for the type checker, not a reachable case.
 function formatBand(band: NormBand): string {
@@ -327,10 +327,10 @@ function manifestOnce(): NormsManifest {
 }
 
 /**
- * A component's own control heights, padding-to-type ratios, radii, and border treatments read
+ * A component's control heights, padding-to-type ratios, radii, and border treatments read
  * against the norms manifest's observed bands. Advisory by principle: unlike the
  * error-tier rules, a finding here never states a defect, only a step worth a second look, so the
- * manifest's own honesty disciplines (open-question, single-observation) carry through to the
+ * manifest's honesty disciplines (open-question, single-observation) carry through to the
  * message rather than being smoothed over into a flat pass/fail.
  *
  * Only the `rest` state is read (a component's geometry is a property of its resting render, and the

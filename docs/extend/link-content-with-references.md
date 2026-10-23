@@ -269,14 +269,14 @@ missing target.
 
 Each manifest entry records its outbound references in `references`, one `{ field, concept, id }`
 edge for each, and `verifyReferences` checks that every edge's target exists. The plugin runs it
-right after `verifyManifest`, and a site that builds with the plugin makes no call of its own. A
+right after `verifyManifest`, and a site that builds with the plugin makes no separate call. A
 dangling reference that reaches the build fails it. The route in
 [Resolve the targets on the entry route](#resolve-the-targets-on-the-entry-route) can therefore drop
 an unresolved id instead of throwing. The
 [Manifest format, parse, and verify](../reference/core.md#manifest-format-parse-and-verify) entry
 documents `verifyReferences`.
 
-Before a change reaches the build, the admin runs checks of its own.
+Before a change reaches the build, the admin checks it too.
 
 ## The admin's reference guards
 
@@ -305,8 +305,8 @@ Deleting a fragment runs the same action with one more check, for includes.
 A reference held in an unpublished draft still counts. It blocks the delete or rename of its target
 even though nothing about the reference is live yet.
 
-A rename refuses, naming the blocking entries, when an open branch other than the entry's own holds
-an inbound reference. Otherwise, it rewrites each referencing entry's stored id by splicing in the
+A rename refuses, naming the blocking entries, when an open branch other than the one the entry is on
+holds an inbound reference. Otherwise, it rewrites each referencing entry's stored id by splicing in the
 new id, and no other byte of the frontmatter changes.
 [Renames](content-model.md#renames) in Content model covers the rest of what a rename refuses and
 rewrites.

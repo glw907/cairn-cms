@@ -1,7 +1,7 @@
 # The `cairn-manifest` CLI
 
 `cairn-manifest` regenerates the committed content manifest. It evaluates the
-[`cairnManifest`](./vite.md) virtual module in write mode through the consumer's own Vite
+[`cairnManifest`](./vite.md) virtual module in write mode through the consumer's Vite
 resolution, so the manifest it writes matches what a build would verify against. The bin is a thin
 shell over two internal functions, `writeManifest` and `writeSiteFacts`, which keep the write logic
 testable apart from the command.
@@ -12,7 +12,7 @@ The package ships the command in its `bin` field, so an install puts it on the p
 
 The command loads your project's Vite config, finds the `cairnManifest()` plugin in it, and reads the
 content globs, the config module, and the manifest path off that plugin. It then evaluates the
-write-mode virtual module through your build's own resolution and writes the serialized manifest to
+write-mode virtual module through your build's resolution and writes the serialized manifest to
 the configured `manifestPath`, which defaults to `/src/content/.cairn/index.json`. Because the bin
 reuses the plugin's options, it regenerates with exactly the inputs the build verifies against.
 

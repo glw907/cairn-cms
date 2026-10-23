@@ -56,7 +56,7 @@ The body then walks the switch in the order the parts depend on each other: the 
 1. In the admin's **Editors** screen, signed in as an owner, compare each editor's email with the primary address your identity provider asserts for that person. :fact[9sbf9g] :fact[g0206o]
 2. For each address that differs, on the same screen, add the editor at the provider's address with the same role. :fact[9sbf9g]
 3. On the same screen, remove the row at the old address. :fact[9sbf9g]
-- The screen has no way to edit an email in place, and it refuses to remove the last owner. An owner whose own address differs adds the new owner row first, then removes the old one. :fact[9sbf9g]
+- The screen has no way to edit an email in place, and it refuses to remove the last owner. An owner whose address differs adds the new owner row first, then removes the old one. :fact[9sbf9g]
 - A row can also be corrected with `wrangler d1 execute` against `AUTH_DB`. :fact[g0206o]
 - The Access application and the roster are two admission lists that never reconcile on their own: the application decides who reaches `/admin` at all, and the roster decides who among them may edit. The email the resolver returns is their only join. :fact[k40l86] :fact[emrebl]
 
@@ -103,7 +103,7 @@ The body then walks the switch in the order the parts depend on each other: the 
 ```
 
 - With `preview_urls` omitted, Wrangler leaves an existing Version URL setting alone. A site that turned those URLs on then still serves `/admin` on a `workers.dev` hostname that Access doesn't cover. :fact[51uyqr]
-- The guard makes no hostname check of its own. It admits a request on such a hostname whenever the resolver accepts its token. :fact[jha9f7]
+- The guard makes no hostname check. It admits a request on such a hostname whenever the resolver accepts its token. :fact[jha9f7]
 - The token check at the Worker is stateless, so a token Access has since revoked keeps verifying there until it expires. :fact[fe0dyh]
 - The Wrangler edit takes effect at the deploy in the wiring section.
 - See [Wire the resolver and deploy the Worker](#wire-the-resolver-and-deploy-the-worker).

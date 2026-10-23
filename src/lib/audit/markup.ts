@@ -8,7 +8,7 @@
 //
 // The node list is flat and in document order because the suppression idiom resolves a
 // directive to the first node beginning on or after the following line, then suppresses matching
-// findings anywhere in that node's range. Cairn's own tree contains a multi-line element whose
+// findings anywhere in that node's range. Cairn's tree contains a multi-line element whose
 // class attribute sits three lines below its directive, so a line-literal reading scores a
 // correctly annotated site as two errors.
 import { parse } from 'svelte/compiler';
@@ -27,7 +27,7 @@ export interface ClassToken {
    * The start offset of the element or component node that owns this token's `class` attribute.
    * A co-occurrence rule (does this element also carry `popover`, does it also carry
    * `rounded-box`) groups tokens by this key rather than by source proximity, which a nested
-   * child's own class attribute would otherwise pollute.
+   * child's class attribute would otherwise pollute.
    */
   elementStart: number;
 }
@@ -65,7 +65,7 @@ export interface StyleValue {
   /** `attribute` for a `style=` declaration, `directive` for a `style:` directive. */
   kind: 'attribute' | 'directive';
   /**
-   * The CSS property this text is the value of: a directive's own name, or the name written before
+   * The CSS property this text is the value of: a directive's name, or the name written before
    * the colon. Absent when the text follows an interpolation, where the property sits earlier in
    * the attribute than the text this piece can see.
    */
@@ -94,11 +94,11 @@ export interface SourceNode {
   startLine: number;
   /** 1-based line of `end`. */
   endLine: number;
-  /** The node's own attributes and `class:` directives, present on an element or component node. */
+  /** The node's attributes and `class:` directives, present on an element or component node. */
   attributes?: ElementAttribute[];
   /**
    * The end offset of the nearest enclosing element or block, absent at the top level. Suppression
-   * resolution reads it so a directive whose own parent holds nothing after it reads as dead rather
+   * resolution reads it so a directive whose parent holds nothing after it reads as dead rather
    * than walking out of that parent and silently attaching to the next element in the file.
    */
   parentEnd?: number;
@@ -112,11 +112,11 @@ export interface ParsedComponent {
   nodes: SourceNode[];
   classTokens: ClassToken[];
   /**
-   * Every class name the component's own scoped `<style>` block defines as a selector.
+   * Every class name the component's scoped `<style>` block defines as a selector.
    * Svelte-scoped to the component, not the admin sheet's job: a markup reference to one of
    * these is never a compiled-sheet miss, the same exclusion `check-admin-css-classes.mjs`
    * already drew by regex over the raw `<style>` text; this substrate reads it off the
-   * `svelte/compiler`'s own structured CSS AST instead.
+   * `svelte/compiler`'s structured CSS AST instead.
    */
   styleClassNames: Set<string>;
   /**
@@ -126,10 +126,10 @@ export interface ParsedComponent {
    */
   styleValues: StyleValue[];
   /**
-   * The component's own scoped `<style>` block: its raw CSS text and the offset its first
+   * The component's scoped `<style>` block: its raw CSS text and the offset its first
    * character sits at in `source`. Absent when the component carries no `<style>` block. The
    * CSS-family static rules (token-colors, grammar-boundary, focus-parity, motion-band,
-   * reduced-motion) parse this text with `sheet.ts`'s own selector/declaration parser and add
+   * reduced-motion) parse this text with `sheet.ts`'s selector/declaration parser and add
    * this offset back onto every position it returns, so a finding's line points at the actual
    * CSS in the component's source rather than at an offset local to the extracted text.
    */
@@ -231,9 +231,9 @@ function tokensInLiteral(node: RawNode): RawToken[] {
   return [];
 }
 
-// The component's own top-level script bindings, the other half of the class-token substrate. A
+// The component's top-level script bindings, the other half of the class-token substrate. A
 // class string is as often named in the script as written in the attribute, in a const or in a
-// helper the attribute calls, and an identifier used to contribute nothing at all: cairn's own tree
+// helper the attribute calls, and an identifier used to contribute nothing at all: cairn's tree
 // carried a class inside one of those helper strings that compiles nowhere, exactly the silent
 // no-op no-uncompiled-class exists to catch, while the whole markup rule family read the file as
 // clean. Resolution is local and syntactic. A binding from a prop, an import, or a function
@@ -312,7 +312,7 @@ function functionValue(fn: RawNode): { expressions: RawNode[]; params: string[] 
   return { expressions, params };
 }
 
-/** A value binding's initializer expressions, with a value rune's own wrapper removed. */
+/** A value binding's initializer expressions, with a value rune's wrapper removed. */
 function valueExpressions(init: RawNode | null | undefined): RawNode[] {
   if (!init || typeof init !== 'object') return [];
   if (init.type === 'CallExpression') {
@@ -417,7 +417,7 @@ function tokensInTemplate(node: RawNode, res: Resolution): RawToken[] {
  * The class tokens an expression in class position yields. Only value positions are read: a
  * conditional's test, a guard's left side, and an object value are conditions, never class names,
  * which is how the substrate stays quiet on `size === 'xs'`. An identifier or a call resolves
- * through the component's own top-level script bindings; one this file does not declare (a prop, an
+ * through the component's top-level script bindings; one this file does not declare (a prop, an
  * import, a parameter) contributes nothing rather than a guess.
  */
 function tokensInExpression(node: RawNode | null | undefined, res: Resolution): RawToken[] {
@@ -484,7 +484,7 @@ function tokensInExpression(node: RawNode | null | undefined, res: Resolution): 
 }
 
 /**
- * The class tokens a spread attribute's own object literal contributes. Only the inline form is
+ * The class tokens a spread attribute's object literal contributes. Only the inline form is
  * resolvable: `{...rest}` from a parent is a value this file does not contain, while
  * `{...{ class: '...' }}` names its classes right here and used to be dropped before the expression
  * was ever examined.
@@ -553,7 +553,7 @@ function isHardcodedTrue(value: unknown): boolean {
   return !!expr && expr.type === 'Literal' && expr.value === true;
 }
 
-/** One node's own attributes and `class:` directives, the substrate a co-occurrence rule reads. */
+/** One node's attributes and `class:` directives, the substrate a co-occurrence rule reads. */
 function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
   if (!Array.isArray(node.attributes)) return [];
   const out: ElementAttribute[] = [];
@@ -708,7 +708,7 @@ function collect(node: RawNode, into: Collector, parentEnd: number | undefined):
       }
     }
   }
-  // A Fragment carries no range of its own, so its children inherit the enclosing element's or
+  // A Fragment carries no range, so its children inherit the enclosing element's or
   // block's end rather than reading as top level.
   const childParentEnd =
     node.type === 'Fragment' || typeof node.end !== 'number' ? parentEnd : node.end;
@@ -722,7 +722,7 @@ function collect(node: RawNode, into: Collector, parentEnd: number | undefined):
   }
 }
 
-/** The class names a component's own scoped `<style>` block defines, read off the CSS AST. */
+/** The class names a component's scoped `<style>` block defines, read off the CSS AST. */
 function collectStyleClassNames(node: unknown, out: Set<string>): void {
   if (!node || typeof node !== 'object') return;
   const raw = node as RawNode;
@@ -737,7 +737,7 @@ function collectStyleClassNames(node: unknown, out: Set<string>): void {
   }
 }
 
-/** The shape of svelte/compiler's own `css` root node this module reads: the raw text span. */
+/** The shape of svelte/compiler's `css` root node this module reads: the raw text span. */
 interface RawStyle {
   content?: { start?: number; end?: number };
 }
@@ -784,7 +784,7 @@ export function parseComponent(
   let root: { fragment?: RawNode; css?: RawStyle; instance?: RawScript; module?: RawScript };
   try {
     // The published AST union describes the same shape this module reads structurally; the cast
-    // hands the walker its own narrow view rather than twenty per-node-type narrowings.
+    // hands the walker its narrow view rather than twenty per-node-type narrowings.
     root = parse(source, { filename: file, modern: true }) as unknown as {
       fragment?: RawNode;
       css?: RawStyle;

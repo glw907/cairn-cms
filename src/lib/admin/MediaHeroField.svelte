@@ -10,7 +10,7 @@ The field renders inside the edit form (the EditPage details loop). A nested <fo
 so the field carries no <form> of its own: the working inputs in the dialog (the alt input, the
 caption input) carry no name and never submit, and the committed value rides four named hidden
 inputs (`<name>.src`, `<name>.alt`, `<name>.caption`, `<name>.decorative`). "Use this image" copies
-the dialog's working state into those hidden inputs; the form's own Save commits them.
+the dialog's working state into those hidden inputs; the form's Save commits them.
 
 The decorative choice persists for the frontmatter hero because the hero value is an object with a
 slot for it. A reload then tells a deliberately decorative hero apart from a left-blank alt, so a
@@ -29,7 +29,7 @@ Escape). Two views live inside it: the chooser (an upload-first button plus the 
 below) and the placement view (a 16:9 crop preview, the describe-or-decorative alt radiogroup, the
 caption input, and Replace/Remove as quiet text controls). The dialog reuses MediaPicker directly and
 replicates MediaCaptureCard's alt radiogroup model rather than mounting MediaCaptureCard (which holds
-its own <form>, illegal nested here, and a Name field a hero has no use for). Alt is debt, never a
+its <form>, illegal nested here, and a Name field a hero has no use for). Alt is debt, never a
 save block; a decorative hero resolves alt to the empty string. The upload path mirrors the insert
 popover's runUpload but resolves to this field, not an editor placeholder.
 -->
@@ -157,7 +157,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   // reads 'needs-alt' by default.
   const heroNeedsAlt = $derived(hasHero && committedStatus === 'needs-alt');
   // Report the signal on mount and on every real change, but read the callback through untrack so a
-  // fresh callback identity (the host recreates the arrow on each of its own renders, which this very
+  // fresh callback identity (the host recreates the arrow on each of its renders, which this very
   // call triggers) does not re-run the effect and loop. The effect depends only on the signal value.
   $effect(() => {
     const signal = heroNeedsAlt;
@@ -210,7 +210,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
    *  placement view seeded from the committed value, switch a non-decorative hero into describe mode
    *  so the alt text input renders, and land focus on it. This is the "Add alt text" action, the
    *  frontmatter counterpart to the body notice's select-range jump (a hero has no body offset, so it
-   *  focuses the field's own alt input rather than a source range). */
+   *  focuses the field's alt input rather than a source range). */
   export async function focusAlt() {
     openDialog('placement');
     if (workAltMode !== 'decorative') {
@@ -395,7 +395,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   }
   /**
    * Clears the drag-over state, unless the leave lands on a target still inside the dropzone
-   * button (one of its own icon or label spans), which would otherwise flicker the paint off as
+   * button (one of its icon or label spans), which would otherwise flicker the paint off as
    * the pointer crosses a child element on its way across the dropzone.
    */
   function onDropzoneDragleave(e: DragEvent) {
@@ -421,7 +421,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           <span class="truncate type-meta font-medium">{committedName}</span>
           {#if committedStatus === 'described'}
             <!-- The muted done-treatment (design arc 2026-07-15, E3/F3): a completed state reads
-                 as quiet confirmation, not a green accent, matching the Media Library's own
+                 as quiet confirmation, not a green accent, matching the Media Library's
                  Described chip. -->
             <span class="inline-flex w-max items-center gap-1 type-label font-medium text-base-content">
               <svg class="h-[0.6875rem] w-[0.6875rem] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>

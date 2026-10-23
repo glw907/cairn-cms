@@ -1,10 +1,10 @@
 # The public stylesheet (`@glw907/cairn-cms/cairn-public.css`)
 
-`cairn-public.css` holds the engine's defaults for the public site: the role keys a theme colors, the rules that style the classes the engine emits, and one source line that compiles the built-in public components. The contract is a floor, never a ceiling. It names what a theme provides so that cairn's own parts render, and it never limits what a theme adds, replaces, or skips. A theme may define tokens of its own, may replace or drop the chassis `prose.css` and `composition.css`, and may restyle anything through the ordinary cascade. The audit's [public scope](./cairn-audit.md#the-public-scope) checks that a value comes from a token and never which token, so it polices literals and leaves vocabulary alone.
+`cairn-public.css` holds the engine's defaults for the public site: the role keys a theme colors, the rules that style the classes the engine emits, and one source line that compiles the built-in public components. The contract is a floor, never a ceiling. It names what a theme provides so that cairn's parts render, and it never limits what a theme adds, replaces, or skips. A theme may define tokens of its own, may replace or drop the chassis `prose.css` and `composition.css`, and may restyle anything through the ordinary cascade. The audit's [public scope](./cairn-audit.md#the-public-scope) checks that a value comes from a token and never which token, so it polices literals and leaves vocabulary alone.
 
 Stability tier: Extension API.
 
-The subpath is a CSS asset with no type declarations, so this page is its complete reference. A site imports the sheet once, after Tailwind and before its own reading-surface sheet.
+The subpath is a CSS asset with no type declarations, so this page is its complete reference. A site imports the sheet once, after Tailwind and before its reading-surface sheet.
 
 ```css
 @import "tailwindcss";
@@ -18,7 +18,7 @@ The contract has three parts, and nothing else belongs to it.
 
 1. **daisyUI's theme variables.** These are `color-scheme`, the twenty color roles, `--radius-selector`, `--radius-field`, `--radius-box`, `--size-selector`, `--size-field`, `--border`, `--depth`, and `--noise`. The audit reads the key list from `daisyui/theme/object`, so it tracks daisyUI upgrades. The engine defaults none of these keys. daisyUI does, when a theme block extends a built-in theme by name.
 2. **The sheet.** The roles, two colors, and rules described on this page.
-3. **The emitted classes.** The engine writes a fixed set of class names into public markup. The [emitted-class registry](./render.md#emitted-classes) lists each one and says whether the sheet styles it or a theme must. A theme that replaces the chassis `prose.css` reads that list to learn what its own sheet has to cover.
+3. **The emitted classes.** The engine writes a fixed set of class names into public markup. The [emitted-class registry](./render.md#emitted-classes) lists each one and says whether the sheet styles it or a theme must. A theme that replaces the chassis `prose.css` reads that list to learn what its sheet has to cover.
 
 Keys follow daisyUI's names for daisyUI's keys. A cairn key sits in `@theme` under a Tailwind namespace when a utility should read it, as `text-muted` reads `--color-muted`. Every other cairn key is a `--cairn-*` role. `--flow-space` is the one unprefixed role, because every site's prose reads it. The sheet defines no alias for any key.
 
@@ -73,7 +73,7 @@ The engine defaults every role above. A theme built on the chassis also defines 
 
 A chassis-based theme defines every custom property that the chassis and its routes read and that neither the engine nor the chassis `tokens.css` defaults. The six above are the complete list for the chassis as shipped. `tokens.css` already gives the design scale (the faces, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, the two measures, and the two heading levers) a generic default, so a theme redeclares those only to change them. A theme that omits one of the six leaves the `var()` unresolved: `theme-conformance` names it, and the panel or the navigation links render without it. A key the chassis reads behind a fallback, such as `--tag-filter-radius`, is an optional override and never a hole.
 
-A theme's own additions take the `--site-*` prefix.
+A theme's additions take the `--site-*` prefix.
 
 ## Rules
 
@@ -84,19 +84,19 @@ The sheet ships rules in `@layer components` only where the styling carries no d
 | `pre.shiki` | Binds the highlighter's block to `--cairn-code-bg`, `--cairn-code-ink`, and `--cairn-code-border`. |
 | `.cairn-tok-keyword`, `.cairn-tok-string`, `.cairn-tok-comment`, `.cairn-tok-function`, `.cairn-tok-number`, `.cairn-tok-punct` | Bind each token class to its `--cairn-code-*` role. |
 | `.table-scroll` | Sets `display: block` and `overflow-x: auto`, the structural pair that lets a wide table scroll. |
-| `.cairn-focus-ring:focus-visible` | Applies the outline and offset roles. It never sets the radius, so a call site's own `border-radius` is untouched. |
+| `.cairn-focus-ring:focus-visible` | Applies the outline and offset roles. It never sets the radius, so a call site's `border-radius` is untouched. |
 
-The sheet also carries one `@source` line over the engine's public component directory, `dist/public/`. A built-in public component's Tailwind utilities therefore compile in the site's own sheet, and the `@theme` keys it reads are emitted.
+The sheet also carries one `@source` line over the engine's public component directory, `dist/public/`. A built-in public component's Tailwind utilities therefore compile in the site's sheet, and the `@theme` keys it reads are emitted.
 
 The chassis `prose.css` keeps the design of `.table-scroll` (flow space, scroll-edge shading, focus) and drops only the structural pair. A utility that sets `outline-*` on a `.cairn-focus-ring` element wins over the class, because utilities sit in a later layer.
 
 ## Layers and nesting
 
-Tailwind declares `theme` as its lowest layer, so a value written anywhere else overrides a role. A value in an unlayered `:root` rule wins, and so does a value in a daisyUI theme block. The `[data-theme]` selector makes a role recompute inside a region that carries its own `data-theme`. A derived ink inside a nested region mixes that region's fill with that region's body ink.
+Tailwind declares `theme` as its lowest layer, so a value written anywhere else overrides a role. A value in an unlayered `:root` rule wins, and so does a value in a daisyUI theme block. The `[data-theme]` selector makes a role recompute inside a region that carries its `data-theme`. A derived ink inside a nested region mixes that region's fill with that region's body ink.
 
 The two `@theme` colors do not recompute there. Tailwind resolves them at `:root`, and a nested region inherits the result. A theme that nests a region sets `--color-muted` and `--color-card-border` in the nested block.
 
-The import order decides ties between the sheet and a theme. The sheet comes before the theme's own blocks, so a later `@theme` declaration in the theme wins over the sheet's two colors.
+The import order decides ties between the sheet and a theme. The sheet comes before the theme's blocks, so a later `@theme` declaration in the theme wins over the sheet's two colors.
 
 ## Placement of a per-scheme value
 
@@ -109,7 +109,7 @@ A hand-tuned per-scheme value, such as an ink override or the CTA set, goes in b
 
 The per-scheme CTA set can sit in either of two places. The simpler choice for a new theme is each daisyUI block. The other is a `:root` block with its dark counterpart, the form Waymark uses. Its light CTA values are unlayered, and a layered dark value in a daisyUI block would lose to them, so the dark values live in unlayered rules too. Write them in both dark `:root` blocks: the `@media (prefers-color-scheme: dark)` block, guarded by `:root:not([data-theme])` so an explicit choice wins, and the explicit `:root[data-theme="<dark name>"]` block. The first applies when the visitor has made no choice and the system is dark, and the second applies after a toggle, so a value in only one leaves the other case on the light values. Both placements are valid.
 
-An unlayered `:root` role in a site's own sheet beats the sheet's layered default. A copy of the earlier chassis `tokens.css` therefore cancels ink derivation without any visible error, which is why the audit's `theme-conformance` rule raises a finding when a chassis file redeclares a default this sheet sets.
+An unlayered `:root` role in a site's sheet beats the sheet's layered default. A copy of the earlier chassis `tokens.css` therefore cancels ink derivation without any visible error, which is why the audit's `theme-conformance` rule raises a finding when a chassis file redeclares a default this sheet sets.
 
 ## Ink derivation
 
@@ -117,9 +117,9 @@ Each status ink defaults to the status fill mixed toward the body ink. Mixing da
 
 `--color-muted` defaults to an opaque mix of the body ink over `base-100`, at 80 percent. An opaque mix has a contrast ratio that belongs to the theme. The earlier default was a translucent mix, which composites over whatever lies beneath it.
 
-The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](https://github.com/glw907/cairn-cms/blob/main/docs/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets its own in its daisyUI block, and in both blocks when both schemes need it.
+The percentages come from a measurement in Chromium's computed colors across daisyUI's 35 stock themes, Waymark, and the fixture theme, on `base-100`, `base-200`, and each status's callout tint. The [derivation record](https://github.com/glw907/cairn-cms/blob/main/docs/research/2026-09-29-theme-pass-c-ink-derivation.md) lists every theme's result at the chosen percentage and at its neighbors. Some stock themes fail AA with a derived ink, and the record names them. A theme that needs a tuned ink sets one in its daisyUI block, and in both blocks when both schemes need it.
 
-Run the public-scope audit before you call a theme finished, since a derived ink can fail AA on a theme's own fills:
+Run the public-scope audit before you call a theme finished, since a derived ink can fail AA on a theme's fills:
 
 ```bash
 npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast

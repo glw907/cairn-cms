@@ -4,20 +4,20 @@
 // tokens motivated this rule; the mechanical floor under the craft chapter's "neutrals always
 // derive from the palette's neutral role" rule falls out of the same two checks, since every way
 // CSS has of writing a raw neutral (`white`, `#fff`, `rgb(128 128 128)`, `oklch(50% 0 0)`) is
-// already one of hex/rgb/named or pure achromatic; nothing else needs its own check.
+// already one of hex/rgb/named or pure achromatic; nothing else needs its check.
 //
 // `transparent` and `currentColor` are excluded from the named-color set: both are CSS keywords a
 // declaration reaches for constantly (a color-mix fade, an inherited ink), and neither names a
 // color choice the palette could have supplied instead.
 //
 // The detection itself lives in the shared literal core (../../literals.ts), which also knows the
-// chromatic and wide-gamut forms. This rule keeps its own verdict set: hex, rgb, named colors, and
+// chromatic and wide-gamut forms. This rule keeps a separate verdict set: hex, rgb, named colors, and
 // the achromatic function forms. `public-literals` acts on every form the core reports.
 //
 // A declared palette declaration site (`config.paletteCssFiles`, config.ts) never trips this rule
 // either, for the same reason a raw literal is fine there: the site IS where the palette's literal
-// values get written down. `cairn-admin.css`'s own exclusion (previously by construction, never
-// named as a consumer CSS file at all) and a site's own theme file now share this one named list,
+// values get written down. `cairn-admin.css`'s exclusion (previously by construction, never
+// named as a consumer CSS file at all) and a site's theme file now share this one named list,
 // rather than the rule inventing a filename special case for the second one.
 import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import { findColorLiteral, isPureAchromatic } from '../../literals.js';

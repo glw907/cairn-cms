@@ -1,4 +1,4 @@
-// The theme's island registry: directive name to live Svelte component. Kept in its own module,
+// The theme's island registry: directive name to live Svelte component. Kept in a separate module,
 // separate from cairn.config.ts, so the root layout can import just this small map to hydrate
 // islands without pulling in the full adapter (the engine renderer, the icon set, the committed
 // media manifest, hastscript) into the client bundle. cairn.config.ts imports this same map for

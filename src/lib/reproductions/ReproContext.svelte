@@ -1,13 +1,13 @@
 <!--
 @component
-The one mounting wrapper both a docs route and the engine's own story-mount test render a
+The one mounting wrapper both a docs route and the engine's story-mount test render a
 reproduction story through, so the two consumers can never disagree about what a story needs to
-render correctly. It applies the story's own `context` entries, supplies the fixture media base
+render correctly. It applies the story's `context` entries, supplies the fixture media base
 and a CSRF-token getter every media surface reads (so no call site injects either itself), hosts
 `shell` stories inside `CairnAdminShell` with the fixture `navLayout`, and carries the admin
 stylesheet unconditionally. A bare story that resolves no theme root of its own also gets one here,
 from the same `theme` prop, plus the surface the theme root itself does not paint: between the
-three, such a story renders styled on the admin's own ground wherever it mounts, rather than only
+three, such a story renders styled on the admin's ground wherever it mounts, rather than only
 inside a host that happens to provide a root.
 
 It also contains what it mounts, so a reader cannot drive a reproduction as if it were a live admin
@@ -19,7 +19,7 @@ of the embed. A capture-phase `focusin` listener marks a modal dialog inert as i
 the focus the dialog took, which is the only way to contain one: the HTML inert algorithm exempts
 the topmost modal dialog from an ancestor's inertness. And capture-phase listeners on `window` stop
 `keydown`, `pointerdown`, `dragover`, `drop`, and `beforeunload` before any handler sees them,
-cancelling the two drag types as well, since stopping the media library's own `dragover` handler
+cancelling the two drag types as well, since stopping the media library's `dragover` handler
 without taking over its `preventDefault` would leave the browser to navigate to a dropped file.
 Between them they cover the window-level bindings the shell, the editor, the media library, and the
 list toolbar each register.
@@ -27,7 +27,7 @@ list toolbar each register.
 All three register from the instance body, so they are live before any child exists and hold from
 first paint. None depends on a pose, which a consumer runs and this component never does.
 
-Mount this in a document dedicated to one reproduction, its own route inside an `<iframe>`, never
+Mount this in a document dedicated to one reproduction, on a separate route inside an `<iframe>`, never
 beside a live admin surface. The window firewall reaches the whole document rather than the wrapper,
 and it wins by registration order rather than by phase, so a listener already on `window` when this
 component mounts still answers first. On a shared page it takes away every keyboard shortcut, every
@@ -60,14 +60,14 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
   import type { ReproStory } from './index.js';
   import '../admin/cairn-admin.css';
 
-  // The media base every mounted story gets when its mounting page passes none: cairn.pub's own
+  // The media base every mounted story gets when its mounting page passes none: cairn.pub's
   // asset route, `/repro-assets`. Module-internal rather than exported: a docs site deployed
   // under a SvelteKit `paths.base` cannot override a hardcode, and the `mediaBase` prop below is
   // the fix, not a second name for it.
   const DEFAULT_REPRO_MEDIA_BASE = '/repro-assets';
 
   // `ReproInstance` unexported (a sanctioned NavIcon-class leak); the
-  // mounted component's own exports, read structurally off `ReproStory.pose`'s own signature
+  // mounted component's exports, read structurally off `ReproStory.pose`'s signature
   // rather than by the retired name.
   type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];
 
@@ -77,16 +77,16 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
     /**
      * The admin theme the mounting page owns. Resolved once below and then routed by host:
      * `CairnAdminShell`'s `themeOverride` for a `shell` host (every `shell` entry is
-     * `ownThemeRoot: true` in `manifest.ts`, since the shell resolves its own theme root); merged
-     * into the story's own `data.theme` for a `bare` host whose manifest entry is also
+     * `ownThemeRoot: true` in `manifest.ts`, since the shell resolves its theme root); merged
+     * into the story's `data.theme` for a `bare` host whose manifest entry is also
      * `ownThemeRoot: true` (the two auth pages, which render their wrapper from `data.theme`);
-     * carried by this component's own theme root for every other `bare` story, which owns none.
+     * carried by this component's theme root for every other `bare` story, which owns none.
      * Absent, every one of those falls back to the light admin theme, so a page carrying both kinds
      * of story cannot render half of them light and half dark.
      */
     theme?: 'cairn-admin' | 'cairn-admin-dark';
     /**
-     * Called once with the mounted component's own exports, as the mount happens. A host that runs
+     * Called once with the mounted component's exports, as the mount happens. A host that runs
      * poses passes this and hands the value back to `story.pose`, which is how a pose reaches a
      * state the real admin reaches by calling an exported method rather than by clicking (see
      * `ReproStory.pose`). A host that only renders a resting story needs none of it.
@@ -94,10 +94,10 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
     oninstance?: (instance: ReproInstance) => void;
     /**
      * The path segment every fixture media URL mounts under, so a docs site deployed under a
-     * SvelteKit `paths.base` composes URLs inside its own namespace instead of the engine's fixed
+     * SvelteKit `paths.base` composes URLs inside its namespace instead of the engine's fixed
      * default. Threaded to both places a mounted story reaches its media base: the
-     * `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's own
-     * `mediaBase` field, which feeds `CairnAdminShell`'s own shadowing `setContext` for a `'shell'`
+     * `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's
+     * `mediaBase` field, which feeds `CairnAdminShell`'s shadowing `setContext` for a `'shell'`
      * story. Defaults to `'/repro-assets'`.
      */
     mediaBase?: string;
@@ -107,15 +107,15 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
   // The mounted component's exports, handed out through a property setter rather than assigned to
   // a plain variable. `bind:this` writes to any assignable target and a member expression is one,
-  // so the handoff below runs synchronously inside the mount's own render effect. An $effect would
-  // not: a host that mounts and then immediately poses (the engine's own story suite does exactly
+  // so the handoff below runs synchronously inside the mount's render effect. An $effect would
+  // not: a host that mounts and then immediately poses (the engine's story suite does exactly
   // that) would read the instance before any effect had flushed. `bind:this` also writes undefined
   // on teardown, which is not a mount, so only a truthy value is handed on.
   //
   // `$state.raw`, not a plain `let`: Svelte's dev-mode binding validation reads the bound property
   // inside an effect and warns `binding_property_non_reactive` when that read registers no
   // dependency, which a plain variable behind a getter does not. Raw rather than deep, so the
-  // instance handed on is the component's own exports object and not a proxy of it.
+  // instance handed on is the component's exports object and not a proxy of it.
   let mountedInstance = $state.raw<ReproInstance | undefined>(undefined);
   const mount = {
     get instance(): ReproInstance | undefined {
@@ -133,13 +133,13 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
   // Containment, registered here in the instance body rather than in onMount or an $effect. The
   // placement is load-bearing: the instance body runs before the template creates any child, so a
-  // child that opens a modal from its own mount effect (TidyReview does) is already covered by the
+  // child that opens a modal from its mount effect (TidyReview does) is already covered by the
   // time it runs, and no parent-versus-child effect ordering question arises.
   // src/tests/component/reproductions-containment.test.ts is what proves that ordering holds.
   if (BROWSER) {
     // A modal dialog escapes the wrapper's inertness: the HTML inert algorithm exempts the topmost
     // modal dialog and its flat-tree descendants from an ancestor's, so showModal() still lands
-    // focus inside the dialog and the dialog's own buttons stay tabbable. Marking the dialog itself
+    // focus inside the dialog and the dialog's buttons stay tabbable. Marking the dialog itself
     // inert is what removes them, and it costs the picture nothing: the dialog stays open, stays
     // top-layered, and still paints its backdrop.
     const containFocus = (event: FocusEvent) => {
@@ -177,13 +177,13 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
     //
     // This covers more than a per-component opt-out could: EditPage registers its keydown and
     // beforeunload handlers imperatively, ListToolbar arrives through a shared toolkit primitive
-    // rather than as a story's own component, and a component that grows a window binding in one of
+    // rather than as a story's component, and a component that grows a window binding in one of
     // these five types later is covered with nobody remembering to gate it. Scoping to the wrapper
     // is not available, since the shell's Ctrl/Cmd+K handler fires whatever the event target is.
     const firewalled = ['keydown', 'pointerdown', 'dragover', 'drop', 'beforeunload'] as const;
     // A drag is the one case where stopping the handler is not enough to contain it. The media
     // library's window dragover handler is what makes this document a valid drop target, and its
-    // own preventDefault is what makes it one; stopping that handler and leaving the default action
+    // preventDefault is what makes it one; stopping that handler and leaving the default action
     // in place means the browser navigates to the dropped file, replacing the picture with a raw
     // image. So the firewall takes over the cancellation for those two types, and only those two:
     // cancelling keydown would take away Tab and space-scroll, and cancelling beforeunload IS the
@@ -204,14 +204,14 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
   /**
    * Everything this instance takes from the story it was created to mount, resolved once here:
-   * the story's own context entries applied, the media base and CSRF getter every mounted story
+   * the story's context entries applied, the media base and CSRF getter every mounted story
    * gets, the id its one-story invariant is checked against, its manifest entry, and its shell
    * payload. One call, so the containment listeners have one failure path to be released on.
    */
   function resolveMount() {
     try {
       // Context application runs once, during initialization: setContext must be called while this
-      // component is being created, so the story's own value (read once here, since a story does not
+      // component is being created, so the story's value (read once here, since a story does not
       // change identity across ReproContext's lifetime) is enough. untrack makes that one-time read
       // explicit rather than leaving it a warned-about accident of reading a prop outside a tracking
       // context.
@@ -228,8 +228,8 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
       // Unconditional: every mounted story's media surfaces resolve their base through this context
       // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form
-      // gets a getter. A shell-hosted story's own CairnAdminShell instance sets a more specific CSRF
-      // getter for its own descendants (from its fixture `data.csrf`), which simply shadows this one.
+      // gets a getter. A shell-hosted story's CairnAdminShell instance sets a more specific CSRF
+      // getter for its descendants (from its fixture `data.csrf`), which simply shadows this one.
       setContext(MEDIA_BASE_CONTEXT_KEY, resolvedMediaBase);
       setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
 
@@ -246,14 +246,14 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
       // worked navLayout example, the office default pathname, a resolved-null pending set, and
       // `story.shellData`'s fields laid over that default. `data.theme` is the SSR seed
       // CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so this
-      // field's own value never shows through.
+      // field's value never shows through.
       //
       // The merge is read once, non-reactively (the same `untrack` precedent this field used for the
       // pathname before `shellData` existed), and the whole object below is computed exactly once
-      // during initialization rather than derived: CairnAdminShell runs its own `$effect` that reads
+      // during initialization rather than derived: CairnAdminShell runs its `$effect` that reads
       // `shell?.pathname` off this `data` prop and closes the posed publish dialog on any change to it
       // (sweep finding 9). A `$derived` here would re-run that effect on every one of ReproContext's
-      // own reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
+      // reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
       // pose the moment a capture read it.
       const shellOverride = untrack(() => story.shellData);
       const shellData: Extract<AdminShellData, { public: false }> = {
@@ -274,8 +274,8 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
         pendingEntries: Promise.resolve(null),
         attention: {},
         // The same resolved value the setContext call above already hands every mounted story
-        // directly: CairnAdminShell now sets its own MEDIA_BASE_CONTEXT_KEY from this field too
-        // (shadowing the one above for its own descendants, the way its CSRF getter already does),
+        // directly: CairnAdminShell now sets its MEDIA_BASE_CONTEXT_KEY from this field too
+        // (shadowing the one above for its descendants, the way its CSRF getter already does),
         // so this keeps that shadow carrying the identical value rather than reverting to /media.
         mediaBase: resolvedMediaBase,
         ...definedOnly(shellOverride),
@@ -286,7 +286,7 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
       // The containment listeners above are live from the instance body, while their onDestroy
       // teardown is not: Svelte compiles onDestroy to a mount effect whose return value is the
       // cleanup, so nothing can remove them until effects flush. A throw in that window (a story
-      // whose own init fails, a fixture that does not resolve) aborts the mount with the focus
+      // whose init fails, a fixture that does not resolve) aborts the mount with the focus
       // firewall and five window capture listeners installed and no handle left on them, which
       // costs the document its keyboard, pointer, and drag handling for the rest of its life.
       // Release them, then rethrow: swallowing the error would hide the defect that caused it.
@@ -341,14 +341,14 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
   // One resolution for all three host branches below. Resolving here rather than per branch is what
   // keeps a page that carries both kinds of story from rendering half of them light and half dark:
-  // an undefined override handed to CairnAdminShell falls through to the shell's own resolution,
+  // an undefined override handed to CairnAdminShell falls through to the shell's resolution,
   // which reads the theme cookie on the docs origin and then prefers-color-scheme, while a bare
   // story would have taken the light fallback. Passing the resolved value suppresses both reads,
   // which is what this prop is for.
   const resolvedTheme = $derived(theme ?? 'cairn-admin');
 
   // Whether the mounted component resolves a theme root itself: the shell for a `shell` story, the
-  // two auth pages' own wrappers for a `bare` one. A story with no manifest entry (a test probe) is
+  // two auth pages' wrappers for a `bare` one. A story with no manifest entry (a test probe) is
   // treated as owning none, which is the case that needs the wrapper below. A plain `const`, not
   // `$derived`: `manifestEntry` is itself resolved once at init from the mounted story's id, so
   // marking this reactive would misstate a value that never actually recomputes.
@@ -361,7 +361,7 @@ than the keyboard one. https://github.com/glw907/cairn-cms/blob/main/docs/intern
 
 <!-- The containment wrapper every host branch below renders inside. It carries `inert`, which
      reaches every flat-tree descendant regardless of layout, and the attribute the focus firewall
-     above scopes itself by. Deliberately not `[data-repro-root]`: that is the consuming route's own
+     above scopes itself by. Deliberately not `[data-repro-root]`: that is the consuming route's
      theme-flip hook, it sits outside this wrapper, and it must keep working. -->
 <div data-cairn-picture inert>
 {#if story.host === 'shell'}

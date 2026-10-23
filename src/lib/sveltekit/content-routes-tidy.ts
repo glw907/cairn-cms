@@ -119,7 +119,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     }
     const editor = requireEditor(event);
     // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
-    // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
+    // this gates the same as editLoad/saveAction on the entry's concept, closing the deny-at-
     // the-route gap a mapped-away concept would otherwise leave in this edit-screen action. A route
     // that carries none (a hand-mount off the edit view) has no concept to gate on, so it answers
     // 404 rather than skip the check.
@@ -160,11 +160,11 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     const system = buildTidyPrompt(resolveTidyConventions(tidy.conventions));
     const model = tidy.model || DEFAULT_TIDY_MODEL;
 
-    // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
-    // call becomes a retryable fail(502) rather than a platform timeout. The client also drives its own
+    // Bound the model call with the Worker's deadline (shorter than the platform limit), so a slow
+    // call becomes a retryable fail(502) rather than a platform timeout. The client also drives its
     // AbortController (Cancel + a bounded timeout); this action accepts an aborted request
     // cleanly by mapping any abort to the same fail(502). `deadlineHit` distinguishes the deadline
-    // timer's own abort from some other abort reaching the same signal (a client disconnect cancelling
+    // timer's abort from some other abort reaching the same signal (a client disconnect cancelling
     // the underlying subrequest), so the log's `reason` names which one actually happened.
     const controller = new AbortController();
     let deadlineHit = false;

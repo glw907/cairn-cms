@@ -1,5 +1,5 @@
 // cairn-cms: the public `/auth-store` barrel. A pure re-export of the D1 editor-provisioning
-// functions from `../auth/store.js`, server-only surface for a site that manages its own editor
+// functions from `../auth/store.js`, server-only surface for a site that manages its editor
 // allowlist outside the `ManageEditors` admin screen. Anything proposed here must be a D1
 // editor-roster read or write, provisioning surface only; the auth-flow functions (`findEditor`,
 // `issueToken`, session handling, and so on) stay unexported here, since they are engine-internal

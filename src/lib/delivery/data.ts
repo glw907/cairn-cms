@@ -9,14 +9,14 @@ export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from 
 // re-export here, not a second home (canonical-home rule, foundations A). `buildSiteManifest`,
 // `createSiteIndexes`, and `SiteIndexes`/`SiteGlobs` all name the content-model types their generic
 // bounds derive from, so a site importing only this subpath can still name what it holds.
-// `CairnAdapter` itself is the one deliberate exception: its own structural body reaches
+// `CairnAdapter` itself is the one deliberate exception: its structural body reaches
 // `roles`/`access`/`backend`, which in turn name auth/github-shaped types this backend-free
-// barrel may not import (this file's own charter above, enforced by
-// `delivery-entry-boundary.test.ts`), and a call site names `A` by inference from its own
+// barrel may not import (this file's charter above, enforced by
+// `delivery-entry-boundary.test.ts`), and a call site names `A` by inference from its
 // adapter argument in practice, never by writing `CairnAdapter` out. That cut is why the
 // adapter-only members (`AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
 // `SiteRender`, the component and nav-layout types) are NOT re-exported here: nothing this subpath
-// publishes names them, so they resolve from their own canonical homes instead.
+// publishes names them, so they resolve from their canonical homes instead.
 export type {
   ConceptConfig,
   ConceptDescriptor,

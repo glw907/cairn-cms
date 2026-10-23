@@ -10,7 +10,7 @@ import { log } from '../log/index.js';
 
 /**
  * The four non-entry surfaces a commit can target, the axis `config.invalid` already reports on.
- *  A site may legally declare a concept named `media` or `nav`, so these values ride their own
+ *  A site may legally declare a concept named `media` or `nav`, so these values ride their
  *  field rather than overloading `concept`.
  */
 export type CommitScope = 'nav' | 'settings' | 'vocabulary' | 'media';
@@ -28,7 +28,7 @@ export type CommitLogFields = { id: string; editor: string; branch?: string } & 
 /**
  * Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
  *  reason; any other error is unexpected and logs at error with the stringified cause. Publish
- *  failures carry the same shape under their own event name.
+ *  failures carry the same shape under their event name.
  */
 export function logCommitFailed(
   fields: CommitLogFields,
@@ -44,11 +44,11 @@ export function logCommitFailed(
 
 /**
  * The shared commit catch for a read-modify-commit action: log the failure, then answer a conflict
- *  in place with `fail(409, payload)`, so the caller's own screen shape carries the message (a
- *  save's `body`, a delete's `inboundLinks`, and so on, whatever fields the caller's own
+ *  in place with `fail(409, payload)`, so the caller's screen shape carries the message (a
+ *  save's `body`, a delete's `inboundLinks`, and so on, whatever fields the caller's
  *  `ContentFormFailure` payload sets) and the page never navigates away from unsaved work.
  *  Anything else is unexpected and rethrows unchanged, so a genuine backend fault still reaches
- *  the caller's own unexpected-failure handling.
+ *  the caller's unexpected-failure handling.
  */
 export function commitFailure<T>(
   fields: CommitLogFields,

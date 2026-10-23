@@ -5,7 +5,7 @@
 // New button in <nav> are on different surfaces and both stand. This is the ratified register rule
 // ("the portal's first filled button"), made mechanical.
 //
-// Each landmark is its own surface, keyed by its own DOM position, not by its tag name: a page with
+// Each landmark is a separate surface, keyed by its DOM position, not by its tag name: a page with
 // two `<nav>` rails partitions into two surfaces, never one shared `'nav'` surface
 // (latent until now only because every shipped nav uses `btn-active`, never a real fill).
 //
@@ -13,10 +13,10 @@
 // the topmost open dialog layer partitions; <header>, <footer>, and <main> itself do NOT. The rule
 // exists to stop two controls both claiming to be the action, and a DOM boundary between a page
 // header and the card beneath it removes none of that harm, same visual column, same first look. A
-// nav rail genuinely does remove it: persistent chrome, its own ground, its own spatial zone, read
+// nav rail genuinely does remove it: persistent chrome, its ground, its spatial zone, read
 // by an editor as a different part of the screen entirely. The landmark set narrowed from
 // `main, nav, aside, header, footer` to `nav, aside` for exactly this reason; the topmost-open-dialog
-// logic is unchanged. The consequence, applied to cairn's own screens: a filled header action above
+// logic is unchanged. The consequence, applied to cairn's screens: a filled header action above
 // a filled card action is now two primaries on one surface by definition, and the fix is to demote
 // the non-primary fill to ghost, never to loosen this rule to pass a screen.
 //
@@ -32,7 +32,7 @@
 // load-bearing rule in the admin design system), so `var(--color-primary)` was invalid at
 // computed-value time and the accent resolved to `rgba(0, 0, 0, 0)`. Every accent fill went
 // unseen, and every ghost button, whose background really is transparent, was flagged instead. The
-// accent is now read off each control's OWN computed style, where the custom property has
+// accent is now read off each control's computed style, where the custom property has
 // inherited, so no probe placement can desync from the element being judged. The second was a
 // plain string compare against a computed color, which cannot survive a transition frame or a
 // control reaching the same paint through `color-mix`; both sides now go through the shared canvas
@@ -45,7 +45,7 @@ import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../r
 interface FilledCandidate {
   selector: string;
   surface: string;
-  /** The control's own computed `background-color`, unparsed. */
+  /** The control's computed `background-color`, unparsed. */
   background: string;
   /** `--color-primary` as it inherits onto this control, unparsed; empty when the theme is absent. */
   accent: string;
@@ -86,7 +86,7 @@ function collectFilledCandidates(): FilledCandidate[] {
   const layerRoot: Element = topLayer ?? document.body;
   const layerId = topLayer ? selectorFor(topLayer) : 'body';
 
-  // Every landmark inside the layer, keyed by its own position: a page with two `<nav>` rails (a
+  // Every landmark inside the layer, keyed by its position: a page with two `<nav>` rails (a
   // primary rail and a secondary one, say) must not merge them into one surface just because they
   // share a tag name. Batch B fix: the previous key was `landmark.tagName.toLowerCase()` alone, so
   // every `<nav>` on a page collapsed onto the same `'nav'` surface no matter how many there were.
@@ -95,7 +95,7 @@ function collectFilledCandidates(): FilledCandidate[] {
   function surfaceFor(el: Element): string {
     const landmark = el.closest(LANDMARK_SELECTOR);
     // A landmark ABOVE the current layer (an enclosing <main> a dialog happens to be nested inside)
-    // does not partition the dialog's own surface; `contains` is false for an ancestor, so this
+    // does not partition the dialog's surface; `contains` is false for an ancestor, so this
     // falls through to the layer id in exactly that case.
     if (landmark && layerRoot.contains(landmark)) {
       return `${selectorFor(landmark)}#${landmarks.indexOf(landmark)}`;

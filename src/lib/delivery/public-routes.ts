@@ -56,7 +56,7 @@ export interface EntryData {
   concept: string;
   /** The raw entry, frontmatter and body, for a field this projection does not surface. */
   entry: ContentEntry;
-  /** The body already run through the site's own `render`; the template never renders markdown itself. */
+  /** The body already run through the site's `render`; the template never renders markdown itself. */
   html: string;
   /** The entry's absolute, origin-anchored URL, for SEO tags and feed links that must not be relative. */
   canonicalUrl: string;
@@ -114,7 +114,7 @@ function deriveHeroImage(
 }
 
 /**
- * Substitutes for {@link composeEntryData}'s three resolvers, each defaulting to the build's own
+ * Substitutes for {@link composeEntryData}'s three resolvers, each defaulting to the build's
  *  (throwing) pair drawn from `config.site`, or `config.resolveMedia` for the hero. `loadPreview`
  *  is the first caller to pass these: the marking link and fragment resolvers built from
  *  a pending branch's manifest, and a request-time media resolver built from that branch's
@@ -153,9 +153,9 @@ export async function composeEntryData(
   const rawImage = fields.image ?? defaultImage;
   const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
   const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
-  // Stamp the containing entry onto the engine's own fragment resolver, the marker
+  // Stamp the containing entry onto the engine's fragment resolver, the marker
   // remarkResolveIncludes reads to name the entry in an include.missing record. A caller that
-  // substitutes its own resolver (loadPreview) stamps it where it builds it, so nothing here
+  // substitutes its resolver (loadPreview) stamps it where it builds it, so nothing here
   // mutates a function it did not create.
   let resolveFragment = overrides?.resolveFragment;
   if (!resolveFragment) {
@@ -265,7 +265,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
 
 /**
  * What `createPublicRoutes` returns: one entry's public data by request path, the prerender
- *  enumerations, and the raw-markdown twin's own load.
+ *  enumerations, and the raw-markdown twin's load.
  */
 export interface PublicRoutes {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;

@@ -26,9 +26,9 @@ Because `createCairnAdmin` always wires the group's two actions, the group appea
 site that has not applied the migration, every mint or revoke from the group answers "The
 preview_tokens table is missing." A developer who arrives with that message can finish the setup or
 hide the group. [Keep or hide the Share preview group](#keep-or-hide-the-share-preview-group) puts
-that choice first. A site that runs a review workflow of its own can mint and revoke links from a
+that choice first. A site that runs a review workflow can mint and revoke links from a
 custom admin screen on the same table and route, as
-[Mint and revoke from your own admin route](#mint-and-revoke-from-your-own-admin-route) shows.
+[Mint and revoke from your admin route](#mint-and-revoke-from-your-admin-route) shows.
 
 The steps assume familiarity with SvelteKit route groups, layouts, and server load functions,
 with Wrangler's D1 migration commands, and with your site's public entry routes. No cairn knowledge
@@ -209,7 +209,7 @@ A theme whose palette clashes with the banner's defaults can override them.
 The banner reads five custom properties, so declaring them on `:root` points it at your tokens
 without raising specificity. Their defaults are daisyUI 5 role tokens with no color literal, and on
 a daisyUI site the banner already follows the theme in every color scheme. A site without daisyUI
-points the color properties at its own tokens.
+points the color properties at its tokens.
 
 Each property sets one part of the banner:
 
@@ -354,9 +354,9 @@ Find the record's reason in the following table.
 
 The `preview.refused` row of [Log events](../reference/log-events.md) lists the fields each reason carries.
 
-A site with a review workflow of its own can mint and revoke links from a custom admin route.
+A site with a review workflow can mint and revoke links from a custom admin route.
 
-## Mint and revoke from your own admin route
+## Mint and revoke from your admin route
 
 `mintPreview` and `revokePreview` run the built-in actions' checks from a route your site gates, so
 your workflow can share and take back links. A site that mounts content routes by hand already gets

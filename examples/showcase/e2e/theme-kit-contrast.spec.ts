@@ -2,11 +2,11 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // The proof spec: every contrast row cairn's theme identity work commits to, measured against
 // the G1 fixture in a real browser rather than asserted from a design comment. Each pair is
-// painted onto a throwaway canvas and read back as sRGB, mirroring cairn-audit's own color
+// painted onto a throwaway canvas and read back as sRGB, mirroring cairn-audit's color
 // normalizer (src/lib/audit/rendered/page-surface.ts's resolveColorsInPage): a computed color
 // property can serialize as `color-mix(...)`/`oklch(...)` rather than `rgb()`, which no
 // hand-rolled parser reads reliably, and this file, under examples/showcase, has no access to the
-// engine's own internal audit module to import it from. A translucent color composites onto its named ground
+// engine's internal audit module to import it from. A translucent color composites onto its named ground
 // before the WCAG ratio is measured; an already-opaque color composites onto itself, a no-op.
 
 type Theme = 'cairn-admin' | 'cairn-admin-dark';
@@ -15,7 +15,7 @@ const THEMES: Theme[] = ['cairn-admin', 'cairn-admin-dark'];
 
 /**
  * How long the hover/active step test waits after triggering a state before reading it back.
- * daisyUI's own `.btn` carries a 0.2s transition on `background-color`, and an immediate read
+ * daisyUI's `.btn` carries a 0.2s transition on `background-color`, and an immediate read
  * catches an interpolated mid-transition value indistinguishable from rest.
  */
 const SETTLE_MS = 300;
@@ -138,7 +138,7 @@ async function contrastOnGround(page: Page, a: string, b: string, ground: string
   return contrastRatio(opaqueA, opaqueB);
 }
 
-/** The computed value of a color property, read off `locator`'s own box or a named pseudo-element. */
+/** The computed value of a color property, read off `locator`'s box or a named pseudo-element. */
 async function styleOf(
   locator: Locator,
   prop: 'color' | 'backgroundColor' | 'borderColor' | 'outlineColor' | 'boxShadow',
@@ -151,7 +151,7 @@ async function styleOf(
   );
 }
 
-/** A theme root custom property's own declared value, read off the page's `[data-theme]` wrapper. */
+/** A theme root custom property's declared value, read off the page's `[data-theme]` wrapper. */
 async function themeVar(page: Page, name: string): Promise<string> {
   return page
     .locator('[data-theme]')
@@ -230,7 +230,7 @@ for (const theme of THEMES) {
     }) => {
       const base100 = await themeVar(page, '--color-base-100');
 
-      // The fixture's own markup carries three of the five selected forms (btn-active,
+      // The fixture's markup carries three of the five selected forms (btn-active,
       // aria-current, a checked radio join segment); the other two are synthesized here on a
       // plain button each, the same forms BtnActiveDarkGround.test.ts proves against the
       // compiled sheet in a component test.
@@ -299,7 +299,7 @@ for (const theme of THEMES) {
 
     // Measured and recorded for the proof record, never asserted against a floor: these are the
     // hover, active, and dark-lift steps the design already commits to elsewhere, not new
-    // contrast claims. A step's own before/after values are printed so the record can quote them.
+    // contrast claims. A step's before/after values are printed so the record can quote them.
     test('records the hover, active, and lift steps for the record', async ({ page }) => {
       const plain = page.getByTestId('tk-btn-plain');
       const plainRest = await styleOf(plain, 'backgroundColor');

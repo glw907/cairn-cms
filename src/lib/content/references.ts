@@ -69,7 +69,7 @@ const BOM = '﻿';
 
 /**
  * Whether `id` would not reparse as a YAML string, so the rewriter must single-quote it. The
- *  predicate is gray-matter's own parse: an unquoted `true`/`false`/`null`, a number, a hex/octal
+ *  predicate is gray-matter's parse: an unquoted `true`/`false`/`null`, a number, a hex/octal
  *  literal, or a date-shaped scalar parses to a non-string, which the edge's `isValidId` guard then
  *  silently drops. cairn ids never need escaping inside single quotes (they exclude `'`), so a single
  *  quote pair is always enough.

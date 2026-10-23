@@ -1,11 +1,11 @@
 // What a rendered rule reads once a page is open: putting it into a declared interaction state
 // (rest, focus-visible, menu-open, row-expanded), resolving a CSS color string to sRGB by painting
 // it, probing whether a selector matches, misses, or cannot be parsed, and installing the shared
-// CairnAuditPageHelpers on `window` so five rules stop growing their own copies of "is this
+// CairnAuditPageHelpers on `window` so five rules stop growing copies of "is this
 // visible". Several of the functions below run INSIDE the page: Playwright serializes a function
 // handed to `page.evaluate` by source, so `resolveColorsInPage`, `probeSelectors`, and
-// `installPageHelpers` (plus its own nested helpers) stay self-contained, no reference outside their
-// own bodies, the same discipline `identity.ts`'s `capturePageIdentity` follows.
+// `installPageHelpers` (plus its nested helpers) stay self-contained, no reference outside their
+// bodies, the same discipline `identity.ts`'s `capturePageIdentity` follows.
 import type { PaintLayer, Rgba } from '../color.js';
 import type { InteractionState, RenderedPage } from './types.js';
 
@@ -23,7 +23,7 @@ export async function applyState(state: InteractionState, page: RenderedPage): P
   }
   if (state === 'row-expanded') {
     // The precedent menu-open sets: click the first live trigger and report whether one existed.
-    // ExpandableRow's own summary `<tr>` carries the click handler (its own header comment), a
+    // ExpandableRow's summary `<tr>` carries the click handler (its header comment), a
     // trailing `aria-expanded` button inside it doing the same toggle; clicking the row itself is
     // the simpler, single selector to drive.
     return page.evaluate(() => {
@@ -91,7 +91,7 @@ export async function resolveColors(page: RenderedPage, colors: string[]): Promi
 
 /**
  * Runs inside the page. Playwright serializes this by source, so it stays self-contained: no
- * references outside its own body, the same discipline `probeSelectors` follows.
+ * references outside its body, the same discipline `probeSelectors` follows.
  */
 function resolveColorsInPage(colors: string[]): ([number, number, number, number] | null)[] {
   const canvas = document.createElement('canvas');
@@ -137,7 +137,7 @@ function resolveColorsInPage(colors: string[]): ([number, number, number, number
 
 /**
  * Whether each of `selectors` matches, misses, or cannot be parsed on the current page. Playwright
- * serializes this into the page, so it stays self-contained: no references outside its own body.
+ * serializes this into the page, so it stays self-contained: no references outside its body.
  *
  * The third verdict is the point. Folding "the browser refused this string" into "nothing matched"
  * is what let a rendered allowlist entry mint a gating staleness finding for a selector that was
@@ -155,7 +155,7 @@ export function probeSelectors(selectors: string[]): ('matched' | 'absent' | 'un
 
 /**
  * Runs inside the page, installing {@link CairnAuditPageHelpers} on `window` once. Playwright
- * serializes this by source, so every helper is declared inside this function's own body.
+ * serializes this by source, so every helper is declared inside this function's body.
  */
 function installPageHelpers(): void {
   if (globalThis.__cairnAudit) return;
@@ -230,7 +230,7 @@ function installPageHelpers(): void {
   function canvasColor(): string {
     // CSS propagates the root element's background to the canvas, and `<body>`'s when the root
     // declares none. That is not a detail: a hit test just outside an element whose top margin
-    // collapsed out of `<body>` returns the root, whose own computed background is transparent,
+    // collapsed out of `<body>` returns the root, whose computed background is transparent,
     // so a page with a black body read as a white canvas.
     const rootStyle = getComputedStyle(document.documentElement);
     if (rootStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') return rootStyle.backgroundColor;
@@ -249,7 +249,7 @@ function installPageHelpers(): void {
   }
 
   // Splits a selector list on its top-level commas, the only place a comma separates two whole
-  // selectors rather than sitting inside a functional pseudo-class's own argument list
+  // selectors rather than sitting inside a functional pseudo-class's argument list
   // (`:is(a, b)`, `:where(a, b)`). Depth tracks parens only: CSS selector lists have no other
   // bracket that legitimately nests a comma at this level.
   function splitSelectorList(selectorList: string): string[] {
@@ -271,7 +271,7 @@ function installPageHelpers(): void {
     return parts;
   }
 
-  // A single selector's own trailing `::before`/`::after` (or the one-colon legacy form), split
+  // A single selector's trailing `::before`/`::after` (or the one-colon legacy form), split
   // from its element-matching base, since `Element.matches()` only ever matches a real element.
   function stripPseudoElement(selector: string): { base: string; pseudo: '' | '::before' | '::after' } {
     const match = selector.match(/^(.*?)::?(before|after)$/);
@@ -280,7 +280,7 @@ function installPageHelpers(): void {
   }
 
   /**
-   * Recorded against `el` (own body: no closure over anything outside this function, the same
+   * Recorded against `el` (body: no closure over anything outside this function, the same
    * discipline every other page-side helper here follows), one match per style declaration whose
    * selector reaches `el` under `pseudoElement` and which declares `property`.
    *
@@ -314,9 +314,9 @@ function installPageHelpers(): void {
       }
     }
 
-    // `inheritedSelector` is the nearest enclosing style rule's own selector, which a trailing
+    // `inheritedSelector` is the nearest enclosing style rule's selector, which a trailing
     // `CSSNestedDeclarations` block (bare declarations after a nested rule, inside the same
-    // parent) has no selector of its own and inherits.
+    // parent) has no selector and inherits.
     function walk(rules: Iterable<CSSRule>, inheritedSelector: string | null, file: string): void {
       for (const rule of Array.from(rules)) {
         const kind = rule.constructor ? rule.constructor.name : '';
@@ -334,7 +334,7 @@ function installPageHelpers(): void {
         ) {
           walk((rule as unknown as { cssRules: CSSRuleList }).cssRules, inheritedSelector, file);
         }
-        // A @media block is deliberately never descended into; see this method's own doc comment.
+        // A @media block is deliberately never descended into; see this method's doc comment.
       }
     }
 
@@ -343,7 +343,7 @@ function installPageHelpers(): void {
       try {
         rules = sheet.cssRules;
       } catch {
-        // A cross-origin or otherwise opaque sheet throws SecurityError reading its own cssRules;
+        // A cross-origin or otherwise opaque sheet throws SecurityError reading its cssRules;
         // measured on this Chromium install with no other way to probe it, so the sheet is skipped
         // rather than aborting the walk over every other sheet on the page.
         continue;
@@ -365,7 +365,7 @@ function installPageHelpers(): void {
 
 /**
  * Install {@link CairnAuditPageHelpers} on `page` if it does not already carry them. Idempotent and
- * cheap, so a rule calls it at the top of its own `check` rather than trusting the runner: that
+ * cheap, so a rule calls it at the top of its `check` rather than trusting the runner: that
  * keeps a rule driven directly by a unit test working the same way it works under `runRendered`.
  */
 export async function ensurePageHelpers(page: RenderedPage): Promise<void> {

@@ -1,11 +1,11 @@
 // cairn-cms: the seven media stories for the live-reproduction seam. Each row's component, host,
 // and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md's seven `media/*`
 // rows, and the sweep at https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-08-17-repro-audit-verification-sweep.md's
-// findings 12, 14, and 17 correct three of that row set's own details (finding 9 is a general
+// findings 12, 14, and 17 correct three of that row set's details (finding 9 is a general
 // shellData invariant, already carried by ./support.js and ../ReproContext.svelte).
 //
 // Four rows (`media/library`, `media/details-panel`, `media/bulk-selection`, `media/delete-in-use`)
-// mount the same component, `CairnMediaLibrary`, so each builds its own `data` object through
+// mount the same component, `CairnMediaLibrary`, so each builds its `data` object through
 // libraryData() rather than sharing one: four mounted libraries on one page would otherwise alias
 // each other's load data, the same discipline ./support.js's editPageProps() follows for the three
 // EditPage rows.
@@ -45,7 +45,7 @@ const LAKE_SUNRISE = assetBySlug('lake-sunrise');
 
 /**
  * The fixture library keyed by content hash, the shape both bare media components take. Read-only
- *  lookup data, so unlike a `CairnMediaLibrary` story's own `data`, sharing one instance across the
+ *  lookup data, so unlike a `CairnMediaLibrary` story's `data`, sharing one instance across the
  *  two bare stories below carries no aliasing risk.
  */
 const libraryByHash: MediaLibrary = Object.fromEntries(
@@ -136,8 +136,8 @@ const leadPictureValue = {
 /**
  * The lead-picture field's edit dialog, posed to its placement view (`media/lead-picture-dialog`).
  * The pose reaches `openDialog('placement')` through the edit control, not the drop handler, which
- * carries its own separate `showModal()` call (sweep finding 17). `lead: true` matches the real
- * hero field's own `seo === true` wiring (`FieldInput.svelte`), and the committed value gives the
+ * carries its separate `showModal()` call (sweep finding 17). `lead: true` matches the real
+ * hero field's `seo === true` wiring (`FieldInput.svelte`), and the committed value gives the
  * 16:9 preview an image.
  */
 const leadPictureDialog: ReproStory = {
@@ -213,8 +213,8 @@ const bulkSelection: ReproStory = {
 };
 
 /**
- * The in-use face of the safe-delete confirm, opened on the fixture's own in-use asset
- * (`media/delete-in-use`). The pose switches to the list density and clicks the row's own delete
+ * The in-use face of the safe-delete confirm, opened on the fixture's in-use asset
+ * (`media/delete-in-use`). The pose switches to the list density and clicks the row's delete
  * trigger (`requestDelete`), which opens the dialog straight on that asset without the slide-over.
  */
 const deleteInUse: ReproStory = {

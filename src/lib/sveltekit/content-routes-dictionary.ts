@@ -107,7 +107,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     }
     const editor = requireEditor(event);
     // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
-    // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
+    // this gates the same as editLoad/saveAction on the entry's concept, closing the deny-at-
     // the-route gap a mapped-away concept would otherwise leave in this edit-screen action. A route
     // that carries none (a hand-mount off the edit view) has no concept to gate on, so it answers
     // 404 rather than skip the check.
@@ -137,7 +137,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     try {
       const words = await mergeAndCommitDictionary(backend, additions, editor);
       // The count, never the words: log-events.md states the dictionary records carry no document
-      // content, and an added word is the author's own text.
+      // content, and an added word is the author's text.
       log.info('dictionary.added', { editor: editor.email, wordCount: additions.length });
       return { words };
     } catch (err) {

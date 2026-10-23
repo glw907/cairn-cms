@@ -1,4 +1,4 @@
-// cairn-cms: the recipe suggestion popover. Renders cairn's own DOM through CodeMirror's public showTooltip
+// cairn-cms: the recipe suggestion popover. Renders cairn's DOM through CodeMirror's public showTooltip
 // facet for the diagnostic under the caret, instead of skinning @codemirror/lint's built-in tooltip. A pure
 // StateField maps the caret onto the diagnostic (via the public forEachDiagnostic) and provides the Tooltip;
 // the DOM is a generic renderer over Diagnostic.message + Diagnostic.actions, so it serves both the
@@ -34,7 +34,7 @@ function diagnosticAtCaret(
  * contract both spellcheck.ts and objective-errors.ts use to quote a single flagged word or token) so
  * each quoted span becomes a `<code>` child instead of showing its backticks. Builds DOM nodes only,
  * never innerHTML: a diagnostic message can embed an author-typed word, and parsing it as markup would
- * let that word's own characters reach the DOM as elements. A message with no backticks, an unbalanced
+ * let that word's characters reach the DOM as elements. A message with no backticks, an unbalanced
  * backtick, or an empty quoted span renders as a single plain text node, unchanged from before.
  */
 export function renderDiagnosticMessage(host: HTMLElement, message: string): void {
@@ -85,7 +85,7 @@ function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number,
     button.className = 'btn btn-sm';
     button.textContent = action.name;
     button.addEventListener('click', () => {
-      // CodeMirror's own actions take the diagnostic's live range; use the field's from/to so a suggestion
+      // CodeMirror's actions take the diagnostic's live range; use the field's from/to so a suggestion
       // never overwrites the wrong span after an edit. Return focus to the editor after any action (add and
       // ignore close the popover, so the focused button would otherwise vanish and drop focus to <body>).
       action.apply(view, from, to);
@@ -131,7 +131,7 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
 
   // The field's full value: the rendered target (if any) plus which diagnostic, if any, Escape has
   // dismissed for the ambient (caret-in-range, focus-still-in-.cm-content) case. Keyed by the
-  // diagnostic's own range, not a boolean, so the suppression clears the instant the caret lands on a
+  // diagnostic's range, not a boolean, so the suppression clears the instant the caret lands on a
   // DIFFERENT diagnostic (or leaves every diagnostic) and never needs an explicit un-suppress.
   interface PopoverFieldValue {
     target: PopoverTarget | null;
@@ -204,9 +204,9 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
   };
   // The ambient dismiss: Escape with focus still in .cm-content (the popover shown for the caret's
   // diagnostic, never opened via Alt-Enter). The native Escape listener in buildPopoverDom handles the
-  // focus-in-popover case, which this binding never sees (that keydown targets the popover's own DOM,
+  // focus-in-popover case, which this binding never sees (that keydown targets the popover's DOM,
   // outside .cm-content, so CodeMirror's keymap facet does not fire for it). Runs only when a target is
-  // currently shown, so Escape falls through to the default keymap's own handling (e.g. clearing a
+  // currently shown, so Escape falls through to the default keymap's handling (e.g. clearing a
   // selection) when there is nothing to dismiss. No Prec.high: this extension is mounted inside
   // spellcheckCompartment, already placed after the top-level completionKeymap in MarkdownEditor's
   // extensions array, so plain document order keeps Escape closing an open autocomplete popup first.

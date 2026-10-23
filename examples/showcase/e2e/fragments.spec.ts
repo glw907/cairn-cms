@@ -11,8 +11,8 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 //     `cairn:manifest` so the prerendered build and the committed manifest agree.
 //
 //   - The editor assertions run against the dev-backend double (fake-github.ts), an in-memory
-//     GitHub stand-in with its own seed data, entirely separate from the disk corpus above. That
-//     double starts with no fragments of its own, so this half authors, saves, and publishes a
+//     GitHub stand-in with seed data, entirely separate from the disk corpus above. That
+//     double starts with no fragments, so this half authors, saves, and publishes a
 //     fragment through the real admin UI before it can appear as a fragmentTargets candidate.
 
 const FRAGMENT_TEXT = 'Check current avalanche and trail conditions before you set out';

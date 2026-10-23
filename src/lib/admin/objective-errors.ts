@@ -9,7 +9,7 @@
 // amber underline.
 import type { Range } from './spellcheck.js';
 
-/** The three objective-error kinds, each its own check. */
+/** The three objective-error kinds, each its check. */
 type ObjectiveErrorKind = 'doubled-word' | 'double-space' | 'repeated-punct';
 
 /**

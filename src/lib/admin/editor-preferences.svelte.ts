@@ -1,10 +1,10 @@
 // cairn-cms: storage-backed toggle state for the editor's writing-mode preferences.
 
 /**
- * The editor's per-browser writing-mode preferences: focus mode, typewriter, the author's own
- * spellcheck choice, the prose/markup surface posture, and zen. Each persists to its own
+ * The editor's per-browser writing-mode preferences: focus mode, typewriter, the author's
+ * spellcheck choice, the prose/markup surface posture, and zen. Each persists to its
  * localStorage key, read once in an effect (so SSR never touches `localStorage`) and written by
- * its own setter.
+ * its setter.
  *
  * `setZen` here is state-only: it flips the flag and persists it. The host composes it with the
  * DOM choreography (finding the CodeMirror surface before the flip hides it, then moving focus

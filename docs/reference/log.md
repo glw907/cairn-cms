@@ -1,8 +1,8 @@
 # Log (`/log`)
 
-Available since 0.97.0. This subpath exports the factory the engine's own logger is built from, so
-a site that wants structured logs in the same shape as [the engine's own events](./log-events.md)
-uses it instead of writing its own `console` wrapper.
+Available since 0.97.0. This subpath exports the factory the engine's logger is built from, so
+a site that wants structured logs in the same shape as [the engine's events](./log-events.md)
+uses it instead of writing its `console` wrapper.
 
 ```ts
 import { createLogger, CAIRN_LOG_EVENTS, REDACTED_LOG_KEYS } from '@glw907/cairn-cms/log';
@@ -20,7 +20,7 @@ their `-` and `_` characters removed, then compared whole. So `apiKey`, `api_key
 match the single `api_key` member, while `tokenLength` (`tokenlength`) and `x-api-key` (`xapikey`)
 do not, because the comparison is against the whole key, never a substring.
 
-**How deep redaction goes.** Three levels. A key at level one (a record's own field), level two (a
+**How deep redaction goes.** Three levels. A key at level one (a record's field), level two (a
 field inside a headers bag), or level three (a field inside an object inside an array) is matched;
 a key at level four or deeper is left as written. Each nested plain object and each array counts as
 one level. A repeated reference reads as `'<repeated>'` rather than being walked twice, so a cyclic
@@ -28,11 +28,11 @@ payload cannot hang the logger.
 
 **What redaction never walks into.** `Headers`, `Map`, `Set`, and any other class instance pass
 through untouched, the same as a `Date` or an `Error`: walking one apart would rebuild it as a
-plain object and lose whatever a sink's own serializer makes of it, and a secret inside one is
-never matched. A `Request`'s or `Response`'s own `headers` is the shape this bites most: convert it
+plain object and lose whatever a sink's serializer makes of it, and a secret inside one is
+never matched. A `Request`'s or `Response`'s `headers` is the shape this bites most: convert it
 to a plain object first, `Object.fromEntries(request.headers)`, so a field named `authorization`
-inside it actually redacts. A caller's own `level`, `event`, or `timestamp` field is dropped and
-replaced by the envelope's own value of the same name, per the preceding key-order rule.
+inside it actually redacts. A caller's `level`, `event`, or `timestamp` field is dropped and
+replaced by the envelope's value of the same name, per the preceding key-order rule.
 
 **Never log:** a magic-link token, a URL that carries one in its query, a session ID or cookie, an
 `Authorization` header, a GitHub App private key, or anything read from `.dev.vars`.
@@ -57,7 +57,7 @@ function createLogger<Event extends string>(options?: { redactKeys?: readonly st
 ```
 
 Builds a logger scoped to one event union. Call it once per event vocabulary and hold the result,
-the way [the engine's own `log`](./log-events.md) is `createLogger<CairnLogEvent>()`. Each method
+the way [the engine's `log`](./log-events.md) is `createLogger<CairnLogEvent>()`. Each method
 takes the event name and an optional fields object:
 
 ```ts
@@ -75,8 +75,8 @@ log.error('signup.failed', { error: String(err).replace(/token=[^&\s]+/g, 'token
 
 An event string outside `Event` fails to type-check, so the vocabulary stays closed at compile time.
 
-`options.redactKeys` names your own field names to redact, `memberNumber` above. They union with
-`REDACTED_LOG_KEYS` and never replace it, so passing your own list cannot narrow the engine's. Each
+`options.redactKeys` names your field names to redact, `memberNumber` above. They union with
+`REDACTED_LOG_KEYS` and never replace it, so passing your list cannot narrow the engine's. Each
 name normalizes the same way, so one spelling covers every separator form.
 
 The `error` field shows the other half of the job: redaction matches a key, so a token inside a
@@ -92,11 +92,11 @@ import type { CairnLogEvent } from '@glw907/cairn-cms/log';
 declare const CAIRN_LOG_EVENTS: readonly CairnLogEvent[];
 ```
 
-Every member of `CairnLogEvent`, the engine's own event vocabulary documented on
+Every member of `CairnLogEvent`, the engine's event vocabulary documented on
 [log events](./log-events.md), as a runtime array. A site validating an event string read from
 untyped input (a webhook payload, a stored log line) checks it against this array instead of
 re-deriving the vocabulary by hand. The array is frozen, so a `push` throws rather than corrupting a
-vocabulary two of the engine's own gates parse by shape.
+vocabulary two of the engine's gates parse by shape.
 
 ## `REDACTED_LOG_KEYS`
 
@@ -112,8 +112,8 @@ The field-name keys `createLogger`'s redaction matches on the whole normalized k
 `client_secret`, `webhook_secret`, `csrf`, `csrf_token`. Each name is spelled once, because
 normalization collapses the separator forms: the `session_id` member also matches `sessionId` and
 `session-id`. A key that only contains one of these words, `tokenLength` or `hasSession`, is not a
-match. The array is frozen; add your own names through `createLogger`'s `redactKeys` option. A site
-running its own log-secret-field check against its own event handlers reads this array rather than
+match. The array is frozen; add your names through `createLogger`'s `redactKeys` option. A site
+running its log-secret-field check against its event handlers reads this array rather than
 hard-coding the list a second time.
 
 ## `CairnLogEvent`
@@ -129,7 +129,7 @@ type CairnLogEvent =
   | /* 75 more members, documented row by row on log events */ never;
 ```
 
-The engine's own event union, re-exported here so a consumer can name it, for a wrapper function
+The engine's event union, re-exported here so a consumer can name it, for a wrapper function
 or a shared logging helper that must type its `event` parameter. The full, current membership is
 the table on [log events](./log-events.md), the source both pages stay in step with; this page does
 not repeat it.

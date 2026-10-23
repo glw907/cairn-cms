@@ -33,7 +33,7 @@ across a sweep of many sites' verdicts.
 
 A check that ran reports `OK` when it passed and `CRITICAL` when it failed, with two exceptions:
 
-- A check's own declared severity can rank its failure `WARNING` instead of `CRITICAL`. `engine`
+- A check's declared severity can rank its failure `WARNING` instead of `CRITICAL`. `engine`
   is the only health check at warning severity; every other check in the set fails at critical
   weight, and a check id with no declared severity is reported at full, critical weight.
 - An unexpired hold softens a failure to `WARNING`, never to `OK`. A hold that has already expired
@@ -42,7 +42,7 @@ A check that ran reports `OK` when it passed and `CRITICAL` when it failed, with
 ## When a check words its result `skip`
 
 A check that could not run contributes `UNKNOWN`, with one exclusion. Three reason codes name a
-check the run declined to attempt because the site's own setup gives it nothing to read, and
+check the run declined to attempt because the site's setup gives it nothing to read, and
 those three contribute `WARNING` instead.
 
 - `reason.cred-missing`, a credential the operator never set.
@@ -60,7 +60,7 @@ A site with no checks at all folds to `UNKNOWN`, never `OK`.
 ## Empty-registry rules
 
 - `cairn sites list` on an empty registry reports zero sites and exits 0.
-- An `--expect-sites` count that does not match the registry's own count exits 3.
+- An `--expect-sites` count that does not match the registry's count exits 3.
 - Bare `cairn health` on an empty registry exits 3.
 
 ## Holds

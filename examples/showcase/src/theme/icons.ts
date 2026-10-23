@@ -1,5 +1,5 @@
 // The theme's icon set: the concrete glyph data the render helpers (`#chassis/render.js`) and the
-// picker fields draw from. Kept in its own module, apart from `cairn.config.ts`, so re-skinning
+// picker fields draw from. Kept in a separate module, apart from `cairn.config.ts`, so re-skinning
 // the glyph set never touches the adapter or the component declarations that reference it.
 import type { IconSet } from '@glw907/cairn-cms';
 
@@ -9,7 +9,7 @@ export const icons: IconSet = {
   // A speech glyph for the callout picker row and a triangle-bang for the alert row.
   callout: 'M216 48H40a8 8 0 0 0-8 8v160l40-32h144a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8Z',
   alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
-  // A trail-marker pennant: the icon component's own picker row, a selectable content glyph, and the
+  // A trail-marker pennant: the icon component's picker row, a selectable content glyph, and the
   // banner component's picker row (a banner is, literally, a flag).
   flag: 'M64 24v208M64 32h128l-32 32 32 32H64',
   // A solid right-pointing triangle, the video facade's picker row and its thumbnail glyph.

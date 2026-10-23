@@ -3,10 +3,10 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
 import { runtime } from '#chassis/cairn.server.js';
 
-// createAdminAction's own authorization refusals (see the SvelteKit reference's "Refusal channels")
-// throw SvelteKit's own redirect()/error(), which SvelteKit renders correctly with no site
+// createAdminAction's authorization refusals (see the SvelteKit reference's "Refusal channels")
+// throw SvelteKit's redirect()/error(), which SvelteKit renders correctly with no site
 // mapping. SvelteKit's default handleError (a console.error of every server error) covers
-// everything else, so this file declares no handleError hook of its own.
+// everything else, so this file declares no handleError hook.
 
 // The dev backend activates only behind __CAIRN_DEV_BUILD__, the Vite define this branch reads
 // directly (see #chassis/dev-gate.ts): a default `npm run build` substitutes `false` here, so

@@ -5,7 +5,7 @@
 // `$app/*`.
 //
 // The channel's D1 schema is a packaged migration file (`migrations-channel/0000_channel.sql` in
-// the tarball), never an export: a site points its channel binding's own `migrations_dir` at it,
+// the tarball), never an export: a site points its channel binding's `migrations_dir` at it,
 // the same way `migrations/` already serves AUTH_DB. `store.ts` stays internal alongside it, since
 // every statement it holds is a request-path detail the factory owns; the one value a site could
 // want, the schema version, is in the migration it applies.
@@ -18,7 +18,7 @@ export type {
   ChannelConfirmOutcome,
 } from './factory.js';
 export type { ChannelDatabaseLike, ChannelSessionLike, ChannelStatementLike } from './store.js';
-// Canonical home `/cloudflare`; a recorded R4 re-export here because `AuthChannelConfig`'s own
+// Canonical home `/cloudflare`; a recorded R4 re-export here because `AuthChannelConfig`'s
 // challenge budget field names it.
 export type { RateLimitLike } from '../cloudflare/rate-limit.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because `AuthChannelConfig`'s

@@ -34,7 +34,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     data: AdminData;
     /** The last action's result, forwarded to whichever view rendered: the shared content-action
      *  failure family (every failure carries `error`), merged with the auth and editors results,
-     *  so the route's one `form` export covers every view. `RevertOutcome`'s own fields fold into
+     *  so the route's one `form` export covers every view. `RevertOutcome`'s fields fold into
      *  the same merged bag, composed the same way `ContentFormFailure` itself Partial-merges every
      *  other action's failure fields, so a real `?/revert` refusal type-carries through this one
      *  prop; the history view narrows it back to the strict disjoint shape at the point it mounts
@@ -71,7 +71,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 </script>
 
 {#if data.view === 'login'}
-  <!-- Only requestAction's own wrapped result (a RequestOutcome, or viewAction's generic
+  <!-- Only requestAction's wrapped result (a RequestOutcome, or viewAction's generic
        { error } catch-all) ever posts to this view, so the broader merged form union narrows
        here: template narrowing on data.view does not reduce it for us. -->
   <LoginPage
@@ -98,7 +98,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     {previewMint}
   />
 {:else if data.view === 'history'}
-  <!-- Only revertAction's own wrapped result (a RevertOutcome refusal, or viewAction's generic
+  <!-- Only revertAction's wrapped result (a RevertOutcome refusal, or viewAction's generic
        { error } catch-all) ever posts to this view, so the broader merged form union narrows
        here: template narrowing on data.view does not reduce it for us. -->
   <CairnHistory data={data.page} form={form as RevertOutcome | { error: string } | null | undefined} />

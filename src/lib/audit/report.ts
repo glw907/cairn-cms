@@ -14,7 +14,7 @@ function line(finding: Finding): string {
 
 /**
  * The suppressed block, with an identical line printed once and multiplied. One ratified exemption
- * inside a rendered rule covers every element that carries a shared token, which on cairn's own
+ * inside a rendered rule covers every element that carries a shared token, which on cairn's
  * admin is scores of identical lines; that block reads as noise rather than as the exception count
  * it is. Only an exactly identical line collapses, so no distinct selector is lost (a rendered
  * finding's selector is part of its message), and the summary below still counts every finding.

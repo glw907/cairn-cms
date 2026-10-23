@@ -6,7 +6,7 @@
 // not a closure over ContentRoutesContext, so a caller passes `runtime` (or nothing) directly
 // rather than threading `ctx`.
 //
-// Name-collision note: `content-routes-media-metadata.ts` declares its own block-scoped `const
+// Name-collision note: `content-routes-media-metadata.ts` declares its block-scoped `const
 // manifestRow` inside `mediaAltPreviewAction`, unrelated to this module's exported `manifestRow`.
 // That module does not import this one's export today; if it ever does, the local `const` must be
 // renamed first, since the two would otherwise shadow silently.
@@ -69,7 +69,7 @@ export function conceptOf(runtime: CairnRuntime, params: Record<string, string>)
  *  authenticate, resolve the concept, and validate the id. Confines the id to the slug rule
  *  before any commit path is built from it (the App token can write anywhere in the repo), so a
  *  malformed id is rejected before touching GitHub. Shared by save, publish, discard, the
- *  editor's own delete, and rename; the concept list's delete reads its id from the posted form
+ *  editor's delete, and rename; the concept list's delete reads its id from the posted form
  *  instead, a different shape left to validate inline.
  */
 export function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
@@ -81,7 +81,7 @@ export function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent)
   return { editor, concept, id };
 }
 
-/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
+/** True for a D1 error whose message names a missing table (SQLite's "no such table" text). */
 export function isMissingTableError(err: unknown): boolean {
   return /no such table/i.test(String(err));
 }
@@ -152,7 +152,7 @@ export function invalidIdMessage(concept: ConceptDescriptor): string {
  * The most recent publishes the entry history cluster reads; a module constant, not a site config
  *  knob. `listCommits` is asked for one more than this, so the extra
  *  probe row sets `truncated` without a second read and is never itself rendered. Shared by the
- *  revert cluster's own membership check.
+ *  revert cluster's membership check.
  */
 export const HISTORY_LIMIT = 25;
 

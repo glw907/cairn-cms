@@ -1,17 +1,17 @@
-// cairn-audit's focus-parity rule: a component's own hand-authored CSS never gives mouse hover an
+// cairn-audit's focus-parity rule: a component's hand-authored CSS never gives mouse hover an
 // affordance keyboard focus does not also get. For every selector alternative carrying `:hover`,
 // this rule looks for a sibling selector in the same source that is identical except `:hover` is
 // swapped for `:focus-visible` (the element itself is the focus target) or `:focus-within` (a
-// container whose hover wash acknowledges a DESCENDANT gaining focus, ExpandableRow's own summary
+// container whose hover wash acknowledges a DESCENDANT gaining focus, ExpandableRow's summary
 // row over its nested trigger button). Six hover-only families were the motivating finding; three
-// of cairn's own components carried this gap when the rule first ran (ExpandableRow's row wash,
+// of cairn's components carried this gap when the rule first ran (ExpandableRow's row wash,
 // ListToolbar's facet-clear button, HelpHome's five link/button tints), each closed by adding the
-// matching selector to the existing rule's own selector list rather than a new rule, so the CSS
+// matching selector to the existing rule's selector list rather than a new rule, so the CSS
 // stays declarative about which state pairs with which.
 //
 // Deliberately scoped to hand-authored CSS, not Tailwind's `hover:`/`focus-visible:` variant
 // classes: the admin's utility-class idiom already carries dozens of hover: utilities whose
-// keyboard affordance is the engine's own blanket `:focus-visible` outline ring (cairn-admin.css),
+// keyboard affordance is the engine's blanket `:focus-visible` outline ring (cairn-admin.css),
 // a real but different-shaped guarantee a markup-level token scan would over-report against.
 import { splitSelectorList } from '../../sheet.js';
 import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';

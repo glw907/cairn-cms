@@ -51,7 +51,7 @@ export interface MediaUpdateFailure {
  *  typed-slug override was not given, or `fail(503)` when usage cannot be verified (fail closed) or the
  *  bucket is unbound. Mirrors MediaDeleteFailure: the asset hash, the where-used rows, and the count.
  *  Retired from the public surface; the module-level export stays, since
- *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaReplaceFailure {
   error: string;
@@ -65,7 +65,7 @@ export interface MediaReplaceFailure {
  *  open branch (fail closed), or the bucket is unbound, or `fail(409)` on a commit conflict. Alt
  *  fill has no typed-slug gate, so this carries just the summary and the asset hash (so the
  *  Library can re-open the right slide-over). Retired from the public surface; the
- *  module-level export stays, since `CairnMediaLibrary.svelte` imports it directly for its own
+ *  module-level export stays, since `CairnMediaLibrary.svelte` imports it directly for its
  *  typing.
  */
 export interface MediaAltPropagateFailure {
@@ -80,9 +80,9 @@ export interface MediaAltPropagateFailure {
 /**
  * One entry the replace preview will rewrite, enriched with its display title and permalink from the
  *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
- *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
+ *  confirm dialog's where-touched preview, and the apply re-derives its plan rather than trusting
  *  this. Retired from the public surface; the module-level export stays, since
- *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaReplacePreviewEntry {
   /** The concept id, e.g. "posts". */
@@ -102,7 +102,7 @@ export interface MediaReplacePreviewEntry {
  *  the report-only cross-branch delta (open cairn/* branches that reference the same bytes; an apply
  *  rewrites main only). Display-only: the apply re-derives a fresh plan and never trusts this.
  *  Retired from the public surface; the module-level export stays, since
- *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaReplacePreviewPlan {
   affectedCount: number;
@@ -137,7 +137,7 @@ interface MediaAltPreviewEntry {
  *  only placements are reported-but-unchanged (a kept custom alt, a decorative hero), so the screen
  *  can show every bucket; the apply commits only the entries it actually changes. Retired from
  *  the public surface; the module-level export stays, since
- *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaAltPreviewPlan {
   entries: MediaAltPreviewEntry[];

@@ -7,9 +7,9 @@
 /**
  * The refusals that genuinely navigate rather than answering the form that posted: an expired
  *  sign-in link, publish-all's three outcomes, and the one deliberate exception to the
- *  "publish-all only ever redirects to its own three outcomes" rule, `publish_failed`, for the
+ *  "publish-all only ever redirects to its three outcomes" rule, `publish_failed`, for the
  *  unexpected (non-conflict) commit error that would otherwise reach `viewAction`'s generic
- *  `fail(500)` and be discarded when `/admin`'s own load redirects away before it can render
+ *  `fail(500)` and be discarded when `/admin`'s load redirects away before it can render
  *  (`publishAllAction`, `content-routes-entry-write.ts`). `expired` keeps its
  *  shipped spelling; the rest are snake_case, matching the log vocabulary's grammar
  *  (`docs/reference/log-events.md`).

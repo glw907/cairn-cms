@@ -5,7 +5,7 @@ stylesheet live in exactly one place instead of drifting between the two call si
 post drops the date column and reads as a single column (`.site-entry--undated`); below the
 34rem breakpoint the date stacks above the title in one column regardless. `data-cairn-post`
 stays the stable hook other tests and pages key off, since the class names it carries are this
-component's own concern. Failing to keep this component in sync with a future index redesign
+component's concern. Failing to keep this component in sync with a future index redesign
 reintroduces the drift this extraction closes: the fix is here, not on a page's local `.entry`
 copy.
 -->

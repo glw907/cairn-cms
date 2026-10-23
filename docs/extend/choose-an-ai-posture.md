@@ -88,7 +88,7 @@ To confirm that the served file carries the declared posture, follow these steps
    - Under `'invite'`, the only difference from that output is
      `Content-Signal: search=yes, ai-train=yes` directly after `User-agent: *`.
    - Under `'decline'`, the line directly after `User-agent: *` is `Content-Signal: ai-train=no`.
-     Before the `Sitemap` line, each token in the training-crawler table takes its own
+     Before the `Sitemap` line, each token in the training-crawler table takes a separate
      `User-agent` group with `Disallow: /`.
 
    The `Disallow: /admin` line emits the same way under every posture. The

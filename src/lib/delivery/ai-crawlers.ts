@@ -9,7 +9,7 @@
 // search crawlers, deliberately excluded, since disallowing a search crawler costs a site its
 // search presence for no training benefit.
 //
-// Listing a token here is a request, not an enforcement mechanism. Each operator's own page
+// Listing a token here is a request, not an enforcement mechanism. Each operator's page
 // documents robots.txt as the control for its token, and four of the seven (Amazon, Anthropic,
 // Google, Common Crawl) state outright that they honor it; the other three document the control
 // without making that promise in those words. A declining site is asking, not blocking. See
@@ -18,7 +18,7 @@
 
 /**
  * One training crawler's robots.txt token, its operator, and the first-party page documenting it.
- * `note`, when present, qualifies a claim the operator's own page does not make (see `CCBot`'s
+ * `note`, when present, qualifies a claim the operator's page does not make (see `CCBot`'s
  * record), so the shipped table never puts words in an operator's mouth.
  */
 interface AiCrawler {
@@ -28,9 +28,9 @@ interface AiCrawler {
   operator: string;
   /** Always `'training'` today; the table carries no other category. */
   category: 'training';
-  /** The operator's own documentation of this token. Always an `https:` URL. */
+  /** The operator's documentation of this token. Always an `https:` URL. */
   citation: string;
-  /** A qualification the operator's own page does not itself state; omitted when none applies. */
+  /** A qualification the operator's page does not itself state; omitted when none applies. */
   note?: string;
 }
 

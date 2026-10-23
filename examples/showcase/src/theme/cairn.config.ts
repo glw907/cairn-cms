@@ -1,7 +1,7 @@
 // This site's adapter: the single seam the engine consumes. It declares the posts, pages, and
 // fragments concepts, the media wiring, the navLayout, and the preview knob, over a render that
 // runs the engine pipeline and a backend the dev GitHub double answers for. The
-// icon set and the registered markdown components live in their own modules
+// icon set and the registered markdown components live in separate modules
 // (`icons.ts`, `markdown-components.ts`); this file holds only the adapter, concepts, backend,
 // and navLayout.
 import {
@@ -53,7 +53,7 @@ const mediaManifest = readCommittedManifest(
 const media = { bucketBinding: 'MEDIA_BUCKET' };
 
 // The default public media resolver, backing the public build over the committed manifest. The
-// preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
+// preview path injects its resolveMedia from the edit page's mediaTargets; this default keeps a
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
 const resolvedAssets = normalizeAssets(media);
@@ -70,7 +70,7 @@ export const cairn = defineAdapter({
       label: 'Posts',
       // The create affordances read in the singular ("New post"); an omitted `singular` would
       // fall back to `label` and read "New Posts" instead (ConceptList.svelte's documented
-      // fallback, exercised deliberately without one in the engine's own component tests).
+      // fallback, exercised deliberately without one in the engine's component tests).
       singular: 'post',
       summaryFields: ['description'],
       routing: 'feed',
@@ -93,7 +93,7 @@ export const cairn = defineAdapter({
         }),
         // The taxonomy marker: one creatable multiselect per concept whose validated values surface on
         // ContentSummary.tags and feed categories. cairn ships no public tag pages; a site filters its
-        // own archive over this data (the size-gated template filter), so the marker carries no routing.
+        // archive over this data (the size-gated template filter), so the marker carries no routing.
         topics: fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }),
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
@@ -103,7 +103,7 @@ export const cairn = defineAdapter({
           default: 'draft',
         }),
         // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
-        // object carries no label of its own (the array labels the group, itemLabel summarizes a row),
+        // object carries no label (the array labels the group, itemLabel summarizes a row),
         // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
         faq: fields.array(
           fields.object({
@@ -133,7 +133,7 @@ export const cairn = defineAdapter({
     }),
     // The Fragments concept (the reusable-content design): keyed right after pages, per the
     // documented convention, so the flat zero-config nav places it beside the other authored
-    // concepts. routing: 'embedded' is required for this key; the engine's own concept
+    // concepts. routing: 'embedded' is required for this key; the engine's concept
     // normalization enforces it, since the include directive resolves a fragment body through
     // this concept staying non-routable. The fieldset stays minimal: a fragment is a body plus a
     // name for the picker to show, not a full entry.
@@ -168,8 +168,8 @@ export const cairn = defineAdapter({
    * The custom Signups screen is owner-only. Its load gate and its form actions both resolve
    * against this rule, and an owner-only list is written out as `['owner']` because
    * `defineAccess` refuses an empty one. The first argument is the site's role vocabulary;
-   * `undefined` takes the built-in owner/editor roles, which is what a site declaring none of its
-   * own gets.
+   * `undefined` takes the built-in owner/editor roles, which is what a site that declares no
+   * roles gets.
    */
   access: defineAccess(undefined, {
     '/admin/signups': ['owner'],
@@ -194,9 +194,9 @@ export const cairn = defineAdapter({
   // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup; the
-    // engine's own pipeline already wraps every table in a scrollable, labeled region by default
+    // engine's pipeline already wraps every table in a scrollable, labeled region by default
     // (RendererConfig.tableScroll). The default media resolver backs the public build; the
-    // preview path injects its own resolveMedia. resolveFragment forwards the same way: the build
+    // preview path injects its resolveMedia. resolveFragment forwards the same way: the build
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
     // one (EditPage), and this site's render never needs to vary fragment resolution itself.
     render: ({ body, resolve, resolveMedia, resolveFragment }) =>
@@ -215,12 +215,12 @@ export const cairn = defineAdapter({
       label: 'Navigation',
       maxDepth: 2,
     },
-    // The site's whole declared sidebar, the organize-your-admin-nav guide's own worked shape: a
+    // The site's whole declared sidebar, the organize-your-admin-nav guide's worked shape: a
     // Content group for what an editor authors and owns, then a trailing Site group for site
     // management, inbound data, configuration, and roster. The custom and engine doors both place
     // by the same razor, what an editor authors versus what the site operates: Library joins
     // Content, since uploaded, described media is
-    // the editor's own material the same way posts and pages are (the WordPress-era convention of
+    // the editor's material the same way posts and pages are (the WordPress-era convention of
     // Media beside Posts/Pages also matches a volunteer editor's muscle memory).
     // cairn-template:exclude-start
     // The custom Signups screen lands in Site, not Content, since signups are inbound visitor

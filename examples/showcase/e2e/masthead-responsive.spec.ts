@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 // viewport mid-item, leaving the tail of the nav (Styleguide, Admin) unreachable by a real tap. The
 // fix is no-JS-first CSS: the wordmark carries `white-space: nowrap` so it can only ever wrap the
 // row, never the letters, and the header's outer row plus the nav itself carry `flex-wrap` so the
-// nav drops to its own full-width line below the wordmark instead of overflowing past the viewport.
+// nav drops to a full-width line below the wordmark instead of overflowing past the viewport.
 // Nav links also grow a 44px-class touch target (WCAG 2.5.5), so a wrapped nav stays tappable, not
 // just visible. Tested at 320/360/390, the phone-class widths the evidence shots covered.
 for (const width of [320, 360, 390]) {
@@ -17,20 +17,20 @@ for (const width of [320, 360, 390]) {
 
     const wordmark = page.locator('.site-header a[href="/"] span');
     await expect(wordmark).toBeVisible();
-    // The showcase is Waymark's own dev home; the masthead names the template, not a stale
+    // The showcase is Waymark's dev home; the masthead names the template, not a stale
     // "Cairn Showcase" placeholder (docs/ROADMAP.md, "Scaffold content is self-documenting
     // placeholder").
     await expect(wordmark).toHaveText('Waymark');
     expect(await wordmark.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
 
     // nowrap only forbids letter-wrapping; the real proof it did not just overflow off-screen is
-    // that the wordmark's own box sits fully inside the viewport.
+    // that the wordmark's box sits fully inside the viewport.
     const wordmarkBox = await wordmark.boundingBox();
     expect(wordmarkBox).not.toBeNull();
     expect(wordmarkBox!.x).toBeGreaterThanOrEqual(0);
     expect(wordmarkBox!.x + wordmarkBox!.width).toBeLessThanOrEqual(width);
 
-    // Scoped to the header: the footer reuses the `.site-nav` class for its own, separate nav.
+    // Scoped to the header: the footer reuses the `.site-nav` class for a separate nav.
     const navLinks = page.locator('.site-header nav.site-nav a');
     const count = await navLinks.count();
     expect(count).toBeGreaterThan(0);
@@ -48,7 +48,7 @@ for (const width of [320, 360, 390]) {
   });
 
   // The footer nav gets the same WCAG 2.5.8 treatment as the header: `flex-wrap` so it drops to
-  // its own line rather than clipping, and a 44px-class tap target on every link.
+  // a new line rather than clipping, and a 44px-class tap target on every link.
   test(`at ${width}px every footer nav item is reachable and tappable`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/');

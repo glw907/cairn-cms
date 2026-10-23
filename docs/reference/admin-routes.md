@@ -80,7 +80,7 @@ export const load = admin.shellLoad;
 <CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
 ```
 
-A site adds its own admin screen by dropping a concrete route under `/admin/` (for example
+A site adds its admin screen by dropping a concrete route under `/admin/` (for example
 `/admin/signups`), which wins over the catch-all and renders inside this same shell. See
 [Add a custom admin screen](../extend/add-a-custom-admin-screen.md) for the worked route.
 
@@ -130,7 +130,7 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/vocabulary` | vocabulary | The tag-vocabulary editor: add, rename, delete an unused tag, and seed from tags already in use. |
 | `/admin/help` | help | The Help home: getting started, the formatting reference, and the support hand-off. |
 
-Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL of its own; the
+Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL; the
 admin shell always posts it to the fixed `/admin?/logout` action, regardless of which page the
 editor is on, which is why `logout` accepts any parsed view.
 
@@ -213,7 +213,7 @@ A media-enabled site also checks
 the adapter turns media on.
 
 A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
-`<html data-theme>`) keeps it by sequencing the engine guard after its own:
+`<html data-theme>`) keeps it by sequencing the engine guard after it:
 
 ```ts
 // src/hooks.server.ts
@@ -292,14 +292,14 @@ A request with `?live=1` also asks GitHub whether it accepts the key; see
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent
-`ok:false` that also 404 responses at runtime. The admin mount carries its own `prerender = false`; this
-root endpoint needs its own opt-out.
+`ok:false` that also 404 responses at runtime. The admin mount carries its `prerender = false`; this
+root endpoint needs its opt-out.
 
 ## Per-route mounting (advanced)
 
 The per-surface factories behind the facade (`createAuthRoutes`, `createContentRoutes`,
 `createEditorRoutes`, `createNavRoutes`) remain public, so a site that needs to interpose on one
-surface, or to mount a single admin view inside its own shell, can wire routes by hand against
+surface, or to mount a single admin view inside its shell, can wire routes by hand against
 them. That path trades the single mount's stability for control: the site then owns its route
 tree and must track the action vocabulary across releases itself. The factory signatures, the
 view components' named-action contracts, and worked per-route examples live in
@@ -313,6 +313,6 @@ replace-in-place, alt propagation, and bulk delete/orphan scan/purge). A site th
 supplies those actions; only `createCairnAdmin` mounts them at runtime. The declared
 [`CairnAdminRoutes`](./sveltekit.md#types) contract withdraws the same ten actions at the type
 level (see the note after [the actions vocabulary](#the-actions-vocabulary)), recovered with a
-spread or a cast; mounting the media view outside the single mount means composing your own
+spread or a cast; mounting the media view outside the single mount means composing your
 actions record around `createCairnAdmin`'s runtime object, not wiring `createContentRoutes`
 alone.

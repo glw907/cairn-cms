@@ -1,4 +1,4 @@
-// cairn-cms: the root package barrel (`@glw907/cairn-cms`). Everything a site's own
+// cairn-cms: the root package barrel (`@glw907/cairn-cms`). Everything a site's
 // `cairn.config.ts` needs to declare its adapter (`defineAdapter`, `defineConcept`, the
 // field/fieldset builders, `CairnAdapter` and its member types), plus the render pipeline entry
 // (`createRenderer`), the composed runtime's read surface, and the content-manifest and
@@ -10,11 +10,11 @@
 // The canonical-home rule (ratified foundations A, `canonical-home-rule` in the rulings ledger)
 // governs every barrel: each name has exactly one declaring subpath, and any other barrel that
 // publishes it does so as a recorded R4 re-export naming that home and the signature that requires
-// it. A name below whose home is another subpath carries that note on its own export line; every
+// it. A name below whose home is another subpath carries that note on its export line; every
 // other name here is at home. `check:surface` fails an unrecorded duplicate.
 export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
-// Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
+// Site-declared role vocabulary (extensible-roles): sites map their role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
 export { defineRoles, resolveCapability, resolveOwnerLevelRoles } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
@@ -57,8 +57,8 @@ export type { StandardInput } from './content/standard-schema.js';
 // The Contract v2 field vocabulary: the one live field system.
 export { fields } from './content/fields.js';
 export type { FieldDescriptor } from './content/fields.js';
-// The field-descriptor union's fifteen arms, each named in `FieldDescriptor` and in `fields`'s own
-// per-type builder signature; every one is importable by its own name.
+// The field-descriptor union's fifteen arms, each named in `FieldDescriptor` and in `fields`'s
+// per-type builder signature; every one is importable by its name.
 export type {
   TextField,
   TextareaField,
@@ -107,16 +107,16 @@ export type { IconSet } from './render/glyph.js';
 // not public: createRenderer is the one public render pipeline, so the safe plugin ordering is
 // the only public path.
 export { createRenderer } from './render/pipeline.js';
-// `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their own
+// `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their
 // `opts` parameter.
 export type { RendererConfig, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
 // The `::include` fragment resolver type: `renderMarkdown`'s `resolveFragment` option and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';
-// `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their own `resolveMedia` option;
-// `MediaResolve`'s own parameter names `MediaRef`.
+// `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their `resolveMedia` option;
+// `MediaResolve`'s parameter names `MediaRef`.
 export type { MediaResolve } from './render/resolve-media.js';
-// Canonical home `/media`; a recorded R4 re-export here because `MediaResolve`'s own parameter
+// Canonical home `/media`; a recorded R4 re-export here because `MediaResolve`'s parameter
 // names it and `MediaResolve` reaches this barrel through `SiteRender`.
 export type { MediaRef } from './media/reference.js';
 // `Manifest.entries[].references` names `ReferenceEdge`.
@@ -132,10 +132,10 @@ export type { FileChange } from './github/repo.js';
 
 // Nav tree and site-config helpers.
 export { parseSiteConfig, readMenu, readVocabulary, SiteConfigError } from './nav/site-config.js';
-// `CairnRuntime.tidy` names `TidyConfig`, whose own `conventions` field names `TidyConventions`.
+// `CairnRuntime.tidy` names `TidyConfig`, whose `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`
-// names `NavLayout`, whose own union names its three member shapes in turn. Type-only imports, so
+// names `NavLayout`, whose union names its three member shapes in turn. Type-only imports, so
 // no `/sveltekit` module ever executes here.
 export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because

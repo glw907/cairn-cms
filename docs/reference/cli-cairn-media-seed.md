@@ -2,7 +2,7 @@
 
 `cairn-media-seed` seeds wrangler's local R2 simulator with every media-library object from a
 deployed cairn site, so `vite dev` serves real media on every page with no deploy. It reads the
-committed media manifest (`src/content/.cairn/media.json`, the engine's own convention),
+committed media manifest (`src/content/.cairn/media.json`, the engine's convention),
 downloads each object from the deployed site, and writes it into local R2 state under the same
 content-addressed key the media route reads. Once seeded, an author edits a source
 file, and `vite dev` serves the real image on reload. [Iterate
@@ -81,6 +81,6 @@ entries`.
 - [Iterate locally](../extend/theme-your-public-site.md#iterate-locally) for the loop this tool
   unblocks: seed once, then edit against `vite dev` with no deploy per change.
 - [The `cairn doctor` command](./cli-cairn-doctor.md), which reads the same wrangler config for
-  its own R2-binding check.
+  its R2-binding check.
 - [Media (`/media`)](./media.md) for the manifest shape and the content-addressed naming scheme
   this command relies on.

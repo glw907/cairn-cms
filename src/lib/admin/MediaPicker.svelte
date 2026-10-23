@@ -4,7 +4,7 @@ The combobox picker over the site's committed media library, read-only. The host
 projected library in as an entries array and receives the chosen asset through onselect, which
 hands back the asset entry, its media: reference token, and the manifest alt to prefill the
 placement. The array is the shape mediaLibraryLoad already returns on MediaLibraryData.assets, so a
-site wiring the picker into its own screen hands the loader's output straight through.
+site wiring the picker into its screen hands the loader's output straight through.
 
 This is a real WAI-ARIA combobox over a listbox: focus stays in the search input at all times, and
 aria-activedescendant moves the active option through arrow keys. The input never loses DOM focus
@@ -125,7 +125,7 @@ while a site stores images only.
   const activeEntry = $derived(activeIndex >= 0 ? (filtered[activeIndex] ?? null) : null);
   const activeDescendant = $derived(activeEntry ? optionId(activeIndex) : undefined);
 
-  // The active-row narration text, kept in its own live region so it never clobbers the count.
+  // The active-row narration text, kept in its live region so it never clobbers the count.
   const activeNarration = $derived(
     activeEntry
       ? `${activeEntry.displayName}${activeEntry.alt.trim() === '' ? ', needs alt text' : ''}, ${activeIndex + 1} of ${filtered.length}`
@@ -207,7 +207,7 @@ while a site stores images only.
   <p class="sr-only" role="status" aria-live="polite">
     {filtered.length} {filtered.length === 1 ? 'image' : 'images'}
   </p>
-  <!-- The active-row narration, its own polite region. -->
+  <!-- The active-row narration, its polite region. -->
   <p class="sr-only" aria-live="polite">{activeNarration}</p>
 
   <!-- The listbox always renders, even with no matches, so the combobox's aria-controls always
@@ -265,12 +265,12 @@ while a site stores images only.
 </div>
 
 <style>
-  /* cairn-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
+  /* cairn-glyph is the public render pipeline's class (src/lib/render/glyph.ts), reused here so
      the admin preview matches the exact class the embed-card glyph ships with on a public page.
      The glyph's fill rides currentColor from the surrounding markup; its real "home" is
      deliberately outside the admin sheet, since public render output stays design-agnostic. The
      rule carries only an inert custom property, never read anywhere, since an empty ruleset
-     fails svelte-check's own lint. */
+     fails svelte-check's lint. */
   .cairn-glyph {
     --cairn-naming-hook: true;
   }

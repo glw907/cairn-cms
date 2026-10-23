@@ -1,7 +1,7 @@
 // The media delivery route: an engine-provided SvelteKit RequestHandler a site mounts at
 // `/media/[...path]`. It streams content-addressed bytes from R2 with the security headers that are
 // the load-bearing XSS control for served media. The route sits outside `/admin`, so the admin
-// security headers never run on it; it owns its own.
+// security headers never run on it; it sets headers itself.
 //
 // It lives on the `/sveltekit` barrel, not the node-safe `/media` subpath, because it reads the
 // Worker env through `./workers-env.js`, whose runtime module a Node process cannot load. Its
@@ -44,7 +44,7 @@ function applySecurityHeaders(headers: Headers, etag: string): void {
 }
 
 /**
- * Write the stored HTTP metadata onto `headers` from the object's plain fields, what R2's own
+ * Write the stored HTTP metadata onto `headers` from the object's plain fields, what R2's
  *  `writeHttpMetadata` writes. The route never calls that method: under miniflare's
  *  `getPlatformProxy` the returned object is an RPC stub, and passing a live `Headers` into one
  *  of its methods fails to serialize, 500ing every `/media` read under a consumer's `vite dev`.

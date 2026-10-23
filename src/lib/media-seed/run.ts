@@ -10,7 +10,7 @@ import type { SeedItem } from './assemble.js';
 
 /**
  * The filesystem, network, and subprocess seams one seed run needs. `writeTempFile` and
- *  `cleanup` own their own temp directory so the run loop never touches path construction;
+ *  `cleanup` own their temp directory so the run loop never touches path construction;
  *  `putObject` is the `wrangler r2 object put --local` call.
  */
 export interface SeedDeps {

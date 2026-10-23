@@ -6,7 +6,7 @@
 // `toolkit/custom-screen` is the one row with no package component to mount: its subject is the
 // worked snippet in docs/extend/add-a-custom-admin-screen.md, so ./CustomScreen.svelte builds that
 // screen inside this module from the exported `@glw907/cairn-cms/admin-toolkit` primitives, per the
-// audit's own row.
+// audit's row.
 import type { Component } from 'svelte';
 import ManageEditors from '../../admin/ManageEditors.svelte';
 import VocabularyAdmin from '../../admin/VocabularyAdmin.svelte';
@@ -26,7 +26,7 @@ const tagsScreen: ReproStory = {
   markers: [
     { n: 1, key: 'add-field', anchor: '#cairn-vocab-new-label' },
     { n: 2, key: 'tag-list', anchor: 'div.overflow-hidden.card-shell.card-shadow' },
-    // gear is the fixture vocabulary's own zero-usage entry, so its delete stays the active,
+    // gear is the fixture vocabulary's zero-usage entry, so its delete stays the active,
     // ungated control the other two entries' non-zero counts guard shut.
     { n: 3, key: 'unused-tag', anchor: 'button[aria-label="Remove Gear"]' },
     { n: 4, key: 'not-on-list', anchor: 'div.rounded-box.border-dashed' },
@@ -48,7 +48,7 @@ const ROSTER_PEER: Editor = {
 };
 
 /**
- * The roster `roster/own-row` renders: the signed-in editor first, at the role the shell's own
+ * The roster `roster/own-row` renders: the signed-in editor first, at the role the shell's
  * fixture identity carries, plus one owner peer.
  */
 const rosterData: EditorsData = {
@@ -65,7 +65,7 @@ const rosterData: EditorsData = {
   ],
 };
 
-/** The roster with its own row's controls disabled, `data.self` matching the fixture editor (`roster/own-row`). */
+/** The roster with its row's controls disabled, `data.self` matching the fixture editor (`roster/own-row`). */
 const rosterOwnRow: ReproStory = {
   id: 'roster/own-row',
   component: ManageEditors as unknown as Component<Record<string, unknown>>,
@@ -75,7 +75,7 @@ const rosterOwnRow: ReproStory = {
 
 /**
  * The resolved sidebar the fixture `navLayout` produces, at rest (`nav/worked-navlayout`). The
- * whole contract is `data.nav`, which `ReproContext`'s own default shell payload already carries
+ * whole contract is `data.nav`, which `ReproContext`'s default shell payload already carries
  * (`fixtureNavLayout`, ../fixtures.js), so this row overrides no shell field.
  */
 const workedNavLayout: ReproStory = {
@@ -85,7 +85,7 @@ const workedNavLayout: ReproStory = {
   props: { data: { displayName: fixtureEditor.displayName, siteName: fixtureSiteName } },
 };
 
-/** The events a site's own custom screen manages, matching the doc snippet's own shape. */
+/** The events a site's custom screen manages, matching the doc snippet's shape. */
 const customScreenEvents = [
   { id: 'spring-cleanup', name: 'Spring Cleanup', status: 'Confirmed' },
   { id: 'trail-work-day', name: 'Trail Work Day', status: 'Confirmed' },

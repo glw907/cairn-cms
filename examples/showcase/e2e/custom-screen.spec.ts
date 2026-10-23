@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 // The end-to-end proof of the custom-admin-screen seam (Plan 1). The cms-dev handle mints an owner
 // editor and supplies a fake APP_DB in the Worker env, so the create-then-delete round-trips through
-// the developer's own binding. The fake APP_DB is process-global, so a row added on one request is
+// the developer's binding. The fake APP_DB is process-global, so a row added on one request is
 // visible on the next; a unique signup name per run keeps the assertions exact under Playwright's
 // CI retries (a retry shares the running server, so a fixed name would accumulate duplicate rows).
 
@@ -12,7 +12,7 @@ async function addSignup(page: Page, label: string): Promise<string> {
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="email"]', `${label.toLowerCase()}@test`);
   await page.getByRole('button', { name: 'Add' }).click();
-  // Exact match: the actions cell's own accessible name is composed from its Delete button's
+  // Exact match: the actions cell's accessible name is composed from its Delete button's
   // label, which also contains this name, so a substring match would resolve two cells.
   await expect(page.getByRole('cell', { name, exact: true })).toBeVisible();
   return name;
@@ -28,7 +28,7 @@ test('a custom admin screen renders in the shell, reads identity, and writes its
   await expect(
     page.getByRole('navigation', { name: 'Site content' }).getByRole('link', { name: 'Signups' }),
   ).toBeVisible();
-  // The custom screen's own content renders inside that shell.
+  // The custom screen's content renders inside that shell.
   await expect(page.getByRole('heading', { name: 'Signups' })).toBeVisible();
   // The bare CsrfField renders the shell's context token, so the create form round-trips. The dev
   // handle replaces the real guard, so this proves the token plumbing, not the guard's rejection
@@ -90,7 +90,7 @@ test("each row's Delete trigger names its own signup", async ({ page }) => {
   await page.goto('/admin/signups');
   const first = await addSignup(page, 'Grace');
   const second = await addSignup(page, 'Hedy');
-  // Exact-match locators built from each row's own name: a substring match would let a shared
+  // Exact-match locators built from each row's name: a substring match would let a shared
   // label pass, so this proves the two triggers carry genuinely different accessible names.
   await expect(page.getByRole('button', { name: `Delete ${first}`, exact: true })).toHaveCount(1);
   await expect(page.getByRole('button', { name: `Delete ${second}`, exact: true })).toHaveCount(1);
@@ -104,7 +104,7 @@ test('a row survives until the confirm dialog is accepted', async ({ page }) => 
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();
   // The row is still in the DOM: the click opened the confirm, it did not post the removal.
-  // Exact match for the same reason addSignup uses one: the actions cell's own name also
+  // Exact match for the same reason addSignup uses one: the actions cell's name also
   // contains this signup's name.
   await expect(page.getByRole('cell', { name, exact: true })).toHaveCount(1);
   await dialog.getByRole('button', { name: 'Delete' }).click();

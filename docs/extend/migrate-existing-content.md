@@ -467,7 +467,7 @@ Work through the following causes in order:
 3. If the build stops with one line per invalid field, each `<dir>/<id>: <field>: <message>`,
    follow the matching row of
    [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build). A migration adds
-   two causes of its own:
+   two more causes:
 
    - If a `date` field is listed, the old date carried a time part. See
      [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd).

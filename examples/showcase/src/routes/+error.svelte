@@ -1,11 +1,11 @@
 <!-- @component The site's ROOT error page, a sibling of the `(site)` route group rather than a
      file inside it. Every route under `(site)` prerenders (`export const prerender = true` on
-     every leaf), so SvelteKit strips the group's own `[...path]` catch-all from the
+     every leaf), so SvelteKit strips the group's `[...path]` catch-all from the
      runtime-routable manifest entirely: a request for an unmatched path matches no route at all,
-     the `(site)` group's layout never runs, and its own `(site)/+error.svelte` (if it had one)
+     the `(site)` group's layout never runs, and its `(site)/+error.svelte` (if it had one)
      never mounts. Only a root-level `+error.svelte` renders for that case, through the Worker's
      built-in default-404 SSR (see `wrangler.jsonc`'s `assets.not_found_handling` comment). The
-     root has no shared layout of its own, so this page rebuilds the `(site)` chrome directly:
+     root has no shared layout, so this page rebuilds the `(site)` chrome directly:
      both stylesheets, `SiteHeader`, and `SiteFooter`, the same components and token classes the
      `(site)` layout uses. See `src/chassis/README.md`'s "The themed-404 pattern" for the full
      mechanism and why. -->

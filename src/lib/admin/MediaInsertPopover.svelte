@@ -87,7 +87,7 @@ rule). The CSRF token is read from the admin context.
   let view = $state<View | null>(null);
   let captureFile = $state<File | null>(null);
 
-  // The card a failed loop surfaces: an ingest-taxonomy card (its own message) or the envelope-only
+  // The card a failed loop surfaces: an ingest-taxonomy card (its message) or the envelope-only
   // generic card. The two share the failed-card shape, so one alias names both.
   type FailureCard = IngestFailureCard | { status: 'failed'; kind: UploadFailureKind; message: string };
 
@@ -282,8 +282,8 @@ rule). The CSRF token is read from the admin context.
       return;
     }
     if (outcome.kind === 'failed') {
-      // An ingest-taxonomy kind reuses failureCard's own message; the envelope-only `generic` kind
-      // carries its own plain message. Either way the card shows the message with a Retry.
+      // An ingest-taxonomy kind reuses failureCard's message; the envelope-only `generic` kind
+      // carries its plain message. Either way the card shows the message with a Retry.
       if (outcome.failure === 'generic') genericCard();
       else fail(failureCard(outcome.failure));
       return;
@@ -304,18 +304,18 @@ rule). The CSRF token is read from the admin context.
 
   // The author-facing message for an envelope-only generic refusal (a binding-missing, a csrf, a
   // length-required: operational refusals with no author-actionable specifics). The ingest-taxonomy
-  // kinds carry their own messages through failureCard.
+  // kinds carry their messages through failureCard.
   const GENERIC_FAILURE_MESSAGE = 'The upload could not be completed. Please try again.';
 
   // The popover's anchored position: just below the caret line, clamped into the viewport on both
   // axes. A null anchor centers it. The full-height sheet at the narrow breakpoint is the CSS
-  // fallback. The vertical clamp reserves the same box height the stylesheet's own
+  // fallback. The vertical clamp reserves the same box height the stylesheet's
   // `max-height: min(28rem, 80vh)` caps the panel at, so a caret near the bottom of a tall page
-  // (or one captured a frame before a font swap widened the toolbar's own eyebrow labels enough
+  // (or one captured a frame before a font swap widened the toolbar's eyebrow labels enough
   // to wrap it, locking in a too-low anchor for the popover's whole open lifetime) never anchors
-  // the panel low enough to push its own bottom-row primary action, the Insert/Add submit button,
+  // the panel low enough to push its bottom-row primary action, the Insert/Add submit button,
   // past the viewport: the panel's `overflow: auto` still handles content taller than that
-  // reserved height by scrolling within itself, which a click's own scroll-into-view can reach,
+  // reserved height by scrolling within itself, which a click's scroll-into-view can reach,
   // unlike a `position: fixed` box sitting off-screen.
   const positionStyle = $derived.by(() => {
     if (!anchor) return 'left: 50%; top: 4rem; transform: translateX(-50%);';

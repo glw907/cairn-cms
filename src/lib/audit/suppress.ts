@@ -1,7 +1,7 @@
 // cairn-audit's suppression idiom: a co-located comment silences one rule over one construct, and
 // the run counts every one of them. The design replaces the file-plus-token JSON allowlists the repo
 // gates used, whose entries orphaned silently on rename and exempted whole files. Three properties
-// carry the weight, and each is a finding of its own when it fails: a directive names a reason, a
+// carry the weight, and each is a separate finding when it fails: a directive names a reason, a
 // directive that silences nothing is dead, and neither of those errors can itself be suppressed. An
 // agent under completion pressure silences gates, so a build that passes by suppression has to read
 // as one.
@@ -19,7 +19,7 @@ import type { Finding } from './types.js';
 /** The comment text a suppression opens with. */
 export const DIRECTIVE_MARKER = 'cairn-audit-disable-next-line';
 
-/** The rule id the suppression system reports its own findings under. */
+/** The rule id the suppression system reports its findings under. */
 export const SUPPRESSION_RULE_ID = 'suppression';
 
 const SEPARATOR = '--';
@@ -57,7 +57,7 @@ export interface SuppressionSource {
    * `suppression` finding. Raw source text cannot tell a real directive from a mention of one in
    * a string literal, a test fixture, or a doc comment, so judging every occurrence as reasonless
    * or dead would turn an advisory feature into an error-tier false positive on any tree that
-   * tests or documents its own suppressions, cairn's own included. A markup or CSS entry that
+   * tests or documents its suppressions, cairn's included. A markup or CSS entry that
    * happens to share a path with a source-text entry overrides it in the caller's dedup, which
    * keeps both judgments unchanged for those two families.
    */
@@ -66,7 +66,7 @@ export interface SuppressionSource {
 
 /** One run's findings split by whether a directive silenced them. */
 export interface SuppressionSplit {
-  /** Findings no directive covered, plus the suppression system's own findings. */
+  /** Findings no directive covered, plus the suppression system's findings. */
   findings: Finding[];
   /** Findings a directive silenced, counted and never gating. */
   suppressed: Finding[];
@@ -183,7 +183,7 @@ function nextLineRange(source: string, from: number): Range | null {
 
 /**
  * The source range a directive covers, or null when nothing follows it. An HTML-form directive
- * never reaches past its own parent: `nodes` is a flat document-order list, so a directive whose
+ * never reaches past its parent: `nodes` is a flat document-order list, so a directive whose
  * parent holds nothing after it would otherwise walk out of that parent and attach to whatever
  * element comes next in the file. That is the orphan-on-rename failure the JSON allowlists were
  * replaced to end, and it is silent both ways, silencing an unrelated finding while the directive
@@ -236,7 +236,7 @@ function suppressionFinding(directive: Directive, message: string): Finding {
  * directive is judged the way it always was.
  *
  * A source flagged `suppressionsOnly` still silences a matching finding, but raises none of the
- * three directive-shape findings above for anything found in it: see the field's own doc comment
+ * three directive-shape findings above for anything found in it: see the field's doc comment
  * for why.
  */
 export function applySuppressions(
@@ -272,7 +272,7 @@ export function applySuppressions(
       for (const finding of matched) silenced.add(finding);
     }
   }
-  // The suppression system's own findings are appended after the split, never offered to a
+  // The suppression system's findings are appended after the split, never offered to a
   // directive. A `suppression` directive that could silence a dead-directive error would make every
   // other guarantee here optional.
   return {

@@ -141,7 +141,7 @@ type ParsedSiteConfig =
   | { ok: false; failure: ActionFailure<{ error: string }> };
 
 /**
- * The generic copy a parse-error refusal answers with; the parser's own actionable message stays
+ * The generic copy a parse-error refusal answers with; the parser's actionable message stays
  *  in the `config.invalid` log record below, for the site's operator, not the editor's screen.
  */
 const CONFIG_INVALID_MESSAGE = 'This section is not available. Let your site developer know.';
@@ -155,12 +155,12 @@ const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Re
  *  key), not an editor mistake, but it still blocks this save, so it answers the screen that
  *  posted rather than navigating away from the editor's unsaved work; both screens now receive
  *  `form`, so the refusal reaches them the same way a conflict does. The response carries generic
- *  copy rather than the parser's own message, which can echo a misplaced key or value straight
+ *  copy rather than the parser's message, which can echo a misplaced key or value straight
  *  from the committed file; the actionable detail stays in the log record below, for the site's
  *  operator. Any other error propagates unchanged. `scope` names the calling screen (`'settings'`
  *  or `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in
  *  this module emits `config.invalid` with `scope: 'settings'`. It is not enough for the
- *  vocabulary caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'`
+ *  vocabulary caller: vocabularyLoad's degrade-path emit also carries `scope: 'vocabulary'`
  *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
  *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
  *  See docs/reference/log-events.md's `config.invalid` row, which documents this collision
@@ -221,7 +221,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  first and reuses a fresh verdict, so a run of settings navigations spends at most one live
    *  round trip within the TTL window; only a stale-or-absent record calls `probeTidyKey`, which is
    *  itself bounded by `ctx.tidyTimeoutMs`, the same deadline a tidy call gets, rather than the
-   *  Anthropic SDK's own multi-minute default.
+   *  Anthropic SDK's multi-minute default.
    */
   async function settingsLoad(event: CairnEvent): Promise<SettingsData> {
     const editor = requireEditor(event);
@@ -386,8 +386,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     try {
       posted = validateVocabulary(JSON.parse(String(form.get('vocabulary') ?? '[]')));
     } catch (err) {
-      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its own message
-      // (V8's own diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
+      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its message
+      // (V8's diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
       // content into the alert; SiteConfigError's messages stay safe to surface directly (each
       // attacker-influenced value they name is already regex-constrained before it is embedded).
       if (err instanceof SyntaxError) {

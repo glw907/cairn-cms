@@ -20,7 +20,7 @@ The role path builds a `staff` role whose `home` is `/admin/staff`, the declarat
 The channel path follows the members channel in the repository's example site, `examples/showcase`.
 That channel signs members in at `/members/login` and gates `/members`.
 It delivers codes through a capture transport for development, which refuses to run outside the dev backend.
-The channel path replaces that transport with a `deliver` for your own.
+The channel path replaces that transport with a `deliver` you write.
 The two mechanisms share no steps, so a developer who has already chosen follows only that path.
 
 The steps assume a site built through [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) or scaffolded by the setup command, so its hooks file, its adapter module, its Wrangler bindings, and its D1 migrations are familiar.
@@ -312,7 +312,7 @@ To write the module, follow these steps:
 
 3. In the file that the following code block names, create the channel with its six required members, typed over the Worker env.
 
-   <!-- snippet-check-skip: imports cloudflare:workers, which a site's own Worker types declare -->
+   <!-- snippet-check-skip: imports cloudflare:workers, which a site's Worker types declare -->
    ```ts
    // src/lib/server/member-channel.ts
    import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
@@ -362,7 +362,7 @@ To write the module, follow these steps:
 
 `wrangler dev` reads secrets from `.dev.vars` and never from a deployed Worker secret, so the production copy waits for [Deploy the channel](#deploy-the-channel).
 The scaffold's `.gitignore` keeps `.dev.vars` out of git.
-The module's own `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.
+The module's `Env` types only what the factory hands its functions, while the `env` imported from `cloudflare:workers` reads the generated type.
 
 Each required member is a decision the site makes:
 
@@ -456,7 +456,7 @@ The reference's [types table](../reference/auth-channel.md#types) lists every ou
 
 ### Gate the member area
 
-A channel session never populates `locals.cairnEditor`, so the member area lives in the site's own routes outside `/admin`.
+A channel session never populates `locals.cairnEditor`, so the member area lives in the site's routes outside `/admin`.
 Each route resolves the subject with `resolveSubject` in its load function.
 To gate the member area, follow these steps:
 

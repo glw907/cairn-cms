@@ -8,7 +8,7 @@ import { test, expect, type Locator } from '@playwright/test';
 // stylesheet text, so a future edit that reintroduces an unwrapped type selector on the reset (or on any
 // rule the owl selector must lose a tie to) fails here instead of shipping a flat, rhythmless post.
 //
-// The assertion compares the element's computed margin-top against `1.35 * its own font-size` (the
+// The assertion compares the element's computed margin-top against `1.35 * its font-size` (the
 // literal `--flow-space: 1.35em` from theme.css resolved against the element the margin applies to,
 // which is how em-valued custom properties resolve): a loose `> 0` check would also pass a reset margin
 // that leaked in from the browser's UA stylesheet.

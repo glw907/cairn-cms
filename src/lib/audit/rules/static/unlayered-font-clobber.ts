@@ -1,5 +1,5 @@
 // cairn-audit's unlayered-font-clobber rule: under the no-Preflight admin, a Svelte scoped `<style>`
-// block declares CSS with no `@layer` wrapper of its own, while every Tailwind utility class ships
+// block declares CSS with no `@layer` wrapper, while every Tailwind utility class ships
 // inside `@layer utilities`. Cascade LAYER precedence, not selector specificity, decides the winner
 // between them: an unlayered scoped declaration beats a font utility class at ANY specificity, even
 // a single-class scoped selector against a `text-2xl font-bold` pair on the same element. Only a
@@ -13,7 +13,7 @@
 // one-scope-per-file rule): a root a site's public scope claims leaves the admin scope, so this
 // rule never reads a site's public components again. A scan of `src/lib/admin-toolkit`,
 // `src/lib/admin`, and `src/routes/admin` found zero co-occurrences, so the rule does not red the
-// engine's own tree.
+// engine's tree.
 import { parseSheet } from '../../sheet.js';
 import { lineAt } from '../../markup.js';
 import { utilityBase } from './utility.js';
@@ -23,7 +23,7 @@ import type { Finding, StaticRule } from '../../types.js';
 const FONT_PROPERTY = new Set(['font-family', 'font-size', 'font-weight', 'font']);
 const LAYER_CONDITION = /^@layer\b/i;
 
-// Tailwind's own text-sizing namespace (`type-scale`'s TEXT_SIZING_TOKEN restated as a full match)
+// Tailwind's text-sizing namespace (`type-scale`'s TEXT_SIZING_TOKEN restated as a full match)
 // and the font-weight/family namespace. Deliberately narrow to font-AFFECTING utilities: `text-*`
 // color utilities (`text-primary`) name a color, not a size, and are out of scope.
 const TEXT_SIZE_UTILITY = /^text-(?:xs|sm|base|lg|xl|[2-9]xl|\[[^\]]+\])$/;
@@ -35,12 +35,12 @@ function isFontUtility(token: string): boolean {
   return TEXT_SIZE_UTILITY.test(base) || FONT_WEIGHT_OR_FAMILY_UTILITY.test(base);
 }
 
-/** Whether a rule's own enclosing at-rules include no `@layer`, the unlayered condition. */
+/** Whether a rule's enclosing at-rules include no `@layer`, the unlayered condition. */
 function isUnlayered(conditions: string[]): boolean {
   return !conditions.some((condition) => LAYER_CONDITION.test(condition.trim()));
 }
 
-/** The class tokens written on one element, grouped by the element's own start offset. */
+/** The class tokens written on one element, grouped by the element's start offset. */
 function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   const map = new Map<number, Set<string>>();
   for (const token of file.classTokens) {
@@ -51,16 +51,16 @@ function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   return map;
 }
 
-/** One rule's own class name and the font-affecting utility it clobbers on the same element. */
+/** One rule's class name and the font-affecting utility it clobbers on the same element. */
 interface FontClobberHit {
   className: string;
   utilityHit: string;
 }
 
 /**
- * The FIRST element/class-name pair a rule's own selector clobbers, or none. A row or list
- * component repeats its own row class across many elements, and the same rule can name more than
- * one class in its own selector list; either shape names the same hazard once per rule, not once
+ * The FIRST element/class-name pair a rule's selector clobbers, or none. A row or list
+ * component repeats its row class across many elements, and the same rule can name more than
+ * one class in its selector list; either shape names the same hazard once per rule, not once
  * per element or class name it happens to match, so the search stops at the first hit.
  */
 function findFontClobberHit(

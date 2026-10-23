@@ -5,46 +5,46 @@ attribute on an icon-only action control. A native `title` never reaches a keybo
 `:focus-visible` trigger, no Escape dismissal) and never reaches a touch user (no hover at all), so
 an icon button whose only accessible name comes from `aria-label` still leaves a sighted mouse
 user's "why" undiscoverable on every other input mode. This component wraps the control instead:
-it renders the given trigger unchanged, points `aria-describedby` at its own rendered text when
+it renders the given trigger unchanged, points `aria-describedby` at its rendered text when
 that text says something the trigger's accessible name does not, and drives the bubble's visibility
 from whichever input mode is active.
 
 Shows on hover (`mouseenter`/`mouseleave`) and on `:focus-visible` (checked on the actual focused
 descendant at `focusin` time, so a mouse click that focuses the trigger does not also open the
 bubble the way a keyboard Tab does); hides on Escape without moving focus off the trigger, since
-Escape only clears this component's own visibility state, never calls `.blur()`. A coarse pointer
-(a real tap, detected from the triggering `PointerEvent`'s own `pointerType`, never `matchMedia`,
+Escape only clears this component's visibility state, never calls `.blur()`. A coarse pointer
+(a real tap, detected from the triggering `PointerEvent`'s `pointerType`, never `matchMedia`,
 since a hybrid device can carry both a mouse and a touchscreen at once) shows the bubble on tap and
-hides on the next tap outside the wrapper, mirroring a native tooltip's own touch fallback. A tap
+hides on the next tap outside the wrapper, mirroring a native tooltip's touch fallback. A tap
 or click that activates an enabled trigger hides the bubble instead of stranding it over whatever
 the activation opened; a trigger marked `aria-disabled="true"` activates nothing, so its bubble
 stays, which is the guarded-control case this component exists for.
 
-The three WCAG 1.4.13 (Content on Hover or Focus) bullets are all this component's own to meet,
+The three WCAG 1.4.13 (Content on Hover or Focus) bullets are all this component's to meet,
 since it authors the bubble rather than leaving it to user-agent `title` presentation. Dismissible:
 a `document`-level Escape listener, so the key works wherever focus sits. Hoverable: the bubble
 takes pointer events, and a hover-triggered `mouseleave` on the wrapper does not clear `hoverOn`
 right away; it starts the hide-grace timer (see `HOVER_HIDE_GRACE_MS`) so a pointer crossing the
 gap between trigger and bubble has time to land on either before the bubble closes. Persistent:
 the bubble stays open until the pointer, keyboard, or tap that opened it says otherwise; the hide
-grace only defers a hover-leave's own dismissal by that one short span, never dismisses on its own
+grace only defers a hover-leave's dismissal by that one short span, never dismisses on its own
 initiative while the pointer stays put.
 
 The bubble is a manual popover placed by CSS anchor positioning, the same recipe the editor
-toolbar's own menus use: the trigger carries an `anchor-name` unique to this instance and the
+toolbar's menus use: the trigger carries an `anchor-name` unique to this instance and the
 bubble carries the matching `position-anchor` with a `position-area` above it. A popover renders in
 the top layer, so no transformed, scaled, or `overflow: hidden` ancestor can displace or clip it,
-which a coordinate-writing scheme cannot promise (an open daisyUI modal's own box sets both a
+which a coordinate-writing scheme cannot promise (an open daisyUI modal's box sets both a
 `translate` and an `overflow: hidden`, and any transform establishes a containing block for fixed
 descendants). Anchor positioning also tracks the trigger through scroll and resize with no
-listener of this component's own, and `position-try-fallbacks` flips the bubble below the trigger
+listener in this component, and `position-try-fallbacks` flips the bubble below the trigger
 when there is no room above. A browser without anchor positioning would paint the bubble at an
 unplaced position, so there the bubble is not rendered at all; `aria-describedby` carries the text
 to assistive technology, except in the duplicate-name case, where no `aria-describedby` is set at
 all (see `duplicatesName`), so the same client-side feature test sets a native `title` on the
 trigger instead, a UA tooltip standing in for the bubble this browser cannot place.
 
-`aria-describedby` is set imperatively on the trigger's own rendered root element (the wrapper's
+`aria-describedby` is set imperatively on the trigger's rendered root element (the wrapper's
 first child once the `children` snippet mounts), not spread through a snippet parameter: the sweep
 this component exists for wraps existing buttons and links unchanged, so the trigger keeps
 whatever attributes it already carries and this component adds exactly one. The same effect writes
@@ -54,7 +54,7 @@ already declares for a popover menu of its own rather than replacing it.
 A closed popover is not rendered at all, but an element referenced by `aria-describedby` still
 contributes its text however it is hidden (the accessible-description computation traverses into a
 hidden referenced subtree by design), so the description resolves on a trigger this component's
-own hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
+hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
 -->
 <script module lang="ts">
   /** Whether this browser resolves CSS anchor positioning, tested once and cached at module scope
@@ -69,20 +69,20 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   import type { Snippet } from 'svelte';
 
   interface Props {
-    /** The tooltip's own text, rendered inside the bubble and pointed at by the trigger's
+    /** The tooltip's text, rendered inside the bubble and pointed at by the trigger's
      *  `aria-describedby` when it differs from the trigger's accessible name. An empty string opts
      *  out entirely (no `aria-describedby`, no bubble, every hover/focus/tap mechanic a no-op):
      *  the sweep this component exists for wraps a few sites whose reason is conditional (a
-     *  guarded button's own explanation, present only while guarded), and an empty string is how a
+     *  guarded button's explanation, present only while guarded), and an empty string is how a
      *  caller passes "nothing to say right now" without a second, conditionally-rendered copy of
      *  the whole trigger. */
     text: string;
-    /** An id for the bubble element. Omit to use `$props.id()`'s own generated id. */
+    /** An id for the bubble element. Omit to use `$props.id()`'s generated id. */
     id?: string;
     /** Renders the trigger control (a button or a link) unchanged; this component adds only
      *  `aria-describedby` and an `anchor-name` to its rendered root element. Exactly one element,
      *  never bare text and never two siblings: the first element is the trigger this component
-     *  describes and anchors. A trigger whose own `style` attribute is written from a reactive
+     *  describes and anchors. A trigger whose `style` attribute is written from a reactive
      *  expression loses the appended `anchor-name` whenever Svelte rewrites that attribute, so
      *  give such a trigger a class instead. */
     children: Snippet;
@@ -98,7 +98,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 
   let wrapperEl = $state<HTMLElement | null>(null);
   let bubbleEl = $state<HTMLElement | null>(null);
-  /** The pause a hover-shown bubble tolerates between the wrapper's own `mouseleave` and clearing
+  /** The pause a hover-shown bubble tolerates between the wrapper's `mouseleave` and clearing
    *  `hoverOn`, matching `--cairn-dur-base`. Chromium's hit-testing for a top-layer popover does
    *  not extend into the gap between trigger and bubble (every point there resolves to the
    *  document, never the bubble), so a pointer that merely pauses in that gap fires the wrapper's
@@ -127,7 +127,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   const hoverDelayed = $derived(visible && hoverOn && !focusOn && !tapOn);
 
   /**
-   * The trigger element, the wrapper's own first child once the `children` snippet mounts. Null
+   * The trigger element, the wrapper's first child once the `children` snippet mounts. Null
    * when that snippet rendered no element of its own, in which case the wrapper's first child is
    * the bubble: there is nothing to describe or anchor, so every mechanic skips rather than
    * pointing the bubble at itself.
@@ -146,7 +146,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
    * case no `aria-describedby` is written: a screen reader would otherwise read the same words
    * twice, once as the name and once as the description. The name is read the way the trigger
    * supplies it, an `aria-label` when present and the rendered text otherwise, which covers every
-   * shape this toolkit's own sweep wraps.
+   * shape this toolkit's sweep wraps.
    */
   function duplicatesName(trigger: HTMLElement): boolean {
     const name = (trigger.getAttribute('aria-label') ?? trigger.textContent ?? '').trim();
@@ -154,7 +154,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   }
 
   /**
-   * Points the trigger at the bubble, unless the bubble only repeats the trigger's own accessible
+   * Points the trigger at the bubble, unless the bubble only repeats the trigger's accessible
    * name.
    * @returns the trigger's prior `aria-describedby`, for a teardown to restore
    */
@@ -192,14 +192,14 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     return prior;
   }
 
-  // Writes aria-describedby and the anchor name on the trigger's own rendered root element, never
+  // Writes aria-describedby and the anchor name on the trigger's rendered root element, never
   // on this component's wrapper: the wrapper renders no box of its own, so it can be neither the
   // element that receives focus nor an anchor (a boxless element cannot anchor anything). Re-runs
   // whenever the trigger, the text, the bubble id, or the anchor name changes, and cleans up on
   // unmount so a later Tooltip reusing the same DOM node never inherits a stale value. A no-op
-  // while `text` is empty (see the prop's own doc comment).
+  // while `text` is empty (see the prop's doc comment).
   //
-  // The same effect watches the trigger's own `aria-expanded`: a trigger that opens a menu of its
+  // The same effect watches the trigger's `aria-expanded`: a trigger that opens a menu of its
   // own must not leave a bubble hanging over that menu, and watching the attribute catches the
   // open however it happened, including one a caller opens programmatically.
   //
@@ -234,7 +234,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   // Drives the popover from the derived visibility rather than from each handler, so the several
   // input modes cannot disagree about whether the bubble is open. Both popover methods throw when
   // the popover is already in the state they ask for, hence the guard on each. The trigger is
-  // re-resolved on every open, so a caller that swapped its own trigger element (a conditional
+  // re-resolved on every open, so a caller that swapped its trigger element (a conditional
   // block re-rendering it) gets the anchor name and the description repaired on the next open
   // rather than anchoring the bubble to an element that left the DOM.
   $effect(() => {
@@ -342,9 +342,9 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 </script>
 
 <!-- The wrapper is deliberately non-interactive (no role, no tabindex): its hover/focus/pointer
-     listeners are delegation over whatever the children snippet renders, not an affordance of
-     their own an AT user should be told about, matching ToolbarDisclosure's own containing
-     element. The click listener only ever hides a bubble the trigger's own activation would
+     listeners are delegation over whatever the children snippet renders, not an affordance
+     an AT user should be told about, matching ToolbarDisclosure's containing
+     element. The click listener only ever hides a bubble the trigger's activation would
      otherwise strand, so it adds no keyboard affordance to duplicate. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -375,7 +375,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 <style>
   /* Layout only, scoped rather than a Tailwind utility string: `admin-toolkit` sits outside
      `custom-surface-budget.json`'s `markupDirs`, so this block faces no budget. `display: contents`:
-     a direct flex-item child is blockified regardless of its own declared `display` (the CSS
+     a direct flex-item child is blockified regardless of its declared `display` (the CSS
      Flexbox spec forces this), so even `inline`/`inline-flex` on this wrapper still measured wider
      than the bare trigger once every button in a dense row carried one, pushing EditorToolbar's
      format cluster past its 49rem fit cap. `display: contents` is the one value exempt from
@@ -388,7 +388,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
 
   /* The bubble is a manual popover, so the browser renders it in the top layer and no ancestor's
      transform, scale, or `overflow: hidden` can displace or clip it. `position-area: top` off the
-     trigger's own `anchor-name` (written by the script's effect above) places it centered above
+     trigger's `anchor-name` (written by the script's effect above) places it centered above
      that one trigger, and `position-try-fallbacks: flip-block` moves it below when the top edge
      has no room. `inset: auto` and `margin: 0` undo the UA popover sheet, whose `inset: 0` plus
      `margin: auto` would otherwise stretch the bubble across the whole position area. The bubble
@@ -416,9 +416,9 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
       display var(--cairn-dur-base, 150ms) allow-discrete,
       overlay var(--cairn-dur-base, 150ms) allow-discrete;
     /* Literal fallbacks precede every custom-property read below (--cairn-shadow, --color-neutral,
-       --color-neutral-content), since a consumer's own admin screen (this toolkit's other
+       --color-neutral-content), since a consumer's admin screen (this toolkit's other
        audience) never guarantees the cairn admin theme root is an ancestor; see StatusChip.svelte's
-       own header comment for the same discipline. */
+       header comment for the same discipline. */
     background-color: oklch(32% 0.012 75);
     background-color: var(--color-neutral, oklch(32% 0.012 75));
     color: oklch(96% 0.004 75);
@@ -427,7 +427,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
     box-shadow: var(--cairn-shadow, 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1));
   }
 
-  /* The entrance fade, keyed off the popover's own open state so the discrete display change
+  /* The entrance fade, keyed off the popover's open state so the discrete display change
      animates with it; @starting-style supplies the from value a first render otherwise has none
      for. */
   @starting-style {
@@ -462,7 +462,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   }
 
   /* Both selectors, since the exit rule above outranks a single-class reduce rule and would keep
-     its own transition under the floor. */
+     its transition under the floor. */
   @media (prefers-reduced-motion: reduce) {
     .cairn-tooltip-bubble,
     .cairn-tooltip-bubble:not(:popover-open) {
@@ -471,7 +471,7 @@ own hover/focus mechanics never opened, matching how `aria-describedby` resolves
   }
 
   /* Anchor positioning places this bubble; without it the bubble would paint at the UA popover
-     sheet's own centered position, unrelated to its trigger. There it is not rendered at all, and
+     sheet's centered position, unrelated to its trigger. There it is not rendered at all, and
      the trigger's `aria-describedby` carries the text on its own, which is how the description
      reaches assistive technology whether or not the bubble ever paints. */
   @supports not (anchor-name: --x) {

@@ -1,5 +1,5 @@
 // The reference preview mount every consumer copies. It lives INSIDE the `(site)` layout group
-// deliberately: the group's own layout carries the theme stylesheets and chrome
+// deliberately: the group's layout carries the theme stylesheets and chrome
 // (`(site)/+layout.svelte`), and mounting outside it would render the page unstyled. `loadPreview`
 // takes the SAME `publicRoutesConfig` object `(site)/[...path]/+page.server.ts` composes its public
 // routes from, so a site can never wire the preview page to a different rendering config than its

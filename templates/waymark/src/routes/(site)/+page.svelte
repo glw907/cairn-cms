@@ -59,7 +59,7 @@
 </section>
 
 <section class="listing" aria-label="Writing">
-  <!-- The lead: the newest entry, set apart with its own title size, an excerpt, and an explicit
+  <!-- The lead: the newest entry, set apart with its title size, an excerpt, and an explicit
        "Read the post" link, so the front page opens with one clear invitation instead of the first
        row of a table. The "Latest" label now differentiates it from "Archive" below, which is why
        the eyebrow device earns its place here (it did not on the masthead above, where nothing else
@@ -162,18 +162,18 @@
 
 <style>
   /* The listing: a top hairline opens the whole section (the previous single-list treatment), with
-     the lead and the tightened index each carrying their own rhythm below it. */
+     the lead and the tightened index each carrying their rhythm below it. */
   .listing {
     border-top: var(--border) solid var(--color-base-300);
     padding-top: var(--spacing-s);
     margin-bottom: var(--spacing-2xl);
   }
 
-  /* The lead card: the newest entry, set larger than an index row and closed by its own hairline
+  /* The lead card: the newest entry, set larger than an index row and closed by its hairline
      before the archive starts. .lead does not carry .cairn-section: the primitive's margin-block
      visibly redesigns the eyebrow-to-date and excerpt-to-link gaps (26 to 48px above the date,
      49 to 81px above the link, 50 to 17px below the link at home-light-2560), so .lead keeps its
-     own spacing here instead. */
+     spacing here instead. */
   .lead {
     padding-bottom: var(--spacing-l);
     margin-bottom: var(--spacing-l);
@@ -244,7 +244,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* The year marker: the page's own eyebrow-heading register (display face, tight tracking) scaled
+  /* The year marker: the page's eyebrow-heading register (display face, tight tracking) scaled
      up from the "Archive"/"Latest" eyebrow rather than introducing a new voice, with a hairline
      above every group but the first, so a multi-year archive reads as segmented history. */
   .index__year {
@@ -271,7 +271,7 @@
      corner ladder: it reads --tag-filter-radius, which a theme sets at its root, and falls back to
      999px. The theme's `--radius-selector` is a separate, smaller geometry knob (0.28rem), so reading
      it here would change the shape, not just unlock it. Each pill reaches the 44px
-     touch-target floor through its own vertical padding rather than a fixed height, so the visible
+     touch-target floor through its vertical padding rather than a fixed height, so the visible
      pill grows with its content instead of clipping a longer label. */
   .tag-filter {
     display: flex;
@@ -287,7 +287,7 @@
     line-height: var(--leading-snug);
     padding: 0.6rem 0.9rem;
     border: var(--border) solid var(--color-card-border);
-    /* A shape, not a step on the corner ladder: the pill reads its own token. */
+    /* A shape, not a step on the corner ladder: the pill reads its token. */
     border-radius: var(--tag-filter-radius, 999px);
     background: transparent;
     color: var(--color-muted);

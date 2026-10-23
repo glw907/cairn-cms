@@ -2,7 +2,7 @@
 // whole line replaced by a chip naming the fragment's human title ("Include: Office contact"), never
 // the raw fence machinery or the bare id. The line is also made atomic, so a backspace or delete
 // touching it removes the whole line in one transaction (one undo step restores it), mirroring the
-// media: source chip's own atomic-token behavior (editor-media.ts) but scoped to the whole line
+// media: source chip's atomic-token behavior (editor-media.ts) but scoped to the whole line
 // rather than one inline token, since a leaf directive's grammar already confines it to its own line.
 //
 // Client-only like editor-highlight, editor-modes, and editor-media: MarkdownEditor reaches this
@@ -10,7 +10,7 @@
 // (guarded by the editor-boundary test, whose DYNAMIC_ONLY list names this file).
 //
 // The title lookup is reactive: MarkdownEditor feeds it in through a compartment reconfigured on a
-// prop change, mirroring the media library's own wiring. A fragment id absent from the lookup (the
+// prop change, mirroring the media library's wiring. A fragment id absent from the lookup (the
 // title unavailable) renders a neutral chip named from the raw id rather than throwing; the decoration
 // never touches the document text either way.
 import {
@@ -80,7 +80,7 @@ class IncludeChipWidget extends WidgetType {
 
 /**
  * The published title for a fragment id, or null when the lookup carries no entry for it. Reads
- *  only the lookup's own keys ({@link Object.hasOwn}), never the inherited `Object.prototype`
+ *  only the lookup's keys ({@link Object.hasOwn}), never the inherited `Object.prototype`
  *  chain: `titles` is a plain object built from author-typed fragment ids, so an id like
  *  `"constructor"` or `"toString"` must fall back to the raw id rather than resolving a JS
  *  internal the bracket lookup would otherwise hit.
@@ -95,10 +95,10 @@ function resolveTitle(titles: FragmentTitles, fragmentId: string): string | null
  * Every resolved include line across the editor's visible ranges, in document order. A line
  *  resolves when it carries a `fragment="id"` value {@link includeFragmentId} can read AND sits
  *  outside a fenced code block: a documented `::include{...}` example inside a code fence is the
- *  block's own literal text, never a live directive the renderer resolves, so it stays plain
+ *  block's literal text, never a live directive the renderer resolves, so it stays plain
  *  source like every sibling decoration in this editor. An include leaf directive with no fragment
  *  attribute (or a malformed one) is likewise left as plain source, matching the media decoration's
- *  own "malformed token stays plain source" precedent.
+ *  "malformed token stays plain source" precedent.
  */
 function visibleMatches(view: EditorView, titles: FragmentTitles): IncludeMatch[] {
   const lines = docLines(view);

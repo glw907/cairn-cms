@@ -1,10 +1,10 @@
 <!-- @component The G1 fixture screen: an owner-only, no-nav proof that a custom admin route
 written only in plain daisyUI classes and cairn's role utilities (`type-*`, `gap-*`, `card-shell`,
-`rounded-*`) gets a consistent look with no per-element idiom of its own. Every probed element
+`rounded-*`) gets a consistent look with no per-element idiom. Every probed element
 carries a stable `data-testid`, read by `theme-kit.spec.ts` and the `admin-visual` captures; no
 `<style>` block anywhere on the page (spec, "G1: a consistent look by default"). The page heading
 carries `font-[550]`, the one arbitrary value the ratified page heading itself uses (PageHeader's
-own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
+`.page-h1`), since no plain Tailwind weight utility lands on 550. -->
 <svelte:head>
   <title>Theme kit</title>
 </svelte:head>
@@ -29,7 +29,7 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
         <button class="btn btn-error" data-testid="tk-btn-error">Error</button>
         <button class="btn" disabled data-testid="tk-btn-disabled">Disabled</button>
         <button class="btn btn-sm" data-testid="tk-btn-sm">Small</button>
-        <!-- Review focus 2's host-order probes: an uncolored outline stays daisyUI's own edge, and
+        <!-- Review focus 2's host-order probes: an uncolored outline stays daisyUI's edge, and
              a selected outline keeps rule 11's ink, in either host-sheet order. -->
         <button class="btn btn-outline" data-testid="tk-btn-outline">Outline</button>
         <button class="btn btn-outline btn-active" data-testid="tk-btn-outline-active">
@@ -158,7 +158,7 @@ own `.page-h1`), since no plain Tailwind weight utility lands on 550. -->
       </div>
     </section>
 
-    <!-- daisyUI's own `.modal-box` is `opacity: 0; scale: .95` at rest, visible only nested
+    <!-- daisyUI's `.modal-box` is `opacity: 0; scale: .95` at rest, visible only nested
          inside an open `.modal`. This fixture renders the box standalone to prove its warm
          shadow, so `opacity-100 scale-100` (plain Tailwind utilities, unlayered against
          daisyUI's nested component layer) hold it visible on its own. -->

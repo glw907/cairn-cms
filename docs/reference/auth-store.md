@@ -1,21 +1,21 @@
 # Auth store (`@glw907/cairn-cms/auth-store`)
 
-This subpath holds the D1 editor-provisioning functions the engine's own `editors-routes` uses to
+This subpath holds the D1 editor-provisioning functions the engine's `editors-routes` uses to
 back the [`ManageEditors`](./admin.md#manageeditors) screen: read the allowlist, add or remove an editor,
 and change a role, with the owner-count guards that keep at least one owner-capability editor on
 the roster. It is server-only surface (no `svelte` export condition), for a site that provisions or
-manages editors from its own server code, a setup script, or a migration, outside the admin screen.
+manages editors from its server code, a setup script, or a migration, outside the admin screen.
 
 This subpath carries D1 editor-roster reads and writes, provisioning surface only. The auth-flow
 functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
 `recentlyIssued`, `consumeToken`, `rebindToken`, `createSession`, `resolveSession`, and
 `deleteSession`, stay unexported here. They back the login flow only; no real caller outside the engine needs them, so
 they are not proven surface. A token or session primitive lives on
-[`/auth-crypto`](./auth-crypto.md) instead, even one this store's own rows carry a hash of.
+[`/auth-crypto`](./auth-crypto.md) instead, even one this store's rows carry a hash of.
 
 Every function takes the site's `AUTH_DB` `D1Database` binding as its first argument, the same
 binding `CairnEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's
-own `editors-routes` calls these exact functions, over the same rows, so a consumer script and the
+`editors-routes` calls these exact functions, over the same rows, so a consumer script and the
 `ManageEditors` screen stay consistent.
 
 ```ts
@@ -38,18 +38,18 @@ unreachable to a lookup under another, leaving a site with an editor who can nev
 still counts toward the owner-count guards below.
 
 Compare an address the store returns against an address from elsewhere, such as a user record in the
-site's own database, only after lowercasing both sides.
+site's database, only after lowercasing both sides.
 
 ## Owner-count guards
 
 `deleteEditor` and `setEditorRole` both take an `ownerRoles` argument (the site's owner-capability
-role names) and fold the anti-lockout guard into their own atomic write: a non-owner row is
+role names) and fold the anti-lockout guard into their atomic write: a non-owner row is
 removed or changed unconditionally, and an owner-capability row is refused only when it is the
 last one. Each is the one call a caller needs, "remove this editor" or "change this editor's role,"
 regardless of the target's current role; neither requires a caller to look the target up first and
 dispatch between a guarded and an unguarded function.
 
-`removeOwnerIfNotLast` and `demoteOwnerIfNotLast` are the narrower, owner-only twins: their own
+`removeOwnerIfNotLast` and `demoteOwnerIfNotLast` are the narrower, owner-only twins: their
 `WHERE` matches only an owner-capability row, so each refuses outright on a row that isn't
 owner-capability at all, rather than acting on it. Reach for these when a call site specifically
 wants an owner-only guard, refused rather than silently no-opping on a non-owner target.
@@ -64,9 +64,9 @@ Each of the four guarded write functions on this page returns a discriminated `o
 rather than a `boolean` or `void`. A caller reads the refusal reason off the type and never
 re-derives it from a separate read. `deleteEditor` and `setEditorRole` distinguish `'not-found'` (no row matched the
 email) from `'last-owner'` (the row is present and is the last owner-capability row), because
-their own atomic write's `WHERE` matches any row, owner or not, so a `changes === 0` result can
+their atomic write's `WHERE` matches any row, owner or not, so a `changes === 0` result can
 only mean one or the other. `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` instead report
-`'not-eligible'` for both "no such row" and "present but not owner-capability": their own `WHERE`
+`'not-eligible'` for both "no such row" and "present but not owner-capability": their `WHERE`
 matches only owner-capability rows, so a `changes === 0` result can't tell those two cases apart,
 and the discriminant names only what the predicate knows.
 
@@ -220,6 +220,6 @@ Stability tier: Extension API.
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
 | `UnresolvedEditor` | Extension API | `type UnresolvedEditor = Omit<Editor, 'capability'>` | An allowlist row as the store reads it, `Editor` minus `capability`. The store has no access to a site's declared vocabulary, so it never resolves that field; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |
-| `DeleteEditorOutcome` | Extension API | `type DeleteEditorOutcome = { outcome: 'removed' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`deleteEditor`](#deleteeditor) returns; see its own description for each arm. |
-| `SetEditorRoleOutcome` | Extension API | `type SetEditorRoleOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`setEditorRole`](#seteditorrole) returns; see its own description for each arm. |
-| `OwnerGuardOutcome` | Extension API | `type OwnerGuardOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-eligible' }` | What [`removeOwnerIfNotLast`](#removeownerifnotlast) and [`demoteOwnerIfNotLast`](#demoteownerifnotlast) return; see either function's own description for each arm. |
+| `DeleteEditorOutcome` | Extension API | `type DeleteEditorOutcome = { outcome: 'removed' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`deleteEditor`](#deleteeditor) returns; see its description for each arm. |
+| `SetEditorRoleOutcome` | Extension API | `type SetEditorRoleOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-found' }` | What [`setEditorRole`](#seteditorrole) returns; see its description for each arm. |
+| `OwnerGuardOutcome` | Extension API | `type OwnerGuardOutcome = { outcome: 'ok' } \| { outcome: 'last-owner' } \| { outcome: 'not-eligible' }` | What [`removeOwnerIfNotLast`](#removeownerifnotlast) and [`demoteOwnerIfNotLast`](#demoteownerifnotlast) return; see either function's description for each arm. |

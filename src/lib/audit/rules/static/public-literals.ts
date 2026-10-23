@@ -11,12 +11,12 @@
 // Legal by rule, never by suppression:
 // - a custom-property definition anywhere under a theme root, a component's `<style>` block
 //   included, since defining a token is what a theme root is for;
-// - the root element's own `font-size`, which is what defines `rem` for the page;
+// - the root element's `font-size`, which is what defines `rem` for the page;
 // - `em`, `%`, a keyword, and a `var()` or math function over tokens for a size;
 // - `transparent`, `currentColor`, and the CSS-wide keywords for a color.
-// Tailwind's own utilities (`text-sm`, `bg-red-500`) carry no bracket and are tokens a designer
+// Tailwind's utilities (`text-sm`, `bg-red-500`) carry no bracket and are tokens a designer
 // may choose, so they are never read. A `<style lang="...">` block the parser cannot read (Sass,
-// Less) raises its own advisory finding, since its literals go unchecked.
+// Less) raises an advisory finding, since its literals go unchecked.
 import { isUnderRoots } from '../../config.js';
 import { lineAt } from '../../markup.js';
 import { arbitraryValueHazard, declarationHazard } from '../../literals.js';

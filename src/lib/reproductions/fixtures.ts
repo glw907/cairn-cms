@@ -1,6 +1,6 @@
 // cairn-cms: the deliberately minimal fixture set the live-reproduction seam's stories mount
 // against. One sample concept, a handful of entries, a small media library, a tag vocabulary, one
-// signed-in editor, and the nav/worked-navlayout example, typed against the engine's own load-time
+// signed-in editor, and the nav/worked-navlayout example, typed against the engine's load-time
 // shapes (ListData's EntrySummary, HistoryData, MediaLibraryData, VocabularyData,
 // ResolvedNavLayout) so a story's props are exactly what a real admin route would hand the same
 // component. Node-safe like ./manifest.ts: no `.svelte` import, no @sveltejs/kit, no DOM outside the
@@ -14,7 +14,7 @@
 //
 // https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md is the per-story mechanism record these fixtures serve;
 // its "Note for A2" paragraphs on `media/upload-form` and `media/delete-in-use` are load-bearing
-// here. src/tests/unit/reproductions-fixtures.test.ts holds this module to its own consistency.
+// here. src/tests/unit/reproductions-fixtures.test.ts holds this module to its consistency.
 import { defineFieldset } from '../content/fieldset.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
@@ -50,7 +50,7 @@ export const fixtureConcept: ConceptDescriptor = {
 export const fixtureSiteName = 'Trailhead';
 
 /**
- * The CSRF token every reproduction's forms carry: the value a story bakes into its own `data.csrf`
+ * The CSRF token every reproduction's forms carry: the value a story bakes into its `data.csrf`
  * and the one `ReproContext` hands descendants through the CSRF context. One constant because the
  * two are written in different modules and a static reproduction shows nothing when they disagree.
  */
@@ -70,12 +70,12 @@ export const fixtureEditor: Editor = {
 
 /**
  * One fixture entry: a real admin route's `EntrySummary` row, plus the concept it belongs to and,
- *  for the one entry `publish/history-list` renders, its own publish history.
+ *  for the one entry `publish/history-list` renders, its publish history.
  */
 export interface FixtureEntry extends EntrySummary {
   /** The concept id this entry belongs to. Every entry in this fixture set carries `fixtureConcept.id`. */
   concept: string;
-  /** This entry's own `CairnHistory` data, present only on the entry `publish/history-list` mounts. */
+  /** This entry's `CairnHistory` data, present only on the entry `publish/history-list` mounts. */
   history?: HistoryData;
 }
 
@@ -260,7 +260,7 @@ export const fixtureVocabulary: VocabularyData = {
 };
 
 /**
- * The `navLayout` seam's own worked example, resolved to
+ * The `navLayout` seam's worked example, resolved to
  * the shape `CairnAdminShell` renders: two engine references, a "Team" section of two site entries,
  * two more engine references (one relabeled), then an unreferenced trailing group after the divider
  * (`vocabulary`, `editors`, `help`, none of which the worked example's tree names).
@@ -302,7 +302,7 @@ const CAPTURE_IMAGE_BASE64 =
   'g9N0IZ+EC2tcFfJO/H6YCgcN/gWDs0hntT/H9edZX2vW1/fDXDhoEA3mBg2m8g9mFpibGFCYTAAAAABJRU5ErkJggg==';
 
 /**
- * Decode a base64 string to raw bytes: `File`'s own bytes-inline constructor, browser and Node
+ * Decode a base64 string to raw bytes: `File`'s bytes-inline constructor, browser and Node
  * alike via the global `atob`. Returns `Uint8Array<ArrayBuffer>` explicitly (not the bare
  * `Uint8Array<ArrayBufferLike>` a plain `new Uint8Array(n)` widens to), the same narrowing
  * `naming.ts`'s `asArrayBuffer` applies, since `BlobPart` refuses the wider generic.

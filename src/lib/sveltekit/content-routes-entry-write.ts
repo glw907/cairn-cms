@@ -3,7 +3,7 @@
 // commits the entry file to its pending branch; save stops there, publish reuses the same held
 // state to copy that commit to main. discardAction shares no code with the other three but sits
 // here because it is the write cluster's fourth branch-lifecycle verb (save, publish, discard all
-// act on the entry's own pending branch, unlike the destructive and revert clusters).
+// act on the entry's pending branch, unlike the destructive and revert clusters).
 // createEntryWriteActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
 // sibling factory; the public createContentRoutes is a thin wrapper around that internal factory.
@@ -77,7 +77,7 @@ interface SaveHold {
   path: string;
   markdown: string;
   /**
-   * The posted body alone, frontmatter stripped: publish's own conflict reseeds SaveFailure.body
+   * The posted body alone, frontmatter stripped: publish's conflict reseeds SaveFailure.body
    *  from this rather than the frontmatter-bearing `markdown`, mirroring what the editor typed.
    */
   body: string;
@@ -116,7 +116,7 @@ interface SaveHold {
 /**
  * A save refusal's payload: the one-line summary over an empty broken-link list, reseeding the
  *  posted body so the editor re-renders with the unsaved work intact. The broken-link list is
- *  empty on every refusal but the link guard's own, which builds its payload with the tokens it
+ *  empty on every refusal but the link guard's, which builds its payload with the tokens it
  *  found.
  */
 function saveRefusal(message: string, body: string): SaveFailure {
@@ -158,7 +158,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
     //  concept marks a taxonomy field. Otherwise the bare path runs unchanged (the open creatable
     //  multiselect an unadopted site has today). When enforced, the allowed set is the vocabulary
-    //  unioned with the entry's own prior committed tags, so a re-saved pre-existing orphan passes
+    //  unioned with the entry's prior committed tags, so a re-saved pre-existing orphan passes
     //  while a genuinely new value is rejected; the closed field drives the getAll decode.
     const vocabValues = runtime.vocabulary.map((v) => v.value);
     const taxField = resolveTaxonomyField(concept.fields);
@@ -370,7 +370,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (mediaChange) changes.push(mediaChange);
 
     // The cross-branch address-collision re-check: warn-and-allow, last-write-wins, never a gate.
-    // Resolve this entry's own address the way editLoad does and look it up in the index built from
+    // Resolve this entry's address the way editLoad does and look it up in the index built from
     // the same manifest the publish carries. The read fails open: a thrown index build degrades to
     // no event and the publish proceeds, so a transient GitHub error never blocks a publish.
     let address = '';
@@ -437,7 +437,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    *  concept param is ignored and the redirect lands on the first configured concept. This is
    *  the one engine action that spans every concept in a single call, so it cannot gate with a
    *  single `requireEngineAccess(runtime.access, editor, target)` call the way every other
-   *  concept route does: instead each pending entry is filtered by `canReach` against its own
+   *  concept route does: instead each pending entry is filtered by `canReach` against its
    *  concept id, so a role mapped away from a concept never has that concept's entries published
    *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
    *  The default branch's head is read before every branch read and main's manifest and rides
@@ -455,7 +455,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // Each cairn/ ref names a pending entry; the shared predicate skips a stray ref rather
     // than failing the whole batch on it. A concept the access map denies this editor is
     // skipped the same way: this batch only ever acts on entries the editor could also reach
-    // one at a time through the concept's own publish action.
+    // one at a time through the concept's publish action.
     const names = await backend.listBranches(PENDING_PREFIX);
     const pending = names.flatMap((name) => {
       const entry = pendingEntryOf(runtime, name);
@@ -527,12 +527,12 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       if (isConflict(err)) {
         throw redirect(303, `${listPage}?error=publish_conflict`);
       }
-      // Every other outcome of this action is its own redirect to listPage (above and below), so
+      // Every other outcome of this action is its redirect to listPage (above and below), so
       // an unexpected commit failure gets the same treatment rather than escaping to viewAction's
-      // generic fail(500): this action posts to the bare /admin, whose own load (indexLoad)
+      // generic fail(500): this action posts to the bare /admin, whose load (indexLoad)
       // always redirects away before ever rendering a component that reads `form`, so a fail()
       // here would be silently discarded before an editor ever saw it. The bounded publish_failed
-      // code carries the same calm copy viewAction's own unexpected-failure fallback uses.
+      // code carries the same calm copy viewAction's unexpected-failure fallback uses.
       throw redirect(303, `${listPage}?error=publish_failed`);
     }
     // Only after the main commit lands: a failure above keeps every branch and its edits. Each
@@ -569,7 +569,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     // Only a never-published entry's discard clears preview-token rows: the id is now free for an
     // unrelated future entry to claim, the id-reuse collision the clear closes. Discarding an EDIT
     // of a live entry leaves its rows alone (the same "publish does not clear" coupling), since the
-    // id still names the same, still-live entry and the ended page (loadPreview's own branch-gone,
+    // id still names the same, still-live entry and the ended page (loadPreview's branch-gone,
     // main-exists path) is the correct answer for an outstanding link, never a bare 404 implying the
     // link never existed.
     await clearPreviewTokens(event, concept, id);

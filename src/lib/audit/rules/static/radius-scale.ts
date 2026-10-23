@@ -66,7 +66,7 @@ function radiusMessage(body: string): string {
   );
 }
 
-/** The class tokens written on one element, grouped by the element's own start offset. */
+/** The class tokens written on one element, grouped by the element's start offset. */
 function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   const map = new Map<number, Set<string>>();
   for (const token of file.classTokens) {

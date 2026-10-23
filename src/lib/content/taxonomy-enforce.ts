@@ -6,7 +6,7 @@ import type { NamedField } from './types.js';
 import { resolveTaxonomyField } from './taxonomy.js';
 
 /**
- * The allowed tag set for one entry: the configured vocabulary unioned with the entry's own prior
+ * The allowed tag set for one entry: the configured vocabulary unioned with the entry's prior
  *  tags, deduped in first-seen order. The union is the orphan safety net, so a re-saved
  *  pre-existing tag passes even after it leaves the vocabulary.
  */

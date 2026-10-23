@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { captureDeliver, resetCapture } from '../../members/capture-transport.js';
 
 // Every /test fixture route refuses with a 404 unless the dev backend is on. The members routes
-// check the worker's own env and the host in their bodies; the three dev-package routes check the
+// check the worker's env and the host in their bodies; the three dev-package routes check the
 // build define and the runtime opt-in, which reads the Worker env and then the process env. Each refusal case below keeps its collaborators armed (a
 // stored capture, a database stub, a resolved subject, a recorded commit), so a route that lost
 // its check would answer 200 instead of reaching an empty-handed 404 by accident, and each route
@@ -106,7 +106,7 @@ beforeEach(async () => {
   revokeSessions.mockClear();
   resetCapture();
   // A stored capture for the contact last-otp reads, delivered under the flag the transport itself
-  // demands, so the 404 a flag-less call gets can only come from the route's own refusal.
+  // demands, so the 404 a flag-less call gets can only come from the route's refusal.
   await captureDeliver('seed@showcase.test', '12345678', {
     env: { CAIRN_DEV_BACKEND: '1' },
   } as Parameters<typeof captureDeliver>[2]);

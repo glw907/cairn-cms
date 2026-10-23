@@ -8,7 +8,7 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 //      computed ground and ink equal the computed values of the contract tokens, its text and link
 //      clear 4.5:1 on that ground, and the two states paint different grounds.
 //   2. The editor's preview frame. The frame document's <html> carries no `data-theme`, so only an
-//      emulated OS color scheme reaches it; its body ground equals the frame's own resolved
+//      emulated OS color scheme reaches it; its body ground equals the frame's resolved
 //      `--color-base-100`.
 //
 // The banner flow mirrors preview.spec.ts: a disposable post is created through the admin UI, a
@@ -66,10 +66,10 @@ async function applyScheme(page: Page, scheme: Scheme, url: string): Promise<voi
 
 /**
  * Reads the banner's computed ground and ink beside the computed values of the tokens the two
- * are meant to equal. A token is read through a probe element in the banner's own parent, so the
+ * are meant to equal. A token is read through a probe element in the banner's parent, so the
  * probe sits in the same theme region and the browser serializes both values the same way. Color
  * strings reduce to sRGB bytes through a canvas, which parses any notation the browser reports.
- * The draft state has no link element, so a link is added under the banner's own scoping class
+ * The draft state has no link element, so a link is added under the banner's scoping class
  * to read the rule's color.
  */
 async function readBanner(page: Page, state: BannerState): Promise<BannerReading> {

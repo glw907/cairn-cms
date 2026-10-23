@@ -15,7 +15,7 @@ following reasons:
 
 - The site misbehaves under the development server or in production.
 - A check in an extend guide failed, and the failure names an event or failure this page covers.
-- The developer is building a query, an alert, or records of their own on the same record shape.
+- The developer is building a query, an alert, or records on the same record shape.
 
 For each symptom, its section names the record it leaves, or the error or test result it shows, and
 the change that fixes it. A section whose symptom needs no change says so. The sections assume
@@ -223,7 +223,7 @@ in the [log events](../reference/log-events.md) reference. The record omits the 
 The fix is a code change to the site's sink, at the failure that `error` names.
 
 A site that wires [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) reads
-`audit.sink.write_failed` instead. That sink catches its own failures before
+`audit.sink.write_failed` instead. That sink catches its failures before
 `audit.sink.call_failed` can fire. That record carries the audit record itself, truncated, because
 it is the only surviving trace of a row the packaged sink failed to write. Its `actor` need not be
 an editor's email when site code calls the sink directly with the site's domain events. A query
@@ -293,7 +293,7 @@ A query filters entry commits on `concept` and the other surfaces on `scope`.
 
 ## Site records with `createLogger`
 
-The `/log` subpath exports `createLogger`, so a site's own events share the engine's record shape
+The `/log` subpath exports `createLogger`, so a site's events share the engine's record shape
 and redaction. It also exports `REDACTED_LOG_KEYS`, `CAIRN_LOG_EVENTS`, and the `CairnLogEvent`
 type, while the engine's `log` instance stays internal. The `redactKeys` option unions a site's
 field names with the default keys and cannot narrow them. A site's records take the redaction that
@@ -352,7 +352,7 @@ Cloudflare's [local development environment
 variables](https://developers.cloudflare.com/workers/local-development/environment-variables/) page
 describes `.dev.vars`. The following reader is illustrative:
 
-<!-- snippet-check-skip: reads env.CAIRN_FIXED_TODAY, which only the site's own generated Env declares -->
+<!-- snippet-check-skip: reads env.CAIRN_FIXED_TODAY, which only the site's generated Env declares -->
 ```ts
 // src/lib/today.ts
 import { building } from '$app/env';

@@ -7,7 +7,7 @@ depth comes from the Indent and Outdent buttons, capped at the menu's maxDepth. 
 validates on save.
 
 The header band is `PageHeader`, its
-title the menu's own declared label; the sortable-list card below stays untouched.
+title the menu's declared label; the sortable-list card below stays untouched.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -106,8 +106,8 @@ title the menu's own declared label; the sortable-list card below stays untouche
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
   // every fresh error so the region text always mutates and the screen reader speaks again; this is
   // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // own comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
   // fresh-inserted role element announces inconsistently and would clobber a repeat).
   let announceNonce = $state(0);
   function nonce(): string {

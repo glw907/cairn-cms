@@ -7,7 +7,7 @@ this fixture cannot reach challenges.cloudflare.com, and wire a real Turnstile w
 slot on a real site instead. The confirm form carries no `contact` field on purpose: `confirm`
 reads the pending code by its nonce cookie alone, so a member must confirm in the same browser
 that requested the code (the documented "same browser" rule; a cross-browser confirm answers
-`no-pending-request`). The request form doubles as its own resend control: a second submission
+`no-pending-request`). The request form doubles as its resend control: a second submission
 inside the cooldown still answers `sent`, so the button's label is the only thing that changes.
 -->
 <script lang="ts">

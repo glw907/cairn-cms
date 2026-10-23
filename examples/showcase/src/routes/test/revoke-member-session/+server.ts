@@ -1,4 +1,4 @@
-// Internal fixture endpoint: revokes the CALLER's own resolved session, never a subject named in
+// Internal fixture endpoint: revokes the CALLER's resolved session, never a subject named in
 // the request body. This is a harness affordance for the e2e's revocation spec, not a pattern to
 // copy: a real site's roster-removal flow (docs/reference/auth-channel.md's `revokeSessions`)
 // revokes an admin-chosen subject from an authenticated admin action, which is
@@ -6,10 +6,10 @@
 // arbitrary victim subject would violate the rule that no control keyed on the victim's
 // identity may deny, delay, or destroy anything; denial keys on the requester. Here
 // the "requester" and the "victim" are deliberately the same person, by construction, because the
-// subject comes from `memberChannel.resolveSubject(event)` (the caller's own session cookie), not
+// subject comes from `memberChannel.resolveSubject(event)` (the caller's session cookie), not
 // from a posted field.
 //
-// The refusal lives in the body, `devDelivery`'s own precedent; see the sibling `last-otp` route
+// The refusal lives in the body, `devDelivery`'s precedent; see the sibling `last-otp` route
 // for why both checks (host and env) are independent of the build fold.
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';

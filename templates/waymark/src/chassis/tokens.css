@@ -1,7 +1,7 @@
 /* ============================================================================
-   The chassis token SYSTEM: the mechanism a theme's own values plug into, not a look of its own.
+   The chassis token SYSTEM: the mechanism a theme's values plug into, not a look.
    A theme (Waymark, or any future theme) `@import`s this file first, then redeclares the design
-   scale below with its own concrete numbers, and sets the daisyUI theme blocks that carry its
+   scale below with its concrete numbers, and sets the daisyUI theme blocks that carry its
    colors. Cascade order does the rest: a property set again later in the same build wins over this
    file's default, so nothing here is ever visible on its own; it exists so a theme starts from a
    working, generic surface (a real type/space scale, a working DaisyUI activation) rather than an
@@ -13,20 +13,20 @@
        after Tailwind: the status inks, the elevation shadow, the focus-ring keys, the code ramp,
        the flow space, the muted and card-border colors, the code-block binding, the structural
        scroll-wrapper pair, and the focus-ring class. A theme overrides a role by setting it in its
-       own `:root` or daisyUI theme block, and overrides the two colors in its own later `@theme`
+       `:root` or daisyUI theme block, and overrides the two colors in its later `@theme`
        block. The import sits before `prose.css` so a theme's later `@theme` declaration wins.
      - Tailwind and the DaisyUI plugin MECHANISM activate here (`@plugin "daisyui" { themes: false }`);
        the actual named themes (`@plugin "daisyui/theme"`, the DaisyUI role colors and geometry) are
-       100% a theme's own choice and never declared here.
+       100% a theme's choice and never declared here.
      - The COMPONENT SET is scoped to what the public template genuinely renders, not DaisyUI's full
-       library: `button`, `badge`, `alert`, and `card`. `alert` is the directive's own `.alert`/
+       library: `button`, `badge`, `alert`, and `card`. `alert` is the directive's `.alert`/
        `.alert-<role>` classes, which `prose.css` only partially overrides, so the rest of a theme's
        directive styling leans on the base declarations; the directive's two inner classes are the
-       site's own `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
+       site's `cairn-alert-body`/`cairn-head-title`, named apart from DaisyUI's `.card-body`/
        `.card-title` so this same `card` activation cannot restyle them, and the alert no longer
-       emits card classes at all. `card` stays enabled because this site's own members fixture
+       emits card classes at all. `card` stays enabled because this site's members fixture
        renders one (`routes/members`), a route the template excludes; a scaffolded site with no
-       `.card` in its own markup may exclude it too.
+       `.card` in its markup may exclude it too.
        Everything else DaisyUI ships (accordion-style `collapse`,
        `modal`, `navbar`, form controls, and so on) never appears in a chassis-descended template's
        markup and is excluded so the compiled theme.css does not carry ~50 component families of dead
@@ -37,13 +37,13 @@
        `--tracking-*`, `--container-measure*`) get generic defaults here, inside `@theme`, so
        Tailwind still generates every named utility (`text-step-*`, `gap-m`, `font-display`,
        `max-w-measure`, ...) even before a theme overrides the numbers. A theme redeclares the same
-       keys, in its own later `@theme` block, with its real scale.
-     - Two heading levers are a theme's own to set: `--font-weight-heading` (in `@theme`, generating
+       keys, in its later `@theme` block, with its real scale.
+     - Two heading levers are a theme's to set: `--font-weight-heading` (in `@theme`, generating
        the `font-heading` utility) and `--cairn-heading-case` (a plain role, since `text-transform`
        has no Tailwind namespace, applied by the `heading-case` utility below). `prose.css`'s
        heading rules and the chrome's titles read them, so one value moves every heading; an eyebrow
-       keeps its own `uppercase tracking-eyebrow` and weight.
-     - The CTA panel keys and the nav caption tracking are a theme's own tokens. The theme defines
+       keeps its `uppercase tracking-eyebrow` and weight.
+     - The CTA panel keys and the nav caption tracking are a theme's tokens. The theme defines
        them, and this file holds no default for them.
      - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
        sidebar primitives) both import here, so a theme gets both by importing this one file.
@@ -60,7 +60,7 @@
   /* Every DaisyUI component key except the four the public template actually renders (button, badge,
      alert, card; see the OWNERSHIP SPLIT note above). The typography, glass, and join utilities are
      excluded too: typography only ever emits Tailwind-Typography `--tw-prose-*` variables this repo's
-     own hand-built `.prose` (prose.css) never reads, and neither `.glass` nor `.join` appears anywhere
+     hand-built `.prose` (prose.css) never reads, and neither `.glass` nor `.join` appears anywhere
      in the template. The `radius` utility stays (it powers the `rounded-field`/`rounded-box` classes
      the chrome markup uses). */
   exclude:
@@ -72,9 +72,9 @@
     menu, dock, typography, glass, join;
 }
 
-/* The heading-case role, in the lowest layer so a theme's own `:root` or daisyUI block value
+/* The heading-case role, in the lowest layer so a theme's `:root` or daisyUI block value
    wins. `none` leaves a heading as authored; a theme that sets `uppercase` here uppercases every
-   heading that applies `heading-case` or reads the key in its own rule. */
+   heading that applies `heading-case` or reads the key in its rule. */
 @layer theme {
   :root,
   [data-theme] {
@@ -89,7 +89,7 @@
 }
 
 @theme {
-  /* Generic system-font defaults; a theme overrides these three with its own face choices. */
+  /* Generic system-font defaults; a theme overrides these three with its face choices. */
   --font-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -97,8 +97,8 @@
   /* The weight every heading reads; the key's name also generates the `font-heading` utility. */
   --font-weight-heading: 600;
 
-  /* A modest, non-fluid default scale (no clamp math of its own): legible, but a theme almost
-     always wants its own fluid formula here. The named utilities (`text-step-*`) generate from
+  /* A modest, non-fluid default scale (no clamp math): legible, but a theme almost
+     always wants a custom fluid formula here. The named utilities (`text-step-*`) generate from
      these keys regardless of whose values are active. */
   --text-step--1: 0.85rem;
   --text-step-0: 1rem;
@@ -108,7 +108,7 @@
   --text-step-4: 1.875rem;
   --text-step-5: 2.25rem;
 
-  /* A default space scale, roughly doubling step to step; a theme's own fluid clamp scale
+  /* A default space scale, roughly doubling step to step; a theme's fluid clamp scale
      overrides every key. */
   --spacing-3xs: 0.25rem;
   --spacing-2xs: 0.5rem;

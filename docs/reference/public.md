@@ -1,7 +1,7 @@
 # The public components (`@glw907/cairn-cms/public`)
 
 This subpath holds every built-in public component that renders styled markup: a component for a
-page a site's own visitors reach, never the admin's own view tier (see [the admin
+page a site's visitors reach, never the admin's view tier (see [the admin
 components](./admin.md) for that side of the split). `CairnHead` stays at
 [`/delivery/head`](./delivery.md#cairnhead), since it renders no markup of its own, only
 document-head tags. `PreviewBanner` is the one component this barrel carries today.
@@ -32,14 +32,14 @@ the holder knows the link ages out; `state: 'published'` reports only that the p
 since a discarded edit and a published entry both reach this state and the copy must never claim
 the draft went live (false for the discard case). It links the live permalink when `preview.published`
 is set, and renders no link when it's `null` (a discarded new entry, which never had a live page).
-A site may ignore this component entirely and render its own banner from the same metadata; this is
+A site may ignore this component entirely and render its banner from the same metadata; this is
 only the default treatment a getting-started site mounts.
 
 The expiry renders inside a `<time datetime>` element, formatted by default as a fixed,
-locale-independent `YYYY-MM-DD HH:MM UTC` string rather than the visitor's own locale: the same
+locale-independent `YYYY-MM-DD HH:MM UTC` string rather than the visitor's locale: the same
 formatter runs during SSR and hydration, so a Worker whose runtime locale or timezone differs from
-the browser's own cannot render two different strings and cause a hydration mismatch. Pass the
-optional `formatExpiry` prop to render the expiry in a site's own fixed date vocabulary instead.
+the browser's cannot render two different strings and cause a hydration mismatch. Pass the
+optional `formatExpiry` prop to render the expiry in a site's fixed date vocabulary instead.
 
 The default palette reads your site's theme tokens: the daisyUI roles `--color-base-100`,
 `--color-base-200`, `--color-base-content`, `--color-warning`, and `--color-info`, plus the

@@ -1,4 +1,4 @@
-// cairn-cms: the site-declared role vocabulary. A site maps its own role names onto the engine's
+// cairn-cms: the site-declared role vocabulary. A site maps its role names onto the engine's
 // three capability levels (owner, editor, none); this module owns the declaration, its
 // construction-time validation, and the capability/home resolution the guard and routes read.
 // The vocabulary is a plain declaration object so it stays git-committed config; role names are
@@ -52,7 +52,7 @@ function validateDeclaration(name: string, decl: RoleDeclaration): void {
 /**
  * Declare a site's role vocabulary. Validates the declaration at construction so a misdeclared
  * vocabulary fails at build rather than at runtime, and const-captures the literal key set for the
- * caller's own use. Throws on an empty record, a missing or misvalued `owner`, an empty role name,
+ * caller's use. Throws on an empty record, a missing or misvalued `owner`, an empty role name,
  * a malformed declaration, or a non-`/admin` home.
  */
 export function defineRoles<const R extends RolesDeclaration>(roles: R): R {

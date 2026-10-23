@@ -23,7 +23,7 @@ one choice, such as the GitHub App's repository-wide write permission. A develop
 sign-in or add a second group of users wants to know which defenses move with that change.
 
 The defaults are floors, not ceilings. A developer can replace those defaults, the owner and editor
-roles and magic-link sign-in, with their own auth framework, after which cairn mints no session and
+roles and magic-link sign-in, with a different auth framework, after which cairn mints no session and
 reads an owner or editor identity through a defined hand-off. That hand-off is the `identity` option
 on the guard, which reads the proof of identity an external gate supplies in place of cairn's
 session resolution. A site can also add an auth channel, which signs in a second group of users from
@@ -184,7 +184,7 @@ succeeds or a logout runs, and every other issue re-sets the identical value wit
 
 The guard sets `strict-origin` on `/admin` responses only, so a site-wide `no-referrer` still reduces
 every other same-origin form post to `Origin: null`. SvelteKit's check refuses that post on the
-site's own forms, and every auth channel action refuses it through its own `Origin` check. A site therefore keeps `no-referrer` off its site-wide
+site's forms, and every auth channel action refuses it through its own `Origin` check. A site therefore keeps `no-referrer` off its site-wide
 default, and [`cairn doctor`](../reference/cli-cairn-doctor.md) warns through its
 `config.no-referrer-blanket` check when it finds a site-wide `no-referrer`. The check's remediation
 is to serve `strict-origin-when-cross-origin` or `same-origin` as the site-wide default.
@@ -374,7 +374,7 @@ every visitor. A registered `build()` can bypass every render-safety protection 
 literal markup outside the sanitized tree, since the protections stop at the boundary of what
 `createRenderer` produced.
 
-An editor's edits reach the repository through the engine's own credential, and [The GitHub App's
+An editor's edits reach the repository through the engine's credential, and [The GitHub App's
 reach](#the-github-apps-reach) sets out what that credential can write.
 
 ## The GitHub App's reach
@@ -394,7 +394,7 @@ declared content directories. Installing the App on a repository that also holds
 teams' content therefore puts that content inside the token's write reach. [Rotate the GitHub App
 key](rotate-the-github-app-key.md) covers operating the key.
 
-Every defense of the built-in design assumes cairn's own sign-in, and a site that replaces it with
+Every defense of the built-in design assumes cairn's sign-in, and a site that replaces it with
 [an identity gate](#identity-modes-threat-surface) or adds [an auth
 channel](#the-auth-channels-threat-surface) moves some of them.
 
@@ -428,8 +428,8 @@ selects. The guard makes no hostname check under `identity`, so a hostname that 
 outside the gate's coverage is admitted whenever the resolver accepts the presented token.
 
 [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) sets up
-the gate these risks belong to, and the other seam a site can add, an auth channel, has [a threat
-surface of its own](#the-auth-channels-threat-surface).
+the gate these risks belong to, and the other seam a site can add, an auth channel, has [a separate
+threat surface](#the-auth-channels-threat-surface).
 
 ## The auth channel's threat surface
 
@@ -441,7 +441,7 @@ sign-in:
 
 - Escalation answers `challenge-required`, a retry invitation and never a hard failure, and a failed
   challenge on an escalated action answers it again.
-- Eviction keys on the requester's bucket, so a caller crowds out only its own pending rows.
+- Eviction keys on the requester's bucket, so a caller crowds out only its pending rows.
 - The spend ceiling never denies, and crossing it logs `auth.channel.ceiling_exceeded` at error to
   alert the site operator.
 
@@ -449,7 +449,7 @@ Every channel action asserts that the request's `Origin` matches the site's orig
 connection is https, except on a local development host, before any code, budget, or session logic
 runs, and either failure throws a plain 403 with no wire result. The channel keeps its own check
 because SvelteKit's origin check does not run under `vite dev` and admits any origin a site lists in
-`csrf.trustedOrigins`, and because the guard adds no `Origin` check of its own on any route.
+`csrf.trustedOrigins`, and because the guard adds no `Origin` check on any route.
 
 The channel correlates identity through a salted hash of the subject, prefixed `'s:'`, when a roster
 lookup resolved one, or of the contact, prefixed `'c:'`, otherwise, and its logs carry only the

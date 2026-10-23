@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // Every admin document carries exactly one referrer meta, emitted by the view that owns the
 // document. Counting on the served document (not a component render) catches a second meta added
-// by any child, and a head that lost its own. The header is asserted on the confirm document
+// by any child, and a head that lost the meta. The header is asserted on the confirm document
 // only: the e2e build runs the dev-backend handle in place of the guard, so `applySecurityHeaders`
-// does not run here, while the confirm load sets its own header.
+// does not run here, while the confirm load sets its header.
 const documents = [
   { name: 'login', path: '/admin/login', header: false },
   { name: 'confirm', path: '/admin/auth/confirm?token=referrer-token', header: true },

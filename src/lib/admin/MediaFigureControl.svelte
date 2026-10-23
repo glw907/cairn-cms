@@ -14,7 +14,7 @@ decorative image is hidden from screen readers, so a visible caption on it is a 
 The placement is a roving-tabindex radiogroup (Measure, Center, Wide, Full): one bordered group, the
 active segment tinted with a check glyph (the non-color state cue, WCAG 1.4.1), arrow keys move and
 select. Measure maps to the null role (the measure default, no role brace); the others map to their
-own name.
+name.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -206,7 +206,7 @@ own name.
   </div>
 
   <!-- An always-present polite live region, so the contradiction announces when it appears in
-       response to the author's own typing (not only on the dialog's open read). Empty and invisible
+       response to the author's typing (not only on the dialog's open read). Empty and invisible
        until the warning fills it. -->
   <div role="status" aria-live="polite">
     {#if decorativeWithCaption}

@@ -1,5 +1,5 @@
 // cairn-audit's color arithmetic, shared by every rendered rule that compares two painted colors.
-// Three rendered rules landed with their own copy of this math and their own `rgb()`-only regex
+// Three rendered rules landed with a copy of this math and an `rgb()`-only regex
 // parser, and an adversarial pass demonstrated the same fail-open in all three: cairn's admin
 // palette is oklch end to end (`src/lib/admin/cairn-admin.css` declares every Warm Stone token
 // as `oklch(...)`, and Tailwind's opacity modifier compiles to `color-mix(in oklab, ...)`), so
@@ -7,7 +7,7 @@
 // skipped, and the rule reported clean against the very interface it exists to audit.
 //
 // The fix is to stop parsing color syntax at all. `resolveColors` in rendered.ts hands the string
-// to the browser's own canvas and reads the sRGB bytes back, so any color the page can paint
+// to the browser's canvas and reads the sRGB bytes back, so any color the page can paint
 // (oklch, oklab, lab, color(), color-mix, a named keyword) arrives here already normalized. This
 // module therefore only composites and measures; it never parses.
 import type { RenderedFinding } from './rendered.js';
@@ -97,13 +97,13 @@ export function chromaDistance(a: Rgba, b: Rgba): number {
 }
 
 /**
- * One painted layer as a rule's in-page walk reports it: the element's own background, the
+ * One painted layer as a rule's in-page walk reports it: the element's background, the
  * `opacity` that scales it, and whether an image (a gradient, a sprite) also paints there.
  */
 export interface PaintLayer {
-  /** The layer's own `background-color`, as `getComputedStyle` reports it, unparsed. */
+  /** The layer's `background-color`, as `getComputedStyle` reports it, unparsed. */
   backgroundColor: string;
-  /** The layer's own computed `opacity`. */
+  /** The layer's computed `opacity`. */
   opacity: number;
   /** Whether the layer paints a `background-image`, which no color arithmetic can resolve. */
   hasImage: boolean;
@@ -124,7 +124,7 @@ function layerOpacity(layer: PaintLayer): number {
  *
  * For a background chain, {@link resolveGround} handles this itself. This is for paint that is NOT
  * a layer in the chain, a border stroke above all, and for a caller that deliberately resolves one
- * element's own fill against a backdrop the DOM chain does not supply (`border-contrast` samples
+ * element's fill against a backdrop the DOM chain does not supply (`border-contrast` samples
  * the adjacent surface geometrically instead). Both were refuted against real Chromium for missing
  * it: a card hairline under an 8%-opacity ancestor kept its full-strength stroke while the ground
  * beside it washed out, so a barely-there line measured as if nothing had dimmed it.
@@ -140,17 +140,17 @@ export interface GroundOptions {
    * wherever the chain paints nothing. Required, and the caller has to name the real backdrop:
    * every silent default here has shipped as a fail-open. Assuming opaque white read an invisible
    * dark-on-dark panel as clean under `color-scheme: dark`, and it also erased a translucent chip's
-   * true color when the chain was the chip's own single layer.
+   * true color when the chain was the chip's single layer.
    *
-   * For a whole-element chain (the element's own layer through the document root) this is the page
+   * For a whole-element chain (the element's layer through the document root) this is the page
    * canvas, which the shared page helpers' `canvasColor` reads off the live page. For a
-   * single-layer chain holding one element's own fill, it is that element's already-resolved
+   * single-layer chain holding one element's fill, it is that element's already-resolved
    * ground, which makes the returned color the pixels that element actually paints.
    */
   canvas: Rgba;
   /**
    * What `layers[0]` is, which only changes how an indeterminate ground is worded. A caller that
-   * already dropped the element's own layer passes `'ancestor'`, so a gradient on the immediate
+   * already dropped the element's layer passes `'ancestor'`, so a gradient on the immediate
    * parent is not reported as one the element paints on itself.
    */
   firstLayerIs?: 'self' | 'ancestor';
@@ -164,9 +164,9 @@ export type GroundResolution =
 /**
  * The color a chain of layers actually paints, resolved onto `options.canvas`.
  *
- * `layers` runs nearest-first (the element's own layer, then each ancestor up to the document
+ * `layers` runs nearest-first (the element's layer, then each ancestor up to the document
  * root), matching the order a DOM walk produces, and `colors` carries the same entries already
- * normalized by `resolveColors`. A layer's `opacity` dims that layer's own background together with
+ * normalized by `resolveColors`. A layer's `opacity` dims that layer's background together with
  * everything inside it, once, as a group, which is how a chip painted at 4% opacity stops reading
  * as an opaque fill and why a 25%-opacity wrapper does not thin the chip inside it twice over.
  *
@@ -186,7 +186,7 @@ export type GroundResolution =
  *
  * `options.canvas` is what the chain resolves onto, and it is required rather than defaulted: the
  * result is the color a user sees, so a caller that does not know what is behind the chain cannot
- * ask this question honestly. A chip rule that let the canvas default to white got its own
+ * ask this question honestly. A chip rule that let the canvas default to white got its
  * translucent fill back lightened by that white, which cleared the collision floor and hid two real
  * dark-theme collisions while the light-theme half kept firing (white being close enough to a light
  * ground to leave the answer intact).
@@ -216,12 +216,12 @@ export function resolveGround(
           : 'an ancestor paints a background-image over no color at all, so no single ground color exists to measure against',
     };
   }
-  // `opacity` is a GROUP operation: an element's own background and everything inside it composite
+  // `opacity` is a GROUP operation: an element's background and everything inside it composite
   // together first, and the result is dimmed once. So the chain is built innermost outward, each
-  // layer's accumulated content scaled by that layer's own opacity before the next layer's
+  // layer's accumulated content scaled by that layer's opacity before the next layer's
   // background goes behind it.
   //
-  // Applying each layer's cumulative opacity to its own alpha instead, which is the same arithmetic
+  // Applying each layer's cumulative opacity to its alpha instead, which is the same arithmetic
   // for the common case and diverges the moment an ANCESTOR carries opacity, dims an inner layer
   // twice over: it thins the inner paint AND lightens the backdrop it lands on. Against a
   // screenshot of a chip inside a 25%-opacity wrapper, that model returned rgb(177, 174, 170) where
@@ -230,7 +230,7 @@ export function resolveGround(
   let content: Rgba = TRANSPARENT;
   for (const [i, layer] of layers.entries()) {
     const color = colors[i];
-    // What is already accumulated sits INSIDE this layer, so it paints over this layer's own
+    // What is already accumulated sits INSIDE this layer, so it paints over this layer's
     // background, and only then does this layer's opacity dim the pair as one.
     if (color && color.a > 0) content = composite(content, color);
     const opacity = layerOpacity(layer);

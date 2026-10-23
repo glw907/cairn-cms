@@ -338,8 +338,7 @@ Next, add custom checks to the fieldset.
 A fieldset's `behavior` table checks one field after that field's rules pass, and its `refine`
 function checks the whole entry after every field passes.
 
-A `behavior[field].validate(value, siblings)` function runs only for a field that passed its own
-checks. It receives the coerced value and the raw frontmatter, and it returns an error string or
+A `behavior[field].validate(value, siblings)` function runs only for a field that passed its checks. It receives the coerced value and the raw frontmatter, and it returns an error string or
 `null`. A `behavior` key that names an undeclared field throws at declaration. The
 `refine(data, body)` function runs synchronously, and only when no field or behavior check failed.
 It returns a field-keyed error map that fails the save, or nothing.
@@ -424,7 +423,7 @@ and the adapter's `editor` group. Set each one the site needs:
   summarizes a collapsed row.
 
   An empty value falls back to the field's label and the row number. An array of leaf items
-  summarizes each row by its own value and ignores `itemLabel`. Pass a sub-field key, not display
+  summarizes each row by its value and ignores `itemLabel`. Pass a sub-field key, not display
   text.
 
 - In the adapter's `editor` group, set `supportContact` to the contact a stuck editor should reach.

@@ -39,7 +39,7 @@ export function markKeyHealthy(): void {
 
 /**
  * Whether the key is known unhealthy at `now` (defaults to `Date.now()`). The mark expires on
- *  its own once `now` passes the TTL window, so a stale mark clears itself with no explicit
+ *  its once `now` passes the TTL window, so a stale mark clears itself with no explicit
  *  recovery call needed.
  */
 export function keyKnownUnhealthy(now: number = Date.now()): boolean {

@@ -13,9 +13,9 @@
 export * from './data.js';
 export { createPublicRoutes, composeEntryData } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';
-// R4 closure over this barrel's own signatures, and the one place the pair diverges:
+// R4 closure over this barrel's signatures, and the one place the pair diverges:
 // `PublicRoutesConfig.render` names `SiteRender` (canonical home `.`), and its `resolveMedia`
-// names `MediaResolve` (canonical home `.`) and that type's own `MediaRef` parameter (canonical
+// names `MediaResolve` (canonical home `.`) and that type's `MediaRef` parameter (canonical
 // home `/media`). Nothing `/delivery/data` publishes names any of the three, so the narrower
 // barrel of the pair no longer carries them and this one re-exports them directly.
 export type { SiteRender } from '../content/types.js';

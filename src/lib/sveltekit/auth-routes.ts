@@ -48,7 +48,7 @@ export interface AuthRoutesConfig {
 
 /**
  * The request-action result. `outcome` is the discriminant; `sent` is kept for a site rendering
- * its own form against `form.sent`, so the field is additive. The neutral and send-ok paths return
+ * its form against `form.sent`, so the field is additive. The neutral and send-ok paths return
  * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
  * membership.
  */
@@ -101,16 +101,16 @@ export interface ConfirmData {
  */
 const LOGIN_PENDING_COOKIE_BASE = 'cairn_login_pending';
 
-// The `?error=` codes live in their own import-free leaf (./auth-error-codes.js), so a component
+// The `?error=` codes live in a separate import-free leaf (./auth-error-codes.js), so a component
 // branching on one never reaches through this server module to get it. Re-exported here because
 // `/sveltekit` publishes them alongside the handlers that redirect with them, and imported above
-// because `confirmAction` builds its own redirect from the same value.
+// because `confirmAction` builds its redirect from the same value.
 export { NO_PENDING_REQUEST_ERROR };
 
 /**
  * How long the pending-login cookie outlives the token it was minted alongside, as a multiple of
  * {@link TOKEN_TTL_MS}. The cookie holds an opaque nonce whose only meaning is the `nonce_hash`
- * on a live token row, and a row dies with its own ten-minute TTL, so a cookie that outlives it
+ * on a live token row, and a row dies with its ten-minute TTL, so a cookie that outlives it
  * grants nothing. What the longer life buys is the ordinary case: an editor who clicks a link
  * after the token expired arrives WITH their cookie and reads "that link expired" rather than the
  * false "different browser" message a cookie-less arrival produces.
@@ -144,7 +144,7 @@ function mintOrReusePendingNonce(event: CairnEvent): string {
 }
 
 /**
- * The loggable form of a send failure. The engine's own senders throw clean errors, but `send` is
+ * The loggable form of a send failure. The engine's senders throw clean errors, but `send` is
  * an injection seam, and a custom sender's thrown error may embed the failed message and with it
  * the magic link. Scrub any token query value and cap the length, so the documented "records never
  * carry a token" guarantee holds for the seam too.
@@ -158,7 +158,7 @@ function scrubSendError(err: unknown): string {
 /**
  * Build the magic-link auth surface: the login and confirm loads, plus the request, confirm,
  * and logout actions, the handlers a site's sign-in routes call directly or `createCairnAdmin`
- * composes into its own dispatch. The guard serves exactly two public admin paths, `/admin/login`
+ * composes into its dispatch. The guard serves exactly two public admin paths, `/admin/login`
  * and `/admin/auth/confirm`; every other path under `/admin/auth/` sits behind the session gate.
  * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
  * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
@@ -173,7 +173,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * neutral and send-ok responses are identical, so the common case never leaks membership.
    *
    * Under identity mode this 404s, raised before `requireDb`, before `request.formData()`, and
-   * before any cookie write: the organization's own gate is the only sign-in surface, and this
+   * before any cookie write: the organization's gate is the only sign-in surface, and this
    * action mints nothing.
    */
   async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
@@ -217,17 +217,17 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {
       // Rebind the live token to THIS browser before answering, deliberately, with no new email
       // sent. Without it the same-browser binding is a lockout: an attacker POSTing this form
-      // once a minute keeps the live row bound to their own nonce, and this very cooldown then
+      // once a minute keeps the live row bound to their nonce, and this very cooldown then
       // throttles the editor's recovery re-request, so the editor can neither confirm the link
       // sitting in their inbox nor earn a new one. The intended semantics are last-requester-wins,
       // and they cost nothing an attacker did not already have: the email only ever goes to the
-      // editor's own address, so asking grants no token, and the editor recovers by simply asking
+      // editor's address, so asking grants no token, and the editor recovers by simply asking
       // again.
       //
       // No new token, no send, and the cooldown window is untouched, so the response is
       // byte-identical to a throttled answer that rebound nothing. This is a server-side write
       // and a log record only; anything observable in the response would reintroduce an oracle
-      // the neutral exits close. rebindToken's own WHERE holds the expiry, unbound-row, and
+      // the neutral exits close. rebindToken's WHERE holds the expiry, unbound-row, and
       // same-nonce guards, and its outcome names only what that one statement knows.
       //
       // The record is what makes the lockout attempt visible: one is the ordinary recovery after
@@ -267,7 +267,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *
    * It also leaves the pending-login nonce in this browser, the same reuse-or-mint the CSRF token
    * already gets, so the browser holds one before it POSTs anything. Two concurrent cookie-less
-   * POSTs would otherwise each mint their own nonce, and the browser keeps only one of the two
+   * POSTs would otherwise each mint their nonce, and the browser keeps only one of the two
    * `Set-Cookie` values, which may not be the one the surviving token row is bound to.
    *
    * Under identity mode this returns the hand-off shape instead: no pending-login nonce minted,
@@ -309,14 +309,14 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * valid token yields the email; the handler creates a session, sets the cookie, and redirects
    * to /admin. An invalid, replayed, or expired token redirects to the login page.
    *
-   * The same-browser check lives inside the consuming `DELETE`'s own predicate, so a link opened
-   * in another browser (a mail scanner following the link, an attacker putting their own link in
+   * The same-browser check lives inside the consuming `DELETE`'s predicate, so a link opened
+   * in another browser (a mail scanner following the link, an attacker putting their link in
    * front of a victim) refuses without burning the token the requesting browser can still use:
    * the row is not deleted unless its `nonce_hash` matches.
    *
    * One residual the rebind leaves, stated narrowly rather than claimed away: someone who holds a
    * FORWARDED token can still make it work, by posting the request form for that address inside
-   * the send cooldown, which rebinds the row to their own browser (`rebindToken`). It takes both
+   * the send cooldown, which rebinds the row to their browser (`rebindToken`). It takes both
    * the token and the form, and only inside the window; outside it, their request mints a new
    * token and destroys the forwarded one instead. Forwarding a link therefore remains a real way
    * to hand over an account, which is the thing to tell an editor, and the binding is what stops
@@ -353,7 +353,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // and the editor would have to notice they must request the link again from this browser.
     //
     // Which refusal the editor reads is decided here, after the consume, since only the consume's
-    // own predicate knows whether the row was bound. A cookie-less browser that failed against a
+    // predicate knows whether the row was bound. A cookie-less browser that failed against a
     // bound row gets the distinct no-pending-request code, because "request a new one" is the
     // exact advice that reproduces the failure on a second device; everything else, including a
     // present-but-wrong nonce, reads as expired.
@@ -373,7 +373,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // token it was bound to. `secure` here is the same variable the pending cookie was read
     // under above, one csrfSecure call for the whole handler: the session cookie
     // used to derive `secure` from the bare `event.url.protocol`, independently of the CSRF
-    // pair's own PUBLIC_ORIGIN-aware derivation, which could resolve the cookies to different
+    // pair's PUBLIC_ORIGIN-aware derivation, which could resolve the cookies to different
     // `secure` values on one request. An https request always resolves Secure either way;
     // PUBLIC_ORIGIN can only raise a non-https request's answer, never lower it.
     event.cookies.delete(pendingCookie, { path: '/', secure });
@@ -412,7 +412,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  the session row. The CSRF cookie is deleted alongside the session cookie: a persistent
    *  double-submit token must not survive a sign-out.
    *
-   *  Each delete carries the same `secure` flag its own setter used, since SvelteKit's delete
+   *  Each delete carries the same `secure` flag its setter used, since SvelteKit's delete
    *  defaults `secure` on for every host but `localhost` itself, and a browser discards a Secure
    *  `Set-Cookie` sent over http, which would leave both cookies alive on an http dev host such as
    *  `127.0.0.1`.
@@ -420,20 +420,20 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  Belt-and-braces: BOTH cookie-name forms delete for BOTH cookies
    *  (bare and `__Host-`, session and CSRF), each with its matching `secure`, not just the one
    *  `csrfSecure` derives for this request. A `PUBLIC_ORIGIN` change between login and logout
-   *  changes which name this request's own derivation produces, and the bare-derived-name-only
+   *  changes which name this request's derivation produces, and the bare-derived-name-only
    *  delete would strand whichever form the browser actually holds from the earlier login. The
    *  session id to invalidate is read the same way: from the derived name first, the other form
    *  when that one is absent, so a stranded id is found too.
    *
    *  The `auth.session.destroyed` record names the email the deleted row carried, read back from
-   *  the delete's own `RETURNING`: this action reads the session cookie, never `locals.cairnEditor`,
+   *  the delete's `RETURNING`: this action reads the session cookie, never `locals.cairnEditor`,
    *  so the row is the only place the subject exists. It fires only when a row
    *  was actually destroyed AND was still live at the moment of deletion (its `expires_at` in the
    *  future); the delete itself stays unconditional either way, so an already-expired row is
    *  still removed, just not recorded as a sign-out.
    *
    *  A `deleteSession` fault is caught and logged here, never rethrown to `viewAction`'s generic
-   *  `fail(500)`: this action posts to the bare `/admin`, whose own load (`indexLoad`) always
+   *  `fail(500)`: this action posts to the bare `/admin`, whose load (`indexLoad`) always
    *  redirects away before ever rendering a component that reads `form`, so a `fail()` here would
    *  be silently discarded. The editor is already signed out either way, so the redirect to
    *  `/admin/login` stays unconditional; a lingering D1 row with no valid cookie presenting it is
@@ -442,13 +442,13 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  Under identity mode there is no cairn session to delete (the guard never creates one), so
    *  that step is skipped; every cookie delete above still runs (a stale cookie from a mode
    *  switch is still worth clearing), `requireDb` still guards the call, and the redirect target
-   *  is the gate's own `logoutUrl` rather than `/admin/login`, so signing out also ends the
+   *  is the gate's `logoutUrl` rather than `/admin/login`, so signing out also ends the
    *  gate's session.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(env);
     // One variable, one csrfSecure call: the session cookie used to derive
-    // `secure` independently from the CSRF pair's own derivation. `!secure` is this same value's
+    // `secure` independently from the CSRF pair's derivation. `!secure` is this same value's
     // complement, not a second independent derivation.
     const secure = csrfSecure(event);
     const id =
@@ -458,7 +458,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
     event.cookies.delete(csrfCookieName(!secure), { path: '/', secure: !secure });
     // The pending-login nonce is a cairn-owned credential too, so a sign-out clears it. One
-    // name form only, this request's own: a stranded nonce under the other form names a token
+    // name form only, the form this request derives: a stranded nonce under the other form names a token
     // row that its ten-minute TTL has already swept, so nothing can confirm against it.
     event.cookies.delete(buildCookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (!event.locals.cairnIdentity && id) {
@@ -479,7 +479,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // but locals is request-scoped state any handle can write, and a handle sequenced after the
     // guard can overwrite it. So the value is re-checked here against the same rule, and a
     // failing one falls back to the login page. A root-relative target stays on this site; an
-    // absolute one is allowed out to its own origin and nowhere else.
+    // absolute one is allowed out to its origin and nowhere else.
     const configured = event.locals.cairnIdentity?.logoutUrl;
     const target = typeof configured === 'string' && isSafeLogoutUrl(configured) ? configured : '/admin/login';
     if (target.startsWith('/')) throw redirect(303, target);

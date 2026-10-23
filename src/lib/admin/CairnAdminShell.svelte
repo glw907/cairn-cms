@@ -47,19 +47,19 @@ discriminant, not the fields, gates the chrome).
     data: AdminShellData;
     /** The page body. */
     children: Snippet;
-    /** A theme a mounting context owns, which wins over this shell's own resolution and suppresses
+    /** A theme a mounting context owns, which wins over this shell's resolution and suppresses
      *  both of its reads (the admin theme cookie and the OS `prefers-color-scheme` preference).
      *  Reactive: changing it re-renders the shell in the new theme, so a host that pictures the
      *  admin in both themes updates the prop instead of re-mounting. Absent (every real admin
-     *  mount), the shell resolves its own theme exactly as it always has. */
+     *  mount), the shell resolves its theme exactly as it always has. */
     themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
   }
 
   let { data, children, themeOverride }: Props = $props();
 
-  // The authed member, narrowed once for the script's own logic below (the nav-collapse derived,
+  // The authed member, narrowed once for the script's logic below (the nav-collapse derived,
   // the theme seed). The authed-branch template still reads `data` directly in most places, since
-  // its own `{#if data.public}` guard already proves `data` is the authed shape there; `shell`
+  // its `{#if data.public}` guard already proves `data` is the authed shape there; `shell`
   // exists for script-side reads that run before that guard is in scope.
   const shell = $derived(data.public ? null : data);
 
@@ -70,14 +70,14 @@ discriminant, not the fields, gates the chrome).
 
   // Hand every descendant media surface (MediaPicker, CairnMediaLibrary, MediaHeroField, the editor's
   // media chips) the site's resolved delivery base, so a non-default `assets.publicBase` reaches
-  // their thumbnails instead of each reader's own /media fallback. A public payload carries no
+  // their thumbnails instead of each reader's /media fallback. A public payload carries no
   // resolved base (it renders no media surface, the login/confirm pages), so the context still
   // carries the shared default rather than leaving the key unset. Context application runs once, at
   // creation, so the one-time read is untracked the same way the theme seed below reads data.theme.
   setContext(MEDIA_BASE_CONTEXT_KEY, untrack(() => (data.public ? DEFAULT_MEDIA_BASE : data.mediaBase)));
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
-  // host's own pages.
+  // host's pages.
   function writeAdminCookie(name: string, value: string) {
     document.cookie = `${name}=${value}; path=/admin; max-age=31536000; samesite=lax`;
   }
@@ -95,7 +95,7 @@ discriminant, not the fields, gates the chrome).
     return { label: e.label, icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON, href: e.href };
   }
 
-  // shell.nav mixes the engine's own screens (carry `screen`) with the site's own entries (carry
+  // shell.nav mixes the engine's screens (carry `screen`) with the site's entries (carry
   // `iconName`); these two guards discriminate the resolved-layout shape.
   function isEngineChild(node: ResolvedLayoutChild): node is ResolvedEngineNavEntry {
     return 'screen' in node;
@@ -105,8 +105,8 @@ discriminant, not the fields, gates the chrome).
   }
   function layoutChildItem(node: ResolvedLayoutChild): NavItem {
     if (!isEngineChild(node)) return navItemOf(node);
-    // A declared icon override (navLayout's `icon:` on an engine ref) wins over the engine's own
-    // glyph; absent, the engine's own default (a fixed screen's icon, or the concept-kind glyph).
+    // A declared icon override (navLayout's `icon:` on an engine ref) wins over the engine's
+    // glyph; absent, the engine's default (a fixed screen's icon, or the concept-kind glyph).
     if (node.iconName) {
       const overrideIcon = ADMIN_NAV_ICONS[node.iconName] ?? ADMIN_NAV_FALLBACK_ICON;
       return { label: node.label, icon: overrideIcon, href: node.href };
@@ -118,7 +118,7 @@ discriminant, not the fields, gates the chrome).
   // One rendered group of the sidebar's scroll area: a named, collapsible section, or a batch of
   // top-level loose nodes (site entries or engine references placed outside any section) rendered
   // as a plain, header-less list between the sections around them. A section also carries the sum
-  // of its own visible children's attention counts, computed once here from the same `data.attention`
+  // of its visible children's attention counts, computed once here from the same `data.attention`
   // record the leaf pills read below, never a second data source.
   type NavGroup =
     | { kind: 'section'; label: string; items: NavItem[]; attentionSum: number }
@@ -220,7 +220,7 @@ discriminant, not the fields, gates the chrome).
 
   let drawerOpen = $state(false);
 
-  // The drawer's own nav region: the focus-in effect below (keyed on isDrawerOverlay) finds its
+  // The drawer's nav region: the focus-in effect below (keyed on isDrawerOverlay) finds its
   // first focusable child here, and the close-side restore effect checks whether focus is still
   // inside it.
   let drawerNavEl = $state<HTMLElement>();
@@ -255,7 +255,7 @@ discriminant, not the fields, gates the chrome).
 
   // True for an input, a textarea, a select, an element with isContentEditable, or an element
   // inside one. CodeMirror's editing surface is a contenteditable div, so this is what lets
-  // Ctrl+K there open the Web link dialog (EditPage's own card handler) rather than stacking the
+  // Ctrl+K there open the Web link dialog (EditPage's card handler) rather than stacking the
   // command palette on top of it, even for a chord a handler forgot to stopPropagate.
   function isEditableTarget(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) return false;
@@ -280,7 +280,7 @@ discriminant, not the fields, gates the chrome).
 
   // Restores focus once the drawer closes, for whatever method opened it (the focus-in effect
   // below captures drawerRestoreFocusEl for every overlay open, not just the shortcut): only when
-  // focus never left the drawer's own nav in the meantime.
+  // focus never left the drawer's nav in the meantime.
   $effect(() => {
     if (drawerOpen || !drawerRestoreFocusEl || !drawerNavEl?.contains(document.activeElement)) return;
     drawerRestoreFocusEl.focus();
@@ -289,7 +289,7 @@ discriminant, not the fields, gates the chrome).
 
   // Close the mobile drawer and the command palette whenever the active path changes (a nav click
   // navigated). Closing the palette here, after the navigation lands, avoids racing a synchronous
-  // close() against a result link's own navigation, which would cancel it.
+  // close() against a result link's navigation, which would cancel it.
   $effect(() => {
     shell?.pathname;
     drawerOpen = false;
@@ -297,7 +297,7 @@ discriminant, not the fields, gates the chrome).
     publishAllDialog?.close();
   });
 
-  // Seed from the SSR'd theme once. The shell's own live theme is owned by this state and the
+  // Seed from the SSR'd theme once. The shell's live theme is owned by this state and the
   // toggle, so the initial read of data.theme is intentional and untracked to keep it out of any
   // reactive graph. The override below is a separate, deliberately tracked path, so this seed stays
   // exactly as untracked as it was: a data.theme change still never reaches the render.
@@ -306,13 +306,13 @@ discriminant, not the fields, gates the chrome).
   );
 
   // What the root actually renders: a mounting context's override when it supplies one, this shell's
-  // own resolution otherwise. The derived is what makes the override reactive to a prop change.
+  // resolution otherwise. The derived is what makes the override reactive to a prop change.
   const theme = $derived(themeOverride ?? ownTheme);
 
   // First mount with no persisted choice follows the OS preference. A returning user's cookie was
   // already honored by the shell load (data.theme), so this only fires on a first-ever visit. An
   // override owns the theme outright, so neither source is consulted under one: a host that mounts
-  // the admin on its own page gets the theme it asked for, not the reader's OS preference.
+  // the admin on its page gets the theme it asked for, not the reader's OS preference.
   $effect(() => {
     if (themeOverride !== undefined) return;
     const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('cairn-admin-theme='));
@@ -388,7 +388,7 @@ discriminant, not the fields, gates the chrome).
 
   // Every visible item in the resolved layout, sections' children included (locked call 10), plus
   // the fallback foot group (so an unreferenced Help still surfaces here, the way it did as a
-  // hard-coded palette entry before this layout became configurable): a section's own label never
+  // hard-coded palette entry before this layout became configurable): a section's label never
   // becomes a command, only its leaves do.
   const paletteNavItems: NavItem[] = $derived([
     ...navGroups.flatMap((group) => group.items),
@@ -411,7 +411,7 @@ discriminant, not the fields, gates the chrome).
   );
 
   // Keep the active index in range as paletteResults narrows; a filter that drops the active row
-  // clears the active descendant rather than pointing at a gone option (MediaPicker's own rule).
+  // clears the active descendant rather than pointing at a gone option (MediaPicker's rule).
   $effect(() => {
     if (paletteActiveIndex >= paletteResults.length) {
       paletteActiveIndex = paletteResults.length === 0 ? -1 : paletteResults.length - 1;
@@ -424,7 +424,7 @@ discriminant, not the fields, gates the chrome).
   const paletteActiveDescendant = $derived(
     paletteActiveCmd ? paletteOptionId(paletteActiveIndex) : undefined,
   );
-  // The active-row narration text, kept in its own live region so it never clobbers the count.
+  // The active-row narration text, kept in its live region so it never clobbers the count.
   const paletteActiveNarration = $derived(
     paletteActiveCmd
       ? `${paletteActiveCmd.label}, ${paletteActiveIndex + 1} of ${paletteResults.length}`
@@ -479,7 +479,7 @@ discriminant, not the fields, gates the chrome).
   }
 
   // Flatten the resolved nav's site entries (section children included, engine doors skipped): a
-  // custom route's crumb label below comes from its own declared entry, never an engine screen.
+  // custom route's crumb label below comes from its declared entry, never an engine screen.
   function flattenSiteEntries(nodes: ResolvedLayoutNode[]): ResolvedNavEntry[] {
     return nodes.flatMap((node) => {
       if (isLayoutSection(node)) return node.children.filter((c): c is ResolvedNavEntry => !isEngineChild(c));
@@ -492,7 +492,7 @@ discriminant, not the fields, gates the chrome).
   // segment of 'history' is the entry's history screen, not the edit desk: the entry crumb then
   // links back to the desk (it is no longer the current page) and a final 'History' leaf names
   // where the trail actually ends, so pageTitle (the deepest crumb) reads "History" rather than
-  // reusing the edit desk's own title and trail.
+  // reusing the edit desk's title and trail.
   const crumbs = $derived.by<Crumb[]>(() => {
     const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?, 'history'?]
     if (segs.length < 2 || segs[0] !== 'admin') return [];
@@ -520,8 +520,8 @@ discriminant, not the fields, gates the chrome).
 
   // A desk route is an open document (/admin/<concept>/<id>): the third path segment is the entry.
   // The band has one job there, so the topbar drops the palette trigger and the site-wide Publish
-  // button and renders the document's own desk controls instead. The second segment must name a
-  // real content concept, not merely sit three-deep: a developer's own custom nav can route just as
+  // button and renders the document's desk controls instead. The second segment must name a
+  // real content concept, not merely sit three-deep: a developer's custom nav can route just as
   // deep (a section entry like /admin/team/events) without opening a document, and treating path
   // depth alone as the signal wrongly receded the persistent desktop sidebar on that navigation (it
   // fell back to the mobile-drawer's toggle-controlled visibility, which read as the sidebar
@@ -547,8 +547,8 @@ discriminant, not the fields, gates the chrome).
   // anywhere: navigating list -> edit would then fade in the document title, footer strip, and
   // mobile action bar on an ordinary first mount of that document, which is not a return from zen.
   // `beforeNavigate` fires only on a genuine SvelteKit navigation, unlike an effect keyed on the
-  // shell's own `data` prop (which also re-fires on a same-route data refresh, and in this
-  // component's own test harness on every rerender regardless of route), so it is what clears the
+  // shell's `data` prop (which also re-fires on a same-route data refresh, and in this
+  // component's test harness on every rerender regardless of route), so it is what clears the
   // flag unless zen is active right now, in which case a navigation that happens to land mid-zen
   // never clears it out from under an active session.
   let zenUsed = $state(false);
@@ -561,11 +561,11 @@ discriminant, not the fields, gates the chrome).
 
   // Whether the frame's first paint has already happened, so the frame-offset transition
   // (cairn-admin.css) can be gated off it: `createEditorPreferences`-style localStorage-restored
-  // state (here, zen's own persisted flag reaching the shell through `topbar.zen`) flips inside an
+  // state (here, zen's persisted flag reaching the shell through `topbar.zen`) flips inside an
   // effect AFTER the first render, so a reader who left zen on carries an SSR/first-paint frame at
   // its non-zen margin that then snaps to its zen margin the instant hydration's effects flush.
   // With the transition rule unconditional, that snap became a 224px animated slide during
-  // hydration, which the spec's own case table rules must snap instead (first paint is never
+  // hydration, which the spec's case table rules must snap instead (first paint is never
   // animated). One deferred animation frame after mount is enough separation from that first
   // paint for the browser to have already committed it, so a user-driven toggle after this point
   // is the only thing the transition ever plays for.
@@ -577,7 +577,7 @@ discriminant, not the fields, gates the chrome).
     return () => cancelAnimationFrame(raf);
   });
 
-  // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
+  // Mirror the live theme and its toggle into the holder so a desk document's overflow menu
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
   // the shell writes and EditPage reads through the same portal. toggleTheme is stable for the
@@ -591,7 +591,7 @@ discriminant, not the fields, gates the chrome).
   });
 
   // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same
-  // route-kind breakpoint its own lg:/xl:drawer-open classes key off above, with zen forcing it
+  // route-kind breakpoint its lg:/xl:drawer-open classes key off above, with zen forcing it
   // closed at every width (it recedes the sidebar regardless of route kind).
   const isPersistentSidebar = $derived(!topbar.zen && (isDeskRoute ? matchesXl : matchesLg));
 
@@ -632,10 +632,10 @@ discriminant, not the fields, gates the chrome).
     };
   });
 
-  // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
+  // Cycles Tab/Shift+Tab within the drawer's nav while it is an open overlay, so a keyboard user
   // can never tab out into the inert document behind it. Both directions redirect into the trap
   // when focus currently sits outside drawerNavEl (a defensive fallback for the moment before the
-  // focus-in effect above lands); MediaInsertPopover's own trap checks a narrower condition on its
+  // focus-in effect above lands); MediaInsertPopover's trap checks a narrower condition on its
   // Shift+Tab branch, focus sitting on the panel itself rather than anywhere outside it, and its
   // forward Tab branch carries no such fallback at all.
   function trapDrawerTab(e: KeyboardEvent) {
@@ -658,11 +658,11 @@ discriminant, not the fields, gates the chrome).
     }
   }
 
-  // A capture-phase listener so the drawer's own Escape and Tab handling always runs ahead of any
+  // A capture-phase listener so the drawer's Escape and Tab handling always runs ahead of any
   // other window keydown listener, most importantly EditPage's zen/details Escape handler, which
   // listens in the bubble phase. Stopping propagation here (capture) keeps the drawer's Escape and
   // every other Escape-driven affordance (zen, the details panel, a dialog) independent in both
-  // directions: a dialog's own Escape is the browser's native close-the-topmost-dialog default
+  // directions: a dialog's Escape is the browser's native close-the-topmost-dialog default
   // action, which fires regardless of script-level propagation, so it is unaffected either way.
   function onDrawerOverlayKeydownCapture(e: KeyboardEvent) {
     if (!isDrawerOverlay) return;
@@ -681,7 +681,7 @@ discriminant, not the fields, gates the chrome).
   <link rel="icon" href={cairnFaviconHref} />
   {#if !data.public}
     <!-- The authed views' referrer policy. A public payload renders LoginPage or ConfirmPage, which
-         emit their own, so exactly one lands in every admin document. -->
+         emit theirs, so exactly one lands in every admin document. -->
     <meta name="referrer" content="strict-origin" />
   {/if}
 </svelte:head>
@@ -708,7 +708,7 @@ discriminant, not the fields, gates the chrome).
        still governs the whole sidebar under zen, so the toggle (and Cmd/Ctrl+B) never traps an
        editor away from the nav.
        At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
-       own `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
+       `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
        load-bearing rules there), not sticky: a host that omits Preflight (the embed-anywhere default
        this admin targets) leaves the UA's default body margin in place, and sticky computes its
        "before it sticks" travel from the sidebar's static offset in the document, so an unreset body
@@ -716,14 +716,14 @@ discriminant, not the fields, gates the chrome).
        Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
   <!-- The seam this closes: a host that omits Preflight leaves the UA's default 8px body margin in
-       place, so this box's own flowing top-left edge used to sit 8px inside the true viewport while
+       place, so this box's flowing top-left edge used to sit 8px inside the true viewport while
        the fixed sidebar above pinned flush to it, and the min-h-screen height plus the ambient 16px
        vertical margin added a permanent 16px of scroll past the true viewport bottom. The packaged
        admin sheet resets the real host body margin to zero itself (cairn-admin.css's build, guarded
        to fire only while an admin theme root is mounted), so this box needs no compensating margin
        of its own, and the fix holds regardless of whether the host's ambient body margin was 8px or
        already 0 (a host that runs Tailwind Preflight, say): no negative margin here can overshoot
-       hard-coding a host default cairn does not get to assume. A host's own unlayered author rule
+       hard-coding a host default cairn does not get to assume. A host's unlayered author rule
        on body margin still wins over this base-layer reset, which is the host's explicit choice
        and needs no `!important` to hold. -->
   <div
@@ -732,7 +732,7 @@ discriminant, not the fields, gates the chrome).
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
     <!-- tabindex="-1" and aria-hidden pull this checkbox out of the tab order and the a11y tree: it
-         is DaisyUI's own drawer-state mechanism (the lg:/xl:drawer-open responsive open keys off
+         is DaisyUI's drawer-state mechanism (the lg:/xl:drawer-open responsive open keys off
          it), not an affordance an editor should ever land keyboard focus on with no accessible
          name. The Open menu button and Ctrl/Cmd+B are the real triggers, both flipping
          drawerOpen directly; this checkbox mirrors that state for the responsive CSS, and
@@ -771,7 +771,7 @@ discriminant, not the fields, gates the chrome).
            registers zen through the topbar holder and the band slides away entirely. The desk's
            three clusters include shell-owned chrome (the drawer toggle, the breadcrumb), so
            emptying the band would leave that chrome behind; the band must be GONE. The manuscript
-           and EditPage's own floating zen chip carry on below. -->
+           and EditPage's floating zen chip carry on below. -->
       {#if !topbar.zen}
       <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
@@ -781,7 +781,7 @@ discriminant, not the fields, gates the chrome).
            bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
            phone-desk band. Office routes keep the full 64px band at every width. -->
       <!-- Chrome fade, the carve-out band: the band leaves but stays nearby, ready to reappear, so
-           it fades at quick on the theme's own standard curve (the admin root's
+           it fades at quick on the theme's standard curve (the admin root's
            default-transition-timing-function) rather than taking the exit curve's one-band
            reduction the offset itself takes. cairn-chrome-fade's rule (cairn-admin.css) keys the
            transition and its @starting-style entrance under the drawer content's
@@ -799,7 +799,7 @@ discriminant, not the fields, gates the chrome).
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
-          <!-- A real button, not the checkbox's own for=/id= label: it flips drawerOpen directly
+          <!-- A real button, not the checkbox's for=/id= label: it flips drawerOpen directly
                on click, so the opener never routes through the checkbox. -->
           <button
             type="button"
@@ -818,15 +818,15 @@ discriminant, not the fields, gates the chrome).
              Hidden on small screens to leave room for the palette trigger. -->
         <div class="hidden min-w-0 max-w-[30%] flex-none sm:block">
           {#if crumbs.length > 1}
-            <!-- Each crumb's own label truncates to an ellipsis: the wrapping nav is block-level
-                 (not the wrapper's own inline content), so a text-overflow rule on the wrapper
+            <!-- Each crumb's label truncates to an ellipsis: the wrapping nav is block-level
+                 (not the wrapper's inline content), so a text-overflow rule on the wrapper
                  alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
                  past its content size so truncate can take effect. -->
-            <!-- ms-0 cancels only daisyUI's own breadcrumb margin, not its list padding: daisyUI
+            <!-- ms-0 cancels only daisyUI's breadcrumb margin, not its list padding: daisyUI
                  5.7.28 pairs `.breadcrumbs { margin-inline-start: -.25rem }` with
                  `.breadcrumbs > ul { padding-inline-start: .25rem }`, and the margin alone was
                  what overflowed this wrapper's flex line by 4px and shrank every crumb into an
-                 ellipsis with room to spare. The list's own 4px padding stays: it is the room
+                 ellipsis with room to spare. The list's 4px padding stays: it is the room
                  the first crumb's keyboard focus ring needs, since `.breadcrumbs` scroll-clips
                  (overflow-x: auto) anything the ring would otherwise draw past the edge. The
                  first crumb sits 4px inside the band's left edge as a result, which is accepted. -->
@@ -866,7 +866,7 @@ discriminant, not the fields, gates the chrome).
               class="flex max-sm:w-auto w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-              <!-- Below `sm` the trigger reads as the icon alone: the surrounding topbar's own
+              <!-- Below `sm` the trigger reads as the icon alone: the surrounding topbar's
                    width leaves too little room for the label, which truncated to an unreadable
                    "S." before this fix. `sr-only`, not `hidden`, keeps the label as the button's
                    accessible name (WCAG 4.1.2) at every width. -->
@@ -887,7 +887,7 @@ discriminant, not the fields, gates the chrome).
             {/if}
           {/await}
         {/if}
-        <!-- Below the sm cutoff a desk route folds this into EditPage's own overflow menu instead
+        <!-- Below the sm cutoff a desk route folds this into EditPage's overflow menu instead
              of shrinking it in place (the desk band collision fix, audit finding 2): the office
              routes keep it visible at every width, since only the desk band runs out of room. -->
         {#if offersThemeToggle}
@@ -914,7 +914,7 @@ discriminant, not the fields, gates the chrome).
         {:else}
           <!-- Office screens (posts, media, editors, settings, help) share one content-width cap,
                so a wide viewport does not stretch the list rows into a dead band (audit finding 8).
-               The desk manages its own manuscript width (EditPage's own max-w-[49rem]/[56rem]), so
+               The desk manages its manuscript width (EditPage's max-w-[49rem]/[56rem]), so
                the cap applies only off the desk route. -->
           <div class="mx-auto w-full max-w-5xl">
             {@render ephemeralNotice()}
@@ -924,9 +924,9 @@ discriminant, not the fields, gates the chrome).
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Commands">
-        <!-- `pt-1` (4px) matches the page-wide `:focus-visible` ring's own outward reach (a 2px
+        <!-- `pt-1` (4px) matches the page-wide `:focus-visible` ring's outward reach (a 2px
              outline at a 2px offset): with `p-0` otherwise flush, the search input's ring, focused
-             on load, would clip against this scrolling box's own top edge with no room above it. -->
+             on load, would clip against this scrolling box's top edge with no room above it. -->
         <div class="modal-box max-w-xl self-start mt-4 p-0 pt-1 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
@@ -950,7 +950,7 @@ discriminant, not the fields, gates the chrome).
           <p class="sr-only" role="status" aria-live="polite">
             {paletteResults.length} {paletteResults.length === 1 ? 'result' : 'results'}
           </p>
-          <!-- The active-row narration, its own polite region. -->
+          <!-- The active-row narration, its polite region. -->
           <p class="sr-only" aria-live="polite">{paletteActiveNarration}</p>
 
           <!-- The listbox always renders, even with no matches, so the combobox's aria-controls
@@ -1054,7 +1054,7 @@ discriminant, not the fields, gates the chrome).
     </div>
 
     <div class="drawer-side">
-      <!-- A click-to-dismiss backdrop, not a tab stop: it sits before the drawer's own nav in
+      <!-- A click-to-dismiss backdrop, not a tab stop: it sits before the drawer's nav in
            DOM order, so a focusable button here would land a second toggle ahead of the drawer's
            contents in the tab order. The label's for=/id= click still closes the drawer through
            the checkbox above; the Ctrl/Cmd+B chord and Escape (onDrawerOverlayKeydownCapture)
@@ -1105,7 +1105,7 @@ discriminant, not the fields, gates the chrome).
                   {item.label}
                   {#if att}
                     <!-- The pill carries no accessible text of its own (the count already joined the
-                         link's own aria-label above); it is decoration for a sighted user, capped at
+                         link's aria-label above); it is decoration for a sighted user, capped at
                          two digits, and color-independent (the design charter's "color carries no
                          semantics on its own" rule). -->
                     <span
@@ -1124,7 +1124,7 @@ discriminant, not the fields, gates the chrome).
           {@const showHeaderPill = attentionSum > 0 && sectionCollapsed}
           <details class="px-2" open={!sectionCollapsed} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
             <!-- The header carries the visible children's summed count only while the section is
-                 closed, since an open <details> already carries each child's own pill (the rollup
+                 closed, since an open <details> already carries each child's pill (the rollup
                  would double the story); it disappears the instant the section opens, per the
                  collapsed-header rollup contract. -->
             <summary
@@ -1149,7 +1149,7 @@ discriminant, not the fields, gates the chrome).
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           <!-- shell.nav.items is the whole arranged, filtered scroll area in declaration order: a
-               section renders as its own collapsible group (a site's own declared navLayout
+               section renders as its collapsible group (a site's declared navLayout
                section); the zero-config default synthesizes no section at all, so its concepts and
                engine screens arrive as loose top-level nodes. A loose node batches with its
                neighbors into a plain, header-less list rather than opening a group of its own. -->

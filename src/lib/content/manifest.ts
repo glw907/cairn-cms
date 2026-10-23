@@ -493,7 +493,7 @@ export function inboundLinks(manifest: Manifest, concept: string, id: string): I
  * Every entry whose body includes the fragment. A fragment id is unique within the fragments
  *  concept (the only concept an `::include` directive can ever target), so unlike `inboundLinks`
  *  the query takes no concept argument. The delete guard reads this to refuse deleting a fragment
- *  still in use; the fragment's own edit screen reads it for usage visibility. Pure over the
+ *  still in use; the fragment's edit screen reads it for usage visibility. Pure over the
  *  manifest, so the request-time delete path and a unit test call it the same way.
  */
 export function inboundIncludes(manifest: Manifest, id: string): InboundLink[] {

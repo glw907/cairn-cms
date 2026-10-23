@@ -1,6 +1,6 @@
 // cairn-cms: the editor's insert-from-form path. Serializes a component's form values through
 // component-grammar.ts, then validates the result through component-validate.ts before the editor
-// commits it, so the editor never inserts a directive that would fail its own schema on the very
+// commits it, so the editor never inserts a directive that would fail its schema on the very
 // next parse.
 import { serializeComponent } from './component-grammar.js';
 import { validateComponent } from './component-validate.js';

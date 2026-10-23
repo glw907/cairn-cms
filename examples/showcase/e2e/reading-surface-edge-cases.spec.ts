@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 //      styles the bare top-level case.
 //   2. the inline CTA's background must read distinct from the page background in both themes,
 //      since the panel-button token pair (`--cairn-cta-btn-*`) it reuses can resolve to the page's
-//      own paper color in one theme and the accent in the other.
+//      paper color in one theme and the accent in the other.
 //   3. a hero/wide/full figure image must carry a height cap, so an extreme-ratio photo cannot blow
 //      the column height out.
 //   4. `.prose` must wrap a long unbroken token (a bare URL) inside the column rather than
@@ -17,7 +17,7 @@ test.describe('Reading surface edge cases', () => {
   test('a standalone icon directive renders at a modest, text-height scale', async ({ page }) => {
     await page.goto('/posts/the-reading-surface');
     // The direct-child selector matches only the standalone `:::icon{name="flag"}` in this article,
-    // not the alert's, the video facade's, the cta's, or the faq's own nested glyph.
+    // not the alert's, the video facade's, the cta's, or the faq's nested glyph.
     const glyph = page.locator('.prose > .cairn-icon > .cairn-glyph');
     await expect(glyph).toBeVisible();
     const box = await glyph.boundingBox();

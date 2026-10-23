@@ -7,7 +7,7 @@ import { renderStaticAdminPage } from './static-admin-page.js';
 
 /**
  * Render the full HTML document for the identity-unresolved page.
- * @param label - The site's own name for its sign-in gate, escaped before interpolation.
+ * @param label - The site's name for its sign-in gate, escaped before interpolation.
  */
 export function identityUnresolvedPage(label = "your organization's sign-in"): string {
   const inner = `

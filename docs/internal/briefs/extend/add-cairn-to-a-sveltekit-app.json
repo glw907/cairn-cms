@@ -10,7 +10,7 @@
       ]
     },
     {
-      "text": "The engine is an npm package the site installs and wires in through its own SvelteKit files.",
+      "text": "The engine is an npm package the site installs and wires in through its SvelteKit files.",
       "id": [
         "f:j0ut9n",
         "f:ew4uk7"
@@ -69,7 +69,7 @@
       "id": "f:9slxqf"
     },
     {
-      "text": "A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings its own.",
+      "text": "A developer who wants cairn without Waymark can start it from an empty project, since the npm package carries no template and a hand-built site brings one.",
       "id": "f:rxj43c"
     },
     {
@@ -1218,7 +1218,7 @@
       "id": "f:jbt2hh"
     },
     {
-      "text": "Each site registers its own GitHub App, with one repository permission, **Contents** at **Read and write**, and no webhook.",
+      "text": "Each site registers a GitHub App, with one repository permission, **Contents** at **Read and write**, and no webhook.",
       "id": [
         "f:gyu7jc",
         "f:vgw8x9"

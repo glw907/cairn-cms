@@ -14,7 +14,7 @@ import type { ReproManifestEntry } from './manifest.js';
  * (required keys, story resolves, width declared). Each member is independently optional, and
  * omitting one skips the check it backs entirely: none of the three carries a baked-in default,
  * since a "Reproduction"-prefixed English alt, a 150-character ceiling, and a closed key set are
- * cairn.pub's own register, not a rule the engine imposes on every consumer.
+ * cairn.pub's register, not a rule the engine imposes on every consumer.
  */
 export interface ValidateReproFenceOptions {
   /** When given, `alt` must match this pattern; omit to skip the alt-prefix check. */
@@ -45,7 +45,7 @@ const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
  * Check a `repro` fence body against the spec's fence schema (gate 1): the YAML parses, the
  * required keys are present, the story id resolves against the installed manifest, and `width`,
  * if given, names a width that story's manifest entry actually declares a height for. Those rules
- * are engine-owned and always run. `options` layers a caller's own register on top: an unknown
+ * are engine-owned and always run. `options` layers a caller's register on top: an unknown
  * key, an alt-text prefix, and an alt-text length ceiling, each checked only when the caller
  * supplies the option that backs it.
  *
@@ -54,7 +54,7 @@ const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
  * only some widths refuses a fence pinned to one it cannot show.
  * @param body - the fence's raw YAML body
  * @param manifest - the installed engine's story manifest
- * @param options - the caller's own register, layered on top of the engine-owned rules
+ * @param options - the caller's register, layered on top of the engine-owned rules
  */
 export function validateReproFence(
   body: string,
@@ -118,7 +118,7 @@ export function validateReproFence(
       `width "${RESPONSIVE_WIDTH}" is the responsive default, which a fence names by omitting "width"`,
     );
   } else if (width !== undefined) {
-    // Read off the story's own ReproHeights entry, never a list of width names kept here: a story
+    // Read off the story's ReproHeights entry, never a list of width names kept here: a story
     // that later declares a new pinned width needs no matching edit in this file. An unresolved
     // story leaves the set empty, so its fence fails on the id above and on the width here.
     const heights = (entry?.heights ?? {}) as Record<string, number | undefined>;

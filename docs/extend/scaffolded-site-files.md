@@ -1,7 +1,6 @@
 # Scaffolded site files
 
-A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in its own GitHub
-repository, already deployed as a Cloudflare Worker, with the engine, `@glw907/cairn-cms`, listed as
+A site that `create-cairn-site` scaffolded arrives as a complete SvelteKit project in a GitHub repository, already deployed as a Cloudflare Worker, with the engine, `@glw907/cairn-cms`, listed as
 one ordinary dependency in `package.json`. Its theme is Waymark, cairn's reference reading theme.
 Waymark runs on the chassis, the plumbing every scaffolded site shares. The setup command copies
 both from the tree the engine tests itself against.
@@ -178,7 +177,7 @@ config in depth.
 
 Because npm's packlist drops a file named `.gitignore`, the setup command's package stores this file
 as `gitignore`. The setup command renames it after copying and stops with an error when it is
-absent. The `.gitattributes` file ships under its own name. Among its entries, `.gitignore` excludes
+absent. The `.gitattributes` file ships under its real name. Among its entries, `.gitignore` excludes
 the local `.dev.vars` and the compiled `.cairn/admin.css`, which the pre-scripts rebuild.
 
 ### Other root files
@@ -257,7 +256,7 @@ The Worker's config declares the following bindings and one variable:
 - `MEDIA_BUCKET`, the R2 bucket that [Configure media](configure-media.md) sets up
 - `PUBLIC_ORIGIN`, a plain variable
 
-Each D1 binding names its own `migrations_dir`, so the site carries one migration directory per
+Each D1 binding names its `migrations_dir`, so the site carries one migration directory per
 database.
 
 The `observability.enabled` setting is `true`, so Workers Logs records the Worker's logs. The
@@ -358,7 +357,7 @@ The root also holds `feed.json/`, `feed.xml/`, and `sitemap.xml/`. The `robots.t
 [Choose an AI posture](choose-an-ai-posture.md) sets.
 
 The `media/[...path]/` route exports the `createMediaRoute` handler, which streams uploaded media
-from `MEDIA_BUCKET` at content-addressed keys with its own security headers, since the route sits
+from `MEDIA_BUCKET` at content-addressed keys with security headers, since the route sits
 outside `/admin`. [Configure media](configure-media.md) sets up the bucket, and the
 [`createMediaRoute`](../reference/sveltekit.md#createmediaroute) entry documents the validation.
 
@@ -525,7 +524,7 @@ The build token is named `cairn create-cairn-site build token`, and the Workers 
 an existing build token that wraps the same token id. Revoking or rolling that token at Cloudflare
 breaks automatic deploys with no prior warning. The next commit still triggers a build, and the
 build fails. The API token setting in the Worker's Workers Builds build configuration holds the
-token its builds authenticate with. A new owner can create an API token of their own and select it
+token its builds authenticate with. A new owner can create an API token and select it
 there, as Cloudflare's [build configuration
 page](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#api-token) describes.
 

@@ -1,10 +1,10 @@
 /* ============================================================================
    The chassis's composition primitives: card, band, section, hero, and sidebar-layout. These are
    the chassis's generosity made concrete: a theme reaches for one of
-   these recipes instead of hand-rolling its own card or two-column layout from scratch, the same
-   way it reaches for a token instead of a literal color. This site's own `(site)` chrome uses
+   these recipes instead of hand-rolling a card or two-column layout from scratch, the same
+   way it reaches for a token instead of a literal color. This site's `(site)` chrome uses
    the site-shell pair; the rest are a theme's choice, never a requirement, and every recipe
-   below is overridable per-instance through its own `--cairn-<primitive>-*` custom properties
+   below is overridable per-instance through its `--cairn-<primitive>-*` custom properties
    (documented at each rule) rather than only through the shared design-scale tokens.
 
    Every rule here reads chassis/tokens.css tokens exclusively (spacing, radius, and DaisyUI color
@@ -14,8 +14,8 @@
    ============================================================================ */
 @layer components {
   /* Card: a bordered, padded surface. The callout/alert/video-facade directives already hand-roll
-     this shape in prose.css (scoped to their own class names, since a directive's markup is fixed
-     by the engine); .cairn-card is the same recipe for a theme's OWN chrome or composed-page
+     this shape in prose.css (scoped to their class names, since a directive's markup is fixed
+     by the engine); .cairn-card is the same recipe for a theme's chrome or composed-page
      markup, where the class name is free to pick. */
   .cairn-card {
     --cairn-card-padding: var(--spacing-m);
@@ -28,7 +28,7 @@
     border: var(--cairn-card-border);
   }
 
-  /* Band: a full-bleed horizontal strip (a page-width section with its own background), for a
+  /* Band: a full-bleed horizontal strip (a page-width section with its background), for a
      home-page CTA panel or a marketing strip that wants to break out of the reading column. Pairs
      with .site-main-style centering inside it: put a max-width container as the band's child. */
   .cairn-band {
@@ -38,7 +38,7 @@
     background: var(--cairn-band-bg);
   }
 
-  /* The footer's own top margin, separating it from whatever precedes it. This lives here, in
+  /* The footer's top margin, separating it from whatever precedes it. This lives here, in
      @layer components, rather than as a Tailwind utility class on the footer element, because the
      band-to-footer cancel below is itself a layered rule: a Tailwind utility (`mt-2xl`) sits in
      @layer utilities, which Tailwind v4 orders AFTER @layer components, so an unlayered or
@@ -48,9 +48,9 @@
     margin-top: var(--spacing-2xl);
   }
 
-  /* The band owns its exit: a footer's own top margin is meant to separate it from a preceding
-     block whose ground differs from its own, but a band that directly precedes the footer
-     already draws that separation itself (the band's own bottom edge is the seam). Left alone,
+  /* The band owns its exit: a footer's top margin is meant to separate it from a preceding
+     block whose ground differs from the band's, but a band that directly precedes the footer
+     already draws that separation itself (the band's bottom edge is the seam). Left alone,
      the footer's margin reopens a strip of the page's base ground between a band and a footer
      that share the same ground (this site's base-200 band into a base-200 footer). Zeroing it
      here, scoped to the direct-sibling case, keeps every other band-to-content transition
@@ -72,7 +72,7 @@
   }
 
   /* Hero: an introductory block with a large display heading over a recessed sub-line, the shape
-     this site's own home masthead and the styleguide both hand-roll today in scoped `<style>`
+     this site's home masthead and the styleguide both hand-roll today in scoped `<style>`
      blocks. A theme adopts .cairn-hero to get the same rhythm without repeating the declarations. */
   .cairn-hero {
     --cairn-hero-gap: var(--spacing-s);
@@ -101,7 +101,7 @@
      (a media query condition cannot read a custom property, so the breakpoint itself is not a
      token seam) so a phone reader never gets a squeezed two-column layout. A theme that wants a
      docs-style side nav or an article's related-posts rail reaches for this instead of a bespoke
-     grid. The aside's own width is overridable per instance via --cairn-sidebar-width. */
+     grid. The aside's width is overridable per instance via --cairn-sidebar-width. */
   .cairn-sidebar-layout {
     --cairn-sidebar-width: 16rem;
     --cairn-sidebar-gap: var(--spacing-l);
@@ -118,10 +118,10 @@
   /* Site shell: a sticky-footer flex column (header, growing main, footer), for a theme whose
      chrome wants the footer pinned to the viewport bottom on a short page (the AstroPaper port's
      shape). `.cairn-site-shell` is the flex column; `.cairn-site-main` is the growing item. A
-     flex item's own width is auto, and auto does not resolve against the flex line the way a
+     flex item's width is auto, and auto does not resolve against the flex line the way a
      plain block's width does on the cross axis (a different bug from the well-known main-axis
      min-content gotcha): when a descendant intrinsically wider than the column (a
-     table with nowrap cells, any box with its own overflow-x: auto) sits anywhere inside
+     table with nowrap cells, any box with its overflow-x: auto) sits anywhere inside
      `.cairn-site-main`, the item shrinks-to-fit that descendant's content width instead of
      stretching, and the growth silently bubbles up through every auto-sized ancestor, breaking
      the layout at narrow viewports. `min-width: 0` alone does not fix this (confirmed by

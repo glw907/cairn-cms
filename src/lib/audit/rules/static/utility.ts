@@ -7,7 +7,7 @@ import type { StaticRuleContext } from '../../types.js';
 
 /**
  * The utility a class token names, with its variant prefixes removed. Only a colon outside brackets
- * and parentheses separates a variant, so an arbitrary value or property that carries its own colon
+ * and parentheses separates a variant, so an arbitrary value or property that carries a colon
  * (`text-[color:red]`, `[font-size:1.375rem]`, `supports-[display:grid]:flex`) keeps it.
  */
 export function utilityBase(token: string): string {

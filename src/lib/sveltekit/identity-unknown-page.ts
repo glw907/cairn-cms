@@ -9,7 +9,7 @@ import { renderStaticAdminPage } from './static-admin-page.js';
  * Render the full HTML document for the unrostered-identity page.
  * @param email - The confirmed, normalized email, capped at 320 characters before this call and
  *  escaped before interpolation.
- * @param label - The site's own name for its sign-in gate, escaped before interpolation.
+ * @param label - The site's name for its sign-in gate, escaped before interpolation.
  */
 export function identityUnknownPage(email: string, label = "your organization's sign-in"): string {
   const inner = `

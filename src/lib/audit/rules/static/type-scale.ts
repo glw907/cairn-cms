@@ -6,14 +6,14 @@
 // which has already produced two miscounts in this initiative. Because the lookup is exact, that
 // confusion cannot arise here either.
 //
-// The rule only inspects `text-*`-prefixed tokens (Tailwind's own text-sizing namespace, named
-// steps and arbitrary brackets alike) plus the `type-*` role utilities themselves. DaisyUI's OWN
+// The rule only inspects `text-*`-prefixed tokens (Tailwind's text-sizing namespace, named
+// steps and arbitrary brackets alike) plus the `type-*` role utilities themselves. DaisyUI's
 // component classes (`.btn`, `.alert`, `.input`, `.select`, `.badge`, `.kbd`, `.label`,
-// `.checkbox`, `.textarea`, `.table`, `.menu`, `.fieldset`, ...) each carry their own baked-in
-// font-size as part of the CONTROL's chrome (sized instead by daisyUI's own `btn-sm`/`input-lg`
+// `.checkbox`, `.textarea`, `.table`, `.menu`, `.fieldset`, ...) each carry baked-in
+// font-size as part of the CONTROL's chrome (sized instead by daisyUI's `btn-sm`/`input-lg`
 // modifiers), a system that has nothing to do with the admin's seven-role text-content scale;
 // resolving every class with ANY font-size declaration flagged all of them as violations the first
-// time this rule ran against cairn's own tree.
+// time this rule ran against cairn's tree.
 //
 // The namespace is read off the token's utility base, never the raw token: `2xl:text-sm` and
 // `text-sm` compile to the same font-size declaration, and anchoring the prefilter at the start of

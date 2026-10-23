@@ -1,14 +1,14 @@
 // The shared iteration surface for cairn-audit's CSS-family static rules (token-colors,
-// grammar-boundary, focus-parity, motion-band, reduced-motion): every CSS rule a component's own
+// grammar-boundary, focus-parity, motion-band, reduced-motion): every CSS rule a component's
 // scoped <style> block or a config-named consumer CSS file declares, each carrying the absolute
 // position (offset into the FULL file source, not the extracted style-block text) a Finding and
-// the suppression idiom both need. A rule's own check() never touches the filesystem or re-parses
+// the suppression idiom both need. A rule's check() never touches the filesystem or re-parses
 // CSS text itself; it reads this one generator and stays a pure function of the run's context.
 //
 // This generator does not itself know about a declared palette site (`config.paletteCssFiles`,
 // config.ts): a palette declaration site still carries real structure (a transition, a selector)
 // every other CSS-family rule legitimately polices, so only the one rule whose hazard model the
-// declaration site trips, token-colors, filters it out of its own check.
+// declaration site trips, token-colors, filters it out of its check.
 import { parseSheet } from '../../sheet.js';
 import { lineAt } from '../../markup.js';
 import type { SheetRule } from '../../sheet.js';
@@ -25,7 +25,7 @@ export interface CssScopeRule {
 }
 
 /**
- * Every CSS rule in the CSS-family scope, one at a time: each parsed component's own scoped
+ * Every CSS rule in the CSS-family scope, one at a time: each parsed component's scoped
  * `<style>` block, and every standalone file `ctx.cssFiles` names. A component with no `<style>`
  * block, or a run with no named consumer CSS files, contributes nothing from that half; neither
  * is an error.
@@ -50,7 +50,7 @@ export function* cssScopeRules(ctx: StaticRuleContext): Generator<CssScopeRule> 
 }
 
 /**
- * Where a CSS-family finding points: the rule's own selector, never the declaration inside it. The
+ * Where a CSS-family finding points: the rule's selector, never the declaration inside it. The
  * selector is the construct an author edits and the construct a suppression directive sits above,
  * so every rule in the family reports one rule at one place no matter which declaration tripped it.
  */

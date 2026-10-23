@@ -1,9 +1,9 @@
-// Chassis-B's own capture tool: shoots the showcase's public and admin surfaces across the
+// Chassis-B's capture tool: shoots the showcase's public and admin surfaces across the
 // five-viewport bar in both color schemes, tiles each full-page image for a grading agent, and
 // writes a manifest a later pass can diff against. Derived from the 2026-08-15 reference-capture
 // tool (`git show 274374f2^:examples/showcase/scripts/reference-capture.mjs`), which already
 // solved the preview-server recipe and the admin theme cookie; this tool generalizes that shape
-// into a surface/width/scheme matrix instead of a fixed screen list. It starts its own preview
+// into a surface/width/scheme matrix instead of a fixed screen list. It starts a separate preview
 // server (the `playwright.config.ts` webServer recipe without its members migration) and tears
 // it down on exit, rather than connecting to a server the caller happens to have running, so a
 // capture always proves the current build.
@@ -15,11 +15,11 @@
 //     on every `/admin` request, so no session cookie or login flow is needed, only the
 //     `cairn-admin-theme` cookie for the color scheme.
 //   - archive2 (`/archive/2`): renders normally (200) now that `ARCHIVE_PAGE_SIZE`
-//     (`src/chassis/archive.ts`) crosses the showcase's own corpus, producing a real page two.
-//     It carries its own page-level `h1` (the "Archive" eyebrow), so it waits on
+//     (`src/chassis/archive.ts`) crosses the showcase's corpus, producing a real page two.
+//     It carries a page-level `h1` (the "Archive" eyebrow), so it waits on
 //     `waitForHeading` like every other public surface.
 //   - error404 (an unmatched path): the root `+error.svelte` DOES render under `wrangler dev`
-//     for a genuinely unmatched route, full SSR, status 404, with the site's own nav and footer.
+//     for a genuinely unmatched route, full SSR, status 404, with the site's nav and footer.
 //     Unlike archive2, this surface's whole point is to capture that rendered error page, so a
 //     404 status here is captured as content rather than written as `.missing`.
 import { chromium } from 'playwright-core';
@@ -74,7 +74,7 @@ const SURFACES = [
       await waitForHeading(page);
       await waitForImages(page);
     },
-    // The clamp-slope test's own mid-range baseline: an extra light-only capture at 1920 so
+    // The clamp-slope test's mid-range baseline: an extra light-only capture at 1920 so
     // that baseline has a before too (site-visual.spec.ts's site-article-light-1920 test).
     extraWidths: [{ width: 1920, scheme: 'light' }],
   },
@@ -294,7 +294,7 @@ async function isServerUp(url) {
 /** Starts the showcase preview server with the `playwright.config.ts` webServer recipe, minus
  *  its members migration
  *  (`VITE_CAIRN_E2E=1 npm run build && npm run preview -- --port 4173 --var CAIRN_DEV_BACKEND:1`),
- *  detached into its own process group so the whole group can be killed on teardown, and waits
+ *  detached into a separate process group so the whole group can be killed on teardown, and waits
  *  for /admin/posts to answer 200 within the config's 120s budget. Refuses to run if port 4173 already has a
  *  listener, since capturing against a server this tool did not start is a silent-wrong-build
  *  hazard. */

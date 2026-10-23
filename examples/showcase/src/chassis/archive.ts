@@ -4,9 +4,9 @@
 // two routes.
 import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-// Entries per archive page. Sized so this site's own corpus crosses one page boundary,
+// Entries per archive page. Sized so this site's corpus crosses one page boundary,
 // proving the pagination shape end to end; a site adopting this chassis sizes the constant
-// against its own archive.
+// against its archive.
 export const ARCHIVE_PAGE_SIZE = 13;
 
 /** One year's entries, newest first within the year. */

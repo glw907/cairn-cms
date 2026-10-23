@@ -1,24 +1,24 @@
 // cairn-cms: the edit page's preview-frame document. The admin's chrome isolation keeps the
 // site's CSS out of the admin document, so EditPage renders the preview inside a sandboxed
-// iframe whose document links the site's own stylesheets from the adapter's preview knob. This
+// iframe whose document links the site's stylesheets from the adapter's preview knob. This
 // module builds that iframe's srcdoc as one pure string, so its shape is unit-testable, and it
 // carries the device table the frame's width control offers.
 
 import { escapeHtml } from '../escape.js';
 import type { ResolvedPreview } from '../content/types.js';
 
-// The preview-only fragment boundary cue's own stylesheet (the invisible-craft design's ratified
-// 4B): a spliced ::include's rendered blocks otherwise look indistinguishable from the entry's own
+// The preview-only fragment boundary cue's stylesheet (the invisible-craft design's ratified
+// 4B): a spliced ::include's rendered blocks otherwise look indistinguishable from the entry's
 // prose, so an editor cannot tell which paragraphs live elsewhere. resolve-include.ts wraps a
 // splice in these classes only when EditPage's client-side resolver is the one in play (never the
 // build-time resolver), so this stylesheet's presence here is inert chrome on the public path: the
 // classes it targets never appear in a build. The accent values are cairn-admin.css's light and
-// dark --color-accent, hard-coded because the preview document links only the site's own
+// dark --color-accent, hard-coded because the preview document links only the site's
 // stylesheets, never the admin's, so neither theme's CSS variables are ever in scope here. cairn's
-// public output is design-agnostic, so the preview's body ground can be dark on a site whose own
-// stylesheet sets one (buildPreviewDoc's own #fff rule is only a fallback the site's CSS
+// public output is design-agnostic, so the preview's body ground can be dark on a site whose
+// stylesheet sets one (buildPreviewDoc's #fff rule is only a fallback the site's CSS
 // overrides); the light accent alone falls under the AA text floor there, so a
-// prefers-color-scheme media query swaps in the dark pair, mirroring how a consumer's own dark
+// prefers-color-scheme media query swaps in the dark pair, mirroring how a consumer's dark
 // theme would read the cue.
 const FRAGMENT_BOUNDARY_STYLE =
   '<style>.cairn-fragment-boundary{border-left:2px solid color-mix(in oklab, oklch(54% 0.16 300) 35%, transparent);padding-left:.75rem}' +
@@ -96,7 +96,7 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     '<base target="_blank">',
-    // The reset paints the site's own paper: `--color-base-100` resolves once the site's stylesheet
+    // The reset paints the site's paper: `--color-base-100` resolves once the site's stylesheet
     // links below load, and the `#fff` fallback covers a site whose stylesheet does not define it
     // (or a styleless preview). The frame's `<html>` carries no `data-theme`, so only the OS color
     // scheme reaches it. cairn-audit scans component <style> blocks and named .css files only, so

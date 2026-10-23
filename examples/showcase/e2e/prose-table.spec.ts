@@ -40,13 +40,13 @@ test('at 320px the table scrolls its wrapper instead of wrapping its cells mid-t
   await expect(table).toBeVisible();
   const wrapper = table.locator('xpath=..');
 
-  // The scroll-not-shatter proof: the wrapper's content overflows its own box (a real horizontal
+  // The scroll-not-shatter proof: the wrapper's content overflows its box (a real horizontal
   // scroll available), not a visual-only screenshot check.
   const overflows = await wrapper.evaluate((el) => el.scrollWidth > el.clientWidth);
   expect(overflows).toBe(true);
 
   // A cell holding an unbroken inline-code token (`[text](address)`, from the writing-guide sample
-  // table) never breaks mid-token: `nowrap` is the mechanism that forces the table past its own
+  // table) never breaks mid-token: `nowrap` is the mechanism that forces the table past its
   // 100% width, which is what makes the wrapper's overflow real instead of merely available.
   const codeCell = page.locator('.prose table td', { hasText: '[text](address)' });
   expect(await codeCell.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');

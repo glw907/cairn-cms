@@ -1,6 +1,6 @@
 // cairn-media-seed's barrel: the flag parser, the manifest and bucket resolution, and the sync
 // loop, behind one import path for the bin and its tests. Internal only, like cairn-manifest's
-// own internal.ts: no public package subpath exports it.
+// internal.ts: no public package subpath exports it.
 export {
   parseArgs,
   normalizeManifest,

@@ -20,7 +20,7 @@ export interface ConceptIndex {
 export interface SiteResolver {
   /** Resolve a request path (with or without a trailing slash) to its entry, or undefined. */
   byPermalink(path: string): ContentEntry | undefined;
-  /** Newer/older neighbors within the entry's own concept, for prev/next links. */
+  /** Newer/older neighbors within the entry's concept, for prev/next links. */
   adjacent(entry: ContentSummary): { newer?: ContentSummary; older?: ContentSummary };
   /** Every entry permalink across concepts, leading slash stripped, for SvelteKit `[...path]`. */
   entries(): { path: string }[];
@@ -121,8 +121,8 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
 
 /**
  * A reference edge resolved to its target's identity, for a public route to render a linked target.
- *  It reuses the target entry's own summary fields rather than re-deriving them, so a linked author
- *  card reads the same title and permalink the target's own page does. `summary` is the target's
+ *  It reuses the target entry's summary fields rather than re-deriving them, so a linked author
+ *  card reads the same title and permalink the target's page does. `summary` is the target's
  *  excerpt when present.
  */
 export interface ResolvedReference {

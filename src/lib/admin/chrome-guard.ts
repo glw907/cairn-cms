@@ -1,4 +1,4 @@
-// Dev-only structural check that catches a host mounting the admin inside its own chrome. Every admin
+// Dev-only structural check that catches a host mounting the admin inside its chrome. Every admin
 // rule is scoped and the admin self-styles, but a host whose root layout wraps the admin in a
 // width-constraining container (a `<main class="container">`) or renders its nav and footer around it
 // breaks the full-bleed admin shell. The engine cannot prevent that layout mistake, so it names it.

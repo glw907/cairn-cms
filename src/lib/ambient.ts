@@ -1,7 +1,7 @@
 // cairn-cms: the public `/ambient` barrel. The one-line augmentation a consumer site imports
 // from src/app.d.ts: the App.Locals members and the `__CAIRN_DEV_BUILD__` global, and nothing
 // else. A type a site consumes directly (CairnEnv, Editor,
-// and so on) belongs on the root barrel or /sveltekit instead, even one this augmentation's own
+// and so on) belongs on the root barrel or /sveltekit instead, even one this augmentation's
 // members reference, since this module's whole contract is its import side effect, not a name a
 // site imports from it.
 //
@@ -13,7 +13,7 @@
 // the field in any repo, this one included, with no namespace to peel back first.
 //
 // The guard sets `event.locals.cairnEditor`, and this declaration types it, so a site no longer
-// hand-writes the `declare global` block. The field is optional: the engine's own structural
+// hand-writes the `declare global` block. The field is optional: the engine's structural
 // event types read it as `cairnEditor?: Editor | null`, and a request the guard has not touched
 // carries no editor at all.
 //
@@ -24,7 +24,7 @@
 // production request never sets it.
 //
 // `cairnAuditSink` is the site-supplied persistence seam `createAdminAction` forwards audit records
-// through. A site assigns it in its own hooks handle; typing it here means that assignment
+// through. A site assigns it in its hooks handle; typing it here means that assignment
 // typechecks without the site hand-writing a `declare global` block for an engine-read field.
 //
 // `cairnAccess` is the site's declared access map, attached by `createAuthGuard` alongside

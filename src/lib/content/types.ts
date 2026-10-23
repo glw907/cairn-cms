@@ -66,7 +66,7 @@ export type NamedField = FieldDescriptor & { name: string };
  * Per-site configuration for one content concept (spec §8). One `fields` fieldset, built with
  * `defineFieldset`, is the single source of truth for the editor form, the validator, and the
  * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
- * typed reads. A concept also declares its own routing and URL policy here (`routing`, `permalink`,
+ * typed reads. A concept also declares its routing and URL policy here (`routing`, `permalink`,
  * `datePrefix`), resolved by `normalizeConcepts`.
  */
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
@@ -144,7 +144,7 @@ export interface NavMenuConfig {
  * deliberately never loads the site's CSS (chrome isolation), so a design-accurate preview needs
  * the site to name its stylesheets for the preview frame; without this knob the preview renders
  * unstyled markup. The frame's srcdoc pins a white body background as a deliberately overridable
- * default, so a site whose ground is not white should state its body background in its own
+ * default, so a site whose ground is not white should state its body background in its
  * stylesheet.
  */
 export interface PreviewConfig {
@@ -178,7 +178,7 @@ export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
  * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
  *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
  *  engine normalizes this into a `ResolvedAssetConfig`; the built-in thumb, inline, card, and hero
- *  presets are the whole preset vocabulary, since a site cannot declare its own.
+ *  presets are the whole preset vocabulary, since a site cannot declare one.
  */
 export interface AssetConfig {
   /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
@@ -206,7 +206,7 @@ export interface AssetConfig {
  *  `body` plus the resolvers. `resolve` rewrites cairn: links to live permalinks (the build passes a
  *  site-resolver-backed resolver, the preview a manifest-backed one); `resolveMedia` resolves media:
  *  references the same way. `resolveFragment` resolves an `::include` directive's fragment id to its
- *  raw markdown body, the same way; a site's own render need not read it unless it wants to vary
+ *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
  *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
  *  are absent for the standalone component-insert preview.
  */
@@ -230,7 +230,7 @@ export interface CairnAdapter {
   content: Record<string, ConceptConfig>;
   /**
    * The site's role vocabulary, from `defineRoles({ ... })`. Absent, a site gets the implicit
-   *  `{ owner: 'owner', editor: 'editor' }` pair with no behavior change. Maps the site's own role
+   *  `{ owner: 'owner', editor: 'editor' }` pair with no behavior change. Maps the site's role
    *  names onto the engine's three capability levels; the guard and the editors routes read it
    *  through the composed runtime.
    */
@@ -239,7 +239,7 @@ export interface CairnAdapter {
    * The site's declared access map, from `defineAccess({ ... })`. Absent, every engine screen and
    *  `requireAccess` call keeps today's any-editor-capability behavior. Re-validated at composition
    *  (`createContentRoutesContext`) against the site's real concepts and engine-route table, the same
-   *  split the engine's own internal nav-layout validation uses.
+   *  split the engine's internal nav-layout validation uses.
    */
   access?: AccessMap;
   /** The commit backend provider, from `createGithubApp({ ... })` (the GitHub App today). */
@@ -299,9 +299,9 @@ export interface CairnAdapter {
      */
     supportContact?: string;
     /**
-     * The whole sidebar, arranged as one ordered tree mixing the engine's own screens with the
-     *  site's own entries (a concept id or a fixed utility-screen name as an engine reference, a
-     *  developer's own labeled `/admin/` link, or a one-level section of either). Absent leaves the
+     * The whole sidebar, arranged as one ordered tree mixing the engine's screens with the
+     *  site's entries (a concept id or a fixed utility-screen name as an engine reference, a
+     *  developer's labeled `/admin/` link, or a one-level section of either). Absent leaves the
      *  sidebar to the default arrangement (today's built-in shape).
      */
     navLayout?: NavLayout;

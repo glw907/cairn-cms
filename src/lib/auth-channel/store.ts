@@ -1,5 +1,5 @@
 // cairn-cms: D1 access for the auth-channel factory, through prepared statements only. No ORM.
-// Every statement in this file targets a site's own channel binding, never AUTH_DB: the two
+// Every statement in this file targets a site's channel binding, never AUTH_DB: the two
 // stores are physically separate databases. Each flow opens one `db.withSession('first-primary')`
 // and threads it through these functions, so a flow's reads and writes share a session;
 // `resolveChannelSession` is the documented exception and takes the bare `db`, since it runs on
@@ -26,7 +26,7 @@ export interface ChannelSessionLike {
 /**
  * The structural subset of D1 the channel store uses, and the type `resolveDb` returns. A real
  * `D1Database` satisfies it, and so does the dev package's `createChannelDb()` result, so a test
- * binds the double to a channel with no cast. The store opens its own session with
+ * binds the double to a channel with no cast. The store opens its session with
  * `withSession('first-primary')`, the only constraint it passes.
  */
 export interface ChannelDatabaseLike {
@@ -38,7 +38,7 @@ export interface ChannelDatabaseLike {
  * The schema version the packaged `migrations-channel/0000_channel.sql` seeds, and the value
  * `verifySchema` demands of a deployed channel database on every action. Not part of the package's
  * public surface (no barrel re-export): a site reads the version out of the migration it applies,
- * never out of an import. The engine's own drift test parses the migration's seeding row and
+ * never out of an import. The engine's drift test parses the migration's seeding row and
  * compares it here, since the two disagreeing is a fail-closed login outage.
  */
 export const CHANNEL_SCHEMA_VERSION = '1';
@@ -56,7 +56,7 @@ function randomHex(byteLength: number): string {
  * A budget row's real primary key is the scope-and-bucket pair, not the bucket alone: two
  * different scopes charging the same physical bucket (the requester send cap and a future
  * requester-scoped control, say) must never collide on one row. `bucket` stores this composite
- * value; `scope` is kept alongside as a plain column for an operator's own D1 queries.
+ * value; `scope` is kept alongside as a plain column for an operator's D1 queries.
  */
 function budgetKey(bucket: string, scope: string): string {
   return `${scope}:${bucket}`;
@@ -251,7 +251,7 @@ export async function consumeCode(
 }
 
 /**
- * Trim a requester bucket's own code rows to the live-row cap, keeping the `keep` most recently
+ * Trim a requester bucket's code rows to the live-row cap, keeping the `keep` most recently
  * created and deleting the rest. Filtered on `requester_bucket`, never `identity`, so an evictor
  * (a cookie-clearing attacker minting many nonces) can only ever destroy rows it created itself.
  */
@@ -310,10 +310,10 @@ export type DestroyedChannelSession = { subject: string; expiresAt: number };
  * Delete a single session by its token hash (logout, confirm's orphan cleanup, and the
  * verify-refused revocation), answering with the subject and expiry the deleted row carried, or
  * null when the hash named no row. `RETURNING` keeps this one statement and one round trip. The
- * subject is a roster identity, so a caller logging the deletion derives the channel's own
+ * subject is a roster identity, so a caller logging the deletion derives the channel's
  * pseudonymous correlation id from it rather than recording it. The delete is unconditional, an
  * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
- * own `now` to decide whether the row was still live before emitting a destroyed record.
+ * `now` to decide whether the row was still live before emitting a destroyed record.
  */
 export async function destroyChannelSession(
   session: ChannelSessionLike,
@@ -341,8 +341,8 @@ export async function revokeChannelSessions(session: ChannelSessionLike, subject
  * fails returns no row to read it from.
  *
  * The "same window" branch is keyed on `window_start >= ?3`, not `=`: an out-of-order `now` (a
- * charge that lands one or more windows BEFORE the stored row's own window, say a delayed retry
- * racing a later request) must charge against the stored window's own estimate rather than
+ * charge that lands one or more windows BEFORE the stored row's window, say a delayed retry
+ * racing a later request) must charge against the stored window's estimate rather than
  * rolling it backwards, which would wipe the accumulated count. `window_start = MAX(...)` mirrors
  * this: the stored value only ever advances, never regresses. The rolled-one-window branch stays
  * keyed on the exact `= WINDOW` delta, since that branch's decay math assumes exactly one window
@@ -424,7 +424,7 @@ export async function refund(session: ChannelSessionLike, bucket: string, scope:
 
 /**
  * Sweep all three expiring tables, plus budget rows more than two windows stale, as separate
- * indexed statements rather than a single `OR`ed one, so each delete uses its own index instead
+ * indexed statements rather than a single `OR`ed one, so each delete uses its index instead
  * of forcing a table scan.
  */
 export async function sweep(session: ChannelSessionLike, now: number): Promise<void> {

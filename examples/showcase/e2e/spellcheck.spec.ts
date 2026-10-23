@@ -64,7 +64,7 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   expect(decoration.style).toBe('wavy');
   expect(decoration.color).toBe(decoration.ink);
 
-  // Apply a suggestion for "recieve". The suggestion popover is cairn's own recipe DOM on the public
+  // Apply a suggestion for "recieve". The suggestion popover is cairn's recipe DOM on the public
   // showTooltip facet (the built-in lint tooltip is suppressed), and it opens on caret-in-range, not
   // hover: click the underlined word to place the caret, then click the top suggestion "receive"
   // (SymSpell ranks the single-transposition fix first). The replace lands as one transaction, so the

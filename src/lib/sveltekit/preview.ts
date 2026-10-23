@@ -1,8 +1,8 @@
 // cairn-cms: mintPreview, the public entry point for issuing a preview link, and loadPreview, the
 // public entry point for serving one (spec part 3, "Public preview for a non-editor"). mintPreview
-// carries the engine's own entry-scoped authorization itself, so every path to a minted token runs
+// carries the engine's entry-scoped authorization itself, so every path to a minted token runs
 // the same check the mintPreview admin action (content-routes-preview.ts) runs, and a caller reaching
-// it from its own workflow route owns nothing beyond signing the editor in. loadPreview is the
+// it from its workflow route owns nothing beyond signing the editor in. loadPreview is the
 // mint's counterpart: it needs no authorization at all, since the token itself is the credential,
 // and it never reads locals.cairnEditor or locals.cairnAccess.
 import { error } from '@sveltejs/kit';
@@ -91,7 +91,7 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
  * What {@link mintPreview} returns: the minted link's plaintext token and expiry, or the one
  * refusal the target could not clear. `unknown-concept` names a concept the runtime does not
  * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
- * branch, so there is nothing to share. A session the engine's own access check refuses never
+ * branch, so there is nothing to share. A session the engine's access check refuses never
  * reaches any of these: it throws, the way every other engine content surface refuses.
  */
 export type PreviewMintOutcome =
@@ -108,12 +108,12 @@ export type PreviewMintOutcome =
  * numeric `expiresAt` (epoch milliseconds), matching `magic_token` and `session`.
  *
  * Minting converts one editor's read on a concept into an unauthenticated public read for anyone
- * holding the URL, so authorization runs FIRST and short-circuits, in the engine's own order:
+ * holding the URL, so authorization runs FIRST and short-circuits, in the engine's order:
  * `requireEditor` (the session the admin guard resolved), the concept lookup,
  * `requireEngineAccess` against `runtime.access`, the id shape rule, and only then the draft
  * check. A refusal therefore never reports whether an entry or its draft exists to a session that
  * was not allowed to ask. The `target` is the argument's, never the route's: this reads no route
- * param, so a site's own workflow route (an editorial queue emailing a reviewer on submit) mints
+ * param, so a site's workflow route (an editorial queue emailing a reviewer on submit) mints
  * from anywhere the guard has run.
  *
  * The editor is the guard-resolved session's and cannot be supplied by the caller. The stored
@@ -121,7 +121,7 @@ export type PreviewMintOutcome =
  * the editor-removal revocation cascade (`DELETE FROM preview_tokens WHERE editor = ?`,
  * `auth/store.ts`) always matches the rows a departing editor minted.
  *
- * Logs `preview.token.minted` on success, so the engine's own route and a site's own workflow
+ * Logs `preview.token.minted` on success, so the engine's route and a site's workflow
  * route both leave the identical record; never called on a refusal.
  * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
@@ -168,8 +168,8 @@ export async function mintPreview(
 
 /**
  * What {@link revokePreview} returns: the number of rows deleted, or the one refusal the target
- * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s own
- * arms; a session the engine's own access check refuses never reaches either, it throws, the way
+ * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s
+ * arms; a session the engine's access check refuses never reaches either, it throws, the way
  * every other engine content surface refuses.
  */
 export type PreviewRevokeOutcome =
@@ -187,11 +187,11 @@ export type PreviewRevokeOutcome =
  * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
  * guard-resolved session), the concept lookup, `requireEngineAccess` against `runtime.access`,
  * then the id shape rule. A refusal therefore never reaches the delete, and the `target` is the
- * argument's, never the route's, so a site's own workflow route revokes from anywhere the guard
+ * argument's, never the route's, so a site's workflow route revokes from anywhere the guard
  * has run, the same way `mintPreview` mints from anywhere.
  *
- * Logs `preview.token.revoked` on success, from inside this function, so the engine's own route
- * and a site's own workflow route both leave the identical record; never called on a refusal.
+ * Logs `preview.token.revoked` on success, from inside this function, so the engine's route
+ * and a site's workflow route both leave the identical record; never called on a refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
  */
@@ -213,7 +213,7 @@ export async function revokePreview(
 }
 
 /**
- * `loadPreview`'s public data shape: a public entry page's own data (`EntryData`, the exact shape
+ * `loadPreview`'s public data shape: a public entry page's data (`EntryData`, the exact shape
  *  `createPublicRoutes`'s `entryLoad` returns) plus the preview metadata a site's banner reads. A
  *  compile-time assertion in the test suite proves this adds no key beyond `preview`, so a future
  *  `EntryData` field breaks this build rather than a consuming site's.
@@ -247,8 +247,8 @@ const NOT_FOUND_MESSAGE = 'Not found';
 /**
  * The header set every `loadPreview` response carries, refusals and the ended page included:
  *  `/preview` is not an admin path, so the admin guard's header layer never reaches it and this
- *  load owns its own. `x-frame-options: DENY` rather than a CSP `frame-ancestors`, so it never
- *  collides with a site's own kit-generated Content-Security-Policy header.
+ *  load sets them itself. `x-frame-options: DENY` rather than a CSP `frame-ancestors`, so it never
+ *  collides with a site's kit-generated Content-Security-Policy header.
  */
 const PREVIEW_HEADERS: Record<string, string> = {
   'x-robots-tag': 'noindex, nofollow',
@@ -258,7 +258,7 @@ const PREVIEW_HEADERS: Record<string, string> = {
   'x-frame-options': 'DENY',
 };
 
-/** The six token/row-verification refusal reasons; the missing-binding 503 logs its own separately. */
+/** The six token/row-verification refusal reasons; the missing-binding 503 logs its reason separately. */
 type PreviewRejectedReason = 'unknown' | 'expired' | 'branch_gone' | 'row_invalid' | 'draft_invalid' | 'table_missing';
 
 /** Log `preview.refused` and throw the one shared 404. Never called for the malformed-shape gate, which logs nothing. */
@@ -289,10 +289,10 @@ interface PreviewResolvers {
 
 /**
  * Build the preview's marking link/fragment resolvers and its request-time media resolver, mirroring
- *  `editLoad`'s own build (content-routes-entry-read.ts) so the admin preview and the public preview agree
- *  on what a draft can reach. `manifest` is the default branch's manifest, with the draft's own
+ *  `editLoad`'s build (content-routes-entry-read.ts) so the admin preview and the public preview agree
+ *  on what a draft can reach. `manifest` is the default branch's manifest, with the draft's
  *  re-derived row already upserted by the caller when previewing a draft; the ended page passes the
- *  plain default-branch manifest, since the previewed entry's own row already lives there.
+ *  plain default-branch manifest, since the previewed entry's row already lives there.
  *  `mediaBranch` is the pending branch for a draft preview, or null for the ended page (whose branch
  *  is already gone), so the media read goes branch-first only when a branch still exists.
  */
@@ -311,9 +311,9 @@ async function buildPreviewResolvers(
     .map((e) => ({ concept: e.concept, id: e.id, permalink: e.permalink, title: e.title, date: e.date, draft: e.draft }));
   const resolveLink = manifestLinkResolver(linkTargets);
 
-  // Fragment targets: mirrors editLoad's own build. A fragments concept must be declared and this
+  // Fragment targets: mirrors editLoad's build. A fragments concept must be declared and this
   // entry must not itself be a fragment (a fragment cannot include another); each candidate body
-  // reads from the default branch only, so a fragment's own pending edits never leak into another
+  // reads from the default branch only, so a fragment's pending edits never leak into another
   // entry's preview. A read failure degrades that one target out rather than failing the load.
   const fragmentsConcept = findConcept(runtime.concepts, FRAGMENTS_CONCEPT_ID);
   let resolveFragment: FragmentResolve | undefined;
@@ -333,7 +333,7 @@ async function buildPreviewResolvers(
     );
     const targets = bodies.filter((b): b is FragmentBody => b !== null);
     const fragmentResolver = manifestFragmentResolver(targets);
-    // Never set previewTitle: that boundary cue is EditPage's own in-admin affordance (the
+    // Never set previewTitle: that boundary cue is EditPage's in-admin affordance (the
     // resolved fragment gets a quiet "From ..." eyebrow there), not a public-facing signal.
     // Wrapping the call in a plain arrow drops the property while keeping resolution identical.
     // The wrapper does carry `entry`, so an include.missing from this body names the entry the
@@ -367,7 +367,7 @@ async function buildPreviewResolvers(
  *  already ({@link PREVIEW_HEADERS}'s `x-robots-tag`), but a self-referential `canonical`/`og:url`
  *  pointing at a URL that is not yet live (or, for the ended page, already superseded) invites a
  *  crawler to consolidate the preview onto that URL anyway, and an unfurler that ignores
- *  `noindex` still reads these fields directly. This is about the page's own advertised identity,
+ *  `noindex` still reads these fields directly. This is about the page's advertised identity,
  *  not the token: the token is the sole credential and lives only in the route path, never in the
  *  page.
  */
@@ -382,14 +382,14 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
 
 /**
  * Serve a public preview link: verify the token, then render the shared draft (or, once the
- *  branch is gone, the ended page) through the site's own public composition, so a preview and a
- *  published page can never structurally drift. `config` is the site's own `PublicRoutesConfig`,
+ *  branch is gone, the ended page) through the site's public composition, so a preview and a
+ *  published page can never structurally drift. `config` is the site's `PublicRoutesConfig`,
  *  the literal object it hands `createPublicRoutes`.
  *
  * The verification chain runs strictly in this order, cheapest first: the token's shape (a 404
  *  with no D1 read or log for spray traffic), the `AUTH_DB` binding, the row lookup by hash, the
  *  row's expiry, the row's stored concept and id against the live runtime, and finally the branch
- *  read, whose own miss is the branch-gone signal (there is no separate `branchHead` pre-check).
+ *  read, whose miss is the branch-gone signal (there is no separate `branchHead` pre-check).
  *  Every refusal answers the identical `error(404, NOT_FOUND_MESSAGE)`; only the `preview.refused`
  *  log distinguishes why, and it never carries the token or any attacker-supplied string.
  *
@@ -415,7 +415,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  true, so a site that lets this route prerender gets a red build instead of a token-bearing
  *  static asset. The flag is read through {@link isBuilding}, which keeps a static `$app/env`
  *  import out of the `/sveltekit` barrel; outside a real SvelteKit build it answers `false`, which
- *  is correct here, since a `/preview/[token]` route carries a token in its own path and is never
+ *  is correct here, since a `/preview/[token]` route carries a token in its path and is never
  *  prerendered.
  */
 export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
@@ -479,7 +479,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
   if (draftRaw === null) {
     // The not-found read IS the branch-gone signal: publish and discard both delete the branch.
     // Distinguish "went live" from "discarded before it ever published" with a live read of the
-    // default branch, never the site's own (possibly stale) build-time index.
+    // default branch, never the site's (possibly stale) build-time index.
     const mainRaw = await backend.readFile(path, backend.defaultBranch);
     const publishedEntry = mainRaw !== null ? createContentIndex([{ path, raw: mainRaw }], concept).byId(row.entryId) : undefined;
     if (!publishedEntry) rejectPreview('branch_gone', { concept: concept.id, id: row.entryId });

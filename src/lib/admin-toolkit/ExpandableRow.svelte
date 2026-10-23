@@ -3,17 +3,17 @@ The admin toolkit's expand-in-place table row, graduated from a consumer site's 
 it gained a second real consumer, the graduation trigger the toolkit's organization work deferred
 it on. General
 contract: a summary `<tr>` plus a conditional panel `<tr>` whose single spanning cell receives the
-row's own datum, so the panel snippet never needs a closure over the row it belongs to.
+row's datum, so the panel snippet never needs a closure over the row it belongs to.
 
-Fully controlled, matching this toolkit's own `Pagination` convention (`page`/`onPageChange`)
+Fully controlled, matching this toolkit's `Pagination` convention (`page`/`onPageChange`)
 rather than owning internal expand state: `expanded` and `onToggle` are props, not `$state`. The
 "one row expanded at a time" contract lives in the *caller* holding a single expanded-row id and
 deriving `expanded={expandedId === row.id}` for every instance -- the same pattern a radio group's
-"one selected at a time" contract rides on `checked`, never on the radio input's own state. A
+"one selected at a time" contract rides on `checked`, never on the radio input's state. A
 controlled row also composes cleanly with `AdminTable`'s `rowCount`/empty-state props without this
 component needing to know about its siblings.
 
-Keyboard operability rides the native `<button>` element's own Enter/Space activation -- no bespoke
+Keyboard operability rides the native `<button>` element's Enter/Space activation -- no bespoke
 `onkeydown` handler reinvents what the browser already does correctly for a real button. The whole
 summary `<tr>` also carries a mouse-only `onclick` convenience (the design spec's "clicking a row
 expands it in place"); the explicit trailing button is the one control carrying `aria-expanded` and
@@ -22,33 +22,33 @@ default -- an interactive control nested directly in the row would double-handle
 cell that genuinely needs an inline interactive control (an inline-editable value, a per-row action)
 wraps it in an element carrying **`data-cairn-inert-cell`**: the row's `onclick` walks the click
 target's ancestry with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside
-one, so the wrapped control's own click handler runs without also toggling the row. This is a
+one, so the wrapped control's click handler runs without also toggling the row. This is a
 documented escape, not `stopPropagation()` a consumer has to hand-roll and re-discover per cell. The
-trigger button carries no `data-cairn-inert-cell` of its own and needs none -- its own `onclick`
+trigger button carries no `data-cairn-inert-cell` of its own and needs none -- its `onclick`
 already calls `event.stopPropagation()` -- so it stays the one control carrying `aria-expanded`,
 unaffected by the escape either way. An interactive control placed inside a summary cell (inert-
 wrapped or not) still has to meet the 24x24 CSS px target-size floor (WCAG 2.5.8) on its own,
-independent of the row's own click-to-expand affordance; `ReferenceField.svelte`'s own remove
+independent of the row's click-to-expand affordance; `ReferenceField.svelte`'s remove
 button (`max-sm:min-h-11 max-sm:min-w-11`, the narrow-viewport-only floor a dense summary cell also
 needs) is the idiom to reach for.
 
 **The trigger cell is `position: sticky; right: 0`**.
-`AdminTable`'s own horizontal-scroll fallback means a summary row wider than its viewport scrolls
-rather than wraps (that component's own contract); without this, a narrow viewport strands the
+`AdminTable`'s horizontal-scroll fallback means a summary row wider than its viewport scrolls
+rather than wraps (that component's contract); without this, a narrow viewport strands the
 trigger off-screen with no visible cue that a row even expands. Sticky keeps the trigger inside the
 visible viewport at every scroll position, including the unscrolled one, with no JS of its own --
-the caller never opts into this, it is unconditional. The sticky cell carries its own opaque
+the caller never opts into this, it is unconditional. The sticky cell carries its opaque
 background rather than an inherited one, the standard frozen-column pattern (a pinned column
-showing a small, constant seam against the scrolling content underneath it is that pattern's own
+showing a small, constant seam against the scrolling content underneath it is that pattern's
 contract, not a bug) -- but that background now follows zebra parity (below) instead of a fixed
 base-100, and the row-hover wash (also below) still reaches it.
 
 The panel cell stays a genuine `<td colspan>` -- deliberately, not `display: block` -- because a
 spanning cell removed from table layout still resolves its width against an anonymous fixup row
-the browser generates for a block-display child of a `<tbody>`, and that anonymous row's own width
+the browser generates for a block-display child of a `<tbody>`, and that anonymous row's width
 is *still* driven by the table's real column widths (verified empirically: `width: 100%` on the
-un-tabled cell kept measuring the summary rows' own narrower first-two-column width, not the table
-wrap's full width, at every viewport). A caller that wants the panel's own internal grid to collapse
+un-tabled cell kept measuring the summary rows' narrower first-two-column width, not the table
+wrap's full width, at every viewport). A caller that wants the panel's internal grid to collapse
 at a narrow width needs the table itself to never need horizontal scroll in the first place -- see
 the `cairn-admin-screens` skill's list exemplar for the pattern (hiding lower-priority summary columns under a
 breakpoint so the whole row, panel included, fits the viewport with nothing to scroll).
@@ -56,40 +56,40 @@ breakpoint so the whole row, panel included, fits the viewport with nothing to s
 **Three visual fixes carried at graduation, adversarially verified against zebra stripes in both
 themes:**
 
-1. Row hover feedback: the whole summary row washes on hover. The caller's own summary cells get
+1. Row hover feedback: the whole summary row washes on hover. The caller's summary cells get
    a `color-mix(in oklab, var(--color-base-content) 5%, transparent)` tint; the sticky trigger cell
    gets a dedicated, opaque hover color instead (a transparent-based mix would let content
    scrolling underneath show through a pinned column, and a review pass also found the shared
    rule's specificity lost outright to the zebra-parity rule below on an even row -- see the
-   trigger cell's own dedicated hover rules for both). Two other candidates were refuted first for
-   the base wash -- the engine's own `base-200/60` row-hover wash is invisible on a zebra-striped
+   trigger cell's dedicated hover rules for both). Two other candidates were refuted first for
+   the base wash -- the engine's `base-200/60` row-hover wash is invisible on a zebra-striped
    row (it IS the stripe color), and a primary-tint wash read off-idiom for a plain row hover, not
    an applied-state affordance.
 2. The sticky trigger cell follows zebra parity instead of a fixed `base-100`: on a `table-zebra`
-   ancestor its background matches the same `tr:nth-child(2n)` rule daisyUI's own zebra striping
+   ancestor its background matches the same `tr:nth-child(2n)` rule daisyUI's zebra striping
    uses, so the pinned column no longer seams against a striped row underneath it.
 3. The panel `<td>` carries a depth story instead of sitting flush with the card surface it shares:
    `background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`.
-   `base-200` was tried and refuted first -- it is the zebra stripe's own color, so the drawer
+   `base-200` was tried and refuted first -- it is the zebra stripe's color, so the drawer
    visually merged with a striped row instead of reading as recessed.
 -->
 <script lang="ts" generics="T">
   import type { Snippet } from 'svelte';
 
   interface Props {
-    /** Whether this row is currently expanded. Controlled by the caller; see this component's own
+    /** Whether this row is currently expanded. Controlled by the caller; see this component's
      *  header comment for the one-row-at-a-time contract. */
     expanded: boolean;
     /** Called when the trigger control, or the summary row itself, is activated. The caller flips
-     *  its own expanded-id state in response; this component holds no state of its own. */
+     *  its expanded-id state in response; this component holds no state of its own. */
     onToggle: () => void;
-    /** The row's own datum, forwarded into `panel` so it doesn't need a closure over the row. */
+    /** The row's datum, forwarded into `panel` so it doesn't need a closure over the row. */
     datum: T;
-    /** How many columns the panel's single spanning cell should cover -- the summary row's own
+    /** How many columns the panel's single spanning cell should cover -- the summary row's
      *  `<td>` count, including the trailing trigger cell this component renders. */
     colspan: number;
     /** The summary row's `<td>` cells (this component supplies the wrapping `<tr>` and the
-     *  trailing trigger cell; the row stays single-line per `AdminTable`'s own contract). */
+     *  trailing trigger cell; the row stays single-line per `AdminTable`'s contract). */
     summary: Snippet;
     /** The panel's content, rendered inside one spanning cell while `expanded` is `true`. Receives
      *  `datum`. */
@@ -102,7 +102,7 @@ themes:**
   let { expanded, onToggle, datum, colspan, summary, panel, triggerLabel }: Props = $props();
 
   /** Toggles on a row click, unless the click resolves inside an element carrying
-   *  `data-cairn-inert-cell`; see this component's own header comment for the escape's contract. */
+   *  `data-cairn-inert-cell`; see this component's header comment for the escape's contract. */
   function handleRowClick(event: MouseEvent) {
     if (event.target instanceof Element && event.target.closest('[data-cairn-inert-cell]')) {
       return;
@@ -141,11 +141,11 @@ themes:**
     cursor: pointer;
   }
 
-  /* A `data-cairn-inert-cell` wrapper opts its own click out of the row toggle (this component's
-     own header comment); the row-level pointer cursor above would otherwise mislead a hover over
+  /* A `data-cairn-inert-cell` wrapper opts its click out of the row toggle (this component's
+     header comment); the row-level pointer cursor above would otherwise mislead a hover over
      that escape into reading as "this also toggles the row." The invariant: the inert cell and
      its plain content must not show the row-toggle pointer, but a self-cursored control keeps its
-     own cursor. `cursor: auto` on the wrapper resets the inherited row pointer for the wrapper
+     cursor. `cursor: auto` on the wrapper resets the inherited row pointer for the wrapper
      itself and any plain content inside it -- `cursor` is an inherited property, so ordinary text
      and inline elements (a `<span>`, for instance) pick this reset back up without a rule of their
      own.
@@ -154,27 +154,27 @@ themes:**
      A form control (`<button>`, `<select>`, ...) never inherits `cursor` in the first place -- the
      browser's UA sheet gives it an explicit `cursor: default` of its own -- so a wildcard override
      would be fighting a value that was never inherited to begin with. Worse, it would also stomp a
-     `.btn`'s own `cursor: pointer`, which daisyUI sets explicitly, on exactly the nested per-row
+     `.btn`'s `cursor: pointer`, which daisyUI sets explicitly, on exactly the nested per-row
      action (an edit or delete button) this escape hatch exists to host: that pointer means "this
      control is clickable," and wrapping the control in an inert cell must not flatten that
-     reading to `auto`. `:global()`: the wrapper is the caller's own snippet markup, opaque to this
+     reading to `auto`. `:global()`: the wrapper is the caller's snippet markup, opaque to this
      component's compiler. */
   .toolkit-expandable-row-summary :global([data-cairn-inert-cell]) {
     cursor: auto;
   }
 
-  /* Row hover feedback (fix 1 above), for the CALLER's own summary cells. `:global(td)` on the
+  /* Row hover feedback (fix 1 above), for the CALLER's summary cells. `:global(td)` on the
      child side: those cells are the caller's snippet markup (opaque to this component's compiler,
-     the same reason AdminTable's own single-line enforcement rule needs :global() on `td`/`th`),
+     the same reason AdminTable's single-line enforcement rule needs :global() on `td`/`th`),
      so the scope attribute Svelte would otherwise require never lands on them. This rule also
-     happens to match the trigger cell (this component's own `<td>`, a direct child of the same
+     happens to match the trigger cell (this component's `<td>`, a direct child of the same
      `<tr>`), but its transparent-based mix is wrong for a `position: sticky` cell -- it would let
-     content scrolling underneath show through -- so the trigger cell gets its own higher-specificity,
+     content scrolling underneath show through -- so the trigger cell gets its higher-specificity,
      opaque rules below, which win over this one.
 
      `:focus-within` pairs the same wash with a keyboard tab onto the trigger button below (the
      row itself carries no tabindex; the button is the one real focus target, per this
-     component's own contract), so a keyboard user sees the same row highlight a mouse hover
+     component's contract), so a keyboard user sees the same row highlight a mouse hover
      gives (cairn-audit's focus-parity rule). */
   .toolkit-expandable-row-summary:hover > :global(td),
   .toolkit-expandable-row-summary:focus-within > :global(td) {
@@ -185,15 +185,15 @@ themes:**
     width: 1px;
     white-space: nowrap;
     text-align: right;
-    /* Always reachable, even when the row is wider than the viewport: see this component's own
+    /* Always reachable, even when the row is wider than the viewport: see this component's
        header comment above. */
     position: sticky;
     right: 0;
     background-color: var(--color-base-100);
   }
 
-  /* Zebra parity (fix 2 above): `.table-zebra`/`tbody` are `AdminTable`'s own ancestor markup, not
-     this component's, hence :global() on that portion of the selector. Mirroring daisyUI's own
+  /* Zebra parity (fix 2 above): `.table-zebra`/`tbody` are `AdminTable`'s ancestor markup, not
+     this component's, hence :global() on that portion of the selector. Mirroring daisyUI's
      `tr:nth-child(2n)` zebra selector, rather than reading some zebra-aware prop, keeps this
      component ignorant of whether it sits inside a striped table -- it just always agrees with
      whatever daisyUI itself decided that row's background is. */
@@ -201,10 +201,10 @@ themes:**
     background-color: var(--color-base-200);
   }
 
-  /* Trigger cell hover (fix 1's own dedicated half): opaque, since a `position: sticky` cell must
+  /* Trigger cell hover (fix 1's dedicated half): opaque, since a `position: sticky` cell must
      stay opaque against whatever scrolls underneath it -- a transparent-based mix (the wash the
      rule above gives every other cell) would let that content bleed through. Two rules, one per
-     zebra state, each mixed toward that state's own resting color (base-100 / base-200) so hover
+     zebra state, each mixed toward that state's resting color (base-100 / base-200) so hover
      reads as a tint of whatever the cell already was, not a color swap.
 
      Specificity, not source order, is what makes hover win here: this first rule (0,3,0: two
@@ -215,7 +215,7 @@ themes:**
      row left the pinned trigger cell showing its plain zebra color while every other cell in the
      row washed, the seam a review pass caught.
 
-     Each rule's own `:focus-within` counterpart is the same fix as the base wash above: the
+     Each rule's `:focus-within` counterpart is the same fix as the base wash above: the
      trigger button living inside this cell is the row's one real focus target, so tabbing onto
      it reads as the same tint a mouse hover gives. */
   .toolkit-expandable-row-summary:hover .toolkit-expandable-row-trigger-cell,

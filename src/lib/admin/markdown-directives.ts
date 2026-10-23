@@ -46,7 +46,7 @@ export interface FenceScan {
    */
   roles: ('opener' | 'closer' | null)[];
   /**
-   * Whether a line sits strictly between a fenced code block's own delimiters (the delimiter
+   * Whether a line sits strictly between a fenced code block's delimiters (the delimiter
    *  lines themselves read false). A directive-shaped line in here is a documented example, not
    *  live machinery: the include and folded-container decorations read this to leave such a line
    *  as plain source, matching what the real renderer resolves (remark never descends into a code
@@ -126,7 +126,7 @@ export interface ContainerRange {
 
 /**
  * The innermost container around a caret line, as an inclusive line range, or null outside any
- * container. Works from the cached scan without re-parsing: the caret line's own depth names
+ * container. Works from the cached scan without re-parsing: the caret line's depth names
  * the container (fence rows carry the depth they delimit, so a caret on a fence belongs to
  * that fence's container), and within a container the only same-depth real fences are its
  * opener and closer (nested containers sit deeper, siblings sit outside), so the nearest
@@ -189,7 +189,7 @@ const FIGURE_ROLES = new Set(['center', 'wide', 'full']);
 
 // The `.class` shorthands inside a directive's `{attrs}` group. mdast-util-directive folds every
 // `.class` into a space-joined node.attributes.class, and remark-figure honors a role only when
-// that whole value is exactly one closed-set name. The chip reads the opener line's own attrs group
+// that whole value is exactly one closed-set name. The chip reads the opener line's attrs group
 // directly (the editor has no mdast), so it collects all class shorthands and applies the same
 // exactly-one rule, so a multi-class brace reads as the measure default on the chip exactly as it
 // renders.
@@ -208,8 +208,8 @@ const CLASS_ATTR = /class\s*=\s*"([^"]*)"/;
  *  Robust to a half-typed or unpaired fence, since {@link caretContainerRange} already disowns
  *  fence-shaped lines inside code blocks and runs an unclosed container to the end.
  *
- *  Reads the attrs group off {@link FENCE}'s own opener match (group 4) rather than the first
- *  `{...}` anywhere on the line, mirroring {@link openerTitleAttr}'s own fix: a bracketed
+ *  Reads the attrs group off {@link FENCE}'s opener match (group 4) rather than the first
+ *  `{...}` anywhere on the line, mirroring {@link openerTitleAttr}'s fix: a bracketed
  *  `[label]` that happens to contain braces (`[Read {this} first]`) can otherwise be mistaken for
  *  the attrs group, either swallowing a real role into the measure default or fabricating one from
  *  label prose.
@@ -254,7 +254,7 @@ export function fenceTokens(line: string): FenceToken[] {
   const m = FENCE.exec(line);
   if (!m?.indices) return [];
   // A group's span exists whenever the group matched: group 1 (the colons) always does on a
-  // fence, and the optional groups are read only behind their own m[n] guard.
+  // fence, and the optional groups are read only behind their m[n] guard.
   const indices = m.indices;
   const out: FenceToken[] = [];
   const [colonFrom, colonTo] = indices[1]!;
@@ -316,7 +316,7 @@ export function frontmatterSpan(text: string): { from: number; to: number } | nu
   if (lines.length < 2 || !FRONTMATTER_FENCE.test(lines[0]!)) return null;
   // Walk the offset forward line by line; the opening fence sits at offset 0, and each line costs
   // its length plus the one newline that joined it. The closing fence's end is its start plus its
-  // own length, which is 3 for an exact `---`.
+  // length, which is 3 for an exact `---`.
   let offset = lines[0]!.length + 1;
   for (let i = 1; i < lines.length; i++) {
     if (FRONTMATTER_FENCE.test(lines[i]!)) {
@@ -381,7 +381,7 @@ export function includeFragmentTokens(line: string): FenceToken[] {
  *  line is not a well-formed include leaf (per {@link LEAF_FULL}, the same whole-line shape
  *  remark-directive itself requires), carries no fragment attribute, or the attribute sits outside
  *  the line's `{attrs}` group. The one source of the id the include chip decoration resolves
- *  against the site's published fragments; mirrors {@link includeFragmentTokens}'s own guard so
+ *  against the site's published fragments; mirrors {@link includeFragmentTokens}'s guard so
  *  the two never disagree on what counts as a resolvable include line, and only ever returns an id
  *  for a line the real renderer will actually resolve as a directive.
  */
@@ -404,7 +404,7 @@ const TITLE_ATTR_VALUE = /(?:^|\s)title\s*=\s*"([^"]*)"/;
 /**
  * The `title="..."` attribute on a container opener line (`:::callout{title="Trail alert"}` gives
  *  `"Trail alert"`), or null when the opener carries no title attribute at all. Reads the attrs
- *  group off {@link FENCE}'s own opener match (group 4) rather than the first `{...}` anywhere on
+ *  group off {@link FENCE}'s opener match (group 4) rather than the first `{...}` anywhere on
  *  the line, so a bracketed `[label]` that happens to contain braces (`[Read {this} first]`) can
  *  never be mistaken for the attrs group, either dropping a real title or fabricating one from
  *  label prose. The folded container chip reads this to add the title segment to its combined

@@ -10,41 +10,41 @@ and the whole chip vocabulary is three registers, no more.
 
 Assembles from one daisyUI 5 primitive already in cairn's admin CSS build: `badge` (the chip
 shape), with `badge-outline` supplying the inherited-border box model every register composes on
-top of. `badge-outline` retired from cairn's own tree on its own: it compiles to an explicit
+top of. `badge-outline` retired from cairn's tree on its own: it compiles to an explicit
 background and border color that can match one of
-AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares that color,
-and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1 border-contrast floor in
+AdminTable's zebra stripe colors, so a ghost chip melts into whichever row shares that color,
+and neither it nor the un-tuned `badge-outline` clears the audit's 3:1 border-contrast floor in
 both themes. `register` supplies the three documented recipes instead: `'quiet'` (the default) tints
-the ground with a low-contrast wash off the admin theme's own content token, for a settled state
+the ground with a low-contrast wash off the admin theme's content token, for a settled state
 (a signup's Confirmed, say) that should recede rather than compete; `'warning'` tints the same
-way but off `--color-warning`, carrying its own on-surface ink, for a state that needs
+way but off `--color-warning`, carrying its on-surface ink, for a state that needs
 attention (an unpublished-changes marker, a needs-alt notice); `'outline'` drops the fill and
 demotes `badge-outline`'s full-strength inherited-text-color border to
 `color-mix(in oklab, currentColor 55%, transparent)`, a hairline that clears 3:1 in both themes, for
 a transient or reversible absence (the successor of the first generation's `'bounded'`). Every
-tinted fill is tuned to a 1.16-1.47:1 contrast band against its own row ground (plain and zebra,
+tinted fill is tuned to a 1.16-1.47:1 contrast band against its row ground (plain and zebra,
 both admin themes), deliberately low: a chip that competed at the old ghost badge's strength melted
 into one ground or read as a clickable button on the other, and the documented recipe is a quiet
 presence, not a bounded object. All values are measured, not invented
 (the standing proof is status-chip-register-tuning.test.ts).
 
-Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
+Padding, truncation, and the min/max width live in this component's scoped `<style>` rather
 than a Tailwind utility string. That was a hard constraint when this component was written, since
 `/admin/**` routes load only cairn's precompiled admin CSS and `src/lib/admin-toolkit` was outside
 the `@source` roots then. The directory joined those roots in `c21ac3b8`, so an arbitrary utility
 written here does compile now; the scoped rules stay because they are settled, and the constraint
-still binds a CONSUMER's own admin screen, which cairn never scans.
+still binds a CONSUMER's admin screen, which cairn never scans.
 
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
-consumer's own signup-status context; a min-width-free "hugging" alternative was tried and
+consumer's signup-status context; a min-width-free "hugging" alternative was tried and
 adversarially refuted -- it produces a ragged column when chip labels vary in length); `xs`
 carries no floor of its own: a dense table column, ConceptList's publish-state cell and
 MediaLibrary's alt/usage cells, budgets its narrow-
 viewport width against the chip's real content, not a fixed reservation sized for a longer label
-the office's own three-word vocabulary never needs).
+the office's three-word vocabulary never needs).
 -->
 <script module lang="ts">
-  /** Two named sizes, matching AdminTable's own density tier names rather than a bespoke scale. */
+  /** Two named sizes, matching AdminTable's density tier names rather than a bespoke scale. */
   export type StatusChipSize = 'xs' | 'sm';
 
   /** The three documented chip registers (second generation): `quiet`, a token-derived tinted ground for a
@@ -67,7 +67,7 @@ the office's own three-word vocabulary never needs).
      *  `'quiet'`'s and `'warning'`'s tinted grounds resolve only inside the admin theme root and
      *  are unguarded against a base-300-derived ground (e.g. a `.table-zebra` row-hover), where
      *  they can drop under the 1.5 ground-collision advisory floor (chip-ground-collision.ts).
-     *  `'outline'`'s hairline inherits its color from the chip's own ancestor, so it can drop
+     *  `'outline'`'s hairline inherits its color from the chip's ancestor, so it can drop
      *  under the audit's 3:1 border-contrast floor inside a muted-text ancestor (verify a new
      *  call site). */
     register?: StatusChipRegister;
@@ -77,7 +77,7 @@ the office's own three-word vocabulary never needs).
      *  read straight after the visible label, the assistive-technology-reachable half of the same
      *  information, rather than an `aria-label` on the outer element (which some assistive
      *  technology exposes inconsistently). Omit for a self-explanatory label: the chip then
-     *  carries no `title` at all, never the label itself repeated as its own tooltip. */
+     *  carries no `title` at all, never the label itself repeated as its tooltip. */
     legend?: string;
   }
 
@@ -114,10 +114,10 @@ the office's own three-word vocabulary never needs).
 
   /* OUTLINE (second generation): demotes
      badge-outline's full-strength `border-color: currentColor` (reads as a button, not a status
-     marker) to a hairline that clears the audit's own 3:1 border-contrast floor in both themes
+     marker) to a hairline that clears the audit's 3:1 border-contrast floor in both themes
      (light card 3.579, light page 3.506, dark card 4.951, dark page 5.254; measured against both
      zebra stripes and both page grounds). `background-color: transparent` is stated explicitly
-     rather than left to badge-outline's own default, so this recipe matches cairn-admin.css's
+     rather than left to badge-outline's default, so this recipe matches cairn-admin.css's
      shared `.cairn-chip-outline` declaration for declaration, not merely in visible effect. The
      successor of the first generation's `bounded` register (same recipe, renamed). */
   .status-chip-outline {
@@ -126,7 +126,7 @@ the office's own three-word vocabulary never needs).
     border-color: color-mix(in oklab, currentColor 55%, transparent);
   }
 
-  /* QUIET (second generation): no border at all, and a ground tinted off the admin theme's own
+  /* QUIET (second generation): no border at all, and a ground tinted off the admin theme's
      content token mixed into the base-200 row ground (the same ground this recipe is tuned
      against), for a settled state that should recede (Published) rather than read as an object.
      Measured fill-vs-ground contrast, plain/zebra: light 1.389/1.297, dark 1.182/1.407, all
@@ -164,7 +164,7 @@ the office's own three-word vocabulary never needs).
     color: var(--cairn-warning-ink);
   }
 
-  /* xs carries no reserved floor: a dense table column budgets its own narrow-viewport width
+  /* xs carries no reserved floor: a dense table column budgets its narrow-viewport width
      against the chip's real content, per the header comment above. */
   .status-chip-xs {
     min-width: 0;

@@ -1,13 +1,13 @@
 // The post-hydration page-identity guard: what a route's identity looks like on the wire, how a
 // hydrated capture is compared against it, and the settle window a capture waits through first.
 // `capturePageIdentity` and `waitForHydrationSettle` both run inside the page (Playwright
-// serializes each by source), so both stay self-contained: no references outside their own bodies.
+// serializes each by source), so both stay self-contained: no references outside their bodies.
 import type { PageIdentity, RenderedBrowser, Theme } from './types.js';
 
 /**
  * Runs inside the page, on both the no-JS SSR capture and the settled hydrated capture, so its
  * result means the same thing on either side of {@link identitiesMatch}. Self-contained: no
- * references outside its own body, the same discipline `resolveColorsInPage` follows, since
+ * references outside its body, the same discipline `resolveColorsInPage` follows, since
  * Playwright serializes it by source.
  */
 export function capturePageIdentity(): PageIdentity {
@@ -49,7 +49,7 @@ export function waitForHydrationSettle(): Promise<void> {
  * reading it from the same context immediately after `goto` resolves already races the client
  * bundle, which is the exact race a consumer site's hydrated-404 defect exploited (the harness
  * measured a page that had already swapped chrome before it ever looked). Playwright still
- * serves `evaluate` calls through the page's own runtime binding regardless of
+ * serves `evaluate` calls through the page's runtime binding regardless of
  * `javaScriptEnabled`, so {@link capturePageIdentity} is unchanged between this capture and the
  * hydrated one.
  */

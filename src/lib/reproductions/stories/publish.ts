@@ -5,7 +5,7 @@
 // findings 9, 10, and 15 correct three mechanism details the audit itself understated.
 //
 // `publish/header-band` mounts `EditPage` for the same reason three editor stories do (the band is
-// its own snippet, reachable only through the shell), so it shares ./support.ts's prop bag rather
+// its snippet, reachable only through the shell), so it shares ./support.ts's prop bag rather
 // than building a second one.
 import type { Component } from 'svelte';
 import CairnHistory from '../../admin/CairnHistory.svelte';
@@ -22,7 +22,7 @@ import { clickWhenPresent, conceptListData, editPageProps, settleEditingSurface,
  * The overflow menu's opened band (`publish/header-band`). `actionsOpen` is internal state with no
  * prop (`EditPage.svelte`), so the pose clicks the trigger and waits on the same `aria-expanded`
  * mirror the trigger itself exposes, rather than a fixed delay: the trigger and the menu share one
- * boolean, so the trigger's own attribute is the observable "it opened" the pose needs.
+ * boolean, so the trigger's attribute is the observable "it opened" the pose needs.
  */
 const headerBand: ReproStory = {
   id: 'publish/header-band',
@@ -30,10 +30,10 @@ const headerBand: ReproStory = {
   host: 'shell',
   // Sweep finding 10: off the desk pathname the shell renders office chrome instead, which is not
   // this row's subject at either declared width (the narrow face is specifically the desk band's
-  // own compaction).
+  // compaction).
   shellData: { pathname: fixtureDeskPathname },
   props: editPageProps(),
-  // The band is in the server render, so this row's own subject needs no wait. The narrow face
+  // The band is in the server render, so this row's subject needs no wait. The narrow face
   // does: the manifest sizes it to contain the whole short screen so the bottom bar sits where it
   // really sits, which puts the document body inside the frame, and `MarkdownEditor` is a fallback
   // textarea until CodeMirror arrives through dynamic imports. Without this, a capture can read a
@@ -45,7 +45,7 @@ const headerBand: ReproStory = {
   },
 };
 
-/** The entry `publish/history-list` renders: the one fixture entry carrying its own publish history. */
+/** The entry `publish/history-list` renders: the one fixture entry carrying its publish history. */
 const HISTORY_ENTRY = fixtureEntries.find((entry) => entry.history);
 if (!HISTORY_ENTRY?.history) {
   throw new Error('cairn reproductions: fixtureEntries carries no entry with a history fixture');
@@ -67,7 +67,7 @@ const REFUSAL_INBOUND_LINKS: InboundLink[] = fixtureEntries
 
 /**
  * The two fixture entries `publish/pending-list` shows as awaiting publish, grouped under the
- * fixture concept's label in the dialog's own grouping: the entry that already carries an
+ * fixture concept's label in the dialog's grouping: the entry that already carries an
  * open draft ({@link HISTORY_ENTRY}, `status: 'edited'`) plus one published entry, so the group
  * reads as more than a single row.
  */
@@ -80,7 +80,7 @@ const PENDING_IDS: { concept: string; id: string }[] = [HISTORY_ENTRY, fixtureEn
  * The topbar's "Publish site (N)" confirm, posed open (`publish/pending-list`). Sweep finding 15:
  * the trigger and the dialog both live inside `CairnAdminShell`'s awaited-then block over
  * `data.pendingEntries`, with no pending branch, so neither exists in the very first render even
- * though the fixture's own promise is already resolved; the pose's own wait for the trigger
+ * though the fixture's promise is already resolved; the pose's wait for the trigger
  * (through `waitFor`) is what carries it past that microtask rather than a settle run beforehand.
  */
 const pendingList: ReproStory = {

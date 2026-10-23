@@ -14,7 +14,7 @@ A developer looking for a publish callback finds none: no site function runs onc
 Code that should follow a publish runs in that job, or behind a link an editor follows into a screen the site adds.
 A site that wants an editor to take a next step at the moment of publishing an entry, with no job at all, adds next-step links beside that entry's publish confirmation, as [Add a next-step link after publish](#add-a-next-step-link-after-publish) describes.
 
-The job assumes a TypeScript module your deploy pipeline can run with Node, the storage your platform offers, and your own email or messaging code, and it needs no cairn knowledge beyond publishing from the admin.
+The job assumes a TypeScript module your deploy pipeline can run with Node, the storage your platform offers, and your email or messaging code, and it needs no cairn knowledge beyond publishing from the admin.
 The pipeline that runs it is yours, and this page names none.
 The next-step link also assumes you know your site's adapter file and its `editor` block, which the [adapter's reference entry](../reference/core.md#defineadapter) describes.
 This page leaves message delivery to your email or messaging provider's documentation.
@@ -25,7 +25,7 @@ Feeds, for subscribers who pull new posts instead of being sent them, are the su
 
 ## Before you begin
 
-The job needs a committed manifest, a pipeline step after the deploy, storage it can write between runs, and your own send code.
+The job needs a committed manifest, a pipeline step after the deploy, storage it can write between runs, and your send code.
 
 - The site commits its content manifest at `src/content/.cairn/index.json`, and a publish commit patches it.
   A scaffolded site already has it, and a hand-built site commits it in [Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest).

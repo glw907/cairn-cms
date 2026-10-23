@@ -34,10 +34,10 @@ function toPreviewTokenRow(row: PreviewTokenCols): PreviewTokenRow {
 
 /**
  * Insert a preview token row, sweeping expired rows in the same batch (the no-cron idiom
- * `issueToken` and `createSession` already run for their own tables). Unlike those two sibling
+ * `issueToken` and `createSession` already run for their tables). Unlike those two sibling
  * tables, this sweep fires only when a preview is minted, a rare, long-TTL event, so an expired
  * row here can linger longer than a stale magic-link token or session would before its table's
- * own sweep clears it. That lag is cosmetic: expiry is enforced again at lookup in
+ * sweep clears it. That lag is cosmetic: expiry is enforced again at lookup in
  * findPreviewToken, so a lingering swept-eligible row is never returned as valid.
  */
 export async function insertPreviewToken(db: D1Database, record: PreviewTokenRecord): Promise<void> {

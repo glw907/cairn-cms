@@ -62,8 +62,8 @@ export interface Backend {
    * A file's commit history at `ref`, newest first, one request capped at `limit + 1` entries so
    * the caller can set a truncation flag without a second read. A 404 or an empty log returns
    * `[]`, never throws: an entry with no publish history is a state, not an error. The GitHub
-   * provider bounds a page at 100 (the commits API's own `per_page` cap), so `limit` must stay
-   * below 99 there; the engine's own call sites stay far under that bound.
+   * provider bounds a page at 100 (the commits API's `per_page` cap), so `limit` must stay
+   * below 99 there; the engine's call sites stay far under that bound.
    */
   listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]>;
 

@@ -3,7 +3,7 @@
 // comma-joined list of resize and format directives Cloudflare reads at the edge. This module owns
 // the option encoding and the stable option order, so the same spec always builds the same URL and
 // a CDN cache keys on it cleanly. The delivery path is appended unaltered, since it already carries
-// its own leading slash.
+// its leading slash.
 
 /**
  * A single image variant: the resize and format directives Cloudflare Images applies to the
@@ -52,15 +52,15 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   if (spec.upscale !== undefined) options.push(`upscale=${spec.upscale}`);
   options.push(`format=${spec.format ?? 'auto'}`);
   options.push(`gravity=${spec.gravity ?? 'auto'}`);
-  // WATCH: gravity and format interpolate a VariantSpec's own string fields with no escaping or
+  // WATCH: gravity and format interpolate a VariantSpec's string fields with no escaping or
   // allowlist check. Safe today because every VariantSpec is engine-owned (BUILT_IN_PRESETS,
   // media/config.ts, whose map is now Object.frozen, though the freeze is shallow and does not
   // reach into each nested VariantSpec value) and validateVariant was retired alongside the
   // site-declared `variants` field (see docs/internal/engine-rulings.md). Reintroducing a caller-supplied
-  // VariantSpec (a site declaring its own preset again) reopens comma/slash injection into the
+  // VariantSpec (a site declaring its preset again) reopens comma/slash injection into the
   // transform URL's options segment; re-add a value check on gravity and format before that seam
   // returns.
-  // The source must be its own path segment after the options, so it needs a leading slash;
+  // The source must be its path segment after the options, so it needs a leading slash;
   // Cloudflare reads a slashless join as a malformed options list. publicPath carries one, but this
   // guards a caller that passes a relative path from fusing the options and the source.
   const source = publicPath.startsWith('/') ? publicPath : `/${publicPath}`;

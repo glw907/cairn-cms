@@ -135,7 +135,7 @@ export function findByHash(manifest: MediaManifest, hash: string): MediaEntry | 
 }
 
 /**
- * Set the entry under its own hash, replacing any same-hash row. Returns a new manifest and leaves
+ * Set the entry under its hash, replacing any same-hash row. Returns a new manifest and leaves
  *  the input untouched, so a caller's prior manifest reference stays valid. The ingest path's patch.
  */
 export function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): MediaManifest {

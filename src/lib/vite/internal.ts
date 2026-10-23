@@ -1,14 +1,14 @@
 // cairn-cms: the cairnManifest Vite plugin and its shared write/verify/derive machinery. This
 // module is NOT the public `/vite` entry (that is `./index.ts`, which re-exports only `cairnManifest`
-// and `CairnManifestOptions`); it is the plugin's own implementation plus the lower-level functions
+// and `CairnManifestOptions`); it is the plugin's implementation plus the lower-level functions
 // the cairn-manifest bin and its unit tests import by relative path, unreachable
 // from the package's `@glw907/cairn-cms/vite` subpath. It owns a virtual module that runs
-// import.meta.glob over the content dirs inside the app's own Vite graph, builds the manifest with
+// import.meta.glob over the content dirs inside the app's Vite graph, builds the manifest with
 // the engine builder, and verifies it against the committed file. The verify runs in the plugin's
 // buildStart hook, so a drift throws there and fails the build (or the dev server's start) as a hard
 // error, outside the prerender request lifecycle (where handleHttpError could downgrade it). Under
 // `vite build` it loads once per build through a nested Vite SSR server; under `vite dev` it loads
-// through the running dev server's SSR runner, because closing a nested server runs the site's own
+// through the running dev server's SSR runner, because closing a nested server runs the site's
 // plugins' closeServer hooks, and adapter-cloudflare's disposes the platform proxy the running server
 // shares. Write mode produces the serialized manifest, which the cairn-manifest bin uses to
 // regenerate. See the design spec, locked decision 1.
@@ -33,7 +33,7 @@ type CairnManifestPlugin = Plugin & { [CAIRN_OPTIONS]?: CairnManifestOptions };
 
 /**
  * Options for {@link cairnManifest}. Paths are app-root-absolute (the form `import.meta.glob` wants),
- *  so they match the build's own resolution.
+ *  so they match the build's resolution.
  */
 export interface CairnManifestOptions {
   /** The module exporting the `cairn` adapter and the parsed `siteConfig`, app-root-absolute. */
@@ -62,7 +62,7 @@ const DEFAULT_SITE_FACTS_PATH = '/src/content/.cairn/site-facts.json';
 /**
  * Build the virtual module source. In verify mode it throws on drift; in write mode it exports the
  *  serialized manifest as `result`. The module runs in the app graph, so its `import.meta.glob`,
- *  package, and `?raw` resolution is the build's own.
+ *  package, and `?raw` resolution is the build's.
  */
 function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): string {
   const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
@@ -96,7 +96,7 @@ export const result = ${resultExpr};
 }
 
 /**
- * Evaluate a virtual module source inside the consumer's own Vite resolution, then return the
+ * Evaluate a virtual module source inside the consumer's Vite resolution, then return the
  *  module's `result`. It reuses the consumer's loaded config (so the site's aliases, the config module,
  *  `import.meta.glob`, and `?raw` resolve exactly as the build does) and strips the cairnManifest
  *  plugin from the nested server's plugin list, so its buildStart never recurses. This runs at
@@ -149,7 +149,7 @@ async function importResult(vite: typeof import('vite'), env: DevEnvironment, id
 
 /**
  * Load a virtual module the cairnManifest plugin serves through the running dev server's SSR
- *  module runner and return its `result`. No second server is created or closed, so the site's own
+ *  module runner and return its `result`. No second server is created or closed, so the site's
  *  plugins (the adapter's shared platform proxy among them) see only the one server they set up.
  *  An SSR environment that is not runnable in Node falls back to the nested server the build uses,
  *  evaluating `source`.
@@ -166,8 +166,8 @@ async function loadFromDevServer(server: ViteDevServer, id: string, source: stri
 /**
  * The entry file of the Vite package the site at `root` installs. The nested verify server is built
  *  from that copy, the one the site's SvelteKit plugin imported: SvelteKit checks the server's SSR
- *  environment with an `instanceof` against its own Vite module, so a server built from another
- *  copy (the engine's own, when the engine is linked into the site rather than installed) fails
+ *  environment with an `instanceof` against its Vite module, so a server built from another
+ *  copy (the engine's, when the engine is linked into the site rather than installed) fails
  *  the check.
  */
 export function resolveConsumerVite(root: string): string {
@@ -246,8 +246,8 @@ const DEV_BUILD_DEFINE = '__CAIRN_DEV_BUILD__';
 
 /**
  * Whether a build opts in to the dev backend with `VITE_CAIRN_E2E=1`, read the way Vite reads its
- *  own env: the process env plus `.env`, `.env.local`, `.env.<mode>`, and `.env.<mode>.local` in the
- *  working directory. It loads the site's own Vite, so the engine never imports a second copy.
+ *  env: the process env plus `.env`, `.env.local`, `.env.<mode>`, and `.env.<mode>.local` in the
+ *  working directory. It loads the site's Vite, so the engine never imports a second copy.
  */
 async function e2eFlagSet(mode: string): Promise<boolean> {
   const root = process.cwd();
@@ -274,7 +274,7 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
     // a literal into each module that reads it, so each guarded branch folds where it is written.
     // A define the site already set wins in either plugin order: Vite merges a hook's result over
     // the config so far, so the hook returns nothing once the name is present. The hook starts no
-    // nested server, only reads the flag through the site's own `loadEnv`.
+    // nested server, only reads the flag through the site's `loadEnv`.
     async config(config, { command, mode }) {
       if (config.define && DEV_BUILD_DEFINE in config.define) return;
       const flagged = command === 'serve' || (await e2eFlagSet(mode));
@@ -364,7 +364,7 @@ async function loadCairnBuild(cwd: string): Promise<{ opts: CairnManifestOptions
 /**
  * Regenerate the committed manifest from the consumer's corpus and write it to the configured
  *  manifestPath under the Vite root {@link loadCairnBuild} derives, evaluating the write-mode
- *  virtual module through the build's own resolution. The cairn-manifest bin calls this; it is
+ *  virtual module through the build's resolution. The cairn-manifest bin calls this; it is
  *  exported so the write logic is testable apart from the CLI shell.
  */
 export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
@@ -520,7 +520,7 @@ function parseAdapterFacts(raw: string): AdapterFacts {
 
 /**
  * Read the media bucket binding, role vocabulary, and AI posture off the consumer's adapter by
- *  evaluating a tiny virtual module through the consumer's own Vite resolution, the same
+ *  evaluating a tiny virtual module through the consumer's Vite resolution, the same
  *  machinery the cairn-manifest bin uses. Kept as an `internal.js`-only entry point for tooling
  *  built directly against this module; the site-facts write path (`buildSiteFactsFromVite`)
  *  shares its evaluation machinery but calls it independently. Derivation is best-effort: any
@@ -564,7 +564,7 @@ export function formatSiteFacts(facts: AdapterFacts): string {
 
 /**
  * Derive the current `site-facts.json` contents from the consumer's adapter, evaluated through the
- *  build's own Vite resolution: the running dev server when one is given, a nested server otherwise.
+ *  build's Vite resolution: the running dev server when one is given, a nested server otherwise.
  *  Shares `adapterFactsSource` and its validation with {@link readAdapterFacts}; never re-derives
  *  the three fields independently.
  */
@@ -613,7 +613,7 @@ export type SiteFactsCheck =
  *  every site that has not yet run the bin). An absent file is not drift: no site commits one until
  *  it runs `cairn-manifest`, and no site's `build` script runs that bin, so a fresh install or an
  *  upgrading consumer must still build. A present file that no longer matches the adapter is drift
- *  and fails the build in the manifest's own shape. A derivation failure (the adapter throwing for a
+ *  and fails the build in the manifest's shape. A derivation failure (the adapter throwing for a
  *  reason unrelated to these three fields) reports `skipped` rather than stale, and the build warns
  *  once and continues: the manifest verify immediately before this check already evaluates the same
  *  config module and is the build's real gate on an adapter that cannot load at all, so failing this

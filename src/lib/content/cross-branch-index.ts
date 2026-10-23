@@ -4,8 +4,8 @@
 // read of every open cairn/* branch, keyed differently per index but sharing one identical fan-out
 // shape underneath: resolve a branch name to its concept-scoped file path, read that one file, extract
 // zero-or-more (key, entry) rows from its frontmatter and body, and fold every row into one Map. This
-// module owns that shape once; each caller supplies its own main rows (built from data it already
-// holds) and its own per-branch extractor.
+// module owns that shape once; each caller supplies its main rows (built from data it already
+// holds) and its per-branch extractor.
 import type { ConceptDescriptor } from './types.js';
 import type { Backend } from '../github/backend.js';
 import { PENDING_PREFIX, parsePendingBranch } from './pending.js';
@@ -45,7 +45,7 @@ export interface CrossBranchBranchContext {
  *  fails open and degrades to a thinner index (E6).
  */
 export interface CrossBranchIndexOptions {
-  /** The open cairn/* branch names, already listed. When present the build skips its own listing. */
+  /** The open cairn/* branch names, already listed. When present the build skips its listing. */
   branches?: string[];
   /** When true a branch read or extraction failure rejects the whole build, so the caller can fail closed. */
   strict?: boolean;
@@ -64,7 +64,7 @@ function push<TEntry>(index: Map<string, TEntry[]>, key: string, entry: TEntry):
  * edited file, extracted per branch by the caller's `branchRows`.
  *
  * A branch name that fails to parse, whose id fails the slug rule, or whose concept this site does not
- * configure is skipped with no read attempted, mirroring the branch tooling's own guard. By default a
+ * configure is skipped with no read attempted, mirroring the branch tooling's guard. By default a
  * read or extraction failure degrades that one branch and is skipped, so a transient failure never sinks
  * the whole build (fail open, for an advisory consumer); pass `strict: true` to rethrow instead, so a
  * gate consumer can fail closed (E6). Pass `branches` to reuse a branch list the caller already listed

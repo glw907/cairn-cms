@@ -96,7 +96,7 @@ export function renameId(oldId: string, newSlug: string, datePrefix: DatePrefix 
 /**
  * Split a `<concept>/<id>` token into its parts, or null when no concept precedes the slash. The
  * shared shape behind the cairn: link token (links.ts) and a pending-branch name (pending.ts),
- * each of which strips its own prefix and applies its own id validation around this split.
+ * each of which strips its prefix and applies its id validation around this split.
  */
 export function splitConceptIdToken(token: string): { concept: string; id: string } | null {
   const slash = token.indexOf('/');

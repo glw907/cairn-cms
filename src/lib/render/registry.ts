@@ -40,7 +40,7 @@ export interface ComponentContext {
   attributes: Record<string, string | boolean>;
   /** A named slot's rendered children. Returns `[]` for an absent or empty slot. */
   slot(name: string): ElementContent[];
-  /** A repeatable slot's items, each item its own list of rendered children. `[]` when absent. */
+  /** A repeatable slot's items, each item its list of rendered children. `[]` when absent. */
   items(name: string): ElementContent[][];
   /** A declared attribute's string value. `undefined` for a boolean or absent value. */
   attr(key: string): string | undefined;
@@ -143,7 +143,7 @@ function findIconField(def: ComponentDef): string | undefined {
 
 /**
  * The engine's role-to-glyph-key fallback for the conventional admonition roles, which a site's
- *  IconSet may satisfy. A component's own {@link ComponentDef.defaultIconByRole} overrides it.
+ *  IconSet may satisfy. A component's {@link ComponentDef.defaultIconByRole} overrides it.
  */
 const DEFAULT_ICON_BY_ROLE: Record<string, string> = {
   note: 'info',
@@ -155,7 +155,7 @@ const DEFAULT_ICON_BY_ROLE: Record<string, string> = {
   danger: 'flame',
 };
 
-/** Directive names the engine's own render step handles; a site cannot register a component under one. */
+/** Directive names the engine's render step handles; a site cannot register a component under one. */
 const RESERVED_DIRECTIVE_NAMES = new Set(['figure', 'include']);
 
 /**

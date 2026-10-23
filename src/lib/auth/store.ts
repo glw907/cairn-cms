@@ -37,8 +37,8 @@ function rethrowStoreFailure(err: unknown): never {
  * Run a statement that writes a caller-chosen role, naming the one fault a correct deployment can
  * still produce. An `AUTH_DB` that never received migrations/0001_roles.sql keeps the original
  * `CHECK (role IN ('owner', 'editor'))`, so a custom role name fails with a bare D1 constraint
- * error. Only the engine's own CHECK text (`role IN ('owner'`) is renamed, read off the error and
- * its cause: a site's own CHECK on the column, a primary-key violation, or any other fault
+ * error. Only the engine's CHECK text (`role IN ('owner'`) is renamed, read off the error and
+ * its cause: a site's CHECK on the column, a primary-key violation, or any other fault
  * rethrows untouched, since this module diagnoses nothing it does not recognize.
  */
 async function runRoleWrite(statement: D1PreparedStatement): Promise<D1Result> {
@@ -89,7 +89,7 @@ export async function findEditor(db: D1Database, email: string): Promise<Unresol
  * `nonceHash` binds the token to the browser that requested it: the hash of the nonce that
  * browser carries in its pending-login cookie, which {@link consumeToken} then requires back.
  * Omitted, the row is written unbound, and any browser holding the token can confirm it; the
- * engine's own request action always passes one (migrations/0004_login_nonce.sql).
+ * engine's request action always passes one (migrations/0004_login_nonce.sql).
  */
 export async function issueToken(
   db: D1Database,
@@ -134,12 +134,12 @@ export type RebindTokenOutcome = { outcome: 'rebound' } | { outcome: 'not-eligib
  * of the same-browser binding.
  *
  * The lockout it closes: an attacker POSTing the request form once a minute keeps the live token
- * bound to the attacker's own nonce, and the per-email send cooldown then throttles the editor's
+ * bound to the attacker's nonce, and the per-email send cooldown then throttles the editor's
  * recovery re-request, so the editor can neither confirm the link in their inbox nor get a new
  * one. Rebinding on the throttled path makes the semantics last-requester-wins, which is
  * symmetric: whoever asked most recently is who the link works for, and the editor recovers by
  * asking again. Nothing is granted by asking, since the token itself only ever reaches the
- * editor's own inbox.
+ * editor's inbox.
  *
  * Three things the one statement's `WHERE` decides, in order:
  *
@@ -185,10 +185,10 @@ export async function recentlyIssued(db: D1Database, email: string, since: numbe
  * Consume a token in one atomic statement. A returned email means the token was present and
  * unexpired and is now gone, so the link is single-use by construction on strongly-consistent D1.
  *
- * `nonceHash` is the confirming browser's own pending-login nonce, hashed. The same-browser
+ * `nonceHash` is the confirming browser's pending-login nonce, hashed. The same-browser
  * binding lives inside this one predicate: a row bound at issue time is deleted only when the
  * two hashes are equal, and a null returned for a mismatch means the row is still there, so a
- * click from the wrong browser refuses without burning the requester's own link. A row carrying
+ * click from the wrong browser refuses without burning the requester's link. A row carrying
  * no binding (written before migrations/0004_login_nonce.sql) is consumed whatever the caller
  * passes, which is what keeps an in-flight link confirmable across the migration.
  *
@@ -226,7 +226,7 @@ export async function createSession(
 ): Promise<void> {
   await db.batch([
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
-    // issueToken's own sweep (above) runs the identical unindexed idiom against magic_token, and
+    // issueToken's sweep (above) runs the identical unindexed idiom against magic_token, and
     // there the OR also defeats idx_magic_token_email: a WHERE clause combining an indexed
     // equality with an unindexed range under OR cannot use either index. No index on
     // session.expires_at or magic_token.expires_at backs either scan: an editor roster is small
@@ -267,7 +267,7 @@ export type DeletedSession = { email: string; expiresAt: number };
  * gives the logout record a subject the caller has no other way to reach: logout is a public
  * admin path, so the guard never resolves an editor onto it. The delete is unconditional, an
  * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
- * own `now` to decide whether the row was still live before emitting a destroyed record.
+ * `now` to decide whether the row was still live before emitting a destroyed record.
  */
 export async function deleteSession(db: D1Database, id: string): Promise<DeletedSession | null> {
   const row = await db
@@ -315,7 +315,7 @@ export type SetEditorRoleOutcome =
 /**
  * What {@link removeOwnerIfNotLast} and {@link demoteOwnerIfNotLast} return: the guarded write
  * landed, it is refused because this is the last owner-capability row, or the row is not eligible
- * for this guard at all. `not-eligible` (never `not-found`) because the atomic write's own `WHERE`
+ * for this guard at all. `not-eligible` (never `not-found`) because the atomic write's `WHERE`
  * only matches owner-capability rows, so a `changes === 0` result cannot tell an absent row apart
  * from a present, non-owner one; the discriminant names only what the predicate knows.
  */
@@ -327,15 +327,15 @@ export type OwnerGuardOutcome =
 /**
  * The removal cascade's preview-token leg: every link one removed editor minted, keyed by their
  * already-normalized address. Both {@link deleteEditor} and {@link removeOwnerIfNotLast} call it
- * after their own session/magic-token batch.
+ * after their session/magic-token batch.
  *
- * It runs as its own statement, deliberately outside that batch: `preview_tokens` is additive
+ * It runs as its statement, deliberately outside that batch: `preview_tokens` is additive
  * (migrations/0003_preview.sql), and every site with `AUTH_DB` wired but that migration unapplied
  * (today, every consumer site) must still remove an editor cleanly. A single `db.batch()` fails
  * the WHOLE batch on one statement's "no such table", which would regress that site's editor
  * removal entirely; a separate statement confines that failure to the one table it names. A
  * "no such table" here is silently swallowed (the un-migrated normal state has no rows to clear);
- * any other error rethrows, since the caller's own removal has already committed and this module
+ * any other error rethrows, since the caller's removal has already committed and this module
  * stays logger-free, so a genuine D1 fault surfaces to the caller rather than disappearing.
  */
 async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string): Promise<void> {
@@ -349,7 +349,7 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
 /**
  * Whether the row a guarded write left untouched is still there, the read every `changes === 0`
  * branch below runs to tell a refusal apart from a plain miss. `ownerRoles`, when given, narrows
- * the read to owner-capability rows, matching the two owner-only guards whose own `WHERE` never
+ * the read to owner-capability rows, matching the two owner-only guards whose `WHERE` never
  * admitted a non-owner row in the first place.
  *
  * It runs after the atomic write and cannot change that write's outcome; it only names which of
@@ -397,12 +397,12 @@ async function editorRowStillPresent(
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, there is no last-owner row to protect, so
  * the plain `DELETE` runs. `defineRoles` always resolves at least one owner-capability name, so
- * `[]` is unreachable through the engine's own callers; it is reachable only from a site calling
+ * `[]` is unreachable through the engine's callers; it is reachable only from a site calling
  * this `/auth-store` export directly, which is exactly the caller that has taken the decision on
  * itself.
  *
  * The cascade is deliberately two statements, not one batch with the removal: the editor `DELETE`
- * has to commit and report its own `changes` before the sweep runs, since the sweep is
+ * has to commit and report its `changes` before the sweep runs, since the sweep is
  * conditional on the removal having happened. Access dies with the editor row regardless of when
  * the sweep lands, because `resolveSession` INNER JOINs `editor`, so a session row outliving its
  * editor by a moment resolves to null and authorizes nothing.
@@ -444,7 +444,7 @@ export async function deleteEditor(
  * part of the DELETE, so two concurrent removals cannot both pass a separate check and strand the
  * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
  * `resolveOwnerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
- * role name stays safe. The narrower, owner-only twin of {@link deleteEditor}: its own `WHERE`
+ * role name stays safe. The narrower, owner-only twin of {@link deleteEditor}: its `WHERE`
  * matches only an owner-capability row, so it refuses outright (`not-eligible`) on a row that is
  * not owner-capability at all, rather than removing it. On success the editor's sessions, pending
  * token, and minted preview links all go too, the same cascade {@link deleteEditor} runs.
@@ -518,7 +518,7 @@ export async function insertOwnerIfEmpty(
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, no change can demote a last owner, so the
  * plain `UPDATE` runs. `defineRoles` always resolves at least one owner-capability name, so `[]`
- * is unreachable through the engine's own callers; it is reachable only from a site calling this
+ * is unreachable through the engine's callers; it is reachable only from a site calling this
  * `/auth-store` export directly.
  */
 export async function setEditorRole(
@@ -555,7 +555,7 @@ export async function setEditorRole(
  * Demote an owner-capability editor to `newRole` only if another owner-capability row remains,
  * in one atomic statement (see `removeOwnerIfNotLast`). `ownerRoles` is the vocabulary's
  * owner-capability name set, so a site with more than one owner-level role name stays safe. The
- * narrower, owner-only twin of {@link setEditorRole}: its own `WHERE` matches only an
+ * narrower, owner-only twin of {@link setEditorRole}: its `WHERE` matches only an
  * owner-capability row, so it refuses outright (`not-eligible`) on a row that is not
  * owner-capability at all, rather than changing it.
  */

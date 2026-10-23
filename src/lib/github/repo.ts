@@ -97,7 +97,7 @@ export function commitsUrl(repo: RepoRef, path: string, ref: string, limit: numb
 }
 
 /**
- * The commits-API entry shape this package reads: the commit sha and its own author/committer
+ * The commits-API entry shape this package reads: the commit sha and its author/committer
  * trailers. GitHub's schema types both trailers nullable (an odd, rare row with no recorded
  * author or committer), so the mapping below degrades rather than reading through a null.
  */
@@ -110,11 +110,11 @@ interface CommitLogEntry {
 }
 
 /**
- * Fetch a file's commit history through the commits API's path filter, newest first (GitHub's own
+ * Fetch a file's commit history through the commits API's path filter, newest first (GitHub's
  * order), one request capped at `limit + 1` entries. A 404 or an empty log returns `[]`, never
  * throws: an entry with no publish history is a state, not a failure to report.
  *
- * Field mapping is deliberate: the author comes from the commit's own author trailer
+ * Field mapping is deliberate: the author comes from the commit's author trailer
  * (`commit.author`), almost always present and never the top-level `author` (the matched GitHub
  * account, null for a magic-link editor, the common case); the date is `commit.committer.date`,
  * when the commit actually landed on `ref`. A null trailer degrades to an empty name, email, or

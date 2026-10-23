@@ -44,7 +44,7 @@ import type { CairnEvent } from '../sveltekit/types.js';
 import { env, siteEnv, waitUntil } from '../sveltekit/workers-env.js';
 
 /**
- * A minute and a day in milliseconds, spelled out so the Defaults table's own units read straight
+ * A minute and a day in milliseconds, spelled out so the Defaults table's units read straight
  * off the clamp calls below. The per-hour knobs (requesterCap, identityCeiling,
  * escalationThreshold) are plain counts, not durations.
  */
@@ -66,9 +66,9 @@ const IDENTITY_CEILING_SCOPE = 'ceiling';
 const IDENTITY_ESCALATION_SCOPE = 'escalation';
 
 /**
- * Step 1 of every action: the unconditional origin and scheme checks. SvelteKit's own origin check
+ * Step 1 of every action: the unconditional origin and scheme checks. SvelteKit's origin check
  * covers form posts but not `vite dev`, so the action keeps its own. Neither result union carries
- * a wire code for a forged or downgraded request, so both refusals throw the framework's own
+ * a wire code for a forged or downgraded request, so both refusals throw the framework's
  * `error()` rather than degrade the cookie or the response.
  * @throws HttpError 403 on an origin mismatch, or on plain http anywhere but a local host.
  */
@@ -94,7 +94,7 @@ interface DevBackendFlagCache {
 /**
  * Step 0 of every action, ahead even of {@link assertOriginAndScheme}: the dev-backend leak
  * tripwire (docs/internal/engine-rulings.md, `dev-backend-flag-refusal`). `CAIRN_DEV_BACKEND` is
- * the dev transport's own
+ * the dev transport's
  * ENABLE contract (the showcase capture transport, and the documented transport-body pattern
  * this tripwire backs up, both refuse WITHOUT it), so refusing on the flag alone, the way
  * `guard.ts` does, would break every legitimate dev-backend deployment. This factory instead
@@ -110,9 +110,9 @@ interface DevBackendFlagCache {
  * {@link isDeployedHost}, not the bare request hostname, is what answers it, so a forged
  * `Host: localhost` cannot talk a configured deployment out of refusing.
  *
- * The refusal is a hard throw, not a member of either action's own result union, matching
- * `guard.ts`'s own unconditional form; it fires before any print, store, or network call,
- * mirroring `assertOriginAndScheme`'s own contract.
+ * The refusal is a hard throw, not a member of either action's result union, matching
+ * `guard.ts`'s unconditional form; it fires before any print, store, or network call,
+ * mirroring `assertOriginAndScheme`'s contract.
  * @throws HttpError 503 when the flag is live on a deployed host.
  */
 function assertNoDevBackendLeak(event: CairnEvent, cache: DevBackendFlagCache): void {
@@ -144,7 +144,7 @@ async function runChallenge<Env>(
 
 /**
  * Scrub a thrown `deliver` error for logging: strip every occurrence of the contact (a delivery
- * provider's own error can embed the recipient address or number) and cap the length, mirroring
+ * provider's error can embed the recipient address or number) and cap the length, mirroring
  * `auth-routes.ts`'s `scrubSendError` for the magic-link send path.
  */
 function scrubDeliverError(err: unknown, contact: string): string {
@@ -164,8 +164,8 @@ const HEX_RUN = /[0-9a-fA-F]{32,}/g;
 /**
  * Scrub a thrown salt-fault error for logging: redact anything salt-shaped, then apply the same
  * length cap `scrubDeliverError` uses. No contact redaction is needed here, since `resolveSalt`'s
- * own faults are D1 read/write errors rather than a delivery provider's response. The delivery
- * failure's own cleanup reuses it for the same reason: its faults are D1 errors over hash-shaped
+ * faults are D1 read/write errors rather than a delivery provider's response. The delivery
+ * failure's cleanup reuses it for the same reason: its faults are D1 errors over hash-shaped
  * bindings.
  *
  * The redaction is not theoretical. `provisionSalt` binds the freshly minted salt as a SQL
@@ -182,23 +182,23 @@ function scrubSaltError(err: unknown): string {
  * SvelteKit's `getClientAddress`, which the requester bucket's address half needs and no other
  * engine surface reads. A structural constraint rather than a published interface of its own: the
  * retired `AuthChannelEvent` was a third request-event shape a consumer had to hold in their head
- * beside kit's `RequestEvent` and `CairnEvent`, and its own comment already conceded that a real
+ * beside kit's `RequestEvent` and `CairnEvent`, and its comment already conceded that a real
  * kit event satisfies all three. A site passes its route event unchanged, with no cast.
  *
  * `logout` and `resolveSubject` take the bare `CairnEvent` instead, since neither derives a
- * requester bucket. The narrower parameter is what lets a site's own session helper declare
+ * requester bucket. The narrower parameter is what lets a site's session helper declare
  * `(event: CairnEvent)` and still call `resolveSubject`.
  */
 type ChannelEvent = CairnEvent & { getClientAddress(): string };
 
 /**
  * The context `deliver` receives alongside the contact and code: the Worker env (provider
- * credentials, or a dev-only transport's own opt-in flag) and Cloudflare's background-task hook,
- * both the Workers runtime's own exports. A `deliver` implementation attaches `.catch()` before
- * anything reaches `waitUntil`, matching the factory's own delivery call (spec, Delivery).
+ * credentials, or a dev-only transport's opt-in flag) and Cloudflare's background-task hook,
+ * both the Workers runtime's exports. A `deliver` implementation attaches `.catch()` before
+ * anything reaches `waitUntil`, matching the factory's delivery call (spec, Delivery).
  */
 export interface DeliverContext<Env> {
-  /** The Worker env, typed as the site's own `Env`. */
+  /** The Worker env, typed as the site's `Env`. */
   env: Env | undefined;
   /** Cloudflare's background-task hook, the `waitUntil` the Workers runtime exports. */
   waitUntil: (promise: Promise<unknown>) => void;
@@ -224,13 +224,13 @@ export type ChannelConfirmOutcome = {
 
 /**
  * Construction-time configuration for `createAuthChannel`. Every function here is awaited even
- * where a compliant implementation can resolve synchronously (`SendMagicLink`'s own convention),
+ * where a compliant implementation can resolve synchronously (`SendMagicLink`'s convention),
  * except `resolveDb` and `normalize`, which are plain synchronous reads and pure string
  * transforms respectively and carry no I/O.
  */
 export interface AuthChannelConfig<Env> {
   /**
-   * The channel's own D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent
+   * The channel's D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent
    * fails an action closed with `{outcome: 'unavailable'}`. Typed as {@link ChannelDatabaseLike},
    * the subset of D1 the store uses, which a real `D1Database` and the dev package's
    * `createChannelDb()` result both satisfy.
@@ -265,7 +265,7 @@ export interface AuthChannelConfig<Env> {
    * `challenge-required` without ever hard-failing, so a member always has a retry path.
    */
   challenge: (event: CairnEvent, form: FormData) => Promise<boolean>;
-  /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's own admin cookies). */
+  /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's admin cookies). */
   cookie: { name: string };
   /**
    * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
@@ -286,7 +286,7 @@ export interface AuthChannelConfig<Env> {
    *
    * The groups are what a site tunes together, re-derived for a reader rather than transplanted
    * from the design document. The retired `ttl` bag held all nine knobs in one flat family because
-   * the spec's own table listed them that way, and only three of the nine were durations, so the
+   * the spec's table listed them that way, and only three of the nine were durations, so the
    * name read narrower than the contents; `throttle` and `code` say what their members do.
    */
   limits?: {
@@ -309,7 +309,7 @@ export interface AuthChannelConfig<Env> {
       identityCeiling?: number;
       /** Identity failure escalation threshold per hour, past which confirm answers `challenge-required`. Default 20, clamped to at least 10. */
       escalationThreshold?: number;
-      /** Live code rows kept per requester bucket; a re-mint prunes the requester's own oldest rows past this. Default 5, clamped to at most 20. */
+      /** Live code rows kept per requester bucket; a re-mint prunes the requester's oldest rows past this. Default 5, clamped to at most 20. */
       liveRowCap?: number;
     };
     /** How long a confirmed login lasts. */
@@ -344,7 +344,7 @@ export interface AuthChannel<Env> {
   /**
    * Read the session cookie and return the resolved subject, or null when absent, expired, or
    * refused by `verify`. Takes the bare event, with no `getClientAddress`, since it derives no
-   * requester bucket: a site's own session helper can declare `(event: CairnEvent)`.
+   * requester bucket: a site's session helper can declare `(event: CairnEvent)`.
    */
   resolveSubject: (event: CairnEvent) => Promise<string | null>;
   /**
@@ -353,7 +353,7 @@ export interface AuthChannel<Env> {
    * The one member that takes a binding rather than an event, and deliberately so: it is the one
    * member callable OUTSIDE a request, from the roster-archive path, a cron, or a queue consumer
    * that has a `db` and no event to resolve one from. Uniformity with its four siblings was weighed
-   * and lost to that capability, since an event-taking signature would put the engine's own
+   * and lost to that capability, since an event-taking signature would put the engine's
    * revocation exemplar out of reach of exactly the callers who need it most.
    */
   revokeSessions: (db: ChannelDatabaseLike, subject: string) => Promise<void>;
@@ -370,7 +370,7 @@ function requireFn(field: string, value: unknown): void {
  * Validate the session cookie's base name and, by extension, the `_pending` nonce cookie's name
  * derived from it: both go through `buildCookieName`'s RFC 6265 token-set and prefix-conflict checks,
  * and a `cairn_`-prefixed base is rejected here even though `buildCookieName` itself permits it, since
- * it would collide with the engine's own admin cookies.
+ * it would collide with the engine's admin cookies.
  */
 function resolveCookieBase(cookie: { name: string } | undefined): string {
   if (!cookie || typeof cookie.name !== 'string' || cookie.name.length === 0) {
@@ -457,7 +457,7 @@ function resolveLimits(limits: AuthChannelConfig<unknown>['limits']): ResolvedLi
  * Compose the rate limit's default key: the requester bucket's address half (spec, Flows step 5)
  * paired with the derived identity, the exact `${address}|${identity}` join `mintCode` stores as
  * `requester_bucket` and `pruneRequesterRows` filters on. Never the identity alone: a key keyed
- * only on identity would let a stranger who merely knows a contact deny that contact's own login
+ * only on identity would let a stranger who merely knows a contact deny that contact's login
  * attempts, the defect the throttle rule (deny on the requester, escalate on the identity) exists
  * to forbid.
  */
@@ -467,7 +467,7 @@ function composeRequesterBucketKey(event: ChannelEvent, identity: string): strin
 
 /**
  * Refund confirm's identity failure gate charge, when this call actually made one. Takes the
- * charged session and identity as plain parameters, rather than closing over `confirmAction`'s own
+ * charged session and identity as plain parameters, rather than closing over `confirmAction`'s
  * narrowed locals, since a nested closure loses the surrounding narrowing TypeScript applies to
  * `session` and `row` at each call site.
  */
@@ -491,10 +491,10 @@ async function refundGateCharge(
  * specifying a key at a step that could not compute it).
  *
  * Degrades to open on an absent binding (`auth.channel.rate_limit_absent`) or a throwing
- * `key()`/`limit()` call (`auth.channel.rate_limit_failed`), mirroring `section-action.ts`'s own
+ * `key()`/`limit()` call (`auth.channel.rate_limit_failed`), mirroring `section-action.ts`'s
  * rate-limit branch exactly, including the one exception: a thrown SvelteKit `redirect()` or
  * `error()` rethrows untouched rather than degrading, from a site-supplied `key()` override and
- * from the binding's own `limit()` alike, since a site relying on either as control flow must not
+ * from the binding's `limit()` alike, since a site relying on either as control flow must not
  * be silently swallowed. `section-action.ts` reaches the same place by two routes, since
  * `resolveRateLimit` captures a throwing `limit()` into its `failed` arm and that call site
  * rethrows the two shapes off the arm. Returns false, having
@@ -584,7 +584,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   let cachedSalt: string | null = null;
 
   // The dev-backend flag's env observation, cached once per channel instance and never re-read
-  // (see assertNoDevBackendLeak's own doc comment).
+  // (see assertNoDevBackendLeak's doc comment).
   const devBackendFlagCache: DevBackendFlagCache = { checked: false, set: false };
 
   /**
@@ -603,11 +603,11 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   }
 
   /**
-   * Record a destroyed session row under the channel's own pseudonym, the one emit point for
+   * Record a destroyed session row under the channel's pseudonym, the one emit point for
    * every teardown whose only identity is the deleted row's subject (the member's logout, the
    * verify-refused revocation). Never the raw subject: no channel record carries a roster
    * identity. `deriveIdentity` reads the contact only when the subject is null, so this
-   * reconstructs the exact value the request flow's own `s:` branch produced, and a teardown keys
+   * reconstructs the exact value the request flow's `s:` branch produced, and a teardown keys
    * to the sign-in it ends. A salt read that faults logs `auth.channel.salt_unavailable` and
    * returns rather than stranding the member: `resolveSalt` caches only success and the request
    * path fails closed by design, but a session teardown must still complete. The fault record
@@ -660,7 +660,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // Step 1: origin and scheme.
     assertOriginAndScheme(event);
 
-    // Read the body off a clone, never the original request: a site's own wrapper around this
+    // Read the body off a clone, never the original request: a site's wrapper around this
     // action (a custom route that also logs the raw body, say) may still need to read it, and a
     // second `formData()` call against an already-consumed body throws (mirrors csrf.ts's
     // `validateCsrfToken`, which clones for the same reason).
@@ -702,7 +702,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       lookupFailed = true;
     }
 
-    // provisionSalt's own fault (a salt row absent after its insert) is the one input-independent
+    // provisionSalt's fault (a salt row absent after its insert) is the one input-independent
     // fault that surfaces this late; it fails the action closed rather than deriving an unsalted
     // identity.
     let salt: string;
@@ -752,10 +752,10 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     }
 
     // Step 7: reuse the unexpired _pending cookie when present (a browser never sends back an
-    // expired one), or mint a fresh nonce. mintCode's own conditional upsert is the sole
+    // expired one), or mint a fresh nonce. mintCode's conditional upsert is the sole
     // authority on whether a reused nonce's cooldown has elapsed.
     //
-    // `secure` here is the bare url.protocol test, deliberately NOT the engine's own csrfSecure,
+    // `secure` here is the bare url.protocol test, deliberately NOT the engine's csrfSecure,
     // which can raise a non-https request's answer through PUBLIC_ORIGIN. Every channel write
     // path runs assertOriginAndScheme first, and that fails http closed on any non-local host, so
     // the only requests reaching this line over http are local dev, where a Secure cookie would
@@ -805,12 +805,12 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       return { outcome: 'sent' };
     }
 
-    // A fresh mint prunes the requester bucket's own oldest rows, never the identity's, so an
+    // A fresh mint prunes the requester bucket's oldest rows, never the identity's, so an
     // evictor (a cookie-clearing attacker minting many nonces) can only ever destroy rows it
     // created itself.
     await pruneRequesterRows(session, fullRequesterBucket, limits.liveRowCap);
 
-    // Housekeeping rides the mint, mirroring the engine's own purge-on-mint discipline for
+    // Housekeeping rides the mint, mirroring the engine's purge-on-mint discipline for
     // magic_token: three indexed deletes clear expired code rows, expired sessions, and budget
     // rows more than two windows stale, through waitUntil so no response waits on them. Without
     // this the tables grow one row per probed contact forever, the exact defect the design
@@ -845,7 +845,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     };
     const deliverPromise = config.deliver(contact, code, ctx).catch(async (err: unknown) => {
       log.error('auth.channel.send_failed', { correlationId, error: scrubDeliverError(err, contact) });
-      // Reuse this call's own captured `now`, never a fresh Date.now(): delivery runs through
+      // Reuse this call's captured `now`, never a fresh Date.now(): delivery runs through
       // waitUntil, so a fresh timestamp taken once the promise settles can land in a later budget
       // window than the one the send charge above actually incremented, and refund() is a no-op
       // against a window it did not charge.
@@ -881,7 +881,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     assertOriginAndScheme(event);
 
     // Read the body off a clone, never the original request, for the same reason requestAction
-    // does: the site's own wrapper may still need the body.
+    // does: the site's wrapper may still need the body.
     const form = await event.request.clone().formData();
 
     // Step 2: canonicalize. Malformed touches nothing: no store access, no attempt spent.
@@ -891,7 +891,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       return { outcome: 'bad-code' };
     }
 
-    // Step 3: the pending nonce cookie. Absent is a statement about the requester's own browser,
+    // Step 3: the pending nonce cookie. Absent is a statement about the requester's browser,
     // answered before any store access, so a cookie-blocked or cross-browser member gets an exit
     // instead of an endless bad-code loop.
     const secure = event.url.protocol === 'https:';
@@ -995,7 +995,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
 
     // Clear the nonce cookie and delete any session row named by an incoming session cookie, so
     // neither leaves an orphan.
-    // The delete states the same `secure` the setter used, the engine's own recorded cookie rule
+    // The delete states the same `secure` the setter used, the engine's recorded cookie rule
     // (sveltekit/types.ts): a jar's delete defaults the flag ON for every host but localhost
     // itself, and a browser discards a Secure Set-Cookie arriving over http, so a delete that
     // leaves the flag to the jar can answer with a clear the browser drops on the floor.
@@ -1009,8 +1009,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       // one record would silently link them. It fires only when a row was actually destroyed and
       // was still live (its `expiresAt` in the future); the delete itself stays unconditional
       // either way. The liveness compare reads the clock here rather than reusing this action's
-      // own `now`, which was captured several D1 round trips earlier: a row that expired during
-      // those round trips is expired, and `auth-routes.ts`'s own destroyed-session compare reads
+      // `now`, which was captured several D1 round trips earlier: a row that expired during
+      // those round trips is expired, and `auth-routes.ts`'s destroyed-session compare reads
       // `Date.now()` at the same point for the same reason.
       const destroyed = await destroyChannelSession(session, await hashToken(existingSessionToken));
       if (destroyed !== null && destroyed.expiresAt > Date.now()) {
@@ -1045,7 +1045,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const sessionCookie = buildCookieName(cookieBase, secure);
     const pendingCookie = buildCookieName(pendingBase, secure);
     const token = event.cookies.get(sessionCookie);
-    // Both deletes state their setter's own `secure`, for the reason confirmAction's does: a
+    // Both deletes state their setter's `secure`, for the reason confirmAction's does: a
     // logout that leaves the flag to the jar's default can clear a cookie the browser then keeps.
     event.cookies.delete(sessionCookie, { path: '/', secure });
     event.cookies.delete(pendingCookie, { path: '/', secure });
@@ -1104,7 +1104,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       if (verified === null) return null;
       if (!verified) {
         // A roster hook actively revoking a live session, silent until now. It records the same
-        // way the member's own logout does, keyed to the subject the DELETE itself returned,
+        // way the member's logout does, keyed to the subject the DELETE itself returned,
         // never the earlier `resolved.subject` read: both name the same row (the DELETE matches
         // on the identical tokenHash, the row's primary key), but the RETURNING value is the
         // provable one, not an assumption that the read and the delete still agree.

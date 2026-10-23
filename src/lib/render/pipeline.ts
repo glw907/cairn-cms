@@ -1,4 +1,4 @@
-// cairn-cms: the shared render pipeline (remark parse, gfm, directives, cairn's own remark and
+// cairn-cms: the shared render pipeline (remark parse, gfm, directives, cairn's remark and
 // rehype steps in a fixed order, then sanitize and stringify). This is `renderDocument`'s wiring:
 // every mdast/hast step the render pipeline owns is composed here once, so the editor preview and
 // every public page call the exact same pipeline, never two divergent ones.
@@ -55,27 +55,27 @@ export interface RendererConfig {
   /**
    * The `rel` value forced on every `target="_blank"` anchor, applied last so it also covers
    *  component-built anchors. Defaults to `'noopener noreferrer'`. Set a different string to change
-   *  it, or `false` to disable the injection (a site that owns its own anchor hardening).
+   *  it, or `false` to disable the injection (a site that owns its anchor hardening).
    */
   anchorRel?: string | false;
   /**
    * Wrap every rendered table in a scrollable, labeled region (WCAG 1.3.1): the table stays a real
    *  `<table>` (so it keeps its role in the accessibility tree) inside a `role="region"`,
    *  keyboard-reachable wrapper div, so a narrow viewport scrolls the wrapper instead of squeezing
-   *  the table's columns. Defaults to `true`. Set to `false` for a site that supplies its own table
-   *  wrapping, whether its own `rehypePlugins` entry or a different a11y strategy.
+   *  the table's columns. Defaults to `true`. Set to `false` for a site that supplies its table
+   *  wrapping, whether its `rehypePlugins` entry or a different a11y strategy.
    */
   tableScroll?: boolean;
   /**
-   * Additional remark plugins, run after cairn's own remark steps (directive stamping, `cairn:`
+   * Additional remark plugins, run after cairn's remark steps (directive stamping, `cairn:`
    *  link resolution, figures, `media:` resolution) and before the remark-to-rehype conversion. A
-   *  site's own markdown-stage transform composes here, seeing the engine's already-resolved tree.
+   *  site's markdown-stage transform composes here, seeing the engine's already-resolved tree.
    */
   remarkPlugins?: PluggableList;
   /**
-   * Additional rehype plugins, run after cairn's own rehype steps (dispatch, the sanitize floor,
+   * Additional rehype plugins, run after cairn's rehype steps (dispatch, the sanitize floor,
    *  heading slugs, highlighting, anchor hardening, the sink guard, the default table-scroll wrap)
-   *  and before stringification. A site's own post-render transform composes here over the hast
+   *  and before stringification. A site's post-render transform composes here over the hast
    *  tree instead of re-parsing the rendered HTML string.
    */
   rehypePlugins?: PluggableList;
@@ -133,10 +133,10 @@ export function createRenderer(
   // build() emitted after the floor. Gated by the same switch as the floor.
   if (!options.unsafeDisableSanitize) rehypePlugins.push(rehypeSinkGuard);
   // The default table-scroll wrap runs over the fully sanitized, dispatched tree, so it wraps a
-  // component's own table output the same as an author's markdown table. Opts out with
+  // component's table output the same as an author's markdown table. Opts out with
   // `tableScroll: false`.
   if (options.tableScroll !== false) rehypePlugins.push(rehypeTableScroll);
-  // A site's own rehype plugins run last of all, over the already-wrapped tree.
+  // A site's rehype plugins run last of all, over the already-wrapped tree.
   rehypePlugins.push(...(options.rehypePlugins ?? []));
   // Build the processor with an optional trailing rehype step, so renderMarkdown and
   // renderDocument share every stage up to that point without either mutating the `rehypePlugins`
@@ -174,7 +174,7 @@ export function createRenderer(
       content: string,
       opts: ResolveOptions = {},
     ): Promise<{ html: string; headings: DocHeading[] }> => {
-      // The heading-collector plugin runs after rehypePlugins (which already carries the site's own
+      // The heading-collector plugin runs after rehypePlugins (which already carries the site's
       // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
       documentProcessor ??= buildProcessor([rehypeCollectHeadings]);
       const file = await documentProcessor.process(makeFile(content, opts));

@@ -1,7 +1,7 @@
 // cairn-cms: concept normalization (seam 1). The adapter declares concepts as an open `content`
 // record; this turns each declared key into a uniform descriptor (id, label, directory, declared
 // routing, fields, validator) the admin reads. A new concept attaches by adding one key under
-// `content` and declaring its own routing and URL policy, with no reshape here.
+// `content` and declaring its routing and URL policy, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
 import type { Fieldset } from './fieldset.js';
 import type { FieldDescriptor } from './fields.js';
@@ -145,7 +145,7 @@ function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean,
 
 /**
  * Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each concept declares its
- * own routing shorthand, resolved by `resolveRouting`, and URL policy (`permalink`, `datePrefix`) on the
+ * routing shorthand, resolved by `resolveRouting`, and URL policy (`permalink`, `datePrefix`) on the
  * config; both default when omitted (`/:slug` for Pages, `/<id>/:slug` otherwise; `datePrefix` defaults
  * to `day`). A new concept attaches by adding one key under `content`.
  */

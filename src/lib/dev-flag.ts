@@ -33,7 +33,7 @@ export function isDevBackendFlagSet(raw: unknown): boolean {
 
 /**
  * Decide whether a hostname names a local development host (`wrangler dev`, a local preview
- * server, a `.localhost` alias). Each caller supplies its own framing for what the answer means:
+ * server, a `.localhost` alias). Each caller supplies its framing for what the answer means:
  * a deployment witness, a cookie-name choice, or a help-page trigger. The hostname alone is
  * client-controlled off Cloudflare, so a caller that needs a trustworthy deployment verdict reads
  * {@link isDeployedHost} instead of calling this on `event.url.hostname` directly.
@@ -70,11 +70,11 @@ export function readPublicOrigin(env: unknown): string | undefined {
  *
  * The request URL derives from the client `Host` header everywhere except Cloudflare, so a caller
  * who asked `isLocalHost(url.hostname)` alone could be talked out of refusing by a forged
- * `Host: localhost`. The site's own configured `PUBLIC_ORIGIN` is not client-controlled, so it is
+ * `Host: localhost`. The site's configured `PUBLIC_ORIGIN` is not client-controlled, so it is
  * consulted first: a `PUBLIC_ORIGIN` naming a non-local host settles the question outright,
  * whatever the request claims about itself. The rule is monotonic toward refusing. A configuration
  * can force a deployed verdict but can never talk one down, so a `PUBLIC_ORIGIN` that names a
- * local host (or is absent, or does not parse) leaves the request's own hostname to decide, the
+ * local host (or is absent, or does not parse) leaves the request's hostname to decide, the
  * behavior a site with no `PUBLIC_ORIGIN` at all keeps.
  *
  * The residual is honest and documented (docs/extend/security-model.md, "The dev-backend flag's
@@ -87,7 +87,7 @@ export function isDeployedHost(url: URL, env: unknown): boolean {
     try {
       if (!isLocalHost(new URL(origin).hostname)) return true;
     } catch {
-      // An unparseable PUBLIC_ORIGIN decides nothing; the request's own hostname answers below.
+      // An unparseable PUBLIC_ORIGIN decides nothing; the request's hostname answers below.
     }
   }
   return !isLocalHost(url.hostname);

@@ -21,7 +21,7 @@ import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 
 /**
  * Where a tagged entry lives: the published corpus on main, or a named open edit branch. Re-declared
- *  here (rather than imported from reference-index.ts) so each index owns its own origin type.
+ *  here (rather than imported from reference-index.ts) so each index owns its origin type.
  */
 type TagUsageOrigin = { kind: 'published' } | { kind: 'branch'; branch: string };
 

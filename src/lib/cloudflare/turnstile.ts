@@ -18,7 +18,7 @@ const ROUTINE_ERROR_CODES = new Set(['invalid-input-response', 'timeout-or-dupli
 export interface VerifyTurnstileOptions {
   /**
    * The visitor's address, from `CF-Connecting-IP` and never a client-forwardable header (a
-   * `X-Forwarded-For` value is attacker-controlled and would let a bot supply its own IP to
+   * `X-Forwarded-For` value is attacker-controlled and would let a bot supply its IP to
    * siteverify).
    */
   ip?: string;
@@ -65,7 +65,7 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * non-200 response, a body that does not parse or carries a field of the wrong shape, a
  * siteverify rejection, and a hostname or action mismatch. This function is fail-closed by
  * contract, so a future refactor cannot flip it open by accident. Degrade-to-open (skipping the
- * check entirely when a site has no secret configured) is the caller's own convention
+ * check entirely when a site has no secret configured) is the caller's convention
  * (`if (secret && ...)`), never this function's; verification and that policy stay separate.
  * Supplying `hostname` and `action` is what stops a token solved on one widget from replaying
  * against another form that shares the same sitekey; without them, siteverify only proves the
@@ -75,14 +75,14 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * Every refusal logs `turnstile.verify_failed` with a reason (`missing_secret` for a blank or
  * non-string secret, a configuration fault apart from a bad token's `invalid_input`), except an ordinary bot rejection
  * (`invalid-input-response` or `timeout-or-duplicate`), which is this function working. No record
- * carries the secret, the token, or the response body. A rejection carries siteverify's own error
+ * carries the secret, the token, or the response body. A rejection carries siteverify's error
  * codes, a mismatch carries the expected and actual value, and the pre-flight refusal carries the
  * token's length. The log-events reference has the full table.
  *
  * The `boolean` return is `convention-outcome-idiom`'s stated exception to the discriminated-
  * result rule: every failure mode collapses to the one fail-closed answer a caller needs
  * (`false`), and a discriminated result naming each reason would tempt a caller into treating one
- * refusal as more admissible than another, which this function's own contract forbids.
+ * refusal as more admissible than another, which this function's contract forbids.
  */
 export async function verifyTurnstile(
   token: string,
@@ -99,7 +99,7 @@ export async function verifyTurnstile(
 
   if (typeof token !== 'string' || !token.trim() || token.length > MAX_TOKEN_LENGTH) {
     // The only refusal path below this one that logs nothing at all: if Cloudflare ever
-    // lengthens the response token past MAX_TOKEN_LENGTH, or a site's own form wrapper
+    // lengthens the response token past MAX_TOKEN_LENGTH, or a site's form wrapper
     // concatenates onto it, every submission would otherwise fail for every visitor with a
     // completely silent lockout. Carries the token's length, never the token itself.
     log.warn('turnstile.verify_failed', {

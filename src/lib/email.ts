@@ -12,7 +12,7 @@ export type { EmailAttachment, EmailRecipient };
  * The message a built magic-link email carries. `to`/`from`/`subject`/`html`/`text` are the
  * shape `buildMagicLinkMessage` fills; `cc`/`bcc`/`replyTo`/`attachments` are optional widenings
  * of the Email Sending API surface (live-verified 2026-07-07) that a custom `SendMagicLink` or a
- * site composing its own message may set. `replyTo` takes a single address only, since the
+ * site composing its message may set. `replyTo` takes a single address only, since the
  * platform rejects an array there (live-probed 2026-07-07 during a consumer-site migration),
  * unlike `cc`/`bcc`.
  */

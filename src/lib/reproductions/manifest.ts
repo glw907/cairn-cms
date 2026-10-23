@@ -49,7 +49,7 @@ export interface ReproManifestEntry {
   /** Whether the story renders inside `CairnAdminShell` or on its own. */
   host: 'shell' | 'bare';
   /**
-   * Whether the mounted component resolves its own theme rather than inheriting the repro route's
+   * Whether the mounted component resolves its theme rather than inheriting the repro route's
    * `[data-repro-root]`. True for the two auth pages, which render their wrapper from `data.theme`,
    * and for every shell-hosted story, since `CairnAdminShell` is itself an own-theme-root
    * component. The repro route hands these stories the theme as a prop and updates it when the
@@ -261,7 +261,7 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
   {
-    // Sized to its own callouts rather than to a comfortable screen box: chips 4 and 5 anchor on
+    // Sized to its callouts rather than to a comfortable screen box: chips 4 and 5 anchor on
     // the not-on-the-list panel and the Save changes button, which land at roughly 814 and 900 at
     // the docs measure, and a declared height is a hard crop (cairn.pub's boundHeight only ever
     // shrinks a render, never grows it), so the 700 this row shipped with cut two of the five
@@ -306,7 +306,7 @@ export const manifest: ReproManifestEntry[] = [
 
 /**
  * The fixture media bytes' filenames, exactly as packaged under `dist/reproductions/fixtures/`, so
- * a mounting site's own asset route can enumerate them for `entries()` without importing the
+ * a mounting site's asset route can enumerate them for `entries()` without importing the
  * Svelte-carrying `./index.js` half of this module. Served at the base the mounting page passes
  * `ReproContext` as its `mediaBase` prop (`'/repro-assets'` when the page passes none).
  */

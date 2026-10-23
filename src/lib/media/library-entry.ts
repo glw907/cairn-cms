@@ -3,7 +3,7 @@
 // the 16-hex content hash, the shape the insert popover, the combobox picker, the editor's source
 // decoration, and the Library screen all read.
 //
-// It lives in its own node-safe module (no @codemirror, no DOM, no @sveltejs/kit) so the consumers
+// It lives in its node-safe module (no @codemirror, no DOM, no @sveltejs/kit) so the consumers
 // share one declaration: editLoad and mediaLibraryLoad both project it through `mediaLibraryEntry`,
 // MediaPicker types its entries prop with it, the insert popover its library prop, and the
 // editor-media decoration resolves a token against it. The editor-boundary test bars a static import from

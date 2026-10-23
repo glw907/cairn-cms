@@ -1,5 +1,5 @@
 // cairn-cms: the per-concept content index (public-delivery design, decisions 1 and 5). It
-// takes raw files from a site's glob, parses them with the engine's own parseMarkdown, and
+// takes raw files from a site's glob, parses them with the engine's parseMarkdown, and
 // returns cheap plain-data summaries plus an on-demand detail lookup. It is concept-generic:
 // every operation reads the descriptor and its routing rule, never a hardcoded concept id.
 import { parseMarkdown } from '../content/frontmatter.js';
@@ -52,7 +52,7 @@ export interface ContentSummary {
 
 /**
  * The detail view: a summary plus the frontmatter and the body to render. The frontmatter
- *  type defaults to `Record<string, unknown>`; a site's own typed reads can infer it from the
+ *  type defaults to `Record<string, unknown>`; a site's typed reads can infer it from the
  *  concept fields. Generic now so that change does not break this signature.
  */
 export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {

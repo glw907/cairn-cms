@@ -3,7 +3,7 @@
 A design-agnostic status notice for a shared preview link, driven only by the `preview` field
 `loadPreview` (`/sveltekit`) adds to its data. It renders one of two states and nothing else: no
 fetch, no internal state, no interactivity. A site may ignore this component entirely and render
-its own banner from the same metadata; this is only the default treatment a getting-started site
+its banner from the same metadata; this is only the default treatment a getting-started site
 mounts.
 
 `state: 'draft'` names the expiry so a holder knows the link ages out. `state: 'published'`
@@ -31,7 +31,7 @@ a focus ring in the `cairn-focus-ring` language. It uses no DaisyUI component cl
 Tailwind class (a consuming site may have neither) and no bundled font choice to fight. Every
 visual value reads a CSS custom property with a token fallback
 (`var(--cairn-preview-bg, var(--color-base-200))` and friends); it never declares one on the scoped
-element, since Svelte's scoping class would raise a declared property's own specificity past a
+element, since Svelte's scoping class would raise a declared property's specificity past a
 plain `:root` rule, making a site's override silently lose. Reading the property instead lets a site
 set `--cairn-preview-bg` and friends on `:root` or any ancestor and win, no `:global` or specificity
 fight required.
@@ -52,14 +52,14 @@ property replaces the default for the whole banner.
   }
 
   interface Props {
-    /** The preview metadata `loadPreview` returns alongside the page's own entry data. */
+    /** The preview metadata `loadPreview` returns alongside the page's entry data. */
     preview: PreviewData['preview'];
     /**
      * Format `preview.expiresAt` for display. Defaults to a fixed `YYYY-MM-DD HH:MM UTC` string,
-     *  deliberately not the visitor's own locale: this renders identically during SSR and
-     *  hydration, so a Worker whose runtime locale or timezone differs from the browser's own
+     *  deliberately not the visitor's locale: this renders identically during SSR and
+     *  hydration, so a Worker whose runtime locale or timezone differs from the browser's
      *  cannot produce two different strings and a hydration mismatch. Pass a formatter to render
-     *  the expiry in a site's own fixed date vocabulary instead.
+     *  the expiry in a site's fixed date vocabulary instead.
      */
     formatExpiry?: (iso: string) => string;
   }
@@ -83,8 +83,8 @@ property replaces the default for the whole banner.
 
 <style>
   /* Every color is a token read: a daisyUI 5 role, or a `cairn-public.css` role with a daisyUI
-     role as its own fallback. Each `--cairn-preview-*` property is read here, never declared on
-     this scoped element: Svelte's scoping class would raise a declared property's own specificity
+     role as its fallback. Each `--cairn-preview-*` property is read here, never declared on
+     this scoped element: Svelte's scoping class would raise a declared property's specificity
      past a plain `:root` rule, making a site's override silently lose. */
 
   .cairn-preview-banner {

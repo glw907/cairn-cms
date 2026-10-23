@@ -1,4 +1,4 @@
-// The runtime enumeration of every CairnLogEvent member, in the same order as the union's own
+// The runtime enumeration of every CairnLogEvent member, in the same order as the union's
 // declaration. A consumer or an audit rule that must validate an event string against the
 // vocabulary reads this array rather than re-deriving it from the type, which has no runtime
 // form of its own.
@@ -93,8 +93,8 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
 ] as const satisfies readonly CairnLogEvent[]);
 
 // A member on the union with no counterpart in the array fails here: CairnLogEvent would not
-// extend the array's own element type, so npm run check catches a union addition the array
-// missed, and the array's own `satisfies` clause above catches the opposite drift. The assertion
+// extend the array's element type, so npm run check catches a union addition the array
+// missed, and the array's `satisfies` clause above catches the opposite drift. The assertion
 // has to stay written out on the union itself, never routed through a generic helper: a
 // conditional type over a naked type parameter distributes across the union, so each member would
 // be tested on its own, every test would pass, and a missing member would go unnoticed.

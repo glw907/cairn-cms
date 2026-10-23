@@ -42,7 +42,7 @@ export interface MediaDeleteFailure {
  * A refused media bulk delete or orphan purge: `fail(503)` for the fail-closed strict-usage refusal
  *  (the whole batch refuses) or media-off / a missing bucket binding. The per-item outcomes ride the
  *  returned summary, not a fail. Retired from the public surface; the module-level
- *  export stays, since `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  export stays, since `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaBulkFailure {
   error: string;
@@ -52,7 +52,7 @@ export interface MediaBulkFailure {
  * The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
  *  partition (with their reason and where-used), and any per-object R2 delete failure. Retired
  *  from the public surface; the module-level export stays, since
- *  `CairnMediaLibrary.svelte` imports it directly for its own typing.
+ *  `CairnMediaLibrary.svelte` imports it directly for its typing.
  */
 export interface MediaBulkDeleteResult {
   deleted: string[];
@@ -64,7 +64,7 @@ export interface MediaBulkDeleteResult {
  * The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
  *  manifest row since the scan, and any per-object delete failure. Retired from the public
  *  surface; the module-level export stays, since `CairnMediaLibrary.svelte` imports
- *  it directly for its own typing.
+ *  it directly for its typing.
  */
 export interface MediaOrphanPurgeResult {
   purged: string[];

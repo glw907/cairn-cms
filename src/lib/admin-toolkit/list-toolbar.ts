@@ -2,13 +2,13 @@
 // module context. Kept in a plain module (rather than only inside ListToolbar.svelte's `<script
 // module>`) so the unit test project, which runs in Node with no Svelte plugin, can exercise the
 // arithmetic directly; ListToolbar.svelte imports `computeAppliedFilters` and `computeCountLine`
-// for its own internal use, the same split `pagination-window.ts` establishes for `Pagination`.
+// for its internal use, the same split `pagination-window.ts` establishes for `Pagination`.
 // Neither publishes from the `/admin-toolkit` barrel any longer: zero consumers reached them
 // independently of the component.
 
 import { itemNoun, type ItemLabel } from './format.js';
 
-/** One option in a `ListToolbarFilter`'s own vocabulary. */
+/** One option in a `ListToolbarFilter`'s vocabulary. */
 export interface ListToolbarFilterOption {
   value: string;
   label: string;
@@ -33,14 +33,14 @@ export interface ListToolbarFilter {
   /**
    * The control's accessible name (e.g. "Standing"). Never rendered as visible chrome for a
    * `'select'` display; a `'segmented'` display renders no separate label either, relying on
-   * the options' own labels to carry meaning.
+   * the options' labels to carry meaning.
    */
   label: string;
   options: ListToolbarFilterOption[];
   /** The filter's current value, one of `options`' own values. */
   value: string;
   /**
-   * Called with the new value on every change, including a pill's own remove control (which
+   * Called with the new value on every change, including a pill's remove control (which
    * calls this with `defaultValue`).
    */
   onChange: (value: string) => void;
@@ -55,7 +55,7 @@ export interface ListToolbarFilter {
    * The filter's presentation: a `<select>` (the default), a `'segmented'` group of toggle
    * buttons (the segmented filter device; ConceptList's
    * publish-state filter and MediaLibrary's triage radiogroup are the first consumers), or a
-   * `'menu'` quiet bordered button showing the filter's own name at rest and its applied value
+   * `'menu'` quiet bordered button showing the filter's name at rest and its applied value
    * in-control (the recomposition that replaced the applied-pills row: `"Standing"` at rest,
    * `"Standing: Overdue"` once applied, with a separate inline clear affordance). Defaults
    * `'select'`.
@@ -76,11 +76,11 @@ export interface AppliedFilterPill {
 }
 
 /**
- * Every filter currently away from its own default value, in the order given, as a pill. A
- * filter's pill label reads from the matching option's own `label` (falling back to the raw
+ * Every filter currently away from its default value, in the order given, as a pill. A
+ * filter's pill label reads from the matching option's `label` (falling back to the raw
  * `value` if the options list doesn't carry a match, so a stale or externally-set value never
  * renders a blank pill). Exported so the round-trip (a filter applied, then removed) is unit
- * tested against this pure function directly, the same way `Pagination`'s own windowing math is.
+ * tested against this pure function directly, the same way `Pagination`'s windowing math is.
  */
 export function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilterPill[] {
   const pills: AppliedFilterPill[] = [];
@@ -94,7 +94,7 @@ export function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilt
 }
 
 /**
- * The scope-stating count line's own copy pattern: `"<count> <itemLabel>"`, followed by every
+ * The scope-stating count line's copy pattern: `"<count> <itemLabel>"`, followed by every
  * applied-filter label joined with a middle dot (`"12 signups · Pending · Waitlisted"`).
  * With no applied filters, the line is just the bare count and item label; the count line always
  * renders, but it only ever states a scope beyond "everything" when a filter is actually applied.
@@ -108,8 +108,8 @@ export function computeCountLine(count: number, itemLabel: string | ItemLabel, a
 }
 
 /**
- * A `'menu'`-display facet's own in-control label: the bare filter label at rest (`"Standing"`),
- * or `"<label>: <value>"` once the filter's value differs from its own default
+ * A `'menu'`-display facet's in-control label: the bare filter label at rest (`"Standing"`),
+ * or `"<label>: <value>"` once the filter's value differs from its default
  * (`"Standing: Overdue"`), falling back to the raw value if the options list carries no matching
  * option (the same fallback `computeAppliedFilters` uses, so a stale or externally-set value
  * never renders a blank trigger). The applied-pills row this once fed retired with the

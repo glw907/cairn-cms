@@ -17,7 +17,7 @@ export interface CookieSetOptions {
 export interface CookieJar {
   get(name: string): string | undefined;
   set(name: string, value: string, opts: CookieSetOptions): void;
-  // `secure` is accepted on a delete, not just a set: SvelteKit's own delete defaults it on for
+  // `secure` is accepted on a delete, not just a set: SvelteKit's delete defaults it on for
   // every host but `localhost` itself, and a browser discards a Secure Set-Cookie sent over http,
   // so a deletion over http dev only lands when the caller states the flag its setter used.
   delete(name: string, opts: { path: string; secure?: boolean }): void;
@@ -35,13 +35,13 @@ export interface CookieJar {
  * `params` and `route` end the documented anti-idiom of reading route identity out of a form
  * body: a real kit event always carries both, so requiring them costs a compliant site nothing
  * and gives a seam like `SectionActionOptions.target` an honest derivation. `route.id` is
- * nullable because kit's own is: `Handle` genuinely runs for an unmatched request (a 404, a
+ * nullable because kit's is: `Handle` genuinely runs for an unmatched request (a 404, a
  * static asset), where kit reports `null`; a matched `load` or form action always sees a real
  * route id. `cookies` and `setHeaders` are required for the same reason (every kit server event
  * has both), where the shapes this type replaces required them only inconsistently.
  *
  * The event carries no Worker bindings. The engine reads them from the `env` the Workers
- * runtime exports, which the Cloudflare adapter provides, so a factory's own config callbacks
+ * runtime exports, which the Cloudflare adapter provides, so a factory's config callbacks
  * (`resolveDb`, `deliver`, `lookup`) are where a site's `Env` type appears, never this event.
  */
 export interface CairnEvent {
@@ -97,7 +97,7 @@ export interface HistoryEntry {
 
 /**
  * `historyLoad`'s data: the entry's bounded recent-publish list plus its open draft, when one
- * exists. The view's own label stays "recent versions", never a completeness claim: a rename
+ * exists. The view's label stays "recent versions", never a completeness claim: a rename
  * restarts the commits API's path filter, so `entries` can be shorter than the entry's real
  * lifetime even when `truncated` is false.
  */
@@ -108,14 +108,14 @@ export interface HistoryData {
    * The pending branch's head commit, rendered as a synthetic top row, or null when the entry
    * carries no open draft. Never derived from a save; a draft's save-by-save history is
    * ephemeral by design and this field surfaces only its current head. `lastSavedAt` names the
-   * head commit's own date, which moves on every save, so the view renders it under a "last
+   * head commit's date, which moves on every save, so the view renders it under a "last
    * saved" label rather than "started".
    */
   draft: { editor: string; lastSavedAt: string } | null;
   /**
    * True when the backend's `limit + 1` probe found more publishes than the bound holds, so the
    * view can say "showing the most recent N" rather than paginating. An entry with exactly the
-   * bound's own count of publishes is NOT truncated.
+   * bound's count of publishes is NOT truncated.
    */
   truncated: boolean;
   /**
@@ -138,7 +138,7 @@ export interface HistoryData {
 export type RevertOutcome =
   | {
       /**
-       * A pending branch already blocks this entry, from `revertAction`'s own fast pre-check or
+       * A pending branch already blocks this entry, from `revertAction`'s fast pre-check or
        * from `createBranch`'s authoritative collision under a race with another save or revert.
        */
       outcome: 'draft-exists';

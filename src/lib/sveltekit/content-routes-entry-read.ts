@@ -190,7 +190,7 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
  * this content type," naming the fields and tags. Shared between the revert cluster's
  * `revertAction`, which derives the two lists from the old content it is about to commit, and
  * `editLoad`, which rehydrates the same notice from the redirect's query params, the channel
- * save's own advisories already ride. Null when neither list carries anything, so a plain revert
+ * save's advisories already ride. Null when neither list carries anything, so a plain revert
  * adds no notice.
  */
 function retiredContentAdvisory(retiredFields: string[], retiredTags: string[]): AdvisoryNotice | null {
@@ -365,7 +365,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
     // also spares a fragment's every edit-load one read per published fragment.
     // When they are offered, ids and titles come from the committed manifest's fragments rows; each
     // body is a SECOND concurrent batch (read only after the manifest is parsed, since the per-id
-    // paths derive from it), from the default branch only, so a fragment's own pending edits never
+    // paths derive from it), from the default branch only, so a fragment's pending edits never
     // leak into another entry's preview. A read failure degrades that one target out rather than
     // failing the whole load (the mediaTargets shape).
     const fragmentsConcept = findConcept(runtime.concepts, FRAGMENTS_CONCEPT_ID);
@@ -420,7 +420,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
     }
 
     // The revert schema-drift advisory (spec "Part 2: revert"): revertAction carries its two
-    // retired-name lists on the redirect query, the same channel save's own draftLinks/
+    // retired-name lists on the redirect query, the same channel save's draftLinks/
     // referenceWarnings ride; this rehydrates them into the same advisories array the address-
     // collision notice above already populates, so EditPage's one generic advisory region renders
     // both with no separate code path.
@@ -442,7 +442,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
 
     // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
     //  concept marks a taxonomy field. The closed field drives the checkbox picker (options sourced
-    //  from the vocabulary unioned with the entry's own prior tags), and the orphan set flags any
+    //  from the vocabulary unioned with the entry's prior tags), and the orphan set flags any
     //  prior tag not in the vocabulary. There is no extra backend read: the vocabulary is the
     //  deployed runtime snapshot and the prior tags come from the already-parsed frontmatter.
     //  Otherwise the bare path runs: the open creatable multiselect an unadopted site has today.
@@ -521,8 +521,8 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT),
       backend.branchHead(branch),
       backend.readFile(path, backend.defaultBranch),
-      // The default branch's own head sha, carried onto the page as HistoryData.head: the
-      // revert form's staleness comparand, unrelated to headSha above (the pending branch's own
+      // The default branch's head sha, carried onto the page as HistoryData.head: the
+      // revert form's staleness comparand, unrelated to headSha above (the pending branch's
       // head, read for the draft row).
       backend.branchHead(backend.defaultBranch),
     ]);

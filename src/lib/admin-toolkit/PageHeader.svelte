@@ -5,17 +5,17 @@ display-face `h1`, an optional muted meta line, and an optional single action sn
 This is the toolkit's one page-header idiom, so every top-level screen mounts the same component
 whether or not it has a standing action to put in the slot; a custom `/admin/` screen composes it
 beside `AdminTable` inside the admin design system's floating-card recipe rather than hand-rolling
-its own header band.
+its header band.
 
 The meta line is the toolkit's one home for a page-level count outside a toolbar: `ListToolbar`'s
-own `computeCountLine` covers a screen with a search/filter toolbar row, and this component's
+`computeCountLine` covers a screen with a search/filter toolbar row, and this component's
 `meta` line covers a screen with none (a stats-prose summary, a scope note). Search never lives in
 this band; a screen that needs search mounts `ListToolbar` below this header instead. The line
-renders at `type-meta` (13px), the size its own prop name already promises, so a screen's own
+renders at `type-meta` (13px), the size its prop name already promises, so a screen's own
 toolbar count line matches it when both appear on one screen.
 
 The default `<h1>`/`<p>` margins do not collapse inside this flex column, so both elements zero
-their own margin and the meta line restores a deliberate 4px with its own `mt-1`. The action slot
+their margin and the meta line restores a deliberate 4px with its `mt-1`. The action slot
 carries `self-start`, since the flex row's default stretch would otherwise pull a header action
 full-width below `sm`.
 
@@ -40,7 +40,7 @@ last word; it stays scoped CSS rather than a utility class, which ships the same
     /** The screen's display-face heading, the page's one visible `h1`. */
     title: string;
     /** The muted meta line under the heading, at the meta type role (13px): a scope note, or the
-     *  page's own collection count when no toolbar renders one (see the count-convergence note
+     *  page's collection count when no toolbar renders one (see the count-convergence note
      *  above). Omitted for a header with nothing to add. */
     meta?: string;
     /** The header's one right-aligned action (a create button, an upload trigger). Omit for a
@@ -67,7 +67,7 @@ last word; it stays scoped CSS rather than a utility class, which ships the same
 </header>
 
 <style>
-  /* The even-line-rag balance for a wrapped title, absorbed from HelpHome's own masthead rule.
+  /* The even-line-rag balance for a wrapped title, absorbed from HelpHome's masthead rule.
      Scoped CSS ships regardless of the Tailwind @source scan, unlike the `text-balance` utility
      this component lives outside the reach of (see the header comment above). */
   .page-h1 {

@@ -1,6 +1,6 @@
 // cairn-cms: the entry revert cluster (revertAction). Starts a fresh pending branch from an
 // earlier publish rather than rewriting history; draftExistsFailure and revertSchemaDrift exist
-// only for revertAction's own use, and BUILTIN_FRONTMATTER_KEYS is revertSchemaDrift's own
+// only for revertAction's use, and BUILTIN_FRONTMATTER_KEYS is revertSchemaDrift's own
 // primitive, so all three stay module-internal.
 // createEntryRevertActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), which createContentRoutesInternal builds once and passes to every
@@ -21,7 +21,7 @@ import type { CairnEvent, RevertOutcome } from './types.js';
 import { requireEntryFromParams, HISTORY_LIMIT, draftFromBranchHead } from './content-routes-shared.js';
 
 /**
- * The frontmatter keys every entry carries regardless of the site's own declared fields: the
+ * The frontmatter keys every entry carries regardless of the site's declared fields: the
  * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
  * gating them on a field declaration, so they are never "retired" even when a concept declares no
  * field of the same name. `description` feeds `buildExcerpt` in both readers the same way.
@@ -60,12 +60,12 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
 
   /**
    * The revert collision refusal (spec "Part 2: revert"): a pending branch already blocks this
-   * entry, from either entry point (`revertAction`'s own fast pre-check, or `createBranch`'s
+   * entry, from either entry point (`revertAction`'s fast pre-check, or `createBranch`'s
    * authoritative collision under a race). Re-reads the blocking draft through
    * `draftFromBranchHead`, so the refusal names the same person the history screen shows rather
    * than answering a bare 409. A branch that vanished between the collision and this re-read (an
    * unlucky discard) degrades to "unknown" rather than throwing: the refusal still stands, since
-   * the caller's own attempt already failed.
+   * the caller's attempt already failed.
    */
   async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertOutcome>> {
     const draft = await draftFromBranchHead(backend, path, branch, await backend.branchHead(branch));
@@ -83,12 +83,12 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
    * through the UI; (2) the posted `head` must still match `branchHead(defaultBranch)`, or someone
    * published since the history page rendered; (3) the old content is read and inspected for
    * schema drift, which only ever warns, never refuses; (4) a pending branch already blocking this
-   * entry refuses fail-closed, from the fast pre-check or from `createBranch`'s own typed
+   * entry refuses fail-closed, from the fast pre-check or from `createBranch`'s typed
    * collision under a race; (5) the old markdown commits onto the new branch with `expectedHead`
    * set to the sha `createBranch` just made, so a save landing in that narrow window answers 409
    * instead of being silently overwritten; (6) `commit.reverted` logs alongside the ordinary
    * `commit.succeeded`; (7) the action lands on the edit screen's post-save redirect, carrying any
-   * schema-drift advisory the same way save's own advisories ride. There is no force path: every
+   * schema-drift advisory the same way save's advisories ride. There is no force path: every
    * refusal here is a fail-closed `ActionFailure` that stays on the page.
    */
   async function revertAction(event: CairnEvent): Promise<ActionFailure<RevertOutcome>> {
@@ -138,10 +138,10 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
     }
 
     // (5) Fail-closed on the sha createBranch actually created the branch at, never the mainHead
-    // read back in (2): createBranch re-reads the default branch's own head internally, several
+    // read back in (2): createBranch re-reads the default branch's head internally, several
     // round trips after (2)'s read, so a publish of any entry landing in that window can move main
     // between the two reads and make mainHead stale by the time the branch exists. Using
-    // createBranch's own returned sha keeps this commit anchored to the branch's real starting
+    // createBranch's returned sha keeps this commit anchored to the branch's real starting
     // point, so it never conflicts on a change createBranch itself already absorbed. Re-reading
     // branchHead here instead would reopen the race this guards (a save landing between
     // createBranch and the re-read would be read back as the expected head and then silently
@@ -171,7 +171,7 @@ export function createEntryRevertActions(ctx: ContentRoutesContext) {
       throw err;
     }
 
-    // (6) commit.succeeded mirrors every other commit path; commit.reverted is revert's own
+    // (6) commit.succeeded mirrors every other commit path; commit.reverted is revert's
     // record, carrying the reverted-to ref and the branch sha the revert commit landed at.
     log.info('commit.succeeded', commitFields);
     log.info('commit.reverted', { concept: concept.id, id, editor: editor.email, ref, branchSha: newSha });

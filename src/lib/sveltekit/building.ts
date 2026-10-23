@@ -7,7 +7,7 @@
 /**
  * Read SvelteKit's `building` flag without a static `$app/env` import.
  *
- * The `/sveltekit` barrel is also bundled outside SvelteKit's own build: a site can wire a single
+ * The `/sveltekit` barrel is also bundled outside SvelteKit's build: a site can wire a single
  * export (`createD1AuditSink`, for a Cloudflare Cron handler) through Wrangler's plain esbuild pass,
  * which has no SvelteKit plugin to resolve the virtual module, so a static import anywhere in the
  * barrel's graph fails that build. esbuild resolves an unwrapped `import()` literal the same way,

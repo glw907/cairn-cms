@@ -1,5 +1,5 @@
 // The Cloudflare binding shape cairn requires of a site's Worker. A site's `Env` comes from
-// `wrangler types`, generated from its own `wrangler.jsonc` and secrets file, and the engine reads
+// `wrangler types`, generated from its `wrangler.jsonc` and secrets file, and the engine reads
 // the same bindings from the Worker env at runtime; these interfaces state what that generated
 // `Env` must carry, so a site checks it at compile time. Split in two so the required-members rule
 // still fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs, and
@@ -53,7 +53,7 @@ export interface CairnMediaBindings {
    * The bucket the `/media` route and the upload action read and write; the adapter names the
    *  binding. Typed by the methods the engine calls on it rather than as workers-types' `R2Bucket`:
    *  a generated `Env` names the runtime's global `R2Bucket`, whose `Headers`-typed members differ
-   *  from the package's own declaration of them under a DOM lib, so the two declarations of one
+   *  from the package's declaration of them under a DOM lib, so the two declarations of one
    *  binding are not assignable to each other.
    */
   MEDIA_BUCKET: {

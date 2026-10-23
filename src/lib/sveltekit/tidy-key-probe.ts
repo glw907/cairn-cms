@@ -19,7 +19,7 @@ export type { TidyKeyProbeResult } from './tidy-key-health.js';
  *  Bounded by `timeoutMs` (save-500-hardening): the production client is a bare `new Anthropic()`
  *  call, whose SDK default is a multi-minute request timeout plus retries, so an unbounded probe
  *  on every settings load could hang the request far past any reasonable page load. An
- *  `AbortController` mirrors `tidyAction`'s own deadline exactly, and an abort or timeout resolves
+ *  `AbortController` mirrors `tidyAction`'s deadline exactly, and an abort or timeout resolves
  *  to 'unknown' (the existing fail-soft posture) rather than throwing into the load. Every
  *  verdict, including 'unknown', is cached through `recordProbeResult` so a run of settings
  *  navigations within the cache's TTL costs no repeated live round trip.

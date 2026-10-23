@@ -1,12 +1,12 @@
 // cairn-cms: the admin-scoped action wrapper. A site
-// building its own `/admin/` screen needs the same editor + CSRF + audit contract every engine
+// building its `/admin/` screen needs the same editor + CSRF + audit contract every engine
 // action honors; this wraps a custom form action with that contract instead of a site
 // hand-rolling it.
 //
-// A site building its own admin action easily duplicates the guard's CSRF check by hand; the
+// A site building its admin action easily duplicates the guard's CSRF check by hand; the
 // generalized finding is recorded here instead: `createAuthGuard` (guard.ts) already verifies the
 // double-submit CSRF token on every unsafe POST under `/admin/**`, custom routes included, before
-// any route's own load or action runs. The check below is therefore defense-in-depth, not the
+// any route's load or action runs. The check below is therefore defense-in-depth, not the
 // sole gate; this wrapper's real value is resolving the signed-in editor as a typed `ctx.editor`
 // and requiring an audit emit for a mutating action, which the engine has no other hook for.
 import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
@@ -34,7 +34,7 @@ export interface AdminActionAudit {
 
 /**
  * What a site's audit sink receives. `createAdminAction` and `createSectionAction` set `actor` to the
- * verified editor's email. A site may also call a sink directly to record its own domain events,
+ * verified editor's email. A site may also call a sink directly to record its domain events,
  * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
  * not be a cairn editor.
  */
@@ -56,8 +56,8 @@ export interface AdminActionContext {
  * `fail()`) having emitted zero `ctx.audit` records, thrown only when running under `esm-env`'s
  * `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal: in
  * production the same condition logs `admin.action.unaudited` instead (see `createAdminAction`).
- * `createAdminAction`'s own authorization refusals, a missing editor session or a CSRF mismatch, throw
- * SvelteKit's own `redirect()` or `error()` instead, which carry their status to the browser
+ * `createAdminAction`'s authorization refusals, a missing editor session or a CSRF mismatch, throw
+ * SvelteKit's `redirect()` or `error()` instead, which carry their status to the browser
  * directly and need no `handleError` mapping; this class carries no production status and never
  * stood for one.
  */
@@ -121,7 +121,7 @@ export function refusalReason(authorization: Exclude<AdminTargetAuthorization, {
  *
  * Internal to the engine, and deliberately not exported from `/sveltekit`: the two wrappers are
  * the supported surface, and a site reaching for the predicate directly wants
- * [`requireAccess`](./guard.js) instead, which owns its own refusal channel.
+ * [`requireAccess`](./guard.js) instead, which owns its refusal channel.
  */
 export function authorizeAdminTarget(
   access: AccessMap | undefined,
@@ -161,7 +161,7 @@ function serializeThrownError(error: unknown): string {
  *    checks it (`./guard.js`): a header witness that was sent at all decides outright, matching or
  *    not, and the cookie-against-`csrf`-form-field check runs only when no `X-Cairn-CSRF` header
  *    was sent. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
- *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's own
+ *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
  *    declared target (see {@link authorizeAdminTarget}); a refusal audits through `ctx.audit`,
@@ -196,12 +196,12 @@ function serializeThrownError(error: unknown): string {
  * assigns clean into a route's generated `Actions`. A handler that reads a site binding imports
  * the Workers runtime's `env` itself. A site whose action needs a database binding resolved
  * reaches for `createSectionAction` (`./section-action.js`), whose `resolveDb` takes the site's
- * own `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
+ * `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
  * contract with no database binding stays on `createAdminAction` itself rather than reaching for
  * that door.
  *
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
- * {@link authorizeAdminTarget} rather than falling back to `canReach`'s own permissive nav
+ * {@link authorizeAdminTarget} rather than falling back to `canReach`'s permissive nav
  * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
  */
 export function createAdminAction<T>(
@@ -216,12 +216,12 @@ export function createAdminAction<T>(
       throw redirect(303, '/admin/login');
     }
 
-    // Read the form once: this is both the CSRF field's source and the handler's own body, so no
+    // Read the form once: this is both the CSRF field's source and the handler's body, so no
     // second read (a clone or a re-parse) ever runs against the same request.
     const form = await event.request.formData();
-    // The header witness decides outright when it was sent at all, mirroring the guard's own
+    // The header witness decides outright when it was sent at all, mirroring the guard's
     // precedence (./guard.js): a valid X-Cairn-CSRF header clears the request outright, and a
-    // header that was sent but wrong rejects on its own verdict rather than falling through to the
+    // header that was sent but wrong rejects on its verdict rather than falling through to the
     // field path. Only with NO header sent at all does the form-field compare run, so a fetch-based
     // custom action that sets the header and posts FormData with no csrf field still passes this
     // inner check the same way it already passes the guard's outer one.
@@ -234,7 +234,7 @@ export function createAdminAction<T>(
       // before the route runs, so a mismatch reaching here is defense-in-depth catching what
       // should already be impossible in production. Log the specific reason and which witness
       // produced it; the response never gets either, since it renders to a real browser through
-      // the nearest +error.svelte. No hasSession field here (unlike the guard's own record): this
+      // the nearest +error.svelte. No hasSession field here (unlike the guard's record): this
       // wrapper only ever runs with a resolved editor, so a session is always known to be present.
       log.warn('admin.action.csrf_refused', {
         path: event.url.pathname,
@@ -253,7 +253,7 @@ export function createAdminAction<T>(
         const full: AdminActionAuditRecord = { ...record, actor: editor.email };
         log.info('admin.action.audited', { ...full });
         // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
-        // own hand-rolled sink is arbitrary code the engine does not control, and the mutation
+        // hand-rolled sink is arbitrary code the engine does not control, and the mutation
         // this record describes already completed. A throw, or a rejected async return, here
         // must never turn that completed write into a failed action. `admin.action.audited`
         // above already logged the full record, so this failure log carries only the identity
@@ -279,9 +279,9 @@ export function createAdminAction<T>(
             Promise.resolve(outcome as PromiseLike<unknown>).catch(logSinkFailure);
           }
         } catch (error) {
-          // SvelteKit's own redirect()/error() are plain classes, not Error instances, and a
+          // SvelteKit's redirect()/error() are plain classes, not Error instances, and a
           // sink built on those (a hand-rolled auth check, say) must not be swallowed into a log
-          // line the site never sees. Rethrow SvelteKit's own control-flow shapes untouched; only
+          // line the site never sees. Rethrow SvelteKit's control-flow shapes untouched; only
           // a genuine sink failure is caught and logged here.
           if (isRedirect(error) || isHttpError(error)) throw error;
           logSinkFailure(error);
@@ -294,8 +294,8 @@ export function createAdminAction<T>(
     // attaches an EMPTY access map rather than none, and an empty map has no rule for any target,
     // so enforcing by default would 403 every consumer of the documented DB-less default instead
     // of hardening anything. A refusal audits first, through the same sink a site already reads,
-    // and then throws error(403): authorization refusals are createAdminAction's own channel, so the
-    // wrapper's return type stays the handler's own T.
+    // and then throws error(403): authorization refusals are createAdminAction's channel, so the
+    // wrapper's return type stays the handler's T.
     if (deps.access) {
       const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
       if (authorization.outcome !== 'allowed') {
@@ -311,7 +311,7 @@ export function createAdminAction<T>(
     }
 
     const result = await handler({ event, form, ctx });
-    // `isActionFailure` is SvelteKit's own runtime-safe check for a `fail()` result (an
+    // `isActionFailure` is SvelteKit's runtime-safe check for a `fail()` result (an
     // `instanceof` test against its internal `ActionFailure` class, re-exported as a type guard
     // precisely so callers never need to know that class's shape); a rejected request mutated
     // nothing, so it is exempt from the unaudited check below.

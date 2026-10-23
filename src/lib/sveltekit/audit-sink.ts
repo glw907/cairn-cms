@@ -10,7 +10,7 @@ import type { AdminActionAuditRecord, AdminActionAuditSink } from './admin-actio
 
 // Truncation maxima, chosen to fit every real value this engine or a site wrapper composes with
 // generous room to spare, so an oversized `detail` (the one field a handler composes freely)
-// cannot suppress its own audit row by causing the insert to fail. These are internal to the
+// cannot suppress its audit row by causing the insert to fail. These are internal to the
 // sink; a truncated value still identifies the actor, action, and entity, and the caller learns
 // nothing from a boundary it never sees.
 const MAX_ACTOR_LENGTH = 320;
@@ -23,7 +23,7 @@ const MAX_DETAIL_LENGTH = 500;
 // rather than looking like a shorter value the caller genuinely supplied.
 const TRUNCATION_MARKER = '…';
 
-// What a field logs as when its own coercion (`String(rawValue)` inside `truncate`) throws,
+// What a field logs as when its coercion (`String(rawValue)` inside `truncate`) throws,
 // rather than losing the whole `audit.sink.write_failed` line for the one field that could not
 // be turned into a string.
 const UNCOERCIBLE_PLACEHOLDER = '[unloggable value]';
@@ -40,13 +40,13 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
  * string ending in a lone surrogate, which would reopen the exact insert failure the maxima exist
  * to prevent). A cut value ends in an ellipsis, both in the stored row and in the fallback log, so
  * truncation is visible rather than a silent, exploitable boundary. A lone surrogate already
- * present anywhere in the input, not created by the cut, survives the code-point split as its own
+ * present anywhere in the input, not created by the cut, survives the code-point split as its
  * element and would still reach D1's `bind()` as an invalid string; replacing it with the Unicode
- * replacement character closes that same attacker-chosen-content-suppresses-its-own-row class the
+ * replacement character closes that same attacker-chosen-content-suppresses-its-row class the
  * maxima exist to close, rather than leaving it to whatever `bind()` does with it. `String(rawValue)`
  * itself is left free to throw here (a null-prototype object, a throwing or absent `toString`, or a
- * throwing Proxy get trap): the caller runs every call to this function inside its own try, so a
- * coercion failure lands there rather than needing its own handling in two places.
+ * throwing Proxy get trap): the caller runs every call to this function inside its try, so a
+ * coercion failure lands there rather than needing its handling in two places.
  */
 function truncate(rawValue: unknown, max: number): string {
   const value = String(rawValue);
@@ -66,15 +66,15 @@ function truncate(rawValue: unknown, max: number): string {
  * The sink is fail-open end to end: it returns synchronously, before the insert settles, and a
  * failure anywhere in the attempt, a throwing coercion, a synchronous throw from `prepare`,
  * `bind`, or `waitUntil` itself, or a rejected insert, is caught and logged rather than left to
- * escape the caller. `createAdminAction` guards its own `ctx.audit` call too, so an escaping throw is
- * caught either way; this sink still catches its own, because only here is the failing stage known,
+ * escape the caller. `createAdminAction` guards its `ctx.audit` call too, so an escaping throw is
+ * caught either way; this sink still catches that failure, because only here is the failing stage known,
  * and a caller-level catch could report neither the `reason` nor the record it tried to persist.
  * Whichever path catches the failure logs the
- * truncated record (falling back to a placeholder for any field whose own coercion is what threw)
+ * truncated record (falling back to a placeholder for any field whose coercion is what threw)
  * plus a `reason` distinguishing which stage failed (`coercion_failed`, `prepare_failed`,
  * `insert_rejected`, or `wait_until_failed`) and the error, as `audit.sink.write_failed`; only the
  * first of these to fire actually logs, since a `wait_until_failed` throw leaves the insert it was
- * meant to back still in flight; that insert's own later rejection would otherwise log a second,
+ * meant to back still in flight; that insert's later rejection would otherwise log a second,
  * redundant line for the same attempt. The audited action already completed by the time any of
  * this runs, so this is the only surviving record of the *persisted row*; the untruncated original
  * already logged as `admin.action.audited` (`./admin-action.js`) before this sink was ever called.
@@ -88,7 +88,7 @@ function truncate(rawValue: unknown, max: number): string {
  *   (`ctx.waitUntil.bind(ctx)`):
  *   `ExecutionContext.waitUntil`'s structural type matches this parameter, so passing the
  *   unbound method typechecks and then throws "Illegal invocation" in workerd, a failure this
- *   sink's own try/catch absorbs but that still silently drops the insert.
+ *   sink's try/catch absorbs but that still silently drops the insert.
  */
 export function createD1AuditSink(
   db: D1Database,
@@ -96,13 +96,13 @@ export function createD1AuditSink(
 ): AdminActionAuditSink {
   return (record: AdminActionAuditRecord) => {
     // Declared outside the try below, not inside it, so the catch can still log a recognizable
-    // record even when the failure is a field's own coercion: a value that never finishes
+    // record even when the failure is a field's coercion: a value that never finishes
     // truncating keeps this placeholder rather than the whole log line losing every field.
     let actor = UNCOERCIBLE_PLACEHOLDER;
     let action = UNCOERCIBLE_PLACEHOLDER;
     let entity = UNCOERCIBLE_PLACEHOLDER;
-    // Reassigned to null, not this placeholder, whenever the record's own field is genuinely
-    // absent (the `== null` checks below); this default only surfaces if that check's own
+    // Reassigned to null, not this placeholder, whenever the record's field is genuinely
+    // absent (the `== null` checks below); this default only surfaces if that check's
     // truncate() call throws before reassigning it.
     let entityId: string | null = UNCOERCIBLE_PLACEHOLDER;
     let detail: string | null = UNCOERCIBLE_PLACEHOLDER;
@@ -115,7 +115,7 @@ export function createD1AuditSink(
 
     function logSinkFailed(reason: string) {
       return (error: unknown): void => {
-        // A wait_until_failed throw leaves the dispatched insert's own .catch() still armed; if
+        // A wait_until_failed throw leaves the dispatched insert's .catch() still armed; if
         // that insert later rejects too, it would otherwise log a second, misleading line for
         // the same attempt. Only the first failure to reach this function logs.
         if (sinkFailedLogged) return;

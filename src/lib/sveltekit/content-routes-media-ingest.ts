@@ -35,7 +35,7 @@ import { env } from './workers-env.js';
 
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
- *  disallowed content) and the mediaLibraryUploadAction commit's own `fail(409)` on a conflict.
+ *  disallowed content) and the mediaLibraryUploadAction commit's `fail(409)` on a conflict.
  *  Just the one-line summary; a refusal here never stores bytes or commits a row. Retired from
  *  the public surface; the module-level export stays, since `uploadAction`'s and
  *  `mediaLibraryUploadAction`'s return type composes into `createContentRoutesInternal`
@@ -117,7 +117,7 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     //    read the resolved editor directly and refuse with a 401 envelope rather than a 303 redirect.
     if (!editor) return refuse(401, 'session_expired');
 
-    // 4.5. The access map's own admission gate for the media screen, the same one every other media
+    // 4.5. The access map's admission gate for the media screen, the same one every other media
     //      action enforces. The concept editor's inline image picker calls this exact endpoint, so
     //      restricting `media` restricts it too (the documented media-picker landmine): a role edits
     //      an image-bearing concept only when it also reaches `media`.

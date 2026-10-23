@@ -4,41 +4,41 @@ The admin toolkit's list-header band, graduated from a consumer site's admin too
 contract: search, any number of promoted
 filters, an overflow disclosure for filters a screen chooses not to promote (present in the
 contract even when a consumer promotes every filter and never renders it), exactly one
-right-aligned primary action, and a count line that always states its own filter scope.
+right-aligned primary action, and a count line that always states its filter scope.
 
 Every prop is a controlled value plus a change callback, the same fully-controlled convention
-`Pagination` already establishes: a search box's own text, a filter's own selected value, and
+`Pagination` already establishes: a search box's text, a filter's selected value, and
 which filters are promoted are all state the caller owns, never this component. `onChange`/
-`onClick` carry no domain knowledge of what a filter means or what an action does; a filter's own
-vocabulary is entirely the consumer's own filter definitions passed in, never hardcoded here.
+`onClick` carry no domain knowledge of what a filter means or what an action does; a filter's
+vocabulary is entirely the consumer's filter definitions passed in, never hardcoded here.
 
 The controls cluster is a single flex row (`flex-wrap: wrap`), not a grid: search grows and
-shrinks (`flex: 1 1 240px`, `min-width: 140px`) while every filter control keeps its own
+shrinks (`flex: 1 1 240px`, `min-width: 140px`) while every filter control keeps its
 intrinsic width. Every control across the row (search, select, segmented, menu) shares one
 height because `input-sm`/`select-sm`/`btn-sm` all derive their `--size` from the shared
 `--size-field` token, so no forced height is needed on a daisyUI-classed control; only the
-`'menu'` facet's own bordered container, a plain `div` with no daisyUI sizing of its own, still
+`'menu'` facet's bordered container, a plain `div` with no daisyUI sizing of its own, still
 sets its height explicitly, from that same token. `computeAppliedFilters` and `computeCountLine`
-(imported from the sibling `list-toolbar.ts` module, the same split `Pagination` uses for its own
+(imported from the sibling `list-toolbar.ts` module, the same split `Pagination` uses for its
 windowing math) are the count line's scope-label source; there is no longer a separate
 applied-pills row (a refinement audit retired it: an applied filter now renders its value
 in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the graduated consumer-site contract (both additive, that consumer's
-own existing usage stays valid): a filter's `display` chooses `'select'` (the original contract,
+existing usage stays valid): a filter's `display` chooses `'select'` (the original contract,
 unchanged, restyled to the shared row height and 13px text and, since a coherence fix, `width:
-auto` so it sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%`
+auto` so it sizes to its content rather than daisyUI's fixed 320px clamp, `max-width: 100%`
 so it never exceeds its container, and a border tinted to the same `--cairn-card-border` a
 `'menu'` facet carries, so a select and a menu facet sitting side by side read as one control
 family), or
 `'segmented'`, a group of toggle buttons for a filter
 whose vocabulary reads better as always-visible tabs than a dropdown (a publish-state filter, a
-triage radiogroup), with each option's own optional `count` rendered beside its label, or
+triage radiogroup), with each option's optional `count` rendered beside its label, or
 `'menu'` (the ratified filter grammar), a quiet bordered button
-showing the filter's own name at rest (`"Standing"`) and its applied value in-control
-(`"Standing: Overdue"`) with a separate inline clear affordance (its own sibling element, never a
+showing the filter's name at rest (`"Standing"`) and its applied value in-control
+(`"Standing: Overdue"`) with a separate inline clear affordance (its sibling element, never a
 button nested inside the trigger button) once a value departs the filter's default. An applied
-`'menu'` facet carries its own treatment (`border-color`/`background` mixed from `--color-primary`
+`'menu'` facet carries its treatment (`border-color`/`background` mixed from `--color-primary`
 against `--cairn-card-border`) and caps its in-control value at `max-width: 14rem` with an
 ellipsis, so a long applied value never pushes the row wide. A segmented filter's overflow form
 (when `promoted` is `false`) still renders as a `<select>`, since a button group behind a
@@ -48,7 +48,7 @@ snippet renders after the toolbar band, for a screen-specific view control this 
 vocabulary for (a grid/list density toggle).
 
 A segmented filter is a real ARIA radiogroup, not a bare button group: ConceptList's and
-MediaLibrary's own pre-toolbar segmented controls each independently carried this pattern, and
+MediaLibrary's pre-toolbar segmented controls each independently carried this pattern, and
 MediaLibrary's carried the fuller implementation, so it is the one graduated here rather than
 forked twice more. The wrapping `join`
 is `role="radiogroup"` and each option is `role="radio"` with `aria-checked`, never `aria-pressed`;
@@ -62,16 +62,16 @@ graduation.
 
 Assembles from daisyUI 5 primitives already compiled into cairn's packaged `cairn-admin.css`:
 `input`/`input-sm`, `select`/`select-sm`, `btn`/`btn-sm`/`btn-primary`/`btn-outline`/`btn-active`,
-`join`/`join-item` (the segmented display, the same assembly `Pagination`'s own page nav uses),
+`join`/`join-item` (the segmented display, the same assembly `Pagination`'s page nav uses),
 and `dropdown`/`dropdown-content`/`dropdown-open`/`menu` (the overflow disclosure and each
-`'menu'` facet's own option list). Each `'menu'` facet's option list is a real ARIA menu of
+`'menu'` facet's option list). Each `'menu'` facet's option list is a real ARIA menu of
 `role="menuitemradio"` options (a single-select choice within the menu, not bare `"menuitem"`
 buttons in a plain list), each carrying `aria-checked` so the applied value is exposed to
-assistive tech the same way the segmented filter's own `role="radio"` options already are, not
+assistive tech the same way the segmented filter's `role="radio"` options already are, not
 just through the sighted-only check glyph (WCAG 1.3.1/4.1.2). The roving tabindex still applies:
 only the focused option is a Tab stop, and ArrowUp/ArrowDown/Home/End move that focus, wrapping at
 the ends. The controls row, the segmented group, and the count line's muted color live in this
-component's own scoped `<style>`, per the compiled-CSS constraint documented on
+component's scoped `<style>`, per the compiled-CSS constraint documented on
 `StatusChip`/`Pagination`: an unverified Tailwind utility string never reaches an `/admin/**`
 route.
 
@@ -81,11 +81,11 @@ panel-on-open, Escape-plus-return-focus, outside-pointerdown, and focus-leaves-t
 mechanics all live there now, driven from this component only by `open`/`onOpenChange` (the same
 fully-controlled convention every other prop here carries). Single-open-at-a-time for the facets
 stays here, in `openFacetId`, which no self-contained disclosure primitive could enforce on its
-own: each facet's own `open` derives from `openFacetId === filter.id`, and setting a new id on
+own: each facet's `open` derives from `openFacetId === filter.id`, and setting a new id on
 open closes whichever facet held it before, purely as a side effect of that derivation. The
 ARIA-menu content layer above (`role="menu"`, `role="menuitemradio"`, arrow roving, reset-to-
-first-on-open) stays entirely in this component's own panel snippet, never in the primitive: it is
-facet behavior, not disclosure mechanics, and `ToolbarDisclosure` accepts only the trigger's own
+first-on-open) stays entirely in this component's panel snippet, never in the primitive: it is
+facet behavior, not disclosure mechanics, and `ToolbarDisclosure` accepts only the trigger's
 `aria-haspopup` value as a prop, carrying no opinion about what the panel holds.
 
 The band is a single wrapped flex row, not a CSS grid: search, every promoted filter, the
@@ -95,12 +95,12 @@ own line below an independently-wrapping controls cluster.
 
 Only one facet menu is open at a time (a second facet's trigger closes the first, mirroring how a
 native `<select>` or the overflow disclosure itself never shows two panels at once); see
-`ToolbarDisclosure`'s own header comment for the five dismissal mechanics themselves.
+`ToolbarDisclosure`'s header comment for the five dismissal mechanics themselves.
 
 The count line and (on `Pagination`) the item-range line are `role="status"` live regions
 (`aria-live="polite"`, `aria-atomic="true"`): a search or filter change updates the line's text with
 no focus move, so an AT user only hears the new scope if it is announced as a status message. The
-count line's own text carries `font-variant-numeric: tabular-nums`, so a changing count never
+count line's text carries `font-variant-numeric: tabular-nums`, so a changing count never
 reflows its neighboring characters.
 -->
 <script module lang="ts">
@@ -134,12 +134,12 @@ reflows its neighboring characters.
     autofocus?: boolean;
     /** Every filter, promoted and overflow alike, in the order each group renders. */
     filters?: ListToolbarFilter[];
-    /** The overflow disclosure's own trigger label. Defaults to `'More filters'`. Only rendered
+    /** The overflow disclosure's trigger label. Defaults to `'More filters'`. Only rendered
      *  when at least one filter opts out of promotion. */
     overflowLabel?: string;
     /** The toolbar's one right-aligned action. Omit for a toolbar with no primary action. */
     primaryAction?: ListToolbarAction;
-    /** The count line's own count (e.g. the number of entries the current filters match). */
+    /** The count line's count (e.g. the number of entries the current filters match). */
     count: number;
     /** The count line's noun (e.g. `'signups'`). A plain string is invariant across every
      *  count, the original contract unchanged; an `{ one, many }` pair picks by grammatical
@@ -170,12 +170,12 @@ reflows its neighboring characters.
     computeCountLine(count, itemLabel, appliedPills.map((pill) => pill.label)),
   );
 
-  // The overflow disclosure's own open state, and single-open-at-a-time for the `'menu'` facets
+  // The overflow disclosure's open state, and single-open-at-a-time for the `'menu'` facets
   // (keyed by filter id, since any number can render in one toolbar): both are the ONE piece of
   // coordination `ToolbarDisclosure` itself cannot own, since it is a single self-contained
   // instance with no notion of its siblings. Every other disclosure mechanic (aria-expanded/
   // aria-controls, focus-into-panel, Escape, outside-pointerdown, focus-leaves-the-boundary) lives
-  // in `ToolbarDisclosure`; see this component's own header comment.
+  // in `ToolbarDisclosure`; see this component's header comment.
   let overflowOpen = $state(false);
   let openFacetId = $state<string | null>(null);
 
@@ -183,21 +183,21 @@ reflows its neighboring characters.
   // carries the standard roving-tabindex keyboard model, not one tab stop per option: only the
   // currently-focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any
   // number of `'menu'` facets can render in one toolbar). Reopening a facet after a prior arrow-key
-  // move resets this index to 0 (see the facet's own `onOpenChange` below): without that reset, a
-  // stale non-zero index is itself the only tabbable option, so `ToolbarDisclosure`'s own
+  // move resets this index to 0 (see the facet's `onOpenChange` below): without that reset, a
+  // stale non-zero index is itself the only tabbable option, so `ToolbarDisclosure`'s
   // focus-into-panel mechanic would land back on the previously-arrowed option instead of the
   // first one, the APG menu-button behavior a real Tab keypress on a freshly-opened menu gives.
   let facetFocusIndex = $state<Record<string, number>>({});
 
-  // Each facet's own trigger element, for `selectFacetOption`'s own focus-return: `ToolbarDisclosure`
-  // never renders the trigger itself (it stays this component's own markup, per its controlled,
+  // Each facet's trigger element, for `selectFacetOption`'s focus-return: `ToolbarDisclosure`
+  // never renders the trigger itself (it stays this component's markup, per its controlled,
   // snippet-based contract), so it only knows to return focus to the trigger on ITS OWN Escape/
   // outside-pointerdown/focusout mechanics. Selecting an option closes the facet from here, a
-  // parent-driven close the primitive cannot see as "its own" dismissal, so the focus-return is
-  // this component's own responsibility too.
+  // parent-driven close the primitive cannot see as "its " dismissal, so the focus-return is
+  // this component's responsibility too.
   let facetTriggerEls = $state<Record<string, HTMLButtonElement | null>>({});
 
-  // Clamped, not read raw: if a menu's own options array shrinks while it is open (a live facet
+  // Clamped, not read raw: if a menu's options array shrinks while it is open (a live facet
   // vocabulary), a stale stored index could point past the end and leave every remaining option at
   // tabindex="-1" with no tab stop at all. Clamping in the accessor keeps the stored value itself
   // untouched (no extra effect to keep it in sync) while every render still resolves a real option.
@@ -210,7 +210,7 @@ reflows its neighboring characters.
     facetFocusIndex = { ...facetFocusIndex, [filter.id]: index };
   }
   // ArrowUp/ArrowDown move the roving focus, wrapping at the ends; Home/End jump to the first/
-  // last option. Mirrors `onSegmentedKeydown`'s own DOM-read-siblings approach below, except a
+  // last option. Mirrors `onSegmentedKeydown`'s DOM-read-siblings approach below, except a
   // menu's arrow keys move focus alone (Enter/click still does the selecting), where a radio
   // group's arrow keys move the selection itself.
   function onFacetMenuKeydown(event: KeyboardEvent) {
@@ -229,9 +229,9 @@ reflows its neighboring characters.
   }
 
   // Selecting an option is a parent-driven close (`ToolbarDisclosure` only owns the mechanics that
-  // dismiss ITS OWN panel; a caller reacting to its own content's own onclick is a third kind of
+  // dismiss ITS OWN panel; a caller reacting to its content's onclick is a third kind of
   // close this component drives directly), so the focus-return to the trigger is this component's
-  // own responsibility too, per `facetTriggerEls`'s own comment above.
+  // responsibility too, per `facetTriggerEls`'s comment above.
   function selectFacetOption(filter: ListToolbarFilter, value: string) {
     filter.onChange(value);
     openFacetId = null;
@@ -245,7 +245,7 @@ reflows its neighboring characters.
     filter.onChange(filter.defaultValue ?? 'all');
   }
 
-  // A segmented filter's roving-tabindex ARIA radio pattern (graduated from MediaLibrary's own
+  // A segmented filter's roving-tabindex ARIA radio pattern (graduated from MediaLibrary's
   // pre-toolbar triage radiogroup): the checked option is the only tab stop, and the arrow/Home/End
   // keys move the selection and the focus together, mirroring a native radio group. Reading the
   // sibling radios from the DOM at keydown time (rather than a bound ref array) keeps this correct
@@ -418,9 +418,9 @@ reflows its neighboring characters.
 </div>
 
 <style>
-  /* Layout only: shape and color come from the daisyUI classes above, except the facet's own
+  /* Layout only: shape and color come from the daisyUI classes above, except the facet's
      applied treatment (mixed from --color-primary, since no daisy utility carries that ratio),
-     the facet container's own height, and the muted count line, matching `Pagination`'s own
+     the facet container's height, and the muted count line, matching `Pagination`'s own
      range-line color. Values stay literal where there's no shared token that survives an
      `/admin/**` route, per the compiled-CSS constraint the header comment documents. Recomposed
      per the refuter-verified recipe: flex row, one control height across the row, the menu
@@ -447,8 +447,8 @@ reflows its neighboring characters.
     min-width: 140px;
   }
 
-  /* Strips the browser's own `type="search"` chrome (a clear button, and on some engines a
-     second, separately-drawn focus ring that layers on top of `.input`'s own themed one, reading
+  /* Strips the browser's `type="search"` chrome (a clear button, and on some engines a
+     second, separately-drawn focus ring that layers on top of `.input`'s themed one, reading
      as a doubled outline): `.input:focus-within`'s outline on the wrapping label then becomes the
      only ring a reader sees. Height is unset here: the wrapping `label.input.input-sm` already
      sizes itself from `--size-field`, the same token `btn-sm` reads, so no forced height is
@@ -459,17 +459,17 @@ reflows its neighboring characters.
     font-size: var(--cairn-type-meta, 0.8125rem);
   }
 
-  /* Measured root cause (the coherence-round finding): daisyUI's own `.select` sets
+  /* Measured root cause (the coherence-round finding): daisyUI's `.select` sets
      `width: clamp(3rem, 20rem, 100%)`, and `20rem` is a fixed length rather than a
-     container-relative one, so every select pins to exactly 320px regardless of its own options
+     container-relative one, so every select pins to exactly 320px regardless of its options
      -- a lone season select on a sibling screen held a 4-character value at that width, and four
      of them together wrapped the whole toolbar off one line at a realistic container width.
-     `width: auto` restores the native `<select>`'s own content-driven sizing (the browser sizes it
-     to its own longest option); `max-width: 100%` is the hard floor that still keeps it inside a
+     `width: auto` restores the native `<select>`'s content-driven sizing (the browser sizes it
+     to its longest option); `max-width: 100%` is the hard floor that still keeps it inside a
      narrow container, since `flex: 0 0 auto` alone would let it overflow rather than shrink.
      `--input-color` is the same custom property the compiled `.select` rule reads for both its
      border and its inset box-shadow, so overriding it here (rather than `border-color` alone)
-     pulls both onto the `'menu'` facet's own `--cairn-card-border` treatment in one step -- a
+     pulls both onto the `'menu'` facet's `--cairn-card-border` treatment in one step -- a
      select and a menu facet sitting side by side now read as the same control family instead of
      two different border vocabularies. */
   .toolkit-toolbar-select {
@@ -480,24 +480,24 @@ reflows its neighboring characters.
     --input-color: var(--cairn-card-border);
   }
 
-  /* `flex: 0 1 auto` plus `min-width: 0` let the group shrink below its own preferred width
+  /* `flex: 0 1 auto` plus `min-width: 0` let the group shrink below its preferred width
      (the flexbox default that overflowed the 320px composition floor: a three-option triage with
      count badges renders past 320px on its own, and the prior `flex: 0 0 auto` refused to yield
-     that width back). The shrink half alone fixes the overflow; the group keeps its own no-grow
+     that width back). The shrink half alone fixes the overflow; the group keeps its no-grow
      basis rather than claiming free space from the row, so the toolbar stays flush right at
      desktop widths. `overflow-x: auto` replaces a prior `flex-wrap: wrap`: the
      `btn-sm` size step widened each segment enough that wrapping split the join across two rows,
      orphaning its last option; a join reads as one control, never two, so it now scrolls
-     horizontally inside its own bounding box, contained by `max-width: 100%`, rather than
+     horizontally inside its bounding box, contained by `max-width: 100%`, rather than
      breaking onto a second line or letting the page itself scroll sideways.
 
-     `overflow-x: auto` also computes `overflow-y` to `auto` (the CSS spec's own rule: one axis
-     `auto` forces the other off `visible`), turning this box into a scrollport whose own padding
+     `overflow-x: auto` also computes `overflow-y` to `auto` (the CSS spec's rule: one axis
+     `auto` forces the other off `visible`), turning this box into a scrollport whose padding
      edge clips anything a child paints past it, including the page-wide `:focus-visible` ring
      (`outline: 2px` at `outline-offset: 2px`, cairn-admin.css) a focused segment draws outside its
-     own border box. The 4px `padding` gives that ring the exact room it needs on every side
+     border box. The 4px `padding` gives that ring the exact room it needs on every side
      (2px offset plus 2px width), and the matching `-4px` `margin` pulls the box back by the same
-     amount so the padding adds no visible space and the join's own on-screen position and the
+     amount so the padding adds no visible space and the join's on-screen position and the
      320px one-row fit are both unchanged. */
   .toolkit-toolbar-segmented {
     flex: 0 1 auto;
@@ -508,29 +508,29 @@ reflows its neighboring characters.
     margin: -4px;
   }
 
-  /* The per-option count: visually secondary to its own label, opacity-dimmed (not a separate
+  /* The per-option count: visually secondary to its label, opacity-dimmed (not a separate
      muted color) so it reads correctly against both a plain and an active/tinted `.btn-active`
-     segment, the same opacity-based dimming ConceptList's own draft-row treatment uses. */
+     segment, the same opacity-based dimming ConceptList's draft-row treatment uses. */
   .toolkit-toolbar-segment-count {
     margin-left: 0.375rem;
     opacity: 0.65;
   }
 
-  /* The 'menu' facet's own box chrome: a quiet bordered pair (trigger plus optional clear). This
+  /* The 'menu' facet's box chrome: a quiet bordered pair (trigger plus optional clear). This
      element is a plain `div`, not a daisyUI-classed control, so it carries no `--size-field`-driven
      height of its own; `calc(var(--size-field, 0.25rem) * 8)` matches the same multiplier
      `input-sm`/`select-sm`/`btn-sm` use, so the facet stays level with the rest of the row at any
      `--size-field` value. `display: inline-flex; align-items: stretch` stretches both children to
-     that height, since neither sets its own; `overflow` stays default (visible),
-     since this element is also the panel's own `position: absolute` containing block (daisyUI's
-     own `.dropdown`/`.dropdown-content` pair, via `ToolbarDisclosure`'s own always-applied
+     that height, since neither sets one; `overflow` stays default (visible),
+     since this element is also the panel's `position: absolute` containing block (daisyUI's
+     `.dropdown`/`.dropdown-content` pair, via `ToolbarDisclosure`'s always-applied
      `dropdown` class) and `hidden` would clip the panel away entirely rather than just tidy the
      trigger/clear corners. `:global()`, not a plain scoped selector: this class names the
      `containerClass` this component passes into `ToolbarDisclosure`, so the element it matches is
      rendered by that component, not this one, and Svelte's per-component style scoping would
-     otherwise silently drop the rule (see `ToolbarDisclosure`'s own header comment on why
-     `containerClass` exists and stays this component's own responsibility to style). Nested under
-     `.toolkit-toolbar` (this component's own scoped root, always an ancestor of every facet it
+     otherwise silently drop the rule (see `ToolbarDisclosure`'s header comment on why
+     `containerClass` exists and stays this component's responsibility to style). Nested under
+     `.toolkit-toolbar` (this component's scoped root, always an ancestor of every facet it
      renders): the reach is unchanged, but the selector no longer matches a same-named class
      anywhere else in the document. */
   .toolkit-toolbar :global(.toolkit-toolbar-facet) {
@@ -552,8 +552,8 @@ reflows its neighboring characters.
     background: color-mix(in oklab, var(--color-primary) 7%, transparent);
   }
 
-  /* The 'menu' facet's own trigger: shares the facet container's own height (styled above) inside
-     `ToolbarDisclosure`'s own bordered box (`containerClass="toolkit-toolbar-facet ..."`). */
+  /* The 'menu' facet's trigger: shares the facet container's height (styled above) inside
+     `ToolbarDisclosure`'s bordered box (`containerClass="toolkit-toolbar-facet ..."`). */
   .toolkit-toolbar-facet-trigger {
     display: inline-flex;
     align-items: center;
@@ -567,7 +567,7 @@ reflows its neighboring characters.
     cursor: pointer;
     color: inherit;
     min-width: 0;
-    /* Rounds the shared border's own left corner; the trigger is always the first child. */
+    /* Rounds the shared border's left corner; the trigger is always the first child. */
     border-top-left-radius: var(--radius-field);
     border-bottom-left-radius: var(--radius-field);
   }
@@ -575,7 +575,7 @@ reflows its neighboring characters.
   /* The in-control value caps at 14rem with an ellipsis once a facet carries an applied value, so
      a long applied value (a class title, say) never pushes the row wide. Driven by the same
      `applied` boolean that names `.toolkit-toolbar-facet-applied` on the container above, applied
-     directly to this element's own class instead, since this element is rendered directly by this
+     directly to this element's class instead, since this element is rendered directly by this
      component and needs no `:global()` to reach it. */
   .toolkit-toolbar-facet-trigger-applied {
     max-width: 14rem;
@@ -594,7 +594,7 @@ reflows its neighboring characters.
     flex-shrink: 0;
   }
 
-  /* The inline clear affordance: its own sibling element, never a button nested inside the
+  /* The inline clear affordance: its sibling element, never a button nested inside the
      trigger button (a nested interactive control is invalid markup and unreliable to activate).
      Its own left border reuses the applied border's tint, so the divider reads as part of the
      same applied treatment rather than a separate control. */
@@ -612,7 +612,7 @@ reflows its neighboring characters.
     font-size: var(--cairn-type-subtitle, 0.9375rem);
     line-height: 1;
     padding: 0;
-    /* Rounds the shared border's own right corner, now that `.toolkit-toolbar-facet` no longer
+    /* Rounds the shared border's right corner, now that `.toolkit-toolbar-facet` no longer
        clips it there with `overflow: hidden`. */
     border-top-right-radius: var(--radius-field);
     border-bottom-right-radius: var(--radius-field);

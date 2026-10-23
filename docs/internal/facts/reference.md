@@ -1913,10 +1913,12 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   header is touched, the cookie carries the full collapsed set and wins entirely"; `collapsed`
   state derivation; `writeAdminCookie('cairn-admin-nav-collapsed', ...)`). [verified]
 - `f:bc27j9` A `NavLayoutEntry.href` colliding with a built-in admin view throws at startup with the
-  conflicting view named; an icon outside the `NavIcon` allowlist throws when the runtime composes.
-  Source: `src/lib/sveltekit/admin-nav.ts:73-90` (`validateEntry`: icon-allowlist throw, href-collision
+  conflicting view named; an icon outside the `NavIcon` allowlist throws at the same point, when
+  `createCairnAdmin` or `createContentRoutes` validates the declared layout.
+  Source: `src/lib/sveltekit/admin-nav.ts#validateEntry` (icon-allowlist throw, href-collision
   throw naming the built-in view; doc comment: "fails at server start rather than rendering a
-  broken or shadowing sidebar link"). [verified]
+  broken or shadowing sidebar link"), `src/lib/sveltekit/content-routes-context.ts#createContentRoutesContext`
+  (`validateNavLayout`). [verified]
 - `f:nv475y` The engine reads every Worker binding and `waitUntil` through one internal module, `src/lib/sveltekit/workers-env.ts`, its only `cloudflare:workers` import, which no Node-context entry (`.`, `/admin`, `/public`, `/vite`, `/cloudflare`, `/auth-crypto`, `/log`, the bins) reaches, so the module's `waitUntil` is always defined and `auth.channel.delivery_inline` retired. Source: `src/lib/sveltekit/workers-env.ts#waitUntil`, `src/tests/unit/workers-env-reach.test.ts`. [verified]
 - `f:yivujb` `isBuilding` reads SvelteKit's `building` through `await import('$app/env')` inside `try`/`catch`, falling back to `false`, so the `/sveltekit` barrel carries no static `$app/env` import and a consumer test that mocks `$app/environment` no longer reaches it; `loadPreview`'s build refusal needs `$app/env` mocked. Source: `src/lib/sveltekit/building.ts#isBuilding`, `src/lib/sveltekit/preview.ts#loadPreview`. [verified]
 

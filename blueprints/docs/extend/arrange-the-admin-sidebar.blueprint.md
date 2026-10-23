@@ -26,7 +26,7 @@ One clause warns the reader who knows `createSectionAction`: its `ownerOnly` opt
 **What it leaves to other pages:**
 - Denying a route rather than hiding its link, which belongs to Restrict admin access, named in the introduction.
 - Building the screen a site entry links to, which belongs to Add a custom admin screen, named in the introduction.
-- The public site's menu and the menu editor `editor.nav` turns on, which share the word nav with the `nav` screen and belong to Build the public routes, named in the introduction.
+- The public site's menu, and the menu editor that `editor.nav` turns on as the `nav` screen at `/admin/nav`, which belong to Build the public routes, named in the introduction.
 :::
 
 :::constraints
@@ -57,7 +57,7 @@ One clause warns the reader who knows `createSectionAction`: its `ownerOnly` opt
 - A `navLayout` is an ordered array of three node kinds, rendered in declaration order. An engine reference places one of cairn's screens, a site entry links one of the site's own routes, and a section groups the other two under a label, one level deep. :fact[nvpcmk] :fact[rwefuj]
 - A table, introduced by a sentence that says it names each node kind's members, gives three rows. An engine reference requires `screen`, a declared concept id or one of `media`, `vocabulary`, `nav`, `settings`, `editors`, and `help`, and takes optional `label`, `hidden`, and `icon`. :fact[jsig0m] :fact[rwefuj]
 - The table's second row: a site entry requires `label`, `icon`, and `href`, and takes optional `roles` and `ownerOnly`. Its third row: a section requires `label` and `children`, and takes optional `roles` and `collapsed`. :fact[78xri7] :fact[qzbfrd] :fact[zyjzeg] :fact[542r4m]
-- An engine reference with no `label` keeps the screen's default label: a concept's own label, or Library, Tags, Settings, Editors, and Help for the fixed screens. :fact[a6ez6i]
+- An engine reference with no `label` keeps the screen's default label: a concept's own label; Library, Tags, Settings, Editors, and Help for the fixed screens; and, for `nav`, the label the adapter's `editor.nav` declares. :fact[a6ez6i]
 - The `nav` screen is the public menu editor, which the adapter's `editor.nav` turns on. A `navLayout` that references `nav` without `editor.nav` throws at server start. :fact[rnwver] :fact[h9hjxc]
 - See [Build the public routes](build-the-public-routes.md).
 - To declare a layout, follow these steps:

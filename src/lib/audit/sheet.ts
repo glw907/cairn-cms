@@ -30,7 +30,7 @@ export interface SheetRule {
   /**
    * The selectors of the style rules this rule nests inside, outermost first, as written with any
    * `&` unresolved. Empty for a top-level rule. A conditional group nested directly in a style
-   * rule (`:root { @media (...) { --x: 1 } }`) is recorded with its own prelude as `selector` and
+   * rule (`:root { @media (...) { --x: 1 } }`) is recorded with its prelude as `selector` and
    * the style rule it sits in here.
    */
   parents: string[];
@@ -43,7 +43,7 @@ export interface SheetRule {
    * Character offset of the selector's first non-whitespace, non-comment character in the CSS
    * text `parseSheet` was given. Meaningless for the compiled admin sheet (those rules
    * resolve position through a markup class token instead), but load-bearing for the CSS-family
-   * rules, which parse a component's own `<style>` block or a standalone consumer CSS
+   * rules, which parse a component's `<style>` block or a standalone consumer CSS
    * file and have no class token to anchor a finding to.
    */
   start: number;
@@ -60,10 +60,10 @@ export interface CompiledSheet {
   declarations(className: string): SheetDeclaration[];
   /**
    * Whether the exact class name appears anywhere in the sheet, positively (`has`) or only as a
-   * `:not(...)` exclusion target. DaisyUI's own `.menu` rules exclude `.disabled` and
+   * `:not(...)` exclusion target. DaisyUI's `.menu` rules exclude `.disabled` and
    * `.menu-title` items from hover/focus purely through negation, with no rule ever declaring
    * `.disabled` positively; a markup class used this way is acknowledged by the sheet even though
-   * it carries no declaration of its own.
+   * it carries no declaration.
    */
   mentions(className: string): boolean;
 }
@@ -387,11 +387,11 @@ function trimmedSpan(css: string, from: number, to: number): { start: number; en
 }
 
 /**
- * A block's own declaration text, with every nested block and the prelude that opened it removed.
- * A style rule that nests a child still declares its own properties, and dropping them made an
+ * A block's declaration text, with every nested block and the prelude that opened it removed.
+ * A style rule that nests a child still declares its properties, and dropping them made an
  * entire rule invisible to every CSS-family check: standard nesting is legal and idiomatic in the
  * hand-authored surfaces those rules read, a component's scoped `<style>` block and a consumer's
- * own CSS file.
+ * CSS file.
  */
 function ownDeclarationText(css: string): string {
   let out = '';
@@ -457,7 +457,7 @@ const THEME_AT_RULE = /^@(theme|plugin)\b/;
 /**
  * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
  * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
- * call's own `css` starts at: a nested `@media` block recurses over its own inner substring
+ * call's `css` starts at: a nested `@media` block recurses over its inner substring
  * (offset 0 in that substring), and every rule's `start`/`end` needs to read against the ONE
  * source `parseSheet`'s caller handed it, not against whichever nesting level produced it.
  */
@@ -492,11 +492,11 @@ function collectRules(css: string, conditions: string[], parents: string[], out:
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
         const nestedIn = prelude.startsWith('@') ? parents : [...parents, prelude];
         if (!prelude.startsWith('@') || THEME_AT_RULE.test(prelude)) {
-          // A nested style rule's own declarations, before its children. The children recurse with
+          // A nested style rule's declarations, before its children. The children recurse with
           // their selectors as written, `&` unresolved: a rule comparing selector text compares
           // within one nesting level, which is the level an author writes the pairing at. A
-          // `@theme` or `@plugin` block that nests a `@keyframes` (Tailwind's own theme file does)
-          // still declares its own custom properties, so it reads like a style rule here.
+          // `@theme` or `@plugin` block that nests a `@keyframes` (Tailwind's theme file does)
+          // still declares its custom properties, so it reads like a style rule here.
           const declarations = parseDeclarations(ownDeclarationText(inner));
           if (declarations.length > 0) {
             out.push({
@@ -537,8 +537,8 @@ function collectRules(css: string, conditions: string[], parents: string[], out:
  * and bracket groups (`:not(...)`, `:global(...)`, an attribute selector) kept intact so a comma
  * inside one of those never splits a single selector in two. The CSS-family static rules use
  * this to compare one alternative of a selector list (a `:hover` clause, say) against another
- * rule's own list, so a shared selector's `:hover`/`:focus-visible` pairing can live in either
- * rule's own alternative rather than needing to repeat the whole list on both sides.
+ * rule's list, so a shared selector's `:hover`/`:focus-visible` pairing can live in either
+ * rule's alternative rather than needing to repeat the whole list on both sides.
  */
 export function splitSelectorList(selector: string): string[] {
   const parts: string[] = [];

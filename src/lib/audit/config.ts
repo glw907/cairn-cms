@@ -6,10 +6,10 @@ import { posix, resolve } from 'node:path';
 /** The config file a consumer writes, read from the audited root. */
 export const CONFIG_FILE = 'cairn-audit.config.json';
 
-// Every surface that renders inside the admin theme, plus the site's own admin routes. The two
+// Every surface that renders inside the admin theme, plus the site's admin routes. The two
 // library directories (src/lib/admin, src/lib/admin-toolkit) are the same roots the admin
 // stylesheet build and the class-compilation gate scan (the retired `admin-fields` subpath merged
-// into admin-toolkit, so its own roster entry folded into that one). A directory that renders
+// into admin-toolkit, so its roster entry folded into that one). A directory that renders
 // admin markup belongs here even when it looks covered. A path that does not exist in a given
 // tree is skipped, so a consumer inherits only what it actually has.
 export const DEFAULT_STATIC_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
@@ -17,19 +17,19 @@ export const DEFAULT_STATIC_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/l
 // Where the source-text-family static rules (log-event-grammar, log-secret-field) walk for
 // `.ts` and `.svelte` files, read as plain text rather than parsed markup. Wider than
 // `DEFAULT_STATIC_SCOPE` on purpose: a log call is not confined to an admin surface, so the
-// default is the whole source tree a site actually keeps its own code in.
+// default is the whole source tree a site actually keeps its code in.
 export const DEFAULT_SOURCE_SCOPE = ['src'];
 
 // The roots an `adminOnly` static rule resolves over instead of `DEFAULT_STATIC_SCOPE`. Now the
 // same three roots `DEFAULT_STATIC_SCOPE` names, since `src/lib/admin` renders only the admin's
-// own views, never a site's shared public components: an admin-only motion rule reading it gates
+// views, never a site's shared public components: an admin-only motion rule reading it gates
 // no public design. A site whose admin screens sit outside these roots names `static.adminScope`
 // itself, the same override `staticScope` already carries.
 export const DEFAULT_ADMIN_SCOPE = ['src/routes/admin', 'src/lib/admin', 'src/lib/admin-toolkit'];
 
 // The public scope: the roots a public-scope rule (`public-literals`) reads `.svelte` and `.css`
 // files under, the design a site ships to its visitors. `src/lib/components` is where a consumer
-// keeps shared public components, and `src/lib/public` is the engine's own public tree. The
+// keeps shared public components, and `src/lib/public` is the engine's public tree. The
 // defaults and the admin roots above never overlap: `src/routes/admin` sits under the
 // `src/routes` root and is removed by `DEFAULT_PUBLIC_EXCLUDE`.
 export const DEFAULT_PUBLIC_SCOPE = [
@@ -41,7 +41,7 @@ export const DEFAULT_PUBLIC_SCOPE = [
 ];
 
 // Paths removed from the public scope. A configured list merges with this default, never
-// replaces it, so a site that names its own exclusion still cannot pull its admin routes in.
+// replaces it, so a site that names its exclusion still cannot pull its admin routes in.
 export const DEFAULT_PUBLIC_EXCLUDE = ['src/routes/admin'];
 
 // The theme roots: where a site's design values are legally defined. A custom-property definition
@@ -53,7 +53,7 @@ export const DEFAULT_THEME_ROOTS = ['src/theme', 'src/chassis/tokens.css'];
 // rule that needs to know what the public stylesheet actually pulls in.
 export const DEFAULT_PUBLIC_STYLESHEETS = ['src/theme/theme.css'];
 
-// Where the built admin stylesheet is, first in the library's own tree and then in a consumer's
+// Where the built admin stylesheet is, first in the library's tree and then in a consumer's
 // installed package. The first candidate is the fallback when neither exists, so the run fails
 // naming a path a developer can act on.
 export const DEFAULT_SHEET_CANDIDATES = [
@@ -65,15 +65,15 @@ export const DEFAULT_SHEET_CANDIDATES = [
 // literal values a palette resolves to. `token-colors` (rules/static/token-colors.ts), the rule
 // that polices a raw color literal bypassing the palette, cannot meaningfully apply to the
 // declaration site itself, so it reads this list and skips every file named here, rather than
-// carrying its own filename special case. Every other CSS-family rule still scans a file named
+// carrying its filename special case. Every other CSS-family rule still scans a file named
 // here when `staticCssFiles` also names it: a declaration site carries real structure (a
-// selector, a transition) those rules legitimately police. `cairn-admin.css` is the engine's own
-// declaration site and so the one default; a site names its own theme file the same way
-// (`static.paletteFiles`) to keep its own palette declaration outside `token-colors` too.
+// selector, a transition) those rules legitimately police. `cairn-admin.css` is the engine's
+// declaration site and so the one default; a site names its theme file the same way
+// (`static.paletteFiles`) to keep its palette declaration outside `token-colors` too.
 export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/admin/cairn-admin.css'];
 
 // The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
-// generator's own page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"
+// generator's page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"
 // in the same sense, and `/admin` is deliberately absent from both since it renders the same office
 // as `/admin/posts`, so including it would double a route rather than add one.
 export const DEFAULT_RENDERED_PAGES = [
@@ -92,7 +92,7 @@ export interface RenderedAllowlistEntry {
   reason: string;
   /**
    * The rule this exemption is for. Optional, and worth naming: a stale entry is reported at the
-   * named rule's own tier, so suppressing an ADVISORY finding cannot later gate the build when the
+   * named rule's tier, so suppressing an ADVISORY finding cannot later gate the build when the
    * selector churns. Without it, a stale entry is an error, which is right for a suppressed
    * error-tier finding and wrong for an advisory one.
    */
@@ -136,7 +136,7 @@ export interface AuditConfig {
   adminScopeFromConfig: boolean;
   /**
    * Standalone CSS files (paths relative to `root`) the CSS-family static rules also scan,
-   * alongside every component's own scoped `<style>` block. Empty by default: a component's
+   * alongside every component's scoped `<style>` block. Empty by default: a component's
    * `<style>` block is the only CSS surface an audited tree carries until a consumer names one
    * explicitly. Naming a declared palette site here too (see `paletteCssFiles`) is fine: only
    * `token-colors` skips it, so the rest of the CSS-family scan still covers it.
@@ -145,13 +145,13 @@ export interface AuditConfig {
   /**
    * Declared palette declaration sites (paths relative to `root`) `token-colors`
    * (rules/static/token-colors.ts) never flags, since a raw color literal is the whole point of a
-   * palette's own declaration site rather than a hazard. Defaults to the engine's own admin
-   * stylesheet; a site names its own theme file here too.
+   * palette's declaration site rather than a hazard. Defaults to the engine's admin
+   * stylesheet; a site names its theme file here too.
    */
   paletteCssFiles: string[];
   /**
    * The built admin stylesheet(s) the class tokens resolve against. Usually the packaged
-   * `cairn-admin.css` alone; a site names its own compiled-class sources here too, the same
+   * `cairn-admin.css` alone; a site names its compiled-class sources here too, the same
    * additive shape `paletteCssFiles` and `staticCssFiles` already carry. A path that does not
    * exist is a config error, never a silent skip, since a class the config believes it covers
    * would otherwise miss.
@@ -159,7 +159,7 @@ export interface AuditConfig {
   sheetPaths: string[];
   /**
    * The pages rendered mode visits: `rendered.pages` (defaulting to the core admin routes) with
-   * `rendered.extraPages` appended. `extraPages` is additive on purpose, so naming a site's own
+   * `rendered.extraPages` appended. `extraPages` is additive on purpose, so naming a site's
    * screen does not silently drop the core routes it no longer restates.
    */
   renderedPages: string[];
@@ -280,7 +280,7 @@ export function resolveConfig(
   // routed answers to one grammar. A public root a site names drops out of the admin defaults;
   // an admin root a site names drops out of the public defaults. A default admin root a public
   // exclusion covers stays: the public scope never reads it, so dropping it would leave its files
-  // in neither scope. A configured list is never narrowed: it is the site's own statement.
+  // in neither scope. A configured list is never narrowed: it is the site's statement.
   const adminDefaults = (defaults: string[]) =>
     configuredPublicScope
       ? defaults.filter((root) => !publicRoots.includes(root) || isUnderRoots(root, publicExclude))
@@ -392,7 +392,7 @@ interface AuditFlags {
 
 /**
  * The bin's parsed argv. A union rather than an optional `term`, so the `norms` branch reaches its
- * term without a cast and a future subcommand cannot forget its own argument.
+ * term without a cast and a future subcommand cannot forget its argument.
  */
 export type AuditArgs =
   | ({ command: 'audit' } & AuditFlags)

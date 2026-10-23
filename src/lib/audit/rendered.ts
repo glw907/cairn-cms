@@ -9,7 +9,7 @@
 // post-hydration page-identity guard that refuses a page whose settled DOM no longer matches what
 // its server response carried, rather than silently measuring whatever it swapped into. What is
 // re-exported below is only the subset an importer outside this file and ./rendered/ actually
-// reaches through this path; everything else in ./rendered/ is imported directly by its own
+// reaches through this path; everything else in ./rendered/ is imported directly by its
 // siblings and stays there.
 //
 // One rule the whole harness holds, load-bearing: it never starts a server. BASE_URL (default
@@ -76,7 +76,7 @@ export { applyState, ensurePageHelpers, resolveColors } from './rendered/page-su
  */
 const LOGIN_PAGE_PATH = '/admin/login';
 
-/** The cookie cairn's own admin reads to pick its SSR theme (`content-routes-shell.ts`). */
+/** The cookie cairn's admin reads to pick its SSR theme (`content-routes-shell.ts`). */
 const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
   light: 'cairn-admin',
   dark: 'cairn-admin-dark',
@@ -94,7 +94,7 @@ const AXIS_CONTEXT_OPTIONS: Record<EmulationAxis, { reducedMotion?: 'reduce' }> 
 // Measured, not assumed: on the Chromium build this axis was built and tested against, CDP's
 // `Emulation.setEmulatedMedia` with a `features` array covering `hover` and `pointer` was silently
 // ignored (no error, no effect on `matchMedia` reads). That is why this axis reaches motion only
-// through Playwright's own `reducedMotion` context option rather than a raw CDP features array, and
+// through Playwright's `reducedMotion` context option rather than a raw CDP features array, and
 // why a touch-modality axis (`hasTouch`) is threaded through `newContext` rather than attempted here.
 
 /**
@@ -104,7 +104,7 @@ const AXIS_CONTEXT_OPTIONS: Record<EmulationAxis, { reducedMotion?: 'reduce' }> 
  * what keeps its context and page-load count identical to a run with no axis concept at all.
  */
 function neededAxes(rules: RenderedRule[]): EmulationAxis[] {
-  // 'default' is seeded unconditionally, not only discovered from a rule with no axes of its own:
+  // 'default' is seeded unconditionally, not only discovered from a rule with no axes:
   // the allowlist selector probe (below, in the main loop) is scoped to `axis === 'default'`, so a
   // `--rule`-scoped run whose only selected rule declares a non-default axis (motion-reduced-delay,
   // say) must still open a default-axis pass, or the probe never runs and every allowlist entry
@@ -116,7 +116,7 @@ function neededAxes(rules: RenderedRule[]): EmulationAxis[] {
 
 /**
  * The refusal `runRendered` throws when every configured page besides {@link LOGIN_PAGE_PATH}
- * settled on the login page's own identity (rank-32(c): "a silent green the run should exit 2
+ * settled on the login page's identity (rank-32(c): "a silent green the run should exit 2
  * on"). Without a session cookie, every authenticated admin route server-redirects to the sign-in
  * card, and the redirect happens before hydration, so the post-hydration page-identity guard sees
  * agreement (the SSR and hydrated captures both ARE the login page) and never fires: the run would
@@ -237,7 +237,7 @@ export async function runRendered(
 
                 // Allowlist selector probing stays scoped to the default axis: `RenderedPageVisit`
                 // stays the shape `findings.ts` already reads, unchanged, and every page still
-                // reaches a default-axis pass (a rule with no axis of its own always needs it), so
+                // reaches a default-axis pass (a rule with no axis of its always needs it), so
                 // scoping the probe there keeps its meaning exactly what it was before an axis
                 // existed at all, rather than accumulating a second dimension of noise into one Set.
                 if (axis === 'default' && relevantAllowlist.length > 0 && visit) {
@@ -252,7 +252,7 @@ export async function runRendered(
                 for (const rule of rules) {
                   if (!(rule.states ?? ['rest']).includes(state)) continue;
                   if (!(rule.axes ?? ['default']).includes(axis)) continue;
-                  // A rule that throws reports at its OWN tier rather than aborting the run with exit
+                  // A rule that throws reports at its tier rather than aborting the run with exit
                   // 2. An advisory rule taking the whole process down on a substrate condition (a
                   // pruned manifest in a consumer install) is the leak a fail-closed exit criterion
                   // forbids, and an error-tier rule still gates through the finding it raises here.

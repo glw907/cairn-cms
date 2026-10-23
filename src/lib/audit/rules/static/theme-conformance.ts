@@ -2,7 +2,7 @@
 // stylesheets read, and defines it the way the engine's defaults expect. Two halves.
 //
 // Completeness. Each named daisyUI theme block (`@plugin "daisyui/theme"`) defines every key
-// daisyUI's own theme object carries, except a block named after a built-in theme, which daisyUI
+// daisyUI's theme object carries, except a block named after a built-in theme, which daisyUI
 // completes by merging. A hole in the default block is a runtime hole; one in a secondary block is
 // filled by the default block's value and is reported as the quieter thing it is.
 //
@@ -61,7 +61,7 @@ function unquote(value: string): string {
 
 /**
  * The custom-property names a value reads through `var()` with no fallback. A `var()` with a
- * fallback is skipped whole, its own fallback included, and so is a name that is not a plain
+ * fallback is skipped whole, its fallback included, and so is a name that is not a plain
  * custom-property identifier or a call that never closes.
  */
 export function unresolvedReads(value: string): string[] {
@@ -119,7 +119,7 @@ function inChassis(file: string): boolean {
 
 /**
  * Build the theme-conformance rule over a given peer access. The registered rule reads the real
- * installed peers; a test injects its own to drive the missing-peer and bad-key-list failures.
+ * installed peers; a test injects a substitute to drive the missing-peer and bad-key-list failures.
  */
 export function createThemeConformance(peers: PeerAccess = nodePeers): StaticRule {
   return {

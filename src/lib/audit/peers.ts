@@ -54,7 +54,7 @@ export interface DaisyThemeKeys {
   keys: string[];
   /** The built-in theme names, which daisyUI completes by merging when a block reuses one. */
   builtInThemes: Set<string>;
-  /** Each built-in theme's own values by name, the values a merged block takes where it is silent. */
+  /** Each built-in theme's values by name, the values a merged block takes where it is silent. */
   themes: Record<string, Record<string, string>>;
 }
 

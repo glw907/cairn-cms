@@ -15,7 +15,7 @@
 // together; this rule shares nothing with the static `reduced-motion` id and must not collide with
 // it).
 //
-// Tier is advisory, not error: every offender this rule has actually found is DaisyUI's own
+// Tier is advisory, not error: every offender this rule has actually found is DaisyUI's
 // component CSS (`.drawer-side`, `.checkbox::before`, `.modal-box`), and cairn ships no unlayered
 // override for any of the four DaisyUI components decision 4 protects. Gating a consumer's exit
 // code on CSS they cannot edit would fail every first `audit:rendered` run on a vendor default.
@@ -40,7 +40,7 @@ interface DelayFinding {
 
 /**
  * Runs inside the page. Playwright serializes this by source, so it stays self-contained: no
- * references outside its own body, the same discipline every other page-side helper in this
+ * references outside its body, the same discipline every other page-side helper in this
  * codebase follows.
  *
  * Walks every element and its `::before`/`::after`, reading `transition-delay` and

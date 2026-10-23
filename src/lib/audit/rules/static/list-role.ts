@@ -1,8 +1,8 @@
 // cairn-audit's list-role rule: a <ul>/<ol> whose marker is suppressed stops being announced as a
 // list by WebKit/VoiceOver unless it carries role="list". Marker suppression arrives two ways: the
-// list's own classes remove it (a `list-style`/`list-style-type: none` declaration, Tailwind's
+// list's classes remove it (a `list-style`/`list-style-type: none` declaration, Tailwind's
 // `list-none`), or an ITEM's classes change its rendered display away from `list-item` to another
-// display that still renders the item (`flex`, `grid`, `block`, `inline-flex`; daisyUI's own
+// display that still renders the item (`flex`, `grid`, `block`, `inline-flex`; daisyUI's
 // `.list-row` renders `display: grid`, documented at `cairn-admin.css`'s `.list` ruling comment).
 // `display: none` is excluded: a hidden item never reaches the accessibility tree, so it cannot
 // strip the enclosing list's implicit role. A list already carrying SOME explicit role attribute
@@ -13,8 +13,8 @@
 // actually resolves to a marker- or display-changing declaration counts, never a class present
 // for some unrelated reason.
 //
-// This rule only sees marker suppression an element's OWN classes cause: a class the compiled
-// sheet resolves DIRECTLY on that element's own selector position, never a descendant selector
+// This rule only sees marker suppression an element's classes cause: a class the compiled
+// sheet resolves DIRECTLY on that element's selector position, never a descendant selector
 // scoped to some ANCESTOR's class (daisyUI's `.menu :where(li)`, `.breadcrumbs > li`). That gap is
 // closed by the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's
 // actual computed `display` in a live browser instead of a second class-source lookup here; this
@@ -37,7 +37,7 @@ interface CauseMatch {
   conditions: string[];
 }
 
-/** The class tokens one element in a file writes, keyed by the element's own start offset. */
+/** The class tokens one element in a file writes, keyed by the element's start offset. */
 function classesOf(file: ParsedComponent, elementStart: number): string[] {
   return file.classTokens
     .filter((token) => token.elementStart === elementStart)
@@ -105,7 +105,7 @@ function lastCompound(selector: string): string {
 }
 
 /**
- * Every class name a declaration's selector genuinely targets on its own subject element, across
+ * Every class name a declaration's selector genuinely targets on its subject element, across
  * every comma-separated branch. Used to reject a declaration whose selector only mentions a class
  * as an ANCESTOR gate (see {@link lastCompound}), which `ctx.sheet.declarations` cannot itself
  * distinguish: it indexes a rule under every class its selector text contains, subject or not.
@@ -118,7 +118,7 @@ function subjectClassNames(selector: string): Set<string> {
   return names;
 }
 
-/** The first of an element's own classes the compiled sheet resolves to a marker-removing rule. */
+/** The first of an element's classes the compiled sheet resolves to a marker-removing rule. */
 function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): CauseMatch | undefined {
   for (const name of classes) {
     const decl = ctx.sheet
@@ -135,7 +135,7 @@ function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): CauseMa
 }
 
 /**
- * The first of an item's own classes the compiled sheet resolves to a display that keeps the
+ * The first of an item's classes the compiled sheet resolves to a display that keeps the
  * item rendered but strips its `list-item` box (`flex`, `grid`, `block`, `inline-flex`, and so
  * on). `display: none` is excluded on purpose: a hidden item is removed from rendering and from
  * the accessibility tree entirely, so it cannot strip the enclosing list's implicit role, which
@@ -223,7 +223,7 @@ export const listRole: StaticRule = {
             .find((value) => value !== undefined);
           if (!hit) continue;
           cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"${conditionSuffix(hit.conditions)}`;
-          // Aligned with the rendered rule's own item-level remedy: HTML-AAM maps <li> to listitem
+          // Aligned with the rendered rule's item-level remedy: HTML-AAM maps <li> to listitem
           // by its parent relationship (a direct child of <ul>/<ol>, or of an element with
           // role="list"), a mapping this exact display change already disrupts, so an explicit role
           // on the item is the defensive fix rather than relying on that mapping alone.

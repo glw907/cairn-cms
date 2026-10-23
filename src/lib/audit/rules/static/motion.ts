@@ -5,7 +5,7 @@
 // property the other never asks about. motion-property and motion-vocabulary share the
 // `--animate-*` indirection below for the same reason: an `animate-*` utility is only reachable
 // through the custom property its compiled `animation` value names, and a rule that resolved that
-// chain its own way would be checking a different animation from its sibling.
+// chain its way would be checking a different animation from its sibling.
 import type { CompiledSheet } from '../../sheet.js';
 
 const MOTION_PROPERTY =

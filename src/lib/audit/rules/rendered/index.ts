@@ -10,13 +10,13 @@
 // `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`, `form-font-parity`,
 // `field-edge-alignment`, `container-inset-asymmetry`, `motion-reduced-delay`), which report and
 // never reach the exit code. `motion-reduced-delay` is the one rule declaring an `axes` other than
-// the default: it opens its own `reducedMotion: 'reduce'` context rather than adding to every
+// the default: it opens a `reducedMotion: 'reduce'` context rather than adding to every
 // other rule's page-load count.
-// `form-font-parity` is registered PROVISIONALLY at advisory: its own
+// `form-font-parity` is registered PROVISIONALLY at advisory: its
 // header names the intended promotion to error, gated on a CI re-check. `panel-width`
-// closes the hole `viewport-overflow` declines on purpose (see its own header): a row clipped
+// closes the hole `viewport-overflow` declines on purpose (see its header): a row clipped
 // inside a table wrapper that never genuinely scrolls to reach it. `list-role` closes the gap the
-// STATIC `list-role` names in its own header: a descendant selector scoped to an ancestor's class
+// STATIC `list-role` names in its header: a descendant selector scoped to an ancestor's class
 // (daisyUI's `.menu :where(li)`) rather than the item's own, seen here through the item's actual
 // computed display rather than a second class-source lookup.
 import { borderContrast } from './border-contrast.js';

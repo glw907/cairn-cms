@@ -1,9 +1,9 @@
 // cairn-audit's log-event-grammar rule: a name heuristic over `<ident>.info(`, `.warn(`, and
 // `.error(` calls whose first argument is a plain string literal. It checks the literal against
-// two things: whether it already collides with a name cairn's own CairnLogEvent union reserves,
+// two things: whether it already collides with a name cairn's CairnLogEvent union reserves,
 // and whether its shape reads as `area[.subject].verb_phrase` (two or more snake_case segments,
 // the last a past-tense verb or a known state adjective), the grammar `src/lib/log/events.ts`'s
-// own header states.
+// header states.
 //
 // This is a NAME heuristic, not a type check: it has no way to know whether `<ident>` is cairn's
 // own logger, so it flags `console.info('a.b.c')` and another library's differently-shaped
@@ -19,7 +19,7 @@ const CALL = /[A-Za-z_$][\w$]*\.(?:info|warn|error)\(/g;
 
 // The header's past-tense-or-adjective closing segments this rule recognizes as grammar
 // conforming when the last segment does not simply end in "ed": the state adjectives among
-// CAIRN_LOG_EVENTS's own members that name a detected condition rather than an occurrence.
+// CAIRN_LOG_EVENTS's members that name a detected condition rather than an occurrence.
 const STATE_ADJECTIVES = new Set([
   'unknown',
   'invalid',

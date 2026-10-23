@@ -1,18 +1,18 @@
 // cairn-audit's no-uncompiled-class rule: every class token an admin component's markup writes
-// has to actually compile into the built cairn-admin.css, or be a name the component's own scoped
+// has to actually compile into the built cairn-admin.css, or be a name the component's scoped
 // <style> block defines locally. A class that reaches neither read as present in the author's mind
 // and is absent from what ships: three real cases motivated this rule (the invisible Overdue chip,
 // the silent ml-1/divide-y no-ops, the unstyled stats strip). Matching is exact through `sheet.ts`,
 // never a substring or a word boundary, so `text-base` (the size utility) and `text-base-content`
 // (the daisyUI color utility) never read as the same class.
 //
-// The sheet check reads `mentions`, not `has`: daisyUI's own `.menu` rules exclude `.disabled` and
+// The sheet check reads `mentions`, not `has`: daisyUI's `.menu` rules exclude `.disabled` and
 // `.menu-title` items from hover/focus purely through `:not(...)` negation, with no rule ever
-// declaring either class positively. A markup class used that way (EntryPicker's own
+// declaring either class positively. A markup class used that way (EntryPicker's
 // `class:disabled` on a selected menu item) is real, working daisyUI API, not an uncompiled miss.
 import type { Finding, StaticRule } from '../../types.js';
 
-/** Every markup class token this component's own scoped `<style>` block or the built sheet never acknowledges. */
+/** Every markup class token this component's scoped `<style>` block or the built sheet never acknowledges. */
 export const noUncompiledClass: StaticRule = {
   id: 'no-uncompiled-class',
   tier: 'error',

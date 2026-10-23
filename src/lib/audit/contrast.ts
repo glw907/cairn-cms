@@ -20,7 +20,7 @@ import type { Color } from 'culori';
 /**
  * A color the resolver produced, in the space it was parsed or mixed in: a mode tag, that mode's
  * channels, and an optional alpha. Declared here rather than re-exported from the color library,
- * which ships no type declarations of its own, so a consumer's type check never has to resolve it.
+ * which ships no type declarations, so a consumer's type check never has to resolve it.
  */
 export interface ResolvedColor {
   mode: string;
@@ -217,7 +217,7 @@ function opaque(color: Color): Color {
 
 /**
  * `fg` over `bg` in one gamut: both clamped into it, `fg` composited over `bg` by its alpha in that
- * gamut's own encoded channels, and the WCAG ratio of the result against `bg`.
+ * gamut's encoded channels, and the WCAG ratio of the result against `bg`.
  */
 function gamutRatio(fg: Color, bg: Color, clamp: (color: Color) => Color, into: (color: Color) => Color): number {
   const ground = into(clamp(opaque(bg)));

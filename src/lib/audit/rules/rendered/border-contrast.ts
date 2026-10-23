@@ -3,17 +3,17 @@
 // `RATIO_FLOOR`; the criterion reaches control-identifying boundaries and graphical objects, not
 // every card hairline). Advisory, and deliberately report-only, not by
 // accident: the documented `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
-// against the page's base-200 ambient (both numbers reproduced exactly by this rule's own fixtures
+// against the page's base-200 ambient (both numbers reproduced exactly by this rule's fixtures
 // against real Chromium). The hairline's quiet edge is a settled design decision: the
 // hairline stays as designed, the quiet edge is deliberate, and `check` below stops reporting the
-// page's own `--cairn-card-border` while it still renders the way it was designed (see
+// page's `--cairn-card-border` while it still renders the way it was designed (see
 // `RATIFIED_TOKEN` and `RATIFIED_HAIRLINE_FLOOR`). Do not loosen the floor or widen the exemption
-// to make cairn's own admin quiet; every OTHER boundary still has to answer the measurement
+// to make cairn's admin quiet; every OTHER boundary still has to answer the measurement
 // honestly, including a border that merely resolves to the same bytes as the ratified one, and
 // including the ratified token itself wherever it stops separating anything.
 //
 // The identity half of that exemption is proved by DERIVATION, never by comparing colors. An
-// adversarial pass refuted a byte-equality cut on cairn's own admin: `cairn-admin.css` declares
+// adversarial pass refuted a byte-equality cut on cairn's admin: `cairn-admin.css` declares
 // `--color-base-300: oklch(30% 0.014 75)` and `--cairn-card-border: oklch(30% 0.014 75)` in the same
 // dark block, so equality swallowed every `border-base-300` boundary in the dark theme (the shell's
 // CMS pill, the media library's clear-selection button, RepeatableField, MediaHeroField) under a
@@ -32,7 +32,7 @@
 // carries an `exemption` reason that routes it to the report's suppressed list, so every run prints
 // the ruling and counts what it let through.
 //
-// The engine's own norms manifest carries the ruling too: `card`/`border-color` sits in
+// The engine's norms manifest carries the ruling too: `card`/`border-color` sits in
 // `RATIFIED_NORMS` with this ruling as its reference, and `norms-manifest.json` records it as
 // `ratified` with no `open-question` flag, so `cairn-audit norms card` prints the decision rather
 // than a question. `checkManifestDisciplines` holds the two halves against each other in both
@@ -50,15 +50,15 @@
 // the element's ancestor chain.
 //
 // So adjacency is read GEOMETRICALLY: hit-test a point just beyond each border edge, and resolve
-// the ground from whatever element actually paints there. The INSIDE surface is the element's own
+// the ground from whatever element actually paints there. The INSIDE surface is the element's
 // fill, which fixes a third demonstrated defect: `background-clip` defaults to `border-box`, so an
-// element's own fill paints under its own border, and compositing a translucent stroke over the
+// element's fill paints under its border, and compositing a translucent stroke over the
 // ancestor instead reported a border 27% off what the pixels show, on the 35 translucent-bordered
 // elements `/admin/posts` alone ships.
 //
 // The verdict is that a border renders no visible boundary when it clears the floor against
 // NEITHER surface, and the badge-on-thumbnail case stops reporting because a 3.63 boundary is
-// genuinely visible. The ratified hairline measures 1.11 outside and 1.19 against the card's own
+// genuinely visible. The ratified hairline measures 1.11 outside and 1.19 against the card's
 // fill under that reading, which is the pair the hairline exemption is bounded by, and it is still
 // the pair the message prints for any border painted in that color WITHOUT the token.
 //
@@ -96,7 +96,7 @@ import {
  * are neither, so a finding on one is a design observation and never a conformance failure. This
  * rule cannot tell the two populations apart from computed style alone, so it applies the number to
  * every border and says which it is; the calibration singles out the form-control boundaries as the
- * criterion's own core case
+ * criterion's core case
  * (`docs/internal/2026-07-design-infrastructure-audit-calibration.md`).
  *
  * The bar this is NOT: 1.4.3 Contrast (Minimum)'s 4.5:1 text floor, which no rule in this engine
@@ -112,13 +112,13 @@ const NO_BORDER_ALPHA = 0.02;
  * The custom property the documented hairline is declared on. Never compared as a value: what qualifies a border is that
  * it is PAINTED THROUGH this property, which {@link RATIFIED_SENTINEL} decides per element.
  *
- * Two cuts failed here and both are worth keeping named. Hard-coding cairn's own resolved sRGB
+ * Two cuts failed here and both are worth keeping named. Hard-coding cairn's resolved sRGB
  * bytes silenced any surface that landed on `rgb(235, 231, 226)` and silenced nothing for a
  * consumer whose Warm Stone re-tune moves the hairline a few hundredths in OKLCH, the population
- * mismatch `norms.ts`'s own `isTokenDerived` doc warns about in the same words. Reading the token
+ * mismatch `norms.ts`'s `isTokenDerived` doc warns about in the same words. Reading the token
  * off the element and comparing THAT to the stroke fixed the consumer half and left the collision
  * half wide open, because a page is free to declare two properties with identical bytes, and
- * cairn's own dark theme does.
+ * cairn's dark theme does.
  */
 const RATIFIED_TOKEN = '--cairn-card-border';
 
@@ -162,20 +162,20 @@ const RATIFIED_SENTINEL = 'rgb(1, 2, 3)';
  * The contrast the ratified hairline actually renders at, and the floor its exemption is gated on.
  * The exemption covers a MEASUREMENT, not a color, so matching the token is necessary and not
  * sufficient: the exemption applies only while the boundary still reads at least this well against
- * one of the two surfaces it separates, which is the rule's own verdict shape ({@link RATIO_FLOOR})
+ * one of the two surfaces it separates, which is the rule's verdict shape ({@link RATIO_FLOOR})
  * evaluated at the ratified number instead of WCAG's.
  *
  * THE GATED QUANTITY IS `bestRatio`, the better of the two surfaces, never the outer one alone.
  * Both numbers are printed and only one is compared, so say which: the measured pairs, reproduced by
  * `rulings.border-contrast.test.ts` against real Chromium, are light 1.11 against the ambient beside
- * it and 1.19 against the card's own fill; dark 1.43 and 1.20 on a base-100 ambient, 1.33 and 1.20
+ * it and 1.19 against the card's fill; dark 1.43 and 1.20 on a base-100 ambient, 1.33 and 1.20
  * on base-200. The exemption is gated on 1.19 and 1.20, not on 1.11. A reader who compares the
- * headline 1.11 to this floor concludes the exemption fires on a boundary failing its own bound.
+ * headline 1.11 to this floor concludes the exemption fires on a boundary failing its bound.
  *
  * The card-fill pairing is the invariant one, since it is two tokens against each other rather than
  * against whatever surface a card lands on, so the floor sits just under it. A colour-only exemption
  * had no such bound and silenced the token rendered at contrast 1.00 on BOTH sides, which is the
- * divider-between-identical-rows case this file's own header names as the defect the geometric
+ * divider-between-identical-rows case this file's header names as the defect the geometric
  * rewrite exists to catch.
  *
  * THE TOLERANCE THIS BUYS A CONSUMER IS NARROW, and narrower than the identity half beside it.
@@ -183,7 +183,7 @@ const RATIFIED_SENTINEL = 'rgb(1, 2, 3)';
  * OKLCH still qualifies; this floor is a literal, so a re-tune that softens the hairline more than
  * roughly 4% against the card fill drops `bestRatio` under 1.15 and every `.card-shell` on every
  * page reports again, which is the 135-finding population the ruling exists to quiet. Deriving the
- * floor from the page's own resolved token pairing rather than pinning cairn's number is the repair,
+ * floor from the page's resolved token pairing rather than pinning cairn's number is the repair,
  * and it is filed with the other rule-repair follow-ups in ROADMAP.
  */
 const RATIFIED_HAIRLINE_FLOOR = 1.15;
@@ -220,7 +220,7 @@ interface BorderContrastCandidate {
   selector: string;
   /** Every side that actually renders: a width past the sub-pixel floor and a drawn style. */
   sides: BorderSide[];
-  /** The paint chain just inside the border, starting with the element's own fill. */
+  /** The paint chain just inside the border, starting with the element's fill. */
   inner: PaintLayer[];
   /** The page canvas, as a CSS color string, for each chain to resolve onto. */
   canvas: string;
@@ -307,7 +307,7 @@ function readBorderCandidates(probe: { token: string; sentinel: string }): Borde
    * Which of `drawn`'s sides are painted through the ratified token, decided by substituting the
    * sentinel for it on this element and seeing which computed border colors follow. The inline
    * declaration wins over anything the cascade put on the element and is restored before the
-   * function returns, including the rare case of an element that carried its own inline value.
+   * function returns, including the rare case of an element that carried its inline value.
    *
    * `transition-property` is forced to `none` across the probe, and that is not hygiene, it is what
    * makes the answer correct. A transition covering `border-color` makes `getComputedStyle` report
@@ -318,7 +318,7 @@ function readBorderCandidates(probe: { token: string; sentinel: string }): Borde
    * themes while its border did follow the substitution 0.2s later. The tell in the raw value is a
    * serialization flip, `oklch(0.93 0.008 75)` before and `oklab(0.93 0.00207 0.00773)` after: the
    * same color, re-expressed in the space Chromium interpolates colors in. Restoring the token
-   * before `transition-property` keeps the restore from starting a transition of its own.
+   * before `transition-property` keeps the restore from starting a transition.
    */
   function derivedSides(el: Element, drawn: { side: BorderSide['side']; color: string }[]): boolean[] {
     const inline = (el as HTMLElement).style;
@@ -435,9 +435,9 @@ export const borderContrast: RenderedRule = {
       // the top edge and the body under the other three.
       //
       // The outer chain never starts with the audited element, so an unresolvable ground there is
-      // always someone else's paint. Wording it as the element's own was a reporting defect the
+      // always someone else's paint. Wording it as the element's was a reporting defect the
       // slice-by-one idiom introduced: a gradient on the immediate parent read as "the element
-      // paints its own background-image".
+      // paints its background-image".
       const grounds = candidate.sides.map((side, index) =>
         resolveGround(side.outer, outerColors[index], { canvas, firstLayerIs: 'ancestor' })
       );
@@ -453,17 +453,17 @@ export const borderContrast: RenderedRule = {
         else groups.set(key, { sides: [side.side], index });
       });
 
-      // `opacity` composites an element WITH its whole subtree, so the element's own fill and its
-      // stroke are dimmed by its own opacity and again by every ancestor's. The backdrop measured
+      // `opacity` composites an element WITH its whole subtree, so the element's fill and its
+      // stroke are dimmed by its opacity and again by every ancestor's. The backdrop measured
       // against is sampled GEOMETRICALLY, from whatever paints beside the border, and a dimming
       // ancestor the two chains SHARE is already inside that sample. Multiplying the whole chain in
       // again applied that ancestor twice, thinning the element's paint AND lightening the backdrop
-      // it lands on, which is verbatim the per-layer failure `resolveGround`'s own doc describes.
+      // it lands on, which is verbatim the per-layer failure `resolveGround`'s doc describes.
       //
       // The two models cannot be reconciled from what this rule holds. "This fill over that
       // geometric surface" is exact only while no shared ancestor dims, and a `PaintLayer` carries
       // no element identity, so the shared ancestors cannot be found to divide their contribution
-      // back out. The element's own opacity is therefore applied, and a dimming ANCESTOR makes the
+      // back out. The element's opacity is therefore applied, and a dimming ANCESTOR makes the
       // measurement indeterminate rather than a number the rule cannot stand behind. That is the
       // direction this engine fails in: a reported "could not measure" over a wrong ratio.
       const ownOpacity = cumulativeOpacity(candidate.inner.slice(0, 1));
@@ -487,10 +487,10 @@ export const borderContrast: RenderedRule = {
           findings.push(indeterminateFinding('border-contrast', candidate.selector, outer.reason));
           continue;
         }
-        // The surface INSIDE the border is the element's own fill over whatever is behind it, which
+        // The surface INSIDE the border is the element's fill over whatever is behind it, which
         // is the surface the outward sample just measured. Resolving it against the DOM ancestor
         // chain instead is what scored an overlaid badge against the card behind its thumbnail. The
-        // fill carries the element's own opacity for the same reason the stroke does, and no more
+        // fill carries the element's opacity for the same reason the stroke does, and no more
         // than that: an ancestor's dimming already reached this measurement through `outer.color`,
         // and the guard above refused the case where it did.
         const innerLayer = candidate.inner.slice(0, 1).map((layer) => ({ ...layer, opacity: ownOpacity }));
@@ -518,7 +518,7 @@ export const borderContrast: RenderedRule = {
         if (alpha < NO_BORDER_ALPHA) continue;
 
         // `background-clip: border-box` is the default, so the border band paints over the
-        // element's OWN fill. The pixel a user sees is the stroke composited onto that fill, not
+        // element's fill. The pixel a user sees is the stroke composited onto that fill, not
         // onto the ancestor behind it: a 5%-white stroke on a white card reads white (21:1 against
         // a black page), and compositing it over the ancestor reported 1.08.
         const painted = composite({ ...stroke, a: alpha }, inner.color);

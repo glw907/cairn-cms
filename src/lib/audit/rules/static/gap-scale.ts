@@ -1,9 +1,9 @@
-// cairn-audit's gap-scale rule: an admin component's own arbitrary margin/padding/gap literal (a
+// cairn-audit's gap-scale rule: an admin component's arbitrary margin/padding/gap literal (a
 // Tailwind bracket, never a named step) has to resolve to a scale. `gap`/`gap-x`/`gap-y` resolve
 // either through one of the four ratified `--cairn-gap-*` relationship roles (label/control/group/
-// section) by var() reference, or, like margin and padding, through Tailwind's own spacing grid: a
+// section) by var() reference, or, like margin and padding, through Tailwind's spacing grid: a
 // plain rem/px length landing on an exact HALF-step of `--spacing` (0.125rem, the finest increment
-// Tailwind's own named scale carries: `p-0.5`, `p-2.5`), the same grid a named step (`p-4`) rides
+// Tailwind's named scale carries: `p-0.5`, `p-2.5`), the same grid a named step (`p-4`) rides
 // by construction and this rule never even looks at. A bracket whose value is not a plain length (a
 // viewport unit, a `calc()`, an `env()`) is expressing geometry the spacing scale has no vocabulary
 // for at all, a safe-area inset or a viewport-relative offset rather than a spacing relationship,
@@ -50,7 +50,7 @@ export const gapScale: StaticRule = {
         if (!match) continue;
         const [, property, literal] = match;
         // The bracket text is the fallback for a class the audited sheet never compiled (a
-        // consumer building its own stylesheet), never the preferred reading.
+        // consumer building its stylesheet), never the preferred reading.
         const compiled = compiledValues(ctx, token.value, (name) => SPACING_PROPERTY.test(name));
         const values = compiled.length > 0 ? compiled : [literal];
         if (values.every((value) => resolvesToScale(property, value))) continue;

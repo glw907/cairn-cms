@@ -1,7 +1,7 @@
 // The type vocabulary the rendered runner and every rendered rule share: the Playwright surface
 // this module drives (typed narrowly rather than imported from the `playwright` package, since
 // Playwright is a dynamic import from whichever tree the caller executes in), the finding and
-// allowlist-bookkeeping shapes, the page-identity guard's own contract, and the substitution seam
+// allowlist-bookkeeping shapes, the page-identity guard's contract, and the substitution seam
 // (`RenderedDeps`) a test injects. No logic lives here, only the interfaces `rendered.ts`,
 // `findings.ts`, `identity.ts`, and every rendered rule build against.
 import type { PaintLayer } from '../color.js';
@@ -12,7 +12,7 @@ import type { Tier } from '../types.js';
 export type Theme = 'light' | 'dark';
 
 /**
- * A DOM state a rendered rule reads from, beyond a page's own rest render. The runner captures only
+ * A DOM state a rendered rule reads from, beyond a page's rest render. The runner captures only
  * the states the REGISTERED rules actually declare (see {@link RenderedRule.states}), so a rule that
  * only needs `'rest'` never pays for a menu-open pass nobody asked for. `row-expanded` clicks the
  * first `ExpandableRow` summary trigger it finds, the precedent `menu-open` set for a real
@@ -23,9 +23,9 @@ export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-exp
 
 /**
  * An emulated browser condition a rendered rule may opt into, layered above the theme context. A
- * rule that declares no axis runs under `'default'` alone (the runner's own default, the same shape
+ * rule that declares no axis runs under `'default'` alone (the runner's default, the same shape
  * {@link RenderedRule.states} defaults to `['rest']`), so a registry with no axis-declaring rule
- * opens exactly the contexts it opens today. `'reduced-motion'` is `motion-reduced-delay`'s own
+ * opens exactly the contexts it opens today. `'reduced-motion'` is `motion-reduced-delay`'s
  * axis; a later pass's rendered hover half is expected to add a touch-modality axis here.
  */
 export type EmulationAxis = 'default' | 'reduced-motion';
@@ -39,7 +39,7 @@ export type EmulationAxis = 'default' | 'reduced-motion';
  * The live browser page a rendered rule reads from. Viewport control is part of the surface rather
  * than a rule's private cast: two v1 rules (`touch-targets`, `viewport-overflow`) check a floor
  * that is only meaningful at a stated width, and both independently reached past a narrower
- * interface to Playwright's own method, which is the signal that the width belongs here.
+ * interface to Playwright's method, which is the signal that the width belongs here.
  */
 export interface RenderedPage {
   goto(url: string, options?: { waitUntil?: string; timeout?: number }): Promise<{ status(): number } | null>;
@@ -61,9 +61,9 @@ export interface RenderedContext {
 /** The launched browser instance. */
 export interface RenderedBrowser {
   /**
-   * `javaScriptEnabled: false` is the page-identity guard's own option: a context opened with it
-   * never runs the page's own scripts, so `evaluate` reads back whatever the server actually sent,
-   * with no race against hydration. Playwright still serves `evaluate` through its own runtime
+   * `javaScriptEnabled: false` is the page-identity guard's option: a context opened with it
+   * never runs the page's scripts, so `evaluate` reads back whatever the server actually sent,
+   * with no race against hydration. Playwright still serves `evaluate` through its runtime
    * binding regardless of the flag, so a page opened this way is otherwise ordinary.
    *
    * `reducedMotion` and `hasTouch` are the two emulation options {@link EmulationAxis} threads
@@ -95,7 +95,7 @@ export interface RenderedRuleContext {
   state: InteractionState;
   /**
    * The emulation axis this context was opened under; see {@link RenderedRule.axes}. Optional so
-   * every rendered rule's own fixture suite, which builds this shape by hand against a bare
+   * every rendered rule's fixture suite, which builds this shape by hand against a bare
    * Playwright page and predates the axis, keeps compiling unchanged; `runRendered` itself always
    * sets it, and a rule that reads it treats an absent value as `'default'`, the same default
    * `axes` itself carries.
@@ -106,7 +106,7 @@ export interface RenderedRuleContext {
 
 /**
  * One rendered rule's raw verdict about one element. `selector` is the same signature idiom the
- * graduating live probes use today (a tag plus a handful of classes, or whatever a rule's own DOM
+ * graduating live probes use today (a tag plus a handful of classes, or whatever a rule's DOM
  * walk names the element): it is what the page+selector+reason allowlist matches against, since a
  * live-page finding has no source line a suppression comment could sit beside.
  */
@@ -132,8 +132,8 @@ export interface RenderedFinding {
    *
    * The alternative a rule reaches for first is `continue`, and that is the defect this field
    * exists to make impossible: `border-contrast`'s ratified hairline silenced 135 findings against
-   * cairn's own admin while the report said `0 suppressed`. An engine whose premise is that silent
-   * green is the enemy counts its own exceptions.
+   * cairn's admin while the report said `0 suppressed`. An engine whose premise is that silent
+   * green is the enemy counts its exceptions.
    */
   exemption?: string;
 }
@@ -204,7 +204,7 @@ export interface RenderedPageVisit {
 /**
  * What a route's identity looks like to the post-hydration guard: enough to say whether the DOM that
  * settles after hydration still belongs to the page that was navigated to. Generic across any route
- * cairn or a consumer might serve, including a consumer's own custom route and the shell-less login
+ * cairn or a consumer might serve, including a consumer's custom route and the shell-less login
  * page: neither carries cairn-only markup, and both still produce one, `landmark` simply reading null
  * where no `<main>`/`[role="main"]` region exists on either side.
  */
@@ -217,24 +217,24 @@ export interface PageIdentity {
 export interface RenderedDeps {
   /** Whether BASE_URL answers; defaults to a real `fetch`. */
   isReachable?: (url: string) => Promise<boolean>;
-  /** Loads Playwright; defaults to a dynamic import of the caller's own install. */
+  /** Loads Playwright; defaults to a dynamic import of the caller's install. */
   loadPlaywright?: () => Promise<PlaywrightModule>;
 }
 
 /**
  * The measurement helpers every rendered rule shares, installed on the page rather than closed
  * over. A function handed to `page.evaluate` is serialized by source and cannot reference anything
- * outside its own body, which is why five rules each grew their own copy of "is this visible" and
+ * outside its body, which is why five rules each grew a copy of "is this visible" and
  * "name this element"; the copies then drifted, and an adversarial pass demonstrated the drift as
  * shipped defects (an `sr-only` heading counted as a rendered heading, an unescaped Tailwind class
  * signature that no `querySelectorAll` could parse). Installing one implementation on `window` and
- * calling it from inside each rule's own evaluate keeps the definition single without reintroducing
+ * calling it from inside each rule's evaluate keeps the definition single without reintroducing
  * the closure the serializer forbids.
  */
 export interface CairnAuditPageHelpers {
   /**
    * A valid CSS selector naming `el`: its tag, its id, and up to four of its classes, every
-   * identifier escaped. Tailwind's own class syntax (`lg:ml-56`, `max-w-[30%]`) is not a legal
+   * identifier escaped. Tailwind's class syntax (`lg:ml-56`, `max-w-[30%]`) is not a legal
    * identifier unescaped, and an unescaped signature throws inside `querySelectorAll`.
    */
   signature(el: Element): string;
@@ -246,7 +246,7 @@ export interface CairnAuditPageHelpers {
   isVisible(el: Element): boolean;
   /** Whether `el` carries the visually-hidden recipe (a clipped 1px box), on its own or by ancestry. */
   isScreenReaderOnly(el: Element): boolean;
-  /** `el`'s own paint layer, then each ancestor's up to the document root. */
+  /** `el`'s paint layer, then each ancestor's up to the document root. */
   paintLayers(el: Element): PaintLayer[];
   /** The color the browser paints where nothing in the document ever paints, as a CSS string. */
   canvasColor(): string;
@@ -255,12 +255,12 @@ export interface CairnAuditPageHelpers {
    * `'::after'`, matches `el` under that pseudo-element) and which declares `property` at all,
    * walked across the page's CSSOM. Six node shapes are descended into looking for a matching leaf:
    * an ordinary style rule, `CSSNestedDeclarations` (bare declarations trailing a nested rule,
-   * matched against the nearest enclosing style rule's own selector), `CSSSupportsRule`,
+   * matched against the nearest enclosing style rule's selector), `CSSSupportsRule`,
    * `CSSContainerRule`, `CSSLayerBlockRule`, and `@starting-style`'s `CSSStartingStyleRule`. A
    * `@media` block is deliberately never descended into: this walker exists to locate the rule
    * behind a FIRING element, and every rule gated behind `prefers-reduced-motion` lives inside one,
    * so a firing element's authoring rule is never there. A cross-origin or otherwise
-   * opaque stylesheet throws reading its own `cssRules`; that sheet is skipped rather than aborting
+   * opaque stylesheet throws reading its `cssRules`; that sheet is skipped rather than aborting
    * the walk over every other sheet on the page.
    *
    * This is a locator, not a detector: it reports what is authored, leaving whether the computed

@@ -2,10 +2,10 @@
 // made mechanical. A site re-tunes palette tokens (--color-*) freely; it never redeclares a
 // grammar token (--cairn-type-*/--cairn-gap-*), since a grammar token names a structural
 // RELATIONSHIP (a heading's role, a control-to-control gap) rather than a palette choice, and
-// holds across light and dark by construction. The engine's own cairn-admin.css is the one
+// holds across light and dark by construction. The engine's cairn-admin.css is the one
 // legitimate declaration site and is deliberately outside the CSS-family scope (see css-scope.ts):
-// this rule only ever sees a component's own scoped <style> block or a consumer-named CSS file,
-// and cairn-admin.css is never named as one, so a clean run never has to special-case its own
+// this rule only ever sees a component's scoped <style> block or a consumer-named CSS file,
+// and cairn-admin.css is never named as one, so a clean run never has to special-case its
 // source of truth. (It is also named in `config.paletteCssFiles`, config.ts, the declared-palette-
 // site list token-colors consults; the two exclusions are independent, since a grammar
 // declaration site and a palette declaration site are different concepts that happen to coincide

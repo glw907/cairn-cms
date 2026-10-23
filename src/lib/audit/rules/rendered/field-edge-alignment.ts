@@ -1,17 +1,17 @@
 // cairn-audit's field-edge-alignment rule: the staircase detector, the
 // mechanical half of finding 3. Within a grid or flex-column container, two or more form controls
 // (`.input`, `.select`, `.textarea`) that render in the same visual column must share a left edge,
-// within 1.5px. The motivating shape is a consumer-site harvest's own corpus finding: an
+// within 1.5px. The motivating shape is a consumer-site harvest's corpus finding: an
 // `inline`-register field (`FieldLabel`'s label-beside-control layout, `FieldLabel.svelte`) whose
 // label text varies row to row pushes each row's control to a different left edge, since the
-// label's own width is what the control's start position rides on. `register="stacked"` (the
+// label's width is what the control's start position rides on. `register="stacked"` (the
 // default) cannot produce this shape at all, since a stacked control always starts at
-// its own container's edge; this rule is what catches a developer reaching for `inline` in a
+// its container's edge; this rule is what catches a developer reaching for `inline` in a
 // multi-column composition where the staircase reappears.
 //
 // GROUPING. A control's group is keyed by its NEAREST ancestor that is itself a CSS grid or a
 // flex-column box (`display: grid`/`inline-grid`, or `flex`/`inline-flex` with `flex-direction:
-// column`). An `inline`-register field's own wrapper is a flex ROW (`FieldLabel.svelte`'s `flex
+// column`). An `inline`-register field's wrapper is a flex ROW (`FieldLabel.svelte`'s `flex
 // items-center gap-1.5`), so the walk passes through it to the grid or list container above, and
 // two inline fields under that same container land in the same group. A `stacked`-register field's
 // wrapper IS itself a flex-column box, so the walk stops there: that field's control is grouped
@@ -28,10 +28,10 @@
 // column-1 control's range AND a column-2 control's range, and transitive clustering ("share a
 // column with anything I overlap") chains the two real columns into one, comparing controls that
 // were never meant to align. Left-edge proximity only ever asks whether two edges are close to each
-// other, so a spanning control's own left edge (wherever its column starts) clusters with that
+// other, so a spanning control's left edge (wherever its column starts) clusters with that
 // column alone, however far its rect reaches to the right.
 //
-// Advisory: "same column" is a heuristic over arbitrary layouts, not a DOM contract cairn's own
+// Advisory: "same column" is a heuristic over arbitrary layouts, not a DOM contract cairn's
 // components declare, and a legitimately narrower control deliberately placed off-grid (a compact
 // inline filter beside a wider stacked field, say) is a real composition this rule cannot tell from
 // a defect.
@@ -60,7 +60,7 @@ function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] 
   const CONTROL_SELECTOR = '.input, .select, .textarea';
   // The floor a gap between two sorted left edges may reach and still cluster as the same column.
   // 80px comfortably clears the corpus staircase shape (a ~50px stagger from label-width variance)
-  // while staying far short of a real grid column's own width plus gutter (hundreds of pixels).
+  // while staying far short of a real grid column's width plus gutter (hundreds of pixels).
   const CLUSTER_GAP_PX = 80;
   const helpers = globalThis.__cairnAudit;
   const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());

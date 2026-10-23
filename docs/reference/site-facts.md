@@ -26,14 +26,14 @@ manifest uses.
   Omitted when the site states no posture.
 
 Nothing else of the adapter crosses into this file: `cairn.backend`'s owner and repo and
-`cairn.email.from` are the adapter's own identity, not this contract's concern, and never appear
+`cairn.email.from` are the adapter's identity, not this contract's concern, and never appear
 here.
 
 ## Who writes it and who verifies it
 
 The [`cairn-manifest`](./cli-cairn-manifest.md) CLI writes `site-facts.json` alongside the
 content manifest, reading the same three fields off the adapter that
-[`cairn doctor`](./cli-cairn-doctor.md) derives for its own checks. Run it after you edit your
+[`cairn doctor`](./cli-cairn-doctor.md) derives for its checks. Run it after you edit your
 adapter's media, roles, or AI-posture declaration, so the committed file tracks what the adapter
 states.
 

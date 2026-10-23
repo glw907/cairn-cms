@@ -29,7 +29,7 @@ A SvelteKit site usually imports the shared symbols through this barrel. The `fe
 and `robots.txt` showcase servers reach `rssResponse`, `sitemapResponse`, and `robotsResponse`
 through `@glw907/cairn-cms/delivery`; `feed.json` reaches `jsonFeedResponse` the same way.
 
-**Ordering contract:** a `ContentIndex`'s `all()` already returns entries in the engine's own order,
+**Ordering contract:** a `ContentIndex`'s `all()` already returns entries in the engine's order,
 so a caller never re-sorts it. A dated concept, one whose `routing.dated` is true, such as Posts,
 gets entries newest first by `date`, with an undated entry sorting last. An undated concept, such as
 Pages, gets entries sorted by `title`. The `examples/showcase` home and archive routes rely on this
@@ -67,7 +67,7 @@ whose frontmatter `robots` field doesn't carry `noindex`, and a loader that reso
 `error(404)` on a miss, the same as `entryLoad`, and on a `noindex` entry, so the loader and the
 enumerator agree whether or not the site's route is prerendered. Both read only through the injected `SiteResolver`.
 A request for a path the resolver doesn't carry gets `error(404)`, and nothing outside the
-resolver's own committed content can reach a response. Pair `markdownEntries`/`markdownLoad` with
+resolver's committed content can reach a response. Pair `markdownEntries`/`markdownLoad` with
 [`markdownResponse`](./delivery-data.md#markdownresponse) in a prerendered `+server.ts`, never a
 runtime one, so the served set is always what a build against `main` produced.
 
@@ -78,7 +78,7 @@ composition so a preview and its eventual public page can't structurally drift.
 
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
 `+page.server.ts` calls `entryLoad` through a shared `PublicRoutesConfig` binding and layers the
-site's own reference-edge resolution on top; the `+page.svelte` hands the result to the theme's
+site's reference-edge resolution on top; the `+page.svelte` hands the result to the theme's
 article view rather than rendering the entry inline.
 
 ```ts
@@ -200,7 +200,7 @@ interface EntryDataOverrides {
 }
 ```
 
-Substitutes for `composeEntryData`'s three resolvers, each defaulting to the build's own (throwing)
+Substitutes for `composeEntryData`'s three resolvers, each defaulting to the build's (throwing)
 pair drawn from `config.site`, or `config.resolveMedia` for the hero, when left unset.
 `resolveLink` substitutes `createLinkResolver(config.site)`, `resolveFragment` substitutes
 `createFragmentResolver(config.site)`, and `resolveMedia` substitutes `config.resolveMedia`,
@@ -233,7 +233,7 @@ import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 Render a page's SEO head from a [`SeoMeta`](./delivery-data.md) object into `<svelte:head>`: a title,
 meta tags, link tags, and one escaped JSON-LD script. The title renders from `seo.title` by default;
 `title={false}` lets the site own the `<title>`, and a string overrides it. `titleTemplate` carries the
-site's own title-suffix convention (for example `(t) => `${t} · example.org`\`) and applies to `seo.title`
+site's title-suffix convention (for example `(t) => `${t} · example.org`\`) and applies to `seo.title`
 only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. `markdownUrl`,
 when passed, adds a `rel="alternate" type="text/markdown"` link pointing at the entry's raw-markdown
 twin ([`markdownResponse`](./delivery-data.md#markdownresponse)); a site that has not wired the twin
@@ -259,6 +259,6 @@ mounts it from the `seo` field the catch-all loader returns.
 
 `CairnHead` imports from `@glw907/cairn-cms/delivery/head`, the component-free split that keeps the
 data surface node-safe. A `.svelte` component would pull Svelte into the module graph, so the
-plain-data builders live on [`/delivery/data`](./delivery-data.md) and the one component lives on its
-own `/delivery/head` entry. A plain-Node tool can import the builders without ever resolving a
+plain-data builders live on [`/delivery/data`](./delivery-data.md) and the one component lives on a separate
+`/delivery/head` entry. A plain-Node tool can import the builders without ever resolving a
 component.

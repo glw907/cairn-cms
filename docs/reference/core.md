@@ -4,7 +4,7 @@ The root export is the engine. It carries the adapter and schema contract a site
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
 and GitHub App primitives. A site imports it at `src/theme/cairn.config.ts` and in its admin and
 delivery code. This subpath carries the adapter and schema construction surface plus the read
-helpers a site's own routes call directly; a SvelteKit route factory lives on
+helpers a site's routes call directly; a SvelteKit route factory lives on
 [`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/admin`](./admin.md),
 even though a site's adapter config also feeds both.
 
@@ -14,7 +14,7 @@ import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
 The `.` entry carries the public construction surface: the adapter and schema constructors, the read
-helpers a site calls on its own routes, and the types that name their signatures. **Stable API** is
+helpers a site calls on its routes, and the types that name their signatures. **Stable API** is
 the deliberate public surface, each primary entry point with a worked snippet. **Types** is a table
 of the public type aliases and interfaces. The TypeScript types in `src/lib` are the source of
 truth, and the export-coverage gate checks every name here against them.
@@ -93,7 +93,7 @@ The default backend: a GitHub App over a repo branch, and the value the adapter'
 takes. It carries the App's non-secret identity, the `owner`, `repo`, `appId`, and `installationId`.
 The private key stays the Worker secret `GITHUB_APP_PRIVATE_KEY_B64`, which the engine reads at request
 time and never from the adapter source. The engine resolves one live `Backend` per request from the
-provider, so a different store such as GitLab, Gitea, or plain git can supply its own provider later
+provider, so a different store such as GitLab, Gitea, or plain git can supply its provider later
 without the engine changing. The backend covers read, commit, and branch operations over files. It's
 deliberately not a query interface, so content querying stays build-time over the committed manifest.
 
@@ -122,7 +122,7 @@ affordances until you declare `singular: 'post'`. Declare `singular` on every co
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
 inside another with the `::include` directive. It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
-resolves against a non-routable concept, and an embedded entry publishing its own live page would
+resolves against a non-routable concept, and an embedded entry publishing its live page would
 make the same content reachable two ways.
 
 <!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
@@ -142,8 +142,8 @@ posts: defineConcept({
 #### `supportContact` (adapter `editor` member)
 
 A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
-instruction. Unset, `composeRuntime` defaults it to `https://cairn.pub/help`, cairn's own hosted editor
-help. A site that sets its own value overrides that default, and a site that sets an explicit empty
+instruction. Unset, `composeRuntime` defaults it to `https://cairn.pub/help`, cairn's hosted editor
+help. A site that sets its value overrides that default, and a site that sets an explicit empty
 string gets the prior self-serve state back: the Help home renders no hand-off. Optional.
 
 <!-- snippet-check-skip: illustrates one adapter editor member's value in isolation -->
@@ -293,10 +293,10 @@ names the R2 bucket bound to the Worker and is the one required field. `publicBa
 base path (default `/media`), and `urlForm` chooses whether the public URL carries the slug
 (`/media/<slug>.<hash>.<ext>`, the default) or stays opaque (`/media/<aa>/<hash>.<ext>`).
 `maxUploadBytes` (default 25 MB) and `allowedTypes` (default the common web image types) bound an
-upload. A site can't declare its own named transform presets. The built-in `thumb`, `inline`,
+upload. A site can't declare its named transform presets. The built-in `thumb`, `inline`,
 `card`, and `hero` presets are the whole vocabulary. A site needing a size beyond the four
 built-ins builds a URL directly against Cloudflare's `/cdn-cgi/image/<options>/<path>`
-transform-URL format. The engine's own URL builder is internal, not public surface.
+transform-URL format. The engine's URL builder is internal, not public surface.
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker
@@ -304,7 +304,7 @@ can flip. The media resolver always returns the bare full-size delivery path; `t
 governs only the responsive `srcset` a rendered image gets alongside it. While it is off, a rendered
 image carries no `srcset`, only its full-size src, so a fresh zone serves correct images rather than
 dead `/cdn-cgi/image` URLs. Once it is on, the asset's width is known, and more than one ladder
-width fits under the asset's own width, the resolver also attaches a `srcset` built from that
+width fits under the asset's width, the resolver also attaches a `srcset` built from that
 fixed width ladder; a narrower asset gets no `srcset`. Flip it to `true` only after enabling
 Transformations on the zone.
 
@@ -349,7 +349,7 @@ attributes are a `fields.*` record of scalar leaves: `text`, `textarea`, `number
 `email`, `date`, `datetime`, `boolean`, and `icon`. An `object`, `array`, `multiselect`,
 `reference`, or `image` attribute throws at declaration. It validates at declaration like `defineConcept`, so a bad type or a
 malformed pattern fails at module load rather than at first insert. The built `attributeSchema` is a
-`Fieldset`, the engine's own component-grammar validator runs it, so a component attribute and a
+`Fieldset`, the engine's component-grammar validator runs it, so a component attribute and a
 concept field validate through identical code. A cross-field attribute rule lives in the co-bundled
 `behavior` table, keyed by attribute name.
 
@@ -365,7 +365,7 @@ boundary.
 [`ComponentDef.build`](#definecomponent) is deliberately synchronous: it returns a hast `Element`,
 never a `Promise`, because it runs inline inside the render pipeline's synchronous hast transform,
 once per rendered directive occurrence. A component needing data it does not already have
-pre-fetches that data outside the render pipeline (at content build time, or in the adapter's own
+pre-fetches that data outside the render pipeline (at content build time, or in the adapter's
 resolver) and passes the result through `attributes`, since `build` itself has no seam to await one.
 
 ```ts
@@ -419,7 +419,7 @@ The field vocabulary. A concept declares its fields with the `fields` constructo
 bundles them into a `defineFieldset` schema. That schema is the single source of truth for the editor form, the
 validator, and the inferred frontmatter type, and the descriptors it carries are plain data.
 
-Every `FieldDescriptor` arm renders one editor widget and carries its own validation. The table
+Every `FieldDescriptor` arm renders one editor widget and carries its validation. The table
 below is the fifteen-arm union at a glance; the constructor and container sections that follow
 cover the container types and the cross-field `refine` hook in full.
 
@@ -437,8 +437,8 @@ cover the container types and the cross-field `refine` hook in full.
 | `boolean` | checkbox | none; an absent or non-`true` value normalizes to unset |
 | `icon` | glyph picker when the adapter supplies an icon set; a plain text input when it does not | none; the stored value is the picked glyph's name |
 | `image` | hero-image control (upload, alt, optional caption) | a `required` image with no picked source is the one error this type raises |
-| `object` | a labeled group of its leaf fields | a `required` empty group errors on the group's own path; otherwise each leaf validates independently |
-| `array` | a repeatable-row editor over its `item`, or the reference picker when `item` is a `reference` | a `required` empty list errors on the array's own path; otherwise each row validates by its own item descriptor |
+| `object` | a labeled group of its leaf fields | a `required` empty group errors on the group's path; otherwise each leaf validates independently |
+| `array` | a repeatable-row editor over its `item`, or the reference picker when `item` is a `reference` | a `required` empty list errors on the array's path; otherwise each row validates by its item descriptor |
 | `reference` | a reference picker over one target concept's entries | rejects a value that is not a well-formed entry id |
 
 #### `fields`
@@ -466,8 +466,7 @@ removable option flagged "not in your tag list." This enforcement is opt-in. A s
 leaves the taxonomy field the open creatable multiselect it is by default, and the build-time
 tags-as-data read on `ContentSummary.tags` is identical either way; enforcement is a save-and-edit
 concern, not a build one. The vocabulary supplies the field's options, so declare the taxonomy field
-as an open creatable multiselect with no literal `options` of its own. A field that pre-declares its
-own `options` enforces those at validation, which is a different, fixed-list shape, not the
+as an open creatable multiselect with no literal `options` of its own. A field that pre-declares its `options` enforces those at validation, which is a different, fixed-list shape, not the
 vocabulary-sourced one.
 
 `fields.object({ fields })` groups leaf fields under one frontmatter key, storing a nested object. Its
@@ -529,7 +528,7 @@ declare function defineFieldset<const R extends Record<string, FieldDescriptor>>
 Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors as
 plain data for the editor form, a server-derived validator that coerces each value to its type and
 returns field-keyed errors or normalized data, and a Standard Schema conformance property whose
-issues are the same `ValidationIssue[]` the validator returns, each located by the field's own path
+issues are the same `ValidationIssue[]` the validator returns, each located by the field's path
 (a nested `object`/`array` failure carries the leaf key or row index too). The validator enforces
 each descriptor's declared constraints: a `text` or `textarea` field's `min`, `max`, `length`, and
 `pattern`, and a `date` field's `min` and `max`. A malformed `pattern` throws at the
@@ -540,7 +539,7 @@ all normalize.
 
 [`FieldsetConfig.refine`](#field-types) is deliberately synchronous: it returns
 `Record<string, string> | undefined` directly, never a `Promise`, because it runs inline in the
-save action's own request path, on every save. A site needing async validation (a uniqueness check
+save action's request path, on every save. A site needing async validation (a uniqueness check
 against a database, an external lookup) pre-fetches whatever data the check needs and reads it
 inside the synchronous callback, rather than awaiting inside it.
 
@@ -556,7 +555,7 @@ Stability tier: Extension API.
 - `FieldDescriptor` is the plain-data descriptor union the form, validator, and inference all read.
 - `Fieldset` is the schema a `defineFieldset` call returns, carrying the descriptors, the behavior table,
   the validator, and the Standard Schema property. `validate` takes an optional third argument, `owner`,
-  which names the schema for diagnostics: a concept binds its own id, and a component binds its directive
+  which names the schema for diagnostics: a concept binds its id, and a component binds its directive
   name. The value reaches only the
   [`content.field_behavior_failed`](log-events.md) record, never the validated data.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
@@ -590,7 +589,7 @@ Compose a site's render pipeline from its component registry: directive syntax, 
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererConfig`
 carries the sanitize and anchor controls, the table-scroll default, and a
-`remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
+`remarkPlugins`/`rehypePlugins` seam for a site's plugins.
 
 [`RendererConfig.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
 Schema) => Schema`, called inline while the pipeline composes its sanitize floor for every render
@@ -625,14 +624,14 @@ const { renderMarkdown } = createRenderer(registry);
 `RendererConfig.tableScroll` (default `true`) wraps every rendered table in a labeled,
 keyboard-reachable `role="region"` div, so a narrow viewport scrolls the wrapper instead of
 squeezing the table's columns while the table itself keeps its role in the accessibility tree. Set
-it to `false` for a site that supplies its own table wrapping.
+it to `false` for a site that supplies its table wrapping.
 
-`RendererConfig.remarkPlugins` and `RendererConfig.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
-plugins to the pipeline. A remark plugin runs after cairn's own markdown-stage steps (directive
+`RendererConfig.remarkPlugins` and `RendererConfig.rehypePlugins` add a site's [unified](https://unifiedjs.com)
+plugins to the pipeline. A remark plugin runs after cairn's markdown-stage steps (directive
 stamping, `cairn:` link resolution, figures, `media:` resolution) and before the conversion to
-hast. A rehype plugin runs after cairn's own hast-stage steps (dispatch, the sanitize floor, heading
+hast. A rehype plugin runs after cairn's hast-stage steps (dispatch, the sanitize floor, heading
 slugs, highlighting, anchor hardening, the sink guard, the default table-scroll wrap) and before
-stringification. A site's own post-render transform composes here over the hast tree directly,
+stringification. A site's post-render transform composes here over the hast tree directly,
 instead of re-parsing `renderMarkdown`'s returned HTML string:
 
 ```ts
@@ -712,7 +711,7 @@ declare function parseMarkdown(source: string): {
 ```
 
 Parse a markdown file into its frontmatter and body. The write side, reassembling a file for
-committing, is the engine's own save-path concern, not a construction-time call a site makes.
+committing, is the engine's save-path concern, not a construction-time call a site makes.
 
 ```ts
 import { parseMarkdown } from '@glw907/cairn-cms';
@@ -734,8 +733,8 @@ declare function renderGlyph(name: string, icons: IconSet): Element;
 
 The rest of the hast a component's `build` function needs is site-owned, not engine-owned:
 `ctx.attr(key)` reads a declared string attribute off the `ComponentContext` `build` receives
-(documented on [`/render`](./render.md)), and `build` constructs its own hast directly with
-hastscript's `h()`. The showcase composes `renderGlyph` with its own chassis-local
+(documented on [`/render`](./render.md)), and `build` constructs its hast directly with
+hastscript's `h()`. The showcase composes `renderGlyph` with its chassis-local
 `makeIconRenderer`/`headRow` helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
@@ -845,7 +844,7 @@ const vocabulary = readVocabulary(siteConfig);
 
 The manifest is the committed, build-verified link graph. The content index that projects raw
 markdown into the query surfaces lives at [`/delivery`](./delivery.md). The write and diff side of
-the manifest is the engine's own save path, so only its format, parse, and verify operations stay
+the manifest is the engine's save path, so only its format, parse, and verify operations stay
 public, for a build script or a custom regenerate tool to call.
 
 Each manifest entry also records which fragment ids its body includes, an inclusion edge alongside
@@ -879,7 +878,7 @@ declare function verifyReferences(manifest: Manifest): void;
 Vite plugin uses it in write mode. `parseManifest` is its codec partner: it parses a committed
 manifest's raw text, throwing on malformed JSON, a wrong version, or a malformed entry, so a caller
 gets a well-formed graph or a clear error rather than a broken shape fed silently into further use.
-Use it to validate a manifest your own code fetches, such as when building the `before`/`after` pair
+Use it to validate a manifest your code fetches, such as when building the `before`/`after` pair
 [`buildNewlyPublished`](./delivery-data.md#buildnewlypublished) takes, instead of casting the fetched
 JSON yourself. `verifyManifest` throws when the committed manifest drifts from the corpus, so a
 raw-git edit fails the build loudly. Pass the site's adapter as the third argument to get the
@@ -916,7 +915,7 @@ async function readDeployedManifest(): Promise<Manifest> {
 
 ### Auth and GitHub App
 
-Sending the magic-link email and minting the GitHub App token are the engine's own save and login
+Sending the magic-link email and minting the GitHub App token are the engine's save and login
 paths, not construction-time calls a site makes. The error classes stay public so a custom route can
 catch them: they are defined in the package, so `instanceof` is reliable across the peer boundary.
 
@@ -944,15 +943,14 @@ attempt raced itself. Both the GitHub App backend and the packaged dev backend t
 from `Backend.createBranch`, so a caller (`revertAction` is the one built-in caller today) catches
 the collision as a typed refusal instead of a raw 500. `Backend.createBranch` resolves to the sha
 it created the branch at, so a caller that needs a fail-closed `commit` right after creation can
-pin `expectedHead` to that returned sha rather than a sha it read earlier, which the branch's
-own source ref may have moved past by the time the branch actually landed. `SiteConfigError`
+pin `expectedHead` to that returned sha rather than a sha it read earlier, which the branch's source ref may have moved past by the time the branch actually landed. `SiteConfigError`
 is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` (always
 `config.site-config-invalid`) names the registered diagnostic condition the fault maps to.
 
 ### Roles
 
 The engine hard-codes three capability levels, `owner`, `editor`, and `none`, but not the role
-names a site's people carry. `defineRoles` maps a site's own role names onto those three levels; a
+names a site's people carry. `defineRoles` maps a site's role names onto those three levels; a
 site that declares no `roles` gets the implicit `{ owner: 'owner', editor: 'editor' }` pair, so a
 zero-config site sees no change here.
 
@@ -965,7 +963,7 @@ declare function defineRoles<const R extends RolesDeclaration>(roles: R): R;
 ```
 
 Declare a site's role vocabulary on the adapter's `roles` member, the const-generic companion to
-`defineAdapter` and `defineConcept`: it const-captures the literal role names for the caller's own
+`defineAdapter` and `defineConcept`: it const-captures the literal role names for the caller's
 use, and validates at construction, so a misdeclared vocabulary fails at build. It throws on an
 empty record, an empty role name, a malformed declaration, a `home` that is not an absolute
 `/admin`-prefixed path, a missing `owner` key, or an `owner` mapped to anything but owner
@@ -974,7 +972,7 @@ both anchor on it. Every other name is free, and a common name like `editor` may
 declared like any other name. A role *name* types as `string` everywhere the engine reads one
 (`Editor.role`, an `AccessMap` value, a `navLayout` entry's `roles`); only the three-way
 capability (`owner`, `editor`, `none`) is a closed union, since that vocabulary is genuinely
-fixed while a site's own role names are not.
+fixed while a site's role names are not.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the roles member -->
 ```ts
@@ -1011,7 +1009,7 @@ closed rather than locking the person out of sign-in.
 `resolveOwnerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
 across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
 declared `/admin` landing `home`, retired from this subpath: zero
-consumers, and its own logic was only the first of three branches in the engine's landing policy,
+consumers, and its logic was only the first of three branches in the engine's landing policy,
 so a site copying it got no policy from it alone.)
 
 ### Access map
@@ -1019,7 +1017,7 @@ so a site copying it got no policy from it alone.)
 A role vocabulary says who has which name; the access map says what each name may reach.
 `defineAccess` declares the map once, and `canReach` is the one authority function every
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
-helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
+helper, the engine's route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
 See [Restrict admin access](../extend/restrict-admin-access.md) for the worked guide.
 
@@ -1042,7 +1040,7 @@ validate against the same implicit owner/editor vocabulary `resolveCapability` f
 site that declares no vocabulary of its own. A screen-id key's existence against the site's real
 concepts, and an href key's collision with a built-in admin route, validate later, at composition,
 once the runtime knows the real concept list. [`composeRuntime`](#composeruntime) also checks every
-role a rule names against the adapter's own `roles` (or the default owner/editor pair) and throws
+role a rule names against the adapter's `roles` (or the default owner/editor pair) and throws
 on a role it doesn't declare. Dropping a role from `defineRoles` then fails the server start until
 you remove the role from every rule, so a stale roster row can't reach the routes those rules name.
 
@@ -1097,7 +1095,7 @@ semantics a `navFilter`-free sidebar relies on.
 screen id, deepest-prefix match for an href). It backs
 [`requireAccess`](./sveltekit.md#requireaccess)'s fail-closed contract: a route that opts into the
 map refuses every session with a 403, owner included, when the map has no opinion on its path at
-all, distinct from `canReach`'s own any-editor reading used for nav visibility.
+all, distinct from `canReach`'s any-editor reading used for nav visibility.
 
 **Deny at the route, never merely hide.** Nav placement is never authorization: hiding a screen
 or entry from the sidebar (a `navLayout` node's `hidden: true`, an unmapped href) does not stop a
@@ -1184,12 +1182,12 @@ function signatures above reference these.
 | `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)`/`attr(key)` readers, and the stamped `node`. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |
 | `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry, recorded per manifest entry and reverse-mapped by the cross-branch index. |
-| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s own parameter. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s parameter. |
 | `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config; every field optional so the YAML can carry as little as `tidy: { enabled: true }`. |
 | `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes, every field resolved to a concrete value from a site's partial `TidyConfig.conventions`. |
-| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar: engine references, its own entries, and sections. The adapter's `editor.navLayout` field takes this shape; see [the navLayout seam](./sveltekit.md#the-navlayout-seam) for the full member types. |
-| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
-| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
+| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar: engine references, its entries, and sections. The adapter's `editor.navLayout` field takes this shape; see [the navLayout seam](./sveltekit.md#the-navlayout-seam) for the full member types. |
+| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
+| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
 | `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
 | `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |

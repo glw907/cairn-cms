@@ -2,10 +2,10 @@
 
 This subpath holds the client runtime for content islands: the seam that mounts a site's live Svelte
 components over the static fallbacks the render pipeline emits. cairn is Svelte-only by design, so the
-runtime mounts with Svelte's own `mount()` and `unmount()` directly, with no framework abstraction. A
+runtime mounts with Svelte's `mount()` and `unmount()` directly, with no framework abstraction. A
 site imports it dynamically and only when it registers at least one island, so a static site never
 ships the runtime. This subpath carries the client-side mount/teardown mechanism itself; an admin
-screen component lives on [`/admin`](./admin.md), and the render pipeline's own hast
+screen component lives on [`/admin`](./admin.md), and the render pipeline's hast
 builders on [`/render`](./render.md), even though both feed what this runtime eventually mounts.
 
 ```ts

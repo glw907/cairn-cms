@@ -8,7 +8,7 @@ subpath carries node-safe pure projection over the media surface. The R2-touchin
 object store and the delivery bucket seam), the `requireBucket` helper, and the `createMediaRoute`
 delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this surface, so the public
 type for `/media` names no kit or workers-types type. The manifest CRUD, the content-hash naming
-helpers, and the Cloudflare Images transform-URL builders back the engine's own upload and preview
+helpers, and the Cloudflare Images transform-URL builders back the engine's upload and preview
 pipeline; every real caller reaches them by relative import, so they stay unexported internals
 rather than public surface.
 
@@ -48,15 +48,14 @@ declare function normalizeAssets(assets: AssetConfig | undefined): ResolvedAsset
 Validate a site's `AssetConfig` and resolve it into the engine-internal `ResolvedAssetConfig` the
 upload, storage, delivery, and render paths read. An absent block leaves media off and returns
 `{ enabled: false }` rather than throwing. A declared block must name its R2 bucket binding and
-carry a known `urlForm`; each failure throws a `cairn:`-prefixed error. A site can't declare its
-own named transform presets; the built-in `thumb`, `inline`, `card`, and `hero` presets are the
+carry a known `urlForm`; each failure throws a `cairn:`-prefixed error. A site can't declare its named transform presets; the built-in `thumb`, `inline`, `card`, and `hero` presets are the
 whole vocabulary. A site needing a size beyond the four built-ins builds a URL directly against
 Cloudflare's `/cdn-cgi/image/<options>/<path>` transform-URL format;
-cairn's own URL builder (`variantUrl`/`presetUrl`) is engine-internal, not public surface.
+cairn's URL builder (`variantUrl`/`presetUrl`) is engine-internal, not public surface.
 
 The engine normalizes the adapter's `media` block once at compose time and exposes the result as
-`CairnRuntime.resolvedAssets`, which backs the engine's own upload, delivery, and admin paths. A
-site building its own public render resolver should pass `normalizeAssets` the same object it
+`CairnRuntime.resolvedAssets`, which backs the engine's upload, delivery, and admin paths. A
+site building its public render resolver should pass `normalizeAssets` the same object it
 hands the adapter's `media:` member, not a re-typed literal, so the two normalizations agree.
 
 ---

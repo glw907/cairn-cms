@@ -153,7 +153,7 @@ const schedule = defineFieldset({
 - The engine uses the following keys:
 - `title` is the entry's title, and an entry without one falls back to its id. :fact[69j91g]
 - `date` is the entry's date, which a dated permalink's tokens resolve from. :fact[69j91g] :fact[zce3pt]
-- `updated` is the sitemap's `lastmod` and the entry page's modified time in its SEO head. A feed carries a modified date only when the site's feed route passes an item's `updated`, which the scaffold's feed doesn't. :fact[69j91g]
+- `updated` is the sitemap's `lastmod` and the entry page's modified time in its SEO head. Only the JSON Feed carries a modified date, as `date_modified`, and only when the site's feed route passes an item's `updated`, which the scaffold's feed doesn't. The RSS feed carries none. :fact[69j91g]
 - `description` is the entry's excerpt. :fact[69j91g]
 - `draft` set to `true` leaves the entry out of a concept index's listings and the sitemap, and a boolean field named `draft` is the edit page's **Hidden** toggle. :fact[69j91g] :fact[xcqr2v]
 - `description`, `image`, `robots`, and `author`, each read as a string, are the SEO head fields the public route factory reads, and a key the fieldset does not declare never reaches the head. :fact[becf0c]

@@ -18,10 +18,10 @@ exemplar: extenders/django-custom-management-commands
 **What they already know.** SvelteKit routing (rest parameters, param matchers, route groups, `+server.ts` endpoints, layout loads), the `prerender` and `entries` exports, and Vite's `import.meta.glob`. Their adapter already declares the site's concepts. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
 **Background.** The public pages are route files in the site's SvelteKit app, and each route is a few lines around an engine builder. :fact[j0ut9n] :fact[pkt8i6] :fact[pvk6h5]
-The routes prerender from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. :fact[1mkckz] :fact[8k9xwm]
-Each route reads two shared inputs: one typed index from `createSiteIndexes`, and one origin string. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
+Every route except the draft preview prerenders from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. The preview route renders at request time and reads the entry's holding branch. :fact[1mkckz] :fact[8k9xwm] :fact[jdz8hj]
+The routes read two shared inputs: one set of typed indexes from `createSiteIndexes`, and one origin string. The robots route reads only the origin, and the archive route reads only the posts index. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
 
-**What the page does for them.** The introduction opens on that model: each route is a site file that calls an engine builder and reads the index and the origin. :fact[pkt8i6] :fact[yef4lo]
+**What the page does for them.** The introduction opens on that model: each route is a site file that calls an engine builder and reads the index, the origin, or both. :fact[pkt8i6] :fact[yef4lo]
 It states the task: build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build. :fact[pkt8i6] :fact[8k9xwm]
 It tells the scaffolded reader that the tree holds these routes already, except the tag page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
 It names where the engine's head stops: it covers entry pages, and it reads the hero from the frontmatter key `image`. :fact[k7nln3] :fact[k5uws5]
@@ -66,7 +66,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Gives the reader the map every later section points into, before any code.*
 
 - On a scaffolded site, the public routes sit under `src/routes/`, and the modules they share sit in `src/chassis/`. :fact[qtm9y2] :fact[zb2k9f]
-- Code: a text tree of the scaffold's public files: `src/params.ts`; under `src/routes/`, the `(site)` group's `[...path]/`, `[...path=md]/`, `archive/[page]/`, `preview/[token]/`, and `+page.svelte`, then `feed.json/`, `feed.xml/`, `robots.txt/`, `sitemap.xml/`, and the root `+layout.server.ts`; under `src/chassis/`, `content.ts`, `public-routes.ts`, and `feed.ts`. :fact[qtm9y2] :fact[zb2k9f]
+- Code: a text tree of the scaffold's public files: `src/params.ts`; under `src/routes/`, the `(site)` group's `[...path]/`, `[...path=md]/`, `archive/[page]/`, `preview/[token]/`, `+layout.svelte`, `+page.server.ts`, and `+page.svelte`, then `feed.json/`, `feed.xml/`, `media/[...path]/`, `robots.txt/`, `sitemap.xml/`, and the root `+layout.server.ts`; under `src/chassis/`, `content.ts`, `public-routes.ts`, and `feed.ts`. :fact[qtm9y2] :fact[zb2k9f]
 - In `src/chassis/`, `content.ts` builds the index and the site's identity, `public-routes.ts` holds the shared entry config, and `feed.ts` maps posts to feed items. :fact[zb2k9f]
 - A hand-built site may lay these files out differently, for example with routes directly under `src/routes/` and no `(site)` group. Each later section names the scaffold's path, and you use the matching file in your tree.
 - See [Routes and the server hook](scaffolded-site-files.md#routes-and-the-server-hook).
@@ -104,7 +104,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 
 *Composes the shared config from the index and the origin, then mounts the catch-all that renders each entry.*
 
-- `createPublicRoutes` turns one `PublicRoutesConfig` into two functions. `entries` lists each routable entry for the prerenderer, and `entryLoad` loads one entry. :fact[pkt8i6]
+- `createPublicRoutes` turns one `PublicRoutesConfig` into four functions. `entries` lists each routable entry for the prerenderer, and `entryLoad` loads one entry. `markdownEntries` and `markdownLoad` serve the markdown twin. :fact[pkt8i6]
 - To wire the entry pages, follow these steps:
 1. In a separate module, export one `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`. A scaffolded site keeps it in `src/chassis/public-routes.ts`. :fact[pkt8i6] :fact[zb2k9f]
 2. In `src/routes/(site)/[...path]/+page.server.ts`, export `prerender = true`, `entries` from `routes.entries()`, and a `load` that returns `routes.entryLoad({ url })`. :fact[pkt8i6] :fact[1mkckz]
@@ -115,7 +115,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - Code: a minimal entry page that renders `CairnHead` with `seo` and a `titleTemplate`, then `{@html data.html}` inside an `<article>`. :fact[fvi8rk] :fact[dvg5gn]
 - The scaffold's entry page renders `ArticleView`, which renders `CairnHead` with the same `seo`. :fact[i8heft]
 - `entryLoad` answers 404 for a path that no entry claims. :fact[pkt8i6]
-- The load data carries `entry` (its frontmatter, body, and title), `html` (the body already run through the site's `render`), `canonicalUrl`, and `seo`. :fact[fvi8rk]
+- The load data carries `concept`, `entry` (the whole entry, including its frontmatter, body, and title), `html` (the body already run through the site's `render`), `canonicalUrl`, `seo`, the `newer` and `older` neighbors, and `heroImage` when a hero resolves. :fact[fvi8rk]
 - The canonical URL is the origin plus the permalink, and `og:url` starts from the same origin. :fact[k16chc]
 - See [`EntryData`](../reference/delivery.md#entrydata).
 - `heroImage` is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve. `entry.frontmatter.image.src` stays the raw token. :fact[83gbov]
@@ -155,7 +155,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - SvelteKit prefers the matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. :fact[03lbjg]
 - See [Sorting](https://svelte.dev/docs/kit/advanced-routing#Sorting).
 - An entry whose `robots` carries `noindex` has no twin. `markdownEntries` skips it, `markdownLoad` answers 404, and the scaffold's page passes no `markdownUrl` for it. :fact[3r08v1] :fact[i8heft]
-- Note: `markdownResponse` sets `text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's headers into the build. Under `wrangler dev` the file still arrives with that type, apparently from the `.md` extension. This was measured locally, not on a deployed zone. :fact[gwpffe]
+- Note: `markdownResponse` sets `text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's headers into the build. :fact[gwpffe]
 
 ## Mount the draft preview route
 
@@ -332,7 +332,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 3. In a terminal, fetch `/sitemap.xml` from the local server. Each `loc` starts with your origin literal, not the local server's address. :fact[k16chc] :fact[mtltw7]
 4. In the same terminal, fetch `/feed.xml` and `/feed.json`. Each lists the published posts with absolute URLs. :fact[70uh8b]
 5. In the same terminal, fetch `/robots.txt`. It holds a `Disallow: /admin` line and a `Sitemap:` line naming your origin's `/sitemap.xml`. :fact[0elmiu]
-6. Print the headers of an entry's twin with `curl -s -D - -o /dev/null '<local-server>/<permalink>.md'`. The content type is `text/markdown; charset=utf-8`. :fact[gwpffe]
+6. Fetch an entry's twin with `curl -s '<local-server>/<permalink>.md'`. The body is the entry's stored markdown, unrendered. :fact[03lbjg]
 7. In a browser, open an entry and view its source. The canonical link and `og:url` are your origin plus the permalink. :fact[k16chc]
 
 ## Diagnose a failed build

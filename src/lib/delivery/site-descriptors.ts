@@ -1,6 +1,6 @@
 // cairn-cms: the one-call descriptor helper. A delivery site needs the same per-concept descriptors
 // the admin runtime uses; this delegates to the shared normalizeConcepts so the pairing is one path, not
-// tribal knowledge. Each concept declares its own routing and URL policy, the single source of truth.
+// tribal knowledge. Each concept declares its routing and URL policy, the single source of truth.
 import { normalizeConcepts } from '../content/concepts.js';
 import type { CairnAdapter, ConceptDescriptor } from '../content/types.js';
 import type { SiteConfig } from '../nav/site-config.js';

@@ -87,7 +87,7 @@ type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
 /** Flatten an intersection into a single readable object type. */
 type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
-/** Drop an index signature so a captured literal record infers its own keys only, not `[x: string]`. */
+/** Drop an index signature so a captured literal record infers its keys only, not `[x: string]`. */
 type RemoveIndex<T> = {
   [K in keyof T as string extends K ? never : number extends K ? never : K]: T[K];
 };
@@ -147,7 +147,7 @@ function validateField(
 
   // object: validate each leaf one level down, assembling a nested object value and concatenating
   // issues with the leaf key appended to the path. An empty (all-leaves-dropped) object omits the
-  // value; a required empty object is an error on the object's own path.
+  // value; a required empty object is an error on the object's path.
   if (field.type === 'object') {
     const obj: Record<string, unknown> = {};
     const issues: ValidationIssue[] = [];
@@ -165,7 +165,7 @@ function validateField(
   }
 
   // array: a reference item keeps the shipped id-list path; any other item recurses per element with
-  // the element index appended to the path. A required empty list errors on the array's own path.
+  // the element index appended to the path. A required empty list errors on the array's path.
   if (field.type === 'array') {
     if (field.item.type === 'reference') {
       // array(reference): coerceToText returns '' for an array, so the empty-first drop below would

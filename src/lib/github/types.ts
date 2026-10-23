@@ -32,7 +32,7 @@ export interface CommitAuthor {
 export interface BackendCommit {
   /** The commit's full sha. */
   ref: string;
-  /** The commit's own author trailer: name and email, whoever git recorded as having authored it. */
+  /** The commit's author trailer: name and email, whoever git recorded as having authored it. */
   author: { name: string; email: string };
   /** ISO 8601: when the commit landed on the ref that was read. */
   date: string;
@@ -48,7 +48,7 @@ export interface AppCredentials {
 
 /**
  * A concurrent edit lost the SHA race: the file changed between the read and the PUT, from
- * another editor or the site's own CI. Thrown so the save fails safe (re-fetch and ask the
+ * another editor or the site's CI. Thrown so the save fails safe (re-fetch and ask the
  * editor to reapply) instead of surfacing a raw 409. Defined and caught inside the package
  * so `instanceof` is reliable, unlike kit's `redirect`/`error` across the peer boundary.
  */

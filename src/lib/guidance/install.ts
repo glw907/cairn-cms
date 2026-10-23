@@ -1,7 +1,7 @@
 // cairn-guidance: the install primitives. One tree hash decides freshness across every packaged
 // tree the install copies: each directory under `skills/`, the review agent under
 // `claude/agents/`, and the `claude/CLAUDE.md` fragment. The containment and `.orig` rules here
-// are the write-side twin of this package's own bin.ts's `readFileUnderCwd`.
+// are the write-side twin of this package's bin.ts's `readFileUnderCwd`.
 import { createHash } from 'node:crypto';
 import { constants, type Dirent, type Stats } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -51,7 +51,7 @@ export function resolveSourceRoot(relDir: string): string {
   return join(dirname(pkgJsonPath), relDir);
 }
 
-/** The installed package's own version, stamped into {@link VERSION_DEST} at install. */
+/** The installed package's version, stamped into {@link VERSION_DEST} at install. */
 export function resolveInstalledVersion(): string {
   const require = createRequire(import.meta.url);
   const pkg = require('@glw907/cairn-cms/package.json') as { version: string };
@@ -68,7 +68,7 @@ export interface WalkResult {
 /**
  * Walk a real directory into a flat file map, refusing by name, without following, any entry
  *  that is not a regular file. A symlink inside a compromised package could otherwise read
- *  arbitrary host content into a site's own committed guidance tree.
+ *  arbitrary host content into a site's committed guidance tree.
  */
 export async function walkPackagedTree(root: string): Promise<WalkResult> {
   const files: Record<string, string> = {};
@@ -155,13 +155,13 @@ export async function readPackagedSnippets(): Promise<WalkResult> {
 
 /** Every packaged tree cairn-guidance installs, resolved against the installed package. */
 export interface GuidanceSource {
-  /** Skill directory name, resolved under `skills/`, mapped to its own relative path to content. */
+  /** Skill directory name, resolved under `skills/`, mapped to its relative path to content. */
   skills: Record<string, Record<string, string>>;
   /** Relative path under `claude/agents/`, mapped to content. */
   agents: Record<string, string>;
   /** The `claude/CLAUDE.md` fragment's content. Empty when the package ships none yet. */
   fragment: string;
-  /** The installed package's own version. */
+  /** The installed package's version. */
   version: string;
   /** The packaged `check` snippets, keyed by filename under `claude/snippets/`. */
   snippets: Record<string, string>;
@@ -225,7 +225,7 @@ export function isGuidancePath(destPath: string): boolean {
 
 /**
  * The paths a previous `MANIFEST` lists that the packaged tree no longer ships. A `MANIFEST` is an
- *  editable file in the site's own repo and these paths get printed, so a line naming anything
+ *  editable file in the site's repo and these paths get printed, so a line naming anything
  *  outside `.claude/` is dropped rather than reported as removable.
  */
 export function removableFromManifest(manifestText: string | null, shipped: string[]): string[] {

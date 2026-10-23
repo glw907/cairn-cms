@@ -5,7 +5,7 @@
 // as a real node; every other leaf directive falls through to that restore untouched. A resolved
 // fragment's raw markdown is parsed with the same directive-aware pipeline (remark-parse + remark-gfm
 // + remark-directive) that media-rewrite.ts's parseFigureDoc uses, and its block nodes splice in
-// place of the directive, so the fragment's own markup (a registered component, a cairn: link, a
+// place of the directive, so the fragment's markup (a registered component, a cairn: link, a
 // media: token) flows through the identical downstream chain (stamp, link/media resolution,
 // remark-rehype, the sanitize floor, dispatch) that a native entry does.
 //
@@ -17,7 +17,7 @@
 // handled as expected without needing to return a new Index", which is exactly the behavior this
 // plugin does NOT want). Returning `[SKIP, index + spliced.length]` jumps the parent's iteration
 // straight past the whole spliced range, so nothing inside it, at any depth, is ever visited by this
-// plugin's own traversal.
+// plugin's traversal.
 import type { Paragraph, Root, RootContent } from 'mdast';
 import type { LeafDirective } from 'mdast-util-directive';
 import { visit, SKIP } from 'unist-util-visit';
@@ -49,12 +49,12 @@ const MISSING_CLASS = 'cairn-include-missing';
 const FRAGMENT_LOG_MAX = 160;
 
 /**
- * A `FragmentResolve` carrying the optional markers the engine's own resolver builders stamp on
+ * A `FragmentResolve` carrying the optional markers the engine's resolver builders stamp on
  *  it. `previewTitle` is the preview-only boundary cue's title lookup (the invisible-craft
  *  design's ratified 4B): EditPage's client-side resolver is the only caller that ever sets it,
  *  so `remarkResolveIncludes` wraps a splice only when the resolver it was handed carries it.
  *  `entry` names the containing entry for the `include.missing` diagnostic. Both ride the
- *  resolver rather than a render option because a site's own render forwards whichever resolver
+ *  resolver rather than a render option because a site's render forwards whichever resolver
  *  it received unchanged, so a marker survives the passthrough by reference.
  */
 export interface MarkedFragmentResolve extends FragmentResolve {
@@ -89,7 +89,7 @@ function fragmentBoundaryNode(title: string, children: RootContent[]): RootConte
 }
 
 /**
- * Parse a fragment body with the directive extension, so its own directive markup survives as real
+ * Parse a fragment body with the directive extension, so its directive markup survives as real
  *  nodes rather than literal text. Mirrors parseFigureDoc in media-rewrite.ts.
  */
 function parseFragmentBody(markdown: string): Root {
@@ -131,7 +131,7 @@ export function remarkResolveIncludes() {
     const resolve = file.data[FRAGMENT_RESOLVE] as MarkedFragmentResolve | undefined;
     if (!resolve) return;
     // The containing entry, when the engine built this resolver. Spread into each record so a
-    // site's own resolver, which carries no marker, simply omits the field.
+    // site's resolver, which carries no marker, simply omits the field.
     const entryField = resolve.entry !== undefined ? { entry: resolve.entry } : {};
     visit(tree, 'leafDirective', (node: LeafDirective, index, parent) => {
       if (node.name !== 'include' || !parent || index == null) return;

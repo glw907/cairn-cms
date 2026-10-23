@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // cairn-manifest: the regenerate command. It evaluates the cairnManifest virtual module in write mode
-// through the consumer's own Vite resolution and writes the canonical content manifest, then does the
+// through the consumer's Vite resolution and writes the canonical content manifest, then does the
 // same for the site-facts contract. A thin shell over writeManifest and writeSiteFacts so the write
 // logic stays testable apart from the CLI. Bad flags go to stderr with exit 2; a write failure exits
 // 1; a clean run exits 0. The codes go through process.exitCode, never process.exit, so a piped

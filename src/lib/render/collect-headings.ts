@@ -1,6 +1,6 @@
 // cairn-cms: the heading-collection rehype step behind renderDocument. It reads no injected
 // resolver (unlike resolve-links.ts and resolve-media.ts); it only writes, following the same
-// string-keyed shared-constant file.data convention (each module exports its own key constant so
+// string-keyed shared-constant file.data convention (each module exports its key constant so
 // the string literal is defined once) in the other direction, so renderDocument can read the
 // collected list back off the VFile after the processor finishes.
 import { visit } from 'unist-util-visit';

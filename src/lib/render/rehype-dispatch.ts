@@ -1,5 +1,5 @@
 // cairn-cms: the rehype step that turns a component directive's stamped hast markers (from
-// remark-directives.ts) into the site's own rendered markup, by looking up the directive's name in
+// remark-directives.ts) into the site's rendered markup, by looking up the directive's name in
 // the ComponentRegistry and calling its declared `render`. The small hast-reading helpers below
 // back that render call.
 import type { Root, Element, ElementContent } from 'hast';
@@ -86,7 +86,7 @@ function partitionSlots(node: Element): {
       if (name === 'body') return body;
       const wrap = named.get(name);
       if (!wrap) return [];
-      // For title we stored the label's own children, so return them as-is. For a markdown or
+      // For title we stored the label's children, so return them as-is. For a markdown or
       // inline named slot the wrapper <div> holds the rendered children; unwrap it.
       if (name === 'title') return wrap;
       const div = wrap[0];

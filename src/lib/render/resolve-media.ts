@@ -18,14 +18,14 @@ export const MEDIA_RESOLVE = 'mediaResolve';
 
 /**
  * The fixed width ladder a managed image's srcset offers once zone transformations are on and the
- *  asset's own width is known. Small and fixed rather than derived per-asset, so the delivered
+ *  asset's width is known. Small and fixed rather than derived per-asset, so the delivered
  *  variant set stays predictable and cache-friendly across a site; a rung wider than the asset's
  *  recorded width is dropped, since Cloudflare Images would otherwise upscale past the source.
  */
 const SRCSET_WIDTHS = [400, 800, 1200, 1600];
 
 /**
- * The generic `sizes` hint per figure placement role, in the engine's own placement vocabulary
+ * The generic `sizes` hint per figure placement role, in the engine's placement vocabulary
  *  (remarkFigure's closed `center`/`wide`/`full` role set), not any one theme's exact breakpoints:
  *  cairn's public render stays design-agnostic, so this is a reasonable general convention rather
  *  than a value tuned to a specific site's CSS. A role outside this map (a bare `:::figure` with no
@@ -102,7 +102,7 @@ export function createMediaResolver(
     return publicPath(entry.slug, entry.hash, entry.ext, resolved.urlForm, resolved.publicBase);
   };
   // The side channel remarkResolveMedia reads for the rendered <img>'s width/height/srcset. Kept
-  // separate from the resolve function's own return so the MediaResolve contract stays exactly
+  // separate from the resolve function's return so the MediaResolve contract stays exactly
   // `(ref) => string | undefined`.
   resolve.imageDetail = (ref: MediaRef): MediaImageDetail | undefined => {
     if (!resolved.enabled) return undefined;

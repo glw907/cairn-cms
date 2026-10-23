@@ -123,7 +123,7 @@ interface SrcLineHit {
  *  order. The key may carry a YAML sequence prefix (`- src: ...`), which is how the first key of an
  *  array row is written. Each token is located by the broad scan and validated through parseMediaToken
  *  (matching on hash), so a malformed token is found then rejected. A flow-style value (`{ src: ... }`)
- *  has no own `src:` line, so it contributes nothing: that shape stays unanchorable rather than
+ *  has no `src:` line, so it contributes nothing: that shape stays unanchorable rather than
  *  spliced by a guessed span.
  */
 function findSrcLinesInRange(
@@ -163,7 +163,7 @@ function findSrcLinesInRange(
 /** One top-level frontmatter key that holds the target hash, and the image values it holds it in. */
 interface ImageKeyHit {
   key: string;
-  /** False for a hero (the key's own value is the image), true for an image inside a container. */
+  /** False for a hero (the key's value is the image), true for an image inside a container. */
   nested: boolean;
   /** The image values at this key whose `src` parses to the hash, in document order. */
   images: Record<string, unknown>[];
@@ -184,7 +184,7 @@ function isImageOf(value: unknown, hash: string): value is Record<string, unknow
 
 /**
  * The top-level frontmatter keys whose value holds an image whose `src` parses to `hash`, in source
- *  order. A key is a hero when its own value is an image (an object carrying a string `src`, the same
+ *  order. A key is a hero when its value is an image (an object carrying a string `src`, the same
  *  shape extractMediaRefs reads, so a token in a plain-text value is never treated as a reference). A
  *  key is nested when an image sits one level inside it, in the four shapes `defineFieldset` admits:
  *  an object holding an image, an array of images, or an array of objects holding an image. The
@@ -288,7 +288,7 @@ function matchedBodyImages(body: string, blockLength: number, hash: string): Mat
 }
 
 /**
- * Collect body edits over the body slice. Each matching image is located within its own source span
+ * Collect body edits over the body slice. Each matching image is located within its source span
  *  and recorded with an absolute offset. The kind is 'figure' when the image is inside a `:::figure`,
  *  else 'body'.
  */
@@ -309,7 +309,7 @@ function bodyEdits(body: string, blockLength: number, oldHash: string): Edit[] {
  * Rewrite every reference to `oldHash` in one entry's raw markdown to `newToken`, and return the
  * rewritten markdown plus a per-placement diff. Only an image-field `src:` line is rewritten in the
  * frontmatter: the image-like keys are read via gray-matter and each key's `src:` line is located
- * structurally within its own block, so a `media:` token that merely appears in a plain-text value (a
+ * structurally within its block, so a `media:` token that merely appears in a plain-text value (a
  * `title:` or `description:`) is left untouched, matching extractMediaRefs. Body and figure images are
  * matched by mdast offset over the body slice. The output is byte-for-byte identical to the input
  * apart from the replaced token substrings, so the rest of the entry (alt text, captions, the
@@ -346,7 +346,7 @@ export function repointMediaRef(markdown: string, oldHash: string, newToken: str
 /**
  * Which alt bucket a placement falls in: an empty alt always gets filled, a non-empty (custom) alt is
  *  reported and only overwritten on opt-in, a decorative hero is never touched, and an image nested
- *  in a container field (a gallery row, a card) is reported in its own bucket and never written.
+ *  in a container field (a gallery row, a card) is reported in its bucket and never written.
  */
 type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped' | 'nested-skipped';
 
@@ -448,7 +448,7 @@ function bodyAltEdits(body: string, blockLength: number, hash: string, defaultAl
 
 /**
  * Find a sibling key line (`alt:` or `decorative:`) at exactly `indent` within the inclusive
- *  line-index range `[lo, hi]` of one mapping. The range is the mapping's own block, so the search
+ *  line-index range `[lo, hi]` of one mapping. The range is the mapping's block, so the search
  *  spans the whole mapping rather than a same-indent contiguous run: a blank line or a deeper-nested
  *  child between `src:` and `alt:` no longer hides the existing key (which would otherwise insert a
  *  duplicate key and break the YAML). Returns the key line's value span (after the key and its space,
@@ -473,13 +473,13 @@ function findSiblingKeyValue(
 /**
  * Collect the hero alt edits inside the frontmatter block. The image-field objects (and their
  *  decorative and alt values) are read via gray-matter to classify the bucket robustly across quoting
- *  forms; the byte edit is then located structurally, scoped to each field's own mapping block, keyed
+ *  forms; the byte edit is then located structurally, scoped to each field's mapping block, keyed
  *  back by the top-level field name. Iterating the fields in source order keeps the hero placements in
  *  document order. A decorative hero is reported and never edited; an empty alt is filled; a custom
  *  alt is overwritten only on opt-in. An alt key that is present (anywhere in the mapping, even below a
  *  blank line or a nested child) has its value replaced; an absent one is inserted right after the
  *  `src:` line at the same indent. The new value is a JSON-quoted scalar, valid YAML that handles a
- *  colon, a quote, or an empty string. A flow-style hero (`image: { ... }`, no own `src:` line) is
+ *  colon, a quote, or an empty string. A flow-style hero (`image: { ... }`, no `src:` line) is
  *  unanchorable, so it is reported from the gray-matter read but never spliced. An image nested in a
  *  container field is reported with kind `nested` and never spliced either.
  */
@@ -498,7 +498,7 @@ function heroAltEdits(
   for (const { key, nested, images } of imageFieldKeys(data, hash)) {
     if (nested) {
       // A nested image is reported, never spliced: its mapping sits inside a sequence row, where the
-      // sibling-key anchoring the hero arm relies on does not hold. It carries its own bucket, apart
+      // sibling-key anchoring the hero arm relies on does not hold. It carries its bucket, apart
       // from the decorative one, so the counts never promise a write the transform does not make and
       // never call a gallery image decorative.
       for (const image of images) {
@@ -525,7 +525,7 @@ function heroAltEdits(
     const src = range ? (findSrcLinesInRange(lines, fmBlock, range, hash)[0] ?? null) : null;
     if (!write || !range || !src) {
       // Reported but not edited: a kept custom alt, a decorative hero, or an unanchorable flow-style
-      // hero (no own `src:` line). It carries a diff entry but no splice, so the bytes stay exact.
+      // hero (no `src:` line). It carries a diff entry but no splice, so the bytes stay exact.
       edits.push({ apply: false, start: 0, end: 0, text: '', placement });
       continue;
     }

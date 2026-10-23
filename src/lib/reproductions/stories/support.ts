@@ -1,7 +1,7 @@
 // cairn-cms: the pieces shared by every reproduction story that mounts `EditPage`, extracted out
 // of ./editor.ts once ./publish.ts needed the same prop bag and the same
-// hydration wait for a second story. Each story module still builds its own props object beyond
-// what `editPageProps()` returns, and a fixture stays in its own story module until a second
+// hydration wait for a second story. Each story module still builds its props object beyond
+// what `editPageProps()` returns, and a fixture stays in its story module until a second
 // module needs that same one.
 import type { NamedField, SiteRender } from '../../content/types.js';
 import { defineRegistry, type ComponentRegistry } from '../../render/registry.js';
@@ -15,7 +15,7 @@ export const ENTRY = fixtureEntries[0]!;
 /**
  * How long a settle waits for a surface CodeMirror builds. The editor arrives through dynamic
  * imports in `onMount`, and the first one on a page pays the cold start, so this is sized like the
- * engine's own editor component tests rather than like a render tick.
+ * engine's editor component tests rather than like a render tick.
  */
 export const SETTLE_TIMEOUT_MS = 20_000;
 
@@ -210,14 +210,14 @@ export function editPageProps(): Record<string, unknown> {
     render: fixtureRender,
     form: null,
     // Fix 3: no mounted editing surface starts a spellcheck Worker or fetches its wasm and
-    // dictionary, whatever the reader's own stored preference says.
+    // dictionary, whatever the reader's stored preference says.
     spellcheckOverride: false,
   };
 }
 
 /**
  * A fresh `ConceptList` load over the fixture concept, one call per story, the way
- * {@link editPageProps} gives each `EditPage` story its own bag: `editor/sidebar-list` and
+ * {@link editPageProps} gives each `EditPage` story its bag: `editor/sidebar-list` and
  * `publish/refusal-banner` both mount `ConceptList` against this same load, and two mounted lists
  * sharing one object would alias each other's state. `entries` stays the shared read-only fixture
  * array, which no mounted list writes to.

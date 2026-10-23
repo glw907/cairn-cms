@@ -70,7 +70,7 @@ export interface SeedItem {
 /**
  * The shape `slugifyFilename` (`media/naming.ts`) always produces: lowercase alphanumeric runs
  *  joined by single internal hyphens, no leading or trailing hyphen. `hash` and `ext` are
- *  screened against `r2Key`'s own grammar; `slug` carries no such check downstream, so it is the
+ *  screened against `r2Key`'s grammar; `slug` carries no such check downstream, so it is the
  *  one field a hostile manifest could otherwise smuggle unscreened into the download URL and the
  *  failure line printed for it.
  */

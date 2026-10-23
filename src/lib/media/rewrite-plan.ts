@@ -5,14 +5,14 @@
 // plan: the affected entries with their rewritten markdown and per-placement diff, plus the affected
 // count. It also returns a report-only cross-branch delta, the open cairn/* edit branches that
 // reference the same bytes, so the screen can warn that an apply touches main only and the drafts
-// keep their own copy of the reference until they publish.
+// keep their copy of the reference until they publish.
 //
 // It is fail-closed. The usage read runs in strict mode, so a transient branch-read failure throws
 // out of here rather than degrading to an "absent reference" the way the Library display tolerates.
 // A planner that fed a partial usage view into an apply would rewrite some references and silently
 // leave others, so it must reject instead. This is the same gate the 3c safe-delete uses.
 //
-// It lives in its own node-safe module (no @codemirror, no DOM, no @sveltejs/kit): the transform is
+// It lives in its node-safe module (no @codemirror, no DOM, no @sveltejs/kit): the transform is
 // injected, so the planner never imports the editor surface. It is internal, exported from no package
 // subpath, so it carries no reference page.
 import type { ConceptDescriptor } from '../content/types.js';

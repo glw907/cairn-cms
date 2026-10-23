@@ -58,7 +58,7 @@ export function canonicalizeCode(raw: string, length: number): string | null {
 
 /**
  * The address half of the requester bucket: `event.getClientAddress()`, narrowed to its /64 for
- * IPv6 so a single host cannot rotate through its own subnet to dodge the requester cap. The
+ * IPv6 so a single host cannot rotate through its subnet to dodge the requester cap. The
  * caller pairs this with the derived identity to form the full bucket key (spec, Flows: "the
  * pair of the client address ... and the identity"); the address alone would let one hostile
  * host exhaust a shared venue's budget for every member behind it.

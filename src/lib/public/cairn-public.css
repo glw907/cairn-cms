@@ -1,8 +1,8 @@
 /* cairn-cms: the engine's public stylesheet, exported at the `/cairn-public.css` subpath. It holds
    cairn's role defaults and the rules that style the classes the engine emits into public
-   markup, and nothing that is a site's own design. A site imports it once, after
-   `@import "tailwindcss"` and before its own reading-surface sheet, so a later declaration in the
-   site's own `@theme` block wins over the two colors below.
+   markup, and nothing that is a site's design. A site imports it once, after
+   `@import "tailwindcss"` and before its reading-surface sheet, so a later declaration in the
+   site's `@theme` block wins over the two colors below.
 
    It holds four things:
      1. The roles, in `@layer theme` on `:root, [data-theme]`. That is the lowest layer Tailwind
@@ -16,7 +16,7 @@
         `pre.shiki` and `.cairn-tok-*` binding, the structural `.table-scroll` pair, and the
         `cairn-focus-ring` class a site's markup applies.
      4. One `@source` line over the engine's public component directory, so the utilities those
-        components use compile in the site's own sheet. */
+        components use compile in the site's sheet. */
 
 @layer theme {
   :root,
@@ -37,7 +37,7 @@
 
     /* On-surface status inks. Each follows its fill: mixing the fill toward the body ink darkens it
        on a light scheme and lightens it on a dark one, so the ink keeps the fill's hue and reads as
-       small text. A theme that wants a tuned ink sets its own in its daisyUI block, and checks its
+       small text. A theme that wants a tuned ink sets one in its daisyUI block, and checks its
        inks against the public-scope audit (`theme-contrast`), the floor they must clear. */
     --cairn-success-ink: color-mix(in oklab, var(--color-success) 50%, var(--color-base-content));
     --cairn-warning-ink: color-mix(in oklab, var(--color-warning) 50%, var(--color-base-content));
@@ -90,22 +90,22 @@
   }
 
   /* The engine wraps every rendered table in this region so it scrolls instead of squeezing.
-     Only the structural pair lives here; a site's reading surface adds its own design. */
+     Only the structural pair lives here; a site's reading surface adds its design. */
   .table-scroll {
     display: block;
     overflow-x: auto;
   }
 
-  /* Carries only the outline pair, never the radius, so a call site's own border-radius is
+  /* Carries only the outline pair, never the radius, so a call site's border-radius is
      untouched on focus. A utility that sets `outline-*` on the same element wins, since utilities
      sit in a later layer. A daisyUI component class that sets an outline also outranks this rule,
-     since daisyUI's own rules sit in a later layer too. */
+     since daisyUI's rules sit in a later layer too. */
   .cairn-focus-ring:focus-visible {
     outline: var(--cairn-focus-ring-outline);
     outline-offset: var(--cairn-focus-ring-offset);
   }
 }
 
-/* Deliberate: this is how a built-in component's utilities compile in the site's own sheet. The
+/* Deliberate: this is how a built-in component's utilities compile in the site's sheet. The
    fixture harness's sentinel proves the scan reaches this directory. */
 @source ".";

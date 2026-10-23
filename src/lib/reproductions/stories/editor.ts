@@ -34,7 +34,7 @@ import {
 } from './support.js';
 
 /**
- * The stroke-icon markup the toolbar's own glyph buttons use, for the host insert controls below.
+ * The stroke-icon markup the toolbar's glyph buttons use, for the host insert controls below.
  * @param inner - the icon's shapes
  * @returns one svg element's markup
  */
@@ -48,15 +48,15 @@ function glyph(inner: string): string {
 
 /**
  * The sibling bubble markup Tooltip.svelte renders at rest (hidden, never shown, since this story
- * never fires a hover or focus): a hand-typed duplicate of that component's own DOM shape, since a
+ * never fires a hover or focus): a hand-typed duplicate of that component's DOM shape, since a
  * raw-HTML story cannot mount a real component. Known cost, not accidental drift-bait: the bubble
  * is a manual popover, so the browser itself keeps it out of the rendering at rest with no style of
- * this story's own, but Tooltip's scoped `<style>` still never reaches this hand-typed span (no
- * Svelte scoping class to match), and a future change to Tooltip's own markup or class names has
- * nothing that keeps this copy in sync automatically. The id is keyed by the control's own position
+ * this story, but Tooltip's scoped `<style>` still never reaches this hand-typed span (no
+ * Svelte scoping class to match), and a future change to Tooltip's markup or class names has
+ * nothing that keeps this copy in sync automatically. The id is keyed by the control's position
  * in the strip rather than a slug of its label, since two controls can carry the same label text
  * and a shared id would point two triggers at one bubble.
- * @param index - the control's own position in the strip
+ * @param index - the control's position in the strip
  * @returns the bubble element's id
  */
 function tooltipBubbleId(index: number): string {
@@ -64,9 +64,9 @@ function tooltipBubbleId(index: number): string {
 }
 
 /**
- * One control's bubble span, the markup that follows its trigger inside Tooltip's own wrapper.
- * @param label - the tooltip's own text
- * @param index - the control's own position in the strip
+ * One control's bubble span, the markup that follows its trigger inside Tooltip's wrapper.
+ * @param label - the tooltip's text
+ * @param index - the control's position in the strip
  * @returns the bubble span's markup
  */
 function tooltipBubble(label: string, index: number): string {
@@ -79,7 +79,7 @@ function tooltipBubble(label: string, index: number): string {
  * text, and Tooltip writes no description that only repeats the name a screen reader already reads.
  * @param label - the control's accessible name and Tooltip text
  * @param inner - the icon's shapes
- * @param index - the control's own position in the strip
+ * @param index - the control's position in the strip
  * @returns one button's markup, followed by its Tooltip bubble
  */
 function insertButton(label: string, inner: string, index: number): string {
@@ -97,7 +97,7 @@ function insertButton(label: string, inner: string, index: number): string {
  * the why.
  * @param label - the control's accessible name and Tooltip text, naming what the caret must reach
  * @param inner - the icon's shapes
- * @param index - the control's own position in the strip
+ * @param index - the control's position in the strip
  * @returns one button's markup, followed by its Tooltip bubble
  */
 function guardedButton(label: string, inner: string, index: number): string {
@@ -109,13 +109,13 @@ function guardedButton(label: string, inner: string, index: number): string {
 }
 
 /**
- * The standalone Tidy control's own Tooltip text, written by hand below (unlike
- * `insertButton`/`guardedButton`, its own icon-plus-text markup does not route through either
+ * The standalone Tidy control's Tooltip text, written by hand below (unlike
+ * `insertButton`/`guardedButton`, its icon-plus-text markup does not route through either
  * helper). This is the one control in the strip whose Tooltip says more than its accessible name
  * ("Tidy"), so it is also the one that carries an `aria-describedby`.
  */
 const TIDY_TOOLTIP_TEXT = 'Tidy: a light copy-edit you review before accepting';
-/** The Tidy control's own position in the strip, the key for its bubble id. */
+/** The Tidy control's position in the strip, the key for its bubble id. */
 const TIDY_INDEX = 5;
 
 /**
@@ -321,7 +321,7 @@ const collapsedLayoutBlock: ReproStory = {
     name: 'body',
     registry: fixtureRegistry,
     foldOnMount: true,
-    // The bare editor's own spellcheck lever (EditPage's `spellcheckOverride` reaches this same
+    // The bare editor's spellcheck lever (EditPage's `spellcheckOverride` reaches this same
     // posture): with it off the lint extension is never installed, so no Worker starts.
     spellcheck: false,
   },

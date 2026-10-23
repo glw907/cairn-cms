@@ -1,7 +1,7 @@
 // cairn-cms: the Svelte-importing half of the live-reproduction seam.
 //
 // This module holds the story registry: component references, fixture props, poses, and the
-// context wrapper both a docs route and the engine's own story-mount test render through. It is
+// context wrapper both a docs route and the engine's story-mount test render through. It is
 // the `@glw907/cairn-cms/reproductions` subpath; the node-safe half (ids, heights, marker keys,
 // per-story flags) lives on `./manifest.js`, importable from a bare `node` process. This module
 // may freely import Svelte components; ./manifest.ts may never import this one.
@@ -19,9 +19,9 @@ import { publishStories } from './stories/publish.js';
 import { siteStories } from './stories/site.js';
 
 /**
- * A mounted story component's own exports, the handle a pose reaches a component method through.
+ * A mounted story component's exports, the handle a pose reaches a component method through.
  *
- * Untyped by design: each story knows which component it mounts and casts to that component's own
+ * Untyped by design: each story knows which component it mounts and casts to that component's
  * exported signature at the one call site that uses it, which is cheaper than teaching this
  * interface every mountable component's exports.
  *
@@ -48,17 +48,17 @@ export interface ReproStory {
   host: 'shell' | 'bare';
   /**
    * The fields of the fixture shell payload this story overrides, for a `shell` story whose
-   * subject is chrome the shell derives from its own load data rather than from `story.props`: the
+   * subject is chrome the shell derives from its load data rather than from `story.props`: the
    * desk pathname (`isDeskRoute` reads exactly three segments with a declared concept in the
    * second, and off that path the shell renders office chrome instead, which moves the sidebar
    * breakpoint and drops the narrow band compaction) or the pending-publish set (the topbar's
    * "Publish site (N)" trigger and its confirm dialog render only while `pendingEntries` resolves
-   * non-empty). `ReproContext` merges this once, non-reactively, over its own fixture payload
+   * non-empty). `ReproContext` merges this once, non-reactively, over its fixture payload
    * before the first render; a story for which the office-default payload already renders
    * correctly leaves it absent. Ignored by a `bare` story.
    */
   shellData?: Partial<Extract<AdminShellData, { public: false }>>;
-  /** The full prop bag the component's own contract takes, not only `data` and `form`. */
+  /** The full prop bag the component's contract takes, not only `data` and `form`. */
   props: Record<string, unknown>;
   /**
    * Session-shaped fixture values `ReproContext` applies as Svelte context before mounting (a
@@ -81,7 +81,7 @@ export interface ReproStory {
    * prop (an opened dialog, a selection). Absent when the resting prop bag already shows the
    * contracted state.
    *
-   * The second argument is the mounted component's own exports, which `ReproContext` hands its
+   * The second argument is the mounted component's exports, which `ReproContext` hands its
    * host through `oninstance`. A pose takes it when the real admin reaches that state by calling
    * an exported method rather than by clicking something (`media/insert-panel` is the case that
    * forced it: the real editor mounts the popover headless and opens it from the toolbar's icon
@@ -99,7 +99,7 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order: the full 25. Module-internal (retired from its own
+ * The registered stories, in manifest order: the full 25. Module-internal (retired from its
  *  export); `getStory` is the seam a consumer, including
  *  `src/tests/component/reproductions-stories.test.ts`, reaches one through.
  */

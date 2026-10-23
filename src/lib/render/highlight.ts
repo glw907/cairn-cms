@@ -14,7 +14,7 @@
 //
 // THE .cairn-tok-* CLASS CONTRACT: the engine owns the token class names (below); the site owns the
 // colors. This mirrors the engine's .cairn-place-* figure-placement contract: a site styles the
-// classes in its own theme. The engine's cairn-public.css binds each class to a --cairn-code-* role
+// classes in its theme. The engine's cairn-public.css binds each class to a --cairn-code-* role
 // variable, so the syntax palette re-skins with the rest of the theme.
 //
 //   .cairn-tok-keyword    a language keyword, storage class, or control word

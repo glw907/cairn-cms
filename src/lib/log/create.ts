@@ -1,6 +1,6 @@
-// The generic logger factory. createLogger<Event> is what the engine's own log instance in
+// The generic logger factory. createLogger<Event> is what the engine's log instance in
 // emit.ts composes, and what a consumer site imports from the /log subpath to get the same
-// record shape and redaction over its own event union.
+// record shape and redaction over its event union.
 
 /** A log level: info for a normal occurrence, warn for a recoverable fault, error for one that is not. */
 export type LogLevel = 'info' | 'warn' | 'error';
@@ -20,7 +20,7 @@ export interface LogRecord {
  * `session-id` all match the single `session_id` member, which is why the list spells each name
  * once. The comparison is against the whole normalized key, never a substring, so `tokenLength`
  * (`tokenlength`) and `hasSession` (`hassession`) are not a match and pass through unchanged.
- * Frozen: a site adds its own keys through `createLogger`'s `redactKeys` option, which unions with
+ * Frozen: a site adds its keys through `createLogger`'s `redactKeys` option, which unions with
  * this list rather than replacing it.
  */
 export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
@@ -45,7 +45,7 @@ export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
   'csrf_token',
 ] as const);
 
-// How far into a record's own field values the redaction walks. A secret is routinely one level
+// How far into a record's field values the redaction walks. A secret is routinely one level
 // down (a headers bag) or two (a row array of objects), and three levels covers both without
 // walking an arbitrarily deep payload a log record should not be carrying in the first place. A key
 // at level four or deeper is left as written, which the /log reference page states as the cap.
@@ -54,7 +54,7 @@ const MAX_REDACTION_DEPTH = 3;
 /**
  * The whole-key comparison form: lowercased, with the two separator characters removed. Exported
  * for internal reuse (never from the public `/log` subpath): `log-secret-field.ts` matches the
- * runtime's own redaction this way rather than carrying a second copy of the same normalization.
+ * runtime's redaction this way rather than carrying a second copy of the same normalization.
  */
 export function normalizeKey(key: string): string {
   return key.toLowerCase().replace(/[-_]/g, '');
@@ -65,7 +65,7 @@ const DEFAULT_REDACTED_KEYS: ReadonlySet<string> = new Set(REDACTED_LOG_KEYS.map
 /**
  * Whether a value is a plain object the redaction should walk into. A class instance, a Date, a
  * Map, or an Error is left alone: walking one would rebuild it as a plain object and lose whatever
- * a sink's own serializer makes of it.
+ * a sink's serializer makes of it.
  */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
@@ -74,7 +74,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 // `level` is the level of the object or array this value was read FROM, so a container found here
-// would hold its own keys one level deeper; at the cap the value is returned as written. The seen
+// would hold its keys one level deeper; at the cap the value is returned as written. The seen
 // set spans the whole walk rather than one branch, so a second appearance of the same object reads
 // as '<repeated>' whether it is a true cycle or a reference shared between two branches: a log
 // record is not a serialization format, and bounding the walk matters more than reproducing a graph.
@@ -101,7 +101,7 @@ function redactValue(
 // Replaces every field whose whole normalized key matches a member of `keys` with '<redacted>', and
 // recurses into a plain object or array value so a secret nested in a headers bag or a row array is
 // caught too. The result is assembled on a null-prototype intermediate so an own '__proto__' key in
-// the source survives as an own key rather than being swallowed by Object.prototype's own setter;
+// the source survives as an own key rather than being swallowed by Object.prototype's setter;
 // the spread that returns it copies own keys by definition, never through that setter.
 function redactObject(
   fields: Record<string, unknown>,
@@ -149,9 +149,9 @@ export function buildRecord(
  * Builds a logger scoped to one event union. Every instance shares the same console sink, the
  * same envelope shape, and the same whole-key redaction; the sink itself carries no promise,
  * only the record shape and the redaction do, so a future subscriber fan-out sees one stream
- * regardless of how many createLogger callers exist. `options.redactKeys` names a site's own
+ * regardless of how many createLogger callers exist. `options.redactKeys` names a site's
  * additional field names, which union with `REDACTED_LOG_KEYS` and never replace it: a site cannot
- * narrow the engine's own list by passing its own.
+ * narrow the engine's list by passing its own.
  */
 export function createLogger<Event extends string>(options?: { redactKeys?: readonly string[] }): {
   info(event: Event, fields?: Record<string, unknown>): void;

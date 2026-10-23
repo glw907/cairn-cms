@@ -2,7 +2,7 @@
 // adapter; this module validates that block and resolves it into the engine-internal
 // ResolvedAssetConfig the upload, storage, and delivery paths read. An absent block means media is
 // off, so the resolved value carries an `enabled` discriminant rather than throwing. A site cannot
-// declare its own transform presets (the `variants` field had zero reachable
+// declare its transform presets (the `variants` field had zero reachable
 // runtime consumers); BUILT_IN_PRESETS is the whole preset vocabulary. This module is
 // engine-internal; later phases call normalizeAssets, but the contract surface stays AssetConfig.
 import type { AssetConfig } from '../content/types.js';
@@ -38,8 +38,8 @@ const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/g
 
 /**
  * The built-in named transform presets, the whole vocabulary `presetUrl` resolves against. A site
- *  cannot declare its own: a size beyond these four is built directly against
- *  Cloudflare's own `/cdn-cgi/image/<options>/` transform-URL format.
+ *  cannot declare one: a size beyond these four is built directly against
+ *  Cloudflare's `/cdn-cgi/image/<options>/` transform-URL format.
  */
 export const BUILT_IN_PRESETS: Record<string, VariantSpec> = Object.freeze({
   thumb: { width: 320, height: 320, fit: 'cover' },

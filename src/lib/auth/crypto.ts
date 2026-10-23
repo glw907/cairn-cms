@@ -42,7 +42,7 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * `base` must not already carry a __Host- or __Secure- prefix (double-prefixing is a cookie
  * the browser silently rejects, not a runtime error, so this throws instead) or a character
  * outside the cookie-name token set. Bases starting `cairn_` are the engine's reserved
- * namespace: the engine's own cookie names delegate through this function, and a site base in
+ * namespace: the engine's cookie names delegate through this function, and a site base in
  * that namespace does not throw, but risks colliding with an engine cookie.
  */
 export function buildCookieName(base: string, secure: boolean): string {

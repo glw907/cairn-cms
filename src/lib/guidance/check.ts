@@ -23,7 +23,7 @@ export const SOURCE_EXCLUSION_LINE = '@source not "./.claude";';
 /** The Tailwind import modifier that turns off automatic source detection, so `.claude/` is never scanned. */
 const SOURCE_NONE = 'source(none)';
 
-// The scaffold's own admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
+// The scaffold's admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
 // then one common alternative; `judgeSourceExclusion` reports unknown and names every path it
 // looked at, including these, when it identifies neither.
 const SOURCE_CSS_CANDIDATES = ['src/admin.css', 'src/theme/admin.css'];
@@ -67,8 +67,8 @@ export function gitignoreExcludesClaude(gitignore: string): boolean {
 }
 
 /**
- * Judge whether `.claude/` is excluded from the site's own Tailwind build: a gitignored
- *  `.claude` passes outright (Tailwind's own scanner skips it), a stylesheet whose Tailwind import
+ * Judge whether `.claude/` is excluded from the site's Tailwind build: a gitignored
+ *  `.claude` passes outright (Tailwind's scanner skips it), a stylesheet whose Tailwind import
  *  uses `source(none)` passes as well, otherwise the candidate admin
  *  stylesheets are read in order and the first one that carries any `@source` directive at all
  *  decides the verdict; when neither signal is found the item reports unknown, naming every path

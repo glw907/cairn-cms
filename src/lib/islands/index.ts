@@ -1,9 +1,9 @@
 // cairn-cms islands (@glw907/cairn-cms/islands): the client runtime that mounts a site's live Svelte
 // components over the static fallbacks the render pipeline emits. cairn is Svelte-only by design, so this
-// mounts with Svelte's own mount()/unmount() directly, with no framework abstraction. A site imports this
+// mounts with Svelte's mount()/unmount() directly, with no framework abstraction. A site imports this
 // dynamically, gated on a non-empty registry, so a static site never ships it (zero cost when unused).
 // Anything proposed here must be part of the client-side mount/teardown mechanism itself; an admin
-// screen component belongs on /admin, and the render pipeline's own hast builders on /render,
+// screen component belongs on /admin, and the render pipeline's hast builders on /render,
 // even though both feed what this runtime eventually mounts.
 import { mount, unmount, type Component } from 'svelte';
 import type { IslandRegistry } from './types.js';

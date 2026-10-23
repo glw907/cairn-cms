@@ -35,7 +35,7 @@ export interface ComposeInput {
 /**
  * Fold an adapter into the composed runtime. This is the one place the grouped adapter maps onto
  * the flat runtime, and the one place the internal manifest and dictionary paths default by
- * convention. Each concept declares its own routing and URL policy, so the runtime and delivery
+ * convention. Each concept declares its routing and URL policy, so the runtime and delivery
  * permalinks cannot diverge. The media slot (seam 4) passes through untouched. Throws when an
  * access rule names a role the adapter's vocabulary does not declare.
  */

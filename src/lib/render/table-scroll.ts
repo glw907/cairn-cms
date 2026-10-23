@@ -5,7 +5,7 @@
 // from the accessibility tree (a `display: block` table is no longer exposed as a table to a
 // screen reader, in every current engine). The standard fix keeps the table a real table and
 // scrolls a wrapper around it instead. Two sites independently rediscovered this gap and wrote the
-// identical rehype step at their own boundary, so the engine now ships it as the pipeline's
+// identical rehype step at their boundary, so the engine now ships it as the pipeline's
 // default.
 import { visit, SKIP } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
@@ -43,7 +43,7 @@ function tableLabel(table: Element): string {
  *  `display: table` (prose.css), so it stays a real table in the accessibility tree; only the
  *  wrapper scrolls (WCAG 1.3.1). `role="region"` plus an `aria-label` names the region, and
  *  `tabIndex: 0` puts it in the tab order so a keyboard user who cannot use a trackpad can still
- *  reach the horizontal scroll. Runs over the fully built tree, so it wraps a component's own
+ *  reach the horizontal scroll. Runs over the fully built tree, so it wraps a component's
  *  table output the same as an author's markdown table.
  */
 export function rehypeTableScroll() {

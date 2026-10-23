@@ -1,4 +1,4 @@
-// cairn-cms: the access map, the single per-site declaration that gates its own admin screens and
+// cairn-cms: the access map, the single per-site declaration that gates its admin screens and
 // custom routes by role. A site declares it once, on the adapter; composeRuntime carries it onto
 // the runtime, and the guard, the dev backend's handle, and the nav resolver all read that one
 // declaration. defineAccess validates shape and role vocabulary at construction time; canReach is
@@ -7,12 +7,12 @@
 // they need the real concept list and engine-route table, which only composition
 // (createCairnAdmin) has, so that check lands with the composition task. hasAccessRule backs
 // requireAccess's fail-closed contract: a target the map has no key for route-gates as a
-// misconfiguration, distinct from canReach's own unmapped-target reading used for nav visibility.
+// misconfiguration, distinct from canReach's unmapped-target reading used for nav visibility.
 // targetFromRouteId is the shared default-target derivation both authorization call sites use,
 // requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and action
 // halves of one route's authorization story never disagree on what they are checking.
 // validateAccessRoles is composeRuntime's check that every role a rule names is declared in the
-// adapter's own vocabulary, so a map can't outlive a role the site dropped.
+// adapter's vocabulary, so a map can't outlive a role the site dropped.
 import { DEFAULT_ROLES, type RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
@@ -52,7 +52,7 @@ function validateKeyShape(key: string): void {
     throw new Error(`defineAccess: key '${key}' is neither a screen id nor an /admin-prefixed path`);
   }
   if (key.includes('(') || key.includes(')')) {
-    // Closes off UNRESOLVED_ROUTE_TARGET's own shape (below) at the first gate: a screen-id key
+    // Closes off UNRESOLVED_ROUTE_TARGET's shape (below) at the first gate: a screen-id key
     // must never spell a parenthesized sentinel, so a site cannot accidentally (or deliberately)
     // grant a role the fail-closed target a null or all-groups route id resolves to.
     throw new Error(`defineAccess: key '${key}' may not contain '(' or ')'`);
@@ -97,7 +97,7 @@ export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration 
  * or the match is ambiguous.
  *
  * A route id's dynamic segment (`[id]`, `[...rest]`) is a literal string, never a resolved value,
- * so it can never equal a deeper map key's own literal next segment (`/admin/money/payroll` can
+ * so it can never equal a deeper map key's literal next segment (`/admin/money/payroll` can
  * never prefix-match `/admin/money/[report]`, whatever report a request actually names). Falling
  * back to the shallower key in that case would silently make the deeper rule dead code: a site
  * that keys both `/admin/money` and `/admin/money/payroll`, meaning the second stricter than the
@@ -106,7 +106,7 @@ export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration 
  * So when the matched prefix's very next target segment is dynamic and the map holds any key
  * strictly deeper than that prefix, the match refuses outright (`undefined`) rather than falling
  * back: the site must declare an explicit `target` for a route this ambiguous, the same way
- * `SectionActionOptions.target`'s own doc already asks for a route with a rest parameter.
+ * `SectionActionOptions.target`'s doc already asks for a route with a rest parameter.
  */
 function matchHrefKey(access: AccessMap, target: string): string | undefined {
   return resolveHrefMatch(access, target).key;
@@ -157,15 +157,15 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
  * no matching key admits any editor-capability session, the nav semantics a site relies on for
  * `navFilter`-free visibility. When the matched prefix's next segment is a route id's dynamic
  * parameter (`[id]`, `[...rest]`) and the map holds a key deeper than that prefix, the deeper key
- * can never be reached (a dynamic segment's literal text never equals a concrete key's own), so
+ * can never be reached (a dynamic segment's literal text never equals a concrete key's), so
  * the match refuses rather than falling back to the shallower rule ({@link matchHrefKey}); here
  * that reads as an unmatched target, the same permissive admit as no rule at all, since this
- * function's own unmatched-target floor is nav visibility, not enforcement. Fail-closed route
+ * function's unmatched-target floor is nav visibility, not enforcement. Fail-closed route
  * enforcement for an unmatched or ambiguous target is `requireAccess`'s job, via
  * {@link hasAccessRule}, not this function's.
  *
  * Posture: permissive by default. A target the map never names stays reachable, because this one
- * reading gates both an engine screen's own route enforcement and that screen's nav visibility,
+ * reading gates both an engine screen's route enforcement and that screen's nav visibility,
  * and every route relies on the zero-config any-editor floor an unmapped target admits.
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
@@ -232,16 +232,16 @@ const ROUTE_GROUP_SEGMENT = /\/\([^/]+\)(?=\/|$)/g;
  * never appears in a URL, so `/admin/(app)/roster` and `/admin/roster` are the same door, while
  * `hasAccessRule`'s path-segment-prefix matching would refuse the group form against a map keyed
  * `/admin/roster` and fail-close every session, owner included. The group name comes from the
- * site's own directory layout, never from the request, so stripping it reintroduces nothing
+ * site's directory layout, never from the request, so stripping it reintroduces nothing
  * attacker-chosen; every surviving segment, a `[id]` parameter included, stays the compile-time
  * literal the route id carries. A null id, and an id that is nothing but groups, both resolve to
  * the fixed non-matching sentinel rather than the request path or an empty string.
  *
  * Shared by `createSectionAction` (section-action.ts) and `requireAccess` (guard.ts), the two
  * halves of one authorization story: both derive their default target this way,
- * never from `event.url.pathname`, so a load and its own POST agree on what a session is allowed
+ * never from `event.url.pathname`, so a load and its POST agree on what a session is allowed
  * to reach. It stays internal to the engine, never re-exported from a package subpath: a site
- * declares its own target through `SectionActionOptions.target` or `requireAccess`'s own
+ * declares its target through `SectionActionOptions.target` or `requireAccess`'s
  * parameter, never by importing this helper directly.
  */
 export function targetFromRouteId(routeId: string | null): string {
@@ -252,7 +252,7 @@ export function targetFromRouteId(routeId: string | null): string {
 
 /**
  * Throw when any rule in `access` names a role `roles` does not declare (`undefined` reads the
- * implicit owner/editor pair). `composeRuntime` runs this on the adapter's own `roles` and
+ * implicit owner/editor pair). `composeRuntime` runs this on the adapter's `roles` and
  * `access`, so a runtime whose map names an undeclared role is never built. `defineAccess` checks
  * the same thing against whatever vocabulary its caller handed it, which need not be the adapter's,
  * and a map written as a plain object skips `defineAccess` entirely.

@@ -1,6 +1,6 @@
-// cairn-media-seed's own tolerant wrangler-config reader, narrowed to the one fact this tool
+// cairn-media-seed's tolerant wrangler-config reader, narrowed to the one fact this tool
 // needs: the declared r2_buckets entries. This module imports nothing outside media-seed, so
-// this tool keeps no dependency on any other engine subsystem's own config reader. The read
+// this tool keeps no dependency on any other engine subsystem's config reader. The read
 // stays a line-anchored shallow scan, not a TOML parser, and jsonc wins silently when both
 // wrangler files exist; a Go port of this same logic exists, and a change here would diverge
 // the two.

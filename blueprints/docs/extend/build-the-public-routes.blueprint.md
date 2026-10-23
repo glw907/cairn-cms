@@ -18,10 +18,10 @@ exemplar: extenders/django-custom-management-commands
 **What they already know.** SvelteKit routing (rest parameters, param matchers, route groups, `+server.ts` endpoints, layout loads), the `prerender` and `entries` exports, and Vite's `import.meta.glob`. Their adapter already declares the site's concepts. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
 **Background.** The public pages are route files in the site's SvelteKit app, and each route is a few lines around an engine builder. :fact[j0ut9n] :fact[pkt8i6] :fact[pvk6h5]
-Every route except the draft preview prerenders from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. The preview route renders at request time and reads the entry's holding branch. :fact[1mkckz] :fact[8k9xwm] :fact[jdz8hj]
-The routes read two shared inputs: one set of typed indexes from `createSiteIndexes`, and one origin string. The robots route reads only the origin, and the archive route reads only the posts index. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
+The entry, twin, archive, feed, sitemap, and robots routes prerender from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. The preview route renders at request time and reads the entry's holding branch. :fact[1mkckz] :fact[8k9xwm] :fact[jdz8hj]
+The routes read two shared inputs: one set of typed indexes from `createSiteIndexes`, and one origin string. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
 
-**What the page does for them.** The introduction opens on that model: each route is a site file that calls an engine builder and reads the index, the origin, or both. :fact[pkt8i6] :fact[yef4lo]
+**What the page does for them.** The introduction opens on that model: the routes are site files that read the shared index, the origin, or both, most of them through an engine builder. :fact[pkt8i6] :fact[yef4lo]
 It states the task: build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build. :fact[pkt8i6] :fact[8k9xwm]
 It tells the scaffolded reader that the tree holds these routes already, except the tag page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
 It names where the engine's head stops: it covers entry pages, and it reads the hero from the frontmatter key `image`. :fact[k7nln3] :fact[k5uws5]
@@ -66,7 +66,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Gives the reader the map every later section points into, before any code.*
 
 - On a scaffolded site, the public routes sit under `src/routes/`, and the modules they share sit in `src/chassis/`. :fact[qtm9y2] :fact[zb2k9f]
-- Code: a text tree of the scaffold's public files: `src/params.ts`; under `src/routes/`, the `(site)` group's `[...path]/`, `[...path=md]/`, `archive/[page]/`, `preview/[token]/`, `+layout.svelte`, `+page.server.ts`, and `+page.svelte`, then `feed.json/`, `feed.xml/`, `media/[...path]/`, `robots.txt/`, `sitemap.xml/`, and the root `+layout.server.ts`; under `src/chassis/`, `content.ts`, `public-routes.ts`, and `feed.ts`. :fact[qtm9y2] :fact[zb2k9f]
+- Code: a text tree of a selection of the scaffold's public files: `src/params.ts`; under `src/routes/`, the `(site)` group's `[...path]/`, `[...path=md]/`, `archive/[page]/`, `preview/[token]/`, `+layout.svelte`, `+page.server.ts`, and `+page.svelte`, then `feed.json/`, `feed.xml/`, `media/[...path]/`, `robots.txt/`, `sitemap.xml/`, and the root `+layout.server.ts`; under `src/chassis/`, `content.ts`, `public-routes.ts`, and `feed.ts`. :fact[qtm9y2] :fact[zb2k9f]
 - In `src/chassis/`, `content.ts` builds the index and the site's identity, `public-routes.ts` holds the shared entry config, and `feed.ts` maps posts to feed items. :fact[zb2k9f]
 - A hand-built site may lay these files out differently, for example with routes directly under `src/routes/` and no `(site)` group. Each later section names the scaffold's path, and you use the matching file in your tree.
 - See [Routes and the server hook](scaffolded-site-files.md#routes-and-the-server-hook).
@@ -332,7 +332,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 3. In a terminal, fetch `/sitemap.xml` from the local server. Each `loc` starts with your origin literal, not the local server's address. :fact[k16chc] :fact[mtltw7]
 4. In the same terminal, fetch `/feed.xml` and `/feed.json`. Each lists the published posts with absolute URLs. :fact[70uh8b]
 5. In the same terminal, fetch `/robots.txt`. It holds a `Disallow: /admin` line and a `Sitemap:` line naming your origin's `/sitemap.xml`. :fact[0elmiu]
-6. Fetch an entry's twin with `curl -s '<local-server>/<permalink>.md'`. The body is the entry's stored markdown, unrendered. :fact[03lbjg]
+6. Fetch an entry's twin with `curl -s '<local-server>/<permalink>.md'`. The body is the entry's stored markdown body, without its frontmatter, unrendered. :fact[03lbjg]
 7. In a browser, open an entry and view its source. The canonical link and `og:url` are your origin plus the permalink. :fact[k16chc]
 
 ## Diagnose a failed build

@@ -34,7 +34,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 - See [`wrangler tail`](https://developers.cloudflare.com/workers/wrangler/commands/#tail).
 - From your terminal, `cairn logs <site>` reads the same records for one site. `--event` narrows them to one event name, and `--since` sets how far back to look, 24 hours unless you name another window. :fact[efxu16] :fact[q9ylqa]
 - `cairn health` runs nine checks against one site, or against every site it knows when you name none. :fact[wbnj9p]
-- Its `errors` check counts only cairn's own error records, never every error line the site logs, and when the query reaches its limit the count reads "at least" a number. :fact[1x1hpl]
+- Its `errors` check counts only cairn's error records, never every error line the site logs, and when the query reaches its limit the count reads "at least" a number. :fact[1x1hpl]
 - The `errors` check passes at up to 5 such records over the last 24 hours and fails above that; `--error-threshold` and `--since` change those two numbers. :fact[vg5zt8]
 - When the `errors` check fails, read that window's records with `cairn logs` and find each record's event in the rows below. :fact[vg5zt8] :fact[efxu16]
 - Each row names the event that confirms it, and the log events reference lists every event with its fields.
@@ -63,7 +63,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The editor taps the link inside a mail app and sees "This browser has no pending sign-in."
-**Cause.** The mail app opened the link in its own built-in browser, which keeps its cookies apart from the browser that requested the link. Apple's in-app Safari view is one such browser.
+**Cause.** The mail app opened the link in its built-in browser, which keeps its cookies apart from the browser that requested the link. Apple's in-app Safari view is one such browser.
 **Fix.** Act: request a new link, then open it in the browser that requested it rather than inside the mail app. :fact[ivpv77] :fact[71luk5]
 :::
 
@@ -105,7 +105,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 
 :::row
 **Symptom.** The **Publish site** button is missing while an entry is open for editing.
-**Cause.** An open entry's own controls take over the top bar, and the site-wide button steps aside.
+**Cause.** An open entry's controls take over the top bar, and the site-wide button steps aside.
 **Fix.** Act: go to any other admin screen, such as the entry's list, and the button shows again while edits wait to publish. :fact[iqlr1w] :fact[hi9nim]
 :::
 
@@ -188,7 +188,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 :::
 
 :::row
-**Symptom.** On a site that signs editors in through an organization's own sign-in gate, the admin shows "This admin needs" followed by the gate's name. The log holds `guard.refused` with `reason: identity`.
+**Symptom.** On a site that signs editors in through an organization's sign-in gate, the admin shows "This admin needs" followed by the gate's name. The log holds `guard.refused` with `reason: identity`.
 **Cause.** The gate refused the request, or failed while confirming who the editor is, so cairn could not start a session. A site that signs in with emailed links never shows this page.
 **Fix.** Act: sign in through the gate again. If it still fails, ask a developer to check the gate's configuration. :fact[yl9c68] :fact[6xsj29]
 :::
@@ -220,7 +220,7 @@ exemplar: operators/github-pages-troubleshoot-domains
 *Show the reader how to stop a known failing check from paging them. Warn that a hold covers that check on every site.*
 
 - `cairn health --ack <check-id>=<YYYY-MM-DD>` holds a known failing check until that date. :fact[wj1i7e]
-- A held failure reads `held` and still counts as WARNING, never OK, and once the date passes the check returns to its own severity. :fact[wj1i7e]
+- A held failure reads `held` and still counts as WARNING, never OK, and once the date passes the check returns to its usual severity. :fact[wj1i7e]
 - Holds can also live in a file: `acknowledgements.json` in the registry directory by default, or a file you name with `--ack-file`. :fact[q4skmn]
 
 :::row

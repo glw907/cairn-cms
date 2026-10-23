@@ -72,7 +72,7 @@ A Note follows the introduction: the link is the credential. Anyone who holds it
 
 ## Apply the preview migration
 
-*Adds the table that both the mint and the preview route read.*
+*Adds the table the mint writes to and the preview route reads.*
 
 - The `0003_preview.sql` migration adds a `preview_tokens` table to `AUTH_DB`. Each row holds the SHA-256 of a link's token, the entry it shares, the editor who minted it, and its expiry. A row never holds the token itself. :fact[049lo2]
 - To apply the migration, follow these steps:
@@ -161,7 +161,7 @@ export const load: PageServerLoad = (event) =>
 *Points the banner's colors and radius at the site's tokens when the banner's defaults clash with the theme.*
 
 - The banner reads five custom properties and declares none of them on its element, so a declaration on `:root` takes effect without a more specific selector. :fact[xssf06]
-- Their color defaults are daisyUI 5 role tokens, apart from the ended state's link, which reads `--cairn-info-ink` before falling back to a daisyUI role. None is a color literal. On a daisyUI site, the banner already follows the theme in every color scheme. A site without daisyUI points the color properties at its theme's tokens. :fact[xssf06]
+- Their color defaults are daisyUI 5 role tokens, apart from the ended state's link, which reads cairn's `--cairn-info-ink` before falling back to a daisyUI role. None is a color literal. On a daisyUI site, the banner already follows the theme in every color scheme. A site without daisyUI points the color properties at its theme's tokens. :fact[xssf06]
 - Each property sets one part of the banner:
 - `--cairn-preview-bg` and `--cairn-preview-border` set the background and the border in both states. :fact[74ls5e]
 - `--cairn-preview-fg` sets the text. :fact[74ls5e]

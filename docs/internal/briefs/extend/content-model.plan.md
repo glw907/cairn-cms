@@ -16,7 +16,7 @@ when it's most relevant to your reader."
 Inputs read: the outline entry for `content-model` in `docs/internal/outlines/extend.json` (job,
 covers, outOfScope, exemplars), and the entries for the four out-of-scope pages
 (`define-an-adapter-and-schema`, `link-content-with-references`, `reuse-content-across-entries`,
-`configure-rendering`) so this page's edges meet theirs; "The page anatomies", "Structure", and
+`write-a-markdown-component`) so this page's edges meet theirs; "The page anatomies", "Structure", and
 "The introduction" in `docs/internal/docs-register.md`; the two exemplars
 (`~/.local/share/cairn/exemplars/extenders/cf-workers-bindings/page.md`,
 `~/.local/share/cairn/exemplars/designers/astro-layouts/page.md`); every fact bullet named below in
@@ -150,7 +150,7 @@ matters, overviews the scope, and states what is out of scope with the pages tha
   - Writing the adapter and a concept's declaration, in `docs/extend/define-an-adapter-and-schema.md`
   - Reference fields in use, in `docs/extend/link-content-with-references.md`
   - Fragments and the include directive, in `docs/extend/reuse-content-across-entries.md`
-  - Rendering an entry's body, in `docs/extend/configure-rendering.md`
+  - Rendering an entry's body, in `docs/extend/write-a-markdown-component.md`
 - **Readers the framing step weighs.** A developer about to declare their first concept, on a
   scaffolded site or the tutorial's (the job's reader); a developer who took over a scaffolded site
   and is reading the posts and pages concepts it inherited; a reader arriving from Architecture's
@@ -386,7 +386,7 @@ than five links a group, each group introduced by a complete sentence.
   `docs/extend/define-an-adapter-and-schema.md` (writing the declaration),
   `docs/extend/link-content-with-references.md` (reference fields in use),
   `docs/extend/reuse-content-across-entries.md` (fragments),
-  `docs/extend/configure-rendering.md` (rendering an entry's body).
+  `docs/extend/write-a-markdown-component.md` (rendering an entry's body).
 - **Concepts** (two), lead-in "The following pages place the content model in the wider system."
   (`no-claim`): `docs/extend/architecture.md` (the content map among the adapter's seams),
   `docs/extend/scaffolded-site-files.md` (where the adapter and the content directories sit on a

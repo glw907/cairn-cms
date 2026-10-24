@@ -23,7 +23,7 @@ Four neighboring subjects are documented elsewhere:
 - Writing the adapter and a concept's declaration, in [Define an adapter and schema](define-an-adapter-and-schema.md)
 - Reference fields and internal links between entries in use, in [Link content with references](link-content-with-references.md)
 - Fragments and the include directive, in [Reuse content across entries](reuse-content-across-entries.md)
-- Rendering an entry's body, in [Configure rendering](configure-rendering.md)
+- Rendering an entry's body, in [Write a markdown component](write-a-markdown-component.md)
 
 ## Concepts
 
@@ -203,7 +203,7 @@ The following guides put the model to work.
 - [Define an adapter and schema](define-an-adapter-and-schema.md): writing the declaration
 - [Link content with references](link-content-with-references.md): reference fields in use
 - [Reuse content across entries](reuse-content-across-entries.md): fragments
-- [Configure rendering](configure-rendering.md): rendering an entry's body
+- [Write a markdown component](write-a-markdown-component.md): rendering an entry's body
 
 The following pages place the content model in the wider system.
 

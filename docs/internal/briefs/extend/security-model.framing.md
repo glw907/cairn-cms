@@ -37,7 +37,7 @@ Agent-facing. Drives the rewrite of the introduction of `docs/extend/security-mo
 ## Place in the doc set
 
 The one concept page under "Auth and access". Task pages (Restrict admin access, Replace magic
-links, Add a second sign-in group, Configure rendering, Rotate the GitHub App key) each configure
+links, Add a second sign-in group, Write a markdown component, Rotate the GitHub App key) each configure
 one piece and point here for the why; Architecture covers the parts and seams without the threat
 reasoning.
 

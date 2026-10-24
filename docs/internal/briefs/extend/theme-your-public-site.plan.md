@@ -100,7 +100,7 @@ No heading. No one-line imperative contract; the opening states the subject. Cit
 2. Para 2: the setup command ships Waymark wired into the shared chassis; both are files in the site's tree, the npm package ships neither, so no engine version governs the look; the look is token values over engine-default roles, so ownership is a matter of reach.
 3. Para 3: reader routing. Re-skin (about fourteen color and type values, Waymark layouts kept); port (existing design onto the chassis); hand-built site starts at Theme a hand-built site after preconditions; scaffolded site skips it and follows boundary, tiers, local loop, one recipe, rendered markdown and preview, verify, resolve findings; both recipes end at the three `cairn-audit` public-scope rules; audit-finding arrivals jump to Resolve an audit finding.
 4. Prior knowledge: Tailwind v4 theme variables and cascade layers, daisyUI theme blocks, Svelte components.
-5. Out-of-scope list (six pages): scaffolded-site-files, configure-rendering, build-the-public-routes, configure-media, run-cairn-audit-on-your-site, style-the-screen.
+5. Out-of-scope list (six pages): scaffolded-site-files, write-a-markdown-component, build-the-public-routes, configure-media, run-cairn-audit-on-your-site, style-the-screen.
 
 Superseded 2026-10-04 by Geoff's intro ruling (framing and reader-first intros, never an imperative opening); see docs/internal/briefs/extend/theme-your-public-site.framing.md.
 
@@ -585,7 +585,7 @@ restated here. The link is not repeated in See also (anatomy item 6).
 First sentence: The following pages cover the work around a theme.
 
 No facts. One bullet per page, each a complete sentence naming what the page does, grouped guides
-first, then reference: `docs/extend/configure-rendering.md` builds the components a theme styles;
+first, then reference: `docs/extend/write-a-markdown-component.md` builds the components a theme styles;
 `docs/extend/build-the-public-routes.md` wires the delivery routes the chassis feeds;
 `docs/extend/configure-media.md` sets up the media storage seeded images come from;
 `docs/extend/run-cairn-audit-on-your-site.md` configures `cairn-audit` for the whole site;

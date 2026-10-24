@@ -9,7 +9,7 @@ Every reader is the extend track's Svelte-fluent web developer. They differ in w
 changing and in what sent them here.
 
 1. **The developer on a scaffolded site who wants a second island.**
-   - From: the extend index's "Public site" group, the configure-rendering page after declaring a
+   - From: the extend index's "Public site" group, the write-a-markdown-component page after declaring a
      component (the outline's crossLink "Hydrating a registered component"), or a search after
      meeting the `banner` island in their own tree. `docs/extend/scaffolded-site-files.md` lists
      `src/theme/islands/` (`Banner.svelte`, `registry.ts`) and says the root `+layout.server.ts`
@@ -20,7 +20,7 @@ changing and in what sent them here.
      component, one registry entry, the `hydrate` declaration; `f:mcxxpp`), and that their adapter
      is `src/theme/cairn.config.ts`, not the tutorial's `src/lib/cairn.config.ts` (`f:q07rd5`).
 2. **The developer on a site built by hand, the add-cairn tutorial's site in particular.**
-   - From: the configure-rendering page, where they declared the component, or the extend index.
+   - From: the write-a-markdown-component page, where they declared the component, or the extend index.
    - Came for: making that component respond in the browser, end to end.
    - Knows: Svelte 5, SvelteKit, the tutorial's adapter at `src/lib/cairn.config.ts` (imported as
      `#lib/cairn.config.js`), and its admin layouts.
@@ -53,7 +53,7 @@ Readers likely to arrive in the wrong place:
   markdown. SvelteKit already hydrates a page's own Svelte components (`f:tf4vfb`), so that widget
   needs no island; it is the site's own SvelteKit code, with no cairn page to send them to.
 - **A developer whose component only renders markup.** They need
-  `docs/extend/configure-rendering.md` alone.
+  `docs/extend/write-a-markdown-component.md` alone.
 - **A developer who expects the island to run in the admin's edit preview.** Not a wrong page, but a
   wrong expectation the body answers in "Verify the island on the public page" (`f:8o2gbl`). The
   introduction leaves it there.
@@ -98,22 +98,22 @@ Readers likely to arrive in the wrong place:
 
 - **Group and neighbors.** The page closes the "Public site" group in outline order, after
   theme-your-public-site, build-the-public-routes, share-a-draft-preview, and
-  act-on-newly-published-entries. Its nearest neighbor by subject is configure-rendering in "Model
+  act-on-newly-published-entries. Its nearest neighbor by subject is write-a-markdown-component in "Model
   content", whose out-of-scope list sends "Hydrating a component on the client" here. The arm index
   `docs/extend/README.md` has no line for the page yet.
-- **What links in, and why.** The outline's one crossLink into the page is configure-rendering's,
+- **What links in, and why.** The outline's one crossLink into the page is write-a-markdown-component's,
   for hydrating a registered component; that page is not on disk yet. Four pages on disk mention
   islands without linking here: `docs/extend/architecture.md:53` (the `/islands` runtime),
   `docs/extend/scaffolded-site-files.md:375,406` (the root load reading the island registry, and
   the `islands/` directory), `docs/extend/upgrade-cairn.md:161` and
   `docs/extend/migration-notes.md:16` (markup that needed `<script>`). No page links into this one
   with an anchor, so every heading is free.
-- **What the page links out to.** configure-rendering (declaring the component), the reference
+- **What the page links out to.** write-a-markdown-component (declaring the component), the reference
   entries `docs/reference/islands.md`, `docs/reference/core.md` (`rendering.islands`), and
   `docs/reference/admin.md` (`hydrate` and the island boundary), scaffolded-site-files, and the
   add-cairn tutorial's adapter section, as the plan sets them.
 - **What siblings own, so the introduction words a shared idea fresh.**
-  - configure-rendering owns the one `render` the preview and the public pages share,
+  - write-a-markdown-component owns the one `render` the preview and the public pages share,
     `defineComponent`, attributes, and `build()`. The introduction states only that the body
     reaches the page as an HTML string, as the reason the default is static, and never retells the
     shared-render story.
@@ -164,7 +164,7 @@ third holds the plan's bounds (prior knowledge and what the page leaves out).
    layouts and server `load` functions, `afterNavigate`, dynamic `import()`, and the component's
    `defineComponent` declaration. What the page leaves out, with the page that covers it: declaring
    the component, its attributes, and the `build()` output that becomes the fallback belong to
-   `docs/extend/configure-rendering.md`, and a component that only renders markup needs that page
+   `docs/extend/write-a-markdown-component.md`, and a component that only renders markup needs that page
    alone. One clause routes the reader who wants a widget in a route or layout of their own: it
    needs no island, since SvelteKit hydrates those components already (`f:tf4vfb`). This sentence
    may name the page, since scope has no subject-first form. Fact ids: `f:tf4vfb`.
@@ -185,6 +185,6 @@ third holds the plan's bounds (prior knowledge and what the page leaves out).
   wiring" with `f:q07rd5`, which states only the adapter's path. The framing backs it with
   `f:5vjwlc` (`rendering.islands` is optional) and `f:mcxxpp` (only the scaffold ships the wiring),
   and widens the wording to "a site built by hand, such as the add-cairn tutorial's".
-- **A second wrong-place route.** Beside the plan's route to configure-rendering, paragraph 3 adds
+- **A second wrong-place route.** Beside the plan's route to write-a-markdown-component, paragraph 3 adds
   one clause for the developer who wants a widget in their own route or layout (`f:tf4vfb`).
 - **The plan's items 3 and 4 merge** into paragraph 3, so the introduction runs three paragraphs.

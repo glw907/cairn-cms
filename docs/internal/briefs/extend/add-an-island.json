@@ -70,7 +70,7 @@
       "id": "f:drsabs"
     },
     {
-      "text": "Declaring the component, its attributes, and the `build()` output that becomes its fallback belongs to [Configure rendering](configure-rendering.md), and a component that only renders markup needs that page alone.",
+      "text": "Declaring the component, its attributes, and the `build()` output that becomes its fallback belongs to [Write a markdown component](write-a-markdown-component.md), and a component that only renders markup needs that page alone.",
       "id": "f:1uk9sw"
     },
     {
@@ -90,11 +90,11 @@
       "id": "f:5vjwlc"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md) declares one, and its `build()` output becomes the fallback.",
+      "text": "[Write a markdown component](write-a-markdown-component.md) declares one, and its `build()` output becomes the fallback.",
       "id": "f:1uk9sw"
     },
     {
-      "text": "An entry whose body uses the component's directive, written as [Configure rendering](configure-rendering.md) describes.",
+      "text": "An entry whose body uses the component's directive, written as [Write a markdown component](write-a-markdown-component.md) describes.",
       "id": "no-claim"
     },
     {
@@ -501,7 +501,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md) declares the component, its attributes, and its `build()` fallback.",
+      "text": "[Write a markdown component](write-a-markdown-component.md) declares the component, its attributes, and its `build()` fallback.",
       "id": "f:1uk9sw"
     },
     {

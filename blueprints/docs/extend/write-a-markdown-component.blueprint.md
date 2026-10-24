@@ -1,9 +1,9 @@
 ---
-page: Configure rendering
+page: Write a markdown component
 type: task guide
 ---
 
-# Configure rendering
+# Write a markdown component
 
 :::reader
 **Who reads it.** A Svelte-fluent developer building an organization's site on cairn who needs a block the site's markdown doesn't have yet. They write a custom public component beside the ones the site already declares, such as the nine a scaffolded site ships in `src/theme/markdown-components.ts`. :fact[qnf469]

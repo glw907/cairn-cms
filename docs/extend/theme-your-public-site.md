@@ -35,7 +35,7 @@ theme blocks, and Svelte components.
 The following pages cover the work next to theming:
 
 - [Scaffolded site files](scaffolded-site-files.md) maps every file the setup command writes.
-- [Configure rendering](configure-rendering.md) builds the components a theme styles.
+- [Write a markdown component](write-a-markdown-component.md) builds the components a theme styles.
 - [Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis feeds.
 - [Configure media](configure-media.md) sets up the media storage and the media route.
 - [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the
@@ -503,7 +503,7 @@ To resolve a public-rule finding, work through the following checks in order:
 
 The following pages cover the work around a theme:
 
-- [Configure rendering](configure-rendering.md) builds the components a theme styles.
+- [Write a markdown component](write-a-markdown-component.md) builds the components a theme styles.
 - [Build the public routes](build-the-public-routes.md) wires the delivery routes the chassis feeds.
 - [Configure media](configure-media.md) sets up the media storage that seeded images come from.
 - [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) configures `cairn-audit` for the

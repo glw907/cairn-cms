@@ -42,7 +42,7 @@ This page leaves out the following tasks, each with the page that covers it:
 - Declaring the target concepts and their fields:
   [Define an adapter and schema](define-an-adapter-and-schema.md).
 - Declaring and registering the components that replace shortcodes:
-  [Configure rendering](configure-rendering.md).
+  [Write a markdown component](write-a-markdown-component.md).
 - Turning media on: [Configure media](configure-media.md).
 - Rewriting the old site's internal links as `cairn:` links:
   [Link content with references](link-content-with-references.md#cairn-body-links-and-reference-fields).
@@ -70,8 +70,8 @@ The script needs the following in place:
   [Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest)
   sets up.
 - If the old bodies use shortcodes, each replacement component is declared and registered, as
-  [Declare a component](configure-rendering.md#declare-a-component) and
-  [Register the component](configure-rendering.md#register-the-component) show.
+  [Declare a component](write-a-markdown-component.md#declare-a-component) and
+  [Register the component](write-a-markdown-component.md#register-the-component) show.
 - The old site's markdown files are copied into a directory of the project outside the content
   directories, such as `old-content/posts`.
 
@@ -351,7 +351,7 @@ leaf directive (`::note`) or a text directive (`:note`) renders as its literal s
 - In the script's `toBody`, rewrite each shortcode as a container directive naming its registered
   component, as the script rewrites `{{< note >}}` to `:::note`.
 
-[Register the component](configure-rendering.md#register-the-component) covers the registration.
+[Register the component](write-a-markdown-component.md#register-the-component) covers the registration.
 
 With every part converted, run the script and let the build check the result.
 
@@ -482,7 +482,7 @@ Work through the following causes in order:
 6. If a shortcode or directive shows as literal text, `toBody` either missed the shortcode or wrote
    a leaf or text directive. See [Replace shortcodes with components](#replace-shortcodes-with-components).
    For a component that still fails, see
-   [Diagnose a failed check in Configure rendering](configure-rendering.md#diagnose-a-failed-check).
+   [Diagnose a failed check in Write a markdown component](write-a-markdown-component.md#diagnose-a-failed-check).
 
 ## See also
 
@@ -492,7 +492,7 @@ The following pages cover the pieces this page links to:
   and their fields.
 - [Entry identity](content-model.md#entry-identity): how the id, the slug, and the entry's date
   relate.
-- [Register the component](configure-rendering.md#register-the-component): registering a
+- [Register the component](write-a-markdown-component.md#register-the-component): registering a
   shortcode's replacement.
 - [Configure media](configure-media.md): turning media on before moving images into the Library.
 - [Link content with references](link-content-with-references.md#cairn-body-links-and-reference-fields):

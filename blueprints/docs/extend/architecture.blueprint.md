@@ -89,7 +89,7 @@ exemplar: core/rust-analyzer-architecture
 - A seam is a documented point where a site supplies code or data that the engine reads.
 - A table lists each seam, what a site supplies through it, and the page that documents it.
 - The `content` map: a `ConceptConfig` for each concept, whose `fields` member holds the fieldset built with `defineFieldset`, documented in Content model. :fact[i87sd3]
-- `render`, in the adapter's `rendering` group: a renderer built with `createRenderer`, documented in Configure rendering. :fact[i87sd3]
+- `render`, in the adapter's `rendering` group: a renderer built with `createRenderer`, documented in Write a markdown component. :fact[i87sd3]
 - Roles and the access map: a role vocabulary in which each role the site names maps to one capability, `none`, `editor`, or `owner`, and an access map that narrows what an editor capability reaches and can admit a `none` role only through a route rule that names it, documented in Restrict admin access. :fact[3pposq] :fact[p1xmp5] :fact[i87sd3]
 - The `identity` option on `createAuthGuard`: the site's gate proves the editor's email in place of the built-in sign-in path, and the guard still looks that email up in the roster, documented in Replace magic links with Cloudflare Access. :fact[fhit7f] :fact[hk24xs]
 - Custom admin routes: a route file under `src/routes/admin/`, which SvelteKit resolves ahead of the `[...path]` catch-all and which renders inside the `CairnAdminShell` chrome through the shared admin layout with no registration, documented in Add a custom admin screen. :fact[03zj56] :fact[brfitv] :fact[6a32oy]
@@ -97,7 +97,7 @@ exemplar: core/rust-analyzer-architecture
 - `media`: an `AssetConfig` for the media store, documented in Configure media. :fact[i87sd3]
 - `BackendProvider`: a content backend other than GitHub, with `createGithubApp` the one provider the engine ships, documented in the core reference's types table. :fact[n1om0r] :fact[i87sd3]
 - See [Content model](content-model.md).
-- See [Configure rendering](configure-rendering.md).
+- See [Write a markdown component](write-a-markdown-component.md).
 - See [Restrict admin access](restrict-admin-access.md).
 - See [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md).
 - See [Add a custom admin screen](add-a-custom-admin-screen.md).

@@ -114,7 +114,7 @@ open edits, not part of the shape itself.
   construction... It retires with or after that reshape in the conventions pass."*; *"The render trio
   (`cardShell` `headRow` `iconSpan`) defers to the chassis pass as list (c) Tier 4 (chassis-coupled).
   All three are value-imported by the showcase theme/chassis and the baked `templates/waymark` twins and
-  taught as `docs/extend/configure-rendering.md`'s worked example; deleting them requires the chassis
+  taught as `docs/extend/write-a-markdown-component.md`'s worked example; deleting them requires the chassis
   re-homing, `emit:template` re-bake, and guide rewrite in one change..."*; *"`ReproInstance` stays
   sanctioned. It appears only as a callback parameter..., which the return-position rationale does not
   literally cover, but a consumer only ever RECEIVES one (inference covers the inline callback;

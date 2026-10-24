@@ -30,7 +30,7 @@ the code the facts cite (`src/lib/render/resolve-include.ts`, `src/lib/delivery/
 the scaffold's `templates/waymark/src/theme/cairn.config.ts:131-174`,
 `templates/waymark/src/chassis/content.ts:1-29`, `templates/waymark/vite.config.ts:51-59`,
 `templates/waymark/src/content/fragments/trail-safety-notice.md`, and
-`templates/waymark/src/content/pages/about.md`). `docs/extend/configure-rendering.md` and
+`templates/waymark/src/content/pages/about.md`). `docs/extend/write-a-markdown-component.md` and
 `docs/extend/link-content-with-references.md` are not on disk yet; the run plan
 (`docs/plans/2026-10-11-draft-docs-2b-part1.md`, "The runs") says forward links pass the
 gate, so the page links both. No `docs/editors/` page is on disk.
@@ -61,7 +61,7 @@ Each section holds what the next one depends on.
 
 1. **The introduction carries the model and the right-tool callout** (`f:880bg6`, `f:72pqil`,
    `f:htxey1`). The Sanity exemplar's take: a reader who wants a block that varies per use learns
-   before any code that a registered component is the better tool, and leaves for configure-rendering.
+   before any code that a registered component is the better tool, and leaves for write-a-markdown-component.
    This is also the anatomy's wrong-place routing, so the callout lives inside the introduction.
 2. **Before you begin** names the three files the wiring touches, per site, and the public entry
    route the resolver rides on, and routes the scaffolded reader ahead.
@@ -111,7 +111,7 @@ Each section holds what the next one depends on.
 
 - **Sanity, Create a custom Studio tool.** The early "Right tool for the job?" note lands as a Note
   callout at the end of the introduction: a fragment versus a registered component, linking
-  configure-rendering. The required members named before code land in "Declare the fragments
+  write-a-markdown-component. The required members named before code land in "Declare the fragments
   concept": the reserved key and `routing: 'embedded'` in the first sentence, then the code. Left
   behind: the plugin tail.
 - **Django, custom management commands.** The file tree before the code lands in "Write a fragment
@@ -163,7 +163,7 @@ step reasons the final wording. Content items, in order:
    fragment's text is spliced verbatim, the same in every entry that includes it, and the include
    takes the fragment id and nothing else (`f:880bg6`, `f:0w7xeu`). When the block should vary per
    use, register a component instead, since a component declares its own attributes (`f:htxey1`,
-   scoped to "optional `attributes`"). Link `docs/extend/configure-rendering.md` (forward link) for
+   scoped to "optional `attributes`"). Link `docs/extend/write-a-markdown-component.md` (forward link) for
    components. Keep the callout to two or three sentences.
 
 ## Sections, in order
@@ -468,7 +468,7 @@ with the recovery link (`docs/extend/debug-your-site.md`) not repeated. One intr
 "The following pages cover the pieces this page links to:" (no-claim), then a bulleted list, each
 item's link text naming its destination:
 
-- `docs/extend/configure-rendering.md`, components with attributes and the render seam (forward link;
+- `docs/extend/write-a-markdown-component.md`, components with attributes and the render seam (forward link;
   the outline's link row names both reasons).
 - `docs/extend/link-content-with-references.md`, reference fields and the delete guard they share
   with fragments (forward link).
@@ -506,7 +506,7 @@ inputs disposed it.
 | f:q07rd5 | carried (scoped) | Before you begin (the two adapter paths); cited again in Introduction. Its tutorial-hooks clause is not used |
 | f:tj3h4c | carried | Write a fragment and include it (when the control appears; the empty picker's message) |
 | f:2g0v8u | cut | The delete action's whole check order (links, includes, the cross-branch reference index, references) is more than this page's job; the include clause it carries is `f:3vndvj`'s, placed in Guards, and the reference-edge order belongs to link-content-with-references, out of scope |
-| f:cgwyp6 | cut | `defineRegistry`'s refusal of a component named `figure` or `include` is the component registry's rule, which configure-rendering owns (out of scope); this page registers no component |
+| f:cgwyp6 | cut | `defineRegistry`'s refusal of a component named `figure` or `include` is the component registry's rule, which write-a-markdown-component owns (out of scope); this page registers no component |
 | f:t5ebsr | carried (scoped) | Guards that keep includes valid (a publish, not a save, updates the recorded includes); scoped in Write a fragment and include it (rows record included fragments). Its other row fields are not used |
 | f:2dqwmu | carried (scoped) | Forward resolveFragment from your render (the scaffold's feed resolves fragments through `createFragmentResolver`); its absolute-image-URL clause is not used |
 | f:ps54gh | cut (subordinated) | `SiteRender`'s full input shape, its HTML-only return, and `renderDocument` for headings: `docs/reference/core.md#siterender` states the input object and the `Promise<string>` return, and `docs/reference/core.md#createrenderer` states that `renderDocument` returns headings (both opened and confirmed). The page needs only the `resolveFragment` member, which `f:zv3q45` carries |
@@ -516,7 +516,7 @@ inputs disposed it.
 | f:n0laoh | carried (added, scoped) | Write a fragment and include it (a drifted manifest fails the build); its migration-tolerance clauses are not used |
 | f:fdtgh5 | carried (added) | Write a fragment and include it (the stale-manifest error names `npx cairn-manifest`); cited again in Diagnose |
 | f:6ebew3 | carried (added, scoped) | Verify the include (`pages` entries take `/:slug`, so the scaffold's about page is `/about`) |
-| f:htxey1 | carried (added, scoped) | Introduction, the Note callout (a component declares optional `attributes`); the rest of `ComponentDef` stays on configure-rendering |
+| f:htxey1 | carried (added, scoped) | Introduction, the Note callout (a component declares optional `attributes`); the rest of `ComponentDef` stays on write-a-markdown-component |
 
 The page-inputs claim inventory carried twenty rows, disposed as it recorded them: the absent prior
 page (no claims), `f:y3s3t9` (cut, above), and the "filed" rows for `f:n5d65u`, `f:rolr87`, and
@@ -558,7 +558,7 @@ none blocking the page:
   nested-include refusal (`f:82eo9p`), plus the `Missing fragment` notice name (`f:bfiuem`).
 - Never describe the Include a fragment control's use from the editor's seat beyond the one paragraph
   in "Write a fragment and include it"; that is the editors arm.
-- Components and their attributes stay on configure-rendering, and reference fields on
+- Components and their attributes stay on write-a-markdown-component, and reference fields on
   link-content-with-references: name each in the introduction, the callout, and See also only.
 - `fragments`, `routing: 'embedded'`, `::include{fragment="<id>"}`, `createSiteIndexes`,
   `cairnManifest`, `content`, `rendering.render`, `resolveFragment`, `resolve`, `resolveMedia`,

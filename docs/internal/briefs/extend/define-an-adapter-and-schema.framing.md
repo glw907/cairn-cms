@@ -74,7 +74,7 @@ Written 2026-10-12 by the framing step of the docs page chain (stage 2b part 1).
      check" answers it.
 9. **Readers in the wrong place, and the page each belongs on.**
    - Wants what a concept, routing, or an entry's identity is: `docs/extend/content-model.md`.
-   - Wants the `rendering` group: `docs/extend/configure-rendering.md`.
+   - Wants the `rendering` group: `docs/extend/write-a-markdown-component.md`.
    - Wants roles or the access map: `docs/extend/restrict-admin-access.md`.
    - Wants `navLayout`: `docs/extend/arrange-the-admin-sidebar.md`.
    - Wants the `media` group: `docs/extend/configure-media.md`.
@@ -137,7 +137,7 @@ Written 2026-10-12 by the framing step of the docs page chain (stage 2b part 1).
 ## Place in the doc set
 
 - **Group and neighbors.** Second in "Model content", after content-model and before
-  configure-rendering, link-content-with-references, reuse-content-across-entries, configure-media,
+  write-a-markdown-component, link-content-with-references, reuse-content-across-entries, configure-media,
   and migrate-existing-content. It is the group's one page about the adapter as a whole; each later
   page in the group configures one part of it.
 - **Links in, and why.** content-model (from the model to the declaration; the check hooks);
@@ -145,7 +145,7 @@ Written 2026-10-12 by the framing step of the docs page chain (stage 2b part 1).
   scaffolded-site-files (changing the concepts in `cairn.config.ts`); architecture ("Each adapter
   field"); add-a-custom-admin-screen (a concept instead of a screen); turn-on-tidy and
   migrate-existing-content when they land.
-- **Links out.** configure-rendering, restrict-admin-access, arrange-the-admin-sidebar, and
+- **Links out.** write-a-markdown-component, restrict-admin-access, arrange-the-admin-sidebar, and
   build-the-public-routes (the outline's cross-links), plus configure-media,
   link-content-with-references, and content-model in the bounds. Two inbound links promise more
   than the page holds ("every adapter option", "Each adapter field"); the page reaches every group
@@ -217,7 +217,7 @@ Then the plan's bounds, unchanged:
   who wants what a concept, routing, or an entry's identity is.
 - **Left out, each with its page:** what routing and identity mean (content-model, named, no second
   link); reference fields (`docs/extend/link-content-with-references.md`); the `rendering` group
-  (`docs/extend/configure-rendering.md`); roles and the access map
+  (`docs/extend/write-a-markdown-component.md`); roles and the access map
   (`docs/extend/restrict-admin-access.md`); `navLayout` (`docs/extend/arrange-the-admin-sidebar.md`);
   the `media` group (`docs/extend/configure-media.md`). This list is what answers reader 2's "every
   adapter option".

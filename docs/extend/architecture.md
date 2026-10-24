@@ -67,7 +67,7 @@ A site adds a concept, a role, or an admin screen through a seam, and none of th
 | Seam | What the site supplies | Documented in |
 |---|---|---|
 | The `content` map | A `ConceptConfig` with a `fieldset` for each concept | [Content model](content-model.md) |
-| `render` | A renderer built with `createRenderer` | [Configure rendering](configure-rendering.md) |
+| `render` | A renderer built with `createRenderer` | [Write a markdown component](write-a-markdown-component.md) |
 | Roles and the access map | A role vocabulary that maps each site-defined role to one capability, `none`, `editor`, or `owner`, and an access map that only narrows a capability | [Restrict admin access](restrict-admin-access.md) |
 | The `identity` option on `createAuthGuard` | A proven email from an external identity gate, which replaces the built-in sign-in path and which the guard still looks up in the roster | [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) |
 | Custom admin routes | A route file under `src/routes/admin/`, resolved ahead of the `[...path]` catch-all and rendered inside the `CairnAdminShell` chrome with no registration | [Add a custom admin screen](add-a-custom-admin-screen.md) |

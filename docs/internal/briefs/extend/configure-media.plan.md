@@ -76,8 +76,8 @@ Each section holds what the next one depends on.
    placement rule sits beside it.
 6. **Resolve media on public pages** has no cover of its own but is part of "turn on media" for the
    tutorial's site, whose entry route passes no resolver. It is where the outline's "wrapping the
-   resolver" (cover 4) gets the resolver it wraps, and the configure-rendering outline sends "the
-   media resolver" here (`docs/internal/outlines/extend.json`, slug `configure-rendering`,
+   resolver" (cover 4) gets the resolver it wraps, and the write-a-markdown-component outline sends "the
+   media resolver" here (`docs/internal/outlines/extend.json`, slug `write-a-markdown-component`,
    out-of-scope list). It precedes Verify, which checks a rendered URL.
 7. **Fail the build on a missing asset** (cover 4) follows the resolver directly. "Resolve media on
    public pages" ends on the resolver returning `undefined` for a hash with no row, which is where

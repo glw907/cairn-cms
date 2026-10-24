@@ -9,7 +9,7 @@ https://developers.google.com/tech-writing/two/large-docs): the outline is the d
 narrative, and information arrives where it is most relevant to the reader.
 
 Inputs read: the outline entry in `docs/internal/outlines/extend.json` (slug `add-an-island`: job,
-covers, out-of-scope list, exemplars; and slug `configure-rendering`, whose out-of-scope list sends
+covers, out-of-scope list, exemplars; and slug `write-a-markdown-component`, whose out-of-scope list sends
 "Hydrating a component on the client" here); "The page anatomies" and "The introduction" in
 `docs/internal/docs-register.md`; every fact bullet named below in `docs/internal/facts/extend.md`
 and `docs/internal/facts/reference.md`; the two exemplars (`extenders/directus-create-extension`,
@@ -26,7 +26,7 @@ and `docs/internal/facts/reference.md`; the two exemplars (`extenders/directus-c
 `templates/waymark/src/theme/cairn.config.ts:21,170-180`,
 `templates/waymark/src/theme/markdown-components.ts:335-348`,
 `templates/waymark/src/routes/+layout.server.ts`, `templates/waymark/src/routes/+layout.svelte`,
-`templates/waymark/src/app.d.ts`, `templates/waymark/package.json` `imports`). The configure-rendering
+`templates/waymark/src/app.d.ts`, `templates/waymark/package.json` `imports`). The write-a-markdown-component
 page is not on disk yet; a link to it passes the gate as a forward link.
 
 Headings in this plan's section list are the page's headings, verbatim. A claim inventory `section`
@@ -61,7 +61,7 @@ Each section holds what the next one depends on.
    "write a component, register it, call the runtime" reads as one mechanism rather than three
    chores. The model sits in the introduction, not in an explanation section, because the anatomy
    lets the introduction say why the thing exists and keeps explanation subordinate to the steps.
-2. **Before you begin** names the component the reader already declared (configure-rendering's
+2. **Before you begin** names the component the reader already declared (write-a-markdown-component's
    job), an entry whose body uses that component's directive (so verification has a page to open),
    the adapter file per site, and routes the scaffolded reader past the wiring they have.
 3. **Write the live component** (cover 4, props) comes first among the steps because the registry
@@ -113,7 +113,7 @@ Each section holds what the next one depends on.
 ### Heading policy
 
 Task headings start with a bare infinitive; "Before you begin" and "See also" are the anatomy's fixed
-headings. No page links into `docs/extend/add-an-island.md` with an anchor today (configure-rendering
+headings. No page links into `docs/extend/add-an-island.md` with an anchor today (write-a-markdown-component
 is not drafted), so every heading is free.
 
 ## The introduction, in Google's three parts
@@ -144,10 +144,10 @@ final wording. Content items, in order:
    layout, and check it on the public page.
 3. **Prior knowledge.** Svelte 5 components and `$props()`, SvelteKit layouts and server `load`
    functions, `afterNavigate`, and dynamic `import()`. The component's `defineComponent` declaration
-   from configure-rendering.
+   from write-a-markdown-component.
 4. **What the page does not cover, with the page that does (wrong-place routing).** Declaring the
    component itself, its attributes, and the `build()` output that becomes the fallback:
-   `docs/extend/configure-rendering.md`. One clause routes a reader who needs no client behavior: a
+   `docs/extend/write-a-markdown-component.md`. One clause routes a reader who needs no client behavior: a
    component that only renders markup needs that page alone. This sentence may name the page, since
    scope has no subject-first form.
 
@@ -177,12 +177,12 @@ that uses it, and the adapter file of the site you are changing.
 A bulleted list of preconditions, each with a link to what produces it (anatomy item 2):
 
 - A component declared with `defineComponent`, in the component registry the adapter passes as
-  `rendering.components` (`f:5vjwlc`, scoped). Link `docs/extend/configure-rendering.md`. Its
+  `rendering.components` (`f:5vjwlc`, scoped). Link `docs/extend/write-a-markdown-component.md`. Its
   `build()` output becomes the fallback, so it already renders what a reader without JavaScript
   needs. State the precondition only; never state why the check needs `rendering.components`
   (no fact; friction filed).
 - An entry whose body uses the component's directive (`converter` in the worked example), so the
-  verification steps have a public page to open. Link `docs/extend/configure-rendering.md` for the
+  verification steps have a public page to open. Link `docs/extend/write-a-markdown-component.md` for the
   authoring grammar; show no directive syntax here beyond one line if the drafter needs it. No fact;
   the bullet states only what the reader brings.
 - The adapter file: `src/theme/cairn.config.ts` on a scaffolded site, imported as
@@ -394,7 +394,7 @@ The extend recovery surface has no island row, so no recovery link is repeated. 
 sentence, "The following pages cover the pieces this page links to:" (no-claim), then a bulleted
 list, each item's link text naming its destination:
 
-- `docs/extend/configure-rendering.md`, declaring the component, its attributes, and its `build()`
+- `docs/extend/write-a-markdown-component.md`, declaring the component, its attributes, and its `build()`
   fallback.
 - `docs/reference/islands.md`, the runtime, the boundary contract, and the props trust boundary.
 - `docs/reference/core.md#renderingislands-adapter-member`, the adapter member and its check.
@@ -490,7 +490,7 @@ on 2026-10-12, none blocking the page:
 - Never claim a performance figure or a gain for `'visible'`, and never contrast `afterNavigate` with
   `onMount`.
 - Never describe the directive grammar, `defineComponent`'s members, or `build()`'s rules beyond the
-  one `hydrate` line; those are configure-rendering's.
+  one `hydrate` line; those are write-a-markdown-component's.
 - `hydrateIslands`, `IslandRegistry`, `rendering.islands`, `rendering.components`, `hydrate`, `build()`,
   `afterNavigate`, `hasIslands`, `siteIslands`, `data-cairn-island`, `data-cairn-props`,
   `data-cairn-hydrate`, `mount()`, `outro: false`, `root`, and every path in code spans.

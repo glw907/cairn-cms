@@ -102,7 +102,7 @@ pages:
       - Writing the declaration (define-an-adapter-and-schema).
       - Reference fields in use (link-content-with-references).
       - Fragments (reuse-content-across-entries).
-      - Rendering the body (configure-rendering).
+      - Rendering the body (write-a-markdown-component).
   - path: docs/extend/define-an-adapter-and-schema.md
     slug: define-an-adapter-and-schema
     title: Define an adapter and schema
@@ -124,12 +124,12 @@ pages:
     outOfScope:
       - What routing and identity mean (content-model).
       - Reference fields (link-content-with-references).
-      - The render group (configure-rendering).
+      - The render group (write-a-markdown-component).
       - Roles and the access map (restrict-admin-access).
       - navLayout (arrange-the-admin-sidebar).
-  - path: docs/extend/configure-rendering.md
-    slug: configure-rendering
-    title: Configure rendering
+  - path: docs/extend/write-a-markdown-component.md
+    slug: write-a-markdown-component
+    title: Write a markdown component
     type: task guide
     job: Write a custom public component beside the ones your site already has, from its declaration through its build function, picker entry, and registration, and check it in the editor and on the published page. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
@@ -176,7 +176,7 @@ pages:
       - 'Guards: a dangling include fails the build, and deleting a fragment still included is refused; the fragment''s edit screen lists where it is used.'
       - The empty-fragment and not-found notices with their include.missing reasons, versus the build's throwing resolver.
     outOfScope:
-      - Reusable components with attributes (configure-rendering).
+      - Reusable components with attributes (write-a-markdown-component).
       - Reference fields (link-content-with-references).
   - path: docs/extend/configure-media.md
     slug: configure-media
@@ -211,7 +211,7 @@ pages:
       - 'Verify: the content index records content problems per entry.'
     outOfScope:
       - Declaring the target concepts (define-an-adapter-and-schema).
-      - Registering components (configure-rendering).
+      - Registering components (write-a-markdown-component).
   - path: docs/extend/theme-your-public-site.md
     slug: theme-your-public-site
     title: Theme your public site
@@ -230,7 +230,7 @@ pages:
       - 'Verify: check:public-tokens and the public-scope audit rules, theme-contrast at WCAG AA.'
     outOfScope:
       - The file map of the scaffold (scaffolded-site-files).
-      - Building components (configure-rendering).
+      - Building components (write-a-markdown-component).
       - The admin's look (add-a-custom-admin-screen).
       - Delivery routes (build-the-public-routes).
       - Media storage and the media route (configure-media).
@@ -301,7 +301,7 @@ pages:
       - 'Runtime behavior: teardown on navigation, root scoping, failure isolation, fallback restore on a throwing mount.'
       - Verify on the public page, since the sandboxed preview frame always shows the fallback.
     outOfScope:
-      - Declaring the component itself (configure-rendering).
+      - Declaring the component itself (write-a-markdown-component).
   - path: docs/extend/add-a-custom-admin-screen.md
     slug: add-a-custom-admin-screen
     title: Add a custom admin screen
@@ -389,7 +389,7 @@ pages:
       - Configuring the access map (restrict-admin-access).
       - Setting up Access (replace-magic-links-with-cloudflare-access).
       - Building a channel (add-a-second-sign-in-group).
-      - Renderer options (configure-rendering).
+      - Renderer options (write-a-markdown-component).
       - Rotating the key (rotate-the-github-app-key).
       - When the sanitize floor shipped; state the floor as it is (migration-notes, kept).
   - path: docs/extend/restrict-admin-access.md
@@ -570,7 +570,7 @@ crossLinks:
     to: reuse-content-across-entries
     why: The reserved fragments concept.
   - from: define-an-adapter-and-schema
-    to: configure-rendering
+    to: write-a-markdown-component
     why: The rendering group of the adapter.
   - from: define-an-adapter-and-schema
     to: restrict-admin-access
@@ -579,25 +579,25 @@ crossLinks:
     to: arrange-the-admin-sidebar
     why: The editor group's navLayout.
   - from: reuse-content-across-entries
-    to: configure-rendering
+    to: write-a-markdown-component
     why: Forwarding resolveFragment from render; components as the alternative to a fragment.
   - from: link-content-with-references
     to: reuse-content-across-entries
     why: The delete guard shape both share.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: security-model
     why: What the sanitize floor and sink guard protect before a site opts out.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: add-an-island
     why: Hydrating a registered component.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: theme-your-public-site
     why: Styling render output.
   - from: migrate-existing-content
     to: content-model
     why: The id and date rules the migration satisfies.
   - from: migrate-existing-content
-    to: configure-rendering
+    to: write-a-markdown-component
     why: Replacing old shortcodes with components.
   - from: theme-your-public-site
     to: scaffolded-site-files
@@ -668,7 +668,7 @@ crossLinks:
   - from: scaffolded-site-files
     to: run-cairn-audit-on-your-site
     why: cairn-audit.config.json and the check:cairn scripts.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: configure-media
     why: The media resolver render forwards, and what a missing asset renders.
   - from: configure-media

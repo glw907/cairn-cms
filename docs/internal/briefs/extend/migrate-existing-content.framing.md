@@ -65,7 +65,7 @@ framing record existed. `docs/README.md` does not exist yet, and the only other 
 
 5. **Wrong place, routed by the plan's out-of-scope list.** A developer who has not declared the
    target concepts belongs on `docs/extend/define-an-adapter-and-schema.md`; one who needs a
-   shortcode's replacement component built belongs on `docs/extend/configure-rendering.md`; one
+   shortcode's replacement component built belongs on `docs/extend/write-a-markdown-component.md`; one
    turning media on belongs on `docs/extend/configure-media.md`; one rewriting the old site's
    internal links belongs on
    `docs/extend/link-content-with-references.md#cairn-body-links-and-reference-fields`.
@@ -131,7 +131,7 @@ framing record existed. `docs/README.md` does not exist yet, and the only other 
 ## Place in the doc set
 
 - **Group and neighbors.** Model content, last of seven in the outline: `content-model`,
-  `define-an-adapter-and-schema`, `configure-rendering`, `link-content-with-references`,
+  `define-an-adapter-and-schema`, `write-a-markdown-component`, `link-content-with-references`,
   `reuse-content-across-entries`, `configure-media`, then this page. It is the group's one page about
   content that already exists elsewhere; the others declare, render, link, reuse, and store content
   the site creates. The next group, Public site, opens on `build-the-public-routes`, which owns the
@@ -143,7 +143,7 @@ framing record existed. `docs/README.md` does not exist yet, and the only other 
   evaluator arrives asking what moving in costs, and paragraph 1, which states what the move
   consists of, is the part they read. Reread the intro against that reader when the link lands.
 - **Links out.** The outline's three crossLinks: `content-model` (the id and date rules the migration
-  satisfies), `configure-rendering` (replacing shortcodes with components), and
+  satisfies), `write-a-markdown-component` (replacing shortcodes with components), and
   `build-the-public-routes` (the build validation that checks migrated frontmatter), each landing in
   the body as the plan places them. The intro's own links are the out-of-scope routes, the section
   names in paragraph 3, and, in the prior-knowledge item, `docs/extend/content-model.md` for the model
@@ -160,7 +160,7 @@ framing record existed. `docs/README.md` does not exist yet, and the only other 
     site, whose adapter is …" with "On the site that Add cairn … builds". Here the steps do not differ
     by site, so one sentence names both adapter paths as where the target concepts live, with neither
     sibling's frame.
-  - `configure-media` says "Two other readers need one part of the page", and `configure-rendering`
+  - `configure-media` says "Two other readers need one part of the page", and `write-a-markdown-component`
     says "Two sites start from different places" and "Four narrower needs also bring a developer to
     this page". Paragraph 3 names its two readers without any of those lead-ins.
   - `build-the-public-routes` opens on the public side as routes that prerender from the commit
@@ -232,7 +232,7 @@ the old generators' "front matter". No paragraph opens on an imperative or on th
 - Out of scope, as a lead-in sentence (which may name the page) and a list, each item with its page:
   declaring the target concepts and their fields, `docs/extend/define-an-adapter-and-schema.md`;
   declaring and registering the components that replace shortcodes,
-  `docs/extend/configure-rendering.md`; turning media on, `docs/extend/configure-media.md`; rewriting
+  `docs/extend/write-a-markdown-component.md`; turning media on, `docs/extend/configure-media.md`; rewriting
   the old site's internal links as `cairn:` links,
   `docs/extend/link-content-with-references.md#cairn-body-links-and-reference-fields`; moving the
   site to a newer cairn version, `docs/extend/upgrade-cairn.md`, with each version's actions in

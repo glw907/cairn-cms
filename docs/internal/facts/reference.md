@@ -902,12 +902,14 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/cli-cairn-manifest.md
 
-- `f:fh6kod` `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
-  manifest path) rather than taking its own flags, so the regenerated manifest is guaranteed to
-  match what a build verifies against. The bin calls two internal functions in sequence,
-  `writeManifest` and `writeSiteFacts`. Source: page text plus `src/lib/vite/internal.ts` doc
-  comments referencing shared option resolution; `src/lib/vite/bin.ts:9` (header comment naming
-  both functions) and `:27-29` (sequential calls). [verified: structurally]
+- `f:fh6kod` `cairn-manifest` takes no flag but `--help`: it loads the site's Vite config, reads the
+  `cairnManifest()` plugin's options from it (globs, config module, manifest path), and refuses to
+  run when the config has no such plugin, so it builds the manifest from the same options the
+  build's check uses. The bin calls two internal functions in sequence, `writeManifest` and
+  `writeSiteFacts`. Source: `src/lib/vite/assemble.ts#parseArgs` (`--help`),
+  `src/lib/vite/internal.ts:349-362` (`loadCairnBuild`), `src/lib/vite/bin.ts:27-29`
+  (`writeManifest`). [verified: corrected 2026-10-24; the source no longer cites page text, and
+  "guaranteed to match" is narrowed to the shared options the code shows]
 - `f:6t5tzu` Only `publishedAt` survives a rebuild across entries: the command reads existing stamps from
   the file about to be overwritten, merges them into the new manifest, and drops any stamp whose
   entry the corpus no longer holds. On a corrupt existing file, it warns to stderr and writes the

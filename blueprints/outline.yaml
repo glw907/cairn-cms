@@ -112,17 +112,18 @@ pages:
       - 'Preconditions: an installed engine (link add-cairn-to-a-sveltekit-app) and the model (link content-model).'
       - 'The defineAdapter call: the four required groups (content, backend, email, rendering), the optional ones, and the narrowed return type that carries field types into reads.'
       - The scaffold's cairn.config.ts as the worked starting point.
-      - 'Add a concept: dir, label, singular, routing, fields; register its glob in createSiteIndexes and in the cairnManifest plugin''s content option (the silent-omission trap).'
-      - 'Permalinks and datePrefix: defaults (`/<id>/:slug`, pages at /:slug), the allowed tokens (:slug, :year, :month, :day) with the date tokens feed-only and requiring a date field, and declaration-time validation.'
-      - 'Tag a concept: the one top-level taxonomy: true multiselect, the tag vocabulary a save checks against (lowercase hyphenated values, existing out-of-vocabulary tags kept as orphans), where the vocabulary is stored (editor.nav.configPath, else src/lib/site.config.yaml), and the content.field_unmarked warning a missing marker raises.'
-      - The backend identity values as non-secret and the email sender group (from, replyTo).
+      - 'Add a concept, which the scaffold does not do for you: dir, label, singular, routing, fields, and the ids the engine refuses; register its literal ?raw eager glob in createSiteIndexes (with the build throws for a missing or lazy glob) and in the cairnManifest plugin''s content option (the silent-omission trap).'
+      - 'Permalinks and datePrefix: defaults (`/<id>/:slug`, pages at /:slug), the allowed tokens (:slug, :year, :month, :day) with the date tokens feed-only and requiring a date field, datePrefix read only for a feed concept, and declaration-time validation.'
+      - 'Tag a concept: the one top-level taxonomy: true multiselect, the site-wide tag vocabulary a save checks against (lowercase hyphenated values, existing out-of-vocabulary tags kept as orphans), where the vocabulary is stored (the file editor.siteConfigPath names, default src/theme/site.config.yaml), and the content.field_unmarked warning a missing marker raises.'
       - 'Field behavior and refine: when each runs, a throwing behavior.validate treated as valid versus an uncaught refine throw, and the one-banner save error that makes a refine message a standalone sentence.'
-      - 'Normalized frontmatter: trimmed strings, empty values omitted, booleans present only when true, and InferFieldset''s optional keys.'
-      - 'Concept and editor options beyond fields: summaryFields, an array field''s itemLabel, and supportContact''s empty-string hand-off.'
-      - What site.config.yaml refuses (the adapter group keys and content) and the single en-US spellcheck dictionary.
-      - 'Verify: npm run check typechecks the declared fields and npm run build runs the manifest checks.'
+      - 'Concept options beyond fields: summaryFields and an array field''s itemLabel.'
+      - 'Verify: npm run check typechecks the declared fields, npm run build runs the content index, and the regenerated manifest and the admin show the new concept.'
     outOfScope:
       - What routing and identity mean (content-model).
+      - Normalized frontmatter and save-time validation (content-model).
+      - The backend identity and the email sender (add-cairn-to-a-sveltekit-app, and the createGithubApp reference entry).
+      - The site config's accepted keys and refusals (the parseSiteConfig reference entry).
+      - The editor group's supportContact (its reference entry).
       - Reference fields (link-content-with-references).
       - The render group (configure-rendering).
       - Roles and the access map (restrict-admin-access).

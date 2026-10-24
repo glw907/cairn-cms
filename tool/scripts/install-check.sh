@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # install-check proves a published tag installs on a machine that holds no copy of this
-# repository: two containers, each with its own empty module cache, each running
+# repository: two containers, each with an empty module cache, each running
 # `go install github.com/glw907/cairn-cms/tool/cmd/cairn@<version>` and then the binary.
 #
 # The two differ in one variable, which is the whole point. The first runs the current Go image
 # with the default GOTOOLCHAIN, so Go downloads whatever toolchain the module asks for and the
 # install succeeds however high the `go` directive sits. The second runs the image pinned at
-# exactly that directive's own minimum with GOTOOLCHAIN=local, which forbids the download, so it
+# exactly that directive's minimum with GOTOOLCHAIN=local, which forbids the download, so it
 # succeeds only if the directive is the true floor rather than the version that happened to be
 # installed when the tag was cut.
 #
@@ -23,7 +23,7 @@ v*) ;;
 *) version="v${version}" ;;
 esac
 
-# MINIMUM_IMAGE tracks go.mod's own `go` directive. Raising one without the other turns this
+# MINIMUM_IMAGE tracks go.mod's `go` directive. Raising one without the other turns this
 # check green while proving nothing about the floor an operator actually meets.
 MINIMUM_IMAGE="docker.io/library/golang:1.26"
 DEFAULT_IMAGE="docker.io/library/golang:latest"
@@ -53,7 +53,7 @@ if ! run_container "default toolchain" "$DEFAULT_IMAGE"; then
 fi
 
 if ! run_container "minimum toolchain, no download" "$MINIMUM_IMAGE" -e GOTOOLCHAIN=local; then
-	echo "install-check: ${version} cannot be installed on the toolchain its own go directive names" >&2
+	echo "install-check: ${version} cannot be installed on the toolchain its go directive names" >&2
 	status=1
 fi
 

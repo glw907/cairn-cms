@@ -3,7 +3,7 @@ package spine
 import "slices"
 
 // Condition is a cairn-doctor condition id, the shared identity the readiness checklist, the
-// doctor probe, and this tool's own checks draw from so the three surfaces agree. A Condition
+// doctor probe, and this tool's checks draw from so the three surfaces agree. A Condition
 // value is always either ConditionNone or one of the Conditions constants; it is never a
 // ReasonCode or a ParkCode, which name why a check could not observe a verdict rather than which
 // known failure mode a verdict names.

@@ -60,7 +60,7 @@ func TestBuildsLatestDecodesBuildShape(t *testing.T) {
 }
 
 // TestClassifyReason covers every Reason value's mapping rule this package can produce (all but
-// ReasonBuildsNotConnected, which classifyReason never produces per its own doc comment), including
+// ReasonBuildsNotConnected, which classifyReason never produces per its doc comment), including
 // the cases the task names explicitly: a 403 with code 10000 classifies as ReasonForbidden, and a
 // 401 as ReasonUnauthorized, regardless of the accompanying code, since neither status carries a
 // code-specific override; a 400 with code 6003 also classifies as ReasonUnauthorized, the second
@@ -102,13 +102,13 @@ func TestClassifyReason(t *testing.T) {
 
 // TestReasonMappingFromCorpusFixtures drives the classification end to end, over a client whose
 // RoundTripper serves a real captured fixture, for every Reason the fixture corpus carries a
-// live-captured body for. The corpus's own rule (packages/create-cairn-site/fixtures/README.md:
+// live-captured body for. The corpus's rule (packages/create-cairn-site/fixtures/README.md:
 // "every body here is a real captured API response") is why this is not all of classifyReason's
 // producible Reason values: the corpus never captured a plain 401, a generic 403, a rate limit,
 // or a 400/6003 token-invalid body, and inventing one to fill the gap would violate that rule, so
 // those are covered only by TestClassifyReason's direct unit table above, not by a corpus
 // fixture. ReasonBuildsNotConnected is absent from both this table and the direct table:
-// classifyReason never produces it (see that constant's own doc comment).
+// classifyReason never produces it (see that constant's doc comment).
 func TestReasonMappingFromCorpusFixtures(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -145,7 +145,7 @@ func TestReasonMappingFromCorpusFixtures(t *testing.T) {
 }
 
 // TestVerifyTokenDecodesSuccess proves the happy-path decode: a 200 v4 envelope carrying
-// result.id in its result field returns that id with no error. The corpus's own
+// result.id in its result field returns that id with no error. The corpus's
 // user_token_verify.success.200.json stores only the pieces the Node fake reconstructs an
 // envelope from (see fake-cloudflare.mjs's sendSuccess call site), not the wire-exact wrapped
 // body, so this test builds the envelope by hand around a fixed id rather than reading it from
@@ -267,7 +267,7 @@ func TestBuildsTokensClassifiesFailure(t *testing.T) {
 }
 
 // TestDNSRecordsDecodesEveryPage asserts DNSRecords returns each record's name and type,
-// following the route's own result_info like every other paginated list.
+// following the route's result_info like every other paginated list.
 func TestDNSRecordsDecodesEveryPage(t *testing.T) {
 	body := []byte(`{"success":true,"result":[{"name":"my-site.example.org","type":"A"},{"name":"www.my-site.example.org","type":"CNAME"}],"result_info":{"page":1,"total_pages":1}}`)
 	cf := NewCloudflare("account-id", NewCredential("token"), fixtureRoundTripper{status: http.StatusOK, body: body})
@@ -290,7 +290,7 @@ func TestDNSRecordsDecodesEveryPage(t *testing.T) {
 	}
 }
 
-// TestBuildsConnectionsDecodesTheRecordedTriggers drives BuildsConnections over the corpus's own
+// TestBuildsConnectionsDecodesTheRecordedTriggers drives BuildsConnections over the corpus's
 // live-captured trigger body. The live route names a trigger's id "trigger_uuid" and nests the
 // repository under "repo_connection", so the decode is what proves this client reads the shape
 // Cloudflare actually sends rather than the one the Node fake once synthesized.
@@ -336,7 +336,7 @@ func TestBuildsConnectionsDecodesAnUnconnectedWorker(t *testing.T) {
 	}
 }
 
-// TestBuildsLatestDecodesTheRecordedBuild drives BuildsLatest over the corpus's own
+// TestBuildsLatestDecodesTheRecordedBuild drives BuildsLatest over the corpus's
 // live-captured build list, proving the commit hash is read from the nested
 // "build_trigger_metadata" object and the settled outcome from "build_outcome".
 func TestBuildsLatestDecodesTheRecordedBuild(t *testing.T) {
@@ -361,7 +361,7 @@ func TestBuildsLatestDecodesTheRecordedBuild(t *testing.T) {
 	}
 }
 
-// TestListZonesDecodesTheAssignedNameServers asserts the zone listing's own "name_servers" key
+// TestListZonesDecodesTheAssignedNameServers asserts the zone listing's "name_servers" key
 // decodes, which is the pair adoption records and the pair the delegation check falls back to
 // when a record carries none.
 func TestListZonesDecodesTheAssignedNameServers(t *testing.T) {

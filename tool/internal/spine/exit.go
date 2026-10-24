@@ -19,7 +19,7 @@ const (
 	VerdictUnknown  Verdict = 3
 )
 
-// String names v in the monitoring convention's own capitals.
+// String names v in the monitoring convention's capitals.
 func (v Verdict) String() string {
 	switch v {
 	case VerdictOK:
@@ -58,7 +58,7 @@ func (v Verdict) Severity() int {
 // the registry does not hold. ExitCode is the only place it is turned into a verdict.
 var ErrExpectSites = errors.New("spine: registry site count does not match the expected count")
 
-// FailSeverity is the verdict one check's own Failing outcome warrants, decided by a per-check
+// FailSeverity is the verdict one check's Failing outcome warrants, decided by a per-check
 // table the health package owns. It is a value on CheckVerdict rather than a lookup here because
 // this package never learns a check id: the arithmetic stays independent of the check set.
 //
@@ -90,14 +90,14 @@ type CheckVerdict struct {
 	// expired arrives false, which is how an expired hold contributes the same code an unheld
 	// failure does.
 	Acknowledged bool
-	// Severity is the weight this check's own Failing outcome carries, from the converting
+	// Severity is the weight this check's Failing outcome carries, from the converting
 	// package's per-check table. It is read only when State is Failing.
 	Severity FailSeverity
 }
 
 // Verdict reports the code this check contributes on its own.
 //
-// A passing check is OK. A failing check is CRITICAL, softened to WARNING either by its own
+// A passing check is OK. A failing check is CRITICAL, softened to WARNING either by its
 // declared Severity or by an unexpired hold: a hold silences notification, never status, so a
 // held failure is never reported OK.
 //

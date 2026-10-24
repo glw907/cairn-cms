@@ -3,7 +3,7 @@ package providers
 import "net/http"
 
 // Reason classifies why a provider API call failed, past the raw HTTP status, so a health check
-// can render one stable, translatable message instead of branching on a provider's own numeric
+// can render one stable, translatable message instead of branching on a provider's numeric
 // codes. The set mirrors the conditions
 // packages/create-cairn-site/src/cloudflare/api.mjs already catalogues for the Node CLI
 // (throwMapped, throwBuildsMapped), and ReasonUnknown is the catch-all no health check should
@@ -17,7 +17,7 @@ const (
 	ReasonUnauthorized Reason = iota
 	ReasonForbidden
 	ReasonNotFound
-	// ReasonBuildsNotConnected is never produced by this package's own classification: a live probe confirmed
+	// ReasonBuildsNotConnected is never produced by this package's classification: a live probe confirmed
 	// GET /accounts/{id}/builds/workers/{tag}/triggers answers 200 with an empty trigger list
 	// for an unconnected worker, not a 404 with a distinct code. The caller that walks
 	// BuildsConnections is the one that assigns this Reason itself when the returned list is
@@ -30,7 +30,7 @@ const (
 	ReasonRateLimited
 	// ReasonRequestRejected is an HTTP 400: the provider parsed the request and refused its
 	// shape. It is separated from ReasonUnknown because the two point at different people. A
-	// rejected request is cairn's own outgoing body being wrong, which no operator can fix and
+	// rejected request is cairn's outgoing body being wrong, which no operator can fix and
 	// which has to read as a bug; folding it into the catch-all is what let a malformed Workers
 	// Logs query report for a week as "the Worker has no observability dataset".
 	ReasonRequestRejected

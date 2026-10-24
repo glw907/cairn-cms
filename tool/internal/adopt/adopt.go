@@ -149,7 +149,7 @@ func adoptedRecord(st *store.Store, c Candidate) (record.Record, bool) {
 
 // Adopt writes a registry record for c under a fresh id and returns it. name is the site's
 // display name and the stem of that id. ctx bounds the one network call Adopt makes, the
-// resolution check below, so a run's own deadline reaches it.
+// resolution check below, so a run's deadline reaches it.
 //
 // Adopting the same Worker twice yields one record: a second call returns the record already
 // held and writes nothing. The record carries no secret, since Adopt sets only identifiers.
@@ -197,7 +197,7 @@ func Adopt(ctx context.Context, st *store.Store, c Candidate, name string, resol
 	return r, nil
 }
 
-// setNameServers writes the zone's assigned nameserver pair under the record's own
+// setNameServers writes the zone's assigned nameserver pair under the record's
 // "cloudflare.nameServers" key, the key the Node CLI writes and the delegation check reads.
 // record.Cloudflare does not type that key, so the value travels as an Extra entry; nothing is
 // written at all when the zone reported no pair, which keeps the key out of a record that has
@@ -248,7 +248,7 @@ const idSuffixLength = 6
 
 // newSiteID returns a fresh registry id for a site called name: name slugged, then a random
 // suffix from crypto/rand. The suffix comes from rand.Text, whose alphabet lowercases into the
-// shape's own character set, so no rejection sampling and no modulo bias is involved.
+// shape's character set, so no rejection sampling and no modulo bias is involved.
 func newSiteID(name string) (string, error) {
 	stem := slugify(name)
 	if stem == "" {

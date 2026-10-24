@@ -81,13 +81,13 @@ func TestDiffIDSets(t *testing.T) {
 }
 
 // TestConditionsMatchEmbeddedMirror asserts the typed Conditions() constants and
-// conditions.json's own parsed id set are identical, replacing the former
+// conditions.json's parsed id set are identical, replacing the former
 // TestConditionsMatchRegistry, which walked up to the repository root to read
 // src/lib/diagnostics/conditions.ts. The mirror now carries the text, so the comparison is embed
 // against constant, not constant against a second repository's source.
 //
 // A failure here is a decision for a human, never an automatic follow. Condition ids are
-// frozen in the tool's own copy and published in docs/reference/cli-cairn-json-output.md, so
+// frozen in the tool's copy and published in docs/reference/cli-cairn-json-output.md, so
 // renaming one here to match the engine breaks every agent reading that contract. Renaming the
 // id is a major-version event carrying a "Consumers must:" line; adding one is not.
 func TestConditionsMatchEmbeddedMirror(t *testing.T) {
@@ -113,7 +113,7 @@ func TestConditionsMatchEmbeddedMirror(t *testing.T) {
 }
 
 // repoRootSymbol is the providers package's repository-root finder, held as a runtime-built
-// string so this file's own source never spells it out literally, which would trip the very
+// string so this file's source never spells it out literally, which would trip the very
 // check TestConditionTestFilesNameNoRepoRoot performs against this file.
 var repoRootSymbol = "providers" + "." + "RepoRoot"
 

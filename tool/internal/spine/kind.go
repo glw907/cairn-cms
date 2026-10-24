@@ -1,6 +1,6 @@
 package spine
 
-// Kind is the Node CLI's own chapter-error classification
+// Kind is the Node CLI's chapter-error classification
 // (packages/create-cairn-site/src/{cloudflare,github}/catalogue.mjs's ErrorKind), the input
 // FromKind maps onto an Outcome.
 type Kind string

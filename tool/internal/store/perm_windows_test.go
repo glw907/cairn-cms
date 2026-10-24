@@ -94,7 +94,7 @@ func TestCheckSafePermOwnerOnlyDACL(t *testing.T) {
 // reparseDataBufferHeader mirrors the common header of the Windows
 // REPARSE_DATA_BUFFER structure. golang.org/x/sys/windows exposes the
 // FSCTL and tag constants but not this struct (it lives only in Go's own
-// internal/syscall/windows), so the test defines its own copy, the same
+// internal/syscall/windows), so the test defines a copy, the same
 // shape Go's os package tests build (createMountPoint in
 // os_windows_test.go).
 type reparseDataBufferHeader struct {

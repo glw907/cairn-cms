@@ -72,7 +72,7 @@ func newFixtureClient(t *testing.T) *providers.Cloudflare {
 }
 
 // TestFetchKeepsEachEntrysFieldKeyOrder asserts Fetch returns the corpus fixture's three events
-// newest first, which is the order the fixture itself carries, and each entry's own Fields in
+// newest first, which is the order the fixture itself carries, and each entry's Fields in
 // the source object's key order.
 func TestFetchKeepsEachEntrysFieldKeyOrder(t *testing.T) {
 	cf := newFixtureClient(t)
@@ -152,7 +152,7 @@ func TestFetchNarrowsToOneEvent(t *testing.T) {
 // trusting its order, and that an entry carrying no timestamp lands after every dated entry in
 // the order it arrived. The response body here is built in the test, out of order, since the
 // shared corpus fixture is already newest first and so proves nothing about the sort. Each
-// event's own platform timestamp is zero, so only the record's own timestamp orders the result;
+// event's platform timestamp is zero, so only the record's timestamp orders the result;
 // TestFetchDatesARecordFromTheEventWhenItCarriesNone covers the fallback.
 func TestFetchOrdersEntriesNewestFirst(t *testing.T) {
 	body := []byte(`{"success":true,"errors":[],"messages":[],"result":{"events":{"count":5,"events":[
@@ -204,7 +204,7 @@ func sentFilters(t *testing.T, sent map[string]any) []any {
 // wantLeafFilter asserts filter is an equality leaf carrying key and value, and the "string" type
 // every leaf filter in the Workers Observability query contract must declare (the endpoint
 // answers HTTP 400 with a ZodError for a leaf missing "type", which is what cairn sent for a week
-// until 2026-09-21). The expected type is the literal "string", never logs.go's own filterType
+// until 2026-09-21). The expected type is the literal "string", never logs.go's filterType
 // constant, so a wrong constant in logs.go cannot pass by agreeing with itself.
 func wantLeafFilter(t *testing.T, filter any, key, value string) {
 	t.Helper()
@@ -236,7 +236,7 @@ func wantTimeframe(t *testing.T, sent map[string]any, from, to time.Time) {
 }
 
 // wantPostToTelemetryQuery asserts rt captured a POST to the account's telemetry query endpoint,
-// the literal path Cloudflare's own API documents, never a path logs.go itself assembles from a
+// the literal path Cloudflare's API documents, never a path logs.go itself assembles from a
 // stored constant.
 func wantPostToTelemetryQuery(t *testing.T, rt *fixtureRoundTripper, accountID string) {
 	t.Helper()
@@ -251,7 +251,7 @@ func wantPostToTelemetryQuery(t *testing.T, rt *fixtureRoundTripper, accountID s
 
 // TestFetchSendsTheObservabilityQueryContract reads the request Fetch actually sent, rather than
 // calling buildQuery directly and inspecting its return value: a filter missing its "type" key
-// would still pass an assertion against buildQuery's own map, since both sides read the same
+// would still pass an assertion against buildQuery's map, since both sides read the same
 // wrong constant. Only the captured wire body can catch that, which is what let a malformed query
 // reach production as a live HTTP 400 for a week.
 func TestFetchSendsTheObservabilityQueryContract(t *testing.T) {
@@ -384,7 +384,7 @@ func TestFetchRecordsCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
 // TestFetchRecordsReportsATruncatedPage asserts a page that fills the fetch limit reports itself
 // truncated, so a caller says "at least" rather than passing a floor off as a total. This is the
 // 2026-09-21 live finding: a 24 hour query returned 1000 entries against a 1000 limit, and the
-// endpoint's own result.events.count read 1000 too, so nothing in the response says how many more
+// endpoint's result.events.count read 1000 too, so nothing in the response says how many more
 // there were.
 func TestFetchRecordsReportsATruncatedPage(t *testing.T) {
 	events := make([]string, 0, recordLimit)
@@ -492,7 +492,7 @@ func TestFetchDatesARecordFromTheEventWhenItCarriesNone(t *testing.T) {
 		t.Fatalf("len(entries) = %d, want 1", len(entries))
 	}
 	if want := time.UnixMilli(1789931462614).UTC(); !entries[0].At.Equal(want) {
-		t.Errorf("entries[0].At = %v, want the event's own %v", entries[0].At, want)
+		t.Errorf("entries[0].At = %v, want the event's %v", entries[0].At, want)
 	}
 }
 

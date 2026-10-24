@@ -198,7 +198,7 @@ func TestLoadUnsafePerms(t *testing.T) {
 	})
 }
 
-// TestOpenRefusesSymlinkedDirectory covers Open's own check, distinct from
+// TestOpenRefusesSymlinkedDirectory covers Open's check, distinct from
 // Load's per-operation permission check: a symlinked registry directory is
 // refused up front.
 func TestOpenRefusesSymlinkedDirectory(t *testing.T) {
@@ -221,7 +221,7 @@ func TestOpenRefusesSymlinkedDirectory(t *testing.T) {
 	}
 }
 
-// TestLoadRefusesSymlinkedDirectory covers Load's own directory check,
+// TestLoadRefusesSymlinkedDirectory covers Load's directory check,
 // distinct from Open's up-front check: a directory Open verified can be
 // swapped for a symlink afterward, and Load must still refuse it rather
 // than reading through the replacement.
@@ -316,7 +316,7 @@ func TestSaveVersion0Upgrade(t *testing.T) {
 
 // rawField reads the raw JSON value at the dotted path in data, without
 // decoding it into any typed field, so a test can compare an untouched
-// key's bytes independent of record.Marshal's own output on the other
+// key's bytes independent of record.Marshal's output on the other
 // side of the comparison.
 func rawField(t *testing.T, data []byte, path []string) json.RawMessage {
 	t.Helper()

@@ -126,7 +126,7 @@ func TestAnAbsentCredentialIsNotCountedAsSkipped(t *testing.T) {
 func TestOnlyLogxRevealsACredential(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	root := filepath.Dir(filepath.Dir(filepath.Dir(thisFile)))
 

@@ -21,7 +21,7 @@ const (
 )
 
 // Severity returns s's rank for combining several checks into one worst verdict: Failing
-// outranks Unknown outranks OK. State's own iota values are not in that order (OK is 1, Failing
+// outranks Unknown outranks OK. State's iota values are not in that order (OK is 1, Failing
 // is 2, so a raw int comparison would rank a failing check beneath an unknown one), so Severity
 // is the one rank a caller combines by.
 func (s State) Severity() int {
@@ -63,7 +63,7 @@ const (
 	ReasonOffline       ReasonCode = "reason.offline"
 	ReasonNotRun        ReasonCode = "reason.not-run"
 	ReasonNotObservable ReasonCode = "reason.not-observable"
-	// ReasonRepoNotRecorded is a check that reads the site's own repository against a record
+	// ReasonRepoNotRecorded is a check that reads the site's repository against a record
 	// carrying none. Discovery learns a repository from a Workers Builds trigger, so a site that
 	// deploys any other way is adopted without one until an operator names it.
 	ReasonRepoNotRecorded ReasonCode = "reason.repo-not-recorded"
@@ -83,7 +83,7 @@ var notAttemptedReasons = []ReasonCode{
 }
 
 // NotAttempted reports whether r names a check the run declined to attempt because the site's
-// own setup gives it nothing to read, rather than one that was attempted and observed nothing.
+// setup gives it nothing to read, rather than one that was attempted and observed nothing.
 // Three reasons qualify: a credential the operator never set, a record carrying no repository,
 // and a Worker with no Workers Builds connection. Each is a disclosed fact about how the site is
 // run, which is why a run words them "skip" and reports WARNING, where a measurement that failed
@@ -128,7 +128,7 @@ func APIReason(r providers.Reason) ReasonCode {
 // operator for a fault they cannot fix.
 //
 // A Failing outcome here sets Code, never Detail: spine cannot import health, so the prose that
-// renders CodeCredsUnauthorized and CodeCredsForbidden lives in health's own messages table,
+// renders CodeCredsUnauthorized and CodeCredsForbidden lives in health's messages table,
 // keyed on the Code this function sets.
 func ReasonToOutcome(r providers.Reason) Outcome {
 	switch r {
@@ -172,7 +172,7 @@ const (
 	// SourceCloudflare marks a value read out of a Cloudflare API response, Workers Logs
 	// included.
 	SourceCloudflare FieldSource = "cloudflare"
-	// SourceGitHub marks a value read out of a GitHub API response or the site repository's own
+	// SourceGitHub marks a value read out of a GitHub API response or the site repository's
 	// metadata.
 	SourceGitHub FieldSource = "github"
 )
@@ -186,7 +186,7 @@ const (
 // usually has none for the rest. A verdict no condition id names leaves it ConditionNone, which
 // is what a renderer reads to omit the remedy line.
 //
-// Code is the tool-owned analogue of Condition for a Failing verdict the engine's own registry
+// Code is the tool-owned analogue of Condition for a Failing verdict the engine's registry
 // names no id for. It is set only alongside Failing, and never alongside a Condition: the two
 // name the same failure at most once, through whichever vocabulary actually owns it.
 type Outcome struct {

@@ -90,7 +90,7 @@ func TestVerdictSeverityAgreesWithStateSeverity(t *testing.T) {
 }
 
 // TestCheckVerdict pins the per-check mapping row by row: an unheld failing check is CRITICAL
-// unless its own declared severity ranks it WARNING, an unexpired hold softens a failure to
+// unless its declared severity ranks it WARNING, an unexpired hold softens a failure to
 // WARNING, an expired hold (which reaches this type as Acknowledged false) stays CRITICAL, and
 // neither a hold nor a WARNING severity softens a check that could not run. The credential-missing
 // row is the one Unknown that reports WARNING.
@@ -105,12 +105,12 @@ func TestCheckVerdict(t *testing.T) {
 		{"held failing check", CheckVerdict{ID: "deploy", State: Failing, Acknowledged: true}, VerdictWarning},
 		{"failing check whose hold expired", CheckVerdict{ID: "deploy", State: Failing}, VerdictCritical},
 		{
-			"failing check its own severity ranks WARNING",
+			"failing check its severity ranks WARNING",
 			CheckVerdict{ID: "engine", State: Failing, Severity: WarningFailure},
 			VerdictWarning,
 		},
 		{
-			"failing check its own severity ranks CRITICAL",
+			"failing check its severity ranks CRITICAL",
 			CheckVerdict{ID: "creds", State: Failing, Severity: CriticalFailure},
 			VerdictCritical,
 		},
@@ -136,7 +136,7 @@ func TestCheckVerdict(t *testing.T) {
 // TestTheTwoKindsOfUnknownAreDisambiguated covers the four combinations a site can carry: a
 // credential the operator never configured is a disclosed gap and reports WARNING, every other
 // Unknown reports UNKNOWN, and one of each together reports UNKNOWN rather than being softened
-// by the disclosed one. The rate-limit row is listed separately because the copy catalogue's own
+// by the disclosed one. The rate-limit row is listed separately because the copy catalogue's
 // rate-limited row asserts WARNING and this arithmetic overrules it: a throttled run did not
 // observe the site.
 //

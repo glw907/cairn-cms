@@ -16,7 +16,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
-// Query is one Workers Logs telemetry read: worker's own events over the trailing Since window,
+// Query is one Workers Logs telemetry read: worker's events over the trailing Since window,
 // optionally narrowed to one event name, capped at Limit entries (0 means a default cap).
 type Query struct {
 	// Worker names the Workers script the query reads.
@@ -43,11 +43,11 @@ type Field struct {
 // Entry is one engine log record, its envelope split out of Fields so a caller reads At, Level,
 // and Event without decoding JSON itself, with every other key left in Fields, ordered.
 type Entry struct {
-	// At is the record's own "timestamp" field.
+	// At is the record's "timestamp" field.
 	At time.Time `json:"at"`
-	// Level is the record's own "level" field ("info", "warn", or "error").
+	// Level is the record's "level" field ("info", "warn", or "error").
 	Level string `json:"level"`
-	// Event is the record's own "event" field, one of src/lib/log/events.ts's union.
+	// Event is the record's "event" field, one of src/lib/log/events.ts's union.
 	Event string `json:"event"`
 	// Fields carries every key beyond the envelope, in the order the source record carried them.
 	Fields []Field `json:"fields"`
@@ -62,7 +62,7 @@ type Entry struct {
 // events, as did a Worker name that does not exist, so a Worker with observability off is not
 // distinguishable from one that simply logged nothing over the window, and this sentinel does not
 // reach a caller for that case. It used to cover an unclassified reason too, which is how a 400
-// (cairn's own query body being malformed) reported for a week as a site whose observability was
+// (cairn's query body being malformed) reported for a week as a site whose observability was
 // never turned on. The 404 arm is kept for a route that does not exist at all; nothing on the
 // verification account produced one.
 var ErrObservabilityOff = errors.New("logs: worker has no observability dataset")
@@ -71,14 +71,14 @@ var ErrObservabilityOff = errors.New("logs: worker has no observability dataset"
 // window fully inside 7 days returned events, and every window 8 or more days back returned none,
 // measured by narrowing the boundary directly. This is the account
 // plan's own retention window, not a fixed cairn constant; an operator on a plan with a longer
-// retention window reads their own boundary the same way, since the API returns no retention
+// retention window reads their boundary the same way, since the API returns no retention
 // value directly.
 const RetentionClamp = 7 * 24 * time.Hour
 
-// defaultLimit is fetch's own entry cap when Query.Limit is 0.
+// defaultLimit is fetch's entry cap when Query.Limit is 0.
 const defaultLimit = 200
 
-// recordLimit bounds FetchRecords's own query. A page that fills to it is reported truncated
+// recordLimit bounds FetchRecords's query. A page that fills to it is reported truncated
 // rather than counted as exact: the endpoint publishes no total of its own, and its
 // result.events.count saturates at the limit the query asked for. Measured live on 2026-09-21,
 // where a 24 hour level: error query against a healthy production Worker answered with count 1000
@@ -141,7 +141,7 @@ type filter struct {
 // buildQuery constructs the Workers Logs telemetry query body Cloudflare's
 // accounts/{id}/workers/observability/telemetry/query endpoint expects, extending the confirmed
 // shape (queryId, timeframe, view, limit, parameters.datasets) with a worker-name filter on
-// "$metadata.service" and each of extra's own leaves.
+// "$metadata.service" and each of extra's leaves.
 //
 // The endpoint's filter schema is a union: an entry is either a group node carrying "kind":
 // "group" and a "filterCombination", or a leaf carrying "key", "type", "operation", and "value".
@@ -177,7 +177,7 @@ func buildQuery(worker string, since time.Duration, now time.Time, extra []filte
 }
 
 // parseEvent decodes one telemetry event into an Entry: the record the Worker logged, under the
-// event's "source", with the platform's own event timestamp standing in when that record carries
+// event's "source", with the platform's event timestamp standing in when that record carries
 // none of its own. A Worker's bare console call is recorded the same way an engine record is, and
 // only the engine writes the envelope, so without the fallback every non-engine line would sort
 // as undated.
@@ -192,7 +192,7 @@ func parseEvent(ev providers.ObservabilityEvent) (Entry, error) {
 	return entry, nil
 }
 
-// parseEntry decodes one logged record's raw JSON into an Entry, pulling the envelope's own
+// parseEntry decodes one logged record's raw JSON into an Entry, pulling the envelope's
 // level, event, and timestamp keys out and leaving every other key in Fields, in the order the
 // source object carried them. No value is stringified: each Field.Value is exactly the raw bytes
 // the source carried for that key.
@@ -246,7 +246,7 @@ func parseEntry(raw json.RawMessage) (Entry, error) {
 }
 
 // fetch runs one telemetry query against cf, classifying an API-level error before deciding how
-// to report it (see ErrObservabilityOff's own doc comment for the split), and decoding the
+// to report it (see ErrObservabilityOff's doc comment for the split), and decoding the
 // returned events, sorting them newest first with entries that carry no timestamp last in
 // arrival order.
 func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since time.Duration, now time.Time, extra []filter, limit int) ([]Entry, error) {
@@ -287,7 +287,7 @@ func fetch(ctx context.Context, cf *providers.Cloudflare, worker string, since t
 
 // Fetch returns worker's log entries over the q.Since window ending at now (clamped to
 // RetentionClamp), newest first, narrowed to q.Event when set. It drops any entry the endpoint
-// returned whose own "event" does not equal q.Event, the same posture FetchRecords takes on the
+// returned whose "event" does not equal q.Event, the same posture FetchRecords takes on the
 // level: the endpoint's filter is applied to a record cairn does not control the shape of, so a
 // caller trusts what each entry actually carries rather than the filter alone. now is a parameter, not a
 // system-clock read, so a caller replaying a query gets the same window every time. Every field
@@ -318,7 +318,7 @@ type Records struct {
 	Truncated bool
 }
 
-// FetchRecords returns the engine's own log records at level, over the since window ending at now
+// FetchRecords returns the engine's log records at level, over the since window ending at now
 // (clamped to RetentionClamp), newest first, and reports whether the page was truncated at the
 // fetch limit.
 //
@@ -328,9 +328,9 @@ type Records struct {
 // directly, an equality filter on "level" and an existence filter on "event", which a live call on
 // 2026-09-21 confirmed it applies to the parsed record: the same 24 hour window answered with 1000
 // console error lines under the level filter alone and none at all once "event" had to exist. Each
-// returned entry is rechecked here anyway, the posture Fetch states about its own narrowing.
+// returned entry is rechecked here anyway, the posture Fetch states about its narrowing.
 //
-// The distinction is the whole point of the count. On a public site the Worker's own 404 logging
+// The distinction is the whole point of the count. On a public site the Worker's 404 logging
 // dwarfs the engine's records, so a count of every error-level line measures crawler traffic
 // rather than anything cairn did.
 func FetchRecords(ctx context.Context, cf *providers.Cloudflare, worker, level string, since time.Duration, now time.Time) (Records, error) {

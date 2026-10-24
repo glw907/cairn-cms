@@ -12,7 +12,7 @@ import (
 )
 
 // recordStepLiteral matches a "step" object key holding a quoted literal, the shape every real
-// record write uses (an updateSite or saveSite call's own argument object).
+// record write uses (an updateSite or saveSite call's argument object).
 var recordStepLiteral = regexp.MustCompile(`step:\s*'([a-z0-9-]+)'`)
 
 // constStepAssign matches a computed local named step, the second real record-write shape: a
@@ -29,12 +29,12 @@ var quotedLiteral = regexp.MustCompile(`'([a-z0-9-]+)'`)
 // value that is only read or logged.
 var bareStepUpdateSite = regexp.MustCompile(`(updateSite|saveSite)\([^)]*\{\s*step[,}]`)
 
-// recordStepLiteralsUnder scans every non-test .mjs file under root for the record's own "step"
+// recordStepLiteralsUnder scans every non-test .mjs file under root for the record's "step"
 // writes. The scope excludes two shapes that also match a naive "step: '...'" grep but name no
-// record step: a chapterError context object (browser-step-abandoned's own "step" key names
+// record step: a chapterError context object (browser-step-abandoned's "step" key names
 // where a browser flow was abandoned, never persisted to a record) and a comment quoting a step
 // name for exposition. Both are recognized by the same line carrying "chapterError(" or a "//"
-// or block-comment-continuation prefix ("*" or "/*"); nothing under this package's own test data
+// or block-comment-continuation prefix ("*" or "/*"); nothing under this package's test data
 // uses either shape for a real write. A third shape, a computed local named step whose literals
 // are only counted when the same file also passes that local to updateSite or saveSite by
 // shorthand, covers a hop that picks its step from a small set of literals rather than writing

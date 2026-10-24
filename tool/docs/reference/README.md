@@ -1,6 +1,6 @@
 # The `cairn` CLI's reference pages moved
 
-The contract pages this directory held are published in the engine's own reference arm, which
+The contract pages this directory held are published in the engine's reference arm, which
 ships in the `@glw907/cairn-cms` npm package, so an installed package puts them in a consumer's
 tree:
 

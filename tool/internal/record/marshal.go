@@ -31,11 +31,11 @@ func (r Record) Marshal() ([]byte, error) {
 
 // orderedFields replays observedOrder against fields and extra, then appends any field key
 // observedOrder never named whose current value is non-zero (a field a caller set after Parse, on
-// a record whose source document never carried that key), in fields' own order, and finally any
+// a record whose source document never carried that key), in fields' order, and finally any
 // extra entry neither observedOrder nor that append step named. A key observedOrder names that is
 // neither in fields nor present in extra was removed from the record after Parse and is dropped
 // rather than re-emitted with a stale value. A nil observedOrder means the value was built
-// directly rather than by Parse, so fields' own key order stands in for it.
+// directly rather than by Parse, so fields' key order stands in for it.
 func orderedFields[T any](observedOrder []string, fields []field[T], t T, extra []ExtraField) ([]string, []json.RawMessage, error) {
 	replayOrder := observedOrder
 	if replayOrder == nil {

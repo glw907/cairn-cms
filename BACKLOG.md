@@ -11,8 +11,6 @@
 
 - [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   After the premise trim, configure-media's plan and framing record (2026-10-12) and the narrowed page's 782-line plan and 254-line framing record were mostly out of scope, and reading them cost more than they returned. Record B3-8, B3-24.
-- [ ] **#52** Have `ci-green` report `action_required` as held, not red `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
-  The baseline-regen run pushes as `github-actions[bot]`, so every workflow on that head sits in `action_required`, and `ci-green` reports it as red. Name it held and print the release command, `gh api -X POST repos/glw907/cairn-cms/actions/runs/<id>/approve`. Record B3-11.
 - [ ] **#50** Name a concept by its key in every concept error `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `defineConcept` names a concept in its errors by `label ?? dir` (`src/lib/content/concepts.ts:67`), while `normalizeConcepts` names it by its content-map key, so one concept shows under two names. Record B3-18.
 - [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*

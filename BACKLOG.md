@@ -4,6 +4,9 @@
 
 ## High
 
+- [ ] **#55** Refuse exit 0 in `gate-tier.mjs` when the fast lane prints no legs `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  In the PR #137 sweep a slice agent's edit script emptied `scripts/checks/gate-tier.mjs` (929 lines) and committed it, and the fast lane printed nothing and exited 0, because the fast lane is that file. Exit nonzero when no leg runs. The sweep-side check (a `git diff --numstat` for unequal counts) lands in the workstation's word-sweep method. Record item 61 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.
+
 - [ ] **#51** Fail `check:facts` on an `external` fact with no URL `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   An `external` fact with no URL (`f:34wt4f`) passes `check:facts` silently. `scripts/checks/check-facts.mjs`. Record B3-7.
 

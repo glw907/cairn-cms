@@ -71,7 +71,7 @@ Three rows carry a rule.
 - **Rules.** `--color-base-300` is the color of a rule or a border. Never use it as the ground under
   text, since no contrast is designed for that pair.
 - **Headings.** `--font-weight-heading` and `--cairn-heading-case` are the two levers, and one value
-  moves every heading. An eyebrow keeps its own `uppercase` and tracking, so a heading lever never
+  moves every heading. An eyebrow keeps its `uppercase` and tracking, so a heading lever never
   reaches it.
 - **Default scheme.** The block marked `default: true` sets the scheme a first-time visitor sees, and
   the light and dark toggle follows the scheme the root actually renders in. A dark-first theme marks
@@ -155,7 +155,7 @@ the seams that override it. Open the page for the piece in hand before restyling
 
 Two paths exist, and both read contract tokens instead of literals.
 
-- **A site's own component.** A `defineComponent` declaration builds the markup, and the rules go in
+- **A site's component.** A `defineComponent` declaration builds the markup, and the rules go in
   `prose.css` or in the component's scoped `<style>` block.
 - **A built-in component.** This path belongs to the engine. The markup lives in `src/lib/public/`,
   styled by Tailwind utilities that compile through the sheet's `@source` line, or by a scoped

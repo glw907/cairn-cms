@@ -9,8 +9,8 @@
 //
 // This also gates `cairn-admin-screens`' SKILL.md "Tier map" section against the real rule
 // registries (src/lib/audit/rules/static/index.ts and rendered/index.ts): a retiered or renamed
-// rule that forgets the doc's own table is exactly the kind of drift no reader catches, since the
-// table reads as plausible prose either way. The tier map is that skill's own artifact, bound to
+// rule that forgets the doc's table is exactly the kind of drift no reader catches, since the
+// table reads as plausible prose either way. The tier map is that skill's artifact, bound to
 // its registries, so no other packaged skill carries one.
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -187,7 +187,7 @@ export function checkTierMap(documented, actual) {
 }
 
 /**
- * Project one registry rule onto a tier-map entry, so the registry's own richer rule shape (a
+ * Project one registry rule onto a tier-map entry, so the registry's richer rule shape (a
  * `check` function, optional interaction states) narrows to just what the doc's table claims.
  * @param {{ id: string, tier: TierMapEntry['tier'] }} rule
  * @param {TierMapEntry['mode']} mode

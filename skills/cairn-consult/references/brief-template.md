@@ -1,8 +1,8 @@
 # Brief template
 
-<!-- leak-ok-begin: C3 -- the path is where the consulting site files its own brief, named by the consult protocol -->
+<!-- leak-ok-begin: C3 -- the path is where the consulting site files its brief, named by the consult protocol -->
 
-One document, saved under the site's own docs (for example
+One document, saved under the site's docs (for example
 `docs/internal/consultations/YYYY-MM-DD-<what-it-presses>.md`), never inside the cairn-cms
 checkout. One item per edge pressed; a pass that presses more than one edge lists more than one
 item in the same document.

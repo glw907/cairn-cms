@@ -90,7 +90,7 @@ function unreleasedWindow(changelogText) {
  * marker; a window with none is presumed patch-worthy, the same default a real patch entry
  * carries. When exactly one marker is present, simulate the cut it would become (bump the last
  * published version by the marker's declared size) and run this same function's size rule against
- * that simulated heading, so a marker malformed or contradicted by its own body fails now, on the
+ * that simulated heading, so a marker malformed or contradicted by its body fails now, on the
  * pass that wrote it, rather than only once the heading is renamed at a real cut.
  * @param {string} changelogText the full CHANGELOG.md text
  * @param {{ version: string, index: number }[]} publishedHeadings the numbered headings, most recent first

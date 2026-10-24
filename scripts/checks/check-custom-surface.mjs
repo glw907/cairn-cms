@@ -2,7 +2,7 @@
 // floor on enumerable signals (not line counts, which are gameable and would flag sanctioned patterns):
 //   (1) the unlayered-rule set, pinned by exact selector, neither deletable nor extendable without an
 //       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a cap on the
-//       cairn-idiom sublayer's own selectors per tree (the one home every rule that overrides a daisyUI
+//       cairn-idiom sublayer's selectors per tree (the one home every rule that overrides a daisyUI
 //       declaration lives in: @layer utilities { @layer cairn-idiom { ... } }, parsed by brace matching
 //       the same way the components block is, and excluded from the unlayered-rule scan the same way);
 //       (4) a per-tree retired-token budget. The admin counts the muted and subtle parallel tokens wrapped
@@ -40,7 +40,7 @@ const CAIRN_IDIOM_LAYER = '@layer cairn-idiom';
 /**
  * Locates the first block opened by the literal `marker` text (`@layer components` or `@layer
  * cairn-idiom`) by brace matching, in the comment-blanked css. A nested block such as cairn-idiom
- * inside `@layer utilities { … }` is found by its own marker, so the outer wrapper never enters the
+ * inside `@layer utilities { … }` is found by its marker, so the outer wrapper never enters the
  * count.
  * @param {string} css comment-blanked css
  * @param {string} marker the at-rule text that opens the block

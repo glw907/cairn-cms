@@ -283,7 +283,7 @@ describe('checkProvenance, the full run', () => {
     const { defects } = checkProvenance(join(root, 'docs/internal/briefs'), FACTS, root, [], NO_REBUILT_ENTRIES);
     expect(defects).toEqual([
       expect.stringMatching(/broken\.json: not valid JSON/),
-      expect.stringMatching(/misfiled\.json: names page "docs\/admin\/some-other-page\.md", but a brief is filed under its page's own name/),
+      expect.stringMatching(/misfiled\.json: names page "docs\/admin\/some-other-page\.md", but a brief is filed under its page's name/),
       expect.stringMatching(/misfiled\.json: page "docs\/admin\/some-other-page\.md" does not exist/),
       expect.stringMatching(/shapeless\.json: missing a "sentences" array/),
       expect.stringMatching(/uncovered\.json: .*"This sentence was never written on the page\." is not on the page/),

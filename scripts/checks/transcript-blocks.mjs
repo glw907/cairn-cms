@@ -117,7 +117,7 @@ function readUnconsumedList(fixturesRootAbs) {
   const section = nextHeadingIdx === -1 ? rest : rest.slice(0, nextHeadingIdx);
   // Only the name a list item OPENS with declares that fixture unconsumed; a `.txt` name
   // mentioned later in the same bullet's prose (as `01c-resume.txt`'s does, describing what
-  // superseded it) is context, not its own declaration.
+  // superseded it) is context, not its declaration.
   const names = new Set();
   for (const m of section.matchAll(/^-\s*`([\w.-]+\.txt)`/gm)) names.add(m[1]);
   return names;
@@ -269,7 +269,7 @@ export function renderTranscript(raw) {
   let i = 0;
   while (i < chars.length) {
     const ch = chars[i];
-    // An escape opens a multi-character sequence whose own scan decides where `i` lands, so it
+    // An escape opens a multi-character sequence whose scan decides where `i` lands, so it
     // is handled ahead of the single-character controls below, which all advance by one.
     if (ch === '\x1b') {
       const next = chars[i + 1];
@@ -339,7 +339,7 @@ export function renderTranscript(raw) {
 /**
  * Every marker-plus-fence block in `text`, and the marker-shape violations found along the way
  * (`orphan-marker`, `double-marker`, `bad-fence-tag`). A block's `body` is the fence's raw
- * interior, unrendered; `markerPath` is the marker's own (unresolved) fixture path.
+ * interior, unrendered; `markerPath` is the marker's (unresolved) fixture path.
  * @param {string} file Repo-relative path, carried only to label a violation.
  * @param {string} text
  */

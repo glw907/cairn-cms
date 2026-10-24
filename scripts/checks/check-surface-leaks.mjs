@@ -1,5 +1,5 @@
 // cairn-cms: the F-1 leak-class rider, chained from the existing `check:surface` package entry
-// (no new top-level gate name; see the plan's tie-break rule). F-1's own predicate: a
+// (no new top-level gate name; see the plan's tie-break rule). F-1's predicate: a
 // retire-verdicted OR ABSENT name (never exported from any subpath) still named inside a
 // surviving KEEP export's rendered public shape is a closure leak: a consumer can read the
 // value's SHAPE, through indexed access or an inline member, but cannot NAME the type it holds.
@@ -10,21 +10,21 @@
 // models and neither alone finds both:
 //
 // - The TYPE-CHECKER model (`deriveTypeCheckerLeaks`) walks the real TypeScript type graph,
-//   through the compiler API, from every currently-exported symbol on each subpath's own built
+//   through the compiler API, from every currently-exported symbol on each subpath's built
 //   `.d.ts`, to a fixed point. It catches a name buried more than one hop deep (`AdvisoryAction`,
-//   reachable only through `EditData.advisories[].actions[]`) that `buildSurfaceModel()`'s own
+//   reachable only through `EditData.advisories[].actions[]`) that `buildSurfaceModel()`'s
 //   renderer cannot: `renderInterface` (check-surface.mjs) expands exactly one member level, so
 //   a nested INTERFACE reference like `AdvisoryNotice` prints as its bare name, and
-//   `AdvisoryNotice`'s own further members (where `AdvisoryAction` actually lives) are never
+//   `AdvisoryNotice`'s further members (where `AdvisoryAction` actually lives) are never
 //   independently rendered once `AdvisoryNotice` itself is unpublished from every subpath.
 // - The RENDERER model (`deriveRendererLeaks`) works over `buildSurfaceModel()`'s already-
-//   rendered shape strings and catches the opposite gap: a name that DOES have its own
+//   rendered shape strings and catches the opposite gap: a name that DOES have its
 //   top-level export row on one subpath, but whose exact literal-union definition is EXPANDED
 //   inline (never referenced by name) inside another export's shape on a DIFFERENT subpath
 //   (`NavIcon`, `EngineScreenId`: root's `.d.ts` rolls up `NavLayoutEntry.icon` without a
 //   surviving symbol reference to `NavIcon`, a TypeScript dts-bundling artifact, not a property
 //   of the type graph itself). `SlotKind` is the absent-everywhere control: unlike `NavIcon`, its
-//   declaring module is bundled into BOTH subpaths' own `.d.ts`, so the type-checker model finds
+//   declaring module is bundled into BOTH subpaths' `.d.ts`, so the type-checker model finds
 //   a live symbol reference on both, and
 //   the renderer model (which needs a name's OWN top-level shape to compare against) cannot
 //   attempt it at all, since `SlotKind` has no export row on any subpath to read that shape from.
@@ -34,7 +34,7 @@
 // ledger slug or move-record row) or `standing-unverdicted` (a one-line citation). The gate fails
 // on any leak the derivation finds with no matching entry, and on any entry the derivation no
 // longer produces (the record shrinks as a leak is resolved, the same discipline check-surface's
-// canonical-home rule already holds for its own record).
+// canonical-home rule already holds for its record).
 import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
@@ -48,7 +48,7 @@ const ROOT = repoRoot(import.meta.url);
 const REGISTRY_PATH = resolve(ROOT, 'scripts/checks/check-surface-leaks.json');
 
 // --- the known type universe: every type/interface/enum src/lib declares, exported or not -----
-// F-1's predicate needs to tell "our own retired-or-internal type" apart from an ambient/library
+// F-1's predicate needs to tell "our retired-or-internal type" apart from an ambient/library
 // type the walker's recursion also touches (Array, Promise, RequestEvent, ...); a name only
 // counts as a candidate leak if it is declared SOMEWHERE in our own source, whether or not it
 // still carries the `export` keyword (a case-2 retire, per the move record, drops only that
@@ -81,10 +81,10 @@ function knownTypeUniverse() {
 }
 
 // --- the type-checker model ---------------------------------------------------------------------
-// Resolve a re-export alias symbol to its target, mirroring check-surface.mjs's own
+// Resolve a re-export alias symbol to its target, mirroring check-surface.mjs's
 // `resolveAlias`. `moduleExports` returns each subpath's barrel-level symbols, most of which are
 // ALIAS symbols pointing at the real declaration elsewhere in the built `dist/` tree; without
-// this, `shapeTypeOf` below reads the alias's own (empty) declaration rather than the interface
+// this, `shapeTypeOf` below reads the alias's (empty) declaration rather than the interface
 // or type alias it re-exports, and the walk never reaches a single member.
 /**
  * @param {import('typescript').TypeChecker} checker
@@ -96,7 +96,7 @@ function resolveAlias(checker, sym) {
 
 // The type carrying an export's shape: a type-only symbol (interface/type alias/enum) on its
 // declared type, a value symbol (a function, a const) on the type at its declaration. Mirrors
-// check-surface.mjs's own `shapeTypeOf`, kept local rather than imported so this rider does not
+// check-surface.mjs's `shapeTypeOf`, kept local rather than imported so this rider does not
 // widen that gate's exported surface for one internal helper.
 /**
  * @param {import('typescript').TypeChecker} checker
@@ -119,7 +119,7 @@ function shapeTypeOf(checker, sym) {
 // tell a component from a bare `export type`; the `Value` flag is what actually distinguishes them
 // (present on every runtime-importable export, absent on a type-only one), and this is the same
 // isType-and-not-`Value` test `shapeTypeOf` above already applies to choose which type carries an
-// export's own shape. F-1's `/admin` clause uses this to derive its root set mechanically off
+// export's shape. F-1's `/admin` clause uses this to derive its root set mechanically off
 // the real barrel, rather than asserting the split in prose.
 /**
  * @param {import('typescript').Symbol} sym
@@ -142,10 +142,10 @@ const MAX_DEPTH = 12;
  * API: union and intersection members, array element types, generic type arguments, and (for a
  * type declared under `ownDir`, or a genuinely anonymous object literal) each property's type.
  * `svelte-package` emits one `.d.ts` per source module rather than one rolled-up file per
- * subpath, so a subpath's own barrel `.d.ts` re-exports names whose OWN declaration lives in a
+ * subpath, so a subpath's barrel `.d.ts` re-exports names whose OWN declaration lives in a
  * sibling file under the same `dist/` tree; `ownDir` (the built `dist/` root) is what
  * distinguishes that sibling from a genuinely ambient/library type (`RequestEvent`, `Array`),
- * declared under `node_modules` or a TypeScript lib file, whose own internals this walk never
+ * declared under `node_modules` or a TypeScript lib file, whose internals this walk never
  * needs to enter. A name is still RECORDED wherever a symbol resolves to it, ambient or not, and
  * the caller filters the result against the known type universe.
  * @param {import('typescript').TypeChecker} checker
@@ -181,7 +181,7 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
       for (const member of type.types) visit(member, depth + 1);
       // `type.types` is the FLATTENED member list (a union-of-a-union collapses to its individual
       // literals at construction time); TypeScript separately tracks the PRE-flattened form on
-      // `.origin` purely for display, and only THAT form still carries a nested member's own
+      // `.origin` purely for display, and only THAT form still carries a nested member's
       // aliasSymbol (`TidyKeyProbeResult | "missing"`, flattened to four raw literals, loses
       // `TidyKeyProbeResult` from `.types` entirely, but keeps it on `.origin.types[0]`).
       const origin = /** @type {{ origin?: { types?: import('typescript').Type[] } }} */ (type).origin;
@@ -200,7 +200,7 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
       // Not a generic type reference; no type arguments to walk.
     }
     // A callable member (every `createCairnAdmin`-composed action, `(event) => Promise<Result |
-    // ActionFailure<Failure>>`) carries its own leak-bearing types on its call signature, not as
+    // ActionFailure<Failure>>`) carries its leak-bearing types on its call signature, not as
     // an object PROPERTY; without this, every retire-verdicted name reachable only through an
     // action's parameter or return type (`DictionaryAddFailure`, `TidyFailure`, and their whole
     // family) is invisible to the walk.
@@ -211,8 +211,8 @@ export function collectReachableNames(checker, rootTypes, ownDir) {
         if (paramDecl) visit(checker.getTypeOfSymbolAtLocation(param, paramDecl), depth + 1);
       }
     }
-    // An anonymous or mapped-type symbol (TypeScript's own placeholder names `__type`/`__object`)
-    // still carries a `.declarations` entry pointing at the UTILITY type's own definition site
+    // An anonymous or mapped-type symbol (TypeScript's placeholder names `__type`/`__object`)
+    // still carries a `.declarations` entry pointing at the UTILITY type's definition site
     // (`Pick`'s declaration in `lib.es5.d.ts`, for a `Pick<{...}, K>`-resolved member), not at the
     // resolved shape's real origin; treated as "own" so the walk still descends into a resolved
     // utility-type member (an action union built with `Pick`) rather than stopping at the wrapper.
@@ -262,18 +262,18 @@ export function deriveTypeCheckerLeaks(model, universe) {
     // so a genuine leak reachable only through one of them (as `Change`, buried inside `TidyApi`,
     // in fact is; see the registry entry) is caught the same way it would be on any other subpath.
     //
-    // A component's own declared type is a generic reference to its Props/Events/Slots parameters,
-    // and walking those would reach every prop's type, including a component's own internal
+    // A component's declared type is a generic reference to its Props/Events/Slots parameters,
+    // and walking those would reach every prop's type, including a component's internal
     // callback and object props. That is an ACCEPTED LIMITATION, stated as one rather than fixed
     // here: component prop types stay invisible to this rider. The concrete blocked shape is the
     // two-model structure itself, neither of which reaches a prop: the type-checker model starts
-    // from each subpath's own EXPORTED symbols' declared types, and a component's declared type
-    // (`Component<Props, Events, Slots>`) never surfaces `Props`' own member types through that
+    // from each subpath's EXPORTED symbols' declared types, and a component's declared type
+    // (`Component<Props, Events, Slots>`) never surfaces `Props`' member types through that
     // walk the way an interface's members do, because the generic's type ARGUMENTS are Props
     // itself, not a property of it; the renderer model never attempts `/admin` at all, since
     // it compares literal-union shapes across `buildSurfaceModel()`'s per-export renderings, and a
     // component's rendered shape is the opaque `Component<Props, ...>` string, not an expanded
-    // object. Structurally modeling component props (walking each component's own Props type
+    // object. Structurally modeling component props (walking each component's Props type
     // argument) would need a third model this rider does not build; Task 7's props gate is the
     // answer for that surface instead (see the ledger row's stated-limits paragraph).
     const resolved = symbols.map((sym) => resolveAlias(checker, sym));
@@ -292,7 +292,7 @@ export function deriveTypeCheckerLeaks(model, universe) {
 
 // --- the renderer model (the per-subpath clause) ------------------------------------------------
 // A depth-aware split on `separator` at bracket depth 0, outside quotes. `=>` is treated as one
-// unit (skipped without a depth change) so an arrow-typed member's own `<...>` generic argument
+// unit (skipped without a depth change) so an arrow-typed member's `<...>` generic argument
 // does not miscount against the `(...)` that already protects it.
 /** @param {string} text @param {string} separator @returns {string[]} */
 function splitTopLevel(text, separator) {
@@ -329,7 +329,7 @@ function splitTopLevel(text, separator) {
 }
 
 // A rendered shape reads as a pure literal-string union (`"a" | "b" | ...`, with `(string & {})`
-// tolerated as the engine's own open-string escape hatch) or it does not; only this distinctive
+// tolerated as the engine's open-string escape hatch) or it does not; only this distinctive
 // shape is compared across subpaths, so an ordinary object or primitive member never produces a
 // false match. Returns the canonical (sorted) literal set, or `null` when the shape is not a
 // pure literal union.
@@ -354,8 +354,8 @@ function sameSet(a, b) {
 
 /**
  * Whether `shape` (a rendered export, object or otherwise) contains a member, at any depth this
- * gate's single-level object rendering reaches, whose own literal-union set exactly matches
- * `targetSet`. Checked against the shape's own top-level form first (a type alias could itself
+ * gate's single-level object rendering reaches, whose literal-union set exactly matches
+ * `targetSet`. Checked against the shape's top-level form first (a type alias could itself
  * be the union), then against each of its members if it is an object shape.
  * @param {string} shape
  * @param {string[]} targetSet
@@ -377,7 +377,7 @@ export function shapeContainsLiteralUnion(shape, targetSet) {
 }
 
 /**
- * F-1's per-subpath clause: a name that HAS its own top-level export row on one subpath, whose
+ * F-1's per-subpath clause: a name that HAS its top-level export row on one subpath, whose
  * exact literal-union definition is expanded inline (not referenced by name) inside another
  * export's rendered shape on a different subpath. Pure over `buildSurfaceModel()`'s output, so
  * the unit test drives it with a crafted model.

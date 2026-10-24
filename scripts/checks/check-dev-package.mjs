@@ -1,6 +1,6 @@
 // check-dev-package.mjs: the gate over the dev-package (packages/cairn-cms-dev, @glw907/cairn-cms-dev).
 // The root check:* gates cover src/lib and the published package, but the dev-package sits in a
-// workspace of its own and no gate reaches it. This runs the checks that keep it honest:
+// separate workspace and no gate reaches it. This runs the checks that keep it honest:
 //
 //   (1) tsc --noEmit over its tsconfig (which extends the root and includes src/**/*.ts), so a type
 //       error in the dev backend or a fake fails CI.
@@ -25,7 +25,7 @@ const EXPECTED_REPOSITORY_URL = 'git+https://github.com/glw907/cairn-cms.git';
 
 /**
  * Check the dev-package manifest for the fields its OIDC publish depends on. npm validates a
- * provenance bundle against the manifest's own `repository.url` and rejects the publish with a 422
+ * provenance bundle against the manifest's `repository.url` and rejects the publish with a 422
  * when the two disagree, which is invisible to every other gate because nothing else reads the
  * field. The 0.95.0 cut is why this exists: the dev backend's first publish was done by hand, so
  * the OIDC path had never run against this manifest, and the release published the engine while
@@ -48,7 +48,7 @@ function checkManifest() {
 }
 
 /**
- * Compare the root package's version against the dev-package's own. The cairn-release skill has
+ * Compare the root package's version against the dev-package's version. The cairn-release skill has
  * no step that aligns the two, so a cut can publish the engine at a new version while the
  * dev-package manifest sits at the old one, undetected until someone reads the tarball.
  * @param {string} rootVersion the version from the root package.json

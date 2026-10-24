@@ -1,14 +1,14 @@
 // cairn-cms: the chassis no-reach-ins gate (chassis-restructure Task 2, generalized at the
 // theme-ports-1-3 harvest). A theme file (anything under an examples/*/src that is not itself
-// inside its own src/chassis) may reach chassis machinery only through one of the seams the
+// inside its src/chassis) may reach chassis machinery only through one of the seams the
 // canonical src/chassis/README.md (examples/showcase) documents in its "What lives here" table:
 // the #chassis subpath import in a .ts/.svelte import, or a relative @import in a .css file (CSS
 // imports stay relative). This script parses that table for the canonical seam list once, then walks
-// EVERY examples/*/src that carries its own chassis/ copy (each site's own verbatim copy, per the
-// "one chassis, N themes" ontology), failing on any import that resolves into that theme's own
+// EVERY examples/*/src that carries its chassis/ copy (each site's verbatim copy, per the
+// "one chassis, N themes" ontology), failing on any import that resolves into that theme's
 // chassis/ but names a file the canonical table does not list, the same way a reach past a
 // package's public exports would fail. A theme that drops a chassis file entirely (documented in
-// its own chassis/README.md) is unaffected: dropping a file only matters if something still
+// its chassis/README.md) is unaffected: dropping a file only matters if something still
 // imports it, which this gate would already catch as a broken import, not a boundary violation.
 // It says nothing about WHICH symbols a seam exports; svelte-check already fails an import of a
 // name a module does not export.
@@ -25,8 +25,8 @@ const CANONICAL_SRC = resolve(EXAMPLES_DIR, 'showcase/src');
 const CANONICAL_README = resolve(CANONICAL_SRC, 'chassis/README.md');
 
 /**
- * Every `examples/<name>/src` directory that carries its own `chassis/` subdirectory: the
- * canonical showcase copy plus every theme port's own verbatim copy.
+ * Every `examples/<name>/src` directory that carries its `chassis/` subdirectory: the
+ * canonical showcase copy plus every theme port's verbatim copy.
  * @returns {string[]}
  */
 export function findChassisRoots() {
@@ -45,7 +45,7 @@ const IMPORT_SPEC =
 /**
  * The basename of an import specifier or a table filename, with its extension stripped once. Both
  * sides of the comparison run through this, so `#chassis/cairn.server.js` (the NodeNext import
- * form) and `cairn.server.ts` (the README's own filename) normalize to the same `cairn.server`.
+ * form) and `cairn.server.ts` (the README's filename) normalize to the same `cairn.server`.
  * @param {string} spec
  * @returns {string}
  */
@@ -95,7 +95,7 @@ function walkExts(dir, exts) {
 /**
  * Every reach-in in one file's already-read source: a chassis-referencing import whose named file
  * is not in `seams`. Pure (no I/O), so it is unit-testable directly on a source string, without a
- * fixture file the root project's own type-check would otherwise pick up as real TypeScript.
+ * fixture file the root project's type-check would otherwise pick up as real TypeScript.
  * @param {string} label The file path to report a violation under.
  * @param {string} source
  * @param {Set<string>} seams

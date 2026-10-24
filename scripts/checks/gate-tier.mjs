@@ -27,13 +27,13 @@
 //      outside check:close.
 //   3. The whole node projects. They hold the guard tests that read files, spawn scripts, or walk
 //      trees, which no import graph can see.
-//   4. The component project, narrowed to the tests Vitest's own related selection picks for the
+//   4. The component project, narrowed to the tests Vitest's related selection picks for the
 //      diff. The whole project runs on a rerun trigger, a deleted or renamed path under `src/`, or an
 //      empty selection. A diff whose every path is a docs path (or a path no check reads) skips
 //      the leg, since the component project cannot see it.
 //   5. The create-cairn-site suite, when the diff touches the package, the showcase it bakes from,
 //      the emitter, or the root package.json.
-//   6. The e2e specs the table's map selects, at zero retries, on a port of its own.
+//   6. The e2e specs the table's map selects, at zero retries, on a separate port.
 //
 // The buckets, the per-check bucket lists, the no-check list, the e2e map, and the protected paths
 // live in gate-table.json beside this file. Fail closed: a path the table cannot place runs every
@@ -46,7 +46,7 @@
 //
 // `--protected` is a separate mode. It prints `ciWait` when the range touches a path on the table's
 // protected list and nothing otherwise, exiting zero either way. It reads the list at `<base>`, so a
-// range that removes its own entry still flags, and an unreadable table at `<base>` flags too. It
+// range that removes its entry still flags, and an unreadable table at `<base>` flags too. It
 // never changes the default mode's output.
 //
 // This is dependency-based test selection, the method Google's TAP uses to pick the tests a change
@@ -71,7 +71,7 @@ export const TABLE_PATH = 'scripts/checks/gate-table.json';
 
 // The five npm gate strings are cumulative, each a strict superset of every tier below it, built
 // by concatenation rather than five independent literals so the superset relationship cannot
-// drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's own three legs and
+// drift. TOOL_GATE stands alone: `make -C tool check` proves the Go module's three legs and
 // is never folded into or out of the npm chain.
 //
 // DOCS_GATE is the one `check:docs-gate` script (scripts/checks/docs-gate.mjs), which owns the
@@ -83,12 +83,12 @@ const DOCS_GATE = 'npm run check:docs-gate';
 // gate runs the node projects first, then the component project alone with file parallelism off,
 // so the local gate stays reliable. CI's `test.yml` runs `test:node-projects` and `test:component`
 // as separate steps without `--no-file-parallelism`; this serialization is local-gate-only.
-// `npm test` (root) never reaches the create-cairn-site workspace member's own `node --test`
-// suite, so its own invocation is appended here too, to keep the five-tier superset chain intact
+// `npm test` (root) never reaches the create-cairn-site workspace member's `node --test`
+// suite, so its invocation is appended here too, to keep the five-tier superset chain intact
 // rather than adding a sixth severity level for one workspace member.
 const SCRIPTS_GATE = `${DOCS_GATE} && npm run check && npm run test:node-projects && npm run test:component -- --no-file-parallelism && npm test -w packages/create-cairn-site`;
 const ADMIN_VISUAL_GATE = `${SCRIPTS_GATE} && npm --prefix examples/showcase run test:e2e -- admin-visual.spec.ts`;
-// The CI `test` job's remaining steps, in test.yml's own order, so the full tier proves everything
+// The CI `test` job's remaining steps, in test.yml's order, so the full tier proves everything
 // CI would. The steps already in a lower tier (`npm run check`, the test projects, the docs gate,
 // the create-cairn-site suite) and the install and bake steps a local gate cannot run are not
 // repeated; the gate-tier test pins this list against test.yml.
@@ -158,7 +158,7 @@ const SITE_VISUAL = 'site-visual.spec.ts';
  * sizes its default heap from the cgroup limit, about 1GB under the light cap, and `check:reference`
  * ran out of heap (`gate exit: 1`, `JavaScript heap out of memory`), so a peak measured outside the
  * cap does not prove the lane. A new lane changes this value and its pinned unit test together, and
- * is proven by a run under the lane's own cap.
+ * is proven by a run under the lane's cap.
  */
 export const FAST_LINE_1_LANE = '';
 
@@ -269,7 +269,7 @@ export function loadTable(root = ROOT) {
  * @property {GateTable} table - The parsed table.
  * @property {string[]} labels - Every selectable check label, in run order, extras last.
  * @property {string[]} closeLabels - The check:close component labels.
- * @property {Set<string>} packagePrefixed - Labels whose own script starts with the package build.
+ * @property {Set<string>} packagePrefixed - Labels whose script starts with the package build.
  * @property {Map<string, Set<string>>} closures - Label to the script files its entry reaches.
  * @property {Set<string>} exportEntries - Source files behind a package export.
  */
@@ -818,7 +818,7 @@ export function diffEntries(range, root = ROOT) {
 
 /**
  * The `--protected` verdict for a range. The protected list is read from the table at the range's
- * base commit, so a range that deletes its own entry still flags; a table that is absent or
+ * base commit, so a range that deletes its entry still flags; a table that is absent or
  * unreadable at the base flags too.
  * @param {string} range - A git range `<base>..<head>`.
  * @param {string} [root] - The repo root.

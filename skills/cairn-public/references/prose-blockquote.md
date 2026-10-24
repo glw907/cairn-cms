@@ -17,4 +17,4 @@ Reads:
 
 Override seams:
 
-- A blockquote is not a pull quote. The pull-quote directive has its own page and its own hook.
+- A blockquote is not a pull quote. The pull-quote directive has its page and its hook.

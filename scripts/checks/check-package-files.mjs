@@ -35,7 +35,7 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
-// The auth-channel factory's own schema, packed from its own directory. A SIBLING of migrations/,
+// The auth-channel factory's schema, packed from its own directory. A SIBLING of migrations/,
 // never a member of it: migrations/ is AUTH_DB's `migrations_dir`, and a shared directory applies
 // each database's schema to the other the first time either is migrated. Both halves are asserted,
 // since the file's absence leaves a channel consumer with no schema to apply and its presence under
@@ -195,7 +195,7 @@ export function checkClaudeTreePacked(filePaths) {
  * resolving to something other than the browser stub.
  *
  * @remarks
- * Scope: the top level of each entry in the package's own "exports" map. A "browser" nested inside
+ * Scope: the top level of each entry in the package's "exports" map. A "browser" nested inside
  * another condition object, or a second map under "publishConfig", is out of reach and neither
  * shape exists here today.
  * @param {Record<string, Record<string, string> | string>} exportsMap the package.json "exports" map
@@ -279,7 +279,7 @@ export function parseRelativeImportSpecifiers(source) {
  * an ambient `.d.ts` or a path this walk mis-resolves should not crash the gate.
  * @param {string} entryPath a posix-style path relative to the repo root
  * @param {(path: string) => string | null} readSource a file's text, or null if it has none
- * @returns {Set<string>} every file path reached, in entryPath's own relative form
+ * @returns {Set<string>} every file path reached, in entryPath's relative form
  */
 export function walkModuleGraph(entryPath, readSource) {
   const seen = new Set();

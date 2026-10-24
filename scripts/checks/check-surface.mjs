@@ -102,7 +102,7 @@ function renderIndexSignatures(checker, type) {
 // last. A bare `typeToString` of an interface prints only its name, and `InTypeAlias` does not
 // expand it, so the members are expanded by hand. Each member's type renders with the shape flags;
 // a referenced named type (for example `role: Role`) stays a name, which is correct because that
-// type carries its own snapshot entry and a change to IT drifts there.
+// type carries its snapshot entry and a change to IT drifts there.
 /**
  * @param {import('typescript').TypeChecker} checker
  * @param {import('typescript').Type} type
@@ -141,7 +141,7 @@ function shapeTypeOf(checker, sym) {
 // Render one export's full declared shape, normalized. The symbol KIND is resolved before the
 // callable check, on purpose: an interface expands member-by-member, and a type alias expands with
 // the shape flags (so a callable alias like `type SiteRender = (input) => …` prints its full
-// signature, not its own name). Only a callable VALUE export (a function or const-function) takes
+// signature, not its name). Only a callable VALUE export (a function or const-function) takes
 // the callable branch, where the arrow-style flags match the signatures gate. A non-callable value
 // (a const, the `fields` namespace object) falls through to the shape flags. The result passes
 // through `normalizeSignature` so `import("…")` qualifiers, `| undefined` optional artifacts, and
@@ -422,7 +422,7 @@ export function formatHomeViolations(result) {
  * @property {{ name: string, before: string, after: string }[]} changed exports whose shape changed
  */
 
-// Load the R4 re-export record, failing with the gate's own message (naming the file and the
+// Load the R4 re-export record, failing with the gate's message (naming the file and the
 // failure kind) rather than a raw ENOENT or SyntaxError, so a missing or malformed record reads
 // the same as any other check-surface failure.
 /**

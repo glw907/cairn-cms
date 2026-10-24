@@ -8,7 +8,7 @@
 // 0 and the change appears to do nothing.
 //
 // This script closes that structurally rather than by remembering a workaround. Each pack is named
-// with a hash of its own contents, so changed code cannot collide with a cached entry, and the
+// with a hash of its contents, so changed code cannot collide with a cached entry, and the
 // install is verified against the extracted tarball afterwards rather than trusted because npm
 // exited 0.
 //
@@ -42,7 +42,7 @@ const PACKAGES = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
 
 /**
  * What follows the package stem in a tarball this script wrote: a version, then the content digest
- * it appends. Pruning matches on this so it can only ever delete its own output.
+ * it appends. Pruning matches on this so it can only ever delete its output.
  *
  * A hand-packed tarball has no digest and so never matches, which is the point. cairn-pub pins
  * `glw907-cairn-cms-0.95.0-rc.1.tgz` by absolute path, and a prune that swept it would break that
@@ -152,7 +152,7 @@ export function consumerPackages(consumerDir) {
 }
 
 /**
- * The directory holding a package's manifest, since the dev backend is a workspace of its own.
+ * The directory holding a package's manifest, since the dev backend is a separate workspace.
  * @param {string} name
  * @returns {string}
  */
@@ -285,7 +285,7 @@ function link(consumerDir, names, skipBuild) {
 /**
  * Put the consumer back on a registry range, and prove the lockfile agrees.
  *
- * The range comes from this repo's own version, so a consumer comes back onto the line the engine
+ * The range comes from this repo's version, so a consumer comes back onto the line the engine
  * is actually on rather than whatever it was pinned at before.
  * @param {string} consumerDir
  * @param {string[]} names the packages the consumer declares

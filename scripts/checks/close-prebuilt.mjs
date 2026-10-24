@@ -76,7 +76,7 @@ export const CLOSE_COMPONENTS = Object.freeze([
 
 /**
  * The close steps, each a label plus the shell command this runner runs for it. A component whose
- * own script starts with the package build runs its script's remainder; any other component runs
+ * script starts with the package build runs its script's remainder; any other component runs
  * exactly as the list spells it.
  * @param {Record<string, string>} scripts - package.json's `scripts` block.
  * @param {readonly string[]} [components] - The component list; defaults to CLOSE_COMPONENTS.

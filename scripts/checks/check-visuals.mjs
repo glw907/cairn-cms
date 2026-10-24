@@ -1,6 +1,6 @@
 // cairn-cms: the visuals gate for the published docs' diagram-and-image contract (the "Visuals"
 // section of docs/internal/docs-register.md). It checks the mechanical, authored-source half of
-// that contract: every mermaid fence carries mermaid's own `accTitle:`/`accDescr:` directives and
+// that contract: every mermaid fence carries mermaid's `accTitle:`/`accDescr:` directives and
 // is immediately followed by an emphasis-paragraph caption (`*...*`); every markdown image carries
 // real alt text no longer than 150 characters (a deliberately decorative image is authored as HTML
 // `<img alt="" ...>` instead, which this gate never flags); and every `repro` fence (the
@@ -27,7 +27,7 @@ import { readArmStates } from './arm-state.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // The four published arms plus the front-door index. `docs/internal` is a contributor zone with
-// its own filing rules, not a published arm, so it stays out of this gate the same way it stays
+// its filing rules, not a published arm, so it stays out of this gate the same way it stays
 // out of the reader-facing register. An entry naming an arm-state arm (arm-state.mjs) is skipped
 // while that arm is absent; the reference arm has none, so it is always scanned and a missing
 // reference directory throws.
@@ -362,7 +362,7 @@ async function main() {
   const { manifest, validateReproFence } = await import(
     `file://${resolve(ROOT, 'dist/reproductions/manifest.js')}`
   );
-  // Binds this gate's own register onto the two-argument shape `scanTree`/`scanDocument` call
+  // Binds this gate's register onto the two-argument shape `scanTree`/`scanDocument` call
   // `validateFence` with, so the caller-register half of `validateReproFence` is supplied here
   // rather than threaded through every intermediate function.
   /**

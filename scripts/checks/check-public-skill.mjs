@@ -8,7 +8,7 @@
 //      built-in directives, every hydrating directive (an island), the engine's public components,
 //      every `.cairn-*` class the chassis composition sheet defines, and the six prose pages.
 //   2. Every class a snippet uses compiles. A snippet is a fenced block; its `class="..."` values
-//      must appear in the showcase's public sheet (compiled by the showcase's own Tailwind CLI, its
+//      must appear in the showcase's public sheet (compiled by the showcase's Tailwind CLI, its
 //      sources the showcase's alone, never the skill's files, or every valid utility would compile
 //      and this check would pass vacuously), in the showcase's plain `site.css`, in a `<style>`
 //      block of an engine public component, or in the emitted-class registry.
@@ -70,7 +70,7 @@ const SKILL_DIR = 'skills/cairn-public';
  * Everything the assertions read, gathered from disk by `runGate` and built by hand in the tests.
  * @typedef {object} Context
  * @property {DirectiveDef[]} directives the showcase registry's component list
- * @property {string[]} gateBuiltins the gate's own list of engine built-in directives
+ * @property {string[]} gateBuiltins the gate's list of engine built-in directives
  * @property {string[]} engineBuiltins the list read off `registry.ts`
  * @property {string[]} components the engine's public component names
  * @property {string[]} compositionClasses the `.cairn-*` classes the composition sheet defines
@@ -389,7 +389,7 @@ function styleBlockClasses(files) {
 
 /**
  * Load the showcase registry's component list, through a Vite server that resolves the showcase's
- * own subpath imports from its package.json, and the engine's `previewMarkdown`.
+ * subpath imports from its package.json, and the engine's `previewMarkdown`.
  * @param {string} root
  * @returns {Promise<DirectiveDef[]>}
  */
@@ -422,7 +422,7 @@ async function loadRegistry(root) {
 }
 
 /**
- * Compile the showcase's public entry sheet with the showcase's own Tailwind CLI.
+ * Compile the showcase's public entry sheet with the showcase's Tailwind CLI.
  * @param {string} showcase
  * @returns {string} the compiled CSS
  */

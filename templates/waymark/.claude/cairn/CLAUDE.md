@@ -5,7 +5,7 @@ agent guidance, imported by your site's root `CLAUDE.md`.
 ## The boundary
 
 cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
-Everything a site needs beyond that, its own functionality, actors, auth, data, and domain
+Everything a site needs beyond that, its functionality, actors, auth, data, and domain
 logic, belongs to the developer, and cairn serves it with a thin seam, not a built-in feature.
 When a task reaches for something the engine does not offer, build it as site code first; reach
 for `cairn-consult` only when the same workaround repeats, or when nothing in the engine's seams
@@ -23,16 +23,16 @@ link this file can follow.
   `node_modules/@glw907/cairn-cms/docs/reference/admin.md`.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. See
   `node_modules/@glw907/cairn-cms/docs/reference/admin-toolkit.md`.
-- `createAuthChannel`: a site's own login channel for a second sign-in group (request, confirm, logout) over
+- `createAuthChannel`: a site's login channel for a second sign-in group (request, confirm, logout) over
   a site-owned database. See `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`.
-- `createLogger`: structured logs in the engine's own record shape, with the same redaction
+- `createLogger`: structured logs in the engine's record shape, with the same redaction
   rules. See `node_modules/@glw907/cairn-cms/docs/reference/log.md`.
 
 ## The gates
 
 A scaffolded site's `package.json` carries `check:cairn` (the design-language audit against the
 static admin markup) and `check:cairn:rendered` (the same audit against a running dev server, on
-both themes). Run `npx cairn-guidance check` to see whether your own repo still has these wired
+both themes). Run `npx cairn-guidance check` to see whether your repo still has these wired
 up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date; `--strict` exits
 1 when the tree is stale.
 

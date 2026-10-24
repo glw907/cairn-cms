@@ -15,4 +15,4 @@ Reads:
 
 Override seams:
 
-- Style the fragment's own content through the ordinary prose rules. There is no include-specific hook.
+- Style the fragment's content through the ordinary prose rules. There is no include-specific hook.

@@ -1,6 +1,6 @@
 # The cairn-hero-title class
 
-The heading inside a hero. It sets its own margin, so it needs no reset.
+The heading inside a hero. It sets its margin, so it needs no reset.
 
 Rendered markup:
 
@@ -15,4 +15,4 @@ Reads:
 
 Override seams:
 
-- Restyle it in the theme's own sheet, or read the two heading levers in a rule of your own.
+- Restyle it in the theme's sheet, or read the two heading levers in a rule of your own.

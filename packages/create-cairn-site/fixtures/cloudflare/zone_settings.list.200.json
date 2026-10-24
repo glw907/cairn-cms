@@ -3,7 +3,7 @@
     "captured": "2026-09-21",
     "source": "GET /zones/{zone_id}/settings?page=1",
     "status": 200,
-    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried 56 settings and no result_info; three are kept, always_use_https among them, which is the https-forced check's own signal."
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's placeholder shapes; every key set, result_info value, and count below is the live one. The live body carried 56 settings and no result_info; three are kept, always_use_https among them, which is the https-forced check's signal."
   },
   "body": {
     "result": [

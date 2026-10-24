@@ -3,7 +3,7 @@
     "captured": "2026-09-21",
     "source": "POST /accounts/{account_id}/workers/observability/telemetry/query",
     "status": 200,
-    "note": "the envelope is recorded live on 2026-09-21 (result.events is an object carrying events, fields, count, and series, and each event carries the Worker's own record under \"source\"); the three records under \"source\" are synthesized, so one fixture covers three engine events, two levels, and a field a live window did not happen to hold. observability-telemetry-query.events.200.json beside it is live all the way down. Before 2026-09-21 this file's envelope was synthesized too, with result.events as a flat array, and that is what hid the decode defect the live verification found. The ray id, account id, worker name, and every editor value are placeholders, and no editor value is email-shaped."
+    "note": "the envelope is recorded live on 2026-09-21 (result.events is an object carrying events, fields, count, and series, and each event carries the Worker's record under \"source\"); the three records under \"source\" are synthesized, so one fixture covers three engine events, two levels, and a field a live window did not happen to hold. observability-telemetry-query.events.200.json beside it is live all the way down. Before 2026-09-21 this file's envelope was synthesized too, with result.events as a flat array, and that is what hid the decode defect the live verification found. The ray id, account id, worker name, and every editor value are placeholders, and no editor value is email-shaped."
   },
   "body": {
     "success": true,

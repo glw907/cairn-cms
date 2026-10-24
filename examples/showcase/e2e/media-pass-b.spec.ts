@@ -33,7 +33,7 @@ const EMPTY_ENTRY = {
 const CUSTOM_ENTRY = {
   name: 'A later pass',
   path: 'src/content/posts/2026-06-first-custom.md',
-  customAlt: "A skier's own words",
+  customAlt: "A skier's words",
 };
 
 const MEDIA_JSON_PATH = 'src/content/.cairn/media.json';

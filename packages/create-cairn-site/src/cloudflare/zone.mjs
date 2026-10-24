@@ -5,7 +5,7 @@
 //
 // createOrAdoptZone reads before it writes: it lists zones by name first and adopts on a hit,
 // posting a create only on a miss, the same discipline email.mjs's ensureSendingDomain already
-// follows for its own non-idempotent write. A live defect (T4b.1) showed why the order matters:
+// follows for its non-idempotent write. A live defect (T4b.1) showed why the order matters:
 // an owner whose zone already exists but whose token cannot create zones used to die on a 403
 // from the create it never needed, because the create was tried unconditionally and only a 1061
 // response ever triggered the adopt lookup. The list-by-name check is now the main door.
@@ -35,7 +35,7 @@
 // through `pending`, so `alreadyActive` short-circuits a delegation wait that domain would
 // otherwise stage forever.
 //
-// checkDelegation's own NS lookup is a plain recursive one, deliberately not the
+// checkDelegation's NS lookup is a plain recursive one, deliberately not the
 // authoritative-nameserver read records.mjs's readCurrentRecords uses. A delegation check is
 // re-run on every resumed invocation until it reports 'active', so a stale recursive answer here
 // self-corrects on the next run; it carries none of readCurrentRecords' silent-data-loss risk,
@@ -89,8 +89,8 @@ async function findZoneByName(api, domain) {
  * zone when the list misses. The list is the primary door, mirroring email.mjs's
  * ensureSendingDomain, since a create is a non-idempotent write and a token that cannot create
  * must not be forced through one for a zone that already exists. The 1061-triggered adopt inside
- * the create's catch stays as a race guard for the gap between this function's own list and its
- * own create, not as the only door. Returns the id and nothing else, so no other field can reach
+ * the create's catch stays as a race guard for the gap between this function's list and its
+ * create, not as the only door. Returns the id and nothing else, so no other field can reach
  * the caller from the create response, which is exactly the trust ensureZone must not place in it.
  * @param {object} args
  * @param {ReturnType<typeof import('./api.mjs').makeApi>} args.api the Cloudflare API client
@@ -116,7 +116,7 @@ async function createOrAdoptZone({ api, domain, dir, log }) {
   } catch (err) {
     switch (zoneCreateCode(err)) {
       case ZONE_CREATE_CODES.alreadyExists: {
-        // This function's own list above already missed, so a 1061 here means another run's
+        // This function's list above already missed, so a 1061 here means another run's
         // create won a race in the gap between that list and this create, not that the list was
         // wrong. The 1061 body still names the zone and nothing else, so ownership still comes
         // from a lookup, kept here purely as the race guard rather than the main door.
@@ -187,7 +187,7 @@ export async function ensureZone({ record, api, log }) {
  *  `record.cloudflare.{zoneId,nameServers,domain,alreadyActive}`
  * @param {ReturnType<typeof import('./api.mjs').makeApi>} args.api the Cloudflare API client
  * @param {(domain: string) => Promise<string[]>} [args.resolveNs] the NS lookup, defaulting to
- *  `node:dns/promises`' own `resolveNs`; a test seam
+ *  `node:dns/promises`' `resolveNs`; a test seam
  * @returns {Promise<'pending' | 'wrong-nameservers' | 'propagating' | 'active'>} the delegation state
  */
 export async function checkDelegation({ record, api, resolveNs = systemResolveNs }) {

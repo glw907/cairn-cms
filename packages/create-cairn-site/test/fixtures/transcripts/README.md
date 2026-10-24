@@ -17,7 +17,7 @@ run that needs different bytes is re-captured, never patched.
 - **Scratch directory:** `2026-08-16-capture/`, a throwaway directory outside this repo, since retired
 
 The template was baked against the published prerelease so the scaffold installed from the
-registry exactly as its own specs dictate, rather than from a vendored tarball no reader gets:
+registry exactly as its specs dictate, rather than from a vendored tarball no reader gets:
 
 ```
 node scripts/bake-template.mjs --to template --engine-spec '^0.95.0-rc.1' --dev-spec '^0.95.0-rc.1'
@@ -40,7 +40,7 @@ unedited, that banner would have become permanent non-tool content in the source
 the method changed to deliver the ruling's intent. The recorded width is unchanged at 100, and
 pinning the size on the pty itself means no caller's terminal is resized.
 
-The clack prompts were answered by a pattern-matched driver that waits for each prompt's own
+The clack prompts were answered by a pattern-matched driver that waits for each prompt's
 text before sending that prompt's answer, so a slow step or a browser moment delays the next
 match rather than desynchronising the run. Driver progress went to stdout; the capture files
 hold pty bytes only.
@@ -102,7 +102,7 @@ replaces the two npm-era captures with one run of the released binary.
 **Install:** `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v1.1.0`, the tagged release
 rather than `@latest`, so this procedure names a version a reader can reproduce.
 
-**The site:** this repo's own `examples/showcase`, at the `doctor-engine` worktree's commit
+**The site:** this repo's `examples/showcase`, at the `doctor-engine` worktree's commit
 `0612c350dfadf4c884e597601c78aea99c7d7ab6`, the head this task branched from. It is a real
 cairn-cms site, already built, so `cairn doctor` reads committed configuration rather than a
 scaffold that never ran a build. `npx cairn-manifest` was run first from `examples/showcase`, so
@@ -114,7 +114,7 @@ and a capture of that degraded state would publish it as the normal one.
 `PATH`, redirected with a plain `>` into the fixture. `cairn doctor` is a single, non-interactive
 command that writes one report to stdout and exits, so `transcript-blocks.mjs`'s pty-control-stream
 normalizer has nothing to normalize; a shell redirect compares fine against the rendered block, and
-none of the `01` captures' pty harness is needed. Bash's own `-x` trace of the command it is about
+none of the `01` captures' pty harness is needed. Bash's `-x` trace of the command it is about
 to run becomes the fixture's first line, `+ cairn doctor .`, real bytes the shell produced rather
 than a hand-written header.
 
@@ -123,7 +123,7 @@ than a hand-written header.
 containment rule refuses to read through it
 (`doctor-go-containment-symlink-resolving` in `docs/internal/engine-rulings.md`), which is why the
 dependency-floor line reads `UNCHECKED` rather than `PASS` or `FAIL`: a site installed the normal
-way, with a real copy of the package under its own `node_modules`, would not hit this. The capture
+way, with a real copy of the package under its `node_modules`, would not hit this. The capture
 is real and unedited either way, per the never-edit rule.
 
 ## The captured sign-in token is dead
@@ -151,7 +151,7 @@ supersede above. Every other file was clean on every pattern.
 
 A name-only comparison against `~/.local/secrets` showed `CLOUDFLARE_API_TOKEN`,
 `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` appearing by
-name. Those are the doctor's own SKIP lines telling a reader which variables to set, so they are
+name. Those are the doctor's SKIP lines telling a reader which variables to set, so they are
 instructions rather than values. No secret value appears in any fixture.
 
 ## Deliberately unconsumed
@@ -166,7 +166,7 @@ No documentation block quotes these; `check:transcripts` treats this list as the
 
 The scaffold gained `.github/workflows/check.yml` and a baked `npm run check:cairn` script
 after this capture ran, so a fresh run today would show a step these transcripts do not: the
-tool's own printed hand-over now names the workflow and the `check:cairn` script. Re-capturing
+tool's printed hand-over now names the workflow and the `check:cairn` script. Re-capturing
 needs a live GitHub App and repository creation, a harness outside this repo, so these fixtures
 stay as recorded rather than being hand-edited to add a step never captured. `check:transcripts`
 compares the docs pages' quoted blocks against these fixtures, not against the current
@@ -175,7 +175,7 @@ scaffold's behavior, so it stays green either way.
 ## Staleness note (2026-09-22)
 
 `01-create-cairn-site.txt` and `01d-resume.txt` predate the doctor's retirement from npm to Go and
-still print `create-cairn-site`'s own old hand-over line, "Run `npx cairn-doctor` any time to
+still print `create-cairn-site`'s old hand-over line, "Run `npx cairn-doctor` any time to
 check what is set up and what is still missing." The scaffold no longer prints that line: it now
 prints a `cairn doctor` reminder with an install pointer, unconditionally, and never runs
 `npx cairn-doctor` at all. Re-capturing needs a live GitHub App and repository creation, a harness
@@ -186,7 +186,7 @@ stays green either way.
 ## Staleness note (2026-09-20, guidance bake)
 
 The scaffold now ships `.claude/` guidance baked in at create time (every packaged skill, the
-review agent, and `.claude/cairn/CLAUDE.md`/`VERSION`/`MANIFEST`), and its own
+review agent, and `.claude/cairn/CLAUDE.md`/`VERSION`/`MANIFEST`), and its
 `.github/workflows/check.yml` gained a third step, `npx cairn-guidance check` under
 `continue-on-error`. `01-create-cairn-site.txt`'s hand-over text predates both and shows
 neither the guidance sentence nor the workflow's third step. Re-capturing needs a live GitHub
@@ -217,7 +217,7 @@ fixture stays as recorded rather than being hand-edited to add a prompt no run a
 `check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against the
 current scaffold's behavior, so it stays green either way; the admin arm's create-your-site page
 (removed pending its rebuild) never quoted that stretch of the transcript (only the cost preamble,
-the GitHub App confirmation, and the closing summary), so its own prose was fixed to name the new
+the GitHub App confirmation, and the closing summary), so its prose was fixed to name the new
 question without touching any quoted block.
 
 ## Identifiers

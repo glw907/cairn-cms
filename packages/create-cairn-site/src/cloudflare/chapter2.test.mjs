@@ -44,8 +44,8 @@ async function freshStateDir(t) {
 
 /**
  * Build a fixture scaffold directory carrying a real wrangler.jsonc (for writePublicOrigin, the
- * cutover's own step) and a real src/theme/cairn.config.ts (for writeEmailFrom, the email half's
- * own rewrite step).
+ * cutover's step) and a real src/theme/cairn.config.ts (for writeEmailFrom, the email half's
+ * rewrite step).
  * @param {import('node:test').TestContext} t
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -59,7 +59,7 @@ async function fixtureScaffoldDir(t) {
 }
 
 /**
- * Start a fake Cloudflare and point CAIRN_CLOUDFLARE_API_BASE at it, the sibling modules' own setup.
+ * Start a fake Cloudflare and point CAIRN_CLOUDFLARE_API_BASE at it, the sibling modules' setup.
  * @param {import('node:test').TestContext} t
  * @param {{ zoneStatus?: string }} [overrides]
  * @returns {Promise<import('../../test/fake-cloudflare.mjs').FakeCloudflare>}
@@ -122,7 +122,7 @@ function alwaysMatchingFetch() {
   };
 }
 
-/** A fetchImpl that fails at the transport level on every confirm; the no-hold park's own probe. */
+/** A fetchImpl that fails at the transport level on every confirm; the no-hold park's probe. */
 function alwaysUnreachableFetch() {
   return async () => {
     throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
@@ -131,7 +131,7 @@ function alwaysUnreachableFetch() {
 
 /**
  * A fetchImpl that fails at the transport level for the first `rounds` confirms, then answers the
- * marker pair correctly. Mirrors hostname.test.mjs's own `unreachableForRounds`: a confirm is
+ * marker pair correctly. Mirrors hostname.test.mjs's `unreachableForRounds`: a confirm is
  * counted by its first request, the https probe of `/`.
  * @param {number} rounds how many confirms fail before the marker pair starts answering
  * @returns {{ fetchImpl: typeof fetch, state: { rounds: number } }}
@@ -148,7 +148,7 @@ function unreachableForRounds(rounds) {
 }
 
 /** A console server handle recording what the hold loop does with it, the same stand-in
- * hostname.test.mjs's own `fakeConsole` uses for the seam's own tests. */
+ * hostname.test.mjs's `fakeConsole` uses for the seam's tests. */
 const HOLD_CONSOLE_URL = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA';
 function fakeConsole() {
   const calls = { start: [], update: [], stop: 0 };
@@ -217,7 +217,7 @@ function confirmAnswering(answer) {
 
 /**
  * A confirm stub that answers chapter 2's two yes/no gates differently, matched by a distinctive
- * substring of each gate's own message. Omitting a gate's answer means the record under test has
+ * substring of each gate's message. Omitting a gate's answer means the record under test has
  * already passed it (or must never reach it): a call for that gate is then a defect, not just an
  * unexpected answer, so it throws rather than silently returning. A message matching neither gate
  * also throws, so a test can never pass by answering some THIRD gate the wrong way.
@@ -247,7 +247,7 @@ function mustNotBeCalled(label) {
 }
 
 /**
- * Seed a state record shaped like a site that just finished chapter 1 (T3's own fields), the
+ * Seed a state record shaped like a site that just finished chapter 1 (T3's fields), the
  * state every chapter2 test starts from unless a test seeds further along.
  * @param {string} siteId
  * @param {string} dir
@@ -267,7 +267,7 @@ async function seedLiveSite(siteId, dir, overrides = {}) {
 }
 
 /**
- * Seed a record at 'domain-live', the email half's own starting point: a real zone on the fake
+ * Seed a record at 'domain-live', the email half's starting point: a real zone on the fake
  * (so the email routes below have a real zoneId to key off) and the whole cloudflare shape a
  * domain half that just finished would have written.
  * @param {import('node:test').TestContext} t
@@ -325,7 +325,7 @@ function dailyLimitBody() {
   };
 }
 
-/** The v4 403 envelope with no extractable permission, matching api.test.mjs's own fixture. */
+/** The v4 403 envelope with no extractable permission, matching api.test.mjs's fixture. */
 const GENERIC_SCOPE_MISSING_BODY = {
   success: false,
   errors: [{ code: 9109, message: 'Unauthorized to access requested resource' }],
@@ -333,7 +333,7 @@ const GENERIC_SCOPE_MISSING_BODY = {
   result: null,
 };
 
-/** The v4 400 envelope api.mjs maps onto token-invalid, matching api.test.mjs's own fixture. */
+/** The v4 400 envelope api.mjs maps onto token-invalid, matching api.test.mjs's fixture. */
 const TOKEN_INVALID_BODY = {
   success: false,
   errors: [
@@ -530,7 +530,7 @@ test('unattended: a low-confidence record read refuses to copy rather than carry
       }),
     (err) => {
       // Asserted on the message, not err.catalogue.code: runActions re-wraps a thrown error with
-      // its action label and does not carry the catalogue property across, so the row's own
+      // its action label and does not carry the catalogue property across, so the row's
       // metadata is not readable here. The admin-visible text is what survives, and it is what
       // this refusal is for.
       assert.match(err.message, /could not be read reliably/);
@@ -741,7 +741,7 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
     log: () => {},
     dryRun: false,
     // The domain gate is already behind this record; the only confirm this run reaches is the
-    // email admission, declined so this test stays about the cutover's own attach count.
+    // email admission, declined so this test stays about the cutover's attach count.
     confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysMatchingFetch(),
@@ -754,7 +754,7 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
 
 // --- The production hold seam (T4d Task 5c) ----------------------------------------------------
 
-/** Seed a record at `delegated`, the cutover's own starting point, on a real fake-Cloudflare zone. */
+/** Seed a record at `delegated`, the cutover's starting point, on a real fake-Cloudflare zone. */
 async function seedDelegatedSite(siteId, dir, domain) {
   const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
   const created = await api.createZone(domain);
@@ -803,8 +803,8 @@ test('an interactive run threads waitForClear into cutOverHostname: the console 
     confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl,
-    // The held probes now run the cutover's own DNS diagnosis for real; a hermetic
-    // authoritative-absent stub keeps this test about the hold's own print/count contract rather
+    // The held probes now run the cutover's DNS diagnosis for real; a hermetic
+    // authoritative-absent stub keeps this test about the hold's print/count contract rather
     // than a real lookup for a fictional domain.
     resolve: () => ({
       resolveNs: absentAnswer(),
@@ -825,7 +825,7 @@ test('an interactive run threads waitForClear into cutOverHostname: the console 
   assert.equal(state.rounds, 4, 'three held probes, then the one-shot re-check after the redeploy');
   assert.equal(holdRecorder.calls.length, 1, 'the seam is composed exactly once, for the pre-redeploy confirm');
   // The row an interrupt lands on before the first probe has read anything. The chapter is the
-  // only place that knows both this class's earliest honest verdict and this run's own params, so
+  // only place that knows both this class's earliest honest verdict and this run's params, so
   // a hold composed without it would leave a Ctrl-C during the first probe printing nothing.
   assert.equal(
     holdRecorder.lastOptions.defaultPark,
@@ -846,7 +846,7 @@ test('an interactive run threads waitForClear into cutOverHostname: the console 
 
 /**
  * Seed a record at `delegated` with no saved nameServers, mirroring `seedDelegatedSite` except for
- * that one omission: the cutover's own DNS diagnosis must then discover the domain's authoritative
+ * that one omission: the cutover's DNS diagnosis must then discover the domain's authoritative
  * nameservers itself, exactly the shape `disagreeingResolve`'s NS-discovery stub expects.
  */
 async function seedDelegatedSiteNoNameServers(siteId, dir, domain) {
@@ -873,9 +873,9 @@ const DISAGREEING_NS_HOST = 'ns1.registrar.test';
 
 /**
  * A resolver factory whose authoritative path already carries the apex AAAA record (the Custom
- * Domain attach's own write) while the recursive resolver still answers absent, the exact
+ * Domain attach's write) while the recursive resolver still answers absent, the exact
  * negative-cache disagreement the propagation split exists to see past. Mirrors hostname.test.mjs's
- * own `disagreeingDns`, reimplemented here since this test proves the wiring at the chapter level,
+ * `disagreeingDns`, reimplemented here since this test proves the wiring at the chapter level,
  * through the `resolve` seam `runChapter2` itself exposes, not by calling `cutOverHostname` directly.
  * @param {string} domain the domain under test
  * @returns {(servers?: string[]) => object} the factory `runChapter2` passes through as `resolve`
@@ -901,7 +901,7 @@ function disagreeingResolve(domain) {
 
 /**
  * Build a `createWaitForClearFn` test seam that expires after exactly one probe, over a virtual
- * clock so no real time passes. Deliberately does not reuse the propagation class's own 40-minute
+ * clock so no real time passes. Deliberately does not reuse the propagation class's 40-minute
  * budget: the assertion this test makes is about which outcome the wiring reaches, not about how
  * many polls a held wait takes to get there.
  * @returns {typeof createWaitForClear} the test seam
@@ -928,7 +928,7 @@ function oneProbeWaitForClearFn() {
 // The falsifiability control this test exists for: chapter2.mjs is the only production caller of
 // cutOverHostname, and until this fix it forwarded no `dns` context at all, so
 // hostname-resolver-lagging was unreachable from a real run no matter how carefully hostname.mjs's
-// own split was proven in isolation. Deleting the `dns: { resolve, nameServers }` argument at the
+// split was proven in isolation. Deleting the `dns: { resolve, nameServers }` argument at the
 // cutOverHostname call site (leaving diagnoseUnreachable itself untouched) makes this test fail
 // with 'hostname-records-absent', the exact regression this pins.
 test('a held cutover threads the injected resolver into the DNS diagnosis: disagreement returns hostname-resolver-lagging end to end', async (t) => {
@@ -985,7 +985,7 @@ test('a --yes run composes no hold at all: no console, no loop, and the seam nev
     confirm: mustNotBeCalled('confirm'),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysUnreachableFetch(),
-    // The cutover's own DNS diagnosis now runs for real (the very wiring the test above this one
+    // The cutover's DNS diagnosis now runs for real (the very wiring the test above this one
     // pins), so this stays hermetic with an authoritative-absent stub rather than letting the
     // default resolver attempt a real lookup for a fictional domain.
     resolve: () => ({
@@ -1058,7 +1058,7 @@ test('records: an already-active zone skips the read and gate entirely, and pers
     text: async () => 'already-active-domain.example',
     promptSecretFn: async () => 'pasted-token-value',
     // readCurrentRecords refuses to run once a domain is already delegated to Cloudflare (its
-    // own guard, records.mjs). This seam stands in for that exact refusal so the test does not
+    // guard, records.mjs). This seam stands in for that exact refusal so the test does not
     // need to fabricate a real matching nameserver pair; the already-active hop must skip the
     // read entirely rather than let it throw, so a call here is the failure being pinned.
     resolve: () => {
@@ -1141,7 +1141,7 @@ test('--dry-run prints every hop, with zero shell-outs and zero fake-API request
   assert.equal(outcome.outcome, 'dry-run');
 
   const titles = [
-    'Connect your own domain',
+    'Connect your domain',
     'Find your Cloudflare account',
     'Get a Cloudflare API token',
     'Create your Cloudflare zone',
@@ -1166,13 +1166,13 @@ test('--dry-run prints every hop, with zero shell-outs and zero fake-API request
 // --- Completion -------------------------------------------------------------------------------
 
 // Consenting to domain and email but running straight through would reach the chapter's real
-// finish line (email-live), which deletes the token as its own terminal-state rule: that would
+// finish line (email-live), which deletes the token as its terminal-state rule: that would
 // prove nothing about domain-live specifically. So this test consents to email too, but arms the
 // fake to refuse the test send once (the propagation shape), which parks the run one hop further
 // than domain-live, at email-onboarded. That is a stronger proof than stopping exactly at
 // domain-live: the token survives PAST it as well. (A disabled onboarding entry cannot fake this
 // instead: the create always reports enabled immediately, spike amendment 3, and this run has not
-// created its own zone yet when the test starts, so there is no zoneId to pre-seed a disabled
+// created its zone yet when the test starts, so there is no zoneId to pre-seed a disabled
 // entry under.)
 test('completion: domain-live is not terminal, so the token survives it on disk', async (t) => {
   await freshStateDir(t);
@@ -1384,11 +1384,11 @@ test('email admission: a re-run after a decline prints the re-offered copy', asy
   assert.ok(logs.some((line) => line.includes('chose again')), 'a re-run must print the reoffered copy, not the first-decline copy');
 });
 
-// A record saved at `paid-plan-declined` before chapter 1 gained its own pre-deploy consent (the
+// A record saved at `paid-plan-declined` before chapter 1 gained its pre-deploy consent (the
 // only shape a real site record from before that change could carry: no field chapter 1's new
 // consent writes, since it persists no step at all) still short-circuits exactly the same way:
 // terminal, token deleted, zero network calls.
-test('email admission: a record saved at paid-plan-declined by a version of the tool from before chapter 1 had its own deploy consent still resumes as a clean terminal stop', async (t) => {
+test('email admission: a record saved at paid-plan-declined by a version of the tool from before chapter 1 had its deploy consent still resumes as a clean terminal stop', async (t) => {
   await freshStateDir(t);
   const stateDir = process.env.CAIRN_STATE_DIR;
   const dir = await fixtureScaffoldDir(t);
@@ -1683,7 +1683,7 @@ test('email hop order: a test-send propagation park exits 0 and a resume repeats
 
   const requestsBeforeResume = cloudflare.requests.length;
 
-  // No failNext armed this time, so the fake's own default (success) answers, proving the resume
+  // No failNext armed this time, so the fake's default (success) answers, proving the resume
   // retries the send for real rather than reusing the first parked answer.
   const secondOutcome = await runChapter2({
     openBrowser: neverOpensBrowser,
@@ -1713,7 +1713,7 @@ test('email hop order: the deploy is skipped when the sender address is already 
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const domain = 'already-correct.example';
-  // Pre-write the exact address writeEmailFrom would otherwise write, so its own skip-when-
+  // Pre-write the exact address writeEmailFrom would otherwise write, so its skip-when-
   // correct guard fires and no build or deploy ever runs.
   await writeFile(
     path.join(dir, 'src', 'theme', 'cairn.config.ts'),
@@ -2193,7 +2193,7 @@ test('token lifecycle: a token-invalid failure creating the zone clears the save
 });
 
 // The widen guard: an unrelated thrown act row (here, email-sender-unavailable, reused from
-// amendment 13's own fixture above) must never cost the owner a working token. Only the two exact
+// amendment 13's fixture above) must never cost the owner a working token. Only the two exact
 // codes clear it.
 test('token lifecycle: an unrelated act-row failure (email-sender-unavailable) does not clear the saved token', async (t) => {
   await freshStateDir(t);
@@ -2210,7 +2210,7 @@ test('token lifecycle: an unrelated act-row failure (email-sender-unavailable) d
       apiToken: plantedToken,
       domain,
       alreadyActive: true,
-      // Well past PROPAGATION_WINDOW_MS, same as amendment 13's own unavailable case above, so
+      // Well past PROPAGATION_WINDOW_MS, same as amendment 13's unavailable case above, so
       // classification falls to the "did not take" act row rather than a park.
       emailOnboardedAt: new Date(0).toISOString(),
     },

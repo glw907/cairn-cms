@@ -16,7 +16,7 @@ import { cloudflareError, trailingStderr } from './catalogue.mjs';
 /**
  * CSI-style ANSI escape sequences (color, cursor movement) the way wrangler emits them even when
  * stdout is a pipe (the T3 spike's section (e)). Narrower than a general-purpose ANSI stripper,
- * but it is exactly the shape wrangler's own output uses, and this module has no dependency
+ * but it is exactly the shape wrangler's output uses, and this module has no dependency
  * budget for a stripping library.
  */
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
@@ -48,7 +48,7 @@ const SUBDOMAIN_UNREGISTERED_CODE = '10063';
 const LOGGED_IN_PATTERN = /you are logged in/i;
 
 /**
- * Install the site's own dependencies, skipping when they are already on disk (the resume path,
+ * Install the site's dependencies, skipping when they are already on disk (the resume path,
  * and what makes a second run of the chapter cheap).
  * @param {object} args
  * @param {string} args.dir the scaffold root
@@ -87,7 +87,7 @@ export async function buildSite({ dir, log }) {
 }
 
 /**
- * Make sure wrangler has a signed-in Cloudflare account to deploy to, driving wrangler's own
+ * Make sure wrangler has a signed-in Cloudflare account to deploy to, driving wrangler's
  * browser sign-in trip when it does not. The tool never opens a browser itself here; `wrangler
  * login` owns that trip end to end, including its local callback.
  * @param {object} args
@@ -174,7 +174,7 @@ export async function deployWorker({ dir, log, accountId }) {
 /**
  * The bindings, in the order migrations run, matching wrangler.jsonc's binding names. A site
  * scaffolded with a second D1 binding and resumed here gets that database provisioned but never
- * migrated; the window is accepted rather than derived from the site's own wrangler.jsonc.
+ * migrated; the window is accepted rather than derived from the site's wrangler.jsonc.
  */
 const MIGRATION_DATABASES = ['AUTH_DB'];
 

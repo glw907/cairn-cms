@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { nameWranglerResources, writePublicOrigin, workerNameFor, writeEmailFrom } from './config.mjs';
 
 /**
- * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's own file
+ * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's file
  * (examples/showcase/wrangler.jsonc) with the `cairn-template:exclude` block (the MEMBER_DB
  * entry) removed, exactly as `scripts/build/emit-template.mjs`'s marker strip leaves it. Pinning
  * this verbatim, rather than a trimmed-down stand-in, is what makes a showcase drift surface here
@@ -23,11 +23,11 @@ const BAKED_WRANGLER_JSONC = `{
   "assets": {
     "directory": ".svelte-kit/cloudflare",
     "binding": "ASSETS",
-    // "none" (the schema's own default) is set explicitly: for a request that matches no static
+    // "none" (the schema's default) is set explicitly: for a request that matches no static
     // asset, Cloudflare passes it through to this Worker instead of intercepting it at the edge.
     // The \`(site)\` route group prerenders every page, so SvelteKit strips its \`[...path]\`
     // catch-all from the runtime-routable manifest entirely; an unmatched path therefore matches
-    // no route at request time, and the Worker's own bundled SvelteKit server falls through to
+    // no route at request time, and the Worker's bundled SvelteKit server falls through to
     // its built-in default-404 handling, which renders the root \`+error.svelte\`
     // (src/routes/+error.svelte) through a real SSR response. Setting this to "404-page" would
     // instead serve a static, unthemed file straight from the edge and never reach the Worker at
@@ -70,7 +70,7 @@ async function fixtureDir(t, content = BAKED_WRANGLER_JSONC) {
 }
 
 /**
- * Strip JSONC `//` line comments and parse the result, the same instrument the task's own
+ * Strip JSONC `//` line comments and parse the result, the same instrument the task's
  * acceptance test uses: proof that the rewritten file is still valid JSON, not just that the
  * expected substrings appear in it.
  * @param {string} content the file's raw JSONC text
@@ -189,10 +189,10 @@ test('workerNameFor truncates a long dash-free name to 57 characters', () => {
 });
 
 /**
- * Wrangler's own client-side validation for an R2 bucket name (`isValidR2BucketName` in the
+ * Wrangler's client-side validation for an R2 bucket name (`isValidR2BucketName` in the
  * wrangler source): 3-63 characters, lowercase alphanumeric and dashes, never starting or ending
  * with a dash. Used as the oracle below so the assertion is about Cloudflare's actual rule, not
- * about this package's own arithmetic agreeing with itself.
+ * about this package's arithmetic agreeing with itself.
  */
 const R2_BUCKET_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/;
 

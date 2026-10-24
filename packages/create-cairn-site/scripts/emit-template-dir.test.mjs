@@ -13,7 +13,7 @@ import {
 } from './emit-template-dir.mjs';
 import { walk } from '../../../scripts/walk-files.mjs';
 
-// Published specs, so a compose under test never depends on what the monorepo's own versions
+// Published specs, so a compose under test never depends on what the monorepo's versions
 // happen to be.
 const PUBLISHED_SPECS = { engineSpec: '^0.95.0', devSpec: '^0.95.0' };
 
@@ -28,7 +28,7 @@ async function tempDir(t) {
   return dir;
 }
 
-test('the template lands outside the workspace glob, so it keeps its own install', async () => {
+test('the template lands outside the workspace glob, so it keeps its install', async () => {
   const rootPackageJson = path.resolve(import.meta.dirname, '../../../package.json');
   const rootPkg = JSON.parse(await readFile(rootPackageJson, 'utf8'));
   // Cloudflare treats the subdirectory as the root of the repo it creates and requires the app be
@@ -75,11 +75,11 @@ test('a composed tree carries the overlay files the deploy flow reads', async (t
   assert.equal(pkg.dependencies['@glw907/cairn-cms'], PUBLISHED_SPECS.engineSpec);
 });
 
-test('a composed tree regenerates the Worker Env from its own config and secret names', async (t) => {
+test('a composed tree regenerates the Worker Env from its config and secret names', async (t) => {
   const composed = await composeTemplate(PUBLISHED_SPECS);
   t.after(() => rm(composed, { recursive: true, force: true }));
 
-  // The showcase's own generated Env carries its members fixture binding, which the marker strip
+  // The showcase's generated Env carries its members fixture binding, which the marker strip
   // removes from the template's wrangler.jsonc, so a copied file would describe a binding the
   // template never binds. The composed file is generated from the composed tree instead.
   const env = await readFile(path.join(composed, 'worker-configuration.d.ts'), 'utf8');

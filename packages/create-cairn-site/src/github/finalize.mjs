@@ -1,6 +1,6 @@
 // The pre-push identity finalize. The engine's GitHub App identity is source-carried by
 // design (src/lib/github/backend.ts: "the non-secret GitHub App identity an adapter carries
-// in source"), so the scaffold's own cairn.config.ts ships with the showcase's placeholder
+// in source"), so the scaffold's cairn.config.ts ships with the showcase's placeholder
 // values until this module rewrites them with the real ones, right before the T2 chapter's
 // push. This is the same exact-string, fail-loud tradition as substitute.mjs: the target
 // string is verified against the real showcase, and a missing target means the showcase moved
@@ -12,7 +12,7 @@ import path from 'node:path';
 const CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 
 /**
- * The showcase's own placeholder `createGithubApp(...)` call, verified character for character
+ * The showcase's placeholder `createGithubApp(...)` call, verified character for character
  * against `examples/showcase/src/theme/cairn.config.ts`. `appId` and `installationId` are
  * strings in `createGithubApp`'s config type (src/lib/github/backend.ts), so the placeholders are
  * quoted digits, not numbers.
@@ -39,7 +39,7 @@ function buildRealLiteral({ owner, repo, appId, installationId }) {
  * GitHub App identity, born correct before the T2 chapter pushes it to GitHub.
  *
  * Idempotent: a resumed run that reaches this a second time finds the real owner already in
- * place and returns without touching the file. Any other state, most likely the showcase's own
+ * place and returns without touching the file. Any other state, most likely the showcase's
  * placeholder literal having changed shape, throws naming the file and the exact string this
  * pass could not find, rather than pushing a scaffold whose backend config silently still
  * points at `'showcase'`.
@@ -62,7 +62,7 @@ export async function finalizeGithubIdentity(dir, identity) {
   }
 
   // Idempotence keys on the WHOLE rewritten call, never the owner alone. An owner login of
-  // `showcase` is a legal GitHub account and collides with the placeholder's own owner, so an
+  // `showcase` is a legal GitHub account and collides with the placeholder's owner, so an
   // owner-only check would read the untouched template as already finalized and push a scaffold
   // still carrying repo 'demo' and appId '1'. Matching the full literal cannot collide: it is
   // equal to the template only when the real identity is the template, which is already correct.

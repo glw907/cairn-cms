@@ -55,7 +55,7 @@ test('nameServers is read from a zone re-read, never trusted from the create res
   const { cloudflare, api } = await setup(t);
   const { ensureZone } = await import('./zone.mjs');
 
-  // The fake's own create response never carries name_servers (see fake-cloudflare.mjs); if
+  // The fake's create response never carries name_servers (see fake-cloudflare.mjs); if
   // ensureZone trusted it, nameServers here would be undefined rather than the real pair.
   const result = await ensureZone({ record: record('testsite.example'), api, log: () => {} });
 
@@ -148,9 +148,9 @@ test('a list miss followed by a 1061 create collision still adopts, via the race
   const { cloudflare, api } = await setup(t);
   const { ensureZone } = await import('./zone.mjs');
 
-  // A wrapper that simulates another run's create landing in the gap between our own list-miss
-  // and our own create attempt: the first list call returns genuinely empty, and only as a side
-  // effect of that emptiness does a "concurrent" zone get created, so our own create collides
+  // A wrapper that simulates another run's create landing in the gap between our list-miss
+  // and our create attempt: the first list call returns genuinely empty, and only as a side
+  // effect of that emptiness does a "concurrent" zone get created, so our create collides
   // with it and Cloudflare answers 1061. The second list call (inside the race-guard branch)
   // sees the concurrent zone for real, with no side effect.
   let concurrentZoneId;

@@ -1,12 +1,12 @@
 // The loopback receiver: a short-lived local HTTP server that catches the browser redirects
 // GitHub's device-code-free flows (manifest creation, OAuth) land after a step completes. It
 // stays dependency-free and catalogue-free on purpose: every later chapter (manifest creation,
-// install) maps its own LOOPBACK_TIMEOUT into its own error catalogue rather than this module
+// install) maps its LOOPBACK_TIMEOUT into its own error catalogue rather than this module
 // reaching outward.
 //
 // Built on ../loopback-core.mjs's fixed, unprefixed mounts: GitHub bakes callback_urls and
 // redirect_url at App-creation time, so this module mounts its three paths ('/', '/callback',
-// '/manifest') fixed and unprefixed, never per-start prefixed (see loopback-core.mjs's own doc
+// '/manifest') fixed and unprefixed, never per-start prefixed (see loopback-core.mjs's doc
 // header for why). The core's Host allowlist now guards every request here too; a request whose
 // Host header is not 127.0.0.1, localhost, or [::1] (each with an optional port) is refused with
 // 403 before reaching any handler.

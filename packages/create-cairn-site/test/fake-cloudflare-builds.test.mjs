@@ -1,9 +1,9 @@
 // Tests for the Workers Builds routes added to fake-cloudflare.mjs (T4c task 4). Split into its
-// own file rather than appended to fake-cloudflare.test.mjs, matching the existing convention of
-// keeping each fixture domain's captured-body assertions independent (see that file's own
+// file rather than appended to fake-cloudflare.test.mjs, matching the existing convention of
+// keeping each fixture domain's captured-body assertions independent (see that file's
 // "Email Sending routes" section, which repastes its fixtures rather than importing them). Every
 // captured body here is pasted independently from docs/internal/2026-08-12-t4c-builds-spike.md,
-// rather than imported from fake-cloudflare.mjs, so a drift in the implementation's own copy
+// rather than imported from fake-cloudflare.mjs, so a drift in the implementation's copy
 // fails this suite instead of passing silently.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -67,7 +67,7 @@ test('the connections PUT upsert returns a stable uuid across two calls, only mo
   assert.equal(second.body.result.created_on, first.body.result.created_on);
 });
 
-test('a different repo on the same provider account gets its own connection', async (t) => {
+test('a different repo on the same provider account gets its connection', async (t) => {
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
 

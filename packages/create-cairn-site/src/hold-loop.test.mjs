@@ -14,8 +14,8 @@ import {
   shouldHold,
 } from './hold-loop.mjs';
 
-/** A console server handle recording every call the loop makes on it, including `stop`'s own
- * park argument: the wiring proof this file's own tests need is that a park a probe hands back
+/** A console server handle recording every call the loop makes on it, including `stop`'s
+ * park argument: the wiring proof this file's tests need is that a park a probe hands back
  * actually reaches this call, not merely that some `stop()` happened. */
 function fakeServer(url = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA') {
   const calls = { start: [], update: [], stop: 0, stopArgs: [] };
@@ -51,7 +51,7 @@ function fakeClock() {
 
 /**
  * A probe returning the scripted results in order, repeating the last one forever, and counting
- * its own invocations.
+ * its invocations.
  */
 function scriptedProbe(results) {
   const state = { calls: 0 };
@@ -76,7 +76,7 @@ const CLEARED = { cleared: true, detail: { markerOutcome: 'live' } };
  * The bound every interrupt-races-a-probe test below runs under. Each of them uses a probe that
  * never resolves, so the ONLY thing that can end the hold is the interrupt: a regression that
  * stops racing the probe would otherwise hang the test forever, and node:test applies no per-test
- * timeout of its own here, so the whole CI job's timeout would be spent before anything reported.
+ * timeout here, so the whole CI job's timeout would be spent before anything reported.
  * A bounded test reports the regression instead of stalling on it. The value is far above what
  * these tests need (they resolve on microtasks, over an injected clock) and far below any CI
  * timeout.
@@ -175,7 +175,7 @@ test('a probe that clears on the first poll never starts the console at all', as
   assert.equal(observation.cleared, true);
 });
 
-test('the propagation budget expires on the injected clock after exactly its own poll count, with the loop printing no park row of its own', async () => {
+test('the propagation budget expires on the injected clock after exactly its poll count, with the loop printing no park row', async () => {
   const server = fakeServer();
   const { now, sleepFn } = fakeClock();
   const { probe, state } = scriptedProbe([NOT_CLEARED]);
@@ -201,20 +201,20 @@ test('the propagation budget expires on the injected clock after exactly its own
   // loop prints is the console URL.
   assert.deepEqual(lines, [consoleUrlLine(server.url)]);
   // The wiring this fix adds: the last probe's catalogue code and params reach `stop`, so a
-  // console still up at expiry can render that code's own park page rather than closing at once.
+  // console still up at expiry can render that code's park page rather than closing at once.
   // Deleting the forwarding in runHold (leaving `server.stop()` called bare) would fail this.
   assert.deepEqual(server.calls.stopArgs, [
     { code: NOT_CLEARED.parkCode, params: NOT_CLEARED.parkParams },
   ]);
 });
 
-test('the builds class refuses to invent its own poll and budget, naming chapter 3 as their owner', () => {
+test('the builds class refuses to invent its poll and budget, naming chapter 3 as their owner', () => {
   assert.throws(
     () => createWaitForClear({ holdClass: BUILD_HOLD_CLASS, server: fakeServer().handle }),
     /chapter 3/,
   );
 
-  // Given chapter 3's own constants it builds fine.
+  // Given chapter 3's constants it builds fine.
   const waitForClear = createWaitForClear({
     holdClass: BUILD_HOLD_CLASS,
     server: fakeServer().handle,
@@ -384,7 +384,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
       holdClass: PROPAGATION_HOLD_CLASS,
       server: server.handle,
       log: (line) => lines.push(line),
-      // Shaped like chapter 3's own persist, which reads the observation's detail: handed a null
+      // Shaped like chapter 3's persist, which reads the observation's detail: handed a null
       // observation it throws the exact TypeError a live run reported, so this stub proves the
       // interrupt path never calls it without something to save.
       persist: async (observation) => {

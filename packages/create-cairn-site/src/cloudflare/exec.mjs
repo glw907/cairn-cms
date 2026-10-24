@@ -27,7 +27,7 @@ const NPX_CANCELED_STDERR = 'npx canceled due to missing packages';
  * @property {string} [input] text written to the child's stdin, then the stream is ended; when
  *  omitted, stdin is ended immediately with nothing written
  * @property {Record<string, string>} [env] variables merged OVER `process.env` for the child;
- *  when omitted, the child inherits the parent environment exactly as it always has (spawn's own
+ *  when omitted, the child inherits the parent environment exactly as it always has (spawn's
  *  default when no `env` option is given at all)
  */
 
@@ -64,7 +64,7 @@ function lineMirror(log) {
  */
 function runCommand(command, args, { cwd, log, input, env }) {
   return new Promise((resolve, reject) => {
-    // Only pass an explicit `env` option to spawn when a caller supplied one. Node's own default,
+    // Only pass an explicit `env` option to spawn when a caller supplied one. Node's default,
     // used whenever `env` is absent from the options object at all, is to inherit `process.env`
     // unchanged; passing `env: { ...process.env }` unconditionally would be equivalent in every
     // case tested here, but omitting the key entirely when there is nothing to merge keeps the
@@ -138,7 +138,7 @@ export function accountEnv(accountId) {
 
 /**
  * Run wrangler with `args`, resolving the binary from `CAIRN_WRANGLER_BIN` (read at call time)
- * or, when unset, from the scaffold's own `wrangler` devDependency via `npx --no-install`.
+ * or, when unset, from the scaffold's `wrangler` devDependency via `npx --no-install`.
  * @param {string[]} args the wrangler subcommand and its arguments
  * @param {RunCommandOptions} options
  * @returns {Promise<CommandResult>} the exit code and captured output for every failure a caller
@@ -167,11 +167,11 @@ export async function runWrangler(args, options) {
 
 /**
  * Run npm with `args`, resolving the binary from `CAIRN_NPM_BIN` (read at call time) or, when
- * unset, from `npm` on the platform's own PATH.
+ * unset, from `npm` on the platform's PATH.
  * @param {string[]} args the npm subcommand and its arguments
  * @param {RunCommandOptions} options
  * @returns {Promise<CommandResult>} the exit code and captured output; never throws for a
- *  non-zero exit, since every npm failure here is the caller's to map through its own catalogue
+ *  non-zero exit, since every npm failure here is the caller's to map through its catalogue
  *  row
  */
 export function runNpm(args, options) {

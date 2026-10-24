@@ -43,7 +43,7 @@ async function freshStateDir(t) {
 /**
  * Build a fixture scaffold directory: a couple of real files, so pushScaffold has something to
  * ship and the secret-scan test has something to walk, plus a `cairn.config.ts` carrying the
- * showcase's own placeholder `createGithubApp(...)` call, so the push step's finalizeGithubIdentity
+ * showcase's placeholder `createGithubApp(...)` call, so the push step's finalizeGithubIdentity
  * hop has a real target to rewrite rather than throwing its rot-gate error on every test.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
@@ -87,17 +87,17 @@ function readPushedFile(github, owner, repo, relativePath, branch = 'main') {
 
 /**
  * Build an `openBrowser` fake that drives the fake GitHub through every browser trip the happy
- * path can make: the manifest step (which opens the shared loopback's own root page), the
+ * path can make: the manifest step (which opens the shared loopback's root page), the
  * install step (which opens GitHub's real install page and, on completion, redirects back to
  * that SAME loopback), and, when the install step's concurrent installation poll wins its race
  * against the browser callback, the reauthorize step that follows (which opens GitHub's plain
- * authorize page and redirects back to its OWN fresh loopback). Branching on the URL rather than
+ * authorize page and redirects back to its fresh loopback). Branching on the URL rather than
  * the call count is what makes this fake robust to either side of that race winning: on a slow
  * machine the poll can see a just-pushed installation row before the callback fetch below lands,
  * and the driver has to be able to play GitHub's part for whichever branch install.mjs actually
  * takes. Reusing the URL captured from the manifest call for the install callback's redirect is
  * what proves the two steps share one loopback: if chapter.mjs ever went back to giving each step
- * its own loopback, the first one would already be closed by the time the install call fires, and
+ * its loopback, the first one would already be closed by the time the install call fires, and
  * this callback fetch would fail instead of completing the install.
  * @param {import('../../test/fake-github.mjs').FakeGithub} github the running fake
  * @param {{ installOwner?: string }} [options] the account login the pushed installation covers
@@ -117,7 +117,7 @@ function makeHappyPathOpenBrowser(github, { installOwner = 'fake-owner' } = {}) 
     }
     if (url.includes('/login/oauth/authorize')) {
       // The reauthorize bounce, reached only when install.mjs's concurrent installation poll won
-      // the race: it opens its own fresh loopback, distinct from the shared one above, and the
+      // the race: it opens its fresh loopback, distinct from the shared one above, and the
       // redirect_uri is already baked into `url`, so fetch(url) alone follows the fake's redirect
       // straight back to it with the state echoed (the same pattern oauth.test.mjs uses).
       setTimeout(() => {
@@ -125,7 +125,7 @@ function makeHappyPathOpenBrowser(github, { installOwner = 'fake-owner' } = {}) 
       }, 0);
       return;
     }
-    // The manifest step: url is the shared loopback's own root page.
+    // The manifest step: url is the shared loopback's root page.
     manifestLoopbackUrl = url;
     setTimeout(async () => {
       const state = await readManifestFormState(url);
@@ -164,7 +164,7 @@ test('runGithubChapter: the happy path returns pushed, walks the state hops, and
   assert.equal(typeof state.github.installationId, 'number', 'the installation id from hop 2 must survive');
   assert.equal(typeof state.github.repo.repo, 'string', 'the repo from hop 3 must survive');
 
-  // The shared-loopback pin: the install step's own heartbeat line names the loopback it is
+  // The shared-loopback pin: the install step's heartbeat line names the loopback it is
   // listening on, independent of what this test's openBrowser fake assumed. It must be the same
   // port the manifest step opened, proving chapter.mjs passed the SAME loopback to both flows.
   const heartbeat = logs.find((line) => line.includes('This machine is listening for'));
@@ -436,9 +436,9 @@ test('runGithubChapter: a dry run prints the App/repo/install action details and
 /**
  * Register a real App in the fake, exactly as the manifest action would have, without ever
  * driving runGithubChapter through it. Every resume test needs a real, JWT-verifiable App
- * already sitting in `github.state.apps` before it can exercise install.mjs's own poll-first
+ * already sitting in `github.state.apps` before it can exercise install.mjs's poll-first
  * check, which authenticates with a JWT signed by the saved pem. The portless callback URL is
- * what lets a resumed run's reauthorize trip (its own, freshly-bound loopback port) still pass
+ * what lets a resumed run's reauthorize trip (its freshly-bound loopback port) still pass
  * the fake's redirect_uri match, the same loopback leniency a real registered App relies on.
  * @param {import('../../test/fake-github.mjs').FakeGithub} github the running fake
  * @returns {Promise<object>} the fake's raw conversion response (id, slug, client_id, ...)
@@ -482,7 +482,7 @@ test('runGithubChapter: resume at app-created skips the manifest action, reachin
     logs.push(`opened ${url}`);
     if (url.includes('/login/oauth/authorize')) {
       // Reached only when install.mjs's concurrent installation poll wins the race against the
-      // browser callback below: it falls through to reauthorize, which opens its own fresh
+      // browser callback below: it falls through to reauthorize, which opens its fresh
       // loopback with the redirect_uri already baked into `url`, so fetch(url) alone follows the
       // fake's redirect straight back to it, with the state echoed.
       setTimeout(() => {
@@ -507,9 +507,9 @@ test('runGithubChapter: resume at app-created skips the manifest action, reachin
     setTimeout(driveCallback, 0);
   };
 
-  // seedFakeApp above already hit /conversions once, standing in for an earlier run's own
+  // seedFakeApp above already hit /conversions once, standing in for an earlier run's
   // manifest action; only requests from THIS call onward prove (or disprove) that the resumed
-  // chapter skips its own.
+  // chapter skips it.
   const requestsBefore = github.requests.length;
   const outcome = await runGithubChapter({
     siteId: 'alpine-club-resume-app',
@@ -536,7 +536,7 @@ test('runGithubChapter: resume at awaiting-org-approval, once installed, complet
 
   const appJson = await seedFakeApp(github);
   // The org owner approved the install since the last run: the installation now exists, so
-  // install.mjs's own poll-first check must find it before ever opening a browser.
+  // install.mjs's poll-first check must find it before ever opening a browser.
   github.state.installations.push({ id: 77, account: { login: appJson.owner.login } });
 
   const { updateSite } = await import('../state.mjs');
@@ -591,7 +591,7 @@ test('runGithubChapter: resume at awaiting-org-approval with no --org on the re-
 
   const appJson = await seedFakeApp(github);
   // The org owner approved the install since the last run: the installation now exists, so
-  // install.mjs's own poll-first check must find it before ever opening a browser.
+  // install.mjs's poll-first check must find it before ever opening a browser.
   github.state.installations.push({ id: 77, account: { login: 'alpine-org' } });
 
   const { updateSite } = await import('../state.mjs');

@@ -1,7 +1,7 @@
 // Bake the Waymark template (examples/showcase, via the repo-root emitter) into this package
 // at pack time, so a tarball install carries a ready-to-scaffold tree rather than a `file:`
 // reference into the monorepo. Resolving the engine and dev-backend dependency specs from the
-// repo's own package.json versions keeps the baked template honest: it fails loud rather than
+// repo's package.json versions keeps the baked template honest: it fails loud rather than
 // emit a dependency spec no registry can install, an unpublished 0.0.0 most of all.
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -25,7 +25,7 @@ export const PRUNED_DEV_DEPENDENCIES = ['@playwright/test', '@axe-core/playwrigh
 // screens (the theme-kit CSS proof among them). A JSON file cannot carry the
 // cairn-template:exclude-start/-end comment marker emitTemplate strips from a source file, so the
 // path exclusion manifest drops this file from the copy outright, and the bake regenerates it
-// here from the showcase's own file instead.
+// here from the showcase's file instead.
 export const AUDIT_CONFIG_FILE = 'cairn-audit.config.json';
 
 const SITE_README = `# Your cairn site
@@ -129,7 +129,7 @@ export function rewriteDevScript(pkg) {
 /**
  * Remove the showcase-only scripts and devDependencies from an emitted package.json object,
  * mutating it in place. Throws naming any expected key that is already missing, so a future
- * rename or removal in the showcase's own package.json surfaces here instead of silently
+ * rename or removal in the showcase's package.json surfaces here instead of silently
  * leaving stale references (or none at all) in the pruned output.
  * @param {{ scripts?: Record<string, string>, devDependencies?: Record<string, string> }} pkg
  *  the parsed, emitted package.json
@@ -153,7 +153,7 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
 /**
  * Drop the showcase-only `rendered` section from a parsed cairn-audit.config.json, mutating
  * nothing (the caller re-stringifies the result). Throws naming the missing section when the
- * showcase's own file no longer carries one, so a future rename or removal surfaces here rather
+ * showcase's file no longer carries one, so a future rename or removal surfaces here rather
  * than silently shipping whatever the showcase currently has, the same rot-gate contract
  * pruneShowcaseOnlyPackageFields carries for the showcase-only package.json fields.
  * @param {Record<string, unknown>} config the parsed showcase cairn-audit.config.json
@@ -170,22 +170,22 @@ export function pruneShowcaseOnlyAuditConfig(config) {
   return rest;
 }
 
-// The scaffolded site's own root CLAUDE.md: the import line every cairn-guidance-installed site
-// carries, plus a short section a developer's own project guidance goes in. install.ts never
+// The scaffolded site's root CLAUDE.md: the import line every cairn-guidance-installed site
+// carries, plus a short section a developer's project guidance goes in. install.ts never
 // touches this file (it only writes under .claude/), so this is the one place the bake writes it.
 const TEMPLATE_CLAUDE_MD = `@.claude/cairn/CLAUDE.md
 
 # Your site
 
-Add your own project-specific guidance here; \`cairn-guidance install\` only ever refreshes the imported fragment above, never this file.
+Add your project-specific guidance here; \`cairn-guidance install\` only ever refreshes the imported fragment above, never this file.
 `;
 
 /**
- * Read the guidance source straight from the monorepo's own `skills/` and `claude/` trees at
- * `repoRoot`, never through the installed-package resolution install.ts's own readers use at
+ * Read the guidance source straight from the monorepo's `skills/` and `claude/` trees at
+ * `repoRoot`, never through the installed-package resolution install.ts's readers use at
  * runtime: this package carries no dependency on @glw907/cairn-cms, so nothing here can resolve
  * "installed". The version stamped is parsed out of the resolved engine spec (the caret
- * stripped), not the repo's own package.json version, since an overridden engineSpec should
+ * stripped), not the repo's package.json version, since an overridden engineSpec should
  * stamp what the template will actually depend on.
  * @param {string} engineSpec the resolved engine dependency spec, `^x.y.z`
  * @returns {Promise<import('../../../src/lib/guidance/install.js').GuidanceSource>} the guidance
@@ -230,7 +230,7 @@ async function loadGuidanceInstall() {
 
 /**
  * Write the guidance tree, the version stamp, and the manifest into the emitted template under
- * `.claude/`, then write the template's own root `CLAUDE.md` importing the fragment.
+ * `.claude/`, then write the template's root `CLAUDE.md` importing the fragment.
  * @param {string} emitted the emitted template's root
  * @param {string} engineSpec the resolved engine dependency spec, used to stamp VERSION
  * @returns {Promise<void>}
@@ -246,7 +246,7 @@ const ENGINE_PACKAGE_JSON = path.join(repoRoot, 'package.json');
 const DEV_PACKAGE_JSON = path.join(repoRoot, 'packages', 'cairn-cms-dev', 'package.json');
 
 /**
- * Resolve a dependency spec from a package's own version, so the baked template tracks what the
+ * Resolve a dependency spec from a package's version, so the baked template tracks what the
  * monorepo currently holds rather than a number written down a second time here.
  * @param {string} packageJsonPath absolute path to the package.json to read
  * @returns {Promise<string>} a caret spec, `^<version>`
@@ -285,7 +285,7 @@ export function assertInstallableSpec(packageName, spec) {
 
 /**
  * Bake the Waymark template into `to`, ready for the packed tarball. `engineSpec` and `devSpec`
- * default to caret specs built from the repo's own package versions; either can be overridden,
+ * default to caret specs built from the repo's package versions; either can be overridden,
  * for example by CI once the dev backend is published. Every resolved-or-supplied spec is
  * validated before the emit runs, so an unpublished dependency fails the bake rather than ship
  * a template a consumer cannot install.
@@ -311,7 +311,7 @@ export async function bake({ to, engineSpec, devSpec }) {
   pruneShowcaseOnlyPackageFields(pkg);
   await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   // AUDIT_CONFIG_FILE is excluded from the copy (.cairn-template.json), so this is the emitted
-  // tree's only source for it: the showcase's own file, pruned of its showcase-only `rendered`
+  // tree's only source for it: the showcase's file, pruned of its showcase-only `rendered`
   // section.
   const auditConfig = JSON.parse(
     await readFile(path.join(repoRoot, 'examples', 'showcase', AUDIT_CONFIG_FILE), 'utf8'),
@@ -356,7 +356,7 @@ async function renameGitignoreForPacking(emitted) {
 
 /**
  * Bake the template, then store its `.gitignore` under the dot-free name a published tarball can
- * carry (see `renameGitignoreForPacking`). This is the entry point create-cairn-site's own
+ * carry (see `renameGitignoreForPacking`). This is the entry point create-cairn-site's
  * `prepack` step uses to build what gets packed. A caller that instead commits the baked tree to
  * this repo (`emit-template-dir.mjs`, whose overlay appends onto the emitted `.gitignore`
  * directly) calls plain `bake()`, since a committed tree has no npm packlist to survive.
@@ -394,7 +394,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   try {
     // Relative to the package, so `--to template` lands on the `template/` directory the package
-    // gitignores and ships through its own `files` list.
+    // gitignores and ships through its `files` list.
     const to = path.resolve(packageDir, values.to);
     await bakeForPacking({ to, engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
     console.log(`baked template to ${to}`);

@@ -86,7 +86,7 @@ export function renderHeader({ chapter, hop }) {
  * @param {string} args.chapter the current chapter label
  * @param {string} args.hop the current hop title
  * @param {string} [args.title] the document title, defaults to the chapter label
- * @param {string} args.bodyHtml the view's own body markup, already escaped by its caller
+ * @param {string} args.bodyHtml the view's body markup, already escaped by its caller
  * @param {number} [args.refreshSeconds] when set, emits a meta refresh at this interval; omitted
  *  entirely renders no refresh meta at all, which is what the exit render and the park shell need
  * @returns {string} the full HTML document

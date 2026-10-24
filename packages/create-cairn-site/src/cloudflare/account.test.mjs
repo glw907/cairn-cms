@@ -124,7 +124,7 @@ test('a preamble line ahead of the JSON still parses correctly', async (t) => {
   t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
 
   // Falsifiable: a naive JSON.parse(stdout) throws on this exact fixture, since it opens with a
-  // non-JSON banner line. Proven here before trusting the real implementation's own parse.
+  // non-JSON banner line. Proven here before trusting the real implementation's parse.
   assert.throws(() => JSON.parse(WHOAMI_JSON_WITH_PREAMBLE));
 
   const { ensureAccountId } = await import('./account.mjs');

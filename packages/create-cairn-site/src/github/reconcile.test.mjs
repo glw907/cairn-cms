@@ -52,7 +52,7 @@ async function pushInitialRepo(t, github, content) {
   return { dir, record };
 }
 
-/** Read the current HEAD commit's tree entries back out of the fake's own state. */
+/** Read the current HEAD commit's tree entries back out of the fake's state. */
 function readHeadTree(github, owner, repo, branch = 'main') {
   const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
   const headSha = gitEntry.refs.get(`heads/${branch}`);
@@ -64,7 +64,7 @@ function readHeadTree(github, owner, repo, branch = 'main') {
  * Simulate an admin editing the repo directly through the GitHub UI: create a new blob, a tree
  * merged onto the current head's tree (base_tree), a commit parented on the current head, and
  * advance the ref. Everything reconcileRepo itself will later do, driven here with raw fetch
- * calls so the test does not depend on the function under test to set its own fixture up.
+ * calls so the test does not depend on the function under test to set its fixture up.
  */
 async function adminAddsFile(github, owner, repo, relativePath, content, branch = 'main') {
   const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
@@ -151,7 +151,7 @@ test('reconcileRepo: a differing wrangler.jsonc commits both files in one commit
   assert.ok(WRANGLER_RELATIVE in byPath, 'the changed file must be in the new tree');
   assert.ok(CAIRN_CONFIG_RELATIVE in byPath, 'both tool-owned files must be in the new tree');
   // base_tree proof: files this reconcile never touched must still be present, which only
-  // happens if the new tree was built onto the head's own tree rather than replacing it.
+  // happens if the new tree was built onto the head's tree rather than replacing it.
   assert.ok('README.md' in byPath, 'an untouched file must survive a base_tree-built commit');
   assert.ok('posts/hello.md' in byPath, 'an untouched nested file must survive a base_tree-built commit');
 

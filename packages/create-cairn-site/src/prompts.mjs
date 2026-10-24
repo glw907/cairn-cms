@@ -1,5 +1,5 @@
 // A thin @clack/prompts wrapper collecting the site's name, description, brand color, and AI
-// posture. Every flag from parseArgs short-circuits its own prompt (a caller who already
+// posture. Every flag from parseArgs short-circuits its prompt (a caller who already
 // answered on the command line is never asked again), and --yes fills in the Waymark defaults
 // for whatever is still unanswered, so a fully-flagged or fully---yes invocation runs end to
 // end with no interactive prompt. Validation lives here, not in substitute.mjs: this is the last
@@ -44,7 +44,7 @@ export function exitOnCancel() {
 /**
  * Check a brand color answer without throwing, since @clack/prompts' validate callback reports a
  * message rather than an exception. The failure itself is returned, not a boolean, so the
- * post-prompt check can still throw with resolveHue's own reason as its cause.
+ * post-prompt check can still throw with resolveHue's reason as its cause.
  * @param {string} value the answered brand color
  * @returns {Error | undefined} the resolveHue failure, or undefined when the value resolves
  */
@@ -77,7 +77,7 @@ export async function resolveField(flagValue, yes, fallback, prompt) {
 /**
  * Prompt for a secret value, masking the input as it is typed and applying the same
  * cancel-exits-the-process contract every other prompt in this file uses. The underlying
- * @clack/prompts `password` call is injectable, mirroring account.mjs's own `prompt` seam, so a
+ * @clack/prompts `password` call is injectable, mirroring account.mjs's `prompt` seam, so a
  * caller like the Cloudflare chapter's token prefill can drive and retry this without a real
  * interactive terminal.
  * @param {string} message the prompt's question, shown above the masked input
@@ -94,7 +94,7 @@ export async function promptSecret(message, passwordFn = password) {
 /**
  * Collect the scaffold's answers: the site name, an optional description, an optional brand
  * color, the site's AI-training-crawler posture, and the target directory. Each already-supplied
- * flag short-circuits its own prompt; --yes fills in the Waymark defaults for anything still
+ * flag short-circuits its prompt; --yes fills in the Waymark defaults for anything still
  * unanswered, and the AI-posture default is `'none'`, no preference.
  * @param {{ yes: boolean, name?: string, description?: string, brandColor?: string, dir?: string,
  *  aiPosture?: string }} flags the parsed CLI flags, as returned by parseArgs

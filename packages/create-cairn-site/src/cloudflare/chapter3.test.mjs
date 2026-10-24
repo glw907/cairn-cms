@@ -26,7 +26,7 @@ import {
 const WORKER_NAME = 'cairn-builds-site';
 const WORKER_TAG = 'tag-abc123';
 
-/** The local scaffold's own copies of the two tool-owned files, matched by default against what
+/** The local scaffold's copies of the two tool-owned files, matched by default against what
  * seedGithubRepo pushes, so the reconcile diff starts empty unless a test deliberately drifts it. */
 const WRANGLER_CONTENT = `${JSON.stringify({ name: WORKER_NAME }, null, 2)}\n`;
 const CAIRN_CONFIG_CONTENT = "export const from = 'cms@example.test';\n";
@@ -44,9 +44,9 @@ async function freshStateDir(t) {
 
 /**
  * Build a fixture scaffold directory carrying both tool-owned files: wrangler.jsonc (the trigger
- * hop's own read, and one reconcile target) and src/theme/cairn.config.ts (the other reconcile
+ * hop's read, and one reconcile target) and src/theme/cairn.config.ts (the other reconcile
  * target). Content defaults to WRANGLER_CONTENT/CAIRN_CONFIG_CONTENT, matched by seedGithubRepo's
- * own default push, so most tests start with an empty diff.
+ * default push, so most tests start with an empty diff.
  */
 async function fixtureScaffoldDir(t, { wrangler = WRANGLER_CONTENT, cairnConfig = CAIRN_CONFIG_CONTENT } = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-scaffold-'));
@@ -79,12 +79,12 @@ async function setupGithub(t) {
 
 /**
  * Seed an installation, create a repository, and push a fixture scaffold matching (by default)
- * fixtureScaffoldDir's own content, the same shape chapter 1's own GitHub chapter leaves the
+ * fixtureScaffoldDir's content, the same shape chapter 1's GitHub chapter leaves the
  * repository in before chapter 3 ever runs. Pushing real content (rather than createRepo's bare
  * auto_init README) is what lets the reconcile diff start empty by default, matching every
  * existing production repo chapter 3 actually runs against.
  * @param {import('../../test/fake-github.mjs').FakeGithub} github
- * @param {string} dir the local scaffold to push (its own wrangler.jsonc/cairn.config.ts)
+ * @param {string} dir the local scaffold to push (its wrangler.jsonc/cairn.config.ts)
  * @param {string} [name]
  * @returns {Promise<{ id: number, owner: string, repo: string, defaultBranch: string }>}
  */
@@ -96,7 +96,7 @@ async function seedGithubRepo(github, dir, name = 'alpine-club') {
 }
 
 /**
- * Seed a state record shaped like a site that just finished chapter 2 (its own terminal already
+ * Seed a state record shaped like a site that just finished chapter 2 (its terminal already
  * cleared `cloudflare.apiToken`), carrying the App credentials the reconcile hop's OAuth trip
  * needs (`clientId`/`clientSecret`), the point every chapter-3 test starts from unless it overrides.
  */
@@ -186,7 +186,7 @@ function smartOpenBrowser() {
   };
 }
 
-/** A fetchImpl answering the live marker pair on any origin, for confirmHostname's own probes. */
+/** A fetchImpl answering the live marker pair on any origin, for confirmHostname's probes. */
 function alwaysMatchingFetch() {
   return async (url) => {
     const u = new URL(url);
@@ -222,7 +222,7 @@ function fastSeams(cloudflare) {
 /**
  * Wrap the real Cloudflare API client so its very first `listBuildsForWorker` call seeds a
  * push-triggered, already-succeeded build carrying the repository's CURRENT head commit sha,
- * simulating Cloudflare's own push webhook noticing the reconcile commit. Every other method
+ * simulating Cloudflare's push webhook noticing the reconcile commit. Every other method
  * delegates straight through to the real client.
  */
 function makeApiFnWithPushBuildSeed({ cloudflare, github, owner, repo, defaultBranch }) {
@@ -260,7 +260,7 @@ function makeApiFnWithPushBuildSeed({ cloudflare, github, owner, repo, defaultBr
 /**
  * Wrap the real Cloudflare API client so `listBuildsForWorker` answers empty for its first
  * `emptyPolls` calls, then seeds the push-triggered build carrying the repository's CURRENT head
- * commit sha (simulating Cloudflare's own push webhook noticing the reconcile commit, delayed a
+ * commit sha (simulating Cloudflare's push webhook noticing the reconcile commit, delayed a
  * few polls) and delegates through to the real client from then on. The delay is what lets a test
  * script a discovery hold across more than one poll, the same shape `makeApiFnWithPushBuildSeed`
  * gives a hold that clears on its very first probe.
@@ -297,7 +297,7 @@ function makeApiFnWithDelayedPushBuildSeed({ cloudflare, github, owner, repo, de
 }
 
 /** A console server handle recording what the hold loop does with it, mirroring hostname.test.mjs
- * and chapter2.test.mjs's own `fakeConsole` stand-in. `stopAtUpdate` records how many times `stop`
+ * and chapter2.test.mjs's `fakeConsole` stand-in. `stopAtUpdate` records how many times `stop`
  * had already run when each update arrived, so a test can assert the console was still up while it
  * was being fed rather than only that it was fed at all. */
 const HOLD_CONSOLE_URL = 'http://127.0.0.1:49153/YmFja3VwLXNlY3JldA';
@@ -465,7 +465,7 @@ test('runChapter3: declining records builds-connect-declined, deletes any token,
   assert.equal('buildsTriggerUuid' in saved.cloudflare, false);
 
   // Setting up the fixture repo itself makes a GitHub request (the repo create); what matters is
-  // that DECLINING makes no request of its own, on either fake, past that setup.
+  // that DECLINING makes no request, on either fake, past that setup.
   assert.equal(cloudflare.requests.length, cloudflareRequestsBefore);
   assert.equal(github.requests.length, githubRequestsBefore);
 });
@@ -548,7 +548,7 @@ test('runChapter3: --yes consents silently, never prompting, reads CAIRN_CF_API_
   assert.equal(putRequest.headers.authorization, 'Bearer env-token-value');
 });
 
-test('runChapter3: a record still carrying chapter 2\'s own saved token gets the full admission and a fresh eight-key token, never chapter 2\'s', async (t) => {
+test('runChapter3: a record still carrying chapter 2\'s saved token gets the full admission and a fresh eight-key token, never chapter 2\'s', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -556,7 +556,7 @@ test('runChapter3: a record still carrying chapter 2\'s own saved token gets the
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-ch2-token-abc123';
   // The state `--connect` actually meets at a chapter-2 resumable step: chapter 2 deletes its saved
-  // token only at its own TERMINAL steps, so a record parked at `domain-live` still carries the
+  // token only at its TERMINAL steps, so a record parked at `domain-live` still carries the
   // five-key token it pasted. Reading that token as "chapter 3 already ran" is what skipped this
   // chapter's consent, its cost copy, and its eight-key prefill.
   const alreadyReconciledCloudflare = (await alreadyReconciled(dir)).cloudflare;
@@ -600,7 +600,7 @@ test('runChapter3: a record still carrying chapter 2\'s own saved token gets the
   assert.equal(putRequest.headers.authorization, 'Bearer fresh-cf-token', 'the Builds calls must sign with the fresh token');
 });
 
-test('runChapter3: an authorization refusal parks on its own row, and a re-run after the fake flips to authorized proceeds through to builds-live', async (t) => {
+test('runChapter3: an authorization refusal parks on its row, and a re-run after the fake flips to authorized proceeds through to builds-live', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -656,7 +656,7 @@ test('runChapter3: an authorization refusal parks on its own row, and a re-run a
   assert.ok(saved.cloudflare.buildsConnectionUuid);
 });
 
-test('runChapter3: the App-not-authorized refusal maps to its own row without quoting the platform wording', async (t) => {
+test('runChapter3: the App-not-authorized refusal maps to its row without quoting the platform wording', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -715,7 +715,7 @@ test('runChapter3: connect and trigger are idempotent across two runs, the secon
 
   // Regress `step` only, simulating a later `--connect` re-entry that must re-run connect and
   // trigger: the account id, the Builds uuids, and the last build stay in place, so the second
-  // run's own writes are the only thing under test here. The first run's own completion already
+  // run's writes are the only thing under test here. The first run's completion already
   // deleted `cloudflare.apiToken` (the builds-live terminal), so this re-entry legitimately asks
   // admission and the token prefill again, the same as any other re-connect after a full cycle.
   await saveSite(siteId, { ...afterFirst, step: 'email-live' });
@@ -927,8 +927,8 @@ test('an interactive run entering the hold with a buildUuid already known, from 
     confirm: confirmAnswering(true),
     promptSecretFn: async () => 'fresh-cf-token',
     // No sleepFn call is expected: a manual kick's build stays 'queued' forever in the fake (no
-    // seam ever advances it), so the hold runs out its own small budget rather than clearing, and
-    // chapter 3's own sleepFn (pollBuildToStop's) is never reached on the held path.
+    // seam ever advances it), so the hold runs out its small budget rather than clearing, and
+    // chapter 3's sleepFn (pollBuildToStop's) is never reached on the held path.
     sleepFn: mustNotBeCalled('sleepFn'),
     fetchImpl: alwaysMatchingFetch(),
     pollIntervalMs: 1,
@@ -965,7 +965,7 @@ test('an interactive run entering the hold with a buildUuid already known, from 
  *  statuses: string[] }} input `statuses` is consumed one entry per `getBuild`; `'stopped'` also
  *  settles the outcome to success
  * @returns {{ makeApiFn: Function, calls: { getBuild: number, listBuildsForWorker: number } }} the
- *  seam and its own call counters
+ *  seam and its call counters
  */
 function makeApiFnWithRunningPushBuild({ cloudflare, github, owner, repo, defaultBranch, statuses }) {
   const remaining = [...statuses];
@@ -1044,7 +1044,7 @@ test('an interactive run holds the console across the build itself, not only its
     openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
     promptSecretFn: async () => 'fresh-cf-token',
-    // The hold owns the pacing here, so chapter 3's own sleep belongs to `pollBuildToStop` alone:
+    // The hold owns the pacing here, so chapter 3's sleep belongs to `pollBuildToStop` alone:
     // a call to it would mean a second loop is polling the build the hold already polled.
     sleepFn: mustNotBeCalled('sleepFn'),
     fetchImpl: alwaysMatchingFetch(),
@@ -1114,12 +1114,12 @@ test('a --yes run composes no hold at all: no console, no loop, and the seam nev
 });
 
 /**
- * A minimal Cloudflare API stand-in for watchAndComplete's own discovery branch, tracking how
+ * A minimal Cloudflare API stand-in for watchAndComplete's discovery branch, tracking how
  * many times each method is called. `listBuildsForWorker` answers empty for its first
  * `emptyPolls` calls and `builds` from then on, so a test can script exactly how many polls
  * discovery needs before it matches. `getBuild` always answers a settled, successful build, so the
  * build half of the watch ends on the read right after discovery: these tests are about the
- * discovery half, and the test above owns the build half's own queued-to-outcome sequence.
+ * discovery half, and the test above owns the build half's queued-to-outcome sequence.
  * @param {{ tag: string, emptyPolls?: number, builds?: object[] }} opts
  */
 function discoveryApi({ tag, emptyPolls = 0, builds = [] }) {
@@ -1183,7 +1183,7 @@ test('watchAndComplete: the discovery hold polls listBuildsForWorker only, and n
     lastBuildOutcome: undefined,
     reconcileResult: { changed: true, commitSha },
     // watchAndComplete now calls this factory itself, with whether a build uuid is already known
-    // at the moment the hold begins; this fixture's own assertions do not depend on that value.
+    // at the moment the hold begins; this fixture's assertions do not depend on that value.
     waitForClear: () =>
       createWaitForClear({
         holdClass: BUILD_HOLD_CLASS,
@@ -1307,9 +1307,9 @@ function alwaysUnreachableFetch() {
 /**
  * A resolver factory whose authoritative path already carries the apex AAAA record while the
  * recursive resolver still answers absent, the negative-cache disagreement that upgrades
- * `hostname-records-absent` to `hostname-resolver-lagging`. Mirrors chapter2.test.mjs's own
+ * `hostname-records-absent` to `hostname-resolver-lagging`. Mirrors chapter2.test.mjs's
  * `disagreeingResolve`, reimplemented here since this test proves the wiring through
- * `watchAndComplete`'s own `dns` param, not by calling `confirmHostname` directly.
+ * `watchAndComplete`'s `dns` param, not by calling `confirmHostname` directly.
  * @param {string} domain the domain under test
  * @returns {(servers?: string[]) => object} the factory `watchAndComplete` forwards to `hostname.mjs`
  */
@@ -1335,11 +1335,11 @@ function disagreeingResolve(domain) {
   return (servers) => (servers ? authoritative : recursive);
 }
 
-// This proves `watchAndComplete`'s own `dns` parameter reaches `confirmHostname`'s unreachable-case
+// This proves `watchAndComplete`'s `dns` parameter reaches `confirmHostname`'s unreachable-case
 // diagnosis: passed one directly, a disagreement resolves to hostname-resolver-lagging rather than
 // the absent-safe default. It does NOT prove `runChapter3`, the only production caller, actually
-// supplies one at either of its own two `watchAndComplete` call sites; the test just below this one
-// closes that gap by going through `runChapter3` itself with no `dns` argument of its own.
+// supplies one at either of its two `watchAndComplete` call sites; the test just below this one
+// closes that gap by going through `runChapter3` itself with no `dns` argument.
 test('watchAndComplete: the post-success hostname confirm threads the injected resolver into the DNS diagnosis, so a disagreement returns hostname-resolver-lagging', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -1367,14 +1367,14 @@ test('watchAndComplete: the post-success hostname confirm threads the injected r
   assert.equal(result.outcome, 'hostname-resolver-lagging');
 });
 
-// The falsifiability control for runChapter3's OWN two watchAndComplete call sites: neither ever
-// forwarded a `dns` context of its own, so hostname-resolver-lagging was unreachable from a real
-// chapter-3 run no matter how carefully the unit-level test above proved watchAndComplete's own
+// The falsifiability control for runChapter3's two watchAndComplete call sites: neither ever
+// forwarded a `dns` context, so hostname-resolver-lagging was unreachable from a real
+// chapter-3 run no matter how carefully the unit-level test above proved watchAndComplete's
 // parameter. This test drives the main first-run call site (the one every fresh `--connect` takes);
 // the next one drives the builds-live re-entry call site. Deleting `dns: { resolve, nameServers:
-// ... }` from EITHER makes its own test fail with 'hostname-records-absent', the exact regression
+// ... }` from EITHER makes its test fail with 'hostname-records-absent', the exact regression
 // this pins; deleting it from both fails both.
-test("runChapter3: a manual-kick build watched to success threads the run's own resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
+test("runChapter3: a manual-kick build watched to success threads the run's resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -1410,7 +1410,7 @@ test("runChapter3: a manual-kick build watched to success threads the run's own 
   assert.equal(result.outcome, 'hostname-resolver-lagging');
 });
 
-test("runChapter3: a builds-live re-entry whose push build is watched to success threads the run's own resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
+test("runChapter3: a builds-live re-entry whose push build is watched to success threads the run's resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
@@ -1582,7 +1582,7 @@ test('runChapter3: fail surfaces builds-deploy-failed carrying the log tail', as
     (err) => {
       // Asserted on the message, not err.catalogue.code: runActions re-wraps a thrown error with
       // its action label and does not carry the catalogue property across (chapter2.test.mjs's
-      // own idiom for exactly this).
+      // idiom for exactly this).
       assert.match(err.message, /did not finish successfully/);
       assert.match(err.message, /a distinctive deploy failure marker/);
       return true;
@@ -1639,7 +1639,7 @@ test('runChapter3: a null build_outcome at a stopped status keeps polling rather
   const siteId = 'builds-null-outcome-site-abc123';
   await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
-  // Cloudflare's own write ordering (docs/internal/2026-08-12-t4c-builds-spike.md) writes
+  // Cloudflare's write ordering (docs/internal/2026-08-12-t4c-builds-spike.md) writes
   // `status: "stopped"` before `build_outcome`, so a real poll can observe exactly this
   // combination for a tick. A poll that stops on `status` alone reads this as a finished build
   // and, downstream, as a success; this proves it keeps polling instead.
@@ -1793,7 +1793,7 @@ test('runChapter3: a builds-live re-entry with nothing changed reports "nothing 
       buildsTriggerUuid: 'trig-1',
       buildsLastBuildUuid: 'build-1',
       buildsLastBuildOutcome: 'success',
-      // What a site that finished the chapter carries: the config hash its own reconcile recorded.
+      // What a site that finished the chapter carries: the config hash its reconcile recorded.
       buildsReconciledHash: await reconciledConfigHash(dir),
     },
   });

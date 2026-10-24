@@ -3,10 +3,10 @@
 // the real entry point rather than against a chapter function called directly. Every run here
 // spawns bin.mjs as a real child process (its `await main()` at module scope makes it otherwise
 // unimportable) with a fake wrangler on CAIRN_WRANGLER_BIN and a fake platform opener
-// prepended onto PATH: emptying PATH outright (src/github/open.test.mjs's own technique) would
-// also stop the fake wrangler/npm scripts from running, since they are invoked through their own
+// prepended onto PATH: emptying PATH outright (src/github/open.test.mjs's technique) would
+// also stop the fake wrangler/npm scripts from running, since they are invoked through their
 // `#!/usr/bin/env node` shebang and need PATH to resolve `node`. The fake opener is a harmless
-// no-op script, so nothing here ever launches a real browser, and openBrowser's own unconditional
+// no-op script, so nothing here ever launches a real browser, and openBrowser's unconditional
 // fallback line is still what proves an open was attempted.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,7 +24,7 @@ const BIN_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '
 
 /**
  * The `--json` stdout of a seed run against a genuinely empty allowlist: the owner insert and
- * the token insert both report one changed row, matching bootstrap.mjs's own trust check.
+ * the token insert both report one changed row, matching bootstrap.mjs's trust check.
  */
 const SEED_SUCCESS_STDOUT = JSON.stringify([
   { results: [], success: true, meta: { changes: 1 } },
@@ -34,7 +34,7 @@ const SEED_SUCCESS_STDOUT = JSON.stringify([
 
 /**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, so
- * `saveSite` here and the spawned CLI's own state reads agree on where records live.
+ * `saveSite` here and the spawned CLI's state reads agree on where records live.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the state directory's absolute path
  */
@@ -69,7 +69,7 @@ async function makeFakeOpenerDir(t) {
 /**
  * Run create-cairn-site as a real child process, with a fake opener prepended onto PATH so no
  * real browser can ever launch. Never rejects: a non-zero exit is returned rather than thrown, so
- * a test can assert on the failure path's own stdout/stderr and exit code.
+ * a test can assert on the failure path's stdout/stderr and exit code.
  * @param {string[]} args the CLI arguments, e.g. `['--dir', dir, '--sign-in']`
  * @param {{ stateDir: string, wranglerBin: string, npmBin?: string, fakeOpenerDir: string }} options
  *  the env seams to set
@@ -154,10 +154,10 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
     result.stdout.includes('--sign-in'),
     `expected a re-run hint naming --sign-in, got: ${result.stdout}`,
   );
-  // --sign-in is a mid-browser recovery, not an invitation into chapter 2's own domain admission
+  // --sign-in is a mid-browser recovery, not an invitation into chapter 2's domain admission
   // prompt: this run must stop after the reseed rather than entering the gate. The marker is the
-  // admission detail's own opening words, not its hop title: printLiveInfo's own re-run hint
-  // below opens on "Connect your own domain any time", so a title match would fire on the
+  // admission detail's opening words, not its hop title: printLiveInfo's re-run hint
+  // below opens on "Connect your domain any time", so a title match would fire on the
   // closing block this run is supposed to print.
   assert.equal(
     result.stdout.includes('Connects a domain you already own'),

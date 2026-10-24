@@ -11,7 +11,7 @@ npm create cairn-site
 
 The command asks for the site's name, description, brand color, its stance toward AI training
 crawlers, and target directory, then writes a ready-to-run SvelteKit site. Node.js 24 or later is
-required, tracking the `@glw907/cairn-cms` engine's own floor.
+required, tracking the `@glw907/cairn-cms` engine's floor.
 
 **macOS and Linux only.** Windows is not supported, including Git Bash and PowerShell. The
 Cloudflare chapter shells out to `npm` and `wrangler` in a way Windows rejects, so a run there
@@ -43,7 +43,7 @@ separate SvelteKit config file: the whole SvelteKit configuration lives in `vite
 serves the production build through `wrangler dev`, because adapter 8 emits a Worker that
 `vite preview` cannot run.
 
-Those two majors set the floors for the site's own toolchain:
+Those two majors set the floors for the site's toolchain:
 
 | Tool | Floor |
 | --- | --- |
@@ -54,7 +54,7 @@ Those two majors set the floors for the site's own toolchain:
 | Node.js, for the site | `>=22.17` |
 
 The scaffolded `package.json` already pins versions above each floor, so a new site needs no
-action. The floors matter when you move an existing site's pins. This command's own Node floor,
+action. The floors matter when you move an existing site's pins. This command's Node floor,
 24 or later, is higher than the site's, and it is the only one the command checks before it
 starts.
 
@@ -133,7 +133,7 @@ without a prompt.
 
 ### What gets created, and what it costs
 
-The chapter deploys your site to your own Cloudflare account, on the `workers.dev` domain
+The chapter deploys your site to your Cloudflare account, on the `workers.dev` domain
 Cloudflare gives every account. It creates one Worker named after your site, one database
 (`<site>-auth`, for sign-ins), and one storage bucket for
 media. A cairn site needs Cloudflare's Workers Paid plan, $5 US per month as of 2026-08-11,
@@ -145,12 +145,12 @@ Deploying again later updates the same Worker rather than making a second one.
 
 ### One browser trip, then one click
 
-If wrangler is not already signed in to Cloudflare, it opens your browser to Cloudflare's own
-sign-in and waits. The tool holds no Cloudflare credential of its own; it works entirely through
+If wrangler is not already signed in to Cloudflare, it opens your browser to Cloudflare's
+sign-in and waits. The tool holds no Cloudflare credential; it works entirely through
 wrangler's session.
 
 At the end, the tool opens your new site's sign-in page with a link already in it. You click
-**Sign in** once and you are in your own admin. No email is sent, and none needs to arrive. The
+**Sign in** once and you are in your admin. No email is sent, and none needs to arrive. The
 link is good for ten minutes; if it expires, `--sign-in` issues a fresh one.
 
 ### Your App's private key moves off your machine
@@ -192,7 +192,7 @@ prints a hint instead of guessing at a domain for you.
 The chapter creates a Cloudflare zone for your domain, or adopts one your account already holds.
 It offers to copy the domain's current DNS records into that zone, then waits for you to point
 your registrar's nameservers at Cloudflare. Once delegation takes effect, it connects the domain
-to your site and switches your site's own address over to it. Cloudflare's free plan covers every
+to your site and switches your site's address over to it. Cloudflare's free plan covers every
 step, and the tool never asks for a payment method.
 
 ### The API token
@@ -233,7 +233,7 @@ prints what it is waiting for, and gives you the exact command to run again. Run
 exactly where it stopped.
 
 Your site keeps answering at its `workers.dev` address the whole time, including after the switch
-to your own domain completes.
+to your domain completes.
 
 ### Flags
 
@@ -245,7 +245,7 @@ to your own domain completes.
 
 With your domain live, the command offers to turn on sign-in email. This is the step that lets
 anyone other than you sign in, because everyone else gets in by clicking a link sent to their
-address. Your own sign-in never needs it.
+address. Your sign-in never needs it.
 
 It asks once, and either answer is fine. `--email` opts in without the prompt. `--yes` alone, with
 no `--email`, declines rather than turning on email sign-in unattended, and says which flag turns
@@ -263,14 +263,14 @@ If you say no, the run stops there and exits `0`. Your site keeps serving on you
 keep editing and publishing as its owner. What you cannot do is invite anyone else, since there is
 no way to send them a link.
 
-Your own way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
+Your way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
 expires out from under you while you decide. Running the command again re-offers turning on email
 sign-in.
 
 ### What it does
 
-The chapter onboards your domain for sending, sends one real message to your own address to prove
+The chapter onboards your domain for sending, sends one real message to your address to prove
 the path works, then writes `no-reply@<your-domain>` into your site's config and redeploys once so
 the running site uses it. The test send comes before the redeploy on purpose: there is no point
 deploying a site whose sending path is broken.
@@ -356,7 +356,7 @@ whenever you do.
 
 An automatic Builds deploy handles your site's code. It does not run database migrations:
 `wrangler d1 migrations apply` has no Workers Builds equivalent. An engine update that ships a new
-migration still needs you to run this CLI's own update path on your machine, so it is not
+migration still needs you to run this CLI's update path on your machine, so it is not
 something you can set aside once Builds is connected.
 
 ### Waiting is normal
@@ -378,7 +378,7 @@ to the full log.
 Each hop is saved as it completes, the same as every earlier chapter. A park resumes with a plain
 re-run; the connection and trigger are adopted rather than re-created if they already exist. Once
 your site is live on Workers Builds, running `--connect` again re-checks your deploy config and
-commits anything that has drifted on your machine since, such as a `PUBLIC_ORIGIN` your own machine
+commits anything that has drifted on your machine since, such as a `PUBLIC_ORIGIN` your machine
 last deployed but never pushed. With `--yes`, a run that finds local drift stops and asks you to
 re-run interactively: committing the change needs the sign-in click above, and `--yes` never opens
 a browser.
@@ -392,10 +392,10 @@ and what it has read so far. When the wait clears, the run carries on in your te
 
 ### What the page shows
 
-For DNS, the answer from your domain's own nameservers sits beside the answer your machine's
+For DNS, the answer from your domain's nameservers sits beside the answer your machine's
 resolver gives. That distinguishes the two situations a single "still propagating" message used to
 blur together: a record that was never written, and a record that is live everywhere except in your
-own resolver's cache. The second one clears on its own, and the page tells you so. Certificate
+resolver's cache. The second one clears on its own, and the page tells you so. Certificate
 issuance cannot be polled with the token this tool holds, so the page reports the HTTPS check it can
 actually make rather than inventing a status.
 
@@ -409,7 +409,7 @@ The console is not a daemon and nothing survives the run. No port is held betwee
 stops answering the moment the wait ends. Re-running the command is how you get it back.
 
 Each run mounts the console under a fresh random path and refuses any request that did not arrive
-addressed to your own machine. No token or secret appears on any page.
+addressed to your machine. No token or secret appears on any page.
 
 ### A run that is not interactive never holds
 
@@ -437,13 +437,13 @@ npm run dev
 
 Then open `http://localhost:5173/admin`. That admin runs against a local stand-in backend, which
 signs you in without an email loop and never touches GitHub or sends real email. The scaffold's
-own `dev` script turns the stand-in on, so no environment variable is needed.
+`dev` script turns the stand-in on, so no environment variable is needed.
 
 ## Status
 
 The local scaffold, the GitHub chapter, the Cloudflare chapter, the domain chapter, the email
 chapter, and the Builds chapter all exist today, so the command takes a site from nothing to live
-on a domain you own, sending its own sign-in email, deploying itself on every commit, with you
+on a domain you own, sending its sign-in email, deploying itself on every commit, with you
 signed in to its admin throughout.
 
 Scaffolding writes nothing outside the site directory except one record of the site under
@@ -451,7 +451,7 @@ Scaffolding writes nothing outside the site directory except one record of the s
 private key lives in that record only until the Worker exists, and then only in the Worker; the
 record itself is not secret-free even after that move, since it still carries the App's client
 secret and webhook secret, which this tool never relocates anywhere else. Each Cloudflare API
-token, the domain chapter's and, later, the Builds chapter's own fresh paste, lives in that same
+token, the domain chapter's and, later, the Builds chapter's fresh paste, lives in that same
 record for as long as its chapter still needs it, and this tool's copy is deleted once that
 chapter reaches a state with nothing left to do with it.
 

@@ -253,7 +253,7 @@ test('success: false under HTTP 200 is treated as a failure, not a success', asy
   );
 });
 
-test('anything else unmapped falls through to the operation\'s own row with the API message as detail', async (t) => {
+test('anything else unmapped falls through to the operation\'s row with the API message as detail', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('zone_create', 500, {
     success: false,
@@ -272,7 +272,7 @@ test('anything else unmapped falls through to the operation\'s own row with the 
   );
 });
 
-test('a DNS-record failure reports through its own row, not the zone row', async (t) => {
+test('a DNS-record failure reports through its row, not the zone row', async (t) => {
   const { cloudflare, api } = await setup(t);
   const zone = await api.createZone('testsite.example');
   cloudflare.failNext('dns_record_create', 500, {
@@ -531,7 +531,7 @@ test('an entitlement refusal maps to paid-plan-missing, keyed on wording because
   );
 });
 
-test('an unmapped email failure falls through to its own operation row with Cloudflare\'s message as detail', async (t) => {
+test('an unmapped email failure falls through to its operation row with Cloudflare\'s message as detail', async (t) => {
   const { cloudflare, api } = await setup(t);
   const zone = await api.createZone('carin-test.org');
 
@@ -569,7 +569,7 @@ test('an unmapped email failure falls through to its own operation row with Clou
 test('a 403 on an email route is read from its body, while a 403 on any other route still maps to token-scope-missing', async (t) => {
   const { cloudflare, api } = await setup(t);
 
-  // The email side: the send's own refusal is a 403, so the blanket token rule would otherwise
+  // The email side: the send's refusal is a 403, so the blanket token rule would otherwise
   // tell an owner whose DNS is still settling that their token is underscoped.
   cloudflare.failNext('email_send', 403, SEND_REFUSED_BODY);
   await assert.rejects(
@@ -747,7 +747,7 @@ test('the repo-not-selected refusal is still caught with the code behind a warni
   );
 });
 
-test('an unmapped /builds/ failure never leaks Cloudflare\'s own platform prose, naming only the numeric code', async (t) => {
+test('an unmapped /builds/ failure never leaks Cloudflare\'s platform prose, naming only the numeric code', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('builds_triggers_list', 500, {
     success: false,

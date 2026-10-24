@@ -1,11 +1,11 @@
 // The out-of-scaffold state store. The umbrella spec's rule, carried here verbatim: tool state
 // never lives under the scaffold directory, and no secret is ever written under the project
 // directory. A manifest response written into the project is one `git add -A` away from a
-// published private key, so this module writes only under the user's own config home
-// (`~/.config/cairn/sites`, or `CAIRN_STATE_DIR` under test), never anywhere the scaffold's own
+// published private key, so this module writes only under the user's config home
+// (`~/.config/cairn/sites`, or `CAIRN_STATE_DIR` under test), never anywhere the scaffold's
 // `git init` or a site's build could pick it up. Read the env var at call time in every export,
 // never cache it at module load, so a test that sets it before importing (and any later task
-// that sets it per run) sees its own directory rather than a value baked in at first import.
+// that sets it per run) sees its directory rather than a value baked in at first import.
 import { mkdir, writeFile, readFile, chmod, readdir, stat, rename, unlink } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { homedir } from 'node:os';
@@ -39,7 +39,7 @@ export function newSiteId(name) {
 
 /**
  * Save a site's state, creating the state directory if needed. Both the directory and the file
- * are chmod'd explicitly after writing: `fs.writeFile`'s own `mode` option only takes effect
+ * are chmod'd explicitly after writing: `fs.writeFile`'s `mode` option only takes effect
  * when it creates the file and is masked by the process umask, so an overwrite of an
  * already-loosened file would otherwise keep the looser mode.
  *
@@ -87,7 +87,7 @@ export async function loadSite(id) {
  * fields an earlier hop already saved. Never throws on a missing record: a record can go missing
  * only from an operator error outside this tool's control, and raising here after a GitHub App or
  * repository already exists would orphan a globally-unique App name with no way to recover it
- * (see scaffold.mjs's own warn-don't-abort comment on `saveSite` for the same class of failure).
+ * (see scaffold.mjs's warn-don't-abort comment on `saveSite` for the same class of failure).
  *
  * A merge can only add or overwrite a field, never remove one: there is no patch shape that
  * expresses "and drop this key". A caller that needs a key gone (the Cloudflare chapter scrubbing

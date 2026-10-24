@@ -126,7 +126,7 @@ export const stripeTrimParity: StaticRule = {
         message:
           `selector "${site.selector}" applies an unconditioned :${site.edge}-child padding trim ` +
           `while "${rowClass}" also carries a striped background in the same source; scope the ` +
-          `trim to its own parity instead (the ":last-child:nth-child(odd)" form), so the trim ` +
+          `trim to the edge row's parity instead (the ":last-child:nth-child(odd)" form), so the trim ` +
           `only fires on the edge whose stripe color it actually agrees with`,
       });
     }

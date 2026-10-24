@@ -69,7 +69,7 @@ export function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, 
       // because an error-tier finding gates" from under the report's `Suppressed:` header, which is
       // the report contradicting itself, the one thing this function exists to prevent. Where the
       // line actually ends up decides which sentence it carries.
-      note = ` (the allowlist suppressed this; the rule's own exemption was refused, since an error-tier finding gates: ${rf.exemption})`;
+      note = ` (the allowlist suppressed this; the rule's exemption was refused, since an error-tier finding gates: ${rf.exemption})`;
     } else {
       note = ` (the rule claimed an exemption, refused because an error-tier finding gates: ${rf.exemption})`;
     }

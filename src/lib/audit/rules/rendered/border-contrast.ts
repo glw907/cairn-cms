@@ -196,7 +196,7 @@ const RATIFIED_HAIRLINE_FLOOR = 1.15;
  */
 function ratifiedExemption(bestRatio: number): string {
   return (
-    `painted in this page's own ${RATIFIED_TOKEN}, the documented hairline, and still ` +
+    `painted in this page's ${RATIFIED_TOKEN}, the documented hairline, and still ` +
     `separating its two surfaces at ${bestRatio.toFixed(3)} against the better of them (documented floor ` +
     `${RATIFIED_HAIRLINE_FLOOR})`
   );
@@ -553,7 +553,7 @@ export const borderContrast: RenderedRule = {
             `${group.sides.join('/')} border ${describeColor(painted)} reads at contrast ${outerRatio.toFixed(2)} ` +
             `against the surface beside it ${describeColor(outer.color)}` +
             `${side.outerSampled ? '' : ' (its DOM ancestor: the adjacent surface could not be sampled)'}` +
-            `, and ${innerRatio.toFixed(2)} against its own fill ${describeColor(inner.color)}, both under the ` +
+            `, and ${innerRatio.toFixed(2)} against its fill ${describeColor(inner.color)}, both under the ` +
             `${RATIO_FLOOR}:1 house floor (WCAG 1.4.11's bar for a control-identifying boundary, applied here to ` +
             `every rendered border)`,
         });

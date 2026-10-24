@@ -95,7 +95,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'config.csrf-trusted-origins-wildcard',
     severity: 'warning',
     title: "Trusted origins bypass SvelteKit's origin check",
-    why: "A csrf.trustedOrigins entry of \"*\" turns off SvelteKit's Origin check on every route, and an entry of \"null\" admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its own double-submit token and member actions keep their own origin compare, but the site's own forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.",
+    why: "A csrf.trustedOrigins entry of \"*\" turns off SvelteKit's Origin check on every route, and an entry of \"null\" admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its double-submit token and member actions keep their origin compare, but the site's forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.",
     remediation: "Remove the \"*\" and \"null\" entries from csrf.trustedOrigins in the Vite config. List only the exact origins that must post to the site, since each one also widens SvelteKit's check on /admin.",
     docsAnchor: 'is-it-working.md#keep-sveltekits-origin-check-on',
   },
@@ -153,7 +153,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     title: 'Auth store is missing a login migration',
     why: 'Every sign-in writes and reads magic_token.nonce_hash, the column that binds a magic link to the browser that asked for it, so an AUTH_DB without migrations/0004_login_nonce.sql answers each login with a bare D1 "no such column" fault and nobody can sign in.',
     remediation:
-      'Copy migrations/0004_login_nonce.sql from the package into the site\'s own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.',
+      'Copy migrations/0004_login_nonce.sql from the package into the site\'s migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.',
     docsAnchor: 'is-it-working.md#provision-the-auth-store',
   },
   'auth.store-roles-unmigrated': {
@@ -162,7 +162,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     title: 'Auth store still restricts roles to owner and editor',
     why: "An AUTH_DB without migrations/0001_roles.sql keeps the original CHECK on editor.role, so adding an editor or changing a role to any name beyond owner and editor fails with a bare D1 constraint fault. Sign-in and publishing still work; only a write that names a custom role is refused.",
     remediation:
-      "Copy migrations/0001_roles.sql from the package into the site's own migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`. The migration rebuilds the editor table with the engine's four columns only, so a site that added its own column to editor carries it across by hand.",
+      "Copy migrations/0001_roles.sql from the package into the site's migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`. The migration rebuilds the editor table with the engine's four columns only, so a site that added a column to editor carries it across by hand.",
     docsAnchor: 'is-it-working.md#provision-the-auth-store',
   },
   'auth.unknown-role': {
@@ -187,7 +187,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'config.no-referrer-blanket',
     severity: 'warning',
     title: 'Site-wide Referrer-Policy: no-referrer',
-    why: "A site-wide Referrer-Policy: no-referrer header strips the Origin from every same-origin top-level form POST under the Fetch spec, so it arrives as Origin: null. SvelteKit's origin check refuses a null Origin, so the site's own forms 403 even though the visitor never left the site, and so does every createAuthChannel action. cairn's admin documents pin their own referrer policy with a header and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head% overrides it; the trap is a site shipping no-referrer as its own site-wide default.",
+    why: "A site-wide Referrer-Policy: no-referrer header strips the Origin from every same-origin top-level form POST under the Fetch spec, so it arrives as Origin: null. SvelteKit's origin check refuses a null Origin, so the site's forms 403 even though the visitor never left the site, and so does every createAuthChannel action. cairn's admin documents pin a referrer policy with a header and a meta tag, so the admin keeps working unless a site meta placed after %sveltekit.head% overrides it; the trap is a site shipping no-referrer as its site-wide default.",
     remediation: "Serve strict-origin-when-cross-origin (or same-origin) as the site's default Referrer-Policy. Either one carries a real Origin on a same-origin POST, which SvelteKit's origin check and every createAuthChannel action need.",
     docsAnchor: 'is-it-working.md#scope-a-site-wide-no-referrer-policy',
   },
@@ -195,7 +195,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
     id: 'auth.email-not-normalized',
     severity: 'warning',
     title: 'Editor email is not trimmed and lowercase',
-    why: 'An editor row carries an email that is not trimmed and lowercase, breaking the invariant the auth store, the allowlist lookup, and a consumer\'s own domain tables all rely on as a join key. This usually comes from a manual D1 insert.',
+    why: 'An editor row carries an email that is not trimmed and lowercase, breaking the invariant the auth store, the allowlist lookup, and a consumer\'s domain tables all rely on as a join key. This usually comes from a manual D1 insert.',
     remediation: 'Update the row so its email is trimmed and lowercase, matching what every write path (magic-link request, manage-editors) already normalizes to.',
     docsAnchor: 'is-it-working.md#provision-the-auth-store',
   },

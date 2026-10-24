@@ -86,7 +86,7 @@ test('the signups outcome region is mounted empty on first load and announces a 
   await expect(page.locator('input[name="name"]')).toBeFocused();
 });
 
-test("each row's Delete trigger names its row's signup", async ({ page }) => {
+test("each row's Delete trigger names that row's signup", async ({ page }) => {
   await page.goto('/admin/signups');
   const first = await addSignup(page, 'Grace');
   const second = await addSignup(page, 'Hedy');

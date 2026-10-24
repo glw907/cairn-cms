@@ -20,7 +20,7 @@ type: task guide
 
 **Background.** An image's bytes sit in an R2 bucket that the Worker reaches through a binding, and its record sits in the committed media manifest, `src/content/.cairn/media.json`. :fact[lu67dk] :fact[2hnxsr]
 Content names an image by a `media:` reference. The resolver turns it into a URL from the manifest's row, and the media route serves the bytes at that URL. :fact[xjdhau] :fact[c8c9ji] :fact[qtvesq]
-The adapter's `media` block holds every option the page sets, and the engine resolves it once into the config the upload action, the resolver, and the route read. :fact[69rw88]
+The adapter's `media` block holds every option the page sets, and the engine resolves it into the config the upload action and the route read. A scaffolded site resolves the same block again with `normalizeAssets` for its resolver. :fact[69rw88] :fact[qifl9g]
 
 **What the page does for them.** The introduction opens on that model as a scaffolded site already wires it: the bucket binding, the adapter's `media` block, the public resolver, and the media route. It says the page changes how those pieces behave and does not set them up. :fact[9hchnv] :fact[qifl9g] :fact[qtvesq]
 The contract sentence follows. The steps set the upload limits, move or reshape the image URLs, turn on responsive images, and make a missing asset fail the build. A concept section says which references the Library counts as a use. An optional task covers uploading from a custom admin screen, and the page ends by checking each change on the deployed site.
@@ -49,7 +49,7 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 
 - The steps assume the following:
 - A site with media on. A [scaffolded site](scaffolded-site-files.md) binds an R2 bucket as `MEDIA_BUCKET` in `wrangler.jsonc` and declares the adapter's `media` block as `{ bucketBinding: 'MEDIA_BUCKET' }`. :fact[9hchnv] :fact[2zytgf]
-- The adapter module, which a scaffolded site keeps at `src/theme/cairn.config.ts`. There it builds `publicMediaResolver` from the committed manifest and passes it to the public routes as `resolveMedia`. :fact[q07rd5] :fact[qifl9g]
+- The adapter module, which a scaffolded site keeps at `src/theme/cairn.config.ts`. There it builds `publicMediaResolver` from the committed manifest, and `src/chassis/public-routes.ts` passes it to the public routes as `resolveMedia`. :fact[q07rd5] :fact[qifl9g]
 - The media route, which a scaffolded site mounts at `src/routes/media/[...path]/+server.ts` with `createMediaRoute`. :fact[qtvesq]
 - A hand-built site with no media yet sets up three pieces first:
 - An `r2_buckets` binding and the adapter's `media` block that names it. :fact[9hchnv] :fact[2zytgf]
@@ -68,7 +68,7 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - To set the upload limits, follow these steps:
 1. In the adapter module, add `allowedTypes` to the `media` block, listing the image types uploads may store. :fact[fnat1w] :fact[enuyhg]
 - The engine sniffs each upload's type from its bytes and stores JPEG, PNG, GIF, WebP, and AVIF. The default `allowedTypes` lists those five, and the list can only narrow them. :fact[enuyhg] :fact[fnat1w]
-- A sniffed HEIC or unrecognized file is refused as `unsupported_type` whatever the list holds. So is an upload declared as SVG, HTML, or XML, or one whose first non-whitespace byte is `<`. :fact[enuyhg]
+- A sniffed HEIC or unrecognized file is refused as `unsupported_type` whatever the list holds. So is an upload declared as `image/svg+xml`, `image/svg`, `text/html`, or `application/xml`, or one whose first non-whitespace byte is `<`. :fact[enuyhg]
 2. In the same block, set `maxUploadBytes` to the largest upload in bytes. The default is 25 MB. :fact[fnat1w] :fact[6kdagb]
 - Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with a 413 before the Worker runs. :fact[9awije]
 - The effective limit is the lower of `maxUploadBytes` and that cap. :fact[ett331] :fact[9awije]
@@ -112,7 +112,7 @@ const media = {
 1. In Cloudflare, turn on Image Transformations for the site's zone. :fact[kp50li]
 - See [Transform images](https://developers.cloudflare.com/images/transform-images/).
 2. In the adapter module, set `transformations: true` in the `media` block. :fact[kp50li]
-- With `transformations` on, an image whose manifest row records its width gets a `srcset` of Cloudflare transform URLs. The `sizes` hint comes from its `:::figure` placement. :fact[kp50li] :fact[wdmlys]
+- With `transformations` on, an image whose manifest row records its width gets a `srcset` of Cloudflare transform URLs. The `sizes` hint comes from its `:::figure` placement, and an image with no placement gets `100vw`. :fact[kp50li] :fact[wdmlys]
 - An image gets no `srcset` when its width is unknown or too narrow to offer more than one width. With `transformations` off, every image gets its full-size path. :fact[wdmlys] :fact[2hnxsr]
 - Either way, an image whose row records its width and height renders with those intrinsic dimensions. :fact[wdmlys]
 - A site can't declare named transform presets. A theme that needs another size builds a `/cdn-cgi/image/<options>/<path>` URL itself. :fact[ckuow3]
@@ -173,7 +173,7 @@ export const publicMediaResolver = failOnMissing;
 *Walk the reader whose custom admin screen uploads images through the request, the response, and what the upload leaves uncommitted. A reader without such a screen skips it.*
 
 - A custom admin screen uploads an image by posting the file to the admin's `mediaUpload` action. The action is part of the typed `CairnAdminRoutes` contract and wraps the upload action the edit page's image picker uses. :fact[1mgfhj] :fact[h56lpd]
-- The action is gated to the Library's view, so the request goes to `/admin/media?/mediaUpload`. A post to another admin path answers 404. :fact[0fg3ju] :fact[joo5f2]
+- The action is gated to the Library's view, so the request goes to `/admin/media?/mediaUpload`. A post that reaches the admin catch-all at another admin path answers 404. :fact[0fg3ju] :fact[joo5f2]
 - See [Writing an admin fetch action](../reference/sveltekit.md#writing-an-admin-fetch-action).
 - To upload a file, follow these steps:
 1. In the screen's component, read the CSRF token from the admin layout's data as `csrf`. :fact[xy1dj1]
@@ -186,7 +186,7 @@ export const publicMediaResolver = failOnMissing;
 5. In the response handler, pass the response's text to SvelteKit's `deserialize` from `$app/forms`. :fact[lsuchw]
 - A success envelope's `data` holds the `media:` `reference` and the manifest `record` the server derived. :fact[h56lpd]
 - Each refusal the action makes arrives as a `failure` envelope whose `data.error` names the reason, with the HTTP status still 200. :fact[g4cwcw]
-- A table, introduced by a sentence saying it lists the refusals a request can cause, gives `length_required` for a missing or non-positive `Content-Length`, and `too_large` for a declared or actual size above `maxUploadBytes`. :fact[ett331]
+- A table, introduced by a sentence saying it lists the refusals a request's size and type cause, gives `length_required` for a missing or non-positive `Content-Length`, and `too_large` for a declared or actual size above `maxUploadBytes`. :fact[ett331]
 - Its third row gives `unsupported_type` for bytes the sniff doesn't place in `allowedTypes`, whatever the declared type. :fact[g4cwcw] :fact[enuyhg]
 - See [`media.upload_failed`](../reference/log-events.md) for every reason the action logs.
 - A body over the plan's request limit never reaches the action. Cloudflare answers it with a real 413 first. :fact[9awije]
@@ -204,7 +204,7 @@ export const publicMediaResolver = failOnMissing;
 1. In the deployed admin, at `/admin/media`, upload an image of an allowed type under the size limit. The asset appears in the Library. :fact[joo5f2] :fact[xjdhau]
 2. In an entry, place the image. :fact[xjdhau]
 3. Publish the entry. The editor documentation covers both steps. :fact[xjdhau]
-4. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on and a width recorded, the image also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
+4. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on and a recorded width of at least 800 pixels, the image also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
 5. In a terminal, request that `src` with `curl -s -D - -o /dev/null https://<your-site><src>`. :fact[fjnszk]
 - The response carries `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, `Content-Security-Policy: default-src 'none'; sandbox`, and `Cache-Control: public, max-age=31536000, immutable`. :fact[fjnszk]
 - Its `Content-Type` is the type the upload stored, such as `image/jpeg`. :fact[db0cx6] :fact[fjnszk]

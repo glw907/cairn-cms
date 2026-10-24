@@ -28,9 +28,7 @@ test('a form posted from the other host name is refused by the framework, not th
   expect(body).not.toContain(FACTORY_ORIGIN_FRAGMENT);
 });
 
-test("the same submission from the form's host name reaches the members form", async ({
-  page,
-}) => {
+test("the same submission from the form's host name reaches the members form", async ({ page }) => {
   await page.goto(`${ORIGINS.named}/members/login`);
   await page.locator('#member-contact').fill('csrf-pair@showcase.test');
   const response = await submitNatively(page, page.locator('form[action="?/request"]'));

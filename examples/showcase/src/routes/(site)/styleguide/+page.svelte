@@ -412,17 +412,16 @@ or extend it; nothing here is a literal a re-skin would miss.
 
     <h3 class="sg-h3">Card</h3>
     <p class="sg-note">
-      A bordered, padded surface for a theme's chrome or composed-page markup. The padding,
-      radius, background, and border below all come from the primitive's tokens; the title and
-      body typography reads this page's <code>.sg-card-title</code>/<code>.sg-card-body</code>
+      A bordered, padded surface for a theme's chrome or composed-page markup. The padding, radius,
+      background, and border below all come from the primitive's tokens; the title and body
+      typography reads this page's <code>.sg-card-title</code>/<code>.sg-card-body</code>
       classes.
     </p>
     <div class="cairn-card">
       <h4 class="sg-card-title">A cairn-card example</h4>
       <p class="sg-card-body">
-        The padding, radius, background, and border are the primitive's <code
-          >--cairn-card-*</code
-        > custom properties.
+        The padding, radius, background, and border are the primitive's <code>--cairn-card-*</code> custom
+        properties.
       </p>
     </div>
 
@@ -449,9 +448,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     </p>
     <div class="cairn-section">
       <p class="sg-section-block">A first block inside the section.</p>
-      <p class="sg-section-block">
-        A second block, spaced from the first by the primitive's gap.
-      </p>
+      <p class="sg-section-block">A second block, spaced from the first by the primitive's gap.</p>
     </div>
 
     <h3 class="sg-h3">Sidebar layout</h3>

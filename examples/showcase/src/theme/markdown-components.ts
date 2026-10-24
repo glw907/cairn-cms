@@ -131,8 +131,7 @@ export const alert = defineComponent({
 export const icon = defineComponent({
   name: 'icon',
   label: 'Icon',
-  description:
-    'A single glyph from the site icon set, for a note that wants a small marker.',
+  description: 'A single glyph from the site icon set, for a note that wants a small marker.',
   use: 'Mark a short standalone line without wrapping it in a card.',
   group: 'Notices',
   icon: 'flag',

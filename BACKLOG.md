@@ -4,6 +4,12 @@
 
 ## Medium
 
+- [ ] **#50** Name a concept by its key in every concept error `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `defineConcept` names a concept in its errors by `label ?? dir` (`src/lib/content/concepts.ts:67`), while `normalizeConcepts` names it by its content-map key, so one concept shows under two names. Record B3-18.
+- [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `mediaUpload` stores bytes and commits no manifest row, so a custom screen's upload resolves as missing until an entry save records it. `mediaLibraryUpload` commits the row but `CairnAdminRoutes` leaves it out (`src/lib/sveltekit/cairn-admin.ts:390`), so typed code reaches it only through a cast. Configure media's blueprint note N2 asks Geoff whether to fix this before drafting. Record B3-25.
+- [ ] **#48** Honor `publicBase` and `urlForm` in the edit page's live preview `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  The live preview builds `/media/<slug>.<hash>.<ext>` paths whatever the media config says (`src/lib/admin/EditPage.svelte:1359`, `src/lib/render/resolve-media.ts:141`), so a site that moves `publicBase` gets 404 preview images unless it also keeps a `/media` route. Configure media's blueprint note N1 asks Geoff whether to fix this before drafting. Record B3-25.
 - [ ] **#47** Fold Reuse content across entries into Content model `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   Batch 3's premise check: a scaffolded site already declares the `fragments` concept, globs it, lists it in the manifest plugin (`templates/waymark/src/theme/cairn.config.ts:137`), and forwards `resolveFragment`, as does the add-cairn tutorial's render (`add-cairn-to-a-sveltekit-app.md:333`). Define an adapter and schema now walks through adding a concept, the `fragments` routing rule included, and the include syntax is editor material. Recommended for Geoff: give Content model one "Fragments" section (the reserved concept and its `embedded` routing, resolution one pass deep and the refused nested include, the build check and the delete guard, the empty and not-found notices); move the diagnosis rows to Debug your site; retire the page. Not authored overnight; waits for Geoff's call.
 - [ ] **#46** Fold Link content with references into Content model `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*

@@ -4,6 +4,8 @@
 
 ## Medium
 
+- [ ] **#46** Fold Link content with references into Content model `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Batch 3's premise check: on a scaffolded site a reference field is one declaration line that the scaffold already resolves (`withReferences`, `src/chassis/entry-data.ts:30-37`) and renders (`ArticleView.svelte:56-58`), so the page's walkthrough repeats the scaffold and `delivery-data.md#resolvereferences`. Recommended for Geoff: give Content model one "Reference fields" section (the declarations and the undeclared-target throw, the picker in a sentence, the build check and the save, delete, and rename guards in order, and where a `cairn:` token is live or inert); leave Build the public routes a two-sentence note at its entry loader for a hand-built site; retire the page. Nine pages link it; the deep link is `build-the-public-routes.md:271`. Not authored overnight; waits for Geoff's call.
 - [ ] **#45** Keep a renamed posts concept's feed from going empty `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   Renaming the scaffold's posts concept empties its feed. The authors raised it in batch 2 and it has no backlog item (record 55).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`

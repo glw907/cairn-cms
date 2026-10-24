@@ -12,6 +12,9 @@
 
 ## Medium
 
+- [ ] **#56** Set `check.sentence_words = 26` in `drafter.toml`, and list `docs/reference/sveltekit.md` and `choose-an-ai-posture` in the outline as `managed: false` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  drafter now has the sentence-length warning (off by default), and a crossLink to an unlisted page misfires where a `managed: false` entry would resolve (glw907/drafter#60).
+
 - [ ] **#54** Split fact f:q07rd5, and drop plan constraints the code now settles `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:q07rd5` bundles a code-sourced scaffold path with tutorial paths sourced only from a docs page and an unrelated hooks note, so ruling D1 blocks a blueprint that cites it for the scaffold alone. Split it into one fact per source. Some page plans still state as constraints things the code now settles (the build error's count prefix, `parseMarkdown` and TOML); see B3-24. Record B3-30 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.
 - [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
@@ -58,6 +61,7 @@
   `check:facts` refuses it while `drafter check --fact` accepts it (`packages/create-cairn-site/...#applyMigrations`) (record 46).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
   Seen again in batch 3: a code span inside a `[verified: ...]` note passed `drafter check --fact` but failed `check:facts` as an unresolved path (drafter #71). Record B3-13.
+  drafter's rule since glw907/drafter#60: a tag note's code spans are commentary, never pointers; `check:facts` should match it.
 
 - [ ] **#37** Correct the facts still marked `[verified]` that the code or their source contradicts, and split bundled bullets `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:0elmiu` (sign-in page indexed, but `LoginPage` sets `noindex`), `f:niuzzg`, `f:s4prb0` (a README source), and `f:q07rd5` (a docs source) are stale or prose-sourced. `f:q07rd5` also joins a code clause with docs-only clauses, so D1 blocks citing the code part alone (record 44, 45).

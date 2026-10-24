@@ -236,7 +236,7 @@ for (const filename of await readdir(FROM)) {
 
 *Explain that the body arrives as written, so its images and shortcodes each need a decision.*
 
-- The script copies each body as `parseMarkdown` returns it, so old image addresses and shortcodes reach the entry as written. :fact[w77gj8]
+- The script copies each body as `parseMarkdown` returns it, apart from the one shortcode `toBody` rewrites. Old image addresses and every other shortcode reach the entry as written. :fact[w77gj8]
 
 ### Keep or move old images
 
@@ -266,7 +266,7 @@ for (const filename of await readdir(FROM)) {
 
 - After the manifest is regenerated, the build validates every entry not marked as a draft. If any has an invalid field, the build fails with one error that lists each one. :fact[kv3qen] :fact[6e8kwx]
 - To run the migration and check it, follow these steps:
-1. In the project directory, run `node scripts/migrate-content.mjs`. The script prints each file it writes and each file it skips, with the reason.
+1. In the project directory, run `node scripts/migrate-content.mjs`. The script prints each `.md` file it writes and each `.md` file it skips, with the reason. It passes over any other file silently.
 2. In the project directory, run `npx cairn-manifest` to regenerate the manifest. :fact[r5wm3c]
 - The committed manifest no longer matches the new files, and a build on a stale manifest fails with an error that names this command. :fact[fdtgh5] :fact[6e8kwx]
 - See [`cairn-manifest`](../reference/cli-cairn-manifest.md).
@@ -319,7 +319,7 @@ cairn: 1 invalid frontmatter field(s):
 - `parseMarkdown` reads a TOML block as empty frontmatter and leaves it in the body. An old file with a dated filename is still written. :fact[p4tg0n]
 3. If the build fails on a stale content manifest, run `npx cairn-manifest` again. :fact[fdtgh5]
 4. If the build stops with a list of invalid fields, fix each one in the script. :fact[kv3qen]
-- A listed `date` field means the date the script took, from the old value or the filename, isn't a real calendar date, such as `2024-13-45`. See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd). :fact[ivhuyc]
+- A listed `date` field means the date the script took, from a quoted old value or the filename, isn't a real calendar date, such as `2024-02-30`, or falls outside the field's bounds. An unquoted impossible date such as `2024-13-45` parses as a rolled-over `Date` and is never listed. See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd). :fact[ivhuyc]
 - A text field listed as required, though the old file had a value, means the value was an unquoted number, date, or boolean. See [Quote values for text fields](#quote-values-for-text-fields). :fact[gh4ckg]
 - See [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build).
 5. If the build fails because a permalink resolves to two entries, rename one of them. Two dated files with one slug and different dates collide under a permalink without a date token, such as the default `/posts/:slug` for a `posts` concept. :fact[ky39tz] :fact[grhib4] :fact[d27z58]

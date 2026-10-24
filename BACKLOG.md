@@ -2,8 +2,17 @@
 
 > Project issue tracker. Managed by `/log-issue`.
 
+## High
+
+- [ ] **#51** Fail `check:facts` on an `external` fact with no URL `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  An `external` fact with no URL (`f:34wt4f`) passes `check:facts` silently. `scripts/checks/check-facts.mjs`. Record B3-7.
+
 ## Medium
 
+- [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  After the premise trim, configure-media's plan and framing record (2026-10-12) and the narrowed page's 782-line plan and 254-line framing record were mostly out of scope, and reading them cost more than they returned. Record B3-8, B3-24.
+- [ ] **#52** Have `ci-green` report `action_required` as held, not red `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  The baseline-regen run pushes as `github-actions[bot]`, so every workflow on that head sits in `action_required`, and `ci-green` reports it as red. Name it held and print the release command, `gh api -X POST repos/glw907/cairn-cms/actions/runs/<id>/approve`. Record B3-11.
 - [ ] **#50** Name a concept by its key in every concept error `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `defineConcept` names a concept in its errors by `label ?? dir` (`src/lib/content/concepts.ts:67`), while `normalizeConcepts` names it by its content-map key, so one concept shows under two names. Record B3-18.
 - [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
@@ -45,14 +54,17 @@
 - [ ] **#38** Make `check:facts` and `drafter check --fact` agree on a `path#Symbol` source outside `src/` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `check:facts` refuses it while `drafter check --fact` accepts it (`packages/create-cairn-site/...#applyMigrations`) (record 46).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+  Seen again in batch 3: a code span inside a `[verified: ...]` note passed `drafter check --fact` but failed `check:facts` as an unresolved path (drafter #71). Record B3-13.
 
 - [ ] **#37** Correct the facts still marked `[verified]` that the code or their source contradicts, and split bundled bullets `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:0elmiu` (sign-in page indexed, but `LoginPage` sets `noindex`), `f:niuzzg`, `f:s4prb0` (a README source), and `f:q07rd5` (a docs source) are stale or prose-sourced. `f:q07rd5` also joins a code clause with docs-only clauses, so D1 blocks citing the code part alone (record 44, 45).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+  Seen again in batch 3: duplicate facts state one claim (`f:pdgkex`, `f:4mz4tp`, `f:yef4lo`; `f:fe46lo`, `f:97c6g1`), and `f:q07rd5` is `[verified]` from a docs page against ruling D1. Merge the duplicates. Record B3-16.
 
 - [ ] **#36** Flag a plan or framing record when a fact it cites is corrected `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   Plans inherit wrong facts and nothing flags them: `f:ld6xam` reached the sidebar plan, the content model's carried about a dozen code-contradicted claims, and build-the-public-routes' plan predates D1. All four batch 2 authors hit it (record 43).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+  Seen again in batch 3: the plan inputs carried the wrong vocabulary storage path (`editor.nav.configPath`) into the outline. Record B3-16.
 
 - [ ] **#35** Add `blueprints/**` to Vale's scope once Survey #1's check exists `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `check:vale` covers `docs`, `README.md`, and the showcase README only, so the empty "own" reached Geoff on two blueprints unflagged. `package.json:52` (record 41).

@@ -49,23 +49,23 @@ A component is a container directive in the markdown that the site's `build` fun
 
 - Before you write a component, make sure your site has the following:
 - An adapter file whose `rendering.render` calls a renderer built with `createRenderer`. The adapter is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the add-cairn tutorial's site. :fact[q07rd5] :fact[u4cfvv]
-- See [Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter).
+- See [Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter) and [`createRenderer`](../reference/core.md#createrenderer).
 - The `hastscript` package, to build the markup a component returns. The scaffold lists it as a dependency; a hand-built site installs it with `npm install hastscript`. :fact[2dsv35]
 - See [hastscript](https://github.com/syntax-tree/hastscript).
-- On a scaffolded site, the components live in `src/theme/markdown-components.ts`, and the adapter builds its registry from that module's `components` list. :fact[qnf469] :fact[u4cfvv]
-- A site with no render function yet builds one first. See [`createRenderer`](../reference/core.md#createrenderer).
+- A module that holds the components. A scaffolded site keeps them in `src/theme/markdown-components.ts`, and the adapter builds its registry from that module's `components` list. :fact[qnf469] :fact[u4cfvv]
 
 ## Declare the component
 
 *Give the reader the declaration's required members and the attributes an author sets, with the grammar rule that decides how a component is written.*
 
-- `defineComponent` declares one container directive. It requires a `name`, a `label`, a `description`, and a `build` function, and takes optional `attributes`, `slots`, and `hydrate`. :fact[htxey1]
-- The vocabulary is container-only: an author writes `:::name[Title]{attrs}` and closes it with `:::`. A leaf `::name` or text `:name` form renders as its literal source text. :fact[fqdknx]
-- A component can't be named `figure` or `include`, the two directive names the engine's render steps handle. :fact[cgwyp6]
+- `defineComponent` declares one container directive. It requires a `name`, a `label`, a `description`, and a `build` function. Its optional members include `attributes`, `slots`, `behavior`, and `hydrate`. :fact[htxey1]
+- A component is always a container directive: an author writes `:::name[Title]{attrs}` and closes it with `:::`. A leaf `::name` or text `:name` form renders as its literal source text. :fact[fqdknx]
+- The names `figure` and `include` belong to the engine's render steps. A component can't take either. :fact[cgwyp6]
 - To declare the component, follow these steps:
 1. In `src/theme/markdown-components.ts`, import `defineComponent` and `fields` from `@glw907/cairn-cms`, and `h` from `hastscript`. :fact[2dsv35] :fact[qnf469]
 2. In the same file, export a `defineComponent` call with the `name`, `label`, and `description`. :fact[htxey1]
-3. In the call, add `attributes`, one `fields.*` descriptor per attribute, keyed by the attribute name. :fact[cxhx8w]
+3. In the call, add an `attributes` object that maps each attribute name to one `fields.*` descriptor. :fact[cxhx8w]
+4. In the call, add a `build` stub that returns an empty `section`. :fact[htxey1]
 
 - Code: the `event` declaration with its two attributes, a required `date` and an optional `place`, and a `build` stub that the build section completes.
 
@@ -88,9 +88,10 @@ export const event = defineComponent({
 ```
 
 - An attribute takes a field type that serializes to one attribute string. The ten such types are `text`, `textarea`, `number`, `select`, `url`, `email`, `date`, `datetime`, `boolean`, and `icon`. :fact[cxhx8w]
-- Any other type, such as `multiselect` or `image`, throws when the module loads. The message begins `a directive attribute must be a single-value scalar`. :fact[cxhx8w]
-- The editor's insert form validates attributes with the same fieldset machinery a concept's fields use. A cross-field rule goes in the component's `behavior` table, keyed by attribute name. :fact[zh8wdb] :fact[4iuce8]
-- The render validates no attribute value. A hand-typed `date="banana"` still reaches `build` as the string `banana`. Write `build` to handle a value the form would refuse. :fact[4iuce8]
+- Any other type, such as `multiselect` or `image`, throws when the module loads. The message includes `a directive attribute must be a single-value scalar`. :fact[cxhx8w]
+- The insert form validates attributes with a fieldset, the same validator a concept's fields use. A cross-field rule goes in the component's `behavior` member, keyed by attribute name. :fact[zh8wdb] :fact[4iuce8]
+- The render validates no attribute value. A hand-typed `date="banana"` still reaches `build` as the string `banana`. A `build` has to handle a value the form would refuse. :fact[4iuce8]
+- `defaultIconByRole` maps a value of the directive's `role` attribute to a glyph key. It overrides the engine's default glyph for each role it names. :fact[c7ruij]
 - See [`defineComponent`](../reference/core.md#definecomponent) for every member, and [Fields](../reference/core.md#fields) for what each field type renders in the form.
 - Setting `hydrate` makes the component an island. See [Add an island](add-an-island.md). :fact[4hd2vg]
 
@@ -98,13 +99,13 @@ export const event = defineComponent({
 
 *Show the reader how to declare the regions an author fills, with the members that shape each one in the insert form.*
 
-- A slot named `title` is the directive's bracketed label, a slot named `body` is its unmarked content, and any other name is a named region. :fact[0aatf6]
+- A slot's name sets its place in the directive. `title` is the bracketed label, `body` is the unmarked content, and any other name is a named region. :fact[0aatf6]
 - Each slot is an object with the following members:
 - `name` and `label`: the slot's key and the label the insert form shows. :fact[cefzv5]
 - `kind`: `'inline'`, `'markdown'`, or `'repeatable'`. :fact[cefzv5]
-- `required`: the insert form marks the slot with an asterisk and keeps **Insert** disabled until it is filled. A touched, empty slot shows `<label> is required.` :fact[w7c3i6]
-- `itemFields`, for a repeatable slot: the insert form reads the first declared field's key alone. Each item is one string under that key, or under `text` without `itemFields`. :fact[t4px7i]
-- `itemLabel(item, index)`, for a repeatable slot: names each row in the insert form. When it returns nothing or blank text, the row reads as the slot label plus the row number. :fact[bnqj5z] :fact[t4px7i]
+- `required`: whether the insert form requires the slot. A required slot shows an asterisk, and **Insert** stays disabled until it is filled. A touched, empty slot shows `<label> is required.` :fact[w7c3i6]
+- `itemFields`, for a repeatable slot: the item's field. The insert form reads only the first declared field's key. Each item is one string under that key, or under `text` without `itemFields`. :fact[t4px7i]
+- `itemLabel(item, index)`, for a repeatable slot: a function that names each row in the insert form. When it returns nothing or blank text, the row reads as the slot label plus the row number. :fact[bnqj5z] :fact[t4px7i]
 - The render never reads `required`, so a hand-typed directive without the slot still renders. :fact[w7c3i6]
 - In the `event` declaration, add the `slots` array. :fact[cefzv5]
 - Code: the `slots` array for `event`: a required inline `title`, a markdown `body`, and a repeatable `agenda` whose `itemLabel` returns the item's text.
@@ -128,14 +129,14 @@ slots: [
 
 *Give the reader the context `build` receives and the rules its output must follow, then the running example's `build`.*
 
-- `build` receives a context and returns one hast `Element`, synchronously, once for each occurrence of the directive. :fact[s6n9zw]
+- `build` runs once for each occurrence of the directive. It receives a context and synchronously returns one hast `Element`. :fact[s6n9zw]
 - The context carries the following members:
 - `attributes`: the declared attribute values, keyed by name, with a `boolean` as `true` or `false`. :fact[2dsv35] :fact[4iuce8]
 - `slot(name)`: a slot's rendered children, or an empty array when the slot is absent. :fact[cefzv5]
 - `items(name)`: a repeatable slot's items, one child list per item. :fact[cefzv5]
 - `attr(key)`: a declared attribute's string value, `undefined` for a boolean or absent one. :fact[2dsv35]
 - `node`: the stamped component element. :fact[2dsv35]
-- The engine ships no hast-building helper beyond the context. Build the markup with hastscript's `h()`. :fact[2dsv35]
+- The engine ships no hast-building helper beyond the context. A `build` makes its markup with hastscript's `h()`. :fact[2dsv35]
 - In the `event` declaration, replace the `build` stub with the function that arranges the slots and attributes. :fact[2dsv35]
 - Code: the `event` `build`, a `section` holding the name, the date and place, the details, and an ordered agenda list, with classes prefixed `event`.
 
@@ -153,10 +154,10 @@ build: (ctx) =>
   ]),
 ```
 
-- `build` can't `await`. Fetch any data a component needs outside the render, and pass it in through `attributes`. :fact[s6n9zw]
+- `build` can't `await`. Data a component needs is fetched outside the render and passed in through `attributes`. :fact[s6n9zw]
 - `build` runs in the editor's browser for the preview and on the server for the public page. It can't depend on a server-only module. :fact[vo5v7n]
-- The engine stamps `data-rise`, the component's document-order index, on each top-level component's result. A `build` adds no entrance motion. :fact[cefzv5]
-- Name a component's inner classes apart from any DaisyUI component class, such as `card-body`. DaisyUI generates CSS for a matching name anywhere in scanned source. :fact[34wt4f]
+- On each top-level component's result, the engine stamps `data-rise`, the component's index in document order. A `build` needs no entrance-motion code. :fact[cefzv5]
+- DaisyUI generates CSS for any of its component class names, such as `card-body`, that it finds in scanned source. A component's inner classes need names that match none of them. :fact[34wt4f]
 - A `build` that throws makes the whole render throw. :fact[3pzda1]
 - See [`ComponentContext`](../reference/render.md#types).
 
@@ -164,15 +165,14 @@ build: (ctx) =>
 
 *Show the reader the optional members that decide how the component appears in the editor's picker.*
 
-- The editor's picker lists a component that declares an attribute, a slot, or an `insertTemplate`, unless it is `hidden`. :fact[rfeaa5]
+- The editor's picker lists a component that declares an attribute, a slot, or an `insertTemplate`. A `hidden` component stays out of the top-level picker. :fact[rfeaa5]
 - The following optional members shape its row:
 - `icon`: a glyph key from the site's icon set, shown beside the label. :fact[c7ruij]
 - `group`: the heading the row sits under. Groups appear in the order first declared, and ungrouped components lead with no heading. :fact[c7ruij] :fact[rfeaa5]
 - `use`: one line on when to reach for the component. :fact[c7ruij]
-- `hidden`: leaves the component out of the top-level picker. :fact[c7ruij]
-- `preview`: a sample of attribute and slot values. Declaring it opens the configure step in two panes, with a live preview beside the form. :fact[c7ruij] :fact[rfeaa5]
-- `insertTemplate`: the markdown inserted at the cursor when a component with no attributes and no slots is chosen. A component with either opens the guided form. :fact[rfeaa5]
-- `defaultIconByRole`: maps a value of the directive's `role` attribute to a glyph key, overriding the engine's defaults. :fact[c7ruij]
+- `hidden`: a flag that leaves the component out of the top-level picker. :fact[c7ruij]
+- `preview`: a sample of attribute and slot values. Declaring it opens the insert form in two panes, with a live preview beside the form. :fact[c7ruij] :fact[rfeaa5]
+- `insertTemplate`: the markdown inserted at the cursor when a component with no attributes and no slots is chosen. A component with either opens the insert form. :fact[rfeaa5]
 - In the `event` declaration, add the picker members its row needs. :fact[c7ruij]
 - Code: the members `event` adds, a group, a glyph from the scaffold's icon set, a use line, and a preview sample.
 
@@ -222,9 +222,9 @@ preview: {
 
 ## Component authoring grammar
 
-*Show the reader the markdown the component's insert form writes and the HTML its `build` returns from it, before they check it in the editor.*
+*Show the reader the markdown the component's insert form writes and the HTML `createRenderer` produces from it, before they check it in the editor.*
 
-- To check the component in the editor, know the markdown the insert form writes. A component with named slots uses a four-colon outer fence, with each named slot as a nested `:::name` container. :fact[co54dg] :fact[0aatf6]
+- The insert form writes a component with named slots inside a four-colon outer fence. Each named slot is a nested `:::name` container. :fact[co54dg] :fact[0aatf6]
 - Code: the `event` directive as the insert form writes it: the title as the label, the details unmarked, and the agenda items as bullets.
 
 ```markdown
@@ -238,7 +238,7 @@ Members vote on the new bylaws.
 ::::
 ```
 
-- Code: the HTML the registered `build` returns for that directive, generated by `createRenderer`.
+- Code: the HTML `createRenderer` produces for that directive, with the `data-rise` stamp the engine adds to `build`'s result.
 
 ```html
 <section class="event" data-rise="0"><p class="event-name">Annual meeting</p><p class="event-when">2026-11-04, Library annex</p><div class="event-details"><p>Members vote on the new bylaws.</p></div><ol class="event-agenda"><li>Welcome</li><li>Bylaws vote</li></ol></section>
@@ -247,7 +247,7 @@ Members vote on the new bylaws.
 - A repeatable slot's items are bullet lines inside its container. :fact[co54dg]
 - A bracketed label is dropped when the component declares no `title` slot. :fact[co54dg]
 - A component with no named slots takes a three-colon fence. :fact[co54dg]
-- A leaf or text form of the name renders as literal text. `:::figure` and `::include` belong to the engine. :fact[fqdknx] :fact[cgwyp6]
+- `:::figure` and `::include` are the engine's directives, not components, and a leaf or text form of any component name stays literal. :fact[fqdknx] :fact[cgwyp6]
 
 ## Verify the component
 
@@ -255,25 +255,29 @@ Members vote on the new bylaws.
 
 - To verify the component, follow these steps:
 1. In a terminal at the project root, start the dev server.
-2. In the admin, open an entry, and on the **Write** tab select **Insert block**. :fact[megde2] :fact[qwbmyj]
-3. In the picker, choose **Event** under the **Events** heading. :fact[rfeaa5]
-4. In the form, fill the required fields, and then select **Insert**. **Insert** stays disabled while a required slot is empty. :fact[w7c3i6]
-5. In the editor, check that the inserted markdown matches the grammar the authoring grammar section shows. :fact[co54dg]
-6. Select the **Preview** tab, and check that it shows the component's markup. :fact[kv9hap] :fact[my6ci3]
-7. Publish the entry, and on the deployed public page, check that the component's element carries the classes the preview showed. :fact[3l7f56]
+2. In the admin, open an entry. :fact[megde2] :fact[qwbmyj]
+3. On the **Write** tab, select **Insert block**. :fact[megde2] :fact[qwbmyj]
+4. In the picker, choose **Event** under the **Events** heading. :fact[rfeaa5]
+5. In the form, fill the required fields. :fact[w7c3i6]
+6. Select **Insert**. **Insert** stays disabled while a required slot is empty. :fact[w7c3i6]
+7. In the editor, check that the inserted markdown matches the directive in [Component authoring grammar](#component-authoring-grammar). :fact[co54dg]
+8. Select the **Preview** tab. :fact[kv9hap] :fact[my6ci3]
+9. In the preview, check that the component renders with its `event` classes. :fact[kv9hap] :fact[my6ci3]
+10. Publish the entry. :fact[3l7f56]
+11. After the site deploys, on the public page, check that the component's element carries the classes the preview showed. :fact[3l7f56]
 
 ## Diagnose a failed check
 
 *Map each failed check to its cause and fix, in the order the verification reaches them.*
 
 - When a check fails, work through the following causes in order:
-1. The site fails to load with an error that names the component. The error names a bad attribute type, a reserved name, or a `defaultIconByRole` without an `icon` attribute. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij]
-2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`. Pass it, as the registration section shows. :fact[rrvh33] :fact[megde2]
+1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, or a `defaultIconByRole` without an `icon` attribute. Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij]
+2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`. Pass it as [Register the component](#register-the-component) shows. :fact[rrvh33] :fact[megde2]
 3. The component is missing from the picker: it declares no attribute, no slot, and no `insertTemplate`, or it sets `hidden`. :fact[rfeaa5]
-4. The preview shows `The preview could not render this content.`: the render threw, often from a `build` that throws on an input it didn't expect. :fact[3pzda1]
+4. The preview shows `The preview could not render this content.` The render threw, often because `build` threw on an input it didn't expect. :fact[3pzda1]
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
-7. A code block shows no token colors: its fence names a language outside the highlighter's preloaded set, which renders as plain text. :fact[dni13r]
+7. A code block shows no token colors: its fence names a language outside the highlighter's preloaded set. The highlighter renders that block as plain text. :fact[dni13r]
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

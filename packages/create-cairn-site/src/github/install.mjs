@@ -1,6 +1,6 @@
 // The install-and-authorize trip: the tool's second visit to GitHub, where the admin installs
 // the App onto their account or organization and, via request_oauth_on_install, authorizes it
-// in the same click. GitHub's own copy calls this page "Install & Authorize"; one browser trip
+// in the same click. GitHub's copy calls this page "Install & Authorize"; one browser trip
 // delivers `code`, `installation_id`, and `setup_action=install` together on the callback.
 //
 // Poll-before-open is the load-bearing design here: every call polls GET /app/installations
@@ -12,7 +12,7 @@
 // Once the install page IS opened, the browser callback wait and a second JWT poll run
 // CONCURRENTLY from the start, first signal wins, rather than the poll only starting after the
 // callback times out. This closes a live gap: on a resumed run the install redirect lands on the
-// FIRST registered callback URL, carrying a dead port from an earlier run's own loopback (see the
+// FIRST registered callback URL, carrying a dead port from an earlier run's loopback (see the
 // spike-observed constraint below), so the callback can never arrive even though the admin's
 // install finishes in seconds. Racing the two from the start resolves that case in about one poll
 // interval instead of the full maxWaitMs. When the callback wins instead (the common fresh-run
@@ -21,11 +21,11 @@
 // Spike-observed constraint (docs/internal/2026-08-10-t2-own-app-spike.md), pinned here so it is
 // not later "simplified" away: the install redirect (request_oauth_on_install) lands on the
 // FIRST registered callback URL verbatim, with no port-only leniency, which the manifest flow
-// (Task 6) registered as this run's own ported loopback `/callback`. On a resumed run that port
+// (Task 6) registered as this run's ported loopback `/callback`. On a resumed run that port
 // is long closed, so a second trip through the install page would dead-end on a browser tab that
 // can never be reached; the concurrent poll above is exactly what recovers from that, well before
-// the callback wait's own timeout. On a FRESH run, the chapter orchestrator (chapter.mjs) closes
-// the gap the other way: it shares one loopback across the manifest trip and this module's own
+// the callback wait's timeout. On a FRESH run, the chapter orchestrator (chapter.mjs) closes
+// the gap the other way: it shares one loopback across the manifest trip and this module's
 // install trip, so the port the App's manifest registered is still the port this module is
 // listening on when the install redirect fires.
 import { startLoopback } from './loopback.mjs';
@@ -79,7 +79,7 @@ async function findInstallation({ appId, pem, owner, dir }) {
   return (Array.isArray(json) ? json : []).find((installation) => installation.account?.login === owner) ?? null;
 }
 
-/** The concurrent poll's own heartbeat, printed every POLL_HEARTBEAT_EVERY attempts. Never
+/** The concurrent poll's heartbeat, printed every POLL_HEARTBEAT_EVERY attempts. Never
  * printed on entry: the "waiting for the browser step" line printed just before the race starts
  * already covers that first moment, and a poll interval short enough for a test can otherwise
  * print nothing for the whole run. */
@@ -111,7 +111,7 @@ const INSTALL_DETECTED_MESSAGE =
  * by rejecting: the timeout is consumed by the `await` inside this same function's `try`/`catch`
  * regardless of which side of the outer race is still listening for the result, which is what
  * keeps an abandoned wait (the poll won the race instead) from ever producing an unhandled
- * rejection later, when its own timer eventually fires.
+ * rejection later, when its timer eventually fires.
  * @param {CallbackSignalInput} input the wait's inputs
  * @returns {Promise<CallbackSignal>} the signal
  */
@@ -145,7 +145,7 @@ async function waitForCallbackSignal({ loopback, maxWaitMs, landingHtml }) {
 
 /**
  * Poll GET /app/installations (App JWT auth) for an installation covering `owner`, running
- * alongside the browser callback wait (see this module's own header comment) rather than only
+ * alongside the browser callback wait (see this module's header comment) rather than only
  * after it times out, so a completed install is detected within about one `pollIntervalMs`
  * instead of after the full `maxWaitMs` callback wait. The FIRST check happens only after one
  * `pollIntervalMs` has elapsed, not immediately: an in-flight `request_oauth_on_install` callback
@@ -194,9 +194,9 @@ async function pollForInstallationSignal({ appId, pem, owner, dir, pollIntervalM
  *  first-time admin meeting a 2FA prompt partway through)
  * @property {import('./loopback.mjs').Loopback} [loopback] a loopback to reuse rather than
  *  starting a fresh one; given by the chapter orchestrator, which shares one loopback across the
- *  manifest and install trips (see this module's own header comment for why). When given, this
- *  function does not close it; the caller owns that. Absent, this function starts and closes its
- *  own, for a caller (or a test) that only needs the install step in isolation.
+ *  manifest and install trips (see this module's header comment for why). When given, this
+ *  function does not close it; the caller owns that. Absent, this function starts and closes it,
+ *  for a caller (or a test) that only needs the install step in isolation.
  */
 
 /**
@@ -263,8 +263,8 @@ export async function installAndAuthorize({
       // pollSignal is abandoned here, not awaited: its outcome no longer matters once the
       // callback has already won, and a cancellation only stops the NEXT poll iteration, not a
       // findInstallation call already in flight (a JWT sign plus a round trip), which can still
-      // reject later (a non-200 status, or the fake server closing once a test's own cleanup
-      // runs). Promise.race already attaches its own handler to the derived promise fed into it
+      // reject later (a non-200 status, or the fake server closing once a test's cleanup
+      // runs). Promise.race already attaches its handler to the derived promise fed into it
       // above, so that late rejection is not actually unhandled today; this explicit no-op catch
       // is belt-and-suspenders against a future refactor that races these two signals some other
       // way and loses that implicit protection.

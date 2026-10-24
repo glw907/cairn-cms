@@ -4,7 +4,7 @@
 // persist it.
 //
 // The prefill URL's permission keys are the one thing here that must be verified against the
-// live dashboard before shipping, never assumed from the vendor's docs alone: Cloudflare's own
+// live dashboard before shipping, never assumed from the vendor's docs alone: Cloudflare's
 // template mechanism fails an unrecognized key SILENTLY, rendering an empty "Select..." control
 // in its place rather than reporting an error (observed 2026-08-11,
 // docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"). A key that
@@ -78,7 +78,7 @@ const BUILDS_PERMISSION_KEYS = [
  */
 export const CHAPTER3_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, ...BUILDS_PERMISSION_KEYS];
 
-/** The name Cloudflare pre-fills into the create-token page's own "Token name" field. */
+/** The name Cloudflare pre-fills into the create-token page's "Token name" field. */
 const PREFILL_TOKEN_NAME = 'cairn create-cairn-site';
 
 /**
@@ -104,7 +104,7 @@ export function prefillUrl(keys = PREFILL_PERMISSION_KEYS) {
 /**
  * The chapter-2 prefilled create-token page, built from PREFILL_PERMISSION_KEYS. Byte-stable
  * across the prefillUrl seam's addition: this is exactly `prefillUrl()`'s default-argument
- * result, kept as its own export so chapter 2's callers need not change.
+ * result, kept as a separate export so chapter 2's callers need not change.
  * @type {string}
  */
 export const PREFILL_URL = prefillUrl();
@@ -174,11 +174,11 @@ async function validateToken(token, { dir, accountId }) {
  *  token itself, on any branch
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
  *  admin's browser to the create-token page; defaults to open.mjs's real opener, overridden in
- *  tests the same way chapter.mjs's own openBrowser seam is
+ *  tests the same way chapter.mjs's openBrowser seam is
  * @property {boolean} [yes] true for a non-interactive run; skips the browser and paste prompt
  *  entirely and reads CAIRN_CF_API_TOKEN instead
  * @property {(message: string) => Promise<string>} [promptSecretFn] the paste prompt, a test
- *  seam defaulting to prompts.mjs's own promptSecret
+ *  seam defaulting to prompts.mjs's promptSecret
  * @property {Record<string, string | undefined>} [env] the environment CAIRN_CF_API_TOKEN is
  *  read from under `yes`; defaults to `process.env`, injected in tests
  * @property {string[]} [argv] the argument vector scanned for a mistakenly-passed token; defaults
@@ -193,7 +193,7 @@ async function validateToken(token, { dir, accountId }) {
  * Try a saved token, validating it against the live API. Returns `{ ok: true, token }` for one
  * that still validates, or `{ ok: false }`, after logging the "no longer works" line, for no
  * saved token or one that no longer does; either shape tells the caller whether to fall through
- * to its own next source. A failure carries the validation error, so a caller holding the same
+ * to its next source. A failure carries the validation error, so a caller holding the same
  * string from another source can throw it rather than spend a second round trip proving it again.
  * @param {string | undefined} saved the saved token, if any
  * @param {{ dir: string | undefined, accountId: string | undefined }} scope forwarded to
@@ -271,7 +271,7 @@ export async function ensureApiToken({
           'create-token page asks for, then re-run.',
       );
     }
-    // The env value is that same rejected string, so its own validation is already spent: throw
+    // The env value is that same rejected string, so its validation is already spent: throw
     // what it produced rather than asking Cloudflare the identical question twice.
     throw savedResult.error;
   }

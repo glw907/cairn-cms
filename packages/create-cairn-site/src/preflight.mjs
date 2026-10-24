@@ -142,7 +142,7 @@ function checkPowerShellExecutionPolicy(platform) {
 /**
  * Run every credential-free pre-flight check and collect the findings.
  * @param {{ nodeVersion?: string, platform?: string }} [options] `nodeVersion` and `platform`
- *  are injected for testing and default to the running process's own values
+ *  are injected for testing and default to the running process's values
  * @returns {Promise<Finding[]>} one finding per applicable check, in check order
  */
 export async function runPreflight({

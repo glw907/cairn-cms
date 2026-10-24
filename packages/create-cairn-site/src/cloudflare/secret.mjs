@@ -8,7 +8,7 @@ import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /**
  * Move the App's private key out of local state and into a Worker secret named
- * `GITHUB_APP_PRIVATE_KEY_B64`, matching the engine's own env contract (`src/lib/env.ts`, which
+ * `GITHUB_APP_PRIVATE_KEY_B64`, matching the engine's env contract (`src/lib/env.ts`, which
  * base64-decodes that variable before handing the PEM to `@octokit/auth-app`). Resumable: once
  * the state record carries no `github.pem`, a later call is a no-op, which doubles as the
  * idempotence check for a re-run that already moved the key.

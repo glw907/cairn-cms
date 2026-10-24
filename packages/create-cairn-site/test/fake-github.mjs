@@ -1,7 +1,7 @@
 // A fake GitHub, standing in for both api.github.com and github.com over plain HTTP on
 // ephemeral loopback ports. It exists so the T2 chapter's manifest-flow, install-flow, and
 // git-data tests run with no network call and no real GitHub App, while still exercising the
-// exact request shapes (a real RSA keypair, a real JWT verify, GitHub's own error bodies) that
+// exact request shapes (a real RSA keypair, a real JWT verify, GitHub's error bodies) that
 // would trip a naive client. Every test drives it through the returned `state` and `requests`
 // rather than by asserting on the fake's internals, so a later task's dry-run and re-push tests
 // can assert "zero requests happened" or "no second push happened" against the same log.
@@ -44,7 +44,7 @@ const REFS_CREATE_ALREADY_EXISTS_BODY = loadFixture('github', 'refs_create.alrea
  *  creates reports that name as its `default_branch` (instead of the usual `main`), for testing
  *  a client's handling of an organization-set default other than `main`;
  *  `state.denyNextAuthorize = true` is a one-shot: the next `/login/oauth/authorize` redirect
- *  carries `error=access_denied` and no `code`, GitHub's own shape for a declined consent screen
+ *  carries `error=access_denied` and no `code`, GitHub's shape for a declined consent screen
  * @property {Array<{ method: string, pathname: string, authorization: string | null }>} requests
  *  every request received by either server, in arrival order; append-only, never reset except
  *  by starting a new server
@@ -152,7 +152,7 @@ export function pointAtFake(t, github) {
 
 /**
  * Build a request listener that logs every request, matches it against a route table (via the
- * shared `matchRoute`), decodes a one-shot `failNext` override before the route's own handler
+ * shared `matchRoute`), decodes a one-shot `failNext` override before the route's handler
  * ever runs, and reads and parses the body for methods that carry one.
  * @param {Array<{ method: string, regex: RegExp, route: string | null, handler: Function }>} routes
  * @param {{ requests: unknown[], failNextMap: Map<string, { status: number, body: unknown }> }} shared
@@ -513,7 +513,7 @@ function createBlobHandler(ctx) {
  * writes one full tree deliberately), but the reconcile chapter always does: its whole point is
  * committing two changed files without disturbing anything else the admin has added since the
  * scaffold push, and that survival depends on this fake actually merging onto the base rather
- * than replacing it. The merge is by path, matching the real API's own base_tree semantics
+ * than replacing it. The merge is by path, matching the real API's base_tree semantics
  * closely enough for a fake that (like `pushScaffold` itself) stores one flat tree of full
  * slash-joined paths rather than real git's nested per-directory tree objects: a base entry
  * survives untouched unless `tree` names the same path, and any new path is appended.
@@ -544,7 +544,7 @@ function createTreeHandler(ctx) {
 /**
  * Read a stored tree back. The stored entries already carry full slash-joined paths (exactly
  * what `pushScaffold` and the reconcile write path post, one flat tree with no intermediate
- * directory objects), which is not a simplification of the real API: GitHub's own `GET .../git/
+ * directory objects), which is not a simplification of the real API: GitHub's `GET .../git/
  * trees/:sha?recursive=1` returns precisely this shape, a flat array of blob entries with full
  * paths and no directory entries. A caller that reads without `recursive=1` would see the real
  * API's un-flattened, one-level view instead; this fake only ever serves the recursive shape,
@@ -610,7 +610,7 @@ function createCreateCommitHandler(ctx) {
     const message = body?.message ?? '';
     // parents/tree are carried in state (and echoed back), not just message: task 8's push
     // test asserts the created commit's parent is the seed sha, which needs somewhere to read
-    // it back from, matching the real Git Data API's own commit response shape. tree is stored
+    // it back from, matching the real Git Data API's commit response shape. tree is stored
     // as the bare sha the request body sent; treeRef wraps it for every outgoing response.
     const parents = Array.isArray(body?.parents) ? body.parents : [];
     const tree = body?.tree ?? null;

@@ -74,7 +74,7 @@ test('the probe plan is pinned: apex types, subdomain hosts, and the DKIM select
 
 // --- readCurrentRecords: typed translation ------------------------------------------------------
 
-test('typed records: MX priority as its own field, a chunked TXT joined intact, CAA translated', async () => {
+test('typed records: MX priority as a separate field, a chunked TXT joined intact, CAA translated', async () => {
   const { readCurrentRecords } = await import('./records.mjs');
 
   const chunkA = 'x'.repeat(255);
@@ -165,7 +165,7 @@ test('the authoritative read is preferred, and catches what a recursive resolver
   const { readCurrentRecords } = await import('./records.mjs');
 
   // The recursive resolver answers absent for every probe, including MX, the exact stale-cache
-  // shape the spike observed twice on its own scratch domain.
+  // shape the spike observed twice on a scratch domain.
   const recursiveResolver = stubResolver({
     resolveNs: async () => ['ns1.registrar.test'],
     resolve4: only('ns1.registrar.test', ['203.0.113.5']),

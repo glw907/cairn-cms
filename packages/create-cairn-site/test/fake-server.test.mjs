@@ -24,7 +24,7 @@ test('matchRoute refuses a right path with the wrong method', () => {
   assert.equal(match, null);
 });
 
-test('startLoopbackServer binds loopback-only and reports its own base URL', async (t) => {
+test('startLoopbackServer binds loopback-only and reports its base URL', async (t) => {
   const handle = await startLoopbackServer();
   t.after(() => handle.close());
   assert.match(handle.base, /^http:\/\/127\.0\.0\.1:\d+$/);

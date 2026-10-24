@@ -8,7 +8,7 @@ import { makeFakeBin } from './fake-bin.mjs';
  * Spawn a fake bin and collect its exit code, stdout, and stderr. `input`, when given, is
  * written to the child's stdin and the stream is then ended; when omitted, stdin is ended
  * immediately with nothing written, mirroring a caller that passes no input. `env`, when given,
- * is merged OVER `process.env` for the child, mirroring how exec.mjs's own spawn seam merges its
+ * is merged OVER `process.env` for the child, mirroring how exec.mjs's spawn seam merges its
  * `env` option rather than replacing the parent environment outright.
  * @param {string} binPath the fake's executable script path
  * @param {string[]} args the arguments to invoke it with

@@ -51,7 +51,7 @@ const heads = new Map<string, string>([['main', nextSha()]]);
  * One committed change, recorded so listCommits can answer a path-filtered history query without
  * a new fixture format: every real backend.commit() call appends here, and the fake's history read
  * filters by branch and touched path, newest first, the same shape the real GitHub commits API's
- * path filter returns. `contentByPath` additionally lets `readFile` replay a past commit's own
+ * path filter returns. `contentByPath` additionally lets `readFile` replay a past commit's
  * content when `ref` names a recorded sha rather than a live branch (a revert's target read),
  * mirroring the real GitHub contents API's `?ref=<sha>` form.
  */
@@ -75,7 +75,7 @@ export function lastRecordedCommit(): RecordedCommit | null {
 /**
  * Read one file's content off a branch's in-memory tree, or null when absent. The media slice's
  * E2E reads the committed `media.json` this way: the last-commit recorder captures only the `.md`
- * entry, so the manifest committed in the same atomic commit needs its own read.
+ * entry, so the manifest committed in the same atomic commit needs its read.
  */
 export function committedFile(branch: string, path: string): string | null {
   return branches.get(branch)?.get(path) ?? null;
@@ -174,7 +174,7 @@ export const PASS_B_ENTRIES = {
     title: 'A later pass',
     path: 'src/content/posts/2026-06-first-custom.md',
     permalink: '/posts/first-custom',
-    customAltText: "A skier's own words",
+    customAltText: "A skier's words",
   },
 } as const;
 
@@ -300,7 +300,7 @@ export function seedMediaLibrary(): void {
 
   // A seed pages entry: the reference e2e (golden-path.spec.ts) needs a pages target so the author
   // reference picker (scoped to the pages concept) has something to pick. The manifest entry below
-  // lists it so editLoad's linkTargets surface it in the picker; the markdown backs its own editor.
+  // lists it so editLoad's linkTargets surface it in the picker; the markdown backs its editor.
   main.set('src/content/pages/about.md', '---\ntitle: About\n---\nThe showcase about page.\n');
 
   // The content manifest on main: the seed post entry, carrying a non-empty summary (the office
@@ -370,7 +370,7 @@ export function seedMediaLibrary(): void {
   main.set('src/content/.cairn/index.json', `${JSON.stringify(manifest, null, 2)}\n`);
   heads.set('main', nextSha());
 
-  // The open edit branch: a snapshot of main plus its own media.json (carrying the fourth asset) and
+  // The open edit branch: a snapshot of main plus its media.json (carrying the fourth asset) and
   // its edited entry markdown (which references that asset in its body). The usage builder reads the
   // entry markdown off the branch; the loader unions the branch media.json by hash.
   const branchTree: Tree = new Map(main);
@@ -398,15 +398,15 @@ export function seedMediaLibrary(): void {
 // backend.defaultBranch only, so a pending edit never leaks into another entry's preview). The bare
 // seed tree and the media seed carry no `fragments` rows, so without this the picker offers nothing
 // and /admin/fragments lists empty. seedFragments writes two PUBLISHED fragments onto main: one
-// mirrors the showcase's own on-disk fixture (src/content/fragments/trail-safety-notice.md) so the
+// mirrors the showcase's on-disk fixture (src/content/fragments/trail-safety-notice.md) so the
 // two content universes (disk corpus vs. this in-memory dev backend, entirely separate per the
-// spec's own comment) agree on id and title, and one distinct fragment so the picker's list is more
-// than a single row. Both ids and titles are static and never collide with the E2E's own
+// spec's comment) agree on id and title, and one distinct fragment so the picker's list is more
+// than a single row. Both ids and titles are static and never collide with the E2E's
 // dynamically-authored fragment (`picker-fragment-<timestamp>`, titled "Picker fragment").
 //
 // It must run AFTER seedMediaLibrary (which writes the whole content manifest), so this reads that
 // manifest back and appends rows to it rather than racing the rewrite, the same discipline
-// seedVocabulary follows for its own patch.
+// seedVocabulary follows for its patch.
 
 /**
  * The two seeded fragments, exported so the spec asserts against real ids and titles. `trailSafety`
@@ -587,7 +587,7 @@ export function seedVocabulary(): void {
 // The preview pass's e2e (preview.spec.ts) proves fidelity by comparing a minted preview page's
 // rendered HTML against a REAL public page's, byte for byte modulo one deliberate word. The public
 // pages are fully prerendered from the showcase's on-disk corpus (src/content/), a content universe
-// this whole file otherwise deliberately keeps separate from (see the fragments seed's own
+// this whole file otherwise deliberately keeps separate from (see the fragments seed's
 // comment): the admin/preview backend is this in-memory repo, built at server start, and the public
 // build is a static snapshot baked at `vite build` time from disk files, so nothing an admin action
 // commits here ever reaches a prerendered page. Twin-render equivalence is only checkable at all
@@ -716,7 +716,7 @@ export function createDevBackend(): Backend {
       const tree = branches.get(ref);
       if (tree) return tree.get(path) ?? null;
       // `ref` may name a recorded commit sha rather than a live branch (a revert's target read at
-      // a past commit, not the branch head); replay that commit's own change to the path.
+      // a past commit, not the branch head); replay that commit's change to the path.
       const historical = commitLog.find((entry) => entry.ref === ref && entry.paths.includes(path));
       return historical ? (historical.contentByPath[path] ?? null) : null;
     },

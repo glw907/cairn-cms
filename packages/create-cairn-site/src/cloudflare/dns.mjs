@@ -1,20 +1,20 @@
 // The authoritative-versus-recursive DNS machinery, extracted from records.mjs so it can be
-// reused by more than one caller. It was written once, for records.mjs's own negative-cache
+// reused by more than one caller. It was written once, for records.mjs's negative-cache
 // defect (see that module's header): a stale negative answer from a public recursive resolver
-// reads exactly like an absent record, so a caller that can reach the domain's own authoritative
+// reads exactly like an absent record, so a caller that can reach the domain's authoritative
 // nameservers directly should prefer that answer, which no recursive cache sits in front of.
 //
 // Three consumers share this module: records.mjs's carry-over read (one resolver chosen up
 // front, then queried for a whole fixed probe list), hostname.mjs's propagation diagnosis (one
 // name queried both ways, so a caller can tell an authoritative "yes, it exists" apart from a
-// recursive resolver still holding a stale "no"), and, later, the console's own propagation view.
+// recursive resolver still holding a stale "no"), and, later, the console's propagation view.
 //
-// The delegation-refusal check (has the domain's own NS pair already switched to Cloudflare?)
-// stays in records.mjs: it is that module's own ordering rule, not a DNS mechanic this module owns.
+// The delegation-refusal check (has the domain's NS pair already switched to Cloudflare?)
+// stays in records.mjs: it is that module's ordering rule, not a DNS mechanic this module owns.
 import { Resolver } from 'node:dns/promises';
 
 /**
- * The recursive resolvers this module falls back to, and uses to discover a domain's own
+ * The recursive resolvers this module falls back to, and uses to discover a domain's
  * authoritative nameservers in the first place. Pinned to the pair the T4a domain spike itself
  * used (docs/internal/2026-08-11-t4a-domain-spike.md, Step 3).
  */
@@ -34,7 +34,7 @@ export function defaultResolve(servers = RECURSIVE_SERVERS) {
 }
 
 /**
- * Look up a domain's own NS records, the read that supplies the authoritative query targets. A
+ * Look up a domain's NS records, the read that supplies the authoritative query targets. A
  * lookup that fails or answers something other than a list reports empty rather than throwing,
  * since every caller here treats "no NS names found" as the ordinary fallback-to-recursive case.
  * @param {object} recursive the recursive resolver to query
@@ -54,7 +54,7 @@ export async function readNsNames(recursive, domain) {
  * Resolve one nameserver hostname to an address usable as an authoritative query target, trying
  * every hostname in turn until one resolves.
  * @param {object} recursive the recursive resolver to resolve NS hostnames against
- * @param {string[]} nsNames the domain's own NS hostnames
+ * @param {string[]} nsNames the domain's NS hostnames
  * @returns {Promise<string | null>} the first resolvable address, or `null` when none resolve
  */
 export async function firstAuthoritativeAddress(recursive, nsNames) {
@@ -73,10 +73,10 @@ export async function firstAuthoritativeAddress(recursive, nsNames) {
 }
 
 /**
- * Pick the resolver a caller should treat as authoritative for a domain: the zone's own
+ * Pick the resolver a caller should treat as authoritative for a domain: the zone's
  * nameservers when `nameServers` is already known, or discovered via a fresh NS lookup
  * otherwise, falling back to the plain recursive resolver (flagged `lowConfidence`) when no
- * authoritative address can be found either way. This is records.mjs's own resolver-selection
+ * authoritative address can be found either way. This is records.mjs's resolver-selection
  * block, generalized with the optional `nameServers` parameter: a caller already holding a
  * zone's assigned nameservers (for example a saved `record.cloudflare.nameServers`) can skip the
  * NS discovery lookup entirely, which both saves a round trip and sidesteps that lookup being
@@ -84,9 +84,9 @@ export async function firstAuthoritativeAddress(recursive, nsNames) {
  * @param {object} args
  * @param {object} args.recursive a resolver already pointed at the recursive fallback servers,
  *  used both as the fallback query target and, absent `nameServers`, to discover the domain's
- *  own NS hostnames
+ *  NS hostnames
  * @param {string} args.domain the domain whose authoritative nameservers to use
- * @param {string[]} [args.nameServers] the domain's own NS hostnames, when already known; skips
+ * @param {string[]} [args.nameServers] the domain's NS hostnames, when already known; skips
  *  the NS discovery lookup
  * @param {(servers?: string[]) => object} args.resolve builds a resolver pointed at given servers
  * @returns {Promise<{ resolver: object, lowConfidence: boolean }>} the resolver to query, and
@@ -107,7 +107,7 @@ export async function selectAuthoritativeResolver({ recursive, domain, nameServe
  * Run one resolver method, translating any failure (an authoritative absence, a real lookup
  * error, an unreachable server) into an empty answer rather than throwing. Callers here are
  * doing best-effort diagnosis, not a validated data read (that stricter contract is
- * records.mjs's own `probe`, which distinguishes absence from failure for its own
+ * records.mjs's `probe`, which distinguishes absence from failure for its
  * records-read-failed row); a DNS hiccup during diagnosis should never itself throw.
  * @param {object} resolver the resolver-like object to query
  * @param {string} method the resolver method name (for example `'resolve6'`)
@@ -123,7 +123,7 @@ async function safeQuery(resolver, method, name) {
 }
 
 /**
- * Read one DNS answer twice: once against the domain's own authoritative nameservers (immune to
+ * Read one DNS answer twice: once against the domain's authoritative nameservers (immune to
  * a recursive resolver's negative cache) and once against the ordinary recursive resolver,
  * returning both so a caller can reason about a split between them (a record that already
  * exists at the authoritative source but has not yet shown up through a resolver still holding a
@@ -132,7 +132,7 @@ async function safeQuery(resolver, method, name) {
  * @param {string} args.domain the domain whose authoritative nameservers to use
  * @param {string} args.name the DNS name to query
  * @param {string} args.method the resolver method name to call (for example `'resolve6'`)
- * @param {string[]} [args.nameServers] the domain's own NS hostnames, when already known; skips
+ * @param {string[]} [args.nameServers] the domain's NS hostnames, when already known; skips
  *  the NS discovery lookup, forwarded to `selectAuthoritativeResolver`
  * @param {(servers?: string[]) => object} [args.resolve] builds a resolver pointed at the given
  *  servers, or the pinned recursive pair when called with none; defaults to `defaultResolve`,
@@ -140,7 +140,7 @@ async function safeQuery(resolver, method, name) {
  * @returns {Promise<{ authoritative: unknown[] | null, recursive: unknown[], lowConfidence:
  *  boolean }>} `authoritative` is `null` when no authoritative source could be found at all
  *  (the same case `lowConfidence: true` reports); `recursive` is always the recursive resolver's
- *  own answer, queried independently of whether an authoritative source was found
+ *  answer, queried independently of whether an authoritative source was found
  */
 export async function readAuthoritativeAndRecursive({ domain, name, method, nameServers, resolve = defaultResolve }) {
   const recursive = resolve();

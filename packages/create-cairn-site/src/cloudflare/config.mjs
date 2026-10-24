@@ -1,5 +1,5 @@
-// wrangler.jsonc naming at scaffold time. The baked template ships with the showcase's own
-// resource names and a placeholder database id; a scaffolded site needs its own slug-derived
+// wrangler.jsonc naming at scaffold time. The baked template ships with the showcase's
+// resource names and a placeholder database id; a scaffolded site needs its slug-derived
 // names and no ids at all, since the 2026-08-10 spike confirmed wrangler auto-provisions an
 // id-less binding by name and never writes anything back into this file. Every target string
 // here is exact and fail-loud, in substitute.mjs's tradition: a missing target means the
@@ -33,7 +33,7 @@ const FALLBACK_SLUG = 'cairn-site';
 // and, through nameWranglerResources, two suffixed names (-auth, -media). Bounding it
 // per-resource would let the worker name reach the 63-character workers.dev DNS label limit while
 // the bucket name (the base plus the 6-character "-media" suffix, the longest of the two) ran
-// past R2's own 63-character cap. The tightest limit among all three resources is that 63-character
+// past R2's 63-character cap. The tightest limit among all three resources is that 63-character
 // R2 bound, so capping the base itself at 57 (63 minus the "-media" suffix) is the one number that
 // keeps every derived name within Cloudflare's limits, since the other suffix is shorter.
 const MAX_BASE_SLUG_LENGTH = 57;

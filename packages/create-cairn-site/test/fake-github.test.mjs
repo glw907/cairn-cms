@@ -244,7 +244,7 @@ test('requests logs every request across both servers', async (t) => {
 
 /**
  * Create a seeded (auto_init) repo owned by `fake-admin`, via a real installation and the fake's
- * own repo-create route, and return its name. Shared setup for the Git Data read-path tests
+ * repo-create route, and return its name. Shared setup for the Git Data read-path tests
  * below, which all need somewhere to write blobs, trees, commits, and refs before reading them
  * back.
  * @param {import('./fake-github.mjs').FakeGithub} github the running fake

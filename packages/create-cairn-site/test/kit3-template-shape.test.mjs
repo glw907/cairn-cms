@@ -1,6 +1,6 @@
 // The scaffold ships the SvelteKit 3 / adapter-cloudflare 8 site shape. The in-tree `template/`
 // is a gitignored build artifact that can be left over from an earlier bake, so this test bakes
-// a fresh tree itself with the package's own bake command, into a scratch directory under
+// a fresh tree itself with the package's bake command, into a scratch directory under
 // $HOME/.cache, and asserts on that. The same checker runs against a committed tree of the
 // SvelteKit 2 shape (test/fixtures/kit2-template), so each assertion is shown to fail on the
 // shape it exists to rule out and not merely to pass on a tree that never had the problem.
@@ -105,7 +105,7 @@ const ASSERTIONS = Object.keys(await kit3Shape(KIT2_FIXTURE));
 let freshBake;
 
 /**
- * Bake the template once for the whole file, through the package's own bake command.
+ * Bake the template once for the whole file, through the package's bake command.
  * @returns {Promise<{ root: string, scratch: string }>} the baked tree and the scratch directory to remove
  */
 function bakeFresh() {

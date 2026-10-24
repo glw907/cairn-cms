@@ -1,6 +1,6 @@
 // Dispatcher-level coverage for bin.mjs's chapter-2 resume paths: a sibling of
-// resume-cloudflare.test.mjs, not an extension of it, since chapter 1's own resume cases already
-// fill that file and chapter 2 has enough of its own to outgrow it. Every run here spawns bin.mjs
+// resume-cloudflare.test.mjs, not an extension of it, since chapter 1's resume cases already
+// fill that file and chapter 2 has enough cases to outgrow it. Every run here spawns bin.mjs
 // as a real child process, the same idiom resume-cloudflare.test.mjs already established: a fake
 // wrangler on CAIRN_WRANGLER_BIN, a fake-opener directory prepended onto PATH, and, new to this
 // file, a fake Cloudflare on CAIRN_CLOUDFLARE_API_BASE.
@@ -11,17 +11,17 @@
 // zone.test.mjs, hostname.test.mjs, and chapter2.test.mjs. The deterministic stop this file uses
 // instead: every case that needs to prove routing INTO chapter 2 runs with `--yes --domain
 // <name>` and no `CAIRN_CF_API_TOKEN` in the child env, which makes `ensureApiToken` throw a
-// plain Error with its own "Next:" line at the token hop (src/cloudflare/prefill.mjs), after
+// plain Error with a "Next:" line at the token hop (src/cloudflare/prefill.mjs), after
 // chapter 2 has already printed its account-selection and token-hop titles. That proves which
 // step routed into chapter 2, and that scaffold and the GitHub chapter were never reached,
 // without ever touching DNS or a real Cloudflare token.
 //
 // The wait-row parks (delegation-pending, hostname-records-absent, certificate-pending) are
 // unreachable in a spawned run without a DNS or HTTPS seam, so this file does not attempt one:
-// their own printed copy is proven in chapter2.test.mjs. What this file proves about a park is
+// their printed copy is proven in chapter2.test.mjs. What this file proves about a park is
 // bin.mjs's shared contract every park exits through (return the outcome, exit 0, print a next
 // step): the admission-declined cases below exercise exactly that contract, since
-// admission-declined is chapter 2's own park-shaped early return.
+// admission-declined is chapter 2's park-shaped early return.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -54,7 +54,7 @@ async function freshStateDir(t) {
 
 /**
  * Build a directory holding harmless no-op stand-ins for every platform opener open.mjs might
- * spawn, mirroring resume-cloudflare.test.mjs's own helper: prepending it onto PATH guarantees
+ * spawn, mirroring resume-cloudflare.test.mjs's helper: prepending it onto PATH guarantees
  * open.mjs finds one of these before it could ever find a real browser opener.
  * @param {import('node:test').TestContext} t
  * @returns {Promise<string>} the directory's absolute path
@@ -72,8 +72,8 @@ async function makeFakeOpenerDir(t) {
 
 /**
  * Run create-cairn-site as a real child process, the same never-rejects contract as
- * resume-cloudflare.test.mjs's own runCli. `CAIRN_CF_API_TOKEN` is explicitly stripped from the
- * child's env unless `extraEnv` supplies one, so an operator's own shell can never accidentally
+ * resume-cloudflare.test.mjs's runCli. `CAIRN_CF_API_TOKEN` is explicitly stripped from the
+ * child's env unless `extraEnv` supplies one, so an operator's shell can never accidentally
  * make a case that depends on the token being absent pass for the wrong reason.
  * @param {string[]} args the CLI arguments
  * @param {{ stateDir: string, wranglerBin: string, apiBase: string, fakeOpenerDir: string,
@@ -108,7 +108,7 @@ async function runCli(args, { stateDir, wranglerBin, apiBase, fakeOpenerDir, ext
 
 /**
  * Seed a site record shaped like a site partway (or all the way) through chapter 2: chapter 1's
- * own fields (github, cloudflare.url/workerName) plus whatever chapter-2 fields the step already
+ * fields (github, cloudflare.url/workerName) plus whatever chapter-2 fields the step already
  * implies. `cloudflare.accountId` is always saved, so `ensureAccountId` takes its zero-enumeration
  * branch and this file never needs a wrangler `whoami` response armed.
  * @param {string} siteId the site id to seed, matching the state store's id shape
@@ -140,9 +140,9 @@ async function seedChapter2Site(siteId, dir, step, cloudflareOverrides = {}) {
 
 /** The scaffold hand-over line, whose absence proves a resumed run never re-scaffolded. */
 const SCAFFOLD_MARKER = 'Your site is scaffolded at';
-/** The GitHub chapter's own consent title, whose absence proves it never ran. */
+/** The GitHub chapter's consent title, whose absence proves it never ran. */
 const GITHUB_CHAPTER_MARKER = 'Confirm the GitHub App and repository';
-/** Chapter 1's own consent title, whose absence proves it never ran. */
+/** Chapter 1's consent title, whose absence proves it never ran. */
 const CHAPTER1_MARKER = 'Deploy your site to Cloudflare';
 
 /**
@@ -166,7 +166,7 @@ function assertNeverFellThrough(stdout) {
 // chapter 2 anymore, so a resumed record at either routes into runChapter2 exactly like
 // `zone-created`, `records-carried`, and `delegated` already do, and hits the same token-hop
 // stop, since account selection and the token hop both run unconditionally on every entry
-// (chapter2.mjs's own comment on those two hops).
+// (chapter2.mjs's comment on those two hops).
 
 for (const [step, siteId] of [
   ['zone-created', 'chapter2-zoncr1'],
@@ -213,9 +213,9 @@ for (const [step, siteId] of [
 
     assert.ok(
       result.stderr.includes('Next:'),
-      `expected the token hop's own Next: line, got: ${result.stderr}`,
+      `expected the token hop's Next: line, got: ${result.stderr}`,
     );
-    // No duplicated generic fallback line on top of the row's own Next: line.
+    // No duplicated generic fallback line on top of the row's Next: line.
     assert.equal(
       result.stderr.includes('Next step: fix the problem above'),
       false,
@@ -261,8 +261,8 @@ test('bin.mjs at live with --yes --domain enters chapter 2 instead of stopping a
     result.stdout.includes('is already live'),
     `expected the existing already-live line to still print, got: ${result.stdout}`,
   );
-  // The admission detail's own opening words, not the hop title: printLiveInfo's re-run hint
-  // opens on "Connect your own domain any time", so a title match could be satisfied by a
+  // The admission detail's opening words, not the hop title: printLiveInfo's re-run hint
+  // opens on "Connect your domain any time", so a title match could be satisfied by a
   // closing block rather than by the gate itself.
   assert.ok(
     result.stdout.includes('Connects a domain you already own'),
@@ -306,7 +306,7 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
     `expected the live info block, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('Connect your own domain any time by re-running'),
+    result.stdout.includes('Connect your domain any time by re-running'),
     `expected the reworded next-chapter copy, got: ${result.stdout}`,
   );
   // The App link and the doctor reminder are the shared closing tail printLiveInfo,
@@ -329,12 +329,12 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
 
 // --- The `domain-live` step: NOT terminal since T4b, continues into chapter 2 ------------------
 //
-// UPDATED FOR T4b: this test used to assert that domain-live was terminal (the domain half's own
+// UPDATED FOR T4b: this test used to assert that domain-live was terminal (the domain half's
 // stopping point, before the email half existed) and that a resumed record there never called
 // runChapter2. That behavior is gone: domain-live is not a stopping point for chapter 2 anymore
-// (its own email half continues from here), so a resumed record at it is now routed through
+// (its email half continues from here), so a resumed record at it is now routed through
 // runChapter2 exactly like the other CHAPTER2_RESUMABLE_STEPS, proven the same deterministic way
-// every other case in this file proves routing into chapter 2 (per this file's own header
+// every other case in this file proves routing into chapter 2 (per this file's header
 // comment): `--yes --domain <name>` with no token in the child env stops at the token hop.
 
 test('bin.mjs at domain-live continues into chapter 2 instead of the old terminal return', async (t) => {
@@ -374,14 +374,14 @@ test('bin.mjs at domain-live continues into chapter 2 instead of the old termina
   assertNeverFellThrough(result.stdout);
   assert.ok(
     result.stderr.includes('Next:'),
-    `expected the token hop's own Next: line, got: ${result.stderr}`,
+    `expected the token hop's Next: line, got: ${result.stderr}`,
   );
 
   const state = await loadSite('chapter2-domliv');
   assert.equal(state.step, 'domain-live', 'a thrown row must never advance the saved step');
 });
 
-// --- The `email-live` and `paid-plan-declined` steps: chapter 2's own terminal states ----------
+// --- The `email-live` and `paid-plan-declined` steps: chapter 2's terminal states ----------
 
 /** Save a site record shaped like one that finished chapter 2's email half. */
 async function seedEmailLiveSite(siteId, dir, overrides = {}) {
@@ -402,7 +402,7 @@ async function seedDeclinedSite(siteId, dir, overrides = {}) {
 }
 
 // Only email-live is terminal for RE-ENTRY. A recorded decline is terminal for its token and its
-// exit code, never for re-entry, and its own test sits below this loop.
+// exit code, never for re-entry, and its test sits below this loop.
 for (const [label, step, seed, idSuffix] of [
   ['email-live', 'email-live', seedEmailLiveSite, 'emlive'],
 ]) {
@@ -417,8 +417,8 @@ for (const [label, step, seed, idSuffix] of [
     const cloudflare = await startFakeCloudflare();
     t.after(() => cloudflare.close());
 
-    // The state store's own SITE_ID_SHAPE requires an exact six-character trailing suffix
-    // (state.mjs), so idSuffix is spelled out per case rather than derived from step's own name.
+    // The state store's SITE_ID_SHAPE requires an exact six-character trailing suffix
+    // (state.mjs), so idSuffix is spelled out per case rather than derived from step's name.
     const siteId = `chapter2-term-${idSuffix}`;
     await seed(siteId, dir);
 
@@ -454,7 +454,7 @@ for (const [label, step, seed, idSuffix] of [
     if (step === 'email-live') {
       assert.ok(
         result.stdout.includes('Cloudflare accepted'),
-        `expected email-live's own closing line, got: ${result.stdout}`,
+        `expected email-live's closing line, got: ${result.stdout}`,
       );
     } else {
       assert.ok(
@@ -484,12 +484,12 @@ for (const [label, step, seed, idSuffix] of [
 // ready, and --start-over refuses at this step, so returning early left an owner who declined no
 // way to turn email on at all. If this test goes red, that trap is back.
 //
-// UPDATED FOR T4c: chapter 2's own top-of-function short-circuit reaches its reoffered copy with
+// UPDATED FOR T4c: chapter 2's top-of-function short-circuit reaches its reoffered copy with
 // no network call at all (it never re-runs the actual admission), and its outcome,
-// `paid-plan-declined`, is one of chapter 2's own TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
-// now falls straight through into chapter 3 in the same call (T4c's own fall-through). This run
-// carries no saved Cloudflare token for chapter 3 to reuse, so it stops at chapter 3's own token
-// hop and exits 1, the same deterministic stop this file's own CHAPTER2_RESUMABLE_STEPS loop
+// `paid-plan-declined`, is one of chapter 2's TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
+// now falls straight through into chapter 3 in the same call (T4c's fall-through). This run
+// carries no saved Cloudflare token for chapter 3 to reuse, so it stops at chapter 3's token
+// hop and exits 1, the same deterministic stop this file's CHAPTER2_RESUMABLE_STEPS loop
 // already uses; the two assertions this test exists for (the resume line, the reoffered copy) both
 // print before that stop.
 test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-offer, then falls through into chapter 3', async (t) => {
@@ -517,7 +517,7 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
   assert.equal(
     result.code,
     1,
-    `expected chapter 3's own token-hop stop (T4c's fall-through), got ${result.code}. stderr: ${result.stderr}`,
+    `expected chapter 3's token-hop stop (T4c's fall-through), got ${result.code}. stderr: ${result.stderr}`,
   );
   assert.ok(
     result.stdout.includes('Resuming'),
@@ -529,7 +529,7 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
   );
   assert.ok(
     result.stdout.includes('Get a fresh Cloudflare API token'),
-    `expected chapter 3's own token hop to have started, got: ${result.stdout}`,
+    `expected chapter 3's token hop to have started, got: ${result.stdout}`,
   );
   assert.ok(
     result.stderr.includes('Next:'),
@@ -761,7 +761,7 @@ test('bin.mjs at email-live names the sender and Cloudflare\'s acceptance, never
     `expected the proven claim to be acceptance, got: ${result.stdout}`,
   );
   assert.equal(
-    result.stdout.includes('sends its own sign-in email'),
+    result.stdout.includes('sends its sign-in email'),
     false,
     `must not flatly claim the site sends sign-in email as proven fact, got: ${result.stdout}`,
   );

@@ -106,7 +106,7 @@ test('listCommits answers newest first, bounded at limit + 1, empty for a never-
   expect(full[0].author).toEqual(author);
   full.forEach((c) => expect(c.date).toMatch(/^\d{4}-\d{2}-\d{2}T/));
 
-  // Bounded at limit + 1: 4 commits exist, so a limit of 2 truncates to 3 (the caller's own signal).
+  // Bounded at limit + 1: 4 commits exist, so a limit of 2 truncates to 3 (the caller's signal).
   const bounded = await backend.listCommits(path, 'main', 2);
   expect(bounded).toHaveLength(3);
   expect(bounded.map((c) => c.ref)).toEqual([shas[3], shas[2], shas[1]]);

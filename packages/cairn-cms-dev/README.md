@@ -34,7 +34,7 @@ if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
 export { handle };
 ```
 
-Add the package to `ssr.noExternal` in your `vite.config.ts`, beside the engine, so `vite dev` processes it. It ships built JavaScript that imports `cloudflare:workers`, a scheme Node's own loader rejects:
+Add the package to `ssr.noExternal` in your `vite.config.ts`, beside the engine, so `vite dev` processes it. It ships built JavaScript that imports `cloudflare:workers`, a scheme Node's loader rejects:
 
 ```ts
 ssr: { noExternal: ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'] },
@@ -55,7 +55,7 @@ the Worker env with `withEnv`, so the admin runs with no GitHub App and no D1.
 
 | `content` | What the admin serves |
 | --- | --- |
-| `'repository'` (the default) | Your site's own files. Each branch is an in-memory overlay over the working tree. |
+| `'repository'` (the default) | Your site's files. Each branch is an in-memory overlay over the working tree. |
 | `'fixtures'` | The package's seeded in-memory repo: sample posts, media, fragments, and a tag vocabulary. |
 
 In `'repository'` mode a read answers the overlay first and the disk second, so the admin lists the
@@ -83,7 +83,7 @@ Three independent layers keep the bypass out of production. The bypass ships onl
    the text of every branch that names it, so Rollup drops the branch with its dynamic `import()`
    and the deployed bundle holds no dev-backend code. Name the define at each call site. A shared
    `export const` read from a helper module does not work: SvelteKit's SSR build folds the constant
-   inside its own chunk but does not propagate the value across the module boundary, so the
+   inside its chunk but does not propagate the value across the module boundary, so the
    consuming chunk keeps the branch and this package rides into the deployed Worker. Gate every
    import from this package the same way: the package re-exports its whole surface from one module,
    so a single static `import` pulls the bypass into the build. Verify a release by grepping the

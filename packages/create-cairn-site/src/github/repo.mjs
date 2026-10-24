@@ -77,7 +77,7 @@ export async function createRepo(token, { name, ownerType, org, dir, appName }) 
   // Every other status is an invariant violation, not a catalogue row: the chapter always
   // installs the App before it ever reaches repo creation, so a bare 404 here (no installation)
   // or any other unmapped status means an earlier step was skipped, not a recoverable GitHub
-  // refusal. A plain error with its own next step still leaves the run with something to do.
+  // refusal. A plain error with its next step still leaves the run with something to do.
   throw new Error(
     `github: repo create failed unexpectedly (status ${status}).\n` +
       `Next step: re-run npx create-cairn-site --dir ${dir}.`
@@ -97,7 +97,7 @@ export async function createRepo(token, { name, ownerType, org, dir, appName }) 
  * PUT call here: `PUT /user/installations/{iid}/repositories/{rid}` is refused for a user
  * access token (403 `Resource not accessible by integration`, spike-confirmed 2026-08-10 in
  * both an all-repositories and a selected-repositories install) and unnecessary, since a repo
- * created with the App's own user token is auto-added to the installation already. This call is
+ * created with the App's user token is auto-added to the installation already. This call is
  * the load-bearing check that the auto-add actually happened.
  * @param {string} token a user access token
  * @param {VerifyInstallationCoversInput} input the installation and repository to check
@@ -145,8 +145,8 @@ async function pushStep(call, dir) {
  */
 
 /**
- * Parse a scaffold's own `.gitignore` into pushScaffold's small rule set. This is deliberately
- * not a full gitignore engine: the scaffold's own `.gitignore` is simple and tool-authored (a
+ * Parse a scaffold's `.gitignore` into pushScaffold's small rule set. This is deliberately
+ * not a full gitignore engine: the scaffold's `.gitignore` is simple and tool-authored (a
  * flat list of directory and file names, at most a trailing `/*` glob), so a literal-name
  * matcher covers every line it actually writes. A comment line, a blank line, and a negation
  * (`!...`, which this tool never emits and does not attempt to un-ignore) are all skipped.
@@ -180,7 +180,7 @@ export function isGitignored(relativePath, rules) {
 }
 
 /**
- * Load and parse the scaffold's own `.gitignore`, when present.
+ * Load and parse the scaffold's `.gitignore`, when present.
  * @param {string} dir the scaffold directory to check for `.gitignore`
  * @returns {Promise<GitignoreRule[]>} the parsed rules, empty when no `.gitignore` exists
  */
@@ -197,7 +197,7 @@ async function loadGitignoreRules(dir) {
 
 /**
  * Walk `dir` recursively for the files pushScaffold ships, skipping dependency trees, VCS
- * metadata, the scaffold's own atomic-claim marker, and, when a `.gitignore` exists at `dir`'s
+ * metadata, the scaffold's atomic-claim marker, and, when a `.gitignore` exists at `dir`'s
  * root, anything it ignores. The `.gitignore` check matters most on a resumed run: an admin who
  * ran `npm install` or `npm run dev` between runs has local secret material (`.wrangler/`,
  * `.dev.vars`, `dist/`) on disk that the hardcoded skip list alone would upload to GitHub.
@@ -234,7 +234,7 @@ async function collectFiles(dir) {
  * @property {(line: string) => void} log receives one printed line per call
  * @property {string} [defaultBranch] the repository's default branch; defaults to `main` for a
  *  saved record from before this field existed, but a freshly created repository always passes
- *  the branch GitHub itself reported (createRepo's own `defaultBranch`), since an organization
+ *  the branch GitHub itself reported (createRepo's `defaultBranch`), since an organization
  *  can set a default other than `main`
  */
 

@@ -5,11 +5,11 @@
 // install flows) is a normal return value, not an error, so there is no consent-denied row.
 // The tool also cannot observe GitHub silently re-rendering the manifest form with the App name
 // already filled in and an inline "name already taken" notice, so there is no
-// app-name-collision row either; that recovery is covered by browser-step-abandoned's own wait
+// app-name-collision row either; that recovery is covered by browser-step-abandoned's wait
 // copy, which already tells the admin to check for exactly that page. builds-oauth-denied is
 // the one place a declined consent DOES get a row: chapter 3's reconcile OAuth trip has no
 // caller-visible "declined, keep going" state the way chapters 1 and 2 do, so a denial there
-// surfaces as this catalogue's own act row instead.
+// surfaces as this catalogue's act row instead.
 
 /**
  * @typedef {'wait' | 'act' | 'ask-someone'} ErrorKind

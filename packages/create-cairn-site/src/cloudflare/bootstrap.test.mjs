@@ -8,8 +8,8 @@ import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
 
 /**
  * Build a `wrangler d1 execute --json` style result array: one entry per statement, in the
- * seed's own order (owner insert, delete, token insert), each carrying only the `meta.changes`
- * count the seed's own trust check reads.
+ * seed's order (owner insert, delete, token insert), each carrying only the `meta.changes`
+ * count the seed's trust check reads.
  * @param {number} ownerChanges rows changed by the owner insert
  * @param {number} deleteChanges rows changed by the magic_token delete
  * @param {number} tokenChanges rows changed by the token insert

@@ -110,7 +110,7 @@ test('printCostPreamble prints nothing on a resume', () => {
 
 /**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, mirroring
- * resume-chapter2.test.mjs's own helper.
+ * resume-chapter2.test.mjs's helper.
  * @param {import('node:test').TestContext} t
  * @returns {Promise<string>} the state directory's absolute path
  */
@@ -145,7 +145,7 @@ async function runCli(args, { stateDir }) {
   }
 }
 
-// A whole-chapter dry run touches no network and shells out to nothing (the plan's own
+// A whole-chapter dry run touches no network and shells out to nothing (the plan's
 // --dry-run constraint), so it is the only fresh-run path this file can drive without a fake
 // GitHub or Cloudflare server.
 test('bin.mjs prints the cost preamble before the site-name prompt on a fresh dry run', async (t) => {
@@ -160,7 +160,7 @@ test('bin.mjs prints the cost preamble before the site-name prompt on a fresh dr
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
   const preambleIndex = result.stdout.indexOf('Before you start, the honest cost picture.');
-  // Two leading spaces distinguish clack's own intro banner ("<box char>  create-cairn-site",
+  // Two leading spaces distinguish clack's intro banner ("<box char>  create-cairn-site",
   // collectAnswers's first line) from the preflight finding that also names the tool
   // ("...that create-cairn-site requires."), which is preceded by a single space.
   const promptIndex = result.stdout.indexOf('  create-cairn-site');
@@ -179,7 +179,7 @@ test('bin.mjs does not print the cost preamble on a resume', async (t) => {
 
   // `email-live` (chapter 2's real finish line, since T4b) rather than `domain-live`: the latter
   // is no longer a stopping point for bin.mjs's dispatcher (it now continues straight into
-  // chapter 2's own admission prompt, which needs a `confirm` seam this file has none of), while
+  // chapter 2's admission prompt, which needs a `confirm` seam this file has none of), while
   // `email-live` still returns immediately with no prompt, which is what this test needs to
   // observe a resume's stdout without hanging.
   await saveSite('money-preamble-resume-emlive', {

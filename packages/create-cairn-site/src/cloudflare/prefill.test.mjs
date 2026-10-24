@@ -19,7 +19,7 @@ async function setup(t) {
   return cloudflare;
 }
 
-/** The v4 403 envelope with no extractable permission, matching api.test.mjs's own fixture. */
+/** The v4 403 envelope with no extractable permission, matching api.test.mjs's fixture. */
 const GENERIC_SCOPE_MISSING_BODY = {
   success: false,
   errors: [{ code: 9109, message: 'Unauthorized to access requested resource' }],
@@ -27,7 +27,7 @@ const GENERIC_SCOPE_MISSING_BODY = {
   result: null,
 };
 
-/** The v4 400 envelope api.mjs maps onto token-invalid, matching api.test.mjs's own fixture. */
+/** The v4 400 envelope api.mjs maps onto token-invalid, matching api.test.mjs's fixture. */
 const TOKEN_INVALID_BODY = {
   success: false,
   errors: [
@@ -111,7 +111,7 @@ test('an underscoped pasted token gets exactly one re-prompt, then throws token-
     promptCalls += 1;
     if (promptCalls === 2) {
       // Re-arm the fake's one-shot override right before the second validation call runs, the
-      // same idiom api.test.mjs's own 429-retry test uses to answer a second request differently.
+      // same idiom api.test.mjs's 429-retry test uses to answer a second request differently.
       cloudflare.failNext('zone_list', 403, GENERIC_SCOPE_MISSING_BODY);
     }
     return `pasted-token-attempt-${promptCalls}`;
@@ -518,7 +518,7 @@ test('a token failing listZones still maps to token-scope-missing when permissio
   );
 
   // The validation call is unchanged by permissionKeys: still listZones, still one call per
-  // attempt, matching the chapter-2 path's own assertion above.
+  // attempt, matching the chapter-2 path's assertion above.
   const zoneListCalls = cloudflare.requests.filter(
     (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'),
   );

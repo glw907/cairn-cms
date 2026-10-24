@@ -56,7 +56,7 @@ export interface FakeAuthDb {
 /** Build the in-memory D1 stand-in the showcase binds as AUTH_DB, seeded with a demo allowlist. */
 export function createFakeAuthDb(): FakeAuthDb {
   // Seeded allowlist: the fake session's editor (hooks.server.ts) as owner, plus one plain
-  // editor so the list view renders more than the acting owner's own row.
+  // editor so the list view renders more than the acting owner's row.
   const editors = new Map<string, EditorRow>([
     ['editor@showcase.test', { email: 'editor@showcase.test', display_name: 'Demo Editor', role: 'owner' }],
     ['writer@showcase.test', { email: 'writer@showcase.test', display_name: 'Sample Writer', role: 'editor' }],
@@ -73,7 +73,7 @@ export function createFakeAuthDb(): FakeAuthDb {
   const previewTokens = new Map<string, PreviewTokenRow>();
 
   // The scan all three of the table's DELETE statements share (by expiry, by entry, by editor);
-  // each supplies only its own predicate, and the returned count is the D1 `meta.changes` the
+  // each supplies only its predicate, and the returned count is the D1 `meta.changes` the
   // store reads back.
   const deletePreviewTokensWhere = (match: (row: PreviewTokenRow) => boolean): number => {
     let changes = 0;
@@ -229,7 +229,7 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: deletePreviewTokensWhere((row) => row.expires_at <= now) };
     }
 
-    // insertPreviewToken's own insert (args: tokenHash, concept, entryId, editor, expiresAt, createdAt).
+    // insertPreviewToken's insert (args: tokenHash, concept, entryId, editor, expiresAt, createdAt).
     if (sql.includes('INSERT INTO preview_tokens')) {
       previewTokens.set(String(args[0]), {
         concept: String(args[1]),

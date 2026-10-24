@@ -382,7 +382,7 @@ test('close releases the port', async (t) => {
 // --- Email Sending routes ------------------------------------------------------------------
 // Every fixture below is pasted independently from the captured bodies in
 // docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
-// rather than imported from fake-cloudflare.mjs, so a drift in the implementation's own copy (a
+// rather than imported from fake-cloudflare.mjs, so a drift in the implementation's copy (a
 // dropped field, a retyped value) fails this suite instead of passing silently.
 
 const CAPTURED_SUBDOMAIN_CREATE_BODY = {
@@ -486,7 +486,7 @@ test('the subdomain list paginates like every other list route', async (t) => {
   assert.equal(page2Body.result[0].name, 'example.org');
 });
 
-test('preview_enabled is not forced to a constant: a seeded entry keeps its own value', async (t) => {
+test('preview_enabled is not forced to a constant: a seeded entry keeps its value', async (t) => {
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
   const zone = await createZone(cloudflare, { name: 'example.org' });

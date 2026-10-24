@@ -12,17 +12,17 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// This package's own canonical copy of the site-config relative path, not a cross-package
+// This package's canonical copy of the site-config relative path, not a cross-package
 // import: the bake never import()s engine code into its process (a compromised or buggy engine
 // install must not execute in the scaffolder), so this file is the one source. The Go tool's
-// own mirror (`tool/internal/doctor/site-config-path.json`) carries the same value, kept in
+// mirror (`tool/internal/doctor/site-config-path.json`) carries the same value, kept in
 // sync by hand.
 const SITE_CONFIG_PATH_FILE = fileURLToPath(new URL('./site-config-path.json', import.meta.url));
 
 /**
  * Verify a site-config relative path before it is ever joined onto a real directory: relative,
  * no leading slash, no NUL byte, and no ".." segment, so a corrupted data file cannot walk a
- * scaffold's file read or write outside its own tree.
+ * scaffold's file read or write outside its tree.
  * @param {unknown} value the candidate relative path, read from site-config-path.json
  * @returns {string} the same value, once verified
  */
@@ -43,7 +43,7 @@ export function verifySiteConfigPath(value) {
 }
 
 /**
- * Read this package's own committed site-config-path.json and verify its shape.
+ * Read this package's committed site-config-path.json and verify its shape.
  * @returns {string} the verified relative path
  */
 function readSiteConfigPath() {
@@ -90,11 +90,11 @@ const SITE_NAME_LINE = 'siteName: Waymark';
 // under some other key is never mistaken for the top-level one.
 const TEMPLATE_HEADER_WITH_DESCRIPTION = new RegExp(`^${SITE_NAME_LINE}\\ndescription: .*$`, 'm');
 
-// The theme file's own re-skin recipe (its header comment) says: rotate the hue only, hold the
+// The theme file's re-skin recipe (its header comment) says: rotate the hue only, hold the
 // lightness and chroma, so both the light and dark blocks keep the contrast they were tuned
 // for. Matching each declaration's L and C individually (rather than replacing a fixed literal)
 // is what lets one hue value drive all four lines without hardcoding their L/C here a second
-// time, which would silently drift from the template's own numbers.
+// time, which would silently drift from the template's numbers.
 const OKLCH_DECLARATION = /(--color-primary(?:-content)?:[ \t]*oklch\([^%\n]+%[ \t]+\S+[ \t]+)(\d+(?:\.\d+)?)([ \t]*\);)/g;
 
 // The light and dark blocks each declare a primary and a primary-content token, so a healthy
@@ -213,7 +213,7 @@ async function readTarget(absolutePath, relativePath) {
  * so the template drifting out from under this module surfaces immediately rather than shipping a
  * scaffold with unpersonalized fields.
  *
- * The description is written under the `description` key, the engine's own known top-level
+ * The description is written under the `description` key, the engine's known top-level
  * site-config field (see `KNOWN_TOP_LEVEL_KEYS` in `src/lib/nav/site-config.ts`), not an
  * invented `tagline` key the engine would reject at build time.
  * @param {string} dir the scaffold root
@@ -234,12 +234,12 @@ export async function applySubstitutions(dir, { name, description, brandColor, a
   }
   const siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
   // A description rides along in this one replacement rather than a second lookup for the line
-  // just written: the template's own `siteName:` line is the only string worth gating on, and
+  // just written: the template's `siteName:` line is the only string worth gating on, and
   // looking up a line this function itself produced would gate on nothing. The template carries
-  // its own tagline under the same key, so the header the replacement consumes is the siteName
+  // its tagline under the same key, so the header the replacement consumes is the siteName
   // line plus that line when it follows: writing a second one produced a duplicate map key, which
   // every YAML parser rejects, and leaving the template's would ship showcase copy as a site's
-  // own description.
+  // description.
   const siteNameBlock = description
     ? `siteName: ${name}\ndescription: ${description}`
     : `siteName: ${name}`;

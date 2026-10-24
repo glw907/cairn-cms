@@ -111,7 +111,7 @@ test('reauthorize: round-trips through the fake authorize redirect to the loopba
   const github = await startFakeGithub();
   t.after(() => github.close());
   pointAtFake(t, github);
-  // The fake's own registered App exists only via the manifest flow; a resume run does not
+  // The fake's registered App exists only via the manifest flow; a resume run does not
   // re-run that flow, so seed the fake's state directly with the App this test's redirect_uri
   // must match, using the portless loopback exception the same way a real re-authorize does.
   github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
@@ -153,7 +153,7 @@ test('reauthorize: a tampered state rejects with a Next step message naming the 
         dir: '/tmp/alpine-club',
         appName: 'Alpine Club CMS',
         openBrowser: async (url) => {
-          // Bypass the fake's own authorize endpoint (no App is even registered here) and hit
+          // Bypass the fake's authorize endpoint (no App is even registered here) and hit
           // the loopback callback directly, as an attacker replaying a stale or intercepted
           // link would, with a state value that does not match this run's nonce.
           const redirectUri = new URL(url).searchParams.get('redirect_uri');

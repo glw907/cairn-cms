@@ -7,7 +7,7 @@ import { scaffold, handoverText, dryRunNotice, SCAFFOLD_SENTINEL } from './scaff
 
 /**
  * A minimal but real wrangler.jsonc, carrying every string nameWranglerResources targets (the
- * showcase's own name, both database names and ids, and the bucket name), so a real scaffold run
+ * showcase's name, both database names and ids, and the bucket name), so a real scaffold run
  * exercises the actual rewrite rather than a fixture that happens to have nothing to find.
  */
 const WRANGLER_JSONC_FIXTURE = `{
@@ -91,7 +91,7 @@ async function templateFixture(t) {
     path.join(dir, 'src/theme/theme.css'),
     '--color-primary: oklch(45% 0.15 30);\n',
   );
-  // The template's own commented-out aiPosture field (substitute.mjs's AI_POSTURE_COMMENT_BLOCK),
+  // The template's commented-out aiPosture field (substitute.mjs's AI_POSTURE_COMMENT_BLOCK),
   // present so a test that answers a real posture has something to personalize.
   await writeFile(
     path.join(dir, 'src/theme/cairn.config.ts'),
@@ -112,7 +112,7 @@ async function templateFixture(t) {
   );
   await writeFile(path.join(dir, 'wrangler.jsonc'), WRANGLER_JSONC_FIXTURE);
   // Mirrors bake-template.mjs's renameGitignoreForPacking: the real baked template carries the
-  // showcase's own .gitignore under this dot-free name, npm-safe through packing.
+  // showcase's .gitignore under this dot-free name, npm-safe through packing.
   await writeFile(path.join(dir, 'gitignore'), GITIGNORE_FIXTURE);
   return dir;
 }
@@ -295,7 +295,7 @@ test('scaffold returns a siteId even under --dry-run, though nothing is saved', 
 
 test('a failing state save reports a warning but leaves the scaffold complete', async (t) => {
   const outDir = await tempDir(t);
-  // Point CAIRN_STATE_DIR at a path that already exists as a plain file, so state.mjs's own
+  // Point CAIRN_STATE_DIR at a path that already exists as a plain file, so state.mjs's
   // mkdir fails, standing in for an unwritable ~/.config or a stray file where the state
   // directory should be.
   const previous = process.env.CAIRN_STATE_DIR;
@@ -467,7 +467,7 @@ test('the hand-over block prints the bare install/dev sequence and never mention
   assert.ok(text.includes('cd alpine-club'));
   assert.ok(text.includes('npm install'));
   assert.ok(text.includes('npm run dev'));
-  assert.ok(!text.includes('CAIRN_DEV_BACKEND'), 'the scaffold\'s own dev script now sets it at runtime');
+  assert.ok(!text.includes('CAIRN_DEV_BACKEND'), 'the scaffold\'s dev script now sets it at runtime');
 });
 
 test('an absolute --dir prints without a doubled leading slash', () => {

@@ -5,7 +5,7 @@
 //
 // THE DEFECT THIS MODULE EXISTS TO PREVENT: a stale negative DNS cache reads exactly like an
 // absent record, and it bites in the exact window this chapter runs in. The spike observed it
-// twice on its own scratch domain: seeded MX records returned nothing from a recursive resolver
+// twice on a scratch domain: seeded MX records returned nothing from a recursive resolver
 // while the apex AAAA on the same name resolved in the same batch, then returned normally minutes
 // later with nothing in DNS having changed. The negative is cached PER RECORD TYPE, so the apex
 // resolving proves nothing about a missing MX, and the failure is silent, because an empty record
@@ -13,15 +13,15 @@
 // stops the admin's mail and reports success.
 //
 // readCurrentRecords therefore prefers the domain's AUTHORITATIVE nameservers, which no recursive
-// cache sits in front of: it looks up the domain's own NS records, resolves one of those
+// cache sits in front of: it looks up the domain's NS records, resolves one of those
 // hostnames to an address, and queries that address directly for every probe. Only when that
 // fails (the NS lookup itself fails, or none of the NS hostnames resolve to an address) does it
 // fall back to a recursive resolver, and `lowConfidence` is set on exactly that fallback, never on
 // the ordinary case.
 //
-// readCurrentRecords refuses to run once the domain's own NS already carries a
-// `.ns.cloudflare.com` pair: at that point a probe would read this tool's own writes rather than
-// what the admin had before, and the persisted carry-over snapshot (this function's own earlier
+// readCurrentRecords refuses to run once the domain's NS already carries a
+// `.ns.cloudflare.com` pair: at that point a probe would read this tool's writes rather than
+// what the admin had before, and the persisted carry-over snapshot (this function's earlier
 // return value, saved by the caller) is the source of truth from there on.
 import { cloudflareError } from './catalogue.mjs';
 import { defaultResolve, readNsNames, selectAuthoritativeResolver } from './dns.mjs';
@@ -34,7 +34,7 @@ const CLOUDFLARE_NS_PATTERN = /\.ns\.cloudflare\.com$/i;
  * primitive, so discovery asks an explicit list and cannot see anything else. Matches the T4a
  * design's ruling 4 exactly: apex A/AAAA/MX/TXT/CAA/NS, plus `www`, `mail`, `autodiscover`, and
  * `_dmarc` (DMARC records are always TXT, per RFC 7489), plus every named DKIM selector, probed as
- * both TXT (Google's own publishing form) and CNAME (Fastmail's, observed live on a Fastmail-hosted
+ * both TXT (Google's publishing form) and CNAME (Fastmail's, observed live on a Fastmail-hosted
  * zone in the spike appendix).
  * @type {{ apex: string[], subdomains: Record<string, string[]>, dkimSelectors: string[] }}
  */
@@ -46,8 +46,8 @@ export const PROBE_PLAN = {
     autodiscover: ['A', 'AAAA', 'CNAME'],
     _dmarc: ['TXT'],
   },
-  // Not independently observed live beyond 'google' (the spike's own Step 3 run) and 'fm1'
-  // (Fastmail's own selector, seen on a Fastmail-hosted zone in the spike appendix); fm2/fm3 follow
+  // Not independently observed live beyond 'google' (the spike's Step 3 run) and 'fm1'
+  // (Fastmail's selector, seen on a Fastmail-hosted zone in the spike appendix); fm2/fm3 follow
   // Fastmail's documented rotation, and selector1/selector2 are Microsoft 365's documented
   // default pair. A best-effort list, per ruling 4: it cannot see a selector outside it.
   dkimSelectors: ['google', 'fm1', 'fm2', 'fm3', 'selector1', 'selector2'],
@@ -132,7 +132,7 @@ function translate(type, answer, name, host) {
       return answer.map((content) => ({ type, name, content, host }));
     case 'TXT':
       // Each entry is itself an array of chunks for one TXT record; join with no separator, per
-      // the spike's own observed [255, 155]/[255, 182]-byte DKIM chunking.
+      // the spike's observed [255, 155]/[255, 182]-byte DKIM chunking.
       return answer.map((chunks) => ({ type, name, content: chunks.join(''), host }));
     case 'MX':
       return answer.map((mx) => ({ type, name, content: mx.exchange, priority: mx.priority, host }));
@@ -158,14 +158,14 @@ function translate(type, answer, name, host) {
  * @property {object[]} records every record the probe list found, each `{ type, name, content,
  *  priority?, data?, host }`
  * @property {boolean} lowConfidence true when the read fell back to a recursive resolver rather
- *  than the domain's own authoritative nameservers, per the negative-cache defect this module
+ *  than the domain's authoritative nameservers, per the negative-cache defect this module
  *  exists to guard against
  */
 
 /**
- * Read the admin's current DNS records against the fixed probe list, preferring the domain's own
+ * Read the admin's current DNS records against the fixed probe list, preferring the domain's
  * authoritative nameservers. Refuses to run once the domain is already delegated to Cloudflare,
- * since a probe past that point would read this tool's own writes.
+ * since a probe past that point would read this tool's writes.
  * @param {object} args
  * @param {string} args.domain the domain to probe
  * @param {string} args.dir the `--dir` value, interpolated into a records-read-failed row
@@ -184,7 +184,7 @@ export async function readCurrentRecords({ domain, dir, resolve = defaultResolve
     throw new Error(
       `readCurrentRecords refuses to run: ${domain} is already delegated to Cloudflare (its ` +
         'nameservers already carry a .ns.cloudflare.com pair), so a fresh probe would read this ' +
-        "tool's own writes rather than what the admin had before. The persisted carry-over " +
+        "tool's writes rather than what the admin had before. The persisted carry-over " +
         'snapshot is the source of truth once delegation is active.',
     );
   }
@@ -226,7 +226,7 @@ export const INCOMPLETE_CAVEAT =
  * that was in fact just created or changed.
  */
 export const LOW_CONFIDENCE_CAVEAT =
-  "This read could not reach your domain's own nameservers directly, so it fell back to a " +
+  "This read could not reach your domain's nameservers directly, so it fell back to a " +
   'public resolver. A public resolver can cache a false "not found" answer for a few minutes ' +
   'after a record changes, so a record you expect to see here but do not may still exist: wait a ' +
   'few minutes and re-run rather than assuming it is gone.';
@@ -274,7 +274,7 @@ function buildGateMessage(records, lowConfidence) {
 /**
  * Translate one typed record into the body `api.createDnsRecord` expects. Every carried record
  * writes `ttl: 1` (Cloudflare's "automatic"): `node:dns` does not surface a source TTL without an
- * extra per-record lookup, and automatic is the safe default the spike's own captured record used
+ * extra per-record lookup, and automatic is the safe default the spike's captured record used
  * too. Address and CNAME records write unproxied, since proxying a record the admin never asked
  * this tool to proxy could break a non-HTTP protocol (mail, for one) sitting behind it.
  * @param {object} record a typed record from readCurrentRecords
@@ -302,13 +302,13 @@ function toApiRecord(record) {
 /**
  * Copy the admin's discovered records into the new zone, writing nothing until `confirm` resolves
  * true. NS records are excluded entirely, both from what gets written and from the gate's summary
- * count: Cloudflare assigns and manages a zone's own apex nameservers, and writing the domain's
+ * count: Cloudflare assigns and manages a zone's apex nameservers, and writing the domain's
  * old NS values as ordinary records into the new zone does not carry any useful meaning.
  * @param {object} args
  * @param {ReturnType<typeof import('./api.mjs').makeApi>} args.api the Cloudflare API client
  * @param {string} args.zoneId the zone to write into
  * @param {object[]} args.records the typed records from readCurrentRecords
- * @param {boolean} [args.lowConfidence] readCurrentRecords' own confidence flag, folded into the
+ * @param {boolean} [args.lowConfidence] readCurrentRecords' confidence flag, folded into the
  *  gate copy when true
  * @param {(message: string) => Promise<boolean>} args.confirm shown the gate message; resolves
  *  true to proceed, false to decline

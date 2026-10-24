@@ -1,14 +1,14 @@
 // The console's park page: one composed source with the printed park text. A park page is never
 // hand-written per code; it is built from the same catalogue row (src/cloudflare/catalogue.mjs)
 // a chapter already prints to the terminal, so the two can never drift apart in wording. The
-// enumeration a completeness test checks against is that catalogue module's own WAIT_KIND_CODES
+// enumeration a completeness test checks against is that catalogue module's WAIT_KIND_CODES
 // export, never a copy kept here.
 import { cloudflareError } from '../cloudflare/catalogue.mjs';
 import { renderParkShell } from './park-shell.mjs';
 
 /**
  * Reduce a catalogue row's full printed text down to everything above its `Next:` line, the part
- * `renderParkShell`'s own `message` param takes; the label-stripped `Next:` text itself is already
+ * `renderParkShell`'s `message` param takes; the label-stripped `Next:` text itself is already
  * exposed as `err.catalogue.next`, so this never needs to re-derive that half. Exported so a test
  * asserting output equality reads this same split rather than keeping a second copy of it that
  * could drift from what a park page actually renders.
@@ -29,7 +29,7 @@ export function messageBody(fullMessage) {
  * different things.
  * @param {object} args
  * @param {string} args.code a catalogue code, ordinarily one of WAIT_KIND_CODES
- * @param {Record<string, string | string[] | boolean>} args.params the row's own interpolation
+ * @param {Record<string, string | string[] | boolean>} args.params the row's interpolation
  *  params, the same shape `cloudflareError` takes
  * @param {string} args.chapter the current chapter label
  * @param {string} args.hop the current hop title

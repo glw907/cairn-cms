@@ -1,7 +1,7 @@
 // A fake Cloudflare, standing in for `api.cloudflare.com/client/v4` over plain HTTP on an
 // ephemeral loopback port. It exists so chapter 2's zone-create, records-carry-over, and
 // cutover tests run with no network call and no real Cloudflare token, while still exercising
-// the exact response shapes (the v4 envelope, `result_info` pagination, Cloudflare's own error
+// the exact response shapes (the v4 envelope, `result_info` pagination, Cloudflare's error
 // bodies) that would trip a naive client. Every test drives it through the returned `state` and
 // `requests` rather than by asserting on the fake's internals, so a later task's carry-over test
 // can assert a written record's `priority` survived, and a cutover test can assert the request
@@ -34,7 +34,7 @@
 // A newly created zone's real birth `status` (`pending`, `initializing`, or arriving already
 // `active`) will NOT be observed: amendment 16 rules that the external-registrar path ships
 // generic delegation instructions rather than waiting on a capture no domain outside Cloudflare's
-// own registrar was ever available to provide. The default below is Cloudflare's documented
+// registrar was ever available to provide. The default below is Cloudflare's documented
 // value, not an observed one, and a caller can override it via `startFakeCloudflare({ zoneStatus })`.
 // The create response also never carries `name_servers` (see createZoneCreateHandler below):
 // amendment 16 found no create response was ever observed populating it, so ensureZone must
@@ -45,7 +45,7 @@ import { compile, loadFixture, matchRoute, readRawBody, sendJson, startLoopbackS
 /** The captured zone-not-found body, reused by every route that 404s on an unknown zone id. */
 const ZONE_NOT_FOUND_BODY = loadFixture('cloudflare', 'zone.not-found.404');
 
-/** The captured body for a request matching no route in this fake's own table. */
+/** The captured body for a request matching no route in this fake's table. */
 const UNMATCHED_ROUTE_BODY = loadFixture('cloudflare', 'dispatcher.unmatched.404');
 
 /** The captured `messages` array a token-verify success carries alongside its result. */
@@ -68,7 +68,7 @@ const TOKEN_VERIFY_MESSAGES = loadFixture('cloudflare', 'user_token_verify.succe
  *  stored record between polls, and the per-worker discovery list is derived by filtering this
  *  map on `trigger.external_script_id`, never a second store), `state.buildLogs` (a `Map` from
  *  `build_uuid` to an ARRAY of logs pages, seeded as `[BUILD_LOGS_FIXTURE]` when a build is
- *  kicked; a test appends further pages to prove `getBuildLogs`'s own cursor paging)
+ *  kicked; a test appends further pages to prove `getBuildLogs`'s cursor paging)
  * @property {Array<{ method: string, path: string, body: unknown, headers: { authorization:
  *  string | undefined } }>} requests every request received, in arrival order; append-only,
  *  never reset except by starting a new server. `headers.authorization` carries the request's
@@ -245,7 +245,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyI
 
 /**
  * Build a request listener that logs every request, matches it against a route table (via the
- * shared `matchRoute`), decodes a one-shot `failNext` override before the route's own handler
+ * shared `matchRoute`), decodes a one-shot `failNext` override before the route's handler
  * ever runs, and reads and parses the body for methods that carry one.
  * @param {Array<{ method: string, regex: RegExp, route: string, handler: Function }>} routes
  * @param {{ requests: unknown[], failNextMap: Map<string, { status: number, body: unknown }> }} shared
@@ -304,7 +304,7 @@ function randomHexId(byteLength) {
   return randomBytes(byteLength).toString('hex');
 }
 
-// A pool of first names in Cloudflare's own nameserver naming convention
+// A pool of first names in Cloudflare's nameserver naming convention
 // (`<name>.ns.cloudflare.com`), sized so a per-zone random pair collides with a prior zone's pair
 // only rarely; `pickNameServerPair` below still guards against even that.
 const NAMESERVER_FIRST_NAMES = [
@@ -330,8 +330,8 @@ function pickNameServerPair(ctx) {
       return pair.map((name) => `${name}.ns.cloudflare.com`);
     }
   }
-  // Pool exhausted or extraordinarily unlucky; fall back to a pair Cloudflare would never assign
-  // on its own account naming, so a stray collision still looks obviously synthetic.
+  // Pool exhausted or extraordinarily unlucky; fall back to a pair Cloudflare's account naming would never
+  // assign, so a stray collision still looks obviously synthetic.
   return [`fallback-${randomHexId(2)}.ns.cloudflare.com`, `fallback-${randomHexId(2)}.ns.cloudflare.com`];
 }
 
@@ -413,7 +413,7 @@ function createZoneCreateHandler(ctx) {
     ctx.state.emailSubdomains.set(zone.id, []);
     // name_servers is stored on the zone (so a subsequent getZone/listZones sees it) but omitted
     // from THIS response: no create-response body was ever observed carrying it (amendment 16),
-    // so a caller that trusts it here rather than re-reading the zone must fail its own test.
+    // so a caller that trusts it here rather than re-reading the zone must fail its test.
     const { name_servers, ...responseZone } = zone;
     sendSuccess(res, 200, responseZone);
   };
@@ -493,7 +493,7 @@ function createDnsRecordListHandler(ctx) {
 
 /**
  * Build the `PUT /accounts/:id/workers/domains` handler. A second attach for the same
- * `hostname` updates the existing entry in place (Cloudflare's own attach call is idempotent on
+ * `hostname` updates the existing entry in place (Cloudflare's attach call is idempotent on
  * hostname), rather than growing a duplicate; the response shape matches the fixture captured
  * 2026-08-11 from `GET /accounts/:id/workers/domains`.
  */
@@ -536,7 +536,7 @@ function createWorkersDomainListHandler(ctx) {
 //    earlier, reports `false`), which is why a second fixture exists for it.
 // 2. The send refusal body is byte-identical for a never-onboarded domain and one still
 //    propagating (spike amendment 2). There is no field to key a fake failure on; the caller's
-//    own classification is `onboardedAt` plus the clock, not this body. A second refusal code,
+//    classification is `onboardedAt` plus the clock, not this body. A second refusal code,
 //    10204, was captured separately (see SENDER_NOT_CONFIGURED_REFUSED_BODY below); it carries
 //    the same ambiguity and is scripted the same way.
 
@@ -625,7 +625,7 @@ function createEmailSendHandler() {
 // 3. A build kick REQUIRES a body (`{branch: "..."}`); an empty body is `12002`.
 //
 // The two authorization-refusal bodies (APP_NOT_AUTHORIZED_REFUSED_BODY,
-// REPO_NOT_SELECTED_REFUSED_BODY) are HTTP 404, not 403 (spike amendment 5/6): Cloudflare's own
+// REPO_NOT_SELECTED_REFUSED_BODY) are HTTP 404, not 403 (spike amendment 5/6): Cloudflare's
 // wording is Pages-era and factually wrong for this condition, which is exactly why the
 // catalogue rows that map these codes do not quote it back to the admin. Do not "fix" the
 // wording here to sound more correct; a test that pins the codes (8000008, 8000012) rather than
@@ -633,7 +633,7 @@ function createEmailSendHandler() {
 //
 // Two shapes below were never captured live and are inferred rather than observed, flagged at
 // the point they are built: the connections PUT's REQUEST body (the response fields are
-// captured; the request is inferred by mirroring them, the same field names Cloudflare's own
+// captured; the request is inferred by mirroring them, the same field names Cloudflare's
 // connections API documents), and the Workers Scripts list entry shape (the spike captured only
 // that a `tag` exists per script, never the full list body).
 
@@ -746,7 +746,7 @@ function createBuildTriggersListHandler(ctx) {
  * Build the `POST /accounts/:accountId/builds/triggers` handler. The response embeds the whole
  * `repo_connection` object (spike Step 4), which is how a worker's triggers stand in for the
  * missing connections-list route; `build_token_name` is looked up from the registered token
- * rather than trusted from the request, matching a real create's own echo behavior.
+ * rather than trusted from the request, matching a real create's echo behavior.
  * @param {{ state: { buildTriggersByTag: Map<string, object[]>, buildConnections: Map<string,
  *  object>, buildTokens: object[] } }} ctx
  */
@@ -798,7 +798,7 @@ function createBuildTokensListHandler(ctx) {
 /**
  * Build the `POST /accounts/:accountId/builds/tokens` handler. The route REGISTERS a Cloudflare
  * API token the caller already holds; it mints nothing (spike Step 4: confirmed by Cloudflare's
- * own OpenAPI schema and three rejected bodies). Missing `build_token_name`,
+ * OpenAPI schema and three rejected bodies). Missing `build_token_name`,
  * `build_token_secret`, or `cloudflare_token_id` is rejected with the captured `12002` shape; the
  * response never echoes `build_token_secret` back, matching the captured create response.
  * @param {{ state: { buildTokens: object[] } }} ctx
@@ -928,13 +928,13 @@ function createBuildGetHandler(ctx) {
  * Build the `GET /accounts/:accountId/builds/builds/:buildUuid/logs` handler: reads
  * `state.buildLogs`, an ARRAY of pages per build, seeded as a single page by a kick and otherwise
  * settable directly by a test (for example to script the log tail `builds-deploy-failed` reads,
- * or a multi-page sequence to prove the client's own cursor paging). With no `?cursor=` query
- * parameter, page 0 is served. With one, the page immediately after whichever page's own
+ * or a multi-page sequence to prove the client's cursor paging). With no `?cursor=` query
+ * parameter, page 0 is served. With one, the page immediately after whichever page's
  * `cursor` field matches it is served (falling back to the last page when nothing matches),
  * modelling a cursor-based "resume after this point" route: this exact query-parameter shape was
  * never captured live (docs/internal/2026-08-12-t4c-builds-spike.md records only the response
  * body, `{cursor, truncated, lines, events}`), so it is inferred, not observed, and paired one-to-
- * one with `api.mjs`'s own `getBuildLogs`, which is the only caller. Do not treat this shape as a
+ * one with `api.mjs`'s `getBuildLogs`, which is the only caller. Do not treat this shape as a
  * captured fixture the way the rest of this file's Builds bodies are.
  * @param {{ state: { buildLogs: Map<string, object[]> } }} ctx
  */

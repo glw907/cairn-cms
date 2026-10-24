@@ -1,12 +1,12 @@
 // The Cloudflare chapter: the guided path from a pushed scaffold to a live, signed-in site. It
-// installs the site's own dependencies, signs wrangler in, builds and deploys the Worker,
+// installs the site's dependencies, signs wrangler in, builds and deploys the Worker,
 // migrates the D1 database, moves the GitHub App's private key from local state into a Worker
 // secret, and seeds the owner's first sign-in straight into the deployed database. Every side
 // effect, including every prompt, runs as an Action through T1's runActions, so --dry-run prints
 // every step's title and detail and touches neither the network nor the state store.
 //
 // Per the T3 spike, the install action runs FIRST, ahead of the login: the chapter shells out
-// through the site's own wrangler devDependency, which does not exist on a fresh scaffold until
+// through the site's wrangler devDependency, which does not exist on a fresh scaffold until
 // npm install has run, so a login-first order fails on every fresh run.
 import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { exitOnCancel } from '../prompts.mjs';
@@ -25,7 +25,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/;
 
 /**
  * Run one chapter step as a single-action batch through runActions, mirroring the GitHub
- * chapter's own `runStep` (src/github/chapter.mjs): the step's title always prints, its detail
+ * chapter's `runStep` (src/github/chapter.mjs): the step's title always prints, its detail
  * prints only under --dry-run, and `execute` never runs under --dry-run.
  * @param {{ dryRun: boolean, log: (line: string) => void }} frame the run's dry-run frame and logger
  * @param {string} title the step's title, always printed
@@ -49,7 +49,7 @@ async function runStep(frame, title, detail, execute) {
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
  *  admin's browser to the given URL; defaults to open.mjs's real opener
  * @property {typeof clackConfirm} [confirm] the yes/no prompt; a test seam, defaulting to
- *  @clack/prompts' own, the way GitHub chapter tests inject openBrowser to keep a real browser
+ *  @clack/prompts', the way GitHub chapter tests inject openBrowser to keep a real browser
  *  trip out of the suite
  * @property {typeof clackText} [text] the free-text prompt; the same kind of test seam as `confirm`
  * @property {typeof clackSelect} [select] the account picker prompt `ensureAccountId` uses on a
@@ -61,8 +61,8 @@ async function runStep(frame, title, detail, execute) {
  * Worker secret, and seed the owner's first sign-in. Every hop is persisted to the site's state
  * record before the next one starts.
  *
- * Re-entry reads the site's own saved record and picks up after whatever hop it last completed,
- * mirroring the GitHub chapter's own resume convention. A record already at `'deployed'` has
+ * Re-entry reads the site's saved record and picks up after whatever hop it last completed,
+ * mirroring the GitHub chapter's resume convention. A record already at `'deployed'` has
  * finished every action up through the deploy: there is nothing left to ask consent for, build,
  * or deploy, so resuming here skips consent and the build/deploy group and runs only the install
  * and login checks, the key move, and the sign-in action, printing one resume line instead of
@@ -103,10 +103,10 @@ export async function runCloudflareChapter({
   // No resume line is printed here. bin.mjs announces every resume before it dispatches, and its
   // line also names any flag overriding a saved answer, so a second line from this module said
   // strictly less and printed directly beneath the first. A live run is where that showed up;
-  // both modules' own tests were happy.
+  // both modules' tests were happy.
   if (!resumingAtDeployed) {
     // A cairn site needs Cloudflare's Workers Paid plan from its first deploy, so this consent
-    // states the plan the site runs on, not a free tier: chapter 2's own email admission
+    // states the plan the site runs on, not a free tier: chapter 2's email admission
     // (chapter2.mjs's EMAIL_ADMISSION_DETAIL) states the same figure the same way, so an owner
     // reading both never meets a contradiction. This is also where a decline stops the run,
     // before anything is installed, built, or deployed.
@@ -118,7 +118,7 @@ export async function runCloudflareChapter({
       `it, and deploys it to your account: one Worker named ${workerName} (deploying again ` +
       `later updates it), one database (${workerName}-auth), and one ` +
       `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
-      'are not already, then one click to sign in to your own site.';
+      'are not already, then one click to sign in to your site.';
 
     let consented = false;
     await runStep(frame, 'Deploy your site to Cloudflare', consentDetail, async () => {
@@ -173,7 +173,7 @@ export async function runCloudflareChapter({
             log('That does not look like an email address (needs an @ with something on both sides).');
           }
           const answer = await text({
-            message: 'Sign-in email (you will use this to sign in to your own site)',
+            message: 'Sign-in email (you will use this to sign in to your site)',
             placeholder: 'you@example.com',
           });
           if (isCancel(answer)) exitOnCancel();
@@ -188,7 +188,7 @@ export async function runCloudflareChapter({
 
   // Hoisted out of the resume conditional below: the two steps that still run on a `deployed`
   // resume (the key move and the sign-in seed) both shell out to wrangler, so both need a
-  // signed-in session, and the key move needs the site's own wrangler devDependency on disk. A
+  // signed-in session, and the key move needs the site's wrangler devDependency on disk. A
   // resume from a fresh clone or a wiped node_modules, or one with an expired Cloudflare session,
   // needs these to run just as much as a fresh 'pushed' run does. Both are already idempotent and
   // cheap on the common case: ensureInstalled short-circuits when node_modules exists, ensureLogin
@@ -203,7 +203,7 @@ export async function runCloudflareChapter({
   await runStep(
     frame,
     'Sign in to Cloudflare',
-    "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's own browser " +
+    "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's browser " +
       'sign-in when it does not.',
     () => ensureLogin({ dir, log }),
   );
@@ -236,7 +236,7 @@ export async function runCloudflareChapter({
       frame,
       'Deploy to workers.dev',
       "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies the database's migrations, " +
-        'then deploys again so the running site carries its own real origin.',
+        'then deploys again so the running site carries its real origin.',
       async () => {
         const first = await deployWorker({ dir, log, accountId });
         await writePublicOrigin(dir, first.url);

@@ -9,7 +9,7 @@ import { renderBuildsView } from './views.mjs';
 /**
  * A bare GET against a running console, the same raw-request idiom server.test.mjs uses (a
  * request against a socket the test expects to already be closed must not go through `fetch`'s
- * own connection pooling, which can mask a closed listener behind a cached socket).
+ * connection pooling, which can mask a closed listener behind a cached socket).
  * @param {number} port the port to connect to
  * @param {string} pathname the request path
  * @returns {Promise<{ status: number, body: string }>}
@@ -65,8 +65,8 @@ test('the console is closed by the time the hold\'s caller resumes: nothing down
   const parsed = new URL(url);
 
   // waitForClear already resolved, which is exactly the point the caller would resume into its
-  // own next prompting hop (a chapter's confirm/select). By construction (hold-loop.mjs awaits
-  // stop() in its own finally block before returning), the console is already closed here: the
+  // next prompting hop (a chapter's confirm/select). By construction (hold-loop.mjs awaits
+  // stop() in its finally block before returning), the console is already closed here: the
   // caller could not proxy a prompt through it even if it tried, because there is nothing left
   // listening.
   await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));

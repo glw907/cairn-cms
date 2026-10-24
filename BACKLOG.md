@@ -9,7 +9,7 @@
 
 ## Medium
 
-- [ ] **#54** Split fact f:q07rd5, and drop plan constraints the code now settles `#improvement` `#docs` `#initiative:docs-system` *(2026-10-24)*
+- [ ] **#54** Split fact f:q07rd5, and drop plan constraints the code now settles `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:q07rd5` bundles a code-sourced scaffold path with tutorial paths sourced only from a docs page and an unrelated hooks note, so ruling D1 blocks a blueprint that cites it for the scaffold alone. Split it into one fact per source. Some page plans still state as constraints things the code now settles (the build error's count prefix, `parseMarkdown` and TOML); see B3-24. Record B3-30 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.
 - [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   After the premise trim, configure-media's plan and framing record (2026-10-12) and the narrowed page's 782-line plan and 254-line framing record were mostly out of scope, and reading them cost more than they returned. Record B3-8, B3-24.

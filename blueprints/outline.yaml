@@ -131,17 +131,16 @@ pages:
     slug: configure-rendering
     title: Configure rendering
     type: task guide
-    job: Build the one render function your admin preview and public pages share, and register your own markdown components with typed attributes and slots. For a Svelte-fluent web developer building an organization's site on cairn's seams.
+    job: Write a custom public component beside the ones your site already has, from its declaration through its build function, picker entry, and registration, and check it in the editor and on the published page. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - One rendering.render per adapter, called by the preview and every public page; the SiteRender signature and the resolvers it forwards.
-      - 'createRenderer: renderMarkdown versus renderDocument (headings), and RendererConfig options (sanitizeSchema, tableScroll, remarkPlugins with where they run, highlighting).'
-      - 'defineComponent: required members, container-only directive grammar, attributes from the ten serializable field types validated by the fieldset machinery, title and body slots, and the build context.'
-      - build is synchronous and returns a hast Element; name inner classes apart from DaisyUI's.
-      - How the preview reruns render on a debounce and drops stale results.
-      - The picker and configure-step members of a component (icon, group, hidden, insertTemplate, use, preview, defaultIconByRole), the slot kinds, the full build context, and a repeatable slot's itemLabel.
-      - 'The authoring grammar a component produces: the four-colon fence, nested slot containers, repeatable items as bullets, the label dropped without a title slot, and the reserved figure and include names.'
-      - 'Built-in render steps: the highlighter''s preloaded languages and the mermaid passthrough, the table-scroll wrapper''s accessible name, and the figure placement classes.'
-      - 'remarkPlugins in practice: the scaffold''s smartypants wiring through its one createRenderer call.'
+      - 'defineComponent: the required members, the container-only directive grammar, attributes from the ten serializable field types and where they are validated, and the reserved figure and include names.'
+      - 'Slots: the title and body slots, named regions, the three slot kinds, required, itemFields, and a repeatable slot''s itemLabel.'
+      - 'The build function: the context members, the synchronous rule, where build runs, the entrance ordinal, and inner class names kept apart from DaisyUI''s.'
+      - The picker members of a component (icon, group, hidden, insertTemplate, use, preview, defaultIconByRole) and which components the picker lists.
+      - 'Registration: defineRegistry, the registry handed to createRenderer and to the admin page, and the throws defineRegistry raises.'
+      - 'The authoring grammar a component produces: the four-colon fence, nested slot containers, repeatable items as bullets, the label dropped without a title slot, and the HTML build returns from it.'
+      - Diagnosing a component that fails a check, including a directive printed as literal text and a code fence with no token colors.
+      - 'Pointers only: building the render function, adding a remark plugin, the renderer options, and the classes the built-in render steps emit.'
     outOfScope:
       - What the sanitize floor and sink guard protect and the opt-out's cost (security-model).
       - Hydrating a component on the client (add-an-island).

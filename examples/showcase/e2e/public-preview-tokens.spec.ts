@@ -216,7 +216,7 @@ test.describe('preview surfaces read the theme tokens', () => {
     }
   });
 
-  test("the editor preview frame's body paints the frame's own --color-base-100 under each OS scheme", async ({
+  test("the editor preview frame's body paints the frame's --color-base-100 under each OS scheme", async ({
     page,
   }) => {
     await page.goto(HELLO_EDIT_PATH);

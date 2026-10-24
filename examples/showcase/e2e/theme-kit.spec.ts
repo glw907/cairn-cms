@@ -195,7 +195,7 @@ for (const theme of THEMES) {
       }
     });
 
-    test('toggle-primary keeps its own color, unaffected by the neutral-fill idiom', async ({
+    test('toggle-primary keeps its color, unaffected by the neutral-fill idiom', async ({
       page,
     }) => {
       const primary = page.getByTestId('tk-toggle-primary');
@@ -351,7 +351,7 @@ for (const theme of THEMES) {
 // S3 Q19: the fixture is the page developers are pointed at as the plain-daisyUI idiom proof, so
 // its a11y gaps (a missing document title, unnamed sections, a forced-open dropdown trigger
 // with no aria-expanded) are fixed on the page itself.
-test('the fixture page is titled, its sections are named, and its dropdown trigger states its own expanded state', async ({
+test('the fixture page is titled, its sections are named, and its dropdown trigger states its expanded state', async ({
   page,
   context,
   baseURL,

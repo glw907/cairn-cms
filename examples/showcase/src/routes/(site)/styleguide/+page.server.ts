@@ -23,7 +23,7 @@ A heading on the display face, bound to the text it introduces with a large spac
 
 ### A third-level heading
 
-Inside a section. Reach for it when a section grows long enough to want its own parts.
+Inside a section. Reach for it when a section grows long enough to want subsections.
 
 Inside a paragraph you can make a word **bold** or *italic*, and link to [the cairn project](https://example.com). Bold reads on a skim; italic is a lighter stress.
 
@@ -61,7 +61,7 @@ The highlighting colors come from the same token set as the rest of the page, so
 }
 \`\`\`
 
-A table handles its own alignment, the header rule, and the zebra striping:
+A table handles alignment, the header rule, and the zebra striping:
 
 | Element    | How you write it | What it is for                  |
 | ---------- | ---------------- | ------------------------------- |

@@ -256,7 +256,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   <section class="sg-section" aria-labelledby="sg-directives">
     <h2 id="sg-directives" class="sg-h2">Directive components</h2>
     <p class="sg-note">
-      One sample for each component this site registers, taken from the component's own
+      One sample for each component this site registers, taken from the component's
       <code>preview</code> and run through the same <code>render</code> as the sample above. A component
       added to the registry appears here with no edit to this page.
     </p>
@@ -412,15 +412,15 @@ or extend it; nothing here is a literal a re-skin would miss.
 
     <h3 class="sg-h3">Card</h3>
     <p class="sg-note">
-      A bordered, padded surface for a theme's own chrome or composed-page markup. The padding,
-      radius, background, and border below all come from the primitive's own tokens; the title and
-      body typography reads this page's own <code>.sg-card-title</code>/<code>.sg-card-body</code>
+      A bordered, padded surface for a theme's chrome or composed-page markup. The padding,
+      radius, background, and border below all come from the primitive's tokens; the title and
+      body typography reads this page's <code>.sg-card-title</code>/<code>.sg-card-body</code>
       classes.
     </p>
     <div class="cairn-card">
       <h4 class="sg-card-title">A cairn-card example</h4>
       <p class="sg-card-body">
-        The padding, radius, background, and border are the primitive's own <code
+        The padding, radius, background, and border are the primitive's <code
           >--cairn-card-*</code
         > custom properties.
       </p>
@@ -428,15 +428,15 @@ or extend it; nothing here is a literal a re-skin would miss.
 
     <h3 class="sg-h3">Band</h3>
     <p class="sg-note">
-      A full-bleed strip with its own background, for a section that wants to break out of the
+      A full-bleed strip with a separate background, for a section that wants to break out of the
       reading column. A centered container sits as its child, the shape the root error page uses;
-      this demo carries the page's own <code>.cairn-place-full</code> breakout (the figure-placement
-      class in <code>src/theme/site.css</code>) to bleed off the styleguide's own reading column.
+      this demo carries the page's <code>.cairn-place-full</code> breakout (the figure-placement
+      class in <code>src/theme/site.css</code>) to bleed off the styleguide's reading column.
     </p>
     <div class="cairn-band cairn-place-full">
       <div class="mx-auto max-w-measure px-m">
         <p class="sg-note" style="margin: 0;">
-          A cairn-band example: this strip's own ground reads <code>--cairn-band-bg</code>, and this
+          A cairn-band example: this strip's ground reads <code>--cairn-band-bg</code>, and this
           paragraph sits inside the centered child container.
         </p>
       </div>
@@ -444,13 +444,13 @@ or extend it; nothing here is a literal a re-skin would miss.
 
     <h3 class="sg-h3">Section</h3>
     <p class="sg-note">
-      A vertical rhythm block within the reading column, for a composed page's own pieces. The home
+      A vertical rhythm block within the reading column, for a composed page's pieces. The home
       page's archive index uses this to space its blocks consistently.
     </p>
     <div class="cairn-section">
       <p class="sg-section-block">A first block inside the section.</p>
       <p class="sg-section-block">
-        A second block, spaced from the first by the primitive's own gap.
+        A second block, spaced from the first by the primitive's gap.
       </p>
     </div>
 

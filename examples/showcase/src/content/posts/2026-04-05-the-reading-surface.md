@@ -18,7 +18,7 @@ A second-level heading like the one above starts with two hash marks. Use one wh
 
 ### Third-level headings sit inside a section
 
-Three hash marks make a third-level heading. Reach for it when a section grows long enough to need its own subsections. Going deeper than this is usually a sign the post wants to be split in two.
+Three hash marks make a third-level heading. Reach for it when a section grows long enough to need subsections. Going deeper than this is usually a sign the post wants to be split in two.
 
 ## Text you can emphasize, and links
 
@@ -55,12 +55,12 @@ A line that starts with `>` becomes a blockquote. Use it when you quote someone 
 
 > A good interface is like a joke. If you have to explain it, it is not that good.
 
-When you want a single line from your own writing to land hard, make it a pull quote with the `pull-quote` component:
+When you want a single line from your writing to land hard, make it a pull quote with the `pull-quote` component:
 
 :::pull-quote[Write the post you wish someone had handed you on your first day.]
 :::
 
-The line sets in the display face and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare. Give it `{attribution="..."}` when the line is not your own words.
+The line sets in the display face and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare. Give it `{attribution="..."}` when the line is not your words.
 
 ## Code, inline and in blocks
 
@@ -126,7 +126,7 @@ Add `{.full}` for an image that spans the full width of the page, for a moment t
 A full-bleed figure runs edge to edge.
 :::
 
-The caption is whatever text you put under the image inside the figure. In a finished site you would store your own pictures in the Media Library and reference them by a short `media:` handle instead of a web address, so the link never breaks when an image is renamed.
+The caption is whatever text you put under the image inside the figure. In a finished site you would store your pictures in the Media Library and reference them by a short `media:` handle instead of a web address, so the link never breaks when an image is renamed.
 
 ---
 
@@ -165,7 +165,7 @@ The second component is an alert, for a caution set in a bordered card with an i
 The post's date sets its place in the archive and its web address. Fixing it after you publish changes the link, which can break anything pointing at the old one. Get it right the first time.
 :::
 
-The third component is an icon, a single glyph from the site's icon set for a short line that wants a marker of its own, with no card and no title:
+The third component is an icon, a single glyph from the site's icon set for a short line that wants a marker, with no card and no title:
 
 :::icon{name="flag"}
 :::

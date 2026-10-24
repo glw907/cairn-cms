@@ -108,7 +108,7 @@ export const containerInsetAsymmetry: RenderedRule = {
       message:
         `renders a ${finding.leftInsetPx}px left inset against a ${finding.rightInsetPx}px right inset ` +
         `(content reads pushed ${finding.pushedRight ? 'right' : 'left'}). Check for a one-sided padding or ` +
-        `margin utility on this container, an unreset user-agent default such as a list's own bullet indent, ` +
+        `margin utility on this container, an unreset user-agent default such as a list's bullet indent, ` +
         `or either of those on a wrapper immediately inside it.`,
     }));
   },

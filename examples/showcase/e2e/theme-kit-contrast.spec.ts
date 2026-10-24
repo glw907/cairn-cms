@@ -171,7 +171,7 @@ for (const theme of THEMES) {
       await gotoThemed(page, context, baseURL!, theme);
     });
 
-    test('alert inks, and the error alert nested link, clear 4.5:1 on their own panel', async ({
+    test('alert inks, and the error alert nested link, clear 4.5:1 on their panel', async ({
       page,
     }) => {
       const base100 = await themeVar(page, '--color-base-100');

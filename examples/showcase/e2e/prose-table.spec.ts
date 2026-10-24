@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 // render pipeline wraps every rendered `<table>` in a `.table-scroll` region by default, and the
 // table itself stays `display: table`. This spec proves the markup shape and the scroll behavior
 // it exists to keep, not a screenshot.
-test('a rendered table sits in a labeled, focusable scroll region and keeps its own display: table', async ({
+test('a rendered table sits in a labeled, focusable scroll region, and the table keeps display: table', async ({
   page,
 }) => {
   await page.goto('/posts/the-reading-surface');

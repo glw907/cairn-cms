@@ -295,7 +295,7 @@ function readChipGrounds(): ChipGroundReading {
       const other = painter.rect;
       if (other.left >= rect.right || rect.left >= other.right) continue;
       if (other.top >= rect.bottom || rect.top >= other.bottom) continue;
-      return `${painter.what} outside this chip's own ancestors paints behind it`;
+      return `${painter.what} outside this chip's ancestors paints behind it`;
     }
     return null;
   }

@@ -212,7 +212,7 @@ export function resolveGround(
       kind: 'indeterminate',
       reason:
         imaged === 0 && firstIsSelf
-          ? 'the element paints its own background-image over no color at all'
+          ? 'the element paints its background-image over no color at all'
           : 'an ancestor paints a background-image over no color at all, so no single ground color exists to measure against',
     };
   }

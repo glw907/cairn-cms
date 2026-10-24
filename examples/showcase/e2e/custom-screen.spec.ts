@@ -18,7 +18,7 @@ async function addSignup(page: Page, label: string): Promise<string> {
   return name;
 }
 
-test('a custom admin screen renders in the shell, reads identity, and writes its own D1', async ({
+test("a custom admin screen renders in the shell, reads identity, and writes the developer's D1", async ({
   page,
 }) => {
   await page.goto('/admin/signups');
@@ -86,7 +86,7 @@ test('the signups outcome region is mounted empty on first load and announces a 
   await expect(page.locator('input[name="name"]')).toBeFocused();
 });
 
-test("each row's Delete trigger names its own signup", async ({ page }) => {
+test("each row's Delete trigger names its row's signup", async ({ page }) => {
   await page.goto('/admin/signups');
   const first = await addSignup(page, 'Grace');
   const second = await addSignup(page, 'Hedy');

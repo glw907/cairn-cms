@@ -135,7 +135,7 @@ test('a short page pins the footer with no background seam below it', async ({ p
 // but the theme's code enforces that the inlined literals stay `cairn-alert-body`/
 // `cairn-head-title` rather than drifting back to DaisyUI's `card-body`/`card-title` names.
 // This asserts the inlined shape directly against the rendered DOM, not against source text.
-test('the rendered alert carries its own inlined classes, not DaisyUI card classes', async ({
+test('the rendered alert carries its inlined classes, not DaisyUI card classes', async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: 'light' });

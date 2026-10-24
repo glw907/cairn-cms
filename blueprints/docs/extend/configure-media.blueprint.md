@@ -26,11 +26,11 @@ The adapter's `media` block holds every option the page sets, and the engine res
 The contract sentence follows. The steps set the upload limits, move or reshape the image URLs, turn on responsive images, and make a missing asset fail the build. A concept section says which references the Library counts as a use. An optional task covers uploading from a custom admin screen, and the page ends by checking each change on the deployed site.
 
 **What it leaves to other pages, each named in the introduction:**
-- Wiring each media piece on a hand-built site, which the reference entries for the adapter's `media` member, `createMediaResolver`, `PublicRoutesConfig`, and `createMediaRoute` cover. Before you begin names the three pieces and links each entry.
-- Seeding local media while theming, which Theme your public site covers.
-- Restricting who reaches the Library, which Restrict admin access covers.
-- Why media bytes sit in R2, which Architecture covers.
-- Uploading and placing images as an editor, which belongs to the editor documentation. It has no page yet, so the introduction names it in words with no link.
+- The reference entries for the adapter's `media` member, `createMediaResolver`, `PublicRoutesConfig`, and `createMediaRoute` cover wiring each media piece on a hand-built site. [Before you begin](#before-you-begin) names the three pieces and links each entry.
+- Theme your public site covers seeding local media while theming.
+- Restrict admin access covers restricting who reaches the Library.
+- Architecture covers why media bytes sit in R2.
+- The editor documentation covers uploading and placing images as an editor. It has no page yet, so the introduction names it in words with no link.
 :::
 
 :::constraints
@@ -48,15 +48,16 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 *Name what the steps assume, and send a reader whose site has no media yet to the reference entries that set it up.*
 
 - The steps assume the following:
-- A site with media on. A scaffolded site binds an R2 bucket as `MEDIA_BUCKET` in `wrangler.jsonc` and declares the adapter's `media` block as `{ bucketBinding: 'MEDIA_BUCKET' }`. :fact[9hchnv] :fact[2zytgf]
+- A site with media on. A [scaffolded site](scaffolded-site-files.md) binds an R2 bucket as `MEDIA_BUCKET` in `wrangler.jsonc` and declares the adapter's `media` block as `{ bucketBinding: 'MEDIA_BUCKET' }`. :fact[9hchnv] :fact[2zytgf]
 - The adapter module, which a scaffolded site keeps at `src/theme/cairn.config.ts`. There it builds `publicMediaResolver` from the committed manifest and passes it to the public routes as `resolveMedia`. :fact[q07rd5] :fact[qifl9g]
 - The media route, which a scaffolded site mounts at `src/routes/media/[...path]/+server.ts` with `createMediaRoute`. :fact[qtvesq]
-- A hand-built site with no media yet needs the same three pieces first, and the reference entries cover each. The first is an `r2_buckets` binding and the adapter's `media` block that names it. :fact[9hchnv] :fact[2zytgf]
+- A hand-built site with no media yet sets up three pieces first:
+- An `r2_buckets` binding and the adapter's `media` block that names it. :fact[9hchnv] :fact[2zytgf]
 - See [the `media` adapter member](../reference/core.md#media-adapter-member).
-- The second is a resolver from `createMediaResolver`, built over the committed manifest and `normalizeAssets` of the same block. The site passes it to `createPublicRoutes` as `resolveMedia`. Without it, a `media:` reference renders as a literal token. :fact[c8c9ji] :fact[fhnvn8] :fact[twqb0s]
+- A resolver from `createMediaResolver`, built over the committed manifest and `normalizeAssets` of the same block. The site passes it to `createPublicRoutes` as `resolveMedia`. Without it, a `media:` reference renders as a literal token. :fact[c8c9ji] :fact[fhnvn8] :fact[twqb0s]
 - See [`createMediaResolver`](../reference/media.md#createmediaresolver).
 - See [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig).
-- The third is `createMediaRoute`, mounted at `<publicBase>/[...path]`, which is `src/routes/media/[...path]/+server.ts` under the default base. :fact[ex4hss] :fact[fnat1w]
+- `createMediaRoute`, mounted at `<publicBase>/[...path]`. Under the default base, that path is `src/routes/media/[...path]/+server.ts`. :fact[ex4hss] :fact[fnat1w]
 - See [`createMediaRoute`](../reference/sveltekit.md#createmediaroute).
 
 ## Set the upload limits
@@ -69,8 +70,8 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - The engine sniffs each upload's type from its bytes and stores JPEG, PNG, GIF, WebP, and AVIF. The default `allowedTypes` lists those five, and the list can only narrow them. :fact[enuyhg] :fact[fnat1w]
 - A sniffed HEIC or unrecognized file is refused as `unsupported_type` whatever the list holds. So is an upload declared as SVG, HTML, or XML, or one whose first non-whitespace byte is `<`. :fact[enuyhg]
 2. In the same block, set `maxUploadBytes` to the largest upload in bytes. The default is 25 MB. :fact[fnat1w] :fact[6kdagb]
-- Cloudflare caps a Worker's request body by the account's plan and answers a larger request with a 413 of its own. :fact[9awije]
-- The effective limit is therefore the lower of `maxUploadBytes` and that cap, and raising `maxUploadBytes` past the cap has no effect. :fact[ett331] :fact[9awije]
+- Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with a 413 before the Worker runs. :fact[9awije]
+- The effective limit is the lower of `maxUploadBytes` and that cap. :fact[ett331] :fact[9awije]
 - See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-limits).
 - Code: an excerpt of a scaffolded site's `media` constant in `src/theme/cairn.config.ts` with both limits set, allowing JPEG, PNG, and WebP and capping uploads at 10 MB. :fact[9hchnv] :fact[fnat1w] :source[/templates/waymark/src/theme/cairn.config.ts]
 
@@ -91,14 +92,15 @@ const media = {
 - `publicBase` sets the path the engine's image URLs start with in rendered pages and in the Library's thumbnails. It doesn't move the media route, which the site mounts at the matching path. :fact[ex4hss]
 - To move the image URLs to a new base, follow these steps:
 1. In the adapter module, set `publicBase` in the `media` block to the new base, such as `/images`. The default is `/media`. :fact[ex4hss] :fact[fnat1w]
-2. In `src/routes/`, rename the route's directory to match, such as `src/routes/images/[...path]/+server.ts`. Keep the catch-all param named `path`. :fact[ex4hss] :fact[qtvesq]
-- A route left at the old path, or a param under another name, makes every generated image URL answer 404. :fact[ex4hss]
-- The edit page's live preview still builds `/media/<slug>.<hash>.<ext>` paths whatever `publicBase` says. Under a moved base, preview images break while published pages render. :fact[9bmrzq] :fact[ex4hss]
-- The route reads only the URL's last segment. Keeping the handler mounted at `src/routes/media/[...path]/+server.ts` as well serves the preview's paths. :fact[f4ulxz] :fact[9bmrzq]
+2. In `src/routes/`, add the route at the new base, such as `src/routes/images/[...path]/+server.ts`, with its catch-all param named `path`. :fact[ex4hss] :fact[qtvesq]
+- A base with no route under it, or a param under another name, makes every generated image URL answer 404. :fact[ex4hss]
+3. Keep the existing route at `src/routes/media/[...path]/+server.ts` for the edit page's live preview. :fact[9bmrzq] :fact[f4ulxz]
+- The live preview still builds `/media/<slug>.<hash>.<ext>` paths whatever `publicBase` says. Without that route, preview images break under a moved base while published pages render. :fact[9bmrzq] :fact[ex4hss]
+- The route reads only the URL's last segment. The same handler at both paths serves the preview's URLs and the published ones. :fact[f4ulxz] :fact[9bmrzq]
 - To change the shape of the URLs under the base, set `urlForm` in the `media` block. :fact[s1n77t]
-- A table, introduced by a sentence saying it lists the two shapes, gives `'slug'`, the default, as `<publicBase>/<slug>.<hash>.<ext>` and `'opaque'` as `<publicBase>/<first two hash characters>/<hash>.<ext>`. The opaque form leaves out the file's name. :fact[s1n77t]
+- A table, introduced by a sentence saying it lists the two shapes, gives `'slug'`, the default, as `<publicBase>/<slug>.<hash>.<ext>`, or `<publicBase>/<hash>.<ext>` for an asset with no slug, and `'opaque'` as `<publicBase>/<first two hash characters>/<hash>.<ext>`. The opaque form leaves out the file's name. :fact[s1n77t]
 - Any other value throws `cairn: media urlForm must be "slug" or "opaque", got "<value>"` when the config is resolved. :fact[s1n77t]
-- The route needs no change for either shape, because it reads the hash and extension from the last segment alone. :fact[f4ulxz]
+- The route needs no change for either shape. :fact[f4ulxz]
 - Neither change requires editing an entry. Content names images by `media:` reference, and the resolver builds each URL from the manifest's row. :fact[c8c9ji]
 
 ## Turn on responsive images
@@ -110,10 +112,9 @@ const media = {
 1. In Cloudflare, turn on Image Transformations for the site's zone. :fact[kp50li]
 - See [Transform images](https://developers.cloudflare.com/images/transform-images/).
 2. In the adapter module, set `transformations: true` in the `media` block. :fact[kp50li]
-- With `transformations` on, an image whose manifest row records its width gets a `srcset` of Cloudflare transform URLs and a `sizes` hint from its `:::figure` placement. :fact[kp50li] :fact[wdmlys]
+- With `transformations` on, an image whose manifest row records its width gets a `srcset` of Cloudflare transform URLs. The `sizes` hint comes from its `:::figure` placement. :fact[kp50li] :fact[wdmlys]
 - An image gets no `srcset` when its width is unknown or too narrow to offer more than one width. With `transformations` off, every image gets its full-size path. :fact[wdmlys] :fact[2hnxsr]
 - Either way, an image whose row records its width and height renders with those intrinsic dimensions. :fact[wdmlys]
-- See [`createMediaResolver`](../reference/media.md#createmediaresolver).
 - A site can't declare named transform presets. A theme that needs another size builds a `/cdn-cgi/image/<options>/<path>` URL itself. :fact[ckuow3]
 
 ## Fail the build on a missing asset
@@ -122,7 +123,7 @@ const media = {
 
 - By default, a `media:` image whose hash has no manifest row logs `media.resolve_missing` and renders as a broken image, and the build still succeeds. :fact[frgg7d]
 - The broken image has `src="#"`, the class `cairn-broken-media`, and the title `Missing media asset`, and it keeps its alt text. :fact[frgg7d]
-- A resolver that throws on a miss fails the build instead. :fact[frgg7d]
+- On a site whose public pages prerender, as a scaffolded site's entry pages do, a resolver that throws on a miss fails the build instead. :fact[frgg7d] :fact[vo5v7n]
 - On a scaffolded site, `publicMediaResolver` reaches the public pages twice: as the fallback in the adapter's `render`, and as `resolveMedia` in the public routes config. Wrapping it where it is defined covers both. :fact[qifl9g]
 - The edit page's preview and the shared-draft preview each pass `render` a resolver in place of the site's. A preview therefore keeps marking a missing image broken. :fact[ax38pm]
 - `createMediaResolver` returns a function that also carries an `imageDetail` property, which the render step reads for each image's intrinsic size and `srcset`. The public `MediaResolve` type doesn't declare it. :fact[nlkgag]
@@ -157,22 +158,22 @@ export const publicMediaResolver = failOnMissing;
 
 *Explain which `media:` references the Library counts as a use, and what that means for deleting an asset.*
 
-- Before you delete an asset, know which references count as a use. The Library counts a `media:` reference in two places. :fact[fn4zb7]
+- An editor deleting an asset relies on the Library's count of references. The Library counts a `media:` reference in two places. :fact[fn4zb7] :fact[0s64g5]
 - The first is the `src` of an `image` field, at the top level or nested at any depth in `object` and `array` fields. The second is a body image, the inner image of a `:::figure` included. :fact[fn4zb7]
 - It counts references in the published content on the default branch and in every open `cairn/*` branch. :fact[fn4zb7]
 - The Library doesn't count a reference in a text field, a link, a directive or component attribute, a raw HTML block, or a code span. For an asset named only in those places, it reads "no references found". :fact[fn4zb7]
 - The Library refuses to delete an asset it finds in use until the editor types the asset's slug. An asset with no counted reference deletes with no such step. :fact[0s64g5]
 - A delete removes the asset's manifest row, then its bytes in R2. A bulk delete removes only selected assets with no counted reference. :fact[0s64g5]
-- A page that still uses a deleted asset through an uncounted reference loses the image. The resolver returns `undefined` for its hash, and its URL answers 404. :fact[c8c9ji] :fact[a7wwj2]
-- See [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset).
+- The resolver never sees an uncounted reference. A page that still names a deleted asset that way keeps the reference as written. :fact[pobbuq]
+- Where that reference is the asset's URL, such as in a raw HTML block, the media route answers it with 404. :fact[a7wwj2] :fact[0s64g5]
+- The wrapper in [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset) doesn't catch these references. :fact[pobbuq]
 
 ## Upload from a custom admin screen
 
 *Walk the reader whose custom admin screen uploads images through the request, the response, and what the upload leaves uncommitted. A reader without such a screen skips it.*
 
-- If your site has a custom admin screen that uploads images, post each file to the admin's `mediaUpload` action. It is part of the typed `CairnAdminRoutes` contract and wraps the same upload action the editor uses. :fact[1mgfhj] :fact[h56lpd]
+- A custom admin screen uploads an image by posting the file to the admin's `mediaUpload` action. The action is part of the typed `CairnAdminRoutes` contract and wraps the upload action the edit page's image picker uses. :fact[1mgfhj] :fact[h56lpd]
 - The action is gated to the Library's view, so the request goes to `/admin/media?/mediaUpload`. A post to another admin path answers 404. :fact[0fg3ju] :fact[joo5f2]
-- The request follows the fetch-action transport: a `text/plain` body, the CSRF token in a header, and a JSON envelope in reply. :fact[g4cwcw]
 - See [Writing an admin fetch action](../reference/sveltekit.md#writing-an-admin-fetch-action).
 - To upload a file, follow these steps:
 1. In the screen's component, read the CSRF token from the admin layout's data as `csrf`. :fact[xy1dj1]
@@ -180,7 +181,7 @@ export const publicMediaResolver = failOnMissing;
 3. In the same request, set `Content-Type` to `text/plain` and `X-Cairn-CSRF` to the token. :fact[g4cwcw]
 - SvelteKit refuses a form action's POST with a non-form content type before the action runs. The action ignores the label and sniffs the bytes. :fact[g4cwcw]
 - The action also requires a positive integer `Content-Length`. The browser sets that header from the body, and a script can't set it. :fact[ett331] :fact[qr2tsn] :fact[lsuchw]
-4. Optionally, in the same request, set the headers that describe the file. :fact[g4cwcw]
+4. Optional: In the same request, set the headers that describe the file. :fact[g4cwcw]
 - A table, introduced by a sentence saying it lists the optional headers, gives `X-Cairn-Filename`, `X-Cairn-Alt` (stored up to 160 characters), `X-Cairn-Display-Name`, `X-Cairn-Width`, and `X-Cairn-Height`. Each text value is URI-encoded. :fact[g4cwcw]
 5. In the response handler, pass the response's text to SvelteKit's `deserialize` from `$app/forms`. :fact[lsuchw]
 - A success envelope's `data` holds the `media:` `reference` and the manifest `record` the server derived. :fact[h56lpd]
@@ -192,6 +193,8 @@ export const publicMediaResolver = failOnMissing;
 - The action stores the bytes in R2 and commits no manifest row. A `media:` reference to the asset resolves as missing until a row lands. :fact[h56lpd] :fact[c8c9ji]
 - An entry save that posts the returned `record` in its `media` field commits the row. :fact[h56lpd]
 - See [`createContentRoutes`](../reference/sveltekit.md#createcontentroutes).
+- The Library's `mediaLibraryUpload` action, at `/admin/media?/mediaLibraryUpload`, takes the same request and commits the row to the default branch itself. :fact[h56lpd] :fact[0fg3ju]
+- The typed `CairnAdminRoutes` contract leaves `mediaLibraryUpload` out. The action runs at runtime, and typed code reaches it only through a spread or a cast. :fact[1mgfhj]
 
 ## Verify the changes
 
@@ -199,12 +202,16 @@ export const publicMediaResolver = failOnMissing;
 
 - After you deploy, check each change you made. To verify, run these checks in order:
 1. In the deployed admin, at `/admin/media`, upload an image of an allowed type under the size limit. The asset appears in the Library. :fact[joo5f2] :fact[xjdhau]
-2. In an entry, place the image and publish the entry. The editor documentation covers both. :fact[xjdhau]
-3. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on, it also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
-4. In a terminal, request that `src` with `curl -s -D - -o /dev/null https://<your-site><src>`. :fact[fjnszk]
+2. In an entry, place the image. :fact[xjdhau]
+3. Publish the entry. The editor documentation covers both steps. :fact[xjdhau]
+4. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on and a width recorded, the image also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
+5. In a terminal, request that `src` with `curl -s -D - -o /dev/null https://<your-site><src>`. :fact[fjnszk]
 - The response carries `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, `Content-Security-Policy: default-src 'none'; sandbox`, and `Cache-Control: public, max-age=31536000, immutable`. :fact[fjnszk]
 - Its `Content-Type` is the type the upload stored, such as `image/jpeg`. :fact[db0cx6] :fact[fjnszk]
-5. If you wrapped the resolver, in a local branch, point an entry's image at a `media:` reference with no manifest row, then build the site. The build fails with the wrapper's message. :fact[frgg7d]
+6. If you wrapped the resolver, point an entry's image at a `media:` reference with no manifest row in a local branch. :fact[frgg7d]
+7. Build the site. On a site whose public pages prerender, the build fails with the wrapper's message. :fact[frgg7d] :fact[vo5v7n]
+
+- If a check fails, find its symptom in the following list. For a failure not listed here, see [Debug your site](debug-your-site.md).
 
 :::row
 **Symptom.** The upload fails, and the Worker logs `media.upload_failed` with `reason: 'too_large'`.
@@ -227,7 +234,7 @@ export const publicMediaResolver = failOnMissing;
 :::row
 **Symptom.** After a `publicBase` change, published images answer 404.
 **Cause.** The media route isn't at `<publicBase>/[...path]`, or its catch-all param isn't named `path`. :fact[ex4hss]
-**Fix.** Move the route's directory to match `publicBase`, keeping the param name `path`, then deploy again. :fact[ex4hss]
+**Fix.** Add the route at `<publicBase>/[...path]`, with its param named `path`, then deploy again. :fact[ex4hss]
 :::
 
 :::row
@@ -239,24 +246,24 @@ export const publicMediaResolver = failOnMissing;
 :::row
 **Symptom.** With `transformations` on, an image has no `srcset`.
 **Cause.** Its manifest row records no width, or the width is too narrow to offer more than one size. :fact[wdmlys]
-**Fix.** None is needed. The image renders at its full-size path, which is correct.
+**Fix.** None is needed. An image with only one candidate width renders at its full-size path. :fact[wdmlys]
 :::
 
 :::row
 **Symptom.** With `transformations` on, the browser fails to load an image's `srcset` URLs.
-**Cause.** Image Transformations is off for the zone, which the flag can't turn on. :fact[kp50li]
+**Cause.** Image Transformations is off for the zone. :fact[kp50li]
 **Fix.** Turn on Image Transformations for the zone, or set `transformations` back to `false` and deploy again. :fact[kp50li]
 :::
 
 :::row
 **Symptom.** After you wrap the resolver, published images lose their `width`, `height`, and `srcset`.
 **Cause.** The wrapper doesn't carry the built resolver's `imageDetail`. :fact[nlkgag]
-**Fix.** Copy `imageDetail` from the built resolver onto the wrapper, as the wrapping step shows. :fact[nlkgag]
+**Fix.** Copy `imageDetail` from the built resolver onto the wrapper. Step 3 of [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset) shows the copy. :fact[nlkgag]
 :::
 
 :::row
 **Symptom.** A custom screen's upload response has status 0 and an opaque type.
-**Cause.** The editor's session expired, and the guard redirected the request, which `redirect: 'manual'` keeps from being followed. :fact[lsuchw]
+**Cause.** The editor's session expired. The guard answered with a redirect, and `redirect: 'manual'` returns it unfollowed as an opaque response. :fact[lsuchw]
 **Fix.** Have the editor sign in again, then retry the upload. :fact[lsuchw]
 :::
 
@@ -270,14 +277,18 @@ export const publicMediaResolver = failOnMissing;
 
 *Point the reader to the reference entries and pages around the media options.*
 
-- The following pages cover the media pieces and the neighboring tasks:
+- The following pages cover the media pieces and the neighboring tasks, each named with one sentence on what it covers:
+- The `media` adapter member's entry lists the members of the adapter's `media` block.
 - See [the `media` adapter member](../reference/core.md#media-adapter-member).
+- The media reference covers the config normalizer, the manifest reader, the `media:` codec, and the resolver.
 - See [the media reference](../reference/media.md).
+- The `createMediaRoute` entry covers the route that serves an image's bytes.
 - See [`createMediaRoute`](../reference/sveltekit.md#createmediaroute).
+- Log events lists every `media.*` record the engine logs.
 - See [Log events](../reference/log-events.md).
+- Add a custom admin screen covers mounting the screen an upload runs from.
 - See [Add a custom admin screen](add-a-custom-admin-screen.md).
 - Restricting the Library also restricts uploads from the image picker in every image-bearing editor. :fact[iewhzh]
 - See [Restrict admin access](restrict-admin-access.md).
 - Theme your public site covers seeding local media while theming.
 - See [Theme your public site](theme-your-public-site.md).
-- See [Debug your site](debug-your-site.md).

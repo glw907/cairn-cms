@@ -94,7 +94,7 @@ pages:
       - 'Validation behavior: the save is refused before any commit (the error banner and a throwing behavior.validate on define-an-adapter-and-schema).'
       - 'The manifest: one row per entry with identity, routing facts, links, reference edges, tags, and includes; git stays the source of truth.'
       - 'Rename as one atomic commit that moves the file and rewrites inbound cairn: tokens, refused on collision.'
-      - Frontmatter keys the engine reads by literal name (title, date, updated, description, draft) and why each must be declared to survive a save.
+      - Frontmatter keys the engine reads by literal name (title, date, updated, description, draft, and the SEO head's image, robots, and author) and why each must be declared to survive a save.
       - 'Field-type edges: url accepts absolute http(s) only, pattern is unanchored, default only prefills a new entry, multiselect options stay closed, and datetime ignores min and max and converts a parsed Date.'
       - dir used verbatim; slugify's ASCII-only ids (permalink tokens on define-an-adapter-and-schema).
       - The address-collision advisory and the publish-time recheck, both warn-only and fail-open.

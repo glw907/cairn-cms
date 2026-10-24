@@ -171,12 +171,12 @@ describe('buildTidyPrompt: the prompt contract (the governing instructions)', ()
 });
 
 describe('buildTidyPrompt: the consistency-class voice-leak guard', () => {
-  // With NO convention enabled, the prompt must forbid harmonizing the text's own habit. These
+  // With NO convention enabled, the prompt must forbid harmonizing the text's habit. These
   // classes (trail head vs trailhead, email vs e-mail, two-way capitalization) all collapse if the
   // model invents a house style from usage counts. The never-harmonize instruction is what holds.
   const prompt = buildTidyPrompt(NONE);
 
-  it('forbids harmonizing to the text own habit', () => {
+  it("forbids harmonizing to the text's habit", () => {
     expect(prompt).toContain('never harmonize to the text');
   });
 

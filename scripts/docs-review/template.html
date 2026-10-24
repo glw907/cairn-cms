@@ -163,7 +163,7 @@
 (function () {
   'use strict';
 
-  // The small reset the Artifact tool's own skeleton head carries, reproduced here because a
+  // The small reset the Artifact tool's skeleton head carries, reproduced here because a
   // self-publish must build that skeleton itself rather than rely on the tool to add it.
   var RESET_CSS =
     ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);' +
@@ -172,7 +172,7 @@
     '[hidden]{display:none!important}';
   var STASH_KEY = 'cairn-docs-review-stash';
 
-  // Captured once, synchronously, at load: this page's own style block and this page's own
+  // Captured once, synchronously, at load: this page's style block and this page's
   // script element. Neither ever changes after load, so capturing them here (rather than
   // serializing the whole live document later) cannot pick up anything the viewer shell injects
   // elsewhere in the page.
@@ -221,7 +221,7 @@
 
   /**
    * Rebuilds the whole document from `nextState`, in the exact shape a self-publish must match:
-   * the skeleton the Artifact tool would have wrapped this page in, with this page's own title,
+   * the skeleton the Artifact tool would have wrapped this page in, with this page's title,
    * style, mount point, state, and script placed inside its body exactly as authored.
    */
   function buildDocument(nextState) {
@@ -495,7 +495,7 @@
     });
   }
 
-  // Exposed for tests and debugging; not part of the page's own UI.
+  // Exposed for tests and debugging; not part of the page's UI.
   window.__cairnDocsReview = {
     getState: function () { return state; },
     isReadOnly: function () { return readOnly; },

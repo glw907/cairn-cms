@@ -2,7 +2,7 @@
 // docs/internal/engine-rulings.md's `(shape: ...)` parentheticals to exactly 160 characters
 // mid-thought (a fact the repair rounds establish by hand against each item's rank source, never
 // something this gate re-derives); the sanctioned fix is not a length check but a format one, since
-// truncation is an authoring defect and the ledger's own header now documents the migration: a
+// truncation is an authoring defect and the ledger's header now documents the migration: a
 // repaired entry loses the `(shape: ...)` parenthetical from its `Reopens on:` line entirely and
 // carries the shape as its own `- **Shape:**` line instead.
 //

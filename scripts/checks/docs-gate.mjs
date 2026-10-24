@@ -1,19 +1,19 @@
 // cairn-cms: the docs gate. One script runs every docs check, so CI, the gate-tier classifier's
-// `docs` tier, and a page-chain page's own gate all read the identical list from one place
+// `docs` tier, and a page-chain page's gate all read the identical list from one place
 // instead of a separate step per check that can drift apart. `check:package` is deliberately not in
-// this list: it checks the tarball's own shape (publint, attw, the file manifest), not a doc
+// this list: it checks the tarball's shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.
 //
 // Interface: `node scripts/checks/docs-gate.mjs [--prebuilt] [--page <path>] [--brief <path>]`. Every component
 // reads the whole tree except three: `--page <path>` narrows Vale to that one path in place of the
 // fixed list `check:vale` runs by default, and also narrows check:tellgrader to that page;
-// `--brief <path>` narrows check:provenance to that one brief through check-provenance.mjs's own
+// `--brief <path>` narrows check:provenance to that one brief through check-provenance.mjs's
 // positional-argument mode. Both flags exist so a page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
 // the page and brief it drafted, not every sibling page's in-flight brief or prose.
 //
 // `--prebuilt` skips the build for a caller that already built `dist` in the same run.
 //
-// Tree mode (no `--page`) also runs `vale test` over the Cairn rules' own cases, since a rule's
+// Tree mode (no `--page`) also runs `vale test` over the Cairn rules' cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
 // `dist` is built exactly once, before any component runs. Seven of the checks
@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// check:vale's own default target list (package.json's check:vale script, unscoped).
+// check:vale's default target list (package.json's check:vale script, unscoped).
 const DEFAULT_VALE_PATHS = ['docs', 'README.md', 'examples/showcase/README.md'];
 
 // The custom rules that keep `vale test` cases beside them.

@@ -4,19 +4,19 @@
 // (src/lib/audit/rules/static/{motion-band,gap-scale,token-colors,motion-property,motion-vocabulary,motion-hover-gate}.ts).
 // The regex substrate this gate used to carry (a hand-rolled comment stripper plus five
 // duration/bracket/color patterns) is gone; svelte/compiler and the built-sheet resolver are the
-// substrate now, exercised by the audit's own fixture suite
+// substrate now, exercised by the audit's fixture suite
 // (src/tests/unit/audit/rules/{motion-band,gap-scale,token-colors,motion-property,motion-vocabulary,motion-hover-gate}.test.ts).
 //
 // The budget this gate used to read from scripts/invisible-craft-budget.json is gone too, its
 // eleven entries each resolved one of three ways in the graduation's no-drift proof (see the
-// graduation commit for the full accounting): a genuine false positive the new rules' own
+// graduation commit for the full accounting): a genuine false positive the new rules'
 // scale/remit computation now recognizes as compliant, needing no suppression at all
 // (MediaHeroField's `pl-[3.875rem]`, CairnAdminShell's `mt-[12vh]`, EditPage's safe-area
 // `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`); a site outside the graduated engine's audited
 // scope (`preview-doc.ts`'s embedded iframe-srcdoc string, a `.ts` module rather than a `.svelte`
-// component or a named CSS file); the showcase theme's own ratified 650ms carousel crossfade,
+// component or a named CSS file); the showcase theme's ratified 650ms carousel crossfade,
 // migrated to a co-located `cairn-audit-disable-next-line motion-band` directive at the site
-// (Spec 6.1's replacement for a budget-file entry); or the showcase theme's own achromatic
+// (Spec 6.1's replacement for a budget-file entry); or the showcase theme's achromatic
 // `--color-base-*` ladder and `--cairn-shadow` color-mix blacks, resolved by naming `theme.css` in
 // `paletteFiles` below, the same declared-palette-site exclusion `cairn-admin.css` already carries
 // from `token-colors` (config.ts's `DEFAULT_PALETTE_CSS_FILES`).
@@ -60,16 +60,16 @@ export const SCAN_SCOPE = [
 ];
 /**
  * The admin-only roots `motion-property`, `motion-vocabulary`, and `motion-hover-gate` resolve
- * over instead of `SCAN_SCOPE`: the engine's own admin frame plus the one showcase route that is
- * shaped like a consumer's own admin screen. `DEFAULT_ADMIN_SCOPE` (config.ts) names three roots,
+ * over instead of `SCAN_SCOPE`: the engine's admin frame plus the one showcase route that is
+ * shaped like a consumer's admin screen. `DEFAULT_ADMIN_SCOPE` (config.ts) names three roots,
  * `src/routes/admin` first; that root does not exist in this tree (the library carries no
- * `src/routes` at all), which is why this gate names its own list rather than taking
+ * `src/routes` at all), which is why this gate names its list rather than taking
  * `DEFAULT_ADMIN_SCOPE`. `src/lib/public` stays out of this list even though `SCAN_SCOPE` carries
- * it: it renders public markup, so an admin-only motion rule reading it would gate a site's own
+ * it: it renders public markup, so an admin-only motion rule reading it would gate a site's
  * public design rather than its admin frame.
  * `examples/showcase/src/chassis`, `examples/showcase/src/theme`, and the showcase's public
  * routes stay out on purpose: they carry no admin markup, and an admin-only rule reading them
- * would gate a site's own public design rather than its admin frame.
+ * would gate a site's public design rather than its admin frame.
  */
 export const ADMIN_SCOPE = [
   'src/lib/admin',
@@ -77,8 +77,8 @@ export const ADMIN_SCOPE = [
   'examples/showcase/src/routes/admin',
 ];
 /**
- * Standalone CSS files this gate's CSS-family rules scan, beyond a component's own scoped
- * `<style>` block. `theme.css` is Waymark's own palette declaration site (the achromatic
+ * Standalone CSS files this gate's CSS-family rules scan, beyond a component's scoped
+ * `<style>` block. `theme.css` is Waymark's palette declaration site (the achromatic
  * `--color-base-*` ladder and the `--cairn-shadow` color-mix blacks are the point, not a hazard),
  * so `main` also passes it as a declared palette site (`static.paletteFiles`), which excludes it
  * from `token-colors` while every other CSS-family rule still scans it. `cairn-admin.css` lies

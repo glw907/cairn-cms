@@ -21,5 +21,5 @@ Reads:
 
 Override seams:
 
-- A theme that replaces `prose.css` keeps the structural pair from the sheet and adds its own shading.
+- A theme that replaces `prose.css` keeps the structural pair from the sheet and adds its shading.
 - The wrapper is focusable on purpose. Keep a visible focus rule on `table-scroll`.

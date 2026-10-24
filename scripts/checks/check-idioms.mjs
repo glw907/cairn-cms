@@ -8,7 +8,7 @@
 //      test): every one of those gates converts a failure into `process.exitCode` plus a
 //      `return`/flow guard, so a caller in the same process (a test, a sibling gate importing a
 //      helper) never has the process killed out from under it.
-//   3. A gate under scripts/checks names itself one way in its own console output. A mismatch
+//   3. A gate under scripts/checks names itself one way in its console output. A mismatch
 //      (part of the file saying `check:foo`, another part saying `foo`, or `check-foo`) is the
 //      exact drift a 2026-09 sweep found in check-chassis-boundary.mjs.
 //   4. A planning path (`docs/specs/`, `docs/plans/`, `docs/research/`, `docs/archive/`) is
@@ -18,7 +18,7 @@
 //   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Phase N`/`phase N`,
 //      `Pass A`/`pass A` (a single lettered pass), `Pass N`/`pass N`, `Plan N`/`plan N`,
 //      `batch N`, `Round N`/`round-N`, `design-arc D2`/`Design ratchet D3` (a design-decision-log
-//      citation naming its own iteration), a `T<n>` marker sharing its comment line with
+//      citation naming its iteration), a `T<n>` marker sharing its comment line with
 //      "adoption"/"sweep"/"task", a bare `R<n>`/`C<n>b?` round marker, `this pass`/`this phase`,
 //      and a named-sweep parenthetical like `(env-genericity sweep)`. These all name the WORK
 //      SESSION that produced a line rather than the durable reason the line is true, so they rot
@@ -31,13 +31,13 @@
 //      the `C0`/DEL control-character pair are exempted because they are not round markers at all.
 //   6. A consumer-site hostname is banned in src/lib, matched BY SHAPE (a bare
 //      `label.tld`-shaped literal over a short list of real TLDs), never by enumerating
-//      the private hostnames a consumer's own site carries: this file is public, and printing a
+//      the private hostnames a consumer's site carries: this file is public, and printing a
 //      customer's domain in a public gate would be the exact disclosure the rule exists to
 //      prevent. `HOSTNAME_ALLOWED_HOSTS` names the public standards bodies and vendor APIs cairn's
-//      own code and docs legitimately cite (w3.org, github.com, cloudflare.com, and so on); a
+//      code and docs legitimately cite (w3.org, github.com, cloudflare.com, and so on); a
 //      hostname shape absent from that list fails the gate, so a future private mention is
 //      caught without ever having been typed into this file. Accepted limitation: none of rules
-//      4-6 enumerates a private repo NAME (a site's own GitHub org or slug, e.g.
+//      4-6 enumerates a private repo NAME (a site's GitHub org or slug, e.g.
 //      "aksailingclub-org") into this public gate's data; only the hostname shape is
 //      structurally caught, so a bare mention of a private repo's name in prose is a manual sweep
 //      finding, not something this gate can catch going forward.
@@ -72,13 +72,13 @@
 // exempting every dotted identifier by shape.
 //
 // Self-exclusion: this file lives under scripts/checks and is itself in scope for rules 2 and 3,
-// so its own `process.exit` pattern is assembled from two literals (PROCESS_EXIT_PATTERN below)
-// rather than written as the literal substring, and its own console output uses exactly one
-// spelling (`check-idioms`). Rules 4-6 scope to `src/lib` only, so this file and its own header
+// so its `process.exit` pattern is assembled from two literals (PROCESS_EXIT_PATTERN below)
+// rather than written as the literal substring, and its console output uses exactly one
+// spelling (`check-idioms`). Rules 4-6 scope to `src/lib` only, so this file and its header
 // above (which quotes the banned shapes) are never in their scan. Every rule also excludes
-// `scripts/checks/fixtures/`, where this gate's own tests keep deliberately-violating sample
-// files. Rule 7 additionally excludes its own unit test file BY NAME (AS_NEVER_SELF_EXCLUSION
-// below), which exercises real `as never` literals to prove the matcher's own behavior. Wired as
+// `scripts/checks/fixtures/`, where this gate's tests keep deliberately-violating sample
+// files. Rule 7 additionally excludes its unit test file BY NAME (AS_NEVER_SELF_EXCLUSION
+// below), which exercises real `as never` literals to prove the matcher's behavior. Wired as
 // `npm run check:idioms`.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -219,7 +219,7 @@ const PLAN_LABEL_PATTERN = /\b[Pp]lan \d+[a-z]?\b/;
 const BATCH_LABEL_PATTERN = /\b[Bb]atch \d+[a-z]?\b/;
 // Round 2 / round-3 / Round-1: a numbered round, space or hyphen, either case.
 const ROUND_LABEL_PATTERN = /\b[Rr]ound[- ]\d+[a-z]?\b/;
-// design-arc D2 / Design ratchet D3: a design-decision-log citation naming its own iteration.
+// design-arc D2 / Design ratchet D3: a design-decision-log citation naming its iteration.
 const DESIGN_ARC_LABEL_PATTERN = /[Dd]esign[- ](?:arc|ratchet) [A-Z]\d\b/;
 // A `T<n>` marker (e.g. `T7`) is only a process reference when the same comment line also reads
 // as an adoption/sweep/task citation; on its own, `T2` (a generic label, a CSS custom property
@@ -311,7 +311,7 @@ export function findProcessReferenceLines(source) {
 // than being treated as a hostname on shape alone.
 const HOSTNAME_SHAPE_PATTERN = /\b[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.(?:com|org|net|io|dev|app|life|ski|club)\b/g;
 
-// Public standards bodies and vendor APIs cairn's own code and docs legitimately name. Never a
+// Public standards bodies and vendor APIs cairn's code and docs legitimately name. Never a
 // private consumer hostname; see the header note above for why none is enumerated here instead.
 const HOSTNAME_ALLOWED_HOSTS = new Set([
   'w3.org',
@@ -363,8 +363,8 @@ export function findConsumerHostnameLines(source) {
 // The scope for rule 7: every .ts and .svelte file under src/tests.
 const TEST_SCOPE_PATTERN = /\.(ts|svelte)$/;
 
-// Self-exclusion: this gate's own unit test exercises findAsNeverLines against literal `as never`
-// strings (a real cast, an escaped one, a backtick mention) so it can assert the function's own
+// Self-exclusion: this gate's unit test exercises findAsNeverLines against literal `as never`
+// strings (a real cast, an escaped one, a backtick mention) so it can assert the function's
 // behavior, which would otherwise make the gate fail against itself the same way an unassembled
 // exit-call literal would trip rule 2.
 const AS_NEVER_SELF_EXCLUSION = 'src/tests/unit/check-idioms.test.ts';

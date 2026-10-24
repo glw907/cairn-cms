@@ -7,7 +7,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * The repo root, resolved from a scripts/ subdirectory file's own `import.meta.url`.
+ * The repo root, resolved from a scripts/ subdirectory file's `import.meta.url`.
  * @param {string} moduleUrl
  * @returns {string}
  */

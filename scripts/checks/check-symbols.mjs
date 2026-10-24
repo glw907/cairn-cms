@@ -13,14 +13,14 @@
 // Six token classes, each resolved against a different ground truth, chosen because each
 // resolves reliably without guessing:
 //   - a CLI flag (`--some-flag`) inside a shell-tagged fenced block, resolved against the two
-//     CLIs this repository owns: `packages/create-cairn-site`'s own argument parser, and the Go
+//     CLIs this repository owns: `packages/create-cairn-site`'s argument parser, and the Go
 //     tool's committed flag list at `tool/testdata/flags.json`, which `make -C tool flags`
 //     writes from the real cobra tree; anything else (npm, npx, wrangler, git, gh, node) comes
 //     from the allowlist
 //   - a `cairn` line (a shell-fenced line whose first word, after an optional `$ ` prompt, is
 //     exactly `cairn`), resolved word by word against `tool/testdata/flags.json`'s per-command
 //     flag map: the command path is the longest run of leading words that map names, and a word
-//     in subcommand position fails when the matched path has subcommands of its own and does not
+//     in subcommand position fails when the matched path has subcommands and does not
 //     recognize it, the same way a flag fails when the matched path does not accept it
 //   - an environment variable (SCREAMING_SNAKE_CASE), resolved against the source tree
 //   - an exported identifier named in an `import ... from '@glw907/cairn-cms...'` line inside a
@@ -35,7 +35,7 @@
 //     `check-readiness.mjs` already loads), and the committed `tool-check-ids.mjs` vocabulary of
 //     every check id the Go tool's `cairn doctor` raises. All three share the exact
 //     dotted-lowercase shape and often the same area
-//     (`auth`, `config`, `admin`, `github`), and `docs/reference/doctor.md`'s own table cites a
+//     (`auth`, `config`, `admin`, `github`), and `docs/reference/doctor.md`'s table cites a
 //     check id and its condition id side by side (`config.bindings` fails as
 //     `config.bindings-missing`, a different string), so resolving against only one or two of
 //     these turned the others into a wall of false positives; resolving against the union
@@ -79,7 +79,7 @@ const SCOPE = [
 // reads an identifier only from a fenced cairn import line.
 const SHELL_LANGS = new Set(['bash', 'sh', 'shell', 'zsh', 'console']);
 
-// File extensions a repository-path candidate must end in. Chosen from what this repo's own
+// File extensions a repository-path candidate must end in. Chosen from what this repo's
 // tree actually carries; add to it only when a real path with a new extension needs covering.
 const PATH_EXTENSIONS = new Set([
   'ts',
@@ -393,7 +393,7 @@ export function parseApiSurface(root = ROOT) {
   return bySubpath;
 }
 
-/** Parse `packages/create-cairn-site`'s own flags from `src/args.mjs`. @param {string} root */
+/** Parse `packages/create-cairn-site`'s flags from `src/args.mjs`. @param {string} root */
 export function createCairnSiteFlags(root = ROOT) {
   const text = readFileSync(join(root, 'packages/create-cairn-site/src/args.mjs'), 'utf8');
   const body = text.match(/const OPTIONS = \{([\s\S]*?)\n\};/);
@@ -447,12 +447,12 @@ export function cairnCommandFlags(root = ROOT) {
 }
 
 /**
- * Every command path in `commandFlags` that has at least one subcommand of its own, derived from
- * the map's own keys: a path is a parent exactly when some other path is `<path> <word>`. This is
+ * Every command path in `commandFlags` that has at least one subcommand, derived from
+ * the map's keys: a path is a parent exactly when some other path is `<path> <word>`. This is
  * what tells `resolveCairnLine` whether the word right after a matched path is a subcommand to
  * validate (`cairn doctor fix`, if `fix` existed) or a positional argument to leave alone
  * (`cairn doctor ./site`), and why `cairn help agents` never checks `agents`: cobra's default
- * `help` command takes a command path, not a subcommand, so it has none of its own in the map.
+ * `help` command takes a command path, not a subcommand, so it has none in the map.
  * @param {Map<string, Set<string>>} commandFlags
  */
 function commandPathsWithChildren(commandFlags) {
@@ -479,7 +479,7 @@ function flagNameFromWord(word) {
 // A word that ends a shell-parsed cairn invocation early: a pipe, a redirect, a background or
 // sequencing operator, or the compound-command joiners. Extraction reads a line's words with no
 // shell grammar at all (`extractCairnLines`), so `cairn logs --json | jq --arg x y` still carries
-// jq's own words as though they belonged to the cairn line; resolution is what must stop reading
+// jq's words as though they belonged to the cairn line; resolution is what must stop reading
 // at the boundary a real shell would honor, or a defect in the piped-to program (`jq --arg`)
 // reports as a cairn defect instead.
 const SHELL_OPERATOR_WORDS = new Set(['|', '||', '&&', ';', '>', '>>', '<', '2>', '&']);
@@ -487,7 +487,7 @@ const SHELL_OPERATOR_WORDS = new Set(['|', '||', '&&', ';', '>', '>>', '<', '2>'
 /**
  * The prefix of a cairn line's words up to, but not including, the first shell operator word or a
  * word starting with `#` (a shell comment): words past either boundary belong to a different
- * command, or to no command at all, and neither should be checked against this line's own path or
+ * command, or to no command at all, and neither should be checked against this line's path or
  * flags.
  * @param {CairnLineWord[]} items
  * @returns {CairnLineWord[]}
@@ -512,7 +512,7 @@ function truncateAtShellBoundary(items) {
  * a word before a flag is always a command word or a bare positional, never a flag's value,
  * whereas a word right after a flag could be either. A line with no such word (`cairn`,
  * `cairn --version`) resolves to the root path. The word the walk stopped on is read as a
- * subcommand only when it is not itself a flag and the matched path has subcommands of its own
+ * subcommand only when it is not itself a flag and the matched path has subcommands
  * (`commandPathsWithChildren`): otherwise it is a flag or a positional argument (a site id, a
  * directory), and the line's flags are still checked against the path that did match.
  * @param {CairnLineWord[]} items
@@ -588,7 +588,7 @@ export function conditionIds(root = ROOT) {
  * `cairn doctor` currently raises, plus every id a published doc still cites that no live check
  * raises (deferred or dropped), so a page quoting one of those resolves as history rather than a
  * hallucination. A check id and the condition id it maps to are two different values in the same
- * dotted-lowercase shape, `docs/reference/doctor.md`'s own "Check" / "Condition" table columns:
+ * dotted-lowercase shape, `docs/reference/doctor.md`'s "Check" / "Condition" table columns:
  * `config.bindings` (the check) fails as `config.bindings-missing` (the condition), not as
  * itself.
  */
@@ -596,9 +596,9 @@ export function toolCheckIds() {
   return new Set([...TOOL_CHECK_IDS, ...RETIRED_TOOL_CHECK_IDS]);
 }
 
-// A published tarball ships a subset of the repo verbatim (`package.json`'s own `files`), so a
+// A published tarball ships a subset of the repo verbatim (`package.json`'s `files`), so a
 // doc's `node_modules/@glw907/cairn-cms/<rest>` or bare `@glw907/cairn-cms/<rest>` path, naming
-// where the installed package lands in a site's own tree, resolves against `<rest>` in this
+// where the installed package lands in a site's tree, resolves against `<rest>` in this
 // repo's root rather than failing as a phantom path.
 const PACKAGE_PATH_PREFIXES = ['node_modules/@glw907/cairn-cms/', '@glw907/cairn-cms/'];
 
@@ -666,7 +666,7 @@ export function envVarInSourceTree(token, root = ROOT) {
 
 /**
  * Every `cairn`-line finding in one file's code-voice segments, each carrying the `file` it came
- * from alongside `resolveCairnLine`'s own `line`, `class`, and composed `token` message
+ * from alongside `resolveCairnLine`'s `line`, `class`, and composed `token` message
  * (`${word} (not accepted by/not a subcommand of \`${path}\`)`), with an allowlisted finding
  * dropped. Split out of `findUnresolvedSymbols`'s per-file loop so the file/line wiring is
  * directly testable without a scratch corpus.

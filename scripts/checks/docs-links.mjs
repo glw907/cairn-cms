@@ -159,7 +159,7 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // Pass D's docs reset (2026-08-14) deleted the guides, tutorial, and explanation arms and folded
 // every page into the admin, editors, and extend tracks. CHANGELOG.md carries 45 links to the 29
 // retired paths below, and every one would fail this gate for as long as the file exists. Each
-// entry names the page that inherited the old page's job, taken from the cutover's own redirect
+// entry names the page that inherited the old page's job, taken from the cutover's redirect
 // map (docs/internal/record/2026-08-14-pass-d-target-manifest.md, section 2).
 //
 // A translation table that quietly maps to nothing is how a gate stops gating, so this one is
@@ -177,7 +177,7 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // takes each one over.
 //
 // Only the path half is translated. The anchor half is deliberately left unchecked for a mapped
-// link: these headings described the old page's own structure, and the fold did not preserve them
+// link: these headings described the old page's structure, and the fold did not preserve them
 // (none of the three anchors CHANGELOG.md carries on a legacy path survives on its new page).
 /** @type {Record<string, string>} */
 const LEGACY_PATH_MAP = {
@@ -236,7 +236,7 @@ export function legacyTarget(file, dest) {
 }
 
 /**
- * The map's own three invariants, checked against the tree and against {@link LEGACY_HOST}'s
+ * The map's three invariants, checked against the tree and against {@link LEGACY_HOST}'s
  * links. An empty array means the map still describes reality. See {@link LEGACY_PATH_MAP} for
  * why each invariant exists.
  * @param {string} root
@@ -293,7 +293,7 @@ const UNRELEASED_PARTNER = 'docs/extend/migration-notes.md';
 
 /**
  * Whether CHANGELOG.md and the migration-notes page agree on having (or not having) an open
- * `## Unreleased` window. The migration notes key their own entries by version the same way the
+ * `## Unreleased` window. The migration notes key their entries by version the same way the
  * CHANGELOG does, and a human renames each heading by hand at the cut; nothing else notices when
  * one side is renamed and the other is not. That drift already shipped once: the 0.91.0 cut
  * renamed the CHANGELOG's heading but left the paired page's "## Unreleased" heading in place.

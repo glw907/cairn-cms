@@ -1,7 +1,7 @@
 # Grader prompt: the coherence read
 
 This is the coherence-read gate from the standard doc's done-gate, step 3: the
-compositional judgment no mechanical rule carries. A builder runs it against their own
+compositional judgment no mechanical rule carries. A builder runs it against their
 captures before calling a derivation or a novel composition done. Execute this prompt
 exactly as written, given only the image paths supplied to you; do not add or drop a
 check, and do not consult anything beyond the images and this file.
@@ -16,7 +16,7 @@ You are given six image paths, each labeled with its own state and theme:
 | `390 / dark` | The same viewport and state, dark theme |
 | `1440 / light` | The screen at a 1440px viewport, light theme, at rest |
 | `1440 / dark` | The same viewport and state, dark theme |
-| `interaction / light` | One interaction state this screen's own composition exercises (an open menu or panel, an expanded row, a focus-visible control), light theme |
+| `interaction / light` | One interaction state this screen's composition exercises (an open menu or panel, an expanded row, a focus-visible control), light theme |
 | `interaction / dark` | The same interaction state, dark theme |
 
 If a label is missing, or a path does not open as an image, stop and report
@@ -88,22 +88,22 @@ implied border? FAIL a chip that looks like it is attempting a border without ac
 clearing one, a chip that reads as almost bounded.
 
 **d. Type hierarchy.** Without reading every word, can you tell which text is the row
-or section's own subject, which is a label, and which is a secondary note, from size
+or section's subject, which is a label, and which is a secondary note, from size
 and weight alone? FAIL if two or more unrelated pieces of text compete at the same
 visual weight for the reader's first look.
 
 **e. Spacing rhythm.** Do related items sit visibly closer together than unrelated
-ones: a label tighter to its own control than to the next field, one field tighter to
+ones: a label tighter to its control than to the next field, one field tighter to
 its neighbor than one section is to the next? FAIL a screen where the gaps read as
 uniform or arbitrary rather than expressing this hierarchy.
 
 **f. Composition width** (390 and 1440 images only). Does anything wrap awkwardly,
 crowd against another control, or run past the visible edge at this width? A label
-wrapping inside a control's own row, or two controls touching with no breathing room
+wrapping inside a control's row, or two controls touching with no breathing room
 between them, both FAIL this item.
 
 **g. Facet quietness** (only when this screen has a filter control). Does the filter
-read as quiet, bordered chrome showing only its own name at rest, picking up emphasis
+read as quiet, bordered chrome showing only its name at rest, picking up emphasis
 only once a non-default value is applied? FAIL a filter that looks pre-emphasized
 before anything is chosen, or that competes visually with the surface's one filled
 action.
@@ -137,7 +137,7 @@ screen that only holds together on its best-looking capture has not resolved.
 List the full, deduplicated set of everything that drove a FAIL, one line each,
 specific enough that a builder could act on it without re-reading the images. Name the
 surface, the checklist letter, and what is wrong: not "spacing feels off" but "the
-picker panel's own destination rows sit at the same gap as the panel-to-trigger
+picker panel's destination rows sit at the same gap as the panel-to-trigger
 distance, so the group and the panel boundary read as one rhythm." An empty tells list
 accompanies an overall PASS only.
 
@@ -148,6 +148,6 @@ per-device verdict table, the overall verdict, and the tells list. Nothing else;
 prompt runs unattended, and its caller reads a fixed shape.
 
 This per-run contract is what a fresh run executes identically whether it is a
-builder's own single done-gate check or one of several independent runs a trial
+builder's single done-gate check or one of several independent runs a trial
 measurement folds into a consensus; the consensus rule itself, how many runs and how
 they combine, belongs to whichever process is calling this prompt, not to this file.

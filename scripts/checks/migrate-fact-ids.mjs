@@ -1,6 +1,6 @@
 // cairn-cms: the one-shot, re-runnable migration that gives every fact bullet in
 // docs/internal/facts/ its id. It inserts a freshly minted `` `f:xxxxxx` `` code span right after
-// each bullet's leading `- ` and changes nothing else: no other byte on the bullet's own line
+// each bullet's leading `- ` and changes nothing else: no other byte on the bullet's line
 // moves, a soft-wrapped continuation line is untouched, and a bullet already carrying an id (or
 // one under the `## Harvest record` / `## Provenance` headings, which carry no id at all) is left
 // exactly as it stands. Re-running this script is a no-op once every bullet has an id, so it is
@@ -20,7 +20,7 @@ const FACTS_DIR = join(ROOT, 'docs/internal/facts');
  * not already carry one, under any heading other than `## Harvest record` or `## Provenance`.
  * Every other line, and every byte of a line that already has an id, is returned unchanged; a
  * bullet whose first line already matches `FACT_ID_RE` right after the `- ` is left alone, which
- * is what makes a second run of this function on its own output a no-op.
+ * is what makes a second run of this function on its output a no-op.
  * @param {string} markdown
  * @returns {{ text: string, added: number }}
  */

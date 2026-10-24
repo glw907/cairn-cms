@@ -1,5 +1,5 @@
 // cairn-cms: shared logic for the owner-review Artifact page. This file has no imports, so
-// its source is copied verbatim (with the `export` keyword stripped) into the page's own inline
+// its source is copied verbatim (with the `export` keyword stripped) into the page's inline
 // script by the embed script; the embed script also imports it directly for the first embed.
 // Both paths run the identical code, so the batch state they encode and decode never drifts
 // between the Node side and the browser side.
@@ -11,8 +11,8 @@ export const STATE_ELEMENT_ID = 'cairn-docs-review-state';
 
 /**
  * The literal closing tag of an HTML script element, and the literal open and close delimiters
- * of an HTML comment, each split by concatenation so this file's own source never spells one out
- * as a contiguous literal. This file is copied verbatim into the page's own inline script (see
+ * of an HTML comment, each split by concatenation so this file's source never spells one out
+ * as a contiguous literal. This file is copied verbatim into the page's inline script (see
  * the header comment above), and a real HTML parser ends a script element's raw text, or changes
  * how it tokenizes the rest of it, at these exact sequences wherever they appear in that text,
  * string and comment literals included, regardless of what the surrounding JavaScript means. Every
@@ -24,7 +24,7 @@ const HTML_COMMENT_CLOSE = '--' + '>';
 
 /**
  * Serializes the review page's state as JSON safe to sit inside an HTML script element: every
- * "<" is escaped to its JSON unicode form, so a literal script closing tag inside a file's own
+ * "<" is escaped to its JSON unicode form, so a literal script closing tag inside a file's
  * markdown (a fenced code block quoting a script element, say) can never end the element early.
  * decodeState reverses the escape through JSON.parse, which treats < as an ordinary string escape.
  * @param {DocsReviewState} state
@@ -123,7 +123,7 @@ export function escapeHtml(str) {
 /**
  * Renders one inline run of markdown text: an inline code span becomes <code>, everything else
  * is escaped literally. Bold and italic are left as literal asterisks, which the review page's
- * own content never needs and keeps the renderer small. Splitting on a capturing group puts
+ * content never needs and keeps the renderer small. Splitting on a capturing group puts
  * every matched code span at an odd index, so the index alone tells a span from plain text.
  * @param {string} text
  * @returns {string}
@@ -150,7 +150,7 @@ function splitTableRow(line) {
 /**
  * Renders one markdown document to display HTML: headings, fenced code blocks, pipe tables,
  * inline code spans, HTML comments (shown inert, never parsed as markup), and paragraphs. This is
- * a small renderer sized to the review page's own display, not a commonmark implementation.
+ * a small renderer sized to the review page's display, not a commonmark implementation.
  * @param {string} markdown
  * @returns {string}
  */

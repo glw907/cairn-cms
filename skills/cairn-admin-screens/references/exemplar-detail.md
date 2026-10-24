@@ -1,7 +1,7 @@
 # Exemplar: a detail screen
 
-Load this when building or reviewing a detail (desk) screen: a single record's own full
-picture, its own sections of related data, and the dialogs that mutate it.
+Load this when building or reviewing a detail (desk) screen: a single record's full
+picture, its sections of related data, and the dialogs that mutate it.
 
 Source: the Signups screen in `examples/showcase`, the cairn-cms repo's worked custom-screen
 example (`src/routes/admin/signups/+page.svelte`). A scaffolded site ships neither that screen
@@ -9,24 +9,24 @@ nor a detail route; the screen's full source is inline at the end of `exemplar-l
 the screen holds that a detail screen reuses is one real dialog, the shared delete confirm,
 reproduced below, and the form-and-outcome wiring a detail screen's dialogs share. This file
 annotates that dialog where it applies and shows, under a **Growth** label, the detail route a
-developer builds next: `/admin/signups/<id>`, one signup's own page, reached from a list row.
+developer builds next: `/admin/signups/<id>`, one signup's page, reached from a list row.
 Growth snippets are not shipped code. They are written in the Signups
-vocabulary and assume the developer's own tables carry the related data (guests, payments,
+vocabulary and assume the developer's tables carry the related data (guests, payments,
 notes) the cards show. Several annotations translate the markup into the cairn-native call
 (`StatusChip` registers, the `card-shell card-shadow` primitive) rather than transcribing it.
 
 ## Anatomy at a glance
 
 Growth: a back link, a header with the record's identity and its light verbs, then a stack of
-cards (Contact, Guests, Payments, Notes), each opening its own dialog for a heavier verb (edit,
-add, move, record a payment, refund). No `PageHeader`: a desk route's own header is bespoke
+cards (Contact, Guests, Payments, Notes), each opening its dialog for a heavier verb (edit,
+add, move, record a payment, refund). No `PageHeader`: a desk route's header is bespoke
 because it carries state (a status chip) and several verbs a generic header snippet doesn't
 have vocabulary for.
 
 ## This screen renders as an office route, and screen-anatomy does flag it
 
-`screen-anatomy`'s desk exemption is earned by the admin shell's own concept-based route
-classification, never by a screen being conceptually a desk (`screen-anatomy.ts`'s own
+`screen-anatomy`'s desk exemption is earned by the admin shell's concept-based route
+classification, never by a screen being conceptually a desk (`screen-anatomy.ts`'s
 comment: "The exemption is read off the RENDER, never off the path, and that is the whole
 point"). The shell's `isDeskRoute` (`CairnAdminShell.svelte`) requires the path to have exactly
 three segments and the SECOND segment to name a registered content concept; this desk lives at
@@ -46,7 +46,7 @@ One check still applies regardless of how a given route classifies, because it's
 rather than a mechanical check the rule can scope by route: **one filled action per surface.**
 This page holds several open dialogs, and each dialog is its own surface (`one-filled-action`
 reads the topmost open layer). The page underneath keeps zero fills; every dialog keeps
-exactly one (its own "Save", or the destructive confirm's error-toned fill).
+exactly one (its "Save", or the destructive confirm's error-toned fill).
 
 ## The header: identity, status, and light verbs
 
@@ -70,21 +70,21 @@ exactly one (its own "Save", or the destructive confirm's error-toned fill).
 
 - The eyebrow (`HEADER_CELL`, `type-label` in cairn's vocabulary) plus the `h1` is the same
   identity pattern the list exemplar's `PageHeader` carries, hand-rolled here because the
-  header's right side needs room for a chip and three verbs a header snippet's own `action`
+  header's right side needs room for a chip and three verbs a header snippet's `action`
   slot (one child) can't hold.
   `type-title font-bold font-[family-name:var(--font-display)]` is a cairn-native rewrite of
   the literal `text-2xl font-bold tracking-tight`. Both resolve to the same 1.5rem, but the
   role utility carries the ruled leading and drops the `tracking-tight`, which the admin
-  design system reserves for the wordmark's own K4 correction, not a page heading.
+  design system reserves for the wordmark's K4 correction, not a page heading.
 - The status badge (`<span class="badge {chip.cls}">`) is a hand-assembled daisyUI badge from
   a per-status class map. A cairn-native build calls
-  `<StatusChip label={...} register={...} />` instead: the header's own identity chip is
+  `<StatusChip label={...} register={...} />` instead: the header's identity chip is
   exactly the kind of state a reader needs to register at a glance (Pending) or can safely
   skim past (Confirmed), so which register applies is the same judgment call
   `exemplar-list.md` walks through for the same status vocabulary.
 - Every header verb here is `btn btn-ghost btn-sm` (one carries `text-error` for the
   destructive "Cancel signup" direction, ink-color only, still no fill). None of the three
-  competes with a dialog's own filled Save; ghost is the correct weight for a verb that
+  competes with a dialog's filled Save; ghost is the correct weight for a verb that
   opens a second surface rather than acting immediately in place.
 
 ## The card: the shell recipe
@@ -132,22 +132,22 @@ Every card in this screen (Contact, Guests, Payments, Notes) repeats this same s
 row a two-part flex (identity block, then chips-plus-verbs block). This is the detail screen's
 own register, worth naming because it recurs once per card rather than once:
 
-- **The section heading's own light verb stays `btn-ghost btn-xs`**, one size down from the
-  header's own `btn-sm` verbs, since a section-scoped action ("Add guest") is a lower-stakes
+- **The section heading's light verb stays `btn-ghost btn-xs`**, one size down from the
+  header's `btn-sm` verbs, since a section-scoped action ("Add guest") is a lower-stakes
   ask than a record-scoped one ("Edit signup").
 - **The fence above writes the cairn-native call, `<StatusChip label="Cancelled" />`.**
   A hand-written badge for "Cancelled" or "Refunded" would read
-  `badge-ghost badge-sm font-medium opacity-60`, the ghost recipe cairn's own audit retires
+  `badge-ghost badge-sm font-medium opacity-60`, the ghost recipe cairn's audit retires
   (`stock-default-hazards`'s `BADGE_GHOST_MESSAGE`). "Cancelled" and "Refunded" are the
   settled, put-away states `StatusChip`'s default `quiet` register exists for, and it carries
   the documented recipe rather than a hand-tuned opacity demotion.
-- **Row-level verbs are uniformly `btn-ghost btn-xs`**, whether the row's own action is
+- **Row-level verbs are uniformly `btn-ghost btn-xs`**, whether the row's action is
   benign (Edit, Move) or destructive (Cancel, carrying `text-error` on the label, still no
   fill). A row can hold several verbs at once without ever competing for the surface's one
   fill, because none of them is one.
 - **The divider (`divide-y divide-[var(--cairn-card-border)]`) plus `py-3 first:pt-0
   last:pb-0`** is the row-rhythm a repeated list uses instead of the table zebra
-  `exemplar-list.md` covers; a desk's own related-data lists read as a flat feed of
+  `exemplar-list.md` covers; a desk's related-data lists read as a flat feed of
   records, not a scannable grid, so a divider carries the separation a zebra stripe would
   overstate here.
 
@@ -207,9 +207,9 @@ Growth, the edit dialog a desk header opens:
   is one of); a single-column dialog form has no shared-row width to compete for, so the default
   is the right choice, not a call for the inline exception.
 - `modal-action`'s two-button pattern, plain `Cancel` beside filled `Save`, is this dialog's
-  own `one-filled-action` surface satisfied: exactly one accent fill, and it's the
+  `one-filled-action` surface satisfied: exactly one accent fill, and it's the
   submitting action. Every dialog on the page repeats the identical pair.
-- `<h2 class="text-lg font-bold">` is the dialog title's own register: a cairn-native build
+- `<h2 class="text-lg font-bold">` is the dialog title's register: a cairn-native build
   writes `type-heading font-bold font-[family-name:var(--font-display)]`, the same Heading
   recipe the admin design system states for a dialog or section heading (18px in Bricolage);
   `text-lg` (1.125rem) already matches the size, so only the display face and the ruled
@@ -224,16 +224,16 @@ Growth, the edit dialog a desk header opens:
 </label>
 ```
 
-A checkbox's own clickable label area is a touch target in `touch-targets`'s own sense: the
+A checkbox's clickable label area is a touch target in `touch-targets`'s own sense: the
 label, even carrying no visible text here (the accessible name comes from `aria-label` on
-the input), still counts as one of the regions the rule unions with the control's own box.
+the input), still counts as one of the regions the rule unions with the control's box.
 `checkbox-sm` renders 20px; a real hit-area expansion (padding, never a `::before` clipped by
 a truncating ancestor) is what closes that gap when a checkbox row measures under the 24px
-floor, the same touch-target fix cairn's own `ConceptList` sort controls needed for the same
+floor, the same touch-target fix cairn's `ConceptList` sort controls needed for the same
 reason.
 
 ## What this exemplar doesn't cover
 
 The group-level dialogs this screen opens (signup edit, add or edit guest, record a payment)
-are each a small form; their own row/label composition, including the wrap failure a wider
+are each a small form; their row/label composition, including the wrap failure a wider
 two-column form can hit, is `form-anatomy.md`'s subject.

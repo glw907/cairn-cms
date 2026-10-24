@@ -6,9 +6,9 @@
 //
 // README.md itself is excluded from the walk: it documents the grammar in prose, with example
 // tags shown in backtick code spans (`` `[verified]` ``, `` `[docs-drift: page says "..."]` ``),
-// not fact bullets of its own, so scanning it as a fact file produces only false positives.
+// not fact bullets, so scanning it as a fact file produces only false positives.
 //
-// A bullet's line can soft-wrap across several markdown source lines (the container's own
+// A bullet's line can soft-wrap across several markdown source lines (the container's
 // authoring convention keeps lines under roughly 100 columns); a bullet is every line from one
 // `- ` at column 0 up to (not including) the next such line, a blank line, or a heading, joined
 // with single spaces. Two headings are allowlisted and skipped entirely, per the README's "Fact
@@ -24,7 +24,7 @@
 //
 // Every fact bullet also carries an opaque id, a leading `` `f:xxxxxx` `` code span the bracket
 // scan already treats as a code span and skips: six lowercase base36 characters minted once by
-// `mintFactId` and never derived from the bullet's own text, so editing a claim or its source
+// `mintFactId` and never derived from the bullet's text, so editing a claim or its source
 // never touches the id. A bullet with no such leading span fails; an id that repeats anywhere in
 // the container, across files, fails too. `--mint` on the command line prints one freshly minted
 // id and exits, the path `docs/internal/facts/README.md` sends a filer down.
@@ -32,8 +32,8 @@
 // A `Source:` pointer into `docs/internal/record/` is a special case: the directory is skipped,
 // not failed, exactly when it is absent. That absence never happens on a normal checkout; the
 // rule exists only because the now-retired reader-validation harness's repository-class export
-// dropped the directory on purpose, and this gate stayed usable against that harness's own
-// exported trees without failing on its own citations. When the directory exists and the cited
+// dropped the directory on purpose, and this gate stayed usable against that harness's
+// exported trees without failing on its citations. When the directory exists and the cited
 // file inside it does not, that is an ordinary broken pointer and still fails.
 //
 // A `path:line` or `path:line-line` pointer inside the bullet's `Source:` field is resolved two
@@ -45,7 +45,7 @@
 //
 // A pointer that carries a quoted anchor (a backtick-quoted snippet in parens right after the
 // pointer) is checked against a WINDOW around the cited line range, not the exact line: this
-// container's own anchors are frequently a paraphrase or an elided quote of a multi-line block
+// container's anchors are frequently a paraphrase or an elided quote of a multi-line block
 // (an ellipsis `...` standing in for omitted code), and an occasional citation lands a few lines
 // off the token it names, so per-line exact matching produces false positives against real,
 // reviewed facts. The window is the cited range expanded by 10 lines on each side (clamped to the
@@ -62,7 +62,7 @@
 // parses the file and finds the named declaration: an undotted symbol only at the top level, each
 // later segment only directly inside the one before, so a renamed symbol fails rather than
 // resolving to a same-named local. The anchor, when one follows, is checked against that
-// declaration's own lines rather than a window around a cited line number, so an edit that moves
+// declaration's lines rather than a window around a cited line number, so an edit that moves
 // the declaration cannot rot the pointer. The form is limited
 // to `.ts`/`.js` files under `src/`: a `.svelte` file is not parseable by the compiler API and its
 // markup has no nameable symbol, so it keeps a `path:line` pointer.
@@ -323,7 +323,7 @@ export function buildBasenameIndex(root) {
 
 /**
  * Resolve a `Source:` pointer's path against the repo root: a literal path first, then, ONLY
- * when the pointer names no directory of its own (a bare filename), a unique basename match. A
+ * when the pointer names no directory (a bare filename), a unique basename match. A
  * pointer that does carry a directory and does not exist there fails outright rather than
  * falling back: the basename fallback exists for the container's bare-filename shorthand ("the
  * file just named above, in the same directory"), not to rescue a stale, fully-qualified path
@@ -662,7 +662,7 @@ function anchorWindow(citedLines, fileLineCount) {
   return [start, end];
 }
 
-/** The path prefix a repository-class reader export drops whole, per `check:facts`'s own header note. */
+/** The path prefix a repository-class reader export drops whole, per `check:facts`'s header note. */
 const RECORD_DIR_PREFIX = 'docs/internal/record/';
 
 /**

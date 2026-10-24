@@ -1,7 +1,7 @@
 // check-consumers.mjs: the root gate proving a public reshape cannot silently break either
 // downstream consumer of the package surface. The reference and surface gates verify the
 // shipped `.d.ts` shape in isolation; neither one actually compiles a consumer against it. This
-// script runs the two real consumers in the repo: the showcase site's own `svelte-check`
+// script runs the two real consumers in the repo: the showcase site's `svelte-check`
 // (examples/showcase, a registry-style consumer resolving `@glw907/cairn-cms` through its built
 // `dist/`) and `packages/cairn-cms-dev`'s typecheck (via the existing `check:dev-package` gate,
 // which already runs `tsc --noEmit` over the dev backend). Wired as `npm run check:consumers`

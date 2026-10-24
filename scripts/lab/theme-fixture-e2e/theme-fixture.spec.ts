@@ -6,7 +6,7 @@ import { test, expect, type Page } from '@playwright/test';
 // hold, or a cascade path only a theme-independent contract can satisfy.
 //
 // With THEME_FIXTURE_BUILD_ONLY=1 only the smoke loads run: the pages answer and render, and no
-// fixture value is asserted. That is the mode a probe's own theme runs under.
+// fixture value is asserted. That is the mode a probe's theme runs under.
 
 const BUILD_ONLY = process.env.THEME_FIXTURE_BUILD_ONLY === '1';
 

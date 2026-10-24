@@ -2,7 +2,7 @@ package main
 
 // permissionScope classifies what confirming one of cairn auth check's permissions needs beyond
 // the three credentials themselves. An account-scoped permission is confirmed with credentials
-// alone; a site-scoped one additionally needs a registered site's own zone or repository, which
+// alone; a site-scoped one additionally needs a registered site's zone or repository, which
 // cairn auth check reads from the registry only when the operator names a site.
 type permissionScope int
 
@@ -10,18 +10,18 @@ const (
 	// scopeAccount permissions are confirmed against the account or the token itself, with no
 	// site named.
 	scopeAccount permissionScope = iota
-	// scopeSite permissions need a site's own zone id or repository, and are skipped when the
+	// scopeSite permissions need a site's zone id or repository, and are skipped when the
 	// operator names none.
 	scopeSite
 )
 
-// permission is one row of cairn auth check's permission table: the label the provider's own
+// permission is one row of cairn auth check's permission table: the label the provider's
 // token page uses, the credential variable it belongs to, and the scope confirming it needs.
 //
 // This is the single source both the command's rows and tool/docs/credentials.md's "Token
 // scopes" section read from. Label is a provider-defined name, not prose this package drafts, so
 // it carries no entry in messages.go's operator-copy catalogue; permissions_test.go fails when
-// this table and the doc's own list of labels disagree.
+// this table and the doc's list of labels disagree.
 type permission struct {
 	Label      string
 	Credential string

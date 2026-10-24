@@ -70,7 +70,7 @@ func findCommand(t *testing.T, root *cobra.Command, path ...string) *cobra.Comma
 }
 
 // TestLogsUnderJSONWritesNothingToStderr covers the rule that makes `cairn logs x --json 2>&1`
-// safe: under --json stderr carries nothing but an error, --verbose adds no line of its own, and
+// safe: under --json stderr carries nothing but an error, --verbose adds no line, and
 // the sensitive-data notice travels inside the payload as containsPersonalData.
 func TestLogsUnderJSONWritesNothingToStderr(t *testing.T) {
 	d := credentialedDeps(t)

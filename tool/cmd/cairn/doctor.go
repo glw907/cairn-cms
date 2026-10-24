@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// doctorFlags are cairn doctor's own flags.
+// doctorFlags are cairn doctor's flags.
 type doctorFlags struct {
 	// asJSON prints the payload instead of the plain report. It defaults off, like every other
 	// --json in the tree.
@@ -78,7 +78,7 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 	return nil
 }
 
-// writeDoctor writes the run, under the same two rules the health command's own writer states.
+// writeDoctor writes the run, under the same two rules the health command's writer states.
 // --json wins over --quiet, because under --json the payload is the output and an empty stdout
 // is what a wrong invocation looks like. --quiet writes nothing at all on an OK run.
 //
@@ -105,9 +105,9 @@ func writeDoctorJSON(w io.Writer, d deps, dir string, checked []doctor.CheckedRe
 }
 
 // writeOutsideCairnSite prints the one line a directory that is not a cairn site earns, instead
-// of a wall of failures no check ever asked its own question, and exits on the resulting
+// of a wall of failures no check ever asked its question, and exits on the resulting
 // UNKNOWN verdict. --quiet does not suppress it: the run is not OK, and quietSuppressesFrame's
-// own rule (health.go's own quietSuppressesFrame) only silences a clean run.
+// rule (health.go's quietSuppressesFrame) only silences a clean run.
 func writeOutsideCairnSite(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap doctor.Snapshot, dir string) error {
 	verdict := spine.ExitCode([]spine.SiteVerdicts{doctor.Verdicts(nil)}, nil, 0)
 	switch {
@@ -127,11 +127,11 @@ func writeOutsideCairnSite(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFl
 }
 
 // resolvePublicOrigin resolves a directory run's public origin the way ai.posture-effective and
-// config.public-origin both expect: the wrangler config's own vars.PUBLIC_ORIGIN first, then the
+// config.public-origin both expect: the wrangler config's vars.PUBLIC_ORIGIN first, then the
 // process environment. The config wins because it is what the deployed Worker actually runs
 // with; the environment is the local fallback for a site that has not declared one. A
 // wrangler.jsonc that fails to parse resolves no origin here; the read that matters for the
-// operator, config.bindings and its siblings, reports its own unchecked result independently
+// operator, config.bindings and its siblings, reports its unchecked result independently
 // the next time a check reads the same file.
 func resolvePublicOrigin(d deps, s doctor.Snapshot) doctor.PublicOrigin {
 	if facts, found, err := doctor.ReadWranglerConfig(s); err == nil && found && facts.HasPublicOrigin {

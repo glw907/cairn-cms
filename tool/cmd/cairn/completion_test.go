@@ -12,7 +12,7 @@ import (
 // completeSiteIDs never inspects it, so any error proves the no-candidates path.
 var errRegistryUnavailable = errors.New("registry unavailable")
 
-// TestCompletionCommandIsPresentAndNotHidden pins cobra's own default completion command:
+// TestCompletionCommandIsPresentAndNotHidden pins cobra's default completion command:
 // keeping it is the whole reason not to hand-roll four shell scripts.
 func TestCompletionCommandIsPresentAndNotHidden(t *testing.T) {
 	root := newRootCmd(mustDeps(t))
@@ -31,7 +31,7 @@ func TestCompletionCommandIsPresentAndNotHidden(t *testing.T) {
 }
 
 // TestSiteIDCompletionListsTheRegistry covers completeSiteIDs directly: candidates are the
-// registry's own ids, filtered by prefix, with no network involved.
+// registry's ids, filtered by prefix, with no network involved.
 func TestSiteIDCompletionListsTheRegistry(t *testing.T) {
 	d, _ := testDeps(t)
 	writeTestRecord(t, d, "my-site-a1b2c3", "my-site.example.org", "my-site")
@@ -92,7 +92,7 @@ func TestSiteIDCompletionIgnoresAPositionalAlreadyGiven(t *testing.T) {
 }
 
 // TestLogEventCompletionFiltersByPrefix covers cairn logs --event's flag completion over the
-// engine's own vocabulary.
+// engine's vocabulary.
 func TestLogEventCompletionFiltersByPrefix(t *testing.T) {
 	got, directive := completeLogEvents(nil, nil, "auth.link.")
 	if directive != cobra.ShellCompDirectiveNoFileComp {

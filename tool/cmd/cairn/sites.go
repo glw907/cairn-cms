@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// sitesFlags holds cairn sites list's own flags. They are declared once, on the sites command's
+// sitesFlags holds cairn sites list's flags. They are declared once, on the sites command's
 // persistent set, so bare cairn sites and cairn sites list take the same flags.
 type sitesFlags struct {
 	// asJSON prints the listing as a JSON array instead of one line per site.
@@ -20,7 +20,7 @@ type sitesFlags struct {
 
 // newSitesCmd builds cairn sites list, with bare cairn sites as its alias. The alias is the
 // same RunE rather than a cobra Aliases entry, because the alias stands in for the subcommand
-// and not for the parent's own name.
+// and not for the parent's name.
 func newSitesCmd(d deps, rf *rootFlags) *cobra.Command {
 	var f sitesFlags
 	run := func(cmd *cobra.Command, _ []string) error { return runSitesList(cmd, d, rf, f) }
@@ -81,7 +81,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 		listErrs = append(listErrs, spine.ErrExpectSites)
 	}
 
-	// ExitCode's own expectSites parameter counts settled site reports, and a listing settles
+	// ExitCode's expectSites parameter counts settled site reports, and a listing settles
 	// none, so the count is compared here and reaches the arithmetic as the sentinel the
 	// listing is meant to return. Nothing below re-derives the mapping from sentinel to code.
 	verdict := spine.ExitCode(nil, listErrs, 0)
@@ -101,7 +101,7 @@ func runSitesList(cmd *cobra.Command, d deps, rf *rootFlags, f sitesFlags) error
 	return nil
 }
 
-// writeSitesStatus prints the run's own credential state under the listing. A listing has no
+// writeSitesStatus prints the run's credential state under the listing. A listing has no
 // creds row for that detail to sit on, which is the one place it stands alone: an operator
 // looking at a registry of sites the tool cannot fully check should learn why here rather than
 // from the first health run that skips half its checks.

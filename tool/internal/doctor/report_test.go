@@ -27,7 +27,7 @@ const cleanWranglerJSONC = `{
 
 // cleanSiteFiles is the file set a passing site carries for every check: valid wrangler bindings, a
 // Vite config that sets no csrf key, a valid site.config.yaml at its canonical path, a wired /admin
-// mount, an installed engine satisfying its own peer floors, and a site-facts.json declaring no
+// mount, an installed engine satisfying its peer floors, and a site-facts.json declaring no
 // media bucket and no custom roles (so both facts-dependent checks that read it settle as a clean
 // skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
@@ -47,7 +47,7 @@ func cleanSiteFiles() map[string]string {
 }
 
 // cleanOrigin and cleanRobots are what the command layer would have resolved and fetched for
-// cleanSiteFiles's own wrangler vars and a live, unmanaged robots.txt declining nothing.
+// cleanSiteFiles's wrangler vars and a live, unmanaged robots.txt declining nothing.
 func cleanOrigin() PublicOrigin {
 	return PublicOrigin{Value: "https://example.com", Source: OriginFromVars}
 }
@@ -103,7 +103,7 @@ func buildSnapshot(t *testing.T, files map[string]string, origin PublicOrigin, r
 // origin/robots a command layer would have handed Run, and the golden file its Format output is
 // compared against.
 type goldenReportCase struct {
-	// name is the golden file's own stem under testdata/golden.
+	// name is the golden file's stem under testdata/golden.
 	name string
 	// files is the Snapshot's directory contents.
 	files map[string]string
@@ -145,7 +145,7 @@ func goldenReportCases() []goldenReportCase {
 			robots: cleanRobots(),
 		},
 		{
-			// ai.posture-effective is unchecked when the command layer's own GET did not
+			// ai.posture-effective is unchecked when the command layer's GET did not
 			// produce a robots.txt body; every other check still reads cleanSiteFiles cleanly.
 			name:   "unchecked-result",
 			files:  cleanSiteFiles(),
@@ -241,7 +241,7 @@ func TestDocsURLIsEmptyForNoAnchor(t *testing.T) {
 	}
 }
 
-// TestRunStampsResultIDFromCheck holds Run's contract that every Result carries its own Check's
+// TestRunStampsResultIDFromCheck holds Run's contract that every Result carries its Check's
 // ID, and that the stamp survives into Verdicts: an exit-code fold keyed on the wrong id would
 // attribute one check's failure to another.
 func TestRunStampsResultIDFromCheck(t *testing.T) {

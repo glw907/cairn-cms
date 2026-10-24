@@ -13,13 +13,13 @@ import (
 
 // delegationCheck ports checkDelegation (packages/create-cairn-site/src/cloudflare/zone.mjs):
 // it compares the domain's actual nameservers against the pair Cloudflare assigned this account
-// at provisioning, then, once they match, reads the zone's own activation state.
+// at provisioning, then, once they match, reads the zone's activation state.
 type delegationCheck struct{}
 
 // ID implements Check.
 func (delegationCheck) ID() string { return "delegation" }
 
-// Needs implements Check. Once the nameservers match, Delegation reads the zone's own activation
+// Needs implements Check. Once the nameservers match, Delegation reads the zone's activation
 // state through the Cloudflare API.
 func (delegationCheck) Needs() Tier { return TierCF }
 
@@ -34,7 +34,7 @@ func (delegationCheck) Run(ctx context.Context, r record.Record, c Clients, _ Op
 
 	// A record adopted before the registry carried the pair, or written by a tool that never
 	// recorded it, is not unobservable: the zone itself reports the nameservers Cloudflare
-	// assigned it, and reading them here is the same fact from its own authority. The zone is
+	// assigned it, and reading them here is the same fact from its authority. The zone is
 	// read once and reused below, so the fallback costs no extra call on the path that needs it.
 	var zone *providers.Zone
 	if len(assigned) == 0 {
@@ -94,7 +94,7 @@ func assignedNameServers(r record.Record) []string {
 }
 
 // nameServersMatch reports whether every assigned nameserver appears in actual, comparing
-// case-insensitively and ignoring a trailing root dot, the way zone.mjs's own
+// case-insensitively and ignoring a trailing root dot, the way zone.mjs's
 // actualLower.has(ns.toLowerCase()) comparison does.
 func nameServersMatch(assigned []string, actual []*net.NS) bool {
 	actualLower := make(map[string]bool, len(actual))
@@ -126,7 +126,7 @@ func looksLikeCloudflareNS(actual []*net.NS) bool {
 }
 
 // normalizeNS lowercases host and strips a trailing root dot, so a DNS response's
-// fully-qualified form compares equal to Cloudflare's own unqualified nameserver names.
+// fully-qualified form compares equal to Cloudflare's unqualified nameserver names.
 func normalizeNS(host string) string {
 	return strings.ToLower(strings.TrimSuffix(host, "."))
 }

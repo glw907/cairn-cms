@@ -8,7 +8,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/logs"
 )
 
-// The log body's own column budget. The date and the zone are stated once, on the section rule,
+// The log body's column budget. The date and the zone are stated once, on the section rule,
 // so a record line spends its width on the record rather than repeating the day on every row.
 const (
 	logIndent = 2
@@ -26,12 +26,12 @@ const logEmpty = "no records"
 // renderLogs draws a site's log excerpt.
 //
 // A level is a word and never a glyph: `?` already means a check that could not run in this
-// design, and a log line is not a check. The fields wrap into their own column with a hanging
+// design, and a log line is not a check. The fields wrap into a separate column with a hanging
 // indent rather than being cut, so the field that carries the answer, a `reason` most of all, is
 // never truncated.
 //
 // The event column is a row's own, not the table's. Only the engine writes an "event" key, so a
-// window on a public site is almost entirely the Worker's own console lines, and a column
+// window on a public site is almost entirely the Worker's console lines, and a column
 // reserved for the whole excerpt spends twenty-three cells of blank on every one of them. A row
 // with no event starts its fields against the level instead, and the rows that do carry one
 // still line up with each other.
@@ -110,7 +110,7 @@ func logLevelRole(level string) Role {
 // logFieldText joins one record's non-envelope fields into the text that wraps into the field
 // column, in the order the record carried them.
 //
-// A value is trimmed after it is sanitized rather than before. A Worker's own console line
+// A value is trimmed after it is sanitized rather than before. A Worker's console line
 // commonly opens with a newline and a colour escape, which sanitize turns into a leading space,
 // and that space reads as a value missing after its `key=` rather than as part of the message.
 func logFieldText(e logs.Entry) string {

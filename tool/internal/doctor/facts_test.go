@@ -10,7 +10,7 @@ import (
 // TestAbsentSiteFactsMakesAllThreeChecksUnknown asserts config.media-bucket, auth.role-wiring,
 // and ai.posture-effective all report unchecked with the exact factsAbsentDetail message when
 // site-facts.json does not exist, and that the whole run's spine.ExitCode reads VerdictUnknown
-// from those results alone, over the package's own verdicts rather than a process exit code (no
+// from those results alone, over the package's verdicts rather than a process exit code (no
 // command exists until Task 8).
 func TestAbsentSiteFactsMakesAllThreeChecksUnknown(t *testing.T) {
 	s := snapshotWithFiles(t, nil)
@@ -78,7 +78,7 @@ func TestSiteFactsVersionMismatchPropagatesAsUnchecked(t *testing.T) {
 
 // TestReadSiteFactsParsesEveryField asserts readSiteFacts fills every optional field when present
 // and leaves each Has flag false when the corresponding key is omitted, the same
-// declared/omitted distinction the engine's own writer makes.
+// declared/omitted distinction the engine's writer makes.
 func TestReadSiteFactsParsesEveryField(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{
 		"src/content/.cairn/site-facts.json": `{
@@ -108,7 +108,7 @@ func TestReadSiteFactsParsesEveryField(t *testing.T) {
 }
 
 // TestReadSiteFactsOmittedFields asserts a minimal site-facts.json (media only, the showcase's
-// own committed shape) leaves roles and aiPosture unset rather than defaulting to a zero value
+// committed shape) leaves roles and aiPosture unset rather than defaulting to a zero value
 // that would read as a declared empty posture.
 func TestReadSiteFactsOmittedFields(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{

@@ -19,7 +19,7 @@ func registryDirAndSource() (string, store.Source, error) {
 }
 
 // defaultRegistryDir resolves the registry directory the way every other command does, through
-// store.Dir's own precedence.
+// store.Dir's precedence.
 func defaultRegistryDir() (string, error) {
 	dir, _, err := registryDirAndSource()
 	return dir, err
@@ -32,7 +32,7 @@ func defaultRegistrySource() (string, store.Source, error) {
 }
 
 // openRegistry opens the registry d points at. It is the one path from a command to the store,
-// so a command holds no directory resolution of its own.
+// so a command holds no directory resolution.
 func openRegistry(d deps) (*store.Store, error) {
 	dir, err := d.registryDir()
 	if err != nil {

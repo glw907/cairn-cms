@@ -14,7 +14,7 @@ import (
 // The schema version of each published payload, one integer per payload type rather than one
 // number across all five: the payloads change for unrelated reasons, and a single number would
 // make every consumer of every payload re-read a schema because one unrelated payload gained a
-// field. Each starts at health.Report's own schema version, the number the tool already
+// field. Each starts at health.Report's schema version, the number the tool already
 // published, so a consumer reading the report's version before this boundary existed is not
 // handed a lower number now. docs/reference/cli-cairn-json-output.md carries the promise each one
 // makes: a key is added within a version, and never removed or retyped within one.
@@ -29,9 +29,9 @@ const (
 	logsSchemaVersion = 1
 	// adoptListSchemaVersion versions the adopt candidate list payload.
 	adoptListSchemaVersion = 1
-	// authCheckSchemaVersion versions cairn auth check's own payload.
+	// authCheckSchemaVersion versions cairn auth check's payload.
 	authCheckSchemaVersion = 1
-	// DoctorSchemaVersion versions cairn doctor's own directory-preflight payload. The
+	// DoctorSchemaVersion versions cairn doctor's directory-preflight payload. The
 	// marshaller itself lives in internal/doctor, whose posture check dials over HTTP; this
 	// package's contract is purity with its direct requires pinned by name, so it holds the
 	// constant and nothing else of that payload.
@@ -60,7 +60,7 @@ type sitePayload struct {
 	Verdict       string `json:"verdict"`
 	// ExitCode is the run's code, never the site's, and is therefore absent from a per-site
 	// NDJSON line: a stream's first line is one site of many, and a code sitting on it would be
-	// read as the run's own.
+	// read as the run's.
 	ExitCode     *int           `json:"exitCode,omitempty"`
 	CheckedAt    string         `json:"checkedAt"`
 	DurationMs   int64          `json:"durationMs"`
@@ -83,7 +83,7 @@ type checkPayload struct {
 	// rather than scanning an array of key-value pairs.
 	Fields map[string]json.RawMessage `json:"fields,omitempty"`
 	// Observed holds the values copied out of a provider's response, each with the source it
-	// was copied from. A site controls those bytes; the mark is what a consumer's own rule
+	// was copied from. A site controls those bytes; the mark is what a consumer's rule
 	// about untrusted data keys on.
 	Observed map[string]observedValue `json:"observed,omitempty"`
 	Fix      *fixPayload              `json:"fix,omitempty"`
@@ -125,7 +125,7 @@ type summaryPayload struct {
 	WorstFirst    []string       `json:"worstFirst"`
 }
 
-// sitesListPayload is cairn sites list's own payload. Every listed site carries enough for a
+// sitesListPayload is cairn sites list's payload. Every listed site carries enough for a
 // consumer to act without a second call.
 type sitesListPayload struct {
 	SchemaVersion int             `json:"schemaVersion"`
@@ -145,7 +145,7 @@ type SiteListEntry struct {
 	Step   string `json:"step"`
 }
 
-// logsPayload is cairn logs's own payload.
+// logsPayload is cairn logs's payload.
 type logsPayload struct {
 	SchemaVersion int    `json:"schemaVersion"`
 	Kind          string `json:"kind"`
@@ -159,8 +159,8 @@ type logsPayload struct {
 }
 
 // logEntry is one engine log record on the wire. Its fields are an object for the same reason a
-// check's are, and they are all copied from the site's own record, which is what the payload's
-// own containsPersonalData flag and json-output.md say in place of a per-field source.
+// check's are, and they are all copied from the site's record, which is what the payload's
+// containsPersonalData flag and json-output.md say in place of a per-field source.
 type logEntry struct {
 	At     string                     `json:"at"`
 	Level  string                     `json:"level"`
@@ -168,7 +168,7 @@ type logEntry struct {
 	Fields map[string]json.RawMessage `json:"fields,omitempty"`
 }
 
-// adoptListPayload is cairn adopt list's own payload.
+// adoptListPayload is cairn adopt list's payload.
 type adoptListPayload struct {
 	SchemaVersion        int              `json:"schemaVersion"`
 	Kind                 string           `json:"kind"`
@@ -202,7 +202,7 @@ type SiteJSON struct {
 	// Verbose keeps every measured field; without it the verbose-only fields are dropped, the
 	// same filter the text bodies run.
 	Verbose bool
-	// Verdict is this site's own verdict.
+	// Verdict is this site's verdict.
 	Verdict spine.Verdict
 	// ExitCode is the run's exit code, written only by MarshalSite.
 	ExitCode spine.Verdict
@@ -316,7 +316,7 @@ func fieldObjects(fs []spine.OutcomeField) (map[string]json.RawMessage, map[stri
 
 // fixForResult returns the structured fix for a check that has one: a failing check's fix comes
 // from its declared identity, and a check that could not run at all takes the fix for its
-// reason, where the table carries one. A command is carried only for an operator's own fix,
+// reason, where the table carries one. A command is carried only for an operator's fix,
 // since that is the one actor whose action is a command line this tool can name.
 func fixForResult(c health.CheckResult) (fixPayload, bool) {
 	fix, ok := health.FixFor(c.Outcome)
@@ -342,7 +342,7 @@ func fixForResult(c health.CheckResult) (fixPayload, bool) {
 type SummaryJSON struct {
 	// Reports holds every site the sweep settled, in registry order; this package ranks them.
 	Reports []health.Report
-	// Verdicts holds each settled site's own verdict, in the same order as Reports.
+	// Verdicts holds each settled site's verdict, in the same order as Reports.
 	Verdicts []spine.Verdict
 	// Verdict is the run's combined verdict and ExitCode its process exit code.
 	Verdict  spine.Verdict
@@ -354,7 +354,7 @@ type SummaryJSON struct {
 	Now     time.Time
 }
 
-// MarshalSummary writes the stream's final line: the run's own verdict and exit code, the count
+// MarshalSummary writes the stream's final line: the run's verdict and exit code, the count
 // by verdict word, and the worst-first ranking of the sites it settled.
 func MarshalSummary(in SummaryJSON) ([]byte, error) {
 	counts := map[string]int{
@@ -404,7 +404,7 @@ func MarshalSitesList(entries []SiteListEntry, verdict spine.Verdict, errs []str
 	})
 }
 
-// MarshalLogs writes cairn logs's payload. Every record it carries is the site's own, which is
+// MarshalLogs writes cairn logs's payload. Every record it carries is the site's, which is
 // what containsPersonalData names: the engine logs an editor's email on some events.
 func MarshalLogs(site string, entries []logs.Entry) ([]byte, error) {
 	out := make([]logEntry, 0, len(entries))
@@ -445,7 +445,7 @@ func MarshalAdoptList(candidates []AdoptCandidate) ([]byte, error) {
 	})
 }
 
-// authCheckPayload is cairn auth check's own payload.
+// authCheckPayload is cairn auth check's payload.
 type authCheckPayload struct {
 	SchemaVersion int    `json:"schemaVersion"`
 	Kind          string `json:"kind"`
@@ -457,7 +457,7 @@ type authCheckPayload struct {
 	Permissions []authCheckPermission `json:"permissions"`
 }
 
-// authCheckPermission is one permission row on the wire: the label the provider's own token page
+// authCheckPermission is one permission row on the wire: the label the provider's token page
 // uses, the credential variable it belongs to, the state word the run settled, and the reason
 // text beside anything other than a pass.
 type authCheckPermission struct {
@@ -472,16 +472,16 @@ type authCheckPermission struct {
 type AuthCheckPermission struct {
 	Label      string
 	Credential string
-	// State is the row's own wire word, from spine.StateWord: "pass", "fail", "skip", or
+	// State is the row's wire word, from spine.StateWord: "pass", "fail", "skip", or
 	// "unknown". A permission row never reads "held", the fifth word, since a hold covers a
-	// site's own failing check and not a token's permissions.
+	// site's failing check and not a token's permissions.
 	State string
-	// Reason is the row's own display text, empty for a pass.
+	// Reason is the row's display text, empty for a pass.
 	Reason string
 }
 
 // MarshalAuthCheck writes cairn auth check's payload: site is the registered site the run named,
-// empty when it named none, and verdict is the run's own exit verdict.
+// empty when it named none, and verdict is the run's exit verdict.
 func MarshalAuthCheck(site string, permissions []AuthCheckPermission, verdict spine.Verdict) ([]byte, error) {
 	rows := make([]authCheckPermission, 0, len(permissions))
 	for _, p := range permissions {

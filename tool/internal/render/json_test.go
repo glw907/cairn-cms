@@ -120,7 +120,7 @@ func TestStateMarshalsAsOneOfFiveWords(t *testing.T) {
 			t.Errorf("check %q state = %v, want %q", id, got, want)
 		}
 	}
-	// The offline fixture is the fifth word's own case: every check was attempted and none could
+	// The offline fixture is the fifth word's case: every check was attempted and none could
 	// reach the network, which is not a credential the operator declined to set.
 	if got := checkByID(t, offline, "serving")["state"]; got != "unknown" {
 		t.Errorf("an offline check's state = %v, want %q", got, "unknown")
@@ -136,7 +136,7 @@ func TestStateDeclaresNoMarshalJSON(t *testing.T) {
 	}
 }
 
-// TestTierMarshalsAsItsWord covers health.Tier's own marshaller, the one enum whose values and
+// TestTierMarshalsAsItsWord covers health.Tier's marshaller, the one enum whose values and
 // whose words are one to one.
 func TestTierMarshalsAsItsWord(t *testing.T) {
 	for tier, want := range map[health.Tier]string{
@@ -250,7 +250,7 @@ func TestFieldsMarshalAsAnObject(t *testing.T) {
 		t.Error("a copied value reached fields; it belongs under observed")
 	}
 
-	// The round trip: every field the check reported is reachable by its own key, with the value
+	// The round trip: every field the check reported is reachable by its key, with the value
 	// it was given, and nothing else is.
 	source := report.Checks[0].Outcome.Fields
 	observed := objectAt(t, check, "observed")
@@ -275,7 +275,7 @@ func TestFieldsMarshalAsAnObject(t *testing.T) {
 	}
 }
 
-// TestObservedIsReadFromTheDeclaredSource asserts the boundary routes on the field's own Source
+// TestObservedIsReadFromTheDeclaredSource asserts the boundary routes on the field's Source
 // and infers nothing. The two fields here carry the same key shape and the same value shape, and
 // only the declared source separates them, so a boundary guessing from a name or a value would
 // put them in the same place.
@@ -299,7 +299,7 @@ func TestObservedIsReadFromTheDeclaredSource(t *testing.T) {
 	}
 }
 
-// TestExitCodeIsScopedToTheRun asserts the single-site payload carries the run's own code, and
+// TestExitCodeIsScopedToTheRun asserts the single-site payload carries the run's code, and
 // that a per-site line of a stream carries none: a consumer reading line one's code as the run's
 // would report the first site's verdict for the whole sweep.
 func TestExitCodeIsScopedToTheRun(t *testing.T) {
@@ -327,7 +327,7 @@ func TestExitCodeIsScopedToTheRun(t *testing.T) {
 		t.Errorf("a per-site line carries exitCode: %s", line)
 	}
 	if decoded["verdict"] != spine.VerdictCritical.String() {
-		t.Errorf("per-site verdict = %v, want the site's own", decoded["verdict"])
+		t.Errorf("per-site verdict = %v, want the site's verdict", decoded["verdict"])
 	}
 }
 
@@ -373,7 +373,7 @@ func TestEveryPayloadCarriesSchemaVersionAndVerdict(t *testing.T) {
 
 // TestCheckIDsAreExactlyTheNine pins the published check vocabulary. A tenth check cannot land
 // without this list naming it, which is what makes every id in a payload something an agent's
-// own table can be written against.
+// table can be written against.
 func TestCheckIDsAreExactlyTheNine(t *testing.T) {
 	want := []string{
 		"creds", "serving", "delegation", "https-forced", "email", "deploy", "publish-path",
@@ -389,7 +389,7 @@ func TestCheckIDsAreExactlyTheNine(t *testing.T) {
 }
 
 // TestEveryFailingAndHeldCheckCarriesAStructuredFix asserts the fix is data a consumer switches
-// on rather than a sentence it parses, and that a command is present only for an operator's own
+// on rather than a sentence it parses, and that a command is present only for an operator's
 // fix: an agent's rule for running one keys on the actor, so a command beside any other actor
 // would invite a run nobody authorised.
 func TestEveryFailingAndHeldCheckCarriesAStructuredFix(t *testing.T) {
@@ -464,7 +464,7 @@ func TestHoldIsStructured(t *testing.T) {
 // than about when the tool measured anything, and it cannot be compared across two runs.
 var relativeTimeWords = []string{"ago", "left", "in "}
 
-// proseKeys names the two values that are cairn's own sentence for a person to read rather than
+// proseKeys names the two values that are cairn's sentence for a person to read rather than
 // a value for a program to key on. They are the one place a relative phrasing is allowed, since
 // a check's Detail is the same sentence the text body prints; json-output.md excludes both from
 // the diffable projection for exactly that reason.

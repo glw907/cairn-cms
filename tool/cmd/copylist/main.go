@@ -1,6 +1,6 @@
 // Command copylist prints every operator-facing string this module's messages and fix tables
 // carry, grouped by package and sorted, with no run required: tool/docs/design/copy-standard.md
-// section 4.3's own golden generator. `make copy-list` writes its output to
+// section 4.3's golden generator. `make copy-list` writes its output to
 // tool/testdata/copy.golden.md, and `make check-copy` asserts a fresh run matches the committed
 // file, so a new string cannot land invisibly.
 //
@@ -36,27 +36,27 @@ import (
 // golden.
 var errNonLiteralConstValue = errors.New("const value is not a string literal, a fold of string literals, or a non-string literal")
 
-// cairnMessagesPath resolves cmd/cairn's own messages table from this source file's own
+// cairnMessagesPath resolves cmd/cairn's messages table from this source file's
 // location via runtime.Caller, so the parse below finds it regardless of the caller's working
-// directory: `go run ./cmd/copylist` runs from tool/ (the Makefile's own cwd) while `go test`
+// directory: `go run ./cmd/copylist` runs from tool/ (the Makefile's cwd) while `go test`
 // runs from cmd/copylist/, and a path relative to either alone would break the other. cmd/cairn
 // is package main, which Go forbids importing, so its catalogue is read by parsing the source
-// rather than calling a Catalogue function the way health's and spine's own are called.
+// rather than calling a Catalogue function the way health's and spine's are called.
 func cairnMessagesPath() (string, error) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", fmt.Errorf("resolve this file's own path")
+		return "", fmt.Errorf("resolve this file's path")
 	}
 	return filepath.Join(filepath.Dir(thisFile), "..", "cairn", "messages.go"), nil
 }
 
-// packageCatalogue is one package's own sorted, deduplicated set of operator-facing strings.
+// packageCatalogue is one package's sorted, deduplicated set of operator-facing strings.
 type packageCatalogue struct {
 	name    string
 	entries []string
 }
 
-// catalogues returns every package's own catalogue, in a fixed package order.
+// catalogues returns every package's catalogue, in a fixed package order.
 func catalogues() []packageCatalogue {
 	path, err := cairnMessagesPath()
 	if err != nil {
@@ -65,7 +65,7 @@ func catalogues() []packageCatalogue {
 	cairn, err := cairnCatalogue(path)
 	if err != nil {
 		// render and main both treat a parse failure as fatal: a golden built without
-		// cmd/cairn's own strings would silently under-report, which is worse than failing loud.
+		// cmd/cairn's strings would silently under-report, which is worse than failing loud.
 		panic(fmt.Sprintf("parse %s: %v", path, err))
 	}
 	return []packageCatalogue{
@@ -77,10 +77,10 @@ func catalogues() []packageCatalogue {
 }
 
 // cairnCatalogue returns every string-valued package-level const messages.go declares at path:
-// every fixed string and every `tmplXxx` format template this table's own doc comment promises
+// every fixed string and every `tmplXxx` format template this table's doc comment promises
 // lives there. It is a parse, not an execution, since messages.go's file comment states the
 // convention this depends on: every operator-facing string in that file is a named const, and no
-// function composes one from a bare literal of its own.
+// function composes one from a bare literal.
 func cairnCatalogue(path string) ([]string, error) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, 0)
@@ -161,8 +161,8 @@ func sortedUnique(entries []string) []string {
 	return slices.Compact(sorted)
 }
 
-// render builds the golden's own Markdown text from every package's catalogue, the single
-// function main and this file's own test both call, so the committed file and a fresh run are
+// render builds the golden's Markdown text from every package's catalogue, the single
+// function main and this file's test both call, so the committed file and a fresh run are
 // compared against the same rendering rather than two copies of it.
 func render() string {
 	var b strings.Builder

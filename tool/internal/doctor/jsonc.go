@@ -20,7 +20,7 @@ func stripJsonc(text string) string {
 var trailingCommaPattern = regexp.MustCompile(`,(\s*[}\]])`)
 
 // errWranglerJsoncParse is the clean message a present-but-unparseable wrangler.jsonc reports,
-// never the parser's own snippet (which would land the file's content verbatim in the report).
+// never the parser's snippet (which would land the file's content verbatim in the report).
 var errWranglerJsoncParse = errors.New("wrangler.jsonc did not parse")
 
 // factsFromJsonc strips comments and trailing commas, then decodes into map[string]any (never a

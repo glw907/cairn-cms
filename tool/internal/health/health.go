@@ -63,7 +63,7 @@ type Check interface {
 	// required client is absent rather than calling it.
 	Needs() Tier
 	// Run measures the check's verdict against r, using c's clients and o's tunables. The
-	// returned Outcome names its own cairn-doctor condition id, so a check whose failures have
+	// returned Outcome names its cairn-doctor condition id, so a check whose failures have
 	// different remedies declares a different Condition per verdict.
 	Run(ctx context.Context, r record.Record, c Clients, o Options) spine.Outcome
 }
@@ -82,7 +82,7 @@ var All = []Check{
 	errorsCheck{},
 }
 
-// reportSchemaVersion is Report's own JSON schema version.
+// reportSchemaVersion is Report's JSON schema version.
 const reportSchemaVersion = 1
 
 // needsClient reports whether tier's required credential is present in c.
@@ -195,7 +195,7 @@ func applyAck(result *CheckResult, acks Acks, now time.Time) {
 	}
 }
 
-// activeAckIDs returns the CheckID of every unexpired entry in acks, in acks's own order,
+// activeAckIDs returns the CheckID of every unexpired entry in acks, in acks's order,
 // regardless of whether a check in the current sweep actually carries that id.
 func activeAckIDs(acks Acks, now time.Time) []string {
 	var ids []string

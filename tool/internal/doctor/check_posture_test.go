@@ -75,7 +75,7 @@ func TestAIPostureEffectiveNoDeclaredNoDirectives(t *testing.T) {
 
 // TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups asserts a served file carrying two
 // "User-agent: *" groups, the shape a managed robots.txt produces by prepending to the origin's
-// own file, passes and names the managed layer in its note rather than asserting a cause.
+// file, passes and names the managed layer in its note rather than asserting a cause.
 func TestAIPostureEffectiveManagedLayerTwoUserAgentStarGroups(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("User-agent: *\nDisallow: /private\n\nUser-agent: *\nAllow: /\n"))

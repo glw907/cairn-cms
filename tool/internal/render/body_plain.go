@@ -90,12 +90,12 @@ func (t Theme) verdictKeyLine(v Verdict, site, tally string) string {
 }
 
 // checkedPhraseValue is checkedPhrase's value half, with the leading "checked " dropped: this
-// body's own key already carries the word.
+// body's key already carries the word.
 func checkedPhraseValue(at, now time.Time, elapsed time.Duration) string {
 	return strings.TrimPrefix(checkedPhrase(at, now, elapsed), "checked ")
 }
 
-// plainCheck renders one check's own lines: its state, the condition id where its verdict
+// plainCheck renders one check's lines: its state, the condition id where its verdict
 // declared one, and, for a check that could not run, the reason that carries the difference
 // between a missing credential and a timeout.
 //
@@ -130,7 +130,7 @@ func plainValue(v string) string {
 	return cmp.Or(v, "unstated")
 }
 
-// plainFix renders the fix a check's own verdict resolves to, and nothing when the fix table
+// plainFix renders the fix a check's verdict resolves to, and nothing when the fix table
 // carries none for it.
 func plainFix(c health.CheckResult) []string {
 	fix, ok := health.FixFor(c.Outcome)
@@ -161,7 +161,7 @@ type fixGroup struct {
 
 // groupFixes collects the fixes for a run's unobservable checks, one entry per distinct fix,
 // naming every check it covers. Where one missing input caused several skips, the group carries
-// one fix under its own key rather than letting the last skipped row appear to own a fix that
+// one fix under its key rather than letting the last skipped row appear to own a fix that
 // covers two: ambiguity costs more than duplication.
 // It groups exactly as groupBlockedFixes does, and drops the two fields only the fleet body's
 // head line reads.

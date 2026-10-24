@@ -11,19 +11,19 @@ import (
 )
 
 // This file is the layer every body shares: the way a report splits into sections, the section
-// words, the header block, the hold field, the fix's own parts, and the text primitives a body
+// words, the header block, the hold field, the fix's parts, and the text primitives a body
 // composes with. A body owns its frame and nothing else, so the vocabulary, the ranking, the fix
 // format, and the timestamps cannot drift between a terminal and a pipe.
 
 // docsBase is the root every published cairn documentation address resolves under, stated once
-// so no body builds a documentation address of its own.
+// so no body builds a documentation address itself.
 const docsBase = "https://cairn.pub/docs/"
 
 // fixAnchorBase is the page every fix's anchor resolves against. A fix names an anchor alone,
 // and the admin arm's is-it-working page is the one page those anchors are written for.
 const fixAnchorBase = docsBase + "admin/is-it-working#"
 
-// The section labels, the four labels a run's checks are grouped under. They are their own fixed
+// The section labels, the four labels a run's checks are grouped under. They are their fixed
 // vocabulary and no body invents a fifth: the check-result words are five, and the two that mean
 // a check did not settle, "skip" and "unknown", share the one "could not run" section, since the
 // operator's next move is the same for both and a section per word would split a group of two
@@ -93,7 +93,7 @@ func (s sections) tally(sep string) string {
 }
 
 // count renders a tally the way the copy standard's numbers rule asks: digits, and always the
-// noun the digits count. Every state word in this vocabulary is already its own plural.
+// noun the digits count. Every state word in this vocabulary is already its plural.
 func count(n int, word string) string {
 	return strconv.Itoa(n) + " " + word
 }
@@ -115,7 +115,7 @@ func checkedAt(r health.Report, fallback time.Time) time.Time {
 // three facts are separated by commas, so a reader does not take the elapsed time for part of
 // the stamp.
 //
-// A stamp from the future, which a clock skew between this machine and a provider's own
+// A stamp from the future, which a clock skew between this machine and a provider's
 // timestamps can produce, has no age to state and prints alone.
 func checkedPhrase(at, now time.Time, elapsed time.Duration) string {
 	out := "checked " + stamp(at)
@@ -167,7 +167,7 @@ func relative(d time.Duration) string {
 
 // holdField returns the trailing field a row with a hold carries, and whether that hold is
 // inside its escalation window. The hold is never comma-spliced into the detail: a failure and
-// the decision to hold it are two facts, so the hold takes a field of its own.
+// the decision to hold it are two facts, so the hold takes a separate field.
 //
 // A lapsed hold reports when it expired and escalates nothing: the check is already back among
 // the failures, which is a louder signal than any ink.
@@ -196,9 +196,9 @@ func remaining(d time.Duration) string {
 	return count(max(int(d.Hours()), 0), "hours")
 }
 
-// conditionID returns the stable failure id a check's own verdict declared, or empty where it
+// conditionID returns the stable failure id a check's verdict declared, or empty where it
 // declared none. Only the engine's condition registry is printed: an id a check did not declare
-// is a claim about what was measured, and spine.Code is the tool's own bookkeeping rather than
+// is a claim about what was measured, and spine.Code is the tool's bookkeeping rather than
 // a published handle an operator can look up.
 func conditionID(o spine.Outcome) string {
 	if o.Condition == spine.ConditionNone {
@@ -208,7 +208,7 @@ func conditionID(o spine.Outcome) string {
 }
 
 // fixURL returns the documentation address a fix's anchor resolves to, and empty when the fix
-// names no anchor. A fix line with no URL is a fix line with no URL: the tool's own bookkeeping
+// names no anchor. A fix line with no URL is a fix line with no URL: the tool's bookkeeping
 // about a page it has not written does not go in the operator's column.
 func fixURL(f health.Fix) string {
 	if f.Anchor == "" {
@@ -262,7 +262,7 @@ func verdictRole(v Verdict) Role {
 
 // verdictLines is the block every terminal body opens and closes with: the verdict, the subject
 // bold, the tallies muted. A tally is a fact, so when the three will not fit on one line the
-// tally takes a line of its own rather than being cut.
+// tally takes a line by itself rather than being cut.
 //
 // The order is the same at the head of a frame and at the foot of it. The verdict leads the
 // block wherever it appears, so a reader who has learned the device at the top of the screen
@@ -275,7 +275,7 @@ func (t Theme) verdictLines(v Verdict, subject, tally string, width int) []strin
 
 // verdictParts renders the verdict block's two pieces: the head line, and the tally lines where
 // the tally did not fit beside it. An empty tally slice means the tally rode the head line, or
-// that the run had nothing to count at all, which is the empty registry's own frame.
+// that the run had nothing to count at all, which is the empty registry's frame.
 func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head string, tallyLines []string) {
 	word := v.String()
 	head = t.strong(verdictRole(v)).Render(word)
@@ -295,7 +295,7 @@ func (t Theme) verdictParts(v Verdict, subject, tally string, width int) (head s
 }
 
 // insetRule is the one section device this design uses: a lowercase label inset two cells into a
-// rule. No box, no capitals, no coloured rail of its own.
+// rule. No box, no capitals, no coloured rail.
 func (t Theme) insetRule(ascii bool, label string, width int) string {
 	lead := t.rule(ascii, 2)
 	tail := max(width-t.width(lead)-t.width(label)-2, 0)
@@ -304,7 +304,7 @@ func (t Theme) insetRule(ascii bool, label string, width int) string {
 }
 
 // cell renders one fixed-width field. Theme.Sized pads inside the styled block and cuts there,
-// so the padding carries the field's own style and a 2.0 HUD can later paint a selected row's
+// so the padding carries the field's style and a 2.0 HUD can later paint a selected row's
 // ground across a whole row without striped gaps.
 func (t Theme) cell(role Role, text string, n int) string {
 	return t.Sized(role, n).Render(text)
@@ -350,11 +350,11 @@ func (t Theme) wrap(text string, width int) []string {
 	return out
 }
 
-// Wrap word-wraps text to width and returns the lines, the writer every body composes its own
+// Wrap word-wraps text to width and returns the lines, the writer every body composes its
 // prose with, down to the guard that pulls a word onto the last line rather than leaving one
 // alone there. A caller printing an operator-facing line outside a frame, a command's stderr
 // notice above all, reaches it here rather than leaving the terminal to fold the line wherever
-// its own edge falls.
+// its edge falls.
 func (t Theme) Wrap(text string, width int) []string {
 	return t.wrapNoOrphan(text, content(width))
 }
@@ -437,7 +437,7 @@ func atColumn(st lipgloss.Style, col int, lines []string) []string {
 }
 
 // wrapLeavingTail wraps text to width and re-flows its last line until tailWidth cells are free
-// at the end of it, so a trailing field shares that line rather than taking one of its own. It
+// at the end of it, so a trailing field shares that line rather than taking a line by itself. It
 // reports false when no re-flow leaves the room, which is a width too narrow to carry both.
 func (t Theme) wrapLeavingTail(text string, width, tailWidth int) (lines []string, ok bool) {
 	lines = t.wrap(text, width)

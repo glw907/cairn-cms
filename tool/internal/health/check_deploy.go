@@ -21,7 +21,7 @@ const buildStoppedStatus = "stopped"
 // to that this check treats as a working deploy. Every other settled outcome (fail, terminated,
 // skipped, cancelled, or one Cloudflare has not documented yet) is a failed deploy: the fail-open
 // alternative, treating an unrecognized outcome as success, would tell an operator a broken
-// deploy is fine (the Node CLI's own runChapter3 draws the same line).
+// deploy is fine (the Node CLI's runChapter3 draws the same line).
 const buildOutcomeSuccess = "success"
 
 // buildState is a Workers Builds run's settled state, as deployCheck reports it in its
@@ -41,7 +41,7 @@ const (
 	buildRunning
 )
 
-// String names s for the check's own "lastBuild" field. A value outside the four reads as none,
+// String names s for the check's "lastBuild" field. A value outside the four reads as none,
 // the same as the zero value: this string reaches an operator's report, where a bare number
 // would say less than "no build".
 func (s buildState) String() string {
@@ -58,7 +58,7 @@ func (s buildState) String() string {
 	return "none"
 }
 
-// deployDetail is deployCheck's own internal measurement, flattened into deployCheck's eleven
+// deployDetail is deployCheck's internal measurement, flattened into deployCheck's eleven
 // ordered Fields entries rather than carried as one struct: Outcome.Fields holds a key and a
 // json.RawMessage per value, so a struct placed in one entry would render as one opaque blob a
 // per-field non-verbose filter could not reach inside.
@@ -68,12 +68,12 @@ type deployDetail struct {
 	// BuildsConnected reports whether the Worker has at least one Builds trigger.
 	BuildsConnected bool
 	// PushToDeploy reports whether a push to the connected repository redeploys the Worker. A
-	// connected trigger is what Cloudflare's own push-to-deploy is: there is no separate
+	// connected trigger is what Cloudflare's push-to-deploy is: there is no separate
 	// read-level flag Builds exposes for it.
 	PushToDeploy bool
 	// LastBuild is the most recent build's settled state.
 	LastBuild buildState
-	// BuildID is the most recent build's own id, verbose-only: an operator needs it to fetch that
+	// BuildID is the most recent build's id, verbose-only: an operator needs it to fetch that
 	// build's logs, but it identifies no more than the short SHAs already do not.
 	BuildID string
 	// LastBuildSHA is the most recent build's commit hash, verbose-only.
@@ -96,7 +96,7 @@ func shortSHA(sha string) string {
 }
 
 // fields flattens d into the eleven ordered spine.OutcomeField entries every deployCheck outcome
-// carries, in the fixed order the check's own goldens key off:
+// carries, in the fixed order the check's goldens key off:
 // workerExists, buildsConnected, pushToDeploy, lastBuild, lastBuildSHA, mainSHA, lastBuildAt,
 // behind, lastBuildShortSHA, mainShortSHA, buildId.
 func (d deployDetail) fields() []spine.OutcomeField {
@@ -124,8 +124,8 @@ func (d deployDetail) outcome(state spine.State, reason spine.ReasonCode, code s
 }
 
 // deployCheck ports the site's Workers Builds deploy pipeline: the Worker exists, Builds is
-// connected to the site's own repository, the last build's settled state, and whether that
-// build's commit is still the repository's own default-branch head.
+// connected to the site's repository, the last build's settled state, and whether that
+// build's commit is still the repository's default-branch head.
 type deployCheck struct{}
 
 // ID implements Check.
@@ -153,12 +153,12 @@ func findWorker(ctx context.Context, cf *providers.Cloudflare, name string) (*pr
 // hasRepo reports whether r names a GitHub repository. Discovery learns a repository from a
 // Workers Builds trigger alone, so a site deployed any other way is adopted without one and
 // every check that reads the repository has to say so rather than querying "/repos//" and
-// reporting the 404 as the site's own fault.
+// reporting the 404 as the site's fault.
 func hasRepo(r record.Record) bool {
 	return r.GitHub.Repo.Owner != "" && r.GitHub.Repo.Repo != ""
 }
 
-// DefaultBranch returns r's repository's own default branch, falling back to "main" when a
+// DefaultBranch returns r's repository's default branch, falling back to "main" when a
 // record carries none: an unadopted or freshly created repository's record can predate the
 // default-branch read, and "main" is what every site this tool provisions is created with.
 func DefaultBranch(r record.Record) string {
@@ -172,7 +172,7 @@ func DefaultBranch(r record.Record) string {
 //
 // A Worker with no Builds trigger is skipped rather than failed. Workers Builds is one way to
 // deploy a cairn site and not the only one: a site deployed from a CI job or from a developer's
-// own `wrangler deploy` has no trigger to read and nothing wrong with it, so reporting it as a
+// `wrangler deploy` has no trigger to read and nothing wrong with it, so reporting it as a
 // broken deploy pipeline would page an operator over a choice they made. The trigger list is
 // also the only read that settles it, which is why the check calls Builds before deciding rather
 // than gating on a credential flag: the token either reads the route or the API says so.

@@ -26,7 +26,7 @@ import (
 // builtBinary builds cairn once per test run and returns its path. The falsification table below
 // has to run against the real process: a cobra.Command driven in memory never reaches the exit
 // code, and the exit code is the whole assertion. The module root is relative because a test
-// binary's own working directory is its package directory, where ./cmd/cairn does not resolve.
+// binary's working directory is its package directory, where ./cmd/cairn does not resolve.
 var builtBinary = sync.OnceValues(func() (string, error) {
 	dir, err := os.MkdirTemp("", "cairn-usage")
 	if err != nil {
@@ -161,7 +161,7 @@ func TestHelpAndVersionExitZero(t *testing.T) {
 }
 
 // TestEveryErrorCarriesTheCairnPrefix covers the three shapes an error reaches an operator in: a
-// usage error built at the flag boundary, a command's own refusal, and a raw Go error from deeper
+// usage error built at the flag boundary, a command's refusal, and a raw Go error from deeper
 // in the tool that never passed through the messages table.
 func TestEveryErrorCarriesTheCairnPrefix(t *testing.T) {
 	tests := []struct {
@@ -197,7 +197,7 @@ func TestAFlagErrorNamesItsOwnSubcommand(t *testing.T) {
 
 	got := err.Error()
 	if !strings.Contains(got, "Run `cairn health --help`") {
-		t.Errorf("error %q does not name the subcommand's own help", got)
+		t.Errorf("error %q does not name the subcommand's help", got)
 	}
 }
 
@@ -237,7 +237,7 @@ func TestOnlyMainMapsAReportlessErrorToACode(t *testing.T) {
 
 // panicSentinel is the value the recovery test panics with. The secret field is what must never
 // reach either stream: a panic raised in a credential-carrying frame can carry a token, and Go's
-// own panic output would print the whole value to the real os.Stderr.
+// panic output would print the whole value to the real os.Stderr.
 type panicSentinel struct {
 	secret string
 }
@@ -359,7 +359,7 @@ func TestTheScrubSkipNoticeIsDisclosedOnceUnderVerbose(t *testing.T) {
 }
 
 // TestTheAccountIDIsNotScrubbed holds the deliberate gap in the scrub's needle set. The account
-// id is an identifier the tool prints on purpose, in `adopt list` and in `auth probe`'s own
+// id is an identifier the tool prints on purpose, in `adopt list` and in `auth probe`'s
 // output, so registering it would blank diagnostic text without protecting a secret. The line
 // below carries all three values through the chokepoint the process streams run on.
 func TestTheAccountIDIsNotScrubbed(t *testing.T) {
@@ -528,8 +528,8 @@ func healthCheckIDs() []string {
 }
 
 // TestTheSingleSiteBudgetFitsTheRequestArithmetic is the arithmetic an operator sizes a
-// scheduler's own cap against: every check the sweep runs is published with a maximum request
-// count, and the worst case where every request runs to its own 15-second timeout still fits
+// scheduler's cap against: every check the sweep runs is published with a maximum request
+// count, and the worst case where every request runs to its 15-second timeout still fits
 // inside one site's default budget.
 func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
 	counts := requestsPerCheck(t)
@@ -571,7 +571,7 @@ func TestTheSweepCapIsThePublishedOne(t *testing.T) {
 // TestEveryUsageErrorCarriesTwoLines covers the second half of catalogue section 3.8's usage
 // row, which the exit-code table above does not: a usage error states the refusal, then where to
 // read what the tool does accept. `cairn frobnicate` printed only the first until 2026-09-21,
-// because cobra's own NoArgs message is one line.
+// because cobra's NoArgs message is one line.
 func TestEveryUsageErrorCarriesTwoLines(t *testing.T) {
 	for _, args := range falsificationTable {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {

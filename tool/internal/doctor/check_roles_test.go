@@ -161,7 +161,7 @@ func TestAuthRoleWiringRuntimeForms(t *testing.T) {
 
 // TestCustomRoleNamesFiltersDefaultsAndSorts asserts customRoleNames drops DEFAULT_ROLES (owner,
 // editor) and returns the rest sorted, since the JSON roles map it reads from carries no
-// ordering of its own.
+// ordering.
 func TestCustomRoleNamesFiltersDefaultsAndSorts(t *testing.T) {
 	got := customRoleNames([]string{"editor", "reviewer", "owner", "contributor"})
 	want := []string{"contributor", "reviewer"}
@@ -175,7 +175,7 @@ func TestCustomRoleNamesFiltersDefaultsAndSorts(t *testing.T) {
 	}
 }
 
-// TestGuardRoleWiring is table-driven over guardRoleWiring's own four outcomes directly, the
+// TestGuardRoleWiring is table-driven over guardRoleWiring's four outcomes directly, the
 // heuristic auth.role-wiring's fail path relies on.
 func TestGuardRoleWiring(t *testing.T) {
 	tests := []struct {

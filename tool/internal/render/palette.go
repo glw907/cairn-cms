@@ -13,7 +13,7 @@ type Role int
 // The CLI's roles, the Warm Stone token table from docs/design/reviews/family.md. There is no
 // role for the reference ground: the terminal owns the background, and the two ground hexes
 // appear only in palette_test.go's contrast test. RoleAck folds into RoleMuted and RoleStale
-// folds into RoleUnknown; neither survives as its own role.
+// folds into RoleUnknown; neither survives as its role.
 const (
 	RoleText Role = iota
 	RoleMuted
@@ -27,7 +27,7 @@ const (
 
 // ink carries one role's value at every rung a terminal can offer: a hex pair for TrueColor, an
 // xterm-256 pair for the named ANSI256 rung, and one ANSI-16 slot shared by both branches, empty
-// when the role carries no explicit slot at all. RoleText and RoleMuted are the terminal's own
+// when the role carries no explicit slot at all. RoleText and RoleMuted are the terminal's
 // default foreground at ANSI-16: slot 8 is the background on Solarized Dark, and SGR 2 (faint)
 // measures under 2:1 contrast on several common themes, so neither is ever used for a role that
 // must stay readable.
@@ -47,7 +47,7 @@ var warmStone = map[Role]ink{
 	RoleFailing: {"#b71824", "#ff8e86", "160", "210", "1"},
 	RoleUnknown: {"#915200", "#f7ac4d", "130", "215", "3"},
 	RoleAccent:  {"#7246cf", "#9d84ec", "97", "141", "5"},
-	// The rule's own risk on a Solarized Dark terminal (slot 8 is that theme's background,
+	// The rule's risk on a Solarized Dark terminal (slot 8 is that theme's background,
 	// so a rule vanishes) is accepted here: a vanished rule costs a separator, not a state,
 	// and it is the one role the ANSI-16 slot-8 test exempts.
 	RoleRule: {"#c9c3bb", "#4a443b", "251", "238", "8"},
@@ -94,7 +94,7 @@ func (t Theme) forTier(ascii bool) Theme {
 	return t
 }
 
-// color resolves role through lipgloss's own light/dark and per-profile seams, so the value a
+// color resolves role through lipgloss's light/dark and per-profile seams, so the value a
 // terminal receives is named at every rung, ANSI256 included, rather than nearest-matched down
 // from 24 bits. The ANSI-16 argument is only ever selected when Style has already confirmed role
 // carries an explicit slot, so an empty slot never reaches a terminal even though the zero value
@@ -112,7 +112,7 @@ func (t Theme) color(role Role) color.Color {
 
 // Style returns role's style: the zero style at ProfileNoColor, so a body that leans on colour
 // alone fails visibly rather than in production; a foreground with no explicit colour at
-// ProfileANSI16 for RoleText and RoleMuted, the terminal's own default; and role's resolved
+// ProfileANSI16 for RoleText and RoleMuted, the terminal's default; and role's resolved
 // colour at every other rung. Style and Sized are the only two ways to get a lipgloss.Style from
 // this package (purity_test.go's grep test forbids a raw lipgloss setter outside this file).
 func (t Theme) Style(role Role) lipgloss.Style {
@@ -128,7 +128,7 @@ func (t Theme) Style(role Role) lipgloss.Style {
 
 // strong returns role's style at bold weight, for the two things a frame emphasizes: the verdict
 // word and the subject it names. It is a Theme method rather than a setter a body chains, which
-// is what keeps this file's own rule intact: Style and Sized are the only ways out of here.
+// is what keeps this file's rule intact: Style and Sized are the only ways out of here.
 //
 // At ProfileNoColor it returns the zero style unchanged, bold included: that rung is what
 // NO_COLOR, --color=never, and a plain pipe all resolve to, and its readers (a cron mail, a CI

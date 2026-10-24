@@ -85,7 +85,7 @@ func main() {
 
 // runTree executes the command tree over args and returns the process exit code.
 //
-// The recover is why this is a function rather than main's own body. A Go panic's default output
+// The recover is why this is a function rather than main's body. A Go panic's default output
 // goes straight to the real os.Stderr, bypassing errOut and its scrubber, so a panic in a
 // credential-carrying frame could print a token into a scheduler's log. health.Run already
 // recovers a panicking check; this covers every frame outside one.
@@ -131,10 +131,10 @@ func commandPath(args []string) string {
 	return strings.Join(path, " ")
 }
 
-// codedError is an error carrying its own process verdict, returned by a command that computed
+// codedError is an error carrying its process verdict, returned by a command that computed
 // a verdict without producing a health.Report: cairn auth check (cairn auth probe is its hidden
 // alias) is the only one. The command folds its permission rows into one spine.SiteVerdicts and
-// calls spine.ExitCode itself, then hands the result to main through codedExit, since main's own
+// calls spine.ExitCode itself, then hands the result to main through codedExit, since main's
 // dispatch has no path that reads a permission row the way it reads a health.Report.
 type codedError struct {
 	verdict spine.Verdict
@@ -146,7 +146,7 @@ func (e codedError) Error() string {
 	return "cairn: run reported " + e.verdict.String()
 }
 
-// codedExit returns the error a command uses to hand main its own verdict.
+// codedExit returns the error a command uses to hand main its verdict.
 func codedExit(v spine.Verdict) error {
 	return codedError{verdict: v}
 }

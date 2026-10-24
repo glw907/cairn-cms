@@ -8,7 +8,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
-// showcaseSiteConfig reads the showcase's own committed site.config.yaml, the corpus's one
+// showcaseSiteConfig reads the showcase's committed site.config.yaml, the corpus's one
 // real-world case.
 func showcaseSiteConfig(t *testing.T) []byte {
 	t.Helper()
@@ -23,7 +23,7 @@ func showcaseSiteConfig(t *testing.T) []byte {
 	return body
 }
 
-// TestSiteConfigFindsAtEveryCandidatePath proves the five found cases: the showcase's own
+// TestSiteConfigFindsAtEveryCandidatePath proves the five found cases: the showcase's
 // committed config at the canonical path, and a minimal valid config at each of the three legacy
 // paths.
 func TestSiteConfigFindsAtEveryCandidatePath(t *testing.T) {

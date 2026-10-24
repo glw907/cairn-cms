@@ -31,11 +31,11 @@ type deps struct {
 	// because secrets keeps the two interfaces separate: a backend that answers reads and
 	// refuses writes has to stay expressible.
 	keyringWriter secrets.Writer
-	// keyringDeleter is the delete half, which auth unset alone uses, kept as its own field for
+	// keyringDeleter is the delete half, which auth unset alone uses, kept as its field for
 	// the same reason keyringWriter is separate from keyring.
 	keyringDeleter secrets.Deleter
 	// keyringStatus reports whether name has an entry in the keyring, distinguishing an absent
-	// entry from a keyring that could not be consulted at all: the distinction keyring's own Get
+	// entry from a keyring that could not be consulted at all: the distinction keyring's Get
 	// deliberately flattens away for credential resolution. auth set, auth list, and auth unset
 	// call this when they must report the difference to an operator.
 	keyringStatus func(name string) (present bool, err error)

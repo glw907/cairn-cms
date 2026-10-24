@@ -11,7 +11,7 @@ import (
 // (siteconfig.go): a found, parsing config with a non-empty siteName passes; a config that does
 // not parse, has a non-mapping root, or carries an empty siteName fails with
 // config.site-config-invalid; no config at any of the four candidate paths is unchecked. This
-// test writes no parsing of its own: every case exercises siteConfig() through the check.
+// test writes no parsing: every case exercises siteConfig() through the check.
 func TestConfigSiteConfig(t *testing.T) {
 	tests := []struct {
 		name       string

@@ -18,7 +18,7 @@ import (
 // the rendered field no way to tell what the number counts.
 //
 // Every value a check passes through it is a bool, a string, a number, a time.Time, or a slice
-// of those, each one of json.Marshal's own built-in cases, so the error return is unreachable and
+// of those, each one of json.Marshal's built-in cases, so the error return is unreachable and
 // ignored rather than threaded back through every caller.
 func field(key string, value any) spine.OutcomeField {
 	data, _ := json.Marshal(value)
@@ -35,11 +35,11 @@ func verboseField(key string, value any) spine.OutcomeField {
 
 // observedField wraps value as a spine.OutcomeField named key whose value was copied out of a
 // provider's response rather than derived by cairn. The marshal boundary carries such a field
-// under its own key with the source beside it, so an agent's rule about untrusted data has
+// under its key with the source beside it, so an agent's rule about untrusted data has
 // something to key on; it never infers the source, which is why every copying check declares it
 // here at the point the value is lifted.
 //
-// A count, a comparison, or a word from cairn's own vocabulary is not copied, even when a
+// A count, a comparison, or a word from cairn's vocabulary is not copied, even when a
 // provider's response is what it was computed from: what the mark names is a string a site
 // controls the bytes of.
 func observedField(key string, value any, source spine.FieldSource) spine.OutcomeField {
@@ -72,7 +72,7 @@ func noZoneIDOutcome() spine.Outcome {
 // apiErrorOutcome classifies a Cloudflare or GitHub API failure, shared by every check that
 // reads one of those APIs but does not itself measure the credential (delegation,
 // HTTPS-forced, HSTS, email, deploy). Unlike credsCheck, a 401 or 403 here is Unknown with its
-// own reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
+// reason.api.<Reason> code rather than Failing: only the creds check treats a rejected
 // credential as the fault under test. An error this package cannot classify at all (a dial
 // failure, a context deadline) is Unknown with reason.timeout.
 //
@@ -98,7 +98,7 @@ func apiErrorOutcome(err error) spine.Outcome {
 // the creds check measures, the one place a 401 or 403 answers Failing rather than the Unknown
 // every other check reports for the same pair. ReasonToOutcome already sets a typed Code for
 // that Failing case (CodeCredsUnauthorized or CodeCredsForbidden), which credentialLine renders
-// through health's own messages table, so no relabeling happens here. An error this package
+// through health's messages table, so no relabeling happens here. An error this package
 // cannot classify at all, a dial failure or a context deadline, is Unknown with reason.timeout:
 // the endpoint itself could not be reached, not merely rejected.
 func credentialErrorOutcome(err error) spine.Outcome {

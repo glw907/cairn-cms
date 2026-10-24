@@ -11,7 +11,7 @@ import (
 )
 
 // resolvedTempDir returns a fresh temp directory, resolved via filepath.EvalSymlinks the same
-// way NewSnapshot resolves its own Dir, so a test's boundary matches what readUnder expects.
+// way NewSnapshot resolves its Dir, so a test's boundary matches what readUnder expects.
 func resolvedTempDir(t *testing.T) string {
 	t.Helper()
 	dir, err := filepath.EvalSymlinks(t.TempDir())
@@ -21,9 +21,9 @@ func resolvedTempDir(t *testing.T) string {
 	return dir
 }
 
-// TestReadUnderRefusesSymlinkEscape proves the spec's own acceptance bullet: a read through a
+// TestReadUnderRefusesSymlinkEscape proves the spec's acceptance bullet: a read through a
 // symlink whose real, resolved location leaves the directory is refused, even though the
-// symlink's own name is nested textually inside the directory.
+// symlink's name is nested textually inside the directory.
 func TestReadUnderRefusesSymlinkEscape(t *testing.T) {
 	root := resolvedTempDir(t)
 	site := filepath.Join(root, "site")
@@ -55,7 +55,7 @@ func TestReadUnderRefusesSymlinkEscape(t *testing.T) {
 }
 
 // TestReadUnderRefusesTextualDotDot proves the textual ".." arm separately from the symlink
-// arm above: a relPath that escapes dir through its own literal segments, with no symlink
+// arm above: a relPath that escapes dir through its literal segments, with no symlink
 // involved at all, is refused the same way.
 func TestReadUnderRefusesTextualDotDot(t *testing.T) {
 	root := resolvedTempDir(t)
@@ -128,7 +128,7 @@ func TestReadUnderPermissionDeniedIsAnError(t *testing.T) {
 		t.Skip("running as root: permission bits are not enforced")
 	}
 	if runtime.GOOS == "windows" {
-		t.Skip("windows: mode bits do not deny the owner's own read")
+		t.Skip("windows: mode bits do not deny the owner's read")
 	}
 	dir := resolvedTempDir(t)
 	path := filepath.Join(dir, "secret.txt")

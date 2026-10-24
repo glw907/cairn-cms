@@ -87,11 +87,11 @@ func TestDegenerateWidthsNeverPanic(t *testing.T) {
 	}
 }
 
-// TestClampNeverExceedsWidth is the nearest sound form of criterion 19 that this task's own
+// TestClampNeverExceedsWidth is the nearest sound form of criterion 19 that this task's
 // primitives can prove: 20a has no body compositor yet (Task 20b-i), so this exercises clamp,
-// the primitive every dynamic field passes through, across the plan's own sweep widths, over
-// long and CJK content rather than a full frame. width.go's own doc comment records the
-// deviation from criterion 19's two-table sweep (Task 20b-ii's own scope).
+// the primitive every dynamic field passes through, across the plan's sweep widths, over
+// long and CJK content rather than a full frame. width.go's doc comment records the
+// deviation from criterion 19's two-table sweep (Task 20b-ii's scope).
 func TestClampNeverExceedsWidth(t *testing.T) {
 	th := NewTheme(true, ProfileTrueColor)
 	sweepWidths := []int{20, 40, 60, 72, 79, 80, 81, 100, 120, 200, 400}

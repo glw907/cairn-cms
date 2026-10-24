@@ -20,7 +20,7 @@ const factsAbsentDetail = "needs engine 0.97.0 or later, and one build"
 
 // siteFacts is the adapter-derived facts a site's committed site-facts.json carries, the three
 // values docs/reference/site-facts.md names. Each Has field distinguishes "declared as this
-// value" from "declared nothing", the same optional-field distinction the engine's own writer
+// value" from "declared nothing", the same optional-field distinction the engine's writer
 // makes by omitting the key.
 type siteFacts struct {
 	// HasMediaBucketBinding reports whether the adapter declared cairn.media.bucketBinding.
@@ -49,7 +49,7 @@ type siteFactsFile struct {
 
 // readSiteFacts reads and parses s.Dir's committed site-facts.json. found is false when the file
 // does not exist, which every facts-dependent check reports as unchecked with factsAbsentDetail
-// rather than treating as its own containment or parse error. err is non-nil for a containment
+// rather than treating as its containment or parse error. err is non-nil for a containment
 // refusal, a JSON parse failure, or a version other than siteFactsSupportedVersion, each naming
 // the file so an operator knows which one to regenerate with cairn-manifest.
 func readSiteFacts(s Snapshot) (facts siteFacts, found bool, err error) {

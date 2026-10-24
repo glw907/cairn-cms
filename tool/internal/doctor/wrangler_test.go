@@ -2,10 +2,10 @@ package doctor
 
 import "testing"
 
-// TestReadWranglerConfigMatchesCorpus asserts the Go reader's output equals the engine's own
+// TestReadWranglerConfigMatchesCorpus asserts the Go reader's output equals the engine's
 // answer for every committed corpus case, case by case. The engine's answer was lifted at
 // authoring time from the TypeScript test named in each case file (loadWranglerCorpus enforces
-// that every case names one), never re-derived here: this test cannot run the engine's own
+// that every case names one), never re-derived here: this test cannot run the engine's
 // reader, so proving agreement depends entirely on the committed expectation being a faithful
 // copy.
 func TestReadWranglerConfigMatchesCorpus(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// aiCrawlerTokens are AI_CRAWLERS's own tokens (src/lib/delivery/ai-crawlers.ts), lowercased for
+// aiCrawlerTokens are AI_CRAWLERS's tokens (src/lib/delivery/ai-crawlers.ts), lowercased for
 // RFC 9309 section 2.2.1's case-insensitive product-token match.
 var aiCrawlerTokens = map[string]struct{}{
 	"amazonbot":          {},
@@ -22,7 +22,7 @@ var aiCrawlerTokens = map[string]struct{}{
 }
 
 // The two Content-Signal values buildRobots emits (CONTENT_SIGNAL in src/lib/delivery/robots.ts),
-// the postures a served file's own directive states rather than what the adapter declares.
+// the postures a served file's directive states rather than what the adapter declares.
 const (
 	contentSignalDecline = "ai-train=no"
 	contentSignalInvite  = "search=yes, ai-train=yes"
@@ -53,18 +53,18 @@ var (
 // parsedRobots is the structural facts evaluatePosture's case decision needs off any RFC
 // 9309 shaped file, including one cairn did not write.
 type parsedRobots struct {
-	// userAgentStarCount is how many "User-agent: *" lines the file carries; cairn's own
+	// userAgentStarCount is how many "User-agent: *" lines the file carries; cairn's
 	// output writes exactly one.
 	userAgentStarCount int
 	// foreignContentSignal reports whether a Content-Signal line's value matches neither of
-	// cairn's own two shapes.
+	// cairn's two shapes.
 	foreignContentSignal bool
 	// signalPosture is the posture stated by the one Content-Signal line that matches a cairn
 	// shape, when any does.
 	signalPosture string
 	// hasSignalPosture reports whether signalPosture was set.
 	hasSignalPosture bool
-	// declinesAIToken reports whether any aiCrawlerTokens entry carries its own
+	// declinesAIToken reports whether any aiCrawlerTokens entry carries its
 	// User-agent/Disallow: / group.
 	declinesAIToken bool
 }
@@ -137,8 +137,8 @@ func observedPosture(parsed parsedRobots) (posture string, ok bool) {
 const (
 	// tmplPostureManagedLayerNote is describeOutsideLayer's note when the served file carries
 	// more than one "User-agent: *" group, the shape a managed robots.txt produces by
-	// prepending to the origin's own file.
-	tmplPostureManagedLayerNote = `%s carries %d "User-agent: *" groups%s. cairn's own output writes one such group, ` +
+	// prepending to the origin's file.
+	tmplPostureManagedLayerNote = `%s carries %d "User-agent: *" groups%s. cairn's output writes one such group, ` +
 		"so a second came from somewhere ahead of it, and this check cannot see what or " +
 		"assert why. A managed robots.txt prepending to the origin's is the common source, " +
 		"so the zone's robots.txt and AI Crawl Control settings are where to look first."
@@ -156,7 +156,7 @@ const (
 
 // describeOutsideLayer returns what the served file shows of a layer other than cairn writing into
 // it, or ok false when it shows none. Two User-agent: * groups is the shape a managed robots.txt
-// produces by prepending to the origin's own file; a single group carrying an unfamiliar
+// produces by prepending to the origin's file; a single group carrying an unfamiliar
 // Content-Signal is not that shape, so it reports the directive without naming a cause.
 func describeOutsideLayer(parsed parsedRobots, target *url.URL) (note string, ok bool) {
 	if parsed.userAgentStarCount > 1 {
@@ -263,7 +263,7 @@ func postureRobotsAbsentDetail(reason robotsAbsentReason) string {
 	}
 }
 
-// robotsURL resolves origin's own /robots.txt URL. ok is false when origin does not parse as an
+// robotsURL resolves origin's /robots.txt URL. ok is false when origin does not parse as an
 // absolute http or https URL, the one scheme restriction the fetch policy states: any other
 // scheme (a file:// origin, for instance) must never be dialed.
 func robotsURL(origin string) (target *url.URL, ok bool) {
@@ -277,7 +277,7 @@ func robotsURL(origin string) (target *url.URL, ok bool) {
 // aiPostureEffective is a live probe of the deployed origin's /robots.txt, compared against the
 // adapter's declared aiPosture. It reads siteFacts for the declared posture, so it reports
 // unchecked with factsAbsentDetail when site-facts.json is absent, and it reads Snapshot.Robots for
-// the served body, so it reports unchecked with the fetch's own reason when the command layer's GET
+// the served body, so it reports unchecked with the fetch's reason when the command layer's GET
 // did not produce one; it never dials itself.
 var aiPostureEffective = Check{
 	ID:        "ai.posture-effective",

@@ -27,7 +27,7 @@ const (
 	// tmplCsrfPassNoKey is the pass detail for a config that sets no csrf.trustedOrigins entries.
 	tmplCsrfPassNoKey = "no csrf.trustedOrigins entries in %s, so SvelteKit's default origin check covers every route (heuristic text read)"
 	// tmplCsrfPassEntries is the pass detail when entries are listed: each one widens the check on
-	// /admin as well as on the site's own forms.
+	// /admin as well as on the site's forms.
 	tmplCsrfPassEntries = "csrf.trustedOrigins in %s lists %s; every entry widens SvelteKit's origin check on /admin too (heuristic text read)"
 	// tmplCsrfPlainHTTP is the clause appended to a pass detail for an http entry on a public host.
 	tmplCsrfPlainHTTP = "; %s is plain http, so it also admits a network attacker on that origin"

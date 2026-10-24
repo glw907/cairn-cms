@@ -15,7 +15,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// enginePackageJSONPath is where a resolved npm, pnpm, or yarn install places the engine's own
+// enginePackageJSONPath is where a resolved npm, pnpm, or yarn install places the engine's
 // package.json, the source of truth for the peer ranges this check judges a site against.
 const enginePackageJSONPath = "node_modules/@glw907/cairn-cms/package.json"
 
@@ -36,7 +36,7 @@ const (
 	tmplPnpmMissingEntry = "%s: no entry for it in pnpm-lock.yaml"
 	tmplYarnMissingEntry = "%s: no entry for it in yarn.lock"
 	// tmplUnexpectedLockfile guards the parser dispatch: a name added to lockfiles without its
-	// own parser case reports itself here instead of reaching another format's parser.
+	// parser case reports itself here instead of reaching another format's parser.
 	tmplUnexpectedLockfile = "%s has no lockfile parser, so the dependency floors were not checked"
 )
 
@@ -63,7 +63,7 @@ func parseVersion(text string) (semver, bool) {
 	return semver{major, minor, patch}, true
 }
 
-// caretRangePattern matches the engine's own caret forms: ^x, ^x.y, and ^x.y.z. Any other range
+// caretRangePattern matches the engine's caret forms: ^x, ^x.y, and ^x.y.z. Any other range
 // shape (>=, a bare version, a tilde range) does not match.
 var caretRangePattern = regexp.MustCompile(`^\^(\d+)(?:\.(\d+))?(?:\.(\d+))?$`)
 
@@ -101,7 +101,7 @@ func compareVersions(a, b semver) int {
 // dependency name keeps the joined detail deterministic) against resolve, which looks up one
 // dependency's resolved version in whichever lockfile is in play. missingEntry names the
 // per-dependency message for a lockfile that carries no entry for it, since each format's message
-// names its own file.
+// names its file.
 func judgePeers(resolve func(dep string) (string, bool), peers map[string]string, missingEntry func(dep string) string) Result {
 	var failures, skips, passes []string
 	for _, dep := range slices.Sorted(maps.Keys(peers)) {
@@ -175,7 +175,7 @@ func npmDependencyFloors(lockText string, peers map[string]string) Result {
 }
 
 // pnpmDepVersion reads one pnpm lockfile entry's resolved version. The entry is either a bare
-// version string or a mapping carrying its own "version" key, and either shape can carry a
+// version string or a mapping carrying its "version" key, and either shape can carry a
 // peer-dependency suffix in parentheses (e.g. "5.56.10(vite@6.0.0)"), stripped before returning.
 func pnpmDepVersion(entry any) (string, bool) {
 	var raw string
@@ -296,7 +296,7 @@ func yarnDependencyFloors(lockText string, peers map[string]string) Result {
 	)
 }
 
-// enginePackageJSON is the installed engine's own package.json's relevant shape: its declared
+// enginePackageJSON is the installed engine's package.json's relevant shape: its declared
 // peer ranges and which of them peerDependenciesMeta marks optional.
 type enginePackageJSON struct {
 	PeerDependencies     map[string]string `json:"peerDependencies"`
@@ -339,7 +339,7 @@ func readEnginePeers(s Snapshot) (peers map[string]string, found bool, err error
 var lockfiles = []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 
 // configDependencyFloors checks the resolved svelte and @sveltejs/kit versions in whichever
-// lockfile exists, judged against the installed engine's own declared peer ranges. The first of
+// lockfile exists, judged against the installed engine's declared peer ranges. The first of
 // lockfiles that exists is the one judged.
 var configDependencyFloors = Check{
 	ID:        "config.dependency-floors",

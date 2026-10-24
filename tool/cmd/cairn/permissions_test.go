@@ -13,7 +13,7 @@ import (
 // page from drifting apart.
 const credentialsDocPath = "../../docs/credentials.md"
 
-// cloudflareBulletPattern matches one Markdown bullet's own text.
+// cloudflareBulletPattern matches one Markdown bullet's text.
 var cloudflareBulletPattern = regexp.MustCompile(`(?m)^- (.+)$`)
 
 // TestPermissionTableMatchesCredentialsDoc asserts permissionTable and tool/docs/credentials.md's

@@ -3,7 +3,7 @@ package health
 import "github.com/glw907/cairn-cms/tool/internal/providers"
 
 // Clients carries the provider clients a Run sweep injects into every Check, plus which
-// credentials actually resolved and where each one came from. A Check never builds its own
+// credentials actually resolved and where each one came from. A Check never builds its
 // client and never reads an environment variable or the keyring directly; Clients is its only
 // route to a provider, which is what keeps a Check a pure function over its inputs.
 type Clients struct {

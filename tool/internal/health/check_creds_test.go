@@ -33,7 +33,7 @@ func (rt credRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 // unreachableRoundTripper always fails to dial, standing in for a network-level failure that
-// never reaches Cloudflare's or GitHub's own error classification at all.
+// never reaches Cloudflare's or GitHub's error classification at all.
 type unreachableRoundTripper struct{}
 
 func (unreachableRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
@@ -193,9 +193,9 @@ func TestCredsCheckExpiryVerdictFollowsOptionsNow(t *testing.T) {
 }
 
 // TestCredsCheckHealthyTokenAttachesGitHubExpiry asserts a GitHub token that verifies clean and
-// is not within credExpiryWindow still carries its own expiry on the combined outcome's Fields,
+// is not within credExpiryWindow still carries its expiry on the combined outcome's Fields,
 // so the command layer can put the date on the run's status line without a second request. The
-// field is a date copied out of GitHub's own response, so the outcome must also declare GitHub as
+// field is a date copied out of GitHub's response, so the outcome must also declare GitHub as
 // its source: that declaration is what moves the value under observedValue at the marshal
 // boundary, and nothing else in the suite reaches this check's Run to prove it.
 func TestCredsCheckHealthyTokenAttachesGitHubExpiry(t *testing.T) {

@@ -1,7 +1,7 @@
-// Command mangen writes cairn's man pages with cobra's own doc generator
+// Command mangen writes cairn's man pages with cobra's doc generator
 // (github.com/spf13/cobra/doc). It is a second command, never a package cmd/cairn imports from
 // or is imported by, because Go forbids importing a package main: cmd/cairn cannot hand this
-// command a live *cobra.Command, so mangen rebuilds one from the real binary's own --help text,
+// command a live *cobra.Command, so mangen rebuilds one from the real binary's --help text,
 // the same workaround cmd/copylist already uses for cmd/cairn's messages table, ported from a
 // source parse to a text harvest because a man page's content (the agents page most of all) is
 // prose too long to duplicate safely as a second literal.
@@ -26,17 +26,17 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
-// rootShort is cairn's own Short line. It is the one field this command cannot harvest: a root
-// command's --help output carries its Long alone, since nothing lists a root's own Short the way
+// rootShort is cairn's Short line. It is the one field this command cannot harvest: a root
+// command's --help output carries its Long alone, since nothing lists a root's Short the way
 // a parent's listing names each child's. TestRootShortMatchesMessagesSource pins it against
-// cmd/cairn/messages.go's own shortRoot constant so the two cannot drift unnoticed.
+// cmd/cairn/messages.go's shortRoot constant so the two cannot drift unnoticed.
 const rootShort = "Operate a cairn-cms production site"
 
-// skipRecursion is cobra's own generated command trees, whose children this command has no
-// grammar interest in enumerating: their own man pages still get generated as leaves.
+// skipRecursion is cobra's generated command trees, whose children this command has no
+// grammar interest in enumerating: their man pages still get generated as leaves.
 var skipRecursion = map[string]bool{"completion": true, "help": true}
 
-// flagLinePattern matches one flag's own line under a "Flags:" block: an optional
+// flagLinePattern matches one flag's line under a "Flags:" block: an optional
 // "-x, " shorthand, "--name", an optional type placeholder pflag prints for a non-bool flag
 // (one word, a single space before it and two or more before the description that follows), and
 // the usage text itself, which sometimes carries a trailing "(default ...)" pflag appended.
@@ -46,7 +46,7 @@ var flagLinePattern = regexp.MustCompile(`^\s+(?:-(\w), )?--([a-zA-Z][a-zA-Z0-9-
 
 // angleEscaper escapes "<" and ">" before a harvested string reaches cobra/doc: its man renderer
 // pipes every field through a Markdown parser, which reads an unescaped "<site>" as an HTML tag
-// and drops it silently. cairn's own --help text uses angle brackets for a placeholder
+// and drops it silently. cairn's --help text uses angle brackets for a placeholder
 // (health's "<site>", the ack flag's "<check-id>=<YYYY-MM-DD>"), so every harvested field that
 // reaches a Command needs this before construction, not only the ones this file happens to quote.
 var angleEscaper = strings.NewReplacer("<", `\<`, ">", `\>`)
@@ -58,7 +58,7 @@ var angleEscaper = strings.NewReplacer("<", `\<`, ">", `\>`)
 // takes the column's last whitespace-separated token as the name either way.
 var listLinePattern = regexp.MustCompile(`^\s*(.+?)\s{2,}(.*)$`)
 
-// listedName returns column's own command name, the last of its whitespace-separated tokens:
+// listedName returns column's command name, the last of its whitespace-separated tokens:
 // bare for a regular listing entry ("adopt"), and just the leaf for a topic's full CommandPath
 // ("cairn agents" -> "agents").
 func listedName(column string) string {
@@ -73,12 +73,12 @@ func listedName(column string) string {
 type flagDef struct {
 	shorthand string
 	name      string
-	// valueType is pflag's own type placeholder, empty for a bool, which prints none.
+	// valueType is pflag's type placeholder, empty for a bool, which prints none.
 	valueType string
 	usage     string
 }
 
-// register declares f on cmd's persistent flags in the type pflag's own placeholder names, so a
+// register declares f on cmd's persistent flags in the type pflag's placeholder names, so a
 // generated page prints a switch as a switch and a duration as a duration. An unrecognised
 // placeholder falls to a string flag, which is how pflag prints any type it has no short name
 // for and the shape that misstates the least.
@@ -98,26 +98,26 @@ func (f flagDef) register(cmd *cobra.Command, usage string) {
 	}
 }
 
-// child is one entry from a command-listing block: a subcommand's own name and Short, harvested
-// from its parent's --help rather than its own, since a command's own --help prints its Long,
+// child is one entry from a command-listing block: a subcommand's name and Short, harvested
+// from its parent's --help rather than the command's, since a command's --help prints its Long,
 // never its Short.
 type child struct {
 	name  string
 	short string
 }
 
-// node is one command harvested from the real binary's own --help output.
+// node is one command harvested from the real binary's --help output.
 type node struct {
 	path    []string
 	short   string
 	long    string
-	use     string // the Use line's own tail: past "cairn <path...> ", with the [flags]/[command] suffixes stripped
+	use     string // the Use line's tail: past "cairn <path...> ", with the [flags]/[command] suffixes stripped
 	example string
 	flags   []flagDef
 	kids    []child
 }
 
-// name returns the node's own command name: cairn for the root, the path's last element
+// name returns the node's command name: cairn for the root, the path's last element
 // otherwise.
 func (n node) name() string {
 	if len(n.path) == 0 {
@@ -185,9 +185,9 @@ func discover(bin string, path []string, short string) (node, error) {
 	return n, nil
 }
 
-// useTail returns cobra's own UseLine tail for a command at path, from the harvested "Usage:"
+// useTail returns cobra's UseLine tail for a command at path, from the harvested "Usage:"
 // block's first line (the bare form, "cairn <path...> [<args>] [flags]"). Stripping the leading
-// "cairn <path...> " and the trailing "[flags]"/"[command]" cobra's own UseLine adds back is what
+// "cairn <path...> " and the trailing "[flags]"/"[command]" cobra's UseLine adds back is what
 // lets the reconstructed Command's Use round-trip through UseLine() unchanged: setting Use to the
 // full harvested line would double both.
 func useTail(usageLines []string, path []string) string {
@@ -210,7 +210,7 @@ func useTail(usageLines []string, path []string) string {
 	return strings.TrimSpace(name + " " + strings.TrimSpace(line))
 }
 
-// build walks path recursively over bin, returning every discovered node keyed by its own dashed
+// build walks path recursively over bin, returning every discovered node keyed by its dashed
 // CommandPath ("cairn-auth-set"), plus a slice of the same keys in discovery order.
 func build(bin string, path []string, short string, into map[string]node, order *[]string) error {
 	n, err := discover(bin, path, short)
@@ -232,7 +232,7 @@ func build(bin string, path []string, short string, into map[string]node, order 
 	return nil
 }
 
-// dashed renders path the way cobra's own GenManTree names a file: the command path, spaces
+// dashed renders path the way cobra's GenManTree names a file: the command path, spaces
 // replaced with dashes, "cairn" alone for the root.
 func dashed(path []string) string {
 	if len(path) == 0 {
@@ -243,7 +243,7 @@ func dashed(path []string) string {
 
 // buildTree turns every discovered node into a live *cobra.Command tree, wired the same way the
 // real one is: PersistentFlags on the node that owns them, so a descendant inherits them the same
-// way cairn's own does, and a no-op RunE on every command except the root's own bare help path
+// way cairn's does, and a no-op RunE on every command except the root's bare help path
 // and the agents topic, so cobra's Runnable()/IsAdditionalHelpTopicCommand() classify each node
 // the way the real tree does.
 func buildTree(nodes map[string]node, order []string) *cobra.Command {
@@ -253,7 +253,7 @@ func buildTree(nodes map[string]node, order []string) *cobra.Command {
 		n := nodes[key]
 		use := n.use
 		if use == "" {
-			// A topic's own Use still has to carry its bare name: cobra derives Name() (and
+			// A topic's Use still has to carry its bare name: cobra derives Name() (and
 			// so every Find/AddCommand lookup) from Use's first word, and an empty Use makes
 			// the command unreachable by name even though it still renders.
 			use = n.name()
@@ -269,7 +269,7 @@ func buildTree(nodes map[string]node, order []string) *cobra.Command {
 			cmd.Short = rootShort
 		}
 		// A topic (no Usage: block, so no flags, no example, and no children) is left with no
-		// RunE, matching cairn's own agents command: cobra's IsAdditionalHelpTopicCommand()
+		// RunE, matching cairn's agents command: cobra's IsAdditionalHelpTopicCommand()
 		// then reports true, and GenManTree skips generating its page on its own, the same
 		// behaviour the real binary's tree has for it.
 		if n.use != "" || len(n.kids) > 0 {
@@ -293,7 +293,7 @@ func buildTree(nodes map[string]node, order []string) *cobra.Command {
 	return commands[dashed(nil)]
 }
 
-// run harvests cairn's own command tree from bin and writes every non-hidden command's man page
+// run harvests cairn's command tree from bin and writes every non-hidden command's man page
 // to dir.
 func run(bin, dir string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -320,8 +320,8 @@ func run(bin, dir string) error {
 	}
 
 	// GenManTree skips every additional-help-topic command by design (it prints no usage or
-	// flags to document), which drops cairn's own agents page: its whole point is being reached
-	// through cairn help agents rather than through a subcommand's own flags. Its page is
+	// flags to document), which drops cairn's agents page: its whole point is being reached
+	// through cairn help agents rather than through a subcommand's flags. Its page is
 	// generated here, directly, so an operator's man(1) still finds it.
 	if agents, _, err := root.Find([]string{"agents"}); err == nil {
 		if err := writeAgentsPage(agents, header, dir); err != nil {
@@ -332,8 +332,8 @@ func run(bin, dir string) error {
 	return nil
 }
 
-// writeAgentsPage renders agents' own man page directly, the one command GenManTree's own walk
-// skips (see run's own comment).
+// writeAgentsPage renders agents' man page directly, the one command GenManTree's walk
+// skips (see run's comment).
 func writeAgentsPage(agents *cobra.Command, header *doc.GenManHeader, dir string) error {
 	f, err := os.Create(filepath.Join(dir, "cairn-agents.1"))
 	if err != nil {
@@ -385,8 +385,8 @@ func buildCairn() (bin string, cleanup func(), err error) {
 	return bin, cleanup, nil
 }
 
-// moduleRoot resolves this module's own root, one directory above cmd/mangen, so buildCairn
-// works whether it is run as `go run ./cmd/mangen` from tool/ (the Makefile's own cwd) or as
+// moduleRoot resolves this module's root, one directory above cmd/mangen, so buildCairn
+// works whether it is run as `go run ./cmd/mangen` from tool/ (the Makefile's cwd) or as
 // `go test ./cmd/mangen` from cmd/mangen itself.
 func moduleRoot() string {
 	wd, err := os.Getwd()

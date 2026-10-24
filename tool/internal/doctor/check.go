@@ -7,7 +7,7 @@ import (
 )
 
 // Check is one doctor measurement: a pure function over a Snapshot, holding no client and
-// reading no clock of its own. Unlike health.Check (internal/health/health.go), it takes no
+// reading no clock. Unlike health.Check (internal/health/health.go), it takes no
 // record.Record: a directory preflight has no site record to read.
 type Check struct {
 	// ID names the check, stable across releases.
@@ -19,9 +19,9 @@ type Check struct {
 	Run func(s Snapshot) Result
 }
 
-// Catalogue returns every operator-facing string this package's own checks contribute.
+// Catalogue returns every operator-facing string this package's checks contribute.
 // cmd/copylist lists it alongside health, spine, and cmd/cairn so a new string cannot land
-// invisibly. Each check_*.go file owns the strings its own checks print; this function only
+// invisibly. Each check_*.go file owns the strings its checks print; this function only
 // collects them.
 func Catalogue() []string {
 	return []string{
@@ -112,7 +112,7 @@ func conditionText(id spine.Condition) spine.ConditionText {
 }
 
 // label returns c's registry-sourced label: its condition's title in the embedded mirror. A
-// check with no condition (Condition: spine.ConditionNone) has no label of its own.
+// check with no condition (Condition: spine.ConditionNone) has no label.
 func (c Check) label() string {
 	return conditionText(c.Condition).Title
 }
@@ -134,7 +134,7 @@ var checks = []Check{
 }
 
 // CheckedResult pairs one Check with the Result its Run produced. A report's per-check line and its
-// failure block both need the check's own label, which lives on Check (its Condition) and not on
+// failure block both need the check's label, which lives on Check (its Condition) and not on
 // every Result, so the pair travels together.
 type CheckedResult struct {
 	// Check is the check that ran.
@@ -154,7 +154,7 @@ func Run(s Snapshot) []CheckedResult {
 }
 
 // runCheck runs c against s and stamps the Result with c's ID and, on a fail, the severity c's
-// condition declares in the registry, so a check can never disagree with its own condition.
+// condition declares in the registry, so a check can never disagree with its condition.
 func runCheck(c Check, s Snapshot) CheckedResult {
 	result := c.Run(s)
 	result.ID = c.ID

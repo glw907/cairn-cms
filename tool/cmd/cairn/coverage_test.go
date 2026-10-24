@@ -10,13 +10,13 @@ import (
 
 // flagNamePattern matches a long flag name at the start of a pflag usage line. None of this
 // package's flag help text contains "--" itself (checked by inspection), so one match per line
-// is exact; this is how the test enumerates a command's own flags without importing
+// is exact; this is how the test enumerates a command's flags without importing
 // github.com/spf13/pflag, which every other file in this package avoids naming directly so it
 // stays an indirect requirement `go mod tidy` never promotes.
 var flagNamePattern = regexp.MustCompile(`--([a-zA-Z][a-zA-Z0-9-]*)`)
 
-// coveragePaths walks root and returns every command's own CommandPath, one entry per node.
-// cobra's own completion and help subtrees are named at their own top level but not descended
+// coveragePaths walks root and returns every command's CommandPath, one entry per node.
+// cobra's completion and help subtrees are named at their top level but not descended
 // into: their children are cobra's to shape, not this grammar's to enumerate.
 func coveragePaths(root *cobra.Command) []string {
 	var paths []string
@@ -43,8 +43,8 @@ func initHelpFlags(c *cobra.Command) {
 	}
 }
 
-// TestEveryActionCoverage is the 1.0 grammar's own coverage assertion: the exact command set,
-// the exact flag set per command, and the root's own persistent flags. A command or a flag this
+// TestEveryActionCoverage is the 1.0 grammar's coverage assertion: the exact command set,
+// the exact flag set per command, and the root's persistent flags. A command or a flag this
 // test does not name is a grammar change no other test would catch.
 func TestEveryActionCoverage(t *testing.T) {
 	root := newRootCmd(mustDeps(t))
@@ -80,7 +80,7 @@ func TestEveryActionCoverage(t *testing.T) {
 		t.Errorf("command set = %v, want %v", got, wantPaths)
 	}
 
-	// The root's own persistent flags. --ack-file is declared here even though only health
+	// The root's persistent flags. --ack-file is declared here even though only health
 	// reads it, since an operator can type it before any subcommand.
 	assertOwnFlags(t, root, "timeout", "verbose", "quiet", "color", "theme", "width", "ack-file", "version", "help")
 
@@ -88,7 +88,7 @@ func TestEveryActionCoverage(t *testing.T) {
 	for _, c := range []*cobra.Command{root} {
 		collectByPath(c, byPath)
 	}
-	// json and expect-sites are declared on the sites parent's own PersistentFlags, so bare
+	// json and expect-sites are declared on the sites parent's PersistentFlags, so bare
 	// cairn sites and cairn sites list share them; only the parent claims them as local, and the
 	// list subcommand inherits them (cairn sites list --help lists them under "Global Flags").
 	assertOwnFlags(t, byPath["cairn sites"], "json", "expect-sites", "help")

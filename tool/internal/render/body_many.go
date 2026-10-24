@@ -20,12 +20,12 @@ import (
 // direction: it is the same information without the grid, for a terminal too narrow to carry the
 // labels, which is why choosing the strip ships both. Neither prints a legend.
 
-// The strip's own column budget.
+// The strip's column budget.
 const (
 	// stripSep is the gutter between two heading columns, and the gutter before the verdict.
 	stripSep = 1
 	// siteColCap bounds the site column, so one 57-character domain cannot push the strip into
-	// its own fallback for every other site on the screen.
+	// its fallback for every other site on the screen.
 	siteColCap = 28
 	// siteColFloor is the narrowest the site column ever draws, the width of the shortest
 	// heading it sits beside.
@@ -94,7 +94,7 @@ func (t Theme) siteColWidth(rs []health.Report) int {
 	return min(n, siteColCap)
 }
 
-// siteVerdict folds one site's checks into the verdict its own row carries, through health's
+// siteVerdict folds one site's checks into the verdict its row carries, through health's
 // conversion and spine's arithmetic alone: the render paints a verdict and never computes one,
 // so an operator reading a row and a routine reading the exit code cannot disagree.
 func siteVerdict(r health.Report) Verdict {
@@ -117,7 +117,7 @@ func (t Theme) fleetTally(rs []health.Report, sep string) string {
 	return strings.Join(parts, sep)
 }
 
-// renderMany draws a fleet: one row per site under real column headings, the run's own state,
+// renderMany draws a fleet: one row per site under real column headings, the run's state,
 // and every fix beneath, ranked. No count of fixes the screen declined to show is printed: that
 // is a fact an operator cannot act on, and the list is already ranked.
 func renderMany(t Theme, in RenderInput) Frame {
@@ -155,12 +155,12 @@ func renderMany(t Theme, in RenderInput) Frame {
 }
 
 // labelWhatToFix heads the fleet's fix list. It names what the list holds and nothing else: a
-// ranked list reads as ranked, and a label that states its own ordering has made a promise a
+// ranked list reads as ranked, and a label that states its ordering has made a promise a
 // later check id can break.
 const labelWhatToFix = "what to fix"
 
 // labelAlsoOn opens the line naming the other sites one repair applies to, after the site its
-// own head line names. The list is never cut: a site left off it is a site the operator does not
+// head line names. The list is never cut: a site left off it is a site the operator does not
 // know needs the same work.
 //
 // Drafted to the copy standard's grammar rather than copied, since the catalogue carries no row
@@ -168,7 +168,7 @@ const labelWhatToFix = "what to fix"
 const labelAlsoOn = "also on: "
 
 // wordTokens is the blocked-group head's collective word for a group more than one missing
-// token together explains, since no single token's own name would cover what stopped it.
+// token together explains, since no single token's name would cover what stopped it.
 // copy-standard.md's section 2.9 fixes "token" as the word for one credential; this is its
 // plural rather than a fresh coinage.
 const wordTokens = "tokens"
@@ -200,7 +200,7 @@ func (t Theme) siteBlock(in RenderInput, rs []health.Report, width int) []string
 }
 
 // stripBlock draws the labelled status strip: one row per site, one real heading per check, the
-// marks centred so they form a grid under their headings, and the site's own verdict at the end
+// marks centred so they form a grid under their headings, and the site's verdict at the end
 // of the row it belongs to.
 func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, siteCol int) []string {
 	head := []string{strings.Repeat(" ", siteCol+stripSep)}
@@ -240,7 +240,7 @@ func (t Theme) stripBlock(in RenderInput, rs []health.Report, ids []string, site
 	return out
 }
 
-// fitted returns text sanitized and cut to n cells, marked with the tier's own ellipsis where it
+// fitted returns text sanitized and cut to n cells, marked with the tier's ellipsis where it
 // was cut, so a fixed column holds one line whatever a site chose to name itself. A cell left to
 // wrap would push every column beside it onto a second line.
 func (t Theme) fitted(ascii bool, text string, n int) string {
@@ -252,7 +252,7 @@ func (t Theme) fitted(ascii bool, text string, n int) string {
 	return t.clamp(text, max(n-t.width(ell), 0)) + ell
 }
 
-// rowVerdictRole returns the ink one site's verdict word takes inside a frame whose own verdict
+// rowVerdictRole returns the ink one site's verdict word takes inside a frame whose verdict
 // is frame. A site reporting OK inside a failing sweep is muted like every other passing mark:
 // the only saturated ink on a failing screen belongs to what failed.
 func rowVerdictRole(row, frame Verdict) Role {
@@ -262,7 +262,7 @@ func rowVerdictRole(row, frame Verdict) Role {
 	return verdictRole(row)
 }
 
-// centredCell renders one mark centred in a column measured by the layout's own width table, so
+// centredCell renders one mark centred in a column measured by the layout's width table, so
 // the marks form a grid under their headings rather than hugging each column's left edge.
 func (t Theme) centredCell(role Role, text string, n int) string {
 	w := t.width(text)
@@ -280,7 +280,7 @@ func (t Theme) centredCell(role Role, text string, n int) string {
 // Declaration order is also the order the columns are given up in at a narrow width, from the
 // right: the two leading columns always draw, and each one after them draws only if it fits
 // whole. A column that cannot be drawn whole is dropped rather than squeezed, because the table
-// is already the strip's own fallback and a second fallback that shortens "errors" to "e" and
+// is already the strip's fallback and a second fallback that shortens "errors" to "e" and
 // pushes a count off the edge prints a fact no reader can use.
 var tableColumns = []struct {
 	heading string
@@ -333,7 +333,7 @@ func tableFit(siteCol, width int) (widths []int, columns int) {
 // engineCheckID is the check whose outcome carries the installed engine version.
 const engineCheckID = "engine"
 
-// engineVersion returns the engine version r's own engine check measured, and empty where the
+// engineVersion returns the engine version r's engine check measured, and empty where the
 // check did not run or reported none. It is read from the check's structured field: the version
 // appears in the check's prose detail too, and a column that parsed that sentence would go wrong
 // the first time it was reworded.
@@ -356,7 +356,7 @@ func engineVersion(r health.Report) string {
 	return ""
 }
 
-// tableBlock draws the plain ruleless table, the strip's own fallback below the width its
+// tableBlock draws the plain ruleless table, the strip's fallback below the width its
 // headings need: one row per site, the verdict, the counts by state, and how old the data is. No
 // rules, no boxes, and no glyph carrying a fact alone.
 func (t Theme) tableBlock(in RenderInput, rs []health.Report, siteCol, width int) []string {
@@ -438,7 +438,7 @@ func blankZero(n int) string {
 	return strconv.Itoa(n)
 }
 
-// The fleet fix list's own column budget. The sentence gets its own width: the site and the
+// The fleet fix list's column budget. The sentence gets its width: the site and the
 // check name the fix on one line, and the sentence sits beneath them with a hanging indent, so
 // it never has to share a line with two columns and leave a stray verb behind.
 const (
@@ -459,13 +459,13 @@ type fleetFix struct {
 	// site is the sanitized name of the worst-ranked site the fix belongs to, the one the entry's
 	// head line names.
 	site string
-	// alsoOn lists the remaining sites the same repair applies to, in the fleet's own ranked
+	// alsoOn lists the remaining sites the same repair applies to, in the fleet's ranked
 	// order. It is empty for a repair that belongs to one site.
 	alsoOn []string
-	// siteRank is the site's own index in the ranked fleet, the tie-break between two fixes the
+	// siteRank is the site's index in the ranked fleet, the tie-break between two fixes the
 	// severity key cannot separate.
 	siteRank int
-	// check is the check id the fix is named by on its own line.
+	// check is the check id the fix is named by on a separate line.
 	check string
 	// ids lists every check this one fix unblocks, set only where it covers more than one, so a
 	// group says what it covers once rather than printing the same sentence per check.
@@ -475,7 +475,7 @@ type fleetFix struct {
 	tail string
 	// class is the fix's severity class, the first key it is ranked by.
 	class int
-	// severity is spine's own state severity, the second key.
+	// severity is spine's state severity, the second key.
 	severity int
 	// blocked marks a fix for a check that could not run, which is listed after the failures.
 	blocked bool
@@ -508,7 +508,7 @@ func (t Theme) fleetFixes(in RenderInput, rs []health.Report, width int) []strin
 // The key is the fix sentence alone, across the whole frame. One remedy printed once per site
 // is the same instruction three times on one screen, which reads as three jobs; a fleet the
 // operator upgrades in one pass is exactly the case this screen exists for. The repeats become
-// the entry's own site list, in the fleet's ranked order, so nothing is lost.
+// the entry's site list, in the fleet's ranked order, so nothing is lost.
 func collectFleetFixes(in RenderInput, rs []health.Report) []fleetFix {
 	var out []fleetFix
 	at := map[string]int{}
@@ -640,7 +640,7 @@ func groupBlockedFixes(blocked []health.CheckResult) []blockedGroup {
 // order the status names them. A group of checks skipped for a missing credential is headed by
 // the one variable this returns, or by the collective word where it returns more than one: the
 // per-credential Disables lists say which checks a token gates, never which token a given skip
-// went without, so the run's own missing set is the only thing that can name the head.
+// went without, so the run's missing set is the only thing that can name the head.
 func missingVariables(s StatusState) []string {
 	var vars []string
 	for _, c := range s.Credentials {
@@ -696,7 +696,7 @@ func (t Theme) fixEntry(in RenderInput, f fleetFix, siteCol, width int) []string
 	tail := f.tail
 	var tailLines []string
 	if tail != "" && min(fixCheckCol, room)+t.width(tail) > room {
-		// Below a width that holds the id whole on a line of its own it is not printed at all. A
+		// Below a width that holds the id whole on a line by itself it is not printed at all. A
 		// broken id is worse than an absent one, and --json carries it at every width.
 		if t.width(tail) <= width-fixSentence {
 			tailLines = atColumn(t.Style(RoleMuted), fixSentence, []string{tail})

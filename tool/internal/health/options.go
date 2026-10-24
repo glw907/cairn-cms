@@ -6,7 +6,7 @@ import (
 )
 
 // Options carries the tunables a Run sweep needs, threaded to every Check so no threshold is a
-// literal buried inside a check's own file.
+// literal buried inside a check's file.
 type Options struct {
 	// ErrorThreshold is the error-rate check's pass/fail cutoff: a count of matching log events
 	// over LogWindow up to and including this value reports OK, and only a count above it reports

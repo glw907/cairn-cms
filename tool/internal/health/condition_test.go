@@ -132,7 +132,7 @@ func conditionCases() []conditionCase {
 	}
 }
 
-// TestCheckConditionsPerVerdict asserts each check's verdict carries the condition its own remedy
+// TestCheckConditionsPerVerdict asserts each check's verdict carries the condition its remedy
 // belongs to, and that every check in All is represented, so a new check cannot ship without a
 // row naming the condition it declares.
 func TestCheckConditionsPerVerdict(t *testing.T) {

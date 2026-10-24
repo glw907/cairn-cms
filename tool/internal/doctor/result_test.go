@@ -35,7 +35,7 @@ func TestResultCheckVerdictContributesTheDecidedTable(t *testing.T) {
 }
 
 // TestVerdictsOfPassSkipInfoIsOK asserts a run of only pass, skip, and info folds to
-// spine.VerdictOK, the spec's own "today's exit-0 runs stay exit 0".
+// spine.VerdictOK, the spec's "today's exit-0 runs stay exit 0".
 func TestVerdictsOfPassSkipInfoIsOK(t *testing.T) {
 	checked := []CheckedResult{
 		{Result: Result{ID: "a", Status: StatusPass}},
@@ -55,8 +55,8 @@ func TestVerdictsOfNoChecksIsUnknown(t *testing.T) {
 	}
 }
 
-// TestSpineStateWordIsNamedNowhere is a source scan over this package's own non-test files: it
-// asserts none names spine.StateWord, since decision 2 gives this package its own five-status
+// TestSpineStateWordIsNamedNowhere is a source scan over this package's non-test files: it
+// asserts none names spine.StateWord, since decision 2 gives this package its five-status
 // conversion rather than reusing StateWord's three-state, five-word vocabulary.
 func TestSpineStateWordIsNamedNowhere(t *testing.T) {
 	entries, err := os.ReadDir(".")
@@ -73,7 +73,7 @@ func TestSpineStateWordIsNamedNowhere(t *testing.T) {
 			t.Fatalf("read %s: %v", name, err)
 		}
 		if strings.Contains(string(body), "StateWord") {
-			t.Errorf("%s names StateWord; this package converts through its own status table instead", name)
+			t.Errorf("%s names StateWord; this package converts through its status table instead", name)
 		}
 	}
 }

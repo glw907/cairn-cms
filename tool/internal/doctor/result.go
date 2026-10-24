@@ -6,8 +6,8 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// Status is one check's own settled result: the five-word vocabulary a directory preflight
-// needs beyond spine's own three-word State, since spine.State has no way to express a doctor
+// Status is one check's settled result: the five-word vocabulary a directory preflight
+// needs beyond spine's three-word State, since spine.State has no way to express a doctor
 // skip or an info note.
 type Status int
 
@@ -40,7 +40,7 @@ func (s Status) String() string {
 
 // Result is one check's settled outcome against a Snapshot.
 type Result struct {
-	// ID is the check's own stable identifier, stamped by Run from the Check that produced this
+	// ID is the check's stable identifier, stamped by Run from the Check that produced this
 	// Result. A Result taken straight from Check.Run carries none.
 	ID string
 	// Status is the check's settled verdict.
@@ -49,15 +49,15 @@ type Result struct {
 	// condition declares in the registry, stamped by Run. A Result taken straight from Check.Run
 	// carries none.
 	Severity spine.FailSeverity
-	// Detail is the check's own note: a why/fix line for a fail, or the note an info status
+	// Detail is the check's note: a why/fix line for a fail, or the note an info status
 	// prints. Empty for pass, skip, and unchecked.
 	Detail string
 }
 
 // The five Result constructors below leave ID and Severity unset: Run stamps both from the
-// Result's own Check, so a check body never restates what its Check already declares.
+// Result's Check, so a check body never restates what its Check already declares.
 
-// passResult builds a StatusPass Result, the common case every check's own pass path shares.
+// passResult builds a StatusPass Result, the common case every check's pass path shares.
 func passResult(detail string) Result {
 	return Result{Status: StatusPass, Detail: detail}
 }
@@ -100,7 +100,7 @@ func (r Result) checkVerdict() spine.CheckVerdict {
 
 // Verdicts converts a run's settled results into the spine.SiteVerdicts its exit code arithmetic
 // folds. A zero-length checked folds to spine.VerdictUnknown through spine.SiteVerdicts.Verdict's
-// own empty-slice rule, the outside-a-cairn-site case.
+// empty-slice rule, the outside-a-cairn-site case.
 func Verdicts(checked []CheckedResult) spine.SiteVerdicts {
 	out := make(spine.SiteVerdicts, len(checked))
 	for i, c := range checked {

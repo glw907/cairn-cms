@@ -43,7 +43,7 @@ func okReport() health.Report {
 // fixtureDetail stands in for whatever the health messages table rendered for a verdict. The
 // body writer carries Outcome.Detail through untouched, so a fixture value proves the
 // passthrough without copying a catalogued line into a test.
-const fixtureDetail = "the fixture's own measured line"
+const fixtureDetail = "the fixture's measured line"
 
 // failingReport returns a settled report carrying one failing check beside two that did not
 // fail, so a body that filters can be told apart from one that does not.
@@ -95,10 +95,10 @@ func TestQuietOnANonOKRunPrintsTheNormalBody(t *testing.T) {
 	loud, _ := writeHealthTo(t, failingReport(), spine.VerdictCritical, healthFlags{}, &rootFlags{})
 
 	if quiet != loud {
-		t.Errorf("the quiet body differs from the same run's own body\n--- quiet ---\n%s\n--- without --quiet ---\n%s", quiet, loud)
+		t.Errorf("the quiet body differs from the same run's body\n--- quiet ---\n%s\n--- without --quiet ---\n%s", quiet, loud)
 	}
 	if !strings.Contains(quiet, fixtureDetail) {
-		t.Errorf("stdout %q does not carry the failing check's own line", quiet)
+		t.Errorf("stdout %q does not carry the failing check's line", quiet)
 	}
 	if quietErr != "" {
 		t.Errorf("stderr = %q, want empty", quietErr)
@@ -143,7 +143,7 @@ func TestQuietSuppressesTheFrameOnOKAlone(t *testing.T) {
 }
 
 // TestStatusLineCarriesTheTokenExpiry is the conductor's 2026-09-21 ruling on criterion 11: the
-// expiry reaches the status line from the creds check's own structured field whenever the run
+// expiry reaches the status line from the creds check's structured field whenever the run
 // measured one, inside or outside the fourteen-day warning window. It runs over the production
 // wiring, runStatus and render.Render, rather than over a hand-built Credential.
 func TestStatusLineCarriesTheTokenExpiry(t *testing.T) {
@@ -336,7 +336,7 @@ func TestSignalCancelsTheRunAndExitsUnknown(t *testing.T) {
 
 // TestPrintedVerdictWordMatchesTheExitCode covers the rule that keeps an operator reading the
 // line and a routine reading the code from disagreeing: the word the body prints and the code
-// the body's own exit line carries are the same verdict, for all four values.
+// the body's exit line carries are the same verdict, for all four values.
 func TestPrintedVerdictWordMatchesTheExitCode(t *testing.T) {
 	for _, v := range []spine.Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
 		stdout, _ := writeHealthTo(t, failingReport(), v, healthFlags{}, &rootFlags{})

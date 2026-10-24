@@ -57,7 +57,7 @@ type Robots struct {
 }
 
 // Snapshot is one doctor run's already-gathered inputs: every check reads from it and performs no
-// network call and reads no clock of its own. The command layer fills PublicOrigin and Robots
+// network call and reads no clock. The command layer fills PublicOrigin and Robots
 // before any check runs; NewSnapshot fills only Dir.
 type Snapshot struct {
 	// Dir is the resolved, symlink-free directory being examined, absolute if the argument was and

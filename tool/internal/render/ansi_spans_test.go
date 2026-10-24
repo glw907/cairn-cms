@@ -6,7 +6,7 @@ import (
 )
 
 // This file is the one test-only ANSI span parser the package shares. Every assertion about what
-// ink a frame spends reads spans through it, rather than each test growing a parser of its own or
+// ink a frame spends reads spans through it, rather than each test growing a parser or
 // reaching for a second sanitizer.
 
 // sgrPattern matches one SGR sequence, capturing its parameters.

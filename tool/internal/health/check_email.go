@@ -11,28 +11,28 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// cloudflareSPFInclude is the SPF mechanism Cloudflare's own Email Sending onboarding writes,
+// cloudflareSPFInclude is the SPF mechanism Cloudflare's Email Sending onboarding writes,
 // captured live on an onboarded zone (docs/internal/record/2026-08-11-t4b-email-spike.md): a
-// sending subdomain's SPF TXT record must include it for Cloudflare's own mail servers to be an
+// sending subdomain's SPF TXT record must include it for Cloudflare's mail servers to be an
 // authorized sender. Already lowercase, since every comparison against it lowercases its side too.
 const cloudflareSPFInclude = "include:_spf.mx.cloudflare.net"
 
 // dkimSelectors is the best-effort DKIM selector list this check probes for, ported from
-// create-cairn-site's own DNS carry-over probe list (records.mjs's PROBE_PLAN.dkimSelectors):
+// create-cairn-site's DNS carry-over probe list (records.mjs's PROBE_PLAN.dkimSelectors):
 // Google's, Fastmail's rotation, and Microsoft 365's documented default pair. DNS has no
 // enumeration primitive, so this check can only ever confirm DKIM against a selector it already
 // knows to ask for.
 var dkimSelectors = []string{"google", "fm1", "fm2", "fm3", "selector1", "selector2"}
 
 // emailCheck runs the magic-link sending domain's credential-free DNS hygiene, then, once that
-// passes, the zone's own Cloudflare Email Sending readiness.
+// passes, the zone's Cloudflare Email Sending readiness.
 type emailCheck struct{}
 
 // ID implements Check.
 func (emailCheck) ID() string { return "email" }
 
 // Needs implements Check. The DNS-hygiene half needs no credential and always runs; Run itself
-// consults Clients.HaveCF for the second half, the way credsCheck inspects its own clients
+// consults Clients.HaveCF for the second half, the way credsCheck inspects its clients
 // rather than declaring a tier that would skip the whole check.
 func (emailCheck) Needs() Tier { return TierNone }
 
@@ -60,7 +60,7 @@ func (emailCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options
 	return checkSendingSubdomain(ctx, r, c)
 }
 
-// isDNSAbsence reports whether err is a DNS lookup's own report that the queried record does not
+// isDNSAbsence reports whether err is a DNS lookup's report that the queried record does not
 // exist, a *net.DNSError with IsNotFound true, rather than a transport-level failure (a down
 // resolver, an offline machine) this check could not observe through at all.
 func isDNSAbsence(err error) bool {
@@ -82,7 +82,7 @@ func dmarcPolicy(lowerTXT string) string {
 
 // checkDMARC reads domain's "_dmarc" TXT record and reports Failing when none exists, its policy
 // tag is absent, or its policy is "none": a DMARC record published at p=none asks receivers to
-// take no action on a spoofed message, which records.mjs's own DMARC-is-TXT expectation treats as
+// take no action on a spoofed message, which records.mjs's DMARC-is-TXT expectation treats as
 // no real policy at all. Every tag is read from a lowercased
 // copy of the record, since DNS TXT values carry no case convention and "p=None" is exactly the
 // live misconfiguration this check exists to catch.
@@ -109,10 +109,10 @@ func checkDMARC(ctx context.Context, probe *providers.Probe, domain string) (spi
 	return spine.Outcome{State: spine.Failing, Code: spine.CodeEmailDMARCMissing, Detail: detailEmailDMARCMissing()}, false
 }
 
-// checkSPF reads domain's own TXT records, the sending subdomain Cloudflare's Email Sending
-// onboards by default, and reports Failing unless one is an SPF record naming Cloudflare's own
+// checkSPF reads domain's TXT records, the sending subdomain Cloudflare's Email Sending
+// onboards by default, and reports Failing unless one is an SPF record naming Cloudflare's
 // mail servers as an authorized sender. Each record is lowercased once before either match, so a
-// registrar or DNS provider's own casing on the record never hides a genuine include.
+// registrar or DNS provider's casing on the record never hides a genuine include.
 func checkSPF(ctx context.Context, probe *providers.Probe, domain string) (spine.Outcome, bool) {
 	records, err := probe.LookupTXT(ctx, domain)
 	if err != nil && !isDNSAbsence(err) {

@@ -13,8 +13,8 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// TestParseAckEntry covers --ack's own grammar: <check-id>=<YYYY-MM-DD>, an already-expired date
-// parsing successfully (expiry is health.Run's own comparison, against Options.Now, never this
+// TestParseAckEntry covers --ack's grammar: <check-id>=<YYYY-MM-DD>, an already-expired date
+// parsing successfully (expiry is health.Run's comparison, against Options.Now, never this
 // parse), and a malformed value naming the entry.
 func TestParseAckEntry(t *testing.T) {
 	tests := []struct {
@@ -61,7 +61,7 @@ func TestParseAckEntry(t *testing.T) {
 }
 
 // TestMergeAcksFlagWinsOnConflict covers the merge rule: a flag entry and a file entry naming
-// the same check id keep the flag's own expiry, and an entry unique to either side survives.
+// the same check id keep the flag's expiry, and an entry unique to either side survives.
 func TestMergeAcksFlagWinsOnConflict(t *testing.T) {
 	flagAcks := health.Acks{
 		{CheckID: "deploy", Expires: time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)},
@@ -82,7 +82,7 @@ func TestMergeAcksFlagWinsOnConflict(t *testing.T) {
 		t.Fatalf("merged = %+v, want 3 entries", merged)
 	}
 	if !byID["deploy"].Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)) {
-		t.Errorf("deploy's merged expiry = %v, want the flag's own value", byID["deploy"])
+		t.Errorf("deploy's merged expiry = %v, want the flag's value", byID["deploy"])
 	}
 	if !byID["flag-only"].Equal(time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)) {
 		t.Error("merge dropped the flag-only entry")
@@ -203,7 +203,7 @@ func TestLoadAckFile(t *testing.T) {
 	})
 }
 
-// TestAckFilePathDefaultsInsideTheRegistryDirectory covers --ack-file's own default: named
+// TestAckFilePathDefaultsInsideTheRegistryDirectory covers --ack-file's default: named
 // nowhere, it resolves to acknowledgements.json inside the registry directory.
 func TestAckFilePathDefaultsInsideTheRegistryDirectory(t *testing.T) {
 	dir := "/tmp/some-registry"
@@ -220,7 +220,7 @@ func TestAckFilePathDefaultsInsideTheRegistryDirectory(t *testing.T) {
 }
 
 // TestSitesListSkipsTheResolvedAckFileEvenWithASiteIDShapedStem covers criterion 3: an
-// operator's own --ack-file, named to a file whose stem looks like a site id, is excluded from
+// operator's --ack-file, named to a file whose stem looks like a site id, is excluded from
 // the listing by its resolved path, not by name.
 func TestSitesListSkipsTheResolvedAckFileEvenWithASiteIDShapedStem(t *testing.T) {
 	d, code := testDeps(t)
@@ -255,9 +255,9 @@ var unresolvedSiteFailingChecks = []string{"serving=2099-01-01", "email=2099-01-
 
 // TestHealthAckSoftensAFailingCheckToWarning covers criterion 4: an acknowledged check reads as
 // held, not failed, in the plain body, and softens the run's exit code away from CRITICAL, the
-// exit arithmetic's own hold semantics (Task 12, Task 18). The fixture also carries several
+// exit arithmetic's hold semantics (Task 12, Task 18). The fixture also carries several
 // cred-missing checks that report UNKNOWN regardless of any acknowledgement, since --ack softens
-// only a Failing check to WARNING (CheckVerdict.Verdict), so the run's own worst-of arithmetic
+// only a Failing check to WARNING (CheckVerdict.Verdict), so the run's worst-of arithmetic
 // still reports UNKNOWN once every Failing check is held; what this test pins is that CRITICAL,
 // the more severe of the two, disappears once every failing check carries an acknowledgement.
 func TestHealthAckSoftensAFailingCheckToWarning(t *testing.T) {

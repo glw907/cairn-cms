@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// This file carries the run's own state beside the checks: how long the sweep took, which
+// This file carries the run's state beside the checks: how long the sweep took, which
 // provider tokens it read and through what, which it could not find and which checks that cost,
 // and whether a missing token degraded the run.
 //
@@ -32,7 +32,7 @@ type Credential struct {
 	// Disables lists the check ids a missing token stopped from running. It is empty for a token
 	// the run found.
 	Disables []string
-	// Expires is the token's own expiry where the provider publishes one, and the zero time
+	// Expires is the token's expiry where the provider publishes one, and the zero time
 	// otherwise. GitHub is the only provider of the two that publishes one.
 	Expires time.Time
 }
@@ -42,7 +42,7 @@ func (c Credential) missing() bool {
 	return c.Provider == ""
 }
 
-// StatusState is the run's own state beside its checks: the wall time, the provider tokens, and
+// StatusState is the run's state beside its checks: the wall time, the provider tokens, and
 // whether a missing one degraded the run. The command layer fills it; render reads it.
 type StatusState struct {
 	// Elapsed is how long the run itself took, printed on the checked line. Zero means the
@@ -52,7 +52,7 @@ type StatusState struct {
 	// order the command layer resolved them.
 	Credentials []Credential
 	// Degraded reports health.Report.Degraded for the run: a missing token stopped checks from
-	// running, as opposed to a check that could not observe its own subject.
+	// running, as opposed to a check that could not observe its subject.
 	Degraded bool
 }
 
@@ -78,7 +78,7 @@ func (t Theme) statusLines(in RenderInput, col, width int) []string {
 	return out
 }
 
-// statusLine renders one token's own fact. listing selects the phrasing for a frame where no
+// statusLine renders one token's fact. listing selects the phrasing for a frame where no
 // check was attempted: a site listing runs none, so the past tense would tell the operator that
 // checks failed to run when nothing ran at all.
 func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width int) []string {
@@ -101,12 +101,12 @@ func (t Theme) statusLine(c Credential, now time.Time, listing bool, col, width 
 	return t.indented(t.Style(RoleMuted), col, line, width)
 }
 
-// The status line's own fragments. They are the strings this file composes a status line from,
+// The status line's fragments. They are the strings this file composes a status line from,
 // stated once here rather than at the three call sites that print one.
 const (
 	// statusUnsetJoin opens a missing token's line, which then names the checks it disabled.
 	statusUnsetJoin = " is not set, so "
-	// statusUnsetTail closes it in the section vocabulary's own words, for a frame whose checks
+	// statusUnsetTail closes it in the section vocabulary's words, for a frame whose checks
 	// did run.
 	statusUnsetTail = " could not run"
 	// statusUnsetTailListing closes it where no check was attempted, which is the site listing.
@@ -128,7 +128,7 @@ const (
 const credsRowID = "creds"
 
 // remainingDays spells a token's remaining life, whole days at a distance and whole hours once a
-// day count would round the warning away, the same two units a hold's own field spells.
+// day count would round the warning away, the same two units a hold's field spells.
 func remainingDays(d time.Duration) string {
 	return remaining(max(d, 0))
 }

@@ -37,7 +37,7 @@ export interface ChannelDb {
  * would not.
  *
  * No runtime floor guard: `node:sqlite` has been unflagged since Node.js 22.13, well below this
- * package's own `engines.node` (`>=24`). npm only warns when the running version misses that
+ * package's `engines.node` (`>=24`). npm only warns when the running version misses that
  * floor, but the floor it warns about already sits past the point where `node:sqlite` needed a
  * guard.
  */

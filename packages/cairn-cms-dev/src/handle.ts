@@ -61,7 +61,7 @@ function underWorkerd(): boolean {
 /** Options for the dev-backend handle. */
 export interface DevBackendConfig {
   /**
-   * Where the dev admin's content comes from. `'repository'` (the default) serves the site's own
+   * Where the dev admin's content comes from. `'repository'` (the default) serves the site's
    * working tree: each branch is an in-memory overlay over the files on disk, so the admin lists
    * the developer's real entries and an edit lives only until the dev server stops; nothing is
    * written to disk. It needs a filesystem, so it throws under `wrangler dev`'s workerd. `'fixtures'`
@@ -106,7 +106,7 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
   }
 
   // Every seed runs only in fixtures mode, so no fixture reaches a real site's admin: the seeded
-  // media, fragments, vocabulary, and preview twin would otherwise shadow the developer's own
+  // media, fragments, vocabulary, and preview twin would otherwise shadow the developer's
   // manifest, media.json, and site config in Settings, Tags, the nav editor, and the Library.
   if (content === 'fixtures') {
     // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
@@ -131,7 +131,7 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
 
   // One dev Backend, built at handle-build time so every request shares the same store (a commit on
   // one request is visible on the next). Fixtures mode shares the module-level in-memory repo, so
-  // the recorder route sees its commits; repository mode keeps its overlay in its own closure.
+  // the recorder route sees its commits; repository mode keeps its overlay in its closure.
   const backend = content === 'fixtures' ? createDevBackend() : createRepositoryBackend(process.cwd());
 
   // One instance each for the server's lifetime, like the in-memory repo, so editors added through
@@ -149,7 +149,7 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
     // prerendered page is static output this handle never serves again; pass it straight through.
     if (await isBuilding()) return resolve(event);
     const path = event.url.pathname;
-    // This handle replaces the engine guard, so the guard's own dev-backend tripwire never runs
+    // This handle replaces the engine guard, so the guard's dev-backend tripwire never runs
     // while it is mounted. A build that folded the dev backend in (VITE_CAIRN_E2E=1, say) and then
     // deployed with the flag set would otherwise serve the owner-session bypass on a public host.
     // The refusal pairs the flag with the request's hostname, read on its own: on Cloudflare the
@@ -187,30 +187,30 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
       };
       // Mirrors the guard, which sets locals.cairnAccess immediately after minting
       // locals.cairnEditor on a guarded admin path, and defaults an absent declaration to {} the
-      // same way, so a site's own route gates and section actions read the same declaration under
+      // same way, so a site's route gates and section actions read the same declaration under
       // either hook branch.
       event.locals.cairnAccess = config.runtime.access ?? {};
     }
     // The binding doubles ride the Worker env the way the Cloudflare adapter would supply the real
-    // ones, through withEnv, so the engine's reads and a site's own `cloudflare:workers` reads see
+    // ones, through withEnv, so the engine's reads and a site's `cloudflare:workers` reads see
     // them alike for the rest of this request. AUTH_DB serves /admin and /preview (loadPreview's
-    // own binding read); MEDIA_BUCKET serves the upload action under /admin and the delivery route
+    // binding read); MEDIA_BUCKET serves the upload action under /admin and the delivery route
     // under /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
     // building a client when it is absent, so the value is set even though the fake client
     // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom admin
-    // screen reads and writes its own D1 binding the engine never touches, so this handle supplies
+    // screen reads and writes its D1 binding the engine never touches, so this handle supplies
     // a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay admin-only
-    // otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's own binding.
+    // otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's binding.
     //
     // The current env is spread first, so every var (PUBLIC_ORIGIN among them) and every binding
     // an outer handle already layered survives, and the doubles win on a name collision. A handle
-    // sequenced after this one layers its own withEnv over this set the same way.
+    // sequenced after this one layers its withEnv over this set the same way.
     const doubles = {
       ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
       ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
       MEDIA_BUCKET: fakeR2,
     };
-    // workers-types declares withEnv's return as unknown; it returns the callback's own value.
+    // workers-types declares withEnv's return as unknown; it returns the callback's value.
     return withEnv({ ...env, ...doubles }, () => resolve(event)) as ReturnType<typeof resolve>;
   };
 }

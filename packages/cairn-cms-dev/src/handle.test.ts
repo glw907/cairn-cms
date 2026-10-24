@@ -51,7 +51,7 @@ test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_
     capability: 'owner',
   });
   expect(seen.AUTH_DB).toBeTruthy();
-  // APP_DB is the developer-binding example: the custom Signups screen reads and writes its own D1.
+  // APP_DB is the developer-binding example: the custom Signups screen reads and writes its D1.
   expect(seen.APP_DB).toBeTruthy();
 });
 
@@ -86,7 +86,7 @@ test('the handle wires the dev backend and AUTH_DB onto /preview/[token], but ne
   expect(event.locals.cairnBackend).toBeTruthy();
   expect(seen.AUTH_DB).toBeTruthy();
   expect(event.locals.cairnEditor).toBeUndefined();
-  // /preview needs no admin-only binding: neither the tidy stub nor the developer's own binding.
+  // /preview needs no admin-only binding: neither the tidy stub nor the developer's binding.
   expect(seen.APP_DB).toBeUndefined();
   expect(seen.ANTHROPIC_API_KEY).toBeUndefined();
 });
@@ -111,12 +111,12 @@ test('a plain var already on the Worker env (PUBLIC_ORIGIN) survives onto an /ad
   expect(seen.AUTH_DB).toBeTruthy();
 });
 
-test('a handle sequenced before it keeps its own double, and the route and the engine read both', async () => {
-  // A site's own handle, ahead of the dev handle, layering one double of its own the same way.
+test('a handle sequenced before it keeps its double, and the route and the engine read both', async () => {
+  // A site's handle, ahead of the dev handle, layering one double the same way.
   const siteHandle: Handle = ({ event, resolve }) =>
     withEnv({ ...env, SITE_DB: 'site-double' }, () => resolve(event)) as ReturnType<typeof resolve>;
   const devHandle = devBackendHandle({ runtime: {} });
-  // The order `sequence(siteHandle, devHandle)` runs them in, composed by hand: kit's own
+  // The order `sequence(siteHandle, devHandle)` runs them in, composed by hand: kit's
   // `sequence` needs the request store a running server provides.
   const handle: Handle = ({ event, resolve }) =>
     siteHandle({ event, resolve: async (inner) => devHandle({ event: inner, resolve }) });

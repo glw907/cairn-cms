@@ -61,7 +61,7 @@ It then names each reader's reason, the prior knowledge above, and what the page
 - `backend` is the `createGithubApp` provider for the repository that receives commits. :fact[2zytgf]
 - `email` names the sender of the sign-in email. :fact[2zytgf] :fact[z7lprs]
 - `rendering` holds the `render` function. :fact[2zytgf]
-- A scaffolded site's call declares the `posts`, `pages`, and `fragments` concepts, a `createGithubApp` backend, an `email` sender, and a `rendering` group. :fact[u4cfvv]
+- A scaffolded site's call declares the `posts`, `pages`, and `fragments` concepts, a `createGithubApp` backend, an `email` sender, and a `rendering` group, plus the optional `media` and `editor` groups. :fact[u4cfvv]
 - Code: an abridged excerpt of the scaffold's `defineAdapter` call, captioned with its path, with each concept's body and the other groups' values elided. :source[/templates/waymark/src/theme/cairn.config.ts] :fact[u4cfvv]
 
 <!-- snippet-check-skip: abridges the scaffold's adapter, eliding its imports, fieldsets, and group values -->
@@ -134,7 +134,7 @@ const indexes = createSiteIndexes(cairn, siteConfig, {
 });
 ```
 
-- A lazy glob, or one without `?raw` and `import: 'default'`, makes the build throw `expected input to be a string or buffer`. If the content module passes no glob for a declared concept, `createSiteIndexes` throws. :fact[n07oiu] :fact[pdgkex]
+- When the concept's directory holds entries, a lazy glob, or one without `?raw` and `import: 'default'`, makes the build throw `expected input to be a string or buffer`. If the content module passes no glob for a declared concept, `createSiteIndexes` throws. :fact[n07oiu] :fact[pdgkex]
 4. In the Vite config, add the concept's id and the same pattern to the `cairnManifest` plugin's `content` option. :fact[fj28xs] :fact[bheewf]
 - Code: an illustrative `cairnManifest` call from the scaffold's `vite.config.ts`, with `events` added to its `content` option. :source[/templates/waymark/vite.config.ts] :fact[bheewf]
 
@@ -210,7 +210,7 @@ tags: fields.multiselect({ label: 'Tags', creatable: true, taxonomy: true }),
 - `behavior[field].validate(value, siblings)` runs only for a field that passed its built-in checks. It receives the coerced value and the raw frontmatter, and returns an error string or `null`. :fact[93iwom]
 - When an optional field is left empty, its `validate` still runs and receives `undefined`. A check that refuses an empty value tests for a string. :fact[k7v2qe]
 - A `behavior` key that names an undeclared field throws when the fieldset is declared. :fact[93iwom]
-- `refine(data, body)` runs synchronously, and only after every field and behavior check passes. It returns either nothing or a map of field keys to messages. A returned map fails the save. :fact[93iwom]
+- `refine(data, body)` runs synchronously, and only after every field and behavior check passes. It returns either nothing or a map of field keys to messages. A returned map with at least one key fails the save, and an empty map passes. :fact[93iwom]
 - A caution notice says that a throw has a different effect in each hook. A throwing `behavior.validate` is logged as `content.field_behavior_failed`, and the field counts as valid. :fact[93iwom]
 - The notice continues: a throwing `refine` isn't caught. It fails the admin save with a server error, and it aborts the build's content index. :fact[ar5p72]
 - A refused save shows one banner holding only the first error message, and no message sits beside a field. Each `refine` message therefore needs to read as a standalone sentence. :fact[aj5c4z]

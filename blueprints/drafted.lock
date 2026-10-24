@@ -103,6 +103,38 @@ pages:
             the-holding-branch: sha256:a36a3d213a451a2b0e33712e496987cacf06ab7d64ba7e66073f83a3c893542b
             the-publish-commit: sha256:148d5847aaab7dd6eb31c2aecf23d00b067674d7c9e30b377376f5262293ce4a
             write-path: sha256:70168f1fa735094eb310ac1c05862f90c0b0e62ec18d75bc35ad717b1a4dfc4d
+    docs/extend/arrange-the-admin-sidebar.md:
+        page: 4a68696eb81ec58305096340c7b4e2bf316c15ef
+        blueprint: 37b20b15c320f894847d1c54b9ba94c6926c8339
+        sections:
+            _intro: sha256:cdd24e0b76ab4f337a1bb22c9a9abab67e8feaafec57f78948abf7e41a58f27e
+            add-attention-badges: sha256:e7d8d20e609d46ba6eed11c5de0ff2652a460370d91c4f87ed57d812bcb565fb
+            before-you-begin: sha256:0dbd5dce6cff8bad2de6bec3732388620baf9cf383487a54e479e999fc2b44e3
+            declare-the-layout: sha256:11850f4a2082f2640127e1b589b2ea490514c0c862e0c80a66beca7e0f597c02
+            filter-the-sidebar-per-request: sha256:1b1614d308db7ae53ad787e710131ac20c3f20a2bf64d5a63407d3ca3ddc8bca
+            hide-an-engine-screen: sha256:213e079e4274cebd6723f7cd69f2efeb517c65369b7e014e22e70ae258afeb81
+            narrow-a-section-by-role: sha256:b740e9391929063d3bcc4785eb8b9560d8593381f0f9b6cdd633faf610513ad3
+            resolve-a-sidebar-error: sha256:4cb6f182efddbfd372e2fc26d0e73aa7a3ed065e38eddf0431b6480edbc25127
+            see-also: sha256:1e8ae1056aa1fb4c340d2d0a2282be008b50e57828538e0912a4580b6754763a
+            set-a-sections-starting-state: sha256:b81ceea2348c15b691629a77469e76bf35ff6c4b97f342356cfeef8b29ea74b6
+            verify-the-sidebar: sha256:610bf2ffaadd62fbfef4bc2222a7062c5fdf8600d199505cba7f9dadba2acefb
+    docs/extend/content-model.md:
+        page: 8465554a17ce762879b9dbb98d1b49e2756c10d6
+        blueprint: 26265118d14e3f756a7bb7667af03b8b20723e7e
+        sections:
+            _intro: sha256:f13c408a49682394c263cf9875b66c5f62d933498b9b71b9ab5cd9e25ec99112
+            address-collisions: sha256:120c42b5f227ec6f7fff3d4f12d96e3b9db6faba70c1a527f93ee67b98e6d485
+            concepts: sha256:42f7cd0bea73a68bbf870461f3fc46e7bdbc67109a64efe149394baa3f373577
+            containers: sha256:62ad64a27d137b1ac4c7b734790248ea761db6c13d249e8479e9b05076e40d21
+            entry-identity: sha256:2a6020da7bfc4568f232014e9b9508f247abe3388e93ca7a0d6d321299126009
+            field-options: sha256:fe75cddcf47510473f59d176579e25b36051f17c18235be546a7ef0e3a296605
+            frontmatter-keys-the-engine-reads: sha256:02bf3da09df6a8e71f578366d8d8d44c52e9204c5e7962645bec0fecb91e45aa
+            related-resources: sha256:b36208b730ef7366892433de9e8fec33621f2029dba122a031e673090eca4f3e
+            renames: sha256:0e880599916a831b14d2d188c5aba3020462f4a2e8bbbe9634cfef96b67b3b10
+            routing: sha256:bab15d5513f36fd62fb8ae69dab417f42cd2f1517afb9b699a5ef622fc9fc341
+            save-time-validation: sha256:783b01035966bb180e625a165f6d4d46ad2ddc4dda635d2f1f367917adb5746c
+            the-content-manifest: sha256:7f8e2311239eb85235cf8f8d451208769472192cd6e9d5fafe6d27b8a85dd474
+            the-fieldset: sha256:03c8b0e7b4493651a49aea7847bfc20a00c05148df637545eada229e7dc9e388
     docs/extend/debug-your-site.md:
         page: be3ce83e66ec6358b32e1c7952d679b2f8586e7e
         blueprint: ad3be2d68e6160516921681a02acf1d2308dd792

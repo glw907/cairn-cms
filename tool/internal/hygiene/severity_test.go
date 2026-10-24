@@ -9,13 +9,13 @@ import (
 )
 
 // moduleRoot resolves the tool module's root directory the same way buildtags_test.go and
-// identicalfiles_test.go do, from thisFile's own path, so all three hygiene tests agree on what
+// identicalfiles_test.go do, from thisFile's path, so all three hygiene tests agree on what
 // "under tool/" means.
 func moduleRoot(t *testing.T) string {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	root := filepath.Dir(filepath.Dir(filepath.Dir(thisFile)))
 	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
@@ -83,7 +83,7 @@ func TestOneSeverityTable(t *testing.T) {
 	}
 }
 
-// TestNoExitArithmeticInCommands asserts no file under cmd/cairn holds its own state-to-exit-code
+// TestNoExitArithmeticInCommands asserts no file under cmd/cairn holds a state-to-exit-code
 // mapping. It greps for the four names the mapping has carried, the private exit-code constants
 // and the two functions that read them, so a command reintroducing any of them goes red rather
 // than quietly owning a rule the whole module needs. It is a name grep and so does not catch a

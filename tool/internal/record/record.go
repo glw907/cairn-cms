@@ -18,7 +18,7 @@ type ExtraField struct {
 }
 
 // String implements fmt.Stringer without printing Value: json.RawMessage's
-// own Stringer prints its bytes verbatim, which would put a secret literal
+// Stringer prints its bytes verbatim, which would put a secret literal
 // carried in Extra into any %v or log line a caller writes. Marshal is the
 // one place a Record's bytes are meant to leave the process.
 func (e ExtraField) String() string {

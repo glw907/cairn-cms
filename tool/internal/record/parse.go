@@ -13,7 +13,7 @@ import (
 // over key names of its own: recordFields is the only place a key becomes
 // recognized, so a key the field table does not name can never reach a
 // typed field, and a key it does name can never be missing from Marshal's
-// own table.
+// table.
 func Parse(data []byte) (Record, error) {
 	r, err := parseObject[Record](data, recordFields)
 	if err != nil {
@@ -70,7 +70,7 @@ func decodeObject(data []byte) ([]string, map[string]json.RawMessage, error) {
 	// Non-nil on purpose, at every nesting level: a nil order is Marshal's
 	// "never parsed" sentinel, so a parsed-but-empty object must come back
 	// with an empty order rather than a nil one, or Marshal would replay the
-	// struct's own field order over it and break the byte-for-byte round trip.
+	// struct's field order over it and break the byte-for-byte round trip.
 	order := []string{}
 	values := make(map[string]json.RawMessage)
 	for dec.More() {

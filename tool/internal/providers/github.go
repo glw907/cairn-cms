@@ -15,13 +15,13 @@ import (
 
 // githubHost is the only host a GitHub client will ever send a request to. There is no base-URL
 // variable and no environment override; the RoundTripper passed to NewGitHub is this client's
-// only test seam, the same rule cloudflare.go states for its own host pin.
+// only test seam, the same rule cloudflare.go states for its host pin.
 const githubHost = "api.github.com"
 
 // githubBase is githubHost's REST root, prefixed onto every request this client sends.
 const githubBase = "https://" + githubHost
 
-// botLogin is the GitHub account name the CMS's own commits carry, the committer login
+// botLogin is the GitHub account name the CMS's commits carry, the committer login
 // LatestBotCommit filters by.
 const botLogin = "cairn-cms[bot]"
 
@@ -48,7 +48,7 @@ func NewGitHub(cred Credential, rt http.RoundTripper) *GitHub {
 }
 
 // GitHubError reports a GitHub REST call that did not return 2xx. Reason is what a health check
-// branches on; Message is the API's own "message" field, useful only for a verbose log line.
+// branches on; Message is the API's "message" field, useful only for a verbose log line.
 type GitHubError struct {
 	Status  int
 	Message string
@@ -142,7 +142,7 @@ type Branch struct {
 	AuthorLogin string
 }
 
-// Branches returns every branch of owner/repo, up to GitHub's own 100-per-page maximum. 1.0's
+// Branches returns every branch of owner/repo, up to GitHub's 100-per-page maximum. 1.0's
 // checks read a site repository, which the spec expects to carry at most a handful of open
 // "cairn/*" branches at once, so a single page is sufficient; a repository with more branches
 // than that is a 2.0 concern.

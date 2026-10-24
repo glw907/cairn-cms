@@ -20,7 +20,7 @@ const (
 	// SourceUserConfig reports that config (os.UserConfigDir in
 	// production) set the directory.
 	SourceUserConfig
-	// SourceLegacyPOSIX reports that the Node CLI's own
+	// SourceLegacyPOSIX reports that the Node CLI's
 	// ~/.config/cairn/sites directory, found already present on disk, set
 	// the directory.
 	SourceLegacyPOSIX
@@ -41,7 +41,7 @@ func (s Source) String() string {
 }
 
 // Dir resolves the registry directory. Precedence: CAIRN_STATE_DIR
-// (SourceEnv) first; then, if the Node CLI's own ~/.config/cairn/sites
+// (SourceEnv) first; then, if the Node CLI's ~/.config/cairn/sites
 // directory already exists under home, that directory (SourceLegacyPOSIX);
 // otherwise config()'s directory plus "cairn/sites" (SourceUserConfig).
 // Paths are never merged: the first match wins outright.

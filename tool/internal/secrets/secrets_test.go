@@ -94,7 +94,7 @@ func TestResolvePropagatesProviderError(t *testing.T) {
 	}
 }
 
-// TestResolveErrorNeverPrintsTheWrappedText asserts a provider whose own error text carries
+// TestResolveErrorNeverPrintsTheWrappedText asserts a provider whose error text carries
 // sensitive-shaped content never reaches a caller that prints the *ResolveError directly: the
 // sentinel is reachable only through errors.As and Unwrap, never through Error()'s string.
 func TestResolveErrorNeverPrintsTheWrappedText(t *testing.T) {

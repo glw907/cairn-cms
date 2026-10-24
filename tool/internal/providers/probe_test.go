@@ -14,7 +14,7 @@ import (
 
 // TestProbeHasNoCredentialField asserts Probe carries no field of type Credential at any
 // nesting depth a caller could reach directly, since a probe reaches an arbitrary third-party
-// domain, not one of this operator's own provider APIs.
+// domain, not one of this operator's provider APIs.
 func TestProbeHasNoCredentialField(t *testing.T) {
 	credType := reflect.TypeFor[Credential]()
 	for field := range reflect.TypeFor[Probe]().Fields() {
@@ -198,7 +198,7 @@ func TestNewProbeWithAuthorityNilAuthorityDefaultsToDefaultAuthorityLookup(t *te
 	}
 }
 
-// TestLookupAuthoritativeReturnsOnContextDeadline proves LookupAuthoritative's own timeout
+// TestLookupAuthoritativeReturnsOnContextDeadline proves LookupAuthoritative's timeout
 // wrapping returns rather than blocking when a slow AuthorityLookup outlives the caller's
 // context, the same failure mode TestSharedTimeoutPolicy proves for the package's other clients.
 func TestLookupAuthoritativeReturnsOnContextDeadline(t *testing.T) {
@@ -248,10 +248,10 @@ func (rt rewriteHostTransport) RoundTrip(req *http.Request) (*http.Response, err
 }
 
 // TestSharedTimeoutPolicy covers the timeout half of the shared transport policy in one table: it
-// drives GitHub's and NPM's shared *client type, and Probe's own doWithRetry, through a handler
+// drives GitHub's and NPM's shared *client type, and Probe's doWithRetry, through a handler
 // that outlives a short caller-supplied deadline, and asserts every one returns rather than
 // hanging. It calls the unexported client.Do and doWithRetry directly with a request built on a
-// short local context, the same way transport_test.go's own TestDoReturnsOnContextDeadline
+// short local context, the same way transport_test.go's TestDoReturnsOnContextDeadline
 // proves this for Cloudflare's client, since routing through the exported GitHub and Probe
 // methods would mean waiting out the real 15-second requestTimeout those methods hardcode.
 func TestSharedTimeoutPolicy(t *testing.T) {
@@ -326,7 +326,7 @@ func TestSharedTimeoutPolicy(t *testing.T) {
 
 // TestSharedRetryPolicy is TestSharedTimeoutPolicy's sibling for the retry half: each client sees
 // one 429 and then a 200, and each must retry exactly once. Retry-After is set to "0" so the
-// wait between the two requests is negligible, matching TestDoRetriesRateLimitedGET's own style.
+// wait between the two requests is negligible, matching TestDoRetriesRateLimitedGET's style.
 func TestSharedRetryPolicy(t *testing.T) {
 	tests := []struct {
 		name string

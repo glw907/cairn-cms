@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// TestRepoRootFromFindsCairnCmsRoot walks up from this test file's own directory (three levels
+// TestRepoRootFromFindsCairnCmsRoot walks up from this test file's directory (three levels
 // under the repository root) and asserts the resolved directory really holds the engine's
 // package.json.
 func TestRepoRootFromFindsCairnCmsRoot(t *testing.T) {

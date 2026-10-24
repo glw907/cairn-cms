@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// vocabularyCheck names one string vocabulary this package hand-derives from its own const
+// vocabularyCheck names one string vocabulary this package hand-derives from its const
 // block: the file the constants and the backing list are declared in, the constant type the
 // block declares, the package-level slice variable that is supposed to carry every one of them,
 // and the constant names the list is allowed to omit (a sentinel "no value" member with no place
@@ -23,7 +23,7 @@ type vocabularyCheck struct {
 	exempt   []string
 }
 
-// vocabularies is every hand-written list this package proves complete against its own const
+// vocabularies is every hand-written list this package proves complete against its const
 // block. A constant added here and never added to its list would otherwise miss Codes,
 // ReasonCodes (which folds parkCodes in), or Conditions silently, since Go has no way to
 // enumerate a const block at run time.
@@ -83,13 +83,13 @@ func TestVocabulariesCoverTheirConstBlocks(t *testing.T) {
 	}
 }
 
-// vocabularySourcePath resolves file relative to this test file's own directory via
+// vocabularySourcePath resolves file relative to this test file's directory via
 // runtime.Caller, so the parse below finds it regardless of the caller's working directory.
 func vocabularySourcePath(t *testing.T, file string) string {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	return filepath.Join(filepath.Dir(thisFile), file)
 }

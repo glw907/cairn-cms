@@ -89,7 +89,7 @@ var eventVocabulary = []string{
 }
 
 // Events returns a copy of the engine's log event vocabulary, for cairn logs --event's flag
-// completion. It is a copy, not the package's own slice, so a caller mutating the result cannot
+// completion. It is a copy, not the package's slice, so a caller mutating the result cannot
 // corrupt the vocabulary every later call reads.
 func Events() []string {
 	out := make([]string, len(eventVocabulary))

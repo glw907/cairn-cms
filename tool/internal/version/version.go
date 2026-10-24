@@ -16,7 +16,7 @@ const devVersion = "dev"
 var Version = devVersion
 
 // Documented is the release the published contract pages describe, the version each one states
-// in its own opening line: docs/reference/cli-cairn-exit-codes.md,
+// in its opening line: docs/reference/cli-cairn-exit-codes.md,
 // docs/reference/cli-cairn-json-output.md, and docs/reference/cli-cairn-doctor.md.
 //
 // It is not Version. Version is "dev" in a test binary and carries a git-described value in a

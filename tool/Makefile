@@ -36,7 +36,7 @@ vet:
 	go vet ./...
 
 # man writes every man page to man/, fresh from a build it runs itself: cmd/mangen harvests the
-# tree from the real binary's own --help text rather than importing cmd/cairn (a package main,
+# tree from the real binary's --help text rather than importing cmd/cairn (a package main,
 # which Go forbids importing), so it always builds cairn before reading it.
 man:
 	go run ./cmd/mangen man
@@ -71,7 +71,7 @@ vulncheck: build-govulncheck
 vale-comments:
 	./scripts/vale-comments.sh
 
-# copy-list writes testdata/copy.golden.md from internal/health's own messages and fix tables
+# copy-list writes testdata/copy.golden.md from internal/health's messages and fix tables
 # (tool/docs/design/copy-standard.md section 4.3). Run this and commit the diff whenever a task
 # adds an operator-facing string.
 copy-list:

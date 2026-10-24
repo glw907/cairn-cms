@@ -27,7 +27,7 @@ func TestExportedMethodsTakeContextFirst(t *testing.T) {
 	}
 	for _, typ := range types {
 		for m := range typ.Methods() {
-			// m.Func's signature carries the receiver as In(0), so the method's own first
+			// m.Func's signature carries the receiver as In(0), so the method's first
 			// parameter is In(1).
 			sig := m.Func.Type()
 			if sig.NumIn() < 2 || sig.In(1) != ctxType {

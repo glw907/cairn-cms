@@ -20,7 +20,7 @@ func TestCodeNoneIsTheOnlyUndotted(t *testing.T) {
 }
 
 // TestCodesAreToolPrefixed asserts every declared Code starts with "tool.", the prefix that
-// keeps a Code from ever being mistaken for a Condition, which carries the engine's own
+// keeps a Code from ever being mistaken for a Condition, which carries the engine's
 // domain-prefixed ids (edge., email., config., and so on).
 func TestCodesAreToolPrefixed(t *testing.T) {
 	for _, c := range Codes() {

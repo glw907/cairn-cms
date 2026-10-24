@@ -63,7 +63,7 @@ func newDiscoveryClient() *providers.Cloudflare {
 }
 
 // TestDiscoverFillsEveryCandidateField asserts Discover lists every Worker on the account, fills
-// the domain and zone id from the Worker domains route, the zone name from the zone's own name
+// the domain and zone id from the Worker domains route, the zone name from the zone's name
 // rather than the domain, and Connected and Repo from the Builds triggers. The zone id is what
 // the HTTPS-forced and email checks read a site's zone through; a record adopted without one
 // reports both of them unobservable.
@@ -394,7 +394,7 @@ func TestAlreadyAdopted(t *testing.T) {
 
 // TestAdoptErrorsAreGoErrorValues asserts every error string adopt.go builds is a lowercase,
 // package-prefixed Go error value rather than a sentence written for an operator to read. It
-// scans the source's own errors.New and fmt.Errorf literals.
+// scans the source's errors.New and fmt.Errorf literals.
 func TestAdoptErrorsAreGoErrorValues(t *testing.T) {
 	data, err := os.ReadFile("adopt.go")
 	if err != nil {
@@ -420,7 +420,7 @@ func TestAdoptErrorsAreGoErrorValues(t *testing.T) {
 	}
 }
 
-// openStore returns a Store rooted at dir, creating the directory at the registry's own mode
+// openStore returns a Store rooted at dir, creating the directory at the registry's mode
 // first so Open's ownership and mode checks see a real registry root.
 func openStore(t *testing.T, dir string) *store.Store {
 	t.Helper()
@@ -439,7 +439,7 @@ func openStore(t *testing.T, dir string) *store.Store {
 	return st
 }
 
-// writeRecord drops a record file into dir at the registry's own file mode.
+// writeRecord drops a record file into dir at the registry's file mode.
 func writeRecord(t *testing.T, dir, id, body string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(dir, id+".json"), []byte(body), 0o600); err != nil {
@@ -447,7 +447,7 @@ func writeRecord(t *testing.T, dir, id, body string) {
 	}
 }
 
-// dirNames returns dir's entry names, sorted by the directory read's own order.
+// dirNames returns dir's entry names, sorted by the directory read's order.
 func dirNames(t *testing.T, dir string) []string {
 	t.Helper()
 	entries, err := os.ReadDir(dir)
@@ -502,8 +502,8 @@ func assertNoSecretKeys(t *testing.T, dir, id string) {
 	}
 }
 
-// rand6 returns six lowercase alphanumeric characters, so a test can give each candidate its own
-// Worker name without two adoptions colliding.
+// rand6 returns six lowercase alphanumeric characters, so a test can give each candidate a
+// distinct Worker name without two adoptions colliding.
 func rand6(t *testing.T) string {
 	t.Helper()
 	id, err := newSiteID("x")

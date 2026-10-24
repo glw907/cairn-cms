@@ -41,7 +41,7 @@
 // component project, and any failure prints nothing on stdout and exits non-zero.
 //
 // `--pin <tier>` bypasses all of it and prints the old tier string for that tier, unchanged.
-// `tool/**`, the Go `cairn` CLI module, keeps its own gate (`make -C tool check`): a diff with
+// `tool/**`, the Go `cairn` CLI module, keeps a separate gate (`make -C tool check`): a diff with
 // paths on both sides runs the targeted gate and then the tool gate.
 //
 // `--protected` is a separate mode. It prints `ciWait` when the range touches a path on the table's
@@ -818,7 +818,7 @@ export function diffEntries(range, root = ROOT) {
 
 /**
  * The `--protected` verdict for a range. The protected list is read from the table at the range's
- * base commit, so a range that deletes its entry still flags; a table that is absent or
+ * base commit, so a range that deletes its own entry still flags; a table that is absent or
  * unreadable at the base flags too.
  * @param {string} range - A git range `<base>..<head>`.
  * @param {string} [root] - The repo root.

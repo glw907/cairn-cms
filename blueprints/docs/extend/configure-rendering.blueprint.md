@@ -271,13 +271,13 @@ Members vote on the new bylaws.
 *Map each failed check to its cause and fix, in the order the verification reaches them.*
 
 - When a check fails, work through the following causes in order:
-1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, a `defaultIconByRole` without an `icon` attribute, or a `hydrate` component with no matching `rendering.islands` entry. Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij] :fact[mv684d]
+1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, a `defaultIconByRole` without an `icon` attribute, or a `hydrate` component and a `rendering.islands` entry that don't match. Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij] :fact[mv684d]
 2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`, or the registry holds no component the picker lists. Pass it as [Register the component](#register-the-component) shows. :fact[rrvh33] :fact[megde2]
 3. The component is missing from the picker: it declares no attribute, no slot, and no `insertTemplate`, or it sets `hidden`. :fact[rfeaa5]
 4. The preview shows `The preview could not render this content.` The render threw, often because `build` threw on an input it didn't expect. :fact[3pzda1]
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
-7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set. The highlighter renders that block as plain text. :fact[dni13r]
+7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set (a `mermaid` fence passes through untouched). The highlighter renders that block as plain text. :fact[dni13r]
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

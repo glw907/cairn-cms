@@ -4,8 +4,52 @@
 
 ## Medium
 
+- [ ] **#45** Keep a renamed posts concept's feed from going empty `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Renaming the scaffold's posts concept empties its feed. The authors raised it in batch 2 and it has no backlog item (record 55).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#44** Check inbound cairn.pub links to the extend headings PR #137 renamed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Dropping "own" changed the anchors `upload-from-your-screen`, `mint-and-revoke-from-your-admin-route`, and `port-your-theme-onto-the-chassis`. In-repo links are fixed; inbound links from cairn.pub are unchecked (record 53).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#43** Say that a local D1 needs `--local` for the `AUTH_DB` migrations `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Deploy applies the migrations with `--remote` only, so a local D1 still needs `--local` (`f:m4y3m4`). Document it or change the step (record 52).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#42** Settle the scaffold's two origins `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  The scaffold names its origin twice, a literal `https://showcase.test` and the setup-written `PUBLIC_ORIGIN` `workers.dev` URL, so a deployed site has two (record 51).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#41** Fix the stale header comment in `manifest.ts` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `src/lib/content/manifest.ts:3-4` says "save path patches one entry"; it is already in the docs friction log, unfixed (record 50).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#40** Add a `ContentRoutesConfig` heading to `docs/reference/sveltekit.md` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  The page has no such heading, so the plan's link target can't exist; the sidebar blueprint links `createCairnAdmin` instead (record 49).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#39** Give the tutorial site's layout a code source `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  No code source exists for it, and D1 removes tutorial-site claims from every page serving tutorial readers. Add a fixture or record a ruling (record 48).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#38** Make `check:facts` and `drafter check --fact` agree on a `path#Symbol` source outside `src/` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `check:facts` refuses it while `drafter check --fact` accepts it (`packages/create-cairn-site/...#applyMigrations`) (record 46).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#37** Correct the facts still marked `[verified]` that the code or their source contradicts, and split bundled bullets `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `f:0elmiu` (sign-in page indexed, but `LoginPage` sets `noindex`), `f:niuzzg`, `f:s4prb0` (a README source), and `f:q07rd5` (a docs source) are stale or prose-sourced. `f:q07rd5` also joins a code clause with docs-only clauses, so D1 blocks citing the code part alone (record 44, 45).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#36** Flag a plan or framing record when a fact it cites is corrected `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Plans inherit wrong facts and nothing flags them: `f:ld6xam` reached the sidebar plan, the content model's carried about a dozen code-contradicted claims, and build-the-public-routes' plan predates D1. All four batch 2 authors hit it (record 43).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
+
+- [ ] **#35** Add `blueprints/**` to Vale's scope once Survey #1's check exists `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `check:vale` covers `docs`, `README.md`, and the showcase README only, so the empty "own" reached Geoff on two blueprints unflagged. `package.json:52` (record 41).
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
 - [ ] **#34** Sweep the empty "own" from the Go tool, the scaffolder, the baked agent files, and developer-facing messages `#improvement` `#cairn-cms` `#initiative:cairn-docs-standard` *(2026-10-22)*
   Follow-up to PR #137, on Geoff's packet answer: sweep everything except the admin's editor copy. Covers `tool/` (about 1,200 uses), `packages/` (about 900), the sources of the template's generated agent files (repo-root `claude/`, `skills/`, `packages/create-cairn-site/template-repo`, then `npm run emit:template`), and about 75 runtime strings (audit findings, CLI diagnostics, the tidy prompt, e2e test names, showcase content), updating the tests a message change touches. Leave editor-facing admin copy ("Your own custom rules") as it reads. Run the dangling-idiom scan after any scripted removal: PR #137 needed 14 repairs ("a second live region of its.").
+  Batch 2: about 240 hits remain in `templates/waymark/.claude/**`, `README.md`, and `CLAUDE.md`, which `emit:template` bakes from repo-root `claude/`, `skills/`, and `packages/create-cairn-site/template-repo`; sweep the sources, then emit (record 54).
 - [ ] **#33** Fix the `branch_gone` row in the log-events reference `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)*
   `docs/reference/log-events.md:40` says `branch_gone` comes from discarding a never-published entry. That discard deletes the entry's link rows, so the link logs `unknown` instead; `branch_gone` needs the branch gone with the row still there, such as after a failed cleanup. Found by the share-a-draft-preview blueprint's fact check.
 - [ ] **#32** Remove `RoutingRule.inFeeds` or wire it `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)*
@@ -14,6 +58,7 @@
   The edit page's advisory says "Publish this one and it replaces the other at that address" (`src/lib/sveltekit/content-routes-entry-read.ts:412`), the 2026-06-23 advisory design's last-write-wins. `createSiteResolver` instead throws on the duplicate permalink (`src/lib/delivery/site-resolver.ts:86`), so the next build fails. The content-model page states both as the code has them.
 - [ ] **#30** Move the three pilot blueprints to the markdown forms and drop `track: extend` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)*
   glw907/drafter#58 gives markdown blueprints `Code:` bullets with a `/`-rooted `:source[...]` and a fence, `Figure:` bullets, and a `:::constraints` block, and makes a named `track` an error when the outline declares none, as cairn's does. `drafter check` now flags the bare fences and `track: extend` in `blueprints/docs/extend/add-a-custom-admin-screen.blueprint.md`, `architecture.blueprint.md`, and `replace-magic-links-with-cloudflare-access.blueprint.md`.
+  Batch 2: an unnamed `drafter check` on main has 15 errors, all from the three pilot blueprints, and PR #134's troubleshooting blueprint adds another (`track: "admin"`, an error since drafter #58). Name both (record 40).
 - [ ] **#29** Let an explicit code `Source:` override the owner-brief heading in check:facts `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)*
   A bullet re-pointed from the charter to code still failed the owner tier until it moved sections (`f:gknz29`). `scripts/checks/check-facts.mjs` (record 29).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-pilot-friction.md`
@@ -64,6 +109,7 @@
 - [ ] **#28** Rename the Access page's facts section to its current page name `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)*
   `docs/internal/facts/extend.md` still files them under `## docs/extend/sign-in-through-your-organization.md` (record 24).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-pilot-friction.md`
+  Batch 2: the sidebar page's facts still sit under `## organize-your-admin-nav.md` and an `### arrange-the-admin-sidebar` subsection too (record 42).
 - [ ] **#5** Decide where the rotate page reads the logs `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*
   The outline's `covers` line puts the logs under verifying signing, while the blueprint reads them under recovery. A call for whoever owns the outline entry. Patch: `docs-system/research/2026-10-19-edit-quality-base-fixes.patch` in glw907/initiatives, made on a throwaway branch by the drafter edit-quality test (glw907/drafter#51).
 - [ ] **#6** Add the rotate blueprint's missing recovery rows and notes `#feature` `#cairn-cms` `#initiative:docs-system` *(2026-10-19)*

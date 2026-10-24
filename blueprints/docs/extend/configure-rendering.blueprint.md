@@ -136,7 +136,7 @@ slots: [
 - `items(name)`: a repeatable slot's items, one child list per item. :fact[cefzv5]
 - `attr(key)`: a declared attribute's string value, `undefined` for a boolean or absent one. :fact[2dsv35]
 - `node`: the stamped component element. :fact[2dsv35]
-- The engine ships no hast-building helper beyond the context. A `build` makes its markup with hastscript's `h()`. :fact[2dsv35]
+- The context builds no markup. A `build` makes its markup with hastscript's `h()`, and can draw an icon with the engine's `renderGlyph`, which returns a hast `svg` element. :fact[2dsv35] :fact[xbdb74]
 - In the `event` declaration, replace the `build` stub with the function that arranges the slots and attributes. :fact[2dsv35]
 - Code: the `event` `build`, a `section` holding the name, the date and place, the details, and an ordered agenda list, with classes prefixed `event`.
 
@@ -171,7 +171,7 @@ build: (ctx) =>
 - `group`: the heading the row sits under. Groups appear in the order first declared, and ungrouped components lead with no heading. :fact[c7ruij] :fact[rfeaa5]
 - `use`: one line on when to reach for the component. :fact[c7ruij]
 - `hidden`: a flag that leaves the component out of the top-level picker. :fact[c7ruij]
-- `preview`: a sample of attribute and slot values. Declaring it opens the insert form in two panes, with a live preview beside the form. :fact[c7ruij] :fact[rfeaa5]
+- `preview`: a sample of attribute and slot values. When the admin page passes `CairnAdmin` a `render`, declaring it opens the insert form in two panes, with a live preview beside the form. :fact[c7ruij] :fact[rfeaa5]
 - `insertTemplate`: the markdown inserted at the cursor when a component with no attributes and no slots is chosen. A component with either opens the insert form. :fact[rfeaa5]
 - In the `event` declaration, add the picker members its row needs. :fact[c7ruij]
 - Code: the members `event` adds, a group, a glyph from the scaffold's icon set, a use line, and a preview sample.
@@ -271,13 +271,13 @@ Members vote on the new bylaws.
 *Map each failed check to its cause and fix, in the order the verification reaches them.*
 
 - When a check fails, work through the following causes in order:
-1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, or a `defaultIconByRole` without an `icon` attribute. Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij]
-2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`. Pass it as [Register the component](#register-the-component) shows. :fact[rrvh33] :fact[megde2]
+1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, a `defaultIconByRole` without an `icon` attribute, or a `hydrate` component with no matching `rendering.islands` entry. Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij] :fact[mv684d]
+2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`, or the registry holds no component the picker lists. Pass it as [Register the component](#register-the-component) shows. :fact[rrvh33] :fact[megde2]
 3. The component is missing from the picker: it declares no attribute, no slot, and no `insertTemplate`, or it sets `hidden`. :fact[rfeaa5]
 4. The preview shows `The preview could not render this content.` The render threw, often because `build` threw on an input it didn't expect. :fact[3pzda1]
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
-7. A code block shows no token colors: its fence names a language outside the highlighter's preloaded set. The highlighter renders that block as plain text. :fact[dni13r]
+7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set. The highlighter renders that block as plain text. :fact[dni13r]
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

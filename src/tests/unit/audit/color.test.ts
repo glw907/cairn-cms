@@ -179,7 +179,7 @@ describe('ground resolution', () => {
     const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }], { canvas: OPAQUE_WHITE });
     expect(ground.kind).toBe('indeterminate');
     if (ground.kind !== 'indeterminate') return;
-    expect(ground.reason).toContain('own background-image');
+    expect(ground.reason).toContain('the element paints its background-image');
   });
 
   // daisyUI v5 paints `--btn-noise` over every `.btn`, so treating any image layer as unmeasurable

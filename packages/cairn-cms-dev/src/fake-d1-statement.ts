@@ -12,7 +12,7 @@ export interface FakeStatement {
   all<T = unknown>(): Promise<{ results: T[] }>;
 }
 
-/** What one dispatched SQL execution yields; first()/run()/all() each read their own slice. */
+/** What one dispatched SQL execution yields; first()/run()/all() each read their slice. */
 export interface FakeExecResult<Row> {
   row: Row | null;
   rows: Row[];

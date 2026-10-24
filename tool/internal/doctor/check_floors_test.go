@@ -207,7 +207,7 @@ func TestConfigDependencyFloorsUnexpectedLockfileIsUnchecked(t *testing.T) {
 
 // TestConfigDependencyFloorsNonCaretEngineRangeSkips proves the non-caret-range skip arm
 // separately, since it needs peers this task controls rather than the fixture package.json's
-// real caret ranges: judgePeers skips rather than guesses when the engine's own declared range
+// real caret ranges: judgePeers skips rather than guesses when the engine's declared range
 // is not a simple caret form.
 func TestConfigDependencyFloorsNonCaretEngineRangeSkips(t *testing.T) {
 	result := npmDependencyFloors(
@@ -222,7 +222,7 @@ func TestConfigDependencyFloorsNonCaretEngineRangeSkips(t *testing.T) {
 	}
 }
 
-// TestConfigDependencyFloorsSymlinkedNodeModulesIsUnchecked proves finding 6's own containment
+// TestConfigDependencyFloorsSymlinkedNodeModulesIsUnchecked proves finding 6's containment
 // case: a pnpm or npm-workspace monorepo layout whose node_modules symlinks outside the site
 // directory (Task 3's buildSymlinkedNodeModulesDir) makes the containment refusal report
 // unchecked, naming the refused relative path, rather than failing the site or crashing the run.
@@ -248,8 +248,8 @@ func TestConfigDependencyFloorsSymlinkedNodeModulesIsUnchecked(t *testing.T) {
 }
 
 // TestReadEnginePeersFiltersOptionalPeer proves finding 6's whole point: a peer marked optional
-// in peerDependenciesMeta (@anthropic-ai/sdk) is filtered out of readEnginePeers's own result
-// entirely, rather than surviving to be judged and read as a skip on its own missing lockfile
+// in peerDependenciesMeta (@anthropic-ai/sdk) is filtered out of readEnginePeers's result
+// entirely, rather than surviving to be judged and read as a skip on its missing lockfile
 // entry, which would mask the framework verdict this check exists to give.
 func TestReadEnginePeersFiltersOptionalPeer(t *testing.T) {
 	s := snapshotWithFiles(t, map[string]string{enginePackageJSONPath: enginePackageJSONFixture})

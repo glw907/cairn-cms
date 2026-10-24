@@ -2,7 +2,7 @@
 // version for every part of the stack a cairn site depends on, so a developer or an agent reading
 // the page gets a real target rather than a stale guess. This gate is what keeps that promise
 // honest: it derives each expected value from the same source the number actually comes from (the
-// root package.json's own version, engines, and peer ranges; the showcase's package.json and
+// root package.json's version, engines, and peer ranges; the showcase's package.json and
 // wrangler.jsonc, the source the public template is emitted from) and fails when the page's table
 // disagrees. A cell can only go stale silently if this gate stops running.
 import { readFileSync } from 'node:fs';

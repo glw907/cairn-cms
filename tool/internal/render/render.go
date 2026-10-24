@@ -1,7 +1,7 @@
-// Package render turns a validated input into terminal output with no I/O of its own: every
+// Package render turns a validated input into terminal output with no I/O: every
 // exported function is a pure function of its arguments, so the same input produces the same
 // bytes on every machine and on every run, which is what makes a golden test possible.
-// purity_test.go enforces the seam: os, golang.org/x/term, colorprofile's own detection entry
+// purity_test.go enforces the seam: os, golang.org/x/term, colorprofile's detection entry
 // points, and lipgloss's package-level Writer and Print family are forbidden everywhere in this
 // package except profile.go, the one file that reads the environment and queries the terminal.
 //
@@ -22,7 +22,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// Verdict is spine's own run verdict, re-exported so a body names the vocabulary without a
+// Verdict is spine's run verdict, re-exported so a body names the vocabulary without a
 // second declaration of it. The spine computes a verdict; this package only paints one.
 type Verdict = spine.Verdict
 
@@ -34,7 +34,7 @@ const (
 	ViewHealth View = iota
 	// ViewLogs renders a site's log entries.
 	ViewLogs
-	// ViewStatus renders the run's own state alone, the frame a site listing ends on: it has no
+	// ViewStatus renders the run's state alone, the frame a site listing ends on: it has no
 	// creds row for the credential detail to sit on, and the detail is not header material.
 	ViewStatus
 )
@@ -94,9 +94,9 @@ type RenderInput struct {
 	// Entries holds a log query's records, newest first, for ViewLogs.
 	Entries []logs.Entry
 	// Site names the subject a view that carries no report still has to name, which is the log
-	// excerpt's own section rule. A health view reads the name off its report instead.
+	// excerpt's section rule. A health view reads the name off its report instead.
 	Site string
-	// Status carries the run's own state beside its checks: the wall time, the provider tokens,
+	// Status carries the run's state beside its checks: the wall time, the provider tokens,
 	// and whether a missing one degraded the run.
 	Status StatusState
 	// Verdict is the run's aggregate verdict, computed by spine.ExitCode at the call site, so an
@@ -121,7 +121,7 @@ func (in RenderInput) width() int {
 //
 // The view decides first and the body second. ViewLogs and ViewStatus each have one form, since
 // neither carries the per-check grammar the three health bodies differ over; a caller writing to
-// a pipe prints its own line-oriented form for those two rather than asking for a column layout
+// a pipe prints its line-oriented form for those two rather than asking for a column layout
 // nothing will read.
 func Render(in RenderInput) Frame {
 	t := NewTheme(in.Dark, in.Profile).forTier(in.ASCII)
@@ -139,7 +139,7 @@ func Render(in RenderInput) Frame {
 	}
 }
 
-// renderStatus draws the run's own state and nothing else.
+// renderStatus draws the run's state and nothing else.
 func renderStatus(t Theme, in RenderInput) Frame {
 	return t.clampFrame(Frame{Body: t.statusLines(in, 0, in.width())}, in.width())
 }
@@ -147,7 +147,7 @@ func renderStatus(t Theme, in RenderInput) Frame {
 // Frame is render.Render's result, sectioned the way the 2.0 HUD pins it: a header that never
 // scrolls, a body that does, and a footer that carries the verdict. Frame carries no bubbletea
 // type; a bubbletea Cursor here would break both the purity test and the seam, since the HUD
-// composes its own tea.View from a Frame plus its own cursor state.
+// composes its tea.View from a Frame plus its cursor state.
 type Frame struct {
 	// Header is the block every body leads with: the verdict, the subject, and when the run
 	// checked.

@@ -32,7 +32,7 @@ const ROOT = repoRoot(import.meta.url);
 /** The committed manifest, which `npm run package` copies to `dist/audit/norms-manifest.json`. */
 const MANIFEST_FILE = 'src/lib/audit/norms-manifest.json';
 
-/** The preview server address absent `BASE_URL`: examples/showcase's own `npm run preview` port. */
+/** The preview server address absent `BASE_URL`: examples/showcase's `npm run preview` port. */
 const DEFAULT_BASE_URL = 'http://localhost:4173';
 
 // The admin paths rendered. Every role in the vocabulary has to appear on at least one of them, or
@@ -354,7 +354,7 @@ async function generate() {
   const manifest = buildManifest({ pages: PAGES, themes: THEMES, observations });
   const violations = checkManifestDisciplines(manifest);
   if (violations.length > 0) {
-    throw new Error(`the derived manifest violates its own disciplines:\n  ${violations.join('\n  ')}`);
+    throw new Error(`the derived manifest violates its disciplines:\n  ${violations.join('\n  ')}`);
   }
   return serializeManifest(manifest);
 }

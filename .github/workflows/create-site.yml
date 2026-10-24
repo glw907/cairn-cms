@@ -363,7 +363,7 @@ jobs:
               }
             }
             assert.notEqual(changedBody, firstBody, 'expected a real re-render once the build was discovered');
-            assert.ok(changedBody.includes(buildUuid), `expected the discovered build's own id, got: ${changedBody}`);
+            assert.ok(changedBody.includes(buildUuid), `expected the discovered build's id, got: ${changedBody}`);
             assert.ok(changedBody.includes('Status: running'), `expected the build's live status, got: ${changedBody}`);
             assert.equal(
               changedBody.includes(EXIT_TEXT),

@@ -8,8 +8,8 @@ import (
 )
 
 // wranglerFactsCase is one committed corpus case's expected facts, the literal JSON copied from
-// the named TypeScript assertion's own expect() call. Only the fields a ported check reads are
-// present (see WranglerFacts's own doc comment for what is deliberately not ported).
+// the named TypeScript assertion's expect() call. Only the fields a ported check reads are
+// present (see WranglerFacts's doc comment for what is deliberately not ported).
 type wranglerFactsCase struct {
 	HasEmailBinding      bool     `json:"hasEmailBinding"`
 	HasAuthDB            bool     `json:"hasAuthDb"`
@@ -103,7 +103,7 @@ func buildSymlinkedNodeModulesDir(t *testing.T) string {
 	return site
 }
 
-// TestBuildSymlinkedNodeModulesDirEscapesContainment proves the builder's own shape: a read
+// TestBuildSymlinkedNodeModulesDirEscapesContainment proves the builder's shape: a read
 // through the site's node_modules resolves outside the site directory, the pnpm and
 // npm-workspace monorepo layout Task 5's config.dependency-floors must recognize and report as
 // unchecked rather than crash on.

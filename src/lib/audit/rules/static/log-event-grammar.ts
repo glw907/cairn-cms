@@ -80,7 +80,7 @@ function findingsFor(file: SourceFile): Finding[] {
     let message: string | null = null;
     if (RESERVED.has(lowered)) {
       message =
-        `"${arg.value}" already names a member of cairn's own CairnLogEvent union; choose a ` +
+        `"${arg.value}" already names a member of cairn's CairnLogEvent union; choose a ` +
         `different event name so two call sites never report under one name. ${CAVEAT}`;
     } else if (!isGrammarConforming(arg.value)) {
       message =

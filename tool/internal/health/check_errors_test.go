@@ -191,7 +191,7 @@ func errorsFieldValue[T any](t *testing.T, outcome spine.Outcome, key string) T 
 }
 
 // TestErrorsCheckCountsEngineRecordsAndIgnoresConsoleLines pins the 2026-09-21 ruling: the count
-// is cairn's own structured records at error level, never every error-level line the Worker
+// is cairn's structured records at error level, never every error-level line the Worker
 // logged. The response here carries two engine records among six error-level lines, the shape a
 // public site produces once crawlers start probing it for WordPress.
 func TestErrorsCheckCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
@@ -219,7 +219,7 @@ func TestErrorsCheckCountsEngineRecordsAndIgnoresConsoleLines(t *testing.T) {
 // needs the number; were the two to diverge, that test fails rather than quietly proving nothing.
 const logsFetchLimit = 1000
 
-// TestErrorsCheckSaysAtLeastOnATruncatedCount asserts a count the fetch truncated at its own page
+// TestErrorsCheckSaysAtLeastOnATruncatedCount asserts a count the fetch truncated at its page
 // limit reads as a floor, in the detail line and in the payload both. The live run that produced
 // the ruling read "1000 errors in 24h" for a number that was only the query's limit.
 func TestErrorsCheckSaysAtLeastOnATruncatedCount(t *testing.T) {
@@ -261,9 +261,9 @@ func TestErrorsCheckOmitsTheTruncationFieldOnAnExactCount(t *testing.T) {
 }
 
 // TestErrorsCheckRejectedRequestIsNotObservabilityOff pins the misreport the 2026-09-21 live run
-// found: cairn's own telemetry query body was malformed, the endpoint answered HTTP 400, and the
+// found: cairn's telemetry query body was malformed, the endpoint answered HTTP 400, and the
 // check told four operators their Workers had no observability dataset. A 400 is cairn's fault,
-// so it keeps its own reason and carries the Detail that says whose bug it is.
+// so it keeps its reason and carries the Detail that says whose bug it is.
 func TestErrorsCheckRejectedRequestIsNotObservabilityOff(t *testing.T) {
 	opts := Options{ErrorThreshold: 5, LogWindow: time.Hour, Now: fixedNow}
 	clients := errorsClients(errorsEventsRoundTripper{status: http.StatusBadRequest})
@@ -304,7 +304,7 @@ func TestErrorsCheckNotFoundIsObservabilityOff(t *testing.T) {
 }
 
 // TestErrorsCheckRecognizedReasonsPassThrough asserts an unauthorized, forbidden, or
-// rate-limited response from the observability endpoint keeps its own classified reason, routed
+// rate-limited response from the observability endpoint keeps its classified reason, routed
 // through apiErrorOutcome like every sibling check, rather than being folded into the
 // missing-dataset condition.
 func TestErrorsCheckRecognizedReasonsPassThrough(t *testing.T) {

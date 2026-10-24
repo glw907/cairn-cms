@@ -10,8 +10,8 @@ import (
 )
 
 // wantPages is the man page cairn's 1.0 grammar ships one of for: every non-hidden command in
-// cmd/cairn's own tree (cmd/cairn/coverage_test.go's TestEveryActionCoverage pins the same set on
-// the live command tree; this list is this package's own copy since cmd/mangen cannot import
+// cmd/cairn's tree (cmd/cairn/coverage_test.go's TestEveryActionCoverage pins the same set on
+// the live command tree; this list is this package's copy since cmd/mangen cannot import
 // cmd/cairn, a package main, to read the tree directly).
 var wantPages = []string{
 	"cairn.1",
@@ -93,7 +93,7 @@ func TestGeneratedPageCarriesEachFlagsOwnType(t *testing.T) {
 	}
 	page := string(data)
 
-	// The rendered form is pflag's own: a bool prints "[=false]", a valued flag "=<zero>".
+	// The rendered form is pflag's: a bool prints "[=false]", a valued flag "=<zero>".
 	for flag, want := range map[string]string{
 		`--quiet`:   `[=false]`,
 		`--json`:    `[=false]`,
@@ -131,9 +131,9 @@ func TestCmdCairnImportsNoCobraDoc(t *testing.T) {
 	}
 }
 
-// TestRootShortMatchesMessagesSource pins rootShort against cmd/cairn/messages.go's own
+// TestRootShortMatchesMessagesSource pins rootShort against cmd/cairn/messages.go's
 // shortRoot constant, the one field discover cannot harvest from --help text: nothing lists a
-// root's own Short the way a parent's listing names each child's.
+// root's Short the way a parent's listing names each child's.
 func TestRootShortMatchesMessagesSource(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "cairn", "messages.go"))
 	if err != nil {
@@ -149,7 +149,7 @@ func TestRootShortMatchesMessagesSource(t *testing.T) {
 // committed one.
 func TestGeneratedFileIsGitIgnored(t *testing.T) {
 	moduleDir := moduleRoot()
-	// The probe sits in its own subdirectory and only that subdirectory is removed: man/ itself
+	// The probe sits in a separate subdirectory and only that subdirectory is removed: man/ itself
 	// holds an operator's generated pages after `make man`, and a test run must not delete them.
 	probeDir := filepath.Join(moduleDir, "man", "ignore-probe")
 	probe := filepath.Join(probeDir, "cairn.1")

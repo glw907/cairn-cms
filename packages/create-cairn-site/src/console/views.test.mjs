@@ -12,7 +12,7 @@ import { renderBuildsView, renderPropagationView } from './views.mjs';
 const CHAPTER = 'Chapter 2: Cloudflare';
 const HOP = 'Connect your domain to your site';
 
-/** A record shaped like the propagation hold's own seam (cutOverHostname's own record shape). */
+/** A record shaped like the propagation hold's seam (cutOverHostname's record shape). */
 const PROPAGATION_RECORD = {
   id: 'site-a1b2c3',
   dir: '/tmp/site-a1b2c3',
@@ -58,7 +58,7 @@ test('renderPropagationView labels both DNS answers honestly and shows the marke
   const view = renderPropagationView(observation, PROPAGATION_RECORD);
 
   assert.match(view.bodyHtml, /Authoritative/);
-  assert.match(view.bodyHtml, /your domain's own nameservers/);
+  assert.match(view.bodyHtml, /your domain's nameservers/);
   assert.match(view.bodyHtml, /Recursive/);
   assert.match(view.bodyHtml, /your machine's resolver|your system resolver/);
   assert.match(view.bodyHtml, /100::/);

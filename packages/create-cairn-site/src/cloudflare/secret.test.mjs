@@ -11,7 +11,7 @@ const FAKE_PEM =
 
 /**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, mirroring
- * state.test.mjs and deploy.test.mjs's own helper.
+ * state.test.mjs and deploy.test.mjs's helper.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the state directory's absolute path
  */

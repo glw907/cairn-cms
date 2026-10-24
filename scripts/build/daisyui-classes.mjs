@@ -2,13 +2,13 @@
 // `@source inline(...)` in the compiled admin sheet (spec, "One compiler, every component"), so the
 // admin's full daisyUI compile tracks a daisyUI upgrade automatically with no hand-kept safelist.
 //
-// Walks every installed module's own `object.js` under `node_modules/daisyui/{components,utilities}`,
+// Walks every installed module's `object.js` under `node_modules/daisyui/{components,utilities}`,
 // the CSS-in-JS tree the daisyUI Tailwind plugin itself compiles from: an object whose keys alternate
 // between literal CSS selectors (mapped to a declaration object, or to a further nested selector
 // object for a `&`-combinator or state clause) and at-rule wrappers (`@layer daisyui.l1.l2.l3`,
 // `@media (hover: hover)`) that themselves nest more selectors. Every dotted selector key anywhere
 // in that tree names one or more classes; an at-rule key never does, so it is excluded before the
-// class-token regex runs (its own dotted layer path, `daisyui.l1.l2.l3`, would otherwise misread as
+// class-token regex runs (its dotted layer path, `daisyui.l1.l2.l3`, would otherwise misread as
 // three classes named `l1`, `l2`, and `l3`). A declaration VALUE is never scanned, only a key, so a
 // decimal CSS value (`0.5rem`) never contributes a false class token.
 import { readdirSync } from 'node:fs';
@@ -58,7 +58,7 @@ function collect(node, classes) {
 
 /**
  * Every class selector daisyUI's installed component and utility modules define, read from each
- * module's own `object.js`, so the list tracks a daisyUI upgrade with no hand-kept safelist.
+ * module's `object.js`, so the list tracks a daisyUI upgrade with no hand-kept safelist.
  * @param {object} [options] the generator's options
  * @param {string[]} [options.exclude] module directory names to skip entirely, for example
  *   `['calendar']` to omit the third-party date-picker skins

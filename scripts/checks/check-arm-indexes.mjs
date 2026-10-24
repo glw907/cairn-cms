@@ -1,12 +1,12 @@
 // cairn-cms: the docs arm-index coverage gate. Each published docs arm keeps an index page that
-// links every page in its own directory. This gate is a set difference only: for every `.md` file
+// links every page in its directory. This gate is a set difference only: for every `.md` file
 // in an arm's directory (excluding the index itself), the arm's index file must contain a relative
 // link whose resolved target is that file. It does no prose analysis and parses no numeric claims;
 // a page that exists on disk but is not reachable from its arm's index is the one thing this checks.
 //
 // All four published arms keep their index inside the directory (`docs/reference/README.md`, and so
-// on). `docs/why-cairn.md` is the exception the arm shape cannot express: a published page with no
-// directory of its own, reachable only from the front door. FRONT_DOOR_PAGES covers it, so a front
+// on). `docs/why-cairn.md` is the exception the arm shape cannot express: a published page without a
+// directory, reachable only from the front door. FRONT_DOOR_PAGES covers it, so a front
 // door that stops linking the evaluator's page fails the same way an unindexed arm page does.
 //
 // The admin, editors, and extend arms and the front door are checked only in the rebuilt state
@@ -17,7 +17,7 @@
 // exists, so an arm cannot pass this gate by losing its index.
 //
 // `docs/internal` is a fifth arm, contributor-zone rather than published, and walks non-recursively:
-// only its own top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
+// only its top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
 // record files under `docs/internal/record/` and other subdirectories (`design/`, `feedback/`,
 // `history/`, `probes/`) that keep their own filing rule and their own index, and a recursive walk
 // would wrongly demand this top-level README link every dated record by name, recreating the
@@ -31,7 +31,7 @@ import { readArmStates } from './arm-state.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // Each arm's directory and the index file that must link every page in it. `recursive` defaults to
-// true; an arm sets it false to check only its own top-level `.md` files, skipping every
+// true; an arm sets it false to check only its top-level `.md` files, skipping every
 // subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`, `probes/`). An
 // entry naming `state` is checked only while that arm-state arm is rebuilt; the rest always are.
 const ARMS = [

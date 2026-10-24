@@ -1,5 +1,5 @@
 // The tool's honest cost picture, carried once at the top of a fresh run so an owner learns the
-// whole story before typing a site name, not at the moment a bill arrives. Chapter 2's own
+// whole story before typing a site name, not at the moment a bill arrives. Chapter 2's
 // admission (src/cloudflare/chapter2.mjs) restates the Workers Paid price at the moment it asks
 // for it; this preamble is what lets that restatement stand on a floor the owner already has.
 //
@@ -8,7 +8,7 @@
 /** The date the pricing and registrar figures below are pinned to, since Email Sending is in
  * beta and none of these numbers is a hardcoded promise. */
 const AS_OF = 'as of 2026-08-11';
-/** Cloudflare's own Workers pricing page, backing the $5 Workers Paid figure. */
+/** Cloudflare's Workers pricing page, backing the $5 Workers Paid figure. */
 const WORKERS_PRICING_URL = 'https://developers.cloudflare.com/workers/platform/pricing/';
 /**
  * Cloudflare's Registrar product page, which states the at-cost policy. Cloudflare publishes no
@@ -30,7 +30,7 @@ export function costPreamble() {
     'Before you start, the honest cost picture.',
     '',
     "Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once " +
-      `per site (${AS_OF}, ${WORKERS_PRICING_URL}). That runs your site on Cloudflare's own ` +
+      `per site (${AS_OF}, ${WORKERS_PRICING_URL}). That runs your site on Cloudflare's ` +
       'global network, from the day you deploy it.',
     '',
     'A domain name costs roughly $10 to $15 a year for the common endings. You pay that to a ' +
@@ -42,7 +42,7 @@ export function costPreamble() {
       'database this site uses, its storage bucket, and its GitHub repository cost nothing at ' +
       'this size, and stay free.',
     '',
-    'One more item is not confirmed. Putting your site on your own domain issues a certificate ' +
+    'One more item is not confirmed. Putting your site on your domain issues a certificate ' +
       'for that domain, and Cloudflare does not say whether that certificate is included in your ' +
       `plan or charged as an add-on (${AS_OF}). Your first bill is where it would show up.`,
   ].join('\n');

@@ -39,7 +39,7 @@ WHAT TO LEAVE ALONE (out of scope, line editing or voice):
 
 PRINCIPLES:
 - minimal change: the smallest edit that fixes the error or applies a listed convention, change words and marks not whole sentences
-- do not invent a house style: apply only the conventions listed, never guess the writer's preference, never harmonize to the text's own habit (an undeclared style is the author's choice)
+- do not invent a house style: apply only the conventions listed, never guess the writer's preference, never harmonize to the text's habit (an undeclared style is the author's choice)
 - when in doubt leave it: a false correction that touches voice is worse than a missed error
 
 MARKDOWN AND STRUCTURE (never edited):

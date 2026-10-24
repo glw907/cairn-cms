@@ -1,27 +1,27 @@
 // The bootstrap sign-in seed: an owner row and one hashed magic-link token, written straight
 // into the deployed AUTH_DB with `wrangler d1 execute`, so the admin's first sign-in needs no
-// email loop. This rides the engine's own tables and hashing with no engine change: the token is
+// email loop. This rides the engine's tables and hashing with no engine change: the token is
 // generated the same way `src/lib/auth/crypto.ts` generates one, hashed the same way, and given
-// the same ten-minute TTL, so the confirm page's own lookup (`src/lib/auth/store.ts`) finds
+// the same ten-minute TTL, so the confirm page's lookup (`src/lib/auth/store.ts`) finds
 // exactly what this seed wrote. The `session` table is never touched; the confirm click mints the
-// session through the engine's own code path.
+// session through the engine's code path.
 //
 // The seed's SQL encodes the same trust the engine does: the owner insert only ever fires on a
 // genuinely empty allowlist (`insertOwnerIfEmpty` in `src/lib/auth/store.ts`), and the token
 // insert only ever fires for an address the editor table already carries, whether it was already
 // there or the owner insert just added it. A non-matching email against an already-populated
 // allowlist grants nothing, the same trust `src/lib/sveltekit/auth-routes.ts` describes for the
-// engine's own bootstrap path.
+// engine's bootstrap path.
 import { randomBytes, createHash } from 'node:crypto';
 import { runWrangler, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
-/** The engine's own magic-token lifetime (`TOKEN_TTL_MS` in `src/lib/auth/crypto.ts`). */
+/** The engine's magic-token lifetime (`TOKEN_TTL_MS` in `src/lib/auth/crypto.ts`). */
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 
 /**
  * What to print once a seeded sign-in link has been opened. Both callers that open one (the
- * chapter's own sign-in action and bin.mjs's `--sign-in` recovery) print this, and it lives
+ * chapter's sign-in action and bin.mjs's `--sign-in` recovery) print this, and it lives
  * beside the lifetime it quotes so a change to `TOKEN_TTL_MS` cannot leave one of them promising
  * the old number.
  */
@@ -41,7 +41,7 @@ function escapeSqlString(value) {
 }
 
 /**
- * Normalize an email the way the engine's own store does on every path
+ * Normalize an email the way the engine's store does on every path
  * (`normalizeEmail` in `src/lib/auth/store.ts`), so this seed writes exactly what a later lookup
  * finds.
  * @param {string} email the raw address, as the admin typed it
@@ -122,7 +122,7 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now(), acc
   // A zero exit can still have granted nothing: the WHERE EXISTS guard above makes the token
   // insert itself conditional, so a seed against an already-populated allowlist that does not
   // carry this address writes no row at all. Handing back a confirm link in that case would be a
-  // dead link the admin has no way to diagnose, so this checks the token insert's own row count
+  // dead link the admin has no way to diagnose, so this checks the token insert's row count
   // (the last of the three statements) rather than trusting the exit code alone.
   const results = parseD1JsonResults(result.stdout);
   const tokenInsertResult = results?.[results.length - 1];

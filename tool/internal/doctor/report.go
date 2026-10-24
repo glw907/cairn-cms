@@ -6,12 +6,12 @@ import (
 )
 
 // docsBaseAdmin is the admin docs directory a failure's docs URL resolves against, the same
-// shape internal/render/layout.go's own fixAnchorBase carries for the health report. It is not
-// shared with render: a doctor-to-render import would invert render's own dependency direction
+// shape internal/render/layout.go's fixAnchorBase carries for the health report. It is not
+// shared with render: a doctor-to-render import would invert render's dependency direction
 // for one string, so the constant is duplicated here instead.
 const docsBaseAdmin = "https://cairn.pub/docs/admin/"
 
-// docsURL builds a failure's docs URL from anchor, a condition's own docsAnchor field shaped
+// docsURL builds a failure's docs URL from anchor, a condition's docsAnchor field shaped
 // "<basename>.md#<fragment>": the published address drops the ".md" the mirror carries. Empty
 // when anchor itself is empty, so a condition carrying no docsAnchor prints no URL line rather
 // than a broken one.
@@ -23,7 +23,7 @@ func docsURL(anchor string) string {
 }
 
 // Format renders checked as cairn doctor's plain-text report: one "STATUS  Label: detail" line per
-// check, keyed to its own condition's registry title, then a why/fix/docs block per failure, then a
+// check, keyed to its condition's registry title, then a why/fix/docs block per failure, then a
 // count summary. No ANSI, so a terminal and a CI log read the same.
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)

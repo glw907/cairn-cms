@@ -169,7 +169,7 @@ function findingsFor(file: SourceFile): Finding[] {
         start: key.start,
         end: key.end,
         message:
-          `the field "${key.name}" matches cairn's own REDACTED_LOG_KEYS list. If this call goes ` +
+          `the field "${key.name}" matches cairn's REDACTED_LOG_KEYS list. If this call goes ` +
           `through a cairn createLogger instance, the runtime already replaces the value with ` +
           `<redacted>; this rule cannot tell your logger from console.info or another library's, ` +
           `so on a bare console call the value ships as written. Either way, this is a ` +

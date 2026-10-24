@@ -16,7 +16,7 @@
 // content, SHA-1) rather than by spawning `git hash-object`, so it needs no repository and no git
 // binary; the unit test proves the two agree.
 //
-// Fact bullets are parsed with check-facts.mjs's own extractor, tag checker, and id reader, so the
+// Fact bullets are parsed with check-facts.mjs's extractor, tag checker, and id reader, so the
 // verifier and `check:facts` can never disagree about what a bullet is.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';

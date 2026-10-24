@@ -3,7 +3,7 @@
     "captured": "2026-09-21",
     "source": "GET /accounts/{account_id}/builds/workers/{worker_tag}/triggers",
     "status": 200,
-    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's own placeholder shapes (worker tag, trigger and connection uuids, repository, commands, token name); every key set below is the live one. The live body carried one trigger and is kept whole."
+    "note": "recorded from a live GET against the verification account, response headers discarded except content-type (application/json) and no authorization header recorded. Every identifier is scrubbed to the corpus's placeholder shapes (worker tag, trigger and connection uuids, repository, commands, token name); every key set below is the live one. The live body carried one trigger and is kept whole."
   },
   "body": {
     "result": [

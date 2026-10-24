@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// logsFlags holds cairn logs's own flags.
+// logsFlags holds cairn logs's flags.
 type logsFlags struct {
 	// event narrows the query to one engine event name. Empty means every event.
 	event string
@@ -48,7 +48,7 @@ func newLogsCmd(d deps, rf *rootFlags) *cobra.Command {
 	return cmd
 }
 
-// completeLogEvents is the flag completion for cairn logs --event, over the engine's own log
+// completeLogEvents is the flag completion for cairn logs --event, over the engine's log
 // event vocabulary. It reads no network and no registry: the vocabulary is a Go literal, so an
 // error is not possible here, and every candidate answers with no directive but plain text.
 func completeLogEvents(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -69,7 +69,7 @@ func runLogs(cmd *cobra.Command, d deps, rf *rootFlags, f logsFlags, site string
 	}
 
 	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
-	// own containsPersonalData field instead of a line no agent reading stdout would see.
+	// containsPersonalData field instead of a line no agent reading stdout would see.
 	if !f.asJSON {
 		if err := writeNotice(cmd, d, rf, pasteNotice); err != nil {
 			return err
@@ -116,8 +116,8 @@ func writeLogs(cmd *cobra.Command, d deps, rf *rootFlags, entries []logs.Entry, 
 		}
 		return writeJSONPayload(cmd.OutOrStdout(), data)
 	}
-	// A terminal gets the log body, which states the day once on its own rule and wraps a field
-	// into its own column. A pipe keeps the tab-separated line, which is what a grep, an awk,
+	// A terminal gets the log body, which states the day once on a separate rule and wraps a field
+	// into a separate column. A pipe keeps the tab-separated line, which is what a grep, an awk,
 	// and an agent read.
 	if in, ok := logsRenderInput(d, rf, entries, site); ok {
 		for _, line := range render.Render(in).Lines() {

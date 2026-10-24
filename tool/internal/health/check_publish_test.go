@@ -24,7 +24,7 @@ type publishBranch struct {
 }
 
 // publishGHRoundTripper stands in for GitHub across one publishPathCheck run: the branch list,
-// each branch's own commit lookup, and the bot-commit query.
+// each branch's commit lookup, and the bot-commit query.
 type publishGHRoundTripper struct {
 	// branches is the repository's full branch list. A nil slice answers with an empty list.
 	branches []publishBranch

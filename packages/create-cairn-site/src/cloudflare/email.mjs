@@ -4,30 +4,30 @@
 // its amendments, folded into the plan 2026-08-12.
 //
 // ensureSendingDomain reads the subdomain list before ever posting a create, because
-// createSendingSubdomain is a write and this seam's own rule (api.mjs) is that a write is never
+// createSendingSubdomain is a write and this seam's rule (api.mjs) is that a write is never
 // retried: a resumed run that posted blind would risk onboarding the same apex twice. It never
 // loops or sleeps; a caller that gets back `enabled: false` parks and re-runs later, the same
 // shape as this chapter's other single-poll checks.
 //
 // sendTestMessage's classification is the one place amendment 1 replaces the plan's original
 // design: the REST send carries no `E_` codes, only a numeric `code` and a dotted identifier on
-// `err.api` (api.mjs's own throwCatalogued). Two codes signal the propagation condition,
+// `err.api` (api.mjs's throwCatalogued). Two codes signal the propagation condition,
 // SENDING_DISABLED_CODE (10203) and SENDER_NOT_CONFIGURED_CODE (10204, captured alongside it
 // 2026-08-12): both dotted identifiers describe a sender that is not yet ready to send, and this
 // chapter only ever sends after a successful onboard, so either code within the window is most
 // plausibly settling state and either past it means onboarding did not take. Neither code
 // separates a domain that was never onboarded from one whose records are still settling
-// (amendment 2), so the caller's own `onboardedAt` plus the clock is the whole discriminator;
+// (amendment 2), so the caller's `onboardedAt` plus the clock is the whole discriminator;
 // nothing in the body can do it. The daily-limit condition was never observed live (amendment 8's
 // sibling for the send path), so it is matched on Cloudflare's dotted identifier containing
-// "daily_limit", in that identifier's own style, rather than on an invented numeric code.
+// "daily_limit", in that identifier's style, rather than on an invented numeric code.
 //
 // The three reclassified rows (email-sender-propagating, email-sender-unavailable,
 // email-daily-limit) are built here with no `dir`: this module classifies a failure, it does not
 // print one, and `dir` is not part of its interface. The caller that prints the final row (chapter
-// 2's orchestrator, which already builds every other wait/act row with its own `dir`) reads
+// 2's orchestrator, which already builds every other wait/act row with its `dir`) reads
 // `err.catalogue.code` off what this throws and rebuilds the printed message with `dir` in hand,
-// the same "outcome now, message later" split hostname.mjs's cutover already uses for its own wait
+// the same "outcome now, message later" split hostname.mjs's cutover already uses for its wait
 // rows. An unmapped failure is rethrown as-is instead: it already carries api.mjs's real `dir`,
 // since api.mjs built it, and reclassifying it here would only lose that.
 import { SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE } from './api.mjs';
@@ -43,7 +43,7 @@ export const PROPAGATION_WINDOW_MS = 30 * 60 * 1000;
 /**
  * Matches Cloudflare's dotted-identifier style for a daily-sending-limit refusal. No numeric code
  * for this condition has ever been observed live (this account never reached it), so the
- * identifier is the only thing to key on; the pattern covers Cloudflare's own naming convention
+ * identifier is the only thing to key on; the pattern covers Cloudflare's naming convention
  * rather than one captured string.
  */
 const DAILY_LIMIT_PATTERN = /daily_limit/i;
@@ -100,7 +100,7 @@ export async function ensureSendingDomain({ api, zoneId, domain, record: _record
 
 /**
  * Classify a caught send failure by Cloudflare's code and by the propagation clock, throwing the
- * catalogue row the failure actually means. Returns normally (falls through to the caller's own
+ * catalogue row the failure actually means. Returns normally (falls through to the caller's
  * rethrow) when the failure is not one this function recognizes.
  * @param {Error & { catalogue?: { code?: string }, api?: { code?: number, id?: string } }} err the
  *  error `api.sendMessage` threw
@@ -130,11 +130,11 @@ function classifySendFailure(err, from, onboardedAt, now) {
 /**
  * Send the test sign-in message that proves the onboarded apex can actually deliver, classifying
  * a refusal into the propagation park, the past-window failure, the daily-limit park, or Task 4's
- * own send-failed fall-through. Resolves silently on success; every other outcome throws.
+ * send-failed fall-through. Resolves silently on success; every other outcome throws.
  * @param {object} args
  * @param {ReturnType<typeof import('./api.mjs').makeApi>} args.api the Cloudflare API client
  * @param {string} args.from the sender address, `no-reply@<domain>` from `defaultFromAddress`
- * @param {string} args.to the recipient, the admin's own address
+ * @param {string} args.to the recipient, the admin's address
  * @param {string} args.onboardedAt the ISO moment `ensureSendingDomain` first saw the apex enabled
  * @param {() => number} [args.now] the clock the propagation window is measured against; defaults
  *  to `Date.now`, a test seam so the window is testable without waiting

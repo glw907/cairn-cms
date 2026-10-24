@@ -8,7 +8,7 @@
 //
 // Unlike src/github/api.mjs, this seam DOES interpret status codes: it maps a response onto one
 // of the chapter's catalogued errors before ever handing control back to a caller, because the
-// catalogue's whole point is that a run never surfaces a raw fetch error or an API's own error
+// catalogue's whole point is that a run never surfaces a raw fetch error or an API's error
 // shape. The mapping is keyed on HTTP status first, and it was corrected 2026-08-11 by a spike
 // against the live API (docs/internal/2026-08-11-t4a-domain-spike.md): the account-scoped
 // zone-create refusal returns HTTP 403 with errors[0].code === 0 and the missing permission
@@ -24,7 +24,7 @@
 // never got created, and the copy has to say so. See OPERATION_CODES.
 //
 // The Email Sending routes are the one exception to "keyed on HTTP status first": their 403 is
-// read from the body rather than mapped to token-scope-missing, because the send's own refusal is
+// read from the body rather than mapped to token-scope-missing, because the send's refusal is
 // a 403. The reasoning is at the discriminator in throwMapped.
 //
 // Retrying is GET-only, deliberately. A failed POST or PUT is reported to the caller and never
@@ -35,7 +35,7 @@
 // than looped.
 //
 // redactToken scrubs every error message this seam constructs, and is exported so a caller can
-// apply the same scrub to its own logging. A pasted API token must never reach a thrown error's
+// apply the same scrub to its logging. A pasted API token must never reach a thrown error's
 // text, because that text gets pasted into issues and screenshots.
 //
 // The Workers Builds routes (added T4c) are NOT threaded through OPERATION_CODES/throwMapped:
@@ -73,7 +73,7 @@ const ENTITLEMENT_PATTERN = /workers[ _.]?paid|paid[ _.]?plan|not[ _.]?entitled|
 /**
  * Cloudflare's code for a send refused because the sender domain is not enabled for Email
  * Sending, captured live 2026-08-12. It covers a domain that was never onboarded AND one whose
- * records are still settling; nothing in the body separates them, so the caller's own record of
+ * records are still settling; nothing in the body separates them, so the caller's record of
  * when onboarding happened is the only discriminator.
  */
 export const SENDING_DISABLED_CODE = 10203;
@@ -95,7 +95,7 @@ export const SENDER_NOT_CONFIGURED_CODE = 10204;
  * docs/internal/2026-08-12-t4c-builds-spike.md): the owner's GitHub account has never
  * authorized Cloudflare's GitHub App at all (8000008), or the App is authorized but this
  * repository is not in its selection (8000012). Both are Pages-era codes reused for Builds, and
- * Cloudflare's own message text is factually wrong for this condition (spike amendment 6), so
+ * Cloudflare's message text is factually wrong for this condition (spike amendment 6), so
  * the catalogue rows these map to never quote it back to the admin.
  */
 export const BUILDS_APP_NOT_AUTHORIZED_CODE = 8000008;
@@ -232,7 +232,7 @@ function isSuccess(status, json) {
 /**
  * Throw `token-invalid` when a failed response carries either shape Cloudflare uses to say the
  * token itself is not usable, and return normally when it carries neither, leaving the caller's
- * own family-specific mapping to decide. Shared by `throwMapped` and `throwBuildsMapped`, which
+ * family-specific mapping to decide. Shared by `throwMapped` and `throwBuildsMapped`, which
  * apply these two rules identically; the 400 shape nests its real explanation one level down in
  * `error_chain`, which is the part worth reading off in exactly one place.
  * @param {number} status the HTTP status
@@ -278,7 +278,7 @@ function throwMapped(status, json, operationCode, dir, token) {
   const api = { status, code: primary?.code, id: primary?.message };
 
   // An Email Sending route's 403 is classified by its body, never by the blanket token rule below.
-  // The send's own refusal (SENDING_DISABLED_CODE) arrives as HTTP 403, so the blanket rule would
+  // The send's refusal (SENDING_DISABLED_CODE) arrives as HTTP 403, so the blanket rule would
   // tell an owner whose DNS is still settling that their API token is missing a permission, which
   // is both wrong and unactionable, and would hide the propagation park behind a scope error the
   // owner cannot fix. The cost of the trade is that an underscoped token hitting an email route
@@ -326,7 +326,7 @@ function throwCatalogued(code, params, token, api) {
 
 /**
  * Map a failed Workers Builds response onto a catalogued or plain error and throw it. See the
- * module doc comment for why Builds routes carry their own smaller mapper rather than joining
+ * module doc comment for why Builds routes carry their smaller mapper rather than joining
  * OPERATION_CODES/throwMapped: the two Builds-specific 404 refusals and the family-agnostic
  * 403/token-invalid rules are still caught here, but anything else throws a plain error carrying
  * only the numeric code(s), never a catalogued one, since no catalogued Builds row exists to
@@ -337,7 +337,7 @@ function throwCatalogued(code, params, token, api) {
  * observed both as HTTP 404 with the refusal at `errors[0]`, but that was one observation, and a
  * warning ahead of the refusal, or Cloudflare re-statusing these Pages-era codes, must not make
  * the row fall through to the plain fallback below, which is the one branch that could otherwise
- * leak Cloudflare's own factually-wrong Pages prose (spike amendment 6).
+ * leak Cloudflare's factually-wrong Pages prose (spike amendment 6).
  * @param {number} status the HTTP status
  * @param {unknown} json the parsed body
  * @param {string} dir the `--dir` value, interpolated into a catalogued row
@@ -370,7 +370,7 @@ function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
   }
   throwIfTokenInvalid(status, primary, dir, token, api);
 
-  // No catalogued Builds row exists for anything else, and the platform's own message must never
+  // No catalogued Builds row exists for anything else, and the platform's message must never
   // reach the admin on a /builds/ route: both captured refusals were Pages-era prose that is
   // factually wrong for the condition they actually describe here, and there is no way to know in
   // general whether an unmapped Builds failure carries the same problem. So the fallback names
@@ -552,7 +552,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
     //
     // `GET /user/tokens/verify` is a bare user-scoped route, not under `/accounts/:id` (the
     // spike's fixture doc: docs/internal/2026-08-12-t4c-builds-spike.md). `result.id` is the
-    // `cloudflare_token_id` the chapter needs when it registers the admin's own pasted token as
+    // `cloudflare_token_id` the chapter needs when it registers the admin's pasted token as
     // the build token.
     async verifyToken() {
       const { status, json } = await get('/user/tokens/verify');
@@ -611,7 +611,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
     },
 
     // The route REGISTERS a Cloudflare API token the caller already holds; it mints nothing
-    // (spike Step 4). The chapter calls this with the admin's own pasted token and
+    // (spike Step 4). The chapter calls this with the admin's pasted token and
     // `verifyToken()`'s `result.id`.
     async createBuildToken({ name, secret, cloudflareTokenId }) {
       const { status, json } = await write('POST', `/accounts/${accountId}/builds/tokens`, {
@@ -624,7 +624,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
     },
 
     // There is no id-based Workers Scripts lookup by name; the tag a Builds trigger needs is
-    // read off the full list and matched on `id`, the script's own name.
+    // read off the full list and matched on `id`, the script's name.
     async findWorkerTag(workerName) {
       const scripts = await listBuildsPaginated(`/accounts/${accountId}/workers/scripts`);
       return scripts.find((script) => script.id === workerName)?.tag;

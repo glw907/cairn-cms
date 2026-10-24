@@ -1,9 +1,9 @@
-// Package fixtures holds the health reports render's own tests and goldens are cut from: one
+// Package fixtures holds the health reports render's tests and goldens are cut from: one
 // named constructor per scenario, never a JSON file, so a change to health.Report's shape fails
 // the build rather than silently rotting a golden into a lie.
 //
 // The scenarios are the corpus both halves of the render work share. A fixture's numbers and
-// prose are the ones tool/docs/design/render-reference's own frames were drawn from, so a frame
+// prose are the ones tool/docs/design/render-reference's frames were drawn from, so a frame
 // cut here can be read beside the reference captures.
 package fixtures
 
@@ -86,7 +86,7 @@ func holdLapsed(c health.CheckResult, expired time.Time) health.CheckResult {
 	return c
 }
 
-// nineCheckIDs is health.All's own nine check ids, in report order, the set fillNine completes
+// nineCheckIDs is health.All's nine check ids, in report order, the set fillNine completes
 // every site to. It reads health.All directly rather than restating the ids, so a check added,
 // removed, or reordered there is reflected here with no second list to drift.
 var nineCheckIDs = checkIDs(health.All)
@@ -121,7 +121,7 @@ func fillNine(checks ...health.CheckResult) []health.CheckResult {
 	return out
 }
 
-// fillDefault returns fillNine's own default result for one omitted check id.
+// fillDefault returns fillNine's default result for one omitted check id.
 //
 // The creds row follows from the same gap email and errors are filled for: the check that would
 // report a missing Cloudflare token cannot itself settle without it, so credsCheck.Run answers a
@@ -155,9 +155,9 @@ func report(site, domain string, checks ...health.CheckResult) health.Report {
 		if c.Outcome.Reason == spine.ReasonCredMissing {
 			r.Degraded = true
 		}
-		// Acknowledged is restated here rather than read from health.Run's own activeAckIDs,
+		// Acknowledged is restated here rather than read from health.Run's activeAckIDs,
 		// which derives it from an acknowledgement file this package carries none of: each
-		// fixture states its own held ids directly, as the scenario's own claim about what is
+		// fixture states its held ids directly, as the scenario's claim about what is
 		// held.
 		if c.Acknowledged {
 			r.Acknowledged = append(r.Acknowledged, c.ID)
@@ -255,7 +255,7 @@ func Healthy() []health.Report {
 // WarningOnly is a site whose only failures are version drift and a Worker that logs nowhere:
 // real, and neither a reason to page anyone, so both take the outlined fail mark.
 //
-// Its own verdict is UNKNOWN rather than WARNING, which is what the outlined marks alone do not
+// Its verdict is UNKNOWN rather than WARNING, which is what the outlined marks alone do not
 // say: the observability skip is an unknown the run cannot attribute to a missing credential, so
 // nothing measured the error rate at all. The frame is here precisely because the marks and the
 // verdict differ.
@@ -309,7 +309,7 @@ func TwelveSites() []health.Report {
 	return out
 }
 
-// Hostile is the corpus a site's own data can hand the renderer: a long domain, an injected
+// Hostile is the corpus a site's data can hand the renderer: a long domain, an injected
 // newline carrying a forged verdict line, a clear-screen escape, a carriage return, a tab, CJK,
 // an IDN, a ZWJ emoji, a 300-character fix, and a hold that lapsed forty days ago.
 func Hostile() []health.Report {
@@ -329,7 +329,7 @@ func Hostile() []health.Report {
 
 // Named is one fixture under the name its golden files are cut at.
 type Named struct {
-	// Name is the fixture's own name, the stem of every golden file cut from it.
+	// Name is the fixture's name, the stem of every golden file cut from it.
 	Name string
 	// Reports is the fixture's sweep.
 	Reports []health.Report

@@ -1,5 +1,5 @@
 // Package hygiene holds repo-wide invariants for the tool module that no
-// single package's own tests can see.
+// single package's tests can see.
 package hygiene
 
 import (
@@ -16,7 +16,7 @@ import (
 func TestNoBuildTags(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	// thisFile is tool/internal/hygiene/buildtags_test.go; strip the file name,
 	// then walk up two directories from internal/hygiene to reach the module root.
@@ -42,7 +42,7 @@ func TestNoBuildTags(t *testing.T) {
 		// runtime.Caller(0) always reports thisFile with forward slashes, but
 		// WalkDir yields OS-native separators, so compare both in slash form;
 		// on Windows a raw == comparison never matches and the walk flags
-		// this file's own //go:build reference in the doc comment above.
+		// this file's //go:build reference in the doc comment above.
 		if !strings.HasSuffix(path, ".go") || filepath.ToSlash(path) == filepath.ToSlash(thisFile) {
 			return nil
 		}

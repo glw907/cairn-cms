@@ -66,7 +66,7 @@ test('an uncolored btn-outline computes the hairline edge at rest, hover, focus-
   await page.mouse.up();
 });
 
-test('a color variant, btn-outline btn-primary, keeps its own colored edge', async ({ page }) => {
+test('a color variant, btn-outline btn-primary, keeps its colored edge', async ({ page }) => {
   // Not on the styleguide page today, so the probe is injected here: an uncolored btn-outline
   // proves the fallback path, and this one proves --btn-color wins the fallback instead.
   await page.evaluate(() => {

@@ -51,7 +51,7 @@ const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEP
 
 /**
  * Every step `--connect` can enter chapter 3 from: an explicit allowlist (never an index
- * comparison, the same reason chapter3.mjs's own admission avoids one), covering every step from
+ * comparison, the same reason chapter3.mjs's admission avoids one), covering every step from
  * `live` onward, across chapter 2 and chapter 3 both. A site still mid chapter 1 (`RESUMABLE_STEPS`,
  * for example `scaffolded` or `deployed`) has no live Worker and no pushed repository yet, so
  * `--connect` refuses there instead: chapter 3 needs both.
@@ -72,7 +72,7 @@ const CHAPTER3_START_OVER_REFUSAL_STEPS = [...CHAPTER3_RESUMABLE_STEPS, ...CHAPT
 /**
  * Build the lines every closing block ends on, whichever hop of the chapter reached it: the
  * finished site's GitHub repository and App links, and the `cairn doctor` reminder. Shared by
- * `printLiveInfo`, `printEmailLiveInfo`, `printDeclinedInfo`, and `continueIntoChapter2`'s own
+ * `printLiveInfo`, `printEmailLiveInfo`, `printDeclinedInfo`, and `continueIntoChapter2`'s
  * terminal completion print, so none of them can drift into printing a different version of the
  * same information.
  * @param {{ github: { repo: { owner: string, repo: string }, appSlug: string } }} state the
@@ -94,7 +94,7 @@ function closingInfoLines(state) {
 
 /**
  * Print the block that names the finished site's GitHub repository and App, and, once the
- * Cloudflare chapter has reached its own hops, the live URL and what exists on Cloudflare. Shared
+ * Cloudflare chapter has reached its hops, the live URL and what exists on Cloudflare. Shared
  * by the fresh-run and resumed-run paths so every form of "the chapter is done" ends on identical
  * copy.
  * @param {string} siteId the site's state-store id, already at step `pushed` or later
@@ -114,7 +114,7 @@ async function printLiveInfo(siteId) {
       "What exists now: one Worker, one database, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
       '',
-      `Connect your own domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
+      `Connect your domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
         'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
     );
   } else {
@@ -126,7 +126,7 @@ async function printLiveInfo(siteId) {
 }
 
 /**
- * Build the three lines every closing block prints once a site has its own domain connected: the
+ * Build the three lines every closing block prints once a site has its domain connected: the
  * live URL, the admin sign-in URL, and the note that its workers.dev address still works. Shared
  * by `printEmailLiveInfo` and `printDeclinedInfo`, both of which describe a site whose domain half
  * finished, so the two can never drift on how they name that domain.
@@ -137,15 +137,15 @@ async function printLiveInfo(siteId) {
 function domainLiveLines(state) {
   const domain = state.cloudflare.domain;
   return [
-    `Your site is live at your own domain: https://${domain}`,
+    `Your site is live at your domain: https://${domain}`,
     `Sign in at: https://${domain}/admin`,
     `Your workers.dev address (${state.cloudflare.url}) keeps working too.`,
   ];
 }
 
 /**
- * Print the closing block for a site already at `email-live`: its own domain, admin sign-in URL,
- * and workers.dev note, plus the address it sends its own sign-in email from, and the shared
+ * Print the closing block for a site already at `email-live`: its domain, admin sign-in URL,
+ * and workers.dev note, plus the address it sends its sign-in email from, and the shared
  * repo/App lines and `cairn doctor` line every closing block ends with. `email-live` is
  * chapter 2's real finish line (`TERMINAL_STEPS`), so this returns without ever calling
  * `runChapter2` again.
@@ -171,7 +171,7 @@ async function printEmailLiveInfo(siteId) {
 
 /**
  * Print the closing block for a site whose owner declined email sign-in (`paid-plan-declined`,
- * the other member of `TERMINAL_STEPS`): its own domain, admin sign-in URL, and workers.dev note,
+ * the other member of `TERMINAL_STEPS`): its domain, admin sign-in URL, and workers.dev note,
  * same as a site at `email-live`, but naming that email sign-in is off rather than claiming it
  * works, since a declined site has no email path at all. `--sign-in` is that owner's only way
  * back in, which this names alongside the shared repo/App lines and doctor line.
@@ -196,10 +196,10 @@ async function printDeclinedInfo(siteId) {
 }
 
 /**
- * Print the closing block for a site that has reached one of chapter 3's own terminal steps,
+ * Print the closing block for a site that has reached one of chapter 3's terminal steps,
  * `CHAPTER3_TERMINAL_STEPS`: the shared repo/App and doctor lines, plus one line naming whether
  * Workers Builds is actually connected. Shared by a plain re-entry at either step (which never
- * calls `runChapter3` at all) and `runChapter3AndReport`'s own post-run print (for a run that just
+ * calls `runChapter3` at all) and `runChapter3AndReport`'s post-run print (for a run that just
  * reached one of these steps), so both ways of arriving here print identically.
  * @param {string} siteId the site's state-store id, already at `builds-live` or
  *  `builds-connect-declined`
@@ -220,12 +220,12 @@ async function printBuildsChapterInfo(siteId, step) {
 /**
  * Run chapter 3 to whatever point the site's current saved state lets it reach, and print the
  * closing block once it settles on one of `CHAPTER3_TERMINAL_STEPS`. A wait-kind park already
- * printed its own row, with its own re-entry command, inside `runChapter3` itself, so nothing
- * further prints for that outcome here. Shared by `--connect`'s own entry branch, a plain re-entry
- * at `CHAPTER3_RESUMABLE_STEPS`, and `continueIntoChapter2`'s own terminal-outcome cascade, so
+ * printed its row, with its re-entry command, inside `runChapter3` itself, so nothing
+ * further prints for that outcome here. Shared by `--connect`'s entry branch, a plain re-entry
+ * at `CHAPTER3_RESUMABLE_STEPS`, and `continueIntoChapter2`'s terminal-outcome cascade, so
  * every way of reaching chapter 3 settles through the one function.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
- * @returns {Promise<{ outcome: string, message?: string }>} chapter 3's own outcome
+ * @returns {Promise<{ outcome: string, message?: string }>} chapter 3's outcome
  */
 async function runChapter3AndReport({ siteId, dir, flags, log, dryRun }) {
   const record = dryRun ? null : await loadSite(siteId);
@@ -239,23 +239,23 @@ async function runChapter3AndReport({ siteId, dir, flags, log, dryRun }) {
 /**
  * Run chapter 2 to whatever point the site's current saved state lets it reach, and print the
  * closing block. A run that reaches one of `TERMINAL_STEPS` (`email-live`, a fresh decline)
- * already saw chapter 2's own completion hop print the domain, the admin sign-in URL, and (for
+ * already saw chapter 2's completion hop print the domain, the admin sign-in URL, and (for
  * `email-live`) the sending address, so this adds only what that hop did not already say, the
  * repo/App links and the doctor reminder, rather than repeating `printEmailLiveInfo` or
  * `printDeclinedInfo`'s whole block on top of it; a later resumed run at either of those steps
- * takes bin.mjs's own dedicated terminal branch instead, which never reaches this function at all
- * (its own dedicated blocks carry the domain and email lines this run's hop already printed).
+ * takes bin.mjs's dedicated terminal branch instead, which never reaches this function at all
+ * (its dedicated blocks carry the domain and email lines this run's hop already printed).
  * Shared by the `live`-branch reopening and the fresh/resumed chapter-1-to-2 handoff in
  * `runCloudflareAndReport`, so the two paths cannot diverge on what "continuing into chapter 2"
  * means.
  *
- * Reaching one of chapter 2's own `TERMINAL_STEPS` is also chapter 3's own entry point (T4c): once
+ * Reaching one of chapter 2's `TERMINAL_STEPS` is also chapter 3's entry point (T4c): once
  * chapter 2 settles there, this continues straight into `runChapter3AndReport` in the same call,
  * under a real record or (when `dryRun`) `record: null`, the same "one dry run prints every hop
  * across every chapter" precedent `runCloudflareAndReport` already established for chapter 1 into
  * chapter 2.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
- * @returns {Promise<{ outcome: string }>} chapter 2's own outcome
+ * @returns {Promise<{ outcome: string }>} chapter 2's outcome
  */
 async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
   const record = dryRun ? null : await loadSite(siteId);
@@ -280,7 +280,7 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
  * `ownerEmailOverride` takes precedence over the saved `state.ownerEmail` and, when it differs,
  * is persisted back to the record so a later plain `--sign-in` reuses it. A record with neither
  * (hand-edited, or written by a version that never persisted the field) fails loud here rather
- * than reaching `seedOwnerAndToken`, whose own `.trim()` would otherwise raise a bare TypeError
+ * than reaching `seedOwnerAndToken`, whose `.trim()` would otherwise raise a bare TypeError
  * that names no next step. The same guard covers a record with no saved `cloudflare.url`: without
  * it, the seed would already have written a live token to the database before a bare dereference
  * of `state.cloudflare.url` threw, leaving no way to reach the link it minted.
@@ -318,8 +318,8 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
  * the other.
  *
  * A dry run always reports `'declined'` from chapter 1 (nothing is ever actually created), but
- * still continues into chapter 2's own dry run unconditionally, passing `record: null` (chapter
- * 1's own `dryRun ? null` precedent): that is the only way the whole chapter's hops, across both
+ * still continues into chapter 2's dry run unconditionally, passing `record: null` (chapter
+ * 1's `dryRun ? null` precedent): that is the only way the whole chapter's hops, across both
  * halves, print in one dry run.
  * @param {{ siteId: string, siteName: string, dir: string, flags: object,
  *  log: (line: string) => void, dryRun: boolean }} args the chapter's inputs
@@ -406,7 +406,7 @@ async function main() {
     if (priorRecord && flags.startOver && CHAPTER3_START_OVER_REFUSAL_STEPS.includes(priorRecord.data.step)) {
       // A record this far into chapter 3 has real Workers Builds resources connected to it: a
       // repository connection and a build trigger, and (at builds-live) a deploy pipeline the
-      // site's own domain is already relying on. --start-over refuses instead of silently
+      // site's domain is already relying on. --start-over refuses instead of silently
       // discarding that state, the same reasoning the chapter-2 refusal below already follows.
       throw new Error(
         `${priorRecord.data.name} already has Workers Builds connected: a repository connection, ` +
@@ -426,7 +426,7 @@ async function main() {
     if (priorRecord && flags.connect) {
       // --connect sits ahead of every other resumed-step branch below, so it can enter chapter 3
       // straight from a step one of those branches would otherwise claim for itself (domain-live,
-      // for instance, which CHAPTER2_RESUMABLE_STEPS below would route into chapter 2's own
+      // for instance, which CHAPTER2_RESUMABLE_STEPS below would route into chapter 2's
       // admission instead). Only a step at or past `live` has a live Worker and a pushed
       // repository for chapter 3 to connect; anything earlier refuses, naming what has to finish
       // first.
@@ -479,7 +479,7 @@ async function main() {
       // A recorded decline is terminal for the TOKEN (deleted) and for the EXIT CODE (0, because
       // nothing is wrong), and deliberately NOT terminal for re-entry. Both decline rows tell the
       // owner in as many words to re-run when they are ready, and chapter 2's admission re-offers
-      // with its own `reoffered` copy. Returning here instead would make that promise unreachable
+      // with its `reoffered` copy. Returning here instead would make that promise unreachable
       // and, since --start-over refuses at this step too, would leave an owner who declined no way
       // to turn email on at all. This branch is what keeps the decline a choice rather than a trap.
       console.log(`Resuming ${priorRecord.data.name} after declining email sign-in.`);
@@ -497,7 +497,7 @@ async function main() {
       console.log(`${priorRecord.data.name} is already live.`);
       if (flags.signIn) {
         // --sign-in is a mid-browser recovery for an expired sign-in link; an admin in that
-        // state has no attention to spare for chapter 2's own domain admission prompt, so this
+        // state has no attention to spare for chapter 2's domain admission prompt, so this
         // reseeds, prints the same closing block every other already-live run ends on, and
         // stops rather than falling into continueIntoChapter2 below.
         await reseedAndOpen({
@@ -531,7 +531,7 @@ async function main() {
       return;
     }
 
-    // A plain re-run at a park inside chapter 3's own connect-and-trigger hop (builds-connected,
+    // A plain re-run at a park inside chapter 3's connect-and-trigger hop (builds-connected,
     // config-reconciled) resumes the chapter directly, the same as CHAPTER2_RESUMABLE_STEPS above:
     // there is no earlier chapter's work left to redo, and without this branch the step falls
     // through, unrecognized, to collectAnswers() and scaffold() below, which would scaffold over
@@ -561,14 +561,14 @@ async function main() {
       return;
     }
 
-    // A plain re-run at one of chapter 3's own terminal steps (builds-live,
+    // A plain re-run at one of chapter 3's terminal steps (builds-live,
     // builds-connect-declined) never calls runChapter3 again on its own: builds-live's only
     // further work is the re-reconcile path (--connect, handled above), and builds-connect-declined
-    // names --connect as its own way back in (the catalogue row's own copy). This is the terminal
+    // names --connect as its way back in (the catalogue row's copy). This is the terminal
     // branch that keeps a plain re-run here from falling through to the scaffolder.
     if (priorRecord && CHAPTER3_TERMINAL_STEPS.includes(priorRecord.data.step)) {
       // --sign-in reseeds a bootstrap token and reopens the confirm page first; either way this
-      // step's own closing block is what prints.
+      // step's closing block is what prints.
       if (flags.signIn) {
         await reseedAndOpen({
           siteId: priorRecord.id,
@@ -649,7 +649,7 @@ async function main() {
     });
 
     // runGithubChapter always reports 'declined' under --dry-run, since nothing is ever actually
-    // created; the Cloudflare chapter's own dry run runs unconditionally, which is the only way
+    // created; the Cloudflare chapter's dry run runs unconditionally, which is the only way
     // the whole chapter's actions all print in one dry run.
     if (flags.dryRun || githubOutcome === 'pushed') {
       await runCloudflareAndReport({

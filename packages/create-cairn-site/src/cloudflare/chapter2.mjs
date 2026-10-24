@@ -1,9 +1,9 @@
 // Chapter 2's orchestrator: the guided path from `live` (chapter 1's finish line) through the
-// admin's own domain and, since T4b, on to sending its own sign-in mail. It is the ONLY module in
+// admin's domain and, since T4b, on to sending its sign-in mail. It is the ONLY module in
 // this chapter that writes `step` or calls the state store; every producer it drives (account.mjs,
 // prefill.mjs, zone.mjs, records.mjs, hostname.mjs, email.mjs) is pure over an in-memory record
 // and returns its outcome, exactly as the T4a plan requires. Modelled directly on chapter.mjs
-// (T3's own orchestrator): the same runStep/runActions idiom carries the dry-run guarantee (a
+// (T3's orchestrator): the same runStep/runActions idiom carries the dry-run guarantee (a
 // title always prints, a detail prints only under --dry-run, and execute never runs under
 // --dry-run), and the same step-gated resume shape skips whatever a saved record already
 // finished.
@@ -13,8 +13,8 @@
 // still propagating, the certificate still issuing, the sending domain not yet enabled, a test
 // send still inside its propagation window) is RETURNED, never thrown, and never advances `step`:
 // a re-run re-detects from the same recorded step. Only an act or ask-someone row throws.
-// `domain-live` is not a stopping point for this function: once the domain half's own completion
-// hop has printed, execution runs straight into the email half's own admission in the same call,
+// `domain-live` is not a stopping point for this function: once the domain half's completion
+// hop has printed, execution runs straight into the email half's admission in the same call,
 // the same way every hop above it already re-validates the token on a resumed record rather than
 // treating domain-live as finished.
 //
@@ -22,28 +22,28 @@
 // decline of email sign-in. domain-live and email-onboarded are NOT terminal, since T4b's email
 // half continues from either and needs the same credential; deleting it there would strand that
 // later work. TERMINAL_STEPS names the states that really are done; reaching one deletes the token
-// by an explicit whole-record rebuild and save, since state.mjs's own updateSite merge can never
+// by an explicit whole-record rebuild and save, since state.mjs's updateSite merge can never
 // express removing a key. T4a implemented the rule and its keep half (domain-live keeps the
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
 // and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
-// (this module's own top-of-function short-circuit) re-offers with the row's reoffered copy
+// (this module's top-of-function short-circuit) re-offers with the row's reoffered copy
 // rather than returning silently, since a decline is a choice an owner can still reconsider. The
 // step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
 // (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
-// itself is no longer a choice made here: chapter 1's own consent confirms it before the first
+// itself is no longer a choice made here: chapter 1's consent confirms it before the first
 // deploy, so by the time this module runs the account already carries it, and declining the email
 // admission below turns down email sign-in for this domain, not the plan.
 //
 // T4b.1 adds a SCOPE-FAILURE half to the same lifecycle: a saved token that still passes
-// validateToken's read (prefill.mjs's own listZones probe) but lacks a write permission was
+// validateToken's read (prefill.mjs's listZones probe) but lacks a write permission was
 // otherwise a dead end, since nothing ever cleared it once a later WRITE call came back
-// token-scope-missing or token-invalid. From the token step onward, this function's own body runs
+// token-scope-missing or token-invalid. From the token step onward, this function's body runs
 // inside one try/catch; either of those two exact codes deletes the saved token before the error
 // surfaces, so the re-run the row already tells the owner to do actually re-collects one instead
 // of silently reusing the bad one. Every other thrown row (a park, a decline, any other act row)
 // is untouched. The catalogue survives only on `error.cause` here: runActions (runner.mjs) rewraps
 // a thrown error with its action's title before it reaches this catch, the same rewrap this
-// module's own tests already work around by asserting on the message rather than `err.catalogue`.
+// module's tests already work around by asserting on the message rather than `err.catalogue`.
 import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { resolveNs as systemResolveNs } from 'node:dns/promises';
 import { exitOnCancel, promptSecret } from '../prompts.mjs';
@@ -66,7 +66,7 @@ import { createConsoleServer } from '../console/server.mjs';
 import { renderPropagationView } from '../console/views.mjs';
 
 /**
- * The states this pass's own step machine writes, in order, so a resumed record's remaining work
+ * The states this pass's step machine writes, in order, so a resumed record's remaining work
  * can be found by comparing indexes rather than repeating a chain of `if` checks.
  */
 const STEP_ORDER = [
@@ -114,7 +114,7 @@ function isTerminalStep(step) {
 }
 
 /**
- * Run one hop as a single-action batch through runActions, mirroring chapter.mjs's own `runStep`:
+ * Run one hop as a single-action batch through runActions, mirroring chapter.mjs's `runStep`:
  * the hop's title always prints, its detail prints only under --dry-run, and `execute` never runs
  * under --dry-run.
  * @param {{ dryRun: boolean, log: (line: string) => void }} frame the run's dry-run frame and logger
@@ -130,16 +130,16 @@ async function runStep(frame, title, detail, execute) {
 /**
  * Delete the pasted API token from the state record: the terminal-state half of the token
  * lifecycle rule. `updateSite`'s merge can only add or overwrite a field, never remove one (its
- * own doc block), so this rebuilds the whole record without `cloudflare.apiToken` and saves it
+ * doc block), so this rebuilds the whole record without `cloudflare.apiToken` and saves it
  * directly, the same scrub `retireSite` already performs when a record is set aside. Always
  * reloads the record fresh from disk rather than trusting a caller's in-memory copy: this
  * function's callers below run after earlier hops in the same invocation may already have
  * written newer fields (a domain, a zoneId, a step) through `updateSite`, and a stale in-memory
  * record rebuilt here would silently discard them.
  * Exported for chapter3.mjs, which reuses this exact function rather than re-implementing the
- * reload-before-rebuild behavior above: chapter 2 already deletes its own saved token at ITS
- * terminal steps, so by the time chapter 3 runs there is nothing left for chapter 2's own callers
- * to accidentally double-delete, and chapter 3's own terminal steps need the identical rebuild.
+ * reload-before-rebuild behavior above: chapter 2 already deletes its saved token at ITS
+ * terminal steps, so by the time chapter 3 runs there is nothing left for chapter 2's callers
+ * to accidentally double-delete, and chapter 3's terminal steps need the identical rebuild.
  * @param {string} siteId the site id to save under
  * @returns {Promise<void>}
  */
@@ -189,14 +189,14 @@ const ALREADY_ACTIVE_DETAIL =
   'stay untouched.';
 
 /**
- * The email half's own admission. Workers Paid was already confirmed before chapter 1's first
+ * The email half's admission. Workers Paid was already confirmed before chapter 1's first
  * deploy, so this no longer restates its price as an open decision; it says what turning on
  * email sign-in itself does, since Paid being on is not the same as this domain sending mail yet.
  */
 const EMAIL_ADMISSION_DETAIL =
   "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is what " +
   "sends this site's sign-in email. Turning this on onboards your domain for Cloudflare Email " +
-  'Sending, then sends a real test message to your own sign-in address to prove it works before ' +
+  'Sending, then sends a real test message to your sign-in address to prove it works before ' +
   'it hands the feature to anyone else.';
 
 /**
@@ -204,32 +204,32 @@ const EMAIL_ADMISSION_DETAIL =
  * @property {string} siteId the site's state-store id; the only id this module ever writes under
  * @property {object | null} record the site's current in-memory state record, already loaded by
  *  the caller (mirrors the `{ record, ... }` pure-step shape every producer above takes); `null`
- *  under --dry-run, chapter 1's own `dryRun ? null` precedent
+ *  under --dry-run, chapter 1's `dryRun ? null` precedent
  * @property {string} dir the scaffolded directory, used in printed copy; read independently of
  *  `record.dir` so a dry run with no record still has it
  * @property {{ yes: boolean, domain?: string, email?: boolean }} args the parsed CLI flags this
  *  chapter reads: `yes` for an unattended run, `domain` carrying both the value and the domain
- *  half's unattended opt-in, `email` the same for the email half's own admission
+ *  half's unattended opt-in, `email` the same for the email half's admission
  * @property {(line: string) => void} log receives one printed line per call
  * @property {boolean} dryRun when true, every hop's title and detail print and nothing executes
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
- *  admin's browser to the create-token page; defaults to open.mjs's own opener
+ *  admin's browser to the create-token page; defaults to open.mjs's opener
  * @property {typeof clackConfirm} [confirm] the yes/no prompt; a test seam, defaulting to
- *  @clack/prompts' own
+ *  @clack/prompts'
  * @property {typeof clackText} [text] the free-text prompt; the same kind of test seam as `confirm`
  * @property {typeof clackSelect} [select] the account picker prompt `ensureAccountId` uses; the
  *  same kind of test seam as `confirm` and `text`
  * @property {(message: string) => Promise<string>} [promptSecretFn] the token paste prompt,
- *  forwarded to `ensureApiToken`; a test seam defaulting to prompts.mjs's own `promptSecret`
+ *  forwarded to `ensureApiToken`; a test seam defaulting to prompts.mjs's `promptSecret`
  * @property {typeof makeApi} [makeApiFn] builds the Cloudflare API client; a test seam defaulting
- *  to api.mjs's own `makeApi`
+ *  to api.mjs's `makeApi`
  * @property {typeof fetch} [fetchImpl] the fetch implementation the cutover's confirm probes with;
  *  a test seam forwarded to `cutOverHostname`
  * @property {(domain: string) => Promise<string[]>} [resolveNs] the NS lookup forwarded to
- *  `checkDelegation`; a test seam defaulting to `node:dns/promises`' own `resolveNs`
+ *  `checkDelegation`; a test seam defaulting to `node:dns/promises`' `resolveNs`
  * @property {(servers?: string[]) => object} [resolve] the resolver factory forwarded to
- *  `readCurrentRecords` and to the cutover's own DNS context (`hostname.mjs`'s
- *  `diagnoseUnreachable`); a test seam, defaulting to `dns.mjs`'s own `defaultResolve`, the same
+ *  `readCurrentRecords` and to the cutover's DNS context (`hostname.mjs`'s
+ *  `diagnoseUnreachable`); a test seam, defaulting to `dns.mjs`'s `defaultResolve`, the same
  *  real resolver readCurrentRecords already fell back to
  * @property {Record<string, string | undefined>} [env] the environment `ensureApiToken` reads
  *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`
@@ -238,19 +238,19 @@ const EMAIL_ADMISSION_DETAIL =
  * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
  *  whether the cutover may hold; defaults to `process.stdout.isTTY`
  * @property {typeof createWaitForClear} [createWaitForClearFn] builds the cutover's hold seam; a
- *  test seam defaulting to hold-loop.mjs's own
+ *  test seam defaulting to hold-loop.mjs's `createWaitForClear`
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
- *  serves through; a test seam defaulting to the console module's own
+ *  serves through; a test seam defaulting to the console module's `createConsoleServer`
  */
 
 /**
  * Compose the cutover's hold seam for an interactive run, or nothing at all for one the policy
- * refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
+ * refuses (hold-loop.mjs's `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
  * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The console and
  * the loop are built here and only here, so a run the policy refuses never composes either, and
  * `cutOverHostname` sees `undefined` and behaves exactly as it did before this seam existed.
  * @param {object} input
- * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
+ * @param {{ yes: boolean }} input.runArgs the chapter's parsed flags
  * @param {boolean} input.isTTY whether stdout is a terminal
  * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
  * @param {(line: string) => void} input.log receives the console URL line
@@ -258,9 +258,9 @@ const EMAIL_ADMISSION_DETAIL =
  * @param {string} input.dir the `--dir` value, interpolated into the hold's default park row
  * @param {string} input.domain the domain being connected, interpolated into that same row
  * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
- *  hold-loop.mjs's own
+ *  hold-loop.mjs's `createWaitForClear`
  * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
- *  console module's own
+ *  console module's `createConsoleServer`
  * @returns {((probe: import('../hold-loop.mjs').HoldProbe) =>
  *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
  *  `cutOverHostname`, or `undefined` when this run may not hold
@@ -289,7 +289,7 @@ function composeCutoverWaitForClear({
     log,
     // The row an interrupt lands on before the first probe has read anything. Resolver lag is
     // this hold's earliest honest verdict: `attachCustomDomain` has already returned by the time
-    // the hold starts, so the record does exist at the zone's own nameservers, and what remains
+    // the hold starts, so the record does exist at the zone's nameservers, and what remains
     // unconfirmed is only whether the rest of the world can see it yet. The records-absent row
     // would instead claim the attach never took, which this run has just disproved.
     defaultPark: cloudflareError('hostname-resolver-lagging', { dir, domain }).message,
@@ -297,13 +297,13 @@ function composeCutoverWaitForClear({
 }
 
 /**
- * Run chapter 2: connect the admin's own domain to the already-deployed site. Re-entry reads the
+ * Run chapter 2: connect the admin's domain to the already-deployed site. Re-entry reads the
  * step already reached on `record` and skips whatever hop that step already finished; a wait
  * outcome (still-pending delegation, a still-propagating hostname, a certificate not yet issued)
  * is returned rather than thrown, and never advances `step`, so the very next invocation
  * re-detects from the same recorded point. Only an act or ask-someone row throws.
  *
- * `domain-live` is this pass's own last step but is not treated as fully finished: re-entering at
+ * `domain-live` is this pass's last step but is not treated as fully finished: re-entering at
  * it still re-validates (and, if needed, re-prefills) the API token, since T4b's email half
  * continues from here and needs it.
  * @param {RunChapter2Input} input the chapter's inputs
@@ -312,8 +312,8 @@ function composeCutoverWaitForClear({
  *  `'delegation-propagating'` | `'hostname-records-absent'` | `'hostname-resolver-lagging'` |
  *  `'certificate-pending'` | `'paid-plan-declined'` | `'email-not-ready'` |
  *  `'email-sender-propagating'` | `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a
- *  record already at one of TERMINAL_STEPS, that step's own name. A delegation park also carries
- *  the row's own `state` and printed `message`
+ *  record already at one of TERMINAL_STEPS, that step's name. A delegation park also carries
+ *  the row's `state` and printed `message`
  */
 export async function runChapter2({
   siteId,
@@ -343,8 +343,8 @@ export async function runChapter2({
     await deleteApiToken(siteId);
     // A re-entry at a recorded decline is not silently ignored: the owner can still change their
     // mind, and this is the one place that later re-run would ever be told so. `email-live`
-    // prints nothing here, since its own completion hop already said everything once, on the run
-    // that reached it; bin.mjs's own closing print covers a later re-entry there.
+    // prints nothing here, since its completion hop already said everything once, on the run
+    // that reached it; bin.mjs's closing print covers a later re-entry there.
     if (record.step === 'paid-plan-declined') {
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
@@ -363,7 +363,7 @@ export async function runChapter2({
   // it already answered both, and re-asking would repeat a browser-adjacent decision for nothing.
   if (!hasReached(record?.step, 'zone-created')) {
     let consented = false;
-    await runStep(frame, 'Connect your own domain', ADMISSION_DETAIL, async () => {
+    await runStep(frame, 'Connect your domain', ADMISSION_DETAIL, async () => {
       log(ADMISSION_DETAIL);
       if (args.yes && !args.domain) {
         log(
@@ -395,7 +395,7 @@ export async function runChapter2({
   }
 
   // --- Account selection: cheap and silent when chapter 1 already saved an id (the common case),
-  // per account.mjs's own zero-enumeration branch. Runs on every invocation, including a resumed
+  // per account.mjs's zero-enumeration branch. Runs on every invocation, including a resumed
   // one, since it costs nothing when nothing changed.
   await runStep(
     frame,
@@ -455,11 +455,11 @@ export async function runChapter2({
     }
 
     // --- Records read + carry-over gate: only from `zone-created`. A decline is recorded by its
-    // own printed copy and never silently advances; the next invocation re-shows the same gate.
+    // printed copy and never silently advances; the next invocation re-shows the same gate.
     // When the zone arrived already active (the Cloudflare-registrar path, or any domain this
-    // account already holds and serves), there is nothing to carry over: the zone's own records
+    // account already holds and serves), there is nothing to carry over: the zone's records
     // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
-    // (its own guard: a probe would read this tool's own writes), so this skips both the read and
+    // (its guard: a probe would read this tool's writes), so this skips both the read and
     // the gate entirely rather than letting that refusal surface as a developer-facing exception.
     if (!hasReached(record?.step, 'records-carried')) {
       let declined = false;
@@ -554,15 +554,15 @@ export async function runChapter2({
             return;
           }
           if (state === 'wrong-nameservers') {
-            // checkDelegation already did its own NS lookup to reach this state but reports only
-            // the state name, not what it found (zone.mjs's own contract); a second lookup here is
+            // checkDelegation already did its NS lookup to reach this state but reports only
+            // the state name, not what it found (zone.mjs's contract); a second lookup here is
             // the cost of naming the actual pair in the row's copy rather than leaving it blank.
             const actual = await resolveNs(domain).catch(() => []);
             throw cloudflareError('delegation-wrong-nameservers', { dir, domain, nameServers, actual });
           }
           // 'pending': the domain has not been repointed yet, so this is the one delegation state
           // where the admin still has work to do at their registrar. delegationInstructions prints
-          // the how-to; the row's own message (logged next) carries the re-run next step.
+          // the how-to; the row's message (logged next) carries the re-run next step.
           log(delegationInstructions(nameServers));
           waitError = cloudflareError('delegation-pending', { dir, domain, nameServers });
           log(waitError.message);
@@ -592,7 +592,7 @@ export async function runChapter2({
         frame,
         'Connect your domain to your site',
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
-          "switches your site's own address over and redeploys once.",
+          "switches your site's address over and redeploys once.",
         async () => {
           const waitForClear = composeCutoverWaitForClear({
             runArgs: args,
@@ -620,8 +620,8 @@ export async function runChapter2({
             api,
             fetchImpl,
             log,
-            // The zone's own nameservers, when already known, let the unreachable-case diagnosis
-            // skip a fresh NS discovery lookup (dns.mjs's own `selectAuthoritativeResolver`); the
+            // The zone's nameservers, when already known, let the unreachable-case diagnosis
+            // skip a fresh NS discovery lookup (dns.mjs's `selectAuthoritativeResolver`); the
             // resolver factory is the same one `readCurrentRecords` above already uses, real DNS
             // in production and a hermetic stub in a test that injects one.
             dns: { resolve, nameServers },
@@ -645,7 +645,7 @@ export async function runChapter2({
 
     // --- Domain completion: reached once the cutover just succeeded or a resumed record was
     // already at `domain-live`. domain-live is not terminal (TERMINAL_STEPS above): execution below
-    // continues straight into the email half's own admission rather than stopping here.
+    // continues straight into the email half's admission rather than stopping here.
     await runStep(
       frame,
       'Finish connecting your domain',
@@ -658,11 +658,11 @@ export async function runChapter2({
       },
     );
 
-    // --- Email admission: Workers Paid is already on (chapter 1's own consent confirmed it
+    // --- Email admission: Workers Paid is already on (chapter 1's consent confirmed it
     // before the first deploy), so this asks only about turning on email sign-in itself. Only
     // asked while step has not yet reached email-onboarded; once onboarding has actually
     // succeeded, this is never re-asked. A decline writes the terminal step directly (rather than
-    // going through TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and
+    // going through TERMINAL_STEPS' short-circuit, which only fires on a LATER re-entry) and
     // deletes the token at the point it happens, per the terminal-state token rule.
     if (!hasReached(record?.step, 'email-onboarded')) {
       let emailConsented = false;
@@ -744,11 +744,11 @@ export async function runChapter2({
         try {
           await sendTestMessage({ api, from, to: ownerEmail, onboardedAt });
         } catch (err) {
-          // email.mjs classifies a send failure with no `dir` in hand (its own interface omits it
+          // email.mjs classifies a send failure with no `dir` in hand (its interface omits it
           // and `record`); this rebuilds each of its three reclassified rows with this chapter's
           // real `dir` (and `domain`, where the row takes one) before it is ever printed or
-          // returned, the same "classify now, name later" split hostname.mjs's own wait outcomes
-          // already use. Anything else (including api.mjs's own email-send-failed fall-through,
+          // returned, the same "classify now, name later" split hostname.mjs's wait outcomes
+          // already use. Anything else (including api.mjs's email-send-failed fall-through,
           // which already carries the real dir since api.mjs built it) is rethrown as-is.
           const code = err?.catalogue?.code;
           if (code === 'email-sender-propagating' || code === 'email-daily-limit') {
@@ -796,7 +796,7 @@ export async function runChapter2({
       'Prints your sign-in sender address and how to check it again later.',
       async () => {
         log(
-          `Cloudflare accepted a real test message sent from ${from}, your site's own sign-in ` +
+          `Cloudflare accepted a real test message sent from ${from}, your site's sign-in ` +
             "sender. Change that address any time by editing email: { from: '...' } in " +
             'src/theme/cairn.config.ts and redeploying.\n' +
             'A domain this new has no sending history yet. As of 2026-08-12, that means mail ' +
@@ -804,7 +804,7 @@ export async function runChapter2({
             'trust builds on its own as the domain keeps sending. If a sign-in link does not ' +
             'arrive yet, this warm-up period is the usual reason.\n' +
             `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
-            "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
+            "isn't from Cloudflare's sending infrastructure. That record stays in place even " +
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
             'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
@@ -830,7 +830,7 @@ export async function runChapter2({
     return { outcome: 'email-live', domain };
   } catch (error) {
     // The catalogue survives only on `error.cause`: runActions (runner.mjs) rewraps a thrown
-    // error with its action's title before it ever reaches this catch (this module's own tests
+    // error with its action's title before it ever reaches this catch (this module's tests
     // already work around the same rewrap by asserting on the message, not `err.catalogue`).
     const code = error?.cause?.catalogue?.code;
     if (!dryRun && (code === 'token-scope-missing' || code === 'token-invalid')) {

@@ -5,14 +5,14 @@
 // hop boundary", extending resume-chapter2.test.mjs. This file instead drives every case
 // in-process against runChapter2 directly. A spawned bin.mjs cannot inject the resolve,
 // resolveNs, and fetchImpl seams chapter2.mjs takes, and there is no env seam for DNS or for the
-// cutover's HTTPS probe (resume-chapter2.test.mjs's own header comment names this same
+// cutover's HTTPS probe (resume-chapter2.test.mjs's header comment names this same
 // constraint). A spawned run past the zone hop would therefore perform real DNS lookups and real
-// HTTPS requests, which is neither hermetic nor safe, and the plan's own Global Constraints bar
+// HTTPS requests, which is neither hermetic nor safe, and the plan's Global Constraints bar
 // adding a DNS or probe env seam to production code just to work around it. Nothing is lost:
 // runChapter2 in-process still writes real state files through the real state store, still
 // spawns the real fake wrangler through exec.mjs, and still rewrites the real scaffold
 // wrangler.jsonc, so every artifact the sweep and the no-repeat assertions below need is
-// genuinely produced. Task 11's own spawned file already proves the dispatcher's routing into
+// genuinely produced. Task 11's spawned file already proves the dispatcher's routing into
 // each new step; this file proves what happens once runChapter2 itself is running.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,7 +34,7 @@ const MINIMAL_WRANGLER_JSONC = JSON.stringify(
 
 const WORKERS_DEV_URL = 'https://cairn-safety-net-site.glw907.workers.dev';
 
-// --- Harness, mirroring chapter2.test.mjs's own helpers (duplicated rather than imported: they
+// --- Harness, mirroring chapter2.test.mjs's helpers (duplicated rather than imported: they
 // are not exported, and this file lives in test/ rather than src/cloudflare/). -----------------
 
 /**
@@ -54,7 +54,7 @@ async function freshStateDir(t) {
 
 /**
  * Build a fixture scaffold directory carrying a real wrangler.jsonc so writePublicOrigin (the
- * cutover's own step) has something to rewrite.
+ * cutover's step) has something to rewrite.
  * @param {import('node:test').TestContext} t
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -140,8 +140,8 @@ function confirmAnswering(answer) {
 
 /**
  * A confirm stub for chapter 2's three yes/no gates (domain connect, carry-over copy, email
- * admission), matched by a distinctive substring of each gate's own message, mirroring
- * chapter2.test.mjs's own `confirmRouting`. Omitting a gate's answer means the record under test
+ * admission), matched by a distinctive substring of each gate's message, mirroring
+ * chapter2.test.mjs's `confirmRouting`. Omitting a gate's answer means the record under test
  * has already passed it (or must never reach it): a call for that gate is then a defect, not just
  * an unexpected answer, so it throws rather than silently returning. A message matching none of
  * the three also throws, so a test can never pass by answering some fourth gate silently.
@@ -247,14 +247,14 @@ async function seedDelegated(t, { siteId, dir, domain, fakeOverrides = {} }) {
   return { ...seeded, cloudflareShape };
 }
 
-/** Every wrangler `deploy` call among `invocations` (fake-bin's own recorded shape). */
+/** Every wrangler `deploy` call among `invocations` (fake-bin's recorded shape). */
 function deployCalls(invocations) {
   return invocations.filter((inv) => inv.argv.includes('deploy'));
 }
 
 /**
  * A `failNext('email_send', ...)` body for the propagation refusal (spike amendment 1/2),
- * mirroring chapter2.test.mjs's own `sendingDisabledBody`: a decline is itself a terminal step
+ * mirroring chapter2.test.mjs's `sendingDisabledBody`: a decline is itself a terminal step
  * (T4b ruling 5) and would delete a planted token before an interruption or sweep case here ever
  * gets to observe it, so this is what several fixes below use to park past domain-live instead.
  */
@@ -288,7 +288,7 @@ test('interruption: a record at live runs every hop exactly once through to doma
     dryRun: false,
     // The domain gate is answered yes; the email gate (the only other confirm this run reaches,
     // since the carry-over hop is skipped by the already-active zone below) is declined, so this
-    // test stays about the domain half's own per-hop counts.
+    // test stays about the domain half's per-hop counts.
     confirm: confirmRouting({ domain: true, email: false }),
     text: async () => domain,
     promptSecretFn: async () => 'safety-live-token',
@@ -336,7 +336,7 @@ test('interruption: a record at zone-created reaches domain-live without repeati
     log: () => {},
     dryRun: false,
     // This zone arrives already active (zoneStatus: 'active' above), so the carry-over hop skips
-    // its own gate entirely; the only confirm this run reaches is the email admission, declined
+    // its gate entirely; the only confirm this run reaches is the email admission, declined
     // here so this test stays about the zone-create no-repeat count below.
     confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
@@ -507,7 +507,7 @@ test('interruption: a genuine park then a later re-run continues from the same s
   assert.equal(afterPark.step, 'records-carried', 'a park must not advance the saved step');
   assert.deepEqual(await wrangler.invocations(), [], 'a park before the cutover shells out to nothing');
 
-  // The zone itself finishes activating between the two runs (mutated directly on the fake's own
+  // The zone itself finishes activating between the two runs (mutated directly on the fake's
   // state, not through a request, so this does not count against the no-repeated-writes proof
   // below).
   const zoneRecord = seeded.cloudflare.state.zones.find((zone) => zone.id === seeded.zoneId);
@@ -570,7 +570,7 @@ async function walkFiles(dir) {
 
 /**
  * Sweep every surface a secret must never leak onto, returning one description per hit. Shared
- * by every case below rather than repeated inline, per the plan's own requirement. Covers, in
+ * by every case below rather than repeated inline, per the plan's requirement. Covers, in
  * order: the scaffold tree (walked, not a hardcoded list, wrangler.jsonc included), every
  * captured log line, every captured thrown-error message, the joined argv of every fake-bin
  * invocation, and every file currently under the state directory (a retired record is just
@@ -640,7 +640,7 @@ test('secret sweep: the helper can actually fail before it can be trusted (falsi
   assert.deepEqual(cleanedAgain, [], 'the sweep must go clean again once the plant is removed');
 });
 
-// A decline would delete the planted token as its own terminal step (T4b ruling 5), proving
+// A decline would delete the planted token as its terminal step (T4b ruling 5), proving
 // nothing about where a LIVE token does and does not leak. So this run consents to email too, and
 // arms the fake to refuse the test send once (the propagation shape), which parks the run one hop
 // past domain-live rather than declining: the token stays live and on disk for the sweep below.
@@ -667,7 +667,7 @@ test('secret sweep: a full run to domain-live confines the planted token to the 
     confirm: confirmRouting({ domain: true, email: true }),
     text: async () => domain,
     // Supplied through the same path a real run uses: pasted back through promptSecretFn, the
-    // way the admin's own paste reaches this chapter.
+    // way the admin's paste reaches this chapter.
     promptSecretFn: async () => plantedToken,
     fetchImpl: alwaysMatchingFetch(),
   });
@@ -688,7 +688,7 @@ test('secret sweep: a full run to domain-live confines the planted token to the 
   // the token out of the file that survives it: this is what "including *.retired-*.json" means
   // in practice, and it needs a real retired file on disk to sweep.
   await retireSite(siteId);
-  assert.equal(await loadSite(siteId), null, 'retiring removes the live record under its own id');
+  assert.equal(await loadSite(siteId), null, 'retiring removes the live record under its id');
 
   const entries = await readdir(stateDir);
   const retired = entries.find((entry) => entry.includes('.retired-'));
@@ -721,9 +721,9 @@ test('secret sweep: reaching a terminal step deletes the token everywhere, and t
     args: { yes: false },
     log: (line) => logs.push(line),
     dryRun: false,
-    // Declines the email admission, this file's own default: this test's own point is the
+    // Declines the email admission, this file's default: this test's point is the
     // terminal-step deletion rule itself, not the email half, and a decline is a terminal step in
-    // its own right (T4b ruling 5).
+    // its right (T4b ruling 5).
     confirm: confirmRouting({ domain: true, email: false }),
     text: async () => domain,
     promptSecretFn: async () => plantedToken,
@@ -733,7 +733,7 @@ test('secret sweep: reaching a terminal step deletes the token everywhere, and t
 
   assert.ok(TERMINAL_STEPS.length > 0);
   const terminalStep = TERMINAL_STEPS[0];
-  // The decline above already deleted the token as part of reaching its OWN terminal step
+  // The decline above already deleted the token as part of reaching its terminal step
   // (paid-plan-declined); replant it here so the short-circuit below has a real token to prove it
   // deletes, rather than proving nothing against an already-empty field. This still synthesizes
   // arriving at TERMINAL_STEPS[0] ('email-live') the way chapter2.test.mjs already does for the

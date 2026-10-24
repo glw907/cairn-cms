@@ -10,7 +10,7 @@ import (
 
 // npmHost is the only host an NPM client will ever send a request to. There is no base-URL
 // variable and no environment override, the same rule cloudflare.go and github.go state for
-// their own host pins.
+// their host pins.
 const npmHost = "registry.npmjs.org"
 
 // npmBase is npmHost's root, prefixed onto every request this client sends.
@@ -88,7 +88,7 @@ func (n *NPM) Latest(ctx context.Context, name string) (string, error) {
 	return doc.DistTags.Latest, nil
 }
 
-// Versions returns every version name has ever published, in the order the packument's own
+// Versions returns every version name has ever published, in the order the packument's
 // "versions" object serialized them: npm's registry writes that object in publish order, and a
 // map-typed decode would lose it (Go randomizes map iteration), so this walks the JSON token
 // stream directly rather than unmarshaling into a map. 2.0's engine detail view reads this order

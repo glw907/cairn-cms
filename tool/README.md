@@ -17,7 +17,7 @@ go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest
 
 This needs Go 1.26 or newer. A `go install` build carries no commit, so `cairn --version` prints
 `none` where a release binary prints a short SHA. Go stamps no VCS revision into a
-`module@version` install, so that is the build's own shape and not a fault.
+`module@version` install, so that is the build's shape and not a fault.
 
 **A release archive**, if you don't. Download the one for your platform from the
 [releases page](https://github.com/glw907/cairn-cms/releases):
@@ -74,8 +74,8 @@ version's `go.mod` and a new patch tag, never by deleting the tag.
 from the environment first, then the OS keyring (`cairn auth set` writes to the keyring).
 [The credentials reference](docs/credentials.md) covers scopes, storage, and the platform-specific
 detail for Linux, macOS, and Windows. `cairn auth check` confirms the permissions this tool itself
-needs against your own two tokens, either with credentials alone or, naming one registered site
-(`cairn auth check <site>`), against that site's own zone and repository too.
+needs against your two tokens, either with credentials alone or, naming one registered site
+(`cairn auth check <site>`), against that site's zone and repository too.
 
 ## The site registry, and where it lives
 
@@ -85,7 +85,7 @@ directory in one order, first match wins, paths never merged:
 
 1. `CAIRN_STATE_DIR`, if set.
 2. The Node CLI's legacy `~/.config/cairn/sites` directory, if it already exists on disk.
-3. `os.UserConfigDir()` plus `cairn/sites` (the platform's own config directory), otherwise.
+3. `os.UserConfigDir()` plus `cairn/sites` (the platform's config directory), otherwise.
 
 The legacy directory outranks the platform config directory deliberately. On a platform where the
 two diverge (macOS, or Linux with `XDG_CONFIG_HOME` set), it's where the Node CLI

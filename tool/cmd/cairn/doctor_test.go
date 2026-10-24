@@ -14,9 +14,9 @@ import (
 // startDoctorRobotsServer serves a fixed, unmanaged robots.txt over loopback, so
 // ai.posture-effective settles to a pass instead of an unchecked result the way it would with
 // no reachable origin at all. Using a real (loopback) HTTP server rather than stubbing
-// doctor.FetchRobots proves cairn doctor's own network path end to end, the same shape the
+// doctor.FetchRobots proves cairn doctor's network path end to end, the same shape the
 // exit-code arithmetic under test depends on: an unrelated unchecked result would otherwise
-// outrank a warning fixture's own single failure (spine's own severity order, CRITICAL then
+// outrank a warning fixture's single failure (spine's severity order, CRITICAL then
 // UNKNOWN then WARNING then OK).
 func startDoctorRobotsServer(t *testing.T) string {
 	t.Helper()
@@ -39,7 +39,7 @@ func doctorCleanWranglerJSONC(origin string) string {
 }
 
 // doctorCleanSiteFiles writes the file set every one of cairn doctor's eleven checks passes or
-// skips cleanly against, the command-level twin of internal/doctor's own report_test.go fixture.
+// skips cleanly against, the command-level twin of internal/doctor's report_test.go fixture.
 // A case that wants exactly one failing check copies this map and overwrites one entry.
 func doctorCleanSiteFiles(origin string) map[string]string {
 	return map[string]string{
@@ -198,8 +198,8 @@ func TestDoctorQuietDoesNotSuppressOutsideACairnSite(t *testing.T) {
 }
 
 // TestDoctorQuietPrintsNothingOnAnOKRun and TestDoctorQuietPrintsTheWholeReportOnAFailingRun are
-// the acceptance criterion's own two halves: --quiet on a clean run writes nothing at all, and
-// on a failing run writes the whole report, health_quiet_test.go's own rule carried over.
+// the acceptance criterion's two halves: --quiet on a clean run writes nothing at all, and
+// on a failing run writes the whole report, health_quiet_test.go's rule carried over.
 func TestDoctorQuietPrintsNothingOnAnOKRun(t *testing.T) {
 	origin := startDoctorRobotsServer(t)
 	dir := writeDoctorFixture(t, doctorCleanSiteFiles(origin))
@@ -243,7 +243,7 @@ func TestDoctorQuietPrintsTheWholeReportOnAFailingRun(t *testing.T) {
 	}
 }
 
-// TestADoctorUsageErrorExitsUnknownWithEmptyStdout runs cairn doctor's own usage errors against
+// TestADoctorUsageErrorExitsUnknownWithEmptyStdout runs cairn doctor's usage errors against
 // the real built binary (usage_test.go's runBinary), the byte-empty-stdout rule
 // TestAUsageErrorExitsUnknownWithEmptyStdout already proves for the whole tree, asserted here for
 // this command specifically: a second positional directory and an unknown flag both refuse

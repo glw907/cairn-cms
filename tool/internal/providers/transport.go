@@ -21,7 +21,7 @@ const defaultRetryAfter = time.Second
 
 // client is the shared HTTP transport every provider's public type wraps: it pins requests to
 // one host, applies a credential to every request, times out, never follows a redirect, and
-// retries a rate-limited GET exactly once. It carries no base-URL field; a caller builds its own
+// retries a rate-limited GET exactly once. It carries no base-URL field; a caller builds the
 // full URL, and Do refuses anything that resolves to a different host before dialing.
 type client struct {
 	host       string
@@ -73,7 +73,7 @@ func (c *client) getWith(ctx context.Context, base, path, accept string) (int, h
 
 // rawGet performs a GET against url through c, setting header on the request, and returns the
 // raw status, response headers, and body with no classification: a caller like GitHub.getJSON or
-// NPM's packument turns a non-2xx status into its own typed error, and TokenExpiry reads a
+// NPM's packument turns a non-2xx status into its typed error, and TokenExpiry reads a
 // header straight off the response rather than building a second request just to read one.
 func (c *client) rawGet(ctx context.Context, url string, header http.Header) (status int, respHeader http.Header, body []byte, err error) {
 	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -108,11 +108,11 @@ func (c *client) rawGet(ctx context.Context, url string, header http.Header) (st
 // shares: client.Do calls it after pinning the host and applying a credential, and Probe.do calls
 // it directly, since Probe carries neither.
 //
-// When the advised wait is longer than req's own remaining context deadline, doWithRetry does not
+// When the advised wait is longer than req's remaining context deadline, doWithRetry does not
 // sleep at all: the wait would only spend the request's whole remaining budget waiting, then fail
 // on the deadline anyway, indistinguishable from a hang to a caller watching the clock. The
 // rate-limited response is returned unretried instead, the same shape as a second 429 or 503, so
-// the caller's own classification (ReasonRateLimited) still applies with no wasted wait.
+// the caller's classification (ReasonRateLimited) still applies with no wasted wait.
 func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 	resp, err := hc.Do(req)
 	if err != nil {
@@ -140,7 +140,7 @@ func doWithRetry(hc *http.Client, req *http.Request) (*http.Response, error) {
 }
 
 // isErrorStatus reports whether status is outside the 2xx range, the one boundary every provider
-// in this package turns into its own error type.
+// in this package turns into its error type.
 func isErrorStatus(status int) bool {
 	return status < 200 || status >= 300
 }

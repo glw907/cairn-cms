@@ -15,7 +15,7 @@ import (
 )
 
 // maxCheckBodyLiteral is the longest string literal a check_*.go file may carry outside a
-// messages.go table entry, tool/docs/design/copy-standard.md's own production rule (section 4.1):
+// messages.go table entry, tool/docs/design/copy-standard.md's production rule (section 4.1):
 // a linter cannot find prose scattered across many files, so a check body earns no exception past
 // this length.
 const maxCheckBodyLiteral = 40
@@ -106,7 +106,7 @@ func TestCheckFilesCarryNoLongProseLiterals(t *testing.T) {
 	}
 }
 
-// kebabToken matches a bare hyphenated token with no space, catalogue section 4.4's own
+// kebabToken matches a bare hyphenated token with no space, catalogue section 4.4's
 // structural rule: a Detail matching it in full is a machine token sitting in a prose field
 // rather than a sentence.
 var kebabToken = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)+$`)
@@ -131,8 +131,8 @@ func assertDetailIsProseOrEmpty(t *testing.T, label, detail string) {
 }
 
 // TestMessagesAreProseOrEmpty drives every messages.go function that takes an argument with a
-// representative call, and every zero-argument message through Catalogue's own output, asserting
-// each result is either empty or prose-shaped. An argument-carrying function keeps its own case
+// representative call, and every zero-argument message through Catalogue's output, asserting
+// each result is either empty or prose-shaped. An argument-carrying function keeps its case
 // here because Catalogue lists the template it formats from rather than a rendered example (see
 // messageExemptions below); a zero-argument function needs no such case, since calling it is
 // exactly what Catalogue already does.
@@ -161,7 +161,7 @@ func TestMessagesAreProseOrEmpty(t *testing.T) {
 	}
 }
 
-// allCatalogueStrings returns every string this package's own messages and fix tables carry, the
+// allCatalogueStrings returns every string this package's messages and fix tables carry, the
 // same union `cmd/copylist` builds its golden from, for the three superseded-rows tests below.
 func allCatalogueStrings() []string {
 	return append(Catalogue(), FixLines()...)
@@ -169,7 +169,7 @@ func allCatalogueStrings() []string {
 
 // cairnCommandsCredsGrammarAllows is the literal allow-list criterion 8 of this task calls for:
 // checked against the real cobra tree once Task 19a-i lands it, and by this list until then. The
-// two cairn commands this package's own fix table names are "cairn auth set" and "cairn adopt",
+// two cairn commands this package's fix table names are "cairn auth set" and "cairn adopt",
 // which the ruled grammar (docs/plans/2026-09-14-cairn-tool-1-0-pass.md, Task
 // 19a-i's "Produces") gives as `auth set <name>` and `adopt`.
 var cairnCommandsCredsGrammarAllows = []string{"cairn auth set", "cairn adopt"}
@@ -181,7 +181,7 @@ var cairnCommandPattern = regexp.MustCompile("`cairn [a-z ]+`|\\bcairn auth set\
 
 // TestNoCAIRNPrefixedLiteralOutsideCredentialVars asserts no string in this package's messages or
 // fix tables names a CAIRN_-prefixed environment variable. Task 19a-ii's `credentialVars` is the
-// single spelling every such literal must belong to; until it exists, this task's own rule is
+// single spelling every such literal must belong to; until it exists, this task's rule is
 // that no table entry names one at all, which is also why 3.8's rate-limited and no-credentials
 // rewrites (which do name one) are not reproduced here.
 func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
@@ -211,7 +211,7 @@ func TestNoMessageNamesAnUnknownCairnCommand(t *testing.T) {
 }
 
 // verdictWord matches one of the four monitoring-plugin verdict words as a whole word, case
-// sensitive: the catalogue's own grammar (2.2) reserves capitalized OK/WARNING/CRITICAL/UNKNOWN
+// sensitive: the catalogue's grammar (2.2) reserves capitalized OK/WARNING/CRITICAL/UNKNOWN
 // for a verdict, never a detail or fix line.
 var verdictWord = regexp.MustCompile(`\b(OK|WARNING|CRITICAL|UNKNOWN)\b`)
 
@@ -227,7 +227,7 @@ func TestNoMessageAssertsAVerdictWord(t *testing.T) {
 }
 
 // TestErrorsWindowFormatsWholeHoursBare asserts errorsWindow renders a whole-hour duration the way
-// the catalogue's own count fields do ("24h"), and falls back to Go's own duration string for
+// the catalogue's count fields do ("24h"), and falls back to Go's duration string for
 // anything else rather than inventing a second notation.
 func TestErrorsWindowFormatsWholeHoursBare(t *testing.T) {
 	tests := []struct {
@@ -245,7 +245,7 @@ func TestErrorsWindowFormatsWholeHoursBare(t *testing.T) {
 	}
 }
 
-// TestEveryReasonCodeHasAPhrase holds the messages table against spine's own published
+// TestEveryReasonCodeHasAPhrase holds the messages table against spine's published
 // vocabulary: every code a run can emit resolves to prose written for the table, never to the
 // fallback sentence, so no body is left with the code as the only thing it could print.
 func TestEveryReasonCodeHasAPhrase(t *testing.T) {
@@ -267,7 +267,7 @@ func TestEveryReasonCodeHasAPhrase(t *testing.T) {
 
 // messageExemptions names a messages.go message declaration TestEveryMessageDeclarationReachesCatalogue
 // does not require Catalogue to name directly, with the reason: Catalogue lists the template
-// constant the function formats from instead of a value the function's own argument would have to
+// constant the function formats from instead of a value the function's argument would have to
 // be invented to supply.
 var messageExemptions = map[string]string{
 	"detailEmailSPFMissing":        "Catalogue lists tmplEmailSPFMissing, the template this function formats, rather than a fabricated include mechanism",
@@ -315,7 +315,7 @@ func messageDeclarations(t *testing.T, path string) []string {
 	return names
 }
 
-// catalogueReferencedIdentifiers parses path and returns every identifier Catalogue's own
+// catalogueReferencedIdentifiers parses path and returns every identifier Catalogue's
 // function body references, so TestEveryMessageDeclarationReachesCatalogue can tell a message
 // this package declares from one Catalogue actually names.
 func catalogueReferencedIdentifiers(t *testing.T, path string) map[string]bool {
@@ -344,9 +344,9 @@ func catalogueReferencedIdentifiers(t *testing.T, path string) map[string]bool {
 }
 
 // TestEveryMessageDeclarationReachesCatalogue asserts every detailXxx function and tmplXxx
-// constant messages.go declares is either called or referenced inside Catalogue's own body, or
+// constant messages.go declares is either called or referenced inside Catalogue's body, or
 // named in messageExemptions with a reason. Without this proof, a message function declared and
-// never wired into Catalogue would still print correctly at its own call site while silently
+// never wired into Catalogue would still print correctly at its call site while silently
 // dropping out of `make copy-list`'s golden and the copy gate that reads it.
 func TestEveryMessageDeclarationReachesCatalogue(t *testing.T) {
 	declared := messageDeclarations(t, "messages.go")

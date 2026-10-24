@@ -185,7 +185,7 @@ test('every catalogue code message ends in exactly one Next: line', () => {
 test('the Builds rows add exactly eight codes, none colliding with build-failed or build-not-runnable', () => {
   // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
   // hostname-records-absent and hostname-resolver-lagging (+2), plus deploy-plan-declined,
-  // chapter 1's own pre-deploy decline row, added alongside the pre-existing paid-plan-declined
+  // chapter 1's pre-deploy decline row, added alongside the pre-existing paid-plan-declined
   // (chapter 2's, unrenamed) (+1).
   const BASELINE_CODE_COUNT = 39;
   const NEW_BUILDS_CODES = [

@@ -71,13 +71,13 @@ func TestReadFirst(t *testing.T) {
 }
 
 // netClientExemptFiles names the one non-test file allowed to import net/http:
-// ai.posture-effective's own network request (fetchrobots.go's FetchRobots) is the single GET
-// this whole command makes (retire-1 plan decision 9), isolated in its own file and never
+// ai.posture-effective's network request (fetchrobots.go's FetchRobots) is the single GET
+// this whole command makes (retire-1 plan decision 9), isolated in a separate file and never
 // called from inside a Check.Run, so the exception this scan grants stays narrow rather than
 // opening the whole package to a client.
 var netClientExemptFiles = map[string]bool{"fetchrobots.go": true}
 
-// TestNoCheckFunctionReadsClockOrHoldsClient is a source scan over this package's own non-test
+// TestNoCheckFunctionReadsClockOrHoldsClient is a source scan over this package's non-test
 // files: it asserts none names time.Now, and none but netClientExemptFiles imports net/http,
 // the two capabilities decision 2 reserves for the command layer so a Check stays a pure
 // function over its Snapshot.

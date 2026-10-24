@@ -16,7 +16,7 @@ Constraints on top of that gate:
    easiest for any site, never transplanted from the requesting site's implementation,
    even when that leaves the requesting site doing some hand-rolling. Worked example: the
    StatusChip absorption takes one site's measured grammar but re-tunes every measured value
-   against the engine's own themes.
+   against the engine's themes.
 4. **The standard applies retroactively.**
 
 An item fails the gate when the hand-roll is small, domain-shaped, or a discoverability

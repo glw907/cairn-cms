@@ -76,7 +76,7 @@
 //
 // - whether the sentence says what the bullet says: negation, scope words ("only", "every",
 //   "none"), ordering, and causation all pass once the tokens are present, so a joined sentence
-//   that contradicts its own bullet with the bullet's own tokens passes here;
+//   that contradicts its bullet with the bullet's tokens passes here;
 // - spelled-out numbers ("two roles", "a handful") and units (`10 MB` and `10 GB` share digits);
 // - unbackticked bare filenames (`package.json` in prose), unbackticked `cairn` verbs and other
 //   CLIs in prose (the product name reads the same as the command), and short flags (`-m`);
@@ -307,7 +307,7 @@ export function extractFacts(text, keyPhrases) {
 
 /**
  * The extracted facts a brief's `local` list does not vouch for. A `path` or `name` fact equal to a
- * `local` entry is the page's own invention, so no bullet is expected to contain it.
+ * `local` entry is the page's invention, so no bullet is expected to contain it.
  * @param {ExtractedFact[]} found
  * @param {string[]} local
  * @returns {ExtractedFact[]}
@@ -531,7 +531,7 @@ function checkCitedIds(label, ids, text, index, local) {
 
 /**
  * The defects in a brief's sentences list: classification, id resolution, citability, and every
- * extractable fact against the sentence's own cited bullet. Page coverage is checked separately.
+ * extractable fact against the sentence's cited bullet. Page coverage is checked separately.
  * @param {BriefSentence[]} sentences
  * @param {FactIndex} index
  * @param {string[]} [local] The brief's page-local paths and names, already validated.
@@ -692,7 +692,7 @@ function resolveBriefArgs(args, briefsDir, root) {
  */
 
 /**
- * Check one brief file: its JSON shape, that it is filed under its page's own name, that the
+ * Check one brief file: its JSON shape, that it is filed under its page's name, that the
  * page exists, its sentences, and the page's coverage.
  * @param {string} briefPath
  * @param {FactIndex} index
@@ -732,7 +732,7 @@ export function checkBrief(briefPath, index, root) {
   result.noClaim = list.filter((s) => s.id === NO_CLAIM).length;
 
   if (basename(briefPath, '.json') !== basename(page, '.md')) {
-    result.defects.push(`names page "${page}", but a brief is filed under its page's own name`);
+    result.defects.push(`names page "${page}", but a brief is filed under its page's name`);
   }
   const pagePath = join(root, page);
   const pageExists = existsSync(pagePath);
@@ -756,7 +756,7 @@ export function checkBrief(briefPath, index, root) {
  * is absent, not valid JSON, or not a JSON array; a valid list still fails one entry at a time
  * when an entry is not a string or sits outside `docs/`, and that entry alone is dropped.
  * @param {string} listPath
- * @param {string} root The directory `listPath`'s own message is reported relative to.
+ * @param {string} root The directory `listPath`'s message is reported relative to.
  * @returns {RebuiltListResult}
  */
 export function loadRebuiltList(listPath, root) {

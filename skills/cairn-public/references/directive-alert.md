@@ -30,4 +30,4 @@ Reads:
 Override seams:
 
 - The `caution` role defaults its icon to `leaf`, set by `defaultIconByRole` on the definition.
-- A theme that drops daisyUI's `alert` component key from the plugin `exclude` list gets daisyUI's own rules underneath these.
+- A theme that drops daisyUI's `alert` component key from the plugin `exclude` list gets daisyUI's rules underneath these.

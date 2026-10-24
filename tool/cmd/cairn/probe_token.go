@@ -53,7 +53,7 @@ type checkSite struct {
 	id          string
 	zoneID      string
 	owner, repo string
-	// branch is the repository's own default branch, the ref the Contents row reads a file at.
+	// branch is the repository's default branch, the ref the Contents row reads a file at.
 	// A repository whose default branch is not main answers 404 for any other ref, which reads
 	// as a missing permission rather than as the wrong ref.
 	branch string
@@ -199,7 +199,7 @@ func skipRow(p permission, display string) checkRow {
 }
 
 // probeRow classifies err through the same provider-error path health checks use, and builds the
-// row's own display text from the classified reason.
+// row's display text from the classified reason.
 func probeRow(p permission, err error) checkRow {
 	if err == nil {
 		return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.OK}}
@@ -212,15 +212,15 @@ func probeRow(p permission, err error) checkRow {
 	return checkRow{permission: p, verdict: spine.CheckVerdict{ID: p.Label, State: spine.Unknown, Reason: spine.ReasonNotObservable}, display: "unreachable"}
 }
 
-// checkRowWord names row's own wire word, through the same function a health check's row goes
+// checkRowWord names row's wire word, through the same function a health check's row goes
 // through, so a permission the run did not attempt and a check the run did not attempt read the
 // same to an operator reading both. A permission row is never held: a hold is a decision about a
-// site's own failing check, which is not a thing to say about a token's permissions.
+// site's failing check, which is not a thing to say about a token's permissions.
 func checkRowWord(row checkRow) string {
 	return spine.StateWord(row.verdict.State, row.verdict.Reason, row.verdict.Acknowledged)
 }
 
-// printCheckRow writes row's own line: the permission label, the credential it belongs to, the
+// printCheckRow writes row's line: the permission label, the credential it belongs to, the
 // wire word its verdict carries, and the display text for anything beyond a pass.
 func printCheckRow(out io.Writer, row checkRow) {
 	word := checkRowWord(row)

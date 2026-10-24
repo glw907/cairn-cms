@@ -216,7 +216,7 @@ export const listRole: StaticRule = {
         let cause: string;
         let itemNote = '';
         if (ownSuppressor) {
-          cause = `its own class "${ownSuppressor.name}" resolves to a list-style-removing declaration${conditionSuffix(ownSuppressor.conditions)}`;
+          cause = `its class "${ownSuppressor.name}" resolves to a list-style-removing declaration${conditionSuffix(ownSuppressor.conditions)}`;
         } else {
           const hit = (items.get(list) ?? [])
             .map((item) => itemDisplayChange(ctx, classesOf(file, item.start)))
@@ -242,7 +242,7 @@ export const listRole: StaticRule = {
           start: list.start,
           end: list.end,
           message:
-            `<${list.name}> suppresses its own marker: ${cause}, and a marker-suppressed <ul>/<ol>/<menu> ` +
+            `<${list.name}> suppresses its marker: ${cause}, and a marker-suppressed <ul>/<ol>/<menu> ` +
             'with no role attribute stops being announced as a list in WebKit/VoiceOver; add ' +
             `role="list" to restore the list semantics (WCAG 1.3.1).${itemNote}`,
         });

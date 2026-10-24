@@ -19,7 +19,7 @@ import {
 
 /**
  * A realistic deploy transcript, the same shape deploy.test.mjs pins from the T3 spike, so
- * deployWorker's own url-parsing runs for real rather than being stubbed out from under it.
+ * deployWorker's url-parsing runs for real rather than being stubbed out from under it.
  */
 const DEPLOY_STDOUT_SAMPLE =
   'Uploaded cairn-t4a-spike (2.14 sec)\n' +
@@ -171,8 +171,8 @@ function stubResolver(overrides = {}) {
 const NS_HOST = 'ns1.registrar.test';
 
 /**
- * A DNS context where the domain's own authoritative nameservers already carry the apex AAAA
- * record (the Custom Domain attach's own write) while the recursive resolver still answers
+ * A DNS context where the domain's authoritative nameservers already carry the apex AAAA
+ * record (the Custom Domain attach's write) while the recursive resolver still answers
  * absent, the exact negative-cache disagreement this split exists to see past.
  * @param {string} domain the domain queried
  * @returns {{ resolve: (servers?: string[]) => object }}
@@ -189,7 +189,7 @@ function disagreeingDns(domain) {
 }
 
 /**
- * A DNS context where the domain's own authoritative nameservers are reachable but genuinely
+ * A DNS context where the domain's authoritative nameservers are reachable but genuinely
  * carry no apex AAAA record yet.
  * @param {string} domain the domain queried
  * @returns {{ resolve: (servers?: string[]) => object }}
@@ -274,7 +274,7 @@ test('unreachable over both http and https, with no DNS context: returns hostnam
     log: () => {},
   });
 
-  // cutOverHostname's own call site forwards no DNS context, so confirmHostname's diagnosis
+  // cutOverHostname's call site forwards no DNS context, so confirmHostname's diagnosis
   // stays absent-safe: no lookup is attempted, and it reports the conservative default.
   assert.deepEqual(result, { outcome: 'hostname-records-absent' });
 });
@@ -431,8 +431,8 @@ test('redeploy failure maps to cutover-deploy-failed and restores the workers.de
     (err) => {
       assert.equal(err.catalogue.code, 'cutover-deploy-failed');
       assert.equal(err.catalogue.kind, 'act');
-      // deployWorker throws its own already-catalogued error, which ends in its own "Next:"
-      // line; catalogue.next must read as cutover-deploy-failed's own next step, not the nested
+      // deployWorker throws its already-catalogued error, which ends in its own "Next:"
+      // line; catalogue.next must read as cutover-deploy-failed's next step, not the nested
       // deploy-failed row's, which embedding the inner message whole would produce instead.
       assert.equal(
         err.catalogue.next,
@@ -760,7 +760,7 @@ test('a repeated attach returns the same identity, with no duplicate-error branc
   const [firstDomain] = cloudflare.state.customDomains;
 
   // A second full run (the re-entry shape a resumed chapter 2 would take) re-attaches the same
-  // hostname; the fake's own idempotent PUT must not grow a duplicate and must not error.
+  // hostname; the fake's idempotent PUT must not grow a duplicate and must not error.
   const second = await cutOverHostname({
     record,
     api,

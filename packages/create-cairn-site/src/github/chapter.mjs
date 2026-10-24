@@ -103,14 +103,14 @@ async function runStep(frame, title, detail, execute) {
  * private repository, and push the scaffold into it. Every hop is persisted to the site's state
  * record before the next one starts, so a later re-run resumes rather than repeats.
  *
- * Re-entry reads the site's own saved record (never a caller-supplied flag) and picks up after
+ * Re-entry reads the site's saved record (never a caller-supplied flag) and picks up after
  * whatever hop it last completed: a record past `app-created` skips the manifest action entirely
  * (its credentials, already saved, are reused rather than re-created, which would otherwise try
  * to register a second, colliding App) and the consent/account-name prompts along with it, since
  * both are meaningless once the App already exists. A record at `repo-created` additionally skips
  * `createRepo` (the repository already exists) but still re-enters the install step for a fresh
  * user token, since the one collected on an earlier run is never persisted, and still re-runs
- * `verifyInstallationCovers` and `pushScaffold`, both idempotent, as its own resumed final hop.
+ * `verifyInstallationCovers` and `pushScaffold`, both idempotent, as its resumed final hop.
  * @param {RunGithubChapterInput} input the chapter's inputs
  * @returns {Promise<'pushed' | 'parked' | 'declined'>} `'pushed'` once the scaffold has landed on
  *  GitHub; `'parked'` when an organization owner's approval is pending (a success state, not a
@@ -419,7 +419,7 @@ export async function runGithubChapter({
       // The scaffold's backend config is finalized with the real App identity before it is
       // pushed, so the tree lands on GitHub already able to commit through the App rather than
       // carrying the showcase's placeholder owner/repo/appId/installationId. Idempotent, so a
-      // resumed run at repo-created re-runs it harmlessly ahead of pushScaffold's own
+      // resumed run at repo-created re-runs it harmlessly ahead of pushScaffold's
       // already-pushed check.
       await finalizeGithubIdentity(dir, {
         owner: ctx.repo.owner,

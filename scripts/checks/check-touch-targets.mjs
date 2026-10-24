@@ -17,10 +17,10 @@
 // for. The fifth finding is new and real (below).
 //
 // scripts/touch-target-allowlist.json folded into ALLOWLIST here, entry for entry: the JSON's
-// {page, selector, reason} rows are already the rendered allowlist's own shape. Geoff's ruling 1
+// {page, selector, reason} rows are already the rendered allowlist's shape. Geoff's ruling 1
 // (Task 16b) then retired all five of them at once by moving the floor to 24x24, which every
 // control they named clears; the empty list below records why, and the no-drift numbers in the
-// paragraph above are the 44px bar's, kept as the graduation's own history.
+// paragraph above are the 44px bar's, kept as the graduation's history.
 //
 // This is a LIVE gate: it drives a real browser against a running preview server, so it needs
 // BASE_URL (default http://localhost:4173, examples/showcase's `npm run preview` port) already
@@ -35,15 +35,15 @@ const ROOT = repoRoot(import.meta.url);
 const RULE_ID = 'touch-targets';
 
 /**
- * Page+selector exemptions, the rendered allowlist's own shape. Suppressions are counted and
+ * Page+selector exemptions, the rendered allowlist's shape. Suppressions are counted and
  * printed by the report, and an entry naming a selector no page matches is itself an error, so a
  * row that stops meaning anything says so instead of hiding.
  *
  * EMPTY BY RULING, and that is the finished state, not a gap. Geoff's ruling 1 (Task 16b) dropped
  * the enforced floor from 44x44 to WCAG 2.5.8's AA 24x24, and every row here was written against
- * the old 44px bar. Four named DaisyUI stock controls whose own documented measurement (40px, 40px,
+ * the old 44px bar. Four named DaisyUI stock controls whose documented measurement (40px, 40px,
  * 40px, 32px) clears 24x24 on both axes. The fifth, the showcase theme's tag-filter chip, is inert
- * for the same reason, from the component's own source rather than a live measurement:
+ * for the same reason, from the component's source rather than a live measurement:
  * `.tag-filter__option` declares `min-height: 2.75rem` (44px) in
  * examples/showcase/src/routes/(site)/+page.svelte, and the width the row's reason recorded as its
  * failing dimension, 43.78px, is itself well past 24px. Both axes clear the ruled floor.

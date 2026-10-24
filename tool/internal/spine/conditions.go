@@ -10,7 +10,7 @@ import (
 var conditionsJSON []byte
 
 // ConditionText is one condition's operator-facing text, mirrored from
-// src/lib/diagnostics/conditions.ts's REGISTRY (conditions.json, kept honest by the engine's own
+// src/lib/diagnostics/conditions.ts's REGISTRY (conditions.json, kept honest by the engine's
 // check:tool-conditions). DocsAnchor and LogEvent are empty when the registry entry omits them.
 type ConditionText struct {
 	ID          Condition
@@ -22,7 +22,7 @@ type ConditionText struct {
 	LogEvent    string
 }
 
-// conditionEntry is conditions.json's own wire shape: a flat array of objects, one per
+// conditionEntry is conditions.json's wire shape: a flat array of objects, one per
 // REGISTRY key, severity spelled as the TypeScript union's two words.
 type conditionEntry struct {
 	ID          string `json:"id"`

@@ -11,8 +11,8 @@ import (
 // check's detail, a fix line, a site name, a domain, a log field value, and an adopt candidate's
 // worker name all arrive from an HTTP body, a build log, or a GitHub error, so none of them is
 // trusted. C0 and C1 controls are stripped, a tab, newline, or carriage return becomes a single
-// space so a control that separated two words never joins them and never starts a line of its
-// own, and invalid UTF-8 becomes the replacement character. No escape sequence reaches the
+// space so a control that separated two words never joins them and never starts a line by
+// itself, and invalid UTF-8 becomes the replacement character. No escape sequence reaches the
 // terminal: ansi.Strip consumes a whole sequence, parameters included, so a forged
 // "ESC[42;30m OK" never leaves colour-changing bytes sitting in the output as debris.
 func sanitize(s string) string {

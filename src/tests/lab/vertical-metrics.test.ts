@@ -308,7 +308,7 @@ describe('the composition term, and why the residual is the defect', () => {
 // above answers whether a CENTRED row pairs with a line at all. Neither answers what a TOP-ALIGNED
 // row asked for, and the first corrected emission of the inventory assumed the raw delta was
 // already the defect there. It is not: top alignment levels the members' own boxes and asks for
-// nothing else, so a member read at its centre sits half its own box below the line beside it.
+// nothing else, so a member read at its centre sits half its box below the line beside it.
 describe('the top-alignment term, and the taller member that is not a defect', () => {
   /** An icon of `ink` px of art, centred in a `box` px member tile whose top sits at `top`. */
   function tiled(box: number, ink: number, top = 0, values: Partial<MemberAnchor> = {}) {

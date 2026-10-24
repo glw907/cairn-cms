@@ -45,7 +45,7 @@ function stubRenderView() {
   return { title: 'Status', bodyHtml: '<p class="stub-view">watching</p>' };
 }
 
-test('routes over the loopback core under the console\'s own secret per-start prefix', async (t) => {
+test('routes over the loopback core under the console\'s secret per-start prefix', async (t) => {
   const server = createConsoleServer({ chapter: CHAPTER, hop: HOP, record: {}, renderView: stubRenderView });
   const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS));
   t.after(() => server.stop());
@@ -172,7 +172,7 @@ test('exit render: no refresh meta, cleared text, served through a grace window 
 
 test('exit render: with no fetch during the grace window, the server still shuts down on its own', async (t) => {
   // Ordering, not a wall-clock delta: a real `setTimeout(fn, 40)` can fire a fraction of a
-  // millisecond early under Node's own timer precision (measured directly against this server:
+  // millisecond early under Node's timer precision (measured directly against this server:
   // some runs land at ~39.7-39.9ms elapsed for a 40ms grace window, both locally and on CI), so
   // asserting `elapsed >= 40` against a real clock, wall or monotonic, is flaky by construction.
   // Mocking the grace timer instead proves the actual guarantee deterministically: the socket is
@@ -201,7 +201,7 @@ test('exit render: with no fetch during the grace window, the server still shuts
   await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
 });
 
-test('park page: a hold that ends un-cleared with a park serves that catalogue code\'s own page through the grace window before closing', async (t) => {
+test('park page: a hold that ends un-cleared with a park serves that catalogue code\'s page through the grace window before closing', async (t) => {
   const server = createConsoleServer({
     chapter: CHAPTER,
     hop: HOP,
@@ -251,7 +251,7 @@ test('park page: a cleared observation always wins over a park argument, so the 
   await stopPromise;
 });
 
-test('park page: a real hold ending on a park serves it here, so deleting the loop\'s own forwarding turns this red', async () => {
+test('park page: a real hold ending on a park serves it here, so deleting the loop\'s forwarding turns this red', async () => {
   // The three park tests above call `stop(park)` themselves, which proves the SERVER but not the
   // WIRING: with the hold loop's forwarding deleted they all stay green while a real run's park
   // page becomes unreachable. This test hands the park to nothing but a probe, and lets the real
@@ -348,9 +348,9 @@ test('park page: with no fetch during the grace window, the server still shuts d
 
 test('render purity: rendering never issues an API or DNS call', async (t) => {
   const server = createConsoleServer({ chapter: CHAPTER, hop: HOP, record: {}, renderView: stubRenderView, graceMs: 20 });
-  // Binding the loopback socket itself resolves '127.0.0.1' through Node's own net internals, so
+  // Binding the loopback socket itself resolves '127.0.0.1' through Node's net internals, so
   // the mocks are installed only once the server is up: what this test guards is RENDERING, a
-  // request landing on the console's route, never issuing an API call or a DNS lookup of its own.
+  // request landing on the console's route, never issuing an API call or a DNS lookup.
   const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS));
   const parsed = new URL(url);
 
@@ -380,7 +380,7 @@ test('render purity: rendering never issues an API or DNS call', async (t) => {
 });
 
 // The sentinel-sweep fixture: distinctive, unmistakable strings planted in apiToken and every
-// other credential-shaped field a real site record carries, including the GitHub App's own
+// other credential-shaped field a real site record carries, including the GitHub App's
 // secrets, which neither real view ever reads. If any real route's rendered bytes ever contain
 // one of these, the allowlist discipline, or a whole-record spread bypassing it, has a hole.
 const SENTINEL_TOKEN = 'SENTINEL-CLOUDFLARE-API-TOKEN-DO-NOT-RENDER';

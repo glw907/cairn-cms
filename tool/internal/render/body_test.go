@@ -300,7 +300,7 @@ func TestSectionLabels(t *testing.T) {
 }
 
 // TestFixIsNeverTruncated is criterion 10: every word of a fix reaches the frame at every width,
-// and the tool's own bookkeeping about a missing page never does.
+// and the tool's bookkeeping about a missing page never does.
 func TestFixIsNeverTruncated(t *testing.T) {
 	fix, ok := health.FixFor(spine.Outcome{Code: spine.CodeDeployBuildFailed})
 	if !ok {
@@ -314,12 +314,12 @@ func TestFixIsNeverTruncated(t *testing.T) {
 			}
 		}
 		if strings.Contains(text, "no remedy page yet") {
-			t.Errorf("width %d: the tool's own bookkeeping reached the operator's column", width)
+			t.Errorf("width %d: the tool's bookkeeping reached the operator's column", width)
 		}
 	}
 }
 
-// TestHyperlinkOnlyForConstrainedTargets is criterion 10's hyperlink rule: a fix's own
+// TestHyperlinkOnlyForConstrainedTargets is criterion 10's hyperlink rule: a fix's
 // documentation URL becomes an OSC 8 link where colour is on, and no row of the hostile URL
 // corpus ever does.
 func TestHyperlinkOnlyForConstrainedTargets(t *testing.T) {
@@ -345,7 +345,7 @@ func TestConditionIDNeverAloneOnALine(t *testing.T) {
 		for _, ascii := range []bool{false, true} {
 			for _, l := range plainLines(input(fixtures.OneSick(), BodySingle, width, ProfileTrueColor, ascii, spine.VerdictCritical)) {
 				if strings.TrimSpace(l) == string(spine.ConditionEdgeHTTPSNotForced) {
-					t.Fatalf("width %d ascii %v: the condition id took a line of its own", width, ascii)
+					t.Fatalf("width %d ascii %v: the condition id took a line by itself", width, ascii)
 				}
 			}
 		}
@@ -353,7 +353,7 @@ func TestConditionIDNeverAloneOnALine(t *testing.T) {
 }
 
 // TestConditionIDPlacementByBand is criterion 11's band rule: at 100 columns and above the id
-// trails the fix block's URL line, and below that it trails the check's own detail instead.
+// trails the fix block's URL line, and below that it trails the check's detail instead.
 func TestConditionIDPlacementByBand(t *testing.T) {
 	cond := string(spine.ConditionEdgeHTTPSNotForced)
 	for _, width := range []int{100, 120, 200} {
@@ -391,7 +391,7 @@ func lineCarrying(t *testing.T, width int, want string) string {
 }
 
 // TestHeldFailuresAreVisibleExpiringAndEscalating is criterion 12. A held row carries the held
-// glyph, the word, and its own trailing field; a hold inside 48 hours takes the attention ink;
+// glyph, the word, and its trailing field; a hold inside 48 hours takes the attention ink;
 // and a lapsed hold holds nothing, leaving the verdict exactly as the caller computed it.
 func TestHeldFailuresAreVisibleExpiringAndEscalating(t *testing.T) {
 	theme := NewTheme(true, ProfileTrueColor)
@@ -585,7 +585,7 @@ func TestWidthDefaultAndExactHonouring(t *testing.T) {
 
 // TestNoLineExceedsTheRequestedWidth is criterion 19's two-table sweep over whole frames: every
 // fixture, every terminal body, the width range from 20 to 400, at both glyph tiers, each frame
-// measured under the width table its own tier chose. The Unicode tier is checked against the
+// measured under the width table its tier chose. The Unicode tier is checked against the
 // narrow table and the ASCII tier against Ambiguous=wide, which is the pairing a terminal ever
 // presents: a terminal configured for the wide reading takes the ASCII tier (ADR-0002).
 func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
@@ -615,7 +615,7 @@ func TestNoLineExceedsTheRequestedWidth(t *testing.T) {
 // by tier, not a package-level setting, and the two tables disagree on an East Asian Ambiguous
 // rune exactly as their names promise.
 func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
-	// U+25CF is the Unicode tier's own pass mark and is EAW=Ambiguous (glyph.go's
+	// U+25CF is the Unicode tier's pass mark and is EAW=Ambiguous (glyph.go's
 	// ambiguousRunes), so it is the one rune that separates the two tables.
 	const ambiguous = "●"
 	narrow := NewTheme(true, ProfileTrueColor).forTier(false)
@@ -626,7 +626,7 @@ func TestWidthTableFollowsTheGlyphTier(t *testing.T) {
 	if got := wide.width(ambiguous); got != 2 {
 		t.Errorf("wide table measures %q as %d cells, want 2", ambiguous, got)
 	}
-	// The tables agree on plain ASCII, which is the whole of the ASCII tier's own glyph set.
+	// The tables agree on plain ASCII, which is the whole of the ASCII tier's glyph set.
 	for _, s := range []string{"+", "!", "*", "?", "o", ">", "-", "...", "my-site"} {
 		if narrow.width(s) != wide.width(s) {
 			t.Errorf("the tables disagree on %q: narrow %d, wide %d", s, narrow.width(s), wide.width(s))
@@ -676,7 +676,7 @@ func TestEveryFixtureRendersInEveryBody(t *testing.T) {
 }
 
 // TestDeterminismAcrossTheEnvironment asserts two renders of one input are byte-identical and
-// that the stamp printed is the input's own instant in UTC, which is the same bytes under every
+// that the stamp printed is the input's instant in UTC, which is the same bytes under every
 // TZ the machine might be set to.
 func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 	for _, tz := range []string{"UTC", "America/Anchorage", "Asia/Tokyo"} {
@@ -688,13 +688,13 @@ func TestDeterminismAcrossTheEnvironment(t *testing.T) {
 			t.Fatalf("TZ=%s: two renders of one input differ", tz)
 		}
 		if !strings.Contains(stripANSI(first), "2026-09-20 22:28 UTC") {
-			t.Errorf("TZ=%s: the frame does not carry the input's own instant in UTC", tz)
+			t.Errorf("TZ=%s: the frame does not carry the input's instant in UTC", tz)
 		}
 	}
 }
 
 // endsWithSuffixOf reports whether line ends with some non-empty suffix of text, which is how a
-// detail line is recognised whether it stands alone or was merged into its own check row.
+// detail line is recognised whether it stands alone or was merged into its check row.
 func endsWithSuffixOf(line, text string) bool {
 	for i := range len(text) {
 		if strings.HasSuffix(line, text[i:]) {
@@ -704,7 +704,7 @@ func endsWithSuffixOf(line, text string) bool {
 	return false
 }
 
-// manyInput builds one RenderInput over a fleet, with the run state the strip's own tests read.
+// manyInput builds one RenderInput over a fleet, with the run state the strip's tests read.
 func manyInput(reports []health.Report, width int, ascii bool) RenderInput {
 	in := input(reports, BodyMany, width, ProfileNoColor, ascii, verdictFor(reports))
 	in.Status = sampleStatus()
@@ -717,7 +717,7 @@ func nineCheckFleet() []health.Report {
 	return append(fixtures.OneSick(), fixtures.Healthy()...)
 }
 
-// TestStripWidthFormulaIsExact is criterion 1: the fallback threshold is the formula's own
+// TestStripWidthFormulaIsExact is criterion 1: the fallback threshold is the formula's
 // value, pinned as an integer, so a heading change moves it visibly rather than silently.
 func TestStripWidthFormulaIsExact(t *testing.T) {
 	reports := nineCheckFleet()
@@ -733,11 +733,11 @@ func TestStripWidthFormulaIsExact(t *testing.T) {
 	}
 	strip := strings.Join(plainLines(manyInput(reports, want, true)), "\n")
 	if !strings.Contains(strip, "delegation") {
-		t.Errorf("the strip did not draw at its own width %d:\n%s", want, strip)
+		t.Errorf("the strip did not draw at its width %d:\n%s", want, strip)
 	}
 	fallback := strings.Join(plainLines(manyInput(reports, want-1, true)), "\n")
 	if strings.Contains(fallback, "delegation") {
-		t.Errorf("the strip still drew one cell under its own width:\n%s", fallback)
+		t.Errorf("the strip still drew one cell under its width:\n%s", fallback)
 	}
 	if !strings.Contains(fallback, "could not run") {
 		t.Errorf("the fallback table did not draw at width %d:\n%s", want-1, fallback)
@@ -764,7 +764,7 @@ func TestStripHeadingsAbbreviateOnlyHTTPS(t *testing.T) {
 	}
 }
 
-// TestStripMarksAgreeWithTheRowVerdict is criterion 3. The two fail marks and the row's own
+// TestStripMarksAgreeWithTheRowVerdict is criterion 3. The two fail marks and the row's
 // verdict word come from one predicate each, and this pins the relation between them: a filled
 // mark only ever appears on a CRITICAL row, and no fail mark at all appears on an OK row.
 //
@@ -810,11 +810,11 @@ func TestHeldFailureKeepsTheHeldMarkInTheStrip(t *testing.T) {
 
 // TestFallbackTableCarriesTheEngineVersionAndTheDataAge is criterion 1's column list for the
 // plain table: the counts by state, the engine version each site runs, and how old the data is.
-// The version is read from the engine check's own structured field, so a reworded detail
+// The version is read from the engine check's structured field, so a reworded detail
 // sentence cannot move it.
 func TestFallbackTableCarriesTheEngineVersionAndTheDataAge(t *testing.T) {
 	reports := fixtures.TwelveSites()
-	// 80 columns is under the strip's own width, so the fallback table is what draws.
+	// 80 columns is under the strip's width, so the fallback table is what draws.
 	text := strings.Join(plainLines(manyInput(reports, 80, false)), "\n")
 	for _, want := range []string{"engine", "checked", "0.78.0", "0.76.0", "4m ago"} {
 		if !strings.Contains(text, want) {
@@ -913,7 +913,7 @@ func TestAllSkippedSiteProducesExactlyOneFix(t *testing.T) {
 		Credentials: []Credential{{Variable: "CAIRN_CF_READ_TOKEN", Disables: stripColumns()}},
 		Degraded:    true,
 	}
-	// The site alone, so the entry under test is the one its own nine skips produced rather than
+	// The site alone, so the entry under test is the one its nine skips produced rather than
 	// one an earlier site in the fleet owns the head line of.
 	alone := collectFleetFixes(in, []health.Report{allSkippedSite()})
 	if len(alone) != 1 {
@@ -936,12 +936,12 @@ func TestAllSkippedSiteProducesExactlyOneFix(t *testing.T) {
 		t.Errorf("the entry covers %d checks, want all %d", len(entry.ids), len(stripColumns()))
 	}
 	if entry.check != "CAIRN_CF_READ_TOKEN" {
-		t.Errorf("the entry heads with %q, want the missing token's own variable", entry.check)
+		t.Errorf("the entry heads with %q, want the missing token's variable", entry.check)
 	}
-	// Rendered alone, so the assertion reads the site's own nine-check entry rather than the
+	// Rendered alone, so the assertion reads the site's nine-check entry rather than the
 	// whole fleet's merged line, whose covered-checks list is the intersection every other
 	// twelve-site entry shares (criterion 2) and so is not guaranteed to name every one of this
-	// site's own nine checks once merged.
+	// site's nine checks once merged.
 	aloneIn := manyInput([]health.Report{allSkippedSite()}, 120, false)
 	aloneIn.Status = in.Status
 	if !strings.Contains(strings.Join(plainLines(aloneIn), "\n"), keyFixFor) {
@@ -956,7 +956,7 @@ func blockedByCred(id string) health.CheckResult {
 }
 
 // TestBlockedGroupHeadsWithTheBlockingVariableOrTheCollectiveWord is criterion 1: a group one
-// missing token explains heads with that token's own variable, and a group two different missing
+// missing token explains heads with that token's variable, and a group two different missing
 // tokens together explain heads with the collective word, never the first covered check id.
 func TestBlockedGroupHeadsWithTheBlockingVariableOrTheCollectiveWord(t *testing.T) {
 	oneToken := health.Report{Site: "one.example.org", Domain: "one.example.org", Degraded: true,
@@ -971,7 +971,7 @@ func TestBlockedGroupHeadsWithTheBlockingVariableOrTheCollectiveWord(t *testing.
 		t.Fatalf("%d entries, want 1", len(entries))
 	}
 	if got := entries[0].check; got != "CAIRN_CF_READ_TOKEN" {
-		t.Errorf("head names %q, want the blocking token's own variable", got)
+		t.Errorf("head names %q, want the blocking token's variable", got)
 	}
 
 	twoTokens := health.Report{Site: "two.example.org", Domain: "two.example.org", Degraded: true,
@@ -1048,7 +1048,7 @@ func TestBlockedFixesFollowTheFailures(t *testing.T) {
 	}
 }
 
-// TestFixListLeavesNoOrphanWord is criterion 8: the sentence has its own width, and no line of
+// TestFixListLeavesNoOrphanWord is criterion 8: the sentence has its width, and no line of
 // the fix list is one word on its own.
 func TestFixListLeavesNoOrphanWord(t *testing.T) {
 	for _, width := range []int{80, 100, 120} {
@@ -1070,7 +1070,7 @@ func TestFixListLeavesNoOrphanWord(t *testing.T) {
 }
 
 // TestCheckedPhraseLeadsWithTheAge pins the header's recency device: how old the data is, then
-// the instant in parentheses in UTC, then the run's own measured time. A stamp carrying a zone
+// the instant in parentheses in UTC, then the run's measured time. A stamp carrying a zone
 // offset prints in UTC like every other, so two operators reading the same run read the same
 // instant. A run settled within the last second, or one stamped ahead of the clock rendering it,
 // has no age to state and prints the stamp alone.
@@ -1124,7 +1124,7 @@ func TestNoBodyPrintsAReasonCode(t *testing.T) {
 					}
 				}
 				// The fleet body draws a mark per check rather than a detail, so only the two
-				// bodies that carry a check's own line are asked for the phrase.
+				// bodies that carry a check's line are asked for the phrase.
 				if body == BodyMany {
 					continue
 				}
@@ -1147,7 +1147,7 @@ func TestNoBodyPrintsAReasonCode(t *testing.T) {
 // token that is not a token itself ("edg" for edge.https-not-forced) is the failure this catches.
 func TestFixListEndsNoLineInACutToken(t *testing.T) {
 	reports := fixtures.TwelveSites()
-	// The handles this fleet's own fix list prints: the condition id each check declared, the
+	// The handles this fleet's fix list prints: the condition id each check declared, the
 	// check ids, the site names, and the credential variables. A line may end in any of them
 	// whole; a proper prefix of one is a cut. They are read off the reports rather than off the
 	// shipped vocabularies, since an id no fixture declares cannot be cut by a frame.
@@ -1182,7 +1182,7 @@ func TestFixListEndsNoLineInACutToken(t *testing.T) {
 				continue
 			}
 			for _, tok := range tokens {
-				// A count or a single letter is a word of its own that happens to open a handle
+				// A count or a single letter is a word by itself that happens to open a handle
 				// ("9" opens "blog-site"), so only a piece long enough to be a cut is read as one.
 				if len(last) > 2 && len(last) < len(tok) && strings.HasPrefix(tok, last) {
 					t.Errorf("width %d: the line %q ends in a cut %q", width, l, tok)
@@ -1219,7 +1219,7 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 
 		// The field column pays for itself only where it leaves the fields a readable share of
 		// the line. Below the wide rung the record names itself on one line and its fields
-		// follow, which is what keeps a field from being hard-wrapped inside its own token.
+		// follow, which is what keeps a field from being hard-wrapped inside its token.
 		record := lineCarryingIn(t, lines, "commit.failed")
 		if width >= width100 && !strings.Contains(record, "=") {
 			t.Errorf("width %d: the record line carries no field: %q", width, record)
@@ -1232,10 +1232,10 @@ func TestLogBodyStatesTheDayOnceAndNeverCutsAReason(t *testing.T) {
 }
 
 // TestLogRowWithNoEventDropsTheEventColumn covers the window a query against a public site
-// actually returns: hundreds of the Worker's own console lines with the odd engine record among
+// actually returns: hundreds of the Worker's console lines with the odd engine record among
 // them. A line carrying no event starts its fields against the level rather than past a column
 // of blank cells, a line carrying one keeps the column, and a message that opened with a newline
-// and a colour escape prints with no gap after its own key.
+// and a colour escape prints with no gap after its key.
 func TestLogRowWithNoEventDropsTheEventColumn(t *testing.T) {
 	for _, width := range []int{60, 80, 100, 120} {
 		lines := plainLines(RenderInput{
@@ -1323,7 +1323,7 @@ func TestStyledRowPaddingCarriesTheRowStyle(t *testing.T) {
 	row := lipgloss.JoinHorizontal(lipgloss.Top, ground.Render("x"), ground.Render("y"))
 	for _, sp := range parseSpans(row) {
 		if strings.TrimSpace(sp.text) == "" && !strings.Contains(sp.sgr, "48;2;18;52;86") {
-			t.Errorf("a row's padding carries %q rather than the row's own ground", sp.sgr)
+			t.Errorf("a row's padding carries %q rather than the row's ground", sp.sgr)
 		}
 	}
 }
@@ -1349,7 +1349,7 @@ func TestFleetOnePassRule(t *testing.T) {
 	}
 }
 
-// tableHeadingLine returns the plain table's own heading row, or "" when the frame drew the
+// tableHeadingLine returns the plain table's heading row, or "" when the frame drew the
 // labelled strip instead. The strip's heading row leads with blanks and a check id, so the
 // leading "site" is what tells the two apart.
 func tableHeadingLine(lines []string) string {
@@ -1362,7 +1362,7 @@ func tableHeadingLine(lines []string) string {
 }
 
 // TestManyTableDrawsEveryColumnWholeAtEveryWidth walks the whole supported width range and
-// asserts the plain table prints each column it draws in full: every heading as its own whole
+// asserts the plain table prints each column it draws in full: every heading as its whole
 // word, and every engine version as the version rather than its first character. It is the
 // assertion the width-60 golden did not make. Before the column budget dropped a column it
 // could not fit, lipgloss squeezed the last ones instead, and a real run at --width 60 printed

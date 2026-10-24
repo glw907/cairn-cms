@@ -1,16 +1,16 @@
 // Emit the public Waymark template into `templates/waymark/` at the repo root, from this package's
-// own bake output plus the repo-only overlay (README, LICENSE, .dev.vars.example, the .gitignore
+// bake output plus the repo-only overlay (README, LICENSE, .dev.vars.example, the .gitignore
 // negation). The tree is generated wholesale: every emit regenerates it, so a hand edit survives at
 // most one run, and `--check` fails when the committed tree and a fresh emit disagree.
 //
 // This replaces the cross-repo sync that pushed the same tree to glw907/cairn-waymark-template.
 // Cloudflare's Deploy button and C3's --template both accept a subdirectory, so the template no
-// longer needs a repo of its own, and the drift tripwire becomes an ordinary in-repo gate: no push
+// longer needs a repo, and the drift tripwire becomes an ordinary in-repo gate: no push
 // credential, no second copy, and a red run lands on the change that caused it.
 //
 // The template must stay OUTSIDE the root package.json's `packages/*` workspace glob. Cloudflare
 // treats the subdirectory as the root of the repository it creates and requires the application be
-// fully isolated within it; a workspace member has no lockfile of its own, since npm hoists to the
+// fully isolated within it; a workspace member has no lockfile, since npm hoists to the
 // root, so `packages/` would break that isolation.
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -31,9 +31,9 @@ export const OVERLAY_DIR = path.join(packageDir, 'template-repo');
 /** Where the composed template lands, repo-relative. */
 export const TEMPLATE_DIR = 'templates/waymark';
 
-// The overlay's own merge-rule table. Every overlay file replaces its bake counterpart outright
+// The overlay's merge-rule table. Every overlay file replaces its bake counterpart outright
 // except a path listed here, which is merged instead. Today this holds exactly one entry: the
-// .gitignore negation must land after the bake's own `.dev.vars.*` line, or the negation is a
+// .gitignore negation must land after the bake's `.dev.vars.*` line, or the negation is a
 // no-op. A future overlay file (for example a keyed package.json merge) adds a row here rather
 // than a special case buried in the apply loop.
 const OVERLAY_MERGE_RULES = { '.gitignore': 'append' };
@@ -69,7 +69,7 @@ export async function applyOverlay(sourceDir, overlayDir) {
 
 /**
  * The secret names the template's Worker `Env` carries: the overlay's `.dev.vars.example`, since a
- * secret never appears in `wrangler.jsonc`. The bake's own regeneration has no such file to read.
+ * secret never appears in `wrangler.jsonc`. The bake's regeneration has no such file to read.
  */
 const SECRET_NAMES_ARGS = ['--env-file=.dev.vars.example'];
 
@@ -137,7 +137,7 @@ const CITATION_PATTERNS = [
 /**
  * Every file the citation scan reads: the files under `src/` and the files directly in the root.
  * The baked guidance under `.claude/` is outside the scan, since those shipped skills name the
- * cairn-cms repository's own `docs/internal/` paths on purpose.
+ * cairn-cms repository's `docs/internal/` paths on purpose.
  * @param {string} root the template tree
  * @returns {Promise<string[]>} paths relative to root
  */
@@ -165,7 +165,7 @@ function jsonStrings(value) {
 /**
  * Find what an emitted template must not ship: a `docs/internal/` path or a `Verdict` number in a
  * file under `src/` or in the root, and a parent-relative path in `cairn-audit.config.json`, which
- * would resolve outside a scaffolded site's own tree.
+ * would resolve outside a scaffolded site's tree.
  * @param {string} root the template tree
  * @returns {Promise<string[]>} one line per violation, empty when the tree is clean
  */
@@ -201,7 +201,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 
   const enginePackage = JSON.parse(await readFile(path.join(repoRoot, 'package.json'), 'utf8'));
-  // Both specs default to the engine's own version, the substitution the bake's callers already
+  // Both specs default to the engine's version, the substitution the bake's callers already
   // make: the two packages publish in lockstep, so one number governs both.
   const defaultSpec = `^${enginePackage.version}`;
   const engineSpec = values['engine-spec'] ?? defaultSpec;

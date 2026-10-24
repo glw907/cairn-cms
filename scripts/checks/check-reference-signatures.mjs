@@ -33,7 +33,7 @@ const ALLOWLIST = /** @type {Set<string>} */ (
     // here, so the page omits it, mirroring `normalizeConcepts`.
     '.#initialValues',
     // The page writes the generic `Role` parameter; in this unaugmented build `Role` resolves to
-    // the literal `'owner' | 'editor'` union. A consuming site's own `CairnRolesRegister`
+    // the literal `'owner' | 'editor'` union. A consuming site's `CairnRolesRegister`
     // augmentation is what narrows `Role` to its declared vocabulary, so the page names the type,
     // not this build's resolved literal.
     '/auth-store#insertEditor',

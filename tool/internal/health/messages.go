@@ -11,11 +11,11 @@ import (
 
 // This file is the messages table tool/docs/design/copy-standard.md section 4.1 requires: every
 // detail and skip fragment health's checks print, so no check body composes operator-facing
-// prose at its own call site. A check returns its measured values; a function here renders the
+// prose at its call site. A check returns its measured values; a function here renders the
 // line. Every string is written to the standard's section 2 grammar (2.4 for a detail line, 2.6
 // for a skip reason) and copied from its section 3 catalogue entry where one exists; a function
 // whose comment says so renders a string the catalogue does not cover instead, under section
-// 4.6's own rule for that case.
+// 4.6's rule for that case.
 
 // detailHTTPSAlwaysUseHTTPSOff renders the https-forced check's Always Use HTTPS half, catalogue
 // section 3.4.
@@ -45,13 +45,13 @@ func detailDelegationWrongNameservers() string {
 	return "the domain points at nameservers outside this Cloudflare zone"
 }
 
-// detailDelegationNoAssignedNS renders the delegation check's own unobservable verdict,
+// detailDelegationNoAssignedNS renders the delegation check's unobservable verdict,
 // catalogue section 3.4.
 func detailDelegationNoAssignedNS() string {
 	return "no assigned nameservers recorded for this site"
 }
 
-// detailDelegationNoZone renders the delegation check's own unobservable verdict, catalogue
+// detailDelegationNoZone renders the delegation check's unobservable verdict, catalogue
 // section 3.4.
 func detailDelegationNoZone() string {
 	return "Cloudflare reports no zone for this domain"
@@ -86,7 +86,7 @@ func detailEmailDMARCNoPolicy() string {
 	return "the DMARC record carries no p= policy"
 }
 
-// tmplEmailSPFMissing is detailEmailSPFMissing's own format template, named so `make copy-list`
+// tmplEmailSPFMissing is detailEmailSPFMissing's format template, named so `make copy-list`
 // can print the template rather than inventing an example include mechanism.
 const tmplEmailSPFMissing = "the sending subdomain's SPF record omits %s"
 
@@ -128,7 +128,7 @@ func detailNoRepoRecorded() string {
 	return "no GitHub repository recorded for this site"
 }
 
-// detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's own
+// detailDeployBuildFailed renders the deploy check's failed-build verdict. The catalogue's
 // build-failed row composes the commit and branch position (3.4's "build failed 26m ago
 // (3f0ba18), main is 2 commits ahead"), which belongs to the render layer reading Fields, not to
 // this bare Detail fallback; this is the plainest fragment satisfying section 2.4.
@@ -137,7 +137,7 @@ func detailDeployBuildFailed() string {
 }
 
 // detailPublishNothingWaiting renders the publish-path check's quiet-state verdict: no open
-// edit branch, so nothing is waiting on an editor. The catalogue's own row for this state words
+// edit branch, so nothing is waiting on an editor. The catalogue's row for this state words
 // it as an absence of observations ("no cairn branches or publish commits observed"), which
 // reads as a failure to measure rather than the ordinary state it names; this is the plainest
 // fragment satisfying section 2.4.
@@ -161,13 +161,13 @@ func detailPublishStaleBranches(count int) string {
 	return fmt.Sprintf(tmplPublishStaleBranchesPlural, count)
 }
 
-// detailEngineNoCairnDependency renders the engine check's own unobservable verdict, catalogue
+// detailEngineNoCairnDependency renders the engine check's unobservable verdict, catalogue
 // section 3.4.
 func detailEngineNoCairnDependency() string {
 	return "the site's package.json carries no " + cairnPackageName + " dependency"
 }
 
-// detailEngineVersionNotFound renders the engine check's own unobservable verdict, catalogue
+// detailEngineVersionNotFound renders the engine check's unobservable verdict, catalogue
 // section 3.4.
 func detailEngineVersionNotFound() string {
 	return "the installed or latest version is not in the published version list"
@@ -178,7 +178,7 @@ func detailEngineCurrent(installed string) string {
 	return installed + " is current"
 }
 
-// tmplEngineBehind is detailEngineBehind's own format template.
+// tmplEngineBehind is detailEngineBehind's format template.
 const tmplEngineBehind = "%s installed, %s latest, %d releases behind"
 
 // detailEngineBehind renders the engine check's behind-latest verdict, catalogue section 3.4.
@@ -187,19 +187,19 @@ func detailEngineBehind(installed, latest string, releasesBehind int) string {
 }
 
 // tmplEngineBehindActionableSuffix is the clause detailEngineBehindActionable appends to
-// detailEngineBehind's own rendering.
+// detailEngineBehind's rendering.
 const tmplEngineBehindActionableSuffix = ", with a required change"
 
 // detailEngineBehindActionable renders the engine check's Failing verdict, when a skipped
-// release carries an actionable "Consumers must:" change. The catalogue's own behind-latest row
+// release carries an actionable "Consumers must:" change. The catalogue's behind-latest row
 // does not distinguish this case from the OK behind-latest one; this appends the one fact that
 // does.
 func detailEngineBehindActionable(installed, latest string, releasesBehind int) string {
 	return detailEngineBehind(installed, latest, releasesBehind) + tmplEngineBehindActionableSuffix
 }
 
-// errorsWindow renders d the way the catalogue's own count fields do ("0 errors in 24h"): a
-// whole number of hours renders bare, and anything else falls back to Go's own duration format
+// errorsWindow renders d the way the catalogue's count fields do ("0 errors in 24h"): a
+// whole number of hours renders bare, and anything else falls back to Go's duration format
 // rather than inventing a second notation.
 func errorsWindow(d time.Duration) string {
 	if hours := d.Hours(); hours == float64(int64(hours)) {
@@ -216,7 +216,7 @@ func detailErrorsObservabilityOff() string {
 
 // detailAPIRequestRejected renders the Detail every check carries when a provider answered a
 // request with HTTP 400. The catalogue carries no row for it: the condition did not exist before
-// 2026-09-21, when a live run found cairn's own Workers Logs query body rejected and reported to
+// 2026-09-21, when a live run found cairn's Workers Logs query body rejected and reported to
 // the operator as a site setting they had never turned off. It names cairn as the faulty party
 // and points at the one place a report belongs, the shape tmplCommandCrashed already uses for the
 // other fault that is never the operator's.
@@ -225,9 +225,9 @@ func detailAPIRequestRejected() string {
 }
 
 // The format templates detailErrorsCount and detailErrorsAboveThreshold render from. The two
-// "at least" forms carry a count the fetch truncated at its own limit: the window holds that many
+// "at least" forms carry a count the fetch truncated at its limit: the window holds that many
 // records and possibly more, so the line says what was measured rather than passing a floor off as
-// an exact number. They extend the catalogue's section 3.4 rows, under section 4.6's own rule for
+// an exact number. They extend the catalogue's section 3.4 rows, under section 4.6's rule for
 // a template the catalogue does not carry.
 const (
 	tmplErrorsCount                 = "%d errors in %s"
@@ -259,7 +259,7 @@ func detailCredsGitHubNoExpiry() string {
 	return "GitHub reports no expiry for this token"
 }
 
-// tmplCredsGitHubExpiring is detailCredsGitHubExpiring's own format template.
+// tmplCredsGitHubExpiring is detailCredsGitHubExpiring's format template.
 const tmplCredsGitHubExpiring = "the GitHub token expires %s, in %d days"
 
 // detailCredsGitHubExpiring renders the creds check's expiring-soon verdict, catalogue section
@@ -272,7 +272,7 @@ func detailCredsGitHubExpiring(expiry, now time.Time) string {
 
 // detailCredsUnauthorized renders a credential the provider rejected outright, catalogue section
 // 3.4's "Cloudflare rejected the token" generalized across providers: ReasonToOutcome carries no
-// provider name of its own, so credentialLine supplies it as this line's own leading word.
+// provider name, so credentialLine supplies it as this line's leading word.
 func detailCredsUnauthorized() string {
 	return "the token was rejected"
 }
@@ -284,7 +284,7 @@ func detailCredsForbidden() string {
 	return "the token lacks a required permission"
 }
 
-// reasonPhrases is the prose every reason code prints as. A reason code is cairn's own
+// reasonPhrases is the prose every reason code prints as. A reason code is cairn's
 // vocabulary, greppable and stable, and it belongs in --json and in a log line; a body printing
 // the code itself hands an operator a token to search for rather than the sentence that says
 // what the run found. Every code spine publishes has a row here, which
@@ -344,10 +344,10 @@ func ReasonPhrase(r spine.ReasonCode) string {
 }
 
 // Catalogue returns every operator-facing string this package's messages table can print: a
-// fixed detail or skip fragment rendered as-is, and a parameterized one rendered as its own named
+// fixed detail or skip fragment rendered as-is, and a parameterized one rendered as its named
 // format template rather than an invented example value. `cmd/copylist` calls this to build
 // `make copy-list`'s output; a caller wanting a rendered line for one specific verdict calls the
-// package's own detailXxx function instead.
+// package's detailXxx function instead.
 func Catalogue() []string {
 	out := []string{
 		detailHTTPSAlwaysUseHTTPSOff(),

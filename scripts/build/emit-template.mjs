@@ -30,7 +30,7 @@ const CONTENT_MANIFEST_PATH = path.join('src', 'content', '.cairn', 'index.json'
  * its matching end marker, inclusive, is dropped; a line outside any block passes through
  * unchanged. Defensive no-ops, so the function is safe to call on any file the post-copy pass
  * walks: content with no start marker returns unchanged, and content carrying a NUL byte (the
- * post-copy pass's own binary signal) returns unchanged rather than risk a lossy rewrite.
+ * post-copy pass's binary signal) returns unchanged rather than risk a lossy rewrite.
  * @param {string} content the file's text
  * @param {string} filePath the file's path, named in a thrown error
  * @returns {string} the content with every marked block removed
@@ -122,15 +122,15 @@ export function isAlwaysSkippedPath(rel) {
  * the content the copy actually kept, by dropping every entry whose source content file the
  * exclusion walk removed. A plain copy of `from`'s committed manifest would carry entries for any
  * excluded path (the thirteen fixture posts excluded from the scaffold, for one), and the emitted
- * tree's own `cairnManifest()` Vite plugin verifies the manifest against its content at build
+ * tree's `cairnManifest()` Vite plugin verifies the manifest against its content at build
  * time, so a stale copy fails every scaffold's first build.
  *
  * A manifest entry keys back to its content file as `src/content/<concept>/<id>.md`, the same
- * directory convention `.cairn-template.json`'s own excluded paths already rely on (every concept
+ * directory convention `.cairn-template.json`'s excluded paths already rely on (every concept
  * descriptor names its content directory `src/content/<concept id>`). The committed manifest is
  * already canonical (entries sorted by concept then id, a fixed per-entry key order,
  * `formatManifest`'s output), and removing entries never disturbs that order or a surviving
- * entry's own shape, so the filtered result is byte-identical to a fresh regeneration: a kept
+ * entry's shape, so the filtered result is byte-identical to a fresh regeneration: a kept
  * entry's content file did not change, so neither does its manifest projection. This runs on the
  * copied tree alone; it needs no installed dependencies and no subprocess. A `from` with no
  * committed manifest (a fixture directory in a unit test) is left alone, the same no-op contract
@@ -158,14 +158,14 @@ async function regenerateManifest(from, to, exclude) {
   );
 }
 
-/** The repo root's own installed wrangler, the one version every regeneration uses. */
+/** The repo root's installed wrangler, the one version every regeneration uses. */
 const WRANGLER_BIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../node_modules/.bin/wrangler');
 
 /** The file `wrangler types` writes the Worker `Env` into, at a site's root. */
 const WORKER_TYPES_FILE = 'worker-configuration.d.ts';
 
 /**
- * Regenerate an emitted tree's `worker-configuration.d.ts` from the tree's own `wrangler.jsonc`,
+ * Regenerate an emitted tree's `worker-configuration.d.ts` from the tree's `wrangler.jsonc`,
  * when the source shipped one. The source's file describes the source's config, and the marker
  * strip removes bindings from the emitted config (the showcase's members fixture database), so a
  * copied file would name a binding the emitted site never binds. Runtime types stay out of the

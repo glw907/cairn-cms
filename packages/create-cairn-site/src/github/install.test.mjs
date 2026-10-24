@@ -106,7 +106,7 @@ test('installAndAuthorize: the callback path installs, exchanges the code, and r
       opened.push(url);
       // Mirror request_oauth_on_install directly: the fake's install page is a stand-in with no
       // real redirect, so push the installation row GitHub would have created, then hit this
-      // run's own loopback /callback the way GitHub's install redirect would, with the loopback
+      // run's loopback /callback the way GitHub's install redirect would, with the loopback
       // base pulled from the heartbeat log line printed just after this call returns.
       setTimeout(() => {
         github.state.installations.push({ id: 99, account: { login: 'fake-owner' } });
@@ -201,7 +201,7 @@ test('installAndAuthorize: an installation appearing while the browser callback 
 
   const opened = [];
   // Wide relative to the STATUS carry-forward's known-flaky race: this delay must reliably
-  // outlast installAndAuthorize's own pre-race findInstallation() check (a real JWT sign plus a
+  // outlast installAndAuthorize's pre-race findInstallation() check (a real JWT sign plus a
   // round trip), or that check itself observes the installation already present under
   // contention and takes the "existing" shortcut this test is not exercising, opening the
   // browser only once instead of the two hops asserted below.
@@ -249,11 +249,11 @@ test('installAndAuthorize: the installation poll wins the race when the callback
   const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
 
   // Nothing ever drives the loopback: this is the finding's exact shape, a resumed run whose
-  // install redirect lands on a dead port from an earlier run and can never reach this run's own
+  // install redirect lands on a dead port from an earlier run and can never reach this run's
   // loopback. The poll must find the installation and win the race well inside maxWaitMs, not
-  // only after the callback wait's own timeout. The delay is wide (the STATUS carry-forward's
+  // only after the callback wait's timeout. The delay is wide (the STATUS carry-forward's
   // known-flaky race) so it reliably outlasts the pre-race findInstallation() check itself: if
-  // that check's own JWT-sign-plus-round-trip is slow enough under contention to still be
+  // that check's JWT-sign-plus-round-trip is slow enough under contention to still be
   // in-flight when a shorter delay fires, it observes the installation already present and
   // takes the "existing installation" shortcut instead, which never logs the detected-install
   // line this test asserts on.
@@ -345,7 +345,7 @@ test('installAndAuthorize: a poll-first win with a shared loopback never produce
   assert.equal(result.installationId, 7);
 
   // The loopback is SHARED (this test's own, not installAndAuthorize's to close), so its
-  // /callback wait's own timer is still pending after the poll already won. Give it time to
+  // /callback wait's timer is still pending after the poll already won. Give it time to
   // actually fire in the background (past maxWaitMs above): this is the exact moment an
   // unguarded callbackSignal would have produced an unhandled rejection.
   await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -479,11 +479,11 @@ test('installAndAuthorize: a JWT that fails to verify surfaces a plain Next step
 
 /**
  * Start a bare `GET /app/installations` stand-in that answers the FIRST request immediately
- * (empty, so `installAndAuthorize`'s own pre-race check finds nothing) and holds every later
+ * (empty, so `installAndAuthorize`'s pre-race check finds nothing) and holds every later
  * request open for `delayMs` before answering 500, standing in for the moment install.mjs's
  * concurrent poll has a `findInstallation` call already in flight when the browser callback
  * wins the race. A real GitHub outage or the fake server closing mid-poll produces the same
- * shape: a rejection surfacing well after the poll's own outcome has stopped mattering.
+ * shape: a rejection surfacing well after the poll's outcome has stopped mattering.
  * @param {number} delayMs how long to hold every request after the first before answering 500
  * @returns {Promise<{ url: string, close: () => Promise<void> }>} the running stand-in
  */
@@ -510,7 +510,7 @@ async function startSlowInstallationsServer(delayMs) {
 }
 
 // This is a regression guard, not a reproduction of a currently-reachable bug: Promise.race
-// already attaches its own handler to every candidate it races, so a losing pollSignal that
+// already attaches its handler to every candidate it races, so a losing pollSignal that
 // rejects after the callback has won is not actually unhandled today (confirmed by hand before
 // writing this test: removing install.mjs's explicit pollSignal.catch(() => {}) still leaves
 // this test green). The explicit catch and this test both guard the SAME invariant against a
@@ -523,7 +523,7 @@ test('installAndAuthorize: a poll call already in flight when the callback wins 
   t.after(() => delete process.env.CAIRN_GITHUB_WEB_BASE);
 
   // GET /app/installations is answered by this stand-in, not by fake-github: the first call
-  // (installAndAuthorize's own pre-race check) returns immediately with no installation, and
+  // (installAndAuthorize's pre-race check) returns immediately with no installation, and
   // every later call (the concurrent poll's) is held for 80ms before failing, so the poll's
   // second findInstallation call is still in flight when the callback below wins the race at
   // around 15ms, well before the held call ever settles.
@@ -584,7 +584,7 @@ test('src/github/: no implementation file names the nonexistent --app-id flag', 
   const nonexistentFlag = ['-', '-app-id'].join('-');
   const entries = await readdir(githubSrcDir, { withFileTypes: true });
   for (const entry of entries) {
-    // Excludes this suite itself: its own assertions name the flag to prove it is gone.
+    // Excludes this suite itself: its assertions name the flag to prove it is gone.
     if (!entry.isFile() || entry.name.endsWith('.test.mjs')) continue;
     const content = await readFile(path.join(githubSrcDir, entry.name), 'utf8');
     assert.ok(!content.includes(nonexistentFlag), `${entry.name} must not name the nonexistent ${nonexistentFlag} flag`);

@@ -1,5 +1,5 @@
 // cairn-cms: the tool-heuristics tripwire. The Go tool's `cairn doctor` proves several checks by
-// a text-read heuristic against the engine's own shape: it greps a site's source for a literal
+// a text-read heuristic against the engine's shape: it greps a site's source for a literal
 // engine symbol name, never imports the engine into its process (a Go binary cannot import
 // TypeScript). A rename or removal of one of those symbols on the engine side silently breaks the
 // heuristic everywhere it runs, with no compiler to catch it, since nothing on the TypeScript

@@ -41,8 +41,8 @@ func (p Profile) colorprofile() colorprofile.Profile {
 }
 
 // Env is the subset of the environment DetectProfile reads: the two variables cmd/cairn's loadEnv
-// resolves (NoColor, Term), plus the operator's own --color choice (Color: "auto", "always", or
-// "never"). It carries no more than that so this package's own determinism promise, that the same
+// resolves (NoColor, Term), plus the operator's --color choice (Color: "auto", "always", or
+// "never"). It carries no more than that so this package's determinism promise, that the same
 // input always produces the same bytes, stays checkable by construction: the same Env value can
 // only ever produce the same profile.
 type Env struct {
@@ -84,7 +84,7 @@ type Terminal struct {
 // operator who forces colour into a pipe still reads the ASCII tier there.
 //
 // cmd/cairn is the one impure caller: it resolves env.NoColor and env.Term from loadEnv and
-// passes its own stdout, and render itself reads nothing beyond this file.
+// passes its stdout, and render itself reads nothing beyond this file.
 func DetectProfile(stdout *os.File, env Env) Terminal {
 	if stdout == nil {
 		// A caller with no stream at all (a test's command, a run whose stdout was closed) is
@@ -108,7 +108,7 @@ func DetectProfile(stdout *os.File, env Env) Terminal {
 
 // detect is DetectProfile's pure core: every input it needs travels as a parameter, so
 // profile_test.go can drive the full detection table (the colour order and the ASCII condition)
-// without a real terminal. isTTY and vtOK are DetectProfile's own two term package results;
+// without a real terminal. isTTY and vtOK are DetectProfile's two term package results;
 // everything else already arrives as data on env.
 func detect(isTTY, vtOK bool, env Env) (profile Profile, ascii bool) {
 	ascii = !isTTY || env.Term == "dumb" || !vtOK
@@ -127,7 +127,7 @@ func detect(isTTY, vtOK bool, env Env) (profile Profile, ascii bool) {
 	default:
 		// colorprofile.Terminfo only ever distinguishes NoTTY, ANSI, or TrueColor (Tc/RGB
 		// capabilities): it never reports ANSI256 (verified local, colorprofile@v0.4.3/env.go),
-		// so the named 256 rung is unreachable through it. colorprofile.Env reads TERM's own
+		// so the named 256 rung is unreachable through it. colorprofile.Env reads TERM's
 		// "-256color" convention instead, which is the one signal a 256-colour terminal
 		// actually advertises there.
 		profile = fromColorprofile(colorprofile.Env([]string{"TERM=" + env.Term}))

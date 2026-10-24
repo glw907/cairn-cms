@@ -91,7 +91,7 @@ func (e *APIError) HTTPStatus() int { return e.Status }
 // HTTP 400 with code 6003 also classifies as ReasonUnauthorized, the second half of the Node
 // client's throwIfTokenInvalid (api.mjs: 400/6003 and 401/10000 both mean the token
 // itself is unusable). There is no code for ReasonBuildsNotConnected here (see that constant's
-// own doc comment); everything else falls back to reasonForStatus, which is how a plain
+// doc comment); everything else falls back to reasonForStatus, which is how a plain
 // unauthenticated, underscoped, or rate-limited request classifies.
 func classifyReason(status int, errs []v4Error, header http.Header) Reason {
 	for _, e := range errs {
@@ -316,7 +316,7 @@ func (cf *Cloudflare) BuildsConnections(ctx context.Context, workerTag string) (
 }
 
 // Build is one Workers Builds run. The field names below match the live shape captured in
-// docs/internal/record/2026-08-13-t5-task8-live-e2e.md and the fake server's own
+// docs/internal/record/2026-08-13-t5-task8-live-e2e.md and the fake server's
 // createBuildKickHandler (packages/create-cairn-site/test/fake-cloudflare.mjs): the commit hash
 // nests under "build_trigger_metadata" rather than sitting on the build itself, since that
 // object also carries the commit that triggered a push-sourced build.
@@ -348,7 +348,7 @@ func (cf *Cloudflare) BuildsLatest(ctx context.Context, workerTag string) (*Buil
 type Zone struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-	// Status is the zone's own activation state ("active" once Cloudflare has finished taking
+	// Status is the zone's activation state ("active" once Cloudflare has finished taking
 	// over the domain's DNS, "pending" or "initializing" while that is still in progress).
 	Status string `json:"status"`
 	// NameServers is the nameserver pair Cloudflare assigned this zone, the pair the domain's
@@ -383,7 +383,7 @@ func (cf *Cloudflare) ListZones(ctx context.Context) ([]Zone, error) {
 // BuildsTokens confirms this client's read access to Workers Builds Configuration with no
 // worker tag needed: GET /accounts/{id}/builds/tokens is account-scoped, unlike
 // BuildsConnections and BuildsLatest, which both need a worker already registered for Builds.
-// The route's own body carries no field a caller reads; only whether the call succeeded matters
+// The route's body carries no field a caller reads; only whether the call succeeded matters
 // here.
 func (cf *Cloudflare) BuildsTokens(ctx context.Context) error {
 	return cf.get(ctx, fmt.Sprintf("/accounts/%s/builds/tokens", cf.accountID), nil)
@@ -450,12 +450,12 @@ type ObservabilityEvents struct {
 	Count int `json:"count"`
 }
 
-// ObservabilityEvent is one matching telemetry event: the platform's own envelope around the
+// ObservabilityEvent is one matching telemetry event: the platform's envelope around the
 // record a Worker logged.
 type ObservabilityEvent struct {
 	// Source is the record the Worker itself logged, kept as raw JSON so a caller decodes only
 	// the keys it recognizes. For a cairn engine record this is the whole log record, envelope
-	// and fields together; for a bare console call it is the platform's own {level, message}.
+	// and fields together; for a bare console call it is the platform's {level, message}.
 	Source json.RawMessage `json:"source"`
 	// Timestamp is when the platform recorded the event, in milliseconds since the Unix epoch.
 	// It is the platform's own clock, not the record's, so it is present even on a record that

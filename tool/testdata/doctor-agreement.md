@@ -4,7 +4,7 @@
 retire-1 acceptance bullet that asks the two doctor implementations to agree, per check and per
 site tree, under a status mapping table. A later reader looking for the gate that holds this file
 will not find one: the agreement it records was measured once, by hand, on the date below, and the
-gates that hold the Go behaviour are the package's own tests.
+gates that hold the Go behaviour are the package's tests.
 
 Measured 2026-09-22 on branch `doctor-go` at `2fe66d1e`.
 
@@ -134,11 +134,11 @@ symlinked engine, also by design, and also not a defect.
 
 The two implementations take the three facts from different places. `cairn doctor` reads the
 committed `src/content/.cairn/site-facts.json`, which the engine writes at build time.
-`cairn-doctor` evaluates the site's adapter live, through the consumer's own Vite resolution.
+`cairn-doctor` evaluates the site's adapter live, through the consumer's Vite resolution.
 
 A tree with no facts file therefore gives `cairn doctor` nothing to read, and it reports
 `UNCHECKED  needs engine 0.97.0 or later, and one build` for all three. The Node doctor still
-evaluates the adapter, or, where that evaluation returns nothing, falls through to each check's own
+evaluates the adapter, or, where that evaluation returns nothing, falls through to each check's
 absent-input branch: `SKIP` for the media bucket and the role wiring, and, for the posture, a
 `PASS` that means "the site states no posture and the served `robots.txt` carries no AI
 directives, consistent with stating nothing".

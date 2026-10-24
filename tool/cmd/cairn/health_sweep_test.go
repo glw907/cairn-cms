@@ -16,11 +16,11 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// independentSweepVerdict recomputes the sweep's own exit-code arithmetic from scratch: it lists
+// independentSweepVerdict recomputes the sweep's exit-code arithmetic from scratch: it lists
 // the registry and runs health.Run over every entry exactly as runHealthSweep does, then feeds
 // the resulting verdicts and list errors to spine.ExitCode. A test calls this after execTree has
 // already run the sweep once, so the comparison is against a value computed independently of
-// health_sweep.go's own bookkeeping rather than a copy of it; the fixtures in this file are all
+// health_sweep.go's bookkeeping rather than a copy of it; the fixtures in this file are all
 // deterministic (a fixed clock, a fake transport with no state), so re-running produces the same
 // per-site verdicts.
 func independentSweepVerdict(t *testing.T, d deps) spine.Verdict {
@@ -213,7 +213,7 @@ func TestHealthSweepRunsEverySiteInListOrder(t *testing.T) {
 // TestHealthSweepCompletesAtTheDefaultOnFourAndTenSites is the end-to-end proof behind
 // TestSweepDeadlineDefaultSizing's arithmetic: bare `cairn health` over registries too large for
 // the old divide-always rule (which gave a four-site sweep 30 seconds a site and a ten-site sweep
-// 12, both under the transport's own request timeout) completes with no site reported
+// 12, both under the transport's request timeout) completes with no site reported
 // reason.timeout, because every site now gets the full single-site budget regardless of how many
 // others are registered.
 func TestHealthSweepCompletesAtTheDefaultOnFourAndTenSites(t *testing.T) {
@@ -281,7 +281,7 @@ func TestHealthSweepReportsAMalformedRecordAndCountsIt(t *testing.T) {
 		t.Errorf("stderr %q does not name the malformed record", errOut)
 	}
 	// A registry the sweep could not list in full contributes UNKNOWN, the same rule sites list
-	// follows, but the two valid sites' own checks can still raise the combined verdict past it
+	// follows, but the two valid sites' checks can still raise the combined verdict past it
 	// (worseVerdict never lets an unrelated list error mask a genuine failure); comparing against
 	// spine.ExitCode computed independently over the same entries and list errors pins the exact
 	// combination, not merely "not OK".
@@ -293,9 +293,9 @@ func TestHealthSweepReportsAMalformedRecordAndCountsIt(t *testing.T) {
 
 // TestHealthSweepMixedRegistryExitCodeMatchesSpineExitCode covers criterion 10: over a registry
 // mixing a settled site, a site the fixture transport cannot answer (so its checks land Unknown
-// rather than OK), and a record the store cannot parse, the sweep's own process exit code equals
+// rather than OK), and a record the store cannot parse, the sweep's process exit code equals
 // spine.ExitCode run independently over the same []spine.SiteVerdicts and []error the sweep
-// itself would have built, never a value health_sweep.go's own bookkeeping merely asserts of
+// itself would have built, never a value health_sweep.go's bookkeeping merely asserts of
 // itself.
 func TestHealthSweepMixedRegistryExitCodeMatchesSpineExitCode(t *testing.T) {
 	d, code := testDeps(t)
@@ -320,8 +320,8 @@ func TestHealthSweepMixedRegistryExitCodeMatchesSpineExitCode(t *testing.T) {
 	}
 }
 
-// cancelOnFirstRequest cancels the given context's own cancel func the first time a request
-// reaches RoundTrip, then answers with that request's own (now-cancelled) context error. This
+// cancelOnFirstRequest cancels the given context's cancel func the first time a request
+// reaches RoundTrip, then answers with that request's (now-cancelled) context error. This
 // makes a sweep's budget expiry deterministic in a test: no sleep, no goroutine race, since the
 // cancellation happens synchronously inside the very first HTTP call the first site's checks
 // make.
@@ -367,18 +367,18 @@ func TestHealthSweepBudgetCutReportsSettledAndNamesTheRest(t *testing.T) {
 		t.Errorf("output %q does not name site-charlie-cccccc among the unsettled sites", got)
 	}
 	if !strings.Contains(got, "alpha.example") {
-		t.Errorf("output %q does not print the first (settled) site's own report", got)
+		t.Errorf("output %q does not print the first (settled) site's report", got)
 	}
 	if *code != int(spine.VerdictUnknown) {
 		t.Errorf("exit code = %d, want %d (%s)", *code, int(spine.VerdictUnknown), spine.VerdictUnknown)
 	}
 }
 
-// TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites pins the settled-loop's own
+// TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites pins the settled-loop's
 // !f.asJSON guard (health_sweep.go's writeSeparator call ahead of each site still in the first
 // loop): a normal, uncancelled sweep over two sites still settles both, so this is the one
 // scenario where that guard's removal is observable, unlike a cut mid-first-site (where only one
-// site ever reaches the guard, so its own effect on wroteAny never surfaces downstream).
+// site ever reaches the guard, so its effect on wroteAny never surfaces downstream).
 func TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites(t *testing.T) {
 	d, _ := testDeps(t)
 	writeTestRecord(t, d, "site-alpha-aaaaaa", "alpha.example", "alpha")
@@ -424,7 +424,7 @@ func TestHealthSweepUnderJSONEmitsNoSeparatorBetweenSettledSites(t *testing.T) {
 	}
 }
 
-// TestHealthSweepBudgetCutUnderJSONEmitsOnlyNewlineDelimitedJSON pins the unsettled-loop's own
+// TestHealthSweepBudgetCutUnderJSONEmitsOnlyNewlineDelimitedJSON pins the unsettled-loop's
 // !f.asJSON guard, which skips both the separator and the writeSweepTimeout row for every site
 // the sweep never reached: a budget cut mid-sweep still emits valid newline-delimited JSON, one
 // object per settled site, with no blank-line separator and no bare "UNKNOWN\tid\treason.timeout"
@@ -494,7 +494,7 @@ func TestHealthSweepExplicitTimeoutCutReportsSettledAndNamesTheRest(t *testing.T
 
 	got := out.String()
 	if !strings.Contains(got, "alpha.example") {
-		t.Errorf("output %q does not print the first (settled) site's own report", got)
+		t.Errorf("output %q does not print the first (settled) site's report", got)
 	}
 	if !strings.Contains(got, "site-bravo-bbbbbb") || !strings.Contains(got, "reason.timeout") {
 		t.Errorf("output %q does not name site-bravo-bbbbbb as reason.timeout", got)
@@ -504,7 +504,7 @@ func TestHealthSweepExplicitTimeoutCutReportsSettledAndNamesTheRest(t *testing.T
 	}
 }
 
-// TestQuietSweepPrintsTheSameBodyAsALoudOne is the sweep half of --quiet's own rule: on any
+// TestQuietSweepPrintsTheSameBodyAsALoudOne is the sweep half of --quiet's rule: on any
 // verdict but OK the flag changes nothing, so the run writes the same bytes to both streams that
 // the same run writes without it. A reduced strip left an operator reading a cron mail unable to
 // see what else the sweep measured.

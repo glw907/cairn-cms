@@ -1,6 +1,6 @@
 # The cairn-card class
 
-A bordered, padded surface for a theme's own chrome or composed pages. The callout and alert directives hand-roll the same shape in `prose.css`, because their markup is fixed.
+A bordered, padded surface for a theme's chrome or composed pages. The callout and alert directives hand-roll the same shape in `prose.css`, because their markup is fixed.
 
 Rendered markup:
 

@@ -8,14 +8,14 @@ import (
 	"runtime"
 )
 
-// corpusExtractionTrigger names the fixture corpus's own retirement condition
+// corpusExtractionTrigger names the fixture corpus's retirement condition
 // (packages/create-cairn-site/fixtures/README.md, "When this corpus moves"), quoted in a
 // RepoRoot error so a reader sees why the walk failed rather than a bare "file not found".
 const corpusExtractionTrigger = "the fixture corpus moves with the Go tool on the day it leaves this repository (packages/create-cairn-site/fixtures/README.md)"
 
 // RepoRoot returns the repository root: the directory holding a package.json whose "name" is
-// "@glw907/cairn-cms". It walks up from its caller's own source file directory (the test file
-// that called RepoRoot directly, or this package's own directory when reached through Corpus,
+// "@glw907/cairn-cms". It walks up from its caller's source file directory (the test file
+// that called RepoRoot directly, or this package's directory when reached through Corpus,
 // since Corpus is RepoRoot's caller in that path), and returns an error naming
 // corpusExtractionTrigger when no such package.json is found. This function takes no
 // testing.TB and this file imports no "testing" package, so a caller that is not itself a test
@@ -28,8 +28,8 @@ func RepoRoot() (string, error) {
 	return repoRootFrom(filepath.Dir(thisFile))
 }
 
-// repoRootFrom is RepoRoot's walk, factored out so a test can drive it from a directory of its
-// own choosing instead of the real caller's location.
+// repoRootFrom is RepoRoot's walk, factored out so a test can drive it from a directory of the
+// test's choosing instead of the real caller's location.
 func repoRootFrom(start string) (string, error) {
 	dir := start
 	for {

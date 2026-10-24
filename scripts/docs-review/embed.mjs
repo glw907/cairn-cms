@@ -16,7 +16,7 @@ const RUNTIME_PLACEHOLDER = '/*__CAIRN_REVIEW_RUNTIME__*/';
 
 /**
  * Strips the module `export` keyword from runtime.mjs's source so its declarations run as plain
- * top-level statements inside the page's own inline script. The declarations are otherwise
+ * top-level statements inside the page's inline script. The declarations are otherwise
  * untouched, so the inlined copy runs exactly the code this module exports.
  * @param {string} runtimeSource
  * @returns {string}
@@ -27,7 +27,7 @@ export function inlineRuntimeSource(runtimeSource) {
 
 /**
  * Escapes text for placement inside HTML content, for the title placeholder (the state
- * placeholder sits inside a JSON script element, whose own escaping is JSON's, not HTML's).
+ * placeholder sits inside a JSON script element, whose escaping is JSON's, not HTML's).
  * @param {string} str
  * @returns {string}
  */
@@ -37,7 +37,7 @@ function escapeHtmlText(str) {
 
 /**
  * Fills the template's placeholders with one review batch: the inlined runtime helpers, the
- * page title, and the batch's own state. `templateSource` and `runtimeSource` are passed
+ * page title, and the batch's state. `templateSource` and `runtimeSource` are passed
  * explicitly so a test can exercise this without touching the filesystem.
  * @param {string} templateSource
  * @param {string} runtimeSource

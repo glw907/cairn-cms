@@ -11,7 +11,7 @@ Ask this before writing any admin markup, not after: does DaisyUI already ship t
 and if a home-grown one is the answer instead, is there a dated ruling in
 [the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) recording the DaisyUI defect that forces it? A home-grown
 component the ledger does not explain is a finding to raise, not a pattern to copy.
-`references/daisyui-first.md` carries the current answer for every place cairn's own admin
+`references/daisyui-first.md` carries the current answer for every place cairn's admin
 already diverges from stock DaisyUI, and why.
 
 Restyling the public site (a theme token, `prose.css`, a directive's rules, a public component) is
@@ -29,11 +29,11 @@ source repository, not in the installed package: [the extend facts](https://gith
 
 | Building | Atom | Seam | Reference |
 |---|---|---|---|
-| A custom admin screen over your own data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md` |
-| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's own `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
+| A custom admin screen over your data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md` |
+| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
 
-**A custom admin screen over your own data.** `createSectionAction<Env, Db>({ resolveDb })`
-builds a reusable per-section action wrapper that resolves a binding from the site's own `Env`
+**A custom admin screen over your data.** `createSectionAction<Env, Db>({ resolveDb })`
+builds a reusable per-section action wrapper that resolves a binding from the site's `Env`
 binding; it and `requireAccess` in the route's `load` share one fail-closed predicate, so a
 session the access map does not admit is refused on both the read and the write. A matched
 SvelteKit form action dispatches directly and never re-runs an ancestor `load`, so a page that
@@ -42,7 +42,7 @@ alone.
 
 **A second sign-in group's own login channel.** `createAuthChannel` builds request, confirm, and
 logout actions over a numeric code (8 digits by default, configurable to 10), each action taking
-the raw SvelteKit `RequestEvent` and switching on its own outcome, never a boolean.
+the raw SvelteKit `RequestEvent` and switching on its outcome, never a boolean.
 
 ## Two habits that hold across both rows
 
@@ -51,15 +51,15 @@ the raw SvelteKit `RequestEvent` and switching on its own outcome, never a boole
   flag. A form action with more than two outcomes follows the same shape: name each branch, do
   not collapse them into `ok`/`not ok`.
 - **Log through `createLogger`, never a bare `console` call.** The `/log` subpath exports the
-  same factory cairn's own logger is built from: `area.subject.verb_phrase` event names,
+  same factory cairn's logger is built from: `area.subject.verb_phrase` event names,
   redaction that walks three levels into a record's values, and a record that never throws out of
-  the call site. A site wiring its own admin screen or channel gets the same structured,
-  safe-to-paste record the engine's own events already are.
+  the call site. A site wiring its admin screen or channel gets the same structured,
+  safe-to-paste record the engine's events already are.
 
 ## Before you call it done
 
 `references/preflight.md` is the checklist: the boundary question, what `cairn-guidance check`
-reports about a site's own gate wiring, and when a second workaround is the signal to reach for
+reports about a site's gate wiring, and when a second workaround is the signal to reach for
 `cairn-consult` instead of a third one.
 
 ## Adding a new archetype

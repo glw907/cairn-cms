@@ -152,7 +152,7 @@ test.describe('the site admin sheet seam', () => {
       );
     });
 
-    test(`${path} keeps the engine's own rendered properties unchanged`, async ({ page }) => {
+    test(`${path} keeps the engine's rendered properties unchanged`, async ({ page }) => {
       const fixture = loadFixture();
       const computed = await pageComputedStyle(page, path);
       expect(computed, `${path} engine-owned computed style`).toEqual(fixture.computedStyle[path]);

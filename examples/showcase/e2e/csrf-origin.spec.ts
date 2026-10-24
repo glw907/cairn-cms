@@ -28,9 +28,7 @@ test('a form posted from the other host name is refused by the framework, not th
   expect(body).not.toContain(FACTORY_ORIGIN_FRAGMENT);
 });
 
-test("the same submission from the form's own host name reaches the members form", async ({
-  page,
-}) => {
+test("the same submission from the form's host name reaches the members form", async ({ page }) => {
   await page.goto(`${ORIGINS.named}/members/login`);
   await page.locator('#member-contact').fill('csrf-pair@showcase.test');
   const response = await submitNatively(page, page.locator('form[action="?/request"]'));
@@ -85,7 +83,7 @@ test.describe('a site that sets no-referrer everywhere', () => {
     return posted;
   }
 
-  test("cairn's own referrer meta still carries a real Origin on the sign-in POST", async ({
+  test("cairn's referrer meta still carries a real Origin on the sign-in POST", async ({
     page,
   }) => {
     const counts = await rewriteAdminDocument(page, '/admin/login', { stripCairnMeta: false });

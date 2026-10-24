@@ -62,7 +62,7 @@ var deployTriggersRoute = deployRoute{
 
 // deployNoTriggersRoute answers the Builds triggers list with an empty list and no error, the
 // live shape a worker Cloudflare has never registered for Builds returns
-// (BuildsConnections's own doc comment), handcrafted here since the fixture corpus carries no
+// (BuildsConnections's doc comment), handcrafted here since the fixture corpus carries no
 // captured body for this condition.
 var deployNoTriggersRoute = deployRoute{
 	path:   "/builds/workers/worker-tag/triggers",
@@ -162,7 +162,7 @@ func TestDeployCheckBuildsNotConnectedIsSkippedNotFailing(t *testing.T) {
 
 // TestDeployCheckNoRecordedRepoIsSkipped asserts a record naming no repository skips the
 // branch-position half rather than querying GitHub for an empty owner and repo and reporting the
-// 404 that answers as the site's own fault.
+// 404 that answers as the site's fault.
 func TestDeployCheckNoRecordedRepoIsSkipped(t *testing.T) {
 	r := deployRecord()
 	r.GitHub.Repo.Owner, r.GitHub.Repo.Repo = "", ""

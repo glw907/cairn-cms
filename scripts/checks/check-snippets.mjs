@@ -2,7 +2,7 @@
 // ```svelte code block from the published docs directories (DOC_DIRS below), and typechecks each
 // one against the BUILT package (run `npm run package` first) through the TypeScript compiler API.
 // A page that teaches a retired export or a stale call signature fails the gate; the RED output
-// names the doc file, the line, and the compiler's own message.
+// names the doc file, the line, and the compiler's message.
 //
 // Each fenced block typechecks on its own (not concatenated with its neighbors): a reference page
 // often walks several DIFFERENT files in sequence (a route's `+page.server.ts` next to its
@@ -29,7 +29,7 @@
 // is pulled in and the options below set nothing for it. The leak is that every unit shares one
 // program, and `vite`'s `.d.ts` carries `/// <reference types="node" />`, so any block that imports
 // vite exposes Node's globals to every other unit. A block that really needs Node's types still
-// carries its own `/// <reference types="node" />`, as the hooks sample does. A per-unit
+// carries its `/// <reference types="node" />`, as the hooks sample does. A per-unit
 // environment is deferred.
 //
 // Per-block opt-out: a snippet that is a deliberate fragment (a partial diff continuing an earlier
@@ -79,7 +79,7 @@ export function isPackageSpecifier(spec) {
 // ...) never does, since a doc snippet's local paths are fictional, not real filesystem targets,
 // even when a same-named file happens to exist. Any other bare specifier is real exactly when
 // it resolves as an actual dependency of this package (so a devDependency a doc page mentions
-// but this repo does not install, like a site's own `@tailwindcss/vite`, stubs automatically
+// but this repo does not install, like a site's `@tailwindcss/vite`, stubs automatically
 // with no allowlist to maintain).
 /** @param {string} spec */
 export function isRealSpecifier(spec) {
@@ -197,10 +197,10 @@ export function rewriteLocalImports(code) {
 }
 
 // Blank out every top-level `declare global { ... }` augmentation (an `app.d.ts` ambient-typing
-// snippet, the doc corpus's own convention for showing an `App.Platform`/`App.Locals` extension),
+// snippet, the doc corpus's convention for showing an `App.Platform`/`App.Locals` extension),
 // replacing its text with a same-line-count placeholder so a later diagnostic's line still maps
 // correctly. Every unit compiles as its own root file, but they all share ONE TypeScript program
-// (for the gate's own performance; a separate program per unit measured two orders of magnitude
+// (for the gate's performance; a separate program per unit measured two orders of magnitude
 // slower over this corpus), and a `declare global` augmentation is process-wide by design, so two
 // snippets naming different shapes for the same augmented interface member (a plain site's
 // `App.Platform.env` versus a media-enabled site's, which adds `CairnMediaBindings`) collide with
@@ -208,7 +208,7 @@ export function rewriteLocalImports(code) {
 // error `ts.getPreEmitDiagnostics` reports. That collision is an artifact of the shared program,
 // never a defect in either doc. The surrounding import statements are left in place and still
 // typecheck for real, so a retired or renamed name in one still fails the gate; only the
-// augmentation body itself, which does not add any check beyond what its own imports already
+// augmentation body itself, which does not add any check beyond what its imports already
 // prove, is elided.
 /** @param {string} code */
 export function stripGlobalAugmentations(code) {
@@ -266,7 +266,7 @@ export function extractBlocks(markdown) {
   return blocks;
 }
 
-// The `<script>` body of a ```svelte block, plus how many of the block's own lines precede the
+// The `<script>` body of a ```svelte block, plus how many of the block's lines precede the
 // script's first content line (so a diagnostic line maps back to the doc correctly). Returns
 // null for a block with no `<script>` tag: pure markup carries nothing to typecheck.
 /** @param {string} body */
@@ -339,7 +339,7 @@ export function docFiles(root = ROOT) {
 /**
  * Every typecheckable unit across the corpus: one unit per non-skipped, non-declaration-only
  * ```ts/```typescript block, and one per non-skipped, non-declaration-only ```svelte block's
- * `<script>`. `lineBase` is added to a diagnostic's own (1-based) internal line to get the doc's
+ * `<script>`. `lineBase` is added to a diagnostic's (1-based) internal line to get the doc's
  * line. Also returns the skipped blocks (for the summary) and a count of blocks silently excluded
  * (declaration-only, or a ```svelte block with no `<script>`).
  */

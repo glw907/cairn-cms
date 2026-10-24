@@ -11,7 +11,7 @@
 // evaluates a consumer config is arbitrary code execution in CI); every signal here is a text
 // scan over `src/lib` and `examples/showcase/src`.
 //
-// "Call site outside its own module": a whole-word occurrence of the export's name in a
+// "Call site outside its module": a whole-word occurrence of the export's name in a
 // `src/lib` `.ts`/`.svelte` file that is not the file declaring it, and is not itself a barrel
 // re-export line (`export { X } from '...'`, `export type { X } from '...'`, single- or
 // multi-line) naming it. A file that only re-exports a name has not used it; only an import that
@@ -57,7 +57,7 @@ const AUTH_ONLY_FILES = new Set(
 
 /**
  * Whether a declaring-file path (relative to ROOT, forward-slashed) sits on an auth-only path:
- * the showcase-call-site remedy is refused there, per the gate's own security-seam rule.
+ * the showcase-call-site remedy is refused there, per the gate's security-seam rule.
  * @param {string} relFile
  * @returns {boolean}
  */
@@ -274,7 +274,7 @@ export function formatViolations({ unlisted, unreasoned }) {
       'own module and zero showcase call sites, and carry no allowlist entry. Remedy order: (1) add',
       'a reasoned entry to scripts/checks/check-self-use-allowlist.json, citing the ledger KEEP row',
       'if one exists; (2) failing that, give it a real showcase call site (refused for auth/security',
-      "paths below, see the gate's own header); this gate never suggests deletion as its own remedy.",
+      "paths below, see the gate's header); this gate never suggests deletion as its remedy.",
       '',
     );
     for (const a of unlisted) {

@@ -68,7 +68,7 @@ func TestConfigMediaBucket(t *testing.T) {
 	}
 }
 
-// TestConfigMediaBucketOwnRemediation asserts config.media-bucket's fail raises its own condition,
+// TestConfigMediaBucketOwnRemediation asserts config.media-bucket's fail raises its condition,
 // config.media-bucket-missing, and that its registry remediation differs from
 // config.bindings-missing's, so the check never borrows that condition's fix text.
 func TestConfigMediaBucketOwnRemediation(t *testing.T) {
@@ -97,6 +97,6 @@ func TestConfigMediaBucketOwnRemediation(t *testing.T) {
 		t.Fatal("spine.TextFor(config.bindings-missing): no registry entry")
 	}
 	if mediaText.Remediation == bindingsText.Remediation {
-		t.Error("config.media-bucket-missing's remediation equals config.bindings-missing's; it must print its own")
+		t.Error("config.media-bucket-missing's remediation equals config.bindings-missing's; it must print its remediation")
 	}
 }

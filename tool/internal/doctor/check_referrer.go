@@ -39,7 +39,7 @@ const (
 	tmplNoReferrerSkip = "neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (%s); see %s"
 	// tmplNoReferrerFail is config.no-referrer-blanket's fail detail template, filled with the
 	// source file that set the policy and the remedy.
-	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's own forms and every createAuthChannel action; %s (heuristic text read)"
+	tmplNoReferrerFail = "%s sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null), so SvelteKit's origin check refuses the site's forms and every createAuthChannel action; %s (heuristic text read)"
 	// tmplNoReferrerPass is config.no-referrer-blanket's pass detail template, filled with the
 	// sources describeNoReferrerSources names.
 	tmplNoReferrerPass = "no site-wide Referrer-Policy: no-referrer found (%s, heuristic text read)"
@@ -169,10 +169,10 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 // configNoReferrerBlanket checks for the blanket no-referrer trap. Under a site-wide
 // Referrer-Policy: no-referrer, the Fetch spec strips the Origin header from a plain same-origin
 // top-level POST, so it arrives as Origin: null and SvelteKit's origin check refuses it, 403ing the
-// site's own forms and every createAuthChannel action. cairn's admin documents pin their own
+// site's forms and every createAuthChannel action. cairn's admin documents pin their
 // referrer policy with a header and a meta tag, so the admin keeps working unless a site meta
 // placed after %sveltekit.head% overrides it; the trap is a site shipping the same policy as its
-// own site-wide default.
+// site-wide default.
 var configNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
 	Condition: spine.ConditionConfigNoReferrerBlanket,

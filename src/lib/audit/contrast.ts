@@ -162,7 +162,7 @@ function resolve(raw: string, lookup: PropertyLookup, seen: Set<string>): Resolu
 
   if (/\(\s*from\s/i.test(expression)) return unmeasured(`${expression} is a relative color, which the resolver does not evaluate`);
   if (/^light-dark\(/i.test(expression)) return unmeasured(`${expression} is light-dark(), which the resolver does not evaluate`);
-  if (/^currentcolor$/i.test(expression)) return unmeasured('currentColor takes the element\'s own color, which a static read cannot know');
+  if (/^currentcolor$/i.test(expression)) return unmeasured('currentColor takes the element\'s color, which a static read cannot know');
   if (/var\(/i.test(expression)) return unmeasured(`${expression} reads a var() inside a color function, which the resolver does not evaluate`);
   if (/calc\(|env\(|attr\(/i.test(expression)) return unmeasured(`${expression} computes a channel, which the resolver does not evaluate`);
   const parsed = parse(expression);

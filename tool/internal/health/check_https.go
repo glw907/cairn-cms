@@ -50,7 +50,7 @@ func (httpsForcedCheck) Needs() Tier { return TierCF }
 // Run implements Check. The two halves report as one verdict, HTTPS first: Always Use HTTPS off
 // is the more severe failure and the one src/lib/diagnostics/conditions.ts carries an id for, so
 // it names edge.https-not-forced even when HSTS is off too, and Detail then names both. HSTS off
-// on its own has no condition id of its own to declare, so it names the setting in Detail alone
+// on its own has no condition id to declare, so it names the setting in Detail alone
 // rather than borrowing an id for a setting it does not describe.
 func (httpsForcedCheck) Run(ctx context.Context, r record.Record, c Clients, _ Options) spine.Outcome {
 	if r.Cloudflare.ZoneID == "" {

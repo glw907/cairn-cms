@@ -1,14 +1,14 @@
-// cairn-cms: what the repo's own cairn-audit gate wrappers share. Each wrapper
+// cairn-cms: what the repo's cairn-audit gate wrappers share. Each wrapper
 // (check-invisible-craft, check-admin-css-classes) runs the full engine and reports on the rules it
 // owns, so the narrowing lives here once rather than once per gate.
 /** @typedef {import('../../src/lib/audit/types.js').AuditReport} AuditReport */
 /** @typedef {import('../../src/lib/audit/types.js').Finding} Finding */
 
 /**
- * Restrict a full audit report to one gate's own rule ids. A directive naming a rule this gate does
+ * Restrict a full audit report to one gate's rule ids. A directive naming a rule this gate does
  * not own must never read as dead just because this gate did not ask for that rule, so the
  * restriction happens here, after `runStatic` has already resolved every suppression against the
- * gate's rule set, never by handing `runStatic` a list narrowed to the gate's own rules. The set a
+ * gate's rule set, never by handing `runStatic` a list narrowed to the gate's rules. The set a
  * wrapper does hand `runStatic` leaves out only the public-scope rules, which read a scope no
  * wrapper names.
  * @param {AuditReport} report

@@ -140,12 +140,12 @@ func TestAuthListPrintsProviderAndNoValue(t *testing.T) {
 	}
 }
 
-// TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable covers the row Get's own
+// TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable covers the row Get's
 // flattening hides: a variable neither the environment nor loadEnv's chain resolved, because the
 // keyring itself could not be consulted, prints a line distinct from a plain "not set", so an
 // operator with a locked keyring is not told their credential is simply gone. The cell itself
 // ends at "the OS keyring did not open" (criterion 6): it is a list cell, not a second
-// instruction line the row's own layout has no room for.
+// instruction line the row's layout has no room for.
 func TestAuthListNamesTheEnvironmentFallbackWhenTheKeyringIsUnavailable(t *testing.T) {
 	d := deps{
 		env:           fakeEnv(nil),
@@ -271,7 +271,7 @@ func TestAuthUnsetTable(t *testing.T) {
 	}
 }
 
-// TestAuthUnsetRefusesAnUnknownNameWithoutCallingTheDeleter mirrors auth set's own refusal test:
+// TestAuthUnsetRefusesAnUnknownNameWithoutCallingTheDeleter mirrors auth set's refusal test:
 // a name outside the three variables never reaches the keyring at all.
 func TestAuthUnsetRefusesAnUnknownNameWithoutCallingTheDeleter(t *testing.T) {
 	del := &fakeDeleter{}
@@ -286,7 +286,7 @@ func TestAuthUnsetRefusesAnUnknownNameWithoutCallingTheDeleter(t *testing.T) {
 }
 
 // TestRestoreOnCancelRestoresWhenTheContextCancels covers the echo-off prompt's half of the
-// signal path: term.ReadPassword restores the terminal on its own return, and a signal at the
+// signal path: term.ReadPassword restores the terminal on its return, and a signal at the
 // prompt never lets it return, so a cancelled run has to restore the state itself.
 func TestRestoreOnCancelRestoresWhenTheContextCancels(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -360,11 +360,11 @@ func TestPromptPasswordPropagatesAStdinReadError(t *testing.T) {
 }
 
 // TestNewDepsWiresTheProcessOwnStdin asserts the production wiring reads os.Stdin, per
-// criterion 7's own requirement that a test cover the default.
+// criterion 7's requirement that a test cover the default.
 func TestNewDepsWiresTheProcessOwnStdin(t *testing.T) {
 	d := newDeps()
 	if d.stdin != io.Reader(os.Stdin) {
-		t.Error("newDeps() does not wire stdin to the process's own os.Stdin")
+		t.Error("newDeps() does not wire stdin to the process's os.Stdin")
 	}
 }
 

@@ -25,7 +25,7 @@ const (
 	// classService is a service the site offers the public degrading: mail posture, edge HTTPS,
 	// or an error rate above the run's threshold.
 	classService = 3
-	// classCredentials is this tool's own access expiring or failing, which costs the operator
+	// classCredentials is this tool's access expiring or failing, which costs the operator
 	// visibility rather than costing a visitor anything.
 	classCredentials = 4
 	// classDrift is version drift: real, and never a reason to page anyone.
@@ -72,7 +72,7 @@ func severityClass(id string) int {
 
 // criticalFailure reports whether a failure of the check named id, on its own, carries the run
 // to CRITICAL rather than WARNING. It is the one predicate behind the two-severity fail mark, so
-// a row's mark can never disagree with the verdict its own severity produced.
+// a row's mark can never disagree with the verdict its severity produced.
 func criticalFailure(id string) bool {
 	return severityClass(id) < criticalClassFloor
 }

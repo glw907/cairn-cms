@@ -1,13 +1,13 @@
-// The console module's main entry: a ConsoleServerHandle (hold-loop.mjs's own contract) built
+// The console module's main entry: a ConsoleServerHandle (hold-loop.mjs's contract) built
 // over the loopback core. The console renders exactly two inputs, the state record and the hold
 // loop's last observation, and never issues an API or DNS call at render time; the hold loop is
-// the one probe owner (see hold-loop.mjs's own header). This module owns routing, the request
+// the one probe owner (see hold-loop.mjs's header). This module owns routing, the request
 // lifecycle, and the grace window a hold's ending state (cleared or parked) is served through; a
-// caller's renderView owns turning an observation and the record into a view's own body markup.
+// caller's renderView owns turning an observation and the record into a view's body markup.
 //
 // A HOLD THAT ENDS WITHOUT CLEARING CAN STILL SERVE A PAGE. `stop` takes an optional park
 // argument (`{ code, params }`); when the hold's last observation never cleared and a park was
-// handed in, the console renders that catalogue code's own park page (park-pages.mjs) through the
+// handed in, the console renders that catalogue code's park page (park-pages.mjs) through the
 // same grace window the cleared path already uses, rather than closing the socket at once. A
 // cleared observation always wins over a park argument, which is why the check below reads
 // `lastObservation` first: the two are mutually exclusive by construction (a caller only supplies
@@ -20,7 +20,7 @@ import { renderPage } from './render.mjs';
 
 /**
  * How long the exit render stays up after its probe cleared, so an in-flight browser refresh
- * lands on it rather than a connection reset. "One fetch or a few seconds", per the design's own
+ * lands on it rather than a connection reset. "One fetch or a few seconds", per the design's
  * wording: whichever comes first ends the window early.
  */
 export const DEFAULT_EXIT_GRACE_MS = 3000;
@@ -31,15 +31,15 @@ export const DEFAULT_EXIT_GRACE_MS = 3000;
 
 /**
  * @typedef {object} ParkInfo
- * @property {string} code a wait-kind catalogue code (park-pages.mjs's own WAIT_KIND_CODES)
- * @property {Record<string, string | string[] | boolean>} params the row's own interpolation
+ * @property {string} code a wait-kind catalogue code (park-pages.mjs's WAIT_KIND_CODES)
+ * @property {Record<string, string | string[] | boolean>} params the row's interpolation
  *  params, the same shape `cloudflareError` takes
  */
 
 /**
  * @typedef {object} ConsoleView
  * @property {string} [title] the document title, defaults to the chapter label
- * @property {string} bodyHtml the view's own body markup
+ * @property {string} bodyHtml the view's body markup
  * @property {number} [refreshSeconds] the meta-refresh interval this view renders at; omitted
  *  renders no refresh meta at all
  */
@@ -54,7 +54,7 @@ export const DEFAULT_EXIT_GRACE_MS = 3000;
 
 /**
  * Build a console server: the ConsoleServerHandle a hold's `waitForClear` composes with (see
- * hold-loop.mjs's own typedef). Nothing here calls an API or resolves DNS; every render reads
+ * hold-loop.mjs's typedef). Nothing here calls an API or resolves DNS; every render reads
  * only `record` and whatever observation the loop last handed in through `update`.
  * @param {object} options
  * @param {string} options.chapter the current chapter label, printed in the header on every page
@@ -77,10 +77,10 @@ export function createConsoleServer({ chapter, hop, record, renderView, graceMs 
   let onRequestDuringGrace = null;
 
   /**
-   * The console's single route, mounted under the start's own secret prefix. Renders the exit
+   * The console's single route, mounted under the start's secret prefix. Renders the exit
    * page once the hold has cleared, the park page once the hold has ended un-cleared with a park
-   * to show, otherwise the caller's own view. A view that throws still gets a safe generic page
-   * rather than a stack trace: a view's own bug is exactly the kind of mistake that could
+   * to show, otherwise the caller's view. A view that throws still gets a safe generic page
+   * rather than a stack trace: a view's bug is exactly the kind of mistake that could
    * otherwise leak an interpolated record, so the failure path renders nothing the view produced.
    * @param {import('node:http').IncomingMessage} _req the incoming request, unused
    * @param {import('node:http').ServerResponse} res the response to write
@@ -154,9 +154,9 @@ export function createConsoleServer({ chapter, hop, record, renderView, graceMs 
      * Shut the console down. When the last observation handed in was the one that cleared the
      * hold, this serves the exit render through its grace window first (DEFAULT_EXIT_GRACE_MS, or
      * the `graceMs` override). Otherwise, when the caller hands in a `park`, it serves that
-     * catalogue code's own park page through the same grace window before closing (View 3's
+     * catalogue code's park page through the same grace window before closing (View 3's
      * during-a-held-wait park: expiry, an interrupt, or a park-class outcome surfacing mid-hold,
-     * all reach here through the hold loop's own `stopServer`). Absent both, it closes at once.
+     * all reach here through the hold loop's `stopServer`). Absent both, it closes at once.
      * @param {ParkInfo} [park] the park to serve while the socket stays open through the grace
      *  window; ignored when the last observation cleared, since a cleared hold always shows the
      *  exit render instead

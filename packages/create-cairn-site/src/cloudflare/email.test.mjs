@@ -6,8 +6,8 @@ import { ensureSendingDomain, sendTestMessage, defaultFromAddress, PROPAGATION_W
 
 /**
  * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md, and
- * api.test.mjs's own copy): byte-identical whether the apex was never onboarded or is still
- * settling, which is exactly why this module's own classification exists.
+ * api.test.mjs's copy): byte-identical whether the apex was never onboarded or is still
+ * settling, which is exactly why this module's classification exists.
  */
 const SEND_REFUSED_BODY = {
   success: false,
@@ -17,7 +17,7 @@ const SEND_REFUSED_BODY = {
 };
 
 /**
- * A daily-limit refusal in Cloudflare's own dotted-identifier style. This exact shape was never
+ * A daily-limit refusal in Cloudflare's dotted-identifier style. This exact shape was never
  * observed live (the spike's account never reached the limit); it is a derived fixture, not a
  * captured one, and the test below says so in its name.
  */
@@ -355,7 +355,7 @@ test('sendTestMessage parks as email-daily-limit on a dotted identifier containi
   );
 });
 
-test('sendTestMessage falls through to email-send-failed for an unmapped refusal, carrying api.mjs\'s own message', async (t) => {
+test('sendTestMessage falls through to email-send-failed for an unmapped refusal, carrying api.mjs\'s message', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('email_send', 500, {
     success: false,

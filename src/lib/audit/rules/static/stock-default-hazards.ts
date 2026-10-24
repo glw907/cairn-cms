@@ -14,10 +14,10 @@ import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const BADGE_GHOST_MESSAGE =
-  'class "badge-ghost" is the stock daisyUI ghost badge, retired from cairn\'s own tree: it ' +
+  'class "badge-ghost" is the stock daisyUI ghost badge, retired from cairn\'s tree: it ' +
   'hardcodes a background/border that can match a row or card color and melt into it, and neither ' +
-  'it nor the un-tuned badge-outline clears the audit\'s own 3:1 border-contrast floor. cairn\'s ' +
-  'own recipe is the three ratified chip registers instead -- quiet (StatusChip\'s default, or the ' +
+  'it nor the un-tuned badge-outline clears the audit\'s 3:1 border-contrast floor. cairn\'s ' +
+  'recipe is the three ratified chip registers instead -- quiet (StatusChip\'s default, or the ' +
   'shared cairn-chip-quiet class, composed with badge) for a settled state such as Published, ' +
   'warning (StatusChip\'s `register="warning"`, or the shared cairn-chip-warning class) for a ' +
   'state needing attention, and outline (StatusChip\'s `register="outline"`, or the shared ' +
@@ -59,7 +59,7 @@ const SHADOW_NONE_BASES = new Set(['shadow-none']);
 
 function inkOpenerMessage(offending: string): string {
   return (
-    `class "${offending}" is the retired ink-opener patch; cairn's own recipe is the class ` +
+    `class "${offending}" is the retired ink-opener patch; cairn's recipe is the class ` +
     '"btn btn-neutral" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The ink story"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
@@ -67,14 +67,14 @@ function inkOpenerMessage(offending: string): string {
 
 function publishTintMessage(offending: string): string {
   return (
-    `class "${offending}" is the retired Publish-tint patch; cairn's own recipe is the class ` +
+    `class "${offending}" is the retired Publish-tint patch; cairn's recipe is the class ` +
     '"btn btn-soft btn-primary" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Buttons"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
 }
 
 const SHADOW_NONE_MESSAGE =
-  'class "shadow-none" on a "btn" cancels a stock shadow the theme\'s own depth token already ' +
+  'class "shadow-none" on a "btn" cancels a stock shadow the theme\'s depth token already ' +
   'zeroes (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Component recipes"); there is nothing to add ' +
   `in its place. Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the ` +
   'finding to error';

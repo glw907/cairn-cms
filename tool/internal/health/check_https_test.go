@@ -57,7 +57,7 @@ func TestHTTPSForcedCheckDeclaresIDAndTierCF(t *testing.T) {
 }
 
 // TestHTTPSForcedCheckBothHalves covers the four settings combinations the one check reports on,
-// each with the condition its own verdict declares: only Always Use HTTPS off names
+// each with the condition its verdict declares: only Always Use HTTPS off names
 // edge.https-not-forced, and HSTS off alone names none while still naming the setting in Detail.
 func TestHTTPSForcedCheckBothHalves(t *testing.T) {
 	tests := []struct {

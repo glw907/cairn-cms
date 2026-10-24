@@ -1,6 +1,6 @@
 // Chapter 3's spine: the guided path from chapter 2's finish (or, later, a resumed `--connect`
 // entry from any allowlisted state) to a repository connected to Workers Builds, with a trigger
-// bound to the site's own Worker, its deploy config reconciled into the repository, and the first
+// bound to the site's Worker, its deploy config reconciled into the repository, and the first
 // Builds deploy watched to success. Modelled directly on chapter2.mjs: the same runStep/runActions
 // idiom (a title always prints, a detail prints only under --dry-run, execute never runs under
 // --dry-run), one state writer, pure step logic over an in-memory record.
@@ -8,32 +8,32 @@
 // THIS CHAPTER HOLDS NO GITHUB CREDENTIAL, and needs none until the reconcile commit. Chapter 1
 // destroyed the App's private key once it had moved it into the Worker's secrets, and nothing
 // persists a GitHub token. Both numeric ids the connections PUT needs are reachable anyway: the
-// repository's own id was persisted by chapter 1 (`createRepo`'s result, saved at
+// repository's id was persisted by chapter 1 (`createRepo`'s result, saved at
 // `github.repo.id`), and the owner's id comes from `GET /users/{login}`, which GitHub serves
 // anonymously for users and organizations alike. Every repository this tool creates is private, so
 // an anonymous `GET /repos/{owner}/{repo}` would answer 404 and connect nothing: do not reach for
 // one here.
 //
-// TOKEN LIFECYCLE. Chapter 3 asks for its own token, prefilled with eight permission keys (the
+// TOKEN LIFECYCLE. Chapter 3 asks for its token, prefilled with eight permission keys (the
 // five chapter 2 asks for plus the three Workers Builds needs). It never adopts a token it did not
-// save itself: chapter 2 writes the same `cloudflare.apiToken` key and only clears it at its own
+// save itself: chapter 2 writes the same `cloudflare.apiToken` key and only clears it at its
 // terminal steps, so a record parked at `domain-live` or `email-onboarded` still carries a
 // five-key chapter-2 token when `--connect` runs, and adopting that one skips the eight-key
 // prefill and 403s at the first Builds call. `cloudflare.buildsTokenSavedAt` is the chapter-3-owned
-// marker recording that this chapter's own token hop saved the token now on the record. Its
+// marker recording that this chapter's token hop saved the token now on the record. Its
 // presence is also what lets a re-run skip admission after a connect or trigger park (neither
 // advances `step`, so `step` alone cannot carry that signal the way it carries "connect and
 // trigger both finished", CHAPTER3_RESUMABLE_STEPS below), and it can only ever be written after
 // admission has been given. The token is deleted at every terminal outcome (builds-live,
 // builds-connect-declined) and on the `--yes` reconcile park; the parks that keep it are the ones
-// whose own re-run resumes with it, listed where they return.
+// whose re-run resumes with it, listed where they return.
 //
 // THE RECONCILE'S SKIP GATE IS LOCAL, NOT REMOTE. Deciding whether the reconcile hop owes an OAuth
 // trip cannot be done by reading the repository: it is private, and the only credential that could
 // read it is the one the trip mints. So the chapter records `cloudflare.buildsReconciledHash`, a
 // hash of the two tool-owned files as they sat on disk at the last reconcile, and compares the
 // current disk contents against it. Equal means nothing local has drifted since, and the trip is
-// skipped. Absent or different means the trip runs and `reconcileRepo`'s own authenticated diff
+// skipped. Absent or different means the trip runs and `reconcileRepo`'s authenticated diff
 // decides, which stays authoritative and still writes nothing when the repository already matches.
 // The narrowing this accepts, stated plainly: an admin who edits `wrangler.jsonc` or
 // `src/theme/cairn.config.ts` directly in the repository is not noticed until something local
@@ -62,8 +62,8 @@ import { createConsoleServer } from '../console/server.mjs';
 import { renderBuildsView } from '../console/views.mjs';
 
 /**
- * The step names this chapter's own success terminal and its declined terminal write, exported
- * for `bin.mjs`'s routing (aliased on import there, since it already imports chapter 2's own
+ * The step names this chapter's success terminal and its declined terminal write, exported
+ * for `bin.mjs`'s routing (aliased on import there, since it already imports chapter 2's
  * `TERMINAL_STEPS`).
  * @type {string[]}
  */
@@ -73,9 +73,9 @@ export const CHAPTER3_TERMINAL_STEPS = ['builds-live', 'builds-connect-declined'
  * The step names a resumed record can still finish this chapter from, past the connect-and-trigger
  * hop: `builds-connected` and `config-reconciled`. Exported for the same `bin.mjs` routing.
  * Membership in this list, checked by plain inclusion rather than a numeric index, is also what
- * this module's own internal resumption is built on: an index-based check like chapter2's own
+ * this module's internal resumption is built on: an index-based check like chapter2's
  * `stepIndex` defaults any unrecognized string to "as if already past `live`", which would wrongly
- * admit a record still mid-chapter-1; a plain membership test against this chapter's own explicit
+ * admit a record still mid-chapter-1; a plain membership test against this chapter's explicit
  * step names carries no such default.
  * @type {string[]}
  */
@@ -84,10 +84,10 @@ export const CHAPTER3_RESUMABLE_STEPS = ['builds-connected', 'config-reconciled'
 /** The trigger name every created trigger carries, matching the shape the spike captured live. */
 const BUILDS_TRIGGER_NAME = 'Deploy default branch';
 
-/** The build command every created trigger carries: the scaffold's own `npm run build` script. */
+/** The build command every created trigger carries: the scaffold's `npm run build` script. */
 const BUILD_COMMAND = 'npm run build';
 
-/** The deploy command every created trigger carries: wrangler's own default deploy invocation. */
+/** The deploy command every created trigger carries: wrangler's default deploy invocation. */
 const DEPLOY_COMMAND = 'npx wrangler deploy';
 
 /** The name registered against the admin's pasted token when it becomes the build token. */
@@ -96,25 +96,25 @@ const BUILD_TOKEN_NAME = 'cairn create-cairn-site build token';
 /** Matches the top-level `"name": "..."` line in a scaffold's wrangler.jsonc. */
 const WORKER_NAME_PATTERN = /"name":\s*"([^"]+)"/;
 
-/** The generic, already-verified Cloudflare dashboard entry point (Global Constraints' own
+/** The generic, already-verified Cloudflare dashboard entry point (Global Constraints'
  * fallback for an unproven deep link): no build-specific deep-link shape was captured by the
  * spike, so this is used rather than a guessed URL. */
 const BUILDS_DASHBOARD_URL = 'https://dash.cloudflare.com/?to=/:account/workers-and-pages';
 
-/** How often, in poll attempts, the build watch prints a heartbeat. Mirrors install.mjs's own
+/** How often, in poll attempts, the build watch prints a heartbeat. Mirrors install.mjs's
  * POLL_HEARTBEAT_EVERY idiom. */
 const BUILD_POLL_HEARTBEAT_EVERY = 10;
 
 const BUILD_POLL_HEARTBEAT_MESSAGE =
   'Still watching the build; checking every few seconds. Leave this running.';
 
-/** The default interval between build polls, and the default budget (Cloudflare's own build
+/** The default interval between build polls, and the default budget (Cloudflare's build
  * timeout is 20 minutes, per the catalogue's build-running row; this stays comfortably under it). */
 const DEFAULT_BUILD_POLL_INTERVAL_MS = 5000;
 const DEFAULT_MAX_POLL_ATTEMPTS = 180;
 
 /**
- * Sleep for the given duration; the build watch's default pacing, overridden by a test's own
+ * Sleep for the given duration; the build watch's default pacing, overridden by a test's
  * `sleepFn`.
  * @param {number} ms milliseconds to wait; a non-positive value resolves on the next tick
  * @returns {Promise<void>} resolves after `ms` milliseconds
@@ -126,7 +126,7 @@ function defaultSleep(ms) {
 /**
  * Read the Worker's name straight from the local wrangler.jsonc, rather than trusting a saved
  * `cloudflare.workerName` field: an admin who renamed the Worker by hand between deploys has
- * already moved the name Cloudflare actually deployed under, and this chapter's own trigger and
+ * already moved the name Cloudflare actually deployed under, and this chapter's trigger and
  * watch both need to bind the tag that name resolves to right now, not whatever chapter 1 last
  * wrote to state.
  * @param {string} dir the scaffold root
@@ -169,7 +169,7 @@ async function resolveWorkerTag(api, dir, blocked) {
 }
 
 /**
- * Run one hop as a single-action batch through runActions, mirroring chapter2.mjs's own
+ * Run one hop as a single-action batch through runActions, mirroring chapter2.mjs's
  * `runStep`: the hop's title always prints, its detail prints only under --dry-run, and `execute`
  * never runs under --dry-run.
  * @param {{ dryRun: boolean, log: (line: string) => void }} frame the run's dry-run frame and logger
@@ -199,7 +199,7 @@ function withoutSavedToken(record) {
  * Fingerprint the two tool-owned files as they currently sit on disk. The chapter stores this at
  * every reconcile and compares it on the next entry, which is what lets an unchanged scaffold skip
  * the OAuth trip without reading the (private) repository; see this module's header for the
- * narrowing that accepts. A file missing locally hashes as its own distinct state rather than
+ * narrowing that accepts. A file missing locally hashes as a distinct state rather than
  * raising, so a directory that is not a scaffold reads as "drifted" and the reconcile hop decides,
  * rather than the hash itself failing the run.
  * @param {string} dir the scaffold root
@@ -262,7 +262,7 @@ async function performReconcile({ record, dir, args, log, openBrowser }) {
 
 /**
  * Whether a build is finished: `stopped` WITH a settled `build_outcome`. `stopped` with
- * `build_outcome: null` is NOT finished, since the spike's own capture shows `build_outcome` is
+ * `build_outcome: null` is NOT finished, since the spike's capture shows `build_outcome` is
  * written after `status` flips to `stopped`, so those two fields are not a guaranteed atomic write,
  * and a caller that stops on `status` alone can read a one-tick-early snapshot and, downstream,
  * treat an unfinished build as a success (T4c review finding B1). The one predicate both watch
@@ -300,7 +300,7 @@ async function pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, m
 
 /**
  * Reduce a build's logs to the trailing lines a failed-build row carries, reusing catalogue.mjs's
- * own `trailingStderr` trim rather than reinventing it: the shape (an array of `[epochMillis,
+ * `trailingStderr` trim rather than reinventing it: the shape (an array of `[epochMillis,
  * text]` pairs) is different, but the "last few non-empty lines" rule is the same one every other
  * failing-child row in this tool already follows.
  * @param {{ lines?: Array<[number, string]> }} logs the build's logs, as `getBuildLogs` returns them
@@ -313,7 +313,7 @@ function buildLogTail(logs) {
 
 /**
  * The chapter's closing copy: what changed (push-to-deploy on the default branch) and where to go
- * from here (the site's own admin), claiming only what this run itself observed. Does not claim
+ * from here (the site's admin), claiming only what this run itself observed. Does not claim
  * the laptop is now disposable, since an engine update still runs through this CLI.
  * @param {{ defaultBranch: string | undefined, domain: string }} input
  * @returns {string} the completion message
@@ -330,20 +330,20 @@ function completionMessage({ defaultBranch, domain }) {
 
 /**
  * Compose the build-watch hold seam for an interactive run, or nothing at all for one the
- * policy refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
+ * policy refuses (hold-loop.mjs's `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
  * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The pacing is
- * chapter 3's own `pollIntervalMs`/`maxPollAttempts`, the same pair `pollBuildToStop` already
- * runs on, converted to a duration budget rather than minting a second pair (T4d Task 4a's own
+ * chapter 3's `pollIntervalMs`/`maxPollAttempts`, the same pair `pollBuildToStop` already
+ * runs on, converted to a duration budget rather than minting a second pair (T4d Task 4a's
  * `createWaitForClear` throws for the `builds` class without one). That one budget now covers the
  * whole watch, discovery and the build together, since they are one wait and one loop.
  *
- * On an interrupt, the loop's own `persist` callback saves the build this hold has discovered so
+ * On an interrupt, the loop's `persist` callback saves the build this hold has discovered so
  * far, the one thing a resumed run could not otherwise recover (the observation itself is never
  * saved; the console that rendered it is already gone by the time a later run starts). That path
  * is reached whenever the interrupt lands after discovery, which is most of a real watch: a build
  * is found in seconds and then runs for minutes.
  * @param {object} input
- * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
+ * @param {{ yes: boolean }} input.runArgs the chapter's parsed flags
  * @param {boolean} input.isTTY whether stdout is a terminal
  * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
  * @param {(line: string) => void} input.log receives the console URL line
@@ -351,18 +351,18 @@ function completionMessage({ defaultBranch, domain }) {
  * @param {object} input.record the full state record, handed to the console's view as is
  * @param {string} input.siteId the site to persist the discovered build uuid to, on interrupt only
  * @param {string} input.dir the `--dir` value, interpolated into the hold's default park row
- * @param {number} input.pollIntervalMs chapter 3's own poll interval, reused verbatim
- * @param {number} input.maxPollAttempts chapter 3's own poll budget, converted to a duration
+ * @param {number} input.pollIntervalMs chapter 3's poll interval, reused verbatim
+ * @param {number} input.maxPollAttempts chapter 3's poll budget, converted to a duration
  * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
- *  hold-loop.mjs's own
+ *  hold-loop.mjs's `createWaitForClear`
  * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
- *  console module's own
+ *  console module's `createConsoleServer`
  * @returns {((buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
  *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} a factory `watchAndComplete`
  *  calls once, right at the moment it is about to enter the hold, with whether a build uuid is
  *  already in hand at that instant; `undefined` when this run may not hold. Built as a factory
  *  rather than a plain seam because that instant is not knowable at compose time: a fresh manual
- *  kick (this chapter's own `kickBuild` call) can mint a `buildUuid` after this function has
+ *  kick (this chapter's `kickBuild` call) can mint a `buildUuid` after this function has
  *  already returned, and the default park printed on an interrupt racing the hold's first probe
  *  must reflect whichever is true right then, not what was true when the run started.
  */
@@ -398,9 +398,9 @@ function composeBuildWatchWaitForClear({
       // uuid in hand yet, that first probe is a discovery read, and the push has happened with no
       // build seen: the same verdict that probe would report itself. With a build uuid already
       // known (a resumed `buildsLastBuildUuid`, or a manual kick that just minted one), that first
-      // probe is a `getBuild` instead, and the honest verdict is the catalogue's own "still
+      // probe is a `getBuild` instead, and the honest verdict is the catalogue's "still
       // running" row, the exact one a budget-exceeded hold with a build in hand already parks on
-      // just below (watchAndComplete's own `budgetExceeded` branch); claiming no build exists
+      // just below (watchAndComplete's `budgetExceeded` branch); claiming no build exists
       // would contradict the buildUuid this run is about to persist.
       defaultPark: cloudflareError(buildUuidKnown ? 'build-running' : 'build-not-started', { dir }).message,
       persist: (observation) => {
@@ -419,7 +419,7 @@ function composeBuildWatchWaitForClear({
  * false (a genuinely first attempt), a manual kick. Once `chapter3Reached` is true, a still-missing
  * build is searched for again (the newest build on this worker) rather than ever kicking a second
  * one, since a `chapter3Reached` record already committed or kicked exactly once and the plan's
- * own invariant is one build, not two.
+ * invariant is one build, not two.
  *
  * THE BUILD-WATCH HOLD (T4d Task 4b). The wait this chapter ends on is one wait in two parts: a
  * queue-lag race (the reconcile's push, or a resumed watch's earlier kick, may not have surfaced on
@@ -430,23 +430,23 @@ function composeBuildWatchWaitForClear({
  * parts: each probe reads the list while no build is known and `getBuild` once one is, and
  * `cleared` means the build reached a terminal status, never merely that it was found. That is
  * what keeps the console up for the minutes an admin actually has to wait, and what makes the
- * view's own queued-to-running-to-outcome cells reachable.
+ * view's queued-to-running-to-outcome cells reachable.
  *
  * ONE LOOP OVER A BUILD, ALWAYS. A held run polls the build through the hold and skips
  * `pollBuildToStop` entirely; an unheld run polls it through `pollBuildToStop` and never enters the
  * hold. Both ask the same `isBuildSettled` predicate, so neither can call a half-written build
- * finished. `kickBuild` stays outside both: a fresh manual kick resolves its own `buildUuid`
+ * finished. `kickBuild` stays outside both: a fresh manual kick resolves its `buildUuid`
  * synchronously, which simply means the hold starts at the build rather than at discovery.
  * @param {object} input
  * @param {(buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
  *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] a factory for the
  *  injected build watch hold, called exactly once, right at the moment the hold is about to
- *  start, with whether `buildUuid` is already known at that instant (so the hold's own default
+ *  start, with whether `buildUuid` is already known at that instant (so the hold's default
  *  park, printed if an interrupt races its first probe, tells the truth about what this run has
  *  actually found). Absent it, the watch behaves exactly as it did before the console existed:
  *  one `listBuildsForWorker` read, then today's park or today's `pollBuildToStop` pass.
  * @param {import('./hostname.mjs').DnsContext} [input.dns] the DNS context forwarded to the
- *  post-success `confirmHostname` re-check; absent-safe (see hostname.mjs's own header), so a
+ *  post-success `confirmHostname` re-check; absent-safe (see hostname.mjs's header), so a
  *  caller that passes none gets the conservative `hostname-records-absent` default with no lookup
  *  attempted, never a false claim that a lookup ran and found nothing.
  * @returns {Promise<{ outcome: string, message?: string }>} a wait-kind park (returned, never
@@ -543,7 +543,7 @@ export async function watchAndComplete({
       },
       // Which park this verdict would be: nothing found yet versus a build still running. The
       // interrupt path prints it, so an interrupted hold reads like the park it interrupted. Both
-      // are wait-kind codes with their own park page, which is what a console still up renders
+      // are wait-kind codes with their park page, which is what a console still up renders
       // when the hold ends un-cleared on one of them.
       park: cloudflareError(buildUuid ? 'build-running' : 'build-not-started', { dir }).message,
       parkCode: buildUuid ? 'build-running' : 'build-not-started',
@@ -571,7 +571,7 @@ export async function watchAndComplete({
   // when the main flow reaches them: each leaves `step` short of a terminal one, so a plain re-run
   // resumes this same watch and signs its polls with the same credential. Reached from the
   // builds-live re-entry instead, that record's step never leaves a terminal one, and the re-entry's
-  // own wrapper deletes the token on every return, including these.
+  // wrapper deletes the token on every return, including these.
   if (!buildUuid) {
     const err = cloudflareError('build-not-started', { dir });
     log(err.message);
@@ -609,7 +609,7 @@ export async function watchAndComplete({
     });
   }
   // `success` is the ONLY outcome the live path proceeds on. This catches `skipped` and
-  // `cancelled` (the catalogue's own builds-not-runnable cases) and, deliberately, anything else:
+  // `cancelled` (the catalogue's builds-not-runnable cases) and, deliberately, anything else:
   // the poll above already guarantees `build_outcome` is settled (never null) by this point, so an
   // outcome this code does not recognize is genuinely unexpected, and reading it as success would
   // tell the admin a failed or unrunnable deploy actually succeeded (T4c review finding B1). No
@@ -650,7 +650,7 @@ const ADMISSION_DETAIL =
   'branch deploys itself, no laptop required. This needs three things: a one-time authorization ' +
   'of Cloudflare\'s "Workers and Pages" GitHub App on your account (if you have not already done ' +
   'this), a fresh Cloudflare API token pasted the same way chapter 2 asked for one, and one ' +
-  'sign-in click later in this chapter, when it commits its own config changes back to your ' +
+  'sign-in click later in this chapter, when it commits its config changes back to your ' +
   'repository. That token becomes your Workers Builds build token, which saves you a second trip ' +
   'to the dashboard and has a consequence worth knowing first: Cloudflare keeps its secret and ' +
   'gives it to every build your repository runs, and the token is scoped across your accounts ' +
@@ -673,7 +673,7 @@ const WATCH_DETAIL =
  * @typedef {object} RunChapter3Input
  * @property {string} siteId the site's state-store id; the only id this module ever writes under
  * @property {object | null} record the site's current in-memory state record, already loaded by
- *  the caller; `null` under --dry-run, chapter 1 and chapter 2's own `dryRun ? null` precedent
+ *  the caller; `null` under --dry-run, chapter 1 and chapter 2's `dryRun ? null` precedent
  * @property {string} dir the scaffolded directory, used in printed copy and read for the local
  *  Worker name
  * @property {{ yes: boolean, connect?: boolean }} args the parsed CLI flags this chapter reads:
@@ -682,15 +682,15 @@ const WATCH_DETAIL =
  * @property {(line: string) => void} log receives one printed line per call
  * @property {boolean} dryRun when true, every hop's title and detail print and nothing executes
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
- *  admin's browser to the create-token page; defaults to open.mjs's own opener
+ *  admin's browser to the create-token page; defaults to open.mjs's opener
  * @property {typeof clackConfirm} [confirm] the yes/no prompt; a test seam, defaulting to
- *  @clack/prompts' own
+ *  @clack/prompts'
  * @property {typeof clackSelect} [select] the account picker prompt `ensureAccountId` uses; the
  *  same kind of test seam as `confirm`
  * @property {(message: string) => Promise<string>} [promptSecretFn] the token paste prompt,
- *  forwarded to `ensureApiToken`; a test seam defaulting to prompts.mjs's own `promptSecret`
+ *  forwarded to `ensureApiToken`; a test seam defaulting to prompts.mjs's `promptSecret`
  * @property {typeof makeApi} [makeApiFn] builds the Cloudflare API client; a test seam defaulting
- *  to api.mjs's own `makeApi`
+ *  to api.mjs's `makeApi`
  * @property {Record<string, string | undefined>} [env] the environment `ensureApiToken` reads
  *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`, injected in tests
  * @property {string[]} [argv] the argument vector `ensureApiToken` scans for a mistakenly-passed
@@ -702,32 +702,32 @@ const WATCH_DETAIL =
  * @property {(servers?: string[]) => object} [resolve] the resolver factory forwarded to the
  *  build watch's post-success hostname confirm (`hostname.mjs`'s `diagnoseUnreachable`, the same
  *  unreachable-case diagnosis chapter 2's cutover uses); a test seam, defaulting to `dns.mjs`'s
- *  own `defaultResolve`
+ *  `defaultResolve`
  * @property {number} [pollIntervalMs] the build watch's poll interval; defaults to five seconds
  * @property {number} [maxPollAttempts] the build watch's poll budget, in attempts; defaults to 180
- *  (fifteen minutes at the default interval, comfortably under Cloudflare's own 20-minute timeout)
+ *  (fifteen minutes at the default interval, comfortably under Cloudflare's 20-minute timeout)
  * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
  *  whether the build-watch hold may hold; defaults to `process.stdout.isTTY`
  * @property {typeof createWaitForClear} [createWaitForClearFn] builds the build-watch hold's seam;
- *  a test seam defaulting to hold-loop.mjs's own
+ *  a test seam defaulting to hold-loop.mjs's `createWaitForClear`
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
- *  serves through; a test seam defaulting to the console module's own
+ *  serves through; a test seam defaulting to the console module's `createConsoleServer`
  */
 
 /**
  * Run chapter 3: admission, the Cloudflare token, connecting the repository to Workers Builds,
- * binding a trigger to the site's own Worker, reconciling its deploy config into the repository,
+ * binding a trigger to the site's Worker, reconciling its deploy config into the repository,
  * and watching the first Builds deploy to success. Re-entry reads the step already reached on
  * `record`: a plain re-entry (no `--connect`) at `builds-connect-declined` short-circuits at the
  * top (the token is cleared again, in case an earlier run somehow left one behind, and the
  * decline is reported back unchanged), while an explicit `--connect` there is the declining
- * owner's own way back in (the catalogue row's own copy) and falls through into the normal
+ * owner's way back in (the catalogue row's copy) and falls through into the normal
  * admission below instead, the same as any other `--connect` entry step; `builds-live` is not a
  * no-op (ruling 4) and re-runs only the reconcile check, reporting "nothing
  * to reconcile" when the local config has not drifted since the last one and, when it has,
  * re-running the token prefill (the saved token was already deleted at that terminal step) to watch
  * the build the fresh commit triggers. A saved `cloudflare.buildsTokenSavedAt` or a step already in
- * CHAPTER3_RESUMABLE_STEPS means this chapter's own admission has already run and is not re-asked;
+ * CHAPTER3_RESUMABLE_STEPS means this chapter's admission has already run and is not re-asked;
  * a step already in CHAPTER3_RESUMABLE_STEPS additionally skips connect and trigger, both of which
  * are otherwise safe to repeat.
  *
@@ -739,7 +739,7 @@ const WATCH_DETAIL =
  * something else) throws.
  * @param {RunChapter3Input} input the chapter's inputs
  * @returns {Promise<{ outcome: string, message?: string }>} the outcome reached; see the module's
- *  own catalogue rows and CHAPTER3_TERMINAL_STEPS/CHAPTER3_RESUMABLE_STEPS for the full set
+ *  catalogue rows and CHAPTER3_TERMINAL_STEPS/CHAPTER3_RESUMABLE_STEPS for the full set
  */
 export async function runChapter3({
   siteId,
@@ -766,14 +766,14 @@ export async function runChapter3({
 }) {
   const frame = { dryRun, log };
 
-  // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
-  // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
+  // The zone's nameservers, saved by chapter 2, let the post-success hostname confirm's
+  // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's
   // `selectAuthoritativeResolver`). Both watch call sites below hand `watchAndComplete` this same
   // context.
   const dns = { resolve, nameServers: record?.cloudflare?.nameServers };
 
   /**
-   * Compose the build-watch hold for one hop, with this run's own shape and seams filled in. Both
+   * Compose the build-watch hold for one hop, with this run's shape and seams filled in. Both
    * watch call sites below go through here, so neither can drift from the other on what the hold
    * is given; only the hop title differs between them.
    * @param {string} hop the hop title this hold's console header renders
@@ -799,12 +799,12 @@ export async function runChapter3({
   }
 
   /**
-   * Collect this chapter's own eight-key token and record it under `cloudflare.apiToken`
+   * Collect this chapter's eight-key token and record it under `cloudflare.apiToken`
    * alongside `buildsTokenSavedAt`, the chapter-3-owned marker saying this chapter is the one
    * that saved what is now on the record. Both of this chapter's token hops (the main flow's and
    * the builds-live re-entry's) run through here, so neither can drift from the other on which
    * saved token may be reused.
-   * @param {boolean} offerSaved whether the record's own saved token may be offered back to
+   * @param {boolean} offerSaved whether the record's saved token may be offered back to
    *  `ensureApiToken`. True only when `buildsTokenSavedAt` proves this chapter saved the token now
    *  on the record; anything else (a five-key chapter-2 token, or a builds-live record still
    *  carrying the marker after its token was deleted at that terminal step) is withheld, so the
@@ -878,7 +878,7 @@ export async function runChapter3({
           if (accountResult.learned) {
             await updateSite(siteId, { cloudflare: { accountId } });
           }
-          // Never the record as saved: reaching builds-live deleted this chapter's own token, so
+          // Never the record as saved: reaching builds-live deleted this chapter's token, so
           // anything still under that key came from somewhere else and is not this chapter's to
           // reuse.
           token = await collectBuildsToken(false);
@@ -924,7 +924,7 @@ export async function runChapter3({
   const chapter3Reached = CHAPTER3_RESUMABLE_STEPS.includes(record?.step);
   // Both of this chapter's "has it already run?" questions are answered by evidence this chapter
   // itself wrote, never by a saved `cloudflare.apiToken`: chapter 2 writes that same key and clears
-  // it only at its own terminal steps, so a record at `domain-live` or `email-onboarded` reaches
+  // it only at its terminal steps, so a record at `domain-live` or `email-onboarded` reaches
   // here still carrying a five-key chapter-2 token. Reading that as "chapter 3 already ran" skipped
   // this chapter's consent, its cost statement, and its eight-key prefill, and then 403'd on the
   // first Builds call with the adopted token.
@@ -967,7 +967,7 @@ export async function runChapter3({
     },
   );
 
-  // Wrapped in one try/catch from the token hop onward (mirroring chapter2.mjs's own T4b.1
+  // Wrapped in one try/catch from the token hop onward (mirroring chapter2.mjs's T4b.1
   // half): a token-scope-missing or token-invalid failure anywhere below clears the saved token
   // before the error surfaces, so the re-run the row already tells the admin to do actually
   // re-collects one instead of silently reusing the bad one.
@@ -1107,7 +1107,7 @@ export async function runChapter3({
     });
     if (!dryRun && reconcileResult?.parked) {
       // The token goes with this park: it was `--yes` that could not open a browser, so the re-run
-      // this row asks for is an interactive one, which collects a token of its own.
+      // this row asks for is an interactive one, which collects a token.
       await deleteApiToken(siteId);
       return { outcome: reconcileResult.parked.catalogue.code, message: reconcileResult.parked.message };
     }

@@ -35,7 +35,7 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 
 	combined := worseCredentialOutcome(cf.outcome, gh.outcome)
 	combined.Detail = credentialLine("cloudflare", cf) + "; " + credentialLine("github", gh)
-	// The expiry travels as a field whatever the verdict. A healthy token's own OK outcome
+	// The expiry travels as a field whatever the verdict. A healthy token's OK outcome
 	// carries no Detail at all, so without this the date the check already measured is reachable
 	// nowhere but inside the fourteen-day warning, and the command layer would have to spend a
 	// second request on a fact this one already holds.
@@ -46,7 +46,7 @@ func (credsCheck) Run(ctx context.Context, _ record.Record, c Clients, o Options
 	return combined
 }
 
-// FieldGitHubTokenExpiry names the GitHub token's own expiry on the creds check's Outcome. The
+// FieldGitHubTokenExpiry names the GitHub token's expiry on the creds check's Outcome. The
 // command layer reads it by key to put the date on the run's status line.
 const FieldGitHubTokenExpiry = "githubTokenExpiry"
 
@@ -56,7 +56,7 @@ const FieldGitHubTokenExpiry = "githubTokenExpiry"
 type credentialSide struct {
 	outcome spine.Outcome
 	from    string
-	// expiry is the token's own expiry where the provider publishes one, and the zero time
+	// expiry is the token's expiry where the provider publishes one, and the zero time
 	// otherwise. Only the GitHub side ever sets it.
 	expiry time.Time
 }
@@ -126,7 +126,7 @@ func worseCredentialOutcome(a, b spine.Outcome) spine.Outcome {
 }
 
 // credentialLine renders one side's verdict for the combined check's Detail: the provider name,
-// which secret store it resolved through (never the value), and its own prose. A side whose
+// which secret store it resolved through (never the value), and its prose. A side whose
 // Detail is empty because ReasonToOutcome (via credentialErrorOutcome) set Code instead renders
 // through detailForCredCode, so the joined line never falls back to a bare Reason token for a
 // rejected credential.
@@ -147,8 +147,8 @@ func credentialLine(name string, side credentialSide) string {
 }
 
 // detailForCredCode renders the two credential-rejection codes ReasonToOutcome can set, in the
-// generic form catalogue section 3.4 calls for: ReasonToOutcome carries no provider name of its
-// own, so this stays provider-neutral and credentialLine supplies the provider as the line's own
+// generic form catalogue section 3.4 calls for: ReasonToOutcome carries no provider name,
+// so this stays provider-neutral and credentialLine supplies the provider as the line's
 // leading word.
 func detailForCredCode(code spine.Code) string {
 	switch code {

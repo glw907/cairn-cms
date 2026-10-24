@@ -1,6 +1,6 @@
 # The callout directive
 
-A highlighted note with a title, a body, and an optional list of points. The site registers it, so its markup is the site's own `build()` output. The rules live in `prose.css`, scoped under `.prose`.
+A highlighted note with a title, a body, and an optional list of points. The site registers it, so its markup is the site's `build()` output. The rules live in `prose.css`, scoped under `.prose`.
 
 Authoring:
 

@@ -1,6 +1,6 @@
 # The cairn-hero class
 
-An introductory block: a large display heading over a recessed lead. The title and the lead have their own pages.
+An introductory block: a large display heading over a recessed lead. The title and the lead have their pages.
 
 Rendered markup:
 

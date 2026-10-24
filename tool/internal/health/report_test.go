@@ -11,7 +11,7 @@ import (
 )
 
 // reportJSON marshals r the way a marshal boundary does: through ForRender, the one visibility
-// filter, and then json.Marshal, since neither type declares a marshaller of its own.
+// filter, and then json.Marshal, since neither type declares a marshaller.
 func reportJSON(r Report, verbose bool) ([]byte, error) {
 	return json.Marshal(r.ForRender(verbose))
 }
@@ -261,7 +261,7 @@ func TestCheckDetailFieldVisibility(t *testing.T) {
 // TestCheckFieldSources pins which of each flattening check's keys carry a value copied out of
 // a provider's response, and which provider each came from. A copied value is a string the site
 // controls the bytes of, so the marshal boundary marks it; a count, a comparison, or a word from
-// cairn's own vocabulary is not copied even when a provider response is what it was computed
+// cairn's vocabulary is not copied even when a provider response is what it was computed
 // from. A check that starts copying a new value without declaring the source goes red here
 // rather than landing unmarked in a payload.
 func TestCheckFieldSources(t *testing.T) {

@@ -124,7 +124,7 @@ func TestDoRefusesMismatchedHost(t *testing.T) {
 	}
 }
 
-// TestDoRetriesRateLimitedGET covers both Retry-After shapes the Node client's own policy
+// TestDoRetriesRateLimitedGET covers both Retry-After shapes the Node client's policy
 // (packages/create-cairn-site/src/cloudflare/api.mjs) handles: a numeric header, and no header at
 // all (the default wait), asserting exactly one retry in each case, and that a second
 // rate-limited response is not retried again.
@@ -215,7 +215,7 @@ func TestDoDoesNotRetryNonGET(t *testing.T) {
 	}
 }
 
-// TestDoDoesNotWaitPastRequestBudget asserts a Retry-After longer than a request's own remaining
+// TestDoDoesNotWaitPastRequestBudget asserts a Retry-After longer than a request's remaining
 // context deadline does not surface as a context error: Do must return the rate-limited response
 // unretried at once, rather than sleeping past the deadline and returning a bare "context
 // deadline exceeded" that hides the real 429 or 503 from the caller's classification.

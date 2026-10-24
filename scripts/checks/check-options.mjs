@@ -29,7 +29,7 @@
 // the member is declared, so a type reached from several roots is listed once. The walk unwraps
 // arrays and tuples to their element types, `Record` and index-signature values,
 // optionality, unions, intersections, mapped types, and generic constraints to the types they
-// carry. It treats a function, a built-in, and any type declared outside the package's own
+// carry. It treats a function, a built-in, and any type declared outside the package's
 // declarations as a leaf. It excludes the members of `*Data` types, descriptors, registries,
 // `*Props` types, the runtime objects named in EXCLUDED_TYPE, and declarations inside a
 // `.svelte.d.ts` file. A member whose type it cannot resolve fails the gate, never drops out.
@@ -164,7 +164,7 @@ function keyOfDeclaration(decl) {
 }
 
 /**
- * Whether a declaration is one the walk reads: inside the package's own declarations, not in
+ * Whether a declaration is one the walk reads: inside the package's declarations, not in
  * `node_modules`, and not a Svelte component's declaration file.
  * @param {ts.Declaration} decl
  * @param {string} declRoot

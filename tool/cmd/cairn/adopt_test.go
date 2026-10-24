@@ -89,9 +89,9 @@ func TestAdoptListPrintsCandidatesAsJSONAndWritesNothing(t *testing.T) {
 	}
 }
 
-// TestAdoptListWrapsItsNoticesToTheWidth covers the width-aware rule on a command's own stderr.
+// TestAdoptListWrapsItsNoticesToTheWidth covers the width-aware rule on a command's stderr.
 // Both notices adopt list prints are prose, and the route-only one is long enough to run past a
-// hundred columns, which left a terminal to fold it and drop two words onto a line of their own.
+// hundred columns, which left a terminal to fold it and drop two words onto a line by themselves.
 // The whole notice still reaches the operator at every width.
 func TestAdoptListWrapsItsNoticesToTheWidth(t *testing.T) {
 	for _, width := range []int{60, 80, 100} {

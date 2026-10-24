@@ -5,7 +5,7 @@
 //
 // The TidyClient contract (src/lib/sveltekit/content-routes.ts) is the narrow, engine-owned
 // interface: `tidy(request)` takes the prompt and returns the corrected text plus a coarse token
-// record, no Anthropic wire shape involved. The action reads the request's own `text`, so the stub
+// record, no Anthropic wire shape involved. The action reads the request's `text`, so the stub
 // keys its reply off that rather than the prompt.
 import type { ContentRoutesConfig } from '@glw907/cairn-cms/sveltekit';
 import { SEED_EDITOR } from './fake-github.js';

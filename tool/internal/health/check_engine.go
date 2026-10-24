@@ -11,11 +11,11 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// cairnPackageName is the npm package name the Engine check compares a site's own dependency
+// cairnPackageName is the npm package name the Engine check compares a site's dependency
 // range against.
 const cairnPackageName = "@glw907/cairn-cms"
 
-// engineOwner and engineRepo name this tool's own engine repository, the second repository the
+// engineOwner and engineRepo name this tool's engine repository, the second repository the
 // Engine check reads besides the site under test: its CHANGELOG.md is the only source of a
 // skipped version's "Consumers must:" line.
 const (
@@ -23,40 +23,40 @@ const (
 	engineRepo  = "cairn-cms"
 )
 
-// changelogHeading matches one of engineRepo's own CHANGELOG.md release headings: "## " followed
+// changelogHeading matches one of engineRepo's CHANGELOG.md release headings: "## " followed
 // by a bare semantic version, with nothing else on the line. It does not match "## Unreleased",
 // which carries no version to key a section by.
 var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 
-// consumersMustLead matches one "Consumers must:" clause's own lead-in, optionally wrapped in
+// consumersMustLead matches one "Consumers must:" clause's lead-in, optionally wrapped in
 // Markdown bold, with two optional single-backtick groups: one immediately before "Consumers" and
 // one immediately after the colon. Both groups matching means the lead-in itself sits inside a
 // code span, a prose MENTION of the convention ("carries every `Consumers must:` line from here
 // on") rather than an actual clause, so sectionHasActionableConsumersMust skips it.
 var consumersMustLead = regexp.MustCompile("(`)?\\*{0,2}Consumers must:\\*{0,2}(`)?")
 
-// blankLine splits a changelog section into its paragraphs and list items: engineRepo's own
-// CHANGELOG.md separates each bullet by a blank line and wraps a bullet's own text across
+// blankLine splits a changelog section into its paragraphs and list items: engineRepo's
+// CHANGELOG.md separates each bullet by a blank line and wraps a bullet's text across
 // multiple indented lines, so a clause's true end is the next blank line, not the next newline.
 var blankLine = regexp.MustCompile(`\n\s*\n`)
 
 // FieldEngineInstalledVersion names the installed engine version on the engine check's Outcome.
-// A renderer reads it by key: the version also appears inside the check's own prose Detail, and
+// A renderer reads it by key: the version also appears inside the check's prose Detail, and
 // parsing prose to recover a fact the check already measured is how a column silently goes wrong
 // the first time the sentence is reworded.
 const FieldEngineInstalledVersion = "installedVersion"
 
-// engineDetail is engineCheck's own internal measurement, flattened into Fields as an
+// engineDetail is engineCheck's internal measurement, flattened into Fields as an
 // "installedVersion" entry, a "releasesBehind" entry and a "consumersMust" entry.
 type engineDetail struct {
-	// Installed is the bare version the site's own dependency range names, the version the site
+	// Installed is the bare version the site's dependency range names, the version the site
 	// is running.
 	Installed string
-	// ReleasesBehind is how many published versions of cairnPackageName the site's own dependency
+	// ReleasesBehind is how many published versions of cairnPackageName the site's dependency
 	// range has not yet taken, up to and including the latest.
 	ReleasesBehind int
 	// ConsumersMust reports whether any skipped release's changelog section carries an actionable
-	// "Consumers must:" line, one whose own text does not read "nothing".
+	// "Consumers must:" line, one whose text does not read "nothing".
 	ConsumersMust bool
 }
 
@@ -75,7 +75,7 @@ func (d engineDetail) outcome(state spine.State, code spine.Code, detail string)
 	return spine.Outcome{State: state, Code: code, Detail: detail, Fields: d.fields()}
 }
 
-// engineCheck compares a site's own `@glw907/cairn-cms` dependency range against the latest
+// engineCheck compares a site's `@glw907/cairn-cms` dependency range against the latest
 // published version, and, when it is behind, whether any release it has not yet taken carries a
 // breaking "Consumers must:" line.
 type engineCheck struct{}
@@ -83,11 +83,11 @@ type engineCheck struct{}
 // ID implements Check.
 func (engineCheck) ID() string { return "engine" }
 
-// Needs implements Check. Engine reads the site's own package.json and engineRepo's CHANGELOG.md
+// Needs implements Check. Engine reads the site's package.json and engineRepo's CHANGELOG.md
 // through GitHub; the npm registry read that follows needs no credential.
 func (engineCheck) Needs() Tier { return TierGH }
 
-// manifestDependencyRange returns manifest's own "dependencies" or, failing that,
+// manifestDependencyRange returns manifest's "dependencies" or, failing that,
 // "devDependencies" entry for cairnPackageName, and whether either carried one.
 func manifestDependencyRange(manifest []byte) (string, bool) {
 	var parsed struct {
@@ -105,7 +105,7 @@ func manifestDependencyRange(manifest []byte) (string, bool) {
 }
 
 // baseVersion strips a semver range's leading operator (^, ~, >=, and so on) and any trailing
-// range clause after the first whitespace, returning the bare version its own first comparator
+// range clause after the first whitespace, returning the bare version its first comparator
 // names.
 func baseVersion(rng string) string {
 	rng = strings.TrimSpace(rng)
@@ -115,7 +115,7 @@ func baseVersion(rng string) string {
 	return strings.TrimLeft(rng, "^~=<> ")
 }
 
-// changelogSections splits changelog into the text of each release section, keyed by its own
+// changelogSections splits changelog into the text of each release section, keyed by its
 // version heading, from just after that heading to just before the next one (or the document's
 // end).
 func changelogSections(changelog []byte) map[string]string {
@@ -135,7 +135,7 @@ func changelogSections(changelog []byte) map[string]string {
 }
 
 // sectionHasActionableConsumersMust reports whether section carries an actionable "Consumers
-// must:" clause: one whose own text, trimmed of whitespace and compared case-insensitively, does
+// must:" clause: one whose text, trimmed of whitespace and compared case-insensitively, does
 // not begin with the whole word "nothing" (the sole non-actionable case; "nothing." and "nothing;
 // a site already on the old name keeps working." both count as non-actionable, while a clause
 // that merely starts elsewhere, "rename X to Y." or "run the migration, nothing else changes.",
@@ -169,7 +169,7 @@ func sectionHasActionableConsumersMust(section string) bool {
 	return false
 }
 
-// clauseIsNonActionableNothing reports whether remainder, a "Consumers must:" clause's own text,
+// clauseIsNonActionableNothing reports whether remainder, a "Consumers must:" clause's text,
 // begins with the whole word "nothing": case-insensitively, and followed by end of text or a
 // non-letter character (a period, semicolon, comma, space, or parenthesis), never a word like
 // "nothingness" that merely starts the same letters.
@@ -186,7 +186,7 @@ func clauseIsNonActionableNothing(remainder string) bool {
 }
 
 // skippedVersions returns the versions strictly after siteVersion up to and including latest, in
-// versions' own publish order, or nil when the site is already current or ahead.
+// versions' publish order, or nil when the site is already current or ahead.
 func skippedVersions(versions []string, siteIndex, latestIndex int) []string {
 	if siteIndex >= latestIndex {
 		return nil

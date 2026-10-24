@@ -19,7 +19,7 @@
 // The candidate pool is deliberately broad (every `.svelte`/`.ts` file under `src/lib`, both the
 // markup text nodes and the quoted/template string literals in `<script>` and plain `.ts`
 // modules) rather than a curated list of "known message files": a message moving to a new
-// component should not need this gate's own source edited to keep tracking it.
+// component should not need this gate's source edited to keep tracking it.
 //
 // The page lives in the editors arm, which is deleted and later rebuilt (arm-state.mjs). While the
 // arm holds no page there is nothing to check, and the gate says so by name. Once the arm holds any
@@ -99,7 +99,7 @@ export function isGrounded(foldedQuote, candidates) {
   });
 }
 
-// --- Extracting the doc's own bolded quotes. ---
+// --- Extracting the doc's bolded quotes. ---
 
 /**
  * Extract every `**"..."**` bolded double-quoted sentence from the editors page, folded to the
@@ -183,7 +183,7 @@ export function extractScriptCandidates(src) {
 /**
  * Extract every markup text node (the content between a closing `>` and the next `<`) from a
  * Svelte component, holes and all. `<script>`/`<style>` blocks and HTML comments are stripped
- * first, so a component's own code and doc comments are never read as rendered text.
+ * first, so a component's code and doc comments are never read as rendered text.
  * @param {string} src
  * @returns {string[]}
  */

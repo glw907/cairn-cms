@@ -74,7 +74,7 @@ func TestDoctorJSONBeatsQuiet(t *testing.T) {
 		t.Errorf("verdict = %v, want %v", payload["verdict"], spine.VerdictOK)
 	}
 	if checks, ok := payload["checks"].([]any); !ok || len(checks) == 0 {
-		t.Errorf("checks = %v, want the run's own results", payload["checks"])
+		t.Errorf("checks = %v, want the run's results", payload["checks"])
 	}
 }
 

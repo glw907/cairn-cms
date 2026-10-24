@@ -40,7 +40,7 @@ func TestEngineIsTheOnlyWarningFailure(t *testing.T) {
 	}
 }
 
-// TestFailSeverityOfAnUnknownCheckIsCritical covers the map's own miss: a check id nothing
+// TestFailSeverityOfAnUnknownCheckIsCritical covers the map's miss: a check id nothing
 // declares is reported at full weight, never softened by accident.
 func TestFailSeverityOfAnUnknownCheckIsCritical(t *testing.T) {
 	if got := failSeverityOf("no-such-check"); got != spine.CriticalFailure {
@@ -58,7 +58,7 @@ func failing(id string, code spine.Code) CheckResult {
 	return CheckResult{ID: id, Outcome: spine.Outcome{State: spine.Failing, Code: code}}
 }
 
-// TestVerdictsCarryTheSeverityTable is the criterion's own table: the whole-run verdict for one
+// TestVerdictsCarryTheSeverityTable is the criterion's table: the whole-run verdict for one
 // site, read through the same conversion and arithmetic cairn health exits on.
 //
 // The engine row is the tier this task adds. The creds row is the deliberate counter-case: a
@@ -118,7 +118,7 @@ func TestVerdictsCarryTheSeverityTable(t *testing.T) {
 // TestAHeldFailureWarnsAndALapsedHoldTakesItsOwnSeverity runs the hold rule over every check in
 // All rather than over one representative id, so the two halves cannot drift apart per check: a
 // held failure contributes WARNING whatever the check is, and the same failure under a hold that
-// has already passed its expiry contributes that check's own entry in failSeverity, which is
+// has already passed its expiry contributes that check's entry in failSeverity, which is
 // WARNING for engine and CRITICAL for the other eight. A lapsed hold reaching the arithmetic as
 // a flat CRITICAL would page an operator for version drift they had already weighed.
 func TestAHeldFailureWarnsAndALapsedHoldTakesItsOwnSeverity(t *testing.T) {

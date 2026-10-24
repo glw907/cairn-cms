@@ -12,7 +12,7 @@ import (
 )
 
 // writeTestRecord saves one adopted site into d's registry directory, through record and
-// store's own shapes rather than hand-built JSON.
+// store's shapes rather than hand-built JSON.
 func writeTestRecord(t *testing.T, d deps, id, domain, worker string) {
 	t.Helper()
 	dir, err := d.registryDir()

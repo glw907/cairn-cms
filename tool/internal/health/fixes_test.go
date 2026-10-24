@@ -116,7 +116,7 @@ func TestFixForOutcomeWithNeitherIdentityIsAbsent(t *testing.T) {
 	}
 }
 
-// headingSlug reproduces GitHub's own Markdown heading-anchor algorithm closely enough for this
+// headingSlug reproduces GitHub's Markdown heading-anchor algorithm closely enough for this
 // page: lowercase, spaces become hyphens, and every character that is not a letter, a digit, a
 // space, or a hyphen is dropped (an apostrophe disappears rather than becoming a hyphen).
 func headingSlug(heading string) string {
@@ -132,7 +132,7 @@ func headingSlug(heading string) string {
 	return b.String()
 }
 
-// headingSlugsIn reads path's own "## " headings and returns their slugs.
+// headingSlugsIn reads path's "## " headings and returns their slugs.
 func headingSlugsIn(path string) (map[string]bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -253,7 +253,7 @@ func anchorProblems(fixAnchors []string, rebuilt bool, slugs map[string]bool, sh
 
 // TestFixLineAnchorsResolveInDocs asserts every non-empty Anchor in either half of the fix table
 // is one a reader can follow, read at test time through providers.RepoRoot: on the shipped-anchor
-// list while the admin arm holds no page, and on docs/admin/is-it-working.md's own headings, with
+// list while the admin arm holds no page, and on docs/admin/is-it-working.md's headings, with
 // every shipped anchor, once it does.
 func TestFixLineAnchorsResolveInDocs(t *testing.T) {
 	root, err := providers.RepoRoot()
@@ -430,7 +430,7 @@ func writeTestFile(t *testing.T, path, body string) {
 }
 
 // TestDeclaredConditionsExistInTheEngineRegistry asserts every condition id health's checks can
-// ever declare (declaredConditions) exists in src/lib/diagnostics/conditions.ts's own registry,
+// ever declare (declaredConditions) exists in src/lib/diagnostics/conditions.ts's registry,
 // read through spine.Conditions(): an id this tool prints must be one the engine actually owns.
 func TestDeclaredConditionsExistInTheEngineRegistry(t *testing.T) {
 	registry := make(map[spine.Condition]bool, len(spine.Conditions()))

@@ -1,6 +1,6 @@
 // The hold loop: the one place a wait is HELD in process rather than parked. Two wait classes
 // qualify, both measured on a live run: hostname propagation (a resolver negative cache that
-// cleared on its own, 27 minutes, while the zone's own nameservers had served the record the
+// cleared on its own, 27 minutes, while the zone's nameservers had served the record the
 // whole time) and the Builds watch (queue lag plus build). Every other wait, the registrar
 // delegation wait above all, stays a true park; a wait measured in hours is not a wait a laptop
 // should sit on.
@@ -18,7 +18,7 @@
 // console handle) without inheriting a terminal's notion of interactivity.
 //
 // ONE PROBE OWNER. This loop polls; the console renders the loop's last observation and never
-// issues an API or DNS call of its own. The observation is the whole handoff between them, which
+// issues an API or DNS call. The observation is the whole handoff between them, which
 // is why its shape is a stated contract (`HoldObservation`) with an exported factory rather than
 // an object literal built at each site.
 
@@ -72,20 +72,20 @@ const DETAIL_DEFAULTS = {
   [BUILD_HOLD_CLASS]: { buildUuid: null, status: null, outcome: null, commitSha: null },
 };
 
-/** Each class's own pacing. `null` means the class has no default and its caller must supply one. */
+/** Each class's pacing. `null` means the class has no default and its caller must supply one. */
 const CLASS_DEFAULTS = {
   [PROPAGATION_HOLD_CLASS]: {
     pollIntervalMs: PROPAGATION_POLL_INTERVAL_MS,
     budgetMs: PROPAGATION_BUDGET_MS,
   },
-  // The Builds class reuses chapter 3's own poll interval and budget rather than minting a second
+  // The Builds class reuses chapter 3's poll interval and budget rather than minting a second
   // pair that could drift from the ones its `pollBuildToStop` already runs on.
   [BUILD_HOLD_CLASS]: { pollIntervalMs: null, budgetMs: null },
 };
 
 /**
  * @typedef {object} PropagationDetail
- * @property {unknown[] | null} authoritative the apex answer read against the zone's own
+ * @property {unknown[] | null} authoritative the apex answer read against the zone's
  *  nameservers, or `null` when no DNS lookup was attempted at all
  * @property {unknown[] | null} recursive the same answer read through the ordinary recursive
  *  resolver, or `null` when no DNS lookup was attempted at all
@@ -98,7 +98,7 @@ const CLASS_DEFAULTS = {
 /**
  * @typedef {object} BuildsDetail
  * @property {string | null} buildUuid the build this hold discovered, once it exists
- * @property {string | null} status the build's own status field, as the platform reports it
+ * @property {string | null} status the build's status field, as the platform reports it
  * @property {string | null} outcome the build's settled outcome, once it has one
  * @property {string | null} commitSha the commit the discovered build matched
  */
@@ -119,8 +119,8 @@ const CLASS_DEFAULTS = {
  *  is merged over the class defaults; `park` is the exact printed row this verdict would park
  *  with, which the interrupt path prints so an interrupted hold reads like today's park;
  *  `parkCode`/`parkParams` are the same verdict's catalogue code and params, present only when the
- *  code has its own park page (a wait-kind code, never one a caller is about to throw), and are
- *  what a console still up when the hold ends un-cleared renders through its own grace window
+ *  code has its park page (a wait-kind code, never one a caller is about to throw), and are
+ *  what a console still up when the hold ends un-cleared renders through its grace window
  */
 
 /**
@@ -138,7 +138,7 @@ const CLASS_DEFAULTS = {
  */
 
 /**
- * Build an observation, filling the envelope and the class's own detail defaults. The loop builds
+ * Build an observation, filling the envelope and the class's detail defaults. The loop builds
  * its real observations through this same factory, so a console fixture and a live observation
  * can never drift apart in shape.
  * @param {string} holdClass which hold class the observation belongs to
@@ -162,7 +162,7 @@ export function makeObservation(holdClass, overrides = {}) {
 }
 
 /**
- * The one line a hold prints to the terminal. Exported so the console's own tests, the child
+ * The one line a hold prints to the terminal. Exported so the console's tests, the child
  * process test's line reader, and the chapters all name the same line rather than three
  * near-copies of it.
  * @param {string} url the console's base URL, secret prefix included
@@ -178,7 +178,7 @@ export function consoleUrlLine(url) {
  * integration proofs, which run as spawned children and so are non-TTY by construction; it is
  * honored only beside a fake API base, so setting it against the real platform changes nothing.
  * @param {{ yes: boolean, isTTY: boolean, env: Record<string, string | undefined> }} run the
- *  run's own shape: its `--yes` flag, whether stdout is a TTY, and the environment
+ *  run's shape: its `--yes` flag, whether stdout is a TTY, and the environment
  * @returns {boolean} whether the caller should compose a `waitForClear`
  */
 export function shouldHold({ yes, isTTY, env = {} }) {
@@ -189,7 +189,7 @@ export function shouldHold({ yes, isTTY, env = {} }) {
 }
 
 /**
- * Sleep for the given duration; the hold's default pacing, overridden by a test's own `sleepFn`.
+ * Sleep for the given duration; the hold's default pacing, overridden by a test's `sleepFn`.
  * @param {number} ms milliseconds to wait
  * @returns {Promise<void>} resolves after `ms` milliseconds
  */
@@ -203,7 +203,7 @@ function defaultSleep(ms) {
  * @returns {Promise<HoldObservation | null>} the last observation taken, or `null` when an
  *  interrupt ended the hold before the first probe returned. No caller reads that `null` in
  *  production, since the interrupt path exits the process before this resolves; it exists for a
- *  test that injects its own `exit`
+ *  test that injects its `exit`
  */
 async function runHold(config) {
   const { holdClass, probe, server, log, persist, pollIntervalMs, budgetMs } = config;
@@ -212,10 +212,10 @@ async function runHold(config) {
   const startedAt = now();
   let attempt = 0;
   let observation = null;
-  // The park row an interrupt prints, replaced by each probe's own verdict as one arrives. It
+  // The park row an interrupt prints, replaced by each probe's verdict as one arrives. It
   // starts at the class default because the interrupt is raced against the probe itself: a signal
   // landing during the FIRST probe (the widest window in practice, since that probe is the one
-  // that waits on a domain that does not resolve yet) has no verdict of its own to print, and an
+  // that waits on a domain that does not resolve yet) has no verdict to print, and an
   // admin who pressed Ctrl-C is owed the same row an expired hold would have left them.
   let park = defaultPark;
   // The last probe's park page, forwarded to `server.stop` so a console still up when the hold
@@ -241,7 +241,7 @@ async function runHold(config) {
   // so a signal ends the hold at once instead of at the next poll boundary. A probe (a DNS lookup,
   // an API read) can run for many seconds; without racing it too, the handler installed below
   // would only be acted on once that in-flight probe finally settled, which is worse than no
-  // handler at all, since installing it also suppresses Node's own terminate-on-Ctrl-C. Handlers
+  // handler at all, since installing it also suppresses Node's terminate-on-Ctrl-C. Handlers
   // are added with `on`, not by clearing the signal's listeners: any listener already installed
   // keeps running, and removing exactly the handler added here restores the disposition the
   // process had before the hold.
@@ -262,7 +262,7 @@ async function runHold(config) {
   const handleInterrupt = async () => {
     await stopServer();
     // No completed probe means nothing was learned, so there is nothing to save; a persist reads
-    // the observation's own detail (chapter 3's saves the discovered build uuid from it), and an
+    // the observation's detail (chapter 3's saves the discovered build uuid from it), and an
     // absent observation is not a shape every caller's persist should have to defend against.
     if (persist && observation) await persist(observation);
     if (park) log(park);
@@ -346,11 +346,11 @@ async function runHold(config) {
  *  an interrupt
  * @param {(observation: HoldObservation) => Promise<void>} [options.persist] save what the loop
  *  learned; called on the interrupt path only, since every other path returns to a caller that
- *  does its own saving, and never before a probe has produced an observation to save
- * @param {string} [options.defaultPark] this class's own default park row, printed when an
- *  interrupt arrives before any probe has returned a verdict of its own. It belongs to the caller
+ *  does its saving, and never before a probe has produced an observation to save
+ * @param {string} [options.defaultPark] this class's default park row, printed when an
+ *  interrupt arrives before any probe has returned a verdict. It belongs to the caller
  *  composing the seam, the one place that knows both the class's earliest honest verdict and the
- *  run's own catalogue params; this module holds no catalogue knowledge. It carries no park PAGE,
+ *  run's catalogue params; this module holds no catalogue knowledge. It carries no park PAGE,
  *  since the console starts only after a probe has already failed to clear
  * @param {number} [options.pollIntervalMs] the wait between probes; required for the Builds class
  * @param {number} [options.budgetMs] how long the hold may run; required for the Builds class
@@ -382,7 +382,7 @@ export function createWaitForClear({
   const resolvedBudget = budgetMs ?? defaults.budgetMs;
   if (!(resolvedPoll > 0) || !(resolvedBudget > 0)) {
     throw new Error(
-      `createWaitForClear: the ${holdClass} hold has no pacing of its own. Pass chapter 3's own ` +
+      `createWaitForClear: the ${holdClass} hold has no pacing. Pass chapter 3's ` +
         'poll interval and budget as pollIntervalMs and budgetMs rather than minting a second ' +
         'pair here.',
     );

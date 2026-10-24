@@ -150,7 +150,7 @@ func TestLoadEnvBlankExportedVariableIsMissing(t *testing.T) {
 	}
 }
 
-// TestLoadEnvRecordsProviderError proves a failing provider's own error is never discarded: the
+// TestLoadEnvRecordsProviderError proves a failing provider's error is never discarded: the
 // variable it was trying to answer is reported missing, and its display line names the failing
 // provider without repeating the error text.
 func TestLoadEnvRecordsProviderError(t *testing.T) {
@@ -163,7 +163,7 @@ func TestLoadEnvRecordsProviderError(t *testing.T) {
 		t.Errorf("CAIRN_GH_READ_TOKEN from = %q, want %q", from, want)
 	}
 	if strings.Contains(displayFor(got, "CAIRN_GH_READ_TOKEN"), "leaked") {
-		t.Error("display line leaked the provider's own error text")
+		t.Error("display line leaked the provider's error text")
 	}
 	found := false
 	for _, m := range missing {
@@ -250,7 +250,7 @@ func TestCredentialVariableNamesAreSpelledOnlyInEnvGo(t *testing.T) {
 		}
 		for _, prefix := range []string{"CAIRN_CF_", "CAIRN_GH_"} {
 			if strings.Contains(string(data), prefix) {
-				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's own accessors instead", name, prefix)
+				t.Errorf("%s spells a %s variable name; read it from credentialVars, authVariables, or one of env's accessors instead", name, prefix)
 			}
 		}
 	}

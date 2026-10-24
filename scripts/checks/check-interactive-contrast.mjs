@@ -10,7 +10,7 @@
 //
 // The no-drift proof for the graduation, run against the showcase preview on all 18 sitemap pages
 // in both themes: old raw findings 0, new raw findings 0, zero deltas in either direction. Zero
-// against zero is a weak proof on its own, so the detection half is proven by the engine's own
+// against zero is a weak proof on its own, so the detection half is proven by the engine's
 // browser regression suite
 // (src/tests/unit/audit/rules/rendered/browser-regressions.test.ts), which drives real Chromium
 // against the exact inputs the old implementation reported clean.
@@ -28,7 +28,7 @@ const ROOT = repoRoot(import.meta.url);
 const RULE_ID = 'interactive-contrast';
 
 /**
- * Page+selector exemptions, the rendered allowlist's own shape. Empty, as
+ * Page+selector exemptions, the rendered allowlist's shape. Empty, as
  * scripts/interactive-contrast-allowlist.json was when it folded in here: this gate has never had a
  * ratified exception. An entry naming a selector no page matches is reported as stale rather than
  * quietly doing nothing, so an empty list stays honest.

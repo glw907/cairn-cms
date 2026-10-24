@@ -2,7 +2,7 @@ package render
 
 // Glyphs is one tier's glyph tokens: the marks a body paints for a check's state, a fix, a rule,
 // and a separator. render never chooses between tiers; render.Render reads RenderInput.ASCII
-// (filled by profile.go's detector, see NewTheme's own doc comment) and a body picks the field it
+// (filled by profile.go's detector, see NewTheme's doc comment) and a body picks the field it
 // draws from.
 type Glyphs struct {
 	// Pass marks a check that passed.

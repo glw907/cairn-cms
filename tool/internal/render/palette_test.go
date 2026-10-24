@@ -27,7 +27,7 @@ func srgbToLinear(c uint8) float64 {
 	return math.Pow((v+0.055)/1.055, 2.4)
 }
 
-// relativeLuminance is WCAG's own formula over three already-linearised channels.
+// relativeLuminance is WCAG's formula over three already-linearised channels.
 func relativeLuminance(r, g, b uint8) float64 {
 	return 0.2126*srgbToLinear(r) + 0.7152*srgbToLinear(g) + 0.0722*srgbToLinear(b)
 }
@@ -54,7 +54,7 @@ func hexRGB(t *testing.T, hex string) (r, g, b uint8) {
 	return uint8(rv), uint8(gv), uint8(bv)
 }
 
-// contrastRatio is WCAG's own ratio of the lighter luminance to the darker, plus 0.05 on each
+// contrastRatio is WCAG's ratio of the lighter luminance to the darker, plus 0.05 on each
 // side (https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio).
 func contrastRatio(t *testing.T, hexA, hexB string) float64 {
 	t.Helper()
@@ -67,9 +67,9 @@ func contrastRatio(t *testing.T, hexA, hexB string) float64 {
 	return (la + 0.05) / (lb + 0.05)
 }
 
-// TestContrastAgainstGround is criterion 7: every text-bearing role clears 4.5:1 against its own
+// TestContrastAgainstGround is criterion 7: every text-bearing role clears 4.5:1 against its
 // branch's reference ground. RoleRule is a decorative separator, not text (WCAG 1.4.3's 4.5:1
-// applies to text; a rule is WCAG 1.4.11's non-text 3:1, which family.md's own review measured
+// applies to text; a rule is WCAG 1.4.11's non-text 3:1, which family.md's review measured
 // this table failing at 1.69:1/1.71:1 and criterion 5's ADR note accepts as a named risk), so it
 // is exempt from this test the same way criterion 5 exempts it from the ANSI-16 slot-0 test.
 func TestContrastAgainstGround(t *testing.T) {
@@ -120,7 +120,7 @@ func TestANSI16Slots(t *testing.T) {
 // SGR 2. Theme.Style at ProfileANSI16 returns the zero style for it, never a Faint style.
 func TestMutedNeverSlotOrFaint(t *testing.T) {
 	if warmStone[RoleMuted].ansi16 != "" {
-		t.Fatalf("RoleMuted carries ANSI-16 slot %q, want none (the terminal's own default)", warmStone[RoleMuted].ansi16)
+		t.Fatalf("RoleMuted carries ANSI-16 slot %q, want none (the terminal's default)", warmStone[RoleMuted].ansi16)
 	}
 	zero := zeroStyleRender
 	for _, dark := range []bool{true, false} {
@@ -136,7 +136,7 @@ func TestMutedNeverSlotOrFaint(t *testing.T) {
 }
 
 // TestNewThemeSignature is criterion 9: NewTheme takes exactly a background and a colour profile,
-// via reflection over its own func value, so a dispatch that widens the signature to carry the
+// via reflection over its func value, so a dispatch that widens the signature to carry the
 // glyph tier fails here rather than in review.
 func TestNewThemeSignature(t *testing.T) {
 	typ := reflect.TypeOf(NewTheme)
@@ -176,7 +176,7 @@ func TestANSI256RungIsNamed(t *testing.T) {
 	}
 }
 
-// TestStyleZeroAtNoColor is the rung's own rule: every way out of this file returns the zero
+// TestStyleZeroAtNoColor is the rung's rule: every way out of this file returns the zero
 // style at ProfileNoColor, so a body leaning on colour alone fails visibly here rather than in
 // production, and no reader of the plain body (a cron mail, a CI log, an agent) receives an
 // escape byte. Strong and SizedStrong are covered because bold is an escape sequence too.

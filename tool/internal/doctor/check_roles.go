@@ -11,7 +11,7 @@ import (
 
 const (
 	// skipNoCustomRoles is auth.role-wiring's skip detail: no role beyond the implicit
-	// owner/editor pair is declared, so the guard's own fallback already matches the
+	// owner/editor pair is declared, so the guard's fallback already matches the
 	// vocabulary.
 	skipNoCustomRoles = "no custom roles declared; the guard fallback owner/editor already matches the vocabulary"
 	// tmplRoleWiringNoHooksFile is auth.role-wiring's info detail template when neither hooks
@@ -39,7 +39,7 @@ var defaultRoleNames = map[string]struct{}{"owner": {}, "editor": {}}
 
 // customRoleNames returns the roles a site declares beyond the implicit owner/editor pair,
 // exactly the roles a guard on the default fallback would resolve to none. Sorted for a
-// deterministic message, since the JSON roles map this reads from carries no ordering of its own.
+// deterministic message, since the JSON roles map this reads from carries no ordering.
 func customRoleNames(roles []string) []string {
 	var custom []string
 	for _, name := range roles {
@@ -51,7 +51,7 @@ func customRoleNames(roles []string) []string {
 	return custom
 }
 
-// createAuthGuardCallPattern captures createAuthGuard's own argument list, non-greedy so a
+// createAuthGuardCallPattern captures createAuthGuard's argument list, non-greedy so a
 // second call later in the file does not widen the capture.
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
@@ -60,7 +60,7 @@ var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]
 // roles from the runtime, and `{ roles }` on an older one.
 var wiringWordPattern = regexp.MustCompile(`\b(?:runtime|roles)\b`)
 
-// guardWiring is guardRoleWiring's own four-value result.
+// guardWiring is guardRoleWiring's four-value result.
 type guardWiring int
 
 // The four outcomes guardRoleWiring distinguishes.

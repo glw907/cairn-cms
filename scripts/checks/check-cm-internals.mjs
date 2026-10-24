@@ -1,7 +1,7 @@
 // cairn-cms: the CodeMirror internal-class ratchet. The editor themes CodeMirror through EditorView.theme
 // object keys; a chrome `.cm-*` class (a built-in widget's internal structure) is fragile across a CM
 // major, so this gate holds the editor theme's chrome coupling to a by-name floor. Writing-surface content
-// classes and cairn's own `.cm-cairn-*` decorations are allow-listed; the sole sanctioned chrome touch is a
+// classes and cairn's `.cm-cairn-*` decorations are allow-listed; the sole sanctioned chrome touch is a
 // neutralize of `.cm-tooltip` (CM force-adds that class to every tooltip). Wired as `npm run check:cm-internals`.
 import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
@@ -12,7 +12,7 @@ import { repoRoot } from '../repo-root.mjs';
 const ROOT = repoRoot(import.meta.url);
 // Three regexes with three jobs. TOKEN is GLOBAL (for matchAll) and must never be reused for `.test()`
 // (a global regex's .test() advances lastIndex and is stateful across calls). HAS_CM is the stateless
-// boolean for the staleness guard. DYNAMIC catches a dynamically composed CHROME name; cairn's own
+// boolean for the staleness guard. DYNAMIC catches a dynamically composed CHROME name; cairn's
 // `.cm-cairn-*` decorations (which legitimately interpolate, e.g. `.cm-cairn-depth-${depth}`) are exempt
 // via the negative lookahead, so the gate does not false-positive on sanctioned rail selectors.
 const TOKEN = /\.cm-[a-zA-Z][a-zA-Z-]*/g;

@@ -71,7 +71,7 @@ func cloudflareZoneRoutes() routeRoundTripper {
 }
 
 // githubOKRoutes returns the two GitHub routes the two GitHub permission rows hit: /rate_limit
-// for Metadata (account-scoped) and, when owner/repo is non-empty, the repository's own
+// for Metadata (account-scoped) and, when owner/repo is non-empty, the repository's
 // package.json for Contents (repository-scoped).
 func githubOKRoutes(owner, repo string) routeRoundTripper {
 	routes := routeRoundTripper{
@@ -88,7 +88,7 @@ func githubOKRoutes(owner, repo string) routeRoundTripper {
 
 // refRoundTripper serves base, except that it answers the GitHub Contents path only when the
 // request carries wantRef, the way GitHub answers 404 for a ref a repository does not have. It
-// is the one fake that can tell a probe reading the site's own default branch from a probe
+// is the one fake that can tell a probe reading the site's default branch from a probe
 // reading a hardcoded one, since routeRoundTripper ignores the query string the ref travels in.
 type refRoundTripper struct {
 	base         routeRoundTripper
@@ -116,14 +116,14 @@ func mergeRoutes(routes ...routeRoundTripper) routeRoundTripper {
 	return merged
 }
 
-// testSite is one record openTestRegistry saves. An empty branch leaves the record's own
+// testSite is one record openTestRegistry saves. An empty branch leaves the record's
 // default branch unset, which is what an adoption predating the default-branch read looks like.
 type testSite struct {
 	owner, repo, branch string
 }
 
 // openTestRegistry opens a fresh store at t.TempDir() and saves one record per id, each carrying
-// testZoneID and its own owner, repository, and default branch, through record and store's own
+// testZoneID and its owner, repository, and default branch, through record and store's
 // real shapes rather than hand-built JSON, and returns the directory for auth check's
 // registryDir dependency.
 func openTestRegistry(t *testing.T, sites map[string]testSite) string {
@@ -354,7 +354,7 @@ func TestAuthCheckSkipsWholeCredentialWhenMissing(t *testing.T) {
 			if !strings.Contains(got, tt.wantCF) {
 				t.Errorf("output = %s, want the group notice %q", got, tt.wantCF)
 			}
-			// Every Cloudflare row's own reason names the same variables the notice does.
+			// Every Cloudflare row's reason names the same variables the notice does.
 			rowReason := strings.TrimPrefix(tt.wantCF, "Cloudflare: skip, ")
 			if strings.Count(got, rowReason) < 2 {
 				t.Errorf("output = %s, want each skipped Cloudflare row naming %q too", got, rowReason)

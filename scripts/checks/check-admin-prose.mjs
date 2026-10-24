@@ -2,7 +2,7 @@
 // (`src/lib/admin/*.svelte`) plus the built-in public components (`src/lib/public/*.svelte`, whose
 // banner ships user-facing copy too) for AI-writing tells and fails on a hit. The component copy
 // ships compiled inside the published package, so a consuming site's `prose-guard` hook never sees
-// it (it would only ever scan that site's own source). The copy can only be guarded here, in this
+// it (it would only ever scan that site's source). The copy can only be guarded here, in this
 // repo.
 //
 // This is a self-contained port of the BLOCKING layer of the workstation `prose-guard` tool

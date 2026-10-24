@@ -65,27 +65,27 @@ test('parses the Cloudflare chapter flags and their defaults', () => {
   assert.equal(a.signIn, true);
 });
 
-// Chapter 2's own flag: carries both the domain value and its unattended opt-in.
+// Chapter 2's flag: carries both the domain value and its unattended opt-in.
 test('parses --domain, undefined when absent', () => {
   assert.equal(parseArgs([]).domain, undefined);
   assert.equal(parseArgs(['--domain', 'example.com']).domain, 'example.com');
 });
 
-// The email half's own opt-in: a boolean, unlike --domain, since the admission it stands in for
+// The email half's opt-in: a boolean, unlike --domain, since the admission it stands in for
 // is a single yes/no rather than a name to collect.
 test('parses --email, false when absent', () => {
   assert.equal(parseArgs([]).email, false);
   assert.equal(parseArgs(['--email']).email, true);
 });
 
-// Chapter 3's own flag (T4c, Builds): a boolean, like --email, since it is bin.mjs's own entry
+// Chapter 3's flag (T4c, Builds): a boolean, like --email, since it is bin.mjs's entry
 // signal into chapter 3 rather than a value to collect.
 test('parses --connect, false when absent', () => {
   assert.equal(parseArgs([]).connect, false);
   assert.equal(parseArgs(['--connect']).connect, true);
 });
 
-// The AI-posture question's own flag: a string, like --brand-color, since collectAnswers does
+// The AI-posture question's flag: a string, like --brand-color, since collectAnswers does
 // the shape validation rather than parseArgs.
 test('parses --ai-posture, undefined when absent', () => {
   assert.equal(parseArgs([]).aiPosture, undefined);

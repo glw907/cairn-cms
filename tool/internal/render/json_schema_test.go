@@ -18,14 +18,14 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// jsonGoldenDir is the committed payload corpus's own root. It sits beside the frame corpus and
+// jsonGoldenDir is the committed payload corpus's root. It sits beside the frame corpus and
 // is recut by the same `make -C tool golden` target, since both tests match `-run TestGolden`.
 const jsonGoldenDir = "testdata/json"
 
 // schemaDirName is where the published schemas live, relative to the repository root. They ship
 // in the repository rather than in the binary: a consumer validating a payload reads the file,
 // and a schema in the binary would be unreachable to every tool that does that. They sit under
-// the engine's own reference arm because that arm is what the npm tarball carries, so an
+// the engine's reference arm because that arm is what the npm tarball carries, so an
 // installed package puts every schema in a consumer's tree.
 const schemaDirName = "docs/reference/schema"
 
@@ -41,14 +41,14 @@ func schemaDir(t *testing.T) string {
 }
 
 // docPathName is the reference page every published key and both freeze lists are stated on,
-// relative to the repository root. It sits in the engine's own reference arm, beside the
+// relative to the repository root. It sits in the engine's reference arm, beside the
 // schemas it describes, so the npm tarball carries both.
 const docPathName = "docs/reference/cli-cairn-json-output.md"
 
 // jsonGoldenCase is one committed payload file, the schema it must validate against, and the
 // bytes it holds.
 type jsonGoldenCase struct {
-	// name is the file's own stem under jsonGoldenDir.
+	// name is the file's stem under jsonGoldenDir.
 	name string
 	// schema is the published schema file every JSON object in the golden validates against. A
 	// stream file names the site schema and its summary line is validated against the summary
@@ -144,7 +144,7 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 // doctorGoldenFile is cairn doctor's committed payload, the one golden this package validates
 // without producing: its marshaller lives in internal/doctor, whose posture check dials over
 // HTTP, and this package's contract is purity with its direct requires pinned by name, so it
-// never imports that package outside a test. internal/doctor's own TestGoldenDoctorPayload cuts
+// never imports that package outside a test. internal/doctor's TestGoldenDoctorPayload cuts
 // the file from the real checks; the cases here hold it to the published schema and to
 // cli-cairn-json-output.md.
 const doctorGoldenFile = "doctor.json"
@@ -166,7 +166,7 @@ func publishedGoldens(t *testing.T) []jsonGoldenCase {
 	return append(jsonGoldens(t), doctorGolden(t))
 }
 
-// reportVerdict folds one fixture report into the verdict its own checks produce, through
+// reportVerdict folds one fixture report into the verdict its checks produce, through
 // health.Verdicts and spine.ExitCode, the same pair the command layer runs. Any other
 // conversion here would publish a payload whose verdict disagrees with the exit code a routine
 // reads from the same run.
@@ -174,7 +174,7 @@ func reportVerdict(r health.Report) spine.Verdict {
 	return spine.ExitCode([]spine.SiteVerdicts{health.Verdicts(r)}, nil, 0)
 }
 
-// worstOf folds several site verdicts into the run's own.
+// worstOf folds several site verdicts into the run's verdict.
 func worstOf(vs []spine.Verdict) spine.Verdict {
 	worst := spine.VerdictOK
 	if len(vs) == 0 {
@@ -190,7 +190,7 @@ func worstOf(vs []spine.Verdict) spine.Verdict {
 
 // TestGoldenJSONPayloads compares every committed payload against the current boundary, and
 // rewrites the corpus under -update. `make -C tool golden` sets the flag; a reviewer reads the
-// resulting diff as the contract's own change, which is the point of freezing this surface at
+// resulting diff as the contract's change, which is the point of freezing this surface at
 // 1.0 while the text bodies' layout stays free to move.
 func TestGoldenJSONPayloads(t *testing.T) {
 	cases := jsonGoldens(t)
@@ -367,7 +367,7 @@ func missingRequired(value map[string]any, schema map[string]any, path string) [
 }
 
 // matchesCondition reports whether value satisfies an "if" subschema: every key it names as
-// required is present, and every declared property's own constraints hold. A key the condition
+// required is present, and every declared property's constraints hold. A key the condition
 // does not mention is ignored, which is what separates a condition from a full validation.
 func matchesCondition(value map[string]any, cond, root map[string]any) bool {
 	if len(missingRequired(value, cond, "$")) > 0 {
@@ -390,9 +390,9 @@ func matchesCondition(value map[string]any, cond, root map[string]any) bool {
 	return true
 }
 
-// TestAuthCheckPayloadValidatesAgainstSchema covers cairn auth check's own published schema
+// TestAuthCheckPayloadValidatesAgainstSchema covers cairn auth check's published schema
 // directly, rather than through jsonGoldens' shared corpus: unlike the other five payloads, auth
-// check carries no committed golden under testdata/json, since its own command test suite
+// check carries no committed golden under testdata/json, since its command test suite
 // (cmd/cairn's TestAuthCheck* family) already exercises every state the payload can carry. This
 // test proves the schema itself matches MarshalAuthCheck's real output, on two representative
 // cases: an all-confirmed run with a site named, and a run with no site, a rejected token, and an
@@ -433,14 +433,14 @@ func TestAuthCheckPayloadValidatesAgainstSchema(t *testing.T) {
 	}
 }
 
-// TestEverySchemaVersionIsOneBeforeTheTag asserts every published payload's own version constant
-// is 1 and that each schema file's own schemaVersion const says the same number.
+// TestEverySchemaVersionIsOneBeforeTheTag asserts every published payload's version constant
+// is 1 and that each schema file's schemaVersion const says the same number.
 //
 // A schema version counts a change a consumer has to re-read a schema for. No consumer exists
 // before tool/v1.0.0 is pushed, so the whole pre-tag window is one schema and the first
 // published version of each payload is 1: an increment inside the window would publish a
 // revision nobody could have read the previous form of. The same reasoning covers a payload
-// published after the tag, cairn doctor's own: no consumer read an earlier form of that payload
+// published after the tag, cairn doctor's: no consumer read an earlier form of that payload
 // either, so its first published version is 1 too.
 func TestEverySchemaVersionIsOneBeforeTheTag(t *testing.T) {
 	for _, tt := range []struct {
@@ -559,7 +559,7 @@ func collectKeys(node any, parent string, seen map[string]bool) {
 // and what stays free to move, and that every check id and verdict word in the frozen list
 // matches the code rather than a copy of it that has since drifted.
 //
-// cairn doctor's own eleven ids are held to the same section by internal/doctor's
+// cairn doctor's eleven ids are held to the same section by internal/doctor's
 // TestBothPublishedPagesNameEveryCheckID. They cannot be checked from here: internal/doctor
 // imports this package for DoctorSchemaVersion, so a test file here importing it back is an
 // import cycle Go rejects even across the test boundary.
@@ -599,7 +599,7 @@ func TestDocCarriesBothFreezeLists(t *testing.T) {
 }
 
 // TestDocPublishesTheWholeReasonVocabulary asserts every reason a run can emit is on the page,
-// read from spine's own closed set rather than from a list retyped here.
+// read from spine's closed set rather than from a list retyped here.
 func TestDocPublishesTheWholeReasonVocabulary(t *testing.T) {
 	doc := readDoc(t)
 	for _, reason := range spine.ReasonCodes() {
@@ -630,14 +630,14 @@ func readDoc(t *testing.T) string {
 // applies to every state. Both halves are asserted against both schemas, since a validator
 // that ignored the conditional would pass the whole golden corpus silently.
 //
-// The doctor payload rides this test rather than a sibling of its own: the rule is one promise
+// The doctor payload rides this test rather than a sibling: the rule is one promise
 // the page makes about every published check, so a second copy would be the place the two
 // schemas drift apart.
 func TestSkipAndUnknownRequireAReason(t *testing.T) {
 	schemas := []struct {
 		name string
 		// base is the smallest check object that schema declares valid, which differs by
-		// payload: a health check names a tier and its own instant, and a directory preflight
+		// payload: a health check names a tier and its instant, and a directory preflight
 		// has neither.
 		base map[string]any
 	}{

@@ -116,7 +116,7 @@ func TestQuietPrintsTheWholeBodyOnAnyOtherVerdict(t *testing.T) {
 
 // TestJSONWinsOverQuietInASweep covers the precedence over the sweep path specifically, where
 // the buffering this round added is the thing that could have swallowed the stream. The
-// single-site body writer's own copy of the rule is TestJSONWinsOverQuiet, in health_test.go.
+// single-site body writer's copy of the rule is TestJSONWinsOverQuiet, in health_test.go.
 func TestJSONWinsOverQuietInASweep(t *testing.T) {
 	d, _ := testDeps(t)
 	d.checks = passingChecks()

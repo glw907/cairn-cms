@@ -28,7 +28,7 @@ test.describe('fragments: reusable content included across entries', () => {
     await expect(page.locator('article.prose')).toContainText(FRAGMENT_TEXT);
   });
 
-  test("a fragment's own computed permalink is not publicly routable (the Task 1 routable gate, end to end)", async ({
+  test("a fragment's computed permalink is not publicly routable (the Task 1 routable gate, end to end)", async ({
     page,
   }) => {
     // The fragments concept declares routing: 'embedded', so its entries never enter the site

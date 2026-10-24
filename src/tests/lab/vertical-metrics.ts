@@ -58,7 +58,7 @@
 // the other member on the WHOLE block, and the first-line reading is short by half the block's
 // extra height: a reading that grows with the line count and swings 3x between viewport widths on
 // identical, correctly composed pixels. Where the row TOP-ALIGNS them, it levelled their boxes and
-// asked for nothing else, so a member read at its centre sits half its own box below the line
+// asked for nothing else, so a member read at its centre sits half its box below the line
 // beside it: a reading that scales with that member's height, 11.5px on a 36px icon tile and 5.5px
 // on a 28px one, again with nothing to fix. What survives both terms is a member whose visible
 // content does not sit where its own box puts it, which is the defect this module was built on.
@@ -1301,7 +1301,7 @@ export function isStartAlignment(alignment: string): boolean {
  *
  * The two kinds answer differently because they are READ differently, not because of what they are.
  * A member read WHOLE (an icon, a control, a padding box) is read at its centre, which top
- * alignment puts half its own box below the row's start edge. A member read off ONE LINE (trap 1)
+ * alignment puts half its box below the row's start edge. A member read off ONE LINE (trap 1)
  * is read near its own top, and top alignment put that line where the reading found it. This is the
  * same asymmetry {@link MemberAnchor.blockLiftPx} already carries, for the same reason.
  */
@@ -1322,7 +1322,7 @@ function placedReadingPx(anchor: MemberAnchor, metric: PairMetric): number | nul
  * spans every line by construction while its glyph reading is the first line.
  *
  * TOP ALIGNMENT, and the taller box. Under `flex-start` the row put the members' own boxes level
- * and asked for nothing else. A member read at its centre therefore sits half its own box below
+ * and asked for nothing else. A member read at its centre therefore sits half its box below
  * that edge, while a member read off one line sits a line's worth below it, so the two readings
  * differ by exactly the difference in where each sits inside its own box: a 36px icon tile beside a
  * 13px line reads 11.5px apart with the ink dead centre in the tile and nothing to fix. The term is

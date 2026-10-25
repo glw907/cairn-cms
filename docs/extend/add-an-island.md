@@ -2,7 +2,7 @@
 
 A markdown component on a cairn site renders on the server as the static markup its `build()` function returns, and with no `hydrate` declaration it adds no client JavaScript to the public page. Declaring `hydrate` makes the component an island. The render pipeline wraps the `build()` output in an island boundary that carries the directive name and a JSON payload of the component's props. In the browser, a live Svelte component registered under the same name mounts over that boundary. The `build()` output stays on the page as the fallback. It is the first paint before the mount and the only content a reader without JavaScript sees.
 
-The task is to make one such component interactive on the public site while its fallback still serves readers without JavaScript. On a site built by hand, the adapter starts with no `rendering.islands` member, so every piece of the wiring is new. A scaffolded site already registers a `banner` island, and its tree already carries the registry module, the adapter's `rendering.islands` member, the root load's `hasIslands` flag, and the root layout's `hydrateIslands` call. Adding a second island there takes the live component, one registry entry beside `banner`, and the `hydrate` declaration. On a hand-built site, the steps write the live component, register the island, wire the root layout, and verify the island on the public page.
+The task is to make one such component interactive on the public site while its fallback still serves readers without JavaScript. On a site built by hand, the adapter starts with no `rendering.islands` member, so every piece of the wiring is new. A scaffolded site already registers a `banner` island, and its tree already carries the registry module, the adapter's `rendering.islands` member, the root load's `hasIslands` flag, and the root layout's `hydrateIslands` call. Adding a second island there takes the live component, one registry entry beside `banner`, and the `hydrate` declaration. On a hand-built site, you write the live component, register the island, wire the root layout, and then verify the island on the public page.
 
 The steps assume familiarity with Svelte components and runes, SvelteKit layouts and server load functions, `afterNavigate`, dynamic imports, and the site's adapter module. They also assume a markdown component the site already declares with `defineComponent`. [Write a markdown component](write-a-markdown-component.md) covers declaring the component, its attributes, and the `build()` function whose output becomes the fallback. The [islands reference](../reference/islands.md) covers the runtime's full contract and the boundary markup.
 
@@ -28,10 +28,10 @@ The live component is an ordinary Svelte component. The runtime mounts it with S
 
 To write the live component, follow these steps:
 
-1. In the site's islands directory, create the component file, such as `src/lib/islands/Converter.svelte`. A scaffolded site keeps its island files in `src/theme/islands/`.
+1. In a directory for the site's islands, such as `src/lib/islands/`, create the component file, such as `Converter.svelte`. A scaffolded site keeps its island files in `src/theme/islands/`.
 2. In the component's script, declare a prop with a default value for each attribute the directive declares.
 
-   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. The icon attribute is the exception: when the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key.
+   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. The icon attribute is the exception. When the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key.
 
 3. In the component's markup, render each prop as text.
 
@@ -58,17 +58,17 @@ The following component is typed from a `converter` directive's `from`, `to`, an
 
 > **Caution:** Never route a prop into `{@html}`, an `href` or `src`, or an inline `style`. An author writes each attribute value, and the runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering. A component that routes a prop into one of those sinks owns the injection risk. [Props are untrusted](../reference/islands.md#props-are-untrusted) states the full contract.
 
-The mount also shapes how the live component renders. It clears the fallback and mounts the component into the same element, and a first render whose size differs from the fallback shifts the layout. The scaffold's `banner` fallback renders the same markup and message as its live component, and the two share CSS classes. Its swap on mount doesn't shift the layout. The runtime also moves no focus. When the fallback holds a focusable control, restoring focus after the mount is the live component's job.
+Two runtime behaviors bear on how the live component renders. The mount clears the fallback and mounts the component into the same element, so a first render whose size differs from the fallback shifts the layout. The scaffold's `banner` fallback renders the same markup and message as its live component, and the two share CSS classes. Its swap on mount doesn't shift the layout. The runtime moves no focus. When the fallback holds a focusable control, restoring focus after the mount is the live component's job.
 
 Next, register the live component under its directive name.
 
 ## Register the island
 
-A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. A separate registry module keeps the adapter module out of the client bundle.
+A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Because the root layout imports the registry and not the adapter module, the adapter module stays out of the client bundle.
 
 To register the island, follow these steps:
 
-1. In a registry module, such as `src/lib/islands/registry.ts`, export an `IslandRegistry` that maps the directive name to the live component. The examples name the export `siteIslands`.
+1. In a registry module, such as `src/lib/islands/registry.ts`, export an [`IslandRegistry`](../reference/islands.md#islandregistry) that maps the directive name to the live component. The examples name the export `siteIslands`.
 
    The following registry maps `converter` to the live component:
 
@@ -103,7 +103,7 @@ To register the island, follow these steps:
 
 3. In the `converter` component's `defineComponent` declaration, set `hydrate` to `true` or `'visible'`.
 
-   With `true`, the island mounts when the layout's call runs, on first load and after each client navigation. With `'visible'`, the mount waits until the island's boundary enters the viewport. The following excerpt sets `hydrate` on the `converter` declaration:
+   With `true`, the island mounts when the layout's call runs, on first load and after each client navigation. With `'visible'`, the mount waits until the island's boundary enters the viewport, and an island that a reader never scrolls to never mounts. The following excerpt sets `hydrate` on the `converter` declaration:
 
    <!-- snippet-check-skip: an excerpt of a component declaration -->
    ```ts
@@ -114,7 +114,7 @@ To register the island, follow these steps:
    });
    ```
 
-A `'visible'` island that a reader never scrolls to never mounts. `hydrate` is typed `boolean | 'visible'`, and setting it to `false`, or leaving it out, keeps the component static.
+Setting `hydrate` to `false`, or leaving it out, keeps the component static. The declaration's type is `boolean | 'visible'`.
 
 `defineAdapter` checks the `hydrate` declarations in `rendering.components` against `rendering.islands` when the adapter is declared, and it throws on a mismatch in either direction. Each mismatch throws one of the following errors, with the directive's name in place of `<name>`:
 
@@ -154,9 +154,9 @@ To wire the root layout, follow these steps:
 2. In `src/routes/+layout.svelte`, add an `afterNavigate` callback that returns at once when `data.hasIslands` is false.
 3. In the same callback, dynamically import `hydrateIslands` from `@glw907/cairn-cms/islands` and `siteIslands` from the registry module.
 
-   > **Caution:** The root layout imports the registry module, never the adapter module. A client import of the adapter module ships everything it imports to each public page. On a scaffolded site, that includes the engine renderer, the icon set, and the committed media manifest.
+   > **Caution:** The root layout imports the registry module, never the adapter module. A client import of the adapter module ships everything it imports to each public page. On a scaffolded site, that includes the engine's renderer, the icon set, and the committed media manifest.
 
-4. After the imports resolve, call `hydrateIslands(siteIslands)`.
+4. In the same callback, after the imports resolve, call `hydrateIslands(siteIslands)`.
 
 The following root layout makes the gated call:
 
@@ -189,7 +189,7 @@ With the layout in place, check the island where readers see it.
 
 ## Verify the island on the public page
 
-Check the island only on a built public page, because the edit page's preview frame is sandboxed and runs no scripts. The preview always shows the fallback, never the mounted component.
+The checks run on a built public page, because the edit page's preview frame is sandboxed and runs no scripts. The preview always shows the fallback, never the mounted component, as [The editor preview shows the fallback](../reference/islands.md#the-editor-preview-shows-the-fallback) states.
 
 To verify the island, follow these steps:
 
@@ -203,9 +203,10 @@ To verify the island, follow these steps:
 5. If the island is `'visible'`, scroll to it on the page.
 6. On the page, confirm that the live component responds where the fallback was.
 7. In the browser settings, turn off JavaScript.
-8. Reload the page, and confirm that the fallback shows inside the boundary.
+8. In the browser, reload the page.
+9. On the page, confirm that the fallback shows inside the boundary.
 
-If a step fails, work through the following checks in order:
+If a step fails, find what the page shows in the following list, in order, and apply its fix:
 
 1. The page shows the component's markup with no `data-cairn-island` boundary.
 
@@ -213,11 +214,21 @@ If a step fails, work through the following checks in order:
 
 2. The boundary is present, the fallback stays, and the browser never requests the islands runtime.
 
-   The root load returned a false `hasIslands`, and the layout's callback returned before its imports. Or the root layout has no `afterNavigate` callback that calls `hydrateIslands`. Check that `src/routes/+layout.server.ts` computes `hasIslands` from the registry module that holds the entry. Then check that the root layout makes the call, as [Wire the root layout](#wire-the-root-layout) shows.
+   The root load returned a false `hasIslands`, and the layout's callback returned before its imports. Or the root layout has no `afterNavigate` callback that calls `hydrateIslands`. Work through the following checks in order:
+
+   1. Check that `src/routes/+layout.server.ts` computes `hasIslands` from the registry module that holds the entry.
+   2. Check that the root layout makes the call, as [Wire the root layout](#wire-the-root-layout) shows.
 
 3. The islands runtime loads, and the fallback stays.
 
-   A `'visible'` island's boundary hasn't entered the viewport yet. Or the layout's map has no entry under the directive name, the props payload failed to parse, or the component threw on mount. Scroll a `'visible'` island into view. Otherwise, check that the layout imports the same `siteIslands` export as the adapter. If it does, check that the boundary's `data-cairn-props` parses as JSON and that the component mounts without throwing. The runtime catches both failures and logs nothing.
+   A `'visible'` island's boundary hasn't entered the viewport yet. Or the layout's map has no entry under the directive name, the props payload failed to parse, or the component threw on mount. Work through the following checks in order:
+
+   1. If the island is `'visible'`, scroll it into view.
+   2. Check that the layout imports the same `siteIslands` export as the adapter.
+   3. Check that the boundary's `data-cairn-props` parses as JSON.
+   4. Check that the component mounts without throwing.
+
+   The runtime catches a parse failure and a mount error, and it logs neither.
 
 ## See also
 

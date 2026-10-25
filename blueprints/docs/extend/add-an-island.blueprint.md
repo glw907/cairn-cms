@@ -225,7 +225,8 @@ export const load: LayoutServerLoad = () => {
 5. If the island is `'visible'`, scroll to it on the page. :fact[mynt0l]
 6. On the page, confirm that the live component responds where the fallback was. :fact[mynt0l]
 7. In the browser settings, turn off JavaScript. :fact[1uk9sw]
-8. Reload the page. The fallback shows inside the boundary. :fact[1uk9sw]
+8. In the browser, reload the page.
+9. On the page, confirm that the fallback shows inside the boundary. :fact[1uk9sw]
 
 - The following list matches each failed check to its cause and fix.
 

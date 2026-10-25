@@ -113,12 +113,12 @@ not on each request.
 
 ### `media.resolver_absent`
 
-Public images render as literal `media:` tokens when the site's content carries `media:` tokens but
+Public images render with no image source when the site's content carries `media:` references but
 the site passes no `resolveMedia` to `createPublicRoutes`. When the site also passes `assetsEnabled:
 true`, the engine logs `media.resolver_absent` as a warning once, when the factory is built, as the
-[log events](../reference/log-events.md) reference lists. Without that flag, the tokens appear with
-no record. The fix is a code change that passes the site's `resolveMedia` to `createPublicRoutes`,
-as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
+[log events](../reference/log-events.md) reference lists. Without that flag, the images lose their
+source with no record. The fix is a code change that passes the site's `resolveMedia` to
+`createPublicRoutes`, as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
 
 ## Admin action events
 

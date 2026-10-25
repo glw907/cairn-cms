@@ -237,7 +237,7 @@
       ]
     },
     {
-      "text": "Public images render as literal `media:` tokens when the site's content carries `media:` tokens but the site passes no `resolveMedia` to `createPublicRoutes`.",
+      "text": "Public images render with no image source when the site's content carries `media:` references but the site passes no `resolveMedia` to `createPublicRoutes`.",
       "id": [
         "f:twqb0s",
         "f:bnt2wh",
@@ -252,7 +252,7 @@
       ]
     },
     {
-      "text": "Without that flag, the tokens appear with no record.",
+      "text": "Without that flag, the images lose their source with no record.",
       "id": [
         "f:bnt2wh",
         "f:twqb0s"

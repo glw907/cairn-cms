@@ -143,8 +143,8 @@ hero reference to its delivery path; the site builds it from its committed `medi
 builds the body resolver, and when it is absent no `heroImage` projection is derived. `assetsEnabled`
 records whether the site turned media on (`runtime.resolvedAssets.enabled`); when true and
 `resolveMedia` is left unset, `createPublicRoutes` logs a one-time `media.resolver_absent`
-diagnostic at construction rather than silently shipping bare `media:` tokens. It only diagnoses the
-gap; `resolveMedia` alone still gates hero resolution.
+diagnostic at construction rather than silently shipping images with no source. It only diagnoses
+the gap; `resolveMedia` alone still gates hero resolution.
 
 ### `EntryData`
 

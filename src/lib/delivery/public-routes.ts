@@ -43,8 +43,8 @@ export interface PublicRoutesConfig {
   /**
    * Whether the site configured media on, read from `runtime.resolvedAssets.enabled`. It exists only
    *  to diagnose a forgotten wire-point: media on but no `resolveMedia` reached this factory, which
-   *  renders public hero and body images as bare `media:` tokens. When true and `resolveMedia` is
-   *  absent, the factory emits `media.resolver_absent` once at construction. It does not change
+   *  leaves public body images with no source and builds no hero image. When true and
+   *  `resolveMedia` is absent, the factory emits `media.resolver_absent` once at construction. It does not change
    *  resolution; `resolveMedia` alone still gates the hero projection.
    */
   assetsEnabled?: boolean;

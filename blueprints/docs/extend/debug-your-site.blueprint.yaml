@@ -329,14 +329,14 @@ sections:
     why: |
       The public-route seam's one row.
     opens: |
-      Public images render as literal `media:` tokens when a public route factory is built with
-      media on but no `resolveMedia`, and the engine logs `media.resolver_absent` once, at
+      Public images render with no image source when a public route factory is built with media
+      on but no `resolveMedia`, and the engine logs `media.resolver_absent` once, at
       construction.
     items:
       - id: x-resolver
         kind: failure
         symptom: |
-          Public pages show literal `media:` tokens where images belong, and the log holds one
+          Public pages show images with no source where `media:` references belong, and the log holds one
           `media.resolver_absent` warning from when the factory was built.
         cause: |
           The factory was built with `assetsEnabled: true` (the site's media-on flag,

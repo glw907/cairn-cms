@@ -166,6 +166,20 @@ pages:
             serve-the-sitemap: sha256:4cfb42881122947378da218126a829ca52a45d6d5ce9734846d22025181af98c
             verify-the-built-routes: sha256:15231d3cdbd5bbfc62ee7c8908c5d65b148796eef25287142c35aff44f7332be
             wire-the-entry-pages: sha256:0066de8a92ba1e659de5cc4e22ff1120d5d886b34867baaa03b5f72481184dbe
+    docs/extend/configure-media.md:
+        page: 9993d98f200ead588a0ad57e0a9d3c62f114e348
+        blueprint: c02f6569ac8f024a446050266c03fd157bec90f8
+        sections:
+            _intro: sha256:293e43ce464a954701f3e2438eae7404518f84c0fcda6b4cb71df7c7298ebed6
+            asset-references-the-library-counts: sha256:8115dde2d94e86e53be76ec3040780cd67c6eec30ac68d03ef6f510695930b1e
+            before-you-begin: sha256:9a03ab9b06fcb8c93d649440023e05bfbebb888f5537fb0c7572ae6abb8191be
+            change-the-image-urls: sha256:79229c908954d02fcb8f2af079241b18de2e20337942e1258adbcac6a8ffcdab
+            fail-the-build-on-a-missing-asset: sha256:165449971fa873677d0172bfa32073329c89c8834d769c67bd6d16ecd123b30e
+            see-also: sha256:2400da95ebe619d2a44118592fa58ea0bd162fd461ea2b9598cb8bc928c06f03
+            set-the-upload-limits: sha256:eb79e17977a3c0c63ecc45cf6d7e51fa044b5d751fa01d388d366d3f5022bab9
+            turn-on-responsive-images: sha256:606de31d555f748c4fa6e249f3ab1c569e807fe26e9242065dc4dfc2dd63704f
+            upload-from-a-custom-admin-screen: sha256:6403d5b7b9d627c91efedd25aa2958d9423df3f2ad4ee4fe2dcaa547ef04a38f
+            verify-the-changes: sha256:28e6066e5e9cf5e45b5f02c1347beb4d9c46cf37314c36d976e692a2a8a1918b
     docs/extend/content-model.md:
         page: 8465554a17ce762879b9dbb98d1b49e2756c10d6
         blueprint: 26265118d14e3f756a7bb7667af03b8b20723e7e

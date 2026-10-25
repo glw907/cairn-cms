@@ -12,6 +12,9 @@
 
 ## Medium
 
+- [ ] **#64** Move the admin's Lucide icons onto Survey v1.4.0's icon rules `#improvement` `#cairn-cms` *(2026-10-25)*
+  The admin draws icons at six ad hoc sizes (`h-3` to `h-8`). Survey's DESIGN.md "Icons" sets 14, 16, 20, or 24px by context, `currentColor`, `--color-muted`, or a status ink for color, and a 1.5px stroke from `components.css`, so no call site passes `strokeWidth`. Do it in the pass that takes Survey v1.4.0. Source: glw907/survey#5.
+
 - [ ] **#63** Mark a reader-site path so `check:symbols` doesn't reject it `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   `check:symbols` rejects `src/app.css`, a path in the reader's site, as an unresolved file, so the drafter wrote "`app.css` under `src`" to get past it, and the theme agent added an allowlist entry. Paths a page names in the reader's site need a marker or a standing allowlist group, so the gate doesn't push the prose into circumlocution.
   Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4/friction.md (P11)

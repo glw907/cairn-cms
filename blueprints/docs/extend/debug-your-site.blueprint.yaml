@@ -329,19 +329,21 @@ sections:
     why: |
       The public-route seam's one row.
     opens: |
-      Public images render as literal `media:` tokens when a public route factory is built with
-      media on but no `resolveMedia`, and the engine logs `media.resolver_absent` once, at
-      construction.
+      A public route factory built with media on but no `resolveMedia` derives no hero image, and
+      on a site whose `render` passes that missing resolver through, body images lose their source
+      too. A scaffolded site's `render` falls back to `publicMediaResolver`, so there the missing
+      hero image is the symptom. The engine logs `media.resolver_absent` once, at construction.
     items:
       - id: x-resolver
         kind: failure
         symptom: |
-          Public pages show literal `media:` tokens where images belong, and the log holds one
-          `media.resolver_absent` warning from when the factory was built.
+          Public pages show no hero image, and on a site whose `render` has no fallback resolver,
+          body images have no source. The log holds one `media.resolver_absent` warning from when
+          the factory was built.
         cause: |
           The factory was built with `assetsEnabled: true` (the site's media-on flag,
-          `runtime.resolvedAssets.enabled`) but no `resolveMedia` function was passed to it, so
-          every `media:` reference has nothing to resolve against.
+          `runtime.resolvedAssets.enabled`) but no `resolveMedia` function was passed to it, so the
+          factory derives no hero image and passes `render` no resolver.
         handledBy: s-resolver-fix
       - id: f-resolver
         kind: fact

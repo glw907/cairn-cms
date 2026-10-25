@@ -19,11 +19,11 @@ exemplar: extenders/astro-v5-upgrade
 **What the page does for them.** The introduction opens on the reader's situation. An old site's markdown file already has a cairn entry's shape: a frontmatter block over a markdown body. The differences sit in the filename, the frontmatter, and the body. The filename becomes the entry's id. The frontmatter is read against the concept's fields. The body's old shortcodes and image URLs each need a decision. :fact[46edxb] :fact[ggzzur] :fact[tg9e0z]
 It gives the model next. cairn ships no importer, and the conversion is a short script the developer writes. The build and the admin both read a committed file with `parseMarkdown`. A script that reads old files with it sees each value typed the way they will. The build then checks every migrated entry against its concept. :fact[7mq2xa] :fact[qd7iat] :fact[g8rbmt] :fact[kv3qen]
 The contract sentence follows, as a statement: this page builds one script that converts each old file so that its entry keeps a stable id, validates, and can be linked, and then uses the build to find each entry that still fails. :fact[46edxb] :fact[kv3qen] :fact[nhjraz]
-One sentence warns a Hugo reader that `parseMarkdown` reads only YAML between `---` lines, so a TOML block between `+++` lines is converted to YAML first. :fact[p4tg0n] :fact[ht7tdd]
+One sentence warns a Hugo reader that `parseMarkdown` reads the block between `---` lines as YAML by default and treats a TOML block between `+++` lines as no frontmatter, so a Hugo site's TOML files are converted to YAML first. :fact[p4tg0n] :fact[ht7tdd]
 
 **What it leaves to other pages, each named in the introduction:**
 - Declaring the target concepts and their fields belongs to Define an adapter and schema.
-- Writing and registering the component that replaces a shortcode belongs to Configure rendering.
+- Writing and registering the component that replaces a shortcode belongs to Write a markdown component.
 - What the save-time validation checks belongs to Content model.
 - Turning media on belongs to Configure media.
 - Rewriting the old site's internal links as `cairn:` links belongs to Link content with references.
@@ -44,11 +44,12 @@ One sentence warns a Hugo reader that `parseMarkdown` reads only YAML between `-
 *Name what the site needs before the script can write into it.*
 
 - Before you write the script, the site needs the following:
-- Each target concept declared in the adapter module, which a scaffolded site keeps at `src/theme/cairn.config.ts`, with a field for each frontmatter key the migration keeps. An admin save deletes a key the concept doesn't declare. :fact[jfuzxf] :fact[ggzzur]
+- Each target concept declared in the adapter module, with a field for each frontmatter key the migration keeps. A scaffolded site keeps the adapter in `src/theme/cairn.config.ts` and imports it as `cairn` from `#theme/cairn.config.js`, through the `#theme/*` import that [`package.json`](scaffolded-site-files.md#packagejson) maps to `src/theme/*`. An admin save deletes a key the concept doesn't declare. :fact[q07rd5] :fact[jfuzxf] :fact[ggzzur]
 - See [Add a concept](define-an-adapter-and-schema.md#add-a-concept).
 - If the old site has drafts, a `boolean` field named `draft` on that concept, which the edit page renders as its **Hidden** toggle. :fact[69j91g] :fact[ggzzur]
 - See [Frontmatter keys the engine reads](content-model.md#frontmatter-keys-the-engine-reads).
-- Each concept's glob passed to `createSiteIndexes` and listed in the `cairnManifest` plugin's `content` option. A scaffolded site calls `createSiteIndexes` in `src/chassis/content.ts`. :fact[pdgkex] :fact[n0laoh] :fact[k8vd2e]
+- Each concept's glob passed to [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes) and listed in the [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin's `content` option. A scaffolded site calls `createSiteIndexes` in `src/chassis/content.ts`. :fact[pdgkex] :fact[n0laoh] :fact[k8vd2e]
+- See [Build one typed index](build-the-public-routes.md#build-one-typed-index).
 - If the old bodies use shortcodes, a registered component for each one. :fact[tg9e0z]
 - See [Register the component](write-a-markdown-component.md#register-the-component).
 - The old site's markdown files copied into a directory of the project outside `src/content`, such as `old-content/posts`.
@@ -59,7 +60,7 @@ One sentence warns a Hugo reader that `parseMarkdown` reads only YAML between `-
 
 - cairn ships no importer. You move the old files with a short script that reads each one through `parseMarkdown`. :fact[7mq2xa] :fact[qd7iat]
 - `parseMarkdown` returns `frontmatter` with the YAML values already typed: an unquoted date or timestamp arrives as a `Date`. It returns `body` starting on the line after the closing `---`. :fact[w77gj8]
-- The function an admin save writes an entry file with isn't exported. The script writes the `---` block itself. :fact[3r6rqn]
+- `@glw907/cairn-cms` doesn't export the function an admin save writes an entry file with. The script writes the `---` block itself. :fact[3r6rqn] :fact[qd7iat]
 - The script writes each value with `JSON.stringify`, and `parseMarkdown` reads the result back as the same string, list, or boolean. :fact[j6yq1s]
 - When `parseMarkdown` can't parse a frontmatter block, it throws. The script catches the error and skips the file with its message. :fact[p4tg0n]
 - To write the script, follow these steps:
@@ -140,7 +141,7 @@ for (const filename of await readdir(FROM)) {
 ```
 
 2. In the script, set `FROM` to the old files' directory, `TO` to the concept's `dir`, and `DATE_PREFIX` to the concept's `datePrefix`. :fact[d27z58]
-- The script builds a dated id the way the admin's create dialog does: the date cut to the concept's `datePrefix`, a hyphen, then the slug. :fact[ilcgl4]
+- The `id` line builds a dated id the way the admin's create dialog does. It joins the date, cut to the concept's `datePrefix`, to the slug with a hyphen. :fact[ilcgl4]
 - The script targets a dated concept. For a concept that isn't dated, such as one with `routing: 'page'`, set the id to the stem, drop the date check, and leave `date` out of `toFrontmatter`. :fact[s2zbzm]
 - The following sections each adapt one part of the script:
 - [Name each file by its id](#name-each-file-by-its-id) adapts `toSlug`, `DATE_PREFIX`, and the `id` line.
@@ -152,7 +153,7 @@ for (const filename of await readdir(FROM)) {
 
 *Settle each entry's filename first, since the id is fixed before the script writes anything.*
 
-- An entry's id is its filename stem, verbatim, and the file on disk is the id plus `.md`. A dated concept's filename starts with a date, which the URL slug strips. :fact[z68na4] :fact[46edxb]
+- An entry's id is its filename stem, verbatim. The script therefore writes each entry to `<id>.md`. A dated concept's filename starts with a date, which the URL slug strips. :fact[z68na4] :fact[46edxb]
 - See [Entry identity](content-model.md#entry-identity).
 
 ### Match the date prefix to the concept
@@ -160,7 +161,7 @@ for (const filename of await readdir(FROM)) {
 *Show how an old date prefix of another length leaks into the URL, and the setting that prevents it.*
 
 - cairn strips a leading date from the slug only at the concept's `datePrefix` granularity. :fact[grhib4]
-- Old filenames can carry a full day, another granularity, or no date. Under `datePrefix: 'month'`, `2024-03-15-my-trip.md` strips only `2024-03-`, so the slug is `15-my-trip`. Nothing throws, and the build doesn't fail. :fact[grhib4]
+- Old filenames can carry a full day, another granularity, or no date. Under `datePrefix: 'month'`, `2024-03-15-my-trip.md` strips only `2024-03-`, so the slug is `15-my-trip`. The mismatch throws no error and doesn't fail the build. :fact[grhib4]
 - In the script, set `DATE_PREFIX` to the concept's `datePrefix`, and the `id` line cuts the entry's date to that length. :fact[ilcgl4] :fact[d27z58]
 - See [Set the permalink and date prefix](define-an-adapter-and-schema.md#set-the-permalink-and-date-prefix).
 
@@ -168,7 +169,7 @@ for (const filename of await readdir(FROM)) {
 
 *Show which stems a link can't reach, and how the script repairs them.*
 
-- An id is lowercase letters and digits, joined by single hyphens. A stem outside that shape still serves its page, but a `cairn:` link can't target it, and the admin's rename and delete actions refuse it. :fact[nhjraz]
+- An id is lowercase letters and digits, joined by single hyphens. A stem outside that shape still serves its page, but a `cairn:` link can't target it. The admin refuses the id as well: its edit page doesn't open the entry, and its save, publish, discard, rename, and delete actions each reject the id as invalid. :fact[nhjraz]
 - Old filenames can carry capital letters, spaces, or other characters, such as `My_Trip.md`. :fact[nhjraz]
 - In the script, keep `toSlug` and the `ID_SHAPE` check. They lowercase and hyphenate each stem, and skip a file whose id is still off shape or already written. :fact[nhjraz]
 
@@ -176,8 +177,8 @@ for (const filename of await readdir(FROM)) {
 
 *Explain the rule every frontmatter change follows, then give each change as an old form and its fix.*
 
-- An admin save keeps a frontmatter key only when the concept declares it, and each declared field reads its value in one form. :fact[ggzzur] :fact[gh4ckg]
-- Each subsection names the line of `toFrontmatter` it changes.
+- Each field type accepts its value in set forms, such as a `YYYY-MM-DD` string or a `Date` for a `date` field. :fact[gh4ckg] :fact[ivhuyc]
+- The following subsections each change `toFrontmatter`.
 
 ### Declare or drop every old key
 
@@ -190,7 +191,7 @@ for (const filename of await readdir(FROM)) {
 2. In the script's `toFrontmatter`, map each kept key onto its field, and leave out the rest.
 - The script's `description` line shows the pattern: it takes the old `summary` when the file has no `description`.
 - See [Add a concept](define-an-adapter-and-schema.md#add-a-concept).
-- Building the manifest logs a `content.field_undeclared` warning that names each concept's undeclared keys. [Verify the migrated entries](#verify-the-migrated-entries) checks for this warning. :fact[3ikjaa] :fact[r5wm3c]
+- Building the manifest logs a [`content.field_undeclared`](../reference/log-events.md) warning that names each concept's undeclared keys. [Verify the migrated entries](#verify-the-migrated-entries) checks for this warning. :fact[3ikjaa] :fact[r5wm3c]
 
 ### Write dates as `YYYY-MM-DD`
 
@@ -199,11 +200,12 @@ for (const filename of await readdir(FROM)) {
 - A `date` field accepts a calendar date in `YYYY-MM-DD` form. A string with a time part fails with the field's label followed by `must be a valid date (YYYY-MM-DD)`. :fact[ivhuyc]
 - Old dates often carry a time and an offset, such as `2024-03-15 20:00:00 -08:00`. :fact[ivhuyc]
 - An unquoted timestamp arrives as a `Date`, and the field takes the `Date`'s UTC day. An evening time west of UTC therefore lands on the next day. :fact[w77gj8] :fact[ivhuyc]
-- The script's `toDay` writes the day as a quoted `YYYY-MM-DD` string. It takes a `Date`'s UTC day, as the field does, and reproduces the shift. :fact[ivhuyc]
+- The script's `toDay` returns the day as a `YYYY-MM-DD` string, and `frontmatterBlock` writes it quoted. For a `Date`, `toDay` takes the UTC day, as the field does, and reproduces the shift. :fact[ivhuyc]
 - If the old filenames carry the intended day, change the `date` line to `fm.date = toDay(filename) ?? toDay(old.date);`. An offset timestamp then can't move the entry.
 - A `datetime` field takes the trimmed string as written, with no format check. :fact[ivhuyc]
-- The script has no `datetime` handling. An unquoted timestamp arrives as a `Date`, and `JSON.stringify` writes it as a UTC string that loses the offset. :fact[w77gj8]
-- For a `datetime` field, take the timestamp from the old file's raw text or rebuild it with its offset. Write it as a quoted string.
+- The script has no `datetime` handling. Because `parseMarkdown` hands an unquoted timestamp over as a `Date`, `frontmatterBlock` writes it as a UTC string that loses the offset. :fact[w77gj8]
+- For a `datetime` field, in `toFrontmatter`, write the timestamp as a quoted string, rebuilt with its offset or taken from the old file's raw text. :fact[ivhuyc]
+- `toFrontmatter` receives the parsed values and the filename, so taking the timestamp from the raw text means passing the file's text into `toFrontmatter` too.
 
 ### Mark drafts with `draft: true`
 
@@ -219,7 +221,7 @@ for (const filename of await readdir(FROM)) {
 *Show how old free-text tags meet a configured tag vocabulary.*
 
 - A tag vocabulary's values are lowercase hyphenated slugs. Once the site configures one, an admin save adds only vocabulary values to the concept's taxonomy field. :fact[2p519o]
-- Old tags are often free text, such as `Travel Notes`. An entry's existing tag outside the vocabulary is kept as an orphan, not refused. :fact[2p519o]
+- Old tags are often free text, such as `Travel Notes`. An admin save keeps an entry's existing tag that sits outside the vocabulary as an orphan and doesn't refuse it. :fact[2p519o]
 - In the script's `toFrontmatter`, convert each tag with `toSlug` and write the list under the name of the concept's taxonomy field. The script's field is `tags`, and a concept may name its taxonomy field differently.
 - See [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field).
 
@@ -227,10 +229,11 @@ for (const filename of await readdir(FROM)) {
 
 *Show which old values a text field reads as empty, and the conversion that keeps them.*
 
-- A text, textarea, select, url, or email field reads an unquoted number, date, or boolean as empty. :fact[gh4ckg]
-- Old frontmatter such as `year: 1984` parses as a number. A required field then fails validation, and an optional one is dropped on the next save. :fact[gh4ckg]
-- In the script's `toFrontmatter`, pass each number or boolean through `String()`, and each date through `toDay`. `frontmatterBlock` then writes the value quoted. :fact[gh4ckg]
-- The `title` and `description` lines already pass their values through `String()`.
+- A text, textarea, select, url, or email field reads a value that isn't a string, such as an unquoted number, date, or boolean, as empty. :fact[gh4ckg]
+- Old frontmatter such as `year: 1984` parses as a number. A required field then fails validation, and an optional one is left out of the validated frontmatter the site reads. :fact[gh4ckg]
+- The admin's edit page fills a `text` or `textarea` field with the value converted to a string, and a save writes that string back. A date written back this way becomes JavaScript's long date string. :fact[gh4ckg]
+- In the script's `toFrontmatter`, convert each number or boolean bound for one of these fields to a string, and each such date with `toDay`. `frontmatterBlock` then writes each string value quoted. :fact[gh4ckg]
+- The `title` and `description` lines already convert their values to strings. The `draft` value stays a boolean, which [Mark drafts with `draft: true`](#mark-drafts-with-draft-true) requires. :fact[0nw43j]
 
 ## Convert the body markup
 
@@ -240,21 +243,22 @@ for (const filename of await readdir(FROM)) {
 
 ### Keep or move old images
 
-*Show what an old image address does after migration and what moving it into the Library takes.*
+*Show what an old image address does after migration and what moving it into the media library takes.*
 
 - The render pipeline rewrites an image's address only when it's a `media:` reference. An old image address left in a body keeps pointing where it did. :fact[xl7d9s]
-- While the old address still serves the image, leave it in place. :fact[xl7d9s]
-- To move an image into the Library instead, follow these steps:
-1. In the admin's Library, upload the image. :fact[xjdhau]
-2. In the entry's body, replace the old address with the image's `media:` reference. :fact[xjdhau]
-- The Library takes one file per upload. :fact[xjdhau]
+- An image whose old address still serves it can stay as it is. :fact[xl7d9s]
+- Moving an image into the media library needs media turned on. :fact[2hnxsr]
 - See [Configure media](configure-media.md).
+- To move an image into the media library instead, follow these steps:
+1. In the admin's **Media library** screen, upload the image. :fact[xjdhau]
+2. In the entry's body, replace the old address with the image's `media:` reference. :fact[xjdhau]
+- The media library takes one file per upload, and it stores and commits each file in one step. :fact[xjdhau]
 
 ### Replace shortcodes with components
 
 *Show the one directive form a registered component answers to, and the script helper that writes it.*
 
-- A site's reusable body block is a registered component, invoked as a container directive such as `:::note`. A leaf directive (`::note`) or a text directive (`:note`) renders as its literal source text. :fact[tg9e0z]
+- A site's reusable body block is a registered component, invoked as a container directive such as `:::note`. Apart from `::include`, which embeds a fragment, a leaf directive (`::note`) or a text directive (`:note`) renders as its literal source text. :fact[tg9e0z]
 - Old bodies carry the old site's block syntax, such as Hugo's `{{< note >}}` or a Jekyll `{% include %}`.
 - In the script's `toBody`, rewrite each shortcode as a container directive that names its registered component. :fact[tg9e0z]
 - The script's one rule turns `{{< note >}}` into `:::note`.
@@ -283,10 +287,11 @@ cairn: 1 invalid frontmatter field(s):
 - The script overwrites a file only when the new id matches. A fix that changes an id would leave the earlier file beside the new one.
 6. Repeat these steps from step 1.
 
-- [Diagnose a failed check](#diagnose-a-failed-check) gives the migration's causes for a listed field. :fact[kv3qen]
-- An invalid draft never fails the build, though the index still leaves it out. [Verify the migrated entries](#verify-the-migrated-entries) shows how to find it. :fact[kv3qen]
-- To let the build pass while entries still fail, pass `{ validate: false }` as the fourth argument of `createSiteIndexes`. :fact[kv3qen]
-- With validation off, each invalid entry drops from the site with no error. Remove the option once the list is empty. :fact[kv3qen]
+- For the migration's causes of a listed field, see [Diagnose a failed check](#diagnose-a-failed-check). :fact[kv3qen]
+- An invalid draft never fails the build, though the index still leaves it out. To find one, see [Verify the migrated entries](#verify-the-migrated-entries). :fact[kv3qen]
+- To let the build pass while entries still fail, in the module that calls `createSiteIndexes`, pass `{ validate: false }` as the call's fourth argument. :fact[kv3qen]
+- With validation off, each invalid entry drops from the site with no error. :fact[kv3qen]
+- Once every migrated entry validates, remove `{ validate: false }` from the `createSiteIndexes` call. :fact[kv3qen]
 - See [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes).
 - See [Build one typed index](build-the-public-routes.md#build-one-typed-index).
 
@@ -313,14 +318,16 @@ cairn: 1 invalid frontmatter field(s):
 
 *Trace each failed check to the part of the file that caused it: its name, a frontmatter value, or a body block.*
 
+- A failed check usually traces to a migrated file's name, one of its frontmatter values, or a block in its body.
 - Work through the following checks in order:
 1. If the script prints `Skipped` for a file, fix the old file or the helper the reason names. The script skips a file that has no date, an off-shape or duplicate id, or frontmatter that `parseMarkdown` can't parse. :fact[p4tg0n]
-2. If a migrated entry's body starts with a `+++` block, convert the old file's TOML frontmatter to YAML, and run the script again. :fact[p4tg0n]
+2. If a migrated entry's body starts with a `+++` block, convert the old file's TOML frontmatter to YAML before the next run. :fact[p4tg0n]
 - `parseMarkdown` reads a TOML block as empty frontmatter and leaves it in the body. An old file with a dated filename is still written. :fact[p4tg0n]
 3. If the build fails on a stale content manifest, run `npx cairn-manifest` again. :fact[fdtgh5]
 4. If the build stops with a list of invalid fields, fix each one in the script. :fact[kv3qen]
-- A listed `date` field means the date the script took, from an old value that YAML kept as a string or from the filename, isn't a real calendar date, such as `2024-02-30`, or falls outside the field's bounds. An unquoted impossible date such as `2024-13-45` parses as a rolled-over `Date` (here `2025-02-14`), so the script writes that real day and the field never reports it as an invalid date. See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd). :fact[ivhuyc]
-- A text field listed as required, though the old file had a value, means the value was an unquoted number, date, or boolean. See [Quote values for text fields](#quote-values-for-text-fields). :fact[gh4ckg]
+- A listed `date` field means the date the script took isn't a real calendar date, or falls outside the field's `min` or `max`. A date that isn't real came from an old value that YAML kept as a string, or from the filename. :fact[ivhuyc] :fact[w77gj8]
+- An unquoted impossible date such as `2024-13-45` parses as a rolled-over `Date`, here `2025-02-14`. The script writes that real day, and it passes the field's calendar-date check. See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd). :fact[mtyw16]
+- A text field listed as required, though the old file had a value, means that value wasn't a string or never reached the field. A value that isn't a string may have been a list, or an unquoted number, date, or boolean. A value that never reached the field sat under a key `toFrontmatter` doesn't map, since the script writes only `title`, `date`, `description`, `draft`, and `tags`. See [Quote values for text fields](#quote-values-for-text-fields). :fact[gh4ckg]
 - See [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build).
 5. If the build fails because a permalink resolves to two entries, rename one of them. Two dated files with one slug and different dates collide under a permalink without a date token, such as the default `/posts/:slug` for a `posts` concept. :fact[ky39tz] :fact[grhib4] :fact[d27z58]
 6. If an entry is missing from the site while the build passes, check whether it's an invalid draft or `validate: false` is still set. See [Verify the migrated entries](#verify-the-migrated-entries). :fact[kv3qen]
@@ -333,7 +340,7 @@ cairn: 1 invalid frontmatter field(s):
 
 *Point the reader to the pages that cover what this migration depends on.*
 
-- The following pages cover the concepts, rendering, media, and routes this migration depends on:
+- The following pages cover what this migration depends on and the links between migrated entries:
 - See [Define an adapter and schema](define-an-adapter-and-schema.md).
 - See [Content model](content-model.md).
 - See [Write a markdown component](write-a-markdown-component.md).

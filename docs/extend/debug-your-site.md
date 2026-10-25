@@ -113,12 +113,14 @@ not on each request.
 
 ### `media.resolver_absent`
 
-Public images render as literal `media:` tokens when the site's content carries `media:` tokens but
-the site passes no `resolveMedia` to `createPublicRoutes`. When the site also passes `assetsEnabled:
-true`, the engine logs `media.resolver_absent` as a warning once, when the factory is built, as the
-[log events](../reference/log-events.md) reference lists. Without that flag, the tokens appear with
-no record. The fix is a code change that passes the site's `resolveMedia` to `createPublicRoutes`,
-as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
+When the site's content carries `media:` references but the site passes no `resolveMedia` to
+`createPublicRoutes`, public pages get no hero image. A site whose `render` passes `resolveMedia`
+through with no fallback resolver also gets body images with no image source. A scaffolded site's
+`render` falls back to `publicMediaResolver`, so there the missing hero image is the symptom. When
+the site also passes `assetsEnabled: true`, the engine logs `media.resolver_absent` as a warning
+once, when the factory is built, as the [log events](../reference/log-events.md) reference lists.
+Without that flag, the gap leaves no record. The fix is a code change that passes the site's `resolveMedia` to
+`createPublicRoutes`, as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
 
 ## Admin action events
 

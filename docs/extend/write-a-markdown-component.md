@@ -1,683 +1,308 @@
 # Write a markdown component
 
-Every entry on a cairn site becomes HTML through one function that the site supplies: the adapter's
-`rendering.render`. The edit page's live preview and every public page call that same
-function, so the preview can't drift from the published page. The engine ships no public design:
-its DaisyUI and Tailwind styling covers the admin alone, and the HTML an entry turns into is each
-site's to decide. The site builds the function with `createRenderer`, whose pipeline renders plain
-markdown, tables, `cairn:` links, and `media:` references with no component registered. The
-preview calls the function in the editor's browser as the author types, and the public entry
-route calls it from a SvelteKit server `load`, so the adapter module and everything its `render`
-imports, components and plugins included, load in the admin's client bundle as well as on the
-server. A custom public component is a container directive in the markdown that the site's
-`build` function turns into markup, and one registry of them is read by both the render pipeline
-and the editor's component picker.
+Every entry on a cairn site becomes HTML through the adapter's `rendering.render`, and the edit page's preview and every public page call that same function. The preview calls it in the editor's browser and the public entry route calls it from a server `load`, so a component's code runs in both places. An author writes a custom public component in the markdown as a container directive, and the component's `build` function turns that directive into markup. The render pipeline reads one registry of components through `createRenderer`, and the editor's picker reads the same registry through the admin page.
 
-Two sites start from different places. On the add-cairn tutorial's site, the adapter at
-`src/lib/cairn.config.ts` renders over an empty registry, and its developer works through every
-section. On a scaffolded site, the adapter at `src/theme/cairn.config.ts` already has the render
-function, the smartypants plugin, and nine components declared in `markdown-components.ts` under
-`src/theme/`. Its developer comes to add a component beside those nine,
-change an option, or learn what a built-in step emits. By the end, the site has a render function
-with its options set, a remark plugin, and a registered custom public component that the preview
-and the published page render the same way.
+A new custom public component sits beside the ones a site already declares, such as the nine that a scaffolded site ships in `markdown-components.ts` under `src/theme/`. Writing one means declaring it and its slots, writing its `build` function, shaping its entry in the picker, registering it, and checking that the preview and the site's public pages render it alike. The running example is an `event` component with a date, a place, a details body, and an agenda list.
 
-Four narrower needs also bring a developer to this page. A block that has to differ on each use,
-which a fragment's fixed text can't do, is a component whose attributes each use sets. An island
-starts as a component declared with `hydrate`, and its `build` output stays on the page as the
-static fallback. Renderer options, such as a wider sanitize allowlist or a different anchor `rel`,
-are set in [Set the renderer options](#set-the-renderer-options). For a symptom such as a
-directive printed as literal text or a code block with no token colors, see
-[Diagnose a failed check](#diagnose-a-failed-check).
+The page serves a developer who wants authors to insert a structured block from the editor's picker, with fields and regions to fill, and to see it in the site's markup. It also serves a developer adding an island. An island starts as a component declared with `hydrate`, and its declaration is written here first. For a component that misbehaves, [Diagnose a failed check](#diagnose-a-failed-check) maps each symptom to its cause, from a directive printed as literal text to a preview that fails to render.
 
-The page assumes you know TypeScript and the unified plugin model, in which a remark plugin works on
-the markdown tree and a rehype plugin on the HTML tree. It also assumes you can build a hast
-element with hastscript's `h()`. It assumes no cairn knowledge beyond the adapter file.
+The page assumes you know TypeScript and can build a hast element with hastscript's `h()`. It also assumes an adapter file whose render function is built with `createRenderer`: a scaffolded site ships one, and the [add-cairn tutorial](add-cairn-to-a-sveltekit-app.md) writes one by hand.
 
 This page leaves the following topics to the pages that cover them:
 
-- What the sanitize floor and the sink guard protect, and what turning the floor off costs, in
-  [Render safety](security-model.md#render-safety).
+- Building the render function, in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) and the [`createRenderer`](../reference/core.md#createrenderer) entry.
+- Adding a remark plugin and setting the renderer options, in the [`createRenderer`](../reference/core.md#createrenderer) entry. A scaffolded site already passes the smartypants plugin to its one `createRenderer` call.
+- The classes the built-in render steps emit for code, tables, and figures, in [Emitted classes](../reference/render.md#emitted-classes).
+- What the sanitize floor and the sink guard protect, in [Render safety](security-model.md#render-safety).
 - Hydrating a component in the browser, in [Add an island](add-an-island.md).
-- Styling the rendered output, in
-  [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown).
+- Styling the rendered output, in [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown).
 - Fragments and `::include`, in [Reuse content across entries](reuse-content-across-entries.md).
 - The media resolver and missing assets, in [Configure media](configure-media.md).
 
 ## Before you begin
 
-Rendering is set in the adapter file of the site you are changing, and a component builds its markup
-with `hastscript`. Before you start, make sure you have the following:
+Before you write a component, make sure your site has the following:
 
-- The adapter file, `src/lib/cairn.config.ts` on the tutorial's site or `src/theme/cairn.config.ts`
-  on a scaffolded site. The tutorial writes its adapter in
-  [Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter).
-- The [hastscript](https://github.com/syntax-tree/hastscript) package, which the following command
-  installs:
+- An adapter file whose `rendering.render` calls a renderer built with `createRenderer`. The adapter is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the add-cairn tutorial's site. The tutorial writes its adapter in [Write the site config and a minimal adapter](add-cairn-to-a-sveltekit-app.md#write-the-site-config-and-a-minimal-adapter), and the [`createRenderer`](../reference/core.md#createrenderer) entry documents the renderer.
+- The `hastscript` package, to build the markup a component returns. For its `h()` API, see [hastscript](https://github.com/syntax-tree/hastscript). The scaffold lists it as a dependency. On a hand-built site, install it with the following command:
 
   ```sh
   npm install hastscript
   ```
 
-A scaffolded site already renders through one `createRenderer` call that carries the smartypants
-plugin and a registry of the nine components in `markdown-components.ts`. On
-that site, skip [Build the render function](#build-the-render-function) and
-[Add a remark plugin](#add-a-remark-plugin), and add your component to that module's list.
+- A module that holds the components. A scaffolded site keeps them in `markdown-components.ts` under `src/theme/`, and the adapter builds its registry from that module's `components` list. [Scaffolded site files](scaffolded-site-files.md#srctheme) describes that module and its nine components.
 
-## Build the render function
+## Declare the component
 
-The adapter's `rendering.render` turns an entry's markdown into HTML, and the edit page's preview and
-every public page call that same function. Its type is `SiteRender`, which takes one object
-and resolves to an HTML string with no headings:
+`defineComponent` declares one container directive. It requires a `name`, a `label`, a `description`, and a `build` function. Its optional members include `attributes`, `slots`, `behavior`, and `hydrate`.
 
-```ts
-import type { FragmentResolve, LinkResolve, MediaResolve } from '@glw907/cairn-cms';
+An author always writes a component as a container directive, opening it with `:::name[Title]{attrs}` and closing it with `:::`. A leaf `::name` or text `:name` form renders as its literal source text. The names `figure` and `include` belong to the engine's render steps, and a component can't take either.
 
-type SiteRender = (input: {
-  body: string;
-  concept?: string;
-  frontmatter?: Record<string, unknown>;
-  resolve?: LinkResolve;
-  resolveMedia?: MediaResolve;
-  resolveFragment?: FragmentResolve;
-}) => Promise<string>;
-```
-
-To build the render function, follow these steps:
-
-1. In the adapter file, call `createRenderer` once with the site's registry, and keep the
-   `renderMarkdown` it returns. The tutorial's site already calls it over
-   `defineRegistry({ components: [] })`, which [Register the component](#register-the-component)
-   replaces.
-2. In the adapter's `rendering` group, set `render` to pass `body` and the three resolvers to
-   `renderMarkdown`.
-
-   <!-- snippet-check-skip: elides the adapter's required content, backend, and email groups -->
-   ```ts
-   // src/lib/cairn.config.ts (excerpt)
-   import { createRenderer, defineAdapter, defineRegistry } from '@glw907/cairn-cms';
-
-   const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-
-   export const cairn = defineAdapter({
-     // content, backend, and email stay as the tutorial wrote them
-     rendering: {
-       render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-         renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
-     },
-   });
-   ```
-
-The preview and the public routes each pass resolvers, and `render` forwards every one it
-receives. The [`SiteRender`](../reference/core.md#siterender) entry lists which
-resolver each caller passes. The `resolveFragment` wiring belongs to
-[Reuse content across entries](reuse-content-across-entries.md#forward-resolvefragment-from-your-render),
-and the `resolveMedia` wiring to [Configure media](configure-media.md). On a scaffolded site,
-`render` also falls back to the public media resolver when its caller passes none.
-
-`renderMarkdown` fits `SiteRender` because it returns the HTML alone. A route that needs the
-headings for a table of contents calls `renderDocument` instead. It returns the HTML plus the
-headings in document order, each as `{ id, text, depth }`. The
-[`createRenderer`](../reference/core.md#createrenderer) entry shows that return value with an
-example.
-
-The two callers run `render` at different moments. The edit page reruns it from an effect
-debounced on the live body, and it discards a result when a newer render has started. The
-public routes call the same `render` in the entry loader, at build when the route is prerendered and
-per request otherwise.
-
-With the render function in place, look at what the pipeline already does before you add to it.
-
-## Built-in render steps
-
-Before a site adds a component or a plugin, a renderer over an empty registry already highlights
-code, wraps each table, and places figures.
-
-The highlighter runs on every render and emits class-only output: `cairn-tok-*` classes on spans
-inside a `pre.shiki` block, with no inline style. On a public page it runs where the route
-renders, at build or per request, and the page ships no highlighter to the browser. The edit
-page's preview runs `render` in the editor's browser, and the highlighter loads there. It
-preloads `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`,
-`yaml`, and `sql`, with their aliases. A fence in any other language, or with none, renders as
-plain `pre.shiki` text with no token classes, and it never throws. A fenced `mermaid` block passes
-through untouched and keeps `<code class="language-mermaid">` for a client-side diagram renderer.
-
-The following fence is a TypeScript sample:
-
-````md
-```ts
-const count = 1;
-```
-````
-
-The highlighter renders it as the following HTML:
-
-```html
-<pre class="shiki cairn-roles" tabindex="0"><code><span class="line"><span class="cairn-tok-keyword">const</span><span> count </span><span class="cairn-tok-punct">=</span><span class="cairn-tok-number"> 1</span><span class="cairn-tok-punct">;</span></span>
-<span class="line"></span></code></pre>
-```
-
-Each rendered table is wrapped in `div.table-scroll` with `role="region"`, `tabindex="0"`, and an
-`aria-label` of `Table: ` plus the first header row's cell text, comma-joined. When there is
-no header row, the label is `Table`. The table stays a real table inside the
-wrapper. Setting `tableScroll` to `false` turns the wrap off, as
-[Set the renderer options](#set-the-renderer-options) describes.
-
-The following markdown is a two-column table:
-
-```md
-| Name | Role |
-| --- | --- |
-| Ada | Owner |
-```
-
-The pipeline renders it as the following HTML:
-
-```html
-<div class="table-scroll" role="region" tabindex="0" aria-label="Table: Name, Role"><table><thead><tr><th>Name</th><th>Role</th></tr></thead><tbody><tr><td>Ada</td><td>Owner</td></tr></tbody></table></div>
-```
-
-The engine's `:::figure` directive keeps a placement class only when its `class` is exactly
-`center`, `wide`, or `full`, and it emits that class as `cairn-place-<role>`. It ignores any
-other class without an error. A figure with no `media:` image still renders as a `<figure>`
-around its other children.
-
-The following directive is a `wide` figure with no image:
-
-```md
-:::figure{class="wide"}
-A caption with no image.
-:::
-```
-
-The pipeline renders it as the following HTML:
-
-```html
-<figure class="cairn-place-wide"><p>A caption with no image.</p></figure>
-```
-
-The engine writes these classes, and [Emitted classes](../reference/render.md#emitted-classes)
-lists each one with who styles it.
-[Style rendered markdown](theme-your-public-site.md#style-rendered-markdown) covers styling them in
-the site's theme.
-
-To turn off the table wrap or change the anchor `rel`, set the renderer options.
-
-## Set the renderer options
-
-`createRenderer` takes a `RendererConfig` as its second argument, and its options extend the sanitize
-allowlist, set the table wrap and the anchor `rel`, and add a site's plugins.
-
-- In the adapter file, pass the options object as the second argument of the one `createRenderer`
-  call.
-
-The following table lists each option, its default, and what it does:
-
-| Option | Default | What it does |
-| --- | --- | --- |
-| `sanitizeSchema` | cairn's default schema | Receives the default schema and returns the schema to use, to admit benign HTML the content needs |
-| `tableScroll` | On | Wraps each table in `div.table-scroll`, and `false` turns the wrap off |
-| `anchorRel` | `'noopener noreferrer'` | Sets the `rel` forced on every `target="_blank"` anchor, and `false` leaves the step out |
-| `remarkPlugins` | None | Runs after cairn's remark steps and before the remark-to-rehype conversion |
-| `rehypePlugins` | None | Runs last of all, after the table-scroll wrap |
-
-The remark steps a site's plugin follows are include resolution, the directive stamp, `cairn:` links,
-figures, and `media:` resolution. The anchor step runs after highlighting and ahead of the
-sink guard, the table-scroll wrap, and the site's `rehypePlugins`. It covers anchors that a
-component builds, but not an anchor that a site's `rehypePlugins` add. No option turns highlighting
-off or changes it.
-
-[The sanitize floor](../reference/render.md#the-sanitize-floor) states what a `sanitizeSchema`
-callback can't remove. [Render safety](security-model.md#render-safety) sets
-out the pipeline's full stage order and what the sanitize floor protects.
-
-Next, add a remark plugin.
-
-## Add a remark plugin
-
-A scaffolded site smartens quotes, dashes, and ellipses by passing `remark-smartypants` to its one
-`createRenderer` call through `remarkPlugins`. Straight quotes, `--` and `---`, and `...` in
-body prose come out smartened the same way in the public render and the preview. Inline code,
-code blocks, and link URLs stay untouched. As a remark plugin, it runs over the markdown tree
-before the conversion to HTML.
-
-The scaffold exports the plugin list from one module and passes it to `createRenderer` in the
-adapter:
-
-```ts
-// src/chassis/render.ts (excerpt)
-import remarkSmartypants from 'remark-smartypants';
-import type { PluggableList } from 'unified';
-
-export const proseTypography: PluggableList = [[remarkSmartypants, { dashes: 'oldschool' }]];
-```
-
-```ts
-// src/theme/cairn.config.ts (excerpt)
-import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
-import { proseTypography } from '#chassis/render.js';
-import { components } from './markdown-components.js';
-
-const registry = defineRegistry({ components });
-const { renderMarkdown } = createRenderer(registry, { remarkPlugins: proseTypography });
-```
-
-On a scaffolded site, another remark plugin goes in the same `proseTypography` list.
-
-To add the plugin to the tutorial's site, follow these steps:
-
-1. In a terminal at the project root, install the plugin:
-
-   ```sh
-   npm install remark-smartypants
-   ```
-
-2. In `src/lib/cairn.config.ts`, pass the plugin to `createRenderer` through
-   `remarkPlugins`:
-
-   ```ts
-   // src/lib/cairn.config.ts (excerpt)
-   import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
-   import remarkSmartypants from 'remark-smartypants';
-
-   const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-     remarkPlugins: [[remarkSmartypants, { dashes: 'oldschool' }]],
-   });
-   ```
-
-The [remark-smartypants README](https://github.com/silvenon/remark-smartypants) lists the plugin's
-other options.
-
-With the pipeline set, declare a custom public component.
-
-## Declare a component
-
-`defineComponent` declares one container directive from a required `name`, `label`, `description`,
-and `build`, with `attributes`, `slots`, and `hydrate` optional. The running example
-declares a `takeaways` component in `src/lib/markdown-components.ts`, a new module laid out like the
-scaffold's `markdown-components.ts`. On a scaffolded site, declare it in the
-scaffold's `markdown-components.ts` beside the nine components already there.
+On a hand-built site, the file can be any module that the adapter imports.
 
 To declare the component, follow these steps:
 
-1. In the module, declare `takeaways` with its label, its description, and one attribute.
-2. In the same module, export the component list:
+1. In `markdown-components.ts`, import `defineComponent` and `fields` from `@glw907/cairn-cms`, and `h` from `hastscript`.
+2. In the same file, export a `defineComponent` call with the `name`, `label`, and `description`.
+3. In the call, add an `attributes` object that maps each attribute name to one `fields.*` descriptor.
+4. In the call, add a `build` stub that returns an empty `section` element.
 
-   ```ts
-   // src/lib/markdown-components.ts
-   import { defineComponent, fields } from '@glw907/cairn-cms';
-   import { h } from 'hastscript';
+The following declaration gives `event` a required `date` attribute, an optional `place` attribute, and a `build` stub that [Write the build function](#write-the-build-function) completes:
 
-   export const takeaways = defineComponent({
-     name: 'takeaways',
-     label: 'Takeaways',
-     description: 'A titled summary that closes with a list of key points.',
-     attributes: {
-       tone: fields.select({ label: 'Tone', options: ['note', 'tip'] }),
-     },
-     // A stub until "Write the build function" replaces it.
-     build: () => h('aside'),
-   });
-
-   export const components = [takeaways];
-   ```
-
-The directive vocabulary is container-only. An author opens a component with
-`:::name[Title]{attrs}` and closes it with `:::`. A component with named slots takes a four-colon
-outer fence around its nested `:::slotName` containers. A leaf `::name{attrs}` or text
-`:name{attrs}` form is restored to its literal source text. The pipeline reads either form as
-a stray colon in prose, such as a time or a ratio. `::include` is the one leaf form the
-pipeline reads, and [Reuse content across entries](reuse-content-across-entries.md) covers
-it.
-
-The `attributes` member accepts exactly ten `fields.*` types, because each serializes to a single
-directive-attribute string. The ten are `text`, `textarea`, `number`, `select`, `url`,
-`email`, `date`, `datetime`, `boolean`, and `icon`. A `multiselect`, `object`, `array`,
-`reference`, or `image` attribute throws at declaration, and the message includes
-`a directive attribute must be a single-value scalar`.
-
-The attributes are checked by the same fieldset machinery a concept's fields use.
-`defineComponent` builds an `attributeSchema` with `defineFieldset(attributes, { behavior })`, and
-`validateComponent` runs it. A cross-field rule therefore goes in the component's `behavior`
-table, keyed by attribute name. The constructor sets `attributeSchema`, and a site never sets
-it. The [`defineComponent`](../reference/core.md#definecomponent) entry lists the ten types
-and the `behavior` table. The [Fields](../reference/core.md#fields) table states what
-each type renders and validates, including what an `icon` attribute needs from the adapter.
-For `hydrate`, which opts the directive into a client island, see
-[Add an island](add-an-island.md).
-
-Next, declare the regions an author fills.
-
-## Declare the slots
-
-A slot named `title` is the directive's bracketed label, a slot named `body` is its default content,
-and any other name is a named region. The editor's insert dialog writes and reads `title` and
-`body` specially, as [Component authoring grammar](#component-authoring-grammar) shows.
-
-The following table lists the members of a slot:
-
-| Member | What it does |
-| --- | --- |
-| `name` and `label` | Name the slot in the directive and label it in the insert form |
-| `kind` | Takes `'inline'`, `'markdown'`, or `'repeatable'` |
-| `required` | Marks the slot with an asterisk in the insert form and keeps **Insert** unavailable until it is filled, with one non-empty item for a repeatable slot. Once the slot is touched, the form shows `<label> is required.`, and the insert validator repeats the check. |
-| `itemFields` | For a repeatable slot, names each item's fields, but the insert form reads only the first declared field's key. Each item is one string under that key, or under `text` when `itemFields` is absent. |
-| `itemLabel` | For a repeatable slot, names each row in the insert form from that one-key record and the zero-based index. When it returns nothing or blank text, the row reads as the slot label plus the row number. |
-
-The render pipeline never reads `required`, so a hand-typed directive without the slot still
-renders.
-
-- In the component's declaration, add a `slots` array with a required title, a markdown body, and a
-  repeatable list of points:
-
-  ```ts
-  // src/lib/markdown-components.ts
-  import { defineComponent, fields } from '@glw907/cairn-cms';
-  import { h } from 'hastscript';
-
-  export const takeaways = defineComponent({
-    name: 'takeaways',
-    label: 'Takeaways',
-    description: 'A titled summary that closes with a list of key points.',
-    attributes: {
-      tone: fields.select({ label: 'Tone', options: ['note', 'tip'] }),
-    },
-    slots: [
-      { name: 'title', label: 'Title', kind: 'inline', required: true },
-      { name: 'body', label: 'Body', kind: 'markdown' },
-      {
-        name: 'points',
-        label: 'Points',
-        kind: 'repeatable',
-        itemLabel: (item) => String(item.text ?? ''),
-      },
-    ],
-    // A stub until "Write the build function" replaces it.
-    build: () => h('aside'),
-  });
-
-  export const components = [takeaways];
-  ```
-
-The `points` slot declares no `itemFields`, so each item is one string under `text`, and its
-`itemLabel` names each row by that text.
-
-Next, write the function that builds the component's markup.
-
-## Write the build function
-
-`build` receives the directive's attributes and rendered slots and returns one hast `Element`,
-synchronously, once for each occurrence in the markdown.
-
-The following table lists what the context passed to `build` carries:
-
-| Member | What it holds |
-| --- | --- |
-| `attributes` | The declared attribute values, keyed by attribute |
-| `slot(name)` | A slot's rendered children, or an empty array when the slot is absent |
-| `items(name)` | One list of children for each item of a repeatable slot |
-| `attr(key)` | A declared attribute's string value, or `undefined` for a boolean or absent attribute |
-| `node` | The stamped component element |
-
-The engine ships no hast-building helper beyond the context, so a site builds its markup with
-hastscript's `h()`. The [Types](../reference/render.md#types) section documents
-`ComponentContext`.
-
-- In the component's declaration, replace the stub with a `build` that arranges the three slots
-  inside an aside element:
-
-  ```ts
-  // src/lib/markdown-components.ts
-  import { defineComponent, fields } from '@glw907/cairn-cms';
-  import { h } from 'hastscript';
-
-  export const takeaways = defineComponent({
-    name: 'takeaways',
-    label: 'Takeaways',
-    description: 'A titled summary that closes with a list of key points.',
-    attributes: {
-      tone: fields.select({ label: 'Tone', options: ['note', 'tip'] }),
-    },
-    slots: [
-      { name: 'title', label: 'Title', kind: 'inline', required: true },
-      { name: 'body', label: 'Body', kind: 'markdown' },
-      {
-        name: 'points',
-        label: 'Points',
-        kind: 'repeatable',
-        itemLabel: (item) => String(item.text ?? ''),
-      },
-    ],
-    build: (ctx) =>
-      h('aside', { className: ['takeaways', `takeaways-${ctx.attr('tone') ?? 'note'}`] }, [
-        h('p', { className: ['takeaways-title'] }, ctx.slot('title')),
-        h('div', { className: ['takeaways-body'] }, ctx.slot('body')),
-        h('ul', { className: ['takeaways-points'] }, ctx.items('points').map((item) => h('li', item))),
-      ]),
-  });
-
-  export const components = [takeaways];
-  ```
-
-`build` runs inline in the pipeline's tree transform and can't `await`. Data a component
-needs is fetched outside the render pipeline and reaches `build` through the directive's
-attributes. The engine stamps an entrance ordinal on the element `build` returns, and `build`
-adds no motion markup.
-
-A component's inner classes need names apart from any DaisyUI component class, such as `card-body`
-or `card-title`. DaisyUI's plugin generates CSS for a matching class name anywhere in scanned
-source. A reused name is restyled when the site turns that DaisyUI component on
-elsewhere. The example's `takeaways-*` classes follow the rule.
-
-Next, shape how the component appears in the editor's picker.
-
-## Shape the picker entry
-
-The optional `icon`, `group`, `hidden`, `insertTemplate`, `use`, and `preview` members shape the
-component's row in the editor's picker.
-
-The following table lists what each member does:
-
-| Member | What it does |
-| --- | --- |
-| `icon` | Names a glyph key from the site's icon set |
-| `group` | Sets the heading the row sits under |
-| `hidden` | Leaves the component out of the top-level picker |
-| `insertTemplate` | Sets the markdown scaffold inserted at the cursor |
-| `use` | Gives one line of guidance |
-| `preview` | Supplies a sample, with optional `attributes` and `slots`, whose presence opts the configure step into the two-pane live preview |
-
-A non-empty `defaultIconByRole` map overrides the engine's role-to-glyph defaults.
-
-- In the component's declaration, add a `group`, a `use` line, and a `preview` sample:
-
-  ```ts
-  // src/lib/markdown-components.ts
-  import { defineComponent, fields } from '@glw907/cairn-cms';
-  import { h } from 'hastscript';
-
-  export const takeaways = defineComponent({
-    name: 'takeaways',
-    label: 'Takeaways',
-    description: 'A titled summary that closes with a list of key points.',
-    group: 'Summaries',
-    use: 'Close a long post with its key points.',
-    preview: {
-      attributes: { tone: 'tip' },
-      slots: {
-        title: 'Before you deploy',
-        body: 'Check these three things first.',
-        points: ['Run the tests.', 'Read the changelog.', 'Tag the release.'],
-      },
-    },
-    attributes: {
-      tone: fields.select({ label: 'Tone', options: ['note', 'tip'] }),
-    },
-    slots: [
-      { name: 'title', label: 'Title', kind: 'inline', required: true },
-      { name: 'body', label: 'Body', kind: 'markdown' },
-      {
-        name: 'points',
-        label: 'Points',
-        kind: 'repeatable',
-        itemLabel: (item) => String(item.text ?? ''),
-      },
-    ],
-    build: (ctx) =>
-      h('aside', { className: ['takeaways', `takeaways-${ctx.attr('tone') ?? 'note'}`] }, [
-        h('p', { className: ['takeaways-title'] }, ctx.slot('title')),
-        h('div', { className: ['takeaways-body'] }, ctx.slot('body')),
-        h('ul', { className: ['takeaways-points'] }, ctx.items('points').map((item) => h('li', item))),
-      ]),
-  });
-
-  export const components = [takeaways];
-  ```
-
-With the component declared, register it.
-
-## Register the component
-
-`defineRegistry({ components })` builds the one registry that the render pipeline and the editor's
-component picker both read. The render pipeline receives it through `createRenderer`. The picker
-receives it only through the `registry` prop that the admin page passes to `CairnAdmin`.
-
-To register the component, follow these steps:
-
-1. In the adapter file, build the registry from the module's component list with
-   `defineRegistry`. On a scaffolded site, add `takeaways` to the `components` list in
-   `markdown-components.ts` instead. The scaffold's adapter already builds its
-   registry from that list.
-2. In the same file, pass `registry` as the first argument of `createRenderer`, in place of the
-   empty registry.
-3. In the adapter's `rendering` group, set `components: registry`, as the scaffold does.
-4. In `src/routes/admin/[...path]/+page.svelte`, pass the registry to `CairnAdmin` as
-   `registry={cairn.rendering.components}`. The scaffold's admin page already passes it.
-
-<!-- snippet-check-skip: elides the adapter's required content, backend, and email groups -->
 ```ts
-// src/lib/cairn.config.ts (excerpt)
-import { createRenderer, defineAdapter, defineRegistry } from '@glw907/cairn-cms';
-import remarkSmartypants from 'remark-smartypants';
-import { components } from './markdown-components.js';
+// src/theme/markdown-components.ts
+import { defineComponent, fields } from '@glw907/cairn-cms';
+import { h } from 'hastscript';
 
-const registry = defineRegistry({ components });
-const { renderMarkdown } = createRenderer(registry, {
-  remarkPlugins: [[remarkSmartypants, { dashes: 'oldschool' }]],
-});
-
-export const cairn = defineAdapter({
-  // content, backend, and email stay as the tutorial wrote them
-  rendering: {
-    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
-    components: registry,
+export const event = defineComponent({
+  name: 'event',
+  label: 'Event',
+  description: 'A dated event with its place and agenda.',
+  attributes: {
+    date: fields.date({ label: 'Date', required: true }),
+    place: fields.text({ label: 'Place' }),
   },
+  // slots: added in "Declare the slots"
+  build: () => h('section', { className: ['event'] }),
 });
 ```
 
-`defineRegistry` throws for a component named `figure` or `include`, because the engine's render
-steps handle those directive names. Its message says to remove the component if the built-in
-covers your use, or to rename it. It also throws when a component sets a non-empty
-`defaultIconByRole` but declares no `type: 'icon'` attribute. The
-[`defineRegistry`](../reference/core.md#defineregistry) entry documents the registry and its
-readers.
+An attribute takes a field type that serializes to one attribute string. The ten such types are `text`, `textarea`, `number`, `select`, `url`, `email`, `date`, `datetime`, `boolean`, and `icon`. Declaring an attribute of any other type, such as `multiselect` or `image`, throws when the module loads. The message includes `a directive attribute must be a single-value scalar`.
 
-Before you verify, read the markdown an author writes for the component.
+Before the insert form inserts a component, it validates the attributes with the same fieldset validator that a concept's fields use. A cross-field rule goes in the component's `behavior` member, keyed by attribute name. The render validates no attribute value, and a hand-typed `date` of `banana` still reaches `build` as that string. A `build` has to handle a value the form would refuse.
+
+A component with an attribute of type `icon` can also set `defaultIconByRole`, which maps a value of the directive's `role` attribute to a glyph key. When an author leaves the component's first attribute of type `icon` empty, the glyph key mapped to the directive's `role` fills that attribute. The map overrides the engine's default glyph for each role it names, and a role that neither names leaves the attribute empty.
+
+The [`defineComponent`](../reference/core.md#definecomponent) entry lists every member. The [Fields](../reference/core.md#fields) table states what each field type renders in the form. Setting `hydrate` makes the component an island, and [Add an island](add-an-island.md) covers the rest.
+
+## Declare the slots
+
+A slot's name sets its place in the directive. A slot named `title` is the bracketed label, a slot named `body` is the unmarked content, and any other name is a named region.
+
+Each slot is an object with the following members:
+
+- `name` and `label`: the slot's key and the label the insert form shows.
+- `kind`: `'inline'`, `'markdown'`, or `'repeatable'`.
+- `required`: whether the insert form requires the slot. A required slot shows an asterisk, and **Insert** stays unavailable until the slot is filled. A touched, empty slot shows `<label> is required.`
+- `itemFields`: for a repeatable slot, the item's field. The insert form reads only the first declared field's key. Each item is one string under that key, or under `text` when `itemFields` is absent.
+- `itemLabel(item, index)`: for a repeatable slot, a function that names each row in the insert form. When it returns nothing or blank text, the row reads as the slot label plus the row number.
+
+The render never reads `required`, so a hand-typed directive without the slot still renders.
+
+- In the `event` declaration, add a `slots` array with a required inline `title`, a markdown `body`, and a repeatable `agenda`. The `agenda` slot's `itemLabel` returns the item's text:
+
+  <!-- snippet-check-skip: a fragment of the event declaration -->
+  ```ts
+  // src/theme/markdown-components.ts (inside the event declaration)
+  slots: [
+    { name: 'title', label: 'Event name', kind: 'inline', required: true },
+    { name: 'body', label: 'Details', kind: 'markdown' },
+    {
+      name: 'agenda',
+      label: 'Agenda',
+      kind: 'repeatable',
+      itemFields: { text: fields.text({ label: 'Item' }) },
+      itemLabel: (item) => String(item.text ?? ''),
+    },
+  ],
+  ```
+
+## Write the build function
+
+`build` runs once for each occurrence of the directive. It receives a context and synchronously returns one hast `Element`.
+
+The context carries the following members:
+
+- `attributes`: the declared attribute values, keyed by name, with a `boolean` as `true` or `false`.
+- `slot(name)`: a slot's rendered children, or an empty array when the slot is absent.
+- `items(name)`: a repeatable slot's items, one child list per item.
+- `attr(key)`: a declared attribute's string value, or `undefined` for a boolean or absent attribute.
+- `node`: the stamped component element.
+
+The context builds no markup, so a `build` makes its markup with hastscript's `h()`. To draw an icon, it can call the engine's [`renderGlyph`](../reference/core.md#component-author-helpers). That function returns an `svg` element from the site's icon set, and it draws each path with `fill=currentColor` and no stroke. A path therefore needs filled shape data. A stroke-only path renders invisible unless the site's CSS adds a stroke.
+
+- In the `event` declaration, replace the `build` stub with a function that arranges the slots and attributes in one element:
+
+  <!-- snippet-check-skip: a fragment of the event declaration -->
+  ```ts
+  // src/theme/markdown-components.ts (inside the event declaration)
+  build: (ctx) =>
+    h('section', { className: ['event'] }, [
+      h('p', { className: ['event-name'] }, ctx.slot('title')),
+      h('p', { className: ['event-when'] }, [
+        ctx.attr('date') ?? '',
+        ctx.attr('place') ? `, ${ctx.attr('place')}` : '',
+      ]),
+      h('div', { className: ['event-details'] }, ctx.slot('body')),
+      h('ol', { className: ['event-agenda'] }, ctx.items('agenda').map((item) => h('li', item))),
+    ]),
+  ```
+
+A `build` follows these rules:
+
+- It can't `await`. Data a component needs is fetched outside the render. It reaches `build` through the directive's attributes or slots, or through a module-scope value that `build` closes over.
+- It can't depend on a server-only module, because the preview runs it in the editor's browser.
+- It needs no entrance-motion code. The engine stamps `data-rise` on each top-level component's result, carrying the component's index in document order. A site's CSS can map that index to an entrance delay.
+
+When the site's DaisyUI plugin config leaves a component enabled, DaisyUI generates CSS for that component's class names, such as `card-body`, found in scanned source. A component class that reuses one of those names takes DaisyUI's styling, so a component's inner classes need names that match none of them. The example's `event-*` classes follow that rule.
+
+A `build` that throws makes the whole render throw. The [`ComponentContext`](../reference/render.md#types) entry documents the context's types.
+
+## Shape the picker entry
+
+The editor's picker lists a component that declares an attribute, a slot, or an `insertTemplate`, unless the component sets `hidden`.
+
+The following optional members shape the component's row:
+
+- `icon`: a glyph key from the site's icon set, shown beside the label.
+- `group`: the heading the row sits under. Groups appear in the order first declared. Ungrouped components form one group with no heading, placed where the first ungrouped component is declared.
+- `use`: one line on when to use the component.
+- `hidden`: a flag that leaves the component out of the picker. The render still builds a hidden component whose directive an author types by hand.
+- `preview`: a sample of attribute and slot values. When the admin page passes [`CairnAdmin`](../reference/admin.md#cairnadmin) a `render`, declaring `preview` opens the insert form in two panes, with a live preview beside the form.
+- `insertTemplate`: the markdown inserted at the cursor when an author chooses a component with no attributes and no slots. A component with either opens the insert form.
+
+The `event` row sits under an **Events** heading, with a glyph, a use line, and a preview sample.
+
+- In the `event` declaration, add the picker members:
+
+  <!-- snippet-check-skip: a fragment of the event declaration -->
+  ```ts
+  // src/theme/markdown-components.ts (inside the event declaration)
+  group: 'Events',
+  icon: 'flag',
+  use: 'Announce a meeting, a workshop, or a talk.',
+  preview: {
+    attributes: { date: '2026-11-04', place: 'Library annex' },
+    slots: {
+      title: 'Annual meeting',
+      body: 'The board presents the annual report.',
+      agenda: ['Welcome', 'Annual report'],
+    },
+  },
+  ```
+
+## Register the component
+
+`defineRegistry({ components })` builds the registry. The render pipeline reads it through `createRenderer`, and the picker reads the `registry` prop that the admin page passes to `CairnAdmin`.
+
+On a scaffolded site, the adapter builds its registry and renderer from the module's `components` list, and the admin page reads that registry. Registering the component takes one step:
+
+- At the end of `markdown-components.ts`, add `event` to the `components` list.
+
+On a hand-built site, follow these steps:
+
+1. In the adapter file, build the registry with `defineRegistry({ components: [event] })`.
+2. In the same file, pass the registry as the first argument of the `createRenderer` call.
+3. In the adapter's `rendering` group, set `components` to the registry.
+4. In `src/routes/admin/[...path]/+page.svelte`, pass `registry={cairn.rendering.components}` to `CairnAdmin`.
+
+The scaffold's admin page passes the registry to `CairnAdmin` beside the render function:
+
+<!-- snippet-check-skip: an excerpt of the admin page's markup, with its script elided -->
+```svelte
+<!-- src/routes/admin/[...path]/+page.svelte -->
+<CairnAdmin
+  {data}
+  {form}
+  render={cairn.rendering.render}
+  registry={cairn.rendering.components}
+  icons={cairn.rendering.icons}
+/>
+```
+
+An admin page that passes no `registry` shows no **Insert block** button. `defineRegistry` throws for a component named `figure` or `include`. Its message says to remove the component if the built-in covers its use, or to rename it. `defineRegistry` also throws for a component that sets a non-empty `defaultIconByRole` but declares no attribute of type `icon`. The [`defineRegistry`](../reference/core.md#defineregistry) entry documents the registry.
 
 ## Component authoring grammar
 
-Checking the component in the editor means reading the markdown the insert dialog writes: a
-four-colon outer fence holding one nested `:::slotName` container for each named slot.
+The insert form writes a component with named slots inside a four-colon outer fence, and each filled named slot becomes a nested `:::name` container.
 
-An author writes the `takeaways` directive like this:
+The insert form writes the `event` directive with the title as the label, the details unmarked, and the agenda items as bullets:
 
-```md
-::::takeaways[Before you deploy]{tone="tip"}
-Check these three things first.
+```markdown
+::::event[Annual meeting]{date="2026-11-04" place="Library annex"}
+The board presents the annual report.
 
-:::points
-- Run the tests.
-- Read the changelog.
-- Tag the release.
+:::agenda
+- Welcome
+- Annual report
 :::
 ::::
 ```
 
-The registered `build` turns it into this HTML:
+`createRenderer` turns that directive into the following HTML, including the `data-rise` stamp that the engine adds to the result of `build`:
 
 ```html
-<aside class="takeaways takeaways-tip" data-rise="0"><p class="takeaways-title">Before you deploy</p><div class="takeaways-body"><p>Check these three things first.</p></div><ul class="takeaways-points"><li>Run the tests.</li><li>Read the changelog.</li><li>Tag the release.</li></ul></aside>
+<section class="event" data-rise="0"><p class="event-name">Annual meeting</p><p class="event-when">2026-11-04, Library annex</p><div class="event-details"><p>The board presents the annual report.</p></div><ol class="event-agenda"><li>Welcome</li><li>Annual report</li></ol></section>
 ```
 
-A repeatable slot's items are bullet lines inside its container. The `title` slot is the
-bracketed label, and the `body` slot is the default content. A directive's bracketed label
-is dropped when the component declares no `title` slot.
+The grammar follows these further rules:
 
-With the grammar in hand, check the component end to end.
+- A repeatable slot's items are bullet lines inside its container.
+- The render drops a bracketed label when the component declares no `title` slot.
+- A component with no named slots takes a three-colon fence.
+- The engine's `:::figure` and `::include` directives aren't components.
+- A leaf or text form of any component name stays literal.
 
-## Verify the render
+## Verify the component
 
-The component renders the same markup in the edit page's preview and on the published
-page.
+A working component inserts from the picker, renders in the edit page's preview, and renders with the same classes on the site's public pages. The check runs on the dev server under the dev backend, which holds each save in memory. Its last steps open a share link to the saved draft. The link's route renders the draft through the config the public entry pages use, so the check needs no publish and no deploy.
 
-To verify the render, follow these steps:
+A scaffolded site's `npm run dev` sets `CAIRN_DEV_BACKEND` to `1`, which turns the dev backend on. A hand-built site sets the variable by hand, and its share link also needs the preview route that [Share a draft preview](share-a-draft-preview.md#mount-the-preview-route) mounts. It needs a `PUBLIC_ORIGIN` var as well, because a mint with no `PUBLIC_ORIGIN` throws.
 
-1. In a terminal, start the site's dev server.
+To verify the component, follow these steps:
+
+1. In a terminal at the project root, start the dev server with the dev backend on:
+
+   - On a scaffolded site, run `npm run dev`.
+   - On a hand-built site, run `npm run dev` with `CAIRN_DEV_BACKEND` set to `1`, in the form [Verify the dev sign-in](add-cairn-to-a-sveltekit-app.md#verify-the-dev-sign-in) gives for your shell.
+
 2. In the admin, open an entry.
-3. In the editor, insert the component from the picker, under its `group`.
-4. In the editor, check that the inserted markdown has the four-colon fence and the nested slot
-   container.
-5. In the editor's preview, check that the component's markup appears after a short pause and
-   updates as you type. With the plugin from [Add a remark plugin](#add-a-remark-plugin) in
-   place, a straight quote typed in body prose shows curly.
-6. In the admin, publish the entry.
-7. On the entry's public page, after the deploy, check that the component element's classes match
-   the preview's.
+3. On the **Write** tab, select **Insert block**.
+4. In the picker, under the **Events** heading, choose **Event**.
+5. In the insert form, check the fields, which open filled with the component's `preview` sample.
+6. In the insert form, select **Insert**. **Insert** stays unavailable while a required slot is empty.
+7. In the editor, check that the inserted markdown matches the directive in [Component authoring grammar](#component-authoring-grammar).
+8. In the toolbar, select the **Preview** tab.
+9. In the preview, check that the component renders with its `event` classes.
+10. On the edit page, select **Save**.
+11. In the **Details** slide-over, in the **Share preview** group, select **Share preview link**.
 
-When a check fails, [Diagnose a failed check](#diagnose-a-failed-check) lists the causes in the
-order of these steps.
+    The group shows a link whose path is `/preview/<token>`. [Share a draft preview](share-a-draft-preview.md) covers the link and its lifetime.
+
+12. In a browser, open the link's `/preview/<token>` path on the dev server's address.
+
+    The link names the site's configured origin, which can differ from the dev server's address.
+
+13. On the preview page, check that the component's element carries the classes that the edit page's preview showed.
+
+Stopping the dev server discards the saved edit and its link.
 
 ## Diagnose a failed check
 
-Each failed check traces to a declaration, the admin page's wiring, or the markdown an author
-wrote, and the causes follow the order of the verification steps:
+Each failed check traces to the component's declaration, the site's wiring, the markdown an author wrote, or the share link's state.
 
-1. The dev server stops at startup with an error that names the component. An attribute of a
-   type outside the ten throws `a directive attribute must be a single-value scalar ...`. A
-   component named `figure` or `include` throws with the remove-or-rename message. A
-   `defaultIconByRole` with no `type: 'icon'` attribute throws as well. Correct the
-   declaration as [Declare a component](#declare-a-component) and
-   [Register the component](#register-the-component) describe.
-2. The component is missing from the picker, or the editor shows no insert trigger. If the
-   trigger is missing, the admin page passes `CairnAdmin` no `registry` prop. Pass it as
-   [Register the component](#register-the-component) describes. If only this component is
-   missing, its declaration sets `hidden`, as [Shape the picker entry](#shape-the-picker-entry)
-   states.
-3. The directive shows as literal text in the preview. It was written in the leaf `::name` or
-   text `:name` form, which always restores to its source text.
-   Rewrite it as a container directive.
-4. A code block shows no token colors in the preview or on the page. Its fence names a language
-   outside the preloaded set, and such a fence renders as plain `pre.shiki` text. The
-   preloaded languages are listed in [Built-in render steps](#built-in-render-steps).
+When a check fails, work through the following symptoms in order:
 
-For any other failure, read the running site's output in
-[Read the structured logs](debug-your-site.md#read-the-structured-logs).
+1. The site fails to load with an error that names the component. A bad attribute type, a reserved name, and a `defaultIconByRole` without an `icon` attribute each throw that error. So does a `hydrate` component without a matching `rendering.islands` entry, or an entry without its component. For that pairing, see [Add an island](add-an-island.md). Fix the member the error names.
+2. The editor shows no **Insert block** button. Either the admin page passes `CairnAdmin` no `registry`, or the registry holds no component the picker lists. Pass the registry as [Register the component](#register-the-component) shows, or apply the fix in the next item.
+3. The component is missing from the picker. It declares no attribute, no slot, and no `insertTemplate`, or it sets `hidden`. Declare one of the three, or remove `hidden`.
+4. The preview shows `The preview could not render this content.` The render threw, for example because `build` threw on a value it didn't expect. Make `build` handle any value an author can type, including one the insert form would refuse.
+5. The directive prints as literal text. It was written in the leaf `::name` or text `:name` form. Rewrite it as a `:::name` container.
+6. The component's content renders without its markup. No component in the registry that `createRenderer` received has the directive's name. Register the component, or correct the directive's name.
+7. A code block shows no token colors. Its fence names no language, or a language outside the highlighter's preloaded set, and the highlighter renders it as plain text. A `mermaid` fence passes through untouched. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`.
+8. The share link answers an error page. A refused link logs a `preview.refused` record, and [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps its reason to a fix. A token cut short in copying fails the shape check and answers a 404 with no record. A `build` that throws answers a server error instead, with the same fix as a preview that fails to render.
+
+For a failure this list doesn't cover, see [Read the structured logs](debug-your-site.md#read-the-structured-logs).
 
 ## See also
 
-The following pages document the renderer's API and the tasks that sit beside this one:
+The following pages document the renderer and the tasks beside this one:
 
-- [`createRenderer`](../reference/core.md#createrenderer): the renderer and its options.
-- [`defineComponent`](../reference/core.md#definecomponent) and
-  [`defineRegistry`](../reference/core.md#defineregistry): the component and registry
-  entries.
-- [Render authoring](../reference/render.md): `ComponentContext` and the emitted classes.
-- [Render safety](security-model.md#render-safety): what the sanitize floor and the sink guard
-  protect.
+- [`createRenderer`](../reference/core.md#createrenderer): the render function, remark plugins, and the renderer options.
+- [Emitted classes](../reference/render.md#emitted-classes): the classes the built-in render steps emit.
+- [Render safety](security-model.md#render-safety): what the sanitize floor and the sink guard protect.
 - [Add an island](add-an-island.md): hydrating a component in the browser.
-- [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown): styling the rendered
-  output.
+- [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown): styling the rendered output.
 - [Reuse content across entries](reuse-content-across-entries.md): fragments and `::include`.
-- [Configure media](configure-media.md): the media resolver that `render` forwards, and what a missing
-  asset renders.
+- [Configure media](configure-media.md): the media resolver and missing assets.
+- [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md): the hand-built site, its adapter, and its render function.

@@ -1017,11 +1017,15 @@ re-sourced to Go on this tree rather than to the page.
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
   (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:45,202-203` (`bootstrapOwner`).
   [verified]
-- `f:xbdb74` An `IconSet` path is filled shape data on a `0 0 256 256` box, never stroke data: `renderGlyph`
-  sets the svg's `fill` to `currentColor` and sets no `stroke` anywhere, so a stroke-only path (one
-  whose `d` encloses no area) renders invisible. Source: `src/lib/render/glyph.ts:16-23`
+- `f:xbdb74` An `IconSet` path is drawn on a `0 0 256 256` box, and `renderGlyph` sets the svg's
+  `fill` to `currentColor` and sets no `stroke` anywhere, so a path needs filled shape data: a
+  stroke-only path (one whose `d` encloses no area) renders invisible unless the site's CSS adds a
+  stroke. The set itself does not enforce filled data: the scaffold's `snowflake` is all stroke-only
+  subpaths and its `flag` pole is stroke-only, and the scaffold's `prose.css` adds a stroke for the
+  standalone icon. Source: `src/lib/render/glyph.ts:7-11,16-23`
   (`renderGlyph`: `s('svg', { ..., fill: 'currentColor', ... }, [s('path', { d })])`, no `stroke`
-  attribute anywhere in the call). [verified]
+  attribute anywhere in the call), `templates/waymark/src/theme/icons.ts:7,14`,
+  `templates/waymark/src/chassis/prose.css:593-599`. [verified]
 
 ## docs/reference/delivery.md
 
@@ -1268,7 +1272,11 @@ re-sourced to Go on this tree rather than to the page.
 - `f:rdwesf` Every outward response to a `preview.refused` case is an identical 404, except
   `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
   (`rejectPreview` always `throw error(404, ...)`) and `:434-443` (`bindings_missing` branch
-  `throw error(503, 'Service unavailable')`). [verified]
+  `throw error(503, 'Service unavailable')`). A token that fails the shape check answers a 404
+  before any lookup and logs no `preview.refused` record (`:432`, `TOKEN_SHAPE_RE`; `:264`, "Never
+  called for the malformed-shape gate"). A `build` that throws while `loadPreview` renders the draft
+  is no refusal: `composeEntryData` runs with no `catch`, so the error reaches SvelteKit as a server
+  error (`:506`, `src/lib/delivery/public-routes.ts:184`). [verified]
 - `f:546jja` `preview.refused` `reason: "draft_invalid"` means the file on the entry's pending
   branch exists but fails the concept's descriptor validation: the per-field checks on its
   frontmatter, then the concept's optional `refine(data, body)` hook, which can reject an entry on
@@ -1413,9 +1421,11 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `entry.slug, entry.hash, entry.ext`, never `ref`'s own slug). [verified]
 - `f:wdmlys` The resolved image gets intrinsic `width`/`height` from the manifest entry when known
   (reserving aspect ratio), and with `assets.transformations` on and width known, a `srcset` from a
-  fixed width ladder plus a `sizes` hint derived from the image's `:::figure` placement role
-  (`center`, `wide`, `full`; unplaced falls back to `100vw`); an asset with unknown dimensions or
-  too-small width gets none of that, and a raw external (non-`media:`) image is never touched.
+  fixed width ladder of 400, 800, 1200, and 1600 pixels, which drops each rung wider than the
+  recorded width and offers no `srcset` with fewer than two rungs left, so a `srcset` needs a
+  recorded width of at least 800 pixels, plus a `sizes` hint derived from the image's `:::figure` placement role
+  (`center`, `wide`, `full`; unplaced falls back to `100vw`); an asset with unknown dimensions gets none of that, an asset too narrow for two rungs keeps its
+  intrinsic `width`/`height` but gets no `srcset` or `sizes`, and a raw external (non-`media:`) image is never touched.
   Source: `src/lib/render/resolve-media.ts:25,35-38` (`SRCSET_WIDTHS = [400, 800, 1200, 1600]`,
   `SIZES_BY_ROLE = { center, wide, full }`), `:104-122` (`imageDetail`: width/height set when
   `!== null`; srcset built only `if (resolved.transformations && entry.width !== null)`, and only

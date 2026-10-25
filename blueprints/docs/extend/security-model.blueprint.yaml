@@ -43,7 +43,7 @@ introduction:
     A bulleted list under a complete lead-in, subject first and page second, one form per item:
     configuring the access map (`restrict-admin-access.md`); setting up Cloudflare Access as an
     identity gate (`replace-magic-links-with-cloudflare-access.md`); building an auth channel
-    (`add-a-second-sign-in-group.md`); the renderer's options (`write-a-markdown-component.md`); rotating
+    (`add-a-second-sign-in-group.md`); the site's markdown components (`write-a-markdown-component.md`); rotating
     the GitHub App's key (`rotate-the-github-app-key.md`); and the isolation of the Worker itself,
     which belongs to Cloudflare's Workers security model. The history of when the sanitize floor
     shipped is out of scope: the page states the floor as it is now and names no release that

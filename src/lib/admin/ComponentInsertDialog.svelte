@@ -37,7 +37,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 
   /** Partition the defs into groups by `def.group`, preserving declaration order of both the
    *  groups (first time a group name is seen) and the rows within a group. A def with no `group`
-   *  collects into one leading default group with no heading. */
+   *  collects into one default group with no heading, placed where the first such def is declared. */
   function groupDefs(defs: ComponentDef[]): CatalogGroup[] {
     const order: string[] = [];
     const byHeading = new Map<string, ComponentDef[]>();

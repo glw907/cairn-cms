@@ -20,10 +20,11 @@ type: task guide
 
 **Background.** An image's bytes sit in an R2 bucket that the Worker reaches through a binding, and its record sits in the committed media manifest, `src/content/.cairn/media.json`. :fact[lu67dk] :fact[2hnxsr]
 Content names an image by a `media:` reference. The resolver turns it into a URL from the manifest's row, and the media route serves the bytes at that URL. :fact[xjdhau] :fact[c8c9ji] :fact[qtvesq]
+Editors manage images in the media library, the admin screen labeled **Library** at `/admin/media`. :fact[joo5f2] :fact[a6ez6i]
 The adapter's `media` block holds every option the page sets, and the engine resolves it into the config the upload action and the route read. A scaffolded site resolves the same block again with `normalizeAssets` for its resolver. :fact[69rw88] :fact[qifl9g]
 
 **What the page does for them.** The introduction opens on that model as a scaffolded site already wires it: the bucket binding, the adapter's `media` block, the public resolver, and the media route. It says the page changes how those pieces behave and does not set them up. :fact[9hchnv] :fact[qifl9g] :fact[qtvesq]
-The contract sentence follows. The steps set the upload limits, move or reshape the image URLs, turn on responsive images, and make a missing asset fail the build. A concept section says which references the Library counts as a use. An optional task covers uploading from a custom admin screen, and the page ends by checking each change on the deployed site.
+The contract sentence follows. The steps set the upload limits, move or reshape the image URLs, turn on responsive images, and make a missing asset fail the build. A section after the steps says which references the Library counts as a use of an asset, and a section for a site with a custom admin screen covers uploading from one. The page ends with a check of each change on the deployed site.
 
 **What it leaves to other pages, each named in the introduction:**
 - The reference entries for the adapter's `media` member, `createMediaResolver`, `PublicRoutesConfig`, and `createMediaRoute` cover wiring each media piece on a hand-built site. [Before you begin](#before-you-begin) names the three pieces and links each entry.
@@ -38,7 +39,7 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - Code examples edit a scaffolded site's files. Frame each as an excerpt, and keep the scaffold's names `media`, `publicMediaResolver`, and `MEDIA_BUCKET`. :fact[qifl9g] :fact[9hchnv]
 - Give a Cloudflare specific, such as a plan's request-body limit or how to turn on Image Transformations, as a link to Cloudflare's page, never as a copied figure or dashboard path.
 - Say `allowedTypes` narrows the sniffed types. Never say it can add a type, accept HEIC or SVG, or throw on an entry it does not know. :fact[enuyhg]
-- Give the upload action's refusals as reasons inside the action's JSON envelope, never as HTTP response statuses. :fact[g4cwcw]
+- Name the upload action's refusals by the reason in the action's JSON envelope, and say the response's HTTP status is the status the action passed to `fail()`. :fact[g4cwcw]
 - Use the Library's words "no references found" for an asset with no counted reference. :fact[fn4zb7]
 - Never say `mediaUpload` adds an asset to the Library or commits a manifest row. :fact[h56lpd]
 :::
@@ -54,7 +55,7 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - A hand-built site with no media yet sets up three pieces first:
 - An `r2_buckets` binding and the adapter's `media` block that names it. :fact[9hchnv] :fact[2zytgf]
 - See [the `media` adapter member](../reference/core.md#media-adapter-member).
-- A resolver from `createMediaResolver`, built over the committed manifest and `normalizeAssets` of the same block. The site passes it to `createPublicRoutes` as `resolveMedia`. Without it, a `media:` reference renders as a literal token. :fact[c8c9ji] :fact[fhnvn8] :fact[twqb0s]
+- A resolver from `createMediaResolver`, built over the committed manifest and `normalizeAssets` of the same block. The site passes it to `createPublicRoutes` as `resolveMedia`. Without it, a `media:` reference on a public page doesn't resolve to an image URL. :fact[c8c9ji] :fact[fhnvn8] :fact[twqb0s]
 - See [`createMediaResolver`](../reference/media.md#createmediaresolver).
 - See [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig).
 - `createMediaRoute`, mounted at `<publicBase>/[...path]`. Under the default base, that path is `src/routes/media/[...path]/+server.ts`. :fact[ex4hss] :fact[fnat1w]
@@ -70,9 +71,9 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - The engine sniffs each upload's type from its bytes and stores JPEG, PNG, GIF, WebP, and AVIF. The default `allowedTypes` lists those five, and the list can only narrow them. :fact[enuyhg] :fact[fnat1w]
 - A sniffed HEIC or unrecognized file is refused as `unsupported_type` whatever the list holds. So is an upload declared as `image/svg+xml`, `image/svg`, `text/html`, or `application/xml`, or one whose first non-whitespace byte is `<`. :fact[enuyhg]
 2. In the same block, set `maxUploadBytes` to the largest upload in bytes. The default is 25 MB. :fact[fnat1w] :fact[6kdagb]
-- Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with a 413 before the Worker runs. :fact[9awije]
+- Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with an HTTP 413 response. :fact[9awije]
 - The effective limit is the lower of `maxUploadBytes` and that cap. :fact[ett331] :fact[9awije]
-- See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-limits).
+- See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
 - Code: an excerpt of a scaffolded site's `media` constant in `src/theme/cairn.config.ts` with both limits set, allowing JPEG, PNG, and WebP and capping uploads at 10 MB. :fact[9hchnv] :fact[fnat1w] :source[/templates/waymark/src/theme/cairn.config.ts]
 
 <!-- snippet-check-skip: an excerpt of the scaffold's adapter module -->
@@ -96,12 +97,12 @@ const media = {
 - A base with no route under it, or a param under another name, makes every generated image URL answer 404. :fact[ex4hss]
 3. Keep the existing route at `src/routes/media/[...path]/+server.ts` for the edit page's live preview. :fact[9bmrzq] :fact[f4ulxz]
 - The live preview still builds `/media/<slug>.<hash>.<ext>` paths whatever `publicBase` says. Without that route, preview images break under a moved base while published pages render. :fact[9bmrzq] :fact[ex4hss]
-- The route reads only the URL's last segment. The same handler at both paths serves the preview's URLs and the published ones. :fact[f4ulxz] :fact[9bmrzq]
+- The route takes the hash and extension from the last segment of its `path` param, so the same handler at both paths serves the preview's URLs and the published ones. :fact[f4ulxz] :fact[9bmrzq]
 - To change the shape of the URLs under the base, set `urlForm` in the `media` block. :fact[s1n77t]
 - A table, introduced by a sentence saying it lists the two shapes, gives `'slug'`, the default, as `<publicBase>/<slug>.<hash>.<ext>`, or `<publicBase>/<hash>.<ext>` for an asset with no slug, and `'opaque'` as `<publicBase>/<first two hash characters>/<hash>.<ext>`. The opaque form leaves out the file's name. :fact[s1n77t]
 - Any other value throws `cairn: media urlForm must be "slug" or "opaque", got "<value>"` when the config is resolved. :fact[s1n77t]
 - The route needs no change for either shape. :fact[f4ulxz]
-- Neither change requires editing an entry. Content names images by `media:` reference, and the resolver builds each URL from the manifest's row. :fact[c8c9ji]
+- Neither change requires an edit to a `media:` reference, because the resolver builds each URL from the manifest's row. A URL written out in a raw HTML block isn't a `media:` reference, and it doesn't follow either change. :fact[c8c9ji] :fact[pobbuq]
 
 ## Turn on responsive images
 
@@ -112,8 +113,8 @@ const media = {
 1. In Cloudflare, turn on Image Transformations for the site's zone. :fact[kp50li]
 - See [Transform images](https://developers.cloudflare.com/images/transform-images/).
 2. In the adapter module, set `transformations: true` in the `media` block. :fact[kp50li]
-- With `transformations` on, an image whose manifest row records its width gets a `srcset` of Cloudflare transform URLs. The `sizes` hint comes from its `:::figure` placement, and an image with no placement gets `100vw`. :fact[kp50li] :fact[wdmlys]
-- An image gets no `srcset` when its width is unknown or too narrow to offer more than one width. With `transformations` off, every image gets its full-size path. :fact[wdmlys] :fact[2hnxsr]
+- With `transformations` on, an image gets a `srcset` of Cloudflare transform URLs when its manifest row records a width of at least 800 pixels, wide enough to offer more than one candidate width. The `sizes` hint comes from its `:::figure` placement, and an image with no placement gets `100vw`. :fact[kp50li] :fact[wdmlys]
+- With `transformations` off, every image gets its full-size path. :fact[wdmlys] :fact[2hnxsr]
 - Either way, an image whose row records its width and height renders with those intrinsic dimensions. :fact[wdmlys]
 - A site can't declare named transform presets. A theme that needs another size builds a `/cdn-cgi/image/<options>/<path>` URL itself. :fact[ckuow3]
 
@@ -124,6 +125,7 @@ const media = {
 - By default, a `media:` image whose hash has no manifest row logs `media.resolve_missing` and renders as a broken image, and the build still succeeds. :fact[frgg7d]
 - The broken image has `src="#"`, the class `cairn-broken-media`, and the title `Missing media asset`, and it keeps its alt text. :fact[frgg7d]
 - On a site whose public pages prerender, as a scaffolded site's entry pages do, a resolver that throws on a miss fails the build instead. :fact[frgg7d] :fact[vo5v7n]
+- On a page that renders at request time, the throw reaches SvelteKit as an unexpected error, and SvelteKit answers the request with a 500 error page unless the site's `handleError` hook sets another status. :fact[6e3l8p]
 - On a scaffolded site, `publicMediaResolver` reaches the public pages twice: as the fallback in the adapter's `render`, and as `resolveMedia` in the public routes config. Wrapping it where it is defined covers both. :fact[qifl9g]
 - The edit page's preview and the shared-draft preview each pass `render` a resolver in place of the site's. A preview therefore keeps marking a missing image broken. :fact[ax38pm]
 - `createMediaResolver` returns a function that also carries an `imageDetail` property, which the render step reads for each image's intrinsic size and `srcset`. The public `MediaResolve` type doesn't declare it. :fact[nlkgag]
@@ -164,7 +166,7 @@ export const publicMediaResolver = failOnMissing;
 - The Library doesn't count a reference in a text field, a link, a directive or component attribute, a raw HTML block, or a code span. For an asset named only in those places, it reads "no references found". :fact[fn4zb7]
 - The Library refuses to delete an asset it finds in use until the editor types the asset's slug. An asset with no counted reference deletes with no such step. :fact[0s64g5]
 - A delete removes the asset's manifest row, then its bytes in R2. A bulk delete removes only selected assets with no counted reference. :fact[0s64g5]
-- The resolver never sees an uncounted reference. A page that still names a deleted asset that way keeps the reference as written. :fact[pobbuq]
+- Deleting an asset that has no counted reference leaves no broken-image marker where those places name it, because the render step doesn't pass a reference in those places to the resolver. :fact[pobbuq] :fact[frgg7d]
 - Where that reference is the asset's URL, such as in a raw HTML block, the media route answers it with 404. :fact[a7wwj2] :fact[0s64g5]
 - The wrapper in [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset) doesn't catch these references. :fact[pobbuq]
 
@@ -179,22 +181,24 @@ export const publicMediaResolver = failOnMissing;
 1. In the screen's component, read the CSRF token from the admin layout's data as `csrf`. :fact[xy1dj1]
 2. In the upload handler, `fetch` `/admin/media?/mediaUpload` with method `POST`, the file's bytes as the body, and `redirect: 'manual'`. :fact[g4cwcw] :fact[lsuchw]
 3. In the same request, set `Content-Type` to `text/plain` and `X-Cairn-CSRF` to the token. :fact[g4cwcw]
-- SvelteKit refuses a form action's POST with a non-form content type before the action runs. The action ignores the label and sniffs the bytes. :fact[g4cwcw]
+- SvelteKit refuses a form action's POST whose content type isn't a form type before the action runs, and `text/plain` is one of the form types it accepts. The action ignores the label and sniffs the bytes. :fact[g4cwcw]
 - The action also requires a positive integer `Content-Length`. The browser sets that header from the body, and a script can't set it. :fact[ett331] :fact[qr2tsn] :fact[lsuchw]
+- See [Forbidden request header](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_request_header) on MDN.
 4. Optional: In the same request, set the headers that describe the file. :fact[g4cwcw]
-- A table, introduced by a sentence saying it lists the optional headers, gives `X-Cairn-Filename`, `X-Cairn-Alt` (stored up to 160 characters), `X-Cairn-Display-Name`, `X-Cairn-Width`, and `X-Cairn-Height`. Each text value is URI-encoded. :fact[g4cwcw]
+- A table, introduced by a sentence saying it lists the optional headers, gives `X-Cairn-Filename`, `X-Cairn-Alt` (stored up to 160 characters), `X-Cairn-Display-Name`, `X-Cairn-Width`, and `X-Cairn-Height`. The filename, alt text, and display name are URI-encoded, and the width and height are plain integers. :fact[g4cwcw]
 5. In the response handler, pass the response's text to SvelteKit's `deserialize` from `$app/forms`. :fact[lsuchw]
 - A success envelope's `data` holds the `media:` `reference` and the manifest `record` the server derived. :fact[h56lpd]
-- Each refusal the action makes arrives as a `failure` envelope whose `data.error` names the reason, with the HTTP status still 200. :fact[g4cwcw]
+- Each refusal the action makes arrives as a `failure` envelope whose `data.error` names the reason, and the response's HTTP status is the status the action passed to `fail()`. :fact[g4cwcw] :fact[ett331]
 - A table, introduced by a sentence saying it lists the refusals a request's size and type cause, gives `length_required` for a missing or non-positive `Content-Length`, and `too_large` for a declared or actual size above `maxUploadBytes`. :fact[ett331]
-- Its third row gives `unsupported_type` for bytes the sniff doesn't place in `allowedTypes`, whatever the declared type. :fact[g4cwcw] :fact[enuyhg]
-- See [`media.upload_failed`](../reference/log-events.md) for every reason the action logs.
-- A body over the plan's request limit never reaches the action. Cloudflare answers it with a real 413 first. :fact[9awije]
+- Its third row gives `unsupported_type` for a sniffed type that isn't in `allowedTypes` or isn't one the engine stores, or for an upload that is markup of a kind [Set the upload limits](#set-the-upload-limits) lists. :fact[g4cwcw] :fact[enuyhg]
+- See the `media.upload_failed` row in [Log events](../reference/log-events.md) for every reason the action logs.
+- Cloudflare answers a body over the plan's request limit with an HTTP 413 error, not the action's envelope. :fact[9awije]
+- See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
 - The action stores the bytes in R2 and commits no manifest row. A `media:` reference to the asset resolves as missing until a row lands. :fact[h56lpd] :fact[c8c9ji]
-- An entry save that posts the returned `record` in its `media` field commits the row. :fact[h56lpd]
+- An entry save that posts the returned `record` inside a JSON array in its `media` form field merges the row into `media.json`. :fact[h56lpd]
 - See [`createContentRoutes`](../reference/sveltekit.md#createcontentroutes).
 - The Library's `mediaLibraryUpload` action, at `/admin/media?/mediaLibraryUpload`, takes the same request and commits the row to the default branch itself. :fact[h56lpd] :fact[0fg3ju]
-- The typed `CairnAdminRoutes` contract leaves `mediaLibraryUpload` out. The action runs at runtime, and typed code reaches it only through a spread or a cast. :fact[1mgfhj]
+- The typed `CairnAdminRoutes` contract leaves `mediaLibraryUpload` out. The action exists at runtime, and typed code reaches it only through a spread or a cast. :fact[1mgfhj]
 
 ## Verify the changes
 
@@ -203,13 +207,13 @@ export const publicMediaResolver = failOnMissing;
 - After you deploy, check each change you made. To verify, run these checks in order:
 1. In the deployed admin, at `/admin/media`, upload an image of an allowed type under the size limit. The asset appears in the Library. :fact[joo5f2] :fact[xjdhau]
 2. In an entry, place the image. :fact[xjdhau]
-3. Publish the entry. The editor documentation covers both steps. :fact[xjdhau]
+3. Publish the entry. :fact[xjdhau]
 4. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on and a recorded width of at least 800 pixels, the image also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
 5. In a terminal, request that `src` with `curl -s -D - -o /dev/null https://<your-site><src>`. :fact[fjnszk]
 - The response carries `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, `Content-Security-Policy: default-src 'none'; sandbox`, and `Cache-Control: public, max-age=31536000, immutable`. :fact[fjnszk]
 - Its `Content-Type` is the type the upload stored, such as `image/jpeg`. :fact[db0cx6] :fact[fjnszk]
 6. If you wrapped the resolver, point an entry's image at a `media:` reference with no manifest row in a local branch. :fact[frgg7d]
-7. Build the site. On a site whose public pages prerender, the build fails with the wrapper's message. :fact[frgg7d] :fact[vo5v7n]
+7. If you wrapped the resolver, build the site from that branch. On a site whose public pages prerender, the build fails with the wrapper's message. :fact[frgg7d] :fact[vo5v7n]
 
 - If a check fails, find its symptom in the following list. For a failure not listed here, see [Debug your site](debug-your-site.md).
 
@@ -226,8 +230,8 @@ export const publicMediaResolver = failOnMissing;
 :::
 
 :::row
-**Symptom.** A large upload fails with a 413 response, and the Worker logs no `media.upload_failed` record.
-**Cause.** The body is over the Cloudflare plan's request-body limit, so Cloudflare refused it before the Worker ran. :fact[9awije]
+**Symptom.** A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope.
+**Cause.** The body is over the request-body limit of the Cloudflare plan, and Cloudflare answered with its 413 error. :fact[9awije]
 **Fix.** Upload a smaller file, or see Cloudflare's Workers limits for the cap on each plan. :fact[9awije]
 :::
 
@@ -244,9 +248,15 @@ export const publicMediaResolver = failOnMissing;
 :::
 
 :::row
-**Symptom.** With `transformations` on, an image has no `srcset`.
-**Cause.** Its manifest row records no width, or the width is too narrow to offer more than one size. :fact[wdmlys]
-**Fix.** None is needed. An image with only one candidate width renders at its full-size path. :fact[wdmlys]
+**Symptom.** With `transformations` on, an image whose manifest row records no width has no `srcset`.
+**Cause.** The upload recorded no width. A custom screen's upload records none when it doesn't set `X-Cairn-Width`. :fact[g4cwcw] :fact[wdmlys]
+**Fix.** In the custom screen's upload handler, set `X-Cairn-Width` and `X-Cairn-Height` for later uploads. :fact[g4cwcw]
+:::
+
+:::row
+**Symptom.** With `transformations` on, an image narrower than 800 pixels has no `srcset`.
+**Cause.** Its recorded width is too narrow to offer more than one candidate width. :fact[wdmlys]
+**Fix.** None is needed. The image renders at its full-size path. :fact[wdmlys]
 :::
 
 :::row
@@ -262,14 +272,14 @@ export const publicMediaResolver = failOnMissing;
 :::
 
 :::row
-**Symptom.** A custom screen's upload response has status 0 and an opaque type.
-**Cause.** The editor's session expired. The guard answered with a redirect, and `redirect: 'manual'` returns it unfollowed as an opaque response. :fact[lsuchw]
+**Symptom.** A custom screen's upload response has status 0 and the type `opaqueredirect`.
+**Cause.** The editor's session expired. The admin guard answered with a redirect, and `redirect: 'manual'` returns it unfollowed as an `opaqueredirect` response. :fact[lsuchw]
 **Fix.** Have the editor sign in again, then retry the upload. :fact[lsuchw]
 :::
 
 :::row
 **Symptom.** A custom screen's upload answers 403, and the Worker logs `guard.refused` with `reason: 'csrf'`.
-**Cause.** The request's `X-Cairn-CSRF` header is missing its value or carries a stale token, and the guard refused it before the action ran. :fact[9cztdn] :fact[g4cwcw]
+**Cause.** The request's `X-Cairn-CSRF` header is missing its value or carries a stale token, and the admin guard refused it before the action ran. :fact[9cztdn] :fact[g4cwcw]
 **Fix.** Read the token from the admin layout's `csrf` data at upload time, not from a value saved earlier. :fact[xy1dj1]
 :::
 

@@ -237,11 +237,24 @@
       ]
     },
     {
-      "text": "Public images render as literal `media:` tokens when the site's content carries `media:` tokens but the site passes no `resolveMedia` to `createPublicRoutes`.",
+      "text": "When the site's content carries `media:` references but the site passes no `resolveMedia` to `createPublicRoutes`, public pages get no hero image.",
       "id": [
         "f:twqb0s",
         "f:bnt2wh",
         "f:pkt8i6"
+      ]
+    },
+    {
+      "text": "A site whose `render` passes `resolveMedia` through with no fallback resolver also gets body images with no image source.",
+      "id": [
+        "f:twqb0s"
+      ]
+    },
+    {
+      "text": "A scaffolded site's `render` falls back to `publicMediaResolver`, so there the missing hero image is the symptom.",
+      "id": [
+        "f:qifl9g",
+        "f:twqb0s"
       ]
     },
     {
@@ -252,7 +265,7 @@
       ]
     },
     {
-      "text": "Without that flag, the tokens appear with no record.",
+      "text": "Without that flag, the gap leaves no record.",
       "id": [
         "f:bnt2wh",
         "f:twqb0s"

@@ -17,7 +17,7 @@ type: task guide
 **What they already know.** TypeScript literal types, Vite's `import.meta.glob`, YAML, and the content model: what a concept is, what routing decides, and how an entry gets its id. The page explains none of these.
 
 **Background.** The engine reads what a site declares about its content from one object, the `defineAdapter` call in the adapter module. A new concept is one more key in that object's `content` map. :fact[2zytgf] :fact[5eum60]
-Vite resolves an `import.meta.glob` pattern only where it is written literally at the call site, and the engine therefore can't glob a concept's directory on the site's behalf. The site writes each concept's glob in its content module, which passes it to `createSiteIndexes`, and writes the same pattern again in the `cairnManifest` plugin's options. :fact[pdgkex] :fact[fj28xs]
+Vite resolves an `import.meta.glob` pattern only where it is written literally at the call site, and the engine therefore can't glob a concept's directory for the content module's call to `createSiteIndexes`. The site writes each concept's glob in its content module, which passes it to `createSiteIndexes`, and writes the same pattern again in the `cairnManifest` plugin's options. :fact[pdgkex] :fact[fj28xs]
 
 **What the page does for them.** The introduction opens on the adapter as the one object that declares the site's content, and on why a new concept is registered in the content module and the Vite config as well as in the adapter. :fact[2zytgf] :fact[bheewf]
 It states the task: add a concept and register its glob twice, then set its address, tag field, checks, and list options. The reader then confirms that the declaration typechecks and builds.
@@ -26,7 +26,7 @@ It then names each reader's reason, the prior knowledge above, and what the page
 **What it leaves to other pages:**
 - Content model covers concepts, routing, entry identity, and the normalized frontmatter a save writes.
 - Add cairn to a SvelteKit app covers the `backend` and `email` groups, and the `createGithubApp` reference entry lists the backend's options.
-- Configure rendering covers the `rendering` group.
+- Write a markdown component covers the `rendering` group's `components` list.
 - Link content with references covers reference fields.
 - Restrict admin access covers the `roles` and `access` groups.
 - Arrange the admin sidebar covers the `editor` group's `navLayout`.
@@ -56,7 +56,7 @@ It then names each reader's reason, the prior knowledge above, and what the page
 
 *Shows the `defineAdapter` call's groups and what the scaffold's call already declares, and hands the groups this page doesn't cover to their pages.*
 
-- The adapter module exports one `defineAdapter` call. The call accepts five optional groups, `roles`, `access`, `media`, `aiPosture`, and `editor`, and requires the four that the following list describes: :fact[hkh101] :fact[2zytgf]
+- The adapter module exports one `defineAdapter` call. The call accepts five optional groups: `roles`, `access`, `media`, `aiPosture`, and `editor`. It also requires the four groups that the following list describes: :fact[hkh101] :fact[2zytgf]
 - `content` holds the concepts, keyed by concept id. :fact[2zytgf]
 - `backend` is the `createGithubApp` provider for the repository that receives commits. :fact[2zytgf]
 - `email` names the sender of the sign-in email. :fact[2zytgf] :fact[z7lprs]
@@ -69,7 +69,7 @@ It then names each reader's reason, the prior knowledge above, and what the page
 // src/theme/cairn.config.ts (abridged)
 export const cairn = defineAdapter({
   content: {
-    posts: defineConcept({ /* dir, label, singular, routing, fields */ }),
+    posts: defineConcept({ /* dir, label, singular, summaryFields, routing, fields */ }),
     pages: defineConcept({ /* ... */ }),
     fragments: defineConcept({ /* ... */ }),
   },
@@ -91,8 +91,8 @@ export const cairn = defineAdapter({
 
 - A concept requires two members: `dir`, the repo-relative directory of its markdown files, and `fields`, its `defineFieldset` fieldset. Every other member has a default. :fact[d27z58]
 - A table, introduced by a sentence saying that it lists each optional member's default, gives one row each for `label` (the id with its first letter capitalized), `singular` (the `label`), `routing` (`'page'`), `permalink` (`/<id>/:slug`, or `/:slug` for `pages`), `datePrefix` (`'day'`), and `summaryFields` (an empty list). :fact[d27z58] :fact[g39nkp]
-- The `label` names the concept's sidebar entry, and the create button on the concept's list screen reads **New** followed by `singular`. A concept labeled `Events` with no `singular` therefore gets the button **New Events**. :fact[gwmmkx]
-- The engine refuses some ids. A concept keyed `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, `settings`, or `site` throws, and a concept keyed `fragments` must set `routing: 'embedded'`. :fact[wr3hx3]
+- The `label` names the concept's sidebar entry, and the create button on the concept's list screen reads **New** followed by `singular`. A concept labeled `Posts` with no `singular` therefore gets the button **New Posts**. :fact[gwmmkx]
+- The engine refuses some ids. A concept keyed `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, `settings`, or `site` throws an error. A concept keyed `fragments` must set `routing: 'embedded'`. :fact[wr3hx3]
 - To add a concept, follow these steps:
 1. In the adapter's `content` map, add a key named for the concept, with a `defineConcept` call as its value. :fact[5eum60] :fact[d27z58]
 - Code: an illustrative `events` key inside the scaffold's `content` map, with `dir`, `label`, `singular`, `routing: 'page'`, and a fieldset of a required `title`, a `date`, and a `location` text field. :source[/templates/waymark/src/theme/cairn.config.ts] :fact[d27z58] :fact[gwmmkx]
@@ -134,7 +134,7 @@ const indexes = createSiteIndexes(cairn, siteConfig, {
 });
 ```
 
-- When the concept's directory holds entries, a lazy glob, or one without `?raw` and `import: 'default'`, makes the build throw `expected input to be a string or buffer`. If the content module passes no glob for a declared concept, `createSiteIndexes` throws. :fact[n07oiu] :fact[pdgkex]
+- Once the concept's directory holds entries, a lazy glob, or one without `import: 'default'`, hands the parser a function or a module object, and the build throws `expected input to be a string or buffer`. If the content module passes no glob for a declared concept, `createSiteIndexes` throws. :fact[n07oiu] :fact[pdgkex]
 4. In the Vite config, add the concept's id and the same pattern to the `cairnManifest` plugin's `content` option. :fact[fj28xs] :fact[bheewf]
 - Code: an illustrative `cairnManifest` call from the scaffold's `vite.config.ts`, with `events` added to its `content` option. :source[/templates/waymark/vite.config.ts] :fact[bheewf]
 
@@ -169,11 +169,11 @@ cairnManifest({
 - It starts with `/`, and its tokens are `:slug`, `:year`, `:month`, and `:day`. :fact[7ak73t]
 - A date token needs `routing: 'feed'`. The `:month` and `:day` tokens render zero-padded. :fact[7ak73t]
 - A date token also needs a field named `date` of type `date`, and the engine makes that field required. :fact[2i6u6o]
-- `datePrefix` takes `'year'`, `'month'`, or `'day'`, and defaults to `'day'`. It applies only to a `'feed'` concept, and sets how much of the date an editor picks in the create dialog starts a new entry's filename. :fact[cg1eo5]
+- `datePrefix` takes `'year'`, `'month'`, or `'day'`, and defaults to `'day'`. It applies only to a `'feed'` concept. When an editor picks a date in the create dialog, `datePrefix` sets how much of that date prefixes the new entry's id. :fact[cg1eo5]
 - See [Entry identity](content-model.md#entry-identity).
 - To give a concept a dated address, follow these steps:
 1. In the concept's declaration, set `routing` to `'feed'`. :fact[7ak73t]
-2. In the same declaration, set `permalink` to a pattern with a date token, such as `'/events/:year/:slug'`. :fact[7ak73t] :fact[2i6u6o]
+2. In the same declaration, set `permalink` to a pattern with a date token, such as `'/:year/:slug'`. :fact[7ak73t] :fact[2i6u6o]
 3. Optional: In the same declaration, set `datePrefix` to `'year'` or `'month'`. :fact[cg1eo5]
 - An invalid `permalink`, `datePrefix`, or `routing` makes `defineConcept` throw when the adapter module loads, before any save. :fact[lkgubp]
 
@@ -195,9 +195,9 @@ tags: fields.multiselect({ label: 'Tags', creatable: true, taxonomy: true }),
 
 - In a concept that marks no field, a multiselect named `tags`, `freetags`, or `categories` makes the content index log a `content.field_unmarked` warning. :fact[lbeeak]
 - See [`content.field_unmarked`](debug-your-site.md#contentfield_unmarked).
-- Editors manage a tag vocabulary on the admin's **Tags** screen. Each entry pairs a lowercase hyphenated `value`, stored in frontmatter, with a display `label`. :fact[grvcbv] :fact[shv6wv] :fact[a6ez6i]
-- The vocabulary is one list for the site. Once it holds an entry, a save can add only vocabulary values to a concept's marked field. :fact[xsms0b] :fact[2p519o]
-- An entry keeps its existing tags outside the vocabulary as orphans. With an empty vocabulary, the marked field stays the open multiselect it was declared as. :fact[2p519o] :fact[grvcbv]
+- Editors manage a tag vocabulary on the admin's **Tags** screen. Each vocabulary item pairs a lowercase hyphenated `value`, stored in frontmatter, with a display `label`. :fact[grvcbv] :fact[shv6wv] :fact[a6ez6i]
+- The vocabulary is one list for the site. Once the vocabulary holds an item, a save can add only vocabulary values to a concept's marked field. :fact[xsms0b] :fact[2p519o]
+- A content entry keeps its existing tags outside the vocabulary as orphans. With an empty vocabulary, the marked field stays the open multiselect it was declared as. :fact[2p519o] :fact[grvcbv]
 - The vocabulary sits under the `vocabulary` key of the site config file. The adapter's `editor.siteConfigPath` names that file, and it defaults to `src/theme/site.config.yaml`. :fact[shv6wv]
 - See [`siteConfigPath`](../reference/core.md#siteconfigpath-adapter-editor-member).
 - See [`parseSiteConfig`](../reference/core.md#parsesiteconfig).
@@ -206,17 +206,17 @@ tags: fields.multiselect({ label: 'Tags', creatable: true, taxonomy: true }),
 
 *Has the reader add a per-field check and a cross-field check, and says how each hook fails when it throws.*
 
-- A fieldset takes a second argument that holds two hooks. A `behavior` entry checks one field, and `refine` checks the whole entry. :fact[93iwom]
+- A fieldset takes a second argument that holds two hooks. Each key in `behavior` checks one field, and `refine` checks the whole entry. :fact[93iwom]
 - `behavior[field].validate(value, siblings)` runs only for a field that passed its built-in checks. It receives the coerced value and the raw frontmatter, and returns an error string or `null`. :fact[93iwom]
-- When an optional field is left empty, its `validate` still runs and receives `undefined`. A check that refuses an empty value tests for a string. :fact[k7v2qe]
+- When an optional field is left empty, its `validate` still runs and receives `undefined`. A check that refuses an empty value therefore tests that the value is a string. :fact[k7v2qe]
 - A `behavior` key that names an undeclared field throws when the fieldset is declared. :fact[93iwom]
 - `refine(data, body)` runs synchronously, and only after every field and behavior check passes. It returns either nothing or a map of field keys to messages. A returned map with at least one key fails the save, and an empty map passes. :fact[93iwom]
 - A caution notice says that a throw has a different effect in each hook. A throwing `behavior.validate` is logged as `content.field_behavior_failed`, and the field counts as valid. :fact[93iwom]
-- The notice continues: a throwing `refine` isn't caught. It fails the admin save with a server error, and it aborts the build's content index. :fact[ar5p72]
-- A refused save shows one banner holding only the first error message, and no message sits beside a field. Each `refine` message therefore needs to read as a standalone sentence. :fact[aj5c4z]
+- The notice continues: a throwing `refine` isn't caught. It fails the admin save with a server error, and it fails the build. :fact[ar5p72]
+- A refused save shows one banner holding only the first error message, and no message sits beside a field. Each message a check returns therefore needs to read as a standalone sentence. :fact[aj5c4z]
 - To add both checks, follow these steps:
 1. In the concept's `defineFieldset` call, pass a second argument after the field record. :fact[93iwom]
-2. In that argument, add a `behavior` entry whose `validate` returns a message for a value the field must refuse. :fact[93iwom] :fact[k7v2qe]
+2. In that argument, add the field's key under `behavior`, with a `validate` function that returns a message for a value the field must refuse. :fact[93iwom] :fact[k7v2qe]
 3. In the same argument, add a `refine` function that returns a message keyed by field name when the fields it compares disagree. :fact[93iwom] :fact[aj5c4z]
 - Code: an illustrative `events` fieldset with an `endDate` field, a `refine` that refuses an end date before `date`, and a `behavior` entry that refuses an empty location by testing for a string. :source[/src/lib/content/fieldset.ts#FieldsetConfig] :fact[93iwom] :fact[k7v2qe] :fact[aj5c4z]
 
@@ -251,11 +251,11 @@ fields: defineFieldset(
 
 *Covers the two summary options: the frontmatter an entry's summary carries, and the label of a collapsed array row.*
 
-- Each of the following options sets what a summary shows: `summaryFields` for an entry in a list, and `itemLabel` for a collapsed array row. Set each one the site needs:
+- Set each of the following options that the site needs:
 - In the concept's declaration, set `summaryFields` to the frontmatter keys a list reads from each entry's summary, such as `['location']`. :fact[9ro4u5]
 - The content index copies each named key from the validated frontmatter onto the entry's `ContentSummary.fields`. A key the fieldset doesn't declare throws when `createSiteIndexes` or `composeRuntime` runs. :fact[9ro4u5]
 - On an `array` field whose items are objects, set `itemLabel` to the key of the sub-field that summarizes a collapsed row. :fact[97c6g1]
-- When that sub-field is empty, the row shows the field's label and the row number. An array of leaf items summarizes each row by its value. :fact[97c6g1]
+- When that sub-field is empty, the row shows the field's label and the row number. An array of leaf items summarizes each row by its value when that value is not an object, such as text. A row whose leaf value is an object, such as an image, shows the field's label and the row number. :fact[97c6g1]
 - Code: the scaffold's `faq` field, an array of objects whose `itemLabel` is `question`. :source[/templates/waymark/src/theme/cairn.config.ts] :fact[fe46lo]
 
 <!-- snippet-check-skip: one property of the scaffold's posts fieldset -->
@@ -276,16 +276,20 @@ faq: fields.array(
 
 *Has the reader run the checks in order and see the new concept in the manifest and the admin.*
 
-- To verify the declaration, run these checks in order:
-1. In a terminal at the site's root, run `npm run check` and confirm that it reports no errors. :fact[a98mnn]
+- To verify the declaration, follow these steps in order:
+1. In a terminal at the site's root, run `npm run check`. :fact[a98mnn]
 - On a scaffolded site the script runs `svelte-kit sync` and then `svelte-check`, which typechecks the code that reads the declared fields. :fact[a98mnn] :fact[68w9k9]
-- An optional field left empty is absent from the saved frontmatter, and its inferred type is optional. Under the scaffold's strict settings, code that uses such a key without handling `undefined` fails this check. :fact[apoa3k] :fact[0cj6du]
-2. In the same terminal, run `npm run build` and confirm that it completes. :fact[a98mnn] :fact[yvz3mm]
-3. If the concept's directory holds entries, in `src/content/.cairn/index.json`, confirm that a row names one of the concept's entries. :fact[t5ebsr] :fact[7az6m2]
-4. In the same terminal, run `npm run dev`. :fact[o47i0q]
+- An optional field left empty is absent from the saved frontmatter, and its inferred type is optional. Under the scaffold's strict settings, code that uses such a key's value where a defined value is required, without checking that it is set, fails this check. :fact[apoa3k] :fact[0cj6du]
+2. In the output, confirm that `npm run check` reports no errors. :fact[a98mnn]
+3. In the same terminal, run `npm run build`. :fact[a98mnn] :fact[yvz3mm]
+4. In the output, confirm that the build completes. :fact[yvz3mm]
+5. If the concept's directory holds entries, in `src/content/.cairn/index.json`, confirm that a row names one of the concept's entries. :fact[t5ebsr] :fact[7az6m2]
+6. In the same terminal, run `npm run dev`. :fact[o47i0q]
 - The scaffold's script starts the dev server against an in-memory dev backend. :fact[o47i0q]
-5. In a browser, open `/admin` and confirm that the sidebar lists the concept's label. :fact[gwmmkx]
-6. In the sidebar, select the concept's label, and confirm that the list screen's create button reads **New** followed by the concept's `singular`. :fact[gwmmkx]
+7. In a browser, open `/admin`. :fact[gwmmkx]
+8. In the sidebar, confirm that the concept's label appears. :fact[gwmmkx]
+9. In the sidebar, select the concept's label. :fact[gwmmkx]
+10. On the list screen, confirm that the create button reads **New** followed by the concept's `singular`. :fact[gwmmkx]
 
 ## Resolve a failed check
 
@@ -293,7 +297,7 @@ faq: fields.array(
 
 :::row
 **Symptom.** The build throws `expected input to be a string or buffer`.
-**Cause.** A concept's glob is lazy, or it lacks `query: '?raw'` and `import: 'default'`. :fact[n07oiu]
+**Cause.** A concept's glob is lazy, or it lacks `import: 'default'`. :fact[n07oiu]
 **Fix.** In the content module, give the glob `query: '?raw'`, `import: 'default'`, and `eager: true`, as [Add a concept](#add-a-concept) shows. :fact[n07oiu]
 :::
 
@@ -310,22 +314,33 @@ faq: fields.array(
 :::
 
 :::row
-**Symptom.** A `cairn: concept` error says the id names an engine view under `/admin`, or that a concept can't be named `site`.
+**Symptom.** A `cairn: concept` error says that the id names an engine view under `/admin`, or that a concept can't be named `site`.
 **Cause.** The concept's key in the `content` map is one of the ids the engine refuses. :fact[wr3hx3]
-**Fix.** In the adapter's `content` map, rename the key, then rename it in the content module and the Vite config. :fact[wr3hx3] :fact[bheewf]
+**Fix.** To give the concept another id, follow these steps: :fact[wr3hx3] :fact[bheewf]
 :::
+
+1. In the adapter's `content` map, rename the key. :fact[wr3hx3]
+2. In the content module, rename the key passed to `createSiteIndexes`. :fact[bheewf] :fact[pdgkex]
+3. In the Vite config, rename the key in the `cairnManifest` plugin's `content` option. :fact[bheewf] :fact[fj28xs]
 
 :::row
 **Symptom.** The build fails with `content manifest is stale`.
 **Cause.** The committed manifest has drifted from the markdown on disk. :fact[6e8kwx] :fact[fdtgh5]
-**Fix.** Run `npx cairn-manifest`, then commit `src/content/.cairn/index.json`. :fact[fdtgh5] :fact[fh6kod]
+**Fix.** To regenerate the manifest, follow these steps: :fact[fdtgh5] :fact[fh6kod]
 :::
+
+1. In a terminal at the site's root, run `npx cairn-manifest`. :fact[fdtgh5] :fact[fh6kod]
+2. Commit `src/content/.cairn/index.json`. :fact[fdtgh5] :fact[fj28xs]
 
 :::row
 **Symptom.** After `npx cairn-manifest`, `index.json` holds no row for the new concept's entries.
-**Cause.** The concept is missing from the `cairnManifest` plugin's `content` option. :fact[7az6m2]
-**Fix.** In the Vite config, add the concept to the plugin's `content` option, then run `npx cairn-manifest` again. :fact[7az6m2] :fact[fh6kod]
+**Cause.** The concept is missing from the `cairnManifest` plugin's `content` option, its pattern there matches none of its files, or the concept's entries fail the fieldset's validation, since the manifest skips an entry that fails it. :fact[7az6m2] :fact[0a254m]
+**Fix.** To add a missing concept to the plugin, follow these steps: :fact[7az6m2] :fact[fh6kod]
 :::
+
+1. In the Vite config, add the concept's id and pattern to the plugin's `content` option. :fact[7az6m2] :fact[fj28xs]
+2. In a terminal at the site's root, run `npx cairn-manifest` again. :fact[fdtgh5] :fact[fh6kod]
+- For an entry that fails validation, see the `invalid frontmatter field(s)` failure in [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build). :fact[0a254m]
 
 :::row
 **Symptom.** The build logs `content.field_unmarked`, and the concept's entries carry no tags.
@@ -340,7 +355,7 @@ faq: fields.array(
 :::
 
 :::row
-**Symptom.** A save fails with a server error, or the build aborts while it builds the content index.
+**Symptom.** A save fails with a server error whose cause is the error that `refine` threw, or the build fails with that error.
 **Cause.** The fieldset's `refine` function threw. :fact[ar5p72]
 **Fix.** Change `refine` to return an error map for the case it threw on. :fact[ar5p72] :fact[93iwom]
 :::
@@ -358,11 +373,12 @@ faq: fields.array(
 - See [Field types](../reference/core.md#field-types).
 - See [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes).
 - See [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions).
-- The following pages cover the model and the adapter's other groups:
+- The following pages cover the content model, the adapter's other groups, and the public routes:
 - See [Content model](content-model.md).
 - See [Write a markdown component](write-a-markdown-component.md).
 - See [Link content with references](link-content-with-references.md).
 - See [Restrict admin access](restrict-admin-access.md).
+- See [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
 - See [Configure media](configure-media.md).
 - See [Choose an AI posture](choose-an-ai-posture.md).
 - See [Build the public routes](build-the-public-routes.md).

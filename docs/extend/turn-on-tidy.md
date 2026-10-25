@@ -184,8 +184,8 @@ An editor's personal dictionary is a separate committed file, `src/content/.cair
 and not a convention. Editors add words to it from the **Add to dictionary** action on a spellcheck
 suggestion, never from the tidy review. Regional spelling is `spellcheck.dialect`, a spellcheck key
 rather than a tidy rule.
-[Keep adapter settings out of `site.config.yaml`](define-an-adapter-and-schema.md#keep-adapter-settings-out-of-siteconfigyaml)
-covers it.
+The [`parseSiteConfig`](../reference/core.md#parsesiteconfig) entry lists the keys the site
+config accepts.
 
 Next, hand these rules to your editors.
 

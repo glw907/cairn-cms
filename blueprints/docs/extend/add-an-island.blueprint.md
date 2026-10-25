@@ -7,7 +7,7 @@ exemplar: extenders/payload-custom-components
 # Add an island
 
 :::reader
-**Who reads it.** A Svelte-fluent web developer building an organization's site on cairn, who wants one markdown component to respond in the browser. One works on a hand-built site, whose adapter starts with no `rendering.islands`. Another works on a scaffolded site, which already carries the island wiring around its `banner` island. :fact[thjrvl] :fact[mcxxpp]
+**Who reads it.** A Svelte-fluent web developer building an organization's site on cairn, who wants one markdown component to respond in the browser. The page serves two such developers. On a hand-built site, the adapter starts with no `rendering.islands`. A scaffolded site already registers a `banner` island and carries the registry module, adapter member, root load, and layout call around it. :fact[thjrvl] :fact[mcxxpp]
 
 **Why they arrive:**
 - A markdown component on a public page renders as static markup, and they want it to respond to the reader. :fact[4hd2vg]
@@ -17,10 +17,10 @@ exemplar: extenders/payload-custom-components
 
 **Background.** An island is a markdown component declared with `hydrate`. The pipeline wraps the component's `build()` output in an island boundary that carries the directive name and a JSON payload of its props. A live Svelte component registered under that name mounts over the boundary in the browser. :fact[4hd2vg]
 The `build()` output stays as the fallback. It is the first paint before the mount, and the content a reader without JavaScript sees. :fact[1uk9sw]
-A component with no `hydrate` stays static server markup with no client JavaScript. :fact[4hd2vg] :fact[awr88d]
+A component with no `hydrate` renders as static server markup and adds no client JavaScript. :fact[4hd2vg] :fact[awr88d]
 
 **What the page does for them.** The introduction opens on that model, then names the task: make one component interactive while its fallback still serves readers without JavaScript. :fact[4hd2vg] :fact[1uk9sw]
-It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. Their path is a live component, one registry line, and `hydrate`. :fact[mcxxpp]
+It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. That reader writes the live component, adds one line to the registry, and sets `hydrate` on the declaration. :fact[mcxxpp]
 The steps write the live component, register the island, wire the root layout on a hand-built site, and verify the island on the public page.
 
 **What it leaves to other pages, each named in the introduction:**
@@ -34,7 +34,7 @@ The steps write the live component, register the island, wire the root layout on
 - Say `hydrate` takes `true` or `'visible'`. Never present "eager" as a value of `hydrate`. :fact[awr88d]
 - Never show a root layout that imports the adapter module on the client. :fact[zrcuyf]
 - State the props rule as the reader's obligation. The runtime passes props to the component unchanged, and the page never says the engine sanitizes them. :fact[8356mn]
-- Keep the runtime's behavior to the one line in "Wire the root layout" and its links to the islands reference.
+- Keep the runtime's teardown, scan, and error isolation to one line in "Wire the root layout" and its links to the islands reference.
 :::
 
 ## Before you begin
@@ -45,9 +45,13 @@ The steps write the live component, register the island, wire the root layout on
 - A markdown component declared with `defineComponent`, in the registry the adapter passes as `rendering.components`. Its `build()` output becomes the island's fallback. :fact[mv684d] :fact[1uk9sw]
 - See [Write a markdown component](write-a-markdown-component.md).
 - An entry whose body uses the component's directive, for checking the island on its public page.
-- A scaffolded site's tree already carries the registry module `src/theme/islands/registry.ts`, the adapter's `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call. :fact[mcxxpp]
-- On a scaffolded site, write the live component, add its line to that registry, and set `hydrate` on its declaration. Then go to the verify section. :fact[mcxxpp]
-- See [Verify the island on the public page](#verify-the-island-on-the-public-page).
+
+- A scaffolded site already carries the registry module `src/theme/islands/registry.ts`, the adapter's `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call. :fact[mcxxpp]
+- On a scaffolded site, follow these steps instead: :fact[mcxxpp]
+1. In `src/theme/islands/`, write the live component, as [Write the live component](#write-the-live-component) describes. :fact[mcxxpp]
+2. In `src/theme/islands/registry.ts`, add the component's entry beside `banner`. :fact[mcxxpp]
+3. In the component's declaration, set `hydrate` to `true` or `'visible'`. :fact[nm3bbo] :fact[awr88d]
+4. Verify the island, as [Verify the island on the public page](#verify-the-island-on-the-public-page) describes.
 
 ## Write the live component
 
@@ -55,12 +59,12 @@ The steps write the live component, register the island, wire the root layout on
 
 - The live component is an ordinary Svelte component. The runtime mounts it with Svelte's `mount()`, passing the directive's declared attributes as its props. :fact[bwaj5c] :fact[hje4zb]
 - To write the live component, follow these steps:
-1. In `src/lib/islands/`, or `src/theme/islands/` on a scaffolded site, create the component file, such as `Converter.svelte`. :fact[mcxxpp]
+1. In the site's islands directory, create the component file, such as `src/lib/islands/Converter.svelte`. A scaffolded site keeps its island files in `src/theme/islands/`. :fact[mcxxpp]
 2. In the component's script, declare a prop with a default value for each attribute the directive declares. :fact[hje4zb] :fact[n3pod3]
 - A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. :fact[hje4zb]
-- An attribute the entry leaves unset arrives as no prop, so its default applies. :fact[n3pod3]
-3. In the component's markup, bind each prop to text. :fact[8356mn]
-- Code: `src/lib/islands/Converter.svelte`, a live component typed from a `converter` directive's `from`, `to`, and `rate` attributes, with each prop bound to text. :fact[hje4zb] :fact[n3pod3] :source[/templates/waymark/src/theme/islands/Banner.svelte]
+- When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. :fact[n3pod3]
+3. In the component's markup, render each prop as text. :fact[8356mn]
+- Code: `src/lib/islands/Converter.svelte`, a live component typed from a `converter` directive's `from`, `to`, and `rate` attributes, with each prop rendered as text. :fact[hje4zb] :fact[n3pod3] :source[/templates/waymark/src/theme/islands/Banner.svelte]
 
 ```svelte
 <!-- src/lib/islands/Converter.svelte -->
@@ -81,21 +85,21 @@ The steps write the live component, register the island, wire the root layout on
 </p>
 ```
 
-- An author writes each attribute value, so each prop is untrusted. The runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering. :fact[8356mn] :fact[hje4zb]
-- Do bind a prop to text, as `{from}` does. Don't route a prop into `{@html}`, an `href` or `src`, or an inline `style`. A component that does owns the injection risk. :fact[8356mn]
+- Caution notice: Don't route a prop into `{@html}`, an `href` or `src`, or an inline `style`. An author writes each attribute value, and the runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering. :fact[8356mn] :fact[hje4zb]
 - See [Props are untrusted](../reference/islands.md#props-are-untrusted).
+- The mount also shapes how the live component renders.
 - The mount clears the fallback and mounts the component into the same element. A first render whose size differs from the fallback shifts the layout. :fact[9zxml1]
-- The scaffold's `banner` avoids the shift: its fallback states the same message its live component shows. :fact[9zxml1]
-- The runtime moves no focus. When the fallback holds a focusable control, the component restores focus itself. :fact[s080jg]
+- The scaffold's `banner` fallback renders the same markup and message as its live component, and the two share CSS classes. Its swap doesn't shift the layout. :fact[9zxml1]
+- The runtime moves no focus. When the fallback holds a focusable control, restoring focus after the mount is the live component's job. :fact[s080jg]
 
 ## Register the island
 
-*Walk the reader through the registry entry, the adapter member, and the `hydrate` declaration, then the check that ties them together.*
+*Walk the reader through the registry entry, the adapter member, and the `hydrate` declaration, then the check `defineAdapter` runs across them.*
 
-- An island registers under its directive name in a lean registry module, kept apart from the adapter module. The adapter and the root layout both import it. :fact[thjrvl] :fact[ni5lm7] :fact[zrcuyf]
+- A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Keeping it separate from the adapter module keeps the adapter off the client. :fact[thjrvl] :fact[ni5lm7] :fact[zrcuyf]
 - To register the island, follow these steps:
-1. In `src/lib/islands/registry.ts`, export an `IslandRegistry` named `siteIslands` that maps the directive name to the component. :fact[thjrvl] :fact[mcxxpp]
-- On a scaffolded site, add the entry beside `banner` in `src/theme/islands/registry.ts` instead. :fact[mcxxpp]
+1. In a registry module, such as `src/lib/islands/registry.ts`, export an `IslandRegistry` that maps the directive name to the live component. The examples name the export `siteIslands`. :fact[thjrvl] :fact[mcxxpp]
+- On a scaffolded site, in `src/theme/islands/registry.ts`, add the entry beside `banner` instead. :fact[mcxxpp]
 - Code: `src/lib/islands/registry.ts`, mapping `converter` to the live component. :fact[thjrvl] :source[/templates/waymark/src/theme/islands/registry.ts]
 
 ```ts
@@ -124,7 +128,8 @@ export const cairn = defineAdapter({
 });
 ```
 
-3. In the component's `defineComponent` declaration, set `hydrate: true` to mount on first load and after each client navigation, or `hydrate: 'visible'` to defer the mount. :fact[nm3bbo] :fact[awr88d]
+3. In the component's `defineComponent` declaration, set `hydrate` to `true` or `'visible'`. :fact[nm3bbo] :fact[awr88d]
+- With `true`, the island mounts when the layout's call runs, on first load and after each client navigation. With `'visible'`, the mount waits until the island's boundary enters the viewport. :fact[awr88d] :fact[mynt0l]
 - Code: an excerpt of the `converter` declaration with `hydrate` set, framed as an excerpt. :fact[nm3bbo] :source[/templates/waymark/src/theme/markdown-components.ts]
 
 <!-- snippet-check-skip: an excerpt of a component declaration -->
@@ -136,7 +141,7 @@ export const converter = defineComponent({
 });
 ```
 
-- A `'visible'` island mounts once, the first time its boundary meets the viewport. An island a reader never scrolls to never mounts. :fact[mynt0l]
+- A `'visible'` island mounts the first time its boundary enters the viewport. A `'visible'` island that a reader never scrolls to never mounts. :fact[mynt0l]
 - `hydrate` is typed `boolean | 'visible'`. Setting it to `false`, or leaving it out, keeps the component static. :fact[awr88d]
 - `defineAdapter` checks the `hydrate` declarations against `rendering.islands` when the adapter is declared. It throws on a mismatch in either direction. :fact[mv684d]
 - Code: the error each mismatch throws, with the directive's name in place of `<name>`. :fact[bb4ah3]
@@ -146,17 +151,17 @@ cairn: component '<name>' declares hydrate but rendering.islands has no entry fo
 cairn: rendering.islands has '<name>' but no component declares hydrate for it.
 ```
 
-- The engine reads `rendering.islands` for this check alone. The runtime mounts from the map the layout passes, so the layout and the adapter import the same `siteIslands` export. :fact[ni5lm7]
+- The engine reads `rendering.islands` for this check alone, and the runtime mounts from the map the layout passes. When the layout and the adapter import the same `siteIslands` export, the check covers the map that mounts. :fact[ni5lm7]
 - See [`rendering.islands`](../reference/core.md#renderingislands-adapter-member).
 
 ## Wire the root layout
 
-*Walk the hand-built-site reader through the gated root load and the `afterNavigate` call, and name the client import that ships the whole adapter.*
+*Walk the hand-built-site reader through the gated root load and the `afterNavigate` call, and name the client import that would ship the adapter module to each public page.*
 
-- A scaffolded site's root layout makes this call already. Its reader goes on to the verify section. :fact[mcxxpp]
+- A scaffolded site's root load already returns `hasIslands`, and its root layout already calls `hydrateIslands`. On a scaffolded site, go to [Verify the island on the public page](#verify-the-island-on-the-public-page). :fact[mcxxpp]
 - The root layout calls `hydrateIslands` from an `afterNavigate` callback. The call runs after each navigation, once the new DOM is in place. :fact[drsabs]
 - To wire the root layout, follow these steps:
-1. In `src/routes/+layout.server.ts`, return `hasIslands`, computed from the registry module. :fact[mcxxpp] :fact[java15]
+1. In `src/routes/+layout.server.ts`, add `hasIslands` to the object the root `load` returns, computed from the registry module. :fact[mcxxpp] :fact[java15]
 - Code: `src/routes/+layout.server.ts`, returning `hasIslands` from the registry's entry count. :fact[mcxxpp] :source[/templates/waymark/src/routes/+layout.server.ts]
 
 ```ts
@@ -171,7 +176,10 @@ export const load: LayoutServerLoad = () => {
 
 - SvelteKit never ships a `+layout.server.ts` module, or what it imports, to the client. The layout's script receives the boolean and not the registry. :fact[java15]
 2. In `src/routes/+layout.svelte`, add an `afterNavigate` callback that returns at once when `data.hasIslands` is false. :fact[shvf6h]
-3. In the same callback, dynamically import `hydrateIslands` from `@glw907/cairn-cms/islands` and `siteIslands` from the registry module, then call `hydrateIslands(siteIslands)`. :fact[mcxxpp] :fact[drsabs]
+3. In the same callback, dynamically import `hydrateIslands` from `@glw907/cairn-cms/islands` and `siteIslands` from the registry module. :fact[mcxxpp]
+- Caution notice: In the root layout, import the registry module, never the adapter module. :fact[zrcuyf]
+- A client import of the adapter module ships everything it imports to each public page. On a scaffolded site, that includes the engine renderer, the icon set, and the committed media manifest. :fact[zrcuyf]
+4. After the imports resolve, call `hydrateIslands(siteIslands)`. :fact[drsabs]
 - Code: `src/routes/+layout.svelte` with the gated callback, following the scaffold's root layout. :fact[mcxxpp] :fact[shvf6h] :source[/templates/waymark/src/routes/+layout.svelte]
 
 <!-- snippet-check-skip: dynamically imports the site's registry module, which only the site declares -->
@@ -198,9 +206,7 @@ export const load: LayoutServerLoad = () => {
 ```
 
 - With `hasIslands` false, the callback returns before either import. A site with no registered island never requests the runtime or the registry module. :fact[shvf6h]
-- Import the registry module in the layout, never the adapter module. :fact[zrcuyf]
-- On a scaffolded site, the adapter module also carries the engine renderer, the icon set, and the committed media manifest. A client import of it ships them to each public page. :fact[zrcuyf]
-- On each call, `hydrateIslands` tears down the previous pass and scans `root`, which defaults to `document`. An island that fails keeps its fallback while the others mount. :fact[rmlwca] :fact[bh6css] :fact[urw3z7]
+- On each call, `hydrateIslands` unmounts the islands its previous call mounted, then scans its optional `root` argument, which defaults to `document`. An island that fails keeps its fallback while the others mount. :fact[rmlwca] :fact[bh6css] :fact[urw3z7]
 - See [`hydrateIslands`](../reference/islands.md#hydrateislands).
 - See [Error isolation](../reference/islands.md#error-isolation).
 
@@ -210,14 +216,17 @@ export const load: LayoutServerLoad = () => {
 
 - The edit page's preview frame is sandboxed and runs no scripts. It shows the fallback, never the mounted component. :fact[8o2gbl]
 - To verify the island, follow these steps:
-1. In the project directory, build the site and serve it with `npm run preview`, or deploy it. :fact[8o2gbl]
-2. In the browser, open the public page of an entry that uses the directive.
-3. In the element inspector, find the boundary: a `<div>` whose `data-cairn-island` is the directive name, with a `data-cairn-props` JSON payload. :fact[4kmm3i]
+1. In the project directory, build the site with `npm run build`. :fact[8o2gbl]
+2. Serve the build with `npm run preview`, or deploy the site. :fact[8o2gbl]
+3. In the browser, open the public page of an entry that uses the directive.
+4. In the element inspector, find the boundary: a `<div>` whose `data-cairn-island` is the directive name, with a `data-cairn-props` JSON payload. :fact[4kmm3i]
 - A `'visible'` island's boundary also carries `data-cairn-hydrate="visible"`. :fact[4kmm3i]
-4. On the page, scroll to the island if it is `'visible'`, then confirm that the live component responds where the fallback was. :fact[mynt0l]
-5. In the browser settings, turn off JavaScript, then reload the page. The fallback shows inside the boundary. :fact[1uk9sw]
+5. If the island is `'visible'`, scroll to it on the page. :fact[mynt0l]
+6. On the page, confirm that the live component responds where the fallback was. :fact[mynt0l]
+7. In the browser settings, turn off JavaScript. :fact[1uk9sw]
+8. Reload the page. The fallback shows inside the boundary. :fact[1uk9sw]
 
-- If a check fails, find its symptom in the following list.
+- The following list matches each failed check to its cause and fix.
 
 :::row
 **Symptom.** The page shows the component's markup with no `data-cairn-island` boundary.
@@ -226,23 +235,23 @@ export const load: LayoutServerLoad = () => {
 :::
 
 :::row
-**Symptom.** The boundary is there and the fallback stays, and the browser never requests the islands runtime.
-**Cause.** The root load returned a false `hasIslands`. The layout's callback returned before its imports. :fact[shvf6h]
-**Fix.** Check that `src/routes/+layout.server.ts` computes `hasIslands` from the registry module that holds the entry. :fact[mcxxpp]
+**Symptom.** The boundary is present, the fallback stays, and the browser never requests the islands runtime.
+**Cause.** The root load returned a false `hasIslands`, and the layout's callback returned before its imports. Or the root layout has no `afterNavigate` callback that calls `hydrateIslands`. :fact[shvf6h] :fact[drsabs]
+**Fix.** Check that `src/routes/+layout.server.ts` computes `hasIslands` from the registry module that holds the entry. Then check that the root layout makes the call, as [Wire the root layout](#wire-the-root-layout) shows. :fact[mcxxpp] :fact[drsabs]
 :::
 
 :::row
 **Symptom.** The islands runtime loads, and the fallback stays.
-**Cause.** The map the layout passes has no entry under the directive name, the props payload failed to parse, or the component threw on mount. :fact[urw3z7]
-**Fix.** Check that the layout imports the same `siteIslands` export as the adapter. If it does, debug the component's mount. :fact[ni5lm7] :fact[urw3z7]
+**Cause.** A `'visible'` island's boundary hasn't entered the viewport yet. Otherwise, the layout's map has no entry under the directive name, the props payload failed to parse, or the component threw on mount. :fact[mynt0l] :fact[urw3z7]
+**Fix.** Scroll a `'visible'` island into view. Otherwise, check that the layout imports the same `siteIslands` export as the adapter. If it does, see [Debug your site](debug-your-site.md). :fact[mynt0l] :fact[ni5lm7] :fact[urw3z7]
 :::
 
 ## See also
 
 *Point the reader to the reference entries and pages around islands.*
 
-- The following pages cover the pieces this page links to:
-- Write a markdown component declares the component, its attributes, and its `build()` fallback.
+- The following pages and reference entries cover what this page leaves out:
+- Write a markdown component covers declaring the component, its attributes, and its `build()` fallback.
 - See [Write a markdown component](write-a-markdown-component.md).
 - The islands reference documents the runtime, the boundary markup, and the props contract.
 - See [Islands](../reference/islands.md).

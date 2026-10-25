@@ -64,6 +64,8 @@ The contract sentence follows. A hand-built reader adds the styling stack, then 
 - The sheet's roles read daisyUI variables, such as `--color-base-content` and `--color-primary`. The sheet declares none of them and activates no daisyUI plugin. A hand-built site therefore installs daisyUI and supplies a theme block. :fact[f28x0x]
 - To add the styling stack, follow these steps:
 1. In the site directory, install Tailwind CSS and daisyUI by following each vendor's guide. :fact[f28x0x]
+- Leave out the Tailwind guide's static `import "../app.css"` in `src/routes/+layout.svelte`. :fact[bm73yb]
+- That root layout also wraps `/admin`, and a static import breaks the preview frame's link to the sheet. Step 5 links the sheet through a `?url` import from a `(site)` layout instead. :fact[5y8ity] :fact[gtg454]
 - See [Tailwind's SvelteKit guide](https://tailwindcss.com/docs/installation/framework-guides/sveltekit).
 - See [daisyUI's installation guide](https://daisyui.com/docs/install/).
 2. In `src/app.css`, import `tailwindcss` and then `@glw907/cairn-cms/cairn-public.css`, and then load daisyUI with `@plugin "daisyui"`. :fact[f28x0x]
@@ -144,7 +146,8 @@ export const cairn = defineAdapter({
 - The command downloads each object the committed media manifest lists and writes it into Wrangler's local R2 state. A re-run overwrites each key in place. :fact[7pv6se]
 - See [the `cairn-media-seed` reference](../reference/cli-cairn-media-seed.md) for its flags, its download path, and its exit codes.
 2. In the site directory, start the dev server. :fact[j2qzct]
-- If you seeded media, start it with `npx vite dev` and `CAIRN_DEV_BACKEND` unset, or with `wrangler dev`. :fact[j2qzct]
+- If you seeded media, start it with `npx vite dev` and `CAIRN_DEV_BACKEND` unset. :fact[j2qzct]
+- Or run `npm run build` and then `wrangler dev`. Wrangler serves the last build, with no hot module replacement. :fact[j2qzct]
 - The scaffold's `npm run dev` sets `CAIRN_DEV_BACKEND=1`. With it set, the dev backend serves `/media` from an in-memory fake bucket, and seeded objects don't appear. :fact[j2qzct]
 3. On a scaffolded site, open `/styleguide` in the browser. :fact[bdnzcy]
 - The route renders the type scale, the component recipes, and a sample of each registered directive that declares a `preview`, against the current `theme.css`. A directive without one is listed by name. :fact[bdnzcy]
@@ -167,7 +170,8 @@ export const cairn = defineAdapter({
 6. Optional: In the same `@theme` block, tune the design scale, such as the `--text-step-*` type steps or the `--spacing-*` steps. :fact[f6k5cs] :fact[iel6v5]
 7. Optional: In both daisyUI blocks, change the three radius keys, `--radius-selector`, `--radius-field`, and `--radius-box`. :fact[f6k5cs]
 8. Optional: In `src/theme/components/ArticleView.svelte`, add a `data-flourish` attribute to the `<article class="prose">` element. :fact[ivp8wl] :fact[spn4hj]
-- The attribute turns on the prose flourishes, which are off by default. See [Style rendered markdown](#style-rendered-markdown). :fact[ivp8wl]
+- The attribute turns on the prose flourishes on the public pages, which are off by default. See [Style rendered markdown](#style-rendered-markdown). :fact[ivp8wl]
+- The flourishes don't show in the editor preview. The preview wraps the entry in one element that carries `containerClass` and no other attribute. :fact[ivp8wl]
 9. Optional: To bring the status colors on-brand, follow [Rebrand the status colors](#rebrand-the-status-colors). :fact[f6k5cs]
 10. Run the checks in [Verify the theme](#verify-the-theme).
 - The scaffold's adapter already names `theme.css` and `site.css` in `editor.preview`. A re-skin leaves that member as it is. :fact[spn4hj]
@@ -202,19 +206,23 @@ export const cairn = defineAdapter({
 - Waymark's style guide panel and header read them. Neither the engine sheet nor `tokens.css` defaults these keys. :fact[18qj2u]
 7. In the theme's style sheet, set the two heading keys: `--font-weight-heading` in `@theme`, and `--cairn-heading-case` in the unlayered `:root` rule. :fact[p8hsnz]
 - The chrome's titles and the `prose.css` headings read both keys, so each key sets both kinds of heading. :fact[p8hsnz]
-8. In the page compositions, build each layout from the `composition.css` primitives, `.cairn-card`, `.cairn-band`, `.cairn-section`, `.cairn-hero`, and `.cairn-sidebar-layout`. :fact[ctognq]
+8. In the page compositions, build each layout from the `composition.css` primitives. :fact[ctognq]
+- The primitives are `.cairn-card`, `.cairn-band`, `.cairn-section`, `.cairn-hero`, and `.cairn-sidebar-layout`. :fact[ctognq]
+- The same file declares the page frame, `.cairn-site-shell` and `.cairn-site-main`. :fact[ctognq]
 - Each primitive exposes `--cairn-<primitive>-*` custom properties, such as `--cairn-card-padding`, for a per-instance override. :fact[ctognq]
 - Use `max-w-measure` or an arbitrary width there. Some chassis spacing keys shadow Tailwind's `max-w-*` sizes, so `max-w-2xl` compiles to about 4rem. :fact[gzw7os]
 - Center a container with `margin-inline: auto`. An unlayered `margin: 0 auto` overrides a Tailwind `mt-*` or `mb-*` utility on the same element. :fact[h1qxlq]
 9. In the new chrome, include a skip link: an `sr-only` anchor to `#main`, made visible on focus with `focus:not-sr-only focus:absolute`. :fact[nz87b3]
 - `<main id="main" tabindex="-1">` takes the focus. Activating the link then moves keyboard focus as well as the scroll position. :fact[nz87b3]
-10. In the new chrome, mount the theme toggle from the chassis's `theme-toggle.ts`, passing it the config in `src/theme/theme-names.ts`. :fact[i9pgd2]
+10. In the new chrome, build the theme toggle on the chassis's `theme-toggle.ts` functions, passing each the config in `src/theme/theme-names.ts`. :fact[i9pgd2]
+- The module exports functions, not a component. Waymark's `SiteHeader.svelte` builds its button on `resolveTheme` and `toggleThemeWithTransition`. :fact[i9pgd2]
 - With no `data-theme` set, `resolveTheme` reads the root's computed `color-scheme`. A dark-first theme then resolves dark with no edit to the page shell. :fact[i9pgd2]
 - If you rename the daisyUI themes, change `theme-names.ts`, the no-flash script in `src/app.html`, and the block names in `theme.css` together. `theme-names.test.ts` fails when they drift. :fact[i3rn6f]
 11. If the port adds or renames a compiled style sheet, then in `src/theme/cairn.config.ts`, name its `?url` import in `editor.preview.stylesheets`. :fact[spn4hj] :fact[gtg454]
 - See [the `preview` entry](../reference/core.md#preview-adapter-editor-member) for `containerClass` and the `?url` rule.
 12. Before you delete a chassis file, read its row in the dependents table under "Subtracting an element" in `src/chassis/README.md`. :fact[6oqyfi] :fact[kj37zz]
-- For example, `feed.ts` goes with its two feed routes. Removing `content.ts` means replacing its imports in six delivery routes in the same change. :fact[kj37zz]
+- For example, `feed.ts` goes with its two feed routes. Removing `content.ts` means replacing its imports in the same change. :fact[kj37zz]
+- `content.ts` is imported by six delivery routes and by the chassis's `feed.ts`, `public-routes.ts`, and `entry-data.ts`. :fact[kj37zz]
 13. Read [Style rendered markdown](#style-rendered-markdown), then run the checks in [Verify the theme](#verify-the-theme).
 
 ## Style rendered markdown
@@ -231,7 +239,7 @@ export const cairn = defineAdapter({
 
 *Has the reader run the public-scope audit rules, read a clean result, and confirm the editor preview.*
 
-- The three public-scope rules, `public-literals`, `theme-conformance`, and `theme-contrast`, ship in `cairn-audit`. On a cairn site the three rules are advisory: a finding doesn't change the exit code. :fact[o4ctu5] :fact[xv2ien]
+- The three public-scope rules, `public-literals`, `theme-conformance`, and `theme-contrast`, ship in `cairn-audit`. On a cairn site the three rules are advisory. A finding doesn't change the exit code unless the run passes `--fail-on advisory`. :fact[o4ctu5] :fact[xv2ien] :fact[52glgy]
 - `theme-contrast` reads the site's import chain and needs `daisyui` installed in the site. :fact[mzmvt8]
 - To verify the theme, run these checks in order:
 1. In the site directory, run the public-scope rules by name. A run of public rules alone needs no built admin style sheet. :fact[0nfxs2]
@@ -260,8 +268,8 @@ npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-con
 - Find the failed check's symptom in the following list.
 
 :::row
-**Symptom.** After a fill change, `theme-contrast` flags directive text or code highlighting.
-**Cause.** The theme overrides that status's ink, and the override no longer matches the new fill. :fact[ylmc9c] :fact[u893cs]
+**Symptom.** After a fill change, `theme-contrast` flags a status ink on its callout tint.
+**Cause.** The theme overrides that status's ink. The callout tint mixes from the new fill, and the unchanged ink no longer clears 4.5:1 on it. :fact[lqtwdt] :fact[u893cs]
 **Fix.** Retune the ink beside its fill, or delete the override so the derived ink follows. :fact[u893cs]
 :::
 

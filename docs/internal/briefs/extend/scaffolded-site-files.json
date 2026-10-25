@@ -222,7 +222,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The signups screen as a pattern, in [Add a custom admin screen](add-a-custom-admin-screen.md)",
+      "text": "Building a custom admin screen, in [Add a custom admin screen](add-a-custom-admin-screen.md)",
       "id": "no-claim"
     },
     {
@@ -272,6 +272,10 @@
     {
       "text": "The setup command writes the following tree, where `[engine]` marks a file the engine reads or writes, and `[gate]` marks a file a check reads that can fail the build or the CI run.",
       "id": "f:qlgggh"
+    },
+    {
+      "text": "The tree leaves out files no section discusses, such as `src/app.html` and the theme's test files.",
+      "id": "f:i3rn6f"
     },
     {
       "text": "The tree shows the entries the following sections cover and leaves out files no section discusses.",
@@ -395,7 +399,7 @@
       "id": "f:wnsv5x"
     },
     {
-      "text": "The two migration directories are covered under [Database migrations](#database-migrations).",
+      "text": "The migration directory is covered under [Database migrations](#database-migrations).",
       "id": "no-claim"
     },
     {
@@ -567,10 +571,6 @@
       "id": "f:n7t4bn"
     },
     {
-      "text": "`APP_DB`, a second D1 database for the signups screen",
-      "id": "f:n7t4bn"
-    },
-    {
       "text": "`EMAIL`, the Email Sending binding",
       "id": "f:n7t4bn"
     },
@@ -583,8 +583,11 @@
       "id": "f:n7t4bn"
     },
     {
-      "text": "Each D1 binding names its `migrations_dir`, so the site carries one migration directory per database.",
-      "id": "f:nv0ok0"
+      "text": "The config binds no second D1 database, so `AUTH_DB` is the only binding that names a `migrations_dir`.",
+      "id": [
+        "f:n7t4bn",
+        "f:nv0ok0"
+      ]
     },
     {
       "text": "The `observability.enabled` setting is `true`, so Workers Logs records the Worker's logs.",
@@ -595,7 +598,14 @@
       "id": "f:2qnqkm"
     },
     {
-      "text": "The site keeps two migration directories because it binds two D1 databases, and `wrangler d1 migrations apply` walks one directory per database.",
+      "text": "The site keeps one migration directory because it binds one D1 database.",
+      "id": [
+        "f:n7t4bn",
+        "f:gepykz"
+      ]
+    },
+    {
+      "text": "A database the site adds takes a directory of its own, because `wrangler d1 migrations apply` walks one directory per database.",
       "id": "f:nv0ok0"
     },
     {
@@ -616,22 +626,6 @@
     {
       "text": "The second serves a site that wires `createD1AuditSink`, as [Wire the audit sink](add-a-custom-admin-screen.md#wire-the-audit-sink) in Add a custom admin screen describes.",
       "id": "f:gepykz"
-    },
-    {
-      "text": "This directory holds `0000_signups.sql`, the `signups` table with `id`, `name`, and `email` columns behind `/admin/signups`.",
-      "id": "f:nv0ok0"
-    },
-    {
-      "text": "The `migrations_dir` of `APP_DB` points at it, because a directory shared with `migrations/` would apply each schema to both databases.",
-      "id": "f:nv0ok0"
-    },
-    {
-      "text": "The signups table backs the one custom admin screen among the scaffold's routes.",
-      "id": "f:onqm6k"
-    },
-    {
-      "text": "That screen reads the table only after `migrations-app/` is applied.",
-      "id": "f:onqm6k"
     },
     {
       "text": "The server hook in `src/hooks.server.ts` installs the auth guard over `/admin`, and the routes split into that admin mount, a prerendered public site in the `(site)` group, and endpoints at the root.",
@@ -674,19 +668,14 @@
       "id": "f:t2t5lx"
     },
     {
-      "text": "Those are the only files directly under `admin/` besides `signups/`, and [The canonical admin mount](../reference/admin-routes.md) documents the pairs.",
-      "id": "f:t2t5lx"
+      "text": "Those are the only files directly under `admin/` besides `+error.svelte`, and [The canonical admin mount](../reference/admin-routes.md) documents the pairs.",
+      "id": [
+        "f:t2t5lx",
+        "f:qtm9y2"
+      ]
     },
     {
-      "text": "The `signups/` route is a custom screen whose load calls `requireAccess` and reads the `signups` table through `env.APP_DB` from `cloudflare:workers`, and it fails closed with a 500 when the binding is absent.",
-      "id": "f:onqm6k"
-    },
-    {
-      "text": "Its form actions are `createSectionAction` wrappers, and its table exists only after `0000_signups.sql` in `migrations-app/` is applied to `APP_DB`.",
-      "id": "f:onqm6k"
-    },
-    {
-      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md) covers the pattern the screen follows.",
+      "text": "[Add a custom admin screen](add-a-custom-admin-screen.md) covers a screen you add beside them.",
       "id": "no-claim"
     },
     {

@@ -86,8 +86,15 @@
       "id": "no-claim"
     },
     {
-      "text": "It declares a webmaster role, and only webmasters and owners reach the media library and the scaffold's signups screen.",
-      "id": "f:onqm6k"
+      "text": "It declares a webmaster role, and only webmasters and owners reach the media library and the signups screen of the repository's example site, `examples/showcase`.",
+      "id": [
+        "f:onqm6k",
+        "f:qlgggh"
+      ]
+    },
+    {
+      "text": "On your site, one of your own custom screens takes the signups screen's place.",
+      "id": "no-claim"
     },
     {
       "text": "A developer arrives here to gate a custom admin screen's route, to close an engine screen such as the media library to most editors, or to make the map admit named roles alone.",
@@ -140,7 +147,7 @@
       ]
     },
     {
-      "text": "A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the scaffold's signups screen in `src/routes/admin/signups/`.",
+      "text": "A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the example site's signups screen.",
       "id": "f:onqm6k"
     },
     {
@@ -276,7 +283,7 @@
       "id": "f:qlgggh"
     },
     {
-      "text": "The example replaces the scaffold's owner-only `/admin/signups` rule, so the webmaster role reaches the signups screen.",
+      "text": "The example site's map gives `/admin/signups` an owner-only rule, and the example replaces it so the webmaster role reaches the signups screen.",
       "id": "f:3z1uxv"
     },
     {
@@ -353,10 +360,11 @@
       ]
     },
     {
-      "text": "The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the sign-in page and its auth endpoints.",
+      "text": "The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the two pages of the sign-in flow, `/admin/login` and `/admin/auth/confirm`.",
       "id": [
         "f:hwffph",
-        "f:9xthnq"
+        "f:9xthnq",
+        "f:j5v0gn"
       ]
     },
     {
@@ -378,8 +386,12 @@
       "id": "f:4xrx5f"
     },
     {
-      "text": "A webmaster editor then signs in and is refused everywhere, because the guard's pair does not hold that role.",
-      "id": "f:hwffph"
+      "text": "A webmaster editor then signs in at `none` capability, because the guard's pair does not hold that role, and the engine's content and roster screens refuse the session.",
+      "id": [
+        "f:hwffph",
+        "f:zjglk8",
+        "f:4673n6"
+      ]
     },
     {
       "text": "The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's other options.",
@@ -420,7 +432,7 @@
       ]
     },
     {
-      "text": "The example needs no edit here, since the scaffold's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.",
+      "text": "The example needs no edit here, since the example site's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.",
       "id": "f:onqm6k"
     },
     {
@@ -622,7 +634,7 @@
       "id": "f:altcjp"
     },
     {
-      "text": "A `navLayout` site entry, such as the one for the scaffold's signups screen, is gated only when its href matches a key.",
+      "text": "A `navLayout` site entry, such as the example site's Signups entry, is gated only when its href matches a key.",
       "id": [
         "f:altcjp",
         "f:6a32oy",
@@ -743,6 +755,14 @@
         "f:8ciz2s",
         "f:8anql1"
       ]
+    },
+    {
+      "text": "The checks name the example site's signups screen at `/admin/signups`.",
+      "id": "f:onqm6k"
+    },
+    {
+      "text": "On your site, open the route you gated in its place, and run its actions in place of the signups add and delete, skipping the delete check on a route with no owner-only action.",
+      "id": "f:onqm6k"
     },
     {
       "text": "To verify the map, run these checks in order:",

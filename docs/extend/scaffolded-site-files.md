@@ -59,7 +59,7 @@ Separate pages cover the following related work:
 - The by-hand build of the same tree, in
   [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md)
 - Changes to the theme and the chassis, in [Theme your public site](theme-your-public-site.md)
-- The signups screen as a pattern, in [Add a custom admin screen](add-a-custom-admin-screen.md)
+- Building a custom admin screen, in [Add a custom admin screen](add-a-custom-admin-screen.md)
 - The wiring of each delivery route, in [Build the public routes](build-the-public-routes.md)
 - The media configuration behind the `MEDIA_BUCKET` binding, in
   [Configure media](configure-media.md)
@@ -83,6 +83,7 @@ still carry a contract that engine code or a gate reads, and the file tree marks
 
 The setup command writes the following tree, where `[engine]` marks a file the engine reads or
 writes, and `[gate]` marks a file a check reads that can fail the build or the CI run.
+The tree leaves out files no section discusses, such as `src/app.html` and the theme's test files.
 
 ```text
 .
@@ -94,7 +95,6 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 │   └── workflows/
 │       └── check.yml             [gate]
 ├── migrations/                   [engine]
-├── migrations-app/
 ├── scripts/
 │   └── dev.mjs
 ├── src/
@@ -186,7 +186,7 @@ The files `LICENSE`, `README.md`, `.prettierignore`, `.prettierrc`, `tsconfig.js
 generated `wrangler types` output that `src/app.d.ts` references. The `scripts/` directory holds the
 `dev.mjs` that the `dev` script runs. The `src/lib/` directory is imported through `#lib`. It holds
 `log.ts`, which creates the site's logger with [`createLogger`](../reference/log.md#createlogger)
-for event names the site defines. The two migration directories are covered under [Database
+for event names the site defines. The migration directory is covered under [Database
 migrations](#database-migrations).
 
 ## Configuration files
@@ -250,13 +250,12 @@ flag is a dev-only opt-in.
 The Worker's config declares the following bindings and one variable:
 
 - `AUTH_DB`, the D1 auth store
-- `APP_DB`, a second D1 database for the signups screen
 - `EMAIL`, the Email Sending binding
 - `MEDIA_BUCKET`, the R2 bucket that [Configure media](configure-media.md) sets up
 - `PUBLIC_ORIGIN`, a plain variable
 
-Each D1 binding names its `migrations_dir`, so the site carries one migration directory per
-database.
+The config binds no second D1 database, so `AUTH_DB` is the only binding that names a
+`migrations_dir`.
 
 The `observability.enabled` setting is `true`, so Workers Logs records the Worker's logs. The
 `assets.not_found_handling` setting is `"none"`, and [Themed 404 page](#themed-404-page) explains
@@ -264,8 +263,9 @@ why.
 
 ## Database migrations
 
-The site keeps two migration directories because it binds two D1 databases, and
-`wrangler d1 migrations apply` walks one directory per database.
+The site keeps one migration directory because it binds one D1 database. A database the site adds
+takes a directory of its own, because `wrangler d1 migrations apply` walks one directory per
+database.
 
 ### `migrations/`
 
@@ -276,14 +276,6 @@ pair, as [Restrict admin access](restrict-admin-access.md) describes. The second
 wires `createD1AuditSink`, as
 [Wire the audit sink](add-a-custom-admin-screen.md#wire-the-audit-sink) in Add a custom admin screen
 describes.
-
-### `migrations-app/`
-
-This directory holds `0000_signups.sql`, the `signups` table with `id`, `name`, and `email` columns
-behind `/admin/signups`. The `migrations_dir` of `APP_DB` points at it, because a directory shared
-with `migrations/` would apply each schema to both databases. The signups table backs the one custom
-admin screen among the scaffold's routes. That screen reads the table only after `migrations-app/`
-is applied.
 
 ## Routes and the server hook
 
@@ -306,7 +298,6 @@ src/
     │   └── +page.svelte
     ├── admin/                    [engine]
     │   ├── [...path]/
-    │   ├── signups/
     │   ├── +layout.server.ts
     │   └── +layout.svelte
     ├── feed.json/
@@ -333,14 +324,9 @@ access](restrict-admin-access.md) adds one.
 
 The admin mount is one catch-all pair, `[...path]/+page.server.ts` and `+page.svelte`, beside the
 shared layout pair, `+layout.server.ts` and `+layout.svelte`. Those are the only files directly
-under `admin/` besides `signups/`, and [The canonical admin mount](../reference/admin-routes.md)
-documents the pairs.
-
-The `signups/` route is a custom screen whose load calls `requireAccess` and reads the `signups`
-table through `env.APP_DB` from `cloudflare:workers`, and it fails closed with a 500 when the
-binding is absent. Its form actions are `createSectionAction` wrappers, and its table exists only
-after `0000_signups.sql` in `migrations-app/` is applied to `APP_DB`.
-[Add a custom admin screen](add-a-custom-admin-screen.md) covers the pattern the screen follows.
+under `admin/` besides `+error.svelte`, and [The canonical admin mount](../reference/admin-routes.md)
+documents the pairs. [Add a custom admin screen](add-a-custom-admin-screen.md) covers a screen you add
+beside them.
 
 ### `src/routes/(site)/`
 

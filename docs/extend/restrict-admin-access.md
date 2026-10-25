@@ -15,7 +15,8 @@ Under `npm run dev`, it's `devBackendHandle`.
 The steps that follow declare a role vocabulary and an access map and give both to the adapter, which hands the map to both readers.
 They then enforce the map on your screens' reads and writes and verify each role's reach.
 One example runs through every step.
-It declares a webmaster role, and only webmasters and owners reach the media library and the scaffold's signups screen.
+It declares a webmaster role, and only webmasters and owners reach the media library and the signups screen of the repository's example site, `examples/showcase`.
+On your site, one of your own custom screens takes the signups screen's place.
 
 A developer arrives here to gate a custom admin screen's route, to close an engine screen such as the media library to most editors, or to make the map admit named roles alone.
 [Make the map exhaustive](#make-the-map-exhaustive) covers that case.
@@ -34,7 +35,7 @@ The steps need a cairn site with a custom admin screen, and the checks need a de
 
 - A site that `create-cairn-site` scaffolded, or a hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
   Neither has a `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.
-- A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the scaffold's signups screen in `src/routes/admin/signups/`.
+- A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the example site's signups screen.
   [Add a custom admin screen](add-a-custom-admin-screen.md) builds another.
 - A deployed site, an email address for a test editor besides the owner's, and a second browser to sign in as that editor.
   The setup command deploys a scaffolded site, and [Move the site to production](add-cairn-to-a-sveltekit-app.md#move-the-site-to-production) deploys a hand-built one.
@@ -93,7 +94,7 @@ export const access = defineAccess(roles, {
 });
 ```
 
-The example replaces the scaffold's owner-only `/admin/signups` rule, so the webmaster role reaches the signups screen.
+The example site's map gives `/admin/signups` an owner-only rule, and the example replaces it so the webmaster role reaches the signups screen.
 
 Restricting `media` also restricts the inline image picker in every image-bearing concept's editor, since the picker calls the same access-gated endpoint.
 An `editor` session can therefore no longer insert an image into a post.
@@ -117,11 +118,11 @@ The adapter takes `roles` and `access` as optional members.
 The engine's screens, their write actions, and the sidebar read the adapter's `access`, and while it is unset they stay open to every editor-capability session.
 The scaffold's adapter declares no `access` member, so a scaffolded site's engine screens stay open until the adapter carries the map.
 
-The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the sign-in page and its auth endpoints.
+The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the two pages of the sign-in flow, `/admin/login` and `/admin/auth/confirm`.
 It reads the map from the `runtime` that the hooks file passes it, as `createAuthGuard({ runtime })`.
 It runs on every guarded request and attaches the map to `locals.cairnAccess`, which is why `requireAccess` takes no map argument.
 When the adapter declares no `roles`, the guard resolves every session against the implicit `owner` and `editor` pair.
-A webmaster editor then signs in and is refused everywhere, because the guard's pair does not hold that role.
+A webmaster editor then signs in at `none` capability, because the guard's pair does not hold that role, and the engine's content and roster screens refuse the session.
 The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's other options.
 
 To pass the map to the adapter, follow this step:
@@ -147,7 +148,7 @@ export const cairn = defineAdapter({
 ## Enforce the map on your routes
 
 Your routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.
-The example needs no edit here, since the scaffold's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.
+The example needs no edit here, since the example site's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.
 Its destructive `remove` action also sets `ownerOnly: true`.
 The steps that follow apply to a route you add.
 
@@ -218,7 +219,7 @@ The sidebar reads the adapter's map through the same check the routes use.
 One function, `canReach`, decides route enforcement and the visibility of every keyed entry.
 The roster's entry stays owner-only.
 An engine screen's entry follows `canReach` directly.
-A `navLayout` site entry, such as the one for the scaffold's signups screen, is gated only when its href matches a key.
+A `navLayout` site entry, such as the example site's Signups entry, is gated only when its href matches a key.
 A gated entry shows to the roles that key admits and to owners.
 
 An href that no key matches stays visible to every editor-capability role, while `requireAccess` and `createSectionAction` refuse the route behind it.
@@ -277,6 +278,8 @@ A demotion therefore takes effect at once, and one test editor can cycle through
 ## Verify each role's reach
 
 On the deployed site, the composition warning names the targets the map leaves open, and each role meets a refusal wherever the map excludes it.
+The checks name the example site's signups screen at `/admin/signups`.
+On your site, open the route you gated in its place, and run its actions in place of the signups add and delete, skipping the delete check on a route with no owner-only action.
 
 To verify the map, run these checks in order:
 

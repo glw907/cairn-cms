@@ -283,14 +283,16 @@ pages:
     type: task guide
     job: Make one markdown component interactive on the public site by hydrating it as an island, while its static fallback still serves readers without JavaScript. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - An island as a component declared with hydrate, eager or visible, and build() output as the fallback.
-      - Register it in rendering.islands; the declaration-time mismatch check.
-      - Call hydrateIslands from afterNavigate, gated on a hasIslands flag with a dynamic import so a static site ships no runtime.
-      - 'Props: typed from declared attributes, untrusted, unsanitized by the runtime.'
-      - 'Runtime behavior: teardown on navigation, root scoping, failure isolation, fallback restore on a throwing mount.'
+      - An island as a component declared with hydrate, set to true or 'visible', and build() output as the fallback.
+      - A scaffolded site's short path, since its tree already carries the registry, the adapter member, the root load, and the layout call.
+      - Register it in rendering.islands through a lean registry module; the declaration-time mismatch check.
+      - On a hand-built site, call hydrateIslands from afterNavigate, gated on a hasIslands flag from the root server load, with dynamic imports of the runtime and the registry module, never the adapter.
+      - 'Props: typed from declared attributes, untrusted, and passed unsanitized; the do and the don''t, linked to the islands reference''s contract.'
+      - 'Runtime behavior in one line (teardown on navigation, root scoping, failure isolation, fallback restore), linked to the islands reference.'
       - Verify on the public page, since the sandboxed preview frame always shows the fallback.
     outOfScope:
       - Declaring the component itself (write-a-markdown-component).
+      - The runtime's full contract and the boundary markup (the islands reference, docs/reference/islands.md).
   - path: docs/extend/add-a-custom-admin-screen.md
     slug: add-a-custom-admin-screen
     title: Add a custom admin screen

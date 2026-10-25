@@ -1194,11 +1194,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:4kmm3i` The island boundary is a `<div>` with `data-cairn-island` (the directive name), `data-cairn-props`
   (JSON.stringify'd declared scalar attributes; number/boolean fields serialize as JSON
   number/boolean, everything else stays the literal string), and `data-cairn-hydrate="visible"`
-  present only on a `'visible'` island. Source: `src/lib/render/rehype-dispatch.ts:122-137`
-  (`islandBoundary`: `{ type: 'element', tagName: 'div', properties: { dataCairnIsland: name,
-  dataCairnProps: JSON.stringify(serializeIslandProps(...)) } }`, plus `dataCairnHydrate =
-  'visible'` only `if (def.hydrate === 'visible')`) and `:107-120` (`serializeIslandProps`
-  coerces only declared `number` fields via `Number(value)`, everything else stays as-is).
+  present only on a `'visible'` island. Source: `src/lib/render/rehype-dispatch.ts:124-139`
+  (`islandBoundary`), `src/lib/render/rehype-dispatch.ts:108-122` (`serializeIslandProps`).
   [verified]
 - `f:j390f9` Island props are HTML-attribute-escaped on emit and `JSON.parse`-d in a try/catch on the client,
   safe against breakout only because the value never enters a script context; an island component

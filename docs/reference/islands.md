@@ -30,29 +30,50 @@ declare function hydrateIslands(islands: IslandRegistry, root?: ParentNode): voi
 ```
 
 Mount each island in `root` over its server-rendered fallback. Call it from a root layout on
-`afterNavigate`, so it runs on first load and after every client-side navigation:
+`afterNavigate`, so it runs on first load and after every client-side navigation. Keep the island
+registry in a module of its own, and import that module on the client, never the adapter module:
+the adapter also carries the renderer, the icon set, and the media manifest, so importing it in a
+layout's client script ships all of them to every public page. A server load reports whether the
+registry holds any island:
 
+```ts
+// src/routes/+layout.server.ts
+import type { LayoutServerLoad } from './$types';
+import { siteIslands } from '#theme/islands/registry.js';
+
+export const load: LayoutServerLoad = () => ({
+  hasIslands: Object.keys(siteIslands).length > 0,
+});
+```
+
+The root layout imports the runtime and the registry only when that flag is set:
+
+<!-- snippet-check-skip: the dynamic import names the site's registry module, which the check cannot stub -->
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { cairn } from '#theme/cairn.config.js';
+  import type { LayoutData } from './$types';
+  import type { Snippet } from 'svelte';
 
-  let { children } = $props();
+  let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
   afterNavigate(async () => {
-    const islands = cairn.rendering.islands;
-    if (!islands || Object.keys(islands).length === 0) return;
-    const { hydrateIslands } = await import('@glw907/cairn-cms/islands');
-    hydrateIslands(islands);
+    if (!data.hasIslands) return;
+    const [{ hydrateIslands }, { siteIslands }] = await Promise.all([
+      import('@glw907/cairn-cms/islands'),
+      import('#theme/islands/registry.js'),
+    ]);
+    hydrateIslands(siteIslands);
   });
 </script>
 
 {@render children()}
 ```
 
-The gate on a non-empty registry keeps the dynamic import out of a static site's bundle, so a site
-with no islands ships none of this code.
+The layout returns before both dynamic imports when the flag is false, so a site with no islands
+never requests the runtime or the registry module. The adapter module imports the same registry for `rendering.islands`, so the two
+stay one map.
 
 `hydrateIslands` is idempotent across navigation. It tears down the previous pass before it runs,
 unmounting live instances and disconnecting any pending observers, so a second call over the same DOM

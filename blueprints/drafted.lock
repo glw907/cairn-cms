@@ -224,6 +224,21 @@ pages:
             read-the-structured-logs: sha256:1f28b328ce7bdf9e37e57c6a7d2079a5ec33fec7198e59a58eb187de971880d7
             see-also: sha256:dc24301d5774787bac12189ee9a1e82c0e53355824b2469b07aafd8af9655f5e
             site-config-events: sha256:2384b4a46133fd98483db72b0c2fb228e4e6f93f531ca656bf9a0b915e67dca2
+    docs/extend/define-an-adapter-and-schema.md:
+        page: 53424d261f6e799952c34688d6e750a1835c2218
+        blueprint: b37d50632c6a62728ff226d1e7288df653e6cf70
+        sections:
+            _intro: sha256:5cf68063fc3831b421de8c5e663216954695504b4861e4229cfdf781d1abb6e5
+            add-a-concept: sha256:853f923b073e7ec94ce3966d78c619cc45cacdf397e8b4a6f76928c6d7abecae
+            add-field-checks: sha256:a19518f02a3b9413c215ff96bf2a1812244216a6bdb5033b77c69a605f7dac4b
+            before-you-begin: sha256:97df1069f0d5133626b4767cd3c075397b7057107fddc38a1302aa2fad1b9929
+            mark-the-tag-field: sha256:146018324c6c50767965f17836855c9662b8d176080a99cf1d09b71e8008b7ef
+            resolve-a-failed-check: sha256:8f926e7f5969db321cdaa4cb89fc5d46a6d92b7ec96f3f921fe6b8786b15afcc
+            see-also: sha256:2b632abfb3f6681709913bf958c130783f9b871316236424f5cfe66f38effe2e
+            set-summary-fields-and-row-labels: sha256:e379e91f19095faad1ad19d6ca25220e0b68269a5073122347073b5f53df549e
+            set-the-permalink-and-date-prefix: sha256:6d7a278099454e87622783428dbcea7791aff48fc9f097d5e3a5964f90869db4
+            start-from-the-adapter-module: sha256:ea627c1af444dac87309c375965a7533ce19b664d49c5b2327603be7c9cb16f9
+            verify-the-declaration: sha256:b6849016e1f8cc54d7ed51935213160823f895d907ebf7ebc1a3f9bba2ae5a9b
     docs/extend/replace-magic-links-with-cloudflare-access.md:
         page: 523a620f6acb5a50234f23fa11be13e6b2c1c5f7
         blueprint: 39d985b5306add3ea92cc95226d5fc20aec5beff

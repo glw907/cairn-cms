@@ -11,13 +11,13 @@ type Actor string
 
 // The four Actor values a Fix declares.
 const (
-	// ActorOperator is the site's own operator: the person running this tool, with access to the
+	// ActorOperator is the site's operator: the person running this tool, with access to the
 	// site's Cloudflare dashboard, GitHub organization, and keyring.
 	ActorOperator Actor = "operator"
-	// ActorDeveloper is whoever maintains the site's own code: a config change, a dependency
+	// ActorDeveloper is whoever maintains the site's code: a config change, a dependency
 	// bump, or a build fix that only a commit can carry out.
 	ActorDeveloper Actor = "developer"
-	// ActorProviderConsole is a provider's own support channel, for a fault neither the operator
+	// ActorProviderConsole is a provider's support channel, for a fault neither the operator
 	// nor the developer can clear from outside it.
 	ActorProviderConsole Actor = "provider-console"
 	// ActorRegistrar is the domain's registrar, for a fault only a registrar-side change clears
@@ -27,12 +27,12 @@ const (
 
 // Fix is one fix line the fix table carries for one declared spine.Condition or spine.Code, using
 // the grammar tool/docs/design/copy-standard.md's remedy map defines, re-homed here from the
-// mockups' own remedy.go sketch.
+// mockups' remedy.go sketch.
 type Fix struct {
 	// Text is the imperative fix line itself, catalogue grammar 2.5: one clause naming the
 	// action and where to take it, capital initial, final period.
 	Text string
-	// Anchor is the heading anchor in docs/admin/is-it-working.md this fix's own doc section
+	// Anchor is the heading anchor in docs/admin/is-it-working.md this fix's doc section
 	// lives at, or "" when the page carries no matching heading yet. "" is legal: a fix line can
 	// exist before the checklist page grows the heading it points at.
 	Anchor string
@@ -182,7 +182,7 @@ var fixesByCode = map[spine.Code]Fix{
 // repair.
 //
 // The cred-missing line names no variable, because one entry covers both tokens and this table
-// does not know which one the run could not find. The renderer names it from the run's own
+// does not know which one the run could not find. The renderer names it from the run's
 // credential state, beside the entry. None of the three is in the catalogue.
 var fixesByReason = map[spine.ReasonCode]Fix{
 	spine.ReasonCredMissing: {
@@ -220,7 +220,7 @@ func fixForCode(c spine.Code) (Fix, bool) {
 	return fix, ok
 }
 
-// FixFor returns the fix line an Outcome's own failure identity resolves to: its Condition when
+// FixFor returns the fix line an Outcome's failure identity resolves to: its Condition when
 // it names one, its Code otherwise. An outcome with neither, or with an identity the table does
 // not carry a line for, returns false.
 func FixFor(o spine.Outcome) (Fix, bool) {
@@ -233,9 +233,9 @@ func FixFor(o spine.Outcome) (Fix, bool) {
 	return Fix{}, false
 }
 
-// FixLines returns every fix line's own operator-facing strings, Text and, when it carries one,
+// FixLines returns every fix line's operator-facing strings, Text and, when it carries one,
 // Command: `cmd/copylist` calls this to build `make copy-list`'s output without depending on
-// either map's own iteration order (the caller sorts).
+// either map's iteration order (the caller sorts).
 func FixLines() []string {
 	lines := make([]string, 0, 2*(len(fixesByCondition)+len(fixesByCode)))
 	lines = appendFixLines(lines, fixesByCondition)

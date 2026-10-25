@@ -39,7 +39,7 @@ func TestGlyphWidthParity(t *testing.T) {
 	})
 }
 
-// TestEllipsisIsNeverATilde is criterion 10's own named regression: a tilde reads as vi filler
+// TestEllipsisIsNeverATilde is criterion 10's named regression: a tilde reads as vi filler
 // and collides with the rule glyph.
 func TestEllipsisIsNeverATilde(t *testing.T) {
 	if unicodeGlyphs.Ellipsis == "~" || asciiGlyphs.Ellipsis == "~" {

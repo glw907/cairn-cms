@@ -1,7 +1,7 @@
 // Chapter 3's deploy-config reconciliation: diff the two tool-owned files (wrangler.jsonc,
 // src/theme/cairn.config.ts) against the repo's current head and, when either differs, commit
-// both in one Git Data commit built on that head's own tree (base_tree). A full-tree write
-// (pushScaffold's own shape, right for a first push) would silently delete everything the admin
+// both in one Git Data commit built on that head's tree (base_tree). A full-tree write
+// (pushScaffold's shape, right for a first push) would silently delete everything the admin
 // has added since; base_tree is what keeps this reconcile from ever touching another file.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -10,14 +10,14 @@ import { chapterError } from './catalogue.mjs';
 
 /**
  * The commit message reconcileRepo writes. Never read back as an idempotence sentinel: the
- * admin's own commits move HEAD after a reconcile lands, so a HEAD-message check would already
+ * admin's commits move HEAD after a reconcile lands, so a HEAD-message check would already
  * be wrong on the very next run. The diff itself is the idempotence.
  */
 export const RECONCILE_COMMIT_MESSAGE = 'Reconcile deploy config from create-cairn-site';
 
 /**
  * The two files this chapter owns; every other repo file is left untouched by its commit.
- * Exported, and imported directly by chapter3.mjs's own hash-gate (`reconciledConfigHash`),
+ * Exported, and imported directly by chapter3.mjs's hash-gate (`reconciledConfigHash`),
  * rather than duplicated there: a third tool-owned file added to this list without a matching
  * update at that gate would silently go unnoticed by it, so this constant is the ONE place either
  * module reads it from (T4c review finding B5).

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// erroringWriter always fails, so writeJSONPayload's own error return is exercised without a
+// erroringWriter always fails, so writeJSONPayload's error return is exercised without a
 // real I/O failure.
 type erroringWriter struct{}
 

@@ -283,7 +283,7 @@ export const interactiveContrast: RenderedRule = {
         tier: 'error',
         selector: candidate.selector,
         message:
-          `text "${candidate.text}" reads at contrast ${ratio.toFixed(2)} against its own composited ` +
+          `text "${candidate.text}" reads at contrast ${ratio.toFixed(2)} against its composited ` +
           `background ${describeColor(ground.color)} (floor ${RATIO_FLOOR}); color ${candidate.color}`,
       });
     }

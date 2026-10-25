@@ -10,7 +10,7 @@ const DIR = '/tmp/fixture-site';
 
 /**
  * Plausible params for every wait-kind catalogue code, enough to build a real row. This is the
- * completeness list Task 5b's own tests are checked against: a code with no entry here fails the
+ * completeness list Task 5b's tests are checked against: a code with no entry here fails the
  * completeness test below rather than silently rendering an incomplete page.
  */
 const PARK_FIXTURES = {
@@ -51,20 +51,20 @@ test('park-page output equality: the rendered page carries the exact printed mes
 
     assert.match(page, /<!doctype html>/, `${code}: expected a full document`);
 
-    // The split itself is the module UNDER TEST's own export (park-pages.mjs's messageBody), not
+    // The split itself is the module UNDER TEST's export (park-pages.mjs's messageBody), not
     // a second copy of the same logic kept here: a bug in the real split would move both this
     // computed value and the page together, so a local reimplementation would never see it move.
     const body = messageBody(printed.message);
     assert.ok(
       page.includes(escapeHtml(body)),
-      `${code}: park page is missing the printed row's own message`,
+      `${code}: park page is missing the printed row's message`,
     );
     assert.ok(
       page.includes(`Next: ${escapeHtml(printed.catalogue.next)}`),
-      `${code}: park page is missing the printed row's own exact Next: line`,
+      `${code}: park page is missing the printed row's exact Next: line`,
     );
 
-    // messageBody's own output is everything ABOVE the Next: line, a prefix of the full printed
+    // messageBody's output is everything ABOVE the Next: line, a prefix of the full printed
     // text by construction. Checking that prefix and the Next: line separately (above) does not
     // by itself prove nothing was dropped IN BETWEEN; reassembling the two must reproduce the
     // catalogue row's full printed text exactly, over the WHOLE message, not just its prefix.

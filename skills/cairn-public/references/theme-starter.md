@@ -61,7 +61,7 @@ The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a t
 - `--tracking-tight` and `--tracking-eyebrow`
 - `--container-measure` and `--container-measure-wide`
 
-A theme sets a defaulted key only to change its value. Redeclare it in the theme's own `@theme` block, after the `tokens.css` import.
+A theme sets a defaulted key only to change its value. Redeclare it in the theme's `@theme` block, after the `tokens.css` import.
 
 `--cairn-heading-case` is defaulted too, but as a plain role in a lowest layer rather than in `@theme`, since `text-transform` has no Tailwind namespace. The chassis sets it to `none`. A theme overrides it in each daisyUI block, or in its own `:root`, and leaves it out to keep headings as authored.
 

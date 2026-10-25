@@ -7,7 +7,7 @@ import { buildManifest, manifestFormHtml, manifestTarget, runManifestFlow } from
 /**
  * Read the manifest form served at the loopback's root and pull the `state` nonce out of its
  * action URL, the way a real browser carrying the form to GitHub (and GitHub echoing it back on
- * the redirect) would, rather than reading runManifestFlow's own nonce out of band.
+ * the redirect) would, rather than reading runManifestFlow's nonce out of band.
  * @param {string} loopbackUrl the loopback's base URL
  * @returns {Promise<string | null>} the state nonce, or null when the form carries none
  */
@@ -265,7 +265,7 @@ test('runManifestFlow: a given loopback is reused, not closed, and stays open fo
     dir: '/tmp/alpine-club',
     loopback,
     openBrowser: async (url) => {
-      assert.equal(url, loopback.url, 'the given loopback\'s own URL must be what opens');
+      assert.equal(url, loopback.url, 'the given loopback\'s URL must be what opens');
       setTimeout(async () => {
         const state = await readManifestFormState(url);
         fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
@@ -346,7 +346,7 @@ test('runManifestFlow: a mismatched state on the /manifest redirect throws, nami
         org: undefined,
         dir: '/tmp/alpine-club',
         openBrowser: async (url) => {
-          // Bypass reading the served form's own nonce, as an attacker who can merely reach this
+          // Bypass reading the served form's nonce, as an attacker who can merely reach this
           // loopback (but never saw the real form) would.
           setTimeout(() => {
             fetch(`${url}/manifest?code=goodcode&state=tampered-value`).catch(() => {});

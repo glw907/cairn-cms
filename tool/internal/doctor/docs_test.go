@@ -10,7 +10,7 @@ import (
 )
 
 // referenceDir is where the published pages this package is pinned to live, relative to the
-// repository root. They sit in the engine's own reference arm, which the npm tarball carries.
+// repository root. They sit in the engine's reference arm, which the npm tarball carries.
 const referenceDir = "docs/reference"
 
 // readPage reads one published page under referenceDir, resolving it through
@@ -34,7 +34,7 @@ func readPage(t *testing.T, name string) string {
 // Both are read from checks rather than from a literal list, so a check added or renamed
 // without its docs fails here.
 //
-// It lives in this package rather than beside internal/render's own freeze-list test because
+// It lives in this package rather than beside internal/render's freeze-list test because
 // internal/doctor imports internal/render for DoctorSchemaVersion, which makes a render test
 // file importing this package an import cycle Go rejects.
 func TestBothPublishedPagesNameEveryCheckID(t *testing.T) {

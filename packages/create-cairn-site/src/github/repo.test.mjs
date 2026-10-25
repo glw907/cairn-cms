@@ -7,7 +7,7 @@ import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { createRepo, verifyInstallationCovers, pushScaffold, TOOL_COMMIT_MESSAGE } from './repo.mjs';
 import { scaffold } from '../scaffold.mjs';
 
-/** Seed one installation covering `fake-admin`, the fake's own hardcoded /user/repos owner. */
+/** Seed one installation covering `fake-admin`, the fake's hardcoded /user/repos owner. */
 function seedInstallation(github) {
   github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
 }
@@ -52,7 +52,7 @@ async function fixtureDirWithGitignore(t) {
 
 /**
  * A minimal but real wrangler.jsonc, carrying every string nameWranglerResources targets. Mirrors
- * scaffold.test.mjs's own WRANGLER_JSONC_FIXTURE.
+ * scaffold.test.mjs's WRANGLER_JSONC_FIXTURE.
  */
 const WRANGLER_JSONC_FIXTURE = `{
   "name": "cairn-showcase",
@@ -71,7 +71,7 @@ const WRANGLER_JSONC_FIXTURE = `{
 
 /**
  * Build a fixture the real `scaffold()` can copy from: the `src/theme` files applySubstitutions
- * expects, and the dot-free `gitignore` name bake-template.mjs's own rename-for-packing produces,
+ * expects, and the dot-free `gitignore` name bake-template.mjs's rename-for-packing produces,
  * so `scaffold()` runs end to end against it rather than against a hand-authored scaffold.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture template's absolute path
@@ -93,7 +93,7 @@ async function templateFixture(t) {
 
 /**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, mirroring
- * scaffold.test.mjs's own helper, so a real `scaffold()` run under test saves its site record
+ * scaffold.test.mjs's helper, so a real `scaffold()` run under test saves its site record
  * there rather than in a developer's `~/.config/cairn/sites`.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the state directory's absolute path
@@ -314,7 +314,7 @@ test('pushScaffold: threads a non-"main" default branch through every ref path, 
   assert.ok(!gitEntry.refs.has('heads/main'), 'heads/main must never be created for a trunk-default repo');
 });
 
-test('pushScaffold: honors the scaffold\'s own .gitignore, shipping neither ignored files nor ignored directories', async (t) => {
+test('pushScaffold: honors the scaffold\'s .gitignore, shipping neither ignored files nor ignored directories', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
   pointAtFake(t, github);
@@ -359,7 +359,7 @@ test('pushScaffold: honors the .gitignore a real scaffold() run writes, not just
   });
 
   // Local material a resumed run's `npm install`/`npm run dev` would leave behind, the same shape
-  // fixtureDirWithGitignore writes above, layered onto scaffold()'s own real .gitignore.
+  // fixtureDirWithGitignore writes above, layered onto scaffold()'s real .gitignore.
   await mkdir(path.join(dir, '.wrangler/state'), { recursive: true });
   await writeFile(path.join(dir, '.wrangler/state/secret.json'), '{"token":"leak"}\n');
   await writeFile(path.join(dir, '.dev.vars'), 'SECRET=leak\n');

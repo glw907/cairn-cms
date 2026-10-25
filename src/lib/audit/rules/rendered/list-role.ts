@@ -125,7 +125,7 @@ export const listRoleRendered: RenderedRule = {
         message:
           `${subject} at ` +
           `${displayFact} instead of list-item; the likely cause is a descendant selector on an ` +
-          "ancestor's class rather than the item's own (this check measures only the computed " +
+          "ancestor's class rather than the item's class (this check measures only the computed " +
           'value, never which selector produced it), and a marker-suppressed list with no role ' +
           'attribute stops being announced as a list in WebKit/VoiceOver; add role="list" to ' +
           `restore the list semantics (WCAG 1.3.1).${itemNote}`,

@@ -1,9 +1,9 @@
 // The console's two live views: propagation (the primary hold, watching a domain cut over) and
 // the Builds watch (watching the first Workers Builds deploy). Both are pure functions of one
-// HoldObservation (hold-loop.mjs's own contract, built through its makeObservation factory in
+// HoldObservation (hold-loop.mjs's contract, built through its makeObservation factory in
 // every caller and fixture) and the state record, read only through render.mjs's pickAllowlist.
-// Neither view issues an API or DNS call of its own; the hold loop is the one probe owner
-// (hold-loop.mjs's own header), and a view here only reads what it was last handed.
+// Neither view issues an API or DNS call; the hold loop is the one probe owner
+// (hold-loop.mjs's header), and a view here only reads what it was last handed.
 import { BUILD_HOLD_CLASS, DISPLAY_REFRESH_SECONDS, PROPAGATION_HOLD_CLASS } from '../hold-loop.mjs';
 import { escapeHtml, pickAllowlist } from './render.mjs';
 
@@ -14,17 +14,17 @@ const PROPAGATION_RECORD_FIELDS = ['cloudflare.domain'];
 const BUILDS_RECORD_FIELDS = ['cloudflare.domain', 'cloudflare.workerName'];
 
 /**
- * What each marker-probe outcome means, in plain terms, for the propagation view's own
- * explanatory line. `hostname-not-serving` never mid-hold surfaces to `live`; hostname.mjs's own
+ * What each marker-probe outcome means, in plain terms, for the propagation view's
+ * explanatory line. `hostname-not-serving` never mid-hold surfaces to `live`; hostname.mjs's
  * hold seam retries it as an ordinary not-cleared observation, so it is still worth naming here
  * for the rare case the console renders one final frame at expiry.
  */
 const MARKER_OUTCOME_MEANINGS = {
   live: 'Your site answers correctly over HTTPS.',
   'hostname-records-absent':
-    'Your domain does not resolve yet, even at its own nameservers. This is a normal step right after connecting a domain.',
+    'Your domain does not resolve yet, even at its nameservers. This is a normal step right after connecting a domain.',
   'hostname-resolver-lagging':
-    "Your domain already resolves at its own nameservers; only your machine's resolver has not caught up yet.",
+    "Your domain already resolves at its nameservers; only your machine's resolver has not caught up yet.",
   'certificate-pending': 'Your domain answers over plain HTTP; the HTTPS certificate has not finished issuing yet.',
   'hostname-not-serving': 'Your domain resolves and answers, but what answers is not your site.',
 };
@@ -42,11 +42,11 @@ function formatDnsAnswer(answer) {
 }
 
 /**
- * The certificate cell's own text, driven solely by the marker outcome. Certificate issuance
- * cannot be polled with this token (hostname.mjs's own header), so anything but the two outcomes
+ * The certificate cell's text, driven solely by the marker outcome. Certificate issuance
+ * cannot be polled with this token (hostname.mjs's header), so anything but the two outcomes
  * that settle it one way or the other reports the honest "not knowable yet" rather than a status
  * this view would have to invent.
- * @param {string | null} markerOutcome the marker probe's own conclusion, or `null` when no probe
+ * @param {string | null} markerOutcome the marker probe's conclusion, or `null` when no probe
  *  has run yet
  * @returns {string} the sentence the certificate cell renders
  */
@@ -73,13 +73,13 @@ function renderAuthoritativeRow({ authoritative, lowConfidence }) {
   const reading = lowConfidence
     ? 'not available; the read fell back to the recursive resolver (low confidence)'
     : escapeHtml(formatDnsAnswer(authoritative));
-  return `<p class="cairn-console-dns-authoritative">Authoritative (your domain's own nameservers): ${reading}</p>`;
+  return `<p class="cairn-console-dns-authoritative">Authoritative (your domain's nameservers): ${reading}</p>`;
 }
 
 /**
  * Render the propagation view: both DNS answers honestly labeled, the marker-probe outcome and
  * what it means, and a certificate cell driven solely by the marker outcome, never a fabricated
- * status (certificate issuance is unpollable with this token; see hostname.mjs's own header).
+ * status (certificate issuance is unpollable with this token; see hostname.mjs's header).
  * @param {import('../hold-loop.mjs').HoldObservation} observation the hold loop's last observation
  * @param {object} record the full state record, read only through the allowlist above
  * @returns {import('./server.mjs').ConsoleView} the view to render
@@ -108,7 +108,7 @@ export function renderPropagationView(observation, record) {
 }
 
 /**
- * Render the Builds watch view: discovery (no build matched yet) versus a discovered build's own
+ * Render the Builds watch view: discovery (no build matched yet) versus a discovered build's
  * state, queued through running to its settled outcome, and the commit it matched.
  * @param {import('../hold-loop.mjs').HoldObservation} observation the hold loop's last observation
  * @param {object} record the full state record, read only through the allowlist above

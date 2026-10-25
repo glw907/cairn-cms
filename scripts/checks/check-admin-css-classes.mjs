@@ -1,23 +1,23 @@
 // cairn-cms: the admin-CSS class-compilation gate, graduated into the packaged cairn-audit
 // engine's no-uncompiled-class rule (src/lib/audit/rules/static/no-uncompiled-class.ts): every
 // class token an admin component's markup references has to compile into the built
-// cairn-admin.css, or be a name the component's own scoped <style> block defines locally. The
+// cairn-admin.css, or be a name the component's scoped <style> block defines locally. The
 // regex substrate this gate used to carry (a hand-rolled brace-matched class-attribute scanner)
 // is gone; svelte/compiler and the built-sheet resolver are the substrate now, exercised by the
-// audit's own fixture suite (src/tests/unit/audit/rules/no-uncompiled-class.test.ts).
+// audit's fixture suite (src/tests/unit/audit/rules/no-uncompiled-class.test.ts).
 //
 // The allowlist this gate used to read from scripts/admin-css-classes-allowlist.json is gone
 // too: the graduation's no-drift proof found all twelve of its entries already dead (the
 // CairnMediaLibrary/ComponentInsertDialog/IconPicker/MediaPicker/EditPage/EditorToolbar
-// test-selector and glyph-sharing hooks each now carry their own local <style> block marker
+// test-selector and glyph-sharing hooks each now carry their local <style> block marker
 // declaring the class, a genuine fix rather than a suppression), so both the old regex substrate
 // and this one already find zero uncompiled classes with no allowlist at all. See the graduation
 // commit for the no-drift proof.
 //
-// This gate runs against the engine's own tree with no cairn-audit.config.json, so the shared
+// This gate runs against the engine's tree with no cairn-audit.config.json, so the shared
 // loadConfig/runStatic pipeline resolves `sheet` to its packaged-sheet-only default: the ENGINE's
 // own markup has no site-authored compiled-class source to name, the case the list-valued `sheet`
-// config exists for. A consumer wiring this same rule into their own build gets the list for free
+// config exists for. A consumer wiring this same rule into their build gets the list for free
 // through the shared config contract.
 //
 // The run hands `runStatic` every rule except the public-scope ones, so the public scope and its

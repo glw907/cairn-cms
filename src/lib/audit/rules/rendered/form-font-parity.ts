@@ -143,7 +143,7 @@ export const formFontParity: RenderedRule = {
         `computes font-family "${mismatch.family}", not the admin root's "${result.rootFamily}". A bare ` +
         `control that misses the reset layer falls back to the browser's UA face: check that the built ` +
         `admin sheet actually loaded (cairn-admin.css's base-layer "font: inherit" rule on button, input, ` +
-        `select, textarea, optgroup). If this control opts into its own face on purpose, this finding may ` +
+        `select, textarea, optgroup). If this control opts into a different face on purpose, this finding may ` +
         `be an exemption miss: allowlist the selector with a reason.`,
     }));
   },

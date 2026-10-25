@@ -23,7 +23,7 @@ async function tempDir(t) {
   return dir;
 }
 
-// The template's own commented-out aiPosture block (see the template's cairn.config.ts, around
+// The template's commented-out aiPosture block (see the template's cairn.config.ts, around
 // the media/rendering seam), reproduced exactly so the fixture exercises the real target string.
 const AI_POSTURE_COMMENT_FIXTURE = [
   "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
@@ -232,9 +232,9 @@ test('a decline or invite answer throws naming cairn.config.ts when its aiPostur
   );
 });
 
-// Regression: this file's own AI_POSTURE_COMMENT_FIXTURE is hand-copied from the template, so a
+// Regression: this file's AI_POSTURE_COMMENT_FIXTURE is hand-copied from the template, so a
 // silent drift between the two would pass every test above against a fixture the real scaffold no
-// longer produces. This reads the real template's own file instead, the same guard
+// longer produces. This reads the real template's file instead, the same guard
 // substitute.test.mjs's showcase-config test already applies to site.config.yaml.
 test('the real template config carries the exact aiPosture comment block this pass targets', async (t) => {
   const templateConfig = readFileSync(
@@ -280,7 +280,7 @@ test('verifySiteConfigPath rejects a non-string or empty value', () => {
 });
 
 // The DEFAULT shape ruling 5 sanctions: a generated data file the bake reads as data, never a
-// cross-package import (the bake never import()s engine code). This package's own copy is the
+// cross-package import (the bake never import()s engine code). This package's copy is the
 // one source; the Go tool's mirror (`tool/internal/doctor/site-config-path.json`) is kept in
 // sync with it by hand.
 test('the committed site-config-path.json parses to the value verifySiteConfigPath accepts', () => {
@@ -290,7 +290,7 @@ test('the committed site-config-path.json parses to the value verifySiteConfigPa
   assert.deepEqual(bakeCopy, { path: verifySiteConfigPath(bakeCopy.path) });
 });
 
-// Regression: the pass wrote its own `description:` line without touching the template's, so a
+// Regression: the pass wrote its `description:` line without touching the template's, so a
 // showcase that carries a tagline scaffolded a config with the key twice, which every YAML
 // parser rejects as a duplicate map key. The fixture above cannot catch that on its own, since
 // a hand-written fixture drifts from the showcase silently, so this reads the real source the

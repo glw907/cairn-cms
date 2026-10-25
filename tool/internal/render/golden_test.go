@@ -19,10 +19,10 @@ import (
 )
 
 // updateGolden regenerates every golden from the current renderer. `make -C tool golden` sets
-// it; a reviewer reads the resulting diff as the frame's own change.
+// it; a reviewer reads the resulting diff as the frame's change.
 var updateGolden = flag.Bool("update", false, "rewrite the golden frames from this renderer")
 
-// goldenDir is the committed corpus's own root.
+// goldenDir is the committed corpus's root.
 const goldenDir = "testdata/golden"
 
 // goldenRungs are the widths every golden is cut at: the named rung constants, so a frame is
@@ -34,7 +34,7 @@ var goldenRungs = []int{widthFloor, widthNarrow, Width80, width100, widthCap}
 type goldenCase struct {
 	// view names the surface, and is the corpus subdirectory.
 	view string
-	// fixture names the input, and is the file's own stem.
+	// fixture names the input, and is the file's stem.
 	fixture string
 	// reports is the health sweep the frame draws, empty for the log view.
 	reports []health.Report
@@ -56,7 +56,7 @@ func goldenName(view, fixture string, width int, profile Profile, dark, ascii bo
 	return filepath.Join(goldenDir, view, strings.Join(parts, "_")+".txt")
 }
 
-// path returns c's own golden path.
+// path returns c's golden path.
 func (c goldenCase) path() string {
 	return goldenName(c.view, c.fixture, c.width, c.profile, c.dark, c.ascii)
 }
@@ -93,7 +93,7 @@ func tableName(ascii bool) string {
 	return "narrow"
 }
 
-// verdictFor returns the verdict spine's own arithmetic settles for a fixture, so a golden's
+// verdictFor returns the verdict spine's arithmetic settles for a fixture, so a golden's
 // verdict word is the one the exit code would carry rather than one the test chose.
 func verdictFor(reports []health.Report) Verdict {
 	sites := make([]spine.SiteVerdicts, 0, len(reports))
@@ -108,10 +108,10 @@ func verdictFor(reports []health.Report) Verdict {
 }
 
 // sampleStatus is a plausible run state for the general render tests that exercise layout
-// (width, marks, fix printing) rather than a fixture's own credential story: one token the run
+// (width, marks, fix printing) rather than a fixture's credential story: one token the run
 // could not find, and one read from the keyring with an expiry, so the status line's three
 // shapes are all pinned. It is not read by TestGolden, which cuts every frame against
-// fixtureStatus's own per-fixture entry instead (criterion 22).
+// fixtureStatus's per-fixture entry instead (criterion 22).
 func sampleStatus() StatusState {
 	return StatusState{
 		Elapsed: 16300 * time.Millisecond,
@@ -126,15 +126,15 @@ func sampleStatus() StatusState {
 	}
 }
 
-// fixtureStatus is each named fixture's own run state, matched to its own creds row rather than
+// fixtureStatus is each named fixture's run state, matched to its creds row rather than
 // the one shared story every golden was cut against before this task (criterion 22). A
 // many-sites fixture ("twelve-site") carries one Status for the whole run, since the process
-// holds one set of provider tokens for every site it sweeps, and every site's own creds row
+// holds one set of provider tokens for every site it sweeps, and every site's creds row
 // (fillNine's default) agrees with it. Every entry carries one Credential per credential
 // variable, present or not, because cmd/cairn's runStatus always appends both: a frame with
 // fewer is one no run can produce. "empty" and "hostile" carry no creds row to agree with, so
 // both tokens read from the keyring, the story their reports cannot contradict.
-// TestFixtureStatusAgreesWithItsOwnCredsRow checks every entry against its fixture's own creds
+// TestFixtureStatusAgreesWithItsOwnCredsRow checks every entry against its fixture's creds
 // row and against that two-entry shape.
 var fixtureStatus = map[string]StatusState{
 	"empty": {
@@ -158,7 +158,7 @@ var fixtureStatus = map[string]StatusState{
 			{Variable: "CAIRN_GH_READ_TOKEN", Disables: []string{"deploy", "publish-path"}},
 		},
 	},
-	// Offline's own creds row skipped for spine.ReasonOffline, not a missing credential: the
+	// Offline's creds row skipped for spine.ReasonOffline, not a missing credential: the
 	// network was unreachable, which says nothing about whether either token is present, so
 	// this Status shows both resolved rather than claiming one is unset with nothing to prove it.
 	"offline": {
@@ -179,7 +179,7 @@ var fixtureStatus = map[string]StatusState{
 			},
 		},
 	},
-	// Healthy's own creds row passes, "Cloudflare and GitHub tokens read from the keyring".
+	// Healthy's creds row passes, "Cloudflare and GitHub tokens read from the keyring".
 	"healthy": {
 		Elapsed: 16300 * time.Millisecond,
 		Credentials: []Credential{
@@ -187,7 +187,7 @@ var fixtureStatus = map[string]StatusState{
 			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
 		},
 	},
-	// WarningOnly's own creds row passes the same way Healthy's does.
+	// WarningOnly's creds row passes the same way Healthy's does.
 	"warning-only": {
 		Elapsed: 16300 * time.Millisecond,
 		Credentials: []Credential{
@@ -195,8 +195,8 @@ var fixtureStatus = map[string]StatusState{
 			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
 		},
 	},
-	// Degraded's own creds row rejects the Cloudflare token rather than reporting it missing, so
-	// both tokens resolved; the rejection itself is the creds row's own failure, not a Status
+	// Degraded's creds row rejects the Cloudflare token rather than reporting it missing, so
+	// both tokens resolved; the rejection itself is the creds row's failure, not a Status
 	// concern.
 	"degraded": {
 		Elapsed: 16300 * time.Millisecond,
@@ -205,7 +205,7 @@ var fixtureStatus = map[string]StatusState{
 			{Variable: "CAIRN_GH_READ_TOKEN", Provider: providerKeyring},
 		},
 	},
-	// TwelveSites leans on fillNine's own default, which skips creds, email, and errors for a
+	// TwelveSites leans on fillNine's default, which skips creds, email, and errors for a
 	// missing Cloudflare token on every site the scenario does not override, and every site
 	// shares the one run's provider tokens.
 	"twelve-site": {
@@ -221,7 +221,7 @@ var fixtureStatus = map[string]StatusState{
 	},
 }
 
-// statusFor returns fixture's own run state, or sampleStatus for a pseudo-fixture goldenCases
+// statusFor returns fixture's run state, or sampleStatus for a pseudo-fixture goldenCases
 // builds outside the named corpus (the log view's "excerpt"), which draws no status line at all
 // (render.go never calls statusLines for ViewLogs).
 func statusFor(fixture string) StatusState {
@@ -236,7 +236,7 @@ func statusFor(fixture string) StatusState {
 // owns its shape: this half adds no fixture to it.
 func goldenLogEntries() []logs.Entry {
 	// The zone is built rather than parsed. time.Parse resolves an offset that matches the
-	// machine's own location to that location, so a parsed stamp formats its zone differently on
+	// machine's location to that location, so a parsed stamp formats its zone differently on
 	// a workstation set to it than on a runner set to UTC, and the golden moves with the machine.
 	at := func(minute int) time.Time {
 		return time.Date(2026, 9, 20, 14, minute, 0, 0, time.FixedZone("AKDT", -8*3600))
@@ -262,7 +262,7 @@ func goldenLogEntries() []logs.Entry {
 }
 
 // goldenMixedLogEntries is the window a query against a public site actually returns: the
-// Worker's own console lines, which a 404 logger writes by the hundred, and one engine record
+// Worker's console lines, which a 404 logger writes by the hundred, and one engine record
 // among them. The shapes are the ones
 // packages/create-cairn-site/fixtures/cloudflare/observability-telemetry-query.mixed-lines.200.json
 // recorded live, the escape-and-newline opening of a 404 line included, since that opening is
@@ -407,7 +407,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-// TestGoldenFooterLeadsWithItsVerdict holds the closing block's own order across the whole
+// TestGoldenFooterLeadsWithItsVerdict holds the closing block's order across the whole
 // committed corpus: in a terminal body the last block of the frame opens on the verdict word and
 // carries the tally after it, the same order the header block takes. A footer that wrapped its
 // tally above the verdict would state a run's counts before the word they belong to, and would
@@ -450,7 +450,7 @@ func TestGoldenPrintsNoRemedyTwice(t *testing.T) {
 	// Every fix sentence the shipped table carries, so a repeat is recognised by the sentence
 	// itself rather than by a guess at what a fix line looks like.
 	// FixLines carries each fix's sentence and, where it has one, its command. The sentences are
-	// the ones that end in a period, which is the copy standard's own rule for them.
+	// the ones that end in a period, which is the copy standard's rule for them.
 	var sentences []string
 	for _, line := range health.FixLines() {
 		if strings.HasSuffix(line, ".") {
@@ -513,7 +513,7 @@ func TestGoldenCorpusIsSized(t *testing.T) {
 	}
 }
 
-// credsRowOf returns r's own creds check, the row statusLines' credential story has to agree
+// credsRowOf returns r's creds check, the row statusLines' credential story has to agree
 // with.
 func credsRowOf(r health.Report) (health.CheckResult, bool) {
 	for _, c := range r.Checks {
@@ -525,7 +525,7 @@ func credsRowOf(r health.Report) (health.CheckResult, bool) {
 }
 
 // TestFixtureStatusAgreesWithItsOwnCredsRow covers criterion 23's second assertion: a fixture's
-// own run state agrees with its creds row. A Status naming a token unset requires a creds row
+// run state agrees with its creds row. A Status naming a token unset requires a creds row
 // that skipped for a missing credential; a Status naming both tokens read from the keyring
 // requires a creds row that did not skip for one. It also holds every entry to the shape
 // cmd/cairn's runStatus builds, one Credential per credential variable in that order, so a

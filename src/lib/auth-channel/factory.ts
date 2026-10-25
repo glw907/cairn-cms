@@ -379,7 +379,7 @@ function resolveCookieBase(cookie: { name: string } | undefined): string {
   const base = cookie.name;
   if (base.toLowerCase().startsWith('cairn_')) {
     throw new Error(
-      `createAuthChannel: config.cookie.name "${base}" starts with the engine's reserved "cairn_" prefix, which collides with cairn's own admin cookies; choose a site-specific base`,
+      `createAuthChannel: config.cookie.name "${base}" starts with the engine's reserved "cairn_" prefix, which collides with cairn's admin cookies; choose a site-specific base`,
     );
   }
   buildCookieName(base, false);

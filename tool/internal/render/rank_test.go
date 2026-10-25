@@ -9,7 +9,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// TestSeverityClassCoversEveryShippedCheck asserts every id in health.All has a class of its own
+// TestSeverityClassCoversEveryShippedCheck asserts every id in health.All has a class
 // rather than falling to the unclassed default, so a check added without a ranking decision is a
 // failing test rather than a row silently sorted next to version drift.
 func TestSeverityClassCoversEveryShippedCheck(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRankResultsTieBreak(t *testing.T) {
 	}
 }
 
-// TestRankResultsDoesNotMutate asserts ranking returns a new slice: the sweep's own order is the
+// TestRankResultsDoesNotMutate asserts ranking returns a new slice: the sweep's order is the
 // registry's and the render must not rewrite it in place.
 func TestRankResultsDoesNotMutate(t *testing.T) {
 	in := []health.CheckResult{
@@ -130,7 +130,7 @@ func TestRankReportsWorstFirstThenListOrder(t *testing.T) {
 	if got[2].Site != "shop-site" {
 		t.Errorf("third site = %q, want the email failure", got[2].Site)
 	}
-	// cairn.pub and events-site both fail engine alone, so the registry's own order decides.
+	// cairn.pub and events-site both fail engine alone, so the registry's order decides.
 	drift := []string{}
 	for _, r := range got {
 		if worstClass(r) == classDrift {

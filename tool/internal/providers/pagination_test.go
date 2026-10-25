@@ -74,7 +74,7 @@ func resultInfoOf(t *testing.T, body []byte) resultInfo {
 	return *env.ResultInfo
 }
 
-// TestWorkerDomainsWalksEveryPageOfTheLiveShape is the defect's own regression. The recorded
+// TestWorkerDomainsWalksEveryPageOfTheLiveShape is the defect's regression. The recorded
 // first page reports per_page 1 and total_count 7 and no total_pages, which the walk used to read
 // as a single page; discovery then saw one of the account's seven custom domains, and every
 // production site but the one on page 1 failed to adopt.

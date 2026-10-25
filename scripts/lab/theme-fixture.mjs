@@ -63,7 +63,7 @@ const PACKAGE = '@glw907/cairn-cms';
 const RESERVED_PORTS = [4173, 4391, 4392];
 
 /**
- * The environment the showcase's own Playwright config gives its build. The runtime half of the
+ * The environment the showcase's Playwright config gives its build. The runtime half of the
  * dev-backend gate is not here: an OS variable never reaches workerd, so `serve` passes it as a
  * `--var` on the wrangler command.
  */
@@ -233,7 +233,7 @@ function hash(path) {
 }
 
 /**
- * Pack a workspace into a directory under a name carrying its own content digest, so npm's
+ * Pack a workspace into a directory under a name carrying its content digest, so npm's
  * content-addressed cache cannot serve an older build of the same version.
  * @param {string} packageDir
  * @param {string} into
@@ -332,7 +332,7 @@ async function templateArm({ themeFile, themeDir, probe }) {
     run('node', ['scripts/build/emit-template.mjs', site, `file:${engine}`, `file:${dev}`, 'fixture-template'], { cwd: ROOT });
     // The preview serves the built site under `wrangler dev`, whose workerd cannot read a working
     // tree, and the dev backend's default content mode refuses there. The copy opts into the seeded
-    // fixtures, the way the example site's own hooks do.
+    // fixtures, the way the example site's hooks do.
     const hooks = join(site, 'src/hooks.server.ts');
     const hooksSource = readFileSync(hooks, 'utf8');
     const withFixtures = hooksSource.replace(/devBackendHandle\(\{\s*runtime,?\s*\}\)/, "devBackendHandle({ runtime, content: 'fixtures' })");

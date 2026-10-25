@@ -37,7 +37,7 @@ func loadHostileCorpus(t *testing.T) []hostileEntry {
 }
 
 // hasC0OrC1 reports whether s carries a C0 or C1 control byte, DEL included, the way sanitize's
-// own switch classifies one.
+// switch classifies one.
 func hasC0OrC1(s string) bool {
 	for _, r := range s {
 		if r < 0x20 || r == 0x7f || (r >= 0x80 && r <= 0x9f) {
@@ -71,7 +71,7 @@ func TestSanitizeHostileCorpus(t *testing.T) {
 }
 
 // TestSanitizeForgedVerdictStaysInField is criterion 22's named case: a forged "OK" carried by a
-// colour escape must not read as a line of its own once its escapes are stripped.
+// colour escape must not read as a line by itself once its escapes are stripped.
 func TestSanitizeForgedVerdictStaysInField(t *testing.T) {
 	in := "detail \u001b[42;30mOK\u001b[0m more detail"
 	got := sanitize(in)
@@ -81,7 +81,7 @@ func TestSanitizeForgedVerdictStaysInField(t *testing.T) {
 	}
 }
 
-// TestSanitizeControlBetweenWordsBecomesSpace is criterion 21's own rule: a control that
+// TestSanitizeControlBetweenWordsBecomesSpace is criterion 21's rule: a control that
 // separated two words becomes a space rather than joining them.
 func TestSanitizeControlBetweenWordsBecomesSpace(t *testing.T) {
 	for _, in := range []string{"before\nafter", "before\rafter", "before\tafter"} {
@@ -135,7 +135,7 @@ func TestSanitizeDegenerateInputs(t *testing.T) {
 	}
 }
 
-// TestSanitizeDeterministic is the sanitizer's own share of criterion 24: two runs of the same
+// TestSanitizeDeterministic is the sanitizer's share of criterion 24: two runs of the same
 // input are byte-identical. sanitize takes no environment input at all, so this holds regardless
 // of TZ, LANG, LC_CTYPE, TERM, or NO_COLOR.
 func TestSanitizeDeterministic(t *testing.T) {

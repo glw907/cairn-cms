@@ -14,20 +14,20 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/providers"
 )
 
-// internalPackagePrefix is this module's own internal import root, the prefix every check
+// internalPackagePrefix is this module's internal import root, the prefix every check
 // against spine's dependency boundary strips before comparing.
 const internalPackagePrefix = "github.com/glw907/cairn-cms/tool/internal/"
 
 // TestSpineImportsOnlyProviders asserts every file in this package imports at most one internal
 // package, tool/internal/providers, and never tool/internal/record: the module's downward
 // architecture puts spine below record, so a dependency the other way would be a layering
-// violation, not merely an unused import. Parsing each file's own import specs (rather than
+// violation, not merely an unused import. Parsing each file's import specs (rather than
 // grepping for the literal string) means a comment or a string literal mentioning the path can
 // never trip this test by accident.
 func TestSpineImportsOnlyProviders(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	dir := filepath.Dir(thisFile)
 	entries, err := os.ReadDir(dir)

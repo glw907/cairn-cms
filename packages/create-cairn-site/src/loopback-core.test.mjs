@@ -47,7 +47,7 @@ test('binds an ephemeral port on 127.0.0.1 and reports it', async (t) => {
   assert.equal(core.url, `http://127.0.0.1:${core.port}`);
 });
 
-test('routes by a path map: each mounted path dispatches to its own handler', async (t) => {
+test('routes by a path map: each mounted path dispatches to its handler', async (t) => {
   const core = await startLoopbackCore();
   t.after(() => core.close());
   core.mount('/one', (req, res) => {
@@ -147,11 +147,11 @@ test('Host allowlist: a non-loopback Host is refused with 403 on every mount', a
     assert.equal(consoleStatus, 403, `expected 403 for Host: "${host}" on a console mount`);
   }
 
-  // A request with no Host header at all is not even a valid HTTP/1.1 request; Node's own http
+  // A request with no Host header at all is not even a valid HTTP/1.1 request; Node's http
   // server refuses it with 400 before this module's handler ever runs, which already denies the
   // request the guard exists to deny.
   const noHostStatus = await requestWithHost(core, '/probe', null);
-  assert.equal(noHostStatus, 400, 'expected Node\'s own HTTP/1.1 enforcement to refuse a missing Host header');
+  assert.equal(noHostStatus, 400, 'expected Node\'s HTTP/1.1 enforcement to refuse a missing Host header');
 });
 
 test('shutdown closes the socket', async () => {

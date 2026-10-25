@@ -103,7 +103,7 @@ function fixedMessage(token: string, side: string | undefined, elementClasses: S
   const role = roleForElement(elementClasses);
   if (role) {
     return radiusMessage(
-      `class "${token}" is a fixed Tailwind radius; this element's own daisyUI class fixes its ` +
+      `class "${token}" is a fixed Tailwind radius; this element's daisyUI class fixes its ` +
         `corner role to rounded${sidePart(side)}-${role}`
     );
   }

@@ -21,8 +21,8 @@ type engineFile struct {
 	body string
 }
 
-// engineGHRoundTripper stands in for GitHub across one engineCheck run: the site's own
-// package.json and engineRepo's own CHANGELOG.md, both read through the Contents API.
+// engineGHRoundTripper stands in for GitHub across one engineCheck run: the site's
+// package.json and engineRepo's CHANGELOG.md, both read through the Contents API.
 type engineGHRoundTripper struct {
 	files  []engineFile
 	status int
@@ -156,7 +156,7 @@ func TestEngineCheckNoDependencyIsUnknownNotObservable(t *testing.T) {
 
 // TestEngineCheckAPIRateLimitedIsUnknownNeverFailing asserts a 403 carrying
 // x-ratelimit-remaining: 0 classifies as rate-limited and settles Unknown, never Failing: a
-// throttled tool is not the site's own engine drifting, and misreading it as one would page an
+// throttled tool is not the site's engine drifting, and misreading it as one would page an
 // operator for a fault they cannot fix.
 func TestEngineCheckAPIRateLimitedIsUnknownNeverFailing(t *testing.T) {
 	c := Clients{
@@ -190,11 +190,11 @@ func TestEngineCheckAPIForbiddenIsUnknownNotOK(t *testing.T) {
 }
 
 // TestSectionHasActionableConsumersMust covers the word-boundary rule: a "Consumers must:" clause
-// is non-actionable only when its own text, trimmed and compared case-insensitively, begins with
+// is non-actionable only when its text, trimmed and compared case-insensitively, begins with
 // the whole word "nothing" (end of text, or a period, semicolon, comma, space, or parenthesis
 // right after it). A qualified "nothing" clause ("nothing; a site already on the old name keeps
 // working.") is still non-actionable, while a clause that merely contains the word later, or
-// whose own text does not lead with it, is actionable.
+// whose text does not lead with it, is actionable.
 func TestSectionHasActionableConsumersMust(t *testing.T) {
 	cases := []struct {
 		name    string

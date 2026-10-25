@@ -88,7 +88,7 @@ export function checkReadiness(conditions, markdownText, allowlist = ALLOWLIST, 
  * an empty list is itself a defect: no released tag has ever shipped zero anchors, so an emptied
  * file cannot be told apart from a working one that legitimately has none.
  * @param {string} listPath
- * @param {string} root The directory `listPath`'s own message is reported relative to.
+ * @param {string} root The directory `listPath`'s message is reported relative to.
  * @returns {ShippedAnchorListResult}
  */
 export function loadShippedAnchors(listPath, root) {
@@ -169,10 +169,10 @@ export function checkShippedAnchors(anchors, markdownText, doc = DOC) {
 /**
  * The full problem list `main()` reports: the live registry/doc pairing (`checkReadiness`) plus
  * the shipped-anchor list against the same doc (`checkShippedAnchors`), in that order. Split out
- * of `main()`'s own body so a test can prove the composition itself runs the shipped-anchor half,
+ * of `main()`'s body so a test can prove the composition itself runs the shipped-anchor half,
  * rather than only trusting that `main()` still does: an edit that wired `checkReadiness` but
  * dropped the shipped-anchor call would otherwise pass every test in this file. The shipped list's
- * own load defects (a missing or malformed `shipped-anchors.json`) are reported on their own,
+ * load defects (a missing or malformed `shipped-anchors.json`) are reported on their own,
  * without also running the heading comparison against a list that failed to load.
  * @param {{ id: string, docsAnchor?: string }[]} conditions
  * @param {string} markdownText
@@ -228,7 +228,7 @@ export function checkLiveAnchorsListed(conditions, anchors, allowlist = ALLOWLIS
 
 /**
  * The full problem list for the admin arm's state: list mode ({@link checkLiveAnchorsListed} plus
- * the shipped list's own load defects) while the arm is not rebuilt, and {@link readinessProblems}
+ * the shipped list's load defects) while the arm is not rebuilt, and {@link readinessProblems}
  * against the checklist once it is. A rebuilt arm with no checklist page is itself the problem.
  * @param {{ id: string, docsAnchor?: string }[]} conditions
  * @param {string} adminState the admin arm's state from arm-state.mjs

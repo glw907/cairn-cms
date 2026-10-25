@@ -14,7 +14,7 @@ interface PngChunk {
 
 /**
  * Walk a PNG's chunk stream after the eight-byte signature. Each chunk is a big-endian length, a
- * four-byte ASCII type, the data, then a four-byte CRC this reader does not verify (a browser's own
+ * four-byte ASCII type, the data, then a four-byte CRC this reader does not verify (a browser's
  * decoder is the structural authority; this test only proves the seeded bytes are shaped like a PNG).
  */
 function readChunks(bytes: Uint8Array): PngChunk[] {

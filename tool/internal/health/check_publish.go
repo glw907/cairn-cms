@@ -12,7 +12,7 @@ import (
 )
 
 // publishStaleWindow is how long a "cairn/*" edit branch may sit unpublished before the check
-// reports it stale: the spec's own publish-path window, chosen because an editor's saved draft
+// reports it stale: the spec's publish-path window, chosen because an editor's saved draft
 // that has not reached Publish in two weeks is either abandoned or stuck, not merely slow.
 const publishStaleWindow = 14 * 24 * time.Hour
 
@@ -20,7 +20,7 @@ const publishStaleWindow = 14 * 24 * time.Hour
 // (`cairn/<concept>/<id>`), the prefix this check filters a repository's branch list by.
 const cairnBranchPrefix = "cairn/"
 
-// publishDetail is publishPathCheck's own internal measurement, flattened into Fields as an
+// publishDetail is publishPathCheck's internal measurement, flattened into Fields as an
 // "openBranchCount" entry and one "branchAgeDays" entry carrying every branch's age.
 type publishDetail struct {
 	// BranchCount is how many "cairn/*" branches the repository currently carries.
@@ -51,7 +51,7 @@ func (d publishDetail) outcome(state spine.State, reason spine.ReasonCode, code 
 
 // publishPathCheck ports the engine's publish path: every open "cairn/*" edit branch a site's
 // repository carries, aged against the newest commit `cairn-cms[bot]` has made on the default
-// branch, since a bot commit newer than a branch is that branch's own publish having already
+// branch, since a bot commit newer than a branch is that branch's publish having already
 // landed.
 type publishPathCheck struct{}
 
@@ -74,7 +74,7 @@ func cairnBranches(branches []providers.Branch) []providers.Branch {
 }
 
 // staleBranchCount reports how many of branches are older than publishStaleWindow as of now, with
-// no bot commit dated after the branch's own last commit: a branch a later bot commit has
+// no bot commit dated after the branch's last commit: a branch a later bot commit has
 // superseded is not stuck, however old it is.
 func staleBranchCount(branches []providers.Branch, botCommitAt, now time.Time) int {
 	var stale int

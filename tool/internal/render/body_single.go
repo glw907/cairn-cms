@@ -14,7 +14,7 @@ const (
 	colIndent = 2
 	colGlyph  = 2
 	// colWord fits the longest state word, "unknown", and one space. A cell is Width(n).MaxWidth(n),
-	// so a budget under the word's own width would cut the word rather than overflow the column.
+	// so a budget under the word's width would cut the word rather than overflow the column.
 	colWord = 8
 	colName = 14
 )
@@ -23,7 +23,7 @@ const (
 // order they must do it, under lowercase inset rules, with each fix under the row it repairs.
 //
 // There is no rail down the failing group. The failing group is always first and always under
-// its own rule, so its edge is never in question; a rail buys an edge the reader already has and
+// its rule, so its edge is never in question; a rail buys an edge the reader already has and
 // spends a fourth ink on it.
 func renderSingle(t Theme, in RenderInput) Frame {
 	width := in.width()
@@ -89,9 +89,9 @@ func (t Theme) glyphs(ascii bool) Glyphs {
 //
 // A held failure is always the held glyph, never the filled or outlined fail mark: the
 // filled-against-outlined distinction says how bad an unheld failure is, and a held failure has
-// already been weighed. An unheld failure takes the filled mark when its own severity would
+// already been weighed. An unheld failure takes the filled mark when its severity would
 // carry the run to CRITICAL and the outlined mark when it would only reach WARNING, from the
-// same predicate the verdict uses, so a mark can never disagree with its own row.
+// same predicate the verdict uses, so a mark can never disagree with its row.
 func (t Theme) mark(in RenderInput, c health.CheckResult) (glyph string, role Role) {
 	g := t.glyphs(in.ASCII)
 	switch {
@@ -145,7 +145,7 @@ func detailCol(in RenderInput) int {
 }
 
 // checkRows draws one check: the glyph, the state word where the tier keeps it, the check id,
-// the detail in its own column, the hold field where the row carries one, and the fix beneath.
+// the detail in a separate column, the hold field where the row carries one, and the fix beneath.
 func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []string {
 	hold, escalating := holdField(c, in.Now)
 	glyph, glyphRole := t.mark(in, c)
@@ -196,7 +196,7 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 	}
 
 	out := append(head, t.indented(t.Style(holdRole), col, hold, width)...)
-	// The credential and keyring detail sit on the creds row, in its own detail column, rather
+	// The credential and keyring detail sit on the creds row, in a separate detail column, rather
 	// than in the header block: it is detail about the check the operator is already reading.
 	if c.ID == credsRowID {
 		out = append(out, t.statusLines(in, col, width)...)
@@ -204,10 +204,10 @@ func (t Theme) checkRows(in RenderInput, c health.CheckResult, width int) []stri
 	return append(out, block...)
 }
 
-// detailLines renders one check's detail into its own column, and reports whether the condition
+// detailLines renders one check's detail into a separate column, and reports whether the condition
 // id's tail was placed on the last of them. Below 100 columns the fix block's URL has already
 // taken the width, so the detail re-flows to make room for the id rather than leaving it to a
-// line of its own.
+// line by itself.
 func (t Theme) detailLines(detail, tail string, col, width int) (lines []string, placed bool) {
 	avail := width - col
 	if tail == "" || width >= width100 {
@@ -232,7 +232,7 @@ func checkDetail(c health.CheckResult) string {
 }
 
 // fixBlock renders one fix under the row it repairs: the imperative sentence wrapped with a
-// hanging indent, then the full documentation URL on its own line, clickable where the terminal
+// hanging indent, then the full documentation URL on a line by itself, clickable where the terminal
 // supports OSC 8 and whole everywhere else. A fix is never truncated.
 func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) []string {
 	if !hasFix || fix.Text == "" {
@@ -258,12 +258,12 @@ func (t Theme) fixBlock(in RenderInput, fix health.Fix, hasFix bool, width int) 
 }
 
 // placeCondition writes the condition id onto the tail of a line it shares, in place. The id
-// never occupies a line of its own: on its own line under a detail it reads as debris rather
+// never occupies a line by itself: on a line by itself under a detail it reads as debris rather
 // than as the greppable handle for the failure beside it.
 //
 // At 100 columns and above it trails the fix block's last line, so the handle and the page that
 // documents it share a line. Below that the URL has already taken the width, so the id trails
-// the check's own detail and wraps with it. Where no line has room for it at all, which happens
+// the check's detail and wraps with it. Where no line has room for it at all, which happens
 // only at the narrowest widths, it is not printed: a bare line is the defect this corrects, and
 // --json carries the id at every width.
 func (t Theme) placeCondition(detail, block []string, tail string, width int) {
@@ -293,7 +293,7 @@ func attachTail(t Theme, lines []string, tail string, width int) bool {
 	return false
 }
 
-// foldLine folds every passing check into one line. Its dot takes the frame's own pass ink,
+// foldLine folds every passing check into one line. Its dot takes the frame's pass ink,
 // which is the same rule every other passing mark follows: green only in a run whose verdict
 // is OK.
 func (t Theme) foldLine(in RenderInput, passing []health.CheckResult, width int) []string {
@@ -310,7 +310,7 @@ func (t Theme) foldLine(in RenderInput, passing []health.CheckResult, width int)
 
 // clampFrame cuts every emitted line to the requested width, the last thing a terminal body
 // passes through. It fires only on a line data made too long, never on one the layout composed,
-// which is what keeps a hostile detail from wrapping a row onto a line of its own.
+// which is what keeps a hostile detail from wrapping a row onto a line by itself.
 func (t Theme) clampFrame(f Frame, width int) Frame {
 	for _, section := range [][]string{f.Header, f.Body, f.Footer} {
 		for i, l := range section {

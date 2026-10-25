@@ -53,7 +53,7 @@ test('a 204 yields a null json body', async (t) => {
 
   // No fake route 204s by default (the one that used to, PUT .../repositories/:rid, was
   // amended to the observed 403 refusal for a user token); arm a one-shot 204 to test
-  // githubRequest's own empty-body handling in isolation from any particular route's status.
+  // githubRequest's empty-body handling in isolation from any particular route's status.
   github.failNext('link', 204, undefined);
   const { status, json } = await githubRequest('PUT', '/user/installations/7/repositories/42', { token: 'a-token' });
   assert.equal(status, 204);

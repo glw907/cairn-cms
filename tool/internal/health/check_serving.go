@@ -16,7 +16,7 @@ import (
 const adminLoginPath = "/admin/login"
 
 // servingCheck ports confirmHostname (packages/create-cairn-site/src/cloudflare/hostname.mjs):
-// it probes the record's own domain for the site-specific marker pair, distinguishing a
+// it probes the record's domain for the site-specific marker pair, distinguishing a
 // certificate still issuing, a hostname not yet propagated, and a hostname serving something
 // else entirely.
 type servingCheck struct{}
@@ -24,7 +24,7 @@ type servingCheck struct{}
 // ID implements Check.
 func (servingCheck) ID() string { return "serving" }
 
-// Needs implements Check. Serving reaches only the site's own public domain, never a provider
+// Needs implements Check. Serving reaches only the site's public domain, never a provider
 // API, so it needs no credential.
 func (servingCheck) Needs() Tier { return TierNone }
 
@@ -33,7 +33,7 @@ func (servingCheck) Run(ctx context.Context, r record.Record, c Clients, _ Optio
 	return probeServing(ctx, c.Probe, r, r.Domain)
 }
 
-// probeServing is confirmHostname's own logic: HTTPS is tried first, falling back to HTTP only
+// probeServing is confirmHostname's logic: HTTPS is tried first, falling back to HTTP only
 // when HTTPS never reaches an HTTP response at all (a missing certificate, DNS not yet
 // resolving, or a refused connection). Reaching HTTP with the marker pair intact means only the
 // certificate is still issuing; reaching neither at all defers to the DNS diagnosis.
@@ -55,12 +55,12 @@ func probeServing(ctx context.Context, probe *providers.Probe, r record.Record, 
 	return diagnoseUnreachable(ctx, probe, r, domain, providers.RequestTimeout)
 }
 
-// originProbe is one origin's reachability and marker match, mirroring hostname.mjs's own
+// originProbe is one origin's reachability and marker match, mirroring hostname.mjs's
 // probeOrigin return shape: matches and serves are only meaningful when reachable is true.
 type originProbe struct {
 	reachable bool
 	matches   bool
-	// serves reports whether the origin's own "/" answered 200. It splits the two ways a marker
+	// serves reports whether the origin's "/" answered 200. It splits the two ways a marker
 	// can fail to match, which are two different faults: a site serving its home page but no
 	// cairn admin, and a hostname answering nothing a visitor would call a site.
 	serves bool
@@ -70,7 +70,7 @@ type originProbe struct {
 // pair. A home page that answers 200 is a live site; whatever is at that hostname, it is not
 // cairn's admin, and saying the hostname does not answer would send an operator to DNS over a
 // route or a build that points somewhere else. A home page that answers anything else is a
-// hostname not serving the site at all, which is the older line's own case.
+// hostname not serving the site at all, which is the older line's case.
 func servingMismatch(p originProbe) spine.Outcome {
 	if p.serves {
 		return spine.Outcome{State: spine.Failing, Code: spine.CodeServingNotCairn, Detail: detailServingNotCairn()}
@@ -129,17 +129,17 @@ func matchesMarker(origin string, root, admin *http.Response) bool {
 
 // diagnoseUnreachable is confirmHostname's propagation split (hostname.mjs's diagnoseUnreachable)
 // for the case where neither scheme connects at all: it reads the apex AAAA record, the same
-// record a Custom Domain attach itself writes, against the zone's own authoritative
+// record a Custom Domain attach itself writes, against the zone's authoritative
 // nameservers, which no recursive resolver's negative cache sits in front of. Present there
-// means only the caller's own resolver has not caught up; absent, or no authoritative read
+// means only the caller's resolver has not caught up; absent, or no authoritative read
 // possible at all, means the record has not propagated.
 //
 // The candidate nameservers are discovered live first and the record's saved pair is only a
 // fallback, in that order, for two reasons. A recurring check must measure today's delegation,
 // not a pair a domain may have since moved away from, so an ordinary LookupNS is tried first and
 // wins outright whenever it answers with at least one nameserver. Only when that lookup answers
-// with none, or errors outright, does the sweep fall back to r's own saved assigned pair
-// (assignedNameServers): minutes after a registrar delegation, the operator's own resolver can
+// with none, or errors outright, does the sweep fall back to r's saved assigned pair
+// (assignedNameServers): minutes after a registrar delegation, the operator's resolver can
 // still hold a negative answer for NS while Cloudflare's nameservers already serve the apex
 // record, and only the saved pair can catch that case as resolver-lagging rather than
 // records-absent. When neither source yields a nameserver, or every authoritative query in the
@@ -179,7 +179,7 @@ func diagnoseUnreachable(ctx context.Context, probe *providers.Probe, r record.R
 	return spine.Outcome{State: spine.Unknown, Reason: spine.ParkReason(spine.ParkHostnameRecordsAbsent)}
 }
 
-// discoveredNameServerHosts asks the ordinary recursive resolver for domain's own nameservers,
+// discoveredNameServerHosts asks the ordinary recursive resolver for domain's nameservers,
 // returning their hostnames, or nil when the lookup errors or answers with none.
 func discoveredNameServerHosts(ctx context.Context, probe *providers.Probe, domain string) []string {
 	nameservers, err := probe.LookupNS(ctx, domain)

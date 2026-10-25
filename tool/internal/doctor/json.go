@@ -13,7 +13,7 @@ import (
 const kindDoctor = "doctor"
 
 // The wire state words this payload writes. They are five of the frozen vocabulary
-// docs/reference/cli-cairn-json-output.md publishes, and the doctor adds none of its own: its own
+// docs/reference/cli-cairn-json-output.md publishes, and the doctor adds none: its
 // info status has no wire word, and is written as a pass carrying a note.
 const (
 	stateWordPass    = "pass"
@@ -22,7 +22,7 @@ const (
 	stateWordUnknown = "unknown"
 )
 
-// payload is one directory preflight on the wire. It is its own kind rather than a health
+// payload is one directory preflight on the wire. It is its kind rather than a health
 // payload with different checks: a directory run has no registry record, no credential tier,
 // and no acknowledgements, so site, domain, tier, acknowledged, and hold have nothing to hold.
 type payload struct {
@@ -42,11 +42,11 @@ type checkPayload struct {
 	CheckID string `json:"checkId"`
 	State   string `json:"state"`
 	// Reason is mandatory on every skip and every unknown and absent otherwise, the rule the
-	// schema's own conditional enforces.
+	// schema's conditional enforces.
 	Reason    string `json:"reason,omitempty"`
 	Condition string `json:"condition,omitempty"`
 	Detail    string `json:"detail,omitempty"`
-	// Note carries an info check's own sentence. An info is written state: pass, since info is
+	// Note carries an info check's sentence. An info is written state: pass, since info is
 	// not one of the frozen wire words, and this key is how a consumer still tells the two
 	// apart. A check carrying a note writes no detail: the note is the whole of what it has to
 	// say, and the same sentence under two keys would leave a consumer guessing which to read.
@@ -76,7 +76,7 @@ type JSONInput struct {
 }
 
 // Marshal writes in as cairn doctor's published payload. The wire mapping is deliberately not
-// the printed report's: the report prints the doctor's own five status words, and the wire
+// the printed report's: the report prints the doctor's five status words, and the wire
 // writes only the five frozen state words json-output.md publishes.
 func Marshal(in JSONInput) ([]byte, error) {
 	// A run that settled no check writes an empty array rather than null: a consumer indexing
@@ -137,7 +137,7 @@ func conditionID(id spine.Condition) string {
 	return string(id)
 }
 
-// wireFix builds the fix a failing check publishes, from the condition's own registry entry: the
+// wireFix builds the fix a failing check publishes, from the condition's registry entry: the
 // remediation sentence the report prints, and the docs section it points at when the mirror
 // declares one.
 func wireFix(id spine.Condition) *fixPayload {

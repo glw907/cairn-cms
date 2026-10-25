@@ -114,7 +114,7 @@ test('the mint conditional-upsert contract behaves through the double: fresh, in
   const db = await createChannelDb(CHANNEL_SCHEMA_SQL);
   // store.ts's functions are typed against the real D1DatabaseSession, which carries far more of
   // the D1 surface (session bookmarks, D1Result's operational metadata) than this double needs to
-  // implement; the cast is the one the spec names for the showcase's own injection site, applied
+  // implement; the cast is the one the spec names for the showcase's injection site, applied
   // here at the one call site that reaches into engine code under test.
   const session = db.withSession('first-primary') as unknown as D1DatabaseSession;
   const now = Date.now();

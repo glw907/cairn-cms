@@ -326,7 +326,7 @@ test('deletePreviewTokens removes every row for one entry, and only that entry',
   expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-c').first()).not.toBeNull();
 });
 
-test("the editor-removal cascade's own delete clears every row that editor minted, across entries", async () => {
+test("the editor-removal cascade's delete clears every row that editor minted, across entries", async () => {
   const db = createFakeAuthDb();
   await mintToken(db, 'hash-a', { concept: 'posts', entryId: 'one', editor: 'gone@t', expiresAt: Date.now() + 60_000 });
   await mintToken(db, 'hash-b', { concept: 'posts', entryId: 'two', editor: 'gone@t', expiresAt: Date.now() + 60_000 });

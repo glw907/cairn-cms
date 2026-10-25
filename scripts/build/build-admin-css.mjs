@@ -30,7 +30,7 @@ const SCOPE = ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'
 export async function buildAdminCss({ extraSources = [] } = {}) {
   const base = readFileSync(inputPath, 'utf8');
   // Every daisyUI class name, calendar excluded, generated fresh from the installed package so
-  // a daisyUI upgrade needs no hand-kept list; see the placeholder's own comment in
+  // a daisyUI upgrade needs no hand-kept list; see the placeholder's comment in
   // admin-css.input.css. `listDaisyuiClasses` throws if it finds none, so a renamed daisyUI module
   // layout fails the build loudly instead of silently shrinking the compiled sheet.
   const daisyuiClasses = await listDaisyuiClasses({ exclude: ['calendar'] });
@@ -101,14 +101,14 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // scripts/admin-css.input.css declares `@layer theme, base, components, utilities;` up front, but
   // that bare ordering statement is dropped by the Tailwind/lightningcss pipeline above (each stage
   // only carries forward the populated `@layer name { ... }` blocks). Without it, precedence rides
-  // on lightningcss's own emission order, which happens to match the declared order for the four
+  // on lightningcss's emission order, which happens to match the declared order for the four
   // named layers, but Tailwind also emits an undeclared `@layer properties { ... }` block (the
-  // `--tw-*` fallback initializers) after its own `@layer theme, base, components, utilities;`
+  // `--tw-*` fallback initializers) after its `@layer theme, base, components, utilities;`
   // statement; an undeclared layer registers after every declared one, so `properties` would land
   // after `utilities` and outrank it. Re-declaring the full order here, first in the output, pins
   // `properties` ahead of `utilities` regardless of file order.
   //
-  // The second statement pins the order of daisyUI's own `@layer utilities.daisyui...` sublayers
+  // The second statement pins the order of daisyUI's `@layer utilities.daisyui...` sublayers
   // against `utilities.cairn-idiom`, the sublayer every override of a daisyUI declaration lives in
   // (spec, "The cairn-idiom sublayer"). Cascade layers resolve before specificity, so a rule in
   // `cairn-idiom` beats every daisyUI sublayer only because this statement registers it after them,
@@ -117,9 +117,9 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // first `cairn-idiom` rule to register it implicitly) keeps the order explicit and reviewable in
   // one place instead of riding wherever that first rule happens to land in the source.
   //
-  // A minifier downstream of this build (a consumer's own bundler) is free to relocate this
+  // A minifier downstream of this build (a consumer's bundler) is free to relocate this
   // statement below both sublayer blocks, where it registers nothing new: both blocks already
-  // fixed their own layer order by appearing first. Emission order, not this statement, is what
+  // fixed their layer order by appearing first. Emission order, not this statement, is what
   // decides the winner in that case, so the two sublayer blocks below must keep daisyUI's ahead of
   // cairn-idiom's regardless of where this pin ends up. src/tests/unit/admin-css-build.test.ts
   // guards that order against both the shipped sheet and a minified compile of it.
@@ -130,16 +130,16 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
   // real host `<body>` element sits ABOVE the admin theme root in the document, not inside it, so
   // the usual `[data-theme=...] descendant` scoping this sheet uses everywhere else cannot reach
   // it, and stage 2's prefixSelector step special-cases a bare `body`/`html`/`:root` selector by
-  // remapping it onto the theme root itself (the trick that lets Tailwind's own `:root` theme
+  // remapping it onto the theme root itself (the trick that lets Tailwind's `:root` theme
   // variables land correctly), which would put `margin: 0` on the wrapper div instead of the real
   // body. Writing the selector here, after both pipeline stages, is the same technique the
   // self-hosted @font-face rules above already use to reach the output unmangled. `:has()` keeps
   // the reset provably inert on any page this stylesheet is never a part of, resetting the host's
-  // own body only while an admin theme root is actually mounted in it: CairnAdminShell,
+  // body only while an admin theme root is actually mounted in it: CairnAdminShell,
   // LoginPage, and ConfirmPage each set `data-theme` to exactly one of these two names, and none
   // of the three assumes the host's ambient body margin is any particular value (8px, the UA
   // default, or 0, a host that already runs Tailwind Preflight), closing the seam a hard-coded
-  // compensating margin on an inner element could not. A host's own unlayered author rule on
+  // compensating margin on an inner element could not. A host's unlayered author rule on
   // `body` margin still wins over this base-layer rule, which is the host's explicit choice and
   // needs no `!important` to hold.
   const bodyMarginReset =

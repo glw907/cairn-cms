@@ -12,7 +12,7 @@ import (
 )
 
 // forbiddenImports names the two import paths criterion 3 forbids everywhere in this package
-// except profile.go: os and golang.org/x/term, the one TTY check's own two capabilities.
+// except profile.go: os and golang.org/x/term, the one TTY check's two capabilities.
 var forbiddenImports = []string{"os", "golang.org/x/term"}
 
 // forbiddenSelectors names the colorprofile detection entry points and the lipgloss package-level
@@ -28,7 +28,7 @@ var forbiddenSelectors = map[string][]string{
 // getter family (Get*), and Copy are not setters and are not listed. Width, MaxWidth, Height,
 // MaxHeight, Align*, and Border* are deliberately absent too: this check has no type information
 // (a plain AST walk, not go/types), so it can only match a selector by name, and those names
-// collide with this package's own methods (Theme.width) and would false-positive on a legitimate
+// collide with this package's methods (Theme.width) and would false-positive on a legitimate
 // call. The remaining names are lipgloss-specific enough that a collision is not a real risk.
 var lipglossSetters = []string{
 	"Foreground", "Background", "Bold", "Italic", "Underline", "UnderlineStyle", "Strikethrough",
@@ -38,7 +38,7 @@ var lipglossSetters = []string{
 	"Hyperlink", "ColorWhitespace", "Transform", "TabWidth",
 }
 
-// sourceFile is one non-test .go file in this package's own directory, parsed once for every
+// sourceFile is one non-test .go file in this package's directory, parsed once for every
 // purity check below to share.
 type sourceFile struct {
 	name string
@@ -86,7 +86,7 @@ func TestForbiddenImportsOutsideProfileGo(t *testing.T) {
 			path := strings.Trim(imp.Path.Value, `"`)
 			for _, forbidden := range forbiddenImports {
 				if path == forbidden {
-					t.Errorf("%s imports %q; that is profile.go's own TTY check alone", sf.name, path)
+					t.Errorf("%s imports %q; that is profile.go's TTY check alone", sf.name, path)
 				}
 			}
 		}
@@ -165,7 +165,7 @@ func TestNoLipglossSetterOutsidePaletteGo(t *testing.T) {
 
 // renderDirectRequires is ADR-0002's pin policy, now four: the three libraries the record took at
 // Task 20a plus displaywidth, promoted from indirect at segment 3 so both width tables come from
-// the one library x/ansi's own narrow measure already rests on. A fifth is a decision, not an
+// the one library x/ansi's narrow measure already rests on. A fifth is a decision, not an
 // import, so it fails here first.
 var renderDirectRequires = []string{
 	"charm.land/lipgloss/v2",
@@ -177,13 +177,13 @@ var renderDirectRequires = []string{
 // otherDirectRequires is how many direct requires the rest of the module carries: the CLI
 // framework, the keyring library, the two x/ packages, YAML (promoted from indirect for
 // internal/doctor's site-config parse, ADR-0002's addendum), and pflag (promoted from indirect
-// when cmd/cairn's flag-list test began walking the command tree's own flag sets, which are
+// when cmd/cairn's flag-list test began walking the command tree's flag sets, which are
 // pflag values cobra hands back). They are counted rather than named, because internal/secrets
-// confines one of those import paths to its own file and that check reads every .go file in the
+// confines one of those import paths to its file and that check reads every .go file in the
 // module as text, this one included.
 const otherDirectRequires = 6
 
-// TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its own list, and the module
+// TestRenderDirectRequiresArePinned holds ADR-0002's pin policy to its list, and the module
 // to its total. A fifth library taken for this package, or one of the four dropped, fails here
 // and is named in the diff; a new direct require anywhere else in the module fails the count.
 func TestRenderDirectRequiresArePinned(t *testing.T) {
@@ -222,7 +222,7 @@ func TestRenderDirectRequiresArePinned(t *testing.T) {
 //
 // The list is longer than Task 20b-ii's criterion 16 enumerates, and the difference is recorded
 // rather than hidden: View and its constants, SelectBody, Env, Terminal, Glyphs, and Credential all
-// landed with the foundations and the first bodies, and the criterion's own prose names only the
+// landed with the foundations and the first bodies, and the criterion's prose names only the
 // types it was adding to. Everything here is reachable from Render's input or its output.
 var exportedSurface = []string{
 	"Body", "BodyMany", "BodyPlain", "BodySingle",
@@ -248,9 +248,9 @@ var exportedSurface = []string{
 	"Width80",
 }
 
-// exportedThemeMethods is Theme's own exported method set: the seams table names Style, Sized,
-// and Wrap as the 2.0 HUD's own seam, and every other method the cut found reachable only from
-// this package's own bodies and tests is unexported instead, so a later widening is a deliberate
+// exportedThemeMethods is Theme's exported method set: the seams table names Style, Sized,
+// and Wrap as the 2.0 HUD's seam, and every other method the cut found reachable only from
+// this package's bodies and tests is unexported instead, so a later widening is a deliberate
 // one a reviewer reads rather than a name nobody noticed had gone public.
 var exportedThemeMethods = []string{
 	"Sized", "Style", "Wrap",
@@ -275,7 +275,7 @@ func TestExportedSurfaceIsPinned(t *testing.T) {
 }
 
 // exportedNames returns the exported top-level names one declaration introduces, skipping a
-// method, which belongs to its receiver's own surface rather than to the package's.
+// method, which belongs to its receiver's surface rather than to the package's.
 func exportedNames(decl ast.Decl) []string {
 	var out []string
 	switch d := decl.(type) {

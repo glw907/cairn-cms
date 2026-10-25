@@ -23,7 +23,7 @@ func fixedNow() time.Time {
 }
 
 // fixedOutcomeCheck is a Check whose Run always returns a fixed spine.Outcome, standing in for a
-// real check in a test that only needs to observe Run's own orchestration.
+// real check in a test that only needs to observe Run's orchestration.
 type fixedOutcomeCheck struct {
 	id      string
 	tier    Tier
@@ -36,7 +36,7 @@ func (c fixedOutcomeCheck) Run(context.Context, record.Record, Clients, Options)
 	return c.outcome
 }
 
-// cancelingCheck cancels its own run's context before returning, standing in for the real-world
+// cancelingCheck cancels its run's context before returning, standing in for the real-world
 // deadline or Ctrl-C a running sweep can hit mid-check.
 type cancelingCheck struct {
 	id     string
@@ -60,11 +60,11 @@ func (c panickingCheck) Run(context.Context, record.Record, Clients, Options) sp
 	panic(c.value)
 }
 
-// statefulStubCheck counts its own invocations and folds the count into its Outcome, standing in
+// statefulStubCheck counts its invocations and folds the count into its Outcome, standing in
 // for a check that (unlike creds) carries mutable state. TestRunIsPureOverItsInputs gives each of
-// its two Run calls a fresh instance with its own zeroed counter, so the resulting reports are
+// its two Run calls a fresh instance with its zeroed counter, so the resulting reports are
 // identical only if Run itself calls each check's Run method exactly once per sweep and
-// introduces no hidden state of its own between separate calls.
+// introduces no hidden state between separate calls.
 type statefulStubCheck struct {
 	calls *int
 }
@@ -196,7 +196,7 @@ func TestRunDegradedClearForNonCredMissingUnknown(t *testing.T) {
 }
 
 // TestRunIsPureOverItsInputs runs the whole All set plus a fresh statefulStubCheck twice, each
-// against its own zeroed counter and the same fixed clock, and asserts the two reports render to
+// against its zeroed counter and the same fixed clock, and asserts the two reports render to
 // byte-identical JSON.
 func TestRunIsPureOverItsInputs(t *testing.T) {
 	clients := okCredsClients()

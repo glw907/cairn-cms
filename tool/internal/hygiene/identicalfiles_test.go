@@ -22,7 +22,7 @@ var identicalPairs = [][2]string{
 func TestGOOSPairsAreByteIdentical(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	// thisFile is tool/internal/hygiene/identicalfiles_test.go; strip the
 	// file name, then walk up two directories from internal/hygiene to

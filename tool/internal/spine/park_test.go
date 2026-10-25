@@ -17,7 +17,7 @@ var (
 )
 
 // waitCodesIn scans a catalogue.mjs file's ROWS object for every row whose kind is "wait",
-// returning the row's own key: the vocabulary a ParkCode names.
+// returning the row's key: the vocabulary a ParkCode names.
 func waitCodesIn(path string) (map[string]bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

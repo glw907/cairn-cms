@@ -221,7 +221,7 @@ func (s *Store) Save(id string, r record.Record) (err error) {
 
 // fsyncDir fsyncs dir itself, so a rename into it survives a crash.
 // FlushFileBuffers on a directory handle is not guaranteed on Windows,
-// where NTFS's own write-ahead logging makes the extra fsync moot, so a
+// where NTFS's write-ahead logging makes the extra fsync moot, so a
 // failure there is not treated as fatal.
 func fsyncDir(dir string) error {
 	d, err := os.Open(dir)

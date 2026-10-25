@@ -1,15 +1,15 @@
-// cairn-cms: the public-theme gate over cairn's own tree. It runs cairn-audit's three public-scope
+// cairn-cms: the public-theme gate over cairn's tree. It runs cairn-audit's three public-scope
 // rules (public-literals, theme-conformance, theme-contrast) from the packaged audit over the
 // showcase, then again with the cairn-theme identity overlay (examples/cairn-theme/cairn.css)
 // layered after theme.css in the import chain, so an overlay retone is held to the same floor, then
 // a third time over a temporary copy of the showcase with the fixture theme in place of theme.css.
 //
-// A consumer runs these rules at advisory tier. cairn's own tree holds itself to more: any
+// A consumer runs these rules at advisory tier. cairn's tree holds itself to more: any
 // unsuppressed finding at either tier fails this gate, so all three rules gate cairn's CI from the
 // day they register. A suppressed finding is a reasoned exception and never fails it.
 //
 // The roots come from the repo-owned scripts/checks/public-scope.config.json, never the showcase's
-// own config, which the template receives: that file adds the engine's src/lib/public as a public
+// config, which the template receives: that file adds the engine's src/lib/public as a public
 // root and cairn-public.css as a theme root, both paths a scaffolded site does not have. The audit
 // reads cairn-public.css through the showcase's installed engine, so the showcase's node_modules
 // must be installed and the engine packaged (the npm script packages first). The fixture run reads

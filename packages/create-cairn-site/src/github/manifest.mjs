@@ -1,13 +1,13 @@
 // The manifest flow: the tool's first trip to GitHub. It builds a GitHub App manifest, serves
 // it on the loopback as an auto-submitting form, waits for GitHub's redirect back with the
 // one-time exchange code, and trades that code for the new App's credentials. This is the
-// step that needs no standing OAuth client of its own: the App the admin creates here becomes
-// its own OAuth client for every later step.
+// step that needs no standing OAuth client: the App the admin creates here becomes
+// its OAuth client for every later step.
 //
 // Spike-observed constraints (docs/internal/2026-08-10-t2-own-app-spike.md), pinned by tests so
 // neither is later "simplified" away:
 //   - The install redirect (a later chapter step) uses the FIRST registered callback URL
-//     verbatim. callback_urls therefore carries this run's own ported loopback URL first, and
+//     verbatim. callback_urls therefore carries this run's ported loopback URL first, and
 //     the portless 'http://127.0.0.1/callback' second only as a resume fallback (port 80 is
 //     unbindable by an unprivileged process, so it can never be the primary path). This is why
 //     the chapter orchestrator (chapter.mjs) shares ONE loopback across the manifest trip and the
@@ -134,12 +134,12 @@ export function manifestTarget({ ownerType, org }) {
  * @param {(line: string) => void} input.log receives one printed line per call
  * @param {string} input.dir the `--dir` value, interpolated into every raised error's message
  * @param {number} [input.timeoutMs] overrides the loopback wait's timeout; defaults to
- *  `startLoopback`'s own ten-minute default, and exists so a test can force a fast timeout
+ *  `startLoopback`'s ten-minute default, and exists so a test can force a fast timeout
  * @param {import('./loopback.mjs').Loopback} [input.loopback] a loopback to reuse rather than
  *  starting a fresh one; given by the chapter orchestrator, which shares one loopback across the
- *  manifest and install trips (see this module's own header comment for why). When given, this
- *  function does not close it; the caller owns that. Absent, this function starts and closes its
- *  own, for a caller (or a test) that only needs the manifest step in isolation.
+ *  manifest and install trips (see this module's header comment for why). When given, this
+ *  function does not close it; the caller owns that. Absent, this function starts and closes it,
+ *  for a caller (or a test) that only needs the manifest step in isolation.
  * @returns {Promise<ManifestCredentials>} the created App's credentials
  */
 export async function runManifestFlow({ appName, siteName, ownerType, org, openBrowser, log, dir, timeoutMs, loopback: givenLoopback }) {
@@ -148,7 +148,7 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
   try {
     // A per-run nonce on the form target, echoed back by GitHub on the redirect to redirect_url
     // (the /manifest hit below), so a process that can merely reach this loopback (not the
-    // browser this run actually opened) cannot hand it a code for an App of its own creation.
+    // browser this run actually opened) cannot hand it a code for an App that process created.
     const state = randomBytes(16).toString('hex');
     const manifest = buildManifest({ appName, siteName, ownerType, loopbackUrl: loopback.url });
     const target = new URL(manifestTarget({ ownerType, org }));

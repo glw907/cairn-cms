@@ -14,8 +14,8 @@ import {
 } from './bake-template.mjs';
 import { TEMPLATE_GITHUB_APP_LITERAL } from '../src/github/finalize.mjs';
 
-// Published specs, so a bake under test never depends on what the monorepo's own versions
-// happen to be. The resolved defaults have their own test below.
+// Published specs, so a bake under test never depends on what the monorepo's versions
+// happen to be. The resolved defaults have their test below.
 const PUBLISHED_SPECS = { engineSpec: '^0.94.0', devSpec: '^0.1.0' };
 
 /**
@@ -62,12 +62,12 @@ test('the baked template\'s cairn.config.ts carries the exact createGithubApp(..
 // @glw907/cairn-cms-dev first published at the 0.95.0-rc.1 cut, so bake() now resolves a usable
 // default devSpec instead of refusing one. The refusal is still covered: assertInstallableSpec is
 // exercised directly below against a constructed 0.0.0, which tests the guard's contract rather
-// than a passing state of the repo's own version files.
+// than a passing state of the repo's version files.
 test('bake with no overrides resolves installable default specs', async (t) => {
   const to = await tempTarget(t);
   await bake({ to });
   const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
-  // A caret on a prerelease is admitted: the specs the bake resolves track the repo's own
+  // A caret on a prerelease is admitted: the specs the bake resolves track the repo's
   // versions, and a release line opens on an rc before its stable exists.
   const INSTALLABLE = /^\^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
   assert.match(pkg.dependencies['@glw907/cairn-cms'], INSTALLABLE);
@@ -114,7 +114,7 @@ test('bake prunes showcase-only scripts and devDependencies, keeping the rest', 
   assert.ok('format:check' in pkg.scripts);
 });
 
-// The showcase excludes .claude/ from the copy (its own dev tooling stays out); the bake writes
+// The showcase excludes .claude/ from the copy (its dev tooling stays out); the bake writes
 // its own .claude/ explicitly (the guidance tree), so the directory now exists but holds only
 // what writeGuidance wrote, never any showcase dev-tooling leftover.
 test('bake emits a tree with only the baked .claude guidance, and scripts/ holds exactly dev.mjs', async (t) => {
@@ -153,7 +153,7 @@ test('bake rewrites package.json.scripts.dev to run the shim', async (t) => {
   assert.equal(pkg.scripts.dev, 'node scripts/dev.mjs');
 });
 
-// The rot gate: rewriteDevScript must fail loud when the showcase's own dev script is not the
+// The rot gate: rewriteDevScript must fail loud when the showcase's dev script is not the
 // exact string it expects to replace, rather than silently overwrite an unrelated command.
 test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
   const pkg = { scripts: { dev: 'vite dev --host' } };
@@ -163,7 +163,7 @@ test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
   );
 });
 
-// Plain bake() (emit-template-dir.mjs's own entry point) keeps the emitted .gitignore under its
+// Plain bake() (emit-template-dir.mjs's entry point) keeps the emitted .gitignore under its
 // real dot name: a committed template tree has no npm packlist to strip it, and the emitter's
 // overlay appends its `.dev.vars.example` negation onto that exact file (OVERLAY_MERGE_RULES).
 test('bake keeps the emitted .gitignore under its real name, covering the secret-bearing entries', async (t) => {
@@ -178,8 +178,8 @@ test('bake keeps the emitted .gitignore under its real name, covering the secret
   assert.match(gitignore, /\.wrangler/);
 });
 
-// The rot gate against npm's own packlist: it drops any file literally named ".gitignore" from a
-// published tarball, so bakeForPacking (create-cairn-site's own prepack entry point) must rename
+// The rot gate against npm's packlist: it drops any file literally named ".gitignore" from a
+// published tarball, so bakeForPacking (create-cairn-site's prepack entry point) must rename
 // the emitted copy to a dot-free name before packing; scaffold.mjs renames it back on the way out.
 test('bakeForPacking renames the emitted .gitignore to a dot-free "gitignore", covering the secret-bearing entries', async (t) => {
   const to = await tempTarget(t);
@@ -201,7 +201,7 @@ test('bake writes a site README that is not the showcase README', async (t) => {
   assert.ok(!readme.includes('../../docs'));
 });
 
-// The scaffold's own dev script now sets CAIRN_DEV_BACKEND at runtime (scripts/dev.mjs), so the
+// The scaffold's dev script now sets CAIRN_DEV_BACKEND at runtime (scripts/dev.mjs), so the
 // README teaches plain `npm run dev` and must never mention the variable or a PowerShell branch.
 test('the baked README teaches plain npm run dev and never mentions CAIRN_DEV_BACKEND', async (t) => {
   const to = await tempTarget(t);
@@ -259,7 +259,7 @@ test("bake writes the template's root CLAUDE.md with the import line and a site 
   assert.match(claudeMd, /# Your site/);
 });
 
-test('bake excludes .claude from the site\'s own Tailwind build', async (t) => {
+test('bake excludes .claude from the site\'s Tailwind build', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
   const tokensPath = path.join(to, 'src', 'chassis', 'tokens.css');

@@ -20,7 +20,7 @@ import (
 func TestRenderMatchesCommittedGolden(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	goldenPath := filepath.Join(filepath.Dir(thisFile), "..", "..", "testdata", "copy.golden.md")
 
@@ -33,13 +33,13 @@ func TestRenderMatchesCommittedGolden(t *testing.T) {
 	}
 }
 
-// TestCataloguesAreSortedAndDeduplicated asserts every package's own catalogue is sorted with no
+// TestCataloguesAreSortedAndDeduplicated asserts every package's catalogue is sorted with no
 // repeated entry, the shape `make copy-list`'s output and the committed golden both depend on for
 // a stable, reviewable diff.
 func TestCataloguesAreSortedAndDeduplicated(t *testing.T) {
 	for _, pkg := range catalogues() {
-		// doctor carries no checks yet, so its own catalogue is legitimately empty until one
-		// registers detail or fix text of its own.
+		// doctor carries no checks yet, so its catalogue is legitimately empty until one
+		// registers detail or fix text.
 		if len(pkg.entries) == 0 && pkg.name != "doctor" {
 			t.Errorf("package %q carries no entries", pkg.name)
 		}
@@ -107,15 +107,15 @@ const badConst = otherIdent
 	}
 }
 
-// TestCheckDoesNotDependOnCopyReview asserts the Makefile's own `check` target never acquires a
+// TestCheckDoesNotDependOnCopyReview asserts the Makefile's `check` target never acquires a
 // dependency on `copy-review`: copy-review runs tellgrader, a Linux-only binary, and
 // .github/workflows/tool.yml runs `make -C tool check` on macOS and Windows runners too, where
 // that dependency would hard-fail rather than skip (tool/docs/design/copy-standard.md section
-// 4.5's own rule for keeping the editorial aid out of CI).
+// 4.5's rule for keeping the editorial aid out of CI).
 func TestCheckDoesNotDependOnCopyReview(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	makefilePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "Makefile")
 	data, err := os.ReadFile(makefilePath)
@@ -132,13 +132,13 @@ func TestCheckDoesNotDependOnCopyReview(t *testing.T) {
 
 // TestNoCmdCairnFileImportsCopylist asserts cmd/copylist has no non-test importer under
 // cmd/cairn, so this binary can never enter the shipped `cairn` binary. copylist is itself
-// `package main`, which Go's own compiler already refuses to import; this test is the standing
+// `package main`, which Go's compiler already refuses to import; this test is the standing
 // proof of that refusal, so a later restructuring that changed copylist's package name would
 // still be caught here rather than by a compiler error nobody reads as a policy statement.
 func TestNoCmdCairnFileImportsCopylist(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	cairnDir := filepath.Join(filepath.Dir(filepath.Dir(thisFile)), "cairn")
 	entries, err := os.ReadDir(cairnDir)

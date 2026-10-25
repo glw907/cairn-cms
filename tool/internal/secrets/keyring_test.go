@@ -20,7 +20,7 @@ func TestKeyringName(t *testing.T) {
 }
 
 func TestKeyringRoundTrip(t *testing.T) {
-	// The library's own in-memory mock, not a live keyring, so this
+	// The library's in-memory mock, not a live keyring, so this
 	// passes on a headless CI leg with no Secret Service and no session
 	// keyring.
 	zkeyring.MockInit()
@@ -116,7 +116,7 @@ func TestKeyringSetDeadlineMiss(t *testing.T) {
 
 // TestKeyringSetDropsBackendText swaps keyringSet for a func that fails with a distinctive
 // string and asserts Set's returned error carries neither that string nor any other backend
-// text, matching ErrKeyringUnavailable's own doc comment.
+// text, matching ErrKeyringUnavailable's doc comment.
 func TestKeyringSetDropsBackendText(t *testing.T) {
 	prevSet := keyringSet
 	keyringSet = func(string, string, string) error {
@@ -131,7 +131,7 @@ func TestKeyringSetDropsBackendText(t *testing.T) {
 		t.Fatalf("Set() on a backend failure = %v, want ErrKeyringUnavailable", err)
 	}
 	if strings.Contains(err.Error(), "XYZZY-BACKEND-REFUSED") {
-		t.Errorf("Set() error = %q, must not carry the backend's own text", err.Error())
+		t.Errorf("Set() error = %q, must not carry the backend's text", err.Error())
 	}
 }
 
@@ -201,7 +201,7 @@ func TestKeyringDeleteDropsBackendText(t *testing.T) {
 		t.Fatalf("Delete() on a backend failure = %v, want ErrKeyringUnavailable", err)
 	}
 	if strings.Contains(err.Error(), "XYZZY-BACKEND-REFUSED") {
-		t.Errorf("Delete() error = %q, must not carry the backend's own text", err.Error())
+		t.Errorf("Delete() error = %q, must not carry the backend's text", err.Error())
 	}
 }
 
@@ -285,7 +285,7 @@ func TestReadClassifiesItsFailures(t *testing.T) {
 // TestKeyringLive exercises the real OS keyring on whichever machine runs
 // it. It is skipped by default so the suite passes on a headless CI leg
 // with no Secret Service and no session keyring; set CAIRN_KEYRING_LIVE=1
-// to run it against this machine's own keyring.
+// to run it against this machine's keyring.
 func TestKeyringLive(t *testing.T) {
 	if os.Getenv("CAIRN_KEYRING_LIVE") == "" {
 		t.Skip("set CAIRN_KEYRING_LIVE=1 to exercise the real OS keyring")
@@ -308,7 +308,7 @@ func TestKeyringLive(t *testing.T) {
 func TestKeyringLibraryOnlyInKeyringGo(t *testing.T) {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("resolve this file's own path")
+		t.Fatal("resolve this file's path")
 	}
 	// thisFile is tool/internal/secrets/keyring_test.go; strip the file
 	// name, then walk up two directories from internal/secrets to reach

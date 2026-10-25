@@ -2,8 +2,8 @@
 
 `cairn` needs three values to reach a site's Cloudflare zone and its GitHub
 repository, and a place on disk to keep the sites it has adopted. Neither
-store is a product cairn ships: an operator's own environment and OS
-keyring hold the credentials, and a directory on the operator's own machine
+store is a product cairn ships: an operator's environment and OS
+keyring hold the credentials, and a directory on the operator's machine
 holds the registry.
 
 ## The three variables
@@ -94,7 +94,7 @@ the earlier sections describe, keeps a credential out of both.
   as an absent value, the same as an operator who has only set the
   environment variables.
 
-`cairn` names no operator's own secret store, such as a password manager's
+`cairn` names no operator's secret store, such as a password manager's
 CLI or a cloud secrets service, as a source; the environment and the OS
 keyring are the two providers 1.0 ships.
 
@@ -108,7 +108,7 @@ resolves in this order:
    `~/.config/cairn/sites`, when it exists on disk. This directory outranks
    the platform default deliberately, so an operator's existing records are
    never silently unread on a platform where the two differ.
-3. Otherwise, the platform's own configuration directory plus
+3. Otherwise, the platform's configuration directory plus
    `cairn/sites`: `%AppData%\cairn\sites` on Windows,
    `~/Library/Application Support/cairn/sites` on macOS, and
    `$XDG_CONFIG_HOME/cairn/sites` (or `~/.config/cairn/sites` when
@@ -116,12 +116,12 @@ resolves in this order:
 
 ## Token scopes
 
-`cairn auth check` confirms the permissions below against your own two
+`cairn auth check` confirms the permissions below against your two
 tokens: every account-scoped permission with credentials alone, and every
 zone-scoped or repository-scoped permission against one registered site
-with `cairn auth check <site>`. The nine labels below are cairn's own
+with `cairn auth check <site>`. The nine labels below are cairn's
 single source (`tool/cmd/cairn/permissions.go`); a permission added to one
-without the other fails the tool's own test suite.
+without the other fails the tool's test suite.
 
 ### Cloudflare
 
@@ -138,7 +138,7 @@ pins plus all zones of that account:
 - Email Sending
 
 Zone Settings is easy to omit: Workers Scripts and Zone alone read a zone's
-worker and domain state, but the HTTPS-forced check's own endpoints
+worker and domain state, but the HTTPS-forced check's endpoints
 (`zones/{id}/settings/always_use_https` and
 `zones/{id}/settings/security_header`) answer 403 without it. A token minted
 with the first six groups only fails that one check forever, silently,
@@ -150,7 +150,7 @@ since a 403 there reports UNKNOWN rather than a scope error.
 and Metadata read, at the shortest expiry the operator can live with. Mint
 it over all repositories the account owns rather than a hand-picked list,
 so adopting a second site needs no new token: the tool reads only the
-repositories its own registry names. It also reads `glw907/cairn-cms` for
+repositories its registry names. It also reads `glw907/cairn-cms` for
 the Engine check's changelog, which a token confined to your own
 repositories still reaches, since that repository is public. A narrower
 scope is a silent failure: a check that cannot read a repository returns
@@ -170,9 +170,9 @@ classify a 404 as `not-found`, never `forbidden`; an operator who sees
 re-check the token's repository list before assuming the repository
 itself moved.
 
-### Confirming one site's own scope
+### Confirming one site's scope
 
-`cairn auth check <site>` reads that site's own record from the registry
+`cairn auth check <site>` reads that site's record from the registry
 and probes Zone Settings, DNS, and Email Sending against its zone, and
 Contents against its repository, all read-only; no site's zone id or
 repository is compiled into the binary. With no site named, those four
@@ -181,7 +181,7 @@ confirm them.
 
 ## The credential mint-and-probe run (2026-09-19/20)
 
-Geoff minted both tokens for his own five repositories
+Geoff minted both tokens for his five repositories
 (`glw907/ecxc-ski`, `glw907/907-life`, `glw907/aksailingclub-org`,
 `glw907/xcathletes-org`, and `glw907/cairn-cms`) and stored the values
 through the workstation age store, per his own deployment's rules (not
@@ -203,7 +203,7 @@ other four public:
 `auth probe` prints these key sets itself, by names only, through a
 recording `http.RoundTripper` that reads each 200 response body once,
 records its top-level key names (and, for the Cloudflare v4 envelope, the
-`result` field's own key names, since the envelope's own four keys carry
+`result` field's key names, since the envelope's four keys carry
 none of its shape), and hands the provider an identical fresh body; no
 response body is written to a file or to this document. Every probed
 repository line also reports public or private (`aksailingclub-org`,
@@ -214,7 +214,7 @@ merely not-rejected.
 The zone-scoped Zone Settings endpoints
 (`zones/{id}/settings/always_use_https`,
 `zones/{id}/settings/security_header`) were verified separately, by a
-direct API call against one of the operator's own zones rather than
+direct API call against one of the operator's zones rather than
 through `auth probe`: 1.0 has no `adopt` yet (Task 18), so no registry
 record before this pass carries a zone id `auth probe` could target
 generically. Both answered 403 before the Zone Settings group was added
@@ -242,7 +242,7 @@ in either case, so the boundary is observed from the data rather than
 stated by Cloudflare. **This is the account plan's own retention window,
 not a fixed cairn constant.** Task 17 clamps `logs --since` to **7 days**,
 the last value this run confirmed still returns events; an operator on a
-different Cloudflare plan reads their own boundary the same way, since the
+different Cloudflare plan reads their boundary the same way, since the
 API returns no retention value directly.
 
 ### GitHub token expiry

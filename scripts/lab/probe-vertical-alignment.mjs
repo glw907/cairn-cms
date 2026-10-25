@@ -15,8 +15,8 @@
 // reading one of them as a defect. A row that CENTRES its members and wraps its text has
 // deliberately put the other member half a block below the line the reading was taken on, so the
 // raw delta grows with the line count and swings with the viewport width. A row that TOP-ALIGNS
-// them levelled their own boxes and asked for nothing else, so a member read at its centre sits
-// half its own box below the line beside it, and the reading scales with the member box. The module
+// them levelled their boxes and asked for nothing else, so a member read at its centre sits
+// half its box below the line beside it, and the reading scales with the member box. The module
 // splits each delta into both terms and the residual left over (`compositionPx`), this probe
 // reports both columns, and the reporting bar applies to the residual. The first emission reported
 // 37 rows, hand-declined 13 as "trap 1 doing its job", and called the identical arithmetic a defect
@@ -32,7 +32,7 @@
 // A method that cannot reproduce a known defect has no standing to report a screen clean.
 //
 // WHY A STANDALONE SCRIPT RATHER THAN `runRendered`. The rendered rule that graduates the firing
-// half of this measurement does drive the engine's own runner. This sweep needs three things that
+// half of this measurement does drive the engine's runner. This sweep needs three things that
 // runner's page x theme x state loop does not express: a per-corpus width sweep (the runner owns
 // one viewport per visit), a screenshot crop per row (a RenderedFinding carries a selector and a
 // message, not an artifact), and the full numeric record of every measured pair, including the
@@ -159,7 +159,7 @@ const UNRENDERED_STATES = [
   ],
   [
     'validation / error',
-    'no form is submitted, so no error line renders below a control; this is exactly the shape the bottom-aligned field row recipe\'s caveat names (FieldLabel.svelte\'s own header comment), and it is unmeasured here',
+    'no form is submitted, so no error line renders below a control; this is exactly the shape the bottom-aligned field row recipe\'s caveat names (FieldLabel.svelte\'s header comment), and it is unmeasured here',
   ],
   ['loading / pending', 'no in-flight action is held open, so spinner and skeleton rows are unmeasured'],
 ];
@@ -281,7 +281,7 @@ async function applyState(page, state) {
     return (await page.locator('dialog[open]').count()) > 0;
   }
   if (state === 'dialog-open' || state === 'menu-open') {
-    // The engine's own definition of an open popup (rendered.ts's `applyState`), split by trigger
+    // The engine's definition of an open popup (rendered.ts's `applyState`), split by trigger
     // kind so the spec's "dialogs" and "one open-menu state" are two readings rather than whichever
     // one happened to come first in the DOM.
     const selector =
@@ -379,7 +379,7 @@ async function calibrate(browser) {
 
 /**
  * The pair a fixture's calibration verdict is taken on: the largest-magnitude pair of the fixture's
- * own class inside the fixture's own row, which is the same selection `calibrationMiss` makes.
+ * own class inside the fixture's row, which is the same selection `calibrationMiss` makes.
  * @param {Fixture} fixture
  * @param {MeasuredPair[]} pairs
  * @returns {MeasuredPair | null}
@@ -457,13 +457,13 @@ function classRuns(classes) {
 }
 
 /**
- * The file the ROW CONTAINER is authored in, resolved from the container's own class run.
+ * The file the ROW CONTAINER is authored in, resolved from the container's class run.
  *
  * THE ROW'S RENDERED TEXT DELIBERATELY PLAYS NO PART. An alignment recipe lives with the container,
  * and where that container is a shared toolkit component fed by props (`PageHeader`, used by every
  * admin page), the text it renders lives in the CONSUMER. Resolving from text names the consumer on
  * every such row, and an implementer dispatched from that name edits the wrong file and never sees
- * the shared recipe. Narrowing a multi-file class run by the row's own words has the same defect for
+ * the shared recipe. Narrowing a multi-file class run by the row's words has the same defect for
  * the same reason, so a run that lands in more than one file reports every candidate instead.
  * @param {{ file: string, text: string }[]} index
  * @param {string} classes
@@ -486,7 +486,7 @@ function attributeContainer(index, classes) {
 
 /**
  * The fallback: the longest run of CONSECUTIVE class tokens the row's elements carry, narrowed to
- * the files that ALSO render one of the row's own words. A Tailwind component writes its class list
+ * the files that ALSO render one of the row's words. A Tailwind component writes its class list
  * as one literal, so the run is a real signal, but several components share one and the first
  * emission resolved that ambiguity by taking whichever file the walk reached first.
  *
@@ -577,7 +577,7 @@ function shapeOf(pair) {
  *
  * EVERY ENTRY HERE IS A DESIGN CALL THE ARITHMETIC CANNOT REACH, and each one says which shape it
  * is. The composition term ({@link compositionPx}) now decides the mechanical cases, so a row whose
- * reading is explained by its own alignment never reaches this table: it measures within the bar
+ * reading is explained by its alignment never reaches this table: it measures within the bar
  * and drops out of the inventory. Sixteen of the first emission's twenty-one rulings were exactly
  * that, and a ruling that restates a rule is where a hand list starts disagreeing with itself.
  *
@@ -623,7 +623,7 @@ const REVIEWED_DISPOSITIONS = {
     "task 2 (admin toolkit): the icon-beside-text row mechanic (pair the ink centre to the line's " +
     'cap centre). REAL BUT MARGINAL, and it clears the bar by 0.33px: thirteen sibling icon-in-btn ' +
     "rows across the admin cluster in [-0.75, -0.5], and lucide's check glyph carries about 0.33px " +
-    'of ink-bbox bias of its own, which leaves roughly 1.5px of genuine placement offset. Worth ' +
+    'of ink-bbox bias, which leaves roughly 1.5px of genuine placement offset. Worth ' +
     'fixing with the mechanic, not worth a bespoke nudge.',
   '290376a5': INLINE_FLEX_LABEL_MECHANIC,
   '24a343fe': INLINE_FLEX_LABEL_MECHANIC,
@@ -963,7 +963,7 @@ async function sweep(args) {
  * (a composition term is taken) and at one where it does not (none is). The decomposition claims
  * those leave the same residual, and this is how far off that claim lands.
  *
- * A row's own constant offset cancels, which is the point. The previous emission read the residual
+ * A row's constant offset cancels, which is the point. The previous emission read the residual
  * SPREAD of the composition-explained rows as a floor, and most of that spread was rows carrying a
  * real 1 to 1.5px offset at every width, term or no term.
  * @param {object[]} record
@@ -995,7 +995,7 @@ function driftAcrossCompositions(record) {
 /**
  * What the top-alignment composition term actually judged, and what it could not see.
  *
- * Subtract that term and the algebra leaves each member's own content-within-its-own-box offset;
+ * Subtract that term and the algebra leaves each member's content-within-its-own-box offset;
  * the two members' RELATIVE placement drops out. So the branch judges a member read off something
  * INSIDE its box (an icon's ink in a tile, the one control in a stacked composite) and nothing
  * else, and on every other pair its residual is zero whatever the row looks like. Counting both
@@ -1126,7 +1126,7 @@ function renderDoc(run, corpora, index) {
   lines.push(
     '- A member whose run sits in a PAINTED BOX of its own (a background or a border, plus a ' +
       'padding, a border or a rounded corner) is read at that box, not at its cap band. The row ' +
-      "container's own paint never counts: a painted button holding an icon and its label is the " +
+      "container's paint never counts: a painted button holding an icon and its label is the " +
       'ground that row is drawn on, not one member\'s object. Keeping the two apart is also what ' +
       'stops a glyph riding high INSIDE a chip being counted twice, once here and once in the ' +
       'optical readings below.'
@@ -1155,8 +1155,8 @@ function renderDoc(run, corpora, index) {
   );
   lines.push('');
   lines.push(
-    'A TOP-ALIGNED row levelled its members\' own boxes and asked for nothing else, so a member ' +
-      'read at its CENTRE sits half its own box below the line beside it: a 36px icon tile beside a ' +
+    'A TOP-ALIGNED row levelled its members\' boxes and asked for nothing else, so a member ' +
+      'read at its CENTRE sits half its box below the line beside it: a 36px icon tile beside a ' +
       '13px line reads 11.5px apart with its ink dead centre in the tile, and the same recipe in a ' +
       '28px tile reads 5.5px. A reading that scales with the member box rather than with the ink is ' +
       'the signature.'
@@ -1176,7 +1176,7 @@ function renderDoc(run, corpora, index) {
     'The member box is the box the row placed, which is not always the box the reading came off: an ' +
       'icon centred in a tile and the one control inside a stacked composite are both read off ' +
       'something smaller. What survives the top-alignment term is therefore a member whose visible ' +
-      'content does not sit where its own box puts it, which is the `/join` ink defect this method ' +
+      'content does not sit where its box puts it, which is the `/join` ink defect this method ' +
       'was built on, and the `icon-card` calibration fixture is the positive control: it top-aligns, ' +
       'it takes a term of half a pixel, and its 4px defect survives whole.'
   );
@@ -1190,7 +1190,7 @@ function renderDoc(run, corpora, index) {
       'enters. NOT MODELLED, and left to a reviewed ruling rather than folded in silently: an ' +
       "`end`-aligned row pairs with the block's LAST line, and a grid member spanning several rows " +
       'centres on its span. NOT REPORTED, and stated rather than implied: under `stretch` (and the ' +
-      '`normal` that resolves to it) a member box is the row\'s own height, so no term is taken; and ' +
+      '`normal` that resolves to it) a member box is the row\'s height, so no term is taken; and ' +
       'the top-alignment term absorbs generous leading, since a row that got the tops it asked for ' +
       'is composed as written and choosing `items-center` instead is a design call, not a reading.'
   );
@@ -1205,7 +1205,7 @@ function renderDoc(run, corpora, index) {
   const coverage = topAlignmentCoverage(run.record);
   lines.push(
     'Stated rather than implied, because a residual of zero here is NOT a clean row. Subtract the ' +
-      "top-alignment term and the algebra leaves each member's own content-within-its-own-box " +
+      "top-alignment term and the algebra leaves each member's content-within-its-own-box " +
       'offset: `residual = inset(a) - inset(b)`. THE TWO MEMBERS\' RELATIVE PLACEMENT DROPS OUT ' +
       'ENTIRELY. What survives is a member read off something INSIDE the box the row placed, which ' +
       'is real and is the defect this method was built on, and nothing else.'
@@ -1214,10 +1214,10 @@ function renderDoc(run, corpora, index) {
   lines.push(
     `- Readings this branch JUDGED (an icon's ink in its tile, a stacked composite's control): ` +
       `${coverage.sighted}, of which ${coverage.sightedNonZero} measured anything other than exactly ` +
-      'zero. A zero here is a real verdict: the ink sits where its own box puts it.'
+      'zero. A zero here is a real verdict: the ink sits where its box puts it.'
   );
   lines.push(
-    `- Readings where it is blind by construction (every member read exactly where its own box ` +
+    `- Readings where it is blind by construction (every member read exactly where its box ` +
       `puts it, so the inset is structurally zero): ${coverage.blind}, of which ` +
       `${coverage.blindNonZero} measured anything other than exactly zero.` +
       (coverage.byClass.length > 0
@@ -1247,7 +1247,7 @@ function renderDoc(run, corpora, index) {
   );
   lines.push('');
   lines.push(
-    'Each fixture declares the largest composition term its own alignment can honestly ask for, ' +
+    'Each fixture declares the largest composition term its alignment can honestly ask for, ' +
       'which makes this check the guard on the decomposition as well: a rule that started ' +
       'explaining real defects away as composition fails here rather than quietly emptying the ' +
       'inventory. `season-row` centres and wraps nothing, so its bound is zero. `icon-card` ' +
@@ -1308,7 +1308,7 @@ function renderDoc(run, corpora, index) {
   lines.push('');
   lines.push(
     'Sign: NEGATIVE means the left-hand member rides HIGH against the right-hand member; on an ' +
-      'optical row, negative means the glyph rides high inside its own padding box. The RESIDUAL ' +
+      'optical row, negative means the glyph rides high inside its padding box. The RESIDUAL ' +
       'column is the reading each disposition rests on. Every row carries a disposition: a recipe ' +
       'task, or an explicit decline with its reason. No row reads "unknown".'
   );
@@ -1388,7 +1388,7 @@ function renderDoc(run, corpora, index) {
   }
   lines.push(
     'A decline is one of two things, and each row says which. A MECHANICAL decline is the ' +
-      'measurement disqualifying its own reading (an icon with no reachable painting geometry, so ' +
+      'measurement disqualifying its reading (an icon with no reachable painting geometry, so ' +
       'the number is a border box rather than ink). A REVIEWED decline is a design call the ' +
       'arithmetic cannot reach, ruled on after reading the crop. The reviewed rulings live in the ' +
       'probe (`REVIEWED_DISPOSITIONS`), keyed by the Id column, because a re-run overwrites this ' +
@@ -1455,7 +1455,7 @@ function renderDoc(run, corpora, index) {
   lines.push('');
   lines.push(
     'Glyph cap centre against the padding box the glyph sits in, over every optical reading in the ' +
-      'run rather than only the ones above the bar. NEGATIVE means the glyph rides high in its own ' +
+      'run rather than only the ones above the bar. NEGATIVE means the glyph rides high in its ' +
       'box. This is the evidence a `text-box: trim-both` default rests on, so the sub-bar ' +
       'distribution matters as much as the outliers.'
   );
@@ -1490,7 +1490,7 @@ function renderDoc(run, corpora, index) {
   if (opticalRanked.length > 20) lines.push(`| ... ${opticalRanked.length - 20} more recipes | | | |`);
   lines.push('');
 
-  // The decomposition's own landing error, measured rather than assumed. A reading this run
+  // The decomposition's landing error, measured rather than assumed. A reading this run
   // rendered BOTH wrapped (a composition term is taken) and unwrapped (none is) is a within-reading
   // control on the term: the decomposition claims both leave the same residual, so the distance
   // between them is the method's error. No selection on either variable enters, which is what the
@@ -1543,7 +1543,7 @@ function renderDoc(run, corpora, index) {
   }
   lines.push('');
   lines.push(
-    'NEITHER DISTRIBUTION IS A NOISE FLOOR. The full distribution contains the defects, so its own ' +
+    'NEITHER DISTRIBUTION IS A NOISE FLOOR. The full distribution contains the defects, so its ' +
       'p99 is pulled up by them, and any statistic over "the readings under the bar" is a statistic ' +
       'about the bar. Nor is the residual spread of the composition-explained rows a floor, which ' +
       'is what the previous emission used: that set is defined as raw above the bar AND residual ' +
@@ -1557,7 +1557,7 @@ function renderDoc(run, corpora, index) {
     'The population that does answer the question is a WITHIN-READING one, and it needs no ' +
       'selection at all: any reading this run measured both wrapped (a composition term is taken) ' +
       'and unwrapped (none is). The decomposition claims those two renderings leave the same ' +
-      'residual, so how far apart they land IS the method\'s own error, measured on the corpus ' +
+      'residual, so how far apart they land IS the method\'s error, measured on the corpus ' +
       'rather than assumed.'
   );
   lines.push('');
@@ -1574,7 +1574,7 @@ function renderDoc(run, corpora, index) {
   lines.push('');
   lines.push(
     `The floor this run supports is ${round(floor)}px: the larger of run-to-run jitter (${jitter}px) ` +
-      `and the decomposition's own landing error (${round(driftMax)}px). Everything above that is a ` +
+      `and the decomposition's landing error (${round(driftMax)}px). Everything above that is a ` +
       'REPRODUCIBLE offset rather than noise, including the 1 to 1.5px readings the previous ' +
       'emission called a floor, which hold to the hundredth across five widths and both themes.'
   );
@@ -1612,7 +1612,7 @@ function renderDoc(run, corpora, index) {
         'where the 1.55px was the cap-height ratio between 10px chip type and 13px cell type and ' +
         'nothing else. Read at centres they measure 0.05px, the chip box against the date\'s cap ' +
         'band, and the crop shows the chip optically centred on the date. THEY ARE NOT THE SAME ' +
-        'DEFECT as the three `CairnTidySettings` rows above, which miss a baseline their own row ' +
+        'DEFECT as the three `CairnTidySettings` rows above, which miss a baseline their row ' +
         'declared. A row sitting under the bar is not evidence of anything until its metric is right.'
     );
     lines.push('');

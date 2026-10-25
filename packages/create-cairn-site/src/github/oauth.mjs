@@ -4,7 +4,7 @@
 // access token traded for a one-time code. exchangeCode is a DIRECT fetch, not routed through
 // api.mjs's githubRequest: the token endpoint lives on webBase(), not apiBase(), and its default
 // response is form-encoded rather than JSON, which is a different contract than every other call
-// this tool makes (see api.mjs's own module comment for the same rule stated from that side).
+// this tool makes (see api.mjs's module comment for the same rule stated from that side).
 import { randomBytes } from 'node:crypto';
 import { startLoopback } from './loopback.mjs';
 import { webBase } from './api.mjs';
@@ -82,13 +82,13 @@ export function authorizeUrl({ clientId, redirectUri, state }) {
  *  admin's browser to the given URL
  * @property {(line: string) => void} log receives one printed line per call
  * @property {number} [timeoutMs] overrides the loopback wait's timeout; defaults to
- *  `startLoopback`'s own ten-minute default, and exists so a test can force a fast timeout
+ *  `startLoopback`'s ten-minute default, and exists so a test can force a fast timeout
  */
 
 /**
  * Re-authorize on a resumed run. The App is already installed and authorized from an earlier
  * run, so GitHub redirects straight back with no consent prompt to click through; this is the
- * resume path's own authorize/callback round trip, distinct from the manifest flow's.
+ * resume path's authorize/callback round trip, distinct from the manifest flow's.
  *
  * Spike-observed constraint (docs/internal/2026-08-10-t2-own-app-spike.md), pinned here so it is
  * not later "simplified" away: GitHub's loopback leniency for a registered portless callback URL
@@ -132,10 +132,10 @@ export async function reauthorize({ clientId, clientSecret, dir, appName, openBr
 
     const code = params.get('code');
     if (!code) {
-      // GitHub's own shape for a declined consent screen: the redirect still lands (and still
+      // GitHub's shape for a declined consent screen: the redirect still lands (and still
       // echoes state, checked above), but carries no code, only an error param. Only the
       // reconcile chapter's re-authorize trip can actually reach a live consent screen (chapter
-      // 1's own call happens only once the App is already confirmed installed, which GitHub
+      // 1's call happens only once the App is already confirmed installed, which GitHub
       // never re-prompts for), so the builds-prefixed row is the right home for this even though
       // the check itself lives in the shared trip both chapters call.
       throw chapterError('builds-oauth-denied', { dir });

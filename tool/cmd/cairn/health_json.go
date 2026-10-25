@@ -12,7 +12,7 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
-// writeSiteJSON writes the single-site payload, which carries the run's own exit code: for a
+// writeSiteJSON writes the single-site payload, which carries the run's exit code: for a
 // one-site invocation the site's verdict and the run's code are the same thing.
 func writeSiteJSON(w io.Writer, d deps, rf *rootFlags, r health.Report, verdict spine.Verdict, elapsed time.Duration) error {
 	data, err := render.MarshalSite(render.SiteJSON{

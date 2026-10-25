@@ -109,7 +109,7 @@ func TestProbeServingHomePageNot200IsHostnameMismatch(t *testing.T) {
 
 func TestProbeServingCertificatePendingFallsBackToHTTP(t *testing.T) {
 	// A plain HTTP server serving the marker pair: an HTTPS attempt against it fails at the
-	// transport level (no TLS handshake at all), the shape confirmHostname's own comment
+	// transport level (no TLS handshake at all), the shape confirmHostname's comment
 	// documents for a zone whose certificate has not finished issuing.
 	srv := httptest.NewServer(markerHandler(false))
 	defer srv.Close()

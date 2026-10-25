@@ -63,7 +63,7 @@ const ROWS = {
     build(params) {
       return (
         "The tool could not run wrangler at all, because this site's dependencies are not " +
-        "installed, so its own wrangler is not on disk.\n" +
+        "installed, so its wrangler is not on disk.\n" +
         `Next: run npm install in ${params.dir}, then re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
@@ -378,7 +378,7 @@ const ROWS = {
     build(params) {
       return (
         `The list of DNS records for ${params.domain} could not be read reliably. Reaching your ` +
-        "domain's own nameservers did not work, so the lookup fell back to a public resolver, " +
+        "domain's nameservers did not work, so the lookup fell back to a public resolver, " +
         'and a public resolver can keep answering "no such record" for a few minutes after a ' +
         'record is added. The list may therefore be missing records that really exist.\n' +
         'This run is unattended, so nothing was copied: copying a list that is quietly missing ' +
@@ -438,7 +438,7 @@ const ROWS = {
     kind: 'wait',
     build(params) {
       return (
-        `Your domain ${params.domain} does not resolve yet: even its own nameservers do not ` +
+        `Your domain ${params.domain} does not resolve yet: even its nameservers do not ` +
         'show a DNS record for it. This is a normal step right after connecting a new domain, ' +
         'and usually finishes within a few minutes to a few hours. Your site keeps answering on ' +
         'its workers.dev address the whole time.\n' +
@@ -450,7 +450,7 @@ const ROWS = {
     kind: 'wait',
     build(params) {
       return (
-        `Your domain ${params.domain} already has its DNS record at its own nameservers, so ` +
+        `Your domain ${params.domain} already has its DNS record at its nameservers, so ` +
         "the connection itself is set up; it just has not reached your machine's resolver yet. " +
         'This is a public resolver holding an older "not found" answer for a few minutes, not a ' +
         'real problem, and usually clears on its own well within an hour. Your site keeps ' +
@@ -529,7 +529,7 @@ const ROWS = {
   // site needs Workers Paid from its first deploy, so the run stops here rather than deploying
   // onto a plan that cannot carry it. There is no reoffered form: nothing was created yet, so a
   // later re-run simply asks again from the same starting point. A distinct code from chapter 2's
-  // own paid-plan-declined row below, since the two are different events.
+  // paid-plan-declined row below, since the two are different events.
   'deploy-plan-declined': {
     kind: 'declined',
     build(params) {
@@ -543,7 +543,7 @@ const ROWS = {
       );
     }
   },
-  // This row fires from chapter 2's own email admission, once the site is already live on
+  // This row fires from chapter 2's email admission, once the site is already live on
   // Cloudflare's Workers Paid plan: declining here turns down email sign-in for the connected
   // domain specifically, not the plan itself, which is already on. Its code and the `step` it
   // writes are both the stable name `paid-plan-declined`, since the Go tool mirrors this step
@@ -554,9 +554,9 @@ const ROWS = {
       if (params.reoffered) {
         return (
           'You chose again not to turn on email sign-in for your domain. This site still ' +
-          'cannot send its own sign-in email; it keeps serving its pages, and you keep editing ' +
+          'cannot send its sign-in email; it keeps serving its pages, and you keep editing ' +
           'and publishing as the owner.\n' +
-          `Your own way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
+          `Your way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
           'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
           `${params.dir} to do it.`
@@ -567,7 +567,7 @@ const ROWS = {
         'site keeps serving its pages, and you keep editing and publishing as the owner, but ' +
         'what does not work is anyone else signing in, since only email sign-in can send them a ' +
         'link.\n' +
-        `Your own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which ` +
+        `Your way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which ` +
         "writes a fresh sign-in link straight into the site's database without touching email. " +
         'Your current sign-in lasts 30 days.\n' +
         'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
@@ -739,7 +739,7 @@ const ROWS = {
   'builds-deploy-failed': {
     kind: 'act',
     build(params) {
-      // `logTruncated` is set only when getBuildLogs gave up mid-log against its own page cap
+      // `logTruncated` is set only when getBuildLogs gave up mid-log against its page cap
       // (api.mjs), never when the log genuinely ended: claiming "ends with" over a log this tool
       // stopped reading early would misrepresent lines it never saw as the log's true tail.
       const logIntro = params.logTruncated
@@ -810,7 +810,7 @@ export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind 
  *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to
  *  print the copy for a re-run after an earlier decline, `owner`/`repo` on
  *  builds-repo-not-selected, `detail`/`buildUrl`/`logTruncated` (a boolean, true only when
- *  getBuildLogs gave up against its own page cap) on builds-deploy-failed, and `outcome`
+ *  getBuildLogs gave up against its page cap) on builds-deploy-failed, and `outcome`
  *  (`skipped`, `cancelled`, or another non-success value) on builds-not-runnable)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`

@@ -14,7 +14,7 @@ import (
 // window are never read by a stub check, so their values only need to satisfy Options.Validate.
 var runOptions = health.Options{ErrorThreshold: 1, LogWindow: time.Minute, Now: Now}
 
-// stubCheck plays back one fixture's own CheckResult.Outcome as health.Run's Check.Run result,
+// stubCheck plays back one fixture's CheckResult.Outcome as health.Run's Check.Run result,
 // standing in for the real check that produced it.
 type stubCheck struct {
 	id      string
@@ -27,8 +27,8 @@ func (c stubCheck) Run(context.Context, record.Record, health.Clients, health.Op
 	return c.outcome
 }
 
-// TestFixtureDegradedMatchesHealthRun drives every exported fixture's own check results through
-// health.Run and asserts the settled report's Degraded agrees with the fixture's own restated
+// TestFixtureDegradedMatchesHealthRun drives every exported fixture's check results through
+// health.Run and asserts the settled report's Degraded agrees with the fixture's restated
 // value, proving report's local rule has not drifted from health.Run's.
 func TestFixtureDegradedMatchesHealthRun(t *testing.T) {
 	for _, f := range All() {

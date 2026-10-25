@@ -28,7 +28,7 @@ var secondaryCommands = []string{
 }
 
 // TestCorpusResolverHasNoNonTestCaller walks every non-test Go file in the module and fails on any
-// reference to corpus.go's own exported symbols. Compiling into package providers is unavoidable
+// reference to corpus.go's exported symbols. Compiling into package providers is unavoidable
 // (corpus.go is not a _test.go file), so the property that keeps `go install` honest is that
 // nothing outside a test ever calls in.
 func TestCorpusResolverHasNoNonTestCaller(t *testing.T) {
@@ -77,7 +77,7 @@ func TestCorpusResolverHasNoNonTestCaller(t *testing.T) {
 }
 
 // TestSecondaryCommandsAreNotLinkedIntoCairn asserts the copy lister and the man generator are
-// absent from the shipped binary's own dependency graph, which is what lets a release archive and
+// absent from the shipped binary's dependency graph, which is what lets a release archive and
 // a `go install` build carry neither.
 func TestSecondaryCommandsAreNotLinkedIntoCairn(t *testing.T) {
 	const cairn = "github.com/glw907/cairn-cms/tool/cmd/cairn"
@@ -99,7 +99,7 @@ func TestSecondaryCommandsAreNotLinkedIntoCairn(t *testing.T) {
 	}
 }
 
-// moduleRoot resolves tool/ from this package's own directory, so the walk above covers the whole
+// moduleRoot resolves tool/ from this package's directory, so the walk above covers the whole
 // module however `go test` was invoked.
 func moduleRoot(t *testing.T) string {
 	t.Helper()

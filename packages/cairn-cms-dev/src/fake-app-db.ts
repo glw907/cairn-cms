@@ -1,7 +1,7 @@
 // A dev-only APP_DB double for the showcase's custom Signups screen, the developer-binding sibling
 // of fake-auth-db.ts. It implements just the D1Database surface the custom route touches
 // (prepare(sql).bind() with all/run/first) over an in-memory signups array, so /admin/signups
-// reads and writes its own binding under the cms-dev handle without a real D1 binding. Installed
+// reads and writes its binding under the cms-dev handle without a real D1 binding. Installed
 // from handle.ts as the Worker env's APP_DB; never part of the published engine.
 //
 // Dispatch is on the route's exact SQL strings, matched as normalized substrings. Unknown SQL

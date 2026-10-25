@@ -33,7 +33,7 @@ const FIXTURE_CSS = resolve(ROOT, 'scripts/lab/theme-fixture/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 const SHOWCASE = resolve(ROOT, 'examples/showcase');
 
-// A literal colour in CSS's literal colour syntaxes, the prose single-source check's own test.
+// A literal colour in CSS's literal colour syntaxes, the prose single-source check's test.
 // `oklch(` is matched with its trailing `c`, so the `color-mix(in oklab, <token>, ...)` colour-space
 // keyword, which carries no literal, never matches. The `#hex` form matches 3, 4, 6, or 8 hex
 // digits at a token boundary.

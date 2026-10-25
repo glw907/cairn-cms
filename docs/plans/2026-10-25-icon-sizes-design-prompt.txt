@@ -1,0 +1,20 @@
+You are the design session for cairn-cms backlog #64, started from the cairn-cms main checkout
+`/var/home/glw907/Projects/cairn-cms`. Geoff has not approved a design yet; this session brings him
+one.
+
+Load `cairn-pass` (it loads `pass-core`) and `brainstorming`. Read BACKLOG.md #64, the "Icon strokes"
+ruling in `docs/internal/admin-design-system.md` (around line 394), and the "Icons" section of
+Survey's DESIGN.md (`/var/home/glw907/Projects/survey/DESIGN.md`, tag v1.4.0) as a reference.
+
+Goal: one size scale for the admin's icons, and the hand-drawn inline SVGs replaced with Lucide
+glyphs where Lucide has one, so the 1.75px stroke rule reaches them. Count the call sites on current
+`main` before sizing the work; #64's figures were read on 2026-10-25.
+
+Settled, not for re-asking: stroke weight is a site design choice (Geoff, 2026-10-25). The engine
+keeps its 1.75px default, and a site that loads Survey overrides it with Survey's `.lucide` rule. No
+change to the stroke ruling or to Survey belongs in this pass.
+
+Bring Geoff one design per pass-core Lifecycle step 1, with an owner fork only where the scale
+itself is a taste call (for example, whether the admin's 12px icons survive). Check
+`docs/STATUS.md`'s sequence for where an engine pass sits; engine passes land on `main` and never
+release.

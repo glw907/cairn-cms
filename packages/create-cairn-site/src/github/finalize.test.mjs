@@ -77,7 +77,7 @@ test('finalizeGithubIdentity is a no-op on a second call', async (t) => {
 });
 
 test('finalizeGithubIdentity still rewrites when the real owner is literally "showcase"', async (t) => {
-  // An owner login of `showcase` collides with the placeholder's own owner. Keying idempotence
+  // An owner login of `showcase` collides with the placeholder's owner. Keying idempotence
   // on the owner alone would read the untouched template as already finalized and return, and
   // the site would be pushed carrying repo 'demo' and appId '1': a scaffold that cannot commit,
   // failing silently at the one moment it matters.

@@ -63,7 +63,7 @@ const PUBLIC_TIERS = ['T1', 'T2'];
  * @typedef {{ cls: string, tiers: string[], pattern: RegExp, label: string, severity?: 'error' | 'warning', outsideCode?: boolean }} Rule
  */
 
-// A link into the engine repo's own GitHub tree is the sanctioned way for a shipped page to point at
+// A link into the engine repo's GitHub tree is the sanctioned way for a shipped page to point at
 // a maintainer doc, so the internal-path and ledger rules skip a path that follows it.
 const GITHUB_BLOB = 'github\\.com/glw907/cairn-cms/(?:blob|tree)/main/';
 

@@ -21,7 +21,7 @@ type Env struct {
 
 // NewEnvFromLookup returns the environment Provider reading through lookup
 // instead of the real process environment, for a caller that already owns
-// its own environment chokepoint or a test that needs a fixed set of
+// its environment chokepoint or a test that needs a fixed set of
 // variables.
 func NewEnvFromLookup(lookup func(string) (string, bool)) Env {
 	return Env{lookup: lookup}

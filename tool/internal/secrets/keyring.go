@@ -28,7 +28,7 @@ var (
 // ErrKeyringUnavailable reports a keyring the process could not consult at
 // all: an unreachable bus, a backend failure, or a deadline miss. It is
 // distinct from ErrNotFound, which reports a keyring that answered
-// and holds no such entry. The backend's own error text is dropped rather
+// and holds no such entry. The backend's error text is dropped rather
 // than wrapped, so nothing a backend wrote can reach a caller that prints
 // the error string. Exported so cmd/cairn's auth commands, which cannot import
 // github.com/zalando/go-keyring themselves, can tell an unreachable keyring apart from one that
@@ -57,7 +57,7 @@ func (Keyring) Name() string {
 }
 
 // withDeadline runs f and gives up on it after keyringDeadline, answering
-// errKeyringUnavailable. f keeps running in its own goroutine after a
+// errKeyringUnavailable. f keeps running in its goroutine after a
 // deadline miss: the underlying library takes no context, so a call blocked
 // on an unlock prompt can only be abandoned, never cancelled.
 func withDeadline[T any](f func() (T, error)) (T, error) {
@@ -135,7 +135,7 @@ func (Keyring) Status(name string) (present bool, err error) {
 // deadline miss or a backend error, flattens to ErrKeyringUnavailable: a
 // backend refusing a write (a locked collection, a busy bus) is the same
 // "could not be consulted" condition read reports, and ErrKeyringUnavailable's
-// own doc comment promises that no backend text reaches a caller, so a raw
+// doc comment promises that no backend text reaches a caller, so a raw
 // backend error is never returned here either.
 func (Keyring) Set(name, value string) error {
 	_, err := withDeadline(func() (struct{}, error) {

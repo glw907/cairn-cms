@@ -8,7 +8,7 @@ import (
 )
 
 // cloudflareProbe returns the call cairn auth check runs to confirm one Cloudflare permission
-// label, keyed by permissionTable's own labels. The four account-scoped rows need no site; the
+// label, keyed by permissionTable's labels. The four account-scoped rows need no site; the
 // three zone-scoped rows read zoneID, which checkPermission supplies only when the operator
 // named a site.
 func cloudflareProbe(label string, cf *providers.Cloudflare, zoneID string) func(ctx context.Context) error {

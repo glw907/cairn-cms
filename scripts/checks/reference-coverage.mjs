@@ -131,7 +131,7 @@ function tierFromSection(name, pageText) {
   const definesLineRe = new RegExp(`^\\s*(?:-\\s+)?\`${escaped}[\`(]`, 'm');
   // The most specific section that defines `name` owns its tier. A section whose heading names `name`
   // is the most specific; failing that, the narrowest (deepest-heading) section that declares or
-  // defines it wins. A broad h2 wrapper that merely contains a narrower export's own h3/h4 section
+  // defines it wins. A broad h2 wrapper that merely contains a narrower export's h3/h4 section
   // must not lend its tier to that export, which is the whole-section leak the per-export rule
   // forbids: an export with its own section is resolved there, and only a name with no narrower home
   // falls back to its enclosing group.
@@ -217,7 +217,7 @@ function typesTableNames(pageText) {
   const header = /^\|\s*Name\s*\|\s*Stability\s*\|.*\|\s*$/m.exec(pageText);
   if (!header) return [];
   // Slice from the header line itself, then drop it (index 0), so the divider row and every
-  // data row that follows line up at index 1+ with no off-by-one from the header's own newline.
+  // data row that follows line up at index 1+ with no off-by-one from the header's newline.
   const lines = pageText.slice(header.index).split('\n').slice(1);
   const names = [];
   for (const line of lines) {
@@ -263,10 +263,10 @@ function tsFencedBlocks(pageText) {
 // mixes a real import and real code with a `declare const` naming a fictional local the
 // snippet-typecheck gate needs standing up (`declare const fileText: string;` beside a real
 // `parseMarkdown(fileText)` call, or `declare const entry: ContentEntry;` beside a real call that
-// consumes it); that name is scaffolding for the snippet's own type-check, never an export claim,
+// consumes it); that name is scaffolding for the snippet's type-check, never an export claim,
 // so it must not enter the stale-name candidate pool. A signature-only block and a usage block
 // share the identical `declare const` syntax, so only the surrounding statements (an import, a
-// real call) tell them apart, which is why this reads the block's own AST rather than trusting
+// real call) tell them apart, which is why this reads the block's AST rather than trusting
 // the name regex the caller applies next.
 /** @param {string} code */
 function isSignatureOnlyBlock(code) {
@@ -314,7 +314,7 @@ export function leakNamesForSubpath(leaks, subpath) {
 
 // The real backtick code spans in `text`, in document order. Splitting on the backtick
 // character and taking every odd-indexed piece assumes well-formed alternating pairs (every
-// reference page's own convention: prose never contains a bare backtick), which is what keeps
+// reference page's convention: prose never contains a bare backtick), which is what keeps
 // this from bridging across two UNRELATED code spans the way a single greedy `` `[^`]*` ``
 // regex would: two spans separated by ordinary prose that happens to contain a markdown link's
 // `[text](url)` brackets must not read as one indexed-access expression.
@@ -327,7 +327,7 @@ function codeSpans(text) {
 }
 
 // Whether `text` carries a code span with at least one NON-EMPTY bracket subscript: the
-// convention's own marker that a consumer reaches an un-importable member via indexed access
+// convention's marker that a consumer reaches an un-importable member via indexed access
 // off a real exported type (`Extract<AdminData, { view: 'edit' }>['page']['advisories'][number]`,
 // `NonNullable<ContentFormFailure['usage']>[number]`, and the like). The bracket contents must be
 // non-empty (`[^\]]+`, not `[^\]]*`) so an ordinary array-type suffix (`AdvisoryNotice[]`, empty
@@ -380,18 +380,18 @@ export function missingIndexedAccessParentheticals(names, pageText) {
 }
 
 // Task 7's props-vs-reference clause (an extension of this gate, not a new script per the plan's
-// tie-break rule): a component's own Props keys, diffed against its reference-page section.
+// tie-break rule): a component's Props keys, diffed against its reference-page section.
 //
 // A component's per-file dist declaration carries its Props shape under one of two names,
 // depending on how svelte-package generated it: a local `interface Props { ... }` when the
-// component's own script declares one explicitly (the common case, and the one an `extends`
+// component's script declares one explicitly (the common case, and the one an `extends`
 // composition such as MarkdownEditor's `Props extends StableEditorProps, UnstableEditorProps`
 // still uses), or a synthesized `type $$ComponentProps = { ... }` alias when it does not (a
 // component whose `$props()` destructuring types its shape inline, such as HelpHome and
 // WelcomeView).
 const PROPS_TYPE_NAMES = ['Props', '$$ComponentProps'];
 
-// The Props member names a component's own dist `.svelte.d.ts` declares, resolved through the type
+// The Props member names a component's dist `.svelte.d.ts` declares, resolved through the type
 // checker (`type.getProperties()`) so an `interface Props extends A, B` reports A's and B's
 // members too, not just Props' own declared ones. Null when the file declares neither known Props
 // shape.
@@ -409,9 +409,9 @@ export function componentPropsNames(dtsPath) {
   return null;
 }
 
-// The doc window for one component's own `### `Name`` section on its barrel's reference page:
+// The doc window for one component's `### `Name`` section on its barrel's reference page:
 // from its heading to the next h2 or h3 heading, deliberately never stopping at an h4, so a
-// component's own sub-section under an h4 (MarkdownEditor's "wiring props (Unstable API)" table)
+// component's sub-section under an h4 (MarkdownEditor's "wiring props (Unstable API)" table)
 // stays inside its owning component's window rather than falling out of scope. Null when the page
 // carries no such heading for `name`.
 /**
@@ -431,7 +431,7 @@ export function componentSectionWindow(name, pageText) {
 }
 
 // The prop names from `names` that never appear as a whole-word token anywhere in `sectionText`
-// (the owning component's own doc window, not the whole page). Mirrors `missingNames`, scoped per
+// (the owning component's doc window, not the whole page). Mirrors `missingNames`, scoped per
 // component so an undocumented prop on a page covering many components is attributed to the right
 // one, not lost in the page-wide pool. Known weakness, the same class `missingNames` carries: a
 // whole-word match anywhere in the section counts, including an ordinary prose sentence that
@@ -450,7 +450,7 @@ export function missingComponentProps(names, sectionText) {
 // component's frozen stable contract even though a plain presence check (missingComponentProps)
 // passes it regardless of which part of the section names it. Ruling 1 / S-10:
 // MarkdownEditor's `spellcheckTest` is a test-only Worker-factory seam that must stay out of
-// `StableEditorProps`. Each entry is checked against the component's own STABLE snippet (see
+// `StableEditorProps`. Each entry is checked against the component's STABLE snippet (see
 // `stableSnippet` below), which must never name the pinned prop.
 /** @type {{ component: string, prop: string, reason: string }[]} */
 export const DOCUMENTED_UNSTABLE_PROPS = [
@@ -475,7 +475,7 @@ export function assertDocumentedUnstableReasoned(registry) {
   }
 }
 
-// The component's own stable-contract snippet: the first fenced ```ts/```typescript block inside
+// The component's stable-contract snippet: the first fenced ```ts/```typescript block inside
 // its section window, the convention every component page's frozen-contract listing opens with
 // (the `let { ... }: { ... } = $props();` destructuring). Empty string when the section carries no
 // such block, so a pinned prop trivially fails to appear in it.
@@ -484,7 +484,7 @@ function stableSnippet(sectionText) {
   return tsFencedBlocks(sectionText)[0] ?? '';
 }
 
-// The DOCUMENTED_UNSTABLE_PROPS entries for `component` whose pinned prop has crept into its own
+// The DOCUMENTED_UNSTABLE_PROPS entries for `component` whose pinned prop has crept into its
 // stable snippet, which would silently promote it into the frozen contract the snippet documents.
 /**
  * @param {string} component
@@ -503,7 +503,7 @@ export function promotedUnstableProps(component, sectionText, registry = DOCUMEN
 // documented-unstable pin that crept into the stable snippet), and `noSection` (the page carries no
 // `### `name`` heading at all, so every real prop is trivially missing). Null when the component's
 // dist declaration EXISTS but carries no Props shape (nothing to check); a MISSING declaration
-// throws instead, matching `checkOne`'s own "run npm run package first" for the index-wide case: a
+// throws instead, matching `checkOne`'s "run npm run package first" for the index-wide case: a
 // missing `.d.ts` means the package has not been built, never that the component has zero props,
 // and a silent null here would read as the latter.
 /**
@@ -538,7 +538,7 @@ export const SUBPATH_EXCLUSIONS = [
     subpath: '/admin-sources.css',
     reason:
       'a CSS asset with no .d.ts to enumerate; documented inside docs/reference/cairn-audit.md ' +
-      'rather than its own reference page (see ROADMAP.md).',
+      'rather than its reference page (see ROADMAP.md).',
   },
   {
     subpath: '/cairn-public.css',
@@ -550,7 +550,7 @@ export const SUBPATH_EXCLUSIONS = [
   {
     subpath: '/package.json',
     reason:
-      "the npm self-reference convention for resolving the package's own metadata, not a " +
+      "the npm self-reference convention for resolving the package's metadata, not a " +
       'documented export.',
   },
 ];
@@ -558,7 +558,7 @@ export const SUBPATH_EXCLUSIONS = [
 // The per-subpath settings CONFIG needs beyond "this subpath exists": which built `.d.ts` to
 // enumerate and which reference page documents it, plus `excludeDts` for /delivery, which drops a
 // re-exported surface that is documented on its own page (/delivery re-exports all of
-// /delivery/data, so the delivery page documents only its own additions). /delivery/head points at
+// /delivery/data, so the delivery page documents only its additions). /delivery/head points at
 // the same delivery.md page, so the folded-in CairnHead is covered there. /ambient is type-only:
 // the module exports no names, so its entry asserts only that the page exists.
 /** @type {Record<string, { dts: string, page: string, excludeDts?: string }>} */
@@ -592,7 +592,7 @@ export const SUBPATH_SETTINGS = {
   '/log': { dts: 'dist/log/public.d.ts', page: 'docs/reference/log.md' },
 };
 
-// A package.json exports key in this gate's own subpath convention: the root key stays '.', every
+// A package.json exports key in this gate's subpath convention: the root key stays '.', every
 // other key drops its leading dot (`./sveltekit` becomes `/sveltekit`), the same convention
 // check-surface.mjs's `surfaceSubpaths` reads exports with, so the two gates agree on one subpath
 // string per key.
@@ -608,7 +608,7 @@ export function exportKeyToSubpath(key) {
 // while the gate reports OK over the subpaths it already knew.
 /**
  * @param {object} options
- * @param {Record<string, unknown>} options.exportsMap package.json's own `exports` field
+ * @param {Record<string, unknown>} options.exportsMap package.json's `exports` field
  * @param {Record<string, { dts: string, page: string, excludeDts?: string }>} [options.settings]
  * @param {{ subpath: string, reason: string }[]} [options.exclusions]
  * @returns {{ subpath: string, dts: string, page: string, excludeDts?: string }[]}
@@ -640,7 +640,7 @@ export function deriveConfig({ exportsMap, settings = SUBPATH_SETTINGS, exclusio
   return config;
 }
 
-// One reference page per importable subpath, derived from package.json's own `exports` map (see
+// One reference page per importable subpath, derived from package.json's `exports` map (see
 // `deriveConfig`) so a new export subpath fails this gate, naming itself, until it is mapped in
 // SUBPATH_SETTINGS or recorded in SUBPATH_EXCLUSIONS, rather than shipping with silent coverage.
 export const CONFIG = deriveConfig({
@@ -668,7 +668,7 @@ function globalKnownNames(entries) {
 // Scoped per PAGE, not per CONFIG entry, because two page files each cover two subpath entries
 // (delivery.md documents both /delivery and /delivery/head; reproductions.md documents both
 // /reproductions and /reproductions/manifest): a name real only on the page's OTHER covered
-// subpath is still that page's own name, not foreign. A name real on some unrelated subpath the
+// subpath is still that page's name, not foreign. A name real on some unrelated subpath the
 // page does not cover no longer excuses a stale mention (the union-over-everything pool this
 // replaces let 14 dead rows survive undetected in delivery-data.md, see
 // `docs/internal/engine-rulings.md`'s `reference-coverage-stale-names-rescope` row); the
@@ -731,7 +731,7 @@ function isAllowlisted(page, name, globalNames, allowlist) {
 /**
  * @param {object} options
  * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} options.entry
- * @param {Set<string>} options.pageKnownNames the real exports this page documents (own subpath,
+ * @param {Set<string>} options.pageKnownNames the real exports this page documents (the page's subpath,
  *   plus any sibling subpath entry that shares the same page)
  * @param {Set<string>} options.globalKnownNamesSet the full real-export pool, used only to keep
  *   an allowlisted name honest against a later rename or removal
@@ -870,7 +870,7 @@ function main() {
       // `.svelte.d.ts` exists for those, by design, never a build failure. Discriminate on the
       // *source*, not the dist output: a name with no `<srcDir>/<name>.svelte` is a type export and
       // is skipped here; a name that IS a real component but is missing its dist declaration (a
-      // stale or partial build) falls through to checkComponentProps's own missing-file throw.
+      // stale or partial build) falls through to checkComponentProps's missing-file throw.
       if (!existsSync(resolve(ROOT, `${srcDir}/${name}.svelte`))) continue;
       const r = checkComponentProps(name, dtsPath, pageText);
       if (!r) continue;

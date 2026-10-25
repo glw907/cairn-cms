@@ -16,8 +16,8 @@ import (
 // site-down signal, which is why zero through the threshold is OK rather than Failing.
 //
 // It counts engine records alone, never every error-level line the Worker logged. On a public site
-// the Worker's own 404 logging runs to thousands a day, which is what the count reported until
-// 2026-09-21: a live run against a healthy site returned 1000 errors in 24 hours, the query's own
+// the Worker's 404 logging runs to thousands a day, which is what the count reported until
+// 2026-09-21: a live run against a healthy site returned 1000 errors in 24 hours, the query's
 // limit, made up of crawler 404s and holding no cairn record at all. logs.FetchRecords carries the
 // distinction.
 type errorsCheck struct{}
@@ -28,7 +28,7 @@ func (errorsCheck) ID() string { return "errors" }
 // Needs implements Check. Errors reads Workers Logs through Cloudflare.
 func (errorsCheck) Needs() Tier { return TierCF }
 
-// errorsDetail is errorsCheck's own internal measurement, flattened into Fields as a
+// errorsDetail is errorsCheck's internal measurement, flattened into Fields as a
 // non-verbose "errorCount" entry and a verbose-only "topEvents" entry, so a reverted
 // verboseField call on TopEvents goes red against TestCheckDetailFieldVisibility rather than
 // silently reaching a non-verbose render.
@@ -36,7 +36,7 @@ type errorsDetail struct {
 	// Count is how many error-level engine records logs.FetchRecords returned over
 	// Options.LogWindow.
 	Count int
-	// Truncated reports whether the fetch filled its own page limit, which makes Count a floor
+	// Truncated reports whether the fetch filled its page limit, which makes Count a floor
 	// rather than a total.
 	Truncated bool
 	// TopEvents is the up-to-three most frequent Event values among those records, most

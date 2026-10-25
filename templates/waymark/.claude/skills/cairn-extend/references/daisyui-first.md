@@ -1,9 +1,9 @@
 # DaisyUI first
 
 Cairn's admin skeleton is built in DaisyUI, and the default stance is to reach for a stock
-DaisyUI component before building one. Every place the engine's own admin diverges from stock
+DaisyUI component before building one. Every place the engine's admin diverges from stock
 DaisyUI is a deliberate, documented exception, never inertia; this page states the current one
-for each, with the ruling that is the why. A home-grown component in a site's own admin that
+for each, with the ruling that is the why. A home-grown component in a site's admin that
 this page cannot explain is a finding, not something to copy.
 
 ## Write this, get this
@@ -32,12 +32,12 @@ Put a custom admin component under `src/routes/admin` or `src/lib/admin`. Those 
 
 ## Tooltip
 
-Native `title` no longer carries the engine's own tooltip content on an action control:
+Native `title` no longer carries the engine's tooltip content on an action control:
 `Tooltip` in `/admin-toolkit` does, wrapping the trigger unchanged and adding the three
-behaviors DaisyUI's own CSS-only `.tooltip` cannot supply, dismissible on Escape, hoverable (a
+behaviors DaisyUI's CSS-only `.tooltip` cannot supply, dismissible on Escape, hoverable (a
 pointer can travel from the trigger into the bubble without losing it), and persistent (nothing
 hides it on a timer). Ruling: `tooltip-primitive`. `StatusChip` is the one exception left: its
-native `title` carries the register's own legend beside an already-present `sr-only` copy, so it
+native `title` carries the register's legend beside an already-present `sr-only` copy, so it
 stays. Ruling: `status-chip-title-legend`.
 
 ## Guarded buttons (`cairn-btn-guarded`)
@@ -68,7 +68,7 @@ treatment specifically, `display` and `overlay` passing the motion allowlist und
 Stock DaisyUI badges (`badge-error`, `badge-success`, `badge-soft`, `badge-outline`,
 `badge-dash`) are safelisted and fine for a plain surface. `StatusChip` exists for the chip
 register grammar specifically, because a raw `badge-outline`/`badge-ghost` compiles to a
-background and border color that can match one of `AdminTable`'s own zebra-stripe colors and
+background and border color that can match one of `AdminTable`'s zebra-stripe colors and
 disappear into the row. Ruling: `audit-admin-statuschip`.
 
 ## Segmented-control contrast
@@ -76,17 +76,17 @@ disappear into the row. Ruling: `audit-admin-statuschip`.
 For the join-style pickers (a facet, `Pagination`, the editor's Write/Preview capsule), write
 `join-item btn btn-active` on the selected segment and add nothing else. The rule renders the
 selected segment as a neutral wash (a 7% mix of `base-content` over `base-100`) at weight 600,
-with a state hairline on the segment's own border in both themes. It keys on all five selected
+with a state hairline on the segment's border in both themes. It keys on all five selected
 forms: `.btn-active`, `aria-pressed="true"`, `aria-checked="true"`, `aria-current` (unless
 `false` or empty), and a checked radio. A color variant, `btn-outline`, and `btn-dash` keep their
-own fill and ink, so a `join-item btn btn-primary` selected segment stays primary. The check
-glyph, where the control shows one, is the screen's own job. `npx cairn-audit norms <role>`
+fill and ink, so a `join-item btn btn-primary` selected segment stays primary. The check
+glyph, where the control shows one, is the screen's job. `npx cairn-audit norms <role>`
 prints the measured values.
 
 ## Open opportunity, not yet built
 
 Cairn's documented nav-group recipe is a raw `<details>` element with a custom rotate-on-open
-chevron, functionally identical to DaisyUI's own `collapse`/`collapse-arrow` (also
+chevron, functionally identical to DaisyUI's `collapse`/`collapse-arrow` (also
 `<details>`-backed). This is the one real "should already be DaisyUI" gap found so far: cosmetic
 value only, not yet adopted, and worth checking before adding a second hand-rolled collapsible
 group rather than reaching for the stock class.

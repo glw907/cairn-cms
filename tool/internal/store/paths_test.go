@@ -9,7 +9,7 @@ import (
 
 func noEnv(string) string { return "" }
 
-// TestDir covers Dir's own resolution precedence documented above: three
+// TestDir covers Dir's resolution precedence documented above: three
 // platforms, each with and without CAIRN_STATE_DIR, and each with and
 // without the Node CLI's legacy directory already present. config is
 // built per case from home, standing in for what os.UserConfigDir returns

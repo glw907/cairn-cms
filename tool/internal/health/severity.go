@@ -2,7 +2,7 @@ package health
 
 import "github.com/glw907/cairn-cms/tool/internal/spine"
 
-// failSeverity names, per check id, the weight that check's own Failing outcome carries. It sits
+// failSeverity names, per check id, the weight that check's Failing outcome carries. It sits
 // beside All because the two must cover the same set, which severity_test.go asserts: a tenth
 // check cannot land without an entry here.
 //

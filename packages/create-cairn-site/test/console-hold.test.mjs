@@ -5,14 +5,14 @@
 // cannot show.
 //
 // BOTH CASES TARGET THE BUILDS HOLD, the one wait class a spawned child can drive: the
-// propagation probe's inputs (the marker fetch, DNS) have no env seam (hold-loop.mjs's own
+// propagation probe's inputs (the marker fetch, DNS) have no env seam (hold-loop.mjs's
 // header), so that class stays proven at the unit level. The fixture below seeds a record at
-// chapter 3's own watch step (`config-reconciled`, one of CHAPTER3_RESUMABLE_STEPS) with its
+// chapter 3's watch step (`config-reconciled`, one of CHAPTER3_RESUMABLE_STEPS) with its
 // `buildsReconciledHash` already matching the local scaffold, so `performReconcile` sees no diff
 // and `watchAndComplete` falls straight into the discovery hold (`needsDiscovery` on the
-// resumed, no-diff path: the newest-build predicate, chapter3.mjs's own header).
+// resumed, no-diff path: the newest-build predicate, chapter3.mjs's header).
 //
-// THE HOLD-FORCE SEAM. A spawned child is non-TTY and this suite's own env may carry `CI`, so the
+// THE HOLD-FORCE SEAM. A spawned child is non-TTY and this suite's env may carry `CI`, so the
 // never-holds default would make the hold unreachable; `CAIRN_FORCE_HOLD=1`, honored only beside
 // a fake API base (hold-loop.mjs's `shouldHold`), is the documented override that exists for
 // exactly this file's two cases.
@@ -46,10 +46,10 @@ const WORKER_NAME = 'console-hold-worker';
 const WORKER_TAG = 'tag-console-hold';
 const WRANGLER_CONTENT = `${JSON.stringify({ name: WORKER_NAME }, null, 2)}\n`;
 const CAIRN_CONFIG_CONTENT = "export const from = 'cms@example.test';\n";
-/** The build-not-started catalogue row's own opening sentence, the park text an interrupted
- * discovery hold prints (catalogue.mjs's own `build-not-started` build()). */
+/** The build-not-started catalogue row's opening sentence, the park text an interrupted
+ * discovery hold prints (catalogue.mjs's `build-not-started` build()). */
 const BUILD_NOT_STARTED_TEXT = 'no matching build has appeared yet';
-/** The build-running catalogue row's own opening sentence, the park text an interrupt taken while
+/** The build-running catalogue row's opening sentence, the park text an interrupt taken while
  * the hold is watching a discovered build prints. */
 const BUILD_RUNNING_TEXT = 'The build is still running';
 
@@ -64,7 +64,7 @@ async function freshStateDir(t) {
   return dir;
 }
 
-/** Build a local scaffold dir carrying both reconcile-owned files, matched by the fixture's own
+/** Build a local scaffold dir carrying both reconcile-owned files, matched by the fixture's
  * `buildsReconciledHash` so `performReconcile` reads no diff and never needs GitHub at all. */
 async function scaffoldDir(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-console-hold-scaffold-'));
@@ -86,7 +86,7 @@ async function setupCloudflare(t) {
 
 /**
  * Build a state-store id whose trailing dash-segment is exactly six characters, matching
- * state.mjs's own SITE_ID_SHAPE (see the fake-github-and-flakes memory: a record failing that
+ * state.mjs's SITE_ID_SHAPE (see the fake-github-and-flakes memory: a record failing that
  * shape is silently invisible to findSiteByDir).
  * @param {string} label
  * @returns {string}
@@ -100,7 +100,7 @@ function makeSiteId(label) {
   return `console-hold-${suffix}`;
 }
 
-/** Seed a record at chapter 3's own watch step, its local reconcile hash already matching `dir`
+/** Seed a record at chapter 3's watch step, its local reconcile hash already matching `dir`
  * so `--connect` falls straight into the discovery hold with no GitHub call at all. */
 async function seedHoldSite(siteId, dir) {
   const hash = await reconciledConfigHash(dir);
@@ -173,19 +173,19 @@ function spawnCli(args, env) {
   return { child, stdoutLines, waitForLine };
 }
 
-/** Match the console URL line and capture the URL, without duplicating hold-loop.mjs's own exact
+/** Match the console URL line and capture the URL, without duplicating hold-loop.mjs's exact
  * punctuation: the caller re-derives the expected line through consoleUrlLine and asserts equality. */
 function matchConsoleUrlLine(line) {
   return /^Watch progress at (\S+) /.exec(line);
 }
 
 /**
- * A GET request that closes its own socket once the response ends, mirroring server.test.mjs's
- * own `rawRequest` (a bare `http.get`, not global `fetch`). `loopback-core.mjs`'s `close()` is
+ * A GET request that closes its socket once the response ends, mirroring server.test.mjs's
+ * `rawRequest` (a bare `http.get`, not global `fetch`). `loopback-core.mjs`'s `close()` is
  * the ordinary `http.Server#close`, which waits for every open connection to end before its
  * promise resolves; global `fetch` (undici) pools a keep-alive connection per origin by default,
- * which a request landing during the console's own grace window could leave open past its own
- * reuse, holding `close()` (and so the child's own `exit(0)`) pending. This sidesteps that risk
+ * which a request landing during the console's grace window could leave open past its
+ * reuse, holding `close()` (and so the child's `exit(0)`) pending. This sidesteps that risk
  * rather than proving it either way.
  * @param {string} url the console URL to request
  * @returns {Promise<{ status: number, body: string }>}
@@ -220,7 +220,7 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
   const [, url] = await waitForLine(matchConsoleUrlLine);
   assert.ok(
     stdoutLines.includes(consoleUrlLine(url)),
-    "the printed line must match hold-loop.mjs's own consoleUrlLine template exactly",
+    "the printed line must match hold-loop.mjs's consoleUrlLine template exactly",
   );
 
   const firstResponse = await fetch(url);
@@ -235,7 +235,7 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
   assert.equal(firstBody.includes(EXIT_TEXT), false, 'must not already show the cleared page');
 
   // Flip the fake's build state: any build now answers `listBuildsForWorker` for this tag, which
-  // is exactly what the resumed, no-diff discovery predicate (chapter3.mjs's own header) matches
+  // is exactly what the resumed, no-diff discovery predicate (chapter3.mjs's header) matches
   // on position alone. `status: 'running'` with no settled outcome is a build the hold has found
   // and is still watching, which is the state this case exists to see rendered.
   const buildUuid = randomUUID();
@@ -249,7 +249,7 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
     build_trigger_metadata: { commit_hash: 'deadbeef', commit_message: 'x', author: 'admin', branch: 'main' },
   });
 
-  // Poll-fetch until the body changes: the next probe fires on chapter3's own poll interval (5s).
+  // Poll-fetch until the body changes: the next probe fires on chapter3's poll interval (5s).
   const deadline = Date.now() + 20000;
   let changedBody = firstBody;
   while (changedBody === firstBody && Date.now() < deadline) {
@@ -257,7 +257,7 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
     changedBody = await (await fetch(url)).text();
   }
   assert.notEqual(changedBody, firstBody, 'expected a real re-render once the build was discovered');
-  assert.ok(changedBody.includes(buildUuid), `expected the discovered build's own id, got: ${changedBody}`);
+  assert.ok(changedBody.includes(buildUuid), `expected the discovered build's id, got: ${changedBody}`);
   assert.ok(changedBody.includes('Status: running'), `expected the build's live status, got: ${changedBody}`);
   assert.equal(
     changedBody.includes(EXIT_TEXT),
@@ -391,7 +391,7 @@ test('SIGINT during a held Builds discovery wait serves the park page over the r
   child.kill('SIGINT');
 
   // The interrupt's `stop` now serves the park page through the same grace window the exit
-  // render already used (server.mjs's own header), so a request landing before the process
+  // render already used (server.mjs's header), so a request landing before the process
   // exits must see it: this is the wiring FIX 3 adds, deleting it (leaving only renderParkPage
   // as a function nothing calls) would make this test time out with no matching park body.
   const expectedPage = renderParkPage({

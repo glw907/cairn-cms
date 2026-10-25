@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// adoptFlags holds cairn adopt's own flags. 1.0's adopt is flag-driven and never prompts: the
+// adoptFlags holds cairn adopt's flags. 1.0's adopt is flag-driven and never prompts: the
 // interactive dialog is 2.0's, and a command that waits on stdin has no recovery in a
 // scheduled run.
 type adoptFlags struct {
@@ -23,7 +23,7 @@ type adoptFlags struct {
 	domain string
 }
 
-// adoptListFlags holds cairn adopt list's own flags.
+// adoptListFlags holds cairn adopt list's flags.
 type adoptListFlags struct {
 	// asJSON prints the candidates as JSON. It defaults off, like every other --json in the
 	// tool: a bare command prints for the person who typed it, and a default that differs from
@@ -105,7 +105,7 @@ func discoverCandidates(ctx context.Context, d deps) ([]render.AdoptCandidate, e
 // what makes it safe to run against an account before any decision has been taken.
 func runAdoptList(cmd *cobra.Command, d deps, rf *rootFlags, lf adoptListFlags) error {
 	// Under --json stderr carries nothing but an error, so the notice travels as the payload's
-	// own containsPersonalData field instead of a line no agent reading stdout would see.
+	// containsPersonalData field instead of a line no agent reading stdout would see.
 	if !lf.asJSON {
 		if err := writeNotice(cmd, d, rf, pasteNotice); err != nil {
 			return err
@@ -208,7 +208,7 @@ func runAdopt(cmd *cobra.Command, d deps, rf *rootFlags, f adoptFlags) error {
 		// sits outside every zone on the account. Keeping the discovered zone would attach the
 		// custom domain's zone id to a domain that is not in it, and the zone-scoped checks
 		// would then report another site's settings as this one's. An adoption is not refused
-		// over it: the zone-scoped checks report their own unobservable verdict against a record
+		// over it: the zone-scoped checks report their unobservable verdict against a record
 		// carrying no zone id, and a site served from a zone elsewhere is still worth
 		// registering.
 		chosen.Zone, chosen.ZoneID, chosen.NameServers = "", "", nil

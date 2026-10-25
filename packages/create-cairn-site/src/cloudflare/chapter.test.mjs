@@ -47,7 +47,7 @@ async function fixtureScaffoldDir(t) {
 }
 
 /**
- * Seed a state record shaped like a site that just finished the GitHub chapter (T2's own
+ * Seed a state record shaped like a site that just finished the GitHub chapter (T2's
  * fields), the state runCloudflareChapter always starts from in this suite.
  * @param {string} siteId the site id to seed
  * @param {string} dir the scaffold directory the record points at
@@ -93,7 +93,7 @@ async function armLoggedIn(fake) {
  * Arm the `whoami --json` reply ensureAccountId needs on its own: a zero exit whose stdout
  * carries exactly one account, so the account step resolves without ever needing the injected
  * prompt. `armLoggedIn` calls this too; a test that wants only the account resolution (and
- * relies on the fake's own unarmed default for the plain `whoami`/`login` calls) can call this
+ * relies on the fake's unarmed default for the plain `whoami`/`login` calls) can call this
  * alone.
  * @param {import('../../test/fake-bin.mjs').FakeBin} fake the fake wrangler bin
  * @returns {Promise<void>}
@@ -110,7 +110,7 @@ async function armSingleAccount(fake) {
 
 /**
  * The `--json` stdout of a seed run against a genuinely empty allowlist: the owner insert and
- * the token insert both report one changed row, matching bootstrap.mjs's own trust check.
+ * the token insert both report one changed row, matching bootstrap.mjs's trust check.
  */
 const SEED_SUCCESS_STDOUT = JSON.stringify([
   { results: [], success: true, meta: { changes: 1 } },
@@ -119,7 +119,7 @@ const SEED_SUCCESS_STDOUT = JSON.stringify([
 ]);
 
 /**
- * Arm the `d1 execute` reply every happy-path test needs, so the sign-in action's own trust
+ * Arm the `d1 execute` reply every happy-path test needs, so the sign-in action's trust
  * check (bootstrap.mjs) finds a token it can report as actually written.
  * @param {import('../../test/fake-bin.mjs').FakeBin} fake the fake wrangler bin
  * @returns {Promise<void>}
@@ -149,7 +149,7 @@ async function readAllFiles(root) {
 
 /**
  * Scan every file under each of `roots` for any of `needles`, recursively, returning the first
- * one found. Proven falsifiable in its own test with a doctored fixture, so a sweep elsewhere
+ * one found. Proven falsifiable in its test with a doctored fixture, so a sweep elsewhere
  * that comes back clean can be trusted to mean the secret really is absent, not that the scan
  * has a blind spot.
  * @param {string[]} roots the directories to scan
@@ -306,9 +306,9 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   const firstWranglerIndex = invocations.findIndex((i) => i.argv[0] !== 'install' && i.argv[0] !== 'run');
   assert.ok(installIndex < firstWranglerIndex, 'npm install must run strictly before the first wrangler call');
 
-  // The no-secret sweep: neither the PEM's own marker, its base64 form, nor the raw bootstrap
+  // The no-secret sweep: neither the PEM's marker, its base64 form, nor the raw bootstrap
   // token (recovered here from the opened confirm URL) may appear anywhere under the scaffold
-  // directory or the state store. The state's own PEM deletion and the token's already-asserted
+  // directory or the state store. The state's PEM deletion and the token's already-asserted
   // in-memory-only lifetime are what should make this always come back clean; the sweep is the
   // check that proves it, rather than trusting either mechanism by inspection.
   const rawToken = decodeURIComponent(opened[0].slice(opened[0].indexOf('token=') + 'token='.length));
@@ -618,7 +618,7 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
   const stateAfterFailure = await loadSite('alpine-club-retry');
   assert.equal(stateAfterFailure.step, 'pushed');
 
-  // The failed run's own install action already succeeded (only the deploy failed), so a real
+  // The failed run's install action already succeeded (only the deploy failed), so a real
   // re-run would already have node_modules on disk; simulate that here rather than re-running
   // npm install for real.
   await mkdir(path.join(dir, 'node_modules'));
@@ -695,7 +695,7 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
   });
 
   assert.equal(outcome, 'live');
-  // The chapter prints no resume line of its own: bin.mjs announces the resume before it
+  // The chapter prints no resume line: bin.mjs announces the resume before it
   // dispatches, and a second line here duplicated it in a real run.
   assert.equal(
     logs.some((line) => line.startsWith('Resuming ')),

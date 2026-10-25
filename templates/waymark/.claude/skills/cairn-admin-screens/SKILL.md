@@ -1,12 +1,12 @@
 ---
 name: cairn-admin-screens
-description: Build or review a screen inside a cairn site's /admin, to the register cairn's own admin holds itself to. Load before touching anything under /admin routes, admin-toolkit components, or cairn-admin.css. Points at cairn-audit's mechanical checks and cairn-audit norms rather than restating them.
+description: Build or review a screen inside a cairn site's /admin, to the register cairn's admin holds itself to. Load before touching anything under /admin routes, admin-toolkit components, or cairn-admin.css. Points at cairn-audit's mechanical checks and cairn-audit norms rather than restating them.
 ---
 
 # cairn admin screens
 
 This skill teaches an agent to build or review a screen inside a cairn site's `/admin`, to the
-same register cairn's own admin holds itself to. Load it before touching anything under `/admin`
+same register cairn's admin holds itself to. Load it before touching anything under `/admin`
 routes, admin-toolkit components, or `cairn-admin.css`.
 
 The rules a builder needs to hold in working memory are only the ones no tool can check. Every
@@ -110,11 +110,11 @@ judgment about what the screen is for:
   not-yet-confirmed suggestion). Use quiet for the state a list mostly sits in (Published,
   Closed); reserve warning for a state that needs attention (Draft, Overdue, Pending). Both
   tinted registers, quiet and warning, are tuned to a contrast band that sits under the audit's
-  own 1.5 ground-collision floor by design on every row ground, not only near `base-300`: a
+  1.5 ground-collision floor by design on every row ground, not only near `base-300`: a
   `quiet` or `warning` chip measures as an advisory camouflaged finding on some row/theme pairs,
   expected rather than a regression.
-- **Facet quietness.** A filter control is a "facet" in `ListToolbar`'s own vocabulary (its
-  `'menu'` display): quiet bordered-button chrome at rest, showing only its own name. It picks up
+- **Facet quietness.** A filter control is a "facet" in `ListToolbar`'s vocabulary (its
+  `'menu'` display): quiet bordered-button chrome at rest, showing only its name. It picks up
   its applied treatment, a primary-tinted border and background, only once a value departs the
   filter's default. A facet never competes with the surface's one filled action.
 
@@ -123,10 +123,10 @@ judgment about what the screen is for:
 A screen is done, in order, only after:
 
 1. **The static audit passes.** `npx cairn-audit` against the routes and components you touched.
-2. **The rendered audit passes**, both themes, against your own running dev server:
+2. **The rendered audit passes**, both themes, against your running dev server:
    `npx cairn-audit --rendered`.
 3. **For a derivation or any composition the toolkit doesn't already cover**, run the shipped
-   grader prompt (`references/grader-prompt.md`) against your own multi-state captures, and fix
+   grader prompt (`references/grader-prompt.md`) against your multi-state captures, and fix
    what it finds.
 
 Run all three before you call a screen finished, not only when someone else reviews it: the
@@ -137,7 +137,7 @@ A clean audit means the screen's vocabulary is correct. It does not mean the scr
 screen can be vocabulary-clean and still not compose. Report a green audit as exactly that, never
 as design-done.
 
-If you added a suppression to get here, say so in your own report. A build that passes by
+If you added a suppression to get here, say so in your report. A build that passes by
 suppressing a finding is a disguised failure, not a pass.
 
 ## References

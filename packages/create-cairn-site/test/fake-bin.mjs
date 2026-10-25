@@ -6,8 +6,8 @@
 // spawn-seam tests free of a real wrangler or npm process.
 //
 // The logged env is filtered to variables whose names start with `CAIRN_` or `CLOUDFLARE_`, the
-// two namespaces this tool's own env-passing seam ever sets. A test spawns the fake with its own
-// process's full environment merged in (spawn's default, or exec.mjs's own env-merge behavior),
+// two namespaces this tool's env-passing seam ever sets. A test spawns the fake with its
+// process's full environment merged in (spawn's default, or exec.mjs's env-merge behavior),
 // so logging every variable verbatim would write whatever real secrets happen to sit in the
 // operator's shell into a fake's log file on disk. Recording only the two namespaces this tool
 // controls is enough to prove the env seam works without ever capturing anything unrelated.
@@ -32,7 +32,7 @@ import { join } from 'node:path';
  * @property {string[]} argv the arguments the fake was called with, excluding the binary itself
  * @property {string} cwd the child process's working directory at call time
  * @property {string} stdin everything read from stdin before the fake replied
- * @property {Record<string, string>} env the fake's own environment, filtered to only the
+ * @property {Record<string, string>} env the fake's environment, filtered to only the
  *  variables whose names start with `CAIRN_` or `CLOUDFLARE_`; every other variable the fake
  *  actually received (including whatever it inherited from the operator's shell) is left out of
  *  the log on purpose, so a test asserting on this field never writes an unrelated real secret to
@@ -125,7 +125,7 @@ export function clearAmbientAccountId(t) {
   });
 }
 
-// The fake's own body, written out verbatim as the spawned script. It reads stdin to EOF first
+// The fake's body, written out verbatim as the spawned script. It reads stdin to EOF first
 // (an empty or already-closed stream resolves immediately, so a caller that never writes
 // anything never hangs it), logs the call, then answers from responses.json. Kept as one inline
 // template rather than a sibling file so the factory and the spawned behavior stay together, one
@@ -184,7 +184,7 @@ process.exitCode = match?.code ?? 0;
 
 // A variant that never reads stdin at all, so the process can exit while a caller is still
 // writing (or has yet to start writing) its piped input, the shape that raises an unhandled
-// EPIPE on the write side when the caller attaches no 'error' listener of its own. Everything
+// EPIPE on the write side when the caller attaches no 'error' listener. Everything
 // else matches FAKE_BIN_SCRIPT: same invocation log (including the filtered env), same matcher
 // lookup, same reply shape; the logged \`stdin\` is always \`null\`, since this fake deliberately
 // leaves it unread.

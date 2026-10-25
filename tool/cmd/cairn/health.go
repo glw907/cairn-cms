@@ -22,7 +22,7 @@ const defaultSince = "24h"
 // single error record would page most mornings, which trains an operator to ignore the tool.
 const defaultErrorThreshold = 5
 
-// healthFlags holds cairn health's own flags.
+// healthFlags holds cairn health's flags.
 type healthFlags struct {
 	// asJSON prints the report as JSON instead of the plain body.
 	asJSON bool
@@ -31,7 +31,7 @@ type healthFlags struct {
 	// since is the lookback window, in the grammar logs.ParseSince accepts.
 	since string
 	// acks is every --ack flag's raw value, "<check-id>=<YYYY-MM-DD>", merged with the resolved
-	// --ack-file's own entries in resolveAcks.
+	// --ack-file's entries in resolveAcks.
 	acks []string
 }
 
@@ -122,7 +122,7 @@ func runHealthSingle(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, s
 // run prints none. It writes one line per check to stderr, so a sweep that takes a while is
 // visibly progressing rather than apparently hung.
 //
-// --json suppresses it whatever --verbose says: under --json the run's own progress is the
+// --json suppresses it whatever --verbose says: under --json the run's progress is the
 // newline-delimited stream on stdout, and a second stream in a different shape on stderr is
 // noise an agent cannot parse.
 func checkProgress(cmd *cobra.Command, rf *rootFlags, f healthFlags) func(health.CheckResult) {
@@ -176,8 +176,8 @@ func writeHealthBody(w io.Writer, d deps, rf *rootFlags, rs []health.Report, ver
 // calls are the whole impure boundary: render itself reads no environment, no terminal, and no
 // clock.
 //
-// The width is the operator's own --width when they set one, the terminal's measured column
-// count when stdout is a terminal, and otherwise the seam's own default. The body follows the
+// The width is the operator's --width when they set one, the terminal's measured column
+// count when stdout is a terminal, and otherwise the seam's default. The body follows the
 // run's scope and whether stdout is a terminal, never the colour choice: an operator who forces
 // colour into a pipe still gets the plain body, in colour.
 //
@@ -213,11 +213,11 @@ func detectTerminal(d deps, rf *rootFlags) render.Terminal {
 	})
 }
 
-// runStatus builds the run's own state beside its checks: how long the sweep took, which
+// runStatus builds the run's state beside its checks: how long the sweep took, which
 // provider tokens it resolved and through what, and which it could not find, with the checks
-// each absence stopped named from the checks' own declared tiers rather than from a second list.
+// each absence stopped named from the checks' declared tiers rather than from a second list.
 //
-// The GitHub token's expiry comes off the creds check's own structured field in reports, so the
+// The GitHub token's expiry comes off the creds check's structured field in reports, so the
 // status line prints the date whenever the run measured one, inside or outside the fourteen-day
 // warning window, and costs no second request. A run with no report to read, which is what a
 // bare site listing is, leaves it unset.

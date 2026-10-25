@@ -5,7 +5,7 @@
 - `f:aaa002` The fixture's version constant is 1. Source: `target.ts:5` (`VERSION = 1`). [verified]
 - `f:aaa003` A claim sourced only to a doc page, not traced to code. Source: page text. [candidate: sourced to the page only, not traced to code]
 - `f:aaa004` A fact about a platform cairn depends on but does not own. Source: none found in repo. [external: SvelteKit]
-- `f:aaa005` A vendor figure that lives on the vendor's own page. Source: none found in repo. [vendor: link, not a repo fact]
+- `f:aaa005` A vendor figure that lives on the vendor's page. Source: none found in repo. [vendor: link, not a repo fact]
 - `f:aaa006` A claim that turned out false. Source: page text. [rejected: contradicted by target.ts's actual export]
 
 ## Harvest record

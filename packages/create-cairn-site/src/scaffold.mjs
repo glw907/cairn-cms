@@ -20,7 +20,7 @@ const ADMIN_URL = 'http://localhost:5173/admin';
 
 /**
  * The name of the atomic-claim marker file a scaffolded directory carries until the GitHub
- * chapter finishes pushing it. Defined here (rather than in the GitHub chapter's own module)
+ * chapter finishes pushing it. Defined here (rather than in the GitHub chapter's module)
  * so `src/github/repo.mjs`'s tree walk can skip it without an import cycle; Task 11 builds the
  * claim mechanism that writes and clears it.
  */
@@ -49,7 +49,7 @@ async function assertTemplateBaked(templateDir) {
  * `renameGitignoreForPacking`, which stores it that way because npm's packlist strips any file
  * literally named `.gitignore` from a published tarball) back to the working `.gitignore` name
  * inside a newly scaffolded site. Throws naming the template when the file is missing, since a
- * scaffold with no `.gitignore` leaves `pushScaffold`'s own ignore-honoring with nothing to read,
+ * scaffold with no `.gitignore` leaves `pushScaffold`'s ignore-honoring with nothing to read,
  * and `.dev.vars`/`.wrangler/` would then be one `git add -A` away from reaching GitHub.
  * @param {string} dir the scaffold target, already carrying the copied template
  * @returns {Promise<void>}
@@ -72,7 +72,7 @@ async function restoreGitignore(dir) {
  * Fail when the target directory already exists and holds files, naming the directory and the
  * two ways forward. An existing empty directory is fine, since the recursive copy fills it in. A
  * directory whose only entry is the atomic-claim sentinel is a distinct case, an earlier run that
- * crashed mid-copy, so it gets its own, more specific message and recovery instruction rather than
+ * crashed mid-copy, so it gets a more specific message and recovery instruction rather than
  * the generic "not empty" refusal.
  * @param {string} dir the target scaffold directory
  * @returns {Promise<void>}
@@ -219,9 +219,9 @@ export function dryRunNotice({ dir }) {
  * reached the admin (the dev backend needed `CAIRN_DEV_BACKEND=1` at runtime on top of its
  * build-time define) and that a scaffolded reader has no idea the admin they land on is a local
  * stand-in. The second fact is still load-bearing; the first is now fixed at the source, by the
- * scaffold's own `npm run dev` (a shim baked into `scripts/dev.mjs`, see bake-template.mjs),
+ * scaffold's `npm run dev` (a shim baked into `scripts/dev.mjs`, see bake-template.mjs),
  * so this text prints the plain command rather than teach a variable it no longer needs. It also
- * names `npm run check:cairn`, the site's own gate baked into `.github/workflows/check.yml`
+ * names `npm run check:cairn`, the site's gate baked into `.github/workflows/check.yml`
  * (see bake-template.mjs), so a reader who never opens the workflow file still learns what runs
  * on every push.
  * @param {{ dir: string }} options `dir` is the scaffolded directory to `cd` into
@@ -244,7 +244,7 @@ export function handoverText({ dir }) {
     '',
     'That admin runs against a local stand-in. It signs you in without an email loop, and nothing',
     'you write there touches GitHub or sends real email. Write a post, save it, publish it, and',
-    "watch it appear on the site. The scaffold's own dev script turns the stand-in on.",
+    "watch it appear on the site. The scaffold's dev script turns the stand-in on.",
     '',
     'Run `cairn doctor` any time to check what is set up and what is still missing. Install it ' +
       'with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the release ' +
@@ -254,7 +254,7 @@ export function handoverText({ dir }) {
     'GitHub tells you if a change breaks the gate before it reaches your site.',
     '',
     "Your site is born with cairn's agent-facing guidance baked into .claude/: the skills, the",
-    "review agent, and the CLAUDE.md fragment your own root CLAUDE.md imports. Run",
+    "review agent, and the CLAUDE.md fragment your root CLAUDE.md imports. Run",
     '`npx cairn-guidance check` any time to see whether it is current.',
     '',
     'This scaffold is local only. Putting the site on the internet needs a GitHub repository, a',

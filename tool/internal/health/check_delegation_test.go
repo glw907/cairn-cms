@@ -135,7 +135,7 @@ func TestDelegationCheckWrongNameserversIsFailing(t *testing.T) {
 
 // TestDelegationCheckUnrecordedNameServersFallsBackToTheZone asserts a record carrying no
 // "nameServers" key still settles a verdict: the zone reports the pair Cloudflare assigned it,
-// which is the same fact from its own authority, so a site adopted before the key was recorded
+// which is the same fact from its authority, so a site adopted before the key was recorded
 // reads pass rather than unknown.
 func TestDelegationCheckUnrecordedNameServersFallsBackToTheZone(t *testing.T) {
 	r := record.Record{Domain: "example.test"}

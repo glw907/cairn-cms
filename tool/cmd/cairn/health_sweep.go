@@ -31,13 +31,13 @@ const maxSweepTimeout = 4 * defaultTimeout
 // stops the sweep after whichever site is already in flight settles; every site still to come is
 // still counted toward the run's exit code the same as a settled site would be, but under --json
 // it is omitted from the emitted stream rather than named, since a plain-text UNKNOWN line and a
-// blank-line separator would corrupt the newline-delimited JSON. The stream's own Sites count
+// blank-line separator would corrupt the newline-delimited JSON. The stream's Sites count
 // still includes it, so MarshalSummary's arithmetic (Sites minus len(Verdicts)) counts every
 // unreached site as UNKNOWN without a per-site line for it.
 func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st *store.Store, window time.Duration, acks health.Acks) error {
 	entries, listErrs := st.List()
 
-	// An empty registry reuses spine.ErrExpectSites, sites list's own sentinel for the same
+	// An empty registry reuses spine.ErrExpectSites, sites list's sentinel for the same
 	// reason: the tool cannot say whether zero sites is every site cairn knows or none was ever
 	// registered.
 	if len(entries) == 0 {
@@ -148,7 +148,7 @@ func runHealthSweep(cmd *cobra.Command, d deps, rf *rootFlags, f healthFlags, st
 	verdict := spine.ExitCode(sites, listErrs, 0)
 	switch {
 	// The summary line closes the stream whatever --quiet says: under --json the payload is the
-	// output, and a stream carrying no summary is UNKNOWN by json-output.md's own rule, so
+	// output, and a stream carrying no summary is UNKNOWN by json-output.md's rule, so
 	// suppressing it would leave an agent unable to tell a quiet green run from a truncated one.
 	case f.asJSON:
 		if err := writeSweepSummaryJSON(out, d, reports, verdicts, verdict, len(entries), d.now().Sub(started)); err != nil {
@@ -229,7 +229,7 @@ func sweepDeadline(ctx context.Context, rf *rootFlags, siteCount int) (context.C
 }
 
 // siteBudget returns the deadline one site's health.Run gets, derived from envelope so it can
-// never outlive the sweep's own budget. A site gets its fair share of what is left, the envelope's
+// never outlive the sweep's budget. A site gets its fair share of what is left, the envelope's
 // remaining time divided by the sites still to run, and never more than the per-site budget,
 // whether that budget is the default or an explicit --timeout. The share is recomputed after each
 // site settles, so one slow site cannot eat the rest and a fast sweep gives its slack back to the

@@ -1,12 +1,12 @@
 // Open the admin's default browser to a URL. This is the tool's only client-facing use of a
-// child process, so it is kept narrow: pick the platform's own opener, fire it detached (never
-// block the tool's own event loop on the browser's lifetime), and swallow any spawn failure,
+// child process, so it is kept narrow: pick the platform's opener, fire it detached (never
+// block the tool's event loop on the browser's lifetime), and swallow any spawn failure,
 // since a missing xdg-open (a headless server, a locked-down container, an SSH session with no
 // display) is a normal environment, not a bug. The one thing every call does unconditionally is
 // print the URL as plain text, so a run with no working browser still tells the admin exactly
 // where to go by hand.
 //
-// The GitHub chapter's own URLs (the manifest, the OAuth authorize, the App install page) carry
+// The GitHub chapter's URLs (the manifest, the OAuth authorize, the App install page) carry
 // no secret, so they print unconditionally. The Cloudflare chapter's confirm URL is different: it
 // carries a raw sign-in token, and `--yes --deploy` is documented as a fully unattended run, the
 // shape whose stdout gets archived (CI logs, `| tee`, scrollback). A caller opts a URL into that
@@ -31,7 +31,7 @@ function openerFor(url, platform) {
  * @typedef {object} OpenBrowserOptions
  * @property {boolean} [secret] when true and `process.stdout.isTTY` is false, the URL itself is
  *  withheld from the log (only its origin prints) since a non-interactive run's stdout is the
- *  shape most likely to be archived; defaults to false, the GitHub chapter's own URLs, which
+ *  shape most likely to be archived; defaults to false, the GitHub chapter's URLs, which
  *  carry no secret and always print in full
  */
 
@@ -59,7 +59,7 @@ export async function openBrowser(url, log, { secret = false } = {}) {
     child.unref();
   } catch {
     // spawn itself can throw synchronously (an invalid command on some platforms); swallowed for
-    // the same reason as the child's own 'error' event above.
+    // the same reason as the child's 'error' event above.
   }
 
   if (secret && !process.stdout.isTTY) {

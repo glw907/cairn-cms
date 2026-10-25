@@ -32,7 +32,7 @@ type Deleter interface {
 	Delete(name string) error
 }
 
-// ResolveError reports that a Provider's own Get call failed while Resolve
+// ResolveError reports that a Provider's Get call failed while Resolve
 // tried name.
 type ResolveError struct {
 	provider string
@@ -45,7 +45,7 @@ func (e *ResolveError) Provider() string {
 }
 
 // Error implements the error interface, naming only the provider that failed: a backend that
-// tainted its own error text would otherwise reach any caller that prints this string. The
+// tainted its error text would otherwise reach any caller that prints this string. The
 // wrapped error itself is reachable only through Unwrap.
 func (e *ResolveError) Error() string {
 	return fmt.Sprintf("secrets: resolve from %s failed", e.provider)

@@ -1,6 +1,6 @@
 // Learning the Cloudflare account id, once, so every chapter-1 wrangler call can be pointed at
 // it explicitly instead of whatever account a multi-account session happens to default to.
-// Chapter 2 needs the same id for its own zone and DNS calls, so this module learns it here and
+// Chapter 2 needs the same id for its zone and DNS calls, so this module learns it here and
 // the chapter persists it, rather than re-deriving it per chapter.
 import { isCancel } from '@clack/prompts';
 import { exitOnCancel } from '../prompts.mjs';
@@ -39,15 +39,15 @@ function parseWhoamiJson(stdout) {
  *  throws instead of prompting, since there is no one to ask
  * @property {(options: { message: string, options: Array<{ value: string, label: string }> }) =>
  *  Promise<string | symbol>} prompt the account picker, a test seam defaulting in the caller to
- *  `@clack/prompts`' own `select`
+ *  `@clack/prompts`' `select`
  * @property {(line: string) => void} log receives progress lines
  */
 
 /**
  * Resolve the Cloudflare account id every chapter-1 wrangler call needs once a session exists.
  * Pure over the in-memory record: this returns its outcome and never writes to the state store
- * itself, mirroring the pure-step-function rule chapter 2 states for its own steps (chapter 1
- * already owns its own persistence, so its caller writes the result back).
+ * itself, mirroring the pure-step-function rule chapter 2 states for its steps (chapter 1
+ * already owns its persistence, so its caller writes the result back).
  * @param {EnsureAccountIdInput} args
  * @returns {Promise<{ accountId: string, learned: boolean }>} the resolved id, and whether this
  *  call had to enumerate accounts at all, so the caller knows whether it needs to persist it

@@ -8,7 +8,7 @@ import (
 
 // siteConfigStatus enumerates what siteConfig found: whether a candidate path held a file and,
 // if so, whether that file satisfied the parse predicate this package narrows to. It carries no
-// status word of its own: configSiteConfig maps it onto config.site-config's status words (pass,
+// status word: configSiteConfig maps it onto config.site-config's status words (pass,
 // fail, unchecked).
 type siteConfigStatus int
 

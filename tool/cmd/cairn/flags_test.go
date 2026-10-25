@@ -50,7 +50,7 @@ type flagList struct {
 
 // initLazyCommands adds cobra's lazily created `help` and `completion` commands to root, the
 // same way (*Command).ExecuteC does immediately before running a real invocation ("regardless
-// of what command execute is called on, run on Root only", cobra's own comment on that method):
+// of what command execute is called on, run on Root only", cobra's comment on that method):
 // once, on the root, before any walk below sees the tree. Both are real commands a docs page can
 // write a line against (`cairn help agents`, `cairn completion bash`), so the committed map has
 // to carry them the same as any command declared in this package.
@@ -79,7 +79,7 @@ func treeFlags(root *cobra.Command) []string {
 }
 
 // treeCommandFlags returns, for every command below root (root included), the long flags that
-// command's own path accepts: its local flags plus every flag it inherits from an ancestor.
+// command's path accepts: its local flags plus every flag it inherits from an ancestor.
 // Callers pass a root that has already gone through initLazyCommands so the help and completion
 // commands' paths are covered too.
 func treeCommandFlags(root *cobra.Command) map[string][]string {

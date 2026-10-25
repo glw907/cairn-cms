@@ -2,7 +2,7 @@
 
 Release candidate verification is the conductor's work, not the owner's: this page is a checklist
 for whoever builds and runs the candidate before the `tool/v1.0.0` tag, run in a real terminal
-against the owner's own five production sites.
+against the owner's five production sites.
 
 ## Build it
 
@@ -35,7 +35,7 @@ cairn sites list --json
 
 ## What to run, in this order
 
-1. **The single-site body and the sweep's strip, in the real terminal, at its own width.** Run
+1. **The single-site body and the sweep's strip, in the real terminal, at the terminal's width.** Run
    `cairn health <one site>` and bare `cairn health` against every registered site, not a captured
    frame. This settles the standing "real-terminal evidence" item by the conductor's own eyes:
    does either body read cleanly at the terminal's actual width?
@@ -49,7 +49,7 @@ cairn sites list --json
 4. **A held check, and the exit code it produces.** Write an `--ack` entry for one failing check
    (`cairn health <site> --ack <check-id>=<a future date>`) and run it again. Does the held row
    read distinctly from a plain pass or fail, and does the run exit 1 (WARNING) rather than
-   carrying the failure's own severity?
+   carrying the failure's severity?
 5. **`--quiet`, on an OK sweep and on a sweep that is not OK, at the terminal and through a
    pipe.** Run `cairn health --quiet` against a registry whose sites are all green: it writes
    nothing at all, and `echo $?` reports 0. Run it again piped (`cairn health --quiet | cat`),
@@ -83,7 +83,7 @@ cairn sites list --json
    runs on this machine, so neither is executed here: read `docs/tripwire.md`'s launchd plist and
    Windows Task Scheduler sections and judge whether each is something a macOS or Windows
    operator could paste and adapt with no further cairn-specific knowledge. A "no" means the
-   wrapper's own prose needs another pass, not that the schedule itself is broken.
+   wrapper's prose needs another pass, not that the schedule itself is broken.
 
 ## What a "no" would mean
 
@@ -91,12 +91,12 @@ cairn sites list --json
 - **Item 3 is illegible**: the light palette needs another pass; the tag waits on it.
 - **Item 4's held row or exit code is wrong**: the hold arithmetic has a gap; the tag waits on a
   fix.
-- **Item 5's silence or strip is wrong**: `--quiet`'s own rule has a gap; the tag waits on a fix.
+- **Item 5's silence or strip is wrong**: `--quiet`'s rule has a gap; the tag waits on a fix.
 - **Item 6 misreports a row**: the permission table or its probe has a real bug; the tag waits on
   a fix.
 - **Item 7's payload fails its schema, or item 8 writes to stdout**: the machine contract is
   broken, which is the one thing a published tag cannot take back. The tag waits on a fix.
-- **Item 9 shows a row that is the tool's own gap**: a healthy site cannot read `OK`, so every
+- **Item 9 shows a row that is the tool's gap**: a healthy site cannot read `OK`, so every
   scheduled run exits non-zero forever. The tag waits on a fix.
 - **Item 10's wrapper prose is unusable as written**: `docs/tripwire.md` gets one more edit before
   the tag.
@@ -115,7 +115,7 @@ touching a route records its response there in the same pass. A hand-written fix
 that the code agrees with whoever wrote the fixture.
 
 The second run, the same day, found the defect item 9 now exists for: all five sites carried three
-or four rows that were the tool's own gaps rather than facts about the site, so no site could ever
+or four rows that were the tool's gaps rather than facts about the site, so no site could ever
 read `OK` and every scheduled run would have exited 3. `CHANGELOG.md` lists each one. The lasting
 change is item 9 itself: reading the verdict word is not enough, and every `skip` and `unknown` row
 gets read for whose fault it names.

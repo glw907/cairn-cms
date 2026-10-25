@@ -11,7 +11,7 @@ import (
 )
 
 // The three published contract pages, by their path from the repository root. They live in the
-// engine's own reference arm rather than under tool/, so the npm tarball carries them to every
+// engine's reference arm rather than under tool/, so the npm tarball carries them to every
 // consumer, and a scripter reading one is reading the same file this module is held to.
 const (
 	exitCodesPage  = "docs/reference/cli-cairn-exit-codes.md"
@@ -19,7 +19,7 @@ const (
 	doctorPage     = "docs/reference/cli-cairn-doctor.md"
 )
 
-// exitCodeRow matches one row of the exit-codes page's own code table: a decimal code, then the
+// exitCodeRow matches one row of the exit-codes page's code table: a decimal code, then the
 // word in backticks. The requests-per-check table on the same page does not match, since its
 // first cell is a backticked check id rather than a number.
 var exitCodeRow = regexp.MustCompile("(?m)^\\| (\\d+) \\| `([A-Z]+)` \\|")
@@ -39,7 +39,7 @@ func namedVerdicts() []spine.Verdict {
 }
 
 // TestTheExitCodeTablePublishesEveryVerdict holds the exit-codes page's code table to spine's
-// own verdicts: a code the page omits, a code it carries that spine does not name, and a code
+// verdicts: a code the page omits, a code it carries that spine does not name, and a code
 // paired with the wrong word each fail here. The table is the one thing a caller branches on
 // without running the tool, so a page that disagrees with the binary is worse than no page.
 func TestTheExitCodeTablePublishesEveryVerdict(t *testing.T) {
@@ -87,7 +87,7 @@ func TestThePagesDescribeTheDocumentedRelease(t *testing.T) {
 	}
 }
 
-// pageLede returns the paragraph a page opens with under its own title, the paragraph each of
+// pageLede returns the paragraph a page opens with under its title, the paragraph each of
 // these three states its release in.
 func pageLede(t *testing.T, rel, body string) string {
 	t.Helper()

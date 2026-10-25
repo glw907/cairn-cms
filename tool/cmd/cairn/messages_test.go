@@ -13,19 +13,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// maxCommandBodyLiteral is criterion 1's own threshold: the longest string literal a cmd/cairn
-// file outside messages.go may carry, skipping a struct tag, a flag's own long name, and a
-// cobra.Command field key (an import path, caught the same way health's own
+// maxCommandBodyLiteral is criterion 1's threshold: the longest string literal a cmd/cairn
+// file outside messages.go may carry, skipping a struct tag, a flag's long name, and a
+// cobra.Command field key (an import path, caught the same way health's
 // TestCheckFilesCarryNoLongProseLiterals excludes one).
 const maxCommandBodyLiteral = 30
 
-// probeDumpFiles hold cairn auth check's own raw diagnostic dump: permission labels, credential
+// probeDumpFiles hold cairn auth check's raw diagnostic dump: permission labels, credential
 // variable names, and provider-classified reason words for whoever is minting the three
-// credentials. probe_token.go's own Long text states the design this codifies: "auth check's
+// credentials. probe_token.go's Long text states the design this codifies: "auth check's
 // whole output is identifiers (permission labels, credential variable names, and
 // pass/fail/skip/unknown words)", the same reason copy-standard.md section 3.9 keeps a log
 // line's field values verbatim rather than routing them through the prose table.
-// probe_token.go's own genuine prose (Short, Long, Example, and its skip notices) is still moved
+// probe_token.go's genuine prose (Short, Long, Example, and its skip notices) is still moved
 // into messages.go despite this exemption; TestAuthCheckStringsLiveInMessages covers that half
 // directly.
 var probeDumpFiles = map[string]bool{
@@ -35,7 +35,7 @@ var probeDumpFiles = map[string]bool{
 }
 
 // excludedCommandLiterals returns every *ast.BasicLit a cmd/cairn file exempts from
-// maxCommandBodyLiteral: a struct tag, the same exemption health's own literal-length test
+// maxCommandBodyLiteral: a struct tag, the same exemption health's literal-length test
 // grants.
 func excludedCommandLiterals(file *ast.File) map[*ast.BasicLit]bool {
 	excluded := make(map[*ast.BasicLit]bool)
@@ -49,7 +49,7 @@ func excludedCommandLiterals(file *ast.File) map[*ast.BasicLit]bool {
 }
 
 // TestNoLongProseLiteralOutsideMessages asserts no cmd/cairn file outside messages.go and auth
-// probe's own diagnostic dump (probeDumpFiles) carries a string literal longer than
+// probe's diagnostic dump (probeDumpFiles) carries a string literal longer than
 // maxCommandBodyLiteral characters, outside a struct tag or an import path: every longer
 // operator-facing string, an error message, a command's Short/Long/Example, or a flag's help
 // text, must live in messages.go instead.
@@ -91,7 +91,7 @@ func TestNoLongProseLiteralOutsideMessages(t *testing.T) {
 	}
 }
 
-// TestAuthCheckStringsLiveInMessages pins the half of probe_token.go's own prose the
+// TestAuthCheckStringsLiveInMessages pins the half of probe_token.go's prose the
 // probeDumpFiles exemption above does not cover: its Short, Long, and Example, on both cairn
 // auth check and its Hidden alias cairn auth probe, are still messages.go constants, not
 // literals reintroduced at the call site.
@@ -168,14 +168,14 @@ func TestNoCAIRNPrefixedLiteralOutsideCredentialVars(t *testing.T) {
 }
 
 // cairnBacktickCommandPattern matches a backtick-quoted "cairn <word...>" fragment: the shape a
-// fix line uses to name a command an operator should run next, health/messages_test.go's own
+// fix line uses to name a command an operator should run next, health/messages_test.go's
 // pattern generalized from an allow-list check to a real-tree check.
 var cairnBacktickCommandPattern = regexp.MustCompile("`cairn [a-z][a-z -]*`")
 
 // TestNoMessageNamesAnUnknownCairnCommand extends Task 19c-i's conflict test the same way,
 // checked against the real cobra tree cairn builds rather than an allow-list: every backtick-
 // quoted "cairn ..." command mention messages.go carries resolves to a command somewhere in
-// newRootCmd's own tree.
+// newRootCmd's tree.
 func TestNoMessageNamesAnUnknownCairnCommand(t *testing.T) {
 	known := knownCommandPaths(t)
 
@@ -189,9 +189,9 @@ func TestNoMessageNamesAnUnknownCairnCommand(t *testing.T) {
 	}
 }
 
-// commandPathOf returns fragment's own leading command path, dropping a trailing flag word
+// commandPathOf returns fragment's leading command path, dropping a trailing flag word
 // (`--help`) so "cairn health --help" is checked as "cairn health" against the real tree rather
-// than as a command path of its own.
+// than as a command path.
 func commandPathOf(fragment string) string {
 	words := strings.Fields(fragment)
 	for len(words) > 0 && strings.HasPrefix(words[len(words)-1], "-") {
@@ -216,12 +216,12 @@ func knownCommandPaths(t *testing.T) map[string]bool {
 }
 
 // TestEveryCairnPrefixedMessageFollowsTheErrorGrammar covers criterion 3: every messages.go
-// string shaped as an error (it starts "cairn: ") carries the standard's own three-part shape
+// string shaped as an error (it starts "cairn: ") carries the standard's three-part shape
 // rather than a raw Go error chain. Short, Long, Example, and flag help text are not error
 // messages and are skipped: they never carry the "cairn: " prefix in the first place, which is
 // itself how this test tells the two kinds apart with no second list to maintain.
 //
-// A multi-line message's first line ends with a period, the standard's own 2.7; a single-line
+// A multi-line message's first line ends with a period, the standard's 2.7; a single-line
 // message does not, staticcheck's ST1005 (a Go error string carries no trailing punctuation) and
 // go-conventions winning for the one shape where the two would otherwise collide: a message with
 // no second line IS the whole Go error string, so it is graded by ST1005 rather than 2.7 in that
@@ -229,7 +229,7 @@ func knownCommandPaths(t *testing.T) map[string]bool {
 func TestEveryCairnPrefixedMessageFollowsTheErrorGrammar(t *testing.T) {
 	for _, s := range messageConstants(t) {
 		// pasteNotice is a printed notice, never wrapped in an error, so ST1005 does not reach
-		// it and its own trailing period is correct UI text rather than a Go error string.
+		// it and its trailing period is correct UI text rather than a Go error string.
 		if !strings.HasPrefix(s, "cairn: ") || s == pasteNotice {
 			continue
 		}
@@ -251,10 +251,10 @@ func TestEveryCairnPrefixedMessageFollowsTheErrorGrammar(t *testing.T) {
 }
 
 // The eight rows copy-standard.md section 3.8 names, one constructor each, plus the fallback.
-// TestEveryEightSection38CaseHasATableEntry exercises each directly so criterion 2's own count
+// TestEveryEightSection38CaseHasATableEntry exercises each directly so criterion 2's count
 // is proven rather than merely asserted in a comment, and so `unused` never flags the four
 // (noCredentialsError, networkDownError, rateLimitedError, crashedCheckError) that carry no
-// production call site today (see messages.go's own comment on why).
+// production call site today (see messages.go's comment on why).
 func TestEveryEightSection38CaseHasATableEntry(t *testing.T) {
 	cases := map[string]error{
 		"no credentials":                 noCredentialsError(),
@@ -297,8 +297,8 @@ func TestTranslateErrorPassesThroughATranslatedMessage(t *testing.T) {
 }
 
 // TestTranslateErrorAckFileUnreadableSinglePrefix asserts loadAckFile's read-permission failure
-// reaches translateError as a translatedError, so main's own boundary passes it through instead
-// of prefixing it a second time; this pins the regression an inline fmt.Errorf at ack.go's own
+// reaches translateError as a translatedError, so main's boundary passes it through instead
+// of prefixing it a second time; this pins the regression an inline fmt.Errorf at ack.go's
 // read call site reintroduced, "cairn: cairn: read <path>: <cause>".
 func TestTranslateErrorAckFileUnreadableSinglePrefix(t *testing.T) {
 	err := ackFileUnreadableError("/home/geoff/.config/cairn/acks.json", errRaw{"permission denied"})
@@ -312,8 +312,8 @@ func TestTranslateErrorAckFileUnreadableSinglePrefix(t *testing.T) {
 }
 
 // TestTranslateErrorPrefixesARawError asserts a raw Go error that never went through this
-// table's own constructors still reaches an operator with the cairn: prefix, copy-standard.md
-// section 4.2's own fallback.
+// table's constructors still reaches an operator with the cairn: prefix, copy-standard.md
+// section 4.2's fallback.
 func TestTranslateErrorPrefixesARawError(t *testing.T) {
 	raw := errRaw{"open /home/geoff/.config/cairn/sites: permission denied"}
 	got := translateError(raw)
@@ -323,7 +323,7 @@ func TestTranslateErrorPrefixesARawError(t *testing.T) {
 }
 
 // errRaw is a bare error type standing in for a store or filesystem failure that never passed
-// through one of this file's own constructors, so it is never a translatedError.
+// through one of this file's constructors, so it is never a translatedError.
 type errRaw struct{ s string }
 
 func (e errRaw) Error() string { return e.s }
@@ -368,7 +368,7 @@ func TestNoMalformedInOperatorCopy(t *testing.T) {
 
 // TestTheExitCodesPageNamesTheCutShortSiteAndTheCap covers half of criterion 25: the published
 // exit-codes page states the reason a cut-short site's unfinished checks carry
-// (spine.ReasonNotRun's own wire value) and the cap the per-site share divides against, so the
+// (spine.ReasonNotRun's wire value) and the cap the per-site share divides against, so the
 // prose cannot drift from the arithmetic. The page now sits outside this module, which is why
 // it is read from the repository root rather than beside tripwire.md.
 func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
@@ -376,7 +376,7 @@ func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
 }
 
 // TestTripwireNamesTheCutShortSiteAndTheCap covers the other half of criterion 25, over the
-// tool's own operator runbook.
+// tool's operator runbook.
 func TestTripwireNamesTheCutShortSiteAndTheCap(t *testing.T) {
 	const rel = "docs/tripwire.md"
 	assertNamesTheBudget(t, rel, readToolFile(t, rel))
@@ -395,14 +395,14 @@ func assertNamesTheBudget(t *testing.T, rel, body string) {
 	}
 }
 
-// readmeLinkLabelPattern matches a Markdown link's own label text, the part between [ and ].
+// readmeLinkLabelPattern matches a Markdown link's label text, the part between [ and ].
 var readmeLinkLabelPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 
 // TestReadmeLinksCarryDescriptiveText covers criterion 14: every README link carries
 // descriptive text, never a bare documentation path, so a reader learns what a link leads to
 // before following it.
 //
-// It inspects a link into the tool's own docs tree and a link to a published cairn.pub page
+// It inspects a link into the tool's docs tree and a link to a published cairn.pub page
 // alike. The second form was added when the contract pages left tool/docs/reference: the one
 // README link that named a page there now names its published address, and a rule that stopped
 // at a "docs/" prefix would have stopped covering it.
@@ -414,7 +414,7 @@ func TestReadmeLinksCarryDescriptiveText(t *testing.T) {
 			continue
 		}
 		if strings.Trim(label, "`") == target {
-			t.Errorf("README link to %q carries its own path as the label %q, not descriptive text", target, label)
+			t.Errorf("README link to %q carries its path as the label %q, not descriptive text", target, label)
 		}
 	}
 }

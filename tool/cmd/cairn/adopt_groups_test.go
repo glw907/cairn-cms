@@ -137,7 +137,7 @@ func TestAdoptWithNoDomainNamesTheFlagThatResolvesIt(t *testing.T) {
 	}
 	got := err.Error()
 	if strings.Contains(got, "domain is empty") {
-		t.Errorf("error %q is still the validator's own raw message", got)
+		t.Errorf("error %q is still the validator's raw message", got)
 	}
 	for _, want := range []string{"route-served", "--domain"} {
 		if !strings.Contains(got, want) {
@@ -185,7 +185,7 @@ func TestAdoptFromExplicitValuesWritesTheRecord(t *testing.T) {
 	}
 }
 
-// publicIPResolver answers every lookup with one public address, so adoption's own
+// publicIPResolver answers every lookup with one public address, so adoption's
 // resolves-to-a-public-address check settles without a live DNS query.
 type publicIPResolver struct{}
 

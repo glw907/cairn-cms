@@ -1,12 +1,12 @@
 // Walks every file under fixtures/ and fails if one carries a real identifier: an email address
 // or the estate account id. The corpus is meant to travel with the Go tool (fixtures/README.md
-// names the trigger), so nothing in it may be a credential or an operator's own identity, even
+// names the trigger), so nothing in it may be a credential or an operator's identity, even
 // though every fixture is a real captured API response.
 //
 // `message_id` is exempted from the email-shaped check: a captured send-success body's
 // `message_id` is an opaque, mail-server-generated token that is syntactically email-shaped
-// (RFC 5322's own Message-ID grammar is `local-part@domain`) without naming anyone's identity,
-// and the corpus's own `email_send.success.200.json` carries one against the scratch domain
+// (RFC 5322's Message-ID grammar is `local-part@domain`) without naming anyone's identity,
+// and the corpus's `email_send.success.200.json` carries one against the scratch domain
 // `carin-test.org`. Every other string in the corpus is still checked.
 import test from 'node:test';
 import assert from 'node:assert/strict';

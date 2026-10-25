@@ -7,9 +7,9 @@ import (
 )
 
 // githubProbe returns the call cairn auth check runs to confirm one GitHub permission label,
-// keyed by permissionTable's own labels. Metadata is account-scoped: every fine-grained token
+// keyed by permissionTable's labels. Metadata is account-scoped: every fine-grained token
 // carries it by default, and a request no repository name reaches (GET /rate_limit) confirms the
-// token is usable at all. Contents is repository-scoped and needs owner/repo and the site's own
+// token is usable at all. Contents is repository-scoped and needs owner/repo and the site's
 // default branch, which checkPermission supplies only when the operator named a site: a
 // repository whose default branch is not main answers 404 at any other ref, and a read permission
 // the token holds would report as not-found.

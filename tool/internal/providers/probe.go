@@ -10,7 +10,7 @@ import (
 )
 
 // Resolver is the DNS lookup surface Probe depends on, satisfied by *net.Resolver in production
-// and a fake in tests. Its three methods are *net.Resolver's own signatures, so no adapter is
+// and a fake in tests. Its three methods are *net.Resolver's signatures, so no adapter is
 // needed to satisfy it in production code.
 type Resolver interface {
 	LookupTXT(ctx context.Context, name string) ([]string, error)
@@ -18,10 +18,10 @@ type Resolver interface {
 	LookupIP(ctx context.Context, network, host string) ([]net.IP, error)
 }
 
-// AuthorityLookup asks nameserver directly for host's own address records, bypassing the
+// AuthorityLookup asks nameserver directly for host's address records, bypassing the
 // ordinary recursive resolver and its negative cache: the read diagnoseUnreachable
 // (packages/create-cairn-site/src/cloudflare/hostname.mjs) performs to tell a record that
-// already exists at the zone's own authority from one that has not propagated there at all.
+// already exists at the zone's authority from one that has not propagated there at all.
 // nameserver is a hostname, resolved to its own address before the direct query. A record that
 // does not exist at the authority may surface either way: as an error (a *net.DNSError with
 // IsNotFound true) or as a nil/empty slice with no error, and a caller must treat both as
@@ -35,9 +35,9 @@ type AuthorityLookup func(ctx context.Context, nameserver, host string) ([]net.I
 const RequestTimeout = requestTimeout
 
 // Probe is the tool's unauthenticated HTTP and DNS client, used by the checks that reach an
-// arbitrary site's own domain rather than a fixed provider API. It carries no
+// arbitrary site's domain rather than a fixed provider API. It carries no
 // Credential field and never sends an Authorization header, since a check probing a third
-// party's DNS or a custom domain has no business presenting this operator's own token to it.
+// party's DNS or a custom domain has no business presenting this operator's token to it.
 type Probe struct {
 	resolver  Resolver
 	authority AuthorityLookup
@@ -138,7 +138,7 @@ func (p *Probe) lookupA(ctx context.Context, name string) ([]net.IP, error) {
 	return p.resolver.LookupIP(reqCtx, "ip4", name)
 }
 
-// LookupAuthoritative asks nameserver directly for host's own address records, through the
+// LookupAuthoritative asks nameserver directly for host's address records, through the
 // AuthorityLookup a Probe was built with, bounded by the package's shared request timeout.
 func (p *Probe) LookupAuthoritative(ctx context.Context, nameserver, host string) ([]net.IP, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -150,7 +150,7 @@ func (p *Probe) LookupAuthoritative(ctx context.Context, nameserver, host string
 // nameserver's own address with the ordinary system resolver, trying IPv4 then IPv6 since a
 // nameserver may publish only one family, then dials that address directly (port 53) for
 // host's AAAA records, the same record type hostname.mjs's diagnoseUnreachable reads. No
-// recursive resolver's negative cache sits between this query and the zone's own authority.
+// recursive resolver's negative cache sits between this query and the zone's authority.
 func defaultAuthorityLookup(ctx context.Context, nameserver, host string) ([]net.IP, error) {
 	nsAddr, err := resolveNameserverAddress(ctx, nameserver)
 	if err != nil {
@@ -175,7 +175,7 @@ func resolveNameserverAddress(ctx context.Context, nameserver string) (string, e
 		return ip4Addrs[0].String(), nil
 	}
 	if ip4Err != nil && ctx.Err() != nil {
-		// The ip4 attempt failed because the caller's own context ended, not because ip4 lacks
+		// The ip4 attempt failed because the caller's context ended, not because ip4 lacks
 		// an address; that is the more informative error, so report it rather than masking it
 		// behind whatever the ip6 attempt below returns for the same expired context.
 		return "", fmt.Errorf("providers: resolve nameserver %s: %w", nameserver, ip4Err)

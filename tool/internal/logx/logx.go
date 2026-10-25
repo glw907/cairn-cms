@@ -12,7 +12,7 @@ import (
 )
 
 // redacted is what a matched credential is replaced with, the same placeholder
-// providers.Credential's own String and MarshalJSON print.
+// providers.Credential's String and MarshalJSON print.
 const redacted = "<redacted>"
 
 // MinLength is the shortest credential Writer will match. A very short value occurs in ordinary

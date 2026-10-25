@@ -16,7 +16,7 @@ const cairnModule = "@glw907/cairn-cms"
 
 // readUnder reads the file at relPath inside dir, refusing any path, including one that escapes
 // only through a symlink, that resolves outside dir. dir must already be a resolved, existing
-// directory (Snapshot's own Dir, produced by NewSnapshot). ok is false when the file does not
+// directory (Snapshot's Dir, produced by NewSnapshot). ok is false when the file does not
 // exist or is a dangling symlink; err is non-nil for a containment refusal or any other read
 // failure, a permission-denied file included.
 //

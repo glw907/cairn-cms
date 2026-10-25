@@ -1,6 +1,6 @@
 // cairn-cms: the committed check-id vocabulary check-symbols.mjs resolves a doc's check-id
 // candidates against. Before this file existed, this vocabulary came from a live directory walk
-// over the engine's own check modules at gate time; that directory is gone (the checks it ran
+// over the engine's check modules at gate time; that directory is gone (the checks it ran
 // now live in the Go tool's `cairn doctor`), so the vocabulary is a committed list instead.
 //
 // TOOL_CHECK_IDS names every check id the Go tool currently raises. RETIRED_TOOL_CHECK_IDS names

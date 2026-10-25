@@ -30,7 +30,7 @@ const (
 	StepConfigReconciled      Step = "config-reconciled"
 )
 
-// allSteps backs parseStep and is replayed by step_test.go's own literal scan.
+// allSteps backs parseStep and is replayed by step_test.go's literal scan.
 var allSteps = map[Step]bool{
 	StepScaffolded:            true,
 	StepAppCreated:            true,
@@ -59,7 +59,7 @@ func parseStep(s string) (Step, bool) {
 	return step, allSteps[step]
 }
 
-// terminalSteps names the cloudflare chapter's own steps past which the pasted API token is
+// terminalSteps names the cloudflare chapter's steps past which the pasted API token is
 // deleted, ported from TERMINAL_STEPS in
 // packages/create-cairn-site/src/cloudflare/chapter2.mjs.
 func terminalSteps() []Step {

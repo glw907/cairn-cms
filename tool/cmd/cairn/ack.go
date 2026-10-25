@@ -28,7 +28,7 @@ type ackFileEntry struct {
 }
 
 // ackFilePath resolves the acknowledgement file health reads and sites list skips: the
-// operator's own --ack-file when named, otherwise the default name inside dir, the registry
+// operator's --ack-file when named, otherwise the default name inside dir, the registry
 // directory store.Dir resolves.
 func ackFilePath(dir string, rf *rootFlags) string {
 	if rf.ackFile != "" {
@@ -139,7 +139,7 @@ func resolveAcks(d deps, rf *rootFlags, f healthFlags) (health.Acks, error) {
 
 // excludeAckFile drops the entry, and any store.List error, whose record path is the same file
 // the resolved acknowledgement path names. store.List already skips the default name because
-// its stem fails record.ValidateSiteID, but an operator's own --ack-file can carry a
+// its stem fails record.ValidateSiteID, but an operator's --ack-file can carry a
 // site-id-shaped stem pointing at a file inside the registry directory: store.List then reads
 // it as a record, fails to parse it, and reports it in errs, so both the entry (had it parsed)
 // and that error are excluded here by comparing full resolved paths rather than names.
@@ -174,4 +174,4 @@ func excludeAckFile(entries []store.Entry, errs []error, dir string, rf *rootFla
 // The six errors above (ackFlagError, ackFileNotFoundError, ackFileMalformedError,
 // ackFileMissingCheckIDError, ackFileMissingExpiryError, ackFileMalformedDateError) are defined
 // in cmd/cairn/messages.go: the catalogue carries no row for a malformed or missing
-// acknowledgement entry, so each is drafted to copy-standard.md's own grammar rather than copied.
+// acknowledgement entry, so each is drafted to copy-standard.md's grammar rather than copied.

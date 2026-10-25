@@ -71,7 +71,7 @@ function hook() {
  * @param {string} options.root the repository root
  * @param {string} [options.themeFile] a stylesheet copied over `src/theme/theme.css`
  * @param {string} [options.themeDir] a directory overlaid onto `src/theme`, taking precedence over
- *   `themeFile`, for a theme that brings its own chrome
+ *   `themeFile`, for a theme that brings its chrome
  * @returns {{ dir: string, remove: () => void }} the copy's directory, and a function that removes it
  */
 export function makeShowcaseCopy({ root, themeFile, themeDir }) {

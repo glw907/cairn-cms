@@ -35,7 +35,7 @@ func TestMissingCredentialNamesTheChecksItDisables(t *testing.T) {
 			t.Errorf("the line does not name %q among the checks the missing token disables:\n%s", id, text)
 		}
 	}
-	// The status view is the site listing's own frame, where no check was attempted, so the line
+	// The status view is the site listing's frame, where no check was attempted, so the line
 	// says what the absence will cost rather than reporting a failure that did not happen.
 	if !strings.Contains(text, "cannot run") {
 		t.Errorf("the listing's line does not say what the absence costs:\n%s", text)
@@ -54,7 +54,7 @@ func TestHealthFrameKeepsThePastTenseMissingTokenLine(t *testing.T) {
 		Variable: "CAIRN_GH_READ_TOKEN",
 		Disables: []string{"deploy", "engine", "publish-path"},
 	}}}
-	// The line wraps into the creds row's own detail column, so the frame is flattened before
+	// The line wraps into the creds row's detail column, so the frame is flattened before
 	// the clause is looked for. The whole clause, not the bare words: "could not run" is also a
 	// section label, so a substring test on it alone would pass whatever the line says.
 	text := strings.Join(strings.Fields(strings.Join(plainLines(in), " ")), " ")
@@ -71,7 +71,7 @@ func TestPresentCredentialNamesItsProviderAndExpiry(t *testing.T) {
 		t.Errorf("a found token does not name the store it resolved through:\n%s", text)
 	}
 	if !strings.Contains(text, "expires 2026-09-26, in 6 days") {
-		t.Errorf("the token's own expiry date is missing:\n%s", text)
+		t.Errorf("the token's expiry date is missing:\n%s", text)
 	}
 
 	// The same three facts on the GitHub token, the one of the two whose provider publishes an
@@ -102,7 +102,7 @@ func TestDegradedIsStatedWhereNoMissingTokenIs(t *testing.T) {
 	in.Status.Degraded = true
 	text := strings.Join(plainLines(in), "\n")
 	if strings.Contains(text, statusDegraded) {
-		t.Errorf("the degraded line repeats what the missing token's own line already said:\n%s", text)
+		t.Errorf("the degraded line repeats what the missing token's line already said:\n%s", text)
 	}
 }
 
@@ -139,13 +139,13 @@ func TestCredentialDetailSitsOnTheCredsRow(t *testing.T) {
 	}
 }
 
-// TestElapsedRidesTheCheckedLine is criterion 11's first fact: the run's own wall time, on the
+// TestElapsedRidesTheCheckedLine is criterion 11's first fact: the run's wall time, on the
 // line that already says when the run happened, and absent where the caller measured none.
 func TestElapsedRidesTheCheckedLine(t *testing.T) {
 	in := input(fixtures.OneSick(), BodySingle, 100, ProfileNoColor, true, spine.VerdictCritical)
 	in.Status = StatusState{Elapsed: 16300 * time.Millisecond}
 	if text := strings.Join(plainLines(in), "\n"); !strings.Contains(text, "), in 16.3s") {
-		t.Errorf("the checked line does not carry the run's own time:\n%s", text)
+		t.Errorf("the checked line does not carry the run's time:\n%s", text)
 	}
 	in.Status = StatusState{}
 	if text := strings.Join(plainLines(in), "\n"); strings.Contains(text, ", in ") {
@@ -187,7 +187,7 @@ func TestJoinWordsReadsAsProse(t *testing.T) {
 }
 
 // TestStatusSanitizesItsOwnFields drives a hostile variable name, provider and check id through
-// the status line: a site's own data never reaches this line, but a keyring or an environment
+// the status line: a site's data never reaches this line, but a keyring or an environment
 // can still hand back a value nobody chose.
 func TestStatusSanitizesItsOwnFields(t *testing.T) {
 	in := statusInput()

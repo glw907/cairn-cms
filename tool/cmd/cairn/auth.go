@@ -23,7 +23,7 @@ func isAuthVariable(name string) bool {
 }
 
 // restoreOnCancel calls restore once, when ctx is done, and returns the function the caller
-// defers to stand the watch down. term.ReadPassword restores the terminal on its own return,
+// defers to stand the watch down. term.ReadPassword restores the terminal on its return,
 // and a signal at the prompt never lets it return, which is what leaves a shell with echo off
 // after Ctrl-C.
 func restoreOnCancel(ctx context.Context, restore func()) (stop func()) {
@@ -218,7 +218,7 @@ func newAuthListCmd(d deps) *cobra.Command {
 
 // keyringAwareDisplay returns r's display line, unchanged when anything resolved it, and
 // distinguishing a keyring that could not be consulted from one that simply holds no entry when
-// nothing did. loadEnv's own resolution, and so credential-resolution behavior, is untouched:
+// nothing did. loadEnv's resolution, and so credential-resolution behavior, is untouched:
 // this only refines what auth list prints for a variable Resolve already reported as a miss.
 func keyringAwareDisplay(d deps, r resolution) string {
 	if r.display != "not set" || d.keyringStatus == nil {

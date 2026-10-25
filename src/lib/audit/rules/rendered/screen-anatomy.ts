@@ -197,7 +197,7 @@ export const screenAnatomy: RenderedRule = {
         message:
           `the page's one <h1> (${snapshot.h1Selector}) does not render inside a <header> landmark; ` +
           'PageHeader wraps its display-face title in <header>, so either this heading is not ' +
-          "PageHeader's own or its header wrapper is missing.",
+          "the one PageHeader renders or its header wrapper is missing.",
       });
     }
 

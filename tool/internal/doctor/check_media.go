@@ -12,8 +12,8 @@ const (
 	// media bucket binding, the R2 half is never added to config.bindings, so a no-media
 	// site never fails on a binding it never asked for.
 	skipConfigMediaBucketNone = "no media assets configured"
-	// tmplConfigMediaBucketFail is config.media-bucket's own fail detail template. It carries
-	// its own condition and its own remediation, config.media-bucket-missing's, rather than
+	// tmplConfigMediaBucketFail is config.media-bucket's fail detail template. It carries
+	// its condition and its remediation, config.media-bucket-missing's, rather than
 	// borrowing config.bindings-missing's.
 	tmplConfigMediaBucketFail = "adapter declares media bucket %s but no matching r2_buckets binding is in wrangler"
 	// tmplConfigMediaBucketPass is config.media-bucket's pass detail template.

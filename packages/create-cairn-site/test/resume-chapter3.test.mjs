@@ -1,15 +1,15 @@
 // Dispatcher-level coverage for bin.mjs's chapter-3 routing (T4c task 9): a sibling of
-// resume-chapter2.test.mjs, proving `--connect`, the plain re-entry at chapter 3's own resumable
+// resume-chapter2.test.mjs, proving `--connect`, the plain re-entry at chapter 3's resumable
 // and terminal steps, the fresh-run fall-through into chapter 3, and the --start-over refusal all
-// route through bin.mjs's own real entry point, the same way that file already proves chapter 2's
-// routing (its own module tests cannot see bin.mjs's dispatch logic at all).
+// route through bin.mjs's real entry point, the same way that file already proves chapter 2's
+// routing (its module tests cannot see bin.mjs's dispatch logic at all).
 //
 // HERMETIC-TEST CONSTRAINT, inherited from resume-chapter2.test.mjs: there is no DNS or HTTPS
 // probe seam here either, so a case that must prove chapter 3 actually started (rather than a
 // refusal or a cached print) uses the same deterministic stop that file established: `--yes` with
-// no `CAIRN_CF_API_TOKEN` in the child env and no saved token on the record makes chapter 3's own
+// no `CAIRN_CF_API_TOKEN` in the child env and no saved token on the record makes chapter 3's
 // token hop (`Get a fresh Cloudflare API token`, prefill.mjs's `ensureApiToken`) throw a plain
-// Error with its own `Next:` line, after whichever of chapter 3's earlier hops already printed.
+// Error with its `Next:` line, after whichever of chapter 3's earlier hops already printed.
 // That proves chapter 3 itself ran, and it does so before any Cloudflare or GitHub network call a
 // fake would need to answer, so most cases here need no fake Cloudflare or fake GitHub at all.
 import test from 'node:test';
@@ -40,7 +40,7 @@ async function freshStateDir(t) {
 }
 
 /** Build a directory of harmless no-op stand-ins for every platform opener open.mjs might spawn,
- * mirroring resume-chapter2.test.mjs's own helper. */
+ * mirroring resume-chapter2.test.mjs's helper. */
 async function makeFakeOpenerDir(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-fake-opener-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -54,8 +54,8 @@ async function makeFakeOpenerDir(t) {
 
 /**
  * Run create-cairn-site as a real child process. `CAIRN_CF_API_TOKEN` is always stripped from the
- * child's env unless `extraEnv` supplies one, matching resume-chapter2.test.mjs's own contract, so
- * an operator's own shell can never accidentally make a token-hop-stop case pass for the wrong
+ * child's env unless `extraEnv` supplies one, matching resume-chapter2.test.mjs's contract, so
+ * an operator's shell can never accidentally make a token-hop-stop case pass for the wrong
  * reason.
  * @param {string[]} args the CLI arguments
  * @param {{ stateDir: string, wranglerBin: string, apiBase?: string, githubApiBase?: string,
@@ -90,9 +90,9 @@ async function runCli(args, { stateDir, wranglerBin, apiBase, githubApiBase, fak
  * already finished: the GitHub and Cloudflare fields every closing print and every chapter-3 hop
  * reads. `cloudflare.apiToken` is left unset by default so every case below reaches chapter 3's
  * token hop with nothing saved, the deterministic stop this file's header describes. That is a
- * fixture choice, not a fact about the world: chapter 2 clears its own saved token only at its
+ * fixture choice, not a fact about the world: chapter 2 clears its saved token only at its
  * TERMINAL steps, so a real record at `domain-live` or `email-onboarded` still carries one. The
- * case below that seeds `apiToken` covers exactly that, and chapter 3 keys its own "already
+ * case below that seeds `apiToken` covers exactly that, and chapter 3 keys its "already
  * admitted" answer on `cloudflare.buildsTokenSavedAt`, which only chapter 3 ever writes.
  * @param {string} siteId
  * @param {string} dir
@@ -125,7 +125,7 @@ async function seedSite(siteId, dir, step, overrides = {}) {
 
 /**
  * Build a state-store id whose trailing dash-segment is exactly six characters, matching
- * state.mjs's own SITE_ID_SHAPE regex (`findSiteByDir` silently skips a record whose id does not
+ * state.mjs's SITE_ID_SHAPE regex (`findSiteByDir` silently skips a record whose id does not
  * match it, which reads as "no saved record" and falls all the way through to the scaffolder,
  * the exact failure mode this helper exists to avoid).
  * @param {string} label a short, readable tag for the test; only its first six lowercased
@@ -143,37 +143,37 @@ function makeSiteId(label) {
 
 /** The scaffold hand-over line, whose absence proves a resumed run never re-scaffolded. */
 const SCAFFOLD_MARKER = 'Your site is scaffolded at';
-/** Chapter 3's own admission hop title. */
+/** Chapter 3's admission hop title. */
 const CHAPTER3_ADMISSION_TITLE = 'Connect to Workers Builds';
-/** Chapter 3's own token hop title (distinct from chapter 2's "Get a Cloudflare API token"). */
+/** Chapter 3's token hop title (distinct from chapter 2's "Get a Cloudflare API token"). */
 const CHAPTER3_TOKEN_TITLE = 'Get a fresh Cloudflare API token';
-/** Chapter 2's own admission hop title, whose presence would prove a run fell into chapter 2. */
-const CHAPTER2_ADMISSION_TITLE = 'Connect your own domain';
+/** Chapter 2's admission hop title, whose presence would prove a run fell into chapter 2. */
+const CHAPTER2_ADMISSION_TITLE = 'Connect your domain';
 
 /**
  * Assert the shared negative markers proving a run reached chapter 3's token hop and stopped
- * there, never falling through to the scaffolder or into chapter 2's own admission.
+ * there, never falling through to the scaffolder or into chapter 2's admission.
  * @param {string} stdout
  */
 function assertReachedChapter3TokenHop(stdout) {
-  assert.ok(stdout.includes(CHAPTER3_TOKEN_TITLE), `expected chapter 3's own token hop, got: ${stdout}`);
+  assert.ok(stdout.includes(CHAPTER3_TOKEN_TITLE), `expected chapter 3's token hop, got: ${stdout}`);
   assert.equal(stdout.includes(SCAFFOLD_MARKER), false, `expected no scaffold output, got: ${stdout}`);
   assert.equal(
     stdout.includes(CHAPTER2_ADMISSION_TITLE),
     false,
-    `expected chapter 2's own admission never to run, got: ${stdout}`,
+    `expected chapter 2's admission never to run, got: ${stdout}`,
   );
 }
 
-// === Step 1: falsifiable routing tests, through bin.mjs's own entry =============================
+// === Step 1: falsifiable routing tests, through bin.mjs's entry =============================
 //
 // FALSIFIABILITY: each of these four cases seeds a step that is a member of NEITHER
-// GITHUB_RESUMABLE_STEPS, CLOUDFLARE_RESUMABLE_STEPS, CHAPTER2_RESUMABLE_STEPS, nor chapter 2's own
+// GITHUB_RESUMABLE_STEPS, CLOUDFLARE_RESUMABLE_STEPS, CHAPTER2_RESUMABLE_STEPS, nor chapter 2's
 // TERMINAL_STEPS. Removing the CHAPTER3_RESUMABLE_STEPS (or CHAPTER3_TERMINAL_STEPS) branch this
 // test proves would leave the step unrecognized by every other check in bin.mjs's dispatch chain,
 // so it would fall through to the final `collectAnswers()` + `scaffold()` path instead: the
 // SCAFFOLD_MARKER assertion below would then find the marker present rather than absent, and the
-// chapter-3-specific assertion would find its own title or text missing. This was verified by hand
+// chapter-3-specific assertion would find its title or text missing. This was verified by hand
 // during implementation: commenting out the CHAPTER3_RESUMABLE_STEPS branch in bin.mjs turned the
 // first two tests below red (SCAFFOLD_MARKER present, CHAPTER3_TOKEN_TITLE absent), and commenting
 // out the CHAPTER3_TERMINAL_STEPS branch turned the last two red the same way.
@@ -202,7 +202,7 @@ for (const step of ['builds-connected', 'config-reconciled']) {
       `expected the resume line, got: ${result.stdout}`,
     );
     assertReachedChapter3TokenHop(result.stdout);
-    assert.ok(result.stderr.includes('Next:'), `expected the token hop's own Next: line, got: ${result.stderr}`);
+    assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
     assert.deepEqual(
       await fake.invocations(),
       [],
@@ -267,7 +267,7 @@ test('bin.mjs: a run that reaches paid-plan-declined during this call falls thro
   t.after(() => cloudflare.close());
 
   const siteId = makeSiteId('fall-declined');
-  // A saved token that still validates (the fake accepts any bearer) lets chapter 2's own account
+  // A saved token that still validates (the fake accepts any bearer) lets chapter 2's account
   // and token hops pass silently, so this run reaches the email-admission hop and declines it
   // (--yes with no --email) without ever needing a real Cloudflare token or a DNS/HTTPS seam.
   await seedSite(siteId, dir, 'domain-live', {
@@ -285,14 +285,14 @@ test('bin.mjs: a run that reaches paid-plan-declined during this call falls thro
   assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
   assert.ok(
     result.stdout.includes("You chose not to turn on email sign-in for your domain"),
-    `expected chapter 2's own decline row, got: ${result.stdout}`,
+    `expected chapter 2's decline row, got: ${result.stdout}`,
   );
   assertReachedChapter3TokenHop(result.stdout);
   assert.ok(result.stderr.includes('Next:'), `expected chapter 3's token-hop Next: line, got: ${result.stderr}`);
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'paid-plan-declined', 'chapter 2 wrote its own outcome before chapter 3 began');
-  assert.equal('apiToken' in state.cloudflare, false, 'the decline deleted chapter 2\'s own saved token');
+  assert.equal(state.step, 'paid-plan-declined', 'chapter 2 wrote its outcome before chapter 3 began');
+  assert.equal('apiToken' in state.cloudflare, false, 'the decline deleted chapter 2\'s saved token');
 });
 
 test('bin.mjs: a run that reaches email-live during this call falls through into chapter 3', async (t) => {
@@ -303,7 +303,7 @@ test('bin.mjs: a run that reaches email-live during this call falls through into
   const domain = 'fallthrough-live-test.example';
   // Matches defaultFromAddress(domain) exactly, so writeEmailFrom reports no change and chapter 2
   // never has to build or deploy the site to reach email-live: this file has no fake wrangler
-  // build/deploy fixture, and the point of this test is chapter 3's own entry, not chapter 2's.
+  // build/deploy fixture, and the point of this test is chapter 3's entry, not chapter 2's.
   await writeFile(
     path.join(dir, 'src/theme/cairn.config.ts'),
     `export default {\n  email: { from: 'no-reply@${domain}' },\n};\n`,
@@ -332,14 +332,14 @@ test('bin.mjs: a run that reaches email-live during this call falls through into
   assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
   assert.ok(
     result.stdout.includes('Cloudflare accepted a real test message'),
-    `expected chapter 2's own email-live completion line, got: ${result.stdout}`,
+    `expected chapter 2's email-live completion line, got: ${result.stdout}`,
   );
   assertReachedChapter3TokenHop(result.stdout);
   assert.ok(result.stderr.includes('Next:'), `expected chapter 3's token-hop Next: line, got: ${result.stderr}`);
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'email-live', 'chapter 2 wrote its own outcome before chapter 3 began');
-  assert.equal('apiToken' in state.cloudflare, false, 'email-live deleted chapter 2\'s own saved token');
+  assert.equal(state.step, 'email-live', 'chapter 2 wrote its outcome before chapter 3 began');
+  assert.equal('apiToken' in state.cloudflare, false, 'email-live deleted chapter 2\'s saved token');
 });
 
 // --- --connect enters chapter 3 from every allowlisted step, ahead of every other branch --------
@@ -349,7 +349,7 @@ for (const [label, step, overrides] of [
   ['domain-live', 'domain-live', { domain: 'connect-domain-live-test.example' }],
   ['email-live', 'email-live', { domain: 'connect-email-live-test.example', emailFrom: 'no-reply@connect-email-live-test.example' }],
 ]) {
-  test(`bin.mjs --connect enters chapter 3 from ${label}, ahead of its own normal branch`, async (t) => {
+  test(`bin.mjs --connect enters chapter 3 from ${label}, ahead of its normal branch`, async (t) => {
     const stateDir = await freshStateDir(t);
     const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
     t.after(() => rm(dir, { recursive: true, force: true }));
@@ -372,12 +372,12 @@ for (const [label, step, overrides] of [
       result.stdout.includes(`Connecting Chapter3 Resume Site to Workers Builds.`),
       `expected the --connect entry line, got: ${result.stdout}`,
     );
-    assert.ok(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), `expected chapter 3's own admission hop, got: ${result.stdout}`);
+    assert.ok(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), `expected chapter 3's admission hop, got: ${result.stdout}`);
     assertReachedChapter3TokenHop(result.stdout);
     assert.equal(
       result.stdout.includes('is already live.'),
       false,
-      `--connect must bypass the plain-live branch's own print, got: ${result.stdout}`,
+      `--connect must bypass the plain-live branch's print, got: ${result.stdout}`,
     );
 
     const state = await loadSite(siteId);
@@ -385,7 +385,7 @@ for (const [label, step, overrides] of [
   });
 }
 
-test('bin.mjs --connect at domain-live still admits chapter 3 when chapter 2\'s own token is saved', async (t) => {
+test('bin.mjs --connect at domain-live still admits chapter 3 when chapter 2\'s token is saved', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -430,7 +430,7 @@ test('bin.mjs --connect at domain-live still admits chapter 3 when chapter 2\'s 
 });
 
 test('bin.mjs at builds-connect-declined routes a plain re-run to the terminal branch, never calling runChapter3', async (t) => {
-  // The regression guard for the behavior a fix to the module's own short-circuit must preserve:
+  // The regression guard for the behavior a fix to the module's short-circuit must preserve:
   // a plain re-run (no --connect) at a recorded decline reports the decline unchanged and never
   // reaches admission. This mirrors the loop test above (`'builds-connect-declined'` is one of its
   // cases) at the same dispatcher layer, named and kept standalone here so the decline-then-plain-
@@ -478,12 +478,12 @@ test('bin.mjs --connect at builds-connect-declined proceeds into admission, not 
 
   const result = await runCli(['--dir', dir, '--connect', '--yes'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
-  // The bug this guards: chapter3.mjs's own top-of-function short-circuit used to fire
+  // The bug this guards: chapter3.mjs's top-of-function short-circuit used to fire
   // unconditionally at this step, so `--connect` here just re-reported the stale decline and
-  // deleted the token again, with no way back in despite the catalogue row's own promise ("re-run
+  // deleted the token again, with no way back in despite the catalogue row's promise ("re-run
   // npx create-cairn-site --dir <dir> --connect"). The fix gates that short-circuit on the absence
   // of `--connect`, so an explicit `--connect` now proceeds into the same admission every other
-  // entry step goes through, and reaches this suite's own deterministic token-hop stop.
+  // entry step goes through, and reaches this suite's deterministic token-hop stop.
   assert.equal(
     result.code,
     1,
@@ -495,10 +495,10 @@ test('bin.mjs --connect at builds-connect-declined proceeds into admission, not 
   );
   assert.ok(
     result.stdout.includes(CHAPTER3_ADMISSION_TITLE),
-    `--connect must reach chapter 3's own admission, got: ${result.stdout}`,
+    `--connect must reach chapter 3's admission, got: ${result.stdout}`,
   );
   assertReachedChapter3TokenHop(result.stdout);
-  assert.ok(result.stderr.includes('Next:'), `expected the token hop's own Next: line, got: ${result.stderr}`);
+  assert.ok(result.stderr.includes('Next:'), `expected the token hop's Next: line, got: ${result.stderr}`);
   assert.equal(
     result.stdout.includes('Workers Builds is not connected'),
     false,
@@ -566,7 +566,7 @@ test('bin.mjs --connect at builds-live runs the re-reconcile hop rather than a n
   // tool-owned file, so the reconcile's hash gate cannot say "nothing drifted" and the hop owes a
   // sign-in trip, which `--yes` parks on rather than opening a browser. That park is the proof this
   // is the real reconcile hop running, not a no-op: a no-op would never reach it, and this run's
-  // own token hop is never touched (the token hop for builds-live only runs after a real commit,
+  // token hop is never touched (the token hop for builds-live only runs after a real commit,
   // which this test never lets happen).
   await seedSite(siteId, dir, 'builds-live', {
     buildsConnectionUuid: 'connection-uuid-1',
@@ -653,11 +653,11 @@ for (const step of ['builds-connected', 'config-reconciled', 'builds-live', 'bui
 // --- The declined-email re-offer keys on the record's fields, not the step ------------------------
 //
 // A record whose email admission was declined before it ever reached chapter 3 keeps
-// `emailDeclinedAt` set (chapter 2's own reoffered flag reads that field, never the step, per
-// paid-plan-declined's own admission logic in chapter2.mjs). This proves bin.mjs's chapter-3
+// `emailDeclinedAt` set (chapter 2's reoffered flag reads that field, never the step, per
+// paid-plan-declined's admission logic in chapter2.mjs). This proves bin.mjs's chapter-3
 // routing carries that field through unchanged, rather than the state store's flat-merge losing
 // it: a record already at `builds-connected` still has it on disk after a plain re-run, so it
-// would still drive the reoffered copy on any later path that DOES re-enter chapter 2's own
+// would still drive the reoffered copy on any later path that DOES re-enter chapter 2's
 // admission (this codebase has none today, but the field surviving is what makes that possible).
 
 test('bin.mjs: a record advanced to builds-connected still carries its earlier emailDeclinedAt', async (t) => {

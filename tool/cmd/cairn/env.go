@@ -29,7 +29,7 @@ type credentialVar struct {
 // varCFAccountID, varCFReadToken, and varGHReadToken name, not hold, the three CAIRN_CF_/CAIRN_GH_
 // environment variables loadEnv reads; each is a bare variable name, never a credential value,
 // spelled exactly once, here. Every other file under cmd/cairn refers to one of the three through
-// these constants (or through credentialVars, authVariables, and env's own accessors, which are
+// these constants (or through credentialVars, authVariables, and env's accessors, which are
 // all built from them) rather than spelling the name again, which is what
 // TestCredentialVariableNamesAreSpelledOnlyInEnvGo checks.
 const (
@@ -46,7 +46,7 @@ const (
 	varTerm    = "TERM"
 )
 
-// varPublicOrigin names the site's own public origin variable, cairn doctor's fallback once the
+// varPublicOrigin names the site's public origin variable, cairn doctor's fallback once the
 // wrangler config carries none. It is not a cairn credential, so it carries no Missing entry and
 // is read directly from envFn, the same as the two above.
 const varPublicOrigin = "PUBLIC_ORIGIN"

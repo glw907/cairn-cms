@@ -7,14 +7,14 @@
 // Fixed mounts and console mounts are deliberately DISTINCT capabilities, never unified. A fixed
 // mount (`mount`) registers at the exact, unprefixed path given, for a path baked into an
 // external contract. GitHub's App manifest bakes callback_urls and redirect_url at App-creation
-// time, and github/oauth.mjs's own ReauthorizeInput doc comment pins a spike-observed constraint:
+// time, and github/oauth.mjs's ReauthorizeInput doc comment pins a spike-observed constraint:
 // GitHub's loopback leniency for a registered portless callback is PORT-ONLY, never path-flexible,
 // so reauthorize's redirect_uri must always land on the literal '/callback' path. A per-start
 // prefix on that path would dead-end reauthorize for every App this tool has ever registered,
 // including the inherited one. A console mount (`mountConsole`) registers beneath this start's
-// own secret prefix (`randomBytes(16).toString('base64url')`), unguessable and unique per start;
-// GitHub's own state nonce already guards the fixed routes, so the console's secret prefix is
-// what stands in for that on routes with no such nonce of their own.
+// secret prefix (`randomBytes(16).toString('base64url')`), unguessable and unique per start;
+// GitHub's state nonce already guards the fixed routes, so the console's secret prefix is
+// what stands in for that on routes with no such nonce.
 import http from 'node:http';
 import { randomBytes } from 'node:crypto';
 

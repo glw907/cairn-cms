@@ -9,7 +9,7 @@ import (
 // Report is the read-side result of one health sweep against a site: every check's settled
 // verdict, plus the degraded flag and acknowledgement list Run derives from them.
 type Report struct {
-	// SchemaVersion is Report's own JSON schema version, bumped when a field is added or removed
+	// SchemaVersion is Report's JSON schema version, bumped when a field is added or removed
 	// in a way a parsing consumer needs to know about.
 	SchemaVersion int `json:"schemaVersion"`
 	// Site is the record's display name.
@@ -19,7 +19,7 @@ type Report struct {
 	// Checks holds every check's settled result, in the order Run swept them.
 	Checks []CheckResult `json:"checks"`
 	// Degraded is set when any check result is Unknown with reason.cred-missing: a missing,
-	// unconfigured credential is the one Unknown a report-level reader treats as its own signal
+	// unconfigured credential is the one Unknown a report-level reader treats as its signal
 	// rather than a plain unobservable check.
 	Degraded bool `json:"degraded"`
 	// Acknowledged lists the check ids of every unexpired Ack the run was given, whether or not a
@@ -68,7 +68,7 @@ func nonVerboseFields(fields []spine.OutcomeField) []spine.OutcomeField {
 
 // nonVerboseOutcome returns a copy of o for a non-verbose render. Detail passes through
 // unchanged: Detail is free text, and a check that puts a verbose-only value there instead of a
-// named Fields entry is that check's own bug, not something a rendering-time filter can safely
+// named Fields entry is that check's bug, not something a rendering-time filter can safely
 // repair by mangling arbitrary text. Fields is cut down to the fields no check marked verbose.
 func nonVerboseOutcome(o spine.Outcome) spine.Outcome {
 	o.Fields = nonVerboseFields(o.Fields)

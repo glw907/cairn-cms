@@ -33,7 +33,7 @@ ladder. A disabled button and a small button take only `disabled` and `btn-sm`.
 ## Joins
 
 A join is a segmented control. The selected segment takes `btn-active`, or one of the other
-selected forms (`aria-current`, a checked radio); a color variant keeps its own fill when
+selected forms (`aria-current`, a checked radio); a color variant keeps its fill when
 selected.
 
 ```svelte

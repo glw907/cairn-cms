@@ -214,7 +214,7 @@ export const focusRenders: RenderedRule = {
           `tab stop ${index + 1} renders no focus indicator: the computed outline is ` +
           `${own.outlineStyle} ${own.outlineWidth} ${own.outlineColor}, and neither this element ` +
           `nor its ${ANCESTOR_DEPTH} nearest ancestors change box-shadow, border color, or background ` +
-          `color from their own resting paint`,
+          `color from their resting paint`,
       });
     });
     return findings;

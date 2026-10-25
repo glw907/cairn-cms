@@ -125,7 +125,7 @@ function neededAxes(rules: RenderedRule[]): EmulationAxis[] {
 function redirectTrapRefusal(loginIdentity: PageIdentity): Error {
   const landmark = loginIdentity.landmark ? `, landmark ${loginIdentity.landmark}` : '';
   return new Error(
-    `every configured page besides ${LOGIN_PAGE_PATH} settled on the login page's own identity ` +
+    `every configured page besides ${LOGIN_PAGE_PATH} settled on the login page's identity ` +
       `(title "${loginIdentity.title}"${landmark}). Without a session cookie every admin route ` +
       `redirects to the sign-in card before the rules ever see it, so this run would have measured ` +
       `that card once per page while reporting zero errors: a silent green the run refuses instead ` +

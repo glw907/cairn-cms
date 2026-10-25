@@ -12,6 +12,8 @@
 
 ## Medium
 
+- [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  Agents reach the docs through the four packaged skills and the `claude/CLAUDE.md` fragment, which read the installed version under `node_modules/@glw907/cairn-cms/docs/`. No general docs-reference skill: a catch-all description triggers poorly, and the routing already exists. Check that every task row and seam cites its finished page and that every finished page is reachable from some route (a candidate gate beside `check:reference`). Fix `skills/cairn-extend/SKILL.md:12,24-25`, which links the facts, rulings, and admin design system on GitHub `main` and so drifts from the installed version: ship or summarize what an agent needs. Fold the result into the planned `docs/claude-code/` arm (ROADMAP, "The Claude Code arm").
 - [ ] **#69** Loosen the register's task-guide item 5 for a feature with no log event `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   `docs/internal/docs-register.md` item 5 asks every task guide for failure paths that point at the track's recovery surface (`extend/debug-your-site.md`). A feature that logs no event has nothing there to point at, so the item should let such a page point at the checks that settle it instead. Moved from drafter #102 (glw907/drafter#67).
 - [ ] **#68** Set `facts.id_command` in `drafter.toml` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*

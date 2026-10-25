@@ -40,7 +40,7 @@ The following topics belong to other pages:
 - How the admin secures its sessions and cookies belongs to
   [Security model](security-model.md#the-session-cookie).
 - The admin editor's preview pane, which the adapter's `editor.preview` styles, belongs to
-  [Theme your public site](theme-your-public-site.md#style-the-editor-preview).
+  [Theme your public site](theme-your-public-site.md#theme-a-hand-built-site).
 
 > **Note:** The link is the credential: anyone who holds it can read the draft without signing in until the link expires, an editor revokes it, or the draft ends.
 > The preview page reads no cookie and no editor session, so a forwarded link forwards the access with it.

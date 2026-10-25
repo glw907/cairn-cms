@@ -26,7 +26,7 @@ It then names each reader's reason, the prior knowledge above, and what the page
 **What it leaves to other pages:**
 - Content model covers concepts, routing, entry identity, and the normalized frontmatter a save writes.
 - Add cairn to a SvelteKit app covers the `backend` and `email` groups, and the `createGithubApp` reference entry lists the backend's options.
-- Write a markdown component covers the `rendering` group.
+- Write a markdown component covers the `rendering` group's `components` list.
 - Link content with references covers reference fields.
 - Restrict admin access covers the `roles` and `access` groups.
 - Arrange the admin sidebar covers the `editor` group's `navLayout`.

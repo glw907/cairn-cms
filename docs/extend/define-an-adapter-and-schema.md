@@ -11,7 +11,7 @@ A scaffolded site's adapter declares the `posts`, `pages`, and `fragments` conce
 The page assumes you know TypeScript literal types, Vite's `import.meta.glob`, and YAML. It also assumes familiarity with the content model. [Content model](content-model.md) explains what a concept is, what routing decides, how an entry gets its id, and the normalized frontmatter a save writes. The page leaves the following topics to other pages:
 
 - The `backend` and `email` groups, in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), with the backend's options in the [`createGithubApp`](../reference/core.md#creategithubapp) entry.
-- The `rendering` group, in [Write a markdown component](write-a-markdown-component.md).
+- The `rendering` group's `components` list, in [Write a markdown component](write-a-markdown-component.md).
 - Reference fields, in [Link content with references](link-content-with-references.md).
 - The `roles` and `access` groups, in [Restrict admin access](restrict-admin-access.md).
 - The `editor` group's `navLayout`, in [Arrange the admin sidebar](arrange-the-admin-sidebar.md).

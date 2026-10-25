@@ -85,7 +85,7 @@ The steps write the live component, register the island, wire the root layout on
 </p>
 ```
 
-- Caution notice: Don't route a prop into `{@html}`, an `href` or `src`, or an inline `style`. An author writes each attribute value, and the runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering. :fact[8356mn] :fact[hje4zb]
+- A caution notice says not to route a prop into `{@html}`, an `href` or `src`, or an inline `style`. An author writes each attribute value, and the runtime passes the parsed values to the component unchanged, with no sanitizing or URL filtering. :fact[8356mn] :fact[hje4zb]
 - See [Props are untrusted](../reference/islands.md#props-are-untrusted).
 - The mount also shapes how the live component renders.
 - The mount clears the fallback and mounts the component into the same element. A first render whose size differs from the fallback shifts the layout. :fact[9zxml1]
@@ -177,7 +177,7 @@ export const load: LayoutServerLoad = () => {
 - SvelteKit never ships a `+layout.server.ts` module, or what it imports, to the client. The layout's script receives the boolean and not the registry. :fact[java15]
 2. In `src/routes/+layout.svelte`, add an `afterNavigate` callback that returns at once when `data.hasIslands` is false. :fact[shvf6h]
 3. In the same callback, dynamically import `hydrateIslands` from `@glw907/cairn-cms/islands` and `siteIslands` from the registry module. :fact[mcxxpp]
-- Caution notice: In the root layout, import the registry module, never the adapter module. :fact[zrcuyf]
+- A caution notice says that the root layout imports the registry module, never the adapter module. :fact[zrcuyf]
 - A client import of the adapter module ships everything it imports to each public page. On a scaffolded site, that includes the engine renderer, the icon set, and the committed media manifest. :fact[zrcuyf]
 4. After the imports resolve, call `hydrateIslands(siteIslands)`. :fact[drsabs]
 - Code: `src/routes/+layout.svelte` with the gated callback, following the scaffold's root layout. :fact[mcxxpp] :fact[shvf6h] :source[/templates/waymark/src/routes/+layout.svelte]

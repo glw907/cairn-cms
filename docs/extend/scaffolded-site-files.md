@@ -98,7 +98,6 @@ writes, and `[gate]` marks a file a check reads that can fail the build or the C
 ├── scripts/
 │   └── dev.mjs
 ├── src/
-│   ├── access.ts                 [engine]
 │   ├── admin.css                 [gate]
 │   ├── app.d.ts
 │   ├── chassis/
@@ -321,13 +320,14 @@ src/
     └── +layout.svelte
 ```
 
-### `src/hooks.server.ts` and `src/access.ts`
+### `src/hooks.server.ts`
 
 The hook picks `devBackendHandle` or `createAuthGuard` in one `if` and exports the result as
 `handle`. Its test reads the build-time `__CAIRN_DEV_BUILD__` define first and the runtime opt-in
 `CAIRN_DEV_BACKEND === '1'` second. Under `vite dev`, the opt-in falls back to `process.env`. Both
-handles receive `{ access }`, the `defineAccess` map in `src/access.ts`. [Restrict admin
-access](restrict-admin-access.md) configures that map.
+handles receive `{ runtime }`, the composed runtime the hook imports from `#chassis/cairn.server.js`.
+The scaffold's adapter declares no `access` member, and [Restrict admin
+access](restrict-admin-access.md) adds one.
 
 ### `src/routes/admin/`
 

@@ -220,7 +220,7 @@ import { env, waitUntil } from 'cloudflare:workers';
 import { createAuthGuard, createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit/hooks';
-import { access } from './access.js';
+import { runtime } from '#chassis/cairn.server.js';
 
 const wireAuditSink: Handle = ({ event, resolve }) => {
   if (!building && env.AUDIT_DB) {
@@ -230,14 +230,14 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
 };
 
 // ...
-handle = sequence(createAuthGuard({ access }), wireAuditSink);
+handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 ```
 
-The excerpt shows the scaffold's production branch, and the dev branch keeps `devBackendHandle({ access })`.
+The excerpt shows the scaffold's production branch, and the dev branch keeps `devBackendHandle({ runtime })`.
 A scaffolded site's hooks file already imports some of these names, so the excerpt's imports merge into its existing ones.
 
-The snippet's `access` import is the access map that [Restrict admin access](restrict-admin-access.md) describes.
-A scaffolded site declares it with `defineAccess` in `access.ts`, beside `hooks.server.ts`.
+The snippet's `runtime` import is the composed runtime, and the guard reads from it the access map that [Restrict admin access](restrict-admin-access.md) describes.
+A site declares that map once, as the adapter's `access` member, so the hooks file imports no map.
 
 The handle checks `building` from `$app/env` before it reads `env.AUDIT_DB`, because every read of the `env` from `cloudflare:workers` throws while the build prerenders.
 The handle passes the `waitUntil` that `cloudflare:workers` exports, which needs no bind.

@@ -288,7 +288,7 @@ To turn on identity mode, follow these steps:
    // src/hooks.server.ts (excerpt)
    import { accessIdentity } from '#lib/access-identity.js';
 
-   handle = createAuthGuard({ access, identity: accessIdentity });
+   handle = createAuthGuard({ runtime, identity: accessIdentity });
    ```
 
 2. In the project directory, build the site with `npm run build`.

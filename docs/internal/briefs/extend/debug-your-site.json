@@ -460,18 +460,14 @@
       "id": "f:nup3og"
     },
     {
-      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) attaches the map on every admin path where it signs an editor in, so behind the guard this reason does not occur.",
+      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) and the dev backend's `devBackendHandle` each attach `runtime.access ?? {}` right after they set the editor on every admin path they cover, so behind either this reason does not occur.",
       "id": [
         "f:u78zg6",
         "f:iwf4nu"
       ]
     },
     {
-      "text": "The dev backend's `devBackendHandle` attaches the map only when its config carries `access`.",
-      "id": "f:u78zg6"
-    },
-    {
-      "text": "The fix is a code change in the site's server hooks that passes the guard's map as `devBackendHandle({ access })`.",
+      "text": "The fix is a code change: that hook also sets `locals.cairnAccess` to `runtime.access ?? {}`, as the guard does, or the route goes behind the guard, which sets it on every admin path it covers.",
       "id": [
         "f:nup3og",
         "f:u78zg6"

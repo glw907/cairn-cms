@@ -71,8 +71,11 @@
       ]
     },
     {
-      "text": "The steps that follow declare a role vocabulary and an access map and give the map to both readers.",
-      "id": "f:iwf4nu"
+      "text": "The steps that follow declare a role vocabulary and an access map and give both to the adapter, which hands the map to both readers.",
+      "id": [
+        "f:iwf4nu",
+        "f:cvzb8z"
+      ]
     },
     {
       "text": "They then enforce the map on your screens' reads and writes and verify each role's reach.",
@@ -126,15 +129,15 @@
       "id": "no-claim"
     },
     {
-      "text": "A site that `create-cairn-site` scaffolded, whose `src/access.ts` holds the access map that its hooks file hands the guard.",
-      "id": [
-        "f:kldwss",
-        "f:qlgggh"
-      ]
+      "text": "A site that `create-cairn-site` scaffolded, or a hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).",
+      "id": "f:kldwss"
     },
     {
-      "text": "A hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has no `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.",
-      "id": "f:q07rd5"
+      "text": "Neither has a `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.",
+      "id": [
+        "f:q07rd5",
+        "f:3z1uxv"
+      ]
     },
     {
       "text": "A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the scaffold's signups screen in `src/routes/admin/signups/`.",
@@ -325,10 +328,10 @@
       "id": "f:cvzb8z"
     },
     {
-      "text": "The guard's copy gates your routes, so both need the same map.",
+      "text": "The guard reads the same map from the runtime and hands it to your routes.",
       "id": [
-        "f:cvzb8z",
-        "f:iwf4nu"
+        "f:iwf4nu",
+        "f:cvzb8z"
       ]
     },
     {
@@ -343,10 +346,10 @@
       "id": "f:cvzb8z"
     },
     {
-      "text": "The scaffold passes its map to the two hook handles and not to the adapter, so a scaffolded site's engine screens stay open until the adapter carries the map too.",
+      "text": "The scaffold's adapter declares no `access` member, so a scaffolded site's engine screens stay open until the adapter carries the map.",
       "id": [
-        "f:cvzb8z",
-        "f:u78zg6"
+        "f:3z1uxv",
+        "f:cvzb8z"
       ]
     },
     {
@@ -357,6 +360,13 @@
       ]
     },
     {
+      "text": "It reads the map from the `runtime` that the hooks file passes it, as `createAuthGuard({ runtime })`.",
+      "id": [
+        "f:iwf4nu",
+        "f:f21bcz"
+      ]
+    },
+    {
       "text": "It runs on every guarded request and attaches the map to `locals.cairnAccess`, which is why `requireAccess` takes no map argument.",
       "id": [
         "f:iwf4nu",
@@ -364,7 +374,7 @@
       ]
     },
     {
-      "text": "With no `roles`, the guard resolves every session against the implicit `owner` and `editor` pair.",
+      "text": "When the adapter declares no `roles`, the guard resolves every session against the implicit `owner` and `editor` pair.",
       "id": "f:4xrx5f"
     },
     {
@@ -376,7 +386,7 @@
       "id": "f:4xrx5f"
     },
     {
-      "text": "To pass the map to both readers, follow these steps:",
+      "text": "To pass the map to the adapter, follow this step:",
       "id": "no-claim"
     },
     {
@@ -391,36 +401,15 @@
       "id": "f:q07rd5"
     },
     {
-      "text": "In `src/hooks.server.ts`, import both `roles` and `access` from `src/access.ts`.",
+      "text": "The hooks file needs no edit, since both hook handles already receive `{ runtime }` and read the map from it.",
       "id": [
-        "f:hwffph",
-        "f:cvzb8z",
-        "f:qlgggh"
+        "f:f21bcz",
+        "f:iwf4nu",
+        "f:7cv105"
       ]
     },
     {
-      "text": "In the same file, pass `{ roles, access }` to `createAuthGuard`.",
-      "id": [
-        "f:hwffph",
-        "f:cvzb8z"
-      ]
-    },
-    {
-      "text": "If the file's dev branch calls `devBackendHandle()` with no argument, as the tutorial's site does, pass `{ access }` to it as well.",
-      "id": [
-        "f:q07rd5",
-        "f:u78zg6"
-      ]
-    },
-    {
-      "text": "Without the map, every section action under `npm run dev` answers `fail(500)` and logs `admin.action.misconfigured`.",
-      "id": [
-        "f:u78zg6",
-        "f:f21bcz"
-      ]
-    },
-    {
-      "text": "After these steps, the adapter call and the guard line read as follows:",
+      "text": "After this step, the adapter call reads as follows:",
       "id": "no-claim"
     },
     {
@@ -879,10 +868,10 @@
       ]
     },
     {
-      "text": "It can also trace to a reader never given `roles` or `access`, or to an auth database without the roles migration.",
+      "text": "It can also trace to an adapter never given `roles` or `access`, or to an auth database without the roles migration.",
       "id": [
         "f:cvzb8z",
-        "f:hwffph",
+        "f:4xrx5f",
         "f:rn62i1"
       ]
     },
@@ -910,18 +899,14 @@
       "id": "f:8anql1"
     },
     {
-      "text": "If a webmaster editor is refused on every screen and the logs show `auth.role.unknown` for that role, check whether the guard was given `roles`.",
+      "text": "If a webmaster editor is refused on every screen and the logs show `auth.role.unknown` for that role, check whether the adapter declares `roles`.",
       "id": [
         "f:4bazhe",
-        "f:hwffph"
+        "f:4xrx5f"
       ]
     },
     {
-      "text": "Running `cairn doctor` reports the same gap as the `auth.role-wiring-missing` condition, which the [`cairn doctor` reference](../reference/cli-cairn-doctor.md) lists.",
-      "id": "f:hwffph"
-    },
-    {
-      "text": "The fix is in [Pass the map to the adapter and the guard](#pass-the-map-to-the-adapter-and-the-guard).",
+      "text": "The fix is in [Pass the map to the adapter](#pass-the-map-to-the-adapter).",
       "id": "no-claim"
     },
     {

@@ -659,19 +659,14 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "Both handles receive `{ access }`, the `defineAccess` map in `src/access.ts`.",
-      "id": [
-        "f:f21bcz",
-        "f:qlgggh",
-        "f:u78zg6"
-      ]
+      "text": "Both handles receive `{ runtime }`, the composed runtime the hook imports from `#chassis/cairn.server.js`.",
+      "id": "f:f21bcz"
     },
     {
-      "text": "[Restrict admin access](restrict-admin-access.md) configures that map.",
+      "text": "The scaffold's adapter declares no `access` member, and [Restrict admin access](restrict-admin-access.md) adds one.",
       "id": [
-        "f:f21bcz",
-        "f:qlgggh",
-        "f:u78zg6"
+        "f:3z1uxv",
+        "f:iwf4nu"
       ]
     },
     {

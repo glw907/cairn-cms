@@ -183,20 +183,22 @@ pages:
     slug: configure-media
     title: Configure media
     type: task guide
-    job: 'Turn on media for your site: bind the R2 bucket, set the adapter''s media options, mount the media route, and know what the engine refuses at upload, serves at delivery, and counts as a use. For a Svelte-fluent web developer who has the R2 bucket binding in wrangler.jsonc.'
+    job: 'Change how media behaves on a site that already has it: set the upload limits, move or reshape the image URLs, turn on responsive images, fail the build on a missing asset, know which media: references the Library counts before deleting an asset, and upload from a custom admin screen. For a Svelte-fluent web developer whose site has media on, as a scaffolded site does.'
     covers:
-      - 'Preconditions: the R2 bucket binding in wrangler.jsonc and the media block on the adapter; what the resolved asset config holds.'
-      - 'Set the options: allowedTypes narrows but never widens the five sniffed image types (SVG, HTML, and HEIC always refused), maxUploadBytes and its default against the request-body limit of the Cloudflare plan, publicBase, urlForm, and transformations with the four built-in presets and the srcset they turn on.'
-      - 'Mount createMediaRoute at `<publicBase>/[...path]`: the param name, the last-segment lookup, and the response headers it sets.'
-      - 'What a missing asset does: the broken-image marker and media.resolve_missing, the build that still succeeds, and wrapping the resolver to fail it.'
-      - 'Usage tracking''s reach: which media: references the Library counts, and why an asset can show no references while a page still renders it.'
-      - 'Uploading from your own screen: the upload action''s raw-body protocol, its headers, and its fail() refusals.'
-      - 'Verify: an upload through the Library, the rendered image URL, and the media route''s headers.'
+      - 'Preconditions: media already on, as the scaffold wires it (the MEDIA_BUCKET binding, the adapter''s media block, the public resolver, the media route); for a hand-built site, the three pieces named with a link to each reference entry, not taught.'
+      - 'Upload limits: allowedTypes narrows but never widens the five sniffed image types (SVG, HTML, and HEIC always refused), and maxUploadBytes against the request-body limit of the Cloudflare plan.'
+      - 'Image URLs: publicBase and the route directory that must move with it, urlForm and the two URL shapes, and the edit page''s preview that keeps /media.'
+      - 'Responsive images: transformations, the zone setting it reports, and the srcset and intrinsic size it turns on.'
+      - 'A missing asset: the broken-image marker and media.resolve_missing, the build that still succeeds, and wrapping the resolver to fail it while keeping imageDetail.'
+      - 'Which media: references the Library counts, and what deleting an asset with no counted reference does.'
+      - 'Uploading from a custom admin screen: the mediaUpload action, its raw-body request and headers, its fail() refusals in the envelope, and the manifest row it does not commit.'
+      - 'Verify: an upload through the Library, the rendered image URL and srcset, the media route''s headers, and a build that fails on a missing asset.'
     outOfScope:
       - Seeding local media for theme work (theme-your-public-site).
       - Editor-facing use of the Library (editors arm).
       - Restricting media through the access map (restrict-admin-access).
       - The R2 tier's place among the data tiers (architecture).
+      - Wiring each media piece on a hand-built site step by step (the reference entries for the adapter's media member, createMediaResolver, PublicRoutesConfig, and createMediaRoute).
   - path: docs/extend/migrate-existing-content.md
     slug: migrate-existing-content
     title: Migrate existing content

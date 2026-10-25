@@ -1411,7 +1411,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   for the bare form). [verified]
 - `f:c8c9ji` `createMediaResolver` builds the delivery path from the manifest entry's slug and ext, not the
   token's, so a rename never breaks the reference; it returns `undefined` when media is off or no
-  entry carries the hash (the preview-miss backstop). Source: `src/lib/render/resolve-media.ts:78-84`
+  entry carries the hash (the preview-miss backstop). Source: `src/lib/render/resolve-media.ts:80-88`
   (doc comment states this verbatim) and `:89-101` (`createMediaResolver`: `if (!resolved.enabled)
   return undefined`; `if (!entry) { log.warn(...); return undefined; }`; the returned path uses
   `entry.slug, entry.hash, entry.ext`, never `ref`'s own slug). [verified]

@@ -1,31 +1,32 @@
 # Arrange the admin sidebar
 
-The admin sidebar is one ordered tree that the admin shell's SvelteKit layout load resolves for every `/admin` page except the sign-in pages. The tree comes from a `navLayout` on the adapter's `editor` group. When the adapter declares none, the engine builds a flat default of the site's concepts followed by the engine's screens, with Help left to a trailing group. The engine resolves that default through the same functions as a declared layout, and the two cannot disagree on what a role sees.
+The admin sidebar is one ordered tree that the admin shell's SvelteKit layout load resolves for every `/admin` page except the sign-in pages. The tree comes from a `navLayout` on the adapter's `editor` group. When the adapter declares none, the engine builds a flat default of the site's concepts followed by the engine's screens, with **Help** left to a trailing group. Because the engine resolves that default through the same functions as a declared layout, the two cannot disagree on what a role sees.
 
-A custom admin screen renders inside the admin shell with no registration, yet the sidebar lists it only through a site entry in a `navLayout`. Until a layout groups and relabels them, an organization's editors see the engine's screens under the engine's labels and in the engine's order. Declaring a layout loses no screen. A screen the layout leaves out still renders in a trailing group after a divider.
+A custom admin screen renders inside the admin shell with no registration, yet the sidebar lists it only through a site entry in a `navLayout`. Until a layout groups and relabels them, an organization's editors see the engine's screens with their default labels, in engine order. Declaring a layout loses no screen. A screen the layout leaves out still renders in a trailing group after a divider.
 
 A developer who arranges the sidebar usually wants one of the following:
 
 - A sidebar link to a custom screen they built.
 - The engine's screens grouped into sections that an organization's editors recognize, with some relabeled, re-iconed, or taken out of the sidebar.
 - A sidebar that differs by role, such as a section one role never sees or a link only owners see.
-- A per-request visibility check that the declared tree cannot express, such as one that reads the site's data, or a count badge on an entry.
+- A per-request visibility check that the declared tree cannot express, such as one that reads the site's data.
+- A count badge on a sidebar entry.
 
 The steps declare a layout that groups screens into sections, relabels, re-icons, or hides engine screens, and links custom screens. They also narrow a section by role and set which sections start collapsed, then add the two per-request functions, `navFilter` and `attention`. The page also covers how startup validation refuses a malformed tree and how to check the sidebar in the running admin. It assumes familiarity with the SvelteKit routes under `src/routes/admin/`, SvelteKit's request `event`, and the site's adapter module.
 
-`hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map hides an entry and refuses its route. The engine refuses its own screens' routes, and a site's route refuses once it calls `requireAccess`. An action built with `createSectionAction` refuses a non-owner when its `ownerOnly` option is set, but `ownerOnly` on a site entry only hides the link.
+`hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map hides an entry and refuses its route. The engine refuses the routes to its screens, and a site's route refuses once it calls `requireAccess`. With `ownerOnly` set, an action built with `createSectionAction` refuses a non-owner. On a site entry, `ownerOnly` only hides the link.
 
 To deny a route rather than hide its link, see [Restrict admin access](restrict-admin-access.md). To build the screen a site entry links to, see [Add a custom admin screen](add-a-custom-admin-screen.md). For the public site's menu and the menu editor that `editor.nav` turns on as the `nav` screen at `/admin/nav`, see [Build the public routes](build-the-public-routes.md).
 
 ## Before you begin
 
-The steps edit the site's adapter module and the server module that calls `createCairnAdmin`. The steps assume the following:
+The steps assume the following:
 
 - For every step, an adapter module and a server module that calls `createCairnAdmin`. A scaffolded site keeps the server module at `src/chassis/cairn.server.ts`, and that module imports the adapter `cairn` from `#theme/cairn.config.js`. [Scaffolded site files](scaffolded-site-files.md) describes both.
 - For each site entry, a route under `src/routes/admin/`. The route renders inside the admin shell with no registration. [Add a custom admin screen](add-a-custom-admin-screen.md) builds one.
 - For role narrowing, the role names the adapter declares, or `owner` and `editor` when it declares none. [Declare the roles](restrict-admin-access.md#declare-the-roles) shows the declaration.
 
-A scaffolded site's adapter already declares a `navLayout`, and the steps edit that tree. Its `Content` section holds posts, pages, fragments, and media. Its `Site` section holds Tags, the menu editor, Settings relabeled `Site settings`, and Editors. An adapter with no `navLayout` gets the flat default of the site's concepts followed by the engine's screens, with Help in the trailing group.
+A scaffolded site's adapter already declares a `navLayout`. Its `Content` section holds posts, pages, fragments, and media. Its `Site` section holds **Tags**, the menu editor, **Settings** relabeled `Site settings`, and **Editors**. An adapter with no `navLayout` gets the engine's flat default.
 
 ## Declare the layout
 
@@ -39,9 +40,9 @@ The following table lists each node kind's members.
 | Site entry | `label`, `icon`, `href` | `roles`, `ownerOnly` |
 | Section | `label`, `children` | `roles`, `collapsed` |
 
-An engine reference with no `label` keeps the screen's default label. A concept shows its label, and the fixed screens show Library, Tags, Settings, Editors, and Help. For `nav`, the default is the label the adapter's `editor.nav` declares.
+An engine reference with no `label` keeps the screen's default label. A concept shows its label, and the fixed screens show **Library**, **Tags**, **Settings**, **Editors**, and **Help**. For `nav`, the default is the label the adapter's `editor.nav` declares.
 
-The `nav` screen is the public menu editor, which the adapter's `editor.nav` turns on. A `navLayout` that references `nav` without `editor.nav` throws at server start. [Build the public routes](build-the-public-routes.md) covers the menu editor.
+The `nav` screen is the public menu editor, and the adapter's `editor.nav` turns it on. A `navLayout` that references `nav` without `editor.nav` throws at server start. [Build the public routes](build-the-public-routes.md) covers the menu editor.
 
 To declare a layout, follow these steps:
 
@@ -53,13 +54,13 @@ To declare a layout, follow these steps:
 3. In the same array, add a section with a `label` and a `children` array.
 4. In the section's `children`, add a site entry with a `label`, an `icon`, and an `href` for each custom screen.
 
-   The `icon` is one of the 27 names that [`NavIcon`](../reference/sveltekit.md#navicon) lists. An `href` that collides with a built-in admin view throws at startup, and the error names that view.
+   The `icon` is one of the 27 names that [`NavIcon`](../reference/sveltekit.md#navicon) lists. An `href` that collides with a built-in admin view throws at server start, and the error names that view.
 
 5. On an engine reference, set `label` to relabel the screen or `icon` to change its glyph.
 
    A relabel leaves the screen's icon and route alone. An `icon` override is checked against the same 27 names.
 
-The engine validates the whole tree once, when `createCairnAdmin` builds the admin. A bad icon, a colliding `href`, an unknown screen, or an undeclared role throws a `navLayout:` error then, before the admin serves a request. [Resolve a sidebar error](#resolve-a-sidebar-error) lists every trigger.
+The engine validates the whole tree once, when `createCairnAdmin` builds the admin. At that point, a bad icon, a colliding `href`, an unknown screen, or an undeclared role throws a `navLayout:` error before the admin serves a request. [Resolve a sidebar error](#resolve-a-sidebar-error) lists every trigger.
 
 The following illustrative layout is for a site whose concepts are posts and pages. Screens it never names render in the trailing group that [Hide an engine screen](#hide-an-engine-screen) covers.
 
@@ -97,7 +98,7 @@ caption: For an owner on a site with no public menu editor, Posts and Pages rend
 
 ## Hide an engine screen
 
-A screen the layout never references still renders after a divider, in a trailing group. The group follows engine order, which puts the concepts first and then Library, Tags, the menu editor, Settings, Editors, and Help. The figure's trailing group shows this rule.
+A screen the layout never references still renders after a divider, in a trailing group. The group follows engine order, which puts the concepts first and then **Library**, **Tags**, the menu editor, **Settings**, **Editors**, and **Help**. The trailing group in the example layout's figure shows this rule.
 
 To take a screen out of the sidebar, follow this step:
 
@@ -105,13 +106,13 @@ To take a screen out of the sidebar, follow this step:
 
 The hidden reference counts as the screen's placement in the tree. A second reference to the same screen anywhere in the tree throws at server start.
 
-Hiding removes the sidebar entry and leaves the route live. Entering the screen's URL still reaches the screen. To deny the route, use the access map that [Restrict admin access](restrict-admin-access.md) declares.
+Hiding removes the sidebar entry, and entering the screen's URL still reaches the screen. To deny the route, use the access map that [Restrict admin access](restrict-admin-access.md) declares.
 
-A layout cannot show an engine screen that the engine's visibility check hides. Editors stays out of a non-owner's sidebar wherever the layout places it.
+A layout cannot show an engine screen that the engine's visibility check hides. **Editors** stays out of a non-owner's sidebar wherever the layout places it.
 
 ## Narrow a section by role
 
-A section's `roles` renders its children only for an editor whose role it names. Each child's gate still applies. A section's `roles` narrows what a role sees and never widens it.
+A section with `roles` renders its children only for an editor whose role the list names. Each child's gate still applies, and the list narrows what a role sees without ever widening it.
 
 To narrow a section, follow this step:
 
@@ -165,7 +166,7 @@ export const admin = createCairnAdmin({ runtime, tidy: { client }, navFilter });
 
 `createCairnAdmin` forwards the function unchanged, so it behaves as the `navFilter` member of `ContentRoutesConfig`. For the full config, see [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin).
 
-The filter never receives the trailing group. To take a screen out of that group, give it a `hidden: true` reference in the layout. The filter hides links only. A route it hides still needs a server-side gate from the access map in [Restrict admin access](restrict-admin-access.md).
+The filter never receives the trailing group. To take a screen out of that group, give it a `hidden: true` reference in the layout. The filter hides links only, and a route whose link it drops still needs a server-side gate from the access map in [Restrict admin access](restrict-admin-access.md).
 
 ## Add attention badges
 
@@ -184,9 +185,11 @@ Each item carries an `href` for the entry the badge sits on, a `count`, and an o
 
 - Its `count` is zero or negative.
 - Its `href` matches no sidebar entry the session can see.
-- Its `href` repeats an earlier item's, and the first item wins.
+- Its `href` repeats an earlier item's `href`.
 
-The following illustrative excerpt badges the example's Events entry from a count that the stub `countPendingEvents` computes. It keeps the scaffold's imports and options as the filter excerpt does.
+Of items that share an `href`, the first keeps the badge.
+
+The following illustrative excerpt badges the example's Events entry from a count that the stub `countPendingEvents` computes. Like the filter excerpt, it leaves the scaffold's imports and options out of view.
 
 <!-- snippet-check-skip: an excerpt that keeps the scaffold's imports, runtime, and tidy client out of view -->
 ```ts
@@ -221,31 +224,32 @@ The sidebar is arranged when the admin loads with no `navLayout:` error and show
 
 To check the sidebar, run these checks in order:
 
-1. In the site directory, start the development server and open `/admin`.
+1. In the site directory, start the development server.
+2. In a browser, open `/admin`.
 
    The admin loads with no `navLayout:` error.
 
-2. Signed in as an owner, look at the sidebar.
+3. Signed in as an owner, look at the sidebar.
 
    Sections and entries appear in declaration order, relabeled screens show their new labels, and unreferenced screens follow the divider.
 
-3. In a private window, sign in as an owner and open `/admin`.
+4. In a private window, sign in to `/admin` as an owner.
 
    A section declared `collapsed: true` starts closed.
 
-4. Signed in as an editor whose role a section's `roles` omits, open `/admin`.
+5. Signed in as an editor whose role a section's `roles` omits, open `/admin`.
 
    That section does not render.
 
-5. Signed in as an owner, enter a hidden screen's URL directly.
+6. Signed in as an owner, enter a hidden screen's URL directly.
 
    The screen opens. Hiding removed only its sidebar entry.
 
-6. With `navFilter` configured, sign in as an editor whose session the site's check rejects, and open `/admin`.
+7. With `navFilter` configured, sign in to `/admin` as an editor whose session the site's check rejects.
 
    The filtered section does not render.
 
-7. With `attention` configured, open `/admin`.
+8. With `attention` configured, open `/admin`.
 
    An entry with a positive count carries a badge.
 
@@ -253,7 +257,7 @@ To check the sidebar, run these checks in order:
 
 A sidebar change can fail in two ways: a tree that validation refuses at server start, or a per-request function that fails the shell load.
 
-When the server module that calls `createCairnAdmin` fails to load with an error that starts `navLayout:`, the declared tree failed validation. The message names the value at fault, except for a blank section label. Correct that value, then restart the server. The error has one of these triggers:
+When the server module that calls `createCairnAdmin` fails to load with an error that starts `navLayout:`, the declared tree failed validation. The error has one of the following triggers:
 
 - An icon outside the `NavIcon` allowlist, on a site entry or as an engine reference's override.
 - A site entry `href` that collides with a built-in admin view.
@@ -264,6 +268,11 @@ When the server module that calls `createCairnAdmin` fails to load with an error
 - A blank section `label`, or two sections that share a `label`.
 - A section with empty `children`, or a section nested in another section.
 - A role name the adapter does not declare, on a section or a site entry.
+
+The message names the value at fault, except for a blank section label. To clear the error, follow these steps:
+
+1. In the adapter's `navLayout`, correct the value the message names.
+2. Restart the server.
 
 When every admin page fails to load after you add a `navFilter` or an `attention` function, the function threw or rejected. The shell load does not catch an error from either function. Catch the error inside the function and return a fallback, as the catch in [Add attention badges](#add-attention-badges) does.
 
@@ -276,5 +285,5 @@ The following pages cover the tasks and reference around the sidebar:
 - [Restrict admin access](restrict-admin-access.md) denies a route that the sidebar only hides.
 - [Add a custom admin screen](add-a-custom-admin-screen.md) builds the screen a site entry links to.
 - [Build the public routes](build-the-public-routes.md) covers the public menu editor behind the `nav` screen.
-- [The navLayout seam](../reference/sveltekit.md#the-navlayout-seam) defines each node type and resolved shape.
+- [The `navLayout` seam](../reference/sveltekit.md#the-navlayout-seam) defines each node type and resolved shape.
 - [The attention seam](../reference/sveltekit.md#the-attention-seam) defines `AttentionItem`.

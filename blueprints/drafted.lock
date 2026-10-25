@@ -142,6 +142,30 @@ pages:
             see-also: sha256:1e8ae1056aa1fb4c340d2d0a2282be008b50e57828538e0912a4580b6754763a
             set-a-sections-starting-state: sha256:b81ceea2348c15b691629a77469e76bf35ff6c4b97f342356cfeef8b29ea74b6
             verify-the-sidebar: sha256:610bf2ffaadd62fbfef4bc2222a7062c5fdf8600d199505cba7f9dadba2acefb
+    docs/extend/build-the-public-routes.md:
+        page: 48a6847cff28174fa4f027b1acf17375c65b880e
+        blueprint: 5e912725f33e87692f53c4b931727ae28ed54283
+        sections:
+            _intro: sha256:c78bc39b93ce5139d42f730d1ca69b35a8e4ae56d430cf3294b510af4e89fac8
+            add-a-tag-page: sha256:0fb6dcc8d6fee9a7304a10d6ad8f7ab7748b9e2d48ab7166f74362a604207b00
+            add-an-editable-menu: sha256:96c05f8f5cd85f42da3e501337368f77020418597c4399069b77036b94f8f77d
+            before-you-begin: sha256:852a93793b7f9f69351dcdc824a0270a9da90be9f5f8cf49114775994a101e4f
+            build-one-typed-index: sha256:66184eb8639baab8042d8a408780e98a56bb12325b2e01974545e522e244ee58
+            build-the-archive: sha256:b6db28faf680d5a2d6b7808cdb13d8912595c26f2bf4b007bb9e856f653b4025
+            declare-the-fields-the-head-reads: sha256:d2caedddf22bccf910ac419e196034ecd10807ce7bfbc24f743caa52a708e970
+            diagnose-a-failed-build: sha256:4534d1bbc4700fec199c43e62f8c33d254acaac598621baacec9dd6179020495
+            give-other-pages-a-head: sha256:4254e9fdf3b8a3e6de2d521af77bade2215a27a8580ea9111fdfa6fbb7d43632
+            keep-noindex-entries-out-of-the-sitemap-and-feeds: sha256:1502e341eff58778e8fa613e0e5c21244cfcc3eeb13813525ec452f0ee823e04
+            lay-out-the-route-files: sha256:55324658f09dc8c819db2628135bb2dbd79a2753dbe6f33417c48c4455a20c66
+            mount-the-draft-preview-route: sha256:c8f8f8fd8dd24cf5d343cce21f8c94ce664e47369d2bfd8b0341512264294589
+            name-the-origin-once: sha256:a9257246369c3f81de4e6fe21a36d5f53bc79699471c6c9647c97d140bad9550
+            see-also: sha256:eac278a09bbb7017a7e9e18e3933b9475dbaf02162483607a2f5b26b89848de3
+            serve-robotstxt: sha256:a105b863a91b566f95bff0c39ec5192760c12526a237459d6c240f444417f664
+            serve-the-feeds: sha256:f16dd3c0b0ea93ca84d4cbb6ebe8f91932df73e91d53c83610921294886cd1a7
+            serve-the-markdown-twin: sha256:b9d4b9745e00471250ed94acff2aab7ce66c4e0894fd23afade5af043a17219f
+            serve-the-sitemap: sha256:4cfb42881122947378da218126a829ca52a45d6d5ce9734846d22025181af98c
+            verify-the-built-routes: sha256:15231d3cdbd5bbfc62ee7c8908c5d65b148796eef25287142c35aff44f7332be
+            wire-the-entry-pages: sha256:0066de8a92ba1e659de5cc4e22ff1120d5d886b34867baaa03b5f72481184dbe
     docs/extend/content-model.md:
         page: 8465554a17ce762879b9dbb98d1b49e2756c10d6
         blueprint: 26265118d14e3f756a7bb7667af03b8b20723e7e

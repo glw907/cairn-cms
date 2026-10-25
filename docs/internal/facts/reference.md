@@ -1017,11 +1017,15 @@ re-sourced to Go on this tree rather than to the page.
   empty-record, empty-name, missing-owner, and owner-capability throws), `:108`
   (`resolveOwnerLevelRoles`), `src/lib/sveltekit/auth-routes.ts:45,202-203` (`bootstrapOwner`).
   [verified]
-- `f:xbdb74` An `IconSet` path is filled shape data on a `0 0 256 256` box, never stroke data: `renderGlyph`
-  sets the svg's `fill` to `currentColor` and sets no `stroke` anywhere, so a stroke-only path (one
-  whose `d` encloses no area) renders invisible. Source: `src/lib/render/glyph.ts:16-23`
+- `f:xbdb74` An `IconSet` path is drawn on a `0 0 256 256` box, and `renderGlyph` sets the svg's
+  `fill` to `currentColor` and sets no `stroke` anywhere, so a path needs filled shape data: a
+  stroke-only path (one whose `d` encloses no area) renders invisible unless the site's CSS adds a
+  stroke. The set itself does not enforce filled data: the scaffold's `snowflake` is all stroke-only
+  subpaths and its `flag` pole is stroke-only, and the scaffold's `prose.css` adds a stroke for the
+  standalone icon. Source: `src/lib/render/glyph.ts:7-11,16-23`
   (`renderGlyph`: `s('svg', { ..., fill: 'currentColor', ... }, [s('path', { d })])`, no `stroke`
-  attribute anywhere in the call). [verified]
+  attribute anywhere in the call), `templates/waymark/src/theme/icons.ts:7,14`,
+  `templates/waymark/src/chassis/prose.css:593-599`. [verified]
 
 ## docs/reference/delivery.md
 

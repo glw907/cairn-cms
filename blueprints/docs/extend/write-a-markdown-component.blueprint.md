@@ -19,7 +19,7 @@ type: task guide
 The preview calls it in the editor's browser and the public route calls it from a server `load`, so a component's code runs in both places. :fact[vo5v7n]
 An author writes a custom public component in the markdown as a container directive, and the component's `build` function turns that directive into markup. The render pipeline reads one registry of components through `createRenderer`, and the editor's picker reads the same registry through the admin page. :fact[htxey1] :fact[uqytbb] :fact[rrvh33]
 
-**What the page does for them.** The introduction opens on that model and names the task: declare a component and its slots, write its `build`, shape its picker entry, register it, and check that the preview and the published page render it alike. The body follows one running example, an `event` component with a date, a place, a details body, and an agenda list, which no scaffolded component duplicates.
+**What the page does for them.** The introduction opens on that model and names the task: declare a component and its slots, write its `build`, shape its picker entry, register it, and check that the preview and the site's public pages render it alike. The body follows one running example, an `event` component with a date, a place, a details body, and an agenda list, which no scaffolded component duplicates.
 
 **What it leaves to other pages:**
 - Building the render function: the add-cairn tutorial and the `createRenderer` reference entry.
@@ -93,7 +93,7 @@ export const event = defineComponent({
 - Declaring an attribute of any other type, such as `multiselect` or `image`, throws when the module loads. The message includes `a directive attribute must be a single-value scalar`. :fact[cxhx8w]
 - The insert form validates attributes with a fieldset, the same validator a concept's fields use. A cross-field rule goes in the component's `behavior` member, keyed by attribute name. :fact[zh8wdb] :fact[4iuce8]
 - The render validates no attribute value. A hand-typed `date="banana"` still reaches `build` as the string `banana`. A `build` has to handle a value the form would refuse. :fact[4iuce8]
-- A component with an attribute of type `icon` can also set `defaultIconByRole`, which maps a value of the directive's `role` attribute to a glyph key. When an author leaves the `icon` attribute empty, the glyph key for the directive's `role` fills it. The map overrides the engine's default glyph for each role it names. :fact[c7ruij]
+- A component with an attribute of type `icon` can also set `defaultIconByRole`, which maps a value of the directive's `role` attribute to a glyph key. When an author leaves the component's first attribute of type `icon` empty, the glyph key mapped to the directive's `role` fills that attribute. The map overrides the engine's default glyph for each role it names, and a role that neither names leaves the attribute empty. :fact[c7ruij]
 - See [`defineComponent`](../reference/core.md#definecomponent) for every member, and [Fields](../reference/core.md#fields) for what each field type renders in the form.
 - Setting `hydrate` makes the component an island. See [Add an island](add-an-island.md). :fact[4hd2vg]
 
@@ -139,7 +139,7 @@ slots: [
 - `attr(key)`: a declared attribute's string value, `undefined` for a boolean or absent one. :fact[2dsv35]
 - `node`: the stamped component element. :fact[2dsv35]
 - The context builds no markup, so a `build` makes its markup with hastscript's `h()`. :fact[2dsv35]
-- To draw an icon, it can call the engine's [`renderGlyph`](../reference/core.md#component-author-helpers). That function returns an `svg` element from the site's icon set. Each path in that set holds filled shape data, because a stroke-only path renders invisible. :fact[xbdb74]
+- To draw an icon, it can call the engine's [`renderGlyph`](../reference/core.md#component-author-helpers). That function returns an `svg` element from the site's icon set, and it draws each path with `fill=currentColor` and no stroke. A path therefore needs filled shape data. A stroke-only path renders invisible unless the site's CSS adds a stroke. :fact[xbdb74]
 - In the `event` declaration, replace the `build` stub with the function that arranges the slots and attributes. :fact[2dsv35]
 - Code: the `event` `build`, a `section` holding the name, the date and place, the details, and an ordered agenda list, with classes prefixed `event`.
 
@@ -158,7 +158,7 @@ build: (ctx) =>
 ```
 
 - A `build` follows these rules:
-- It can't `await`. Data a component needs is fetched outside the render and reaches `build` through `attributes`. :fact[s6n9zw]
+- It can't `await`. Data a component needs is fetched outside the render. It reaches `build` through the directive's attributes or slots, or through a module-scope value that `build` closes over. :fact[s6n9zw]
 - It can't depend on a server-only module, because the preview runs it in the editor's browser. :fact[vo5v7n]
 - It needs no entrance-motion code. The engine stamps `data-rise` on each top-level component's result, carrying the component's index in document order. A site's CSS can map that index to an entrance delay. :fact[cefzv5]
 - When the site's DaisyUI plugin config leaves a component enabled, DaisyUI generates CSS for that component's class names, such as `card-body`, found in scanned source. :fact[34wt4f]
@@ -259,29 +259,34 @@ The board presents the annual report.
 
 ## Verify the component
 
-*Walk the reader through checking the component from the picker to the published page.*
+*Walk the reader through checking the component from the picker to the site's public render, on the dev server.*
 
-- On the dev server, the admin runs on the dev backend, and a publish there never leaves the machine. The published-page check therefore runs on the deployed site, after the component's code deploys. :fact[dqjkci] :fact[f21bcz]
+- A working component inserts from the picker, renders in the edit page's preview, and renders with the same classes on the site's public pages. :fact[rfeaa5] :fact[3l7f56] :fact[6c3amx]
+- The check runs on the dev server under the dev backend, which holds each save in memory. Its last steps open a share link to the saved draft. :fact[dqjkci]
+- The link's route renders the draft through the config the public entry pages use, so the check needs no publish and no deploy. :fact[6c3amx] :fact[dqjkci]
+- A scaffolded site's `npm run dev` sets `CAIRN_DEV_BACKEND` to `1`, which turns the dev backend on. :fact[f21bcz]
+- A hand-built site sets the variable by hand, and its share link also needs the preview route that [Share a draft preview](share-a-draft-preview.md#mount-the-preview-route) mounts. It needs a `PUBLIC_ORIGIN` var as well, because a mint with no `PUBLIC_ORIGIN` throws. :fact[dqnblw] :fact[6c3amx] :fact[sp2org]
 - To verify the component, follow these steps:
-1. In a terminal at the project root, start the dev server. :fact[f21bcz]
+1. In a terminal at the project root, start the dev server with the dev backend on: on a scaffolded site, run `npm run dev`; on a hand-built site, run `npm run dev` with `CAIRN_DEV_BACKEND` set to `1`, in the form [Verify the dev sign-in](add-cairn-to-a-sveltekit-app.md#verify-the-dev-sign-in) gives for your shell. :fact[f21bcz] :fact[dqnblw]
 2. In the admin, open an entry. :fact[megde2] :fact[qwbmyj]
 3. On the **Write** tab, select **Insert block**. :fact[megde2] :fact[qwbmyj]
 4. In the picker, choose **Event** under the **Events** heading. :fact[rfeaa5]
-5. In the form, fill the required fields. :fact[w7c3i6]
+5. In the insert form, check the fields, which open filled with the component's `preview` sample. :fact[c7ruij]
 6. Select **Insert**. **Insert** stays unavailable while a required slot is empty. :fact[w7c3i6]
 7. In the editor, check that the inserted markdown matches the directive in [Component authoring grammar](#component-authoring-grammar). :fact[co54dg]
 8. Select the **Preview** tab. :fact[kv9hap] :fact[my6ci3]
 9. In the preview, check that the component renders with its `event` classes. :fact[kv9hap] :fact[my6ci3]
-10. From the site repository, deploy the component's code. :fact[dqjkci]
-11. In the deployed site's admin, insert the component into an entry. :fact[megde2] :fact[rfeaa5]
-12. In the deployed site's admin, publish the entry. :fact[3l7f56]
-13. After the site deploys, on the public page, check that the component's element carries the classes the preview showed. :fact[3l7f56]
+10. On the edit page, select **Save**. :fact[76m2vf]
+11. In the **Details** slide-over, in the **Share preview** group, select **Share preview link**. The group shows a link whose path is `/preview/<token>`; [Share a draft preview](share-a-draft-preview.md) covers the link and its lifetime. :fact[sp1mbt] :fact[76m2vf]
+12. In a browser, open the link's `/preview/<token>` path on the dev server's address. The link names the site's configured origin, which can differ from the dev server's address. :fact[76m2vf] :fact[sp2org]
+13. On the preview page, check that the component's element carries the classes that the edit page's preview showed. :fact[6c3amx] :fact[3l7f56]
+- Stopping the dev server discards the saved edit and its link. :fact[dqjkci]
 
 ## Diagnose a failed check
 
 *Map each failed check to its cause and fix, in the order the verification reaches them.*
 
-- Each failed check traces to the component's declaration, the admin page's wiring, or the markdown an author wrote, including a code fence's language. :fact[cxhx8w] :fact[rrvh33] :fact[fqdknx] :fact[dni13r]
+- Each failed check traces to the component's declaration, the adapter's or admin page's wiring, or the markdown an author wrote, including a code fence's language. :fact[cxhx8w] :fact[rrvh33] :fact[fqdknx] :fact[dni13r]
 - When a check fails, work through the following symptoms in order:
 1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, a `defaultIconByRole` without an `icon` attribute, or a `hydrate` component and a `rendering.islands` entry that don't match. For that pairing, see [Add an island](add-an-island.md). Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij] :fact[mv684d]
 2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`, or the registry holds no component the picker lists. Pass it as [Register the component](#register-the-component) shows, or apply the fix in the next item. :fact[rrvh33] :fact[megde2]
@@ -290,6 +295,7 @@ The board presents the annual report.
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
 7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set (a `mermaid` fence passes through untouched). The highlighter renders that block as plain text. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`. :fact[dni13r]
+8. The share link answers an error page. [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps the logged reason to a fix.
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

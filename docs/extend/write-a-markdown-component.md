@@ -2,7 +2,7 @@
 
 Every entry on a cairn site becomes HTML through the adapter's `rendering.render`, and the edit page's preview and every public page call that same function. The preview calls it in the editor's browser and the public entry route calls it from a server `load`, so a component's code runs in both places. An author writes a custom public component in the markdown as a container directive, and the component's `build` function turns that directive into markup. The render pipeline reads one registry of components through `createRenderer`, and the editor's picker reads the same registry through the admin page.
 
-A new custom public component sits beside the ones a site already declares, such as the nine that a scaffolded site ships in `markdown-components.ts` under `src/theme/`. Writing one means declaring it and its slots, writing its `build` function, shaping its entry in the picker, registering it, and checking that the preview and the published page render it alike. The running example is an `event` component with a date, a place, a details body, and an agenda list.
+A new custom public component sits beside the ones a site already declares, such as the nine that a scaffolded site ships in `markdown-components.ts` under `src/theme/`. Writing one means declaring it and its slots, writing its `build` function, shaping its entry in the picker, registering it, and checking that the preview and the site's public pages render it alike. The running example is an `event` component with a date, a place, a details body, and an agenda list.
 
 The page serves a developer who wants authors to insert a structured block from the editor's picker, with fields and regions to fill, and to see it in the site's markup. It also serves a developer adding an island. An island starts as a component declared with `hydrate`, and its declaration is written here first. For a component that misbehaves, [Diagnose a failed check](#diagnose-a-failed-check) maps each symptom to its cause, from a directive printed as literal text to a preview that fails to render.
 
@@ -71,7 +71,7 @@ An attribute takes a field type that serializes to one attribute string. The ten
 
 Before the insert form inserts a component, it validates the attributes with the same fieldset validator that a concept's fields use. A cross-field rule goes in the component's `behavior` member, keyed by attribute name. The render validates no attribute value, and a hand-typed `date` of `banana` still reaches `build` as that string. A `build` has to handle a value the form would refuse.
 
-A component with an attribute of type `icon` can also set `defaultIconByRole`, which maps a value of the directive's `role` attribute to a glyph key. When an author leaves the `icon` attribute empty, the glyph key for the directive's `role` fills it. The map overrides the engine's default glyph for each role it names.
+A component with an attribute of type `icon` can also set `defaultIconByRole`, which maps a value of the directive's `role` attribute to a glyph key. When an author leaves the component's first attribute of type `icon` empty, the glyph key mapped to the directive's `role` fills that attribute. The map overrides the engine's default glyph for each role it names, and a role that neither names leaves the attribute empty.
 
 The [`defineComponent`](../reference/core.md#definecomponent) entry lists every member. The [Fields](../reference/core.md#fields) table states what each field type renders in the form. Setting `hydrate` makes the component an island, and [Add an island](add-an-island.md) covers the rest.
 
@@ -119,7 +119,7 @@ The context carries the following members:
 - `attr(key)`: a declared attribute's string value, or `undefined` for a boolean or absent attribute.
 - `node`: the stamped component element.
 
-The context builds no markup, so a `build` makes its markup with hastscript's `h()`. To draw an icon, it can call the engine's [`renderGlyph`](../reference/core.md#component-author-helpers). That function returns an `svg` element from the site's icon set. Each path in that set holds filled shape data, because a stroke-only path renders invisible.
+The context builds no markup, so a `build` makes its markup with hastscript's `h()`. To draw an icon, it can call the engine's [`renderGlyph`](../reference/core.md#component-author-helpers). That function returns an `svg` element from the site's icon set, and it draws each path with `fill=currentColor` and no stroke. A path therefore needs filled shape data. A stroke-only path renders invisible unless the site's CSS adds a stroke.
 
 - In the `event` declaration, replace the `build` stub with a function that arranges the slots and attributes in one element:
 
@@ -140,7 +140,7 @@ The context builds no markup, so a `build` makes its markup with hastscript's `h
 
 A `build` follows these rules:
 
-- It can't `await`. Data a component needs is fetched outside the render and reaches `build` through `attributes`.
+- It can't `await`. Data a component needs is fetched outside the render. It reaches `build` through the directive's attributes or slots, or through a module-scope value that `build` closes over.
 - It can't depend on a server-only module, because the preview runs it in the editor's browser.
 - It needs no entrance-motion code. The engine stamps `data-rise` on each top-level component's result, carrying the component's index in document order. A site's CSS can map that index to an entrance delay.
 
@@ -245,27 +245,41 @@ The grammar follows these further rules:
 
 ## Verify the component
 
-A working component inserts from the picker, renders in the edit page's preview, and carries the same classes on the published page. On the dev server, the admin runs on the dev backend, and a publish there never leaves the machine. The published-page check therefore runs on the deployed site, after the component's code deploys.
+A working component inserts from the picker, renders in the edit page's preview, and renders with the same classes on the site's public pages. The check runs on the dev server under the dev backend, which holds each save in memory. Its last steps open a share link to the saved draft. The link's route renders the draft through the config the public entry pages use, so the check needs no publish and no deploy.
+
+A scaffolded site's `npm run dev` sets `CAIRN_DEV_BACKEND` to `1`, which turns the dev backend on. A hand-built site sets the variable by hand, and its share link also needs the preview route that [Share a draft preview](share-a-draft-preview.md#mount-the-preview-route) mounts. It needs a `PUBLIC_ORIGIN` var as well, because a mint with no `PUBLIC_ORIGIN` throws.
 
 To verify the component, follow these steps:
 
-1. In a terminal at the project root, start the dev server.
+1. In a terminal at the project root, start the dev server with the dev backend on:
+
+   - On a scaffolded site, run `npm run dev`.
+   - On a hand-built site, run `npm run dev` with `CAIRN_DEV_BACKEND` set to `1`, in the form [Verify the dev sign-in](add-cairn-to-a-sveltekit-app.md#verify-the-dev-sign-in) gives for your shell.
+
 2. In the admin, open an entry.
 3. On the **Write** tab, select **Insert block**.
 4. In the picker, under the **Events** heading, choose **Event**.
-5. In the insert form, fill the required fields.
+5. In the insert form, check the fields, which open filled with the component's `preview` sample.
 6. In the insert form, select **Insert**. **Insert** stays unavailable while a required slot is empty.
 7. In the editor, check that the inserted markdown matches the directive in [Component authoring grammar](#component-authoring-grammar).
 8. In the toolbar, select the **Preview** tab.
 9. In the preview, check that the component renders with its `event` classes.
-10. From the site repository, deploy the component's code.
-11. In the deployed site's admin, insert the component into an entry.
-12. In the deployed site's admin, publish the entry.
-13. After the site deploys, on the public page, check that the component's element carries the classes the preview showed.
+10. On the edit page, select **Save**.
+11. In the **Details** slide-over, in the **Share preview** group, select **Share preview link**.
+
+    The group shows a link whose path is `/preview/<token>`. [Share a draft preview](share-a-draft-preview.md) covers the link and its lifetime.
+
+12. In a browser, open the link's `/preview/<token>` path on the dev server's address.
+
+    The link names the site's configured origin, which can differ from the dev server's address.
+
+13. On the preview page, check that the component's element carries the classes that the edit page's preview showed.
+
+Stopping the dev server discards the saved edit and its link.
 
 ## Diagnose a failed check
 
-Each failed check traces to the component's declaration, the admin page's wiring, or the markdown an author wrote, including a code fence's language.
+Each failed check traces to the component's declaration, the adapter's or admin page's wiring, or the markdown an author wrote, including a code fence's language.
 
 When a check fails, work through the following symptoms in order:
 
@@ -276,6 +290,7 @@ When a check fails, work through the following symptoms in order:
 5. The directive prints as literal text. It was written in the leaf `::name` or text `:name` form. Rewrite it as a `:::name` container.
 6. The component's content renders without its markup. No component in the registry that `createRenderer` received has the directive's name. Register the component, or correct the directive's name.
 7. A code block shows no token colors. Its fence names no language, or a language outside the highlighter's preloaded set, and the highlighter renders it as plain text. A `mermaid` fence passes through untouched. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`.
+8. The share link answers an error page. [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps the logged reason to a fix.
 
 For a failure this list doesn't cover, see [Read the structured logs](debug-your-site.md#read-the-structured-logs).
 

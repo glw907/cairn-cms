@@ -796,6 +796,10 @@ must be one the engine reads from the YAML (`siteName`, `description`, `author`,
 `email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as its correct
 home; any other unrecognized key throws listing the known keys.
 
+The parser doesn't check the value of `spellcheck.dialect`. The one spellcheck dictionary cairn ships
+is American English, `en-US`. The editor resolves any other dialect, or an unset one, to that
+dictionary with no error.
+
 ```ts
 // examples/showcase/src/theme/site-config.ts
 import { parseSiteConfig } from '@glw907/cairn-cms';

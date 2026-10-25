@@ -267,14 +267,17 @@ pages:
     type: task guide
     job: Detect which entries a deploy newly published by diffing two manifests and hand them to your own notification code, or give editors a next-step link the moment they publish. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - 'The exports from delivery/data: buildNewlyPublished, parseManifest, Manifest.'
-      - 'The rule: not draft, stamped, and no prior stamp at the concept/id key; the draft check first.'
-      - Persisting the prior manifest across deploys is your job (KV, R2, or other storage).
-      - 'before: null for a first backfill only.'
-      - 'Edge cases: rename and delete-recreate read as new; removals are silent; the function is pure.'
-      - 'The in-admin alternative: editor.publishActions next-step links shown after a publish, their {concept} and {id} placeholders, the concept filter, and validation at server start.'
+      - 'The post-deploy job as the spine: read the deployed manifest, load the prior one from your storage, diff with buildNewlyPublished, send, and save; the exports from delivery/data it imports (buildNewlyPublished, parseManifest, Manifest, ManifestEntry).'
+      - Persisting the prior manifest is your job; the job keeps it as one string, shown against Workers KV, and another store works the same way.
+      - Ordering the send and the save, and what each order trades when a send throws.
+      - 'The first run stores the deployed manifest and sends nothing; before: null only for a deliberate backfill.'
+      - 'The rule in short (not draft, stamped, no prior stamp at the concept/id key) and the cases a run meets: a rename reads as new, a delete and recreate reads as new only across a run, removals are silent, and an entry never stamped never returns; the full rule stays on the buildNewlyPublished reference entry.'
+      - 'The in-admin alternative in short: editor.publishActions next-step links after a single entry''s publish, with the publish-actions reference for the placeholders, the concept filter, and validation.'
     outOfScope:
       - The feed routes (build-the-public-routes).
+      - The full buildNewlyPublished rule and its purity (reference/delivery-data).
+      - The PublishActionEntry members and their substitution rules (reference/sveltekit).
+      - Sending the message (your email or messaging provider).
   - path: docs/extend/add-an-island.md
     slug: add-an-island
     title: Add an island

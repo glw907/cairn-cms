@@ -1125,8 +1125,7 @@ re-sourced to Go on this tree rather than to the page.
   `:70-72` (draft check precedes the stamp comparison). [verified]
 - `f:gkrell` `ManifestEntry.publishedAt` (ISO 8601 UTC) is set once, at the publish commit that first lands
   the entry non-draft, and never overwritten or cleared afterward; `upsertEntry` preserves a prior
-  `publishedAt` through an ordinary save. Source: `src/lib/content/manifest.ts:53-61` (the `publishedAt` doc
-  comment) and `src/lib/content/manifest.ts#stampFirstPublish`, matching the Types-table row in
+  `publishedAt` through an ordinary save. Source: `src/lib/content/manifest.ts:53-61` (`publishedAt`) and `src/lib/content/manifest.ts#stampFirstPublish`, matching the Types-table row in
   `docs/reference/delivery-data.md:595`. [verified]
 - `f:445jgb` `/delivery/data`'s own charter forbids importing from `github`, `auth`, or `email`, enforced by a
   source-boundary test, so the delivery layer never pulls the backend or magic-link auth surface

@@ -12,6 +12,10 @@
 
 ## Medium
 
+- [ ] **#65** Run the full docs gate on a batch's integration branch before its pages are queued `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  Batch 4 queued three pages on #140 with `check:provenance` red (7 defects), and CI caught it only after Geoff approved them, so the fix (`92b2cfce2`) landed after approval. Two causes: hand edits to `scaffolded-site-files.md` and `share-a-draft-preview.md` left their briefs quoting old anchors, and the batch 3 rewrite of `f:0elmiu` dropped the `/sitemap.xml` that `build-the-public-routes.json` cites, where `drafter refs f:0elmiu` would have named the brief. Make a green `npm run check:docs-gate` on the merged branch a precondition of `approval-queue page`, a rule for `cairn-pass` or the batch prompt beside #60.
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4/RESUME.md`
+
 - [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it. Design session prompt: `docs/plans/2026-10-25-icon-sizes-design-prompt.txt`.
 

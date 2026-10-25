@@ -71,7 +71,7 @@ The contract sentence follows. The steps set the upload limits, move or reshape 
 - The engine sniffs each upload's type from its bytes and stores JPEG, PNG, GIF, WebP, and AVIF. The default `allowedTypes` lists those five, and the list can only narrow them. :fact[enuyhg] :fact[fnat1w]
 - A sniffed HEIC or unrecognized file is refused as `unsupported_type` whatever the list holds. So is an upload declared as `image/svg+xml`, `image/svg`, `text/html`, or `application/xml`, or one whose first non-whitespace byte is `<`. :fact[enuyhg]
 2. In the same block, set `maxUploadBytes` to the largest upload in bytes. The default is 25 MB. :fact[fnat1w] :fact[6kdagb]
-- Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with a 413 before the Worker runs. :fact[9awije]
+- Cloudflare caps a Worker's request body by the account's plan, and it answers a larger request with an HTTP 413 response. :fact[9awije]
 - The effective limit is the lower of `maxUploadBytes` and that cap. :fact[ett331] :fact[9awije]
 - See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
 - Code: an excerpt of a scaffolded site's `media` constant in `src/theme/cairn.config.ts` with both limits set, allowing JPEG, PNG, and WebP and capping uploads at 10 MB. :fact[9hchnv] :fact[fnat1w] :source[/templates/waymark/src/theme/cairn.config.ts]
@@ -125,7 +125,7 @@ const media = {
 - By default, a `media:` image whose hash has no manifest row logs `media.resolve_missing` and renders as a broken image, and the build still succeeds. :fact[frgg7d]
 - The broken image has `src="#"`, the class `cairn-broken-media`, and the title `Missing media asset`, and it keeps its alt text. :fact[frgg7d]
 - On a site whose public pages prerender, as a scaffolded site's entry pages do, a resolver that throws on a miss fails the build instead. :fact[frgg7d] :fact[vo5v7n]
-- On a page that renders at request time, the throw reaches SvelteKit as an unexpected error, and SvelteKit answers the request with a 500 error page. :fact[6e3l8p]
+- On a page that renders at request time, the throw reaches SvelteKit as an unexpected error, and SvelteKit answers the request with a 500 error page unless the site's `handleError` hook sets another status. :fact[6e3l8p]
 - On a scaffolded site, `publicMediaResolver` reaches the public pages twice: as the fallback in the adapter's `render`, and as `resolveMedia` in the public routes config. Wrapping it where it is defined covers both. :fact[qifl9g]
 - The edit page's preview and the shared-draft preview each pass `render` a resolver in place of the site's. A preview therefore keeps marking a missing image broken. :fact[ax38pm]
 - `createMediaResolver` returns a function that also carries an `imageDetail` property, which the render step reads for each image's intrinsic size and `srcset`. The public `MediaResolve` type doesn't declare it. :fact[nlkgag]
@@ -192,7 +192,7 @@ export const publicMediaResolver = failOnMissing;
 - A table, introduced by a sentence saying it lists the refusals a request's size and type cause, gives `length_required` for a missing or non-positive `Content-Length`, and `too_large` for a declared or actual size above `maxUploadBytes`. :fact[ett331]
 - Its third row gives `unsupported_type` for a sniffed type that isn't in `allowedTypes` or isn't one the engine stores, or for an upload that is markup of a kind [Set the upload limits](#set-the-upload-limits) lists. :fact[g4cwcw] :fact[enuyhg]
 - See the `media.upload_failed` row in [Log events](../reference/log-events.md) for every reason the action logs.
-- Cloudflare answers a body over the plan's request limit with an HTTP 413 response before the action runs. :fact[9awije]
+- Cloudflare answers a body over the plan's request limit with an HTTP 413 error, not the action's envelope. :fact[9awije]
 - See [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
 - The action stores the bytes in R2 and commits no manifest row. A `media:` reference to the asset resolves as missing until a row lands. :fact[h56lpd] :fact[c8c9ji]
 - An entry save that posts the returned `record` inside a JSON array in its `media` form field merges the row into `media.json`. :fact[h56lpd]
@@ -207,7 +207,7 @@ export const publicMediaResolver = failOnMissing;
 - After you deploy, check each change you made. To verify, run these checks in order:
 1. In the deployed admin, at `/admin/media`, upload an image of an allowed type under the size limit. The asset appears in the Library. :fact[joo5f2] :fact[xjdhau]
 2. In an entry, place the image. :fact[xjdhau]
-3. Publish the entry. The editor documentation covers both steps. :fact[xjdhau]
+3. Publish the entry. :fact[xjdhau]
 4. On the published page, inspect the image. Its `src` starts with your `publicBase` and has your `urlForm`'s shape. With `transformations` on and a recorded width of at least 800 pixels, the image also carries a `srcset`. :fact[ex4hss] :fact[s1n77t] :fact[kp50li]
 5. In a terminal, request that `src` with `curl -s -D - -o /dev/null https://<your-site><src>`. :fact[fjnszk]
 - The response carries `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, `Content-Security-Policy: default-src 'none'; sandbox`, and `Cache-Control: public, max-age=31536000, immutable`. :fact[fjnszk]
@@ -231,7 +231,7 @@ export const publicMediaResolver = failOnMissing;
 
 :::row
 **Symptom.** A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope, and the Worker logs no `media.upload_failed` record.
-**Cause.** The body is over the Cloudflare plan's request-body limit, so Cloudflare refused it before the Worker ran. :fact[9awije]
+**Cause.** The body is over the request-body limit of the Cloudflare plan, and Cloudflare answered with its 413 error. :fact[9awije]
 **Fix.** Upload a smaller file, or see Cloudflare's Workers limits for the cap on each plan. :fact[9awije]
 :::
 

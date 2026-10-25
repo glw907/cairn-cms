@@ -1327,7 +1327,7 @@ govern any fetch-style admin action or a client that calls one of these. A Svelt
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
 clears before its body-cloning form-field check. Reading the body twice would consume the stream.
-A form action answers a JSON request with an envelope (`{ type, status, data }`), and under SvelteKit 3
+A form action answers a JSON request with an envelope (`{ type, status, location, data }`), and under SvelteKit 3
 the response status matches the `fail()` status, so a `fail(413)` from the action is an HTTP 413 whose
 body is still the envelope. The client reads the envelope whatever the status and branches on `data`. Build a new fetch-style admin action against this contract from the start. The upload
 client in `examples/showcase` is the working reference.

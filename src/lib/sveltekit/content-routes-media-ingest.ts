@@ -208,7 +208,7 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
 
   /**
    * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
-   * result into a JSON envelope `{ type, status, data }`. Under SvelteKit 3 a `fail(status, ...)`
+   * result into a JSON envelope `{ type, status, location, data }`. Under SvelteKit 3 a `fail(status, ...)`
    * sets both the envelope's `status` field and the HTTP response status, so a `fail(413)` is an
    * HTTP 413 whose body is still the envelope; a client deserializes the body whatever the status
    * and branches on its `type` and `data`. Success returns a plain `UploadResult` (a 200 envelope). The action logs `media.upload_failed` on a refusal and

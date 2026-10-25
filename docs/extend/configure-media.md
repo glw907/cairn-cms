@@ -107,7 +107,7 @@ A site can't declare named transform presets. A theme that needs another size bu
 
 ## Fail the build on a missing asset
 
-By default, a `media:` image whose hash has no manifest row logs `media.resolve_missing` and renders as a broken image, and the build still succeeds. The broken image has `src="#"`, the class `cairn-broken-media`, and the title `Missing media asset`, and it keeps its alt text. On a site whose public pages prerender, as a scaffolded site's entry pages do, a resolver that throws on a miss fails the build instead. On a page that renders at request time, the throw reaches SvelteKit as an unexpected error, and SvelteKit answers the request with a 500 error page.
+By default, a `media:` image whose hash has no manifest row logs `media.resolve_missing` and renders as a broken image, and the build still succeeds. The broken image has `src="#"`, the class `cairn-broken-media`, and the title `Missing media asset`, and it keeps its alt text. On a site whose public pages prerender, as a scaffolded site's entry pages do, a resolver that throws on a miss fails the build instead. On a page that renders at request time, the throw reaches SvelteKit as an unexpected error, and SvelteKit answers the request with a 500 error page unless the site's `handleError` hook sets another status.
 
 On a scaffolded site, `publicMediaResolver` reaches the public pages in two places. It's the fallback in the adapter's `render` and the `resolveMedia` value in the public routes config, so wrapping it where it's defined covers both. The edit page's preview and the shared-draft preview each pass `render` a resolver in place of the site's. A preview therefore keeps marking a missing image broken.
 
@@ -194,7 +194,7 @@ To upload a file, follow these steps:
    | `too_large` | The declared or actual size is above `maxUploadBytes` |
    | `unsupported_type` | The sniffed type isn't in `allowedTypes` or isn't one the engine stores, or the upload is markup of a kind that [Set the upload limits](#set-the-upload-limits) lists |
 
-   For every reason the action logs, see the `media.upload_failed` row in [Log events](../reference/log-events.md). Cloudflare answers a body over the plan's request limit with an HTTP 413 response before the action runs. For the limit on each plan, see [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
+   For every reason the action logs, see the `media.upload_failed` row in [Log events](../reference/log-events.md). Cloudflare answers a body over the plan's request limit with an HTTP 413 error, not the action's envelope. For the limit on each plan, see [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits).
 
 The action stores the bytes in R2 and commits no manifest row. Until a row lands, a `media:` reference to the asset resolves as missing. An entry save that posts the returned `record` inside a JSON array in its `media` form field merges the row into `media.json`. For the save's form fields, see [`createContentRoutes`](../reference/sveltekit.md#createcontentroutes).
 
@@ -212,8 +212,6 @@ To verify the changes, follow these steps:
 
 2. In an entry, place the image.
 3. In the same entry, publish the entry.
-
-   The editor documentation covers placing an image and publishing an entry.
 
 4. On the published page, inspect the image element.
 
@@ -245,7 +243,7 @@ The following table lists the symptoms a failed check can show, with each one's 
 | --- | --- | --- |
 | The upload fails with the refusal `too_large`, and the Worker logs `media.upload_failed` with `reason: 'too_large'`. | The file is larger than `maxUploadBytes`. | In the adapter module, raise `maxUploadBytes`, up to your plan's request-body limit, then deploy again. |
 | The upload fails with the refusal `unsupported_type`, and the Worker logs `media.upload_failed` with `reason: 'unsupported_type'`. | The sniffed type isn't in `allowedTypes`, or it isn't one of the five types the engine stores. | If the type is one of the five, add it to `allowedTypes` and deploy again. Otherwise, convert the file to one of the five. |
-| A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope, and the Worker logs no `media.upload_failed` record. | The body is over the request-body limit of the Cloudflare plan, so Cloudflare refused it before the Worker ran. | Upload a smaller file. For the cap on each plan, see [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits). |
+| A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope, and the Worker logs no `media.upload_failed` record. | The body is over the request-body limit of the Cloudflare plan, and Cloudflare answered with its 413 error. | Upload a smaller file. For the cap on each plan, see [Workers limits](https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits). |
 | After a `publicBase` change, published images answer 404. | The media route isn't at `<publicBase>/[...path]`, or its catch-all param isn't named `path`. | Add the route at `<publicBase>/[...path]`, with its param named `path`, then deploy again. |
 | After a `publicBase` change, images in the edit page's preview are broken while published pages render them. | The live preview builds `/media/<slug>.<hash>.<ext>` paths whatever `publicBase` says. | Keep the handler mounted at `src/routes/media/[...path]/+server.ts` as well as at the new base. |
 | With `transformations` on, an image whose manifest row records no width has no `srcset`. | The upload recorded no width. A custom screen's upload records none when it doesn't set `X-Cairn-Width`. | In the custom screen's upload handler, set `X-Cairn-Width` and `X-Cairn-Height` for later uploads. |

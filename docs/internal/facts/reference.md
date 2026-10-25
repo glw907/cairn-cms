@@ -1416,8 +1416,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   fixed width ladder of 400, 800, 1200, and 1600 pixels, which drops each rung wider than the
   recorded width and offers no `srcset` with fewer than two rungs left, so a `srcset` needs a
   recorded width of at least 800 pixels, plus a `sizes` hint derived from the image's `:::figure` placement role
-  (`center`, `wide`, `full`; unplaced falls back to `100vw`); an asset with unknown dimensions or
-  too-small width gets none of that, and a raw external (non-`media:`) image is never touched.
+  (`center`, `wide`, `full`; unplaced falls back to `100vw`); an asset with unknown dimensions gets none of that, an asset too narrow for two rungs keeps its
+  intrinsic `width`/`height` but gets no `srcset` or `sizes`, and a raw external (non-`media:`) image is never touched.
   Source: `src/lib/render/resolve-media.ts:25,35-38` (`SRCSET_WIDTHS = [400, 800, 1200, 1600]`,
   `SIZES_BY_ROLE = { center, wide, full }`), `:104-122` (`imageDetail`: width/height set when
   `!== null`; srcset built only `if (resolved.transformations && entry.width !== null)`, and only

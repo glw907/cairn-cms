@@ -230,7 +230,7 @@ export const publicMediaResolver = failOnMissing;
 :::
 
 :::row
-**Symptom.** A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope, and the Worker logs no `media.upload_failed` record.
+**Symptom.** A large upload fails with an HTTP 413 response whose body isn't a JSON action envelope.
 **Cause.** The body is over the request-body limit of the Cloudflare plan, and Cloudflare answered with its 413 error. :fact[9awije]
 **Fix.** Upload a smaller file, or see Cloudflare's Workers limits for the cap on each plan. :fact[9awije]
 :::

@@ -285,7 +285,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   delete every `preview_tokens` row the removed editor minted (a separate statement outside the
   atomic batch, swallowing only a "no such table" fault for a site with the preview migration
   unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts#deleteEditor`
-  (`deleteEditor` call), `src/lib/auth/store.ts:469-473` (`removeOwnerIfNotLast` call). [verified]
+  (`deleteEditor` call), `src/lib/auth/store.ts:477` (`removeOwnerIfNotLast` call). [verified]
 - `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
   consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
   `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a
@@ -1271,7 +1271,7 @@ re-sourced to Go on this tree rather than to the page.
   `draft_invalid`). [verified]
 - `f:rdwesf` Every outward response to a `preview.refused` case is an identical 404, except
   `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
-  (`rejectPreview` always `throw error(404, ...)`) and `:454-457` (`bindings_missing` branch
+  (`rejectPreview` always `throw error(404, ...)`) and `:434-443` (`bindings_missing` branch
   `throw error(503, 'Service unavailable')`). [verified]
 - `f:546jja` `preview.refused` `reason: "draft_invalid"` means the file on the entry's pending
   branch exists but fails the concept's descriptor validation: the per-field checks on its
@@ -1873,8 +1873,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   no draft check). [verified]
 - `f:n0xz8f` `mintPreview`'s `config.ttlMs` defaults to seven days and must be finite, positive, and between
   one minute and thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error
-  before any token is generated. Source: `src/lib/sveltekit/preview.ts:61`
-  (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:75-85` (`resolveTtlMs`: finite/positive
+  before any token is generated. Source: `src/lib/sveltekit/preview.ts:63`
+  (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:77-88` (`resolveTtlMs`: finite/positive
   check, min/max bound check, `PreviewTokenConfig:`-prefixed throws). [verified]
 - `f:esg0zx` `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's outstanding
   preview rows unconditionally (regardless of publish state) as part of their own cascade;

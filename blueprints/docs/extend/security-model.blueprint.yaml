@@ -165,6 +165,22 @@ sections:
       - id: sc-guard-ref
         kind: link
         target: ../reference/sveltekit.md#createauthguard
+      - id: sc-preview
+        kind: sentence
+        mode: claim
+        text: |
+          A draft preview link sits outside `/admin`, and the link is the credential. Anyone who
+          holds it reads that one draft with no sign-in until the link stops working. It stops
+          working when it expires, when an editor revokes it, when the entry is published,
+          discarded, renamed, or deleted, or when the editor who minted it is removed from the
+          site.
+        facts:
+          - f:afkvsb
+          - f:76m2vf
+          - f:pimnjy
+          - f:a7yrhq
+          - f:l4waby
+          - f:sp9rem
       - id: sc-isolation
         kind: reason
         text: |

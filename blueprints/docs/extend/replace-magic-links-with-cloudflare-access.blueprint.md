@@ -300,7 +300,7 @@ handle = createAuthGuard({ runtime, identity: accessIdentity });
 - The following pages cover the seams and limits around identity mode:
 - See [Identity mode's threat surface](security-model.md#identity-modes-threat-surface).
 - See [Restrict admin access](restrict-admin-access.md).
-- See [Share a draft preview](share-a-draft-preview.md).
+- See [Mount the draft preview route](build-the-public-routes.md#mount-the-draft-preview-route).
 - See [Add a second sign-in group](add-a-second-sign-in-group.md).
 - See [`createAuthGuard`](../reference/sveltekit.md#createauthguard).
 - See [`IdentityResolver`](../reference/sveltekit.md#identityresolver).

@@ -276,7 +276,7 @@ Content:
     request body by the account plan and answers a larger request with a 413 of its own, so the
     effective ceiling is the lower of this value and that cap, and raising it past the cap does
     nothing (`f:ett331`, `f:9awije`). Link Cloudflare's Workers limits page,
-    https://developers.cloudflare.com/workers/platform/limits/#request-limits, for the cap per plan;
+    https://developers.cloudflare.com/workers/platform/limits/#request-and-response-limits, for the cap per plan;
     copy no figure.
   - `publicBase`, default `/media` (`f:fnat1w`). The rule: it moves every URL the engine writes, in
     rendered pages, the editor, and the Library, but not the route; the route's directory must match

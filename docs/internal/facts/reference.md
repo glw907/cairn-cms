@@ -1413,7 +1413,9 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   `entry.slug, entry.hash, entry.ext`, never `ref`'s own slug). [verified]
 - `f:wdmlys` The resolved image gets intrinsic `width`/`height` from the manifest entry when known
   (reserving aspect ratio), and with `assets.transformations` on and width known, a `srcset` from a
-  fixed width ladder plus a `sizes` hint derived from the image's `:::figure` placement role
+  fixed width ladder of 400, 800, 1200, and 1600 pixels, which drops each rung wider than the
+  recorded width and offers no `srcset` with fewer than two rungs left, so a `srcset` needs a
+  recorded width of at least 800 pixels, plus a `sizes` hint derived from the image's `:::figure` placement role
   (`center`, `wide`, `full`; unplaced falls back to `100vw`); an asset with unknown dimensions or
   too-small width gets none of that, and a raw external (non-`media:`) image is never touched.
   Source: `src/lib/render/resolve-media.ts:25,35-38` (`SRCSET_WIDTHS = [400, 800, 1200, 1600]`,

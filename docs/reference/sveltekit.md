@@ -1984,7 +1984,8 @@ contract in full.
 A site declares next-step links for the publish-success moment, the `navLayout` site-entry grammar
 applied after a publish. A `publishActions` entry on the adapter's `editor` group is plain data, validated
 when `createCairnAdmin` builds the admin's content routes: a blank label or `href`, a label declared
-twice, or an unknown concept throws an error naming the entry. SvelteKit's build loads each route's
+twice, or an unknown concept throws an error, and each error but the blank-label one names the
+entry by its label. SvelteKit's build loads each route's
 server modules, so on a site whose admin routes import the module that calls `createCairnAdmin`,
 the bad entry fails the build instead of silently rendering a broken link after a publish. `editLoad` resolves the validated config for the one
 entry that just went live. It drops any entry a `concepts` list excludes, then substitutes

@@ -58,7 +58,7 @@ It tells the reader who looked for a callback that code meant to follow a publis
 - See [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished) and [`parseManifest`](../reference/delivery-data.md#parsemanifest).
 - To add the job, follow these steps:
 1. In your site, create `scripts/announce-new-posts.ts` with the following contents. :fact[tdbki1] :fact[vrue1g]
-- Code: the whole job file. It reads the deployed manifest from the checkout and loads the stored one from a Workers KV value. On the first run it stores a baseline and returns. Otherwise it diffs the manifests, sends each `posts` entry, and saves the deployed manifest last. The block typechecks against the built package. :fact[ix641z] :fact[gj96px] :fact[3dyial] :fact[2hwgg3]
+- Code: the whole job file. It reads the deployed manifest from the checkout and loads the stored one from a Workers KV value. On the first run it stores a baseline and returns. Otherwise it diffs the manifests, sends each `posts` entry, and saves the deployed manifest last. :fact[ix641z] :fact[gj96px] :fact[3dyial] :fact[2hwgg3]
 
 ```ts
 /// <reference types="node" />

@@ -15,6 +15,9 @@ failure_pattern = '✖|defect\(s\)|broken link|target not found|\.json: [^0-9]|^
 
 [facts]
 dir = "docs/internal/facts"
+# The scaffold's READMEs ship in every scaffolded site, so a fact about what one says may cite it
+# (Geoff, 2026-10-24, on the theme-your-public-site blueprint). drafter matches exact paths.
+prose_sources = ["templates/waymark/README.md", "templates/waymark/src/chassis/README.md"]
 
 [seat.draft]
 model = "claude-opus-5-5"

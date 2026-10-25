@@ -1,43 +1,57 @@
 # Content model
 
-Every entry an editor opens in a cairn site's admin is a markdown file in the site's repository. Each entry belongs to a concept. A concept is one kind of content the site declares in its adapter: a directory of markdown files and a fieldset that describes their frontmatter. The engine builds in no kind of content. The posts and pages a scaffolded site starts with are declarations in its adapter, like any concept the site adds, and neither name is reserved. Every concept takes the same shape, and the site chooses which concepts exist, with no open-ended collection model beside them.
+An entry an editor opens in a cairn site's admin is a markdown file in the site's repository, and each entry belongs to a concept. A concept is one entry in the adapter's `content` map, and it declares a directory of those files and a fieldset that describes their frontmatter. The posts and pages concepts a scaffolded site starts with are declarations of this kind, not concepts the engine builds in.
 
-A concept's declaration is the only place the engine learns about it. The declaration decides the form editors fill in, the checks a save runs before anything is committed, the TypeScript type the site's SvelteKit code reads entries as, whether an entry gets a public address, and what the committed content manifest records about it. A save writes back only the frontmatter keys the fieldset declares, so an undeclared key in a file disappears the first time an editor saves that entry. The markdown files remain the record of the content. An entry's filename gives it its id, and the manifest is a summary of those files that admin code reads in place of fetching each entry from GitHub.
+The fieldset is the one place a field is declared. An admin save writes frontmatter back from the validator's output, and a key the fieldset does not declare is dropped at the entry's first save. The files in git stay the source of truth for content. A committed content manifest summarizes them, and admin code reads the content graph from it instead of reading GitHub entry by entry.
 
-A developer who knows the model before writing a declaration can predict what the engine refuses when the adapter module loads, such as a container nested too deep or a malformed pattern, what a save refuses, and which options behave unlike the HTML input attributes whose names they share. On a site someone else scaffolded, the model explains what the inherited posts and pages concepts are and what a dated filename means. Markdown moved in from another system has to meet the id, date, and frontmatter-key rules the model sets. For a developer weighing cairn against alternatives, the model also marks its limits: a fixed set of field builders with no seam for another type, and containers that nest one level deep. A reader following internal links between entries finds how the manifest records them and how a rename rewrites them in one commit.
+One concept declaration decides the form editors fill in, the checks a save runs before anything is committed, and the TypeScript type of entries in the site's SvelteKit code. It also decides whether an entry gets a public address and what the manifest records about it.
 
-The following subjects make up the content model:
+Developers come to the model for several reasons:
 
-- What a concept is and what declaring one gives a site
-- The fieldset, its builders, the options that behave unexpectedly, and the two containers
-- How a save validates
-- The frontmatter keys the engine reads
-- How an entry is identified and routed, and what happens when two entries share an address
+- A developer about to declare a concept learns what the engine refuses at module load and at an editor's save.
+- A developer who inherits a scaffolded site learns what its posts and pages concepts are and what a dated filename such as `2026-08-14-my-post.md` means.
+- A developer weighing cairn for an organization's content learns its limits: a closed set of field builders, and containers nested one level deep.
+- A developer moving existing markdown into cairn, or tracing a frontmatter key lost at an editor's save, learns the id, date, and frontmatter rules.
+
+Several builder options share a name with an HTML input attribute but behave differently. For example, `pattern` matches anywhere in the value, but the HTML attribute of that name must match the whole value.
+
+This page covers the following subjects, in order:
+
+- Concepts
+- The fieldset
+- Field options
+- Containers
+- Save-time validation
+- Frontmatter keys the engine reads
+- Entry identity
+- Routing
+- Address collisions
 - The content manifest
 - Renames
 
-Working with the model takes familiarity with TypeScript literal types and inference, YAML frontmatter at the head of a markdown file, JavaScript regular expressions, and HTML form input attributes. If you're new to the adapter, read [Architecture](architecture.md) first for where the content map sits among its seams.
+The page assumes familiarity with TypeScript literal types and inference, YAML frontmatter at the head of a markdown file, JavaScript regular expressions, and HTML form input attributes. If you're new to the adapter, read [Architecture](architecture.md) first to see where the content map sits among its seams.
 
-Four neighboring subjects are documented elsewhere:
+The following subjects are documented on other pages:
 
-- Writing the adapter and a concept's declaration, in [Define an adapter and schema](define-an-adapter-and-schema.md)
-- Reference fields and internal links between entries in use, in [Link content with references](link-content-with-references.md)
+- Writing the adapter and a concept's declaration, including permalinks, date prefixes, tags, and custom validation hooks, in [Define an adapter and schema](define-an-adapter-and-schema.md)
+- Using reference fields and internal links between entries, in [Link content with references](link-content-with-references.md)
 - Fragments and the include directive, in [Reuse content across entries](reuse-content-across-entries.md)
 - Rendering an entry's body, in [Configure rendering](configure-rendering.md)
 
 ## Concepts
 
-Declaring a concept in the adapter's `content` map grants a site one kind of content: a repository directory of markdown entries, described by a fieldset. Each concept is a `defineConcept` call that names its `dir` and its `fields`, and it may add a routing shorthand and a URL policy. The adapter module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds.
+Declaring a concept in the adapter's `content` map gives a site one kind of content: a repository directory of markdown entries, described by a fieldset, with optional routing and URL policy. On a scaffolded site, the adapter is `src/theme/cairn.config.ts`. The scaffold wraps each concept in `defineConcept`, which keeps the fieldset's type for typed reads and checks the URL policy when the module loads.
 
-The following declaration adds an `events` concept to a scaffolded site's adapter:
+The following excerpt declares an `events` concept with a `dir`, `routing: 'page'`, a required `title` text field, and a `date` field:
 
 ```ts
-// src/theme/cairn.config.ts, on a scaffolded site
+// src/theme/cairn.config.ts (excerpt)
 import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
-// The adapter's content map lists this concept beside the scaffold's: content: { posts, pages, fragments, events }
 export const events = defineConcept({
   dir: 'src/content/events',
+  label: 'Events',
+  singular: 'event',
   routing: 'page',
   fields: defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
@@ -46,173 +60,208 @@ export const events = defineConcept({
 });
 ```
 
-One entry in that concept is a file in its `dir`, with frontmatter that matches the fieldset:
+One entry in that concept is the file `spring-open-house.md` in the concept's `dir`. Its frontmatter keys match the fieldset, and its filename stem `spring-open-house` is the entry's id. The file holds the following:
 
-```md
+```markdown
 ---
-# open-house.md, in the events concept's dir
-title: Open house
-date: 2026-11-07
+title: Spring open house
+date: 2026-05-02
 ---
-The building is open to visitors all afternoon.
+
+Visitors are welcome to tour the space.
 ```
 
-The posts and pages concepts a scaffolded site starts with are declared the same way. Neither name is reserved, so a site may rename them, remove them, or declare more concepts beside them.
+Neither scaffolded concept is reserved: a site may rename `posts` or `pages`, remove them, or declare other concepts beside them. Some scaffold code reads a concept by its id. The scaffold's feed, for example, reads the `posts` concept, and a site that renames a scaffolded concept updates that code too.
 
-One declaration gives the site the following:
+Some engine conveniences also key on the literal ids. A concept's default permalink is `/<id>/:slug`, except for the concept with the id `pages`, whose default is `/:slug`. The admin's getting-started checklist looks for entries in `posts` and `pages`. The entry picker and the editor's `[[` link autocomplete list `pages` entries first and `posts` second.
 
-- An admin list and an edit page for the concept's entries
-- A form, a save-time validator, and a TypeScript type, all derived from the fieldset
-- A public page for each entry, unless the routing shorthand is `'embedded'`
+One concept declaration gives a site the following:
+
+- An admin list and an editor for the concept's entries
+- A form, a save-time validator, and a TypeScript type, each derived from the fieldset
+- A public page for each non-draft entry, unless the concept's routing is `'embedded'`
 - A row for each entry in the committed content manifest
 
-The [`defineConcept`](../reference/core.md#defineconcept) entry gives the signature and the checks the engine runs on a URL policy at declaration. The fieldset is the half of a concept that a site writes field by field.
+For the full signature, see [`defineConcept`](../reference/core.md#defineconcept).
 
 ## The fieldset
 
-A concept's fieldset is the only place its fields are declared, and the engine derives the edit page's form, the save-time validator, and the TypeScript type of the concept's entries from it. No separate schema language exists, so the three cannot drift apart.
+The engine derives the editor's form, the save-time validator, and the TypeScript type of the site's entries from the concept's fieldset. Because no separate schema language exists, the form, the validator, and the type cannot drift apart.
 
-A fieldset draws on fifteen field builders, in two groups:
+The `fields` namespace has fifteen builders, in two groups:
 
-- Thirteen leaf builders: `text`, `textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `icon`, `image`, and `reference`
-- Two container builders that hold other fields: `object` and `array`
+- Thirteen leaves: `text`, `textarea`, `number`, `select`, `multiselect`, `url`, `email`, `date`, `datetime`, `boolean`, `icon`, `image`, and `reference`
+- Two containers: `object` and `array`
 
-`FieldDescriptor` is a closed union of those fifteen types, and the engine exposes no seam to register another. A site models any other shape with the builders that exist. The [Fields](../reference/core.md#fields) table in the reference records what each builder renders as and what it validates. [Link content with references](link-content-with-references.md) covers the `reference` builder in use. Each builder takes options that shape its input and the checks a save runs.
+`FieldDescriptor` is a closed union of those fifteen types. The engine exposes no seam to register another field type, and a shape outside them is modeled with the existing builders.
+
+[Link content with references](link-content-with-references.md) covers the `reference` builder in use. For each builder's options, see the [Fields](../reference/core.md#fields) table in the core reference.
 
 ## Field options
 
-Every builder takes four base options, `label`, `help`, `required`, and `default`, and a few options behave in ways their names alone do not predict. For the options specific to each builder and what each one does, see the [Fields](../reference/core.md#fields) table in the reference.
+Each builder takes the four base options `label`, `help`, `required`, and `default`. Of the four, `label` is optional only on an `object`. An `array` can omit it only by omitting its whole options argument, since `fields.array(item, options)` requires `label` whenever `options` is passed.
 
-The following options carry those edges:
+The following options behave in ways their names alone do not predict:
 
-- `pattern` on `text` and `textarea` compiles when `defineFieldset` runs, and a malformed pattern throws at declaration. The save tests it unanchored and with no flags, so matching a whole value takes an explicit `^` and `$`.
-- `default` on any builder prefills only a new entry's create form, never an existing or hand-written file. A `date` field's `'today'` default resolves to the current UTC date.
-- `creatable` on a `multiselect` that sets `options` changes the control to a tag input, and a value outside `options` still fails the save.
-- `min` and `max` on a `date` field are enforced at save and never rendered on the input. On a `datetime` field, neither the save nor the form enforces them.
+- `pattern` on `text` and `textarea` compiles when `defineFieldset` runs. A malformed pattern throws at declaration.
+- A save tests `pattern` unanchored and with no flags. Unlike the HTML attribute, it needs an explicit `^` and `$` to match the whole value.
+- `default` prefills only a new entry's create form, never an existing or hand-written file. A `date` field's `'today'` default resolves to the current UTC date.
+- `creatable` on a `multiselect` that sets `options` changes the control to a tag input. A value outside `options` still fails the save.
+- `min` and `max` on a `date` field are enforced at the save but never rendered on the input. On a `datetime` field, neither the save nor the form enforces them.
 
-The `text`, `textarea`, and `date` constraints never render as input attributes, so the form accepts a value that the save then refuses.
+The `text` and `textarea` constraints (`min`, `max`, `length`, and `pattern`) and the `date` bounds never render as input attributes. The form therefore accepts a value that the save then refuses.
 
-Two builders check a value with no option involved. A `url` field accepts only an absolute `http://` or `https://` URL with no whitespace, and a root-relative path or a `mailto:` value fails the save. A `datetime` field keeps a quoted string as written. When YAML parses an unquoted full ISO timestamp into a `Date`, the field converts it to a zoneless `YYYY-MM-DDTHH:mm` string read in UTC, dropping the seconds and the offset. Unlike the leaf builders, the two containers hold other fields rather than a single value.
+The `url` and `datetime` builders also restrict or convert a value with no option involved. A `url` field accepts only an absolute `http://` or `https://` URL with no whitespace. A root-relative path or a `mailto:` value fails the save.
+
+A `datetime` field keeps a quoted string as written. YAML parses an unquoted full ISO timestamp into a `Date`, and the field converts that `Date` to a zoneless `YYYY-MM-DDTHH:mm` string read in UTC. The conversion drops the seconds and the offset.
+
+For every option each builder takes, see the [Fields](../reference/core.md#fields) table in the core reference.
 
 ## Containers
 
 `object` and `array` are the two container builders, and each nests one level: an `object` holds leaf fields, and an `array` holds one leaf or a flat `object` of leaves.
 
-An `object` stores its `fields` as one nested object under its key, each leaf keyed by its frontmatter sub-key. An optional `object` whose leaves are all empty omits its key. The `label` of an `object` is optional. A top-level `object` with no `label` falls back to the humanized key, so `social_card` reads as **Social card**, and an `object` inside an `array` takes its label from the `array`.
+An `object`'s `fields` record holds its leaf fields, keyed by frontmatter sub-key, and the object stores them as one nested object. When an optional `object`'s leaves are all empty, the key is omitted. Without a `label`, a top-level `object` takes its group legend from the humanized key: `social_card` reads as **Social card**. Inside an `array`, the `array`'s label serves.
 
-An `array` stores a list, and every element conforms to its `item` descriptor. An optional empty list omits its key, a required empty list fails the save, and an `array` of `reference` items stores a list of entry ids.
+An `array`'s `item` is the descriptor every element conforms to, and the array stores its value as a list. An optional empty list omits its key, and a required empty list fails the save. An `array` of `reference` items stores a list of entry ids.
 
 Each of the following declarations throws when the adapter module loads:
 
 - An `array` whose item is another `array`
 - An `object` that holds an `object` or an `array`
-- A `reference` inside an `object`, with an error that advises modeling it as the parent's own concept or using a top-level `array` of references
-- A field key with a dot in it, at any level, since the engine addresses a nested field by a dotted path
+- A `reference` inside an `object`, whose error advises a top-level `array` of references or a separate concept for the parent
+- A field key that contains a dot, at the top level or inside a container
 
-The following fieldset declares an `array` of arrays and throws when the module loads:
+The dot rule exists because the engine addresses a nested field by a dotted path.
 
-<!-- snippet-check-skip: throws by design at the defineFieldset call, shown to mark the nesting boundary -->
+The following fieldset declares an `array` whose item is another `array`, and the call throws when the module loads:
+
+<!-- snippet-check-skip: illustrates a declaration that throws by design -->
 ```ts
 import { defineFieldset, fields } from '@glw907/cairn-cms';
 
-// Throws when the module loads: an array's item cannot be another array.
-export const schedule = defineFieldset({
-  slots: fields.array(fields.array(fields.text({ label: 'Time' })), { label: 'Slots' }),
+// Throws when the module loads: an array's item must be a leaf or a flat object.
+const schedule = defineFieldset({
+  sessions: fields.array(fields.array(fields.text({ label: 'Room' })), { label: 'Sessions' }),
 });
 ```
 
-The [`fields`](../reference/core.md#fields-1) entry in the reference shows a working container declaration. The fieldset's rules meet an editor's values at the save.
+For more information, see the [`fields`](../reference/core.md#fields-1) entry in the core reference.
 
 ## Save-time validation
 
-An admin save runs the concept's validator on the submitted values before any commit, and an invalid save stops there: the editor sees the first failing message in one banner, and nothing reaches the repository. Declaration-time refusals come earlier, when the adapter module loads, and a malformed `pattern` or a container nested too deep never reaches a save. Cross-field checks and per-field behavior hooks are part of the declaration, and [Define an adapter and schema](define-an-adapter-and-schema.md) covers them. Some of the keys a fieldset declares matter to the engine as well as to the form.
+Declaration-time errors, such as a malformed `pattern` or a container nested too deep, surface when the adapter module loads. A value that breaks a declared rule passes declaration, and the save refuses it.
+
+An admin save runs the concept's validator on the submitted values before any commit. An invalid save stops there: the editor sees the first failing message in one banner, and nothing is committed. A save writes the entry's frontmatter from the validator's output alone. A key the fieldset does not declare is therefore dropped from the file at its first admin save.
+
+The validator also runs when the site builds its content indexes. Unless the site turns that check off with `validate: false`, a non-draft entry whose frontmatter fails the validator fails the build. That check catches a file edited outside the admin.
+
+[Define an adapter and schema](define-an-adapter-and-schema.md) covers cross-field checks and per-field validation hooks, including what happens when a hook throws.
 
 ## Frontmatter keys the engine reads
 
-The engine reads five frontmatter keys by literal name, and a site that wants one of them to survive an admin save declares it as a field.
+The engine reads several frontmatter keys by literal name, and a site that wants one of them to survive an admin save declares it as a field.
 
-Each of the five keys feeds an engine behavior:
+The engine uses the following keys:
 
-- `title` is the entry's title, and the engine falls back to the id when it is absent.
-- `date` is the entry's date, which dated permalinks and templates use.
-- `updated` sets the sitemap's `lastmod` and the feed's modified date.
+- `title` is the entry's title, and an entry without one falls back to its id.
+- `date` is the entry's date, which a dated permalink's tokens resolve from.
+- `updated` sets the sitemap's `lastmod` and the modified time in the entry page's SEO head. Only a JSON Feed item carries it, as `date_modified`, and only when the site's feed route passes it. The scaffold's feed doesn't pass it, and the RSS feed never carries it.
 - `description` is the entry's excerpt.
-- `draft`, declared as a boolean field, is what the edit page renders as its **Hidden** toggle.
+- `draft` set to `true` keeps the entry out of a concept index's default listings and out of the sitemap. A boolean field named `draft` is the edit page's **Hidden** toggle.
+- `description`, `image`, `robots`, and `author` are the SEO head fields the public route factory reads, each as a non-empty string. An undeclared `image`, `robots`, or `author` never reaches the head. An undeclared `description` still becomes the entry's excerpt, which the head uses, until an admin save drops the key.
 
-An entry's date is the one part of its identity that comes from frontmatter rather than from its filename.
+Of the facts that identify an entry, only its date comes from frontmatter rather than from its filename.
 
 ## Entry identity
 
-An entry's id is its markdown filename without `.md`, and the file sits directly in the concept's `dir` at `${dir}/${id}.md`. The engine uses `dir` verbatim and never validates it, so the declaration must give a repo-relative path with no leading or trailing slash. Entries never sit in subfolders. A dated concept's filename also carries a leading date, and the URL slug strips only that prefix.
+An entry's id is its markdown filename without `.md`, and the file sits directly in the concept's `dir` at `${dir}/${id}.md`. The engine uses `dir` verbatim and never validates it. A `dir` must be repo-relative, with no leading or trailing slash. Entries sit directly in it, never in subfolders.
 
-For example, one post on a scaffolded site resolves as follows:
+In a dated concept, the filename also carries a leading date, and the URL slug strips only that prefix. The following example shows one dated entry's file, id, and slug:
 
 - The file is `2026-08-14-my-post.md` in the posts concept's `dir`.
 - The id is `2026-08-14-my-post`.
 - The slug is `my-post`.
 
-The filename's date prefix feeds only the slug. The entry's date always comes from its `date` field, so a dated permalink makes `date` structurally required. Define an adapter and schema covers date-prefix granularity and the permalink tokens.
+The filename's date prefix affects only the slug, which drops it. The entry's date comes from its `date` field. A dated permalink resolves its date tokens from that field, which makes `date` required.
 
-Entry ids are lowercase ASCII letters, digits, and single hyphens. When the create action derives an id from a title, a title in a non-Latin script yields an empty id, which the action refuses. An accented letter becomes a separator rather than a transliteration: `résumé` becomes `r-sum`. The concept's routing decides what the public site does with the slug.
+When an editor creates an entry in the admin, the date picked in the create dialog sets both the filename prefix, cut to the concept's `datePrefix`, and the entry's `date` field. The two start out agreeing to the prefix's granularity. Neither a save nor a rename changes the prefix afterward. A later edit to the `date` field can leave the two different.
+
+Ids are lowercase ASCII letters, digits, and single hyphens. When `slugify` derives an id from a title, a title in a non-Latin script produces an empty id. The create action refuses an empty id. An accented letter becomes a separator rather than a transliteration: `résumé` becomes `r-sum`.
+
+For date-prefix granularity and the permalink tokens, see [Define an adapter and schema](define-an-adapter-and-schema.md).
 
 ## Routing
 
-A concept's `routing` shorthand decides whether its entries get public pages and whether they are dated, and `'page'` is the default when a concept omits it.
+A concept's `routing` shorthand decides whether its entries get public pages and whether they are dated. The shorthand is `'page'`, `'feed'`, or `'embedded'`, and a concept that omits it gets `'page'`.
 
-The following table sets out what each shorthand turns on or off and the content it suits:
+The following table sets out what each shorthand does and the content it suits:
 
-| Shorthand | What it turns on or off | What it suits |
+| Shorthand | Effect on each entry | What it suits |
 | --- | --- | --- |
-| `'page'` | Routable and undated, with each entry in the sitemap | Standalone pages |
-| `'feed'` | Routable and dated, with entries in feeds, an archive, and the sitemap | Dated, chronological content |
-| `'embedded'` | Not routable, with no permalink, and never listed or prerendered | A reference-only concept such as `authors` |
+| `'page'` | A routable, undated permalink and a sitemap entry | Standalone pages |
+| `'feed'` | A routable permalink that may use the date tokens, in an index sorted newest first | Chronological content |
+| `'embedded'` | No public page and no sitemap entry | A concept whose entries only other entries read, such as fragments |
 
-An `'embedded'` concept still has its directory, its fields, and its admin list and edit page. The [`defineConcept`](../reference/core.md#defineconcept) entry gives the default permalink for each concept. A routable entry's permalink can match another entry's.
+Which entries reach an RSS or JSON feed is up to the site's feed route. The engine serializes whatever items the site's feed route passes it.
+
+An `'embedded'` concept keeps a directory, fields, and an admin list and editor. The admin labels its entries' identifier **Name** rather than **Address**, and its editor offers **Rename** rather than **Change URL**.
+
+For more information, see [`defineConcept`](../reference/core.md#defineconcept).
 
 ## Address collisions
 
-When another published entry already resolves to the same permalink, the edit page shows a warn-only `address-collision` advisory, and a publish rechecks and logs the collision without blocking. The edit page checks only published entries on `main`. The publish recheck also covers every open `cairn/*` holding branch, and when a collision remains, it logs `publish.address_collided` after the publish lands. A check that cannot run lets the save or the publish proceed. The [Log events](../reference/log-events.md) reference lists the fields the `publish.address_collided` record carries. An entry's address is one of the routing facts the content manifest keeps for every entry.
+When another published entry on `main` already resolves to the same permalink, the edit page shows a warn-only `address-collision` advisory. A publish rechecks against `main` and every open `cairn/*` branch, and when a collision remains it logs `publish.address_collided` after the publish lands. Neither check blocks a save or a publish, and both fail open: a check that cannot run lets the save or publish go ahead.
+
+Once both entries are on `main`, neither is a draft, and both concepts are routable, building the site's content indexes throws on the duplicate permalink and fails the build.
+
+For the fields the log record carries, see [Log events](../reference/log-events.md).
 
 ## The content manifest
 
-The files in git stay the source of truth for content, and the committed content manifest summarizes them, one row per entry, so request-time admin code reads the content graph without crawling GitHub entry by entry.
+The committed content manifest holds one row per entry, summarizing the files in git. Admin code reads the content graph from it.
 
-Each row records the following about one entry:
+A row records the following about its entry:
 
-- Its identity
-- Its routing facts
+- Its id, concept, title, date, and permalink
+- Its summary and its draft flag
 - Its outbound `cairn:` links, the internal links its body makes to other entries
-- Its reference-field edges
-- Its tags
-- Its included fragments
+- Its media refs, reference-field edges, tags, included fragments, and first-publish stamp, when it has them
 
-A `reference` field holds a typed `{ concept, id }` pointer, and the manifest carries both sides of that edge. The engine uses those edges to know what still points at an entry. It refuses a delete while any entry references it, and a rename repoints every published reference to the new id.
+A save to the entry's holding branch commits no manifest change. A publish patches the entry's row in the same commit as the content change. When a build or the dev server starts, the `cairnManifest` Vite plugin rebuilds the manifest from the files. A committed file that has drifted fails the build. The `cairn-manifest` command writes a regenerated file, and the scaffold runs it as the `cairn:manifest` script.
 
-A build regenerates and verifies the manifest. A publish, not a save, patches the changed entry's row in the same commit as the content change. The manifest's format and verify functions are in [Content and manifest](../reference/core.md#content-and-manifest) in the reference. Inbound links matter most when an entry changes its id.
+A `reference` field holds a typed `{ concept, id }` pointer. The manifest records each entry's outbound reference edges. From those edges, the engine finds which entries point at a given entry.
+
+For the manifest's format and functions, see [Content and manifest](../reference/core.md#content-and-manifest) in the core reference. For reference fields in use, see [Link content with references](link-content-with-references.md).
 
 ## Renames
 
-A rename moves the entry's file to a new id, which changes its slug, and rewrites every inbound `cairn:` token in the same atomic commit on `main`. The engine refuses a rename with a 409 when the new id collides with an existing entry, while the entry has pending edits, while another editor's open branch holds a reference to it, or when it can't build the reference index. In the same commit, the rename repoints every published reference field that points at the entry. [Link content with references](link-content-with-references.md) covers reference fields in use.
+A rename gives the entry a new slug in one atomic commit on `main`. The commit moves the file to the new id and rewrites the inbound `cairn:` tokens that `main`'s committed manifest records. The same commit repoints the published reference fields that point at the entry. In a dated concept, the rename keeps the filename's date prefix and swaps only the slug.
 
-A concept's form, its save-time checks, the type of its entries, their public addresses, and their manifest rows all come from its one declaration in the adapter.
+The engine refuses a rename with a 409 in any of the following cases:
+
+- The new id collides with an existing entry.
+- The entry has unpublished edits.
+- Another editor's open branch holds a reference to the entry.
+- The engine can't build the reference index.
 
 ## Related resources
 
-The following guides put the model to work.
+The following guides put the model to work:
 
-- [Define an adapter and schema](define-an-adapter-and-schema.md): writing the declaration
-- [Link content with references](link-content-with-references.md): reference fields in use
-- [Reuse content across entries](reuse-content-across-entries.md): fragments
+- [Define an adapter and schema](define-an-adapter-and-schema.md): writing the adapter and a concept's declaration
+- [Link content with references](link-content-with-references.md): reference fields and internal links in use
+- [Reuse content across entries](reuse-content-across-entries.md): fragments and the include directive
 - [Configure rendering](configure-rendering.md): rendering an entry's body
 
-The following pages place the content model in the wider system.
+The following pages place the content model in the wider system:
 
-- [Architecture](architecture.md): the content map among the adapter's seams
-- [Scaffolded site files](scaffolded-site-files.md): where the adapter and the content directories sit on a scaffolded site
+- [Architecture](architecture.md): the adapter and its seams
+- [Scaffolded site files](scaffolded-site-files.md): the files a scaffolded site starts with
 
-The following external pages document the platform behavior the model builds on.
+The following external pages document the platform behavior the model builds on:
 
-- [Everyday Types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html) in the TypeScript handbook: literal types and inference
-- [RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp) on MDN: regular expressions in JavaScript
-- [The Input element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input) on MDN: the attributes of an input element
-- [Timestamp Language-Independent Type](https://yaml.org/type/timestamp.html) in the YAML type repository: how YAML parses an unquoted timestamp
+- [Everyday Types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html) in the TypeScript handbook
+- [RegExp](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp) on MDN
+- [The HTML pattern attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/pattern) on MDN
+- [Timestamp Language-Independent Type](https://yaml.org/type/timestamp.html) in the YAML type repository

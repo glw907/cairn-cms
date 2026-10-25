@@ -298,3 +298,18 @@ pages:
             the-github-apps-reach: sha256:200c3cf62bbe3065d524f3085a804a61c25c06edd56d3a48918c7ec0c89f5ac2
             the-session-cookie: sha256:d9f8d0714bfd58568009594abce2173ffa8e1744fe5e8999dbea4e7953ac45d3
             the-site-s-responsibilities: sha256:63d46429aff481f60cd7c77ca436aeb17af943e37efb6e7453b400bec73bf2e3
+    docs/extend/theme-your-public-site.md:
+        page: 6b8b24eabcb399a01af8f6b66d6400a041cb6cec
+        blueprint: 9ca7054577cb45dc6dbe31df535dce1e1c651b47
+        sections:
+            _intro: sha256:c3c495e56daa5114a1f37f73178428d17795988bc825aa0d980f25384ec8a0f5
+            before-you-begin: sha256:edf6fb9c07e53d28e445260cffd91700be66a1efc0bfceaec3e30c515bb801fa
+            iterate-locally: sha256:eba92c131e2421944a39bd5c48378afb4a6c3eea7a6fbaaeaa73b61c4534fd4f
+            port-your-theme-onto-the-chassis: sha256:ccc4876673bf05e035399bd9ac8c3d755d748859c8a1aa0595ad057130c1355e
+            re-skin-waymark: sha256:fcaa34c9232cf0dd37a10ca0b493d91ed613cf5402d70786302c049f6ea2a56d
+            rebrand-the-status-colors: sha256:49ba05dc55d4558c55ed66b36b128a82ad2b9301a132222d5fd86839f9f3df93
+            resolve-an-audit-finding: sha256:702f327f17e2e82b2f433ecf6d831d80d761bfc747505809fb93c9efdcaa9eb3
+            see-also: sha256:9d3acbfa22dc666cca9da74a22d2e0044cd93cc2524e0e029afd8bc978ac5df6
+            style-rendered-markdown: sha256:73179cdced389a87e247fd5683287ead32228636e99d2e5967ed2f194841c26b
+            theme-a-hand-built-site: sha256:53666b1b2a23f57f0be322f80d3765fba53681eafa877136d2b71bd088b09c44
+            verify-the-theme: sha256:6b6eb275f4db1ee4ea686aa57ca9cd08e012b5e7530968daa81b45e3df1d807e

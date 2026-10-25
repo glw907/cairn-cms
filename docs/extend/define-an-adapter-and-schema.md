@@ -283,7 +283,7 @@ The declaration is sound when `npm run check` and `npm run build` pass and the n
 
 1. In a terminal at the site's root, run `npm run check`.
 
-   On a scaffolded site the script runs `svelte-kit sync` and then `svelte-check`, which typechecks the code that reads the declared fields. An optional field left empty is absent from the saved frontmatter, and its inferred type is optional. Under the scaffold's strict settings, code that reads such a key without checking that it is set fails this check.
+   On a scaffolded site the script runs `svelte-kit sync` and then `svelte-check`, which typechecks the code that reads the declared fields. An optional field left empty is absent from the saved frontmatter, and its inferred type is optional. Under the scaffold's strict settings, code that uses such a key's value where a defined value is required, without checking that it is set, fails this check.
 
 2. In the output, confirm that `npm run check` reports no errors.
 3. In the same terminal, run `npm run build`.
@@ -302,7 +302,7 @@ If a check fails, find its symptom in [Resolve a failed check](#resolve-a-failed
 
 ## Resolve a failed check
 
-Each failure in the following list traces to one registration or one rule in the declaration. Under each failure, the list gives its cause and its fix:
+Each failure in the following list traces to a registration or a rule in the declaration. Under each failure, the list gives its cause and its fix:
 
 - The build throws `expected input to be a string or buffer`.
 
@@ -333,7 +333,7 @@ Each failure in the following list traces to one registration or one rule in the
 
 - After `npx cairn-manifest`, `index.json` holds no row for the new concept's entries.
 
-  The concept is missing from the `cairnManifest` plugin's `content` option, or the concept's entries fail the fieldset's validation, since the manifest skips an entry that fails it. To add a missing concept to the plugin, follow these steps:
+  The concept is missing from the `cairnManifest` plugin's `content` option, its pattern there matches none of its files, or the concept's entries fail the fieldset's validation, since the manifest skips an entry that fails it. To add a missing concept to the plugin, follow these steps:
 
   1. In the Vite config, add the concept's id and pattern to the plugin's `content` option.
   2. In a terminal at the site's root, run `npx cairn-manifest` again.
@@ -348,7 +348,7 @@ Each failure in the following list traces to one registration or one rule in the
 
   The field's `behavior.validate` threw, and the engine counted the field as valid. See [`content.field_behavior_failed`](debug-your-site.md#contentfield_behavior_failed).
 
-- A save fails with a server error, or the build fails with the error that `refine` threw.
+- A save fails with a server error whose cause is the error that `refine` threw, or the build fails with that error.
 
   The fieldset's `refine` function threw. Change `refine` to return an error map for the case it threw on.
 

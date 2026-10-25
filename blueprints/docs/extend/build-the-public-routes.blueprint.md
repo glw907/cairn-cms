@@ -59,7 +59,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - A SvelteKit app that builds with `@sveltejs/adapter-cloudflare`. :fact[j0ut9n]
 - See [Deploy a bare SvelteKit site](add-cairn-to-a-sveltekit-app.md#deploy-a-bare-sveltekit-site).
 - For hero images, a media resolver. Without one, an entry gets no `heroImage`. :fact[83gbov]
-- See [Resolve media on public pages](configure-media.md#resolve-media-on-public-pages).
+- See [`createMediaResolver`](../reference/media.md#createmediaresolver).
 
 ## Lay out the route files
 

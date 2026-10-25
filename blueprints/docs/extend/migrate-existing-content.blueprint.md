@@ -50,7 +50,7 @@ One sentence warns a Hugo reader that `parseMarkdown` reads only YAML between `-
 - See [Frontmatter keys the engine reads](content-model.md#frontmatter-keys-the-engine-reads).
 - Each concept's glob passed to `createSiteIndexes` and listed in the `cairnManifest` plugin's `content` option. A scaffolded site calls `createSiteIndexes` in `src/chassis/content.ts`. :fact[pdgkex] :fact[n0laoh] :fact[k8vd2e]
 - If the old bodies use shortcodes, a registered component for each one. :fact[tg9e0z]
-- See [Register the component](configure-rendering.md#register-the-component).
+- See [Register the component](write-a-markdown-component.md#register-the-component).
 - The old site's markdown files copied into a directory of the project outside `src/content`, such as `old-content/posts`.
 
 ## Write the migration script
@@ -258,7 +258,7 @@ for (const filename of await readdir(FROM)) {
 - Old bodies carry the old site's block syntax, such as Hugo's `{{< note >}}` or a Jekyll `{% include %}`.
 - In the script's `toBody`, rewrite each shortcode as a container directive that names its registered component. :fact[tg9e0z]
 - The script's one rule turns `{{< note >}}` into `:::note`.
-- See [Register the component](configure-rendering.md#register-the-component).
+- See [Register the component](write-a-markdown-component.md#register-the-component).
 
 ## Run the build as the migration check
 
@@ -326,7 +326,7 @@ cairn: 1 invalid frontmatter field(s):
 6. If an entry is missing from the site while the build passes, check whether it's an invalid draft or `validate: false` is still set. See [Verify the migrated entries](#verify-the-migrated-entries). :fact[kv3qen]
 7. If a `cairn:` link to a migrated entry finds no target, check the entry's stem against the id shape. See [Reduce each stem to the id shape](#reduce-each-stem-to-the-id-shape). :fact[nhjraz]
 8. If a shortcode renders as literal text, rewrite it as a container directive. See [Replace shortcodes with components](#replace-shortcodes-with-components). :fact[tg9e0z]
-- For render failures, see the rendering checks in [Configure rendering](configure-rendering.md#diagnose-a-failed-check).
+- For render failures, see the rendering checks in [Write a markdown component](write-a-markdown-component.md#diagnose-a-failed-check).
 - For the engine's structured log records, see [Debug your site](debug-your-site.md).
 
 ## See also
@@ -336,7 +336,7 @@ cairn: 1 invalid frontmatter field(s):
 - The following pages cover the concepts, rendering, media, and routes this migration depends on:
 - See [Define an adapter and schema](define-an-adapter-and-schema.md).
 - See [Content model](content-model.md).
-- See [Configure rendering](configure-rendering.md).
+- See [Write a markdown component](write-a-markdown-component.md).
 - See [Configure media](configure-media.md).
 - See [Link content with references](link-content-with-references.md).
 - See [Build the public routes](build-the-public-routes.md).

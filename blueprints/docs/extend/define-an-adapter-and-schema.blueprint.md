@@ -360,7 +360,7 @@ faq: fields.array(
 - See [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions).
 - The following pages cover the model and the adapter's other groups:
 - See [Content model](content-model.md).
-- See [Configure rendering](configure-rendering.md).
+- See [Write a markdown component](write-a-markdown-component.md).
 - See [Link content with references](link-content-with-references.md).
 - See [Restrict admin access](restrict-admin-access.md).
 - See [Configure media](configure-media.md).

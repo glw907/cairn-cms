@@ -302,7 +302,7 @@ sections:
         target: content-model.md
       - id: se-link-render
         kind: link
-        target: configure-rendering.md
+        target: write-a-markdown-component.md
       - id: se-link-access
         kind: link
         target: restrict-admin-access.md

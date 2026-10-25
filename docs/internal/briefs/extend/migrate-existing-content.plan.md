@@ -19,7 +19,7 @@ introduction", and "Structure" in `docs/internal/docs-register.md`; every fact b
 ("Add the first entry", "Index the content and commit its manifest", "Resolve a content build
 failure"), `docs/extend/define-an-adapter-and-schema.md` ("Add a concept", "Set the permalink and date
 prefix", "Mark the tag field"), `docs/extend/content-model.md` ("Frontmatter keys the engine reads",
-"Entry identity"), `docs/extend/configure-rendering.md` ("Declare a component", "Register the
+"Entry identity"), `docs/extend/write-a-markdown-component.md` ("Declare a component", "Register the
 component", "Diagnose a failed check"), `docs/extend/configure-media.md`, and
 `docs/extend/link-content-with-references.md` ("`cairn:` body links and reference fields"),
 `docs/extend/build-the-public-routes.md` ("Build one typed index", "Diagnose a failed build"; read in
@@ -102,7 +102,7 @@ needs it and again in See also:
 
 - `content-model` ("The id and date rules the migration satisfies"): "Name each file by its id" and
   See also, at `docs/extend/content-model.md#entry-identity`.
-- `configure-rendering` ("Replacing old shortcodes with components"): "Replace shortcodes with
+- `write-a-markdown-component` ("Replacing old shortcodes with components"): "Replace shortcodes with
   components", "Diagnose a failed check", and See also.
 - `build-the-public-routes` ("The build validation that checks migrated frontmatter"): "Run the build
   as the migration check" links `docs/extend/build-the-public-routes.md#build-one-typed-index` where
@@ -169,7 +169,7 @@ or three paragraphs. The intro-framing step reasons the final wording. Content i
    each kind of old content.
 4. **What the page does not cover, with the page that does (wrong-place routing).** Declaring the
    target concepts and their fields: `docs/extend/define-an-adapter-and-schema.md`. Declaring and
-   registering the components that replace shortcodes: `docs/extend/configure-rendering.md`. Setting up
+   registering the components that replace shortcodes: `docs/extend/write-a-markdown-component.md`. Setting up
    media: `docs/extend/configure-media.md`. Rewriting the old site's internal links as `cairn:` links:
    `docs/extend/link-content-with-references.md#cairn-body-links-and-reference-fields`. Redirects from
    the old site's addresses: name it in words as left out, with no link and no claim about how a site
@@ -204,8 +204,8 @@ A bulleted list of preconditions, each with a link to what produces it (anatomy 
 - The site's content indexed with `createSiteIndexes` and checked by the `cairnManifest` plugin. Link
   `docs/extend/add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest`.
 - If the old bodies use shortcodes, each replacement component declared and registered. Link
-  `docs/extend/configure-rendering.md#declare-a-component` and
-  `docs/extend/configure-rendering.md#register-the-component`.
+  `docs/extend/write-a-markdown-component.md#declare-a-component` and
+  `docs/extend/write-a-markdown-component.md#register-the-component`.
 - The old site's markdown files copied into a directory of the project outside `src/content`, such as
   `old-content/posts`.
 
@@ -526,7 +526,7 @@ The pair:
   literal source text (`f:tg9e0z`).
 - What to do, one step as a single bulleted item: in the script's `toBody`, rewrite each shortcode as
   a container directive naming its registered component, as the script rewrites `{{< note >}}` to
-  `:::note`. Link `docs/extend/configure-rendering.md#register-the-component` for the registration,
+  `:::note`. Link `docs/extend/write-a-markdown-component.md#register-the-component` for the registration,
   and do not teach it.
 
 **Hand-off (no-claim):** "With every part converted, run the script and let the build check the
@@ -637,7 +637,7 @@ the section by heading:
    "Reduce each stem to the id shape".
 6. A shortcode renders as text: it was rewritten as a leaf or text directive, not a container
    (`f:tg9e0z`); "Replace shortcodes with components". For a component that still fails, link
-   `docs/extend/configure-rendering.md#diagnose-a-failed-check`.
+   `docs/extend/write-a-markdown-component.md#diagnose-a-failed-check`.
 
 The recovery row for the build's invalid-field list lives on
 `docs/extend/build-the-public-routes.md#diagnose-a-failed-build`, so item 3 points there and keeps
@@ -659,7 +659,7 @@ this page links to:" (no-claim), then a bulleted list, each item's link text nam
 
 - `docs/extend/define-an-adapter-and-schema.md`, declaring the target concepts and their fields.
 - `docs/extend/content-model.md#entry-identity`, how the id, the slug, and the entry's date relate.
-- `docs/extend/configure-rendering.md#register-the-component`, registering a shortcode's replacement.
+- `docs/extend/write-a-markdown-component.md#register-the-component`, registering a shortcode's replacement.
 - `docs/extend/configure-media.md`, turning media on before moving images into the Library.
 - `docs/extend/link-content-with-references.md#cairn-body-links-and-reference-fields`, linking
   migrated entries with `cairn:` links.
@@ -704,7 +704,7 @@ and named where it lands.
 The page-inputs claim inventory carried twenty rows, disposed as it recorded them: the absent prior
 page (no claims, cut as a placeholder), and one row per fact id above, each carried in the section
 the table names. Three placements differ from the inventory's section labels: the inventory's "Old body
-markup (registration itself links to configure-rendering)" is the page's "Convert the body markup",
+markup (registration itself links to write-a-markdown-component)" is the page's "Convert the body markup",
 with `f:tg9e0z` under its H3 "Replace shortcodes with components"; the inventory's "Frontmatter traps"
 and "Frontmatter that must change" are the page's merged "Convert the frontmatter", with each fact under
 the H3 the table names; and `f:q07rd5`'s "Any sentence naming the adapter file" lands in Before you

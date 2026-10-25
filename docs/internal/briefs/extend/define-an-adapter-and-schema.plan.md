@@ -63,7 +63,7 @@ Each section holds what the next one depends on.
    in the sections that follow.
 4. **Set the backend identity and the email sender** (cover 7) moves up from seventh place. It
    completes the required groups the previous section named (the third, `rendering`, belongs to
-   configure-rendering), and it is short and content-free, so placing it here lets the concept work
+   write-a-markdown-component), and it is short and content-free, so placing it here lets the concept work
    that follows run without interruption from declaration through options. In the outline's place,
    it would split the field-check sections from the tag section for no dependency. Its values need a
    registered GitHub App and Email Sending onboarding, which a reader who came to add a concept may
@@ -170,10 +170,10 @@ final wording. Content items, in order:
 4. **What the page does not cover, with the page that does.** What routing and identity mean (name
    content-model as their home, with no second link; item 3 carries it). Reference fields:
    `docs/extend/link-content-with-references.md`.
-   The `rendering` group: `docs/extend/configure-rendering.md`. Roles and the access map:
+   The `rendering` group: `docs/extend/write-a-markdown-component.md`. Roles and the access map:
    `docs/extend/restrict-admin-access.md`. `navLayout`: `docs/extend/arrange-the-admin-sidebar.md`.
    The `media` group: `docs/extend/configure-media.md`. Link the pages not yet on disk
-   (`link-content-with-references`, `configure-rendering`) the way `docs/extend/content-model.md`
+   (`link-content-with-references`, `write-a-markdown-component`) the way `docs/extend/content-model.md`
    already does.
 
 ## Sections, in order
@@ -224,7 +224,7 @@ Content:
   (configure-media), `roles` and `access` (restrict-admin-access), `aiPosture`
   (`docs/extend/choose-an-ai-posture.md`), and `editor` ("Set the concept and editor options" for
   `supportContact`; arrange-the-admin-sidebar for `navLayout`). `rendering`'s contents go to
-  configure-rendering; say no more about it.
+  write-a-markdown-component; say no more about it.
 - The file tree (Django take), scaffold first: `src/theme/cairn.config.ts`, `src/chassis/content.ts`,
   and `vite.config.ts` (`f:n5d65u`). One sentence for the tutorial site: its adapter is
   `src/lib/cairn.config.ts` and its content module `src/lib/content.ts`, beside the same
@@ -577,12 +577,12 @@ this page links to:" (no-claim), then a bulleted list, each item's link text nam
   (the next step after declaring a concept; not on disk yet, linked as content-model links its
   unwritten pages).
 - `docs/extend/link-content-with-references.md`, reference fields.
-- `docs/extend/configure-rendering.md`, the `rendering` group (not on disk yet; linked the same way).
+- `docs/extend/write-a-markdown-component.md`, the `rendering` group (not on disk yet; linked the same way).
 - `docs/extend/configure-media.md`, the `media` group.
 - `docs/extend/restrict-admin-access.md`, roles and the access map.
 - `docs/extend/arrange-the-admin-sidebar.md`, the `editor` group's `navLayout`.
 
-See also carries every cross-link the outline draws from this page: `configure-rendering`,
+See also carries every cross-link the outline draws from this page: `write-a-markdown-component`,
 `restrict-admin-access`, `arrange-the-admin-sidebar`, and `build-the-public-routes`.
 
 ## Dispositions, every fact id

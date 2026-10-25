@@ -28,7 +28,7 @@ It then lists the subjects in body order, the prior knowledge above, and what th
 - Define an adapter and schema covers writing the adapter and a concept's declaration, including permalinks, `datePrefix`, tags, `refine`, and `behavior.validate`.
 - Link content with references covers reference fields and internal links between entries in use.
 - Reuse content across entries covers fragments and the include directive.
-- Configure rendering covers rendering an entry's body.
+- Write a markdown component covers rendering an entry's body.
 :::
 
 :::constraints
@@ -232,7 +232,7 @@ const schedule = defineFieldset({
 - See [Define an adapter and schema](define-an-adapter-and-schema.md).
 - See [Link content with references](link-content-with-references.md).
 - See [Reuse content across entries](reuse-content-across-entries.md).
-- See [Configure rendering](configure-rendering.md).
+- See [Write a markdown component](write-a-markdown-component.md).
 - The following pages place the content model in the wider system:
 - See [Architecture](architecture.md).
 - See [Scaffolded site files](scaffolded-site-files.md).

@@ -23,7 +23,7 @@ mount it from the root layout, and check the result on the public page.
 
 The steps assume familiarity with Svelte runes, SvelteKit layouts, server load functions,
 `afterNavigate`, and dynamic imports. Declaring the component, its attributes, and the
-`build()` output that becomes its fallback belongs to [Configure rendering](configure-rendering.md),
+`build()` output that becomes its fallback belongs to [Write a markdown component](write-a-markdown-component.md),
 and a component that only renders markup needs that page alone. A widget in a route or layout the
 site writes in Svelte needs no island, because SvelteKit already hydrates those pages.
 
@@ -34,10 +34,10 @@ adapter file of the site you are changing. Each of the following must be in plac
 step:
 
 - A markdown component in the component registry the adapter passes as `rendering.components`.
-  [Configure rendering](configure-rendering.md) declares one, and its `build()` output becomes the
+  [Write a markdown component](write-a-markdown-component.md) declares one, and its `build()` output becomes the
   fallback.
 - An entry whose body uses the component's directive, written as
-  [Configure rendering](configure-rendering.md) describes. This page's example uses a `converter`
+  [Write a markdown component](write-a-markdown-component.md) describes. This page's example uses a `converter`
   directive.
 - The adapter module at `src/theme/cairn.config.ts` on a scaffolded site, or at
   `src/lib/cairn.config.ts` on the add-cairn tutorial's site.
@@ -281,7 +281,7 @@ Work through the following checks in order:
 
 The following pages cover the pieces this page links to:
 
-- [Configure rendering](configure-rendering.md) declares the component, its attributes, and its
+- [Write a markdown component](write-a-markdown-component.md) declares the component, its attributes, and its
   `build()` fallback.
 - [Islands](../reference/islands.md) documents the runtime, the boundary contract, and the props
   trust boundary.

@@ -147,7 +147,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
   'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
   'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
-  'file-path:src/lib/markdown-components.ts', // docs/extend/configure-rendering.md's component module on the tutorial's site, a file the reader creates
+  'file-path:src/lib/markdown-components.ts', // docs/extend/write-a-markdown-component.md's component module on the tutorial's site, a file the reader creates
   'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`

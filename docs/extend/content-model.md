@@ -36,7 +36,7 @@ The following subjects are documented on other pages:
 - Writing the adapter and a concept's declaration, including permalinks, date prefixes, tags, and custom validation hooks, in [Define an adapter and schema](define-an-adapter-and-schema.md)
 - Using reference fields and internal links between entries, in [Link content with references](link-content-with-references.md)
 - Fragments and the include directive, in [Reuse content across entries](reuse-content-across-entries.md)
-- Rendering an entry's body, in [Configure rendering](configure-rendering.md)
+- Rendering an entry's body, in [Write a markdown component](write-a-markdown-component.md)
 
 ## Concepts
 
@@ -252,7 +252,7 @@ The following guides put the model to work:
 - [Define an adapter and schema](define-an-adapter-and-schema.md): writing the adapter and a concept's declaration
 - [Link content with references](link-content-with-references.md): reference fields and internal links in use
 - [Reuse content across entries](reuse-content-across-entries.md): fragments and the include directive
-- [Configure rendering](configure-rendering.md): rendering an entry's body
+- [Write a markdown component](write-a-markdown-component.md): rendering an entry's body
 
 The following pages place the content model in the wider system:
 

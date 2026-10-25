@@ -212,7 +212,7 @@ No heading. Eight paragraphs, reader-first, no imperative opening and no "the pa
 5. Defaults are floors: the `identity` option, and the auth channel; prior knowledge sentence (SvelteKit hooks, form actions, cookie attributes).
 6. Four-item list of the built-in defense groups.
 7. One sentence on what follows (seam surfaces, then site responsibilities).
-8. Out-of-scope routing: restrict-admin-access, replace-magic-links, add-a-second-sign-in-group, configure-rendering, rotate-the-github-app-key; sanitize-floor history out of scope.
+8. Out-of-scope routing: restrict-admin-access, replace-magic-links, add-a-second-sign-in-group, write-a-markdown-component, rotate-the-github-app-key; sanitize-floor history out of scope.
 
 The earlier owner ruling "land as written" (2026-09-30) for paragraphs 1-2 no longer applies; those paragraphs were rewritten.
 
@@ -672,7 +672,7 @@ The anatomy's ending, grouped as the register asks, not more than 3 to 5 links a
 - **How-to guides** (five): `docs/extend/restrict-admin-access.md` (the access map),
   `docs/extend/replace-magic-links-with-cloudflare-access.md` (an identity gate),
   `docs/extend/add-a-second-sign-in-group.md` (an auth channel),
-  `docs/extend/configure-rendering.md` (the renderer's options),
+  `docs/extend/write-a-markdown-component.md` (the renderer's options),
   `docs/extend/rotate-the-github-app-key.md` (the App's private key).
 - **Concepts** (one): `docs/extend/architecture.md` (how the engine's parts and seams fit
   together). Migration notes left this group on the third structural read's advisory:

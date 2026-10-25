@@ -249,7 +249,7 @@ hand-offs, and the structural edit asked for them back as closing sentences.
   - The `content` map: a `ConceptConfig` with a `fieldset` for each concept (`f:i87sd3`);
     `docs/extend/content-model.md`.
   - `render`: a renderer built with `createRenderer` (`f:i87sd3`);
-    `docs/extend/configure-rendering.md`.
+    `docs/extend/write-a-markdown-component.md`.
   - Roles and the access map: a role vocabulary in which each role name the site defines maps to
     one of the engine's three capabilities, `none`, `editor`, or `owner`, and an access map over
     those names that only narrows what a capability already permits (`f:3pposq` for the

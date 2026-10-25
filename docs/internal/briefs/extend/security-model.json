@@ -123,7 +123,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Building an auth channel belongs to [Add a second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Configure rendering](configure-rendering.md), and the App's private key to [Rotate the GitHub App key](rotate-the-github-app-key.md).",
+      "text": "Building an auth channel belongs to [Add a second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Write a markdown component](write-a-markdown-component.md), and the App's private key to [Rotate the GitHub App key](rotate-the-github-app-key.md).",
       "id": "no-claim"
     },
     {
@@ -1045,7 +1045,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md), for the renderer's options.",
+      "text": "[Write a markdown component](write-a-markdown-component.md), for the renderer's options.",
       "id": "no-claim"
     },
     {

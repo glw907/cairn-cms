@@ -73,13 +73,13 @@ Visitors are welcome to tour the space.
 
 The posts and pages concepts a scaffolded site starts with are declarations like this one in its adapter. Neither name is reserved, and a site may rename them, remove them, or declare other concepts beside them. Some scaffold code reads a concept by its id. The scaffold's feed, for example, reads the `posts` concept, and a site that renames a scaffolded concept updates that code too.
 
-Two engine conveniences also key on the literal ids. A concept's default permalink is `/<id>/:slug`, except for the concept with the id `pages`, whose default is `/:slug`. The admin's getting-started checklist looks for entries in `posts` and `pages`.
+Engine conveniences also key on the literal ids. A concept's default permalink is `/<id>/:slug`, except for the concept with the id `pages`, whose default is `/:slug`. The admin's getting-started checklist looks for entries in `posts` and `pages`, and the entry picker lists `pages` entries first and `posts` second.
 
 One concept declaration gives a site the following:
 
 - An admin list and an editor for the concept's entries
 - A form, a save-time validator, and a TypeScript type, each derived from the fieldset
-- A public page for each entry, unless the concept's routing is `'embedded'`
+- A public page for each non-draft entry, unless the concept's routing is `'embedded'`
 - A row for each entry in the committed content manifest
 
 For the full signature, see [`defineConcept`](../reference/core.md#defineconcept).
@@ -99,7 +99,7 @@ The `fields` namespace has fifteen builders, in two groups:
 
 ## Field options
 
-Each builder takes the four base options `label`, `help`, `required`, and `default`. Of the four, `label` is optional only on an `object`.
+Each builder takes the four base options `label`, `help`, `required`, and `default`. Of the four, `label` is optional only on an `object` and an `array`.
 
 The following options behave in ways their names alone do not predict:
 
@@ -169,7 +169,7 @@ The engine uses the following keys:
 - `updated` sets the sitemap's `lastmod` and the modified time in the entry page's SEO head. Only a JSON Feed item carries it, as `date_modified`, and only when the site's feed route passes it. The scaffold's feed doesn't pass it, and the RSS feed never carries it.
 - `description` is the entry's excerpt.
 - `draft` set to `true` keeps the entry out of a concept index's default listings and out of the sitemap. A boolean field named `draft` is the edit page's **Hidden** toggle.
-- `description`, `image`, `robots`, and `author` are the SEO head fields the public route factory reads, each as a non-empty string. A key the fieldset does not declare never reaches the head.
+- `description`, `image`, `robots`, and `author` are the SEO head fields the public route factory reads, each as a non-empty string. An undeclared `image`, `robots`, or `author` never reaches the head. An undeclared `description` still becomes the entry's excerpt, which the head uses, until an admin save drops the key.
 
 An entry's date is the one part of its identity that comes from frontmatter rather than from its filename.
 
@@ -213,7 +213,7 @@ For more information, see [`defineConcept`](../reference/core.md#defineconcept).
 
 When another published entry on `main` already resolves to the same permalink, the edit page shows a warn-only `address-collision` advisory. A publish rechecks against `main` and every open `cairn/*` branch, and when a collision remains it logs `publish.address_collided` after the publish lands. Neither check blocks a save or a publish, and both fail open: a check that cannot run lets the save or publish go ahead.
 
-Once both entries are on `main` and neither is a draft, building the site's content indexes throws on the duplicate permalink and fails the build.
+Once both entries are on `main`, neither is a draft, and both concepts are routable, building the site's content indexes throws on the duplicate permalink and fails the build.
 
 For the fields the log record carries, see [Log events](../reference/log-events.md).
 

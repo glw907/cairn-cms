@@ -1,6 +1,6 @@
 # Arrange the admin sidebar
 
-The admin sidebar is one ordered tree that the admin shell's SvelteKit layout load resolves for every `/admin` page. The tree comes from a `navLayout` on the adapter's `editor` group. When the adapter declares none, the engine builds a flat default of the site's concepts followed by the engine's screens, with Help left to a trailing group. The engine resolves that default through the same functions as a declared layout, and the two cannot disagree on what a role sees.
+The admin sidebar is one ordered tree that the admin shell's SvelteKit layout load resolves for every `/admin` page except the sign-in pages. The tree comes from a `navLayout` on the adapter's `editor` group. When the adapter declares none, the engine builds a flat default of the site's concepts followed by the engine's screens, with Help left to a trailing group. The engine resolves that default through the same functions as a declared layout, and the two cannot disagree on what a role sees.
 
 A custom admin screen renders inside the admin shell with no registration, yet the sidebar lists it only through a site entry in a `navLayout`. Until a layout groups and relabels them, an organization's editors see the engine's screens under the engine's labels and in the engine's order. Declaring a layout loses no screen. A screen the layout leaves out still renders in a trailing group after a divider.
 
@@ -13,7 +13,7 @@ A developer who arranges the sidebar usually wants one of the following:
 
 The steps declare a layout that groups screens into sections, relabels, re-icons, or hides engine screens, and links custom screens. They also narrow a section by role and set which sections start collapsed, then add the two per-request functions, `navFilter` and `attention`. The page also covers how startup validation refuses a malformed tree and how to check the sidebar in the running admin. It assumes familiarity with the SvelteKit routes under `src/routes/admin/`, SvelteKit's request `event`, and the site's adapter module.
 
-`hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map both hides an entry and refuses its route. An action built with `createSectionAction` refuses a non-owner when its `ownerOnly` option is set, but `ownerOnly` on a site entry only hides the link.
+`hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map hides an entry and refuses its route. The engine refuses its own screens' routes, and a site's route refuses once it calls `requireAccess`. An action built with `createSectionAction` refuses a non-owner when its `ownerOnly` option is set, but `ownerOnly` on a site entry only hides the link.
 
 To deny a route rather than hide its link, see [Restrict admin access](restrict-admin-access.md). To build the screen a site entry links to, see [Add a custom admin screen](add-a-custom-admin-screen.md). For the public site's menu and the menu editor that `editor.nav` turns on as the `nav` screen at `/admin/nav`, see [Build the public routes](build-the-public-routes.md).
 
@@ -253,7 +253,7 @@ To check the sidebar, run these checks in order:
 
 A sidebar change can fail in two ways: a tree that validation refuses at server start, or a per-request function that fails the shell load.
 
-When the server module that calls `createCairnAdmin` fails to load with an error that starts `navLayout:`, the declared tree failed validation. The message names the node at fault. Correct that node, then restart the server. The error has one of these triggers:
+When the server module that calls `createCairnAdmin` fails to load with an error that starts `navLayout:`, the declared tree failed validation. The message names the value at fault, except for a blank section label. Correct that value, then restart the server. The error has one of these triggers:
 
 - An icon outside the `NavIcon` allowlist, on a site entry or as an engine reference's override.
 - A site entry `href` that collides with a built-in admin view.

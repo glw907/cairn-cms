@@ -2,7 +2,7 @@
 
 An organization that publishes through cairn's admin often wants each new post announced once, by email to its subscribers or by another message, and never again when an editor later edits it. An editor's publish commits the entry and its row in the content manifest to the default branch, in the committed file `src/content/.cairn/index.json`. The first publish that takes an entry live stamps its row with `publishedAt`, and later saves keep that stamp unchanged.
 
-That publish commit triggers the site's deploy, and the post reaches its public address only through the build the deploy runs. A message that links to the post therefore belongs after the deploy. The engine stamps the row and computes the diff between two manifests, but it sends no announcement and keeps no manifest between deploys. Your site does both in a job that runs after each deploy and diffs the deployed manifest against the one it stored on its previous run. The job sends a message for each post the diff returns and then saves the deployed manifest for the next run.
+When the site deploys each commit to its default branch, that publish commit starts a deploy, and the post reaches its public address only through the build that deploy runs. A message that links to the post therefore belongs after the deploy. The engine stamps the row and computes the diff between two manifests, but it sends no announcement and keeps no manifest between deploys. Your site does both in a job that runs after each deploy and diffs the deployed manifest against the one it stored on its previous run. The job sends a message for each post the diff returns and then saves the deployed manifest for the next run.
 
 The admin offers no publish callback or webhook, and its publish calls no site function after the commit lands. Code meant to follow a publish belongs in that job, or behind a link an editor follows from the publish confirmation. For an editor who should take a next step at the moment of publishing, such as opening a screen to write the announcement, the site adds that link as described in [Add a next-step link after publish](#add-a-next-step-link-after-publish).
 
@@ -14,7 +14,7 @@ The job needs the following:
 
 - A committed content manifest at `src/content/.cairn/index.json`. A scaffolded site already commits one, and a publish commit patches it.
 - A deploy pipeline that can run a step after the deploy, in a checkout of the deployed commit.
-- Node 22.18 or later, which strips the types from a `.ts` file and runs it. An older Node needs a TypeScript runner such as `tsx`.
+- Node 24 or later, the version cairn requires, which strips the types from a `.ts` file and runs it.
 - Storage the job reads and writes between runs. The example keeps one Workers KV value, read and written through the Cloudflare REST API with an API token. [Workers KV values in the Cloudflare API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/subresources/values/methods/get/) documents both calls.
 - Code that sends one message for one entry, through your provider.
 
@@ -113,7 +113,7 @@ To trade a repeated message for a missed one, follow this step:
 
 - If a missed message costs less than a repeated one, in `main`, move the last `savePriorManifest(raw)` call above the send loop.
 
-In either order, a run that fails exits with a failing status, and the pipeline reports the failure.
+In either order, a run that fails exits with a nonzero status.
 
 ## Start from a stored baseline
 

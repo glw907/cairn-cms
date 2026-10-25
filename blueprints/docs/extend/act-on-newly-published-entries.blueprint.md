@@ -16,7 +16,7 @@ type: task guide
 **What they already know.** TypeScript and Node, their deploy pipeline, the storage their platform offers, and their provider's sending API. The job needs no cairn knowledge beyond publishing from the admin. The next-step link also assumes the reader knows the site's adapter module and its `editor` group.
 
 **Background.** An editor's publish commits the entry and its row in the content manifest, `src/content/.cairn/index.json`, to the default branch. The first publish that takes an entry live stamps the row with `publishedAt`, and later saves keep that stamp. :fact[vrue1g] :fact[gkrell]
-That publish commit triggers the site's deploy, and the post reaches its public address through the build that deploy runs. A message that links to the post therefore belongs after the deploy. :fact[e69d0l] :fact[1mkckz]
+When the site deploys each commit to its default branch, that publish commit starts a deploy, and the post reaches its public address only through the build that deploy runs. A message that links to the post therefore belongs after the deploy. :fact[e69d0l] :fact[1mkckz]
 The engine stamps the row and computes the diff. It sends no announcement, and the site keeps the prior manifest between deploys. :fact[xlj297] :fact[gkrell]
 
 **What the page does for them.** The introduction opens on the reader's goal of announcing new posts and on the stamp as cairn's part in it. It states the task: write a job that runs after each deploy, diffs the deployed manifest against the one it stored last time, sends a message for each new post, and saves the deployed manifest. :fact[ix641z] :fact[xlj297]
@@ -45,7 +45,7 @@ It tells the reader who looked for a callback that code meant to follow a publis
 - The job needs the following:
 - A committed content manifest at `src/content/.cairn/index.json`. A scaffolded site already commits one, and a publish commit patches it. :fact[vrue1g] :fact[e69d0l]
 - A deploy pipeline that can run a step after the deploy, in a checkout of the deployed commit. :fact[1mkckz]
-- Node 22.18 or later, which strips the types from a `.ts` file and runs it. An older Node needs a TypeScript runner such as `tsx`. :fact[rh53a2]
+- Node 24 or later, the version cairn requires, which strips the types from a `.ts` file and runs it. :fact[rh53a2]
 - Storage the job reads and writes between runs. The example uses one Workers KV value, read and written through the Cloudflare REST API with an API token. :fact[z2h50k] :fact[3dyial]
 - See [Workers KV values in the Cloudflare API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/subresources/values/methods/get/).
 - Code that sends one message for one entry, through your provider.
@@ -137,7 +137,7 @@ main().catch((error: unknown) => {
 - If the job saves before it sends, a failed send loses its post instead. The next run diffs against a manifest that already holds the post's stamp, and no later run returns it. :fact[2hwgg3]
 - To trade a repeated message for a missed one, follow this step:
 - If a missed message costs your subscribers less than a repeated one, in `main`, move the last `savePriorManifest(raw)` call from after the `for` loop to above it. :fact[2hwgg3]
-- Whichever order the job uses, a failed run exits with code `1`. The example sets `process.exitCode` when `main` rejects.
+- Whichever order the job uses, a failed run exits with a nonzero status. The example sets `process.exitCode` when `main` rejects.
 
 ## Start from a stored baseline
 

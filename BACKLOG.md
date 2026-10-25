@@ -12,8 +12,8 @@
 
 ## Medium
 
-- [ ] **#64** Move the admin's Lucide icons onto Survey v1.4.0's icon rules `#improvement` `#cairn-cms` *(2026-10-25)*
-  The admin draws icons at six ad hoc sizes (`h-3` to `h-8`). Survey's DESIGN.md "Icons" sets 14, 16, 20, or 24px by context, `currentColor`, `--color-muted`, or a status ink for color, and a 1.5px stroke from `components.css`, so no call site passes `strokeWidth`. Do it in the pass that takes Survey v1.4.0. Source: glw907/survey#5.
+- [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)*
+  The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it. Design session prompt: `docs/plans/2026-10-25-icon-sizes-design-prompt.txt`.
 
 - [ ] **#63** Mark a reader-site path so `check:symbols` doesn't reject it `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   `check:symbols` rejects `src/app.css`, a path in the reader's site, as an unresolved file, so the drafter wrote "`app.css` under `src`" to get past it, and the theme agent added an allowlist entry. Paths a page names in the reader's site need a marker or a standing allowlist group, so the gate doesn't push the prose into circumlocution.

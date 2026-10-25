@@ -1,28 +1,28 @@
 # Build the public routes
 
-A cairn site's public pages are route files in the site's SvelteKit app. The engine ships no separate server: the app builds with `@sveltejs/adapter-cloudflare` into one Worker, and the engine runs inside it. Each public route is a few lines of site code around a builder the engine exports, such as `createPublicRoutes` for the entry pages or `rssResponse` for a feed. The entry pages and their raw-markdown twins, the archive, the feeds, the sitemap, and `robots.txt` prerender from the markdown in the commit being deployed. The Worker then serves the files that build wrote, and no public request reads the GitHub repository. The draft preview route is the exception: it renders at request time and reads the shared entry from its holding branch.
+A cairn site's public pages are route files in the site's SvelteKit app. The engine ships no separate server: the app builds with `@sveltejs/adapter-cloudflare` into one Worker, and the engine runs inside it. Most public routes are a few lines of site code around a builder the engine exports, such as `createPublicRoutes` for the entry pages or `rssResponse` for a feed. The entry pages and their raw-markdown twins, the archive, the feeds, the sitemap, and `robots.txt` prerender from the markdown in the commit being deployed. The Worker then serves the files that build wrote, and no public request reads the GitHub repository. The draft preview route is the exception: it renders at request time and reads the draft from its entry's holding branch.
 
-Every route reads the same two inputs, one set of typed indexes from `createSiteIndexes` and one origin string. The build writes that origin into each canonical URL, `og:url`, feed, and sitemap row, and the origin has to name the deployed site before a production build. To wire the public side, you build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build.
+The routes draw on two shared inputs, one set of typed indexes from `createSiteIndexes` and one origin string. The build writes that origin into each canonical URL, `og:url`, feed, and sitemap row, and the origin has to name the deployed site before a production build. To wire the public side, you build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build.
 
-A site that came from `create-cairn-site` already holds every route this page covers except a tag page, along with the shared modules and the menu. On such a site, this page explains what each file does and where to change it. The most urgent change is the origin. The scaffold ships it as the placeholder `https://showcase.test`. If you build a site by hand, you need each route past the entry pages. Only you need the section on the draft preview route, because a scaffolded site already carries the route. If you want one piece, such as a tag page built on `byTag()` or a menu that editors change at `/admin/nav`, you find it in its own section.
+A site that came from `create-cairn-site` already holds every route this page covers except a tag page and the head section's example contact page, along with the shared modules and the menu. On such a site, this page explains what each file does and where to change it. The most urgent change is the origin. The scaffold ships it as the placeholder `https://showcase.test`. If you build a site by hand, you need each route past the entry pages. The section on the draft preview route is for that reader, because a scaffolded site already carries the route. Each single piece, such as a tag page built on `byTag()` or a menu that editors change at `/admin/nav`, has a separate section.
 
-Two limits of the engine's head explain most symptoms on a site that builds. It builds a head only for entry pages, and a home or archive page has no description or Open Graph tags until its route builds one. It takes the hero and the share image only from the frontmatter key `image`, whatever image field a concept marks for SEO. [Give other pages a head](#give-other-pages-a-head) and [Declare the fields the head reads](#declare-the-fields-the-head-reads) cover those limits, along with a fallback `og:image` that answers 404. [Diagnose a failed build](#diagnose-a-failed-build) maps each message a build prints when it stops on content.
+Two limits of the head the engine builds cause symptoms on a site that otherwise builds. The engine builds a head only for entry pages, and a home or archive page has no description or Open Graph tags until its route builds one. It reads the hero and the social image from the frontmatter key `image` alone, whatever image field a concept marks for SEO. Without an `image`, the social image falls back to the config's `defaultImage`. [Give other pages a head](#give-other-pages-a-head) and [Declare the fields the head reads](#declare-the-fields-the-head-reads) cover those limits, along with a fallback `og:image` that answers 404. [Diagnose a failed build](#diagnose-a-failed-build) maps several messages a build prints when it stops on content to their fixes.
 
 This page assumes you know SvelteKit routing, including rest parameters, param matchers, route groups, server endpoints, and layout loads, along with its prerendering exports and Vite's glob imports. It assumes that your adapter already declares the site's concepts, and it links the vendor's documentation wherever a step depends on a vendor detail. It leaves the following topics to other pages:
 
-- A stance toward AI training crawlers: [Choose an AI posture](choose-an-ai-posture.md).
-- Announcing newly published entries: [Act on newly published entries](act-on-newly-published-entries.md).
-- Resolving `media:` images on public pages: [Configure media](configure-media.md).
-- The pages' look: [Theme your public site](theme-your-public-site.md).
-- What a preview link exposes: [Security model](security-model.md).
-- The preview's mint and revoke signatures: [Public preview](../reference/sveltekit.md#public-preview).
-- The preview's refusal reasons: [Log events](../reference/log-events.md).
+- A stance toward AI training crawlers, in [Choose an AI posture](choose-an-ai-posture.md).
+- Announcing newly published entries, in [Act on newly published entries](act-on-newly-published-entries.md).
+- Resolving `media:` images on public pages, in [Configure media](configure-media.md).
+- The pages' look, in [Theme your public site](theme-your-public-site.md).
+- What a preview link exposes, in [Share a draft preview](share-a-draft-preview.md).
+- The preview's mint and revoke signatures, in [Public preview](../reference/sveltekit.md#public-preview).
+- The preview's refusal reasons, in [Log events](../reference/log-events.md).
 
 ## Before you begin
 
-The routes read an adapter, a parsed site config, and a SvelteKit build, so your site needs the following before you start:
+The routes need an adapter, a parsed site config, and a SvelteKit app that builds for Cloudflare. Before you start, confirm that your site has the following:
 
-- An adapter that declares the site's concepts, and the parsed site config. `createSiteIndexes` takes both, and [Define an adapter and schema](define-an-adapter-and-schema.md) covers the adapter.
+- An adapter that declares the site's concepts, and the parsed site config. `createSiteIndexes` takes both, and [Define an adapter and schema](define-an-adapter-and-schema.md) covers the adapter and the site config.
 - A SvelteKit app that builds with `@sveltejs/adapter-cloudflare`. [Deploy a bare SvelteKit site](add-cairn-to-a-sveltekit-app.md#deploy-a-bare-sveltekit-site) sets one up.
 - Optionally, for hero images, a media resolver. Without one, an entry gets no `heroImage`. The [`createMediaResolver`](../reference/media.md#createmediaresolver) entry covers building one.
 
@@ -64,7 +64,7 @@ Start with the content module.
 
 ## Build one typed index
 
-`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. Vite needs each glob pattern written literally at the call site, so a loop over the concept list can't generate the globs.
+`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. Vite needs each glob pattern written literally at the call site, so a loop over the concept list can't generate the globs. Vite's [glob import](https://vite.dev/guide/features#glob-import) documentation covers the options.
 
 To build the index, make one call:
 
@@ -104,21 +104,21 @@ export const site = indexes.site;
 export const posts = indexes.posts;
 ```
 
-Write each glob with `query: '?raw'`, `import: 'default'`, and `eager: true`. A glob in another form fails the build with the message that [Diagnose a failed build](#diagnose-a-failed-build) lists.
+Write each glob with `query: '?raw'`, `import: 'default'`, and `eager: true`. A lazy glob, or one without `import: 'default'`, hands the parser a function or a module object. The build then fails with the message that [Diagnose a failed build](#diagnose-a-failed-build) lists.
 
 The result holds one index per concept, keyed by concept id, plus `site`, the cross-concept resolver. A concept therefore can't be named `site`. The site config argument doesn't change the indexes, and the call still takes the parsed config.
 
-Each index's `all()` already returns its entries in the engine's sort order. [Build the archive](#build-the-archive) relies on that order. `all()` and `byTag()` leave out an entry marked `draft: true` unless called with `{ includeDrafts: true }`. `allTags()` and `adjacent()` always leave it out. The resolver builds its permalink lookup from `all()`, so a draft never resolves or prerenders. `byId` still returns a draft, and a route that looks an entry up by id has to check its `draft` field.
+Each index's `all()` already returns its entries in the engine's sort order. [Build the archive](#build-the-archive) relies on that order.
+
+`all()` and `byTag()` leave out an entry marked `draft: true` unless called with `{ includeDrafts: true }`. `allTags()` and `adjacent()` always leave it out. The resolver builds its permalink lookup from `all()`, so a draft never resolves or prerenders. `byId` still returns a draft, and a route that looks an entry up by id has to check its `draft` field.
 
 Next, name the origin every absolute URL starts from.
 
 ## Name the origin once
 
-The origin is one string with no trailing slash, and a production build needs it set to the deployed origin. The scaffold keeps it in one string literal.
+The origin is one string with no trailing slash, and a production build needs it set to the deployed origin. The engine takes `PublicRoutesConfig.origin` as a plain string, and keeping it in one string literal is the scaffold's choice.
 
-The engine joins the origin and a leading-slash path with no normalization. A trailing slash would double the slash in each canonical URL and sitemap `loc`. The prerendered routes run at build time, and the build writes the literal into each canonical URL, `og:url`, feed, and sitemap row.
-
-`PublicRoutesConfig.origin` is a plain string. Keeping it in a literal is the scaffold's choice, not an engine rule.
+The engine joins the origin and a leading-slash path with no normalization. A trailing slash would double the slash in each canonical URL and sitemap `loc`. Because the prerendered routes run at build time, a build writes its configured origin into each canonical URL, `og:url`, feed, and sitemap row.
 
 To set the origin, follow these steps:
 
@@ -155,7 +155,7 @@ To wire the entry pages, follow these steps:
 2. In `src/routes/(site)/[...path]/+page.server.ts`, export `prerender = true` and the factory's `entries`, and return the result of `entryLoad` from the route's load function.
 3. In the same directory's `+page.svelte`, render `CairnHead` from `@glw907/cairn-cms/delivery/head` with `seo={data.seo}`, then the entry's `html`.
 
-Later sections explain the `defaultImage`, `feeds`, `resolveMedia`, and `assetsEnabled` members in the scaffold's config module:
+This section covers the `resolveMedia` and `assetsEnabled` members of the scaffold's config module after the entry page. [Declare the fields the head reads](#declare-the-fields-the-head-reads) covers its `defaultImage`, and [Serve the feeds](#serve-the-feeds) covers its `feeds`. The module reads as follows:
 
 <!-- snippet-check-skip: imports the scaffold's #theme alias, which resolves only inside a scaffolded site -->
 ```ts
@@ -218,7 +218,7 @@ On a scaffolded site, the entry page renders `ArticleView`, and `ArticleView` re
 
 `entryLoad` answers 404 for a path that no entry claims. Otherwise, the load data carries `entry` with its frontmatter, body, and title, and `html` with the body already run through the site's `render`. It also carries `canonicalUrl` and `seo`, plus `heroImage` when a hero resolves. The canonical URL is the origin plus the entry's permalink, and `og:url` starts from the same origin. The [`EntryData`](../reference/delivery.md#entrydata) entry gives the full shape.
 
-`heroImage` is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve. Either way, `entry.frontmatter.image.src` stays the raw token. Setting `resolveMedia` alone turns hero resolution on. `assetsEnabled` only makes the engine log `media.resolver_absent` once when media is on and `resolveMedia` is missing.
+`heroImage` is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve. Where a hero is set, `entry.frontmatter.image.src` keeps the raw token whether or not it resolves. Setting `resolveMedia` alone turns hero resolution on. `assetsEnabled` resolves nothing. When it's on and `resolveMedia` is missing, each `createPublicRoutes` call logs `media.resolver_absent` once.
 
 `CairnHead` applies `titleTemplate` only when `title` is left undefined. An explicit `title`, or `title={false}`, wins over it.
 
@@ -245,14 +245,14 @@ The head falls back in a fixed order when an entry leaves a field empty:
 
 - Description: the frontmatter `description`, else the entry's excerpt, else the config's `description`. The excerpt is the body's plain text, cut at a word boundary near 200 characters.
 - Social image: the resolved hero's absolute URL, else a string `image`, else `defaultImage`, each anchored to the origin. `twitter:card` is `summary_large_image` only when an image exists.
-- Page type: a dated entry is an `article`, with `article:published_time`, `article:modified_time` when `updated` is set, `article:author`, and the feed links. An undated entry is a `website`.
+- Page type: a dated entry is an `article`, with `article:published_time` and, when `updated` is set, `article:modified_time`. It also carries `article:author` when the entry sets `author`, and the feed links when the config sets `feeds`. An undated entry is a `website`.
 - Structured data: one `Article` or `WebSite` JSON-LD object, which never carries the author. To add a richer schema.org type, replace `seo.jsonLd` before `CairnHead` renders it.
 
 With each entry's head complete, give each entry its raw-markdown twin.
 
 ## Serve the markdown twin
 
-The markdown twin is a prerendered route beside the catch-all. It serves each entry's stored markdown, unrendered, at the entry's permalink plus `.md`.
+The markdown twin is a prerendered route beside the catch-all. It serves an entry's stored markdown body, unrendered and without its frontmatter, at the entry's permalink plus `.md`, for each entry not marked `noindex`.
 
 To serve the twin, follow these steps:
 
@@ -294,11 +294,11 @@ export const GET: RequestHandler = async ({ url }) => {
 };
 ```
 
-SvelteKit prefers the more specific matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. SvelteKit's [route sorting rules](https://svelte.dev/docs/kit/advanced-routing#Sorting) set that precedence.
+With both routes in place, `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest.
 
 An entry whose `robots` field carries `noindex` has no twin. `markdownEntries` skips it, `markdownLoad` answers 404, and the scaffold's entry page passes no `markdownUrl` for it.
 
-> **Note:** `markdownResponse` sets `Content-Type: text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's response headers into the build. Under `wrangler dev`, the file still arrives with that type, apparently because Cloudflare derives it from the `.md` extension. That was measured locally, not on a deployed zone.
+> **Note:** `markdownResponse` sets `Content-Type: text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's response headers into the build. A local test under `wrangler dev` still served the file with that type, which suggests that Cloudflare derives it from the `.md` extension. No deployed zone has been tested.
 
 Next, mount the route that a preview link opens.
 
@@ -318,7 +318,7 @@ To mount the route, follow these steps:
 3. In the entry pages' route group, create `preview/[token]/+page.server.ts` exporting `prerender = false` and a load function that returns `loadPreview(runtime, publicRoutesConfig, event)`.
 4. In the same directory, create a `+page.svelte` that renders `PreviewBanner` from `@glw907/cairn-cms/public` with `preview={data.preview}`, then your article component.
 
-On a hand-built site, replace the scaffold's `#chassis` imports in the route module with the matching modules in your tree:
+The scaffold's route module reads as follows. A hand-built site replaces its `#chassis` imports with the matching modules in its tree:
 
 <!-- snippet-check-skip: imports the scaffold's #chassis alias and the route's generated $types -->
 ```ts
@@ -364,18 +364,19 @@ If the route is prerendered, `loadPreview` throws a build error that names `expo
 
 To check a minted link, follow these steps:
 
-1. In the admin, open an entry and save an edit.
-2. On the entry's edit screen, in the **Share preview** group, select **Share preview link**.
+1. In the admin, open an entry.
+2. On the entry's edit screen, save an edit.
+3. In the entry's **Details** slide-over, in the **Share preview** group, select **Share preview link**.
 
    The **Preview link** field shows a link on your origin whose path is `/preview/<token>`.
 
-3. In a private browser window, open the link.
+4. In a private browser window, open the link.
 
    The draft renders in your site's chrome and styles, with the banner above it.
 
-If a mint answers that the `preview_tokens` table is missing, copy and apply `0003_preview.sql` to `AUTH_DB` before you mint again.
+If a mint answers `The preview_tokens table is missing.`, copy and apply `0003_preview.sql` to `AUTH_DB` before you mint again.
 
-[Public preview](../reference/sveltekit.md#public-preview) gives the mint and revoke signatures, and [Log events](../reference/log-events.md) lists the refusal reasons.
+[Public preview](../reference/sveltekit.md#public-preview) gives the mint and revoke signatures, and [Log events](../reference/log-events.md) lists the refusal reasons. [Share a draft preview](share-a-draft-preview.md) covers the rest of the feature. It explains how to hide the **Share preview** group, set a link's lifetime, and mint links from a custom admin screen.
 
 Next, publish the posts as feeds.
 
@@ -421,7 +422,7 @@ Each item carries an origin-anchored `url`, the excerpt as `summary`, and the re
 
 The scaffold's mapping also resolves `::include` fragments and makes image URLs absolute. The link resolver throws on a missing target or on one in a concept that isn't routable. A dangling `cairn:` link therefore fails the build.
 
-`feeds` adds `rel="alternate"` links to a dated entry's head and serves nothing. Readers fetch the feeds from the two feed routes.
+`feeds` adds `rel="alternate"` links to a dated entry's head and serves nothing. Feed readers fetch the feeds from the two feed routes.
 
 Next, list the site's pages for crawlers in the sitemap.
 
@@ -458,7 +459,7 @@ To build the rows with `buildSitemapView`, follow these steps:
 2. In the request handler, call `buildSitemapView` with `site`, the descriptors from `buildSiteDescriptors`, the origin, and your other paths as `extraRoutes`.
 3. In the same handler, return `sitemapResponse` with the rows.
 
-With the site root and an about page as `extraRoutes`, the route reads as follows:
+With the site root and a contact page as `extraRoutes`, the route reads as follows:
 
 <!-- snippet-check-skip: imports the scaffold's #chassis and #theme aliases and the route's generated $types -->
 ```ts
@@ -473,11 +474,11 @@ export const prerender = true;
 
 export const GET: RequestHandler = () =>
   sitemapResponse(
-    buildSitemapView(site, buildSiteDescriptors(cairn, siteConfig), siteMeta.origin, ['/', '/about']),
+    buildSitemapView(site, buildSiteDescriptors(cairn, siteConfig), siteMeta.origin, ['/', '/contact']),
   );
 ```
 
-The `extraRoutes` paths come first, with no `lastmod`. Each entry's `lastmod` is its `updated` date, else its `date`. A page that isn't an entry, such as an about page or a tag index, appears only through `extraRoutes`.
+The `extraRoutes` paths come first, with no `lastmod`. Each entry's `lastmod` is its `updated` date, else its `date`. A page that isn't an entry, such as a contact page or a tag index, appears only through `extraRoutes`.
 
 `buildSitemapView`, `buildSiteDescriptors`, `renderJsonLdScript`, and `buildExcerpt` are pure functions on `@glw907/cairn-cms/delivery/data`, and `/delivery` re-exports them. The [`buildSitemapView`](../reference/delivery-data.md#buildsitemapview) entry gives each parameter.
 
@@ -486,8 +487,6 @@ An entry marked `noindex` still gets a row. [Keep noindex entries out of the sit
 Next, point crawlers at the sitemap and keep them out of the admin.
 
 ## Serve robots.txt
-
-The robots route returns `robotsResponse` with the sitemap's URL and `disallow: ['/admin']`.
 
 To serve the file, add one route:
 
@@ -519,22 +518,22 @@ Next, decide whether `noindex` entries belong in the sitemap and feeds.
 
 ## Keep noindex entries out of the sitemap and feeds
 
-The index's lists leave drafts out, but an entry whose `robots` field carries `noindex` still appears in the scaffold's sitemap and feeds. Only the head's robots meta tag and the markdown twin read the `robots` field.
+The index's lists leave drafts out, but an entry whose `robots` field carries `noindex` still appears in the scaffold's sitemap and feeds. Of the public outputs, the head's robots meta tag and the markdown twin read the `robots` field. The sitemap builders and the scaffold's feed mapping ignore it.
 
 To keep `noindex` entries out, follow these steps:
 
 1. In the sitemap route, drop each entry whose `robots` field, read with `readSeoFields`, includes `noindex`.
 2. In the feed mapping, drop the same entries.
 
-A helper over the concept index can make that check:
+A helper over the site resolver can make that check for a summary from the sitemap's `site.all()` or from the posts index's `all()`:
 
 <!-- snippet-check-skip: imports the scaffold's #chassis alias -->
 ```ts
-import { readSeoFields } from '@glw907/cairn-cms/delivery/data';
-import { posts } from '#chassis/content.js';
+import { readSeoFields, type ContentSummary } from '@glw907/cairn-cms/delivery/data';
+import { site } from '#chassis/content.js';
 
-export function isNoindex(id: string): boolean {
-  const entry = posts.byId(id);
+export function isNoindex(summary: ContentSummary): boolean {
+  const entry = site.byPermalink(summary.permalink);
   return (readSeoFields(entry?.frontmatter ?? {}).robots ?? '').includes('noindex');
 }
 ```
@@ -545,7 +544,7 @@ The next sections cover pages that aren't entries, starting with the archive.
 
 ## Build the archive
 
-A dated concept's `all()` already returns entries newest first, and the archive route paginates that list without sorting it. An undated entry sorts last, and an undated concept sorts by `title`.
+A dated concept's `all()` already returns entries newest first, and the archive route paginates that list without sorting it. In a dated concept, an entry with no date sorts after the dated ones. An undated concept sorts its entries by `title`.
 
 In the scaffold, `ARCHIVE_PAGE_SIZE` in `src/chassis/archive.ts` is 13, and it sets the page size for both the home page and `/archive/[page]`. The home page shows the newest post as its lead, and both routes paginate the posts after it. As a result, `/archive/2` exists only once more than 14 posts are published.
 
@@ -554,7 +553,7 @@ To add the archive, follow these steps:
 1. In the `archive/[page]` route's server module, export `prerender = true` and an `entries` generator that lists the real page numbers.
 2. In `vite.config.ts`, in the `prerender` option's `handleUnseenRoutes` handler, exempt the archive route by its id.
 
-A corpus that fits on one page gives the archive route no entries, and SvelteKit's crawl check then fails the build. The scaffold exempts `/(site)/archive/[page]` alone, and any other unseen prerenderable route still fails the build. [Crawl rules](scaffolded-site-files.md#crawl-rules) describes the scaffold's handler.
+A corpus that fits on one page gives the archive route no entries, and SvelteKit's crawl check then fails the build. The scaffold exempts `/(site)/archive/[page]` alone, and any other unseen prerenderable route still fails the build. [Crawl rules](scaffolded-site-files.md#crawl-rules) describes the scaffold's handler. SvelteKit's [prerender configuration](https://svelte.dev/docs/kit/configuration#prerender) documents `handleUnseenRoutes`, and its [page options](https://svelte.dev/docs/kit/page-options#entries) document `entries`.
 
 The engine builds no head for the archive.
 
@@ -569,11 +568,11 @@ To give a page a head, follow these steps:
 1. In the page's server load function, return the result of `buildSeoMeta` with the page's title, a description, its canonical URL, and the site name.
 2. In the page's component, render `CairnHead` with that `seo`.
 
-For an about page, the two files read as follows:
+For a page no entry claims, such as a contact page, the two files read as follows:
 
 <!-- snippet-check-skip: imports the scaffold's #chassis alias and the route's generated $types -->
 ```ts
-// src/routes/(site)/about/+page.server.ts
+// src/routes/(site)/contact/+page.server.ts
 import type { PageServerLoad } from './$types';
 import { buildSeoMeta } from '@glw907/cairn-cms/delivery/data';
 import { siteMeta } from '#chassis/content.js';
@@ -582,9 +581,9 @@ export const prerender = true;
 
 export const load: PageServerLoad = () => ({
   seo: buildSeoMeta({
-    title: 'About',
-    description: 'Who we are and how to reach us.',
-    canonicalUrl: siteMeta.origin + '/about',
+    title: 'Contact',
+    description: 'How to reach us.',
+    canonicalUrl: siteMeta.origin + '/contact',
     siteName: siteMeta.title,
   }),
 });
@@ -592,7 +591,7 @@ export const load: PageServerLoad = () => ({
 
 <!-- snippet-check-skip: reads the route's generated $types -->
 ```svelte
-<!-- src/routes/(site)/about/+page.svelte -->
+<!-- src/routes/(site)/contact/+page.svelte -->
 <script lang="ts">
   import type { PageData } from './$types';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
@@ -681,13 +680,13 @@ The menu editor and `readMenu` check each menu against the following rules:
 
 - A node is `{ label, url?, children? }`, and a node with no `url` is a group header.
 - A label is non-empty and at most 500 characters.
-- A URL is at most 2048 characters and starts with `/`, `#`, `http(s)://`, `mailto:`, or `tel:`.
+- A URL is at most 2048 characters and starts with `/`, `#`, `http://`, `https://`, `mailto:`, or `tel:`.
 - The tree holds at most 200 nodes and nests no deeper than `maxDepth`.
 - Any other key is dropped.
 
 `readMenu` returns an empty list for an absent menu and throws a `NavValidationError` on a broken rule.
 
-The scaffold reads its menus once in `src/theme/site-config.ts`. The layout load imports that module rather than the full adapter, and every request that runs the load skips the renderer's cost.
+The scaffold reads its menus once in `src/theme/site-config.ts`. Because the layout load imports that module rather than the full adapter, the load skips the renderer's cost.
 
 The scaffold's `menus.footer` is a flat list outside `/admin/nav`. You edit it in `site.config.yaml` and read it with `readMenu(siteConfig, 'footer', 1)`. The [`readMenu`](../reference/core.md#readmenu) entry gives its signature.
 
@@ -699,17 +698,17 @@ A successful build writes each prerendered file with your origin in its absolute
 
 To check the build, follow these steps:
 
-1. In the project directory, build the site.
+1. In the project directory, run `npm run build`.
 
    If the build stops, go to [Diagnose a failed build](#diagnose-a-failed-build).
 
 2. In the project directory, serve the build.
 
-   On a scaffolded site, run `npm run preview`. On another site, serve it with `wrangler dev`, because `vite preview` can't serve `@sveltejs/adapter-cloudflare` 8 output.
+   On a scaffolded site, run `npm run preview`. On another site, serve it with `wrangler dev`. `vite preview` can't serve the output of `@sveltejs/adapter-cloudflare` version 8, a limit that an [open SvelteKit issue](https://github.com/sveltejs/kit/issues/17271) tracks.
 
 3. In a terminal, fetch `/sitemap.xml` from the local server.
 
-   Each `loc` starts with your origin literal, not the local server's address.
+   Each `loc` starts with your deployed origin, not the local server's address.
 
 4. In the same terminal, fetch `/feed.xml` and `/feed.json`.
 
@@ -721,7 +720,7 @@ To check the build, follow these steps:
 
 6. In the same terminal, fetch an entry's twin at its permalink plus `.md`.
 
-   The body is the entry's stored markdown body, unrendered.
+   The response is the entry's stored markdown body, unrendered, without its frontmatter.
 
 7. In a browser, open an entry and view its source.
 
@@ -737,18 +736,18 @@ The following table maps each build message to its cause and its fix.
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| The build stops with `expected input to be a string or buffer`. | A glob passed to `createSiteIndexes` is lazy, or it lacks `query: '?raw'` and `import: 'default'`. | Write the glob as [Build one typed index](#build-one-typed-index) shows. |
+| The build stops with `expected input to be a string or buffer`. | A glob passed to `createSiteIndexes` is lazy, or it lacks `import: 'default'`. The parser then receives a function or a module object instead of the file's text. | Write the glob as [Build one typed index](#build-one-typed-index) shows. |
 | The build stops with `cairn: <n> invalid frontmatter field(s):`, then one line per field in the form `<dir>/<id>: <field>: <message>`. | A published entry's frontmatter fails its concept's validation. An invalid draft doesn't fail the build. | Correct the field, or mark the entry `draft: true`. |
 | The build stops with `cairn: permalink "<p>" resolves to both "<a>" and "<b>"`. | Two published entries of routable concepts share a permalink. | Change one entry's slug or permalink. |
 | The build stops with `cairn: link target "cairn:<concept>/<id>" not found`. | A `cairn:` link in a rendered body points at a missing entry or at a concept that isn't routable. | Correct the link or remove it. |
 | SvelteKit stops the build on an unseen prerenderable route. | The route's `entries` returned nothing. An archive route does that when the corpus fits on one page. | Exempt the route by its id in `handleUnseenRoutes`, as [Build the archive](#build-the-archive) shows. |
 | The build stops with a `NavValidationError`. | A menu in the site config breaks a node rule. | Correct the node as [Add an editable menu](#add-an-editable-menu) lists. |
 
-`createSiteIndexes` skips the frontmatter check when its fourth argument sets `validate: false`. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`.
+With `validate: false` in its fourth argument, `createSiteIndexes` doesn't fail the build on invalid frontmatter. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`.
 
 ## See also
 
-The following pages cover the pieces this page links to:
+The following pages cover the reference entries and neighboring guides for these routes:
 
 - [`createPublicRoutes`](../reference/delivery.md#createpublicroutes): the entry factory and its config.
 - [Delivery data](../reference/delivery-data.md): the feed, sitemap, robots, and SEO builders.
@@ -758,4 +757,4 @@ The following pages cover the pieces this page links to:
 - [Configure media](configure-media.md): hero and body images on public pages.
 - [Theme your public site](theme-your-public-site.md): the look of the routes this page wires.
 - [Scaffolded site files](scaffolded-site-files.md): every file the scaffold writes, the admin's included.
-- [Security model](security-model.md): what a preview link exposes.
+- [Share a draft preview](share-a-draft-preview.md): the preview link's lifecycle, its options, and what a link exposes.

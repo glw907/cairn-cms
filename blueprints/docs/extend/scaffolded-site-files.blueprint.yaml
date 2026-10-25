@@ -983,7 +983,7 @@ sections:
           carries none, so the chassis belongs to the site like every other file.
       - id: chassis-boundary-link
         kind: link
-        target: theme-your-public-site.md#the-chassis-boundary
+        target: theme-your-public-site.md#port-your-theme-onto-the-chassis
       - id: chassis-archive-link
         kind: link
         target: '#settings-outside-the-admin'
@@ -1069,7 +1069,7 @@ sections:
           the chassis's design-scale defaults. A second paragraph.
       - id: styles-cascade-link
         kind: link
-        target: theme-your-public-site.md#token-tiers-and-cascade-order
+        target: theme-your-public-site.md#re-skin-waymark
   - id: settings-outside-the-admin
     heading: Settings outside the admin
     why: |

@@ -219,20 +219,19 @@ pages:
     slug: theme-your-public-site
     title: Theme your public site
     type: task guide
-    job: 'Own your public site''s design: re-skin the scaffolded theme through its token tiers, or port your own theme onto the chassis, and iterate locally against real content until it passes the audit gates. For a Svelte-fluent web developer building an organization''s site on cairn''s seams.'
+    job: 'Own your public site''s design: style a hand-built site on the engine''s public style sheet, re-skin the scaffolded Waymark theme, or port your own theme onto the chassis, then iterate locally against real content until the public-scope audit rules pass. For a Svelte-fluent web developer building an organization''s site on cairn''s seams.'
     covers:
-      - 'What a scaffolded site ships: Waymark on the chassis. A hand-built site starts with neither: it adds Tailwind and daisyUI, imports cairn-public.css after tailwindcss, and supplies its own daisyUI theme block, and the rest of this page''s token and verify sections still apply (link docs/reference/public-css.md).'
-      - 'The chassis: one concern per file, the $chassis seam, the dependents rule before deleting a piece (feed.ts versus content.ts).'
-      - The three token tiers and tokens.css design-scale keys; the heading keys.
-      - 'The theme guide (required, Geoff 2026-09-24): the fourteen-value re-skin recipe light and dark, a full status-color rebrand, and porting your own theme onto the chassis step by step with the composition primitives.'
-      - Theme toggle, skip link, and the preview frame's ground following base-100.
-      - 'Local iteration: HMR, /styleguide, seeding local R2 with cairn-media-seed.'
-      - 'Style the editor preview: editor.preview (stylesheets, bodyClass, containerClass, byConcept), the ?url-only import rule, and data-cairn-preview for suppressing motion in the frame.'
-      - 'Chassis conventions and traps: class-prefix ownership, spacing keys shadowing max-w containers, unlayered rules beating utilities, the fluid root font size, formatDate as the one date vocabulary, data-flourish, and the no-flash script''s hard-coded theme names.'
+      - 'A hand-built site starts with neither Waymark nor the chassis: it adds Tailwind and daisyUI, imports cairn-public.css after tailwindcss, supplies a daisyUI theme block, links the sheet through a ?url import from a layout that wraps only the public routes, and names the same URL in editor.preview (link docs/reference/public-css.md and the core preview entry).'
+      - 'The theme guide (required, Geoff 2026-09-24): re-skin Waymark by walking the recipe comment in src/theme/theme.css, light and dark, and a full status-color rebrand.'
+      - 'Port your own theme onto the chassis step by step: the #chassis subpath import (templates/waymark/package.json imports), tokens.css first, the daisyUI theme blocks and the component exclude list, the site-owned CTA keys, the heading levers, the composition primitives, the skip link and theme toggle, and editor.preview when the sheets change. One line per chassis trap where a step meets it; src/chassis/README.md carries the rest.'
+      - 'Local iteration: HMR, /styleguide, and seeding local R2 with cairn-media-seed.'
       - Seeded media shows only with the dev backend off (npx vite dev without CAIRN_DEV_BACKEND, or wrangler dev).
-      - 'Verify: check:public-tokens and the public-scope audit rules, theme-contrast at WCAG AA.'
+      - 'Style rendered markdown: the .prose wrapper, directive classes from markdown-components.ts, the --cairn-code-* roles the engine sheet''s code rules read, and the data-flourish opt-in.'
+      - 'Verify: the cairn-audit public-scope rules run on their own (--rule public-literals --rule theme-conformance --rule theme-contrast), theme-contrast at WCAG AA, and the editor preview; resolving a public-rule finding or an unstyled preview.'
     outOfScope:
       - The file map of the scaffold (scaffolded-site-files).
+      - 'The chassis tour: its file table, class prefixes, dependents table, token tiers, heading levers, and traps (the site''s src/chassis/README.md).'
+      - 'The preview member''s full type, byConcept, and the ?url rule in depth (docs/reference/core.md, the preview entry).'
       - Building components (write-a-markdown-component).
       - The admin's look (add-a-custom-admin-screen).
       - Delivery routes (build-the-public-routes).
@@ -483,7 +482,7 @@ pages:
       - 'Run it in CI: the scaffold''s check:cairn and check:cairn:rendered scripts, and advisory versus error tier on a consumer.'
     outOfScope:
       - Auditing one custom admin screen while you build it (add-a-custom-admin-screen).
-      - The public-scope theme rules in depth (theme-your-public-site).
+      - Running the public-scope theme rules on a theme (theme-your-public-site).
       - Every rule, flag, and config key (docs/reference/cairn-audit.md).
   - path: docs/claude-code/using-claude-code-with-cairn.md
     slug: using-claude-code-with-cairn

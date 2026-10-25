@@ -82,7 +82,7 @@
     { "text": "An editor's personal dictionary is a separate committed file, `src/content/.cairn/dictionary.txt`, and not a convention.", "id": "f:xijdh6" },
     { "text": "Editors add words to it from the **Add to dictionary** action on a spellcheck suggestion, never from the tidy review.", "id": "f:jay6aq" },
     { "text": "Regional spelling is `spellcheck.dialect`, a spellcheck key rather than a tidy rule.", "id": "f:jay6aq" },
-    { "text": "[Keep adapter settings out of `site.config.yaml`](define-an-adapter-and-schema.md#keep-adapter-settings-out-of-siteconfigyaml) covers it.", "id": "f:avtt69" },
+    { "text": "The [`parseSiteConfig`](../reference/core.md#parsesiteconfig) entry lists the keys the site config accepts.", "id": "f:avtt69" },
     { "text": "Next, hand these rules to your editors.", "id": "no-claim" },
     { "text": "An editor's save on `/admin/settings` commits `tidy.conventions` to the site-config file, and tidy applies it only after that commit deploys.", "id": ["f:p7v2xe", "f:rcoz6t"] },
     { "text": "The save writes only the `tidy.conventions` block and leaves `tidy.enabled` and `tidy.model` as you set them.", "id": "f:0j54bd" },

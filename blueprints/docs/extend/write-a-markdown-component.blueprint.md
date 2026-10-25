@@ -295,7 +295,7 @@ The board presents the annual report.
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
 7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set (a `mermaid` fence passes through untouched). The highlighter renders that block as plain text. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`. :fact[dni13r]
-8. The share link answers an error page. A refused link logs a `preview.refused` record, and [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps its reason to a fix. A token mangled in copying answers a 404 with no record. A `build` that throws answers a server error instead, with the same fix as a preview that fails to render. :fact[2awy1w] :fact[rdwesf] :fact[3pzda1]
+8. The share link answers an error page. A refused link logs a `preview.refused` record, and [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps its reason to a fix. A token cut short in copying fails the shape check and answers a 404 with no record. A `build` that throws answers a server error instead, with the same fix as a preview that fails to render. :fact[2awy1w] :fact[rdwesf] :fact[3pzda1]
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

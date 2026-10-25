@@ -4,13 +4,13 @@ A markdown component on a cairn site renders on the server as the static markup 
 
 The task is to make one such component interactive on the public site while its fallback still serves readers without JavaScript. On a site built by hand, the adapter starts with no `rendering.islands` member, so every piece of the wiring is new. A scaffolded site already registers a `banner` island, and its tree already carries the registry module, the adapter's `rendering.islands` member, the root load's `hasIslands` flag, and the root layout's `hydrateIslands` call. Adding a second island there takes the live component, one registry entry beside `banner`, and the `hydrate` declaration. On a hand-built site, the steps write the live component, register the island, wire the root layout, and verify the island on the public page.
 
-The steps assume familiarity with Svelte components and runes, SvelteKit layouts and server load functions, `afterNavigate`, dynamic imports, and the site's adapter module. They also assume a markdown component the site already declares. [Write a markdown component](write-a-markdown-component.md) covers declaring the component, its attributes, and the `build()` function whose output becomes the fallback. The [islands reference](../reference/islands.md) covers the runtime's full contract and the boundary markup.
+The steps assume familiarity with Svelte components and runes, SvelteKit layouts and server load functions, `afterNavigate`, dynamic imports, and the site's adapter module. They also assume a markdown component the site already declares with `defineComponent`. [Write a markdown component](write-a-markdown-component.md) covers declaring the component, its attributes, and the `build()` function whose output becomes the fallback. The [islands reference](../reference/islands.md) covers the runtime's full contract and the boundary markup.
 
 ## Before you begin
 
 The steps assume that the following are in place:
 
-- A markdown component declared in the registry the adapter passes as `rendering.components`. Its `build()` output becomes the island's fallback. [Write a markdown component](write-a-markdown-component.md) describes the declaration.
+- A markdown component declared with `defineComponent`, in the registry the adapter passes as `rendering.components`. Its `build()` output becomes the island's fallback. [Write a markdown component](write-a-markdown-component.md) describes the declaration.
 - An entry whose body uses the component's directive, for checking the island on its public page.
 
 A scaffolded site already carries the registry module `src/theme/islands/registry.ts`, the adapter's `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call. On a scaffolded site, follow these steps instead:
@@ -31,7 +31,7 @@ To write the live component, follow these steps:
 1. In the site's islands directory, create the component file, such as `src/lib/islands/Converter.svelte`. A scaffolded site keeps its island files in `src/theme/islands/`.
 2. In the component's script, declare a prop with a default value for each attribute the directive declares.
 
-   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies.
+   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. The icon attribute is the exception: when the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key.
 
 3. In the component's markup, render each prop as text.
 
@@ -82,7 +82,7 @@ To register the island, follow these steps:
 
    On a scaffolded site, in `src/theme/islands/registry.ts`, import the live component and add its entry beside `banner` instead.
 
-2. On a hand-built site, in the adapter module, pass `siteIslands` as `rendering.islands` beside `rendering.render` and `rendering.components`. A scaffolded site's adapter passes it already.
+2. On a hand-built site, in the adapter module, pass `siteIslands` as `rendering.islands` beside `rendering.render` and `rendering.components`. A scaffolded site's adapter module, `src/theme/cairn.config.ts`, passes it already.
 
    The following excerpt shows the adapter module's `rendering` group with `islands` added:
 
@@ -101,7 +101,7 @@ To register the island, follow these steps:
    });
    ```
 
-3. In the `converter` component's declaration, set `hydrate` to `true` or `'visible'`.
+3. In the `converter` component's `defineComponent` declaration, set `hydrate` to `true` or `'visible'`.
 
    With `true`, the island mounts when the layout's call runs, on first load and after each client navigation. With `'visible'`, the mount waits until the island's boundary enters the viewport. The following excerpt sets `hydrate` on the `converter` declaration:
 

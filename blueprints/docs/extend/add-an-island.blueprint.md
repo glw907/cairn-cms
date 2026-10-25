@@ -63,6 +63,7 @@ The steps write the live component, register the island, wire the root layout on
 2. In the component's script, declare a prop with a default value for each attribute the directive declares. :fact[hje4zb] :fact[n3pod3]
 - A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. :fact[hje4zb]
 - When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. :fact[n3pod3]
+- The icon attribute is the exception: when the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key. :fact[hje4zb]
 3. In the component's markup, render each prop as text. :fact[8356mn]
 - Code: `src/lib/islands/Converter.svelte`, a live component typed from a `converter` directive's `from`, `to`, and `rate` attributes, with each prop rendered as text. :fact[hje4zb] :fact[n3pod3] :source[/templates/waymark/src/theme/islands/Banner.svelte]
 
@@ -110,7 +111,7 @@ import Converter from './Converter.svelte';
 export const siteIslands: IslandRegistry = { converter: Converter };
 ```
 
-2. On a hand-built site, in the adapter module, pass `siteIslands` as `rendering.islands` beside `rendering.render` and `rendering.components`. A scaffolded site's adapter passes it already. :fact[thjrvl] :fact[mcxxpp]
+2. On a hand-built site, in the adapter module, pass `siteIslands` as `rendering.islands` beside `rendering.render` and `rendering.components`. A scaffolded site's adapter module, `src/theme/cairn.config.ts`, passes it already. :fact[thjrvl] :fact[mcxxpp] :fact[7ym1ep]
 - Code: an excerpt of the adapter module's `rendering` group with `islands` added, framed as an excerpt. :fact[thjrvl] :source[/templates/waymark/src/theme/cairn.config.ts]
 
 <!-- snippet-check-skip: an excerpt of the adapter module -->

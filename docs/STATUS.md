@@ -18,21 +18,21 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 continues with drafting. Before the drafting run starts through drafter, copy
-Geoff's `~/.config/drafter/cairn-cms.local.toml` into the drafting worktree as `drafter.local.toml`
-(ignored by git; the committed `drafter.toml` holds the rest), and run `drafter config` there to
-confirm it resolves. The docs review page now shows a `.plan.yaml` plan as a `yaml` block. The 11
-page plans exist, written in drafter's plan format v1
-under `internal/briefs/extend/` and `internal/briefs/claude-code/` (ten extend pages and "Using Claude
-Code with cairn"), each with 0 errors from `drafter check-plan` (drafter F1, both outlines). The pass record is
-`research/2026-10-12-2b-part2-plans-record.md`, and the plans' deferrals sit in the
-ROADMAP entry "Stage 2b part 2". The drafting run
-that follows, through drafter, retires the 10 `.plan.md` files, registers the `claude-code` arm in the
-gates, and adds that arm's track entry to `docs-register.md`. Then comes the rest of part 2: the
-relinks and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the
-outline deletion, the boundary test, and 2b's close, which still owns the friction-log triage. Part
-1's carried items are the ROADMAP entry "Stage 2b part 2". The re-arm list is
-`docs/internal/record/harvest/relink.json`. The release holds until the docs are complete.
+Stage 2b part 2 is drafting pages from approved blueprints through drafter. Batch 5's PR carries
+the last five extend pages (Build the public routes, Configure media, Define an adapter and schema,
+Migrate existing content, Write a markdown component), each queued for Geoff's approval as its own
+item; the PR merges once all five are approved. Its record is
+`~/Projects/initiatives/docs-system/research/2026-10-25-extend-pages-batch-5/RESUME.md`. Each
+drafting worktree needs Geoff's `~/.config/drafter/cairn-cms.local.toml` copied in as
+`drafter.local.toml` (ignored by git), and drafter runs launch under `setsid -f`. After this batch,
+the one blueprint with no page is `blueprints/docs/claude-code/using-claude-code-with-cairn`; its
+draft registers the `claude-code` arm in the gates and adds that arm's track entry to
+`docs-register.md`. The page plans under `internal/briefs/` (`.plan.md` and `.plan.yaml`), which the blueprints
+replaced, still need retiring. Then comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the
+reference-arm corrections, the final arm index, the outline deletion, the boundary test, and 2b's
+close, which still owns the friction-log triage. Part 1's carried items are the ROADMAP entry
+"Stage 2b part 2". The re-arm list is `docs/internal/record/harvest/relink.json`. The release holds
+until the docs are complete.
 
 The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellgrader` predates
 #25, rebuild it with `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`.

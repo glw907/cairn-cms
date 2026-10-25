@@ -17,12 +17,12 @@ Several builder options share a name with an HTML input attribute but behave dif
 
 This page covers the following subjects, in order:
 
-- Concepts and what one declaration gives a site
-- The fieldset and its builders
-- Field options with unexpected behavior
+- Concepts
+- The fieldset
+- Field options
 - Containers
 - Save-time validation
-- The frontmatter keys the engine reads
+- Frontmatter keys the engine reads
 - Entry identity
 - Routing
 - Address collisions
@@ -34,7 +34,7 @@ The page assumes familiarity with TypeScript literal types and inference, YAML f
 The following subjects are documented on other pages:
 
 - Writing the adapter and a concept's declaration, including permalinks, date prefixes, tags, and custom validation hooks, in [Define an adapter and schema](define-an-adapter-and-schema.md)
-- Reference fields and internal links between entries in use, in [Link content with references](link-content-with-references.md)
+- Using reference fields and internal links between entries, in [Link content with references](link-content-with-references.md)
 - Fragments and the include directive, in [Reuse content across entries](reuse-content-across-entries.md)
 - Rendering an entry's body, in [Configure rendering](configure-rendering.md)
 
@@ -71,9 +71,9 @@ date: 2026-05-02
 Visitors are welcome to tour the space.
 ```
 
-The posts and pages concepts a scaffolded site starts with are declarations like this one in its adapter. Neither name is reserved, and a site may rename them, remove them, or declare other concepts beside them. Some scaffold code reads a concept by its id. The scaffold's feed, for example, reads the `posts` concept, and a site that renames a scaffolded concept updates that code too.
+Neither scaffolded concept is reserved: a site may rename `posts` or `pages`, remove them, or declare other concepts beside them. Some scaffold code reads a concept by its id. The scaffold's feed, for example, reads the `posts` concept, and a site that renames a scaffolded concept updates that code too.
 
-Engine conveniences also key on the literal ids. A concept's default permalink is `/<id>/:slug`, except for the concept with the id `pages`, whose default is `/:slug`. The admin's getting-started checklist looks for entries in `posts` and `pages`, and the entry picker lists `pages` entries first and `posts` second.
+Some engine conveniences also key on the literal ids. A concept's default permalink is `/<id>/:slug`, except for the concept with the id `pages`, whose default is `/:slug`. The admin's getting-started checklist looks for entries in `posts` and `pages`. The entry picker and the editor's `[[` link autocomplete list `pages` entries first and `posts` second.
 
 One concept declaration gives a site the following:
 
@@ -86,7 +86,7 @@ For the full signature, see [`defineConcept`](../reference/core.md#defineconcept
 
 ## The fieldset
 
-A concept's fieldset is the one place its fields are declared, and the engine derives the editor's form, the save-time validator, and the TypeScript type of the site's entries from it. No separate schema language exists, so the three cannot drift apart.
+The engine derives the editor's form, the save-time validator, and the TypeScript type of the site's entries from the concept's fieldset. Because no separate schema language exists, the form, the validator, and the type cannot drift apart.
 
 The `fields` namespace has fifteen builders, in two groups:
 
@@ -99,7 +99,7 @@ The `fields` namespace has fifteen builders, in two groups:
 
 ## Field options
 
-Each builder takes the four base options `label`, `help`, `required`, and `default`. Of the four, `label` is optional only on an `object` and an `array`.
+Each builder takes the four base options `label`, `help`, `required`, and `default`. Of the four, `label` is optional only on an `object`. An `array` can omit it only by omitting its whole options argument, since `fields.array(item, options)` requires `label` whenever `options` is passed.
 
 The following options behave in ways their names alone do not predict:
 
@@ -121,7 +121,7 @@ For every option each builder takes, see the [Fields](../reference/core.md#field
 
 `object` and `array` are the two container builders, and each nests one level: an `object` holds leaf fields, and an `array` holds one leaf or a flat `object` of leaves.
 
-An `object`'s `fields` record holds its leaf fields, keyed by frontmatter sub-key, and the object stores them as one nested object. An optional `object` whose leaves are all empty omits its key. An `object`'s `label` is optional. A top-level `object` with no `label` takes its group legend from the humanized key, so `social_card` reads as **Social card**. An `object` inside an `array` is labeled by the `array`.
+An `object`'s `fields` record holds its leaf fields, keyed by frontmatter sub-key, and the object stores them as one nested object. When an optional `object`'s leaves are all empty, the key is omitted. Without a `label`, a top-level `object` takes its group legend from the humanized key: `social_card` reads as **Social card**. Inside an `array`, the `array`'s label serves.
 
 An `array`'s `item` is the descriptor every element conforms to, and the array stores its value as a list. An optional empty list omits its key, and a required empty list fails the save. An `array` of `reference` items stores a list of entry ids.
 
@@ -129,7 +129,7 @@ Each of the following declarations throws when the adapter module loads:
 
 - An `array` whose item is another `array`
 - An `object` that holds an `object` or an `array`
-- A `reference` inside an `object`, whose error advises modeling it as the parent's own concept or using a top-level `array` of references
+- A `reference` inside an `object`, whose error advises a top-level `array` of references or a separate concept for the parent
 - A field key that contains a dot, at the top level or inside a container
 
 The dot rule exists because the engine addresses a nested field by a dotted path.
@@ -150,7 +150,7 @@ For more information, see the [`fields`](../reference/core.md#fields-1) entry in
 
 ## Save-time validation
 
-A malformed `pattern`, a container nested too deep, or a dotted key throws when the adapter module loads. A value that breaks a declared rule passes declaration and is refused at the save.
+Declaration-time errors, such as a malformed `pattern` or a container nested too deep, surface when the adapter module loads. A value that breaks a declared rule passes declaration, and the save refuses it.
 
 An admin save runs the concept's validator on the submitted values before any commit. An invalid save stops there: the editor sees the first failing message in one banner, and nothing is committed. A save writes the entry's frontmatter from the validator's output alone. A key the fieldset does not declare is therefore dropped from the file at its first admin save.
 
@@ -171,11 +171,11 @@ The engine uses the following keys:
 - `draft` set to `true` keeps the entry out of a concept index's default listings and out of the sitemap. A boolean field named `draft` is the edit page's **Hidden** toggle.
 - `description`, `image`, `robots`, and `author` are the SEO head fields the public route factory reads, each as a non-empty string. An undeclared `image`, `robots`, or `author` never reaches the head. An undeclared `description` still becomes the entry's excerpt, which the head uses, until an admin save drops the key.
 
-An entry's date is the one part of its identity that comes from frontmatter rather than from its filename.
+Of the facts that identify an entry, only its date comes from frontmatter rather than from its filename.
 
 ## Entry identity
 
-An entry's id is its markdown filename without `.md`, and the file sits directly in the concept's `dir` at `${dir}/${id}.md`. The engine uses `dir` verbatim and never validates it. A `dir` stays repo-relative with no leading or trailing slash, and entries never sit in subfolders.
+An entry's id is its markdown filename without `.md`, and the file sits directly in the concept's `dir` at `${dir}/${id}.md`. The engine uses `dir` verbatim and never validates it. A `dir` must be repo-relative, with no leading or trailing slash. Entries sit directly in it, never in subfolders.
 
 In a dated concept, the filename also carries a leading date, and the URL slug strips only that prefix. The following example shows one dated entry's file, id, and slug:
 
@@ -183,11 +183,11 @@ In a dated concept, the filename also carries a leading date, and the URL slug s
 - The id is `2026-08-14-my-post`.
 - The slug is `my-post`.
 
-The filename's date prefix only feeds the slug. The entry's date comes from its `date` field. A dated permalink resolves its date tokens from that field, which makes `date` required.
+The filename's date prefix affects only the slug, which drops it. The entry's date comes from its `date` field. A dated permalink resolves its date tokens from that field, which makes `date` required.
 
-An entry created in the admin takes its filename prefix from the date picked in the create dialog, cut to the concept's `datePrefix`. The create dialog also seeds that date into the entry's `date` field, so the two agree to the prefix's granularity. Neither a save nor a rename changes the prefix afterward, and a later edit to the `date` field can leave the two different.
+When an editor creates an entry in the admin, the date picked in the create dialog sets both the filename prefix, cut to the concept's `datePrefix`, and the entry's `date` field. The two start out agreeing to the prefix's granularity. Neither a save nor a rename changes the prefix afterward. A later edit to the `date` field can leave the two different.
 
-Ids are lowercase ASCII letters, digits, and single hyphens. When `slugify` derives an id from a title, a title in a non-Latin script becomes an empty address, which the create action refuses. An accented letter becomes a separator rather than a transliteration: `résumé` becomes `r-sum`.
+Ids are lowercase ASCII letters, digits, and single hyphens. When `slugify` derives an id from a title, a title in a non-Latin script produces an empty id. The create action refuses an empty id. An accented letter becomes a separator rather than a transliteration: `résumé` becomes `r-sum`.
 
 For date-prefix granularity and the permalink tokens, see [Define an adapter and schema](define-an-adapter-and-schema.md).
 
@@ -203,7 +203,7 @@ The following table sets out what each shorthand does and the content it suits:
 | `'feed'` | A routable permalink that may use the date tokens, in an index sorted newest first | Chronological content |
 | `'embedded'` | No public page and no sitemap entry | A concept whose entries only other entries read, such as fragments |
 
-Which entries reach an RSS or JSON feed is up to the site's feed route. The engine serializes the items a site passes it, and the scaffold's feed reads the `posts` concept by its id.
+Which entries reach an RSS or JSON feed is up to the site's feed route. The engine serializes whatever items the site's feed route passes it.
 
 An `'embedded'` concept keeps a directory, fields, and an admin list and editor. The admin labels its entries' identifier **Name** rather than **Address**, and its editor offers **Rename** rather than **Change URL**.
 
@@ -219,7 +219,7 @@ For the fields the log record carries, see [Log events](../reference/log-events.
 
 ## The content manifest
 
-The files in git stay the source of truth for content, and the committed content manifest summarizes them with one row per entry. Admin code reads the content graph from the manifest instead of reading GitHub entry by entry.
+The committed content manifest holds one row per entry, summarizing the files in git. Admin code reads the content graph from it.
 
 A row records the following about its entry:
 
@@ -228,17 +228,22 @@ A row records the following about its entry:
 - Its outbound `cairn:` links, the internal links its body makes to other entries
 - Its media refs, reference-field edges, tags, included fragments, and first-publish stamp, when it has them
 
-A save to the entry's pending branch commits no manifest change, and a publish patches the entry's row in the same commit as the content change. The `cairnManifest` Vite plugin rebuilds the manifest from the files when a build or the dev server starts, and a committed file that has drifted fails the build. Running `cairn-manifest` writes a regenerated file, and the scaffold wires it as its `cairn:manifest` script.
+A save to the entry's holding branch commits no manifest change. A publish patches the entry's row in the same commit as the content change. When a build or the dev server starts, the `cairnManifest` Vite plugin rebuilds the manifest from the files. A committed file that has drifted fails the build. The `cairn-manifest` command writes a regenerated file, and the scaffold runs it as the `cairn:manifest` script.
 
-A `reference` field holds a typed `{ concept, id }` pointer. The manifest records each entry's outbound reference edges, and the engine reads from them which entries point at a given entry.
+A `reference` field holds a typed `{ concept, id }` pointer. The manifest records each entry's outbound reference edges. From those edges, the engine finds which entries point at a given entry.
 
 For the manifest's format and functions, see [Content and manifest](../reference/core.md#content-and-manifest) in the core reference. For reference fields in use, see [Link content with references](link-content-with-references.md).
 
 ## Renames
 
-A rename gives the entry a new slug in one atomic commit on `main`. The commit moves the file to the new id and rewrites the inbound `cairn:` tokens that `main`'s committed manifest records. In a dated concept, the rename keeps the filename's date prefix and swaps only the slug. The same commit repoints the published reference fields that point at the entry.
+A rename gives the entry a new slug in one atomic commit on `main`. The commit moves the file to the new id and rewrites the inbound `cairn:` tokens that `main`'s committed manifest records. The same commit repoints the published reference fields that point at the entry. In a dated concept, the rename keeps the filename's date prefix and swaps only the slug.
 
-The engine refuses a rename with a 409 when the new id collides with an existing entry or while the entry has unpublished edits. It also refuses with a 409 while another editor's open branch holds a reference to the entry, or when it can't build the reference index.
+The engine refuses a rename with a 409 in any of the following cases:
+
+- The new id collides with an existing entry.
+- The entry has unpublished edits.
+- Another editor's open branch holds a reference to the entry.
+- The engine can't build the reference index.
 
 ## Related resources
 

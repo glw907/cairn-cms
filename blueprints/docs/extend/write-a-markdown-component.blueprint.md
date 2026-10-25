@@ -286,7 +286,7 @@ The board presents the annual report.
 
 *Map each failed check to its cause and fix, in the order the verification reaches them.*
 
-- Each failed check traces to the component's declaration, the adapter's or admin page's wiring, or the markdown an author wrote, including a code fence's language. :fact[cxhx8w] :fact[rrvh33] :fact[fqdknx] :fact[dni13r]
+- Each failed check traces to the component's declaration, the site's wiring, the markdown an author wrote, or the share link's state. :fact[cxhx8w] :fact[rrvh33] :fact[fqdknx] :fact[6c3amx] :fact[l4waby]
 - When a check fails, work through the following symptoms in order:
 1. The site fails to load with an error that names the component. The message reports a bad attribute type, a reserved name, a `defaultIconByRole` without an `icon` attribute, or a `hydrate` component and a `rendering.islands` entry that don't match. For that pairing, see [Add an island](add-an-island.md). Fix the member the message names. :fact[cxhx8w] :fact[cgwyp6] :fact[c7ruij] :fact[mv684d]
 2. The editor shows no **Insert block** button: the admin page passes `CairnAdmin` no `registry`, or the registry holds no component the picker lists. Pass it as [Register the component](#register-the-component) shows, or apply the fix in the next item. :fact[rrvh33] :fact[megde2]
@@ -295,7 +295,7 @@ The board presents the annual report.
 5. The directive prints as literal text: it was written as a leaf `::name` or text `:name` form. Rewrite it as a `:::name` container. :fact[fqdknx]
 6. The component's content renders without its markup: no component in the registry `createRenderer` received has that name. Register it, or fix the directive's name. :fact[a2ltun]
 7. A code block shows no token colors: its fence names no language, or one outside the highlighter's preloaded set (a `mermaid` fence passes through untouched). The highlighter renders that block as plain text. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`. :fact[dni13r]
-8. The share link answers an error page. [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps the logged reason to a fix.
+8. The share link answers an error page. A refused link logs a `preview.refused` record, and [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps its reason to a fix. A token mangled in copying answers a 404 with no record. A `build` that throws answers a server error instead, with the same fix as a preview that fails to render. :fact[2awy1w] :fact[rdwesf] :fact[3pzda1]
 - See [Read the structured logs](debug-your-site.md#read-the-structured-logs) for a failure this list doesn't cover.
 
 ## See also

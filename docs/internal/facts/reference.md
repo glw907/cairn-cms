@@ -1272,7 +1272,11 @@ re-sourced to Go on this tree rather than to the page.
 - `f:rdwesf` Every outward response to a `preview.refused` case is an identical 404, except
   `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
   (`rejectPreview` always `throw error(404, ...)`) and `:434-443` (`bindings_missing` branch
-  `throw error(503, 'Service unavailable')`). [verified]
+  `throw error(503, 'Service unavailable')`). A token that fails the shape check answers a 404
+  before any lookup and logs no `preview.refused` record (`:432`, `TOKEN_SHAPE_RE`; `:264`, "Never
+  called for the malformed-shape gate"). A `build` that throws while `loadPreview` renders the draft
+  is no refusal: `composeEntryData` runs with no `catch`, so the error reaches SvelteKit as a server
+  error (`:506`, `src/lib/delivery/public-routes.ts:184`). [verified]
 - `f:546jja` `preview.refused` `reason: "draft_invalid"` means the file on the entry's pending
   branch exists but fails the concept's descriptor validation: the per-field checks on its
   frontmatter, then the concept's optional `refine(data, body)` hook, which can reject an entry on

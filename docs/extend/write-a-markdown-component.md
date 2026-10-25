@@ -279,7 +279,7 @@ Stopping the dev server discards the saved edit and its link.
 
 ## Diagnose a failed check
 
-Each failed check traces to the component's declaration, the adapter's or admin page's wiring, or the markdown an author wrote, including a code fence's language.
+Each failed check traces to the component's declaration, the site's wiring, the markdown an author wrote, or the share link's state.
 
 When a check fails, work through the following symptoms in order:
 
@@ -290,7 +290,7 @@ When a check fails, work through the following symptoms in order:
 5. The directive prints as literal text. It was written in the leaf `::name` or text `:name` form. Rewrite it as a `:::name` container.
 6. The component's content renders without its markup. No component in the registry that `createRenderer` received has the directive's name. Register the component, or correct the directive's name.
 7. A code block shows no token colors. Its fence names no language, or a language outside the highlighter's preloaded set, and the highlighter renders it as plain text. A `mermaid` fence passes through untouched. Name a preloaded language or its alias: `js`, `ts`, `jsx`, `tsx`, `svelte`, `html`, `css`, `json`, `bash`, `markdown`, `python`, `yaml`, or `sql`.
-8. The share link answers an error page. [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps the logged reason to a fix.
+8. The share link answers an error page. A refused link logs a `preview.refused` record, and [Diagnose a refused link](share-a-draft-preview.md#diagnose-a-refused-link) maps its reason to a fix. A token mangled in copying answers a 404 with no record. A `build` that throws answers a server error instead, with the same fix as a preview that fails to render.
 
 For a failure this list doesn't cover, see [Read the structured logs](debug-your-site.md#read-the-structured-logs).
 

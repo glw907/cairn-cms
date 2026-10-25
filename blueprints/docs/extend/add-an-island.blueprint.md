@@ -20,7 +20,7 @@ The `build()` output stays as the fallback. It is the first paint before the mou
 A component with no `hydrate` renders as static server markup and adds no client JavaScript. :fact[4hd2vg] :fact[awr88d]
 
 **What the page does for them.** The introduction opens on that model, then names the task: make one component interactive while its fallback still serves readers without JavaScript. :fact[4hd2vg] :fact[1uk9sw]
-It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. That reader writes the live component, imports it in the registry beside `banner`, and sets `hydrate` on the declaration. :fact[mcxxpp]
+It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. That reader writes the live component, imports it in the registry and adds its entry beside `banner`, and sets `hydrate` on the declaration. :fact[mcxxpp]
 The steps write the live component, register the island, wire the root layout on a hand-built site, and verify the island on the public page.
 
 **What it leaves to other pages, each named in the introduction:**

@@ -3,6 +3,19 @@ version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
         accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
+    docs/extend/act-on-newly-published-entries.md:
+        page: f24f0a87b180d85ee33f9b365a1ec0bc1a3fb89f
+        blueprint: bd5d01080faf2dfa86768d3660cd1abdb3605baf
+        sections:
+            _intro: sha256:f1fe9ef52c249a97f10d4e566e4fb9e8b09adc30304bbc7720322a2f38478dcb
+            add-a-next-step-link-after-publish: sha256:ea089cf93f58f14f44fa2e1c7286df789ecfd25cd16daf32290a1e590b7550b0
+            before-you-begin: sha256:d222116b9b24ee249dc9957fe0c92de9aab095f55d086652c5c32f9a318fad79
+            entries-the-diff-returns: sha256:0ec3af0b0986718fd669616aa84a6dc68afe4e1be8acddea9c915aa7825faf60
+            order-the-send-and-the-save: sha256:f7975759cc0b068a9c3c1b76c8ade1333083fbe987a43842a67acd0fe08fe8be
+            see-also: sha256:8018d863cef350c7311bb35cd5532aa970f77d521462f9f29fbe19ee050a05c3
+            start-from-a-stored-baseline: sha256:a20766e25e1ed569703a84f7817ef122bc151d14f3d1daa3bfc88e153c861a31
+            verify-the-job: sha256:1e6a50e60fed7e89b11b10319397d771592f217a558228140a31c48978abfa18
+            write-the-post-deploy-job: sha256:3df97dba917a22e17ac861c5c8c15f3a9c92a159984334aa3003b38d75e04ac3
     docs/extend/add-a-custom-admin-screen.md:
         page: 420d6440a24b7e827106bee15ee469f288d620cc
         blueprint: 3d57f90a33c7de2c3ce70d1d0505ba0f3e6eaee6

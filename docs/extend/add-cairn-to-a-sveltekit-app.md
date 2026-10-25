@@ -451,7 +451,7 @@ The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the G
 - `@glw907/cairn-cms-dev` installs as a `devDependency`.
 - The guard refuses to serve a production build that has `CAIRN_DEV_BACKEND` set, and the [log events reference](../reference/log-events.md) records that refusal.
 
-Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. The flag test reads `process.env`. Under `vite dev`, the hooks run in Node, and the Worker env there never carries the shell variable that `npm run dev` sets. The hooks module imports `devBackendHandle` dynamically, so a default build never carries it. The `if`'s other branch calls `createAuthGuard()` with no options, a form the guard accepts.
+Vite's `define` folds a literal only within the module that names it, so every call site names `__CAIRN_DEV_BUILD__` directly. A constant exported from one module and imported into another survives the fold and ships the dev-backend import in the deployed Worker. The hooks module is that call site, and it picks between `devBackendHandle` and [`createAuthGuard`](../reference/sveltekit.md#createauthguard) in one `if` that reads the define first and `CAIRN_DEV_BACKEND === '1'` second. The flag test reads `process.env`. Under `vite dev`, the hooks run in Node, and the Worker env there never carries the shell variable that `npm run dev` sets. The hooks module imports `devBackendHandle` dynamically, so a default build never carries it. Both handles take `{ runtime }`, the runtime the hooks module imports from `#lib/cairn.server.js`, and a call without it is a type error.
 
 The site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle on every route, `/admin` included. SvelteKit skips that check under `vite dev`. The guard adds its double-submit token on top of that check. A `'*'` entry in `csrf.trustedOrigins` turns the origin check off on every route, and the `config.csrf-trusted-origins` check of `cairn doctor` warns on it. For the reasoning behind the CSRF design, see the [security model](security-model.md).
 
@@ -525,20 +525,20 @@ To wire the dev backend, follow these steps:
    /// <reference types="node" />
    import type { Handle } from '@sveltejs/kit/hooks';
    import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+   import { runtime } from '#lib/cairn.server.js';
 
    let handle: Handle;
    if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
      const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-     handle = devBackendHandle();
+     handle = devBackendHandle({ runtime });
    } else {
-     handle = createAuthGuard();
+     handle = createAuthGuard({ runtime });
    }
 
    export { handle };
    ```
 
-When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, the hooks module passes it to both `devBackendHandle({ access })` and `createAuthGuard({ access })`.
-A dev backend given no `access` leaves the map unattached, so every section action answers `fail(500)` and logs [`admin.action.misconfigured`](debug-your-site.md#adminactionmisconfigured).
+When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, it declares the map once, as the adapter's `access` member, and the guard reads it from the runtime, so the hooks module needs no edit.
 
 ### Verify the dev sign-in
 

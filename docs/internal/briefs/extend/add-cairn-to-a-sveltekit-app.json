@@ -654,8 +654,13 @@
       "id": "f:eiaqkh"
     },
     {
-      "text": "The `if`'s other branch calls `createAuthGuard()` with no options, a form the guard accepts.",
-      "id": "f:f21bcz"
+      "text": "Both handles take `{ runtime }`, the runtime the hooks module imports from `#lib/cairn.server.js`, and a call without it is a type error.",
+      "id": [
+        "f:f21bcz",
+        "f:4xrx5f",
+        "f:7cv105",
+        "f:q07rd5"
+      ]
     },
     {
       "text": "The site's config sets no `csrf` option, so SvelteKit's origin check runs ahead of every handle on every route, `/admin` included.",
@@ -715,18 +720,8 @@
       ]
     },
     {
-      "text": "When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, the hooks module passes it to both `devBackendHandle({ access })` and `createAuthGuard({ access })`.",
-      "id": [
-        "f:u78zg6",
-        "f:7cv105"
-      ]
-    },
-    {
-      "text": "A dev backend given no `access` leaves the map unattached, so every section action answers `fail(500)` and logs [`admin.action.misconfigured`](debug-your-site.md#adminactionmisconfigured).",
-      "id": [
-        "f:u78zg6",
-        "f:1b3ye3"
-      ]
+      "text": "When the site later declares an access map, as [Restrict admin access](restrict-admin-access.md) does, it declares the map once, as the adapter's `access` member, and the guard reads it from the runtime, so the hooks module needs no edit.",
+      "id": "f:iwf4nu"
     },
     {
       "text": "With `CAIRN_DEV_BACKEND` set to `1`, the dev server opens `/admin` signed in as an owner, with no sign-in email.",

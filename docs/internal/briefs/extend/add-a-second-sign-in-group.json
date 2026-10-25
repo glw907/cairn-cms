@@ -296,7 +296,7 @@
       ]
     },
     {
-      "text": "A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter and passed to the guard, and an object entry's `home` names the `/admin` path its people land on.",
+      "text": "A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter, where the guard reads it through the runtime, and an object entry's `home` names the `/admin` path its people land on.",
       "id": [
         "f:2zytgf",
         "f:4xrx5f",
@@ -331,31 +331,15 @@
       ]
     },
     {
-      "text": "In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.",
-      "id": [
-        "f:4xrx5f",
-        "f:hwffph",
-        "f:7cv105"
-      ]
-    },
-    {
-      "text": "Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.",
+      "text": "In `src/hooks.server.ts`, confirm that `createAuthGuard` and `devBackendHandle` each receive `{ runtime }`, as the scaffold's and the tutorial's hooks do.",
       "id": [
         "f:f21bcz",
-        "f:7cv105"
+        "f:q07rd5"
       ]
     },
     {
-      "text": "SvelteKit 3 refuses a `$lib` import.",
-      "id": "f:pgeeq3"
-    },
-    {
-      "text": "The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`.",
-      "id": "f:pgeeq3"
-    },
-    {
-      "text": "A scaffolded site imports the adapter module through `#theme` instead.",
-      "id": "f:q07rd5"
+      "text": "A site whose hooks still pass `roles` follows [Upgrade cairn](upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change) instead.",
+      "id": "f:4xrx5f"
     },
     {
       "text": "The vocabulary keeps `owner` and `editor` for two reasons.",
@@ -385,7 +369,7 @@
       "id": "f:4673n6"
     },
     {
-      "text": "A guard created without `roles` resolves every session against the owner and editor pair, and [Verify the role signs in to its home screen](#verify-the-role-signs-in-to-its-home-screen) checks that wiring.",
+      "text": "An adapter that declares no `roles` leaves the guard resolving every session against the owner and editor pair, and [Verify the role signs in to its home screen](#verify-the-role-signs-in-to-its-home-screen) checks that wiring.",
       "id": "f:4xrx5f"
     },
     {
@@ -564,7 +548,7 @@
       ]
     },
     {
-      "text": "That warning means the guard never received the vocabulary.",
+      "text": "That warning means `createAuthGuard` was not passed `{ runtime }`.",
       "id": "f:hwffph"
     },
     {

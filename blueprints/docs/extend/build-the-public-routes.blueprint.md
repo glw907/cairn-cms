@@ -17,13 +17,13 @@ exemplar: extenders/django-custom-management-commands
 
 **What they already know.** SvelteKit routing (rest parameters, param matchers, route groups, `+server.ts` endpoints, layout loads), the `prerender` and `entries` exports, and Vite's `import.meta.glob`. Their adapter already declares the site's concepts. The page explains none of these and links the vendor docs where a step depends on a vendor detail.
 
-**Background.** The public pages are route files in the site's SvelteKit app, and each route is a few lines around an engine builder. :fact[j0ut9n] :fact[pkt8i6] :fact[pvk6h5]
+**Background.** The public pages are route files in the site's SvelteKit app, and most routes are a few lines around an engine builder. :fact[j0ut9n] :fact[pkt8i6] :fact[pvk6h5]
 The entry, twin, archive, feed, sitemap, and robots routes prerender from the markdown in the deployed commit, and the site serves the files that build writes, with no GitHub read per request. The preview route renders at request time and reads the entry's holding branch. :fact[1mkckz] :fact[8k9xwm] :fact[jdz8hj]
 Two inputs are shared across the routes: one set of typed indexes from `createSiteIndexes`, and one origin string. The build writes the origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[yef4lo] :fact[niuzzg] :fact[k16chc]
 
 **What the page does for them.** The introduction opens on that model: the routes are site files built on two shared inputs, the index and the origin, most of them through an engine builder. :fact[pkt8i6] :fact[yef4lo]
 It states the task: build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build. :fact[pkt8i6] :fact[8k9xwm]
-It tells the scaffolded reader that the tree holds these routes already, except the tag page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
+It tells the scaffolded reader that the tree holds these routes already, except the tag page and the head section's example contact page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
 It names where the engine's head stops: it covers entry pages, and it reads the hero and the social image from the frontmatter key `image`, with `defaultImage` as the social image's fallback. :fact[k7nln3] :fact[k5uws5] :fact[jguiox]
 
 **What it leaves to other pages:**
@@ -31,7 +31,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - Announcing newly published entries belongs to Act on newly published entries.
 - Resolving `media:` images on public pages belongs to Configure media.
 - The pages' look belongs to Theme your public site.
-- What a preview link exposes belongs to the security model.
+- What a preview link exposes belongs to Share a draft preview.
 - The preview's mint and revoke signatures belong to the sveltekit reference page, and its refusal reasons to the log events reference page.
 :::
 
@@ -152,7 +152,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 4. In the entry page, pass `CairnHead` a `markdownUrl` of the canonical URL plus `.md`. :fact[dvg5gn] :fact[i8heft]
 - Code: the scaffold's `md` matcher. :source[/templates/waymark/src/params.ts] :fact[03lbjg]
 - Code: the scaffold's twin route. It imports the shared config. :fact[03lbjg]
-- SvelteKit's route sorting rules prefer the more specific matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. :fact[03lbjg]
+- With both routes in place, `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. :fact[03lbjg]
 - See [Sorting](https://svelte.dev/docs/kit/advanced-routing#Sorting).
 - An entry whose `robots` carries `noindex` has no twin. `markdownEntries` skips it, `markdownLoad` answers 404, and the scaffold's page passes no `markdownUrl` for it. :fact[3r08v1] :fact[i8heft]
 - Note: `markdownResponse` sets `text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's headers into the build. A local test under `wrangler dev` still served the file with that type, which suggests that Cloudflare derives it from the `.md` extension. No deployed zone has been tested. :fact[gwpffe]
@@ -398,4 +398,3 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - See [Theme your public site](theme-your-public-site.md).
 - See [Scaffolded site files](scaffolded-site-files.md).
 - See [Share a draft preview](share-a-draft-preview.md).
-- See [Security model](security-model.md).

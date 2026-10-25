@@ -1,12 +1,12 @@
 # Build the public routes
 
-A cairn site's public pages are route files in the site's SvelteKit app. The engine ships no separate server: the app builds with `@sveltejs/adapter-cloudflare` into one Worker, and the engine runs inside it. Each public route is a few lines of site code around a builder the engine exports, such as `createPublicRoutes` for the entry pages or `rssResponse` for a feed. The entry pages and their raw-markdown twins, the archive, the feeds, the sitemap, and `robots.txt` prerender from the markdown in the commit being deployed. The Worker then serves the files that build wrote, and no public request reads the GitHub repository. The draft preview route is the exception: it renders at request time and reads the draft from its entry's holding branch.
+A cairn site's public pages are route files in the site's SvelteKit app. The engine ships no separate server: the app builds with `@sveltejs/adapter-cloudflare` into one Worker, and the engine runs inside it. Most public routes are a few lines of site code around a builder the engine exports, such as `createPublicRoutes` for the entry pages or `rssResponse` for a feed. The entry pages and their raw-markdown twins, the archive, the feeds, the sitemap, and `robots.txt` prerender from the markdown in the commit being deployed. The Worker then serves the files that build wrote, and no public request reads the GitHub repository. The draft preview route is the exception: it renders at request time and reads the draft from its entry's holding branch.
 
 The routes draw on two shared inputs, one set of typed indexes from `createSiteIndexes` and one origin string. The build writes that origin into each canonical URL, `og:url`, feed, and sitemap row, and the origin has to name the deployed site before a production build. To wire the public side, you build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build.
 
-A site that came from `create-cairn-site` already holds every route this page covers except a tag page, along with the shared modules and the menu. On such a site, this page explains what each file does and where to change it. The most urgent change is the origin. The scaffold ships it as the placeholder `https://showcase.test`. If you build a site by hand, you need each route past the entry pages. The section on the draft preview route is for that reader, because a scaffolded site already carries the route. Each single piece, such as a tag page built on `byTag()` or a menu that editors change at `/admin/nav`, has a separate section.
+A site that came from `create-cairn-site` already holds every route this page covers except a tag page and the head section's example contact page, along with the shared modules and the menu. On such a site, this page explains what each file does and where to change it. The most urgent change is the origin. The scaffold ships it as the placeholder `https://showcase.test`. If you build a site by hand, you need each route past the entry pages. The section on the draft preview route is for that reader, because a scaffolded site already carries the route. Each single piece, such as a tag page built on `byTag()` or a menu that editors change at `/admin/nav`, has a separate section.
 
-Two limits of the head the engine builds cause symptoms on a site that otherwise builds. The engine builds a head only for entry pages, and a home or archive page has no description or Open Graph tags until its route builds one. It reads the hero and the social image from the frontmatter key `image` alone, whatever image field a concept marks for SEO. Without an `image`, the social image falls back to the config's `defaultImage`. [Give other pages a head](#give-other-pages-a-head) and [Declare the fields the head reads](#declare-the-fields-the-head-reads) cover those limits, along with a fallback `og:image` that answers 404. [Diagnose a failed build](#diagnose-a-failed-build) maps each message a build prints when it stops on content.
+Two limits of the head the engine builds cause symptoms on a site that otherwise builds. The engine builds a head only for entry pages, and a home or archive page has no description or Open Graph tags until its route builds one. It reads the hero and the social image from the frontmatter key `image` alone, whatever image field a concept marks for SEO. Without an `image`, the social image falls back to the config's `defaultImage`. [Give other pages a head](#give-other-pages-a-head) and [Declare the fields the head reads](#declare-the-fields-the-head-reads) cover those limits, along with a fallback `og:image` that answers 404. [Diagnose a failed build](#diagnose-a-failed-build) maps several messages a build prints when it stops on content to their fixes.
 
 This page assumes you know SvelteKit routing, including rest parameters, param matchers, route groups, server endpoints, and layout loads, along with its prerendering exports and Vite's glob imports. It assumes that your adapter already declares the site's concepts, and it links the vendor's documentation wherever a step depends on a vendor detail. It leaves the following topics to other pages:
 
@@ -14,7 +14,7 @@ This page assumes you know SvelteKit routing, including rest parameters, param m
 - Announcing newly published entries, in [Act on newly published entries](act-on-newly-published-entries.md).
 - Resolving `media:` images on public pages, in [Configure media](configure-media.md).
 - The pages' look, in [Theme your public site](theme-your-public-site.md).
-- What a preview link exposes, in [Security model](security-model.md).
+- What a preview link exposes, in [Share a draft preview](share-a-draft-preview.md).
 - The preview's mint and revoke signatures, in [Public preview](../reference/sveltekit.md#public-preview).
 - The preview's refusal reasons, in [Log events](../reference/log-events.md).
 
@@ -294,7 +294,7 @@ export const GET: RequestHandler = async ({ url }) => {
 };
 ```
 
-SvelteKit's [route sorting rules](https://svelte.dev/docs/kit/advanced-routing#Sorting) prefer the more specific matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest.
+With both routes in place, `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest.
 
 An entry whose `robots` field carries `noindex` has no twin. `markdownEntries` skips it, `markdownLoad` answers 404, and the scaffold's entry page passes no `markdownUrl` for it.
 
@@ -757,5 +757,4 @@ The following pages cover the reference entries and neighboring guides for these
 - [Configure media](configure-media.md): hero and body images on public pages.
 - [Theme your public site](theme-your-public-site.md): the look of the routes this page wires.
 - [Scaffolded site files](scaffolded-site-files.md): every file the scaffold writes, the admin's included.
-- [Share a draft preview](share-a-draft-preview.md): the preview link's lifecycle and options.
-- [Security model](security-model.md): what a preview link exposes.
+- [Share a draft preview](share-a-draft-preview.md): the preview link's lifecycle, its options, and what a link exposes.

@@ -239,6 +239,29 @@ pages:
             set-the-permalink-and-date-prefix: sha256:6d7a278099454e87622783428dbcea7791aff48fc9f097d5e3a5964f90869db4
             start-from-the-adapter-module: sha256:ea627c1af444dac87309c375965a7533ce19b664d49c5b2327603be7c9cb16f9
             verify-the-declaration: sha256:b6849016e1f8cc54d7ed51935213160823f895d907ebf7ebc1a3f9bba2ae5a9b
+    docs/extend/migrate-existing-content.md:
+        page: 23093c96318bad31dd3d4dbaa8ec6128d3d2f19d
+        blueprint: 06dda0fb7c3f0cecf7fde6a1c8bd4b62cd588495
+        sections:
+            _intro: sha256:813be846b7ba417fcd04aa247a785709b351c0aec00bdac6af83c33cc9ac6f21
+            before-you-begin: sha256:be25dcf3f7f1de32df0fd0722f69f89b400c34dbbe275164ca4f10b787cd692a
+            convert-the-body-markup: sha256:d05076e8042805cd42b4be87b93e23dcd7d40873eafc33d28c55dee0e9055cb3
+            convert-the-frontmatter: sha256:d0c6f4d1c0667420168d30ae4b8fbc71001f0256a02de80da2d0b10f2a28ac95
+            declare-or-drop-every-old-key: sha256:d5810347104d86030747bcc5faec77a99e5f11c6c0026683f0ee174e4473e72b
+            diagnose-a-failed-check: sha256:c83798da4c03ef291c9651e2335b51f68bff6861b4888bcb07f36be898cc64db
+            keep-or-move-old-images: sha256:aa72d6012b5bdfe916f38592511ca441e7a666f72c5dc3483204cc1d2478a677
+            map-tags-to-the-vocabulary: sha256:f7aa6841d40ed0a92c02931305731c740a50ac8fb4a7b27887df2999703d4c22
+            mark-drafts-with-draft-true: sha256:1f21f992915377abdadb674844beaf3fe111556dcf89e83abd68b3b760ca5e9f
+            match-the-date-prefix-to-the-concept: sha256:8817f1f9781b7323ebad3d426262bcc730aad37ddbdac92fab472714f3589f04
+            name-each-file-by-its-id: sha256:8a2d69e7af34353f7be65e7da0f32243318f9f39894b00d315e384d7901956c1
+            quote-values-for-text-fields: sha256:05e326a016c0b9e201bd9f4cf3e415089148c788d87c8936d762d8ff5a1f2d8e
+            reduce-each-stem-to-the-id-shape: sha256:9c1ef8910d2be81c6bd283905b5c25eb3211d78ac6cc966fa07cdfc3e513ebfd
+            replace-shortcodes-with-components: sha256:55ab9af370cab881f134f14f23b62bc34070a5836b40d160689d9235dcbdd53c
+            run-the-build-as-the-migration-check: sha256:69729c025926487086e43a6b11c2d1711f7ff20d471e1173b82ae21b6a6e0e19
+            see-also: sha256:4d299d2cbaa620d53ba4b2d169f59b17dca9eae8b8f453566fb06ffa29fffc46
+            verify-the-migrated-entries: sha256:24d306651c6b6f8ca6f678a651d194e5ec442409e744156d8f7b2ae53abe67c7
+            write-dates-as-yyyy-mm-dd: sha256:360bbd1dd0c5df5f7cc40f7ae8681a3a36d5bb6f73e37fb1be0d1e91ba7969b7
+            write-the-migration-script: sha256:293ef575000ce7d413b801b7f95df6db269f4ac418ccd817ff443d252a6b6eab
     docs/extend/replace-magic-links-with-cloudflare-access.md:
         page: 523a620f6acb5a50234f23fa11be13e6b2c1c5f7
         blueprint: 39d985b5306add3ea92cc95226d5fc20aec5beff

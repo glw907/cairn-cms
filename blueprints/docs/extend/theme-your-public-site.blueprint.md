@@ -65,7 +65,7 @@ The contract sentence follows. A hand-built reader adds the styling stack, then 
 - To add the styling stack, follow these steps:
 1. In the site directory, install Tailwind CSS and daisyUI by following each vendor's guide. :fact[f28x0x]
 - Leave out the Tailwind guide's static `import "../app.css"` in `src/routes/+layout.svelte`. :fact[bm73yb]
-- That root layout also wraps `/admin`, and a static import breaks the preview frame's link to the sheet. Step 5 links the sheet through a `?url` import from a `(site)` layout instead. :fact[5y8ity] :fact[gtg454]
+- That root layout also wraps `/admin`, and a static import breaks the preview frame's link to the sheet. Instead, a `(site)` group layout links the sheet through a `?url` import, as the next steps show. :fact[5y8ity] :fact[gtg454]
 - See [Tailwind's SvelteKit guide](https://tailwindcss.com/docs/installation/framework-guides/sveltekit).
 - See [daisyUI's installation guide](https://daisyui.com/docs/install/).
 2. In `src/app.css`, import `tailwindcss` and then `@glw907/cairn-cms/cairn-public.css`, and then load daisyUI with `@plugin "daisyui"`. :fact[f28x0x]

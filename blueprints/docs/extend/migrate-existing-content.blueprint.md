@@ -177,7 +177,7 @@ for (const filename of await readdir(FROM)) {
 
 *Explain the rule every frontmatter change follows, then give each change as an old form and its fix.*
 
-- Each declared field reads its value in one form. :fact[gh4ckg]
+- Each field type accepts its value in set forms, such as a `YYYY-MM-DD` string or a `Date` for a `date` field. :fact[gh4ckg] :fact[ivhuyc]
 - The following subsections each change `toFrontmatter`.
 
 ### Declare or drop every old key
@@ -231,7 +231,7 @@ for (const filename of await readdir(FROM)) {
 
 - A text, textarea, select, url, or email field reads a value that isn't a string, such as an unquoted number, date, or boolean, as empty. :fact[gh4ckg]
 - Old frontmatter such as `year: 1984` parses as a number. A required field then fails validation, and an optional one is left out of the validated frontmatter the site reads. :fact[gh4ckg]
-- The admin's edit page fills the field with the value converted to a string, and a save writes that string back. A date written back this way becomes JavaScript's long date string. :fact[gh4ckg]
+- The admin's edit page fills a `text` or `textarea` field with the value converted to a string, and a save writes that string back. A date written back this way becomes JavaScript's long date string. :fact[gh4ckg]
 - In the script's `toFrontmatter`, convert each number or boolean bound for one of these fields to a string, and each such date with `toDay`. `frontmatterBlock` then writes each string value quoted. :fact[gh4ckg]
 - The `title` and `description` lines already convert their values to strings. The `draft` value stays a boolean, which [Mark drafts with `draft: true`](#mark-drafts-with-draft-true) requires. :fact[0nw43j]
 
@@ -327,7 +327,7 @@ cairn: 1 invalid frontmatter field(s):
 4. If the build stops with a list of invalid fields, fix each one in the script. :fact[kv3qen]
 - A listed `date` field means the date the script took isn't a real calendar date, or falls outside the field's `min` or `max`. A date that isn't real came from an old value that YAML kept as a string, or from the filename. :fact[ivhuyc] :fact[w77gj8]
 - An unquoted impossible date such as `2024-13-45` parses as a rolled-over `Date`, here `2025-02-14`. The script writes that real day, and it passes the field's calendar-date check. See [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd). :fact[mtyw16]
-- A text field listed as required, though the old file had a value, means that value wasn't a string. It may have been a list, or an unquoted number, date, or boolean. See [Quote values for text fields](#quote-values-for-text-fields). :fact[gh4ckg]
+- A text field listed as required, though the old file had a value, means that value wasn't a string or never reached the field. A value that isn't a string may have been a list, or an unquoted number, date, or boolean. A value that never reached the field sat under a key `toFrontmatter` doesn't map, since the script writes only `title`, `date`, `description`, `draft`, and `tags`. See [Quote values for text fields](#quote-values-for-text-fields). :fact[gh4ckg]
 - See [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build).
 5. If the build fails because a permalink resolves to two entries, rename one of them. Two dated files with one slug and different dates collide under a permalink without a date token, such as the default `/posts/:slug` for a `posts` concept. :fact[ky39tz] :fact[grhib4] :fact[d27z58]
 6. If an entry is missing from the site while the build passes, check whether it's an invalid draft or `validate: false` is still set. See [Verify the migrated entries](#verify-the-migrated-entries). :fact[kv3qen]

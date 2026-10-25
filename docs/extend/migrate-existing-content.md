@@ -153,7 +153,7 @@ An id is lowercase letters and digits joined by single hyphens. A stem outside t
 
 ## Convert the frontmatter
 
-Each declared field reads its value in one form. The following sections each change `toFrontmatter`.
+Each field type accepts its value in set forms, such as a `YYYY-MM-DD` string or a `Date` for a `date` field. The following sections each change `toFrontmatter`.
 
 ### Declare or drop every old key
 
@@ -205,7 +205,7 @@ The script writes them under `tags`. For how a concept marks its taxonomy field,
 
 ### Quote values for text fields
 
-A `text`, `textarea`, `select`, `url`, or `email` field reads a value that isn't a string, such as an unquoted number, date, or boolean, as empty. Old frontmatter such as `year: 1984` parses as a number. A required field then fails validation, and an optional one is left out of the validated frontmatter the site reads. The admin's edit page fills the field with the value converted to a string, and a save writes that string back. A date written back this way becomes JavaScript's long date string.
+A `text`, `textarea`, `select`, `url`, or `email` field reads a value that isn't a string, such as an unquoted number, date, or boolean, as empty. Old frontmatter such as `year: 1984` parses as a number. A required field then fails validation, and an optional one is left out of the validated frontmatter the site reads. The admin's edit page fills a `text` or `textarea` field with the value converted to a string, and a save writes that string back. A date written back this way becomes JavaScript's long date string.
 
 - In the script's `toFrontmatter`, convert each number or boolean bound for one of these fields to a string, and each such date with `toDay`.
 
@@ -332,7 +332,7 @@ A failed check usually traces to a migrated file's name, one of its frontmatter 
    The following causes are specific to a migration:
 
    - A listed `date` field means the date the script took isn't a real calendar date, or falls outside the field's `min` or `max`. A date that isn't real came from an old value that YAML kept as a string, or from the filename. An unquoted impossible date such as `2024-13-45` parses as a rolled-over `Date`, here `2025-02-14`. The script writes that real day, and it passes the field's calendar-date check. For more information, see [Write dates as `YYYY-MM-DD`](#write-dates-as-yyyy-mm-dd).
-   - A text field listed as required, though the old file had a value, means that value wasn't a string. It may have been a list, or an unquoted number, date, or boolean. For more information, see [Quote values for text fields](#quote-values-for-text-fields).
+   - A text field listed as required, though the old file had a value, means that value wasn't a string or never reached the field. A value that isn't a string may have been a list, or an unquoted number, date, or boolean. A value that never reached the field sat under a key `toFrontmatter` doesn't map, since the script writes only `title`, `date`, `description`, `draft`, and `tags`. For more information, see [Quote values for text fields](#quote-values-for-text-fields).
 
    For the other causes, see [Diagnose a failed build](build-the-public-routes.md#diagnose-a-failed-build).
 

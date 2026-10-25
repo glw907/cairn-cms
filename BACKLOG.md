@@ -12,6 +12,9 @@
 
 ## Medium
 
+- [ ] **#70** Redraft the published extend pages that disagree with their blueprints `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  The runtime-bag sweep (batch 5) found pages that say what their blueprints no longer do. `restrict-admin-access.md` still names the removed `src/routes/admin/signups/` screen and has the reader create `src/access.ts`, which its blueprint never does; `add-a-second-sign-in-group.md:96` repeats the `src/access.ts` claim. `add-cairn-to-a-sveltekit-app.md` shows a hand-written `devBuildDefine` plugin and an `app.d.ts` declaration its blueprint forbids (`f:xluud1`, `f:n52h8f`). The `scaffolded-site-files.md` tree lists `migrations-app/`, which its blueprint says is gone. Seven lock entries name a blueprint blob older than the current one: add-a-custom-admin-screen, add-an-island, architecture, content-model, replace-magic-links-with-cloudflare-access, rotate-the-github-app-key, security-model. Some of those are hand edits carried to both files, so read each diff before redrafting with `drafter page <blueprint>`. `add-a-custom-admin-screen.blueprint.md` also fails `drafter check` with 9 format errors.
+
 - [ ] **#69** Loosen the register's task-guide item 5 for a feature with no log event `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   `docs/internal/docs-register.md` item 5 asks every task guide for failure paths that point at the track's recovery surface (`extend/debug-your-site.md`). A feature that logs no event has nothing there to point at, so the item should let such a page point at the checks that settle it instead. Moved from drafter #102 (glw907/drafter#67).
 - [ ] **#68** Set `facts.id_command` in `drafter.toml` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*

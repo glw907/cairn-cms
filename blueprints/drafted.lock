@@ -400,3 +400,18 @@ pages:
             style-rendered-markdown: sha256:73179cdced389a87e247fd5683287ead32228636e99d2e5967ed2f194841c26b
             theme-a-hand-built-site: sha256:53666b1b2a23f57f0be322f80d3765fba53681eafa877136d2b71bd088b09c44
             verify-the-theme: sha256:6b6eb275f4db1ee4ea686aa57ca9cd08e012b5e7530968daa81b45e3df1d807e
+    docs/extend/write-a-markdown-component.md:
+        page: 481a0dacfb2e13d4ac2234dc7a7a131356163489
+        blueprint: 91fa35632f53c73342406a6bc1e240a965239eb5
+        sections:
+            _intro: sha256:64c625d90bcbdc64029038e871df43d16d9b5da77fe97b6eb5115cefac76dec4
+            before-you-begin: sha256:e1ace4a5f8fa7357a257a1c598da666f0d7d8329220a11490e447c5d38f31d5c
+            component-authoring-grammar: sha256:5fd4386361834900573204ccd4d84e9f272e66502ada9b743e49a46c74f610bc
+            declare-the-component: sha256:2562900ff006c8f47610d620ba8fc33989247543bef785e73490666f9f811a45
+            declare-the-slots: sha256:93100450489edc0e9680e4290627e6b089afb9a9c151aa723372b0073423456c
+            diagnose-a-failed-check: sha256:1759ec1bc6e8d7e125e75bf9f1a1478909319ea58bc7086b1ce807810bd8a124
+            register-the-component: sha256:d9d8a84c77652916d2423b8e450332124920919b7071a1f51050b14718cbffaa
+            see-also: sha256:10e6a12572de7e55c96a27f385ce03f8093c7bfebad31ace76e6001d8307cbed
+            shape-the-picker-entry: sha256:d52314cf9f2847dc529af77a9d6502e78cfd46677e3d4836f820b887c85fc2e1
+            verify-the-component: sha256:45617cead4c6ef6c33740f94c5dcff7d796f2123236eba93957899f426054018
+            write-the-build-function: sha256:40a4dc90b16e0c574d0df8c7f83f877d0632aa8d6860942929f21124e3ab99e2

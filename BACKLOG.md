@@ -12,6 +12,18 @@
 
 ## Medium
 
+- [ ] **#69** Loosen the register's task-guide item 5 for a feature with no log event `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  `docs/internal/docs-register.md` item 5 asks every task guide for failure paths that point at the track's recovery surface (`extend/debug-your-site.md`). A feature that logs no event has nothing there to point at, so the item should let such a page point at the checks that settle it instead. Moved from drafter #102 (glw907/drafter#67).
+- [ ] **#68** Set `facts.id_command` in `drafter.toml` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  drafter now has the setting (glw907/drafter#67), and the blueprint skill tells an author to mint each new fact id with it. Set `facts.id_command = "node scripts/checks/check-facts.mjs --mint"`.
+- [ ] **#67** Set `facts.prose_sources` to globs for the template READMEs in `drafter.toml` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  drafter now reads each entry as a `path.Match` pattern, where `*` stays inside one directory and there is no `**` (glw907/drafter#67). Replace the two exact paths with globs such as `templates/*/README.md` and `templates/*/src/*/README.md`, so a new template's README excerpts with no config change.
+- [ ] **#66** Anchor the remaining anchorless fact pointers `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  A named `drafter check` now fails on a line pointer with no anchor, and names a suggested one (glw907/drafter#67). The unnamed check on `origin/main` at `75b6138` printed 1,836 `anchorless` warnings. Once they are anchored, drafter #110 makes the unnamed run fail on them too. Some suggestions are weak (`The`, `const`, `import`); drafter #111 tracks that, so review each suggestion before pasting it.
+- [ ] **#65** Run the full docs gate on a batch's integration branch before its pages are queued `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  Batch 4 queued three pages on #140 with `check:provenance` red (7 defects), and CI caught it only after Geoff approved them, so the fix (`92b2cfce2`) landed after approval. Two causes: hand edits to `scaffolded-site-files.md` and `share-a-draft-preview.md` left their briefs quoting old anchors, and the batch 3 rewrite of `f:0elmiu` dropped the `/sitemap.xml` that `build-the-public-routes.json` cites, where `drafter refs f:0elmiu` would have named the brief. Make a green `npm run check:docs-gate` on the merged branch a precondition of `approval-queue page`, a rule for `cairn-pass` or the batch prompt beside #60.
+  Record: `~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4/RESUME.md`
+
 - [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it. Design session prompt: `docs/plans/2026-10-25-icon-sizes-design-prompt.txt`.
 
@@ -46,6 +58,7 @@
 - [ ] **#56** Set `check.sentence_words = 26` in `drafter.toml`, and list `docs/reference/sveltekit.md` and `choose-an-ai-posture` in the outline as `managed: false` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   drafter now has the sentence-length warning (off by default), and a crossLink to an unlisted page misfires where a `managed: false` entry would resolve (glw907/drafter#60).
   Batch 4: two authors hand-scripted the register's 26-word rule again because the setting is still off. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 4)
+  Batch 4 friction (glw907/drafter#67): drafter's new unlisted-link error fires on a link to a `docs/extend` page the outline doesn't list, in `drafter check`, `drafter gate`, and `drafter page` stage 1. List `docs/extend/upgrade-cairn.md` (linked by seven blueprints) and `docs/extend/share-a-draft-preview.md` (linked by none today) as `managed: false` beside `choose-an-ai-posture` (linked by three). drafter's install waits until the outline lists `upgrade-cairn.md` and `choose-an-ai-posture.md`, since nine blueprints otherwise stop at stage 1.
 
 - [ ] **#54** Split fact f:q07rd5, and drop plan constraints the code now settles `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:q07rd5` bundles a code-sourced scaffold path with tutorial paths sourced only from a docs page and an unrelated hooks note, so ruling D1 blocks a blueprint that cites it for the scaffold alone. Split it into one fact per source. Some page plans still state as constraints things the code now settles (the build error's count prefix, `parseMarkdown` and TOML); see B3-24. Record B3-30 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.

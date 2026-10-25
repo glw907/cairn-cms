@@ -12,13 +12,39 @@
 
 ## Medium
 
+- [ ] **#62** Fix the published-page defects batch 4 found and left `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  run-cairn-audit's CI fragment runs `npx playwright install chromium` but never installs the `playwright` package, and it sets `BASE_URL` to 4173 while the scaffold's `preview` is `wrangler dev`. `docs/extend/share-a-draft-preview.md:43` links a removed anchor (that page retires with the fold).
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 9)
+
+- [ ] **#61** Record a run for a behavioral fact with a case split `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `f:w3m0ac` (delete-and-recreate inside one diff window) was `[verified]` and wrong: reading the pointer showed the general case, and only running the function showed the split. A behavioral fact with a case split wants a recorded run, not a read.
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 8)
+
+- [ ] **#60** Merge each batch's approved blueprints before the next batch cuts `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  Batch 3's six approved blueprints sat unmerged, so batch 4 built an integration branch (`ebp4-base`) and settled shared-fact conflicts both sides had corrected (`f:68w9k9`, `f:g39nkp`, `f:sz71ur`, `f:n07oiu`), each with one drifted range. Make the merge a precondition of cutting the next batch; a rule for `cairn-pass` or the batch prompt.
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 6)
+
+- [ ] **#59** Fix the scaffold's stale comments `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `templates/waymark/src/theme/theme.css` names `check:public-tokens` (lines 11-12, 66, 126), an engine-repo script a site doesn't have, and its recipe says "about fourteen" values for twelve. The chassis README's `content.ts` dependents row misses `(site)/archive/[page]` and three chassis modules.
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 3)
+
+- [ ] **#58** Decide whether a failed island logs `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `src/lib/islands/index.ts:43-51` swallows a props parse failure and a mount throw in bare `catch` blocks; nothing reaches the console or Workers Logs. Question to Geoff on the island blueprint (N4).
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 2)
+
+- [ ] **#57** Fix the publishActions doc comment: a bad entry also fails `vite build` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
+  `publish-actions.ts:30-33` says a bad entry "fails at server start". SvelteKit's build analysis loads every route's server node (`analyse.js:69`), so on a scaffolded site it also fails `vite build`. The session's constraint copied the comment and was batch 4's one wrong claim in 371.
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 1)
+
 - [ ] **#56** Set `check.sentence_words = 26` in `drafter.toml`, and list `docs/reference/sveltekit.md` and `choose-an-ai-posture` in the outline as `managed: false` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   drafter now has the sentence-length warning (off by default), and a crossLink to an unlisted page misfires where a `managed: false` entry would resolve (glw907/drafter#60).
+  Batch 4: two authors hand-scripted the register's 26-word rule again because the setting is still off. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 4)
 
 - [ ] **#54** Split fact f:q07rd5, and drop plan constraints the code now settles `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `f:q07rd5` bundles a code-sourced scaffold path with tutorial paths sourced only from a docs page and an unrelated hooks note, so ruling D1 blocks a blueprint that cites it for the scaffold alone. Split it into one fact per source. Some page plans still state as constraints things the code now settles (the build error's count prefix, `parseMarkdown` and TOML); see B3-24. Record B3-30 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.
 - [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   After the premise trim, configure-media's plan and framing record (2026-10-12) and the narrowed page's 782-line plan and 254-line framing record were mostly out of scope, and reading them cost more than they returned. Record B3-8, B3-24.
+  Batch 4: every author read a 488 to 836-line plan, or a 53 KB one that predated the trims. Repeat of B3-8, B3-24. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 5)
 - [ ] **#50** Name a concept by its key in every concept error `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `defineConcept` names a concept in its errors by `label ?? dir` (`src/lib/content/concepts.ts:67`), while `normalizeConcepts` names it by its content-map key, so one concept shows under two names. Record B3-18.
 - [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
@@ -67,6 +93,7 @@
   `f:0elmiu` (sign-in page indexed, but `LoginPage` sets `noindex`), `f:niuzzg`, `f:s4prb0` (a README source), and `f:q07rd5` (a docs source) are stale or prose-sourced. `f:q07rd5` also joins a code clause with docs-only clauses, so D1 blocks citing the code part alone (record 44, 45).
   Record: `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`
   Seen again in batch 3: duplicate facts state one claim (`f:pdgkex`, `f:4mz4tp`, `f:yef4lo`; `f:fe46lo`, `f:97c6g1`), and `f:q07rd5` is `[verified]` from a docs page against ruling D1. Merge the duplicates. Record B3-16.
+  Batch 4: more of the same in the facts store: `f:lv29ox` duplicates `f:mcxxpp` (the showcase and template layouts are byte-identical); `f:ctognq`, `f:i9pgd2`, and `f:9zxml1` name the showcase where the scaffold was meant; `f:59u3b9` reads a code comment as an engine claim; `f:7sc3pe` in reference.md carries the drifted `EditPage.svelte:2243`; and act-on's facts sit in two homes (`## announce-on-publish.md` and `### act-on-newly-published-entries`). Repeat of B3-16. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 7)
 
 - [ ] **#36** Flag a plan or framing record when a fact it cites is corrected `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   Plans inherit wrong facts and nothing flags them: `f:ld6xam` reached the sidebar plan, the content model's carried about a dozen code-contradicted claims, and build-the-public-routes' plan predates D1. All four batch 2 authors hit it (record 43).

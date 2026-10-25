@@ -8,7 +8,7 @@ both from the tree the engine tests itself against.
 SvelteKit mounts the admin as one catch-all route pair under `/admin`, and it mounts the public site
 as a prerendered route group. A server hook guards `/admin`. The SvelteKit config sits inline in
 `vite.config.ts`, and the project has no `svelte.config.js`. `wrangler.jsonc` declares the Worker's
-Cloudflare bindings, among them two D1 databases and an R2 bucket. The GitHub repository holds the
+Cloudflare bindings, among them a D1 database and an R2 bucket. The GitHub repository holds the
 code and the markdown, and the site's GitHub App commits each editor's publish into it. A GitHub
 Actions workflow checks every push and pull request.
 
@@ -269,11 +269,11 @@ database.
 
 ### `migrations/`
 
-This directory holds the auth store's schema for `AUTH_DB`, in `0000_auth.sql`, `0003_preview.sql`,
-and `0004_login_nonce.sql`. The engine's `0001_roles.sql` and `0002_audit.sql` are opt-in and
-absent. The first serves a site that declares a role vocabulary beyond the default owner and editor
-pair, as [Restrict admin access](restrict-admin-access.md) describes. The second serves a site that
-wires `createD1AuditSink`, as
+This directory holds the auth store's schema for `AUTH_DB`, in `0000_auth.sql`, `0001_roles.sql`,
+`0003_preview.sql`, and `0004_login_nonce.sql`. The roles migration serves a site that declares a
+role vocabulary beyond the default owner and editor pair, as
+[Restrict admin access](restrict-admin-access.md) describes. The engine's `0002_audit.sql` is opt-in
+and absent. It serves a site that wires `createD1AuditSink`, as
 [Wire the audit sink](add-a-custom-admin-screen.md#wire-the-audit-sink) in Add a custom admin screen
 describes.
 
@@ -298,6 +298,7 @@ src/
     │   └── +page.svelte
     ├── admin/                    [engine]
     │   ├── [...path]/
+    │   ├── +error.svelte
     │   ├── +layout.server.ts
     │   └── +layout.svelte
     ├── feed.json/

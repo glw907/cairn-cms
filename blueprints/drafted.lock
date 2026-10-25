@@ -60,6 +60,17 @@ pages:
             verify-a-member-signs-in-to-the-member-area: sha256:860eb20d28a9e384d9cc247c7fc374f6b940306c97335692d75234c2c6ee55a1
             verify-the-role-signs-in-to-its-home-screen: sha256:28a31a7d16d465cbfe120b09e52096f25f7f5fc17b4dd8b9201142757b3afb9b
             write-the-channel-module: sha256:685caa2d6f0dfebb74c2dbc43b5246d5556bb2615474c5ca70372a67fa93df59
+    docs/extend/add-an-island.md:
+        page: bc2e595e575d221ea1b7ee24521382ad1a81613a
+        blueprint: 2a4905455dbca4d3ac34d1f6d977ffbaabb7eaf1
+        sections:
+            _intro: sha256:e5b68edc43a3e01956947602561d6570ce554d6b4bd9cdc336f310f7e1f1b356
+            before-you-begin: sha256:beea7abb93d262802f7dc6c605fd1c5e5fe6ef7559be48d1df5dafb5a3bfcd2b
+            register-the-island: sha256:97c9f5b299e1048e634450e568c8f18f93926b860e20e3fc61993b124639d3cc
+            see-also: sha256:82e44cd6d64ce6d51fcd761fc5e6657dc3ca34af4bbee31115815f79b99ded85
+            verify-the-island-on-the-public-page: sha256:c5068e339d1f4e2df83b5f8169765c399c6b0b9a0ccc5a65ce36b18a401d4d1d
+            wire-the-root-layout: sha256:833a23ea31bd426d0f4e41df332d998ea300ba2417a7af08366806c7d9eedef4
+            write-the-live-component: sha256:39de9fc83256ac2b8efafa9c512e8a55dd5d93fe9251506ea100bf145bc00f86
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987

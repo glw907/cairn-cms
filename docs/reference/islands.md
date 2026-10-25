@@ -71,8 +71,8 @@ The root layout imports the runtime and the registry only when that flag is set:
 {@render children()}
 ```
 
-The flag keeps both dynamic imports out of a static site's bundle, so a site with no islands ships
-none of this code. The adapter module imports the same registry for `rendering.islands`, so the two
+The layout returns before both dynamic imports when the flag is false, so a site with no islands
+never requests the runtime or the registry module. The adapter module imports the same registry for `rendering.islands`, so the two
 stay one map.
 
 `hydrateIslands` is idempotent across navigation. It tears down the previous pass before it runs,

@@ -20,7 +20,7 @@ The `build()` output stays as the fallback. It is the first paint before the mou
 A component with no `hydrate` renders as static server markup and adds no client JavaScript. :fact[4hd2vg] :fact[awr88d]
 
 **What the page does for them.** The introduction opens on that model, then names the task: make one component interactive while its fallback still serves readers without JavaScript. :fact[4hd2vg] :fact[1uk9sw]
-It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. That reader writes the live component, adds one line to the registry, and sets `hydrate` on the declaration. :fact[mcxxpp]
+It tells the scaffolded-site reader that the tree already carries the registry module, the adapter member, the root load, and the layout call. That reader writes the live component, imports it in the registry beside `banner`, and sets `hydrate` on the declaration. :fact[mcxxpp]
 The steps write the live component, register the island, wire the root layout on a hand-built site, and verify the island on the public page.
 
 **What it leaves to other pages, each named in the introduction:**
@@ -49,7 +49,7 @@ The steps write the live component, register the island, wire the root layout on
 - A scaffolded site already carries the registry module `src/theme/islands/registry.ts`, the adapter's `rendering.islands`, the root load's `hasIslands`, and the root layout's `hydrateIslands` call. :fact[mcxxpp]
 - On a scaffolded site, follow these steps instead: :fact[mcxxpp]
 1. In `src/theme/islands/`, write the live component, as [Write the live component](#write-the-live-component) describes. :fact[mcxxpp]
-2. In `src/theme/islands/registry.ts`, add the component's entry beside `banner`. :fact[mcxxpp]
+2. In `src/theme/islands/registry.ts`, import the live component and add its entry beside `banner`. :fact[mcxxpp]
 3. In the component's declaration, set `hydrate` to `true` or `'visible'`. :fact[nm3bbo] :fact[awr88d]
 4. Verify the island, as [Verify the island on the public page](#verify-the-island-on-the-public-page) describes.
 
@@ -99,7 +99,7 @@ The steps write the live component, register the island, wire the root layout on
 - A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Keeping it separate from the adapter module keeps the adapter off the client. :fact[thjrvl] :fact[ni5lm7] :fact[zrcuyf]
 - To register the island, follow these steps:
 1. In a registry module, such as `src/lib/islands/registry.ts`, export an `IslandRegistry` that maps the directive name to the live component. The examples name the export `siteIslands`. :fact[thjrvl] :fact[mcxxpp]
-- On a scaffolded site, in `src/theme/islands/registry.ts`, add the entry beside `banner` instead. :fact[mcxxpp]
+- On a scaffolded site, in `src/theme/islands/registry.ts`, import the live component and add its entry beside `banner` instead. :fact[mcxxpp]
 - Code: `src/lib/islands/registry.ts`, mapping `converter` to the live component. :fact[thjrvl] :source[/templates/waymark/src/theme/islands/registry.ts]
 
 ```ts
@@ -243,7 +243,7 @@ export const load: LayoutServerLoad = () => {
 :::row
 **Symptom.** The islands runtime loads, and the fallback stays.
 **Cause.** A `'visible'` island's boundary hasn't entered the viewport yet. Otherwise, the layout's map has no entry under the directive name, the props payload failed to parse, or the component threw on mount. :fact[mynt0l] :fact[urw3z7]
-**Fix.** Scroll a `'visible'` island into view. Otherwise, check that the layout imports the same `siteIslands` export as the adapter. If it does, see [Debug your site](debug-your-site.md). :fact[mynt0l] :fact[ni5lm7] :fact[urw3z7]
+**Fix.** Scroll a `'visible'` island into view. Otherwise, check that the layout imports the same `siteIslands` export as the adapter. If it does, check that the boundary's `data-cairn-props` parses as JSON and that the component mounts without throwing. The runtime catches both failures and logs nothing. :fact[mynt0l] :fact[ni5lm7] :fact[urw3z7]
 :::
 
 ## See also

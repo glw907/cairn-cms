@@ -33,7 +33,7 @@ It tells the reader who looked for a callback that code meant to follow a publis
 :::constraints
 - Name no CI service, deploy product, or pipeline syntax. The pipeline is the reader's.
 - Frame the two KV functions in the job as illustrative storage, with Cloudflare's KV API reference beside them. Copy no namespace, binding, or token setup.
-- Say that the admin checks `publishActions` at server start. Never say that a bad entry fails the build.
+- Say that the admin checks `publishActions` when the module that calls `createCairnAdmin` loads, so a bad entry fails the build on a scaffolded site. Never say that `composeRuntime` checks it. :fact[sznajt]
 - Name the adapter module by its role, and give `src/theme/cairn.config.ts` only as where a scaffolded site keeps it. :fact[7ym1ep]
 - When the page describes what the job sends, speak only of posts published from the admin.
 :::
@@ -58,7 +58,7 @@ It tells the reader who looked for a callback that code meant to follow a publis
 - See [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished) and [`parseManifest`](../reference/delivery-data.md#parsemanifest).
 - To add the job, follow these steps:
 1. In your site, create `scripts/announce-new-posts.ts` with the following contents. :fact[tdbki1] :fact[vrue1g]
-- Code: the whole job file. It reads the deployed manifest from the checkout and loads the stored one from a Workers KV value. On the first run it stores a baseline and returns. Otherwise it diffs the manifests, sends each `posts` entry, and saves the deployed manifest last. The block typechecks against the built package. A copy with a stubbed store ran under Node 24. :fact[ix641z] :fact[gj96px] :fact[3dyial] :fact[2hwgg3]
+- Code: the whole job file. It reads the deployed manifest from the checkout and loads the stored one from a Workers KV value. On the first run it stores a baseline and returns. Otherwise it diffs the manifests, sends each `posts` entry, and saves the deployed manifest last. The block typechecks against the built package. :fact[ix641z] :fact[gj96px] :fact[3dyial] :fact[2hwgg3]
 
 ```ts
 /// <reference types="node" />
@@ -136,7 +136,7 @@ main().catch((error: unknown) => {
 - The example saves after it sends. If a send throws, the run ends before the save. The next run diffs against the old baseline and sends the whole batch, so a post sent before the failure gets a second message. :fact[2hwgg3]
 - If the job saves before it sends, a failed send loses its post instead. The next run diffs against a manifest that already holds the post's stamp, and no later run returns it. :fact[2hwgg3]
 - To trade a repeated message for a missed one, follow this step:
-- If a missed message costs your subscribers less than a repeated one, in `main`, move the `savePriorManifest(raw)` call above the `for` loop. :fact[2hwgg3]
+- If a missed message costs your subscribers less than a repeated one, in `main`, move the last `savePriorManifest(raw)` call from after the `for` loop to above it. :fact[2hwgg3]
 - Whichever order the job uses, a failed run exits with code `1`. The example sets `process.exitCode` when `main` rejects.
 
 ## Start from a stored baseline
@@ -201,7 +201,8 @@ publishActions: [
 ```
 
 - The admin replaces `{id}` and `{concept}` in `href` with the published entry's id and concept. `concepts` shows the link only for entries of the listed concepts. :fact[ohq7b9]
-- The admin checks the list when the server starts. A missing label, a repeated label, a missing `href`, or an unknown concept id throws there. :fact[r2vx8m]
+- The admin checks the list when the module that calls `createCairnAdmin` loads. A missing label, a repeated label, a missing `href`, or an unknown concept id throws there. :fact[r2vx8m]
+- On a scaffolded site, that module loads during `vite build`, so a bad entry fails the build. :fact[sznajt]
 - The links appear after an editor publishes one entry from its edit page. The confirmation after **Publish all** carries no links. :fact[v5qalk]
 - To check the link, publish a post from its edit page and confirm that **Announce** appears beside the publish-success strip. :fact[ohq7b9] :fact[v5qalk]
 - See [the publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam) for the members, the placeholders, and the validation.

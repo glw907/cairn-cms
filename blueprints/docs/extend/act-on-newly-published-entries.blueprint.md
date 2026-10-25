@@ -70,20 +70,21 @@ import { buildNewlyPublished, parseManifest, type ManifestEntry } from '@glw907/
 declare function sendNewPostEmail(entry: ManifestEntry): Promise<void>;
 
 // Illustrative storage: one Workers KV value, read and written through the Cloudflare REST API.
-const KV_VALUE_URL =
+const kvNamespaceId = 'your-kv-namespace-id'; // the namespace that holds the baseline
+const kvValueUrl =
   `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}` +
-  `/storage/kv/namespaces/${process.env.ANNOUNCE_KV_NAMESPACE_ID}/values/deployed-manifest`;
+  `/storage/kv/namespaces/${kvNamespaceId}/values/deployed-manifest`;
 const auth = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` };
 
 async function readPriorManifest(): Promise<string | null> {
-  const res = await fetch(KV_VALUE_URL, { headers: auth });
+  const res = await fetch(kvValueUrl, { headers: auth });
   if (res.status === 404) return null; // nothing stored yet: the first run
   if (!res.ok) throw new Error(`KV read failed with ${res.status}`);
   return res.text();
 }
 
 async function savePriorManifest(raw: string): Promise<void> {
-  const res = await fetch(KV_VALUE_URL, {
+  const res = await fetch(kvValueUrl, {
     method: 'PUT',
     headers: { ...auth, 'Content-Type': 'application/octet-stream' },
     body: raw,
@@ -103,7 +104,7 @@ async function main(): Promise<void> {
   }
 
   const newPosts = buildNewlyPublished(parseManifest(prior), after).filter(
-    (entry) => entry.concept === 'posts',
+    ({ concept }) => concept === 'posts',
   );
   for (const entry of newPosts) {
     await sendNewPostEmail(entry);
@@ -118,15 +119,16 @@ main().catch((error: unknown) => {
 });
 ```
 
-2. If your posts concept has an id other than `posts`, in the `filter` call, replace `'posts'` with that id. :fact[gj96px]
+2. If your posts concept has an id other than `posts`, replace `'posts'` in the job's concept check with that id. :fact[gj96px]
 - The scaffold's posts concept is `posts`. :fact[gj96px]
 3. In the same file, replace the `declare function` line with a `sendNewPostEmail` that calls your provider.
 - Each entry the diff returns is a `ManifestEntry`, and the send code reads fields such as `title` and `permalink` from it. :fact[z2h50k]
 - See [the delivery data types](../reference/delivery-data.md#types).
-- The job stores the deployed manifest as one string and passes the string it reads back to `parseManifest`. :fact[z2h50k]
-- To keep that string in R2 or another store, replace `readPriorManifest` and `savePriorManifest`. Return `null` from the read when nothing is stored. :fact[z2h50k]
-4. In your pipeline's settings, set `CLOUDFLARE_ACCOUNT_ID`, `ANNOUNCE_KV_NAMESPACE_ID`, and `CLOUDFLARE_API_TOKEN` for the job's step. :fact[3dyial]
-5. In your deploy pipeline, after the deploy step, add a step that runs `node scripts/announce-new-posts.ts` from the site's root. :fact[rh53a2] :fact[1mkckz]
+4. If you use R2 or another store, replace `readPriorManifest` and `savePriorManifest` with functions for that store. :fact[z2h50k]
+- The job stores the deployed manifest as one string, and it passes the string it reads from storage to `parseManifest`. A replacement read returns `null` when nothing is stored, as the KV read does. :fact[z2h50k]
+5. If you keep the KV storage, replace the value of `kvNamespaceId` with the id of your KV namespace. :fact[3dyial]
+6. In your deploy pipeline, after the deploy step, add a step that runs `node scripts/announce-new-posts.ts` from the site's root. :fact[rh53a2] :fact[1mkckz]
+7. If you keep the KV storage, in your pipeline's settings, set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` for that step. :fact[3dyial]
 
 ## Order the send and the save
 
@@ -135,8 +137,8 @@ main().catch((error: unknown) => {
 - Given the same pair of manifests, the diff returns the same entries. The stored manifest therefore decides what the next run sends. :fact[2hwgg3] :fact[pc3iy5]
 - The example saves after it sends. If a send throws, the run ends before the save. The next run diffs against the old baseline and sends the whole batch, so a post sent before the failure gets a second message. :fact[2hwgg3]
 - If the job saves before it sends, a failed send loses its post instead. The next run diffs against a manifest that already holds the post's stamp, and no later run returns it. :fact[2hwgg3]
-- To trade a repeated message for a missed one, follow this step:
-- If a missed message costs your subscribers less than a repeated one, in `main`, move the last `savePriorManifest(raw)` call from after the `for` loop to above it. :fact[2hwgg3]
+- If a missed message costs your subscribers less than a repeated one, follow this step:
+- In `main`, move the last `savePriorManifest(raw)` call from after the `for` loop to before it. :fact[2hwgg3]
 - Whichever order the job uses, a failed run exits with a nonzero status. The example sets `process.exitCode` when `main` rejects.
 
 ## Start from a stored baseline
@@ -189,7 +191,7 @@ const before = prior === null ? null : parseManifest(prior);
 
 - An `editor.publishActions` list on the adapter shows links beside the publish-success strip for the entry just published. The list holds plain data, not a callback. :fact[ohq7b9] :fact[ww1gv0]
 - To add a link, follow this step:
-- In the adapter module's `editor` group, add a `publishActions` list. :fact[k7pq3d] :fact[7ym1ep]
+- In the adapter module's `editor` group, add a `publishActions` list. On a scaffolded site, the adapter module is `src/theme/cairn.config.ts`. :fact[k7pq3d] :fact[7ym1ep]
 - Code: an illustrative `publishActions` list with one `Announce` link for `posts`, whose `href` opens an admin screen with the published entry's id. :source[/src/lib/sveltekit/publish-actions.ts#PublishActionEntry] :fact[r2vx8m] :fact[ohq7b9]
 
 <!-- snippet-check-skip: one member of the adapter's editor group, inside the defineAdapter call -->
@@ -204,7 +206,9 @@ publishActions: [
 - The admin checks the list when the module that calls `createCairnAdmin` loads. A missing label, a repeated label, a missing `href`, or an unknown concept id throws there. :fact[r2vx8m]
 - On a scaffolded site, that module loads during `vite build`, so a bad entry fails the build. :fact[sznajt]
 - The links appear after an editor publishes one entry from its edit page. The confirmation after **Publish all** carries no links. :fact[v5qalk]
-- To check the link, publish a post from its edit page and confirm that **Announce** appears beside the publish-success strip. :fact[ohq7b9] :fact[v5qalk]
+- To check the link, follow these steps:
+1. In the admin, publish a post from its edit page. :fact[v5qalk]
+2. Confirm that **Announce** appears beside the publish-success strip. :fact[ohq7b9]
 - See [the publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam) for the members, the placeholders, and the validation.
 - See [Add a custom admin screen](add-a-custom-admin-screen.md) for a screen a link can open.
 

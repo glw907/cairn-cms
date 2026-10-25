@@ -12,6 +12,10 @@
 
 ## Medium
 
+- [ ] **#63** Mark a reader-site path so `check:symbols` doesn't reject it `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  `check:symbols` rejects `src/app.css`, a path in the reader's site, as an unresolved file, so the drafter wrote "`app.css` under `src`" to get past it, and the theme agent added an allowlist entry. Paths a page names in the reader's site need a marker or a standing allowlist group, so the gate doesn't push the prose into circumlocution.
+  Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4/friction.md (P11)
+
 - [ ] **#62** Fix the published-page defects batch 4 found and left `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   run-cairn-audit's CI fragment runs `npx playwright install chromium` but never installs the `playwright` package, and it sets `BASE_URL` to 4173 while the scaffold's `preview` is `wrangler dev`. `docs/extend/share-a-draft-preview.md:43` links a removed anchor (that page retires with the fold).
   Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 9)
@@ -45,6 +49,7 @@
 - [ ] **#53** Mark a page plan and framing record superseded when its page is narrowed or trimmed `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   After the premise trim, configure-media's plan and framing record (2026-10-12) and the narrowed page's 782-line plan and 254-line framing record were mostly out of scope, and reading them cost more than they returned. Record B3-8, B3-24.
   Batch 4: every author read a 488 to 836-line plan, or a 53 KB one that predated the trims. Repeat of B3-8, B3-24. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4-friction.md (cairn-cms 5)
+  Batch 4 drafting: the register editor's act-on review asked for a failure-path section and a heading rename, both from the stale page plan (`briefs/extend/<slug>.plan.md`), which the approved blueprint overrides. Record: ~/Projects/initiatives/docs-system/research/2026-10-24-extend-blueprints-batch-4/friction.md (P8)
 - [ ] **#50** Name a concept by its key in every concept error `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   `defineConcept` names a concept in its errors by `label ?? dir` (`src/lib/content/concepts.ts:67`), while `normalizeConcepts` names it by its content-map key, so one concept shows under two names. Record B3-18.
 - [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*

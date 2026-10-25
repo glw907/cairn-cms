@@ -1983,7 +1983,8 @@ contract in full.
 
 A site declares next-step links for the publish-success moment, the `navLayout` site-entry grammar
 applied after a publish. A `publishActions` entry on the adapter's `editor` group is plain data, validated
-when the runtime composes: a blank field or an unknown concept fails the build instead of silently
+when `createCairnAdmin` builds the admin's content routes: a blank label or `href`, a label declared
+twice, or an unknown concept throws an error naming the entry at server start, instead of silently
 rendering a broken link after a publish. `editLoad` resolves the validated config for the one
 entry that just went live. It drops any entry a `concepts` list excludes, then substitutes
 `{concept}` and `{id}` into every surviving `href` with that entry's identity. The edit page

@@ -2,7 +2,7 @@
 
 The engine's part in a site's public styling is one sheet of defaults, `@glw907/cairn-cms/cairn-public.css`. Its roles sit in `@layer theme`, the lowest layer Tailwind declares. A value the site writes for one of those roles, unlayered in `:root` or in a daisyUI theme block, overrides the engine's default.
 
-The setup command, `create-cairn-site`, scaffolds a site with Waymark as its theme. Waymark sits on the chassis. The chassis is a set of genre-free modules and style sheets that every scaffolded site carries. Both are files in the site's tree, and the engine's npm package carries neither. The site's `src/chassis/README.md` documents the chassis: a table of its files, its class prefixes, its override seams and their traps, and a dependents table for most of its files. In the admin, a theme reaches the editor's preview frame. That frame loads the style sheets the adapter's `editor.preview` member names, and no other site CSS.
+The setup command, `create-cairn-site`, scaffolds a site with Waymark as its theme. Waymark sits on the chassis. The chassis is a set of genre-free modules and style sheets that every scaffolded site carries. Both are files in the site's tree, and the engine's npm package carries neither. The site's `src/chassis/README.md` documents the chassis: a table of all but one of its files, its class prefixes, its override seams and their traps, and a dependents table for most of its files. In the admin, a theme reaches the editor's preview frame. That frame loads the style sheets the adapter's `editor.preview` member names, and no other site CSS.
 
 Developers come to theming from four starting points, each with its entry section:
 

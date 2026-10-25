@@ -19,7 +19,7 @@ type: task guide
 **Background.** The engine's part in public styling is one sheet of defaults, `@glw907/cairn-cms/cairn-public.css`. :fact[c4nnu9]
 Its roles sit in `@layer theme`, the lowest layer Tailwind declares. A value the site writes for a role, unlayered in `:root` or in a daisyUI theme block, overrides the engine's default. :fact[hva8r5]
 A scaffolded site ships Waymark, the scaffold's theme, wired into the chassis, a set of genre-free modules and style sheets. Both are files in the site's tree, outside the npm package. :fact[rxj43c]
-The site's `src/chassis/README.md` documents the chassis: a table of its files, its class prefixes, its override seams and their traps, and a dependents table for most of its files. :fact[6oqyfi] :fact[kj37zz]
+The site's `src/chassis/README.md` documents the chassis: a table of all but one of its files, its class prefixes, its override seams and their traps, and a dependents table for most of its files. :fact[6oqyfi] :fact[kj37zz]
 In the admin, a theme reaches the editor's preview frame. The frame loads the sheets the adapter's `editor.preview` names, and no other site CSS. :fact[gnn3pv]
 
 **What the page does for them.** The introduction opens on that model: one engine sheet in the lowest layer, and a scaffold whose theme and chassis are the site's files. :fact[hva8r5] :fact[rxj43c]

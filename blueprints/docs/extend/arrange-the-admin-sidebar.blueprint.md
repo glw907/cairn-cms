@@ -20,7 +20,7 @@ exemplar: extenders/directus-create-extension
 **What the page does for them.** The introduction opens on the sidebar, one ordered tree the server resolves on every request. The tree comes from a `navLayout` on the adapter's `editor` group. When the adapter declares none, it comes from a flat default of the site's concepts and then the engine's screens, built through the same primitives a declared layout uses. :fact[ys1iq1] :fact[18d9so]
 It says why a layout exists. A custom screen reaches the sidebar only through a site entry, and an organization's editors see the engine's labels and order until a layout groups and relabels them. Declaring a layout loses no screen: a screen the layout leaves out still renders in a trailing group after a divider. :fact[brfitv] :fact[yf1rrr]
 The contract sentence follows. The steps declare a layout that groups screens into sections, relabels, re-icons, or hides engine screens, links custom screens, narrows a section by role, and sets which sections start collapsed. They then add the two per-request functions, `navFilter` and `attention`. The page also covers how startup validation refuses a malformed tree and how to check the sidebar in the running admin. :fact[ld6xam]
-It then states the limit that holds throughout the page. `hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map both hides an entry and refuses its route, and Restrict admin access covers it. :fact[bvfs3e] :fact[zyjzeg] :fact[qzbfrd] :fact[rx9v6d] :fact[altcjp]
+It then states the limit that holds throughout the page. `hidden`, `ownerOnly`, `roles`, and `navFilter` each hide a link and leave its route open. The access map hides an entry and refuses its route: the engine refuses the routes to its screens, and a site's route refuses once it calls `requireAccess`. Restrict admin access covers it. :fact[bvfs3e] :fact[zyjzeg] :fact[qzbfrd] :fact[rx9v6d] :fact[altcjp]
 One clause warns the reader who knows `createSectionAction`: its `ownerOnly` option refuses a non-owner, while `ownerOnly` on a site entry only hides the link. :fact[smbsa6] :fact[zyjzeg]
 
 **What it leaves to other pages, each named in the introduction:**
@@ -234,7 +234,7 @@ export const admin = createCairnAdmin({ runtime, tidy: { client }, attention });
 
 :::row
 **Symptom.** The server module that calls `createCairnAdmin` fails to load, with an error that starts `navLayout:`.
-**Cause.** The declared tree failed validation, and the message names the node at fault. :fact[ld6xam] :fact[h9hjxc]
+**Cause.** The declared tree failed validation, and the message names the value at fault, except for a blank section label. :fact[ld6xam] :fact[h9hjxc]
 **Fix.** Correct the node the message names, using the triggers that follow, then restart the server. :fact[h9hjxc]
 :::
 

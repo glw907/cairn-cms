@@ -75,11 +75,11 @@ Visitors are welcome to tour the space.
 
 - The posts and pages concepts a scaffolded site starts with are declarations like this one in its adapter. Neither name is reserved, and a site may rename them, remove them, or declare other concepts beside them. :fact[5eum60]
 - Some scaffold code reads a concept by its id; the scaffold's feed reads `posts`, for example. A site that renames a scaffolded concept updates that code too. :fact[uf5ahv]
-- Two engine conveniences also key on the literal ids: a concept with the id `pages` defaults to the permalink `/:slug` where another concept defaults to `/<id>/:slug`, and the admin's getting-started checklist looks for `posts` and `pages` entries. :fact[r03vis] :fact[g39nkp]
+- Some engine conveniences also key on the literal ids: a concept with the id `pages` defaults to the permalink `/:slug` where another concept defaults to `/<id>/:slug`, the admin's getting-started checklist looks for `posts` and `pages` entries, and the entry picker and the editor's `[[` link autocomplete list `pages` entries first and `posts` second. :fact[r03vis] :fact[g39nkp]
 - One concept declaration gives a site the following:
 - An admin list and an editor for the concept's entries. :fact[vs77a6]
 - A form, a save-time validator, and a TypeScript type, each derived from the fieldset. :fact[phdgof]
-- A public page for each entry, unless the concept's routing is `'embedded'`. :fact[s2zbzm]
+- A public page for each non-draft entry, unless the concept's routing is `'embedded'`. :fact[s2zbzm]
 - A row for each entry in the committed content manifest. :fact[t5ebsr]
 - See [`defineConcept`](../reference/core.md#defineconcept).
 
@@ -156,7 +156,7 @@ const schedule = defineFieldset({
 - `updated` is the sitemap's `lastmod` and the entry page's modified time in its SEO head. Only the JSON Feed carries a modified date, as `date_modified`, and only when the site's feed route passes an item's `updated`, which the scaffold's feed doesn't. The RSS feed carries none. :fact[69j91g]
 - `description` is the entry's excerpt. :fact[69j91g]
 - `draft` set to `true` leaves the entry out of a concept index's listings and the sitemap, and a boolean field named `draft` is the edit page's **Hidden** toggle. :fact[69j91g] :fact[xcqr2v]
-- `description`, `image`, `robots`, and `author`, each read as a string, are the SEO head fields the public route factory reads, and a key the fieldset does not declare never reaches the head. :fact[becf0c]
+- `description`, `image`, `robots`, and `author`, each read as a string, are the SEO head fields the public route factory reads. An undeclared `image`, `robots`, or `author` never reaches the head; an undeclared `description` still becomes the entry's excerpt, which the head uses, until an admin save drops the key. :fact[becf0c]
 - An entry's date is the one part of its identity that comes from frontmatter rather than from its filename. :fact[zce3pt] :fact[46edxb]
 
 ## Entry identity
@@ -195,7 +195,7 @@ const schedule = defineFieldset({
 - When another entry on `main` already resolves to the same permalink, the edit page shows a warn-only `address-collision` advisory. :fact[9270mo]
 - A publish rechecks against `main` and every open `cairn/*` branch, and when a collision remains it logs `publish.address_collided` after the publish lands. :fact[9270mo]
 - Neither check blocks a save or a publish, and both fail open, so a check that cannot run lets the save or publish go ahead. :fact[9270mo]
-- Once both entries are on `main` and neither is a draft, the next build fails, because building the site's content indexes throws on the duplicate permalink. :fact[yvz3mm]
+- Once both entries are on `main`, neither is a draft, and both concepts are routable, the next build fails, because building the site's content indexes throws on the duplicate permalink. :fact[yvz3mm]
 - See [Log events](../reference/log-events.md).
 
 ## The content manifest
@@ -208,7 +208,7 @@ const schedule = defineFieldset({
 - Its summary and its draft flag. :fact[t5ebsr]
 - Its outbound `cairn:` links, the internal links its body makes to other entries. :fact[t5ebsr]
 - Its media refs, reference-field edges, tags, included fragments, and first-publish stamp, when it has them. :fact[t5ebsr]
-- A save to the entry's pending branch commits no manifest change, and a publish patches the entry's row in the same commit as the content change. :fact[t5ebsr]
+- A save to the entry's holding branch commits no manifest change, and a publish patches the entry's row in the same commit as the content change. :fact[t5ebsr]
 - The `cairnManifest` Vite plugin rebuilds the manifest from the files when a build starts and fails the build when the committed file has drifted, and the `cairn-manifest` command writes a regenerated file. :fact[6e8kwx]
 - A `reference` field holds a typed `{ concept, id }` pointer. The manifest records each entry's outbound reference edges, and the engine reads which entries point at an entry from them. :fact[a8ecm0]
 - See [Content and manifest](../reference/core.md#content-and-manifest).

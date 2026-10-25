@@ -1,7 +1,7 @@
-# Framing record: Configure rendering
+# Framing record: Write a markdown component
 
-Agent-facing; drives the introduction of `docs/extend/configure-rendering.md` only; the body follows
-the page plan (`docs/internal/briefs/extend/configure-rendering.plan.md`).
+Agent-facing; drives the introduction of `docs/extend/write-a-markdown-component.md` only; the body follows
+the page plan (`docs/internal/briefs/extend/write-a-markdown-component.plan.md`).
 
 Written 2026-10-12 by the intro-framing step of the docs page chain (stage 2b part 1). No earlier
 framing record existed. Inputs read: "The introduction" and "The page anatomies" in

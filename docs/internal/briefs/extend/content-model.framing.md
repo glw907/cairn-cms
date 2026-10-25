@@ -95,7 +95,7 @@ page plan (`docs/internal/briefs/extend/content-model.plan.md`).
 - Came about the scaffold's fragments concept or the include directive:
   `reuse-content-across-entries`. The intro never calls `fragments` reserved (plan, Drafting
   constraints).
-- Came about how an entry's body renders: `configure-rendering`.
+- Came about how an entry's body renders: `write-a-markdown-component`.
 - Came for one builder's every option: the "Fields" table in `docs/reference/core.md`. The body's
   Field options section links it in its second sentence; the intro adds no fifth out-of-scope item.
 
@@ -154,7 +154,7 @@ page plan (`docs/internal/briefs/extend/content-model.plan.md`).
 
 - **Group and neighbors.** Model content, first of seven pages, and the group's only concept page;
   the other six are task guides that build on it: `define-an-adapter-and-schema`,
-  `configure-rendering`, `link-content-with-references`, `reuse-content-across-entries`,
+  `write-a-markdown-component`, `link-content-with-references`, `reuse-content-across-entries`,
   `configure-media`, `migrate-existing-content`. The intro frames the model those guides act on,
   without naming the group or listing the guides beyond the out-of-scope four.
 - **Links in, on disk.** `docs/extend/architecture.md` lines 22 (out of scope), 69 (seams table), and
@@ -164,7 +164,7 @@ page plan (`docs/internal/briefs/extend/content-model.plan.md`).
   (crossLink: the id and date rules), and `link-content-with-references` (out of scope: the
   `cairn:` link model).
 - **Links out.** The outline's crossLinks to `define-an-adapter-and-schema`,
-  `link-content-with-references`, and `reuse-content-across-entries`; `configure-rendering` from the
+  `link-content-with-references`, and `reuse-content-across-entries`; `write-a-markdown-component` from the
   out-of-scope list; `architecture` from the prior-knowledge sentence; the body's reference links.
 - **What siblings already say, so the intro words it fresh.**
   - Architecture's intro opens on content as markdown in the site's git repository and states that

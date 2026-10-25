@@ -1,5 +1,5 @@
 {
-  "page": "docs/extend/configure-rendering.md",
+  "page": "docs/extend/write-a-markdown-component.md",
   "sentences": [
     { "text": "Every entry on a cairn site becomes HTML through one function that the site supplies: the adapter's `rendering.render`.", "id": "f:3l7f56" },
     { "text": "The edit page's live preview and every public page call that same function, so the preview can't drift from the published page.", "id": "f:3l7f56" },

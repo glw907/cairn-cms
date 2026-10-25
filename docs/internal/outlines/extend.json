@@ -23,7 +23,7 @@
       "pages": [
         "content-model",
         "define-an-adapter-and-schema",
-        "configure-rendering",
+        "write-a-markdown-component",
         "link-content-with-references",
         "reuse-content-across-entries",
         "configure-media",
@@ -154,12 +154,12 @@
     {
       "term": "render",
       "definition": "The adapter's one rendering.render function (a SiteRender, usually built with createRenderer) that both the editor preview and every public page call.",
-      "definedOn": "configure-rendering"
+      "definedOn": "write-a-markdown-component"
     },
     {
       "term": "component",
       "definition": "A container directive a site registers with defineComponent and defineRegistry, with typed attributes and slots and a synchronous build returning a hast Element.",
-      "definedOn": "configure-rendering"
+      "definedOn": "write-a-markdown-component"
     },
     {
       "term": "delivery surface",
@@ -320,7 +320,7 @@
     },
     {
       "from": "define-an-adapter-and-schema",
-      "to": "configure-rendering",
+      "to": "write-a-markdown-component",
       "why": "The rendering group of the adapter."
     },
     {
@@ -335,7 +335,7 @@
     },
     {
       "from": "reuse-content-across-entries",
-      "to": "configure-rendering",
+      "to": "write-a-markdown-component",
       "why": "Forwarding resolveFragment from render; components as the alternative to a fragment."
     },
     {
@@ -344,17 +344,17 @@
       "why": "The delete guard shape both share."
     },
     {
-      "from": "configure-rendering",
+      "from": "write-a-markdown-component",
       "to": "security-model",
       "why": "What the sanitize floor and sink guard protect before a site opts out."
     },
     {
-      "from": "configure-rendering",
+      "from": "write-a-markdown-component",
       "to": "add-an-island",
       "why": "Hydrating a registered component."
     },
     {
-      "from": "configure-rendering",
+      "from": "write-a-markdown-component",
       "to": "theme-your-public-site",
       "why": "Styling render output."
     },
@@ -365,7 +365,7 @@
     },
     {
       "from": "migrate-existing-content",
-      "to": "configure-rendering",
+      "to": "write-a-markdown-component",
       "why": "Replacing old shortcodes with components."
     },
     {
@@ -484,7 +484,7 @@
       "why": "cairn-audit.config.json and the check:cairn scripts."
     },
     {
-      "from": "configure-rendering",
+      "from": "write-a-markdown-component",
       "to": "configure-media",
       "why": "The media resolver render forwards, and what a missing asset renders."
     },
@@ -1040,9 +1040,9 @@
       "relinkIndex": 74,
       "file": "docs/reference/render.md",
       "context": "its own.",
-      "oldTarget": "docs/extend/configure-rendering.md",
-      "action": "Restore the pointer at docs/extend/configure-rendering.md.",
-      "restoredBy": "configure-rendering",
+      "oldTarget": "docs/extend/write-a-markdown-component.md",
+      "action": "Restore the pointer at docs/extend/write-a-markdown-component.md.",
+      "restoredBy": "write-a-markdown-component",
       "batch": "2b"
     },
     {
@@ -2096,7 +2096,7 @@
         "Writing the declaration (define-an-adapter-and-schema).",
         "Reference fields in use (link-content-with-references).",
         "Fragments (reuse-content-across-entries).",
-        "Rendering the body (configure-rendering)."
+        "Rendering the body (write-a-markdown-component)."
       ],
       "pinned": [],
       "rearms": [
@@ -2185,7 +2185,7 @@
       "outOfScope": [
         "What routing and identity mean (content-model).",
         "Reference fields (link-content-with-references).",
-        "The render group (configure-rendering).",
+        "The render group (write-a-markdown-component).",
         "Roles and the access map (restrict-admin-access).",
         "navLayout (arrange-the-admin-sidebar)."
       ],
@@ -2193,9 +2193,9 @@
       "rearms": []
     },
     {
-      "slug": "configure-rendering",
-      "title": "Configure rendering",
-      "path": "docs/extend/configure-rendering.md",
+      "slug": "write-a-markdown-component",
+      "title": "Write a markdown component",
+      "path": "docs/extend/write-a-markdown-component.md",
       "group": "model-content",
       "order": 6,
       "batch": "2b",
@@ -2219,7 +2219,7 @@
       "figureNote": "",
       "absorbs": [],
       "factSections": [
-        "docs/extend/configure-rendering.md",
+        "docs/extend/write-a-markdown-component.md",
         "docs/extend/README.md",
         "docs/extend/render-safety.md"
       ],
@@ -2403,7 +2403,7 @@
         "The empty-fragment and not-found notices with their include.missing reasons, versus the build's throwing resolver."
       ],
       "outOfScope": [
-        "Reusable components with attributes (configure-rendering).",
+        "Reusable components with attributes (write-a-markdown-component).",
         "Reference fields (link-content-with-references)."
       ],
       "pinned": [],
@@ -2533,7 +2533,7 @@
       ],
       "outOfScope": [
         "Declaring the target concepts (define-an-adapter-and-schema).",
-        "Registering components (configure-rendering)."
+        "Registering components (write-a-markdown-component)."
       ],
       "pinned": [],
       "rearms": [
@@ -2619,7 +2619,7 @@
       ],
       "outOfScope": [
         "The file map of the scaffold (scaffolded-site-files).",
-        "Building components (configure-rendering).",
+        "Building components (write-a-markdown-component).",
         "The admin's look (add-a-custom-admin-screen).",
         "Delivery routes (build-the-public-routes).",
         "Media storage and the media route (configure-media).",
@@ -2934,7 +2934,7 @@
         "Verify on the public page, since the sandboxed preview frame always shows the fallback."
       ],
       "outOfScope": [
-        "Declaring the component itself (configure-rendering)."
+        "Declaring the component itself (write-a-markdown-component)."
       ],
       "pinned": [],
       "rearms": [
@@ -3387,7 +3387,7 @@
         "Configuring the access map (restrict-admin-access).",
         "Setting up Access (replace-magic-links-with-cloudflare-access).",
         "Building a channel (add-a-second-sign-in-group).",
-        "Renderer options (configure-rendering).",
+        "Renderer options (write-a-markdown-component).",
         "Rotating the key (rotate-the-github-app-key).",
         "When the sanitize floor shipped; state the floor as it is (migration-notes, kept)."
       ],

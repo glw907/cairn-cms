@@ -1,4 +1,4 @@
-# Configure rendering
+# Write a markdown component
 
 Every entry on a cairn site becomes HTML through one function that the site supplies: the adapter's
 `rendering.render`. The edit page's live preview and every public page call that same

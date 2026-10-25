@@ -285,7 +285,7 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   delete every `preview_tokens` row the removed editor minted (a separate statement outside the
   atomic batch, swallowing only a "no such table" fault for a site with the preview migration
   unapplied). Source: `src/lib/auth/store.ts#deleteEditorPreviewTokens`, `src/lib/auth/store.ts#deleteEditor`
-  (`deleteEditor` call), `src/lib/auth/store.ts:469-473` (`removeOwnerIfNotLast` call). [verified]
+  (`deleteEditor` call), `src/lib/auth/store.ts:477` (`removeOwnerIfNotLast` call). [verified]
 - `f:pf69s2` The store's unexported auth-flow set (engine-internal to the magic-link guard, not proven
   consumer surface) is `findEditor`, `issueToken`, `recentlyIssued`, `consumeToken`, `rebindToken`,
   `createSession`, `resolveSession`, `deleteSession`; `insertOwnerIfEmpty` is separately demoted (a
@@ -902,12 +902,14 @@ re-sourced to Go on this tree rather than to the page.
 
 ## docs/reference/cli-cairn-manifest.md
 
-- `f:fh6kod` `cairn-manifest` reuses the `cairnManifest()` Vite plugin's own options (globs, config module,
-  manifest path) rather than taking its own flags, so the regenerated manifest is guaranteed to
-  match what a build verifies against. The bin calls two internal functions in sequence,
-  `writeManifest` and `writeSiteFacts`. Source: page text plus `src/lib/vite/internal.ts` doc
-  comments referencing shared option resolution; `src/lib/vite/bin.ts:9` (header comment naming
-  both functions) and `:27-29` (sequential calls). [verified: structurally]
+- `f:fh6kod` `cairn-manifest` takes no flag but `--help`: it loads the site's Vite config, reads the
+  `cairnManifest()` plugin's options from it (globs, config module, manifest path), and refuses to
+  run when the config has no such plugin, so it builds the manifest from the same options the
+  build's check uses. The bin calls two internal functions in sequence, `writeManifest` and
+  `writeSiteFacts`. Source: `src/lib/vite/assemble.ts#parseArgs` (`--help`),
+  `src/lib/vite/internal.ts:349-362` (`loadCairnBuild`), `src/lib/vite/bin.ts:27-29`
+  (`writeManifest`). [verified: corrected 2026-10-24; the source no longer cites page text, and
+  "guaranteed to match" is narrowed to the shared options the code shows]
 - `f:6t5tzu` Only `publishedAt` survives a rebuild across entries: the command reads existing stamps from
   the file about to be overwritten, merges them into the new manifest, and drops any stamp whose
   entry the corpus no longer holds. On a corrupt existing file, it warns to stderr and writes the
@@ -1123,8 +1125,7 @@ re-sourced to Go on this tree rather than to the page.
   `:70-72` (draft check precedes the stamp comparison). [verified]
 - `f:gkrell` `ManifestEntry.publishedAt` (ISO 8601 UTC) is set once, at the publish commit that first lands
   the entry non-draft, and never overwritten or cleared afterward; `upsertEntry` preserves a prior
-  `publishedAt` through an ordinary save. Source: `src/lib/content/manifest.ts:53-61` (the `publishedAt` doc
-  comment) and `src/lib/content/manifest.ts#stampFirstPublish`, matching the Types-table row in
+  `publishedAt` through an ordinary save. Source: `src/lib/content/manifest.ts:53-61` (`publishedAt`) and `src/lib/content/manifest.ts#stampFirstPublish`, matching the Types-table row in
   `docs/reference/delivery-data.md:595`. [verified]
 - `f:445jgb` `/delivery/data`'s own charter forbids importing from `github`, `auth`, or `email`, enforced by a
   source-boundary test, so the delivery layer never pulls the backend or magic-link auth surface
@@ -1193,11 +1194,8 @@ re-sourced to Go on this tree rather than to the page.
 - `f:4kmm3i` The island boundary is a `<div>` with `data-cairn-island` (the directive name), `data-cairn-props`
   (JSON.stringify'd declared scalar attributes; number/boolean fields serialize as JSON
   number/boolean, everything else stays the literal string), and `data-cairn-hydrate="visible"`
-  present only on a `'visible'` island. Source: `src/lib/render/rehype-dispatch.ts:122-137`
-  (`islandBoundary`: `{ type: 'element', tagName: 'div', properties: { dataCairnIsland: name,
-  dataCairnProps: JSON.stringify(serializeIslandProps(...)) } }`, plus `dataCairnHydrate =
-  'visible'` only `if (def.hydrate === 'visible')`) and `:107-120` (`serializeIslandProps`
-  coerces only declared `number` fields via `Number(value)`, everything else stays as-is).
+  present only on a `'visible'` island. Source: `src/lib/render/rehype-dispatch.ts:124-139`
+  (`islandBoundary`), `src/lib/render/rehype-dispatch.ts:108-122` (`serializeIslandProps`).
   [verified]
 - `f:j390f9` Island props are HTML-attribute-escaped on emit and `JSON.parse`-d in a try/catch on the client,
   safe against breakout only because the value never enters a script context; an island component
@@ -1269,7 +1267,7 @@ re-sourced to Go on this tree rather than to the page.
   `draft_invalid`). [verified]
 - `f:rdwesf` Every outward response to a `preview.refused` case is an identical 404, except
   `bindings_missing`, which answers 503. Source: `src/lib/sveltekit/preview.ts#rejectPreview`
-  (`rejectPreview` always `throw error(404, ...)`) and `:454-457` (`bindings_missing` branch
+  (`rejectPreview` always `throw error(404, ...)`) and `:434-443` (`bindings_missing` branch
   `throw error(503, 'Service unavailable')`). [verified]
 - `f:546jja` `preview.refused` `reason: "draft_invalid"` means the file on the entry's pending
   branch exists but fails the concept's descriptor validation: the per-field checks on its
@@ -1409,7 +1407,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   for the bare form). [verified]
 - `f:c8c9ji` `createMediaResolver` builds the delivery path from the manifest entry's slug and ext, not the
   token's, so a rename never breaks the reference; it returns `undefined` when media is off or no
-  entry carries the hash (the preview-miss backstop). Source: `src/lib/render/resolve-media.ts:78-84`
+  entry carries the hash (the preview-miss backstop). Source: `src/lib/render/resolve-media.ts:80-88`
   (doc comment states this verbatim) and `:89-101` (`createMediaResolver`: `if (!resolved.enabled)
   return undefined`; `if (!entry) { log.warn(...); return undefined; }`; the returned path uses
   `entry.slug, entry.hash, entry.ext`, never `ref`'s own slug). [verified]
@@ -1871,8 +1869,8 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   no draft check). [verified]
 - `f:n0xz8f` `mintPreview`'s `config.ttlMs` defaults to seven days and must be finite, positive, and between
   one minute and thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error
-  before any token is generated. Source: `src/lib/sveltekit/preview.ts:61`
-  (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:75-85` (`resolveTtlMs`: finite/positive
+  before any token is generated. Source: `src/lib/sveltekit/preview.ts:63`
+  (`DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000`), `:77-88` (`resolveTtlMs`: finite/positive
   check, min/max bound check, `PreviewTokenConfig:`-prefixed throws). [verified]
 - `f:esg0zx` `renameAction` and `deleteAction`/`listDeleteAction` clear an entry's outstanding
   preview rows unconditionally (regardless of publish state) as part of their own cascade;

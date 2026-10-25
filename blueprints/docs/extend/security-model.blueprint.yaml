@@ -43,7 +43,7 @@ introduction:
     A bulleted list under a complete lead-in, subject first and page second, one form per item:
     configuring the access map (`restrict-admin-access.md`); setting up Cloudflare Access as an
     identity gate (`replace-magic-links-with-cloudflare-access.md`); building an auth channel
-    (`add-a-second-sign-in-group.md`); the renderer's options (`configure-rendering.md`); rotating
+    (`add-a-second-sign-in-group.md`); the renderer's options (`write-a-markdown-component.md`); rotating
     the GitHub App's key (`rotate-the-github-app-key.md`); and the isolation of the Worker itself,
     which belongs to Cloudflare's Workers security model. The history of when the sanitize floor
     shipped is out of scope: the page states the floor as it is now and names no release that
@@ -84,7 +84,7 @@ framing:
       is Cloudflare's, linked out.
   placeInDocSet: |
     The one concept page under "Auth and access". Task pages (Restrict admin access, Replace magic
-    links, Add a second sign-in group, Configure rendering, Rotate the GitHub App key) each configure
+    links, Add a second sign-in group, Write a markdown component, Rotate the GitHub App key) each configure
     one piece and point here for the why; Architecture covers the parts and seams without the threat
     reasoning.
   introPlan: |
@@ -165,6 +165,22 @@ sections:
       - id: sc-guard-ref
         kind: link
         target: ../reference/sveltekit.md#createauthguard
+      - id: sc-preview
+        kind: sentence
+        mode: claim
+        text: |
+          A draft preview link sits outside `/admin`, and the link is the credential. Anyone who
+          holds it reads that one draft with no sign-in until the link stops working. It stops
+          working when it expires, when an editor revokes it, when the entry is published,
+          discarded, renamed, or deleted, or when the editor who minted it is removed from the
+          site.
+        facts:
+          - f:afkvsb
+          - f:76m2vf
+          - f:pimnjy
+          - f:a7yrhq
+          - f:l4waby
+          - f:sp9rem
       - id: sc-isolation
         kind: reason
         text: |
@@ -923,7 +939,7 @@ sections:
           bypasses every render-safety guarantee.
       - id: rs-options-link
         kind: link
-        target: configure-rendering.md
+        target: write-a-markdown-component.md
       - id: rs-handoff
         kind: handoff
         text: |
@@ -1344,7 +1360,7 @@ sections:
         target: add-a-second-sign-in-group.md
       - id: rr-render
         kind: link
-        target: configure-rendering.md
+        target: write-a-markdown-component.md
       - id: rr-key
         kind: link
         target: rotate-the-github-app-key.md

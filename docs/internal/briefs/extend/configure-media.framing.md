@@ -16,7 +16,7 @@ fact named below, the inbound link sites on disk, the tutorial's adapter and ent
 | 1. The tutorial finisher, on a hand-built site | `docs/extend/add-cairn-to-a-sveltekit-app.md` "Next steps" ("turns on uploads"); the same tutorial's "Theme a hand-built site" list in `docs/extend/theme-your-public-site.md` | Turning media on, every step | SvelteKit routes, `wrangler.jsonc` from milestone 1, the adapter at `src/lib/cairn.config.ts` (`f:q07rd5`), the runtime module, the entry route at `src/routes/[...path]/+page.server.ts` and its `createPublicRoutes` call | An R2 bucket and its binding (the tutorial creates none; its dev backend faked the bucket), the media model, the `media` block, the route, and a resolver handed to the entry route |
 | 2. The scaffolded-site owner | `docs/extend/scaffolded-site-files.md` (the `MEDIA_BUCKET` binding bullet, the `media/[...path]/` route paragraph, its out-of-scope list); `docs/extend/architecture.md` (the seams table's `media` row, the data-tiers paragraph); a search on an option name | Changing an option (upload types and size, URL base and form, responsive images), or learning a boundary: what an upload is refused for, what the route serves, what a missing asset does, what the Library counts | The scaffold's files, the adapter at `src/theme/cairn.config.ts` (`f:q07rd5`); the binding, block, route, and resolver wiring are already in place (`f:9hchnv`, `f:qtvesq`, `f:qifl9g`) | What each option does and what it is coupled to: `publicBase` against the route's directory, `maxUploadBytes` against the plan's body cap, `transformations` against a zone setting |
 | 3. The custom upload screen builder | `docs/extend/add-a-custom-admin-screen.md` See also ("the media upload protocol"); that page's outline out-of-scope list sends the protocol here | The upload action's request and its refusals | The admin shell, section actions, the admin toolkit including `MediaPicker` | The address, the raw-body protocol, the headers, the CSRF value's source, and the `fail()` envelope (`f:g4cwcw`) |
-| 4. The render builder | `docs/extend/configure-rendering.md` (pending, run 3): its outline cross-link sends "the media resolver render forwards, and what a missing asset renders" here, and its out-of-scope list names both | Where the `resolveMedia` their render forwards comes from, and what a miss renders | `render`, `createRenderer`, the resolvers `render` forwards | `createMediaResolver` over the committed manifest with `normalizeAssets`, the broken-image marker, and the fail-the-build wrapper with its caveat (`f:c8c9ji`, `f:frgg7d`, `f:nlkgag`) |
+| 4. The render builder | `docs/extend/write-a-markdown-component.md` (pending, run 3): its outline cross-link sends "the media resolver render forwards, and what a missing asset renders" here, and its out-of-scope list names both | Where the `resolveMedia` their render forwards comes from, and what a miss renders | `render`, `createRenderer`, the resolvers `render` forwards | `createMediaResolver` over the committed manifest with `normalizeAssets`, the broken-image marker, and the fail-the-build wrapper with its caveat (`f:c8c9ji`, `f:frgg7d`, `f:nlkgag`) |
 | 5. The theme developer who wants seeded media | `docs/extend/theme-your-public-site.md` "Before you begin" ("a deployed site with a media library, which Configure media sets up") and its intro list | A deployed media library, so `cairn-media-seed` has something to seed from | Theming, local iteration | The setup itself, which is reader 1's or reader 2's path; the seeding steps are not here |
 | 6. The symptom searcher | A search on a broken image, a 404 or 503 on an image URL, a refused upload, or a literal `media:` token | The cause and the fix | Their own site | Which piece failed; "Diagnose a failed check" serves them, and the literal-token fix stays on `docs/extend/debug-your-site.md#mediaresolver_absent` |
 
@@ -77,7 +77,7 @@ Readers likely to arrive in the wrong place, and the page each belongs on:
 
 ## Place in the doc set
 
-- **Group.** "Model content", after `configure-rendering`, `link-content-with-references`, and
+- **Group.** "Model content", after `write-a-markdown-component`, `link-content-with-references`, and
   `reuse-content-across-entries`, and before `migrate-existing-content`. On disk the group lists
   only `content-model`; the drafter's index-link step adds this page.
 - **What links in, and why.** `add-cairn-to-a-sveltekit-app.md:1223` ("turns on uploads");
@@ -85,7 +85,7 @@ Readers likely to arrive in the wrong place, and the page each belongs on:
   bucket that Configure media sets up", the route paragraph); `architecture.md:75,152` (the `media`
   member as an `AssetConfig`, "the media store's settings"); `theme-your-public-site.md:40,53,508`
   (media storage and the route, the seeding precondition); `add-a-custom-admin-screen.md:570`
-  ("media storage and the media upload protocol"); and, once drafted, `configure-rendering.md` (the
+  ("media storage and the media upload protocol"); and, once drafted, `write-a-markdown-component.md` (the
   resolver and missing assets).
 - **What siblings own, so the intro words a shared idea fresh.** `architecture.md`'s data tiers say
   why R2 holds the bytes and that the delivery route streams them, so the intro neither argues for
@@ -159,7 +159,7 @@ overview of what the page covers?
   you begin" still routes the scaffolded reader past "Resolve media on public pages", which the
   new fact now backs.
 - **A render-builder reader joins paragraph 3.** The plan names only the custom upload screen
-  builder as a third reader. The outline's `configure-rendering` cross-link and out-of-scope list
+  builder as a third reader. The outline's `write-a-markdown-component` cross-link and out-of-scope list
   send a reader here for the resolver and missing assets, so paragraph 3 names that reader's two
   sections by heading.
 - **One out-of-scope route is added.** A developer bringing an existing site's images belongs on

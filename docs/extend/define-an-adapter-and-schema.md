@@ -37,7 +37,7 @@ assumes you know the content model, and [Content model](content-model.md) explai
 routing, and an entry's identity are. The page leaves the following topics to other pages:
 
 - Reference fields, in [Link content with references](link-content-with-references.md).
-- The `rendering` group, in [Configure rendering](configure-rendering.md).
+- The `rendering` group, in [Write a markdown component](write-a-markdown-component.md).
 - Roles and the access map, in [Restrict admin access](restrict-admin-access.md).
 - The `editor` group's `navLayout`, in [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
 - The `media` group, in [Configure media](configure-media.md).
@@ -71,7 +71,7 @@ following:
   builds.
 - `email`: the sender config for the magic-link sign-in email.
 - `rendering`: the `render` function, plus optional `islands`, covered in
-  [Configure rendering](configure-rendering.md).
+  [Write a markdown component](write-a-markdown-component.md).
 
 Each optional group is covered on another page:
 
@@ -539,7 +539,7 @@ The following pages cover the pieces this page links to:
 - [Build the public routes](build-the-public-routes.md), listing a concept's entries and tags on
   public pages.
 - [Link content with references](link-content-with-references.md), reference fields.
-- [Configure rendering](configure-rendering.md), the `rendering` group.
+- [Write a markdown component](write-a-markdown-component.md), the `rendering` group.
 - [Configure media](configure-media.md), the `media` group.
 - [Restrict admin access](restrict-admin-access.md), roles and the access map.
 - [Arrange the admin sidebar](arrange-the-admin-sidebar.md), the `editor` group's `navLayout`.

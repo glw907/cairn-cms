@@ -45,8 +45,8 @@ with the site close the page.
 Configuring the access map belongs to [Restrict admin access](restrict-admin-access.md), and an
 identity gate to [Replace magic links with Cloudflare
 Access](replace-magic-links-with-cloudflare-access.md). Building an auth channel belongs to [Add a
-second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Configure
-rendering](configure-rendering.md), and the App's private key to [Rotate the GitHub App
+second sign-in group](add-a-second-sign-in-group.md), the renderer's options to [Write a markdown
+component](write-a-markdown-component.md), and the App's private key to [Rotate the GitHub App
 key](rotate-the-github-app-key.md). The history of when the sanitize floor shipped is out of scope.
 
 ## Magic-link sign-in
@@ -517,7 +517,7 @@ The following guides configure and operate the parts of a site these defenses de
 - [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md), for
   an identity gate.
 - [Add a second sign-in group](add-a-second-sign-in-group.md), for an auth channel.
-- [Configure rendering](configure-rendering.md), for the renderer's options.
+- [Write a markdown component](write-a-markdown-component.md), for the renderer's options.
 - [Rotate the GitHub App key](rotate-the-github-app-key.md), for the App's private key.
 
 ### Concepts

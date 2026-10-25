@@ -1,65 +1,62 @@
 # Act on newly published entries
 
-An organization that publishes through cairn's admin often wants to announce each new post, by email to its subscribers or in a message to its members, and cairn's part in that work is a record of when each entry was first published.
-The subscribers, the message, and its delivery belong to the site, because cairn confines itself to managing markdown content and the admin around it.
-An editor's publish commits the entry to the default branch together with its row in the content manifest, the committed file at `src/content/.cairn/index.json`.
-The first publish commit that lands an entry as a non-draft stamps its row with `publishedAt`, and every later save keeps that stamp unchanged.
-The same commit triggers the site's deploy, and a new post reaches its public address only through the build that deploy runs, so a message that links to the post belongs after the deploy.
-Because no later save changes a stamp, `buildNewlyPublished` can compare the manifests of two consecutive deploys and return each entry whose `concept`/`id` key carries a stamp in the later manifest and none in the earlier.
-An edit to a live post's content leaves its stamp in place and never comes back as new.
-[Architecture](architecture.md#write-path) describes the whole write path, from a save to the deploy.
+An organization that publishes through cairn's admin often wants each new post announced once, by email to its subscribers or by another message, and never again when an editor later edits it. The content manifest is the committed file `src/content/.cairn/index.json`. An editor's publish commits the entry and its row in that manifest to the default branch. The first publish that takes an entry live stamps its row with `publishedAt`, and later saves keep that stamp unchanged.
 
-The main task here is a job you write that runs after each deploy, finds the posts that deploy newly published, and hands each one to your send code before saving the deployed manifest for the next run.
-A developer looking for a publish callback finds none: no site function runs once a publish commit lands, and the adapter's one publish-time member holds plain data.
-Code that should follow a publish runs in that job, or behind a link an editor follows into a screen the site adds.
-A site that wants an editor to take a next step at the moment of publishing an entry, with no job at all, adds next-step links beside that entry's publish confirmation, as [Add a next-step link after publish](#add-a-next-step-link-after-publish) describes.
+When the site deploys each commit to its default branch, that publish commit starts a deploy, and the post reaches its public address only through the build that deploy runs. A message that links to the post therefore belongs after the deploy. The engine stamps the row and computes the diff between two manifests, but it sends no announcement and keeps no manifest between deploys. Your site does both in a job that runs after each deploy and diffs the deployed manifest against the one it stored on its previous run. The job sends a message for each post the diff returns and then saves the deployed manifest for the next run.
 
-The job assumes a TypeScript module your deploy pipeline can run with Node, the storage your platform offers, and your email or messaging code, and it needs no cairn knowledge beyond publishing from the admin.
-The pipeline that runs it is yours, and this page names none.
-The next-step link also assumes you know your site's adapter file and its `editor` block, which the [adapter's reference entry](../reference/core.md#defineadapter) describes.
-This page leaves message delivery to your email or messaging provider's documentation.
-Feeds, for subscribers who pull new posts instead of being sent them, are the subject of "Build the public routes."
+The admin offers no publish callback or webhook, and its publish calls no site function after the commit lands. Code meant to follow a publish belongs in that job, or behind a link an editor follows from the publish confirmation. An editor who should take a next step at the moment of publishing, such as opening a screen to write the announcement, needs that link instead. For more information, see [Add a next-step link after publish](#add-a-next-step-link-after-publish).
 
-> **Note:** The engine sends no announcement and keeps nothing between deploys: storing the previous manifest and delivering the message are your site's job.
-> `buildNewlyPublished` is pure and node-safe, so the job runs as a plain Node script in your pipeline.
+The job assumes you know TypeScript and Node, your deploy pipeline, the storage your platform offers, and your provider's sending API. It needs no cairn knowledge beyond publishing from the admin. The next-step link also assumes you know your site's adapter module, where a [`defineAdapter`](../reference/core.md#defineadapter) call declares the adapter, and its `editor` group. The [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished) reference entry gives the diff's whole rule. [The publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam) documents the link's members and validation. This page doesn't cover feeds, for subscribers who pull new posts instead of being sent them; see [Build the public routes](build-the-public-routes.md). [Architecture](architecture.md#write-path) describes the write path from a save to the deploy.
 
 ## Before you begin
 
-The job needs a committed manifest, a pipeline step after the deploy, storage it can write between runs, and your send code.
+The job needs the following:
 
-- The site commits its content manifest at `src/content/.cairn/index.json`, and a publish commit patches it.
-  A scaffolded site already has it, and a hand-built site commits it in [Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest).
-- Your deploy pipeline has a step that runs after the deploy, in a checkout of the deployed commit.
-- The job has storage it reads and writes between runs, such as [Cloudflare KV](https://developers.cloudflare.com/kv/) or [Cloudflare R2](https://developers.cloudflare.com/r2/), and any store serves.
-- You have code that sends one message for one entry.
-
-With those in place, write the job.
+- A committed content manifest at `src/content/.cairn/index.json`. A scaffolded site already commits one, and a publish commit patches it. On a hand-built site, [Index the content and commit its manifest](add-cairn-to-a-sveltekit-app.md#index-the-content-and-commit-its-manifest) creates it.
+- A deploy pipeline that can run a step after the deploy, in a checkout of the deployed commit.
+- Node 24 or later, which cairn's package declares. That version strips the types from a `.ts` file and runs it.
+- Storage the job reads and writes between runs. The example keeps one Workers KV value, read and written through the Cloudflare REST API with an API token.
+- Code that sends one message for one entry, through your provider.
 
 ## Write the post-deploy job
 
-The job reads the deployed manifest, loads the previous one from your storage, diffs the two, sends each new post, and saves the deployed manifest.
-`@glw907/cairn-cms/delivery/data` exports [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished), [`parseManifest`](../reference/delivery-data.md#parsemanifest), and the `Manifest` type without pulling in the engine's server code.
-`buildNewlyPublished` returns `ManifestEntry` rows, and the [delivery data types table](../reference/delivery-data.md#types) lists the fields your send code can read from each one.
+The job imports `buildNewlyPublished`, `parseManifest`, and the `ManifestEntry` type from `@glw907/cairn-cms/delivery/data`. That subpath imports no SvelteKit and no Svelte, so a plain Node script can load it. The [`parseManifest`](../reference/delivery-data.md#parsemanifest) reference entry documents the parser.
 
-To add the job to your site, complete the following steps:
+To add the job, follow these steps:
 
 1. In your site, create `scripts/announce-new-posts.ts` with the following contents:
 
    ```ts
-   // scripts/announce-new-posts.ts
    /// <reference types="node" />
+   // scripts/announce-new-posts.ts
    import { readFile } from 'node:fs/promises';
-   import {
-     buildNewlyPublished,
-     parseManifest,
-     type ManifestEntry,
-   } from '@glw907/cairn-cms/delivery/data';
+   import { buildNewlyPublished, parseManifest, type ManifestEntry } from '@glw907/cairn-cms/delivery/data';
 
-   // Your storage: the manifest text, kept in KV, R2, or another store.
-   declare function readPriorManifest(): Promise<string | null>;
-   declare function savePriorManifest(raw: string): Promise<void>;
    // Your send code: one message for one entry, through your email provider's API.
    declare function sendNewPostEmail(entry: ManifestEntry): Promise<void>;
+
+   // Illustrative storage: one Workers KV value, read and written through the Cloudflare REST API.
+   const kvNamespaceId = 'your-kv-namespace-id'; // the namespace that holds the baseline
+   const kvValueUrl =
+     `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}` +
+     `/storage/kv/namespaces/${kvNamespaceId}/values/deployed-manifest`;
+   const auth = { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` };
+
+   async function readPriorManifest(): Promise<string | null> {
+     const res = await fetch(kvValueUrl, { headers: auth });
+     if (res.status === 404) return null; // nothing stored yet: the first run
+     if (!res.ok) throw new Error(`KV read failed with ${res.status}`);
+     return res.text();
+   }
+
+   async function savePriorManifest(raw: string): Promise<void> {
+     const res = await fetch(kvValueUrl, {
+       method: 'PUT',
+       headers: { ...auth, 'Content-Type': 'application/octet-stream' },
+       body: raw,
+     });
+     if (!res.ok) throw new Error(`KV write failed with ${res.status}`);
+   }
 
    async function main(): Promise<void> {
      const raw = await readFile('src/content/.cairn/index.json', 'utf8');
@@ -67,17 +64,18 @@ To add the job to your site, complete the following steps:
 
      const prior = await readPriorManifest();
      if (prior === null) {
-       // First run: record the deployed manifest and send nothing.
+       // First run: store the deployed manifest as the baseline and send nothing.
        await savePriorManifest(raw);
        return;
      }
-     const before = parseManifest(prior);
 
-     const newPosts = buildNewlyPublished(before, after).filter(({ concept }) => concept === 'posts');
+     const newPosts = buildNewlyPublished(parseManifest(prior), after).filter(
+       ({ concept }) => concept === 'posts',
+     );
      for (const entry of newPosts) {
        await sendNewPostEmail(entry);
      }
-
+     // Save last: a send that throws leaves the old baseline, so the next run sends this batch again.
      await savePriorManifest(raw);
    }
 
@@ -87,191 +85,119 @@ To add the job to your site, complete the following steps:
    });
    ```
 
-2. In `scripts/announce-new-posts.ts`, replace the three `declare function` lines with your storage and send functions.
-3. In your deploy pipeline, add a step after the deploy that runs `node scripts/announce-new-posts.ts` from the site's root.
+   The file reads the deployed manifest from the checkout and loads the stored one from a Workers KV value. On a first run, it stores the deployed manifest as a baseline and returns. On every later run, it diffs the two manifests, sends each `posts` entry, and saves the deployed manifest last. The two KV functions are illustrative storage. For the calls they make, see [Workers KV values in the Cloudflare API](https://developers.cloudflare.com/api/resources/kv/subresources/namespaces/subresources/values/methods/get/).
 
-   Node 22.18 or later runs TypeScript directly.
-   On older Node, use a runner such as `tsx`.
+2. If your posts concept has an id other than `posts`, replace `'posts'` in the job's concept check with that id.
 
-The file does four things, in the order the code runs them:
+   The scaffold's posts concept is `posts`.
 
-- It reads the deployed manifest from the checkout and parses it as `after`.
-- It loads the stored manifest, and on a first run with nothing stored, it saves the deployed one and sends nothing.
-  Passing `null` as `before` there would send every live post instead, as [Backfill on the first run](#backfill-on-the-first-run) explains.
-- It diffs the two manifests and keeps the entries whose `concept` is `posts`.
-- It calls your send code once for each entry, then saves the deployed manifest for the next run.
-  If a send throws, the job exits before that save.
-  The next run diffs against the older stored manifest and sends every post from the failed run again, including those already sent.
+3. In the same file, replace the `declare function` line with a `sendNewPostEmail` that calls your provider.
 
-A site whose posts concept has another id filters on that id.
+   Each entry the diff returns is a `ManifestEntry`, and your send code reads fields such as `title` and `permalink` from it. The [delivery data types](../reference/delivery-data.md#types) list the row's fields.
 
-The diff's rule decides which entries reach your send code.
+4. If you use R2 or another store, replace `readPriorManifest` and `savePriorManifest` with functions for that store.
 
-## What counts as newly published
+   The job stores the deployed manifest as one string, and it passes the string it reads from storage to `parseManifest`. A replacement read returns `null` when nothing is stored, as the KV read does.
 
-Every result the job produces follows from one rule that the diff applies to each entry.
-`buildNewlyPublished` returns an entry from `after` only when all three of the following hold, checked in this order:
+5. If you keep the KV storage, replace the value of `kvNamespaceId` with the id of your KV namespace.
+6. In your deploy pipeline, after the deploy step, add a step that runs `node scripts/announce-new-posts.ts` from the site's root.
+7. If you keep the KV storage, in your pipeline's settings, set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` for that step.
 
-1. The entry is not a draft.
-2. The entry carries a `publishedAt` stamp.
-3. No entry at the same `concept`/`id` key in `before` carried a stamp.
+## Order the send and the save
 
-The stamp is set at the first publish commit and kept through every later save, so an edit to a live post's content never reads as new.
-The draft check runs first, and the stamp check does not imply it: an entry an editor takes back to draft keeps its stamp.
-`buildNewlyPublished` never returns that entry while it stays a draft.
+Given the same pair of manifests, the diff returns the same entries. The stored manifest therefore decides what the next run sends.
 
-On its first run, your job records the manifest and sends nothing.
-A backfill changes that run so it sends every live post once.
+The example saves after it sends. If a send throws, the run ends before the save. The next run diffs against the old baseline and sends the whole batch again, including any post sent before the failure.
 
-## Backfill on the first run
+A job that saves before it sends loses the post whose send failed instead of repeating it. The next run diffs against a manifest that already holds that post's stamp, and no later run returns it.
 
-Pass `null` as `before` only for a first backfill.
-With `before: null`, every stamped, non-draft entry in `after` comes back as newly published.
-On every later run, pass the stored manifest: `null` on an ordinary run sends every live post again.
+If a missed message costs less than a repeated one, follow this step:
 
-- In `scripts/announce-new-posts.ts`, replace the first-run branch and the `parseManifest(prior)` line after it with the following line.
+- In `main`, move the last `savePriorManifest(raw)` call before the send loop.
 
-<!-- snippet-check-skip: continues scripts/announce-new-posts.ts from "Write the post-deploy job" -->
-```ts
-const before = prior === null ? null : parseManifest(prior);
-```
+In either order, a run that fails exits with a nonzero status.
 
-The save at the end of `main` still runs, so every later run diffs against the stored manifest.
+## Start from a stored baseline
 
-With the first run settled, check the job before it emails anyone.
+On its first run, the job finds nothing stored, saves the deployed manifest as its baseline, and sends nothing.
+
+Passing `null` as `before` makes `buildNewlyPublished` return every entry in `after` that is not a draft and carries a stamp. A first run with `null` therefore sends a message for each such post. On a later run, `null` would send each of those posts again, so every later run passes the stored manifest.
+
+To backfill on the first run, follow these steps:
+
+1. In `scripts/announce-new-posts.ts`, replace the first-run branch with the following line:
+
+   <!-- snippet-check-skip: replaces the first-run branch inside main() in scripts/announce-new-posts.ts -->
+   ```ts
+   const before = prior === null ? null : parseManifest(prior);
+   ```
+
+2. In the `buildNewlyPublished` call, replace `parseManifest(prior)` with `before`.
+
+The save at the end of `main` still runs, so the next run diffs against the stored manifest.
+
+## Entries the diff returns
+
+Which publishes reach your subscribers depends on the rule `buildNewlyPublished` applies. `buildNewlyPublished` returns an entry from `after` when the entry is not a draft and carries a `publishedAt` stamp. The same `concept`/`id` key must also have had no stamp in `before`.
+
+A running job meets the following cases:
+
+- An entry taken back to draft keeps its stamp. The draft check runs before the stamp comparison and excludes it.
+- **Publish all** stamps entries the same way as a single publish, so the job sends posts published either way.
+- A renamed post reads as new. The rename carries its stamp to a new `concept`/`id` key, and `before` has no stamp there.
+- A post deleted and then recreated under the same id reads as new when a run saved the manifest between the two. If both land before the next run, the old stamp is still in `before`, and the job does not send the new post.
+- A deleted post is never returned, and the job reports no removals.
+- An entry that reached the default branch without an admin publish carries no stamp, and the job does not send it. The same holds for an entry that was already live before cairn stamped first publishes.
 
 ## Verify the job
 
-Check the job in two passes, first offline and then against a real publish.
-
-`buildNewlyPublished` does no I/O and reads no clock, and two literal manifests give it the same result on every run.
-The offline check builds a `before` with one post still in draft and an `after` with that post live and stamped.
-
-To run the offline check, complete the following steps:
-
-1. In your site, save the following code as `scripts/check-announce.ts`:
-
-   ```ts
-   /// <reference types="node" />
-   import { strictEqual } from 'node:assert';
-   import { buildNewlyPublished, type Manifest } from '@glw907/cairn-cms/delivery/data';
-
-   const draftPost = {
-     id: 'hello-world',
-     concept: 'posts',
-     title: 'Hello world',
-     permalink: '/posts/hello-world',
-     draft: true,
-     links: [],
-   };
-
-   const before: Manifest = { version: 1, entries: [draftPost] };
-   const after: Manifest = {
-     version: 1,
-     entries: [{ ...draftPost, draft: false, publishedAt: '2026-10-12T09:00:00.000Z' }],
-   };
-
-   strictEqual(buildNewlyPublished(before, after).length, 1);
-   strictEqual(buildNewlyPublished(after, after).length, 0);
-   ```
-
-2. From the site's root, run `node scripts/check-announce.ts`.
-
-   It exits silently when both assertions pass: the first diff returns the post, and a manifest diffed against itself returns nothing.
-
-After the job has run once and its storage holds a manifest, check it against a real publish:
+After the job has run once and stored a baseline, check it against a real publish by following these steps:
 
 1. In the admin, publish a new post.
-2. After the deploy, in a checkout pulled from the default branch, open `src/content/.cairn/index.json`.
-
-   The post's row carries `publishedAt`.
-
-3. In the pipeline, let the job run after that deploy.
-
-   Your send code runs once, for that post.
-
+2. In the deployed commit's `src/content/.cairn/index.json`, confirm that the post's row carries `publishedAt`.
+3. In the pipeline's run for that deploy, confirm that your send code ran once, for that post.
 4. In the pipeline, run the job again with no new publish.
 
-   It sends nothing, because the stored manifest now holds the post's stamp.
-
-Some editor actions give results that look wrong until you know the rule.
-
-## Expect renames and removals
-
-If the job sends a post you expected it to skip, or stays silent about one, look at what the editor did to that entry.
-A rename or a delete-then-recreate reads as a new post, and a removal reports nothing.
-Each case follows from the `concept`/`id` key the rule matches on:
-
-- A rename changes the entry's `concept`/`id` key, and the job sends the renamed post as new.
-- A post deleted and then recreated under the same id, with a job run between the two, also reads as new: the deleted row took its stamp out of the prior manifest.
-- A deleted post is never returned, and the job reports no removal.
-
-If a post never reached your send code at all, work through two checks.
-
-## Find a post the job did not send
-
-When a post published from the admin never reaches your send code, check its manifest row and then its commit record:
-
-1. In the deployed `src/content/.cairn/index.json`, check that the post's row carries `publishedAt` and that the post is not a draft.
-
-   A row still marked as a draft was committed with its draft flag set, or taken back to draft.
-   A missing row means the publish commit is not in that deploy.
-   A non-draft row without the stamp was published before cairn recorded `publishedAt`, and the job never sends it.
-
-2. For a publish that never committed, read the commit records in [Debug your site](debug-your-site.md#commitsucceeded-and-commitfailed).
-
-For a post sent a second time after a rename, see [Expect renames and removals](#expect-renames-and-removals).
-
-An editor who needs a next step at the moment of publishing is served by a different seam.
+   It sends nothing, because the stored manifest already holds the post's stamp.
 
 ## Add a next-step link after publish
 
-An `editor.publishActions` list on the adapter shows next-step links beside the publish-success strip, for the entry just published.
-The list is plain data that the admin resolves on the server, and no site code runs when an editor publishes.
-An adapter without it shows no links at the publish-success moment.
-The adapter file is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) tutorial's site.
+An `editor.publishActions` list on the adapter shows links beside the publish-success strip for the entry just published. The list holds plain data, not a callback.
 
-- In your adapter file, add `publishActions` to the `editor` block.
+To add a link, follow this step:
 
-<!-- snippet-check-skip: elides the adapter's other required groups to focus on the editor.publishActions member -->
-```ts
-// src/theme/cairn.config.ts
-import { defineAdapter } from '@glw907/cairn-cms';
+- In the adapter module's `editor` group, add a `publishActions` list. On a scaffolded site, the adapter module is `src/theme/cairn.config.ts`.
 
-export const cairn = defineAdapter({
-  // content, backend, email, and rendering stay as they are
-  editor: {
-    publishActions: [
-      { label: 'Announce', href: '/admin/team/announce?post={id}', concepts: ['posts'] },
-    ],
-  },
-});
-```
+  <!-- snippet-check-skip: one member of the adapter's editor group, inside the defineAdapter call -->
+  ```ts
+  // The adapter module (src/theme/cairn.config.ts on a scaffolded site), inside the editor group
+  publishActions: [
+    { label: 'Announce', href: '/admin/team/announce?post={id}', concepts: ['posts'] },
+  ],
+  ```
 
-Each entry in the list takes three members:
+The example list holds one illustrative **Announce** link for `posts`, and its `href` opens an admin screen with the published entry's id.
 
-- `label`: required, and unique across the list.
-- `href`: a required template string.
-  The admin replaces `{concept}` and `{id}` with the published entry's identity, verbatim and with no URL encoding.
-  Any other brace token stays literal.
-- `concepts`: optional concept ids that limit the link to those concepts.
-  Without them, the link follows every concept's publish.
+The admin replaces `{id}` and `{concept}` in `href` with the published entry's id and concept. `concepts` shows the link only for entries of the listed concepts.
 
-The admin checks the list once, at server start.
-A missing label, a repeated label, a missing href, or an undeclared concept id throws there.
-An `href` can open a [custom admin screen](add-a-custom-admin-screen.md) the site adds, such as a screen for writing the announcement.
-The [publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam) and [`PublishActionEntry`](../reference/sveltekit.md#publishactionentry) entries give the type.
+The admin checks the list when the module that calls `createCairnAdmin` loads. A missing label, a repeated label, a missing `href`, or an unknown concept id throws there. On a scaffolded site, that module loads during `vite build`, so a bad entry fails the build.
 
-When an editor publishes one entry from its edit page, the link appears beside the publish-success strip.
-The confirmation after **Publish all** carries no links.
+The links appear after an editor publishes one entry from its edit page. The confirmation after **Publish all** carries no links.
+
+To check the link, follow these steps:
+
+1. In the admin, publish a post from its edit page.
+2. Confirm that **Announce** appears beside the publish-success strip.
+
+[The publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam) gives the members, the placeholders, and the validation. [Add a custom admin screen](add-a-custom-admin-screen.md) covers a screen a link can open.
 
 ## See also
 
-The following reference entries, guides, and concept pages cover these seams in more detail:
+The following pages cover the functions and seam this page uses, and related tasks:
 
-- [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished) and [`parseManifest`](../reference/delivery-data.md#parsemanifest), the two helpers the job calls
-- The `Manifest` and `ManifestEntry` rows of the [delivery data types table](../reference/delivery-data.md#types), the manifest's shape
-- [The publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam), the reference for next-step links
-- [Add a custom admin screen](add-a-custom-admin-screen.md), for a screen a next-step link can open
-- [Architecture](architecture.md#write-path), for the path from a publish to the deploy
-- [Content model](content-model.md#the-content-manifest), for the manifest's rows in full
+- [`buildNewlyPublished`](../reference/delivery-data.md#buildnewlypublished)
+- [`parseManifest`](../reference/delivery-data.md#parsemanifest)
+- [The publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam)
+- [Add a custom admin screen](add-a-custom-admin-screen.md)
+- [Build the public routes](build-the-public-routes.md)
+- [The write path in Architecture](architecture.md#write-path)

@@ -112,7 +112,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The `rendering` group, in [Configure rendering](configure-rendering.md).",
+      "text": "The `rendering` group, in [Write a markdown component](write-a-markdown-component.md).",
       "id": "f:2zytgf"
     },
     {
@@ -191,7 +191,7 @@
       "id": "f:2zytgf"
     },
     {
-      "text": "`rendering`: the `render` function, plus optional `islands`, covered in [Configure rendering](configure-rendering.md).",
+      "text": "`rendering`: the `render` function, plus optional `islands`, covered in [Write a markdown component](write-a-markdown-component.md).",
       "id": "f:2zytgf"
     },
     {
@@ -1072,7 +1072,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md), the `rendering` group.",
+      "text": "[Write a markdown component](write-a-markdown-component.md), the `rendering` group.",
       "id": "f:2zytgf"
     },
     {

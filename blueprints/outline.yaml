@@ -102,7 +102,7 @@ pages:
       - Writing the declaration (define-an-adapter-and-schema).
       - Reference fields in use (link-content-with-references).
       - Fragments (reuse-content-across-entries).
-      - Rendering the body (configure-rendering).
+      - Rendering the body (write-a-markdown-component).
   - path: docs/extend/define-an-adapter-and-schema.md
     slug: define-an-adapter-and-schema
     title: Define an adapter and schema
@@ -112,36 +112,36 @@ pages:
       - 'Preconditions: an installed engine (link add-cairn-to-a-sveltekit-app) and the model (link content-model).'
       - 'The defineAdapter call: the four required groups (content, backend, email, rendering), the optional ones, and the narrowed return type that carries field types into reads.'
       - The scaffold's cairn.config.ts as the worked starting point.
-      - 'Add a concept: dir, label, singular, routing, fields; register its glob in createSiteIndexes and in the cairnManifest plugin''s content option (the silent-omission trap).'
-      - 'Permalinks and datePrefix: defaults (`/<id>/:slug`, pages at /:slug), the allowed tokens (:slug, :year, :month, :day) with the date tokens feed-only and requiring a date field, and declaration-time validation.'
-      - 'Tag a concept: the one top-level taxonomy: true multiselect, the tag vocabulary a save checks against (lowercase hyphenated values, existing out-of-vocabulary tags kept as orphans), where the vocabulary is stored (editor.nav.configPath, else src/lib/site.config.yaml), and the content.field_unmarked warning a missing marker raises.'
-      - The backend identity values as non-secret and the email sender group (from, replyTo).
+      - 'Add a concept, which the scaffold does not do for you: dir, label, singular, routing, fields, and the ids the engine refuses; register its literal ?raw eager glob in createSiteIndexes (with the build throws for a missing or lazy glob) and in the cairnManifest plugin''s content option (the silent-omission trap).'
+      - 'Permalinks and datePrefix: defaults (`/<id>/:slug`, pages at /:slug), the allowed tokens (:slug, :year, :month, :day) with the date tokens feed-only and requiring a date field, datePrefix read only for a feed concept, and declaration-time validation.'
+      - 'Tag a concept: the one top-level taxonomy: true multiselect, the site-wide tag vocabulary a save checks against (lowercase hyphenated values, existing out-of-vocabulary tags kept as orphans), where the vocabulary is stored (the file editor.siteConfigPath names, default src/theme/site.config.yaml), and the content.field_unmarked warning a missing marker raises.'
       - 'Field behavior and refine: when each runs, a throwing behavior.validate treated as valid versus an uncaught refine throw, and the one-banner save error that makes a refine message a standalone sentence.'
-      - 'Normalized frontmatter: trimmed strings, empty values omitted, booleans present only when true, and InferFieldset''s optional keys.'
-      - 'Concept and editor options beyond fields: summaryFields, an array field''s itemLabel, and supportContact''s empty-string hand-off.'
-      - What site.config.yaml refuses (the adapter group keys and content) and the single en-US spellcheck dictionary.
-      - 'Verify: npm run check typechecks the declared fields and npm run build runs the manifest checks.'
+      - 'Concept options beyond fields: summaryFields and an array field''s itemLabel.'
+      - 'Verify: npm run check typechecks the declared fields, npm run build runs the content index, and the regenerated manifest and the admin show the new concept.'
     outOfScope:
       - What routing and identity mean (content-model).
+      - Normalized frontmatter and save-time validation (content-model).
+      - The backend identity and the email sender (add-cairn-to-a-sveltekit-app, and the createGithubApp reference entry).
+      - The site config's accepted keys and refusals (the parseSiteConfig reference entry).
+      - The editor group's supportContact (its reference entry).
       - Reference fields (link-content-with-references).
-      - The render group (configure-rendering).
+      - The render group (write-a-markdown-component).
       - Roles and the access map (restrict-admin-access).
       - navLayout (arrange-the-admin-sidebar).
-  - path: docs/extend/configure-rendering.md
-    slug: configure-rendering
-    title: Configure rendering
+  - path: docs/extend/write-a-markdown-component.md
+    slug: write-a-markdown-component
+    title: Write a markdown component
     type: task guide
-    job: Build the one render function your admin preview and public pages share, and register your own markdown components with typed attributes and slots. For a Svelte-fluent web developer building an organization's site on cairn's seams.
+    job: Write a custom public component beside the ones your site already has, from its declaration through its build function, picker entry, and registration, and check it in the editor and on the published page. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - One rendering.render per adapter, called by the preview and every public page; the SiteRender signature and the resolvers it forwards.
-      - 'createRenderer: renderMarkdown versus renderDocument (headings), and RendererConfig options (sanitizeSchema, tableScroll, remarkPlugins with where they run, highlighting).'
-      - 'defineComponent: required members, container-only directive grammar, attributes from the ten serializable field types validated by the fieldset machinery, title and body slots, and the build context.'
-      - build is synchronous and returns a hast Element; name inner classes apart from DaisyUI's.
-      - How the preview reruns render on a debounce and drops stale results.
-      - The picker and configure-step members of a component (icon, group, hidden, insertTemplate, use, preview, defaultIconByRole), the slot kinds, the full build context, and a repeatable slot's itemLabel.
-      - 'The authoring grammar a component produces: the four-colon fence, nested slot containers, repeatable items as bullets, the label dropped without a title slot, and the reserved figure and include names.'
-      - 'Built-in render steps: the highlighter''s preloaded languages and the mermaid passthrough, the table-scroll wrapper''s accessible name, and the figure placement classes.'
-      - 'remarkPlugins in practice: the scaffold''s smartypants wiring through its one createRenderer call.'
+      - 'defineComponent: the required members, the container-only directive grammar, attributes from the ten serializable field types and where they are validated, and the reserved figure and include names.'
+      - 'Slots: the title and body slots, named regions, the three slot kinds, required, itemFields, and a repeatable slot''s itemLabel.'
+      - 'The build function: the context members, the synchronous rule, where build runs, the entrance ordinal, and inner class names kept apart from DaisyUI''s.'
+      - The picker members of a component (icon, group, hidden, insertTemplate, use, preview, defaultIconByRole) and which components the picker lists.
+      - 'Registration: defineRegistry, the registry handed to createRenderer and to the admin page, and the throws defineRegistry raises.'
+      - 'The authoring grammar a component produces: the four-colon fence, nested slot containers, repeatable items as bullets, the label dropped without a title slot, and the HTML build returns from it.'
+      - Diagnosing a component that fails a check, including a directive printed as literal text and a code fence with no token colors.
+      - 'Pointers only: building the render function, adding a remark plugin, the renderer options, and the classes the built-in render steps emit.'
     outOfScope:
       - What the sanitize floor and sink guard protect and the opt-out's cost (security-model).
       - Hydrating a component on the client (add-an-island).
@@ -177,26 +177,28 @@ pages:
       - 'Guards: a dangling include fails the build, and deleting a fragment still included is refused; the fragment''s edit screen lists where it is used.'
       - The empty-fragment and not-found notices with their include.missing reasons, versus the build's throwing resolver.
     outOfScope:
-      - Reusable components with attributes (configure-rendering).
+      - Reusable components with attributes (write-a-markdown-component).
       - Reference fields (link-content-with-references).
   - path: docs/extend/configure-media.md
     slug: configure-media
     title: Configure media
     type: task guide
-    job: 'Turn on media for your site: bind the R2 bucket, set the adapter''s media options, mount the media route, and know what the engine refuses at upload, serves at delivery, and counts as a use. For a Svelte-fluent web developer who has the R2 bucket binding in wrangler.jsonc.'
+    job: 'Change how media behaves on a site that already has it: set the upload limits, move or reshape the image URLs, turn on responsive images, fail the build on a missing asset, know which media: references the Library counts before deleting an asset, and upload from a custom admin screen. For a Svelte-fluent web developer whose site has media on, as a scaffolded site does.'
     covers:
-      - 'Preconditions: the R2 bucket binding in wrangler.jsonc and the media block on the adapter; what the resolved asset config holds.'
-      - 'Set the options: allowedTypes narrows but never widens the five sniffed image types (SVG, HTML, and HEIC always refused), maxUploadBytes and its default against the request-body limit of the Cloudflare plan, publicBase, urlForm, and transformations with the four built-in presets and the srcset they turn on.'
-      - 'Mount createMediaRoute at `<publicBase>/[...path]`: the param name, the last-segment lookup, and the response headers it sets.'
-      - 'What a missing asset does: the broken-image marker and media.resolve_missing, the build that still succeeds, and wrapping the resolver to fail it.'
-      - 'Usage tracking''s reach: which media: references the Library counts, and why an asset can show no references while a page still renders it.'
-      - 'Uploading from your own screen: the upload action''s raw-body protocol, its headers, and its fail() refusals.'
-      - 'Verify: an upload through the Library, the rendered image URL, and the media route''s headers.'
+      - 'Preconditions: media already on, as the scaffold wires it (the MEDIA_BUCKET binding, the adapter''s media block, the public resolver, the media route); for a hand-built site, the three pieces named with a link to each reference entry, not taught.'
+      - 'Upload limits: allowedTypes narrows but never widens the five sniffed image types (SVG, HTML, and HEIC always refused), and maxUploadBytes against the request-body limit of the Cloudflare plan.'
+      - 'Image URLs: publicBase and the route directory that must move with it, urlForm and the two URL shapes, and the edit page''s preview that keeps /media.'
+      - 'Responsive images: transformations, the zone setting it reports, and the srcset and intrinsic size it turns on.'
+      - 'A missing asset: the broken-image marker and media.resolve_missing, the build that still succeeds, and wrapping the resolver to fail it while keeping imageDetail.'
+      - 'Which media: references the Library counts, and what deleting an asset with no counted reference does.'
+      - 'Uploading from a custom admin screen: the mediaUpload action, its raw-body request and headers, its fail() refusals in the envelope, and the manifest row it does not commit.'
+      - 'Verify: an upload through the Library, the rendered image URL and srcset, the media route''s headers, and a build that fails on a missing asset.'
     outOfScope:
       - Seeding local media for theme work (theme-your-public-site).
       - Editor-facing use of the Library (editors arm).
       - Restricting media through the access map (restrict-admin-access).
       - The R2 tier's place among the data tiers (architecture).
+      - Wiring each media piece on a hand-built site step by step (the reference entries for the adapter's media member, createMediaResolver, PublicRoutesConfig, and createMediaRoute).
   - path: docs/extend/migrate-existing-content.md
     slug: migrate-existing-content
     title: Migrate existing content
@@ -212,26 +214,25 @@ pages:
       - 'Verify: the content index records content problems per entry.'
     outOfScope:
       - Declaring the target concepts (define-an-adapter-and-schema).
-      - Registering components (configure-rendering).
+      - Registering components (write-a-markdown-component).
   - path: docs/extend/theme-your-public-site.md
     slug: theme-your-public-site
     title: Theme your public site
     type: task guide
-    job: 'Own your public site''s design: re-skin the scaffolded theme through its token tiers, or port your own theme onto the chassis, and iterate locally against real content until it passes the audit gates. For a Svelte-fluent web developer building an organization''s site on cairn''s seams.'
+    job: 'Own your public site''s design: style a hand-built site on the engine''s public style sheet, re-skin the scaffolded Waymark theme, or port your own theme onto the chassis, then iterate locally against real content until the public-scope audit rules pass. For a Svelte-fluent web developer building an organization''s site on cairn''s seams.'
     covers:
-      - 'What a scaffolded site ships: Waymark on the chassis. A hand-built site starts with neither: it adds Tailwind and daisyUI, imports cairn-public.css after tailwindcss, and supplies its own daisyUI theme block, and the rest of this page''s token and verify sections still apply (link docs/reference/public-css.md).'
-      - 'The chassis: one concern per file, the $chassis seam, the dependents rule before deleting a piece (feed.ts versus content.ts).'
-      - The three token tiers and tokens.css design-scale keys; the heading keys.
-      - 'The theme guide (required, Geoff 2026-09-24): the fourteen-value re-skin recipe light and dark, a full status-color rebrand, and porting your own theme onto the chassis step by step with the composition primitives.'
-      - Theme toggle, skip link, and the preview frame's ground following base-100.
-      - 'Local iteration: HMR, /styleguide, seeding local R2 with cairn-media-seed.'
-      - 'Style the editor preview: editor.preview (stylesheets, bodyClass, containerClass, byConcept), the ?url-only import rule, and data-cairn-preview for suppressing motion in the frame.'
-      - 'Chassis conventions and traps: class-prefix ownership, spacing keys shadowing max-w containers, unlayered rules beating utilities, the fluid root font size, formatDate as the one date vocabulary, data-flourish, and the no-flash script''s hard-coded theme names.'
+      - 'A hand-built site starts with neither Waymark nor the chassis: it adds Tailwind and daisyUI, imports cairn-public.css after tailwindcss, supplies a daisyUI theme block, links the sheet through a ?url import from a layout that wraps only the public routes, and names the same URL in editor.preview (link docs/reference/public-css.md and the core preview entry).'
+      - 'The theme guide (required, Geoff 2026-09-24): re-skin Waymark by walking the recipe comment in src/theme/theme.css, light and dark, and a full status-color rebrand.'
+      - 'Port your own theme onto the chassis step by step: the #chassis subpath import (templates/waymark/package.json imports), tokens.css first, the daisyUI theme blocks and the component exclude list, the site-owned CTA keys, the heading levers, the composition primitives, the skip link and theme toggle, and editor.preview when the sheets change. One line per chassis trap where a step meets it; src/chassis/README.md carries the rest.'
+      - 'Local iteration: HMR, /styleguide, and seeding local R2 with cairn-media-seed.'
       - Seeded media shows only with the dev backend off (npx vite dev without CAIRN_DEV_BACKEND, or wrangler dev).
-      - 'Verify: check:public-tokens and the public-scope audit rules, theme-contrast at WCAG AA.'
+      - 'Style rendered markdown: the .prose wrapper, directive classes from markdown-components.ts, the --cairn-code-* roles the engine sheet''s code rules read, and the data-flourish opt-in.'
+      - 'Verify: the cairn-audit public-scope rules run on their own (--rule public-literals --rule theme-conformance --rule theme-contrast), theme-contrast at WCAG AA, and the editor preview; resolving a public-rule finding or an unstyled preview.'
     outOfScope:
       - The file map of the scaffold (scaffolded-site-files).
-      - Building components (configure-rendering).
+      - 'The chassis tour: its file table, class prefixes, dependents table, token tiers, heading levers, and traps (the site''s src/chassis/README.md).'
+      - 'The preview member''s full type, byConcept, and the ?url rule in depth (docs/reference/core.md, the preview entry).'
+      - Building components (write-a-markdown-component).
       - The admin's look (add-a-custom-admin-screen).
       - Delivery routes (build-the-public-routes).
       - Media storage and the media route (configure-media).
@@ -252,57 +253,46 @@ pages:
       - 'Entry SEO: the description, social image, and hero fallbacks; article versus website typing and the JSON-LD shape a site can replace; which SEO fields the fieldset must declare; the hero field kept named image; the scaffold''s defaultImage that 404s until the file exists.'
       - Pages that are not entries get no SEO unless the site calls buildSeoMeta and renders CairnHead itself.
       - 'A tag page: allTags() and byTag() on the index, drafts excluded, and the SEO it gets only through buildSeoMeta and CairnHead.'
-      - 'An editable site menu: declare editor.nav (configPath, menuName, maxDepth), the menu node shape and its limits, readMenu in the root layout''s load, and a second menu edited by hand in site.config.yaml.'
+      - 'An editable site menu: declare editor.nav (menuName, label, maxDepth), the menu node shape and its limits, readMenu in the root layout''s load, and a second menu edited by hand in site.config.yaml.'
       - 'The sitemap: buildSitemapView and extraRoutes versus the scaffold''s hand-built route, noindex entries still listed, and an origin with no trailing slash.'
       - delivery/data's pure builders (buildSiteDescriptors, buildSitemapView, renderJsonLdScript, buildExcerpt).
+      - 'The draft preview route for a hand-built site: apply the preview migration, mount loadPreview inside the entry pages'' layout group, render PreviewBanner, and verify a minted link; a scaffolded site already carries all of it.'
     outOfScope:
       - Choosing the AI posture (choose-an-ai-posture, kept).
-      - The draft preview route (share-a-draft-preview).
       - Announcing new entries (act-on-newly-published-entries).
-  - path: docs/extend/share-a-draft-preview.md
-    slug: share-a-draft-preview
-    title: Share a draft preview
-    type: task guide
-    job: Let an editor share an unpublished draft through a revocable link, mounted so the preview renders with your site's own chrome and styles. For a Svelte-fluent web developer building an organization's site on cairn's seams.
-    covers:
-      - 'Preconditions: the 0003_preview migration and its table; the actionable failure before it runs.'
-      - The share affordance on by default and the mint and revoke actions.
-      - Mount loadPreview inside the same route group as the entry page, and why (the rejected neutral-shell design); the shared composition with entryLoad.
-      - Render PreviewBanner and override its palette with the five custom properties.
-      - 'What the link is: token-only credential, no cookies, the response headers, draft versus published state, expiry and cascades on delete, rename, or discard, and the mint URL built from the configured origin.'
-      - Minting and revoking from your own admin route with mintPreview and revokePreview.
-      - Verify, and the preview.refused reasons with their 404 versus 503.
-    outOfScope:
-      - The public entry route itself (build-the-public-routes).
-      - Session and cookie security (security-model).
   - path: docs/extend/act-on-newly-published-entries.md
     slug: act-on-newly-published-entries
     title: Act on newly published entries
     type: task guide
     job: Detect which entries a deploy newly published by diffing two manifests and hand them to your own notification code, or give editors a next-step link the moment they publish. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - 'The exports from delivery/data: buildNewlyPublished, parseManifest, Manifest.'
-      - 'The rule: not draft, stamped, and no prior stamp at the concept/id key; the draft check first.'
-      - Persisting the prior manifest across deploys is your job (KV, R2, or other storage).
-      - 'before: null for a first backfill only.'
-      - 'Edge cases: rename and delete-recreate read as new; removals are silent; the function is pure.'
-      - 'The in-admin alternative: editor.publishActions next-step links shown after a publish, their {concept} and {id} placeholders, the concept filter, and validation at server start.'
+      - 'The post-deploy job as the spine: read the deployed manifest, load the prior one from your storage, diff with buildNewlyPublished, send, and save; the exports from delivery/data it imports (buildNewlyPublished, parseManifest, Manifest, ManifestEntry).'
+      - Persisting the prior manifest is your job; the job keeps it as one string, shown against Workers KV, and another store works the same way.
+      - Ordering the send and the save, and what each order trades when a send throws.
+      - 'The first run stores the deployed manifest and sends nothing; before: null only for a deliberate backfill.'
+      - 'The rule in short (not draft, stamped, no prior stamp at the concept/id key) and the cases a run meets: a rename reads as new, a delete and recreate reads as new only across a run, removals are silent, and an entry never stamped never returns; the full rule stays on the buildNewlyPublished reference entry.'
+      - 'The in-admin alternative in short: editor.publishActions next-step links after a single entry''s publish, with the publish-actions reference for the placeholders, the concept filter, and validation.'
     outOfScope:
       - The feed routes (build-the-public-routes).
+      - The full buildNewlyPublished rule and its purity (reference/delivery-data).
+      - The PublishActionEntry members and their substitution rules (reference/sveltekit).
+      - Sending the message (your email or messaging provider).
   - path: docs/extend/add-an-island.md
     slug: add-an-island
     title: Add an island
     type: task guide
     job: Make one markdown component interactive on the public site by hydrating it as an island, while its static fallback still serves readers without JavaScript. For a Svelte-fluent web developer building an organization's site on cairn's seams.
     covers:
-      - An island as a component declared with hydrate, eager or visible, and build() output as the fallback.
-      - Register it in rendering.islands; the declaration-time mismatch check.
-      - Call hydrateIslands from afterNavigate, gated on a hasIslands flag with a dynamic import so a static site ships no runtime.
-      - 'Props: typed from declared attributes, untrusted, unsanitized by the runtime.'
-      - 'Runtime behavior: teardown on navigation, root scoping, failure isolation, fallback restore on a throwing mount.'
+      - An island as a component declared with hydrate, set to true or 'visible', and build() output as the fallback.
+      - A scaffolded site's short path, since its tree already carries the registry, the adapter member, the root load, and the layout call.
+      - Register it in rendering.islands through a lean registry module; the declaration-time mismatch check.
+      - On a hand-built site, call hydrateIslands from afterNavigate, gated on a hasIslands flag from the root server load, with dynamic imports of the runtime and the registry module, never the adapter.
+      - 'Props: typed from declared attributes, untrusted, and passed unsanitized; the do and the don''t, linked to the islands reference''s contract.'
+      - 'Runtime behavior in one line (teardown on navigation, root scoping, failure isolation, fallback restore), linked to the islands reference.'
       - Verify on the public page, since the sandboxed preview frame always shows the fallback.
     outOfScope:
-      - Declaring the component itself (configure-rendering).
+      - Declaring the component itself (write-a-markdown-component).
+      - The runtime's full contract and the boundary markup (the islands reference, docs/reference/islands.md).
   - path: docs/extend/add-a-custom-admin-screen.md
     slug: add-a-custom-admin-screen
     title: Add a custom admin screen
@@ -386,11 +376,12 @@ pages:
       - 'Render safety: the pipeline order, the sanitize floor and additive schema, the sink guard, raw HTML, target=_blank, what unsafeDisableSanitize removes, and what a registered build() can still bypass.'
       - 'The GitHub App''s reach: one private key as a Worker secret, the installation token''s repository-wide write.'
       - Logs never carry tokens or session ids.
+      - 'A preview link is the credential: anyone holding it reads the draft with no sign-in until it expires, is revoked, a change to the entry ends it, or its minting editor is removed.'
     outOfScope:
       - Configuring the access map (restrict-admin-access).
       - Setting up Access (replace-magic-links-with-cloudflare-access).
       - Building a channel (add-a-second-sign-in-group).
-      - Renderer options (configure-rendering).
+      - Renderer options (write-a-markdown-component).
       - Rotating the key (rotate-the-github-app-key).
       - When the sanitize floor shipped; state the floor as it is (migration-notes, kept).
   - path: docs/extend/restrict-admin-access.md
@@ -493,7 +484,7 @@ pages:
       - 'Run it in CI: the scaffold''s check:cairn and check:cairn:rendered scripts, and advisory versus error tier on a consumer.'
     outOfScope:
       - Auditing one custom admin screen while you build it (add-a-custom-admin-screen).
-      - The public-scope theme rules in depth (theme-your-public-site).
+      - Running the public-scope theme rules on a theme (theme-your-public-site).
       - Every rule, flag, and config key (docs/reference/cairn-audit.md).
   - path: docs/claude-code/using-claude-code-with-cairn.md
     slug: using-claude-code-with-cairn
@@ -571,7 +562,7 @@ crossLinks:
     to: reuse-content-across-entries
     why: The reserved fragments concept.
   - from: define-an-adapter-and-schema
-    to: configure-rendering
+    to: write-a-markdown-component
     why: The rendering group of the adapter.
   - from: define-an-adapter-and-schema
     to: restrict-admin-access
@@ -580,25 +571,25 @@ crossLinks:
     to: arrange-the-admin-sidebar
     why: The editor group's navLayout.
   - from: reuse-content-across-entries
-    to: configure-rendering
+    to: write-a-markdown-component
     why: Forwarding resolveFragment from render; components as the alternative to a fragment.
   - from: link-content-with-references
     to: reuse-content-across-entries
     why: The delete guard shape both share.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: security-model
     why: What the sanitize floor and sink guard protect before a site opts out.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: add-an-island
     why: Hydrating a registered component.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: theme-your-public-site
     why: Styling render output.
   - from: migrate-existing-content
     to: content-model
     why: The id and date rules the migration satisfies.
   - from: migrate-existing-content
-    to: configure-rendering
+    to: write-a-markdown-component
     why: Replacing old shortcodes with components.
   - from: theme-your-public-site
     to: scaffolded-site-files
@@ -606,9 +597,6 @@ crossLinks:
   - from: build-the-public-routes
     to: docs/extend/choose-an-ai-posture.md
     why: The robots posture option.
-  - from: build-the-public-routes
-    to: share-a-draft-preview
-    why: The preview route shares the entry composition.
   - from: build-the-public-routes
     to: act-on-newly-published-entries
     why: Acting on newly published entries.
@@ -669,7 +657,7 @@ crossLinks:
   - from: scaffolded-site-files
     to: run-cairn-audit-on-your-site
     why: cairn-audit.config.json and the check:cairn scripts.
-  - from: configure-rendering
+  - from: write-a-markdown-component
     to: configure-media
     why: The media resolver render forwards, and what a missing asset renders.
   - from: configure-media
@@ -698,10 +686,10 @@ crossLinks:
     why: A publish action can link to a screen of your own.
   - from: build-the-public-routes
     to: turn-on-tidy
-    why: Declaring editor.nav also names the site-config file tidy conventions are saved to.
+    why: The site-config file editor.siteConfigPath names holds both the menu and tidy's conventions.
   - from: turn-on-tidy
     to: build-the-public-routes
-    why: Declaring editor.nav, which also names the site-config file tidy writes.
+    why: The menu editor, which commits the same site-config file tidy's conventions are saved to.
   - from: migrate-existing-content
     to: build-the-public-routes
     why: The build validation that checks migrated frontmatter.

@@ -171,9 +171,9 @@ site to name its compiled stylesheets here; without the knob the preview renders
 `?url` import of the site's CSS entry resolves the hashed asset URL at build time. `bodyClass`
 applies theme or typography root classes to the preview document's body, and `containerClass`
 wraps the rendered content in the site's content container (a prose or measure class); when
-omitted, the content renders bare. The frame's srcdoc pins a white body background by default,
-deliberately overridable, so a site whose ground is not white should state its body background in
-one of the named stylesheets.
+omitted, the content renders bare. The frame's srcdoc paints the body with the site's
+`--color-base-100`, falling back to white when no named stylesheet defines that variable, so a
+site whose stylesheet sets `--color-base-100` needs no body rule of its own.
 
 `byConcept` overrides `bodyClass` and `containerClass` per concept, keyed by concept id, for a
 site whose concepts wrap content differently (a blog whose posts render inside a post module while

@@ -185,7 +185,7 @@
       "id": "f:htxey1"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md) covers custom public components.",
+      "text": "[Write a markdown component](write-a-markdown-component.md) covers custom public components.",
       "id": "no-claim"
     },
     {
@@ -675,7 +675,7 @@
       "id": "no-claim"
     },
     {
-      "text": "[Configure rendering](configure-rendering.md) covers custom public components with attributes and the render seam.",
+      "text": "[Write a markdown component](write-a-markdown-component.md) covers custom public components with attributes and the render seam.",
       "id": "no-claim"
     },
     {
@@ -706,7 +706,7 @@
     },
     {
       "id": "f:cgwyp6",
-      "reason": "defineRegistry's refusal of a component named figure or include is the component registry's rule, owned by configure-rendering (out of scope); this page registers no component."
+      "reason": "defineRegistry's refusal of a component named figure or include is the component registry's rule, owned by write-a-markdown-component (out of scope); this page registers no component."
     },
     {
       "id": "f:ps54gh",

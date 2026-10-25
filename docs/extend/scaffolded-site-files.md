@@ -411,9 +411,10 @@ The rest of the directory holds the following files:
 ### `src/chassis/`
 
 The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with
-Waymark. [The chassis boundary](theme-your-public-site.md#the-chassis-boundary) in Theme your public
-site covers what it holds and when a port edits it. Its `archive.ts` holds the archive's page size,
-which [Settings outside the admin](#settings-outside-the-admin) covers.
+Waymark. [Port your theme onto the chassis](theme-your-public-site.md#port-your-theme-onto-the-chassis)
+in Theme your public site covers what a port keeps and when it edits the chassis. Its `archive.ts`
+holds the archive's page size, which [Settings outside the admin](#settings-outside-the-admin)
+covers.
 
 ### `src/content/`
 
@@ -453,8 +454,8 @@ fails all three.
 These hold the theme's tokens and page styling, layered over the engine's `cairn-public.css` roles
 and the chassis's design-scale defaults. The roles are the status inks, the shadow, the focus ring,
 `--color-muted`, and `--color-card-border`, and the chassis `tokens.css` imports them right after
-Tailwind. [Token tiers and cascade order](theme-your-public-site.md#token-tiers-and-cascade-order)
-in Theme your public site covers which declaration wins.
+Tailwind. [Re-skin Waymark](theme-your-public-site.md#re-skin-waymark) in Theme your public site covers
+which values a re-skin sets.
 
 ## Settings outside the admin
 

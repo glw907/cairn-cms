@@ -111,6 +111,7 @@ export const ALLOWLIST = new Set([
   // `src/lib/cairn.config.ts`), which is why these are not resolved against it either.
   'file-path:src/app.d.ts', // a site's SvelteKit ambient-types file
   'file-path:src/app.html', // a site's SvelteKit app shell
+  'file-path:src/app.css', // a hand-built site's global style sheet, Tailwind's SvelteKit guide's location
   'file-path:src/hooks.server.ts', // a site's SvelteKit server hooks file
   'file-path:src/lib/cairn.config.ts', // a site's adapter file, by convention, not a fixed path
   'file-path:src/lib/cairn.server.ts', // a site's server-only adapter half, by convention
@@ -147,7 +148,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
   'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
   'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
-  'file-path:src/lib/markdown-components.ts', // docs/extend/configure-rendering.md's component module on the tutorial's site, a file the reader creates
+  'file-path:src/lib/markdown-components.ts', // docs/extend/write-a-markdown-component.md's component module on the tutorial's site, a file the reader creates
   'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`

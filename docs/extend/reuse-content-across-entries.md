@@ -44,7 +44,7 @@ the content module, and `vite.config.ts`. The page leaves two topics to other do
 
 > **Note:** A fragment's text is the same in every entry that includes it, and an include takes the fragment's id and nothing else.
 > When a block should differ on each use, register a custom public component instead, because a component declares the attributes each use sets.
-> [Configure rendering](configure-rendering.md) covers custom public components.
+> [Write a markdown component](write-a-markdown-component.md) covers custom public components.
 
 ## Before you begin
 
@@ -358,7 +358,7 @@ records.
 
 The following pages and reference entries cover related topics:
 
-- [Configure rendering](configure-rendering.md) covers custom public components with attributes and
+- [Write a markdown component](write-a-markdown-component.md) covers custom public components with attributes and
   the render seam.
 - [Link content with references](link-content-with-references.md) covers reference fields and their
   delete guard.

@@ -1,6 +1,6 @@
-# Page plan: Configure rendering
+# Page plan: Write a markdown component
 
-Page: `docs/extend/configure-rendering.md`. Page type: task guide. Status: new page, no prior version
+Page: `docs/extend/write-a-markdown-component.md`. Page type: task guide. Status: new page, no prior version
 on disk. Written 2026-10-12 by the plan step of the docs page chain (stage 2b part 1). The drafter
 drafts from this plan: it is the source of the page's order, each section's claim, and each fact's
 placement. The structural edit seat reads it before any prose exists. The plan is Google's outline
@@ -14,7 +14,7 @@ its own task tie, and "Diagnose a failed check" item 2 drops the unsupported
 `rendering.components` cause. It also takes both pace notes: the introduction no longer states the
 build-time versus per-request split, and "Built-in render steps" keeps its three pairs minimal.
 
-Inputs read: the outline entry in `docs/internal/outlines/extend.json` (slug `configure-rendering`:
+Inputs read: the outline entry in `docs/internal/outlines/extend.json` (slug `write-a-markdown-component`:
 job, covers, out-of-scope list, exemplars); "The page anatomies" and "The introduction" in
 `docs/internal/docs-register.md`; every fact bullet named below in `docs/internal/facts/extend.md`;
 the two exemplars (`designers/astro-styling`, "Scoped Styles" and "Markdown Styling";

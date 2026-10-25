@@ -3,6 +3,19 @@ version: 1
 pages:
     docs/claude-code/using-claude-code-with-cairn.md:
         accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
+    docs/extend/act-on-newly-published-entries.md:
+        page: f24f0a87b180d85ee33f9b365a1ec0bc1a3fb89f
+        blueprint: bd5d01080faf2dfa86768d3660cd1abdb3605baf
+        sections:
+            _intro: sha256:f1fe9ef52c249a97f10d4e566e4fb9e8b09adc30304bbc7720322a2f38478dcb
+            add-a-next-step-link-after-publish: sha256:ea089cf93f58f14f44fa2e1c7286df789ecfd25cd16daf32290a1e590b7550b0
+            before-you-begin: sha256:d222116b9b24ee249dc9957fe0c92de9aab095f55d086652c5c32f9a318fad79
+            entries-the-diff-returns: sha256:0ec3af0b0986718fd669616aa84a6dc68afe4e1be8acddea9c915aa7825faf60
+            order-the-send-and-the-save: sha256:f7975759cc0b068a9c3c1b76c8ade1333083fbe987a43842a67acd0fe08fe8be
+            see-also: sha256:8018d863cef350c7311bb35cd5532aa970f77d521462f9f29fbe19ee050a05c3
+            start-from-a-stored-baseline: sha256:a20766e25e1ed569703a84f7817ef122bc151d14f3d1daa3bfc88e153c861a31
+            verify-the-job: sha256:1e6a50e60fed7e89b11b10319397d771592f217a558228140a31c48978abfa18
+            write-the-post-deploy-job: sha256:3df97dba917a22e17ac861c5c8c15f3a9c92a159984334aa3003b38d75e04ac3
     docs/extend/add-a-custom-admin-screen.md:
         page: 420d6440a24b7e827106bee15ee469f288d620cc
         blueprint: 3d57f90a33c7de2c3ce70d1d0505ba0f3e6eaee6
@@ -47,6 +60,17 @@ pages:
             verify-a-member-signs-in-to-the-member-area: sha256:860eb20d28a9e384d9cc247c7fc374f6b940306c97335692d75234c2c6ee55a1
             verify-the-role-signs-in-to-its-home-screen: sha256:28a31a7d16d465cbfe120b09e52096f25f7f5fc17b4dd8b9201142757b3afb9b
             write-the-channel-module: sha256:685caa2d6f0dfebb74c2dbc43b5246d5556bb2615474c5ca70372a67fa93df59
+    docs/extend/add-an-island.md:
+        page: bc2e595e575d221ea1b7ee24521382ad1a81613a
+        blueprint: 2a4905455dbca4d3ac34d1f6d977ffbaabb7eaf1
+        sections:
+            _intro: sha256:e5b68edc43a3e01956947602561d6570ce554d6b4bd9cdc336f310f7e1f1b356
+            before-you-begin: sha256:beea7abb93d262802f7dc6c605fd1c5e5fe6ef7559be48d1df5dafb5a3bfcd2b
+            register-the-island: sha256:97c9f5b299e1048e634450e568c8f18f93926b860e20e3fc61993b124639d3cc
+            see-also: sha256:82e44cd6d64ce6d51fcd761fc5e6657dc3ca34af4bbee31115815f79b99ded85
+            verify-the-island-on-the-public-page: sha256:c5068e339d1f4e2df83b5f8169765c399c6b0b9a0ccc5a65ce36b18a401d4d1d
+            wire-the-root-layout: sha256:833a23ea31bd426d0f4e41df332d998ea300ba2417a7af08366806c7d9eedef4
+            write-the-live-component: sha256:39de9fc83256ac2b8efafa9c512e8a55dd5d93fe9251506ea100bf145bc00f86
     docs/extend/add-cairn-to-a-sveltekit-app.md:
         page: 65163162be441f51abbf80d2cdb1c0b044fc717c
         blueprint: b307ed09dad986174b8551acadcda4e29c3a6987
@@ -285,3 +309,18 @@ pages:
             the-github-apps-reach: sha256:200c3cf62bbe3065d524f3085a804a61c25c06edd56d3a48918c7ec0c89f5ac2
             the-session-cookie: sha256:d9f8d0714bfd58568009594abce2173ffa8e1744fe5e8999dbea4e7953ac45d3
             the-site-s-responsibilities: sha256:63d46429aff481f60cd7c77ca436aeb17af943e37efb6e7453b400bec73bf2e3
+    docs/extend/theme-your-public-site.md:
+        page: 6b8b24eabcb399a01af8f6b66d6400a041cb6cec
+        blueprint: 9ca7054577cb45dc6dbe31df535dce1e1c651b47
+        sections:
+            _intro: sha256:c3c495e56daa5114a1f37f73178428d17795988bc825aa0d980f25384ec8a0f5
+            before-you-begin: sha256:edf6fb9c07e53d28e445260cffd91700be66a1efc0bfceaec3e30c515bb801fa
+            iterate-locally: sha256:eba92c131e2421944a39bd5c48378afb4a6c3eea7a6fbaaeaa73b61c4534fd4f
+            port-your-theme-onto-the-chassis: sha256:ccc4876673bf05e035399bd9ac8c3d755d748859c8a1aa0595ad057130c1355e
+            re-skin-waymark: sha256:fcaa34c9232cf0dd37a10ca0b493d91ed613cf5402d70786302c049f6ea2a56d
+            rebrand-the-status-colors: sha256:49ba05dc55d4558c55ed66b36b128a82ad2b9301a132222d5fd86839f9f3df93
+            resolve-an-audit-finding: sha256:702f327f17e2e82b2f433ecf6d831d80d761bfc747505809fb93c9efdcaa9eb3
+            see-also: sha256:9d3acbfa22dc666cca9da74a22d2e0044cd93cc2524e0e029afd8bc978ac5df6
+            style-rendered-markdown: sha256:73179cdced389a87e247fd5683287ead32228636e99d2e5967ed2f194841c26b
+            theme-a-hand-built-site: sha256:53666b1b2a23f57f0be322f80d3765fba53681eafa877136d2b71bd088b09c44
+            verify-the-theme: sha256:6b6eb275f4db1ee4ea686aa57ca9cd08e012b5e7530968daa81b45e3df1d807e

@@ -24,7 +24,7 @@ Two inputs are shared across the routes: one set of typed indexes from `createSi
 **What the page does for them.** The introduction opens on that model: the routes are site files built on two shared inputs, the index and the origin, most of them through an engine builder. :fact[pkt8i6] :fact[yef4lo]
 It states the task: build the index, name the origin, compose one `PublicRoutesConfig`, wire the routes that read them, and read the prerendered files after a build. :fact[pkt8i6] :fact[8k9xwm]
 It tells the scaffolded reader that the tree holds these routes already, except the tag page, and that the origin ships as a placeholder to replace before production. :fact[qtm9y2] :fact[ioh6uj]
-It names where the engine's head stops: it covers entry pages, and it reads the hero from the frontmatter key `image`. :fact[k7nln3] :fact[k5uws5]
+It names where the engine's head stops: it covers entry pages, and it reads the hero and the social image from the frontmatter key `image`, with `defaultImage` as the social image's fallback. :fact[k7nln3] :fact[k5uws5] :fact[jguiox]
 
 **What it leaves to other pages:**
 - Choosing an AI-training stance for robots.txt belongs to Choose an AI posture.
@@ -53,9 +53,9 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 
 *Names what the routes read before the first step, each with the page that sets it up.*
 
-- Your site needs the following:
+- The routes need an adapter, a parsed site config, and a SvelteKit app that builds for Cloudflare. Before you start, confirm that your site has the following:
 - An adapter that declares the site's concepts, and the parsed site config. `createSiteIndexes` takes both. :fact[yef4lo]
-- See [Define an adapter and schema](define-an-adapter-and-schema.md).
+- See [Define an adapter and schema](define-an-adapter-and-schema.md), which covers the adapter and the site config.
 - A SvelteKit app that builds with `@sveltejs/adapter-cloudflare`. :fact[j0ut9n]
 - See [Deploy a bare SvelteKit site](add-cairn-to-a-sveltekit-app.md#deploy-a-bare-sveltekit-site).
 - For hero images, a media resolver. Without one, an entry gets no `heroImage`. :fact[83gbov]
@@ -76,9 +76,10 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Builds the index the routes read, and says which entries it leaves out.*
 
 - `createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. Vite needs each pattern written literally at the call site, so a loop can't generate them. :fact[yef4lo]
+- See Vite's [glob import](https://vite.dev/guide/features#glob-import).
 - In your content module, pass `createSiteIndexes` the adapter, the parsed site config, and one glob per concept, keyed by concept id. A scaffolded site does this in `src/chassis/content.ts`. :fact[yef4lo] :fact[zb2k9f]
 - Code: the scaffold's three globs and the `createSiteIndexes` call. :source[/templates/waymark/src/chassis/content.ts] :fact[n07oiu]
-- Write each glob with `query: '?raw'`, `import: 'default'`, and `eager: true`. A glob in another form fails the build. See [Diagnose a failed build](#diagnose-a-failed-build). :fact[n07oiu]
+- Write each glob with `query: '?raw'`, `import: 'default'`, and `eager: true`. A lazy glob, or one without `import: 'default'`, hands the parser a function or a module object. The build then fails. See [Diagnose a failed build](#diagnose-a-failed-build). :fact[n07oiu]
 - The result holds one index per concept plus `site`, the cross-concept resolver. A concept can't be named `site`. :fact[hv8qs9]
 - The site config argument doesn't change the indexes, and the call still takes the parsed config. :fact[n33lwb]
 - Each index's `all()` already returns its entries in the engine's sort order. [Build the archive](#build-the-archive) relies on that order. :fact[upec9v]
@@ -90,10 +91,9 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 
 *Sets the one origin each absolute URL starts from, before a production build writes it into the output.*
 
-- The origin is one string with no trailing slash, and a production build needs it set to the deployed origin. The scaffold keeps it in one string literal. :fact[niuzzg] :fact[k16chc]
+- The origin is one string with no trailing slash, and a production build needs it set to the deployed origin. The engine takes `PublicRoutesConfig.origin` as a plain string, and keeping it in one string literal is the scaffold's choice. :fact[niuzzg] :fact[k16chc]
 - The engine joins the origin and a leading-slash path with no normalization. A trailing slash doubles the slash in each canonical URL and sitemap `loc`. :fact[mtltw7]
-- The prerendered routes run at build time. The build writes the literal into each canonical URL, `og:url`, feed, and sitemap row. :fact[k16chc]
-- `PublicRoutesConfig.origin` is a plain string. Keeping it in a literal is the scaffold's choice, not an engine rule. :fact[niuzzg]
+- Because the prerendered routes run at build time, a build writes its configured origin into each canonical URL, `og:url`, feed, and sitemap row. :fact[k16chc]
 - To set the origin, follow these steps:
 1. In your content module, set the origin literal to your deployed origin. On a scaffolded site, replace the placeholder `'https://showcase.test'` in `src/chassis/content.ts`. :fact[ioh6uj]
 2. In `wrangler.jsonc`, set `PUBLIC_ORIGIN` to the same origin. The Worker reads that value at runtime. :fact[ioh6uj]
@@ -109,7 +109,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 1. In a separate module, export one `PublicRoutesConfig` with `site`, `render`, `origin`, `siteName`, and `description`. A scaffolded site keeps it in `src/chassis/public-routes.ts`. :fact[pkt8i6] :fact[zb2k9f]
 2. In `src/routes/(site)/[...path]/+page.server.ts`, export `prerender = true`, `entries` from `routes.entries()`, and a `load` that returns `routes.entryLoad({ url })`. :fact[pkt8i6] :fact[1mkckz]
 3. In the same directory's `+page.svelte`, render `CairnHead` from `@glw907/cairn-cms/delivery/head` with `seo={data.seo}`, then the entry's `html`. :fact[fvi8rk]
-- Code: the scaffold's config module. Its `defaultImage`, `feeds`, `resolveMedia`, and `assetsEnabled` members come up in later sections. :source[/templates/waymark/src/chassis/public-routes.ts] :fact[pkt8i6]
+- Code: the scaffold's config module. This section covers its `resolveMedia` and `assetsEnabled` members after the entry page. [Declare the fields the head reads](#declare-the-fields-the-head-reads) covers its `defaultImage`, and [Serve the feeds](#serve-the-feeds) covers its `feeds`. :source[/templates/waymark/src/chassis/public-routes.ts] :fact[pkt8i6]
 - Code: the catch-all's server module in its minimal form, without the scaffold's reference resolution. :fact[pkt8i6]
 - See [Resolve the targets on the entry route](link-content-with-references.md#resolve-the-targets-on-the-entry-route).
 - Code: a minimal entry page that renders `CairnHead` with `seo` and a `titleTemplate`, then `{@html data.html}` inside an `<article>`. :fact[fvi8rk] :fact[dvg5gn]
@@ -118,8 +118,8 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - The load data carries `concept`, `entry` (the whole entry, including its frontmatter, body, and title), `html` (the body already run through the site's `render`), `canonicalUrl`, `seo`, the `newer` and `older` neighbors, and `heroImage` when a hero resolves. :fact[fvi8rk]
 - The canonical URL is the origin plus the permalink, and `og:url` starts from the same origin. :fact[k16chc]
 - See [`EntryData`](../reference/delivery.md#entrydata).
-- `heroImage` is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve. `entry.frontmatter.image.src` stays the raw token. :fact[83gbov]
-- `resolveMedia` alone turns hero resolution on. `assetsEnabled` makes the engine log `media.resolver_absent` once when media is on and `resolveMedia` is missing. :fact[bnt2wh]
+- `heroImage` is undefined when no hero is set, media is off, or the `media:` reference doesn't resolve. Where a hero is set, `entry.frontmatter.image.src` keeps the raw token whether or not it resolves. :fact[83gbov]
+- `resolveMedia` alone turns hero resolution on. `assetsEnabled` resolves nothing. When it's on and `resolveMedia` is missing, each `createPublicRoutes` call logs `media.resolver_absent` once. :fact[bnt2wh]
 - `titleTemplate` applies when `title` is left undefined. An explicit `title`, or `title={false}`, wins over it. :fact[dvg5gn]
 
 ## Declare the fields the head reads
@@ -137,14 +137,14 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - The head falls back in a fixed order when an entry leaves a field empty:
 - Description: the frontmatter `description`, else the entry's excerpt, else the config's `description`. The excerpt is the body's plain text, cut at a word boundary near 200 characters. :fact[j2rndg] :fact[nbn6j0]
 - Social image: the resolved hero's absolute URL, else a string `image`, else `defaultImage`, each anchored to the origin. `twitter:card` is `summary_large_image` only when an image exists. :fact[jguiox]
-- Page type: a dated entry is an `article`, with `article:published_time`, `article:modified_time` when `updated` is set, `article:author`, and the feed links. An undated entry is a `website`. :fact[j81xye]
+- Page type: a dated entry is an `article`, with `article:published_time` and, when `updated` is set, `article:modified_time`. It also carries `article:author` when the entry sets `author`, and the feed links when the config sets `feeds`. An undated entry is a `website`. :fact[j81xye] :fact[9xy8j9]
 - Structured data: one `Article` or `WebSite` JSON-LD object, which never carries the author. To add a richer schema.org type, replace `seo.jsonLd` before `CairnHead` renders it. :fact[kdo96n]
 
 ## Serve the markdown twin
 
 *Adds a raw-markdown copy of each entry beside its page, built from the same shared config.*
 
-- The markdown twin is a prerendered route beside the catch-all. It serves each entry's stored markdown, unrendered, at the entry's permalink plus `.md`. :fact[03lbjg]
+- The markdown twin is a prerendered route beside the catch-all. It serves an entry's stored markdown body, unrendered and without its frontmatter, at the entry's permalink plus `.md`, for each entry not marked `noindex`. :fact[03lbjg] :fact[3r08v1]
 - To serve the twin, follow these steps:
 1. In `src/params.ts`, define an `md` matcher that accepts a segment ending in `.md`, through SvelteKit's `defineParams`. :fact[03lbjg] :fact[qtm9y2]
 2. In `src/routes/(site)/[...path=md]/+server.ts`, export `prerender = true`, `entries` from `routes.markdownEntries()`, and a `GET` handler. :fact[03lbjg]
@@ -152,10 +152,10 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 4. In the entry page, pass `CairnHead` a `markdownUrl` of the canonical URL plus `.md`. :fact[dvg5gn] :fact[i8heft]
 - Code: the scaffold's `md` matcher. :source[/templates/waymark/src/params.ts] :fact[03lbjg]
 - Code: the scaffold's twin route. It imports the shared config. :fact[03lbjg]
-- SvelteKit prefers the matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. :fact[03lbjg]
+- SvelteKit's route sorting rules prefer the more specific matched route, so `[...path=md]` takes the `.md` paths and `[...path]` keeps the rest. :fact[03lbjg]
 - See [Sorting](https://svelte.dev/docs/kit/advanced-routing#Sorting).
 - An entry whose `robots` carries `noindex` has no twin. `markdownEntries` skips it, `markdownLoad` answers 404, and the scaffold's page passes no `markdownUrl` for it. :fact[3r08v1] :fact[i8heft]
-- Note: `markdownResponse` sets `text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's headers into the build. :fact[gwpffe]
+- Note: `markdownResponse` sets `text/markdown; charset=utf-8`, but `@sveltejs/adapter-cloudflare` doesn't carry a prerendered route's headers into the build. A local test under `wrangler dev` still served the file with that type, which suggests that Cloudflare derives it from the `.md` extension. No deployed zone has been tested. :fact[gwpffe]
 
 ## Mount the draft preview route
 
@@ -179,12 +179,14 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - Warning: a parent layout's `load` runs for the preview route too, and the preview reads no session. Keep privileged values out of any layout the preview shares, or branch on `route.id` in that `load`. :fact[cnz554] :fact[afkvsb]
 - See [Layout data](https://svelte.dev/docs/kit/load#Layout-data).
 - To check a minted link, follow these steps:
-1. In the admin, open an entry and save an edit. :fact[pimnjy]
-2. On the entry's edit screen, in the Share preview group, select **Share preview link**. The **Preview link** field shows a link on your origin whose path is `/preview/<token>`. :fact[6gmzt1] :fact[sp1mbt] :fact[76m2vf]
-3. In a private browser window, open the link. The draft renders in your site's chrome and styles, with the banner above it. :fact[afkvsb] :fact[gvim4v] :fact[6hmgmv]
-- If a mint answers `The preview_tokens table is missing.`, copy and apply `0003_preview.sql` as [Mount the draft preview route](#mount-the-draft-preview-route)'s first two steps show. :fact[rr00qr]
+1. In the admin, open an entry.
+2. On the entry's edit screen, save an edit. :fact[pimnjy]
+3. In the entry's **Details** slide-over, in the **Share preview** group, select **Share preview link**. The **Preview link** field shows a link on your origin whose path is `/preview/<token>`. :fact[6gmzt1] :fact[sp1mbt] :fact[76m2vf]
+4. In a private browser window, open the link. The draft renders in your site's chrome and styles, with the banner above it. :fact[afkvsb] :fact[gvim4v] :fact[6hmgmv]
+- If a mint answers `The preview_tokens table is missing.`, copy and apply `0003_preview.sql` to `AUTH_DB` before you mint again. :fact[rr00qr] :fact[049lo2]
 - See [Public preview](../reference/sveltekit.md#public-preview).
 - See [Log events](../reference/log-events.md).
+- See [Share a draft preview](share-a-draft-preview.md), which covers hiding the **Share preview** group, a link's lifetime, and minting links from a custom admin screen.
 
 ## Serve the feeds
 
@@ -203,7 +205,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - See [Feeds, sitemap, and robots](../reference/delivery-data.md#feeds-sitemap-and-robots).
 - The scaffold's mapping also resolves `::include` fragments and makes image URLs absolute. :fact[2dqwmu]
 - The link resolver throws on a missing target or one in a concept that isn't routable. A dangling `cairn:` link fails the build. :fact[d7v5cg]
-- `feeds` adds `rel="alternate"` links to a dated entry's head and serves nothing. Readers fetch the two feed routes. :fact[9xy8j9]
+- `feeds` adds `rel="alternate"` links to a dated entry's head and serves nothing. Feed readers fetch the feeds from the two feed routes. :fact[9xy8j9]
 
 ## Serve the sitemap
 
@@ -217,9 +219,9 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 1. In `src/routes/sitemap.xml/+server.ts`, export `prerender = true`. :fact[8k9xwm]
 2. In the `GET` handler, call `buildSitemapView` with `site`, `buildSiteDescriptors(cairn, siteConfig)`, the origin, and your non-entry paths as `extraRoutes`. :fact[mc3n4w] :fact[nibegw]
 3. In the same handler, return `sitemapResponse` with the rows. :fact[pvk6h5]
-- Code: a sitemap route built with `buildSitemapView`, with `extraRoutes` of `'/'` and one local example path. :fact[mc3n4w]
+- Code: a sitemap route built with `buildSitemapView`, with `extraRoutes` of `'/'` and `'/contact'`, a path no scaffold entry claims (the scaffold's `/about` is a pages entry, so passing it would list it twice). :fact[mc3n4w]
 - `extraRoutes` come first, with no `lastmod`. An entry's `lastmod` is its `updated` date, else its `date`. :fact[mc3n4w]
-- A page that isn't an entry, such as an about page or a tag index, appears only through `extraRoutes`. :fact[mc3n4w]
+- A page that isn't an entry, such as a contact page or a tag index, appears only through `extraRoutes`. :fact[mc3n4w]
 - `buildSitemapView`, `buildSiteDescriptors`, `renderJsonLdScript`, and `buildExcerpt` are pure functions on `@glw907/cairn-cms/delivery/data`, which `/delivery` re-exports. :fact[nibegw]
 - See [`buildSitemapView`](../reference/delivery-data.md#buildsitemapview).
 - An entry marked `noindex` still gets a row. :fact[ms7l5u]
@@ -241,11 +243,11 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Lets the reader drop entries that ask not to be indexed from the files that would still list them.*
 
 - The index's lists leave drafts out, but an entry whose `robots` field carries `noindex` still appears in the scaffold's sitemap and feeds. :fact[m9z6sr] :fact[ms7l5u]
-- The head's robots meta tag and the markdown twin read the `robots` field. The sitemap builders and the scaffold's feed mapping don't. :fact[ms7l5u] :fact[3r08v1]
+- Of the public outputs, the head's robots meta tag and the markdown twin read the `robots` field. The sitemap builders and the scaffold's feed mapping ignore it. :fact[ms7l5u] :fact[3r08v1]
 - To keep `noindex` entries out, follow these steps: :fact[ms7l5u] :fact[jsh6ae]
 1. In the sitemap route, drop each entry whose `robots` includes `noindex`, read with `readSeoFields`. :fact[ms7l5u] :fact[jsh6ae]
 2. In the feed mapping, drop the same entries. :fact[ms7l5u]
-- Code: an `isNoindex` helper over `readSeoFields(entry.frontmatter).robots`, reaching the entry through the concept index's `byId`. :fact[jsh6ae] :fact[m9z6sr]
+- Code: an `isNoindex` helper that takes a `ContentSummary` from the sitemap's `site.all()` or the posts index's `all()`, reaches the entry through `site.byPermalink(summary.permalink)`, and reads `readSeoFields(entry.frontmatter).robots`. It covers the rows of each routable concept, which a lookup through one concept index's `byId` would miss. :fact[jsh6ae] :fact[mt7qcl]
 - The field reaches the frontmatter only when the fieldset declares `robots`, as [Declare the fields the head reads](#declare-the-fields-the-head-reads) shows. :fact[jsh6ae]
 
 ## Build the archive
@@ -253,7 +255,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Paginates a dated concept's entries in the order the index already gives.*
 
 - A dated concept's `all()` already returns entries newest first. The archive route paginates that list without sorting it. :fact[upec9v]
-- A dated concept sorts newest first by `date`, with an undated entry last. An undated concept sorts by `title`. :fact[upec9v]
+- In a dated concept, an entry with no date sorts after the dated ones. An undated concept sorts its entries by `title`. :fact[upec9v]
 - The scaffold's `ARCHIVE_PAGE_SIZE`, 13, sets the page size for the home page and `/archive/[page]`. The home page shows the newest post as its lead, and both paginate the posts after it. :fact[38pjqy]
 - To add the archive, follow these steps:
 1. In `src/routes/(site)/archive/[page]/+page.server.ts`, export `prerender = true` and an `entries` generator that lists the real page numbers. :fact[38pjqy] :fact[upec9v]
@@ -261,6 +263,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - A corpus that fits on one page gives the archive route no entries. SvelteKit's crawl check then fails the build. :fact[2zl3qz]
 - The scaffold exempts `/(site)/archive/[page]` alone. Any other unseen prerenderable route still fails the build. :fact[2zl3qz]
 - See [Crawl rules](scaffolded-site-files.md#crawl-rules).
+- See SvelteKit's [prerender configuration](https://svelte.dev/docs/kit/configuration#prerender) for `handleUnseenRoutes` and its [page options](https://svelte.dev/docs/kit/page-options#entries) for `entries`. :fact[2zl3qz]
 - The engine builds no head for the archive. See [Give other pages a head](#give-other-pages-a-head). :fact[k7nln3]
 
 ## Give other pages a head
@@ -272,7 +275,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - To give a page a head, follow these steps:
 1. In the page's `+page.server.ts` `load`, return the result of `buildSeoMeta` with the page's title, a description, its canonical URL, and the site name. :fact[7ssfr1]
 2. In its `+page.svelte`, render `CairnHead` with that `seo`. :fact[7ssfr1] :fact[fvi8rk]
-- Code: a server module and a page for an about-style page at a local path. :fact[7ssfr1]
+- Code: a server module and a page for a contact page at `src/routes/(site)/contact/`, a path no entry claims (a static `(site)/about` route would collide with the scaffold's `about` pages entry). :fact[7ssfr1]
 - See [`buildSeoMeta`](../reference/delivery-data.md#buildseometa).
 - A page that writes its JSON-LD `<script>` without `CairnHead` serializes it with `renderJsonLdScript`. `buildExcerpt` cuts a description from a markdown body. :fact[nibegw] :fact[nbn6j0]
 - The `titleTemplate` rule from the entry pages applies here too. :fact[dvg5gn]
@@ -327,12 +330,12 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 *Has the reader build the site and read the prerendered files for their origin.*
 
 - To check the build, follow these steps:
-1. In the project directory, run `npm run build`. If the build stops, go to [Diagnose a failed build](#diagnose-a-failed-build).
-2. In the project directory, serve the build. A scaffolded site's `npm run preview` runs `wrangler dev`. On another site, run `wrangler dev` directly. :fact[8k9xwm] :fact[gwpffe]
-3. In a terminal, fetch `/sitemap.xml` from the local server. Each `loc` starts with your origin literal, not the local server's address. :fact[k16chc] :fact[mtltw7]
+1. In the project directory, run `npm run build`. If the build stops, go to [Diagnose a failed build](#diagnose-a-failed-build). :fact[a98mnn]
+2. In the project directory, serve the build. A scaffolded site's `npm run preview` runs `wrangler dev`. On another site, run `wrangler dev` directly. `vite preview` can't serve the output of `@sveltejs/adapter-cloudflare` version 8, a limit that an [open SvelteKit issue](https://github.com/sveltejs/kit/issues/17271) tracks. :fact[8k9xwm] :fact[gwpffe]
+3. In a terminal, fetch `/sitemap.xml` from the local server. Each `loc` starts with your deployed origin, not the local server's address. :fact[k16chc] :fact[mtltw7]
 4. In the same terminal, fetch `/feed.xml` and `/feed.json`. Each lists the published posts with absolute URLs. :fact[70uh8b]
 5. In the same terminal, fetch `/robots.txt`. It holds a `Disallow: /admin` line and a `Sitemap:` line naming your origin's `/sitemap.xml`. :fact[0elmiu]
-6. Fetch an entry's twin with `curl -s '<local-server>/<permalink>.md'`. The body is the entry's stored markdown body, without its frontmatter, unrendered. :fact[03lbjg]
+6. Fetch an entry's twin with `curl -s '<local-server>/<permalink>.md'`. The response is the entry's stored markdown body, unrendered, without its frontmatter. :fact[03lbjg]
 7. In a browser, open an entry and view its source. The canonical link and `og:url` are your origin plus the permalink. :fact[k16chc]
 
 ## Diagnose a failed build
@@ -345,7 +348,7 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 
 :::row
 **Symptom.** The build stops with `expected input to be a string or buffer`.
-**Cause.** A glob passed to `createSiteIndexes` is lazy, or it lacks `query: '?raw'` and `import: 'default'`. :fact[n07oiu]
+**Cause.** A glob passed to `createSiteIndexes` is lazy, or it lacks `import: 'default'`. The parser then receives a function or a module object instead of the file's text. :fact[n07oiu]
 **Fix.** Write the glob as [Build one typed index](#build-one-typed-index) shows.
 :::
 
@@ -379,13 +382,13 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 **Fix.** Correct the node as [Add an editable menu](#add-an-editable-menu) lists.
 :::
 
-- `createSiteIndexes` accepts `{ validate: false }` to skip the frontmatter check. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`. :fact[kv3qen]
+- With `validate: false` in its fourth argument, `createSiteIndexes` doesn't fail the build on invalid frontmatter. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`. :fact[kv3qen]
 
 ## See also
 
 *Links the reference entries and neighboring guides a reader goes to next.*
 
-- The following pages cover the pieces this page links to:
+- The following pages cover the reference entries and neighboring guides for these routes:
 - See [`createPublicRoutes`](../reference/delivery.md#createpublicroutes).
 - See [Delivery data](../reference/delivery-data.md).
 - See [Choose an AI posture](choose-an-ai-posture.md).
@@ -394,4 +397,5 @@ It names where the engine's head stops: it covers entry pages, and it reads the 
 - See [Configure media](configure-media.md).
 - See [Theme your public site](theme-your-public-site.md).
 - See [Scaffolded site files](scaffolded-site-files.md).
+- See [Share a draft preview](share-a-draft-preview.md).
 - See [Security model](security-model.md).

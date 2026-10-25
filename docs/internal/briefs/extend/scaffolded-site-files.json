@@ -847,7 +847,7 @@
       "id": "f:rxj43c"
     },
     {
-      "text": "[The chassis boundary](theme-your-public-site.md#the-chassis-boundary) in Theme your public site covers what it holds and when a port edits it.",
+      "text": "[Port your theme onto the chassis](theme-your-public-site.md#port-your-theme-onto-the-chassis) in Theme your public site covers what a port keeps and when it edits the chassis.",
       "id": "no-claim"
     },
     {
@@ -950,7 +950,7 @@
       "id": "f:s23sk0"
     },
     {
-      "text": "[Token tiers and cascade order](theme-your-public-site.md#token-tiers-and-cascade-order) in Theme your public site covers which declaration wins.",
+      "text": "[Re-skin Waymark](theme-your-public-site.md#re-skin-waymark) in Theme your public site covers which values a re-skin sets.",
       "id": "no-claim"
     },
     {

@@ -412,8 +412,9 @@ The rest of the directory holds the following files:
 
 The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with
 Waymark. [Port your theme onto the chassis](theme-your-public-site.md#port-your-theme-onto-the-chassis)
-in Theme your public site covers what a port keeps and when it edits the chassis. Its `archive.ts` holds the archive's page size,
-which [Settings outside the admin](#settings-outside-the-admin) covers.
+in Theme your public site covers what a port keeps and when it edits the chassis. Its `archive.ts`
+holds the archive's page size, which [Settings outside the admin](#settings-outside-the-admin)
+covers.
 
 ### `src/content/`
 

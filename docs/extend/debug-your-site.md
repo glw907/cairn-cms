@@ -194,10 +194,10 @@ missing piece:
 
 For `access_map_not_attached`, the cause is a hook that set the editor without attaching the map.
 [`createAuthGuard`](../reference/sveltekit.md#createauthguard) and the dev backend's
-`devBackendHandle` each attach `runtime.access ?? {}` right after they set the editor on every admin
-path they cover, so behind either this reason does not occur. The fix is a code change: that hook
-also sets `locals.cairnAccess` to `runtime.access ?? {}`, as the guard does, or the route goes
-behind the guard, which sets it on every admin path it covers. [Restrict admin
+`devBackendHandle` each attach `runtime.access ?? {}` right after they set the editor, on every admin
+path where they set one, so behind either this reason does not occur. The fix is a code change: that
+hook also sets `locals.cairnAccess` to `runtime.access ?? {}`, as the guard does, or the route goes
+behind the guard, which sets it on every admin path where it sets the editor. [Restrict admin
 access](restrict-admin-access.md) describes the map.
 
 For `db_not_bound`, the binding that `resolveDb` names is missing from that env. The fix is a config

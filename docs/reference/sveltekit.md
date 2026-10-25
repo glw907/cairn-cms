@@ -844,8 +844,8 @@ is deployed:
 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
    `admin.action.misconfigured`, and returns `fail(500)`. Both
    [`createAuthGuard`](#createauthguard) and `devBackendHandle` attach the map (an empty one for a
-   zero-config site) right after they set the editor on every admin path they cover, so behind
-   either this check never refuses. It refuses only when other code, such as a site's own hook,
+   zero-config site) right after they set the editor, on every admin path where they set one, so
+   behind either this check never refuses. It refuses only when other code, such as a site's own hook,
    sets `locals.cairnEditor` without `locals.cairnAccess`. This check runs before
    authorization out of necessity (a route cannot authorize against a map that was never
    attached) and leaks nothing per-editor: it is identical for every session.

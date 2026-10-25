@@ -31,7 +31,7 @@ To write the live component, follow these steps:
 1. In a directory for the site's islands, such as `src/lib/islands/`, create the component file, such as `Converter.svelte`. A scaffolded site keeps its island files in `src/theme/islands/`.
 2. In the component's script, declare a prop with a default value for each attribute the directive declares.
 
-   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. The icon attribute is the exception. When the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key.
+   A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. The icon attribute is the exception. When the author leaves it unset or blank and the directive's `role` maps to a default glyph key, it arrives as that key.
 
 3. In the component's markup, render each prop as text.
 
@@ -64,7 +64,7 @@ Next, register the live component under its directive name.
 
 ## Register the island
 
-A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Because the root layout imports the registry and not the adapter module, the adapter module stays out of the client bundle.
+A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Because the root layout imports the registry and not the adapter module, the layout adds no adapter code to the public pages' client bundle.
 
 To register the island, follow these steps:
 
@@ -189,7 +189,7 @@ With the layout in place, check the island where readers see it.
 
 ## Verify the island on the public page
 
-The checks run on a built public page, because the edit page's preview frame is sandboxed and runs no scripts. The preview always shows the fallback, never the mounted component, as [The editor preview shows the fallback](../reference/islands.md#the-editor-preview-shows-the-fallback) states.
+The checks run on the public page, not in the editor preview, because the edit page's preview frame is sandboxed and runs no scripts. The preview always shows the fallback, never the mounted component, as [The editor preview shows the fallback](../reference/islands.md#the-editor-preview-shows-the-fallback) states.
 
 To verify the island, follow these steps:
 

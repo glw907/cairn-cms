@@ -63,7 +63,7 @@ The steps write the live component, register the island, wire the root layout on
 2. In the component's script, declare a prop with a default value for each attribute the directive declares. :fact[hje4zb] :fact[n3pod3]
 - A `number` attribute arrives as a JSON number and a `boolean` attribute as a JSON boolean. Any other attribute arrives as the literal string the author wrote. :fact[hje4zb]
 - When the entry leaves an attribute unset, the component receives no prop for it, and the prop's default applies. :fact[n3pod3]
-- The icon attribute is the exception: when the author leaves it blank and the directive has a `role`, it arrives as that role's default glyph key. :fact[hje4zb]
+- The icon attribute is the exception. When the author leaves it unset or blank and the directive's `role` maps to a default glyph key, it arrives as that key. :fact[hje4zb]
 3. In the component's markup, render each prop as text. :fact[8356mn]
 - Code: `src/lib/islands/Converter.svelte`, a live component typed from a `converter` directive's `from`, `to`, and `rate` attributes, with each prop rendered as text. :fact[hje4zb] :fact[n3pod3] :source[/templates/waymark/src/theme/islands/Banner.svelte]
 
@@ -97,7 +97,7 @@ The steps write the live component, register the island, wire the root layout on
 
 *Walk the reader through the registry entry, the adapter member, and the `hydrate` declaration, then the check `defineAdapter` runs across them.*
 
-- A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Keeping it separate from the adapter module keeps the adapter off the client. :fact[thjrvl] :fact[ni5lm7] :fact[zrcuyf]
+- A site registers each island under its directive name in a registry module that imports the live components. The adapter and the root layout both import that module. Because the root layout imports the registry and not the adapter module, the layout adds no adapter code to the public pages' client bundle. :fact[thjrvl] :fact[ni5lm7] :fact[zrcuyf]
 - To register the island, follow these steps:
 1. In a registry module, such as `src/lib/islands/registry.ts`, export an `IslandRegistry` that maps the directive name to the live component. The examples name the export `siteIslands`. :fact[thjrvl] :fact[mcxxpp]
 - On a scaffolded site, in `src/theme/islands/registry.ts`, import the live component and add its entry beside `banner` instead. :fact[mcxxpp]

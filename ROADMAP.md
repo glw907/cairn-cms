@@ -1659,7 +1659,7 @@ the named human gates only):**
     (`activeAckIDs`), which a fixture does not have, so the fixture's own list is the scenario's
     statement (Decision 7).
   - **`probe_token.go` keeps its file name**, not renamed to `auth_check.go`. The rename would
-    break two facts citations and the test-file allowlist in `messages_test.go:34`; the file's
+    break the test-file allowlist in `messages_test.go:34`; the file's
     actual defect, stale wording naming a retired command, was the chore that shipped (Decision
     10).
   - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as

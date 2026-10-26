@@ -485,9 +485,9 @@ To load row detail on demand, follow these steps:
 2. In that route's server file, call `requireAccess`.
 3. In your site's access map, add an entry for the nested route when it needs a different rule from the screen's.
 
-   It also needs an entry when it starts with a dynamic segment and the map holds a deeper key under the screen's.
+   A route that starts with a dynamic segment resolves to no rule when the map holds a deeper key under the screen's.
    Otherwise the screen's key already covers it.
-   [Restrict admin access](restrict-admin-access.md) describes how to add an entry.
+   [Key nested and parameterized routes](restrict-admin-access.md#key-nested-and-parameterized-routes) describes how to declare the governing key for that route.
 
 4. In the screen's markup, render each row as an `ExpandableRow` inside the `AdminTable`.
 

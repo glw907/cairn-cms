@@ -15,7 +15,7 @@
 // absence never fails a build.
 //
 // Interface: `node scripts/checks/check-tellgrader.mjs [<page> ...]`. With no arguments it scans
-// the published tree; with paths it scans only those (a page-chain gate passes `--page`).
+// the published tree; with paths it scans only those (the docs gate passes `--page`).
 import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { resolve, dirname, relative, join } from "node:path";

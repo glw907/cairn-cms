@@ -291,8 +291,7 @@ The original decision framing, for the record:
      process). The rest of "Docs tooling before stage 2b" is the residue entry below.
   3. Stage 2b: the 14 remaining extend pages. Part 1 drafted all 14 (PR #117, merged 2026-10-12);
      part 2 and its close, which runs the test, remain (the carried items entry below).
-  4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): its facts already
-     sit in the container, and the scaffold ships the guidance tree it documents. It registers the arm
+  4. **The Claude Code arm's small stage**, right after 2b (the Now entry below): the scaffold ships the guidance tree it documents. It registers the arm
      first.
   5. Stage 3: the admin arm. Forecast: no engine pass after it.
   6. **Engine pass before stage 4** (forecast): the live UI reproduction seam (the docs render the
@@ -331,31 +330,19 @@ The original decision framing, for the record:
   (`scripts/checks/arm-state.mjs`), so the stage's first task registers it (`ARM_NAMES`, `ARM_DIRS`, the
   arm-index, package-files, snippets, symbols, visuals, leaks, and links checks, `package.json`
   `files`, and the register's track entry) where pages exist to test it against. Pass B's B6 fixes
-  land first, so the page can document `cairn-guidance check` without a false-positive caveat. The
-  facts already sit in `docs/internal/facts/extend.md`: `f:0ygumq` (the installed tree), `f:pmmtrm`
-  (Claude Code format only), `f:7ozknm` and `f:o7bkm0` (the four skills), `f:6ro1n9` (the root
-  `CLAUDE.md`), `f:dy5cfj` (`VERSION`), `f:4ax489` (`check` and `--strict`), `f:jd54ph` (the CI step),
-  `f:4h9fz4` and `f:5ohm23` (`install`'s behavior and exit code), and `f:4nccq6` (the `Stop` hook
-  snippet). The page `scaffolded-site-files.md` cited them in a "guidance tree" section it dropped
-  under the rulings.
+  land first, so the page can document `cairn-guidance check` without a false-positive caveat.
 
 - **Stage 2b part 2: the items part 1 carried (PR #117 triage, Geoff, 2026-10-12).** Part 1's
   "Found, not done" table (`docs/research/2026-10-11-draft-docs-2b-part1-record.md`,
   "Rulings for Geoff") filed these as defers; Geoff submitted the triage unchanged. Part 2 also owns
-  its own scope from the plan (the 10 fact re-arms, the relink and `LEGACY_PATH_MAP` repoints, the
-  reference-arm corrections, the final arm index, the outline deletion, the boundary test, 2b's
-  close, the Claude Code arm). Each item names its trigger:
+  its own scope from the plan (the relink and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the boundary test, 2b's close). Each item names its trigger:
   - The sidebar figure's fixture: `nav/worked-navlayout` (`src/lib/reproductions/stories/site.ts:76-86`,
     `fixtures.ts:262-275`) relabels `media` to its own default, "Library", so the figure on
     `arrange-the-admin-sidebar` cannot show a real relabel; the page was reworded to match. Trigger:
     the next engine pass, which owns `src/lib/reproductions/`.
-  - Outline crossLinks from `share-a-draft-preview` and `act-on-newly-published-entries` to
-    `build-the-public-routes` (the pages name it as plain text). Trigger: part 2's outline step.
   - The `siteConfigPath` and glob explanations repeat across `define-an-adapter-and-schema`,
     `turn-on-tidy`, `build-the-public-routes`, and `reuse-content-across-entries`. Trigger: part 2's
     consistency read.
-  - Fact Source drift: `f:hsk70g` (quoted line), `f:x84fah` (range ends before the tier logic),
-    `f:smbsa6` and `f:zyjzeg` (line numbers). Trigger: part 2's fact re-arm.
   - `act-on-newly-published-entries`: one read found `buildNewlyPublished` in npm 0.98.0, an earlier
     read did not, so the page's unreleased-engine disposition is unsettled. Trigger: check the
     registry before the page's claims about it are final.
@@ -363,47 +350,20 @@ The original decision framing, for the record:
     `package.json`, and never mentions the root `+layout.svelte` that `sv create` writes. Trigger: a
     pass that edits the tutorial page, or part 2's fix-rule step.
   - The tutorial site has no media block, R2 binding or resolver, so `configure-media`'s
-    tutorial-site coverage rests on a doc-only source. Trigger: a [verified] source for it.
-  - `docs/internal/option-map.json`'s `pendingCount` reads 2 against 0 pending rows;
-    `check:options` fails only above the count. Trigger: part 2 settles the field.
+    tutorial-site coverage rests on a doc-only source. Trigger: a code source for it.
+  - The option map holds 27 `pending` rows (BACKLOG #78). Trigger: the next pass that documents a listed
+    option.
   - One whole-tree gate run failed `check:reference` on `admin-toolkit.md` (28 stale exports) and
     passed on rerun; unexplained and not reproduced. Trigger: a second occurrence.
   - The 2a pages say "hand-built site" differently from the 2b pages. Trigger: part 2's
     consistency read.
-  - The friction entries the chain filed in `docs/internal/docs-friction-log.md` are untriaged.
+  - The friction entries in `docs/internal/docs-friction-log.md` are untriaged.
     Trigger: 2b's close.
-  - The page plans' deferrals (PR #122 triage, Geoff, 2026-10-12; submitted unchanged):
-    - Pages that contradict corrected facts (restrict-admin-access, scaffolded-site-files,
-      debug-your-site, security-model, add-a-second-sign-in-group, add-cairn, upgrade-cairn, and
-      three reference pages). The plans carry each as `drift:` friction. Trigger: each page's
-      rebuild in part 2, the reference pages through the reference-arm corrections.
-    - The outline's `debug-your-site` cover 8 says the site-facts check reports `current`; the code
-      returns `skipped`. Trigger: part 2's outline step.
-    - Facts the plans need and the container lacks (the plans' `gap:` friction entries, and
-      `f:s90j7l` and `f:z97ilc` as outline ids). Trigger: a facts pass before the drafting run.
-    - Mixed-vendor `[verified]` bullets `f:0gltjq`, `f:2glcaf`, and `f:33upyd`; each plan restricts
-      them with `use`. Trigger: the same facts pass.
-    - Non-blocking plan-read findings left unfolded (for example the signups markup in
-      `add-a-custom-admin-screen`). Trigger: the drafting run's plan read.
-    - Admin-track facts cut rather than subordinated, since no outline lists an admin page.
-      Trigger: the admin arm's outline.
-    - Cross-plan anchor and crossLink-purpose checks, which `check-plan` does not run. Trigger:
-      part 2's consistency read.
 
 - **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
-  the register, `check:snippets`, `check:provenance`, `check:symbols`, `link:consumer`, and
-  `check:facts`, moved `.ts` fact pointers to `path#Symbol`, and fixed the chain's prompts and the
-  showcase tell in the dotfiles repo. What stays, each with its trigger:
+  the register, `check:snippets`, `check:symbols`, and `link:consumer`, and fixed the showcase tell in the dotfiles repo. What stays, each with its trigger:
   - The second-sign-in-group rename in `src/lib/auth-channel/factory.ts:1` and `:537`,
-    `src/lib/auth-crypto/index.ts:2`, and `examples/showcase/src/members/channel.ts:53`, with
-    `f:qqy4uq`'s anchor: the next engine pass, since those comments sit on the `auth-data` path map.
-  - Anchored `CHANGELOG.md` pointers: new entries go at the top, so every edit shifts the lines past
-    the 10-line anchor window. A fix checks the anchor within its version section, or anywhere in
-    the file.
-  - `path#Symbol` outside `src/`, for `.go`, and for `.svelte`; and latent drift in unanchored
-    pointers that the conversion moved from a stale line.
-  - The pointer-repair half of pass A's finding: a moved `Source:` path should not force a claim
-    edit for provenance matching.
+    `src/lib/auth-crypto/index.ts:2`, and `examples/showcase/src/members/channel.ts:53`: the next engine pass, since those comments sit on the `auth-data` path map.
   - A `Cairn.NamesRetired` Vale entry for "second audience" and "second population".
   - A per-unit type environment in `check:snippets`, for a reader on a create-cairn-site scaffold,
     which names `node`: all units share one program, so a vite-importing block exposes Node's
@@ -415,22 +375,14 @@ The original decision framing, for the record:
 
 
 - **Docs-code sync (Geoff, 2026-09-30; spec `docs/specs/2026-09-30-docs-code-sync-design.md`).**
-  Keep the engine and its docs in sync by catching drift (a fact whose code changed while its
-  `Source:` still resolves) and omission (behavior no fact covers). **Shipped in stage 2a
+  Keep the engine and its docs in sync by catching drift (a documented behavior whose code changed) and omission (behavior no page covers). **Shipped in stage 2a
   (2026-10-07):** option coverage (`check:options` over `docs/internal/option-map.json`, in the docs
-  gate and `check:close`), the page chain's friction route (each seat's `frictionFiled`, triaged
-  at the stage close under S7), and the release sweep (`cairn-release` step 3, capability releases
-  only, its first window seeded at `v0.98.0`). The rest stays deferred with its trigger in the
-  spec's "Deferred, with triggers" table: the fact-staleness lockfile, changelog entries citing
-  fact ids, resolving every backticked identifier, `Test:` pointers, and `@defaultValue`. The
-  in-range pointer drift stage 2a's close repointed by hand is the "Docs tooling before stage 2b"
-  entry above, not the lockfile's trigger.
+  gate and `check:close`), and the release sweep (`cairn-release` step 3, capability releases
+  only, its first window seeded at `v0.98.0`). The rest of the spec's deferred table stays deferred with its trigger there.
 
 - **Tell outside developers how the docs stay true (Geoff, 2026-09-30).** Split by reader. A
-  contributor needs the mechanics: the facts container, the option map, `check:options`,
-  `check:facts`, and what a change must file to pass the docs gate. That half shipped at stage
-  2a's close (2026-10-07): `CONTRIBUTING.md`, "How the docs stay true", names the page chain only as
-  maintainer tooling. An evaluator or site developer needs only the promise: every public option is documented or
+  contributor needs the mechanics: the option map, `check:options`, and what a change must update to pass the docs gate. That half shipped at stage
+  2a's close (2026-10-07): `CONTRIBUTING.md`, "How the docs stay true", states them. An evaluator or site developer needs only the promise: every public option is documented or
   excluded with a reason, CI fails otherwise, and the docs match the installed engine version.
   That claim belongs in `docs/why-cairn.md`, written from the shipped mechanism, never an extend
   page, since no extend job needs it. Trigger: stage 5's outline of the front door.
@@ -453,18 +405,13 @@ The original decision framing, for the record:
     site when a theme next touches the button recipe.
 
 - **Draft documentation on a conventional approach (Geoff, 2026-09-25; spec
-  `docs/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still
-  to be rebuilt from the facts container.
+  `docs/specs/2026-09-26-draft-docs-approach-design.md`).** cairn's docs are still being rebuilt.
   **The harvest is done (2026-09-30; `docs/HISTORY.md`, "Draft docs harvest, then delete").**
-  Every claim on the 49 old narrative and front-door pages became a fact in
-  `docs/internal/facts/` or a recorded cut (2,425 claims), and the pages are deleted, so each arm
-  is outlined and drafted against an empty directory from the facts, the job, and the register's
-  briefs and exemplars. The reference arm stays, with `extend/`'s three kept pages. cairn.pub's
+  The 49 old narrative and front-door pages are deleted (2,425 claims recorded under `docs/internal/record/harvest/`), so each arm is drafted against an empty directory from the code, the job, and the register's briefs and exemplars. The reference arm stays, with `extend/`'s three kept pages. cairn.pub's
   pin ceiling is `0.98.0` until the one release after stage 5 (the standing rule above).
   **Stage 2a closed (2026-10-07):** the first 11 extend pages and the interim index are on `main`
   (`docs/HISTORY.md`, "Draft docs stage 2a"). **Current step:** stage 2b is next, per the sequence in the
-  boundary-test entry above: stage 2b's 14 pages from the committed outline
-  `docs/internal/outlines/extend.json`, admin (stage 3), editors (stage 4), and the front door
+  boundary-test entry above: stage 2b's 14 pages, admin (stage 3), editors (stage 4), and the front door
   (stage 5), with each engine pass in its slot. `docs/internal/record/harvest/relink.json` names what each stage re-arms. The
   style-guide sync (2026-09-28 to 29) settled the drafting inputs: each track's brief in
   `docs/internal/docs-register.md`, the AI posture page as the developer exemplar, and a
@@ -478,7 +425,6 @@ The original decision framing, for the record:
   testing. Inputs it inherits, each to keep or drop on its own merits:
   - The exemplar corpus (68 captures at `~/.local/share/cairn/exemplars/`, manifest
     `docs/internal/record/docs-exemplars.md`), never reviewed as a set.
-  - Fact ids with `check:provenance`, and page briefs under `docs/internal/briefs/`.
   - The designer's theme guide is a primary page (Geoff, 2026-09-27): it documents the one
     public theme contract that theme pass C shipped (`docs/reference/public-css.md`, the `cairn-public`
     skill) and is drafted from it, with the page's outline in the input file named above.
@@ -924,8 +870,7 @@ The original decision framing, for the record:
   falls back to the author when `committer` is omitted, so both fields read the editor, which two
   independent live runs recorded (T3's `/admin` save, and every tool-made commit in T5's Task 8
   e2e). The docs half is overtaken: the two extend pages that said `cairn-cms[bot]` commits are
-  deleted, and the harvest corrected the facts container to the live behavior (ten bullets, and
-  `f:9yi7fu` rescoped), so the rebuild drafts the true claim. The engine half stays open.
+  deleted, and the rebuild drafts the true claim. The engine half stays open.
   `src/lib/github/repo.ts:261` ("GitHub attributes the commit to the App") and
   `src/lib/github/types.ts:20` ("The committer is left to the App") tell the next contributor the
   opposite, and `CLAUDE.md` states "committer = `cairn-cms[bot]`" as design. Whether
@@ -1012,9 +957,7 @@ the named human gates only):**
   filters. Selection for the node projects stays open. (b)
   Auth-data test-only fix rounds taking the touched tests, the tests of touched helpers, and a
   re-run of the affected named mutations. Won't do while the full node projects run on every task:
-  a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) The docs chain
-  framing-seat A/B at stage 2b's start: two intros, one at `xhigh` and one at `high`; keep `xhigh`
-  unless `high` matches.
+  a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) Retired with the docs-as-code cutover (2026-10-25).
 
   Four more, filed from the gate economy pass (2026-10-10), none a defect of the new gate. (d)
   Chains pipelining: the pass runner's parallel mode does not push or
@@ -1079,13 +1022,10 @@ the named human gates only):**
   - `scripts/checks/check-symbols.mjs` (`extractFilePaths`, `:308`) reads the inline import specifier
     `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the
     scaffold's real import; fenced blocks strip import specifiers and inline spans do not.
-  - Docs content (extend arm, so it feeds stage 2b's page inputs): `add-cairn-to-a-sveltekit-app.md`
+  - Docs content (extend arm, so it feeds stage 2b's pages): `add-cairn-to-a-sveltekit-app.md`
     puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `:294`, `:411`) and the scaffold puts it at
     `src/theme/cairn.config.ts` (`#theme`, `choose-an-ai-posture.md:29,62`), so every extend page that
     touches the adapter names two paths.
-  - The task 8 page plans disagree with their pages after the rulings:
-    `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and
-    `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection).
   - `packages/create-cairn-site/scripts/bake-template.mjs` requires `--to <dir>` and a bare invocation
     fails; the "create-cairn-site needs baked template" recipe omitted it, and `scaffold.mjs`'s own
     error names `npm run prepack`, which passes it.
@@ -1097,10 +1037,6 @@ the named human gates only):**
     unrecorded closure leaks (`scripts/checks/check-surface-leaks.mjs:480-486`), and the message
     offers only the registry entry as the remedy; exporting the named types also clears it, which
     pass A's Task 5 chose (`ChannelSessionLike`, `ChannelStatementLike`).
-  - `check:provenance` couples a frozen page brief to a fact bullet's literal text, and no sanctioned
-    path updates a fact under a stale page: `scaffolded-site-files.json` still cites `f:nls26c`
-    (`facts/extend.md:912`), so the bullet had to keep naming `GITHUB_APP_ID` and
-    `GITHUB_APP_INSTALLATION_ID` as dropped variables.
   - The regeneration command on line 2 of `examples/showcase/worker-configuration.d.ts` (`wrangler
     types --env-file=... --include-runtime=false`) was not reproducible by hand on pass A's Task 7:
     a local run with `.svelte-kit` present added a `GlobalProps { mainModule }` block the committed
@@ -1262,30 +1198,6 @@ the named human gates only):**
   `cairn sites` have no command page; the roster is called an "allowlist" 14 times
   (`log-events.md`, `auth-store.md`, `admin.md`, `sveltekit.md`).
 
-- **Docs content the extend rebuild owes (stage 2a's close, 2026-10-07).** Facts and sentences the
-  2a pages closed without. Trigger: stage 2b reopens the extend arm, or a pass edits the page. On
-  `add-a-custom-admin-screen`: a site-built admin remote function resolves its own session (Kit 3's
-  `/_app/remote/...` paths sit outside `/admin`); a custom screen needs no `prerender = false`, since
-  the scaffold sets `prerender = true` per route under `(site)` only
-  (`templates/waymark/src/routes/(site)/+page.server.ts:7`) and an `/admin` screen is dynamic by
-  default (the engine pass before stage 2b declined the engine change); facts for the `ExpandableRow`
-  `expanded` and `onToggle` contract, the detail panel's pending and failed states, the
-  `admin-toolkit` import subpath, and whether the site sheet compiles bracketed utilities. On `security-model`: the auth
-  channel's resend cooldown as a residual risk (restores `relink.json` index 59); a fact for the
-  channel's purpose; the `build()` facts `f:htxey1` and `f:tg9e0z` in its inputs; where the floor's
-  history lives. On `replace-magic-links-with-cloudflare-access`: vendor facts for Access's logout
-  address, its policy selectors, and `jose`'s error codes. On `scaffolded-site-files`: facts for
-  `theme-names.ts`, `src/lib/log.ts`, and `PUBLIC_ORIGIN`; `f:3m0oxs` gains the token deletion and
-  `f:jd54ph` the default exit code as its cause. On `add-a-second-sign-in-group`: facts for the
-  `TURNSTILE_SECRET` name, the `unavailable` outcome, `insecureTestChallenge`, and the blank-secret
-  `missing_secret` reason. On `rotate-the-github-app-key`: isolate turnover at a version deploy, which bounds
-  the 55-minute wait. On `theme-your-public-site`: the heading-case home and the daisyUI block's
-  layer. On `add-cairn-to-a-sveltekit-app`: one fact for when Workers Paid applies (`f:t4pwpw` and
-  `f:75hawi` disagree). On `debug-your-site`: rows for the recoveries sibling pages route to it
-  (including an owner's 403 on an unmapped custom route); a scaffolded site's two redeploy paths as
-  one linkable section; the fixed-date recipe names a site-owned variable, never `CAIRN_FIXED_TODAY`,
-  which no engine code reads.
-
 - **`cairn-audit` and the public theme contract, from the cairn-themes Survey (2026-10-07).** The
   audit has no recipe for a standalone theme package (a contrast-only entry sheet that imports
   `cairn-public.css`, named in `public.stylesheets`); daisyUI 5 gives a form field no ground or
@@ -1341,7 +1253,7 @@ the named human gates only):**
   complete, every agent working on cairn fixes docs deficiencies, inaccuracies, and improvement
   openings as it finds them, and republishes to cairn.pub. The standing order needs a design before
   it runs: which pages an agent may edit in place, which gates it runs, how a fix reaches cairn.pub
-  between releases, and how the facts container and page briefs stay in step. Trigger: the first-draft docs complete (the draft
+  between releases, and how the gates stay in step. Trigger: the first-draft docs complete (the draft
   documentation entry's site round). Open with a brainstorm that designs it.
 
 - **`theme-contrast`'s unreadable-tint detection can over-trigger (theme identity pass C,
@@ -1389,8 +1301,7 @@ the named human gates only):**
   answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says
   so, so a site's own D1-backed admin screen returns a 500 under the dev backend. Fix: a binding
   option, or stop overwriting a binding the site already provides; add a line to the
-  `cairn-admin-screens` skill either way, and file a fact so the extend arm's rebuilt
-  custom-screen page carries it.
+  `cairn-admin-screens` skill either way, and state it on the custom-screen page.
   Trigger: the next pass that changes the dev package's double set or `DevBackendConfig`, and before any
   site is told to build a D1-backed screen against the dev backend. The SvelteKit 3 move changed how the
   doubles reach the Worker (`withEnv` over the Worker env), not which exist, so this defers.
@@ -1424,13 +1335,7 @@ the named human gates only):**
 
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
-  defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
-  draft-documentation approach adopts the v2 chain, and a run records the failure the item answers.
-  - Page chain (now `docs-page-chain.js`, whose register editor runs plain `vale` on the page
-    since the style-guide sync, 2026-09-28): the register editor fed `tellgrader` output;
-    the register editor reporting every finding, with a separate Opus filter that drops only
-    findings contradicting the register or the brief; source material wrapped as content; a
-    text-only turn end treated as a report; bounded auto-continue of two.
+  defer") deferred these, and pass 1 built none of them. Each item names its own trigger.
   - Harness scope: `CONTRIBUTING.md`'s procedures run literally (F4 and F6 need a browser and
     the installed showcase in the repository image), and a parser run against the goldens for
     the `--json` prose claims on the three `cli-cairn-*` reference pages (D05, D10, D13, D14,
@@ -1442,36 +1347,10 @@ the named human gates only):**
 - **Real defects the pass 1 readers found (2026-09-24; narrowed at the harvest's close,
   2026-09-30).** They are listed in the baseline record (F1 to F6, R1 to R4) and in the
   validation record's "Confirmed real, not counted" notes. The harvest deleted the admin pages
-  two of them sat on, and the facts now carry both (the `send_email` binding shape in `f:l3cxgc`,
-  the five status words including `UNCHECKED` in `f:dfq003`). Two remain: the missing Email
-  Sending price for the admin arm's "What it costs" job, a Cloudflare price the facts container
-  does not hold, which stage 3 sources when it drafts that job; and seven contradictions on the
+  two of them sat on, and the code states both (the `send_email` binding shape, the five status words including `UNCHECKED`). Two remain: the missing Email
+  Sending price for the admin arm's "What it costs" job, a Cloudflare price no page holds, which stage 3 sources when it drafts that job; and seven contradictions on the
   three `cli-cairn-*` reference pages, which still ship. Trigger: stage 3 for the price, the next
   pass touching a `cli-cairn-*` page for the contradictions.
-
-- **`check:facts` cannot catch an off-by-one `Source:` pointer (doctor-retirement pre-task,
-  2026-09-21).** `validatePointer` (`scripts/checks/check-facts.mjs:309`) resolves the path and
-  checks that every cited line is in range; an anchored pointer then passes when its tokens appear
-  anywhere within ten lines of the cited range, and an anchor-less pointer is range-checked only.
-  A pointer one or two lines off therefore stays green, which is how the stale pointer at
-  `docs/internal/facts/admin.md:57` survived until a task edited the file beside it, and how a
-  second one landed in this pass's own first draft. Both were caught by a reviewer reading the
-  cited line, not by the gate. The docs rebuild reads these pointers as its raw material, so the
-  cost lands there. Trigger: a third stale pointer, or the docs rebuild's first harvest pass.
-  Partly answered (docs reset pass 1, 2026-09-23): a pointer into a `.ts` or `.js` file under
-  `src/` may now cite `path#Symbol`, which `check:facts` resolves to the declaration's current
-  lines with the TypeScript compiler API, and ten of the fourteen off-line `src/` pointers moved
-  to it. The line form keeps the gap for `.svelte` markup, `package.json`, and `tool/`.
-
-- **`check:facts --cited-by <id>`, the reverse index from a fact to the briefs that cite it (docs
-  reset pass 1, 2026-09-23).** `check:provenance` checks a brief's citations forward, from each
-  sentence to its fact, so an edit to a cited fact bullet leaves every citing page unflagged: the
-  id stays put by design, and nothing lists the pages that now rest on changed wording. The
-  reverse mode reads every brief under `docs/internal/briefs/` and prints the pages whose
-  sentences cite a given id, so a filer editing a fact knows which pages to re-read. It was struck
-  from pass 1 because the baseline record's page-versus-code failures were drift no citation
-  index sees, and no brief existed yet to index. Trigger: the first committed brief whose cited
-  fact is later edited, or the first page drafted under the new approach.
 
 - **`cairn-run-gate` needs a silence watchdog for browser gates (doctor-retirement pre-task,
   2026-09-21; a dotfiles chore, filed here because cairn passes are what hit it).** This pass lost
@@ -1509,17 +1388,6 @@ the named human gates only):**
   re-measure the actual ratios, ideally with the rendered `border-contrast` rule itself against a
   `text-muted` ancestor fixture, before restoring specific numbers to the page.
 
-- **The page-chain's claim inventory has no disposition for a claim a redraft relocates to a
-  linked reference entry (draft docs pass 0+1, task 9, 2026-09-28).** Task 9's chain-proof redraft
-  of `choose-an-ai-posture.md` moved the crawler-decline listing and the limits of declining into
-  the `buildRobots` reference entry, which the register's task-guide anatomy wants (explanation
-  subordinate to the steps), but the page-inputs step's claim inventory still lists those sentences
-  as claims the extend page itself carries, so a fact reader checking the brief against the page
-  reads it as dropped content. Detail:
-  `docs/research/2026-09-26-draft-docs-pass-0-1-proof.md`, "Finding: the page-chain's
-  brief format and the register's anatomy disagree." Trigger: the next page-chain redraft that
-  relocates a claim to a linked page, or the stage 2 pilot if it hits this first.
-
 - **cairn-pub adopts Vale and routes its own prose to the developer brief (style-guide sync ruling
   13, 2026-09-28).** cairn.pub's own prose, everything it serves outside the engine's shipped doc
   arms, takes the Google base, and the workstation `writing-voice` skill already routes it to the
@@ -1551,11 +1419,10 @@ the named human gates only):**
 
 - **Tidy's default model should track the latest Sonnet (Geoff, 2026-09-29; promoted from the
   friction log).** `DEFAULT_TIDY_MODEL` is pinned to `'claude-sonnet-5'`
-  (`src/lib/nav/site-config.ts:133`, fact `f:fmv6m8`), and Sonnet 5.5 has shipped. The fix is the
+  (`src/lib/nav/site-config.ts:133`), and Sonnet 5.5 has shipped. The fix is the
   engine's: an Anthropic model alias that resolves to the newest Sonnet, if the API offers one,
   or a default that moves with each Sonnet release. `supportsEffort()`'s prefix list
-  (`src/lib/sveltekit/content-routes-tidy.ts`, fact `f:wlohtk`) and the Tidy facts follow, and the
-  rebuilt Tidy page names no version. Trigger: the next engine pass that touches Tidy, or before
+  (`src/lib/sveltekit/content-routes-tidy.ts`) and the Tidy page follow, and that page names no version. Trigger: the next engine pass that touches Tidy, or before
   `0.98.0`'s successor ships if no pass touches it first.
 
 - **Report the drawer `:where()` specificity defect upstream to daisyUI (pre-cut, 2026-09-21).**
@@ -1633,37 +1500,13 @@ the named human gates only):**
   cairn's own markup. Draw both from the icon library (`@lucide/svelte`) or a pinned symbol font
   instead. Trigger: the next pass that touches either component.
 
-- **A `cairn-fact` CLI for filing container bullets (docs-to-facts pass, 2026-09-15).** Deferred
-  until a site pass has filed about twenty facts by hand and the shape has stopped moving
-  (`docs/internal/record/2026-09-15-facts-container-review/`, charter report finding 9).
-  Trigger: twenty hand-filed facts.
-
-- **Trace or retire the 4 `[candidate: excluded ...]` bullets left in `docs/internal/facts/`
-  (docs reset pass 1 triage, 2026-09-24; narrowed at the harvest's close, 2026-09-30).** An
-  excluded bullet is not citable by a page brief, so its claim cannot reach a rebuilt page until
-  someone traces it to code or deletes it. The harvest's audit resolved every excluded bullet in
-  the deleted pages' sections (`f:my9dgx`, the old example, is now `[rejected]`). Four remain,
-  in sections the harvest did not audit: `f:4sxnxp` under the root `README.md` in
-  `front-door.md`, `f:zgdkq7` under the kept `migration-notes.md` in `extend.md`, and two in
-  `reference.md`. Record:
-  `docs/internal/record/2026-09-23-candidate-dispositions.md`. Trigger: a drafting pass that
-  needs one of these claims.
-
-- **A `[verified]` container anchor pinned to `path:line` in a component the same pass edits goes
-  stale inside that pass (extend-1, 2026-09-20).** `check:facts` re-reads the quoted anchor text at
-  the cited line, so task 4's own `AdminTable.svelte` edit invalidated two anchors it had just
-  written and cost a repoint commit (`cdfaafb8`). Candidate: let a bullet cite a quoted anchor with
-  no line number when the anchor text is unique in its file, so the pointer survives an edit above
-  it. Trigger: the next pass that files container bullets against a component it also edits.
-
 - **The showcase's `npm run dev` compiles the admin sheet once and does not watch it (extend-1,
   2026-09-20).** Only the scaffold's baked `scripts/dev.mjs` shim carries the watch compile, so
   editing `examples/showcase/src/admin.css` during a dev session has no effect until the next
   `npm run build:admin-css`. Candidate: mirror the scaffold's shim in the showcase. Trigger: the
   next pass that edits the showcase's own admin sheet.
 
-- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (docs-to-facts pass,
-  2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
+- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
   mechanically to clear it, which is not the right place to do a full pass. Trigger: a dedicated
   trim task with its own `diff-reviewer` read, never a rider on another task.
 
@@ -1706,10 +1549,8 @@ the named human gates only):**
   the docs-infra currency pass
   (`~/.dotfiles/docs/plans/2026-09-19-docs-infra-currency-pass.md`, its order against
   the draft docs unruled); the draft docs; the site round, upgrading aksailingclub-org, ecxc-ski,
-  and 907-life into model cairn sites, each filing container bullets through
-  `site-docs/<site>-<pass>`; one improvement release; the docs rebuild from the facts container;
-  then beta. The draft-documentation approach (Now tier; it replaces the stopped docs reset) supersedes both the draft docs step and the docs rebuild
-  from the container. The 2026-10-07 rulings (Now, the boundary-test entry) set the rest: no
+  and 907-life into model cairn sites, each fixing docs through `site-docs/<site>-<pass>`; one improvement release; the docs rebuild;
+  then beta. The draft-documentation approach (Now tier; it replaces the stopped docs reset) supersedes both the draft docs step and the docs rebuild. The 2026-10-07 rulings (Now, the boundary-test entry) set the rest: no
   site round and no release until every docs track is rebuilt, then one release, then the site
   migrations as its acceptance test. The original entry sequenced the Go tool first against extend-1, the docs rewrite,
   and site migration, and that sequencing is spent: the tool, both extend passes, and the pre-cut
@@ -1818,7 +1659,7 @@ the named human gates only):**
     (`activeAckIDs`), which a fixture does not have, so the fixture's own list is the scenario's
     statement (Decision 7).
   - **`probe_token.go` keeps its file name**, not renamed to `auth_check.go`. The rename would
-    break two facts citations and the test-file allowlist in `messages_test.go:34`; the file's
+    break the test-file allowlist in `messages_test.go:34`; the file's
     actual defect, stale wording naming a retired command, was the chore that shipped (Decision
     10).
   - **The B2 record's nits outside the two source entries' bullets stay unplanned**, the same as
@@ -1851,7 +1692,7 @@ the named human gates only):**
   code font and sit inside fences, attributes, or config strings, so Vale never reads them (the
   deleted admin setup page's diagram text "The tool moves through four stages" was one). The
   shape: a small text scan in `scripts/checks/` over alt attributes, the two mermaid directives,
-  and nav-label strings, or a manual sweep folded into each stage's page brief. **Trigger:** the
+  and nav-label strings, or a manual sweep folded into each stage's drafting brief. **Trigger:** the
   first rebuild stage that writes those strings (stage 2a).
 
 - **`link:consumer` cannot measure a consumer site against unreleased engine work (filed at
@@ -1877,8 +1718,7 @@ the named human gates only):**
     written around `npx create-cairn-site` as step one has to be rewritten rather than amended
     when that lands.
   - The admin track gains the tool as part of "is my site working", woven into the existing jobs
-    rather than given a page of its own. The facts are already harvested into
-    `docs/internal/facts/admin.md` under the four sections whose job each one serves.
+    rather than given a page of its own.
 
 - **Items filed at Pass B1's close (2026-09-20), still open after B2.**
   - The engine's condition registry (`tool/internal/spine/condition.go`, ported from
@@ -1968,8 +1808,7 @@ the named human gates only):**
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
   `docs/internal/record/2026-09-04-cairn-case/` is history, not an input. The rewrite follows
-  the `docs-rebuild-not-edit` method (each page rebuilt from a brief, the old page mined for
-  facts, reference entries edited in place) and carries the extend recipe pages,
+  the `docs-rebuild-not-edit` method (each page rebuilt from the code and its job, the old page mined for claims to check, reference entries edited in place) and carries the extend recipe pages,
   one per pattern with its engine ruling linked, that extend-2's skills route to; extend-2
   lands in or just after it. Sequenced after extend-1 so the extend track documents exports
   that exist. **Trigger:** extend-1 merged.
@@ -2788,8 +2627,7 @@ the named human gates only):**
   sibling) in the package or on the docs site; nearly free, and pairs with the filed `/llms` page.
 - **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn doctor`
   covers config and `cairn-audit` covers the design layer. The `cairn doctor` half has shipped:
-  it checks any named site directory with no credential, and the facts container carries it for
-  the admin arm's rebuilt "is my site working" job. What remains: verify `cairn-audit` runs cleanly from a consumer site (not only this
+  it checks any named site directory with no credential, and the admin arm's rebuilt "is my site working" job carries it. What remains: verify `cairn-audit` runs cleanly from a consumer site (not only this
   repo), document the two as the first commands to run when something is wrong, and have the
   scaffolder's agent brief (`claude/CLAUDE.md`, which names neither today) tell the AI assistant
   to reach for them before guessing.
@@ -3129,17 +2967,6 @@ the named human gates only):**
   move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
   `src/lib/components/` to `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
 
-- **Symbol-anchored `Source:` pointers for the Go `tool/` tree (docs reset pass 1, 2026-09-23).**
-  `check:facts` resolves `path#Symbol` only for `.ts` and `.js` files under `src/`, through the
-  TypeScript compiler API, so a pointer into `tool/` still cites `path:line` and rots when an edit
-  moves the line. The Go form would resolve a function, type, method (`Type.Method`), or
-  package-level constant through `go/parser` and `go/ast`, run as a small helper binary or a
-  `go run` from the gate, and check the anchor against the declaration's own lines the way the
-  TypeScript form does. The baseline's exact-line rot sat in `src/` (fourteen of sixteen off-line
-  pointers, none in `tool/`), so the Go half was filed rather than built. Trigger: an off-line `tool/`
-  pointer turns up (the rot measure retired with the reader harness; its code is on branch
-  `docs-reset-2a`), or a pass files facts against `tool/` source in bulk.
-
 - **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
   2026-09-20).** Ruling 3 defaults every survey finding to "file" unless it is zero-behavior-change
   with an existing test; none of these five qualified. (1) `ManageEditors.svelte:169-174`'s
@@ -3167,8 +2994,7 @@ the named human gates only):**
 - **The showcase's own public route map is written nowhere a plan author reads (extend-1,
   2026-09-20).** extend-1's stylesheet-seam proof was planned against a `/posts` archive route the
   showcase does not serve; it serves `/` and `/archive/[page]`, which cost a fix round to discover.
-  Candidate: one sourced statement of the showcase's public routes in the facts container, so a
-  plan asserts against a read fact rather than an assumed convention. Trigger: the next pass whose
+  Candidate: one sourced statement of the showcase's public routes in the showcase README, so a plan asserts against a read statement rather than an assumed convention. Trigger: the next pass whose
   proof or e2e spec asserts a showcase public route.
 
 - **`npm run check:surface -- --update` sends the flag to the wrong command, and two places still
@@ -3253,8 +3079,7 @@ the named human gates only):**
   showcase's footer nav to `site.config.yaml`'s `menus.footer` as a developer-edited yaml block
   rather than a second admin-editable menu, since no site has asked to edit a second menu from
   `/admin` yet. **Trigger:** a consuming site asking to edit a second menu in the admin UI.
-- **An engine-shipped Cloudflare Access verifier**, replacing the recipe the facts container
-  carries under `docs/extend/sign-in-through-your-organization.md` for the extend rebuild
+- **An engine-shipped Cloudflare Access verifier**, replacing the recipe the extend track carries in `docs/extend/replace-magic-links-with-cloudflare-access.md`
   (`docs/internal/engine-rulings.md`'s `identity-seam-access-verifier` row, declined for now).
   **Trigger:** a second consumer hand-rolling this verifier, an engine-internal consumer of it,
   or an evidenced defect in a family site's own resolver.
@@ -3450,8 +3275,7 @@ the named human gates only):**
   2026-08-01; no hurry).** cairn ships one skill, `cairn-admin-screens`, scoped to `/admin`. Nothing
   covers the other authoring task a consuming site repeats: defining a content component with
   `defineComponent`, its directive syntax, and the `hydrate`-plus-`rendering.islands` pairing for the
-  interactive kind. The facts container carries the mechanism for the extend rebuild (building
-  one from nothing, wiring a hydrated one), and `defineComponent` is in the core reference, so a
+  interactive kind. The extend track carries the mechanism (`write-a-markdown-component` and `add-an-island`), and `defineComponent` is in the core reference, so a
   skill written today would mostly restate those pages, and a skill that restates docs is a second
   copy of one contract that drifts. **The trigger, not a date:** the Waymark rebuilds, Topo, and the
   scaffolder each define components next. Harvest the friction from those, and if the same judgment

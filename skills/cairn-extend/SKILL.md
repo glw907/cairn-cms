@@ -20,9 +20,10 @@ Restyling the public site (a theme token, `prose.css`, a directive's rules, a pu
 ## The router
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
-page that documents it. This skill and its references cite three docs that live in the cairn-cms
-source repository, not in the installed package: [the extend facts](https://github.com/glw907/cairn-cms/blob/main/docs/internal/facts/extend.md),
-[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md), and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
+page that documents it. This skill and its references cite two docs that live in the cairn-cms
+source repository, not in the installed package: [the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
+The extend pages under `node_modules/@glw907/cairn-cms/docs/extend/` and the reference pages under
+`node_modules/@glw907/cairn-cms/docs/reference/` ship in the installed package.
 `examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/
 `Recipe:` header naming the pattern and the engine calls it proves, lives in the
 [cairn-cms repository](https://github.com/glw907/cairn-cms) too.

@@ -118,7 +118,7 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/cairn.access.ts', // a site's access-map module, by convention
   'file-path:src/lib/site.config.yaml', // a site's non-secret config file, by convention
   // One of three spots `cairn doctor` looks for a site config, named in the doctor CLI's
-  // reference page and facts/reference.md; cairn doctor looks there by convention, so no repo
+  // reference page; cairn doctor looks there by convention, so no repo
   // carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
   // docs/extend/migration-notes.md's past-version record of the 0.68.0 release, citing the

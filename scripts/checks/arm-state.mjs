@@ -7,8 +7,7 @@
 //              records, until its rebuild);
 //   rebuilt    the arm holds any page outside the kept set, which restores the gate's full check.
 //
-// The kept set comes from docs/internal/record/harvest/deletion-list.json, the one committed list
-// the harvest verifier also reads. The list is read fail-closed: a missing, unparseable, or
+// The kept set comes from docs/internal/record/harvest/deletion-list.json, the one committed list. The list is read fail-closed: a missing, unparseable, or
 // misshapen list throws, so no gate can read a vanished list as an empty arm and pass. The trigger
 // is always the pages an arm holds, never whether its directory or its index exists: an arm index
 // is a page like any other, so a stage that adds one rebuilds its arm.

@@ -1,7 +1,7 @@
 # Exemplars
 
 Three captured pages that show the anatomy and rhythm the two base style guides ask for. A
-drafter or register editor reads a page here whole and imitates its structure and pace, never its
+writer or register editor reads a page here whole and imitates its structure and pace, never its
 wording. Each file opens with its source URL, capture date, and attribution, and each is
 CC BY 4.0 (Google's code samples are Apache 2.0). Vale and `check:docs` skip this directory, so
 the captures keep their original links and typography.

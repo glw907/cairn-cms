@@ -178,7 +178,7 @@ describe('static check selection', () => {
   });
 
   it('leaves check:surface out for a docs page, since it reads the built types and the golden file only', () => {
-    expect(labelsFor('docs/reference/core.md', 'docs/internal/facts/admin.md')).not.toContain('check:surface');
+    expect(labelsFor('docs/reference/core.md', 'docs/internal/engine-rulings.md')).not.toContain('check:surface');
     expect(labelsFor('docs/internal/api-surface.md')).toContain('check:surface');
   });
 
@@ -195,7 +195,7 @@ describe('static check selection', () => {
 
   it('selects the docs checks and tellgrader for a docs page, and no package-building engine check', () => {
     const picked = labelsFor('docs/reference/core.md');
-    expect(picked).toEqual(expect.arrayContaining(['check:vale', 'check:facts', 'check:tellgrader']));
+    expect(picked).toEqual(expect.arrayContaining(['check:vale', 'check:leaks', 'check:tellgrader']));
     expect(picked).not.toContain('check:audit-pack');
     expect(decideGate(['docs/reference/core.md']).gate).toContain('node scripts/checks/check-tellgrader.mjs');
   });
@@ -204,7 +204,7 @@ describe('static check selection', () => {
     for (const path of ['.vale/styles/Cairn/Headings.yml', '.vale.ini']) {
       expect(labelsFor(path), path).toContain('check:vale-rules');
     }
-    const step = buildSteps({ page: null, brief: null }).find((entry) => entry.label === 'check:vale-rules');
+    const step = buildSteps({ page: null }).find((entry) => entry.label === 'check:vale-rules');
     expect(table.extraCommands['check:vale-rules']).toBe([step?.command, ...(step?.args ?? [])].join(' '));
   });
 

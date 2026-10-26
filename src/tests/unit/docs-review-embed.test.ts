@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   embedBatch,
   inlineRuntimeSource,
-  planPathFor,
-  loadReviewFile,
   TEMPLATE_PATH,
   RUNTIME_PATH,
 } from '../../../scripts/docs-review/embed.mjs';
@@ -17,7 +14,6 @@ import {
   extractEmbeddedState,
   computeRestoredFiles,
   isReadOnlyRejection,
-  planSectionHtml,
   renderMarkdown,
 } from '../../../scripts/docs-review/runtime.mjs';
 import { runReviewPage } from './_docs-review-vm.js';
@@ -157,92 +153,5 @@ describe('runtime.mjs source safety', () => {
     expect(RUNTIME_SOURCE).not.toContain('<script');
     expect(RUNTIME_SOURCE).not.toContain('<!--');
     expect(RUNTIME_SOURCE).not.toContain('-->');
-  });
-});
-
-describe('page plan on the review page', () => {
-  const PLAN = '# Plan\n\n- Section one: states `x`.\n';
-
-  it('finds a page\'s plan under its track in the briefs directory, front-door pages included', () => {
-    const root = '/repo';
-    expect(planPathFor('/repo/docs/extend/architecture.md', root)).toBe(
-      '/repo/docs/internal/briefs/extend/architecture.plan.md',
-    );
-    expect(planPathFor('/repo/docs/why-cairn.md', root)).toBe(
-      '/repo/docs/internal/briefs/front-door/why-cairn.plan.md',
-    );
-    expect(planPathFor('/repo/README.md', root)).toBeNull();
-    expect(planPathFor('/repo/docs/extend/architecture.json', root)).toBeNull();
-  });
-
-  it('reads the plan beside the page when it exists, and carries no plan key when it does not', () => {
-    const root = mkdtempSync(join(tmpdir(), 'cairn-docs-review-'));
-    mkdirSync(join(root, 'docs/extend'), { recursive: true });
-    mkdirSync(join(root, 'docs/internal/briefs/extend'), { recursive: true });
-    writeFileSync(join(root, 'docs/extend/planned.md'), '# Planned\n');
-    writeFileSync(join(root, 'docs/extend/unplanned.md'), '# Unplanned\n');
-    writeFileSync(join(root, 'docs/internal/briefs/extend/planned.plan.md'), PLAN);
-
-    const planned = loadReviewFile(join(root, 'docs/extend/planned.md'), root);
-    expect(planned.plan).toBe(PLAN);
-    expect(planned.markdown).toBe('# Planned\n');
-
-    const unplanned = loadReviewFile(join(root, 'docs/extend/unplanned.md'), root);
-    expect(unplanned.markdown).toBe('# Unplanned\n');
-    expect('plan' in unplanned).toBe(false);
-  });
-
-  it('prefers a YAML plan, shows it as a yaml block, and leaves a markdown-only plan unchanged', () => {
-    const root = mkdtempSync(join(tmpdir(), 'cairn-docs-review-yaml-'));
-    const briefs = join(root, 'docs/internal/briefs/extend');
-    mkdirSync(join(root, 'docs/extend'), { recursive: true });
-    mkdirSync(briefs, { recursive: true });
-    for (const slug of ['only-yaml', 'both', 'only-md']) {
-      writeFileSync(join(root, 'docs/extend', `${slug}.md`), `# ${slug}\n`);
-    }
-    writeFileSync(join(briefs, 'only-yaml.plan.yaml'), 'page: only-yaml\nsections: []\n');
-    writeFileSync(join(briefs, 'both.plan.yaml'), 'page: both\n');
-    writeFileSync(join(briefs, 'both.plan.md'), '# Old plan\n');
-    writeFileSync(join(briefs, 'only-md.plan.md'), PLAN);
-
-    expect(loadReviewFile(join(root, 'docs/extend/only-yaml.md'), root).plan).toBe(
-      '```yaml\npage: only-yaml\nsections: []\n```\n',
-    );
-    expect(loadReviewFile(join(root, 'docs/extend/both.md'), root).plan).toBe('```yaml\npage: both\n```\n');
-    expect(loadReviewFile(join(root, 'docs/extend/only-md.md'), root).plan).toBe(PLAN);
-    expect(planPathFor(join(root, 'docs/extend/only-md.md'), root)).toBe(join(briefs, 'only-md.plan.md'));
-  });
-
-  it('fences a YAML plan with more backticks than any run inside it', () => {
-    const root = mkdtempSync(join(tmpdir(), 'cairn-docs-review-fence-'));
-    mkdirSync(join(root, 'docs/extend'), { recursive: true });
-    mkdirSync(join(root, 'docs/internal/briefs/extend'), { recursive: true });
-    writeFileSync(join(root, 'docs/extend/f.md'), '# f\n');
-    writeFileSync(join(root, 'docs/internal/briefs/extend/f.plan.yaml'), 'note: "```"\n');
-    expect(loadReviewFile(join(root, 'docs/extend/f.md'), root).plan).toBe('````yaml\nnote: "```"\n````\n');
-  });
-
-  it('renders the plan as a collapsed section for a planned file and nothing for an unplanned one', () => {
-    const planned = planSectionHtml({ path: 'docs/a.md', markdown: '# A', plan: PLAN }, renderMarkdown);
-    expect(planned).toContain('<details class="doc-file-plan">');
-    expect(planned).toContain('<summary>Page plan</summary>');
-    expect(planned).toContain('<code>x</code>');
-    expect(planSectionHtml({ path: 'docs/a.md', markdown: '# A' }, renderMarkdown)).toBe('');
-    expect(planSectionHtml({ path: 'docs/a.md', markdown: '# A', plan: '  \n' }, renderMarkdown)).toBe('');
-  });
-
-  it('shows the plan in the page\'s own file section only when the file carries one, and keeps it through the round trip', async () => {
-    const files = [
-      { path: 'docs/a.md', markdown: '# A\n', plan: PLAN },
-      { path: 'docs/b.md', markdown: '# B\n' },
-    ];
-    const embedded = embedBatch(TEMPLATE_SOURCE, RUNTIME_SOURCE, { title: 'Docs review', files });
-    const page = await runReviewPage(embedded);
-    const hooks = page.__cairnDocsReview!;
-    expect(hooks.fileSectionHtml(files[0], 0)).toContain('class="doc-file-plan"');
-    expect(hooks.fileSectionHtml(files[1], 1)).not.toContain('doc-file-plan');
-
-    const regenerated = hooks.buildDocument(extractEmbeddedState(embedded)!);
-    expect(extractEmbeddedState(regenerated)!.files).toEqual(files);
   });
 });

@@ -551,6 +551,12 @@
 
 ### Documentation
 
+- **The shipped `cairn-extend` skill points at the published pages.** Its router and its preflight reference no longer point at a maintainer-only file of recorded claims. It sends an agent to the extend and reference pages in the
+  installed package and keeps the links to the engine rulings and the admin design system. The skill
+  and its copy in the Waymark template change together.
+
+  No consumer action.
+
 - **A Claude Code track ships, with its first page.** `docs/claude-code/` holds what cairn ships
   into a site's Claude Code setup and what it leaves to the developer:
   `docs/claude-code/work-on-a-cairn-site-with-claude-code.md` covers the guidance tree, adopting or refreshing
@@ -587,10 +593,10 @@
   `theme-your-public-site.md`, `sign-in-through-your-organization.md` is
   `replace-magic-links-with-cloudflare-access.md`, and `add-a-second-audience.md` is
   `add-a-second-sign-in-group.md`.
-- **Six extend pages are redrafted from their approved blueprints and checked against the code.**
+- **Six extend pages are redrafted and checked against the code.**
   The pages are `docs/extend/add-a-custom-admin-screen.md`, `architecture.md`,
   `restrict-admin-access.md`, `add-a-second-sign-in-group.md`, `scaffolded-site-files.md`, and
-  `add-cairn-to-a-sveltekit-app.md`, and each blueprint now matches its reviewed page.
+  `add-cairn-to-a-sveltekit-app.md`.
   `restrict-admin-access.md` no longer has the reader create `src/access.ts`, and it warns that
   applying `0001_roles.sql` keeps only the engine's four `editor` columns.
   `scaffolded-site-files.md` lists only what the setup command writes.

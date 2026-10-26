@@ -12,10 +12,6 @@
 // `cairn:` content link is skipped because it is an author's in-post token, not a doc target. Links
 // inside fenced or inline code are ignored, since those are examples, not navigation.
 //
-// A relative link from a published docs page to a missing page passes as a pending link when a
-// committed outline (`docs/internal/outlines/*.json`) names that path; its anchor is not checked.
-// Deleting the outline at the arm's final merge makes the check strict again.
-//
 // The harvest deletes the old narrative pages named on the committed deletion list (arm-state.mjs).
 // A dated record keeps the links it was written with, so its links into deletion-list paths are
 // accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
@@ -335,54 +331,15 @@ function isDatedRecord(file) {
   return file === LEGACY_HOST || DATED_RECORD_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
-const OUTLINES_DIR = join('docs', 'internal', 'outlines');
-
-/**
- * The repo-relative path of every page a committed outline plans, whether or not it is drafted.
- * @param {string} root
- * @returns {Set<string>}
- */
-function outlinePagePaths(root) {
-  const dir = join(root, OUTLINES_DIR);
-  /** @type {Set<string>} */
-  const paths = new Set();
-  if (!existsSync(dir)) return paths;
-  for (const name of readdirSync(dir)) {
-    if (!name.endsWith('.json')) continue;
-    const outline = JSON.parse(readFileSync(join(dir, name), 'utf8'));
-    for (const page of outline.pages ?? []) {
-      if (typeof page?.path === 'string') paths.add(page.path);
-    }
-  }
-  return paths;
-}
-
-// The published arm paths, the only places a pending link is excused. The rolling STATUS and
-// HISTORY stay strict: they name pages by path while an arm is in flight and must not hide a typo.
-const PUBLISHED_DOC_PREFIXES = ['docs/extend/', 'docs/admin/', 'docs/editors/', 'docs/claude-code/', 'docs/reference/'];
-const PUBLISHED_DOC_FILES = ['docs/why-cairn.md'];
-
-/**
- * Whether a repo-relative file is a published docs page, the only place a pending link is excused.
- * @param {string} file
- */
-function isPublishedDoc(file) {
-  return PUBLISHED_DOC_FILES.includes(file) || PUBLISHED_DOC_PREFIXES.some((prefix) => file.startsWith(prefix));
-}
-
 /**
  * Check every relative link in the scoped files. `broken` holds the dead ones with file, line, dest,
- * and a reason: a target file that does not exist or a `#anchor` with no matching heading. `pending`
- * holds the links from a published docs page to an outline page not yet on disk, which pass.
+ * and a reason: a target file that does not exist or a `#anchor` with no matching heading.
  * @param {string} root
  */
 export function checkLinks(root = ROOT) {
   const deleted = new Set(loadDeletionList(root).deleted);
   /** @type {{file: string, line: number, dest: string, reason: string}[]} */
   const broken = [];
-  /** @type {{file: string, line: number, dest: string}[]} */
-  const pending = [];
-  const outlinePaths = outlinePagePaths(root);
   /** @type {Map<string, Set<string>>} */
   const anchorCache = new Map();
   /** @param {string} abs */
@@ -420,10 +377,6 @@ export function checkLinks(root = ROOT) {
       const target = relative(root, targetAbs).split(sep).join('/');
       if (isDatedRecord(file) && isDeletedTarget(target, deleted)) continue;
       if (!existsSync(targetAbs)) {
-        if (isPublishedDoc(file) && outlinePaths.has(target)) {
-          pending.push({ file, line, dest });
-          continue;
-        }
         broken.push({ file, line, dest, reason: `target not found: ${path}` });
         continue;
       }
@@ -432,11 +385,11 @@ export function checkLinks(root = ROOT) {
       }
     }
   }
-  return { broken, pending };
+  return { broken };
 }
 
 /**
- * The broken links alone, for callers that do not report pending ones.
+ * The broken links alone.
  * @param {string} root
  */
 export function findBrokenLinks(root = ROOT) {
@@ -445,7 +398,7 @@ export function findBrokenLinks(root = ROOT) {
 
 function main() {
   const scanned = filesInScope().length;
-  const { broken, pending } = checkLinks();
+  const { broken } = checkLinks();
   const unreleasedMismatch = unreleasedParityMismatch(
     readFileSync(join(ROOT, LEGACY_HOST), 'utf8'),
     readFileSync(join(ROOT, UNRELEASED_PARTNER), 'utf8'),
@@ -454,7 +407,7 @@ function main() {
 
   if (broken.length === 0 && !unreleasedMismatch && mapProblems.length === 0) {
     console.log(
-      `docs-links: OK (${scanned} files, every relative link and anchor resolves; ${Object.keys(LEGACY_PATH_MAP).length} legacy ${LEGACY_HOST} paths mapped; ${pending.length} pending link(s) to outline pages not yet drafted)`
+      `docs-links: OK (${scanned} files, every relative link and anchor resolves; ${Object.keys(LEGACY_PATH_MAP).length} legacy ${LEGACY_HOST} paths mapped)`
     );
     return;
   }

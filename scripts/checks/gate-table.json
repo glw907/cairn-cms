@@ -72,8 +72,6 @@
     "check:target-stack": ["docs", "engine", "showcase"],
     "check:arm-indexes": ["docs"],
     "check:editor-quotes": ["docs", "engine"],
-    "check:facts": ["docs", "engine"],
-    "check:provenance": ["docs"],
     "check:leaks": ["docs", "engine", "showcase"],
     "check:visuals": ["docs", "engine"],
     "check:transcripts": ["docs", "showcase"],

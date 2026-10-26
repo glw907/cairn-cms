@@ -18,30 +18,22 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 is drafting pages from approved blueprints through drafter. Every extend page now
-has its drafted page; batch 5 (PR #141) merged the last five. Its record is
-`~/Projects/initiatives/docs-system/research/2026-10-25-extend-pages-batch-5/RESUME.md`. Each
-drafting worktree needs Geoff's `~/.config/drafter/cairn-cms.local.toml` copied in as
-`drafter.local.toml` (ignored by git), and drafter runs launch under `setsid -f`. Several published
-extend pages still disagree with their blueprints; BACKLOG #71 lists them for a redraft. The one blueprint with no page is `blueprints/docs/claude-code/work-on-a-cairn-site-with-claude-code`; its
-draft registers the `claude-code` arm in the gates and adds that arm's track entry to
-`docs-register.md`. The page plans under `internal/briefs/` (`.plan.md` and `.plan.yaml`), which the blueprints
-replaced, still need retiring. Then comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the
-reference-arm corrections, the final arm index, the outline deletion, the boundary test, and 2b's
-close, which still owns the friction-log triage. Part 1's carried items are the ROADMAP entry
-"Stage 2b part 2". The re-arm list is `docs/internal/record/harvest/relink.json`. The release holds
-until the docs are complete.
+Stage 2b part 2 is down to its close. Every extend page and the Claude Code page are published, and
+the redraft BACKLOG #71 tracked is done. A docs change now lands in the same pull request as the
+code, checked by `npm run check:docs-gate`, and goes to Geoff as a `docs` review; the `cairn-docs`
+skill carries the procedure. What remains of part 2 is the relinks and `LEGACY_PATH_MAP` repoints,
+the reference-arm corrections, the final arm index, the boundary test, and 2b's close, which still
+owns the friction-log triage. Part 1's carried items are the ROADMAP entry "Stage 2b part 2". The
+re-arm list is `docs/internal/record/harvest/relink.json`. The release holds until the docs are
+complete.
 
 The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellgrader` predates
 #25, rebuild it with `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`.
 The residue is the "Docs tooling before stage 2b: the residue" entry in `ROADMAP.md`.
 
 ## Open decisions and watches
-- Stage 2b part 1, for Geoff: the framing A/B
-  (`research/2026-10-11-draft-docs-2b-part1-ab/README.md`); the engine fixture for the
-  sidebar figure (the story `nav/worked-navlayout` relabels media to its own default); the outline
-  crossLinks from `share-a-draft-preview` and `act-on-newly-published-entries` to
-  `build-the-public-routes`.
+- Stage 2b part 1, for Geoff: the engine fixture for the
+  sidebar figure (the story `nav/worked-navlayout` relabels media to its own default).
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
   (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),

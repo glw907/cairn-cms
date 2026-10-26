@@ -1,8 +1,0 @@
-{
-  "page": "docs/admin/details-page.md",
-  "sentences": [
-    { "text": "Intro sentence.", "id": "no-claim" },
-    { "text": "Why it matters", "id": "no-claim" },
-    { "text": "The body sentence is here.", "id": "no-claim" }
-  ]
-}

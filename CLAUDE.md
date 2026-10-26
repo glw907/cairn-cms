@@ -88,7 +88,7 @@ arms and the front door hold no page until their stages rebuild them; `extend/` 
 pages and stage 2b finishes it. No pass drafts an arm's prose ahead of its stage.
 
 - **Docs change with the code.** A pass that changes a public behavior edits the affected pages in
-  the same PR, checked by `npm run check:docs-gate`.
+  the same PR, checked by `npm run check:docs-gate`. Load the `cairn-docs` skill for that edit.
 - **Fix rule.** A deficiency found on a published page is fixed on the page in the same pass,
   except a site edit to an arm whose stage is in flight, which is filed for that stage. A site
   pass's docs edits land on a `site-docs/<site>-<pass>` branch off `main`, merged by PR first.

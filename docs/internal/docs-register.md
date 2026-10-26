@@ -169,18 +169,18 @@ guide is silent.
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
   page follows its form without naming it.
-- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
-  `docs/internal/briefs/<track>/<page>.plan.md`, is Google's outline written down: "You might find
-  it useful to think of an outline as the narrative for your document" ([Organizing large
-  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
-  introduction's three parts (what the document covers, what prior knowledge the reader needs,
-  and what it does not cover); the sections in the order the plan argues for, each with its
-  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
-  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
-  section, subordinated to a named reference link, or cut with a reason. The draft follows the
-  plan's order, and the plan is kept beside the page's brief. Section hand-offs belong to the page
-  plan: a hand-off the plan places is not a tell, and a read of the page grades its wording, never
-  whether it is there or where it sits.
+- **A page's outline is written before its prose and rides in the pull request** (Geoff,
+  2026-10-01; reworded 2026-10-25 under the docs-as-code rulings, which retired the committed plan
+  file, its fact ids, and the brief kept beside the page). The premise test comes first: the
+  product has the thing the page documents, and no other page owns it. The outline is Google's
+  outline written down: "You might find it useful to think of an outline as the narrative for your
+  document" ([Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)).
+  It holds the page's job; the introduction's three parts (what the document covers, what prior
+  knowledge the reader needs, and what it does not cover); the sections in the order the outline
+  argues for, each with its heading, the one sentence a reader takes from it, and its hand-off; and
+  the ending the page's anatomy requires. The draft follows the outline's order. Section hand-offs
+  belong to the outline: a hand-off it places is not a tell, and a read of the page grades its
+  wording, never whether it is there or where it sits.
 
 ### Voice
 
@@ -512,17 +512,18 @@ guide is silent.
   cairn does not control.
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under.
-- **A page is drafted from its committed page plan** (Geoff, 2026-10-01). The plan, at
-  `docs/internal/briefs/<track>/<page>.plan.md`, is an outline written down, which Google's
-  guidance on large documents calls "the narrative for your document" ([Organizing large
-  documents](https://developers.google.com/tech-writing/two/large-docs)). It holds the
-  introduction's three parts (what the document covers, what prior knowledge the reader needs,
-  and what it does not cover); the sections in the order the plan argues for, each with its
-  heading, the one sentence a reader takes from it, the fact ids it draws on, and its hand-off;
-  and the ending the page's anatomy requires. Every fact in the page's inventory is placed in a
-  section, subordinated to a named reference link, or cut with a reason. The draft follows the
-  plan's order. Section hand-offs belong to the page plan: a hand-off the plan places is not a
-  tell, and a read of the page grades its wording, never whether it is there or where it sits.
+- **A page's outline is written before its prose and rides in the pull request** (Geoff,
+  2026-10-01; reworded 2026-10-25 under the docs-as-code rulings, which retired the committed plan
+  file, its fact ids, and the brief kept beside the page). The premise test comes first: the
+  product has the thing the page documents, and no other page owns it. The outline is written
+  down, which Google's guidance on large documents calls "the narrative for your document"
+  ([Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)). It
+  holds the page's job; the introduction's three parts (what the document covers, what prior
+  knowledge the reader needs, and what it does not cover); the sections in the order the outline
+  argues for, each with its heading, the one sentence a reader takes from it, and its hand-off; and
+  the ending the page's anatomy requires. The draft follows the outline's order. Section hand-offs
+  belong to the outline: a hand-off it places is not a tell, and a read of the page grades its
+  wording, never whether it is there or where it sits.
 
 ### Voice
 
@@ -1030,8 +1031,8 @@ audience lands, and they carry the whole cairn story.
   organization type, its people, or its vocabulary, such as clubs, instructors, classes, or
   dues. An implementer reading the page has zero context on any consumer site, so a domain
   example reads as a cast from nowhere. A page opens on the job the reader came to do, never on
-  an invented scenario or cast. The same holds in the plans, briefs, outlines, and fact text
-  that feed a drafter, since a domain example there is copied into the page. The rule is the
+  an invented scenario or cast. The same holds in an outline and in any input that
+  feeds a writer, since a domain example there is copied into the page. The rule is the
   owner's (Geoff, 2026-10-07): "Talking about classes and club members here seems VERY strange.
   Where the heck does that come from?"; "If this relates to the ASC's site, an implementer will
   have ZERO context."; "Staff is fine. Examples should be generic and likely to apply to many
@@ -1167,9 +1168,11 @@ question and teaser headings and every tell. The figurative-language rule adopts
 in place of the register's earlier allowance for an explanatory metaphor (Geoff, 2026-09-28,
 ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
 
-The page plan rule in both briefs adds a step the base guides are silent on and forbids no form
+The outline rule in both briefs adds a step the base guides are silent on and forbids no form
 either guide prescribes, so it is a tightening and needs no row. It adopts Google's outline
-guidance as published (Geoff, 2026-10-01).
+guidance as published (Geoff, 2026-10-01). The 2026-10-25 docs-as-code rulings superseded the
+ruling's committed plan file, its fact ids, and the brief kept beside the page, and kept the
+outline and the order it sets. The outline now rides in the pull request.
 
 The editor brief departs from nothing in Microsoft (ruling 4). Its tightenings are the no-pitch
 keystone, the tells that pass this section's test against Microsoft, and the Names rules. Three
@@ -1223,7 +1226,7 @@ The introduction section cites the following pages, read on 2026-10-04; the sour
 - [Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)
 - [Microsoft Writing Style Guide: Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)
 
-The page plan rule in both briefs cites one page of Google's Technical Writing Two course, read on
+The outline rule in both briefs cites one page of Google's Technical Writing Two course, read on
 2026-10-03.
 
 - [Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)

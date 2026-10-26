@@ -87,9 +87,8 @@ seams), `claude-code/` (working on a site with Claude Code), and
 arms and the front door hold no page until their stages rebuild them; `extend/` holds the stage 2a
 pages and stage 2b finishes it. No pass drafts an arm's prose ahead of its stage.
 
-- **Facts container.** A pass that changes a public behavior files a bullet in
-  [`docs/internal/facts/`](docs/internal/facts/README.md), gated by `check:facts`; each arm's stage
-  rebuilds from it.
+- **Docs change with the code.** A pass that changes a public behavior edits the affected pages in
+  the same PR, checked by `npm run check:docs-gate`.
 - **Fix rule.** A deficiency found on a published page is fixed on the page in the same pass,
   except a site edit to an arm whose stage is in flight, which is filed for that stage. A site
   pass's docs edits land on a `site-docs/<site>-<pass>` branch off `main`, merged by PR first.
@@ -195,7 +194,8 @@ Vale's vendored Google package over the published doc arms (`docs/**/*.md`; `doc
 Microsoft's plainer editor voice; internal planning docs are excluded). Every published docs page
 is drafted from the brief for its track in
 [`docs/internal/docs-register.md`](docs/internal/docs-register.md), "Drafting brief: developer
-docs" or "Drafting brief: editor docs"; read it before writing or reviewing docs prose.
+docs" or "Drafting brief: editor docs"; read it before writing or reviewing docs prose. The
+`cairn-docs` skill carries the procedure for changing a page.
 
 Every part of the system has one sanctioned name: the "Names" section of
 [`docs/internal/docs-register.md`](docs/internal/docs-register.md#names), enforced by the

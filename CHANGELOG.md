@@ -551,6 +551,13 @@
 
 ### Documentation
 
+- **The shipped `cairn-extend` skill points at the published pages.** Its router no longer links a
+  maintainer-only file of recorded claims. It sends an agent to the extend and reference pages in the
+  installed package and keeps the links to the engine rulings and the admin design system. The skill
+  and its copy in the Waymark template change together.
+
+  No consumer action.
+
 - **A Claude Code track ships, with its first page.** `docs/claude-code/` holds what cairn ships
   into a site's Claude Code setup and what it leaves to the developer:
   `docs/claude-code/work-on-a-cairn-site-with-claude-code.md` covers the guidance tree, adopting or refreshing

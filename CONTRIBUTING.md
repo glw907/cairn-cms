@@ -95,45 +95,28 @@ which invariant broke, not that the gate is wrong:
 
 ## How the docs stay true
 
-The published docs rest on a record of checked claims, and three gates hold the docs to the code.
-A change to public behavior files its part of that record in the same pull request.
+The published docs change in the same pull request as the code they describe, and one script
+holds them to it.
 
-- **The facts container.** `docs/internal/facts/` holds one bullet per claim about cairn, split by
-  docs track. Each bullet carries a fixed id, a `Source:` that points at the code or the vendor
-  page that proves it, and one status tag.
-  [`docs/internal/facts/README.md`](./docs/internal/facts/README.md) defines the format and the tags.
-- **Page briefs.** Each rebuilt page has a brief under `docs/internal/briefs/` that lists every
-  sentence on the page with the fact ids it rests on.
-- **The option map.** `docs/internal/option-map.json` gives every public option path one row: a
-  fact id, `exclude` with a reason, or `pending` with the slug of the page that documents it next.
+- **Pages.** A change to public behavior edits the page that describes it, and the reference
+  page when the behavior is public API. Search `docs/` and `README.md` for a changed, renamed,
+  or removed name and repoint every hit.
+- **The option map.** `docs/internal/option-map.json` gives every public option path one row: an
+  anchor in a reference page whose section names the option in inline code
+  (`docs/reference/<page>.md#<anchor>`), `exclude` with a reason, or `pending` with the slug of
+  the page that should document it.
 
-The gates check each part:
+`npm run check:options` regenerates the option paths from the built type declarations and fails
+when a row's page, anchor, or section is missing, or when a path has no row, so an option can't
+ship undocumented. `npm run check:docs-gate` runs it with the rest of the docs checks, including
+links, Vale, snippets, and reference coverage. CI runs the same script.
 
-- `npm run check:facts` checks every bullet's id, tag, and `Source:` pointer, and fails on a
-  pointer that names a missing file or an out-of-range line. It checks pointers for the file types
-  it resolves; it does not yet resolve `.go` pointers.
-- `npm run check:provenance` checks that every page sentence appears in its brief and that each
-  claim-bearing sentence cites a fact whose tag makes it citable. A sentence that makes no claim is
-  marked as such.
-- `npm run check:options` regenerates the option paths from the built type declarations and fails
-  when the map and the paths disagree, so an option can't ship without a row.
+To pass the docs gate, make these changes together:
 
-`npm run check:docs-gate` runs these three with the rest of the docs checks. CI runs the same
-script.
-
-To pass the docs gate, file these in the same change:
-
-- If you change public behavior, add or correct its fact bullet, and update the reference page
-  when the behavior is public API. Mint a new bullet's id with
-  `node scripts/checks/check-facts.mjs --mint`, and never change an existing id.
-- If you move or rewrite code that a bullet cites, retarget that bullet's `Source:`.
-- If you add, rename, or remove a public option, update its row in the option map. A new option
-  gets a fact id, or an `exclude` row when a developer never sets it.
-- If you edit a page that has a brief, update the brief's sentences in the same change.
-
-The maintainer's page chain drafts the rebuilt narrative pages. It's a set of agent workflows kept
-in the maintainer's own tooling, and you don't need it to contribute. A change touches only the
-facts, the map, the briefs, and the gates this section names.
+- If you change public behavior, update its page, and the reference page when the behavior is
+  public API.
+- If you add, rename, or remove a public option, update its row in the option map.
+- If you move or rename a heading, repoint every link to its anchor.
 
 ## Conventions a change is held to
 

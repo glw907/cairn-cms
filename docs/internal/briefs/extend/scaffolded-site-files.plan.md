@@ -179,8 +179,7 @@ an entry restates it only where a contract limits it.
     neither Waymark nor the chassis, so every file in the tree is the site's own and no engine
     release ships a newer copy of it. One sentence may add that a site built by hand from
     `sv create` starts with neither, linking `docs/extend/add-cairn-to-a-sveltekit-app.md`.
-  - `f:u705t5`: Waymark is the only template the setup command ships; a second, Topo, is planned
-    but not shipped.
+  - `f:u705t5`: Waymark is the only template the setup command ships.
   - `f:kldwss`: the same run created the site's GitHub App, its repository, and its Cloudflare
     bindings, and deployed it, so the tree arrives already live.
   - Then the shadcn principle lines: a two-item bulleted list under a complete lead-in sentence,

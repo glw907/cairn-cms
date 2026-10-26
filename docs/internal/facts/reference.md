@@ -202,12 +202,12 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   `throttle.cooldownMs` 60000/60s (min 30000/30s), `throttle.requesterCap` 20 (5-100),
   `throttle.identityCeiling` 30 (min 10), `throttle.escalationThreshold` 20 (min 10),
   `throttle.liveRowCap` 5 (max 20), `session.ttlMs` 2592000000/30days (max 31536000000/1yr).
-  Source: `src/lib/auth-channel/factory.ts:326-482`. [verified]
+  Source: `src/lib/auth-channel/factory.ts:326-482` (`AuthChannel`). [verified]
 - `f:ditn3e` `AuthChannelConfig.resolveDb` returns `ChannelDatabaseLike | undefined`, the structural
   subset of D1 the channel store calls (`prepare(...).bind(...).first()/run()`, `withSession('first-primary')`,
   and a session's `prepare` and `batch`); a real `D1Database` and `createChannelDb()`'s result both
   satisfy it with no cast, and `AuthChannel.revokeSessions` takes the same type. Source:
-  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts:232-238`.
+  `src/lib/auth-channel/store.ts#ChannelDatabaseLike`, `src/lib/auth-channel/factory.ts:232-238` (`ChannelDatabaseLike`).
   [verified]
 - `f:vh76wt` A non-positive `limits` override always throws even where the table states only a ceiling
   (prevents a 0 or negative clamp value from silently passing). Source:
@@ -231,8 +231,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   must never share a `migrations_dir` with the engine's own `AUTH_DB` migrations. The
   per-deployment identity salt is provisioned lazily via `INSERT OR IGNORE` of 32 random bytes
   under `identity_salt`, deliberately absent from the committed migration file since a migration
-  published on npm can't carry a per-deployment secret. Source: `migrations-channel/0000_channel.sql:19-46`
-  (the four `CREATE TABLE` statements), `src/lib/auth-channel/store.ts:60-84` (`provisionSalt`:
+  published on npm can't carry a per-deployment secret. Source: `migrations-channel/0000_channel.sql:19-49`
+  (`CREATE TABLE`) (the four `CREATE TABLE` statements), `migrations-channel/0000_channel.sql:13-15`
+  (`identity_salt`) (the salt's deliberate absence), `src/lib/auth-channel/store.ts:93-111` (`provisionSalt`:
   `INSERT OR IGNORE INTO cairn_channel_meta`, `randomHex(32)`), `examples/showcase/wrangler.jsonc:26-53`
   (each D1 binding declares its own `migrations_dir`, comment states why). [verified]
 
@@ -615,7 +616,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:6oopkt` `config.media-bucket`, `auth.role-wiring`, and `ai.posture-effective` read
   `src/content/.cairn/site-facts.json`, and when that file is absent each reports the literal
   message "needs engine 0.97.0 or later, and one build". Source:
-  `tool/internal/doctor/facts.go:8-19`. [verified]
+  `tool/internal/doctor/facts.go:8-19` (`siteFactsRelPath`). [verified]
 - `f:b7o2xd` The seven check ids the doctor never reaches, because they need a live adopted site, are
   `cairn health` ids and none is a doctor id: `serving`, `delegation`, `https-forced`, `email`,
   `deploy`, `publish-path`, and `errors`. Source:
@@ -950,7 +951,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:69xbyh` `verifyTurnstile` is fail-closed by contract: every failure mode (bad input, oversized token,
   timeout/throw, non-200, unparseable body, `success: false`, hostname/action mismatch) returns
   `false`, never throws, so a future refactor can't flip it open by accident. `opts.ip` must come
-  from `CF-Connecting-IP`, never a forwardable header. Source: `src/lib/cloudflare/turnstile.ts:1-3`
+  from `CF-Connecting-IP`, never a forwardable header. Source: `src/lib/cloudflare/turnstile.ts:1-3` (`siteverify`)
   (module comment: "Every failure mode below returns false rather than throwing"), `:17-21`
   (`ip` doc comment: "from `CF-Connecting-IP` and never a client-forwardable header"). [verified]
 - `f:b857di` `MAX_TOKEN_LENGTH` is exactly `2048` characters and the fetch timeout is exactly `5000`ms
@@ -964,7 +965,7 @@ re-sourced to Go on this tree rather than to the page.
   and `reason: 'invalid_input'` (with `tokenLength`) for a blank, non-string, or over-length
   `token`; the secret is checked first, so a call with both bad logs `missing_secret`. Both
   return `false` without calling fetch. Source: `src/lib/cloudflare/turnstile.ts#verifyTurnstile`,
-  `src/lib/cloudflare/turnstile.ts:96,105`. [verified]
+  `src/lib/cloudflare/turnstile.ts:96,105` (`turnstile.verify_failed`). [verified]
 - `f:ndtmx8` `resolveRateLimit` resolves multiple keys in order, short-circuiting at the first key over
   budget (a later key's counter is never incremented once an earlier one has failed), and returns
   a four-arm outcome (`allowed`, `limited`, `no-binding`, `failed`) rather than the boolean its
@@ -1335,7 +1336,7 @@ re-sourced to Go on this tree rather than to the page.
 - `f:mou1li` Composition-time event `config.access_unmapped` runs once at module evaluation (composition, not
   per request), so it appears at most once per isolate on a cold start, and a Workers Logs query
   scoped to a live request window can miss it entirely. Source:
-  `src/lib/sveltekit/admin-nav.ts:283-297,330-333` (`validateAccessComposition`'s doc: "Validate a
+  `src/lib/sveltekit/admin-nav.ts:283-297,330-333` (`config.access_unmapped`) (`validateAccessComposition`'s doc: "Validate a
   site's declared access map once at composition (server start)"; `log.warn('config.
   access_unmapped', ...)` fires from that one validation function, not a per-request path).
   [verified]
@@ -1439,7 +1440,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 ## docs/reference/public-css.md
 
 - `f:q8atv6` `.cairn-focus-ring:focus-visible` is a rule in `@layer components`, so it takes no variants and sits below utilities: a utility that sets `outline-*` on the same element wins, and so does a daisyUI component class that sets an outline, since daisyUI's own rules sit in a later layer. A copied `prose.css` whose links read the ring's keys (`--cairn-focus-ring-outline`, `--cairn-focus-ring-offset`) draws a visible outline once the sheet declares them; those keys were undeclared for a site that did not copy the ring, and the outline computed to nothing. Source: `src/lib/public/cairn-public.css:99-106`, `examples/showcase/src/chassis/prose.css:154-155`. [verified]
-- `f:c4nnu9` The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, built from `src/lib/public/cairn-public.css` and packed at `dist/public/cairn-public.css`. It holds four things: the roles in `@layer theme` on `:root, [data-theme]` (18 keys), two `@theme` colors (`--color-muted`, `--color-card-border`), `@layer components` rules with no design choice (`pre.shiki`, the six `.cairn-tok-*` classes, `.table-scroll`'s structural pair, `.cairn-focus-ring:focus-visible`), and one `@source` line over the public component directory. The subpath has no `.d.ts`, so `check:reference` excludes it (`SUBPATH_EXCLUSIONS`) and `src/tests/unit/cairn-public-surface.test.ts` holds `docs/reference/public-css.md` to the file: every key with its default, and no cairn key the file lacks. Source: `package.json:195` (`"./cairn-public.css": "./dist/public/cairn-public.css"`), `src/lib/public/cairn-public.css:21-111`, `scripts/checks/reference-coverage.mjs:536`. [verified]
+- `f:c4nnu9` The engine ships its public defaults as one CSS asset, `@glw907/cairn-cms/cairn-public.css`, built from `src/lib/public/cairn-public.css` and packed at `dist/public/cairn-public.css`. It holds four things: the roles in `@layer theme` on `:root, [data-theme]` (18 keys), two `@theme` colors (`--color-muted`, `--color-card-border`), `@layer components` rules with no design choice (`pre.shiki`, the six `.cairn-tok-*` classes, `.table-scroll`'s structural pair, `.cairn-focus-ring:focus-visible`), and one `@source` line over the public component directory. The subpath has no `.d.ts`, so `check:reference` excludes it (`SUBPATH_EXCLUSIONS`) and `src/tests/unit/cairn-public-surface.test.ts` holds `docs/reference/public-css.md` to the file: every key with its default, and no cairn key the file lacks. Source: `package.json:195` (`"./cairn-public.css": "./dist/public/cairn-public.css"`), `src/lib/public/cairn-public.css:21-111` (`color-card-border`), `scripts/checks/reference-coverage.mjs:536` (`SUBPATH_EXCLUSIONS`). [verified]
 - `f:w6pqic` The public sheet's derived defaults differ from the values a copied pre-export `tokens.css` carried. Each status ink is `color-mix(in oklab, var(--color-<status>) 50%, var(--color-base-content))` where it was the fill itself. `--color-muted` is `color-mix(in oklab, var(--color-base-content) 80%, var(--color-base-100))`, an opaque mix, where it was a 60 percent mix of `--color-base-content` with `transparent`. `--cairn-shadow` keeps its geometry (a 6 percent and a 12 percent layer) but mixes `black`, where it mixed `--color-base-content`. The 50 and 80 come from a Chromium measurement over the 35 stock daisyUI themes, Waymark, and the fixture theme, recorded with each theme's result. A theme that needs a fixed value sets the key itself, and Waymark does. Source: `src/lib/public/cairn-public.css:38-52,61`, `docs/research/2026-09-29-theme-pass-c-ink-derivation.md` (the Result table). [verified]
 - `f:7653l0` The two `@theme` colors do not recompute inside a nested `data-theme` region: Tailwind resolves them at `:root` and the region inherits the computed value. The roles do recompute, because the sheet declares them on `[data-theme]` as well as `:root`, so a derived ink inside a nested region mixes that region's own fill. A theme that nests a region sets `--color-muted` and `--color-card-border` in the nested block. A comma-bearing value such as `--cairn-shadow` does not survive daisyUI's option parser and goes in that scheme's `:root` block. `theme-contrast` measures the root element only, so it does not measure a nested region. Source: `src/lib/public/cairn-public.css:21-23,60-63` (`:root, [data-theme]` in `@layer theme`; `@theme` colors), `docs/reference/cairn-audit.md#what-theme-contrast-doesnt-cover` (the root-only bullet). [verified]
 
@@ -1578,7 +1579,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `f:ve30i2` `site-facts.json` carries exactly `version`, `mediaBucketBinding`, `roles`, and `aiPosture`;
   `owner`, `repo`, and `from` are never written, even when the adapter declares them.
-  Source: `src/lib/vite/internal.ts:525-533,541-551` (`formatSiteFacts` writes only `version`,
+  Source: `src/lib/vite/internal.ts#formatSiteFacts` (`out.roles = facts.roles`) (`formatSiteFacts` writes only `version`,
   `mediaBucketBinding`, `roles`, and `aiPosture`; `buildSiteFactsFromVite`
   passes it the result of the shared `parseAdapterFacts` validation, never the raw parsed object).
   [verified]
@@ -1589,7 +1590,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   with `siteFactsAbsentWarning(...)`). [verified]
 - `f:eqlssz` A present `site-facts.json` that no longer matches the adapter fails the build through the same
   `this.error(...)` path the content manifest uses, naming the file and the fix. Source:
-  `src/lib/vite/internal.ts:471-476,190-191` (`checkSiteFacts` compares the derived facts against
+  `src/lib/vite/internal.ts:623-645,301-312` (`checkSiteFacts`) (`checkSiteFacts` compares the derived facts against
   the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
   with that message). [verified]
 - `f:yio35u` The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
@@ -1599,7 +1600,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   project root, so it runs from the directory holding `vite.config.ts`; the build's
   stale-`site-facts.json` error names the fix as ``Run `npx cairn-manifest` and commit the
   result.`` Source: `package.json:199-200` (`"cairn-manifest"`), `src/lib/vite/bin.ts#main`,
-  `src/lib/vite/internal.ts:319-324,592-597`. [verified]
+  `src/lib/vite/internal.ts:638-644` (`stale`). [verified]
 
 ## docs/reference/supported-toolchain.md
 

@@ -577,7 +577,7 @@
       "id": "f:k085q0"
     },
     {
-      "text": "The engine logs these events when the site's committed config fails to parse or validate, and when a declared access map leaves a concept or a fixed engine screen without a rule.",
+      "text": "The engine logs these events when the site's committed config fails to parse or validate, and when a declared access map keys at least one screen but leaves a concept or a fixed engine screen without a rule.",
       "id": [
         "f:8fyoha",
         "f:8ciz2s",
@@ -605,8 +605,11 @@
       "id": "f:8fyoha"
     },
     {
-      "text": "The engine checks the access map once, when the site composes, so `config.access_unmapped` appears at most once per isolate, on a cold start.",
-      "id": "f:mou1li"
+      "text": "The engine checks the access map once, when the admin routes are built at server start, so `config.access_unmapped` appears at most once per isolate, on a cold start.",
+      "id": [
+        "f:mou1li",
+        "f:8ciz2s"
+      ]
     },
     {
       "text": "A Workers Logs query scoped to a live request window can miss the warning entirely.",

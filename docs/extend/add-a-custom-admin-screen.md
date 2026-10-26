@@ -42,7 +42,7 @@ The steps assume the following setup:
 The admin is two pairs of route files: the layout pair that renders `CairnAdminShell` and the `[...path]` catch-all pair.
 The admin's `+error.svelte` sits beside them.
 The example site, `examples/showcase`, adds a `signups/` screen beside the catch-all.
-The following tree shows the source files that the steps change, with the new screen's directory named after the example site's.
+The following tree shows the source files that the page touches, with the new screen's directory named after the example site's.
 
 ```text
 src/
@@ -138,7 +138,7 @@ export const load: PageServerLoad = async (event) => {
 
 A route with no rule in the map refuses every session, and the owner has no exemption.
 A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it makes the call itself.
-The access map matches a route by its deepest key prefix, so the screen's key covers a nested route in all but one case.
+The access map matches a route by its deepest key prefix, so the screen's key covers a nested route that has no deeper key of its own, with one exception.
 [Key nested and parameterized routes](restrict-admin-access.md#key-nested-and-parameterized-routes) describes the case that resolves to no rule.
 [Load row detail on demand](#load-row-detail-on-demand) applies this to a detail endpoint.
 
@@ -232,7 +232,7 @@ export const actions: Actions = {
 Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`.
 The audit record takes its `action` and `entity` from the wrapper's options unless the handler's `ctx.audit` call passes one.
 Underneath, the wrapper runs the editor identity, CSRF, and single form-read work of `createAdminAction`.
-A screen never calls `createAdminAction` directly.
+A screen that uses `createSectionAction` never calls `createAdminAction` directly.
 A handler that rejects with `fail()` before it writes owes no record.
 [Resolve a missing audit record](#resolve-a-missing-audit-record) traces a record that never arrives.
 

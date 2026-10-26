@@ -235,7 +235,8 @@ filtered on editor addresses can miss those records.
 ## Site config events
 
 The engine logs these events when the site's committed config fails to parse or validate, and when
-a declared access map leaves a concept or a fixed engine screen without a rule.
+a declared access map keys at least one screen but leaves a concept or a fixed engine screen without
+a rule.
 
 ### `config.invalid`
 
@@ -249,9 +250,9 @@ record's `scope` names, using the message in `error`, and commits it.
 
 ### `config.access_unmapped`
 
-The engine checks the access map once, when the site composes, so `config.access_unmapped` appears
-at most once per isolate, on a cold start. A Workers Logs query scoped to a live request window can
-miss the warning entirely. Finding it takes a wider window. As the [log
+The engine checks the access map once, when the admin routes are built at server start, so
+`config.access_unmapped` appears at most once per isolate, on a cold start. A Workers Logs query
+scoped to a live request window can miss the warning entirely. Finding it takes a wider window. As the [log
 events](../reference/log-events.md) reference describes, the record's `unmapped` field lists the
 targets with no rule. The [Security
 model](security-model.md#allowlist-semantics-from-an-exhaustive-map) page sets out what the warning

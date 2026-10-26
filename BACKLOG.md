@@ -14,6 +14,8 @@
 
 ## Medium
 
+- [ ] **#77** Rewrite the last three YAML blueprints in Markdown and reseed their lock entries `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
+  Geoff ruled on 2026-10-25 that drafter and the Approval Queue accept only the documented Markdown blueprint format, with no converter. `blueprints/docs/extend/debug-your-site.blueprint.yaml`, `rotate-the-github-app-key.blueprint.yaml`, and `security-model.blueprint.yaml` are still YAML; an author rewrites each by hand, as #144 did for four others. `blueprints/drafted.lock` also still keys scaffolded-site-files, add-a-second-sign-in-group, and add-cairn-to-a-sveltekit-app to their YAML hashes and section ids, so reseed those entries once drafter's API returns.
 - [ ] **#76** Re-point drifted fact anchors and retire "Deploy-button tree" from the facts `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   The full `drafter check` on `redraft-prep` (`fae1aca1b`) flags about 17 pointers in `docs/internal/facts/extend.md` whose anchor no longer sits in the cited lines (near lines 74, 105, 126, 282, 283, 311, 585, 586, 693, 731, 738, 908, 1089, 1257), plus 13 errors unchanged from `main`, and debug-your-site's facts carry 27 more anchorless or drifted pointers. Separately, f:jtl15v (admin.md) and f:pe4vuc, f:rxj43c, f:n7t4bn, f:qlgggh, f:n0fg3w (extend.md) still say "Deploy-button tree" or "overlay"; give each the wording f:nls26c now uses (the `templates/waymark/` copy, pre-release).
 - [ ] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25)*

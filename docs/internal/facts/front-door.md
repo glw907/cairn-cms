@@ -64,7 +64,7 @@ Agent-facing; never shipped; not register-graded. Every fact carries a source.
   compiles Tailwind's theme and utilities and the daisyUI plugin. Source:
   `scripts/build/admin-css.input.css:11-13` (`daisyui`) (the `tailwindcss` imports and `@plugin "daisyui"`).
   [verified]
-- `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark; a second template, Topo, is planned but not shipped. Source: `packages/create-cairn-site/package.json:4` (`"description"`), "scaffold a branded Waymark starter"; `packages/create-cairn-site/src/prompts.mjs:15` (`DEFAULTS`), `DEFAULTS = { name: 'Waymark', ... }`; no `Topo` package or directory found under `packages/` or `examples/` (`find . -iname "*topo*"` matched only spec and record docs under `docs/`). [verified: Waymark and the absence of any Topo template trace to the tree; "planned" rests on the specs and ROADMAP.md, not code]
+- `f:u705t5` `create-cairn-site` scaffolds a complete starter called Waymark, the only template it ships. Source: `packages/create-cairn-site/package.json:4` (`"description"`), "scaffold a branded Waymark starter"; `packages/create-cairn-site/package.json:9` (`"template"`), the package ships one baked `template` directory; `packages/create-cairn-site/src/prompts.mjs:15` (`DEFAULTS`), `DEFAULTS = { name: 'Waymark', ... }`. [verified]
 - `f:4sxnxp` cairn is pre-1.0. Source: `package.json:3` (`"version"`), `"version": "0.98.0"`. [verified]
 - `f:3utth1` The published version, unpublished window, and next action live in `docs/STATUS.md`. Source:
   `docs/STATUS.md:7`, "Published: **`0.98.0`**..."; `docs/STATUS.md:21`, "## Immediate next

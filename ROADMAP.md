@@ -1083,8 +1083,6 @@ the named human gates only):**
     puts the adapter at `src/lib/cairn.config.ts` (`#lib`, `:294`, `:411`) and the scaffold puts it at
     `src/theme/cairn.config.ts` (`#theme`, `choose-an-ai-posture.md:29,62`), so every extend page that
     touches the adapter names two paths.
-  - `docs/internal/facts/front-door.md:67` (`f:u705t5`) says "a second template, Topo, is planned but
-    not shipped"; a fact should state only what ships.
   - The task 8 page plans disagree with their pages after the rulings:
     `docs/internal/briefs/extend/debug-your-site.plan.md:64,263` (`cairn help agents`) and
     `docs/internal/briefs/extend/scaffolded-site-files.plan.md:226,252` (the `CLAUDE.md` subsection).

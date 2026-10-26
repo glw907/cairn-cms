@@ -138,7 +138,7 @@ sections:
         target: ../extend/scaffolded-site-files.md#the-scaffold
       - id: pre-site-hand
         kind: link
-        target: ../extend/add-cairn-to-a-sveltekit-app.md#install-and-wire-the-engine
+        target: ../extend/add-cairn-to-a-sveltekit-app.md
       - id: pre-claude
         kind: sentence
         mode: claim

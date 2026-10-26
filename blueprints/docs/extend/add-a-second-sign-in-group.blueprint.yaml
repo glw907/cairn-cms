@@ -16,8 +16,8 @@ introduction:
   covers: |
     The introduction frames the page from above, then states the contract. It opens on the
     reader's situation, as a statement: some sites need people besides editors to sign in, to
-    reach screens or pages made for them. cairn's sign-in exists only to gate the admin, so by
-    default it knows the owner and editor pair and signs them in by an emailed magic link. For a
+    reach screens or pages made for them. The sign-in that cairn ships exists to gate the admin,
+    and by default it signs in only owners and editors, by an emailed magic link. For a
     second group, cairn supplies the sign-in through one of two mechanisms, while what a staff
     member or a member is, and the records kept about them, stay the site's code. It then names
     where each mechanism sits: a declared role joins the editors' roster in `AUTH_DB` at `none`
@@ -45,10 +45,10 @@ introduction:
     familiar; SvelteKit load functions and form actions; and Vitest, for the channel's test. The
     page explains none of these.
   notCovered: |
-    Each subject the page leaves out names its page, subject first. A group whose people write the
-    site's content: `none` capability closes the engine's content screens, so such a group signs
-    in at editor capability and an access map narrows what it reaches (Restrict admin access,
-    which also owns access maps themselves). Signing the editors themselves in through the
+    Each subject the page leaves out names its page, and the list items share one form, each
+    opening on the page that covers it. Restrict admin access covers access maps and a group whose
+    people write the site's content: such a group needs editor capability, since `none` capability
+    closes the engine's content screens, and this page configures no access map. Signing the editors themselves in through the
     organization's identity provider (Replace magic links with Cloudflare Access). The channel's
     threat surface and the hazards a site's delivery function can introduce (the security model's
     auth channel section). A scope sentence may name the page.
@@ -127,7 +127,7 @@ framing:
        define, and cairn's part is signing it in.
     2. **The general model: two mechanisms.** A declared role puts the group in the editors' roster
        in `AUTH_DB` at `none` capability: the same magic link, the engine's content and roster screens
-       closed, and `/admin` sending the person to the role's `home` or a welcome screen (f:b3l3t0,
+       closed, and `/admin` sending the person to the role's `home` or the welcome view (f:b3l3t0,
        f:4673n6, f:7n28wc). A channel built with `createAuthChannel` is a separate login over a
        numeric code, with its subject, D1 binding, and sessions, and its sessions never populate
        `locals.cairnEditor` (f:b3l3t0, f:we2lmp, f:rcpe0n, f:q7fj6p).
@@ -240,8 +240,8 @@ framing:
          so such a group signs in at editor capability and an access map narrows what it reaches,
          `docs/extend/restrict-admin-access.md` (f:4673n6). The page configures no access map. It
          states only the map behavior the role path meets: in [[build-the-role-s-home-screen]],
-         that `requireAccess` and `canReach` admit a `none` role only through a route rule naming
-         it, the alternative gate; in [[show-the-home-screen-in-the-sidebar]], that an entry whose
+         that `requireAccess` and `canReach` admit a `none` role only through an access-map key
+         that lists it, the alternative gate; in [[show-the-home-screen-in-the-sidebar]], that an entry whose
          `href` no map key matches stays visible; and in [[resolve-a-failed-setup]], that a key
          matching the home path that does not name the role hides the link (f:5sx6zl, f:altcjp).
        - Signing the editors themselves in through the organization's identity provider:
@@ -320,15 +320,15 @@ sections:
         kind: fact
         fact: f:ez788q
         use: |
-          Only: `challenge` must actually verify a human, which is why the channel path needs a
-          Turnstile widget and its secret key.
+          Only: `challenge` must verify a human, never return `true` unconditionally, which is why
+          the channel path needs a Turnstile widget and its secret key.
       - id: bb-node
         kind: fact
         fact: f:fcqs22
         use: |
-          Only: the channel's test uses `@glw907/cairn-cms-dev`'s `createChannelDb`, the dev
-          package declares `engines.node` `>=24`, nothing enforces that floor at runtime, and npm
-          only warns.
+          Only: the channel's test uses `@glw907/cairn-cms-dev`'s `createChannelDb`, and the dev
+          package declares `engines.node` `>=24`. The no-runtime-guard and npm-warning clauses are
+          placed in [[resolve-a-failed-setup]] only.
       - id: bb-cli
         kind: fact
         fact: f:1dhk1a
@@ -377,16 +377,9 @@ sections:
       The two paths share no step, so the reader chooses before building anything. The section
       carries the early right-tool callout, here role versus channel.
     opens: |
-      A second group signs in either as a declared role in the editors' roster in `AUTH_DB` or
-      through a separate login built with `createAuthChannel`.
+      The following table compares the two mechanisms by where each keeps its people and what the
+      site builds.
     items:
-      - id: ch-opens
-        kind: fact
-        fact: f:b3l3t0
-        use: |
-          Only the opening sentence's claim: a declared role, whose members sign in by the same magic link
-          and live as rows in `AUTH_DB`'s `editor` table, or `createAuthChannel`, a separate login
-          with its subject, D1 binding, and session.
       - id: ch-table
         kind: sentence
         mode: claim
@@ -396,7 +389,7 @@ sections:
           each for sign-in, roster, sessions, where people land, and what the site builds. The role
           column: the same magic link editors use; rows in the `editor` table of `AUTH_DB`, added by
           an owner on `/admin/editors`; sessions in `AUTH_DB` that populate `locals.cairnEditor`
-          with `none` capability; the role's `home` under `/admin`, or a welcome screen; a screen at
+          with `none` capability; the role's `home` under `/admin`, or the welcome view; a screen at
           the role's `home`. The channel column: a numeric code, 8 digits by default, sent by the
           site's transport; the site's store, read by the site's `lookup`; sessions in the
           channel's D1 binding, never `AUTH_DB`, and never in `locals.cairnEditor`; the site's
@@ -416,8 +409,8 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          A role suits a group that an owner adds person by person and that works in screens under
-          `/admin`.
+          The first of two condition-first bullets under the choice's lead-in: if an owner adds the
+          group's people one at a time and they work in screens under `/admin`, build a role.
         facts:
           - f:nj0nfm
           - f:7n28wc
@@ -425,23 +418,18 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          A channel suits a group whose roster the site already keeps and that never needs the
-          admin.
+          The second bullet: if the site already keeps the group's roster and its people never need
+          the admin, build a channel.
         facts:
           - f:dtz8oa
           - f:q7fj6p
-      - id: ch-domain
-        kind: fact
-        fact: f:nguseg
-        use: |
-          Only the domain point as it applies to either mechanism (what a member, a staff
-          assignment, or a signup is), in the sentence after the fit sentences, worded apart from
-          the introduction's.
       - id: s-choose
         kind: step
         text: |
-          Choose the mechanism the comparison fits. A reader who chooses a channel skips the role
-          path and continues at [[sign-the-group-in-through-a-channel]].
+          Make the choice before building anything, as the two condition-first bullets state; the
+          bullets are the procedure, introduced by a complete sentence, with no separate "choose"
+          bullet. A reader who chooses a channel skips the role path and continues at
+          [[sign-the-group-in-through-a-channel]].
         requires:
           - magic-link-site
         produces:
@@ -459,21 +447,22 @@ sections:
       The role path comes before the channel because it is shorter and reuses the sign-in the site
       already runs; a reader who chose a channel skips it from the comparison.
     opens: |
-      A role adds the group to the editors' roster at `none` capability, so its people sign in by
-      the magic link and reach only the screens the site builds for them.
+      The running example is a `staff` role declared `{ capability: 'none', home: '/admin/staff' }`,
+      the declaration the `defineRoles` reference uses.
     items:
-      - id: ra-opens
-        kind: fact
-        fact: f:4673n6
-        use: |
-          Only, for the opening, the shared magic-link flow and the refusal by the engine's content
-          and roster screens.
       - id: ra-example
         kind: fact
         fact: f:pvs115
         use: |
-          Only the running example: a `staff` role declared `{ capability: 'none', home:
-          '/admin/staff' }`, the declaration the roles reference uses.
+          Only the running example, for the opening: a `staff` role declared `{ capability: 'none',
+          home: '/admin/staff' }`, the declaration the roles reference uses.
+      - id: ra-opens
+        kind: fact
+        fact: f:4673n6
+        use: |
+          Only, after the example, the shared magic-link flow and the refusal by the engine's
+          content and roster screens. Never restate the role-versus-channel definition the
+          comparison table carries.
       - id: ra-roles-link
         kind: link
         target: ../reference/core.md#defineroles
@@ -489,7 +478,8 @@ sections:
     level: 3
     opens: |
       A role is one entry in the site's role vocabulary, declared once on the adapter's `roles`
-      member; the guard reads it from the composed runtime, which the dev backend also takes.
+      member; `composeRuntime` folds the adapter into the runtime the hooks pass, and the guard
+      reads the vocabulary from `runtime.roles`.
     items:
       - id: dr-guard
         kind: fact
@@ -497,13 +487,20 @@ sections:
         use: |
           Only the opening's claim: `createAuthGuard` takes a required `runtime` and reads the declared
           role vocabulary from `runtime.roles`. Omit the earlier-versions clause.
+      - id: dr-compose
+        kind: fact
+        fact: f:3rb362
+        use: |
+          Only: the root barrel's `composeRuntime` folds the adapter into the runtime that the
+          hooks module hands `createAuthGuard`, which is how the adapter's `roles` member becomes
+          `runtime.roles`. Omit the other three touch points.
       - id: dr-dev
         kind: fact
         fact: f:7cv105
         use: |
-          Only: `devBackendHandle` takes the same required `runtime`, so one declaration serves
-          both handles, and it reads only `runtime.access` from it, never `runtime.roles`. Omit
-          the earlier-versions clause; the
+          Only: `devBackendHandle` takes the same `runtime` but reads only `runtime.access` from it,
+          never `runtime.roles`, so the vocabulary changes nothing under the dev backend. Omit the
+          one-declaration-serves-both framing and the earlier-versions clause; the
           dev-backend-mints-an-owner clause is placed in
           [[verify-the-role-signs-in-to-its-home-screen]].
       - id: dr-module
@@ -583,10 +580,8 @@ sections:
         fact: f:7n28wc
         use: |
           Only the welcome branch, in the sentence after the redirect: a `none`-capability role
-          with no `home` gets the welcome view at `/admin`.
-      - id: dr-roles-link
-        kind: link
-        target: ../reference/core.md#defineroles
+          with no `home` gets the welcome view at `/admin`. The closing pointer to the `defineRoles`
+          entry is unlinked, since [[sign-the-group-in-with-a-role]] already links it.
       - id: dr-handoff
         kind: handoff
         text: |
@@ -647,8 +642,8 @@ sections:
         kind: reason
         text: |
           Why the screen checks the role in place of `requireAccess`: the check works whether or not
-          the site declares an access map, while `requireAccess` refuses a `none` session unless a
-          route rule in the map names its role.
+          the site declares an access map, while `requireAccess` refuses a `none` session unless an
+          access-map key lists its role.
         facts:
           - f:8anql1
           - f:5sx6zl
@@ -657,18 +652,21 @@ sections:
         fact: f:5sx6zl
         use: |
           Only: `canReach` admits a `none`-capability session to a route path only when the deepest
-          matching map key lists its role, and `requireAccess` and `createSectionAction` inherit
-          that admit, so a site that keeps an access map may instead add a route rule naming
-          `staff` and gate with `requireAccess`. Omit the list of targets that stay refused.
+          matching access-map key lists its role, and `requireAccess` and `createSectionAction`
+          inherit that admit, so a site that keeps an access map may instead add an access-map key
+          that lists `staff` and gate with `requireAccess`. Omit the list of targets that stay refused.
       - id: hs-map-link
         kind: link
         target: restrict-admin-access.md
       - id: hs-action
         kind: reason
         text: |
-          Why an action on the screen repeats the check: SvelteKit runs a form action without its
-          page's load function, so the action's handler checks the session's role too. Add a custom
-          admin screen compares the two action wrappers' access checks.
+          Why an action on the screen repeats the check: SvelteKit runs a form action before its
+          page's load function, so the load's role check never gates the action, and the action's
+          handler checks the session's role too. Add a custom admin screen compares the two action
+          wrappers' access checks.
+        facts:
+          - f:5pyozi
       - id: hs-action-link
         kind: link
         target: add-a-custom-admin-screen.md#choose-the-action-wrapper
@@ -724,8 +722,8 @@ sections:
       - id: sb-not-auth
         kind: reason
         text: |
-          Why the link is not the gate: the screen's role check refuses everyone else, whatever the
-          sidebar shows.
+          The `roles` list controls only whether the link shows, and the screen's role check
+          refuses every other role. No colon pivot.
       - id: sb-sidebar-link
         kind: link
         target: arrange-the-admin-sidebar.md
@@ -736,35 +734,60 @@ sections:
   - id: deploy-the-role
     heading: Deploy the role
     why: |
-      The role reaches the live site only after the roles migration and a local wiring check, so a
-      wiring fault is caught before it goes live, and the deploy is what makes the editors screen
-      accept the role.
+      The role reaches the live site only after the roles migration and a local wiring check
+      against freshly regenerated site facts, so a wiring fault is caught before it goes live, and
+      the deploy is what makes the editors screen accept the role.
     level: 3
     opens: |
       The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql`, the migration that
-      lets the roster hold a role beyond owner and editor, and a local build passes the role-wiring
-      check.
+      lets the roster hold a role beyond owner and editor, and `cairn doctor` passes the
+      role-wiring check.
     items:
       - id: ap-migration
         kind: fact
         fact: f:rn62i1
         use: |
-          Only the opening, the copy step, and its caution: the migration is needed once a site
-          declares a vocabulary beyond owner and editor; the scaffold ships it, so a scaffolded
-          site already has the file, and an existing site without it copies it from the package;
-          the rebuild keeps only the engine's four `editor` columns, so a site that added its
-          columns carries them across first. Omit the `0003_preview.sql` clause.
+          Only the opening and the copy step: the migration is needed once a site declares a
+          vocabulary beyond owner and editor, and a site without the file, such as a hand-built
+          site or one scaffolded before the file shipped, copies it from the package. The four-column rebuild is placed on the step after the copy, never in the
+          section's preamble. Omit the `0003_preview.sql` clause.
+      - id: ap-setup-applies
+        kind: fact
+        fact: f:m4y3m4
+        use: |
+          Only, for the opening: the setup command runs `wrangler d1 migrations apply AUTH_DB
+          --remote` when it runs a new site's first deploy, so it applies the scaffold's `0001_roles.sql`
+          then. Never say it always applied it.
       - id: s-copy-roles
         kind: step
         text: |
-          In the project directory, copy `0001_roles.sql` from the package's `migrations` directory
-          into the site's `migrations` directory. A site whose `migrations` directory already holds
-          the file skips this step.
+          If the site's `migrations` directory doesn't hold `0001_roles.sql`, copy the file there
+          from the package's `migrations` directory. The condition comes first, and no trailing
+          skip sentence follows the command.
         requires:
           - role-declared
         produces:
           - roles-migration-file
         optional: true
+      - id: s-carry-columns
+        kind: step
+        text: |
+          If your site added columns to the `editor` table, in your copy of `0001_roles.sql`, add
+          each column to `editor_new` and to the `INSERT ... SELECT` that copies the rows. This
+          conditional step precedes the apply step, so the destructive rebuild is never preamble
+          prose.
+        requires:
+          - roles-migration-file
+        produces:
+          - editor-columns-carried
+        optional: true
+      - id: ap-carry
+        kind: fact
+        fact: f:rn62i1
+        use: |
+          Only the rebuild clause, as the continuation of the carry step: the file rebuilds
+          `editor` by create, copy, drop, and rename, keeping every row but only the four columns
+          `email`, `display_name`, `role`, and `created_at`.
       - id: s-apply-roles
         kind: step
         text: |
@@ -781,16 +804,61 @@ sections:
         use: |
           Only the apply command, `wrangler d1 migrations apply <database> --remote`. Omit the
           count of shipped migrations.
-      - id: v-doctor
+      - id: s-site-facts
         kind: step
         text: |
-          After building the site locally, in the project directory, run `cairn doctor` and confirm
-          that it reports no `auth.role-wiring-missing` warning.
+          In the project directory, regenerate the site facts with `npx cairn-manifest`, shown as a
+          command block. A build never writes the file, so the step is `cairn-manifest`, not a
+          build.
         requires:
-          - cairn-cli
           - role-wired
           - home-screen
           - nav-entry
+        produces:
+          - site-facts-current
+        optional: true
+      - id: vr-build
+        kind: fact
+        fact: f:6oopkt
+        use: |
+          Only the `auth.role-wiring` clause: the check reads `src/content/.cairn/site-facts.json`.
+          Omit the absent-file message.
+      - id: sf-roles
+        kind: fact
+        fact: f:ve30i2
+        use: |
+          Only: the file carries the declared `roles`.
+      - id: sf-write
+        kind: fact
+        fact: f:yio35u
+        use: |
+          Only: `cairn-manifest` writes `site-facts.json`.
+      - id: sf-stale
+        kind: fact
+        fact: f:eqlssz
+        use: |
+          Only: while the committed file no longer matches the adapter, the build fails.
+      - id: sf-fix
+        kind: fact
+        fact: f:z61ibp
+        use: |
+          Only: the stale-file error names `npx cairn-manifest` as the fix.
+      - id: s-run-doctor
+        kind: step
+        text: |
+          In the project directory, run `cairn doctor`.
+        requires:
+          - cairn-cli
+          - site-facts-current
+        produces:
+          - doctor-run
+        optional: true
+      - id: v-doctor
+        kind: step
+        text: |
+          In the output, confirm that `cairn doctor` reports no `auth.role-wiring-missing` warning.
+        requires:
+          - doctor-run
         produces:
           - wiring-checked
         canFail: true
@@ -799,32 +867,22 @@ sections:
         kind: fact
         fact: f:hwffph
         use: |
-          Only: the warning means the adapter declares custom roles but `createAuthGuard` was not
-          passed `{ runtime }`, and `cairn doctor` raises it from its `auth.role-wiring` check. On
-          this engine such a guard throws when `src/hooks.server.ts` loads; the fallback to the
-          owner and editor pair that the warning's text describes is an older engine's behavior.
-          Omit the older-engine spelling.
-      - id: vr-type-error
-        kind: fact
-        fact: f:4xrx5f
-        use: |
-          Only: on this engine a `createAuthGuard` call that passes no `runtime` is a type error, so
-          the warning concerns a site whose hooks escape the type check or an older site. Omit the
-          earlier-versions detail.
-      - id: vr-build
-        kind: fact
-        fact: f:6oopkt
-        use: |
-          Only the `auth.role-wiring` clause: the check reads `src/content/.cairn/site-facts.json`,
-          and without it reports that it needs one build, which is why the step runs after a build.
+          Only, as one continuation sentence: the warning means `createAuthGuard` doesn't receive
+          `{ runtime }`, and [[resolve-a-failed-setup]] gives the fix. Omit the type-error and
+          throw-at-load clauses, the older-engine fallback the warning's text describes, and the
+          older-engine spelling.
+      - id: vr-resolve-wiring-link
+        kind: link
+        target: '#resolve-a-failed-setup'
       - id: vr-doctor-link
         kind: link
         target: ../reference/cli-cairn-doctor.md#the-checks
       - id: s-deploy-role
         kind: step
         text: |
-          In the project directory, build and deploy the site as Deploy a change describes, so the
-          screen that adds editors accepts the new role.
+          In the project directory, build and deploy the site as Deploy a change describes. No
+          continuation follows: [[add-the-role-s-people]] states that the screen that adds editors
+          validates the posted role.
         requires:
           - roles-migrated
           - wiring-checked
@@ -834,13 +892,6 @@ sections:
       - id: ap-deploy-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md#deploy-a-change
-      - id: ap-vocab
-        kind: fact
-        fact: f:mbx6q1
-        use: |
-          Only: the admin mount forwards its runtime, so the screen that adds editors validates the
-          posted role against the declared vocabulary in `runtime.roles`, and the site sets the
-          vocabulary once on the adapter. Omit the `createEditorRoutes` wiring detail.
       - id: dp-handoff
         kind: handoff
         text: |
@@ -931,13 +982,29 @@ sections:
         text: |
           The checks run in order, as a numbered list introduced by a complete sentence, and a
           failed check leads to [[resolve-a-failed-setup]].
+      - id: v-roster
+        kind: step
+        text: |
+          On `/admin/editors`, make sure an email address you can receive mail at is on the roster
+          with the `staff` role.
+        requires:
+          - person-told
+        produces:
+          - test-person
+        optional: true
+      - id: v-roster-fact
+        kind: fact
+        fact: f:nj0nfm
+        use: |
+          Only, for the roster check: a person is added on `/admin/editors` with a name, email, and
+          role.
       - id: v-sign-in
         kind: step
         text: |
-          As one of the role's people, open `/admin` on the deployed site and sign in with the
-          emailed link.
+          On the deployed site, open `/admin` as that person, and sign in with the emailed link, as
+          two steps.
         requires:
-          - person-told
+          - test-person
         produces:
           - staff-signed-in
         optional: true
@@ -984,19 +1051,23 @@ sections:
       channel, from database to deploy.
     opens: |
       `createAuthChannel` builds the request, confirm, and logout actions for a separate login over
-      a numeric code, and the site supplies the routes, the code's delivery, and the roster.
+      a numeric code, and it ships no route or UI, so the site builds the login route and the
+      member area.
     items:
       - id: cp-code
         kind: fact
         fact: f:we2lmp
         use: |
-          Only the opening's claim: request, confirm, and logout actions over a numeric code, 8 digits by
-          default. Omit the configurable range.
+          Only the opening's claim: request, confirm, and logout actions over a numeric code. Omit
+          the 8-digit default, which [[choose-the-mechanism]] and [[test-the-channel-on-node]]
+          carry, and the configurable range.
       - id: cp-split
         kind: fact
-        fact: f:cf1avu
+        fact: f:q7fj6p
         use: |
-          Only the division of work between the site and the factory, for the opening.
+          Only, for the opening: the channel ships no route or UI, so the site builds the login
+          route and the member area. Never restate the factory-versus-site triad the introduction
+          carries.
       - id: cp-example-db
         kind: fact
         fact: f:uci4pa
@@ -1033,8 +1104,8 @@ sections:
     level: 3
     anchor: provision-the-channel-database
     opens: |
-      The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB`
-      and never as it, with the packaged migration in a sibling migrations directory.
+      The channel keeps its codes and sessions in a separate D1 database under a binding of its
+      own, never `AUTH_DB`, with the packaged migration in a sibling migrations directory.
     items:
       - id: pd-binding
         kind: fact
@@ -1139,7 +1210,7 @@ sections:
         kind: step
         text: |
           In `src/lib/server/members.ts`, export `findMemberId(contact, { env })`, which resolves to
-          the member's subject or `null`.
+          the member's subject, a stable identifier for the member, or `null`.
         requires:
           - mechanism-chosen
           - roster-store
@@ -1169,7 +1240,7 @@ sections:
         kind: step
         text: |
           In `src/lib/server/member-channel.ts`, create the channel with its six required members,
-          typed over the Worker env.
+          typed over the generated Worker `Env`.
         requires:
           - deliver-fn
           - channel-binding
@@ -1180,18 +1251,27 @@ sections:
         text: |
           Illustrative module modeled on the example site's channel, never copying its
           `captureDeliver` or `insecureTestChallenge`: an import of `env` from
-          `cloudflare:workers`, typed by the generated `Env` that the types step produces; a local
-          `Env` declaring only `MEMBER_DB`, for `resolveDb`; an exported `normalizeContact` that
-          trims and lowercases; and `createAuthChannel<Env>` with `resolveDb` returning
+          `cloudflare:workers`, typed by the generated `Env` that the types step produces; no local
+          `Env` interface; an exported `normalizeContact` that trims and lowercases; and
+          `createAuthChannel<Cloudflare.Env>`, as the example site types its channel, with
+          `resolveDb` returning
           `env?.MEMBER_DB`, `deliver: sendCodeEmail`, `lookup: findMemberId`,
           `normalize: normalizeContact`, a `challenge` that passes the form's
           `cf-turnstile-response` token and the imported `env.TURNSTILE_SECRET` to
           `verifyTurnstile`, and `cookie: { name: 'member_session' }`.
+      - id: s-dev-vars-file
+        kind: step
+        text: |
+          If no `.dev.vars` file sits beside the Wrangler config, create one there.
+        requires:
+          - channel-module
+        produces:
+          - dev-vars-file
+        optional: true
       - id: s-dev-vars
         kind: step
         text: |
-          In `.dev.vars` beside the Wrangler config, creating the file if needed, add the Turnstile
-          secret key as `TURNSTILE_SECRET`.
+          In `.dev.vars`, add the Turnstile secret key as `TURNSTILE_SECRET`.
         requires:
           - channel-module
           - turnstile-widget
@@ -1200,9 +1280,10 @@ sections:
       - id: s-dev-vars-example
         kind: step
         text: |
-          On a site that carries `.dev.vars.example`, as one from the Deploy-button tree does, add
-          `TURNSTILE_SECRET` to that file with an empty value. A site without that file, such as
-          one the setup command scaffolded, skips this step.
+          If your site carries `.dev.vars.example`, as a site created from the public Waymark
+          template does, add `TURNSTILE_SECRET` to that file with an empty value. A site without
+          that file, such as one the setup command scaffolded, skips this step. The page names the
+          tree by what the code calls it, never the internal "Deploy-button tree".
         requires:
           - secret-local
         produces:
@@ -1213,13 +1294,13 @@ sections:
         fact: f:nls26c
         use: |
           Only: `.dev.vars.example` is the template for the local-only `.dev.vars`, and only the
-          Deploy-button tree carries it; the setup command's scaffold ships none, and its
+          public Waymark template, `templates/waymark/`, carries it; the setup command's scaffold ships none, and its
           `.gitignore` keeps `.dev.vars` out of git. Omit the names the template lists.
       - id: s-types
         kind: step
         text: |
-          In the project directory, regenerate the Worker types, so the generated `Env` carries the
-          secret's name. Where `worker-configuration.d.ts` records a command on its first lines, as
+          In the project directory, regenerate the Worker types, so the generated `Env` carries
+          `MEMBER_DB` and the secret's name. Where `worker-configuration.d.ts` records a command on its first lines, as
           a scaffolded site's does, run that command; otherwise run `npx wrangler types`, which
           writes the file.
         requires:
@@ -1239,12 +1320,16 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          One sentence after the types step: `challenge` receives only the event and the form, so
-          the module reads `TURNSTILE_SECRET` from the `env` that `cloudflare:workers` exports,
-          which the generated `Env` types, while the local `Env` types only what `resolveDb`
-          receives.
+          After the types step: `challenge` receives only the event and the form, so the module
+          reads `TURNSTILE_SECRET` from the `env` that `cloudflare:workers` exports, which the
+          generated `Env` type describes. `createAuthChannel`'s type parameter describes the `env`
+          that `resolveDb` receives and the `env` in the context of `lookup`, `deliver`, and
+          `verify`, so typing the channel over `Cloudflare.Env`, the generated type, covers every
+          binding those functions read, as the example site's channel does. "Types" never appears
+          as a verb beside the noun.
         facts:
-          - f:pe4vuc
+          - f:am6hhb
+          - f:2ihgrk
       - id: wm-local-secret
         kind: fact
         fact: f:86h9o6
@@ -1290,7 +1375,7 @@ sections:
         fact: f:ffskeq
         use: |
           Only the `lookup` half: `lookup` takes a `{ env }` context so it reaches the roster's
-          binding, and it never reads request-shaped data.
+          binding, and it receives only that context, never the request.
       - id: wm-cookie
         kind: fact
         fact: f:4cw5dk
@@ -1313,7 +1398,7 @@ sections:
           check, then a bulleted list: `normalize` must be idempotent, canonical per identity, and
           injective across people, since a lossy one maps two people onto one rate budget;
           `lookup` must return a subject that is stable and canonical per person; `challenge` must
-          actually verify a human, since it is the whole economic bound on guessing a code.
+          verify a human, since it is the whole economic bound on guessing a code.
         facts:
           - f:ez788q
           - f:pa2hqh
@@ -1526,8 +1611,8 @@ sections:
         kind: fact
         fact: f:k0cryh
         use: |
-          Only the members page component, for the component step, and the prerender hazard, for
-          the sentence after the code.
+          Only the members page component, for the component step. The prerender hazard is carried
+          by the prerender steps alone; no sentence after the code restates it.
       - id: c-area-server
         kind: code
         text: |
@@ -1544,8 +1629,8 @@ sections:
         kind: fact
         fact: f:dtz8oa
         use: |
-          Only: the subject is the stable string `lookup` returned, so the page loads the member's
-          records by it from the site's store.
+          Only: the subject is the stable string `lookup` returned, and a member page loads the
+          member's records from the site's store by that subject.
       - id: ga-logout
         kind: fact
         fact: f:gubeex
@@ -1564,8 +1649,7 @@ sections:
       follow the routes.
     level: 3
     opens: |
-      A channel session lasts 30 days by default, and a site ends a removed member's sessions early
-      with `verify`, with `revokeSessions`, or with both.
+      A channel session lasts 30 days by default.
     items:
       - id: er-ttl
         kind: fact
@@ -1576,8 +1660,8 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          A complete sentence saying a site uses either or both of the following ways, then the two
-          as a bulleted list, each with its condition first.
+          A complete sentence saying a site ends a removed member's sessions early with either or
+          both of the following, then the two as a bulleted list, each with its condition first.
       - id: e-verify
         kind: step
         text: |
@@ -1608,8 +1692,8 @@ sections:
         kind: fact
         fact: f:ffskeq
         use: |
-          Only the `verify` half: `verify` takes the same `{ env }` context as `lookup` and never
-          reads request-shaped data.
+          Only the `verify` half: `verify` takes the same `{ env }` context as `lookup`, never the
+          request.
       - id: er-revoke
         kind: fact
         fact: f:1rstld
@@ -1646,13 +1730,19 @@ sections:
         kind: fact
         fact: f:fcqs22
         use: |
-          Only: `createChannelDb` needs `node:sqlite`. The Node floor is placed in
-          [[before-you-begin]].
+          Only: `createChannelDb` needs `node:sqlite`, which every Node release at the floor named
+          in [[before-you-begin]] provides. Never call `node:sqlite` the floor's reason.
+      - id: tn-unflag
+        kind: fact
+        fact: f:tnvu0a
+        use: |
+          Only the bound on the claim: `node:sqlite` is available below the floor, so the floor is
+          not its reason. Omit the Node 22.13 version and the missing-guard clause.
       - id: t-inline
         kind: step
         text: |
-          In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`,
-          as the scaffold's config does, and add it if it's missing.
+          In `vitest.config.ts`, if `test.server.deps.inline` doesn't list `@glw907/cairn-cms`, add
+          it. The continuation says the scaffold's config already lists it.
         requires:
           - test-toolchain
           - channel-module
@@ -1774,6 +1864,12 @@ sections:
           Only: `wrangler secret put` creates a new Worker version and deploys it immediately, so the
           secret is live before the last step ships the code that reads it. Omit the gradual
           deployments clause.
+      - id: dc-secrets-link
+        kind: link
+        target: https://developers.cloudflare.com/workers/configuration/secrets/
+        text: |
+          Cloudflare's Secrets page, linked beside the version-and-deploy sentence, since that
+          behavior is the vendor's.
       - id: d-deploy
         kind: step
         text: |
@@ -1855,17 +1951,25 @@ sections:
       - id: c-returns
         kind: step
         text: |
-          Confirm that the login page returns.
+          Confirm that the page redirects to `/members/login`.
         requires:
           - member-signed-out
         produces:
           - login-returned
+      - id: c-open-members
+        kind: step
+        text: |
+          Open `/members`.
+        requires:
+          - login-returned
+        produces:
+          - members-opened
       - id: c-gated
         kind: step
         text: |
-          Confirm that `/members` now redirects to the login page.
+          Confirm that it redirects to `/members/login`.
         requires:
-          - login-returned
+          - members-opened
         produces:
           - channel-verified
       - id: vm-resolve-link
@@ -1881,8 +1985,7 @@ sections:
       The page's failure path holds both paths' failures in the order a reader meets them, after both
       paths so either path's checks can send a reader here.
     opens: |
-      Each failure below names the symptom, then its fix; the role path's failures come first and
-      the channel's follow.
+      The following failures cover the role path first, then the channel.
     items:
       - id: x-wiring
         kind: failure
@@ -1891,15 +1994,14 @@ sections:
           `cairn doctor` reports `auth.role-wiring-missing`.
         cause: |
           The adapter declares custom roles, but `createAuthGuard` in `src/hooks.server.ts` was not
-          passed `{ runtime }`. On this engine that guard throws when the hooks module loads; the
-          owner-and-editor fallback the warning describes is an older engine's.
+          passed `{ runtime }`.
         handledBy: r-wiring
       - id: r-wiring
         kind: step
         text: |
           If `cairn doctor` reports `auth.role-wiring-missing`, pass `{ runtime }` to
-          `createAuthGuard` in `src/hooks.server.ts`, as [[declare-the-role]] does, then rebuild,
-          rerun the check, and deploy as [[deploy-the-role]] does.
+          `createAuthGuard` in `src/hooks.server.ts`, as [[declare-the-role]] does, then rerun the
+          check and deploy as [[deploy-the-role]] does.
       - id: rs-wiring-link
         kind: link
         target: '#declare-the-role'
@@ -1931,7 +2033,7 @@ sections:
         kind: failure
         from: v-lands
         symptom: |
-          The person lands on the minimal signed-in welcome screen, not the home screen.
+          The person lands on the welcome view, not the home screen.
         cause: |
           The deployed vocabulary gives the role no `home`, or omits the role, which then resolves
           to `none`.
@@ -1940,12 +2042,12 @@ sections:
         kind: fact
         fact: f:kqcyv1
         use: |
-          Only, for the symptom, the welcome screen a `none`-capability role with no `home` lands
+          Only, for the symptom, the welcome view a `none`-capability role with no `home` lands
           on.
       - id: r-welcome
         kind: step
         text: |
-          If the person lands on the welcome screen, check that the vocabulary declares the role with
+          If the person lands on the welcome view, check that the vocabulary declares the role with
           its `home`, then redeploy as [[deploy-the-role]] does.
       - id: x-forbidden
         kind: failure
@@ -1953,8 +2055,8 @@ sections:
         symptom: |
           The home screen answers 403 to the role's people.
         cause: |
-          The screen's load function gates with `requireAccess`, and no route rule in the access map
-          names the role.
+          The screen's load function gates with `requireAccess`, and no access-map key lists the
+          role.
         handledBy: r-forbidden
       - id: r-forbidden
         kind: step
@@ -1974,8 +2076,8 @@ sections:
           On a site that keeps an access map, the home screen's link does not show in the role's
           sidebar, though `/admin` lands on the home screen.
         cause: |
-          The deepest map key matching `/admin/staff` does not list `staff`, so the map decides the
-          entry and refuses the role.
+          The deepest access-map key matching `/admin/staff` does not list `staff`, so the map
+          decides the entry and refuses the role.
         handledBy: r-map-hides
         facts:
           - f:altcjp
@@ -1990,13 +2092,13 @@ sections:
         fact: f:5sx6zl
         use: |
           Only the clause on a route-path target for a `none`-capability session: the deepest
-          matching key must list the role.
+          matching access-map key must list the role.
       - id: r-map-hides
         kind: step
         text: |
-          If the site keeps an access map and the link does not show, add `staff` to the map key
-          that matches `/admin/staff`, as Restrict admin access describes. Then redeploy as
-          [[deploy-the-role]] does. A site with no access map skips this check.
+          If the site keeps an access map and the link does not show, add `staff` to the access-map
+          key that matches `/admin/staff`, as Restrict admin access describes. Then redeploy as
+          [[deploy-the-role]] does. This failure cannot occur on a site with no access map.
       - id: rs-map-link
         kind: link
         target: restrict-admin-access.md
@@ -2091,33 +2193,41 @@ sections:
           The request answers that a code was sent, but no code arrives.
         cause: |
           `lookup` returned `null` for the normalized contact, because the contact is not on the
-          roster or its normalized form does not match the roster's, or `lookup` threw.
+          roster or its normalized form does not match the roster's, or `lookup` threw, or the
+          site's `deliver` threw while it sent the code. The one symptom covers all three, and only
+          the records tell them apart, so the former separate delivery-failure entry is merged
+          here.
         handledBy: r-no-code
+        facts:
+          - f:dtz8oa
+          - f:7cot0m
+          - f:tx48wk
       - id: rs-no-code
         kind: fact
         fact: f:dtz8oa
         use: |
           Only: `lookup`'s answer for the normalized contact, a subject or null, decides membership.
+      - id: rs-requested
+        kind: fact
+        fact: f:7cot0m
+        use: |
+          Only: the record is `auth.channel.requested`, its `outcome` is `unknown` for a null
+          `lookup` and `lookup_failed` for a throw, and the request answers `sent` either way. Omit
+          the levels.
+      - id: rs-send-failed
+        kind: fact
+        fact: f:tx48wk
+        use: |
+          Only: a throwing `deliver` logs `auth.channel.send_failed`, whose `error` field carries the
+          scrubbed failure. Omit the cleanup and refund clauses.
       - id: r-no-code
         kind: step
         text: |
-          If no code arrives, read the `auth.channel.requested` record in Workers Logs: an `outcome`
-          of `unknown` means the normalized contact is not on the roster `lookup` reads, and
-          `lookup_failed` means `lookup` threw.
-      - id: x-send-failed
-        kind: failure
-        from: c-enter
-        symptom: |
-          The request answers that a code was sent, but no code arrives, and Workers Logs shows
-          `auth.channel.send_failed`.
-        cause: |
-          `deliver` threw while sending the code.
-        handledBy: r-send-failed
-      - id: r-send-failed
-        kind: step
-        text: |
-          If Workers Logs shows `auth.channel.send_failed`, read its `error` field and fix the
-          transport your `deliver` calls.
+          If no code arrives, read the channel's records in Workers Logs, linking the log events
+          reference: an `auth.channel.requested` record with an `outcome` of `unknown` means the
+          normalized contact is not on the roster `lookup` reads, and `lookup_failed` means
+          `lookup` threw; an `auth.channel.send_failed` record means `deliver` threw, and the fix
+          is to read its `error` field and fix the transport `deliver` calls.
       - id: x-bad-code
         kind: failure
         from: c-enter
@@ -2204,12 +2314,6 @@ dispositions:
       Neither path composes the admin toolkit: the member area sits outside `/admin`, where the
       toolkit's daisyUI classes are unstyled, and the home screen's composition belongs to Add a
       custom admin screen. The toolkit reference owns its rendering contract.
-  - fact: f:tnvu0a
-    disposition: cut
-    reason: |
-      Restates `f:fcqs22`'s missing runtime guard, and its `node:sqlite` unflag point (Node 22.13)
-      sits below the declared floor of 24 the page names, so stating both floors gives the reader a
-      hedge no step depends on. No outlined page documents the dev package's Node history.
   - fact: f:2gtftn
     disposition: subordinated
     reference: add-cairn-to-a-sveltekit-app.md#customize-the-sign-in-email
@@ -2373,7 +2477,9 @@ constraints:
   - |
     The channel sample never copies the example site's `captureDeliver` or
     `insecureTestChallenge`. Its `challenge` reads `TURNSTILE_SECRET`, the one name the
-    `.dev.vars`, `.dev.vars.example`, and `wrangler secret put` steps store.
+    `.dev.vars`, `.dev.vars.example`, and `wrangler secret put` steps store. The channel is typed
+    over the generated `Cloudflare.Env`, as the example site's is, never over a local `Env` that
+    omits a binding `lookup`, `deliver`, or `verify` reads (`f:2ihgrk`).
   - |
     Keep the headings of [[provision-the-channel-database]] and [[write-the-channel-module]]
     stable: `docs/reference/auth-channel.md` links both anchors.
@@ -2390,12 +2496,14 @@ constraints:
     its condition first and says who skips it. [[show-the-home-screen-in-the-sidebar]] is a
     one-step procedure, a single bulleted item. The two removal steps in
     [[end-a-removed-member-s-sessions]] are a bulleted list of alternatives. The verification
-    checks and the checks in [[resolve-a-failed-setup]] are numbered lists, and there each failure
-    and its handler render as one numbered item.
+    checks are numbered lists. The failures in [[resolve-a-failed-setup]] are a bulleted list,
+    since a reader matches a symptom against them rather than running them in order, and each
+    failure and its handler render as one bulleted item.
   - |
     The channel path states no threat claim; the security model owns the channel's threat surface.
-    Do not claim that applying an already-applied `0001_roles.sql` is a no-op, or that the setup
-    command applied it to the remote database; no fact states either.
+    Do not claim that applying an already-applied `0001_roles.sql` is a no-op; no fact states it.
+    That the setup command applies the scaffold's copy when it runs a new site's first deploy rests on
+    `f:m4y3m4`, and that the scaffold ships it on `f:rn62i1`.
   - |
     No step suggests trying the role under the dev backend, which mints an owner (`f:7cv105`);
     both paths end with a deploy and a check on the deployed site.

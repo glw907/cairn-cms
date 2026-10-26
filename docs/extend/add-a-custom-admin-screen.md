@@ -1,41 +1,51 @@
 # Add a custom admin screen
 
-cairn manages a site's markdown content and the admin frame around it, and it leaves the site's other data and domain logic to the developer, whom it serves through a thin seam, not a built-in feature.
-In the admin, that seam is the custom admin screen, a SvelteKit route under `src/routes/admin/` that SvelteKit resolves ahead of the engine's `[...path]` catch-all and that can adopt the packaged admin toolkit.
-A site builds one to manage data it keeps outside its markdown content, such as rows in the Cloudflare D1 database that a scaffolded site binds as `APP_DB` for the developer's use, beside the engine's sign-in database.
-A site with another kind of markdown content declares a concept in its adapter instead of building a screen, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.
+A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside `CairnAdminShell`, can adopt the packaged admin toolkit, and sits behind the same `/admin` sign-in guard as the engine's screens.
+A developer builds one for an administrative function the engine does not provide, such as a report, a tool, or a dashboard.
+Some screens keep data outside the markdown content, such as the example site's list of signups in a D1 database, or a members directory.
+Others keep none, such as a form that sends a newsletter through the site's mail service, a report built from records the site already holds, or a button that calls an outside service to clear a CDN cache.
+A site with another kind of markdown content declares a concept in its adapter instead, as [Define an adapter and schema](define-an-adapter-and-schema.md) describes.
 
-The route's place under `/admin` gives the screen the [`CairnAdminShell`](../reference/admin.md#cairnadminshell) frame and the same sign-in guard as the engine's screens.
-The guard gates the `/admin` subtree as a whole and decides no route's authorization, so the screen checks the site's access map itself, on its read and on every write.
-An entry's edit history comes from git, which never sees a screen's writes to its D1 database, so the screen records those writes in the audit trail itself. Once the site wires an audit sink, each `ctx.audit` call adds one row naming the actor, the action, and the entity.
-`cairn-audit` applies the rules it runs on the engine's admin components to everything under `src/routes/admin`, a custom screen included.
-The steps that follow build a screen under `/admin` that renders inside the admin shell, enforces the site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
+The route's place under `/admin` gives the screen the shell and the sign-in guard.
+The guard decides nothing per route, so the access check belongs to the screen.
+An entry's history comes from git.
+A screen's actions sit outside git, whether they write a site database or call an outside service, and the audit trail is their record.
+Every wrapped action that succeeds must emit an audit record, and both action wrappers audit an access refusal.
+`cairn-audit` holds the screen to the rules it applies to the engine's admin components.
+The steps that follow build a screen that renders inside the admin shell, enforces your site's access map on its reads and writes, records each write in the audit trail, and passes `cairn-audit`.
 
-A developer may first meet a custom screen as the signups screen, which the setup command writes into every scaffolded site at `src/routes/admin/signups/` and which the repository's example site, `examples/showcase`, also carries.
-That screen is the worked example, followed from its route through its load, its actions, their audit calls, its markup, and its styles.
-[Build the dialog form](#build-the-dialog-form) and [Load row detail on demand](#load-row-detail-on-demand) apply only to a screen with a dialog form or expanding rows.
-[Animate the screen](#animate-the-screen) applies only to a screen that animates.
-The steps assume familiarity with SvelteKit's form actions and server hooks and with Svelte's snippets and runes.
+The worked example is the signups screen at `examples/showcase/src/routes/admin/signups/`, which a scaffolded site does not ship.
+A developer who has opened that screen finds each of its calls, `requireAccess`, `createSectionAction`, and `ctx.audit`, explained in the step that adds it.
+[Build the dialog form](#build-the-dialog-form), [Load row detail on demand](#load-row-detail-on-demand), and [Animate the screen](#animate-the-screen) apply only to a screen with that feature.
+The steps assume familiarity with SvelteKit's routing, form actions, and server hooks, with Svelte's snippets and runes, and with Cloudflare D1 bindings.
 
-To declare the site's access map, or to change who reaches an existing screen, see [Restrict admin access](restrict-admin-access.md).
+To declare the access map or change who reaches a screen, see [Restrict admin access](restrict-admin-access.md).
 To list the screen in the sidebar, see [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
 The reasoning behind the access map, the audit's site-wide configuration, and the media upload protocol each have a separate page, listed under [See also](#see-also).
 
 ## Before you begin
 
-The steps assume a scaffolded site, an access-map rule for the screen, a D1 binding for the screen's data, and a D1 database for the audit trail:
+The steps assume the following setup:
 
-- A site that `create-cairn-site` scaffolded, whose `cairn-audit.config.json` names both compiled admin sheets.
-- An access-map rule for the screen's route, as [Restrict admin access](restrict-admin-access.md) describes.
-- A D1 binding for the screen's data, as Cloudflare's [D1 Workers Binding API](https://developers.cloudflare.com/d1/worker-api/) describes.
-- A D1 database for the audit trail, prepared as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.
+- A site that the setup command scaffolded, or a hand-built site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings to the same shape.
+- A rule for the screen's route in your site's access map.
+  The site declares the map once, as the adapter's `access` member.
+  A scaffolded site's adapter declares no `access` member.
+  The example site's adapter declares `'/admin/signups': ['owner']`, which admits only owners to its signups screen.
+  [Restrict admin access](restrict-admin-access.md) describes how to declare the rule.
+- A D1 database that your site binds in `wrangler.jsonc`, with a separate migrations directory, for a screen that keeps data.
+  `wrangler d1 migrations apply` walks one directory per database.
+  The scaffold's `wrangler.jsonc` binds no database beyond the engine's `AUTH_DB`, and the example site's `APP_DB` is not part of the scaffold.
+  Cloudflare's [D1 Worker API](https://developers.cloudflare.com/d1/worker-api/) documentation describes the binding.
+  A screen with no data skips this item.
+  Its actions use `createAdminAction` with the `access` option set, since `createSectionAction` requires a binding resolver.
+- A D1 database that holds the `audit_log` table from the engine's opt-in `0002_audit.sql` migration, as the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry describes.
 
-The scaffold binds `APP_DB`.
-Its `signups` table exists only after you apply the signups migration in the scaffold's `migrations-app` directory.
-Cloudflare's [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/) documentation describes how to apply a migration.
-
-The setup command writes the admin layout's two files and the `[...path]` catch-all's two files into `src/routes/admin/`.
-The `signups/` directory beside them is already a custom screen, so a new screen adds one more directory beside it.
+The admin is two pairs of route files: the layout pair that renders `CairnAdminShell` and the `[...path]` catch-all pair.
+The admin's `+error.svelte` sits beside them.
+The example site, `examples/showcase`, adds a `signups/` screen beside the catch-all.
+A scaffolded site does not ship it.
+The following tree shows the source files that the steps touch, with the new screen's directory named after the example site's.
 
 ```text
 src/
@@ -43,52 +53,65 @@ src/
 ├── admin.css
 └── routes/
     └── admin/
+        ├── +error.svelte
         ├── +layout.server.ts
         ├── +layout.svelte
         ├── [...path]/
         │   ├── +page.server.ts
         │   └── +page.svelte
-        └── signups/
+        └── signups/            (the new screen)
             ├── +page.server.ts
             └── +page.svelte
 ```
 
-For a hand-built site, [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) brings it to the same shape as a scaffolded site.
+The first step creates that directory.
 
 ## Place the route
 
-A route directory under `src/routes/admin/` is the whole registration, since SvelteKit resolves it ahead of the `[...path]` catch-all and the shared layout renders it inside `CairnAdminShell`.
+A route directory under `src/routes/admin/` is the whole registration for a custom screen.
+SvelteKit sorts a route under `src/routes/admin/` ahead of the engine's `[...path]` catch-all, with no configuration.
+The shared admin layout renders the screen as `CairnAdminShell`'s children, with the shell's nav, user menu, and theme, and the screen needs no wrapper code.
+The screen sits behind the same `/admin` sign-in guard as the engine's screens.
+Every `/admin` path except the sign-in page and the magic-link confirm page is gated.
 
 To place the route, follow these steps:
 
 1. In `src/routes/admin/`, create a directory named for the screen.
 2. In that directory, create `+page.server.ts` for the load and the actions, and `+page.svelte` for the markup.
 
-Every `/admin/**` route renders as the shell's children with its nav, user, and theme, so the screen needs no wrapper code.
-The shell's favicon and sidebar brand mark are fixed to the cairn glyph and wordmark.
-The only site identity the shell shows is `siteName`, in the page title and the topbar.
+The shell keeps the cairn glyph and wordmark as its favicon and sidebar brand mark.
+The only site identity it shows is `siteName` from your site config, in the page title and the topbar.
 
-The site's root layout must render no visible chrome around `/admin`, since a header, a footer, or a width cap stops the shell from filling the viewport.
-In dev, a check logs one console error when an ancestor of the shell caps its width, and it never throws or changes rendering.
-To list the screen in the sidebar, see [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
+**Symptom:** The admin shell does not fill the viewport, and in dev the browser console shows one error about a width cap on an ancestor of the admin root.
+
+**Cause:** Your site's root layout wraps every route, the admin included, in a header, a footer, or a width cap.
+A dev-only check catches the width-cap case and logs that one error, and it never changes rendering.
+
+**Fix:** Make the root layout chrome-free for `/admin`, as [the admin routes reference](../reference/admin-routes.md#the-root-layout-must-be-chrome-free) describes.
+
+Listing the screen in the sidebar is a separate task, covered in [Arrange the admin sidebar](arrange-the-admin-sidebar.md).
 
 ## Gate it
 
-The screen enforces the access map itself, with [`requireAccess`](../reference/sveltekit.md#requireaccess) in its `load` and an access-checking wrapper around every action.
-[`createAuthGuard`](../reference/sveltekit.md#createauthguard) admits a session to the whole `/admin` subtree before any `load` runs and decides nothing per route.
-The `requireAccess` call and every [`createSectionAction`](../reference/sveltekit.md#createsectionaction) wrapper share one fail-closed predicate, so a session the map does not admit is refused on the read and on the write.
-A route the map has no rule for refuses every session, owner included.
-The `createSectionAction` entry lists the checks the predicate runs, in order.
-An action needs a separate check because SvelteKit dispatches a matched form action without re-running `load`.
-A hand-rolled action that skips the check admits any signed-in session to the write and records nothing.
+The access check belongs in the screen's `load`, because the sign-in guard admits a session to `/admin` and decides nothing per route.
+`createAuthGuard({ runtime })` signs a session in for the whole `/admin` subtree before any load runs.
+It does not decide which routes that session may reach.
+
+Two calls enforce your site's access map: `requireAccess` in the `load`, and an access-checking wrapper around every action.
+Both run the same fail-closed check, `hasAccessRule` and then `canReach`.
+Both read the map that the guard attaches to every admin request it signs in, taken from the adapter's `access` member.
+SvelteKit runs a matched form action before the page's `load`, and an enhanced submission's request runs the action alone.
+The load's check therefore never guards an action.
+An action that skips the check admits any signed-in session to the write and records nothing.
 
 To gate the screen's read, follow this step:
 
-- In the screen's `+page.server.ts`, call `requireAccess` in `load` before it reads anything.
+- In the screen's `+page.server.ts`, call `requireAccess(event)` in `load` before it reads anything.
 
-The signups `load` calls `requireAccess` before it reads the `signups` table through `APP_DB`, and it fails closed with a 500 when the binding is absent.
+The following load comes from the example site's `examples/showcase/src/routes/admin/signups/+page.server.ts`, without its logger call and comments.
+It calls `requireAccess(event)` before the read and fails with a 500 when the `APP_DB` binding is absent.
 
-<!-- snippet-check-skip: imports cloudflare:workers, which a site's Worker types declare -->
+<!-- snippet-check-skip: imports cloudflare:workers and reads env.APP_DB, which only the site's Worker types declare -->
 ```ts
 // src/routes/admin/signups/+page.server.ts
 import type { PageServerLoad } from './$types';
@@ -104,7 +127,7 @@ interface SignupRow {
 }
 
 function requireAppDb(): D1Database {
-  const db = env.APP_DB;
+  const db: D1Database | undefined = env.APP_DB;
   if (!db) error(500, 'This screen is not configured.');
   return db;
 }
@@ -119,43 +142,58 @@ export const load: PageServerLoad = async (event) => {
 };
 ```
 
-A route nested under the screen inherits the guard and never the screen's `requireAccess` rule.
-A detail endpoint therefore calls `requireAccess` in its server file and takes a separate access-map entry, as the nested-route steps of [Load row detail on demand](#load-row-detail-on-demand) show.
-An action gets its access check from a wrapper, chosen in [Choose the action wrapper](#choose-the-action-wrapper).
+A route with no rule in the map refuses every session, and the owner has no exemption.
+A route nested under the screen inherits the sign-in guard but not the screen's `requireAccess` call, so it makes the call itself.
+The access map matches a route by its deepest key prefix, and the screen's key covers the nested route.
+One case resolves to no rule: a nested route that starts with a dynamic segment when the map holds a deeper key under the screen's.
+Otherwise the nested route needs an entry only for a different rule.
+[Load row detail on demand](#load-row-detail-on-demand) applies this to a detail endpoint.
 
 ## Choose the action wrapper
 
-A screen whose actions write through a database binding wraps them in `createSectionAction`, and a screen with no binding uses `createAdminAction` with its `access` option set.
+A screen whose actions write through a database binding uses `createSectionAction`, and a screen with no binding uses `createAdminAction` with its `access` option set.
+`createSectionAction` requires a `resolveDb` binding resolver.
+`createAdminAction` carries the CSRF and audit contract with no binding.
 
 To choose the wrapper, follow this step:
 
 - In the screen's server file, import the wrapper that matches whether its actions write through a binding.
 
-The following table compares the two wrappers' access checks, refusals, binding requirements, and refusal records.
+The following table compares when each wrapper checks the access map, how it refuses a session, whether it needs a binding, and how it records a refusal.
 
 | Behavior | `createSectionAction` | `createAdminAction` |
 |---|---|---|
 | Checks the access map | On every call | Only when the call sets the `access` option |
 | Refuses a session | Returns `fail(403)` | Throws `error(403, ...)` |
-| Needs a binding | Yes, through a required `resolveDb` | No |
-| Records a refusal | Audited, and logged as `auth.access.refused` | Audited with action `deny` on entity `admin-action`, and logged as `auth.access.refused` with `access.target`, an access-map key and never a request path |
+| Needs a binding | Yes, a `resolveDb` resolver | No |
+| Records a refusal | Audited, and logged as `auth.access.refused` | Audited, and logged as `auth.access.refused` |
 
-The `deniedMessage` option replaces `createSectionAction`'s 403 message, while `createAdminAction`'s message is fixed.
-The signups screen writes through `APP_DB`, so the remaining steps use `createSectionAction`.
+Without the `access` option, `createAdminAction` authorizes nothing.
+Both wrappers show the same default refusal message, which names no gate, and only `createSectionAction` takes a `deniedMessage` option to replace it.
+The signups screen writes through `APP_DB`, so the rest of the page uses `createSectionAction`.
+For the `access` option, see the [`createAdminAction`](../reference/sveltekit.md#createadminaction) entry.
 
 ## Wrap the actions
 
-One `createSectionAction` call builds the section's wrapper, and each form action passes its handler and its audited `action` and `entity` to that wrapper.
-A form action wrapped this way is a section action.
-The call's `Env` type parameter describes the site's platform bindings, since the engine ships no `Env` type, and `resolveDb` receives `Env | undefined`.
-The type parameter does not infer from an unannotated `resolveDb` parameter, so the site annotates that parameter or passes explicit type arguments.
-The example site passes the `Env` that `wrangler types` generates in `worker-configuration.d.ts`.
+One `createSectionAction` call builds a reusable wrapper for the section, and each form action runs through it.
+`resolveDb` reads your site's binding off the Worker env that the engine passes it.
+`Env` is a type parameter for your site's bindings, because the engine ships no `Env` type.
+The example site passes the `Env` that its generated `worker-configuration.d.ts` declares.
 
 To wrap the actions, follow these steps:
 
-1. In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` that reads the section's binding.
+1. In the screen's server file, build one wrapper with `createSectionAction`, passing a `resolveDb` whose parameter is annotated `Env | undefined`.
+
+   **Symptom:** A binding read off the `resolveDb` parameter, such as `workerEnv?.APP_DB`, fails to typecheck against the type `{}`.
+
+   **Cause:** `createSectionAction` does not infer `Env` from an unannotated `resolveDb` parameter, so `Env` collapses to `{}`.
+
+   **Fix:** Annotate the parameter as `Env | undefined`, or pass `Env` and the database type as explicit type arguments.
+
 2. In the exported form actions, wrap each handler in that wrapper, passing its `action` and `entity`.
-3. On the destructive action, add `ownerOnly: true` to the options.
+3. On a destructive action, add `ownerOnly: true` to the options.
+
+The following excerpt continues the same file with the example site's wrapper declaration and its `create` and `remove` actions, without the comments.
 
 <!-- snippet-check-skip: reads Env, which only the site's generated worker-configuration.d.ts declares -->
 ```ts
@@ -196,23 +234,33 @@ export const actions: Actions = {
 ```
 
 Each handler receives `{ form, ctx }`, writes through `ctx.db`, and calls `ctx.audit` with a `detail` or an `entityId`.
-Underneath, the wrapper runs the editor identity, CSRF, and single form-read work of [`createAdminAction`](../reference/sveltekit.md#createadminaction), so a section never calls `createAdminAction` directly.
-Every successful path through a handler must call `ctx.audit` before it returns.
+The audit record takes its `action` and `entity` from the wrapper's options unless the handler's `ctx.audit` call passes one.
+Underneath, the wrapper runs the editor identity, CSRF, and single form-read work of `createAdminAction`.
+A section never calls `createAdminAction` directly.
+Every successful path through a handler calls `ctx.audit` before it returns.
+A handler that rejects with `fail()` before it writes owes no record.
 [Resolve a missing audit record](#resolve-a-missing-audit-record) traces a record that never arrives.
 
 ## Wire the audit sink
 
-The `ctx.audit` call persists a record only when `hooks.server.ts` sets an audit sink on `event.locals.cairnAuditSink`, composed with the auth guard through `sequence`.
-The sink is typically [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) over a bound D1 database.
-The file holds one `handle` export, which `sequence` builds from both handles.
-The sink's handle only sets a `locals` field the route reads, so it needs nothing an earlier handle sets and works placed after `createAuthGuard`.
+A `ctx.audit` call persists a record only when a handle in `hooks.server.ts` sets `event.locals.cairnAuditSink`, typically to a `createD1AuditSink` over a bound D1 database.
+The file has one `handle` export.
+`sequence`, which `@sveltejs/kit/hooks` exports beside the `Handle` type, composes several handles into it and runs them in order.
+The sink's handle only sets a `locals` field that the route reads, and it works placed after `createAuthGuard`.
+The scaffold's hooks module picks between the dev backend and `createAuthGuard({ runtime })` in one `if`, and it exports the result as `handle`.
+The dev backend wires no sink.
 
 To wire the sink, follow these steps:
 
-1. In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink`.
-2. In the same file, compose that handle after `createAuthGuard` through `sequence`.
+1. In `hooks.server.ts`, add a handle that sets `event.locals.cairnAuditSink` to a `createD1AuditSink` over the audit database.
+2. In that handle, guard the env read with `building` from `$app/env`, since every `cloudflare:workers` env read throws while the build prerenders.
+3. In the production branch, set `handle` to `sequence(createAuthGuard({ runtime }), wireAuditSink)`.
 
-<!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it, reading env.AUDIT_DB, which only the site's generated Env declares -->
+The following excerpt of `hooks.server.ts` shows the `wireAuditSink` handle from the `createD1AuditSink` reference entry and the production branch's assignment.
+The scaffold's hooks module wires no sink, so the excerpt shows only the lines to add.
+It imports `runtime` from `#chassis/cairn.server.js` and imports no access map.
+
+<!-- snippet-check-skip: excerpt; assigns the scaffold's handle and reads env.AUDIT_DB, which only the site's generated Env declares -->
 ```ts
 // src/hooks.server.ts (excerpt)
 import { building } from '$app/env';
@@ -229,46 +277,48 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
   return resolve(event);
 };
 
-// ...
+// ...the dev-backend branch stays as the scaffold wrote it
 handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 ```
 
-The excerpt shows the scaffold's production branch, and the dev branch keeps `devBackendHandle({ runtime })`.
-A scaffolded site's hooks file already imports some of these names, so the excerpt's imports merge into its existing ones.
+Inside a request, the handle passes the `waitUntil` that `cloudflare:workers` exports, with no bind.
+A Cron `scheduled` handler that holds an `ExecutionContext` passes `ctx.waitUntil.bind(ctx)` instead.
+The sink is fail-open: it returns before the insert settles, and a failed insert is logged and never fails the audited action.
+`createSectionAction` audits each refusal its checks make, except a rate-limit refusal.
+The session and CSRF refusals underneath it leave no audit record.
+For the sink's parameters, see the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry.
 
-The snippet's `runtime` import is the composed runtime, and the guard reads from it the access map that [Restrict admin access](restrict-admin-access.md) describes.
-A site declares that map once, as the adapter's `access` member, so the hooks file imports no map.
-
-The handle checks `building` from `$app/env` before it reads `env.AUDIT_DB`, because every read of the `env` from `cloudflare:workers` throws while the build prerenders.
-The handle passes the `waitUntil` that `cloudflare:workers` exports, which needs no bind.
-A caller that holds an `ExecutionContext`, such as a Cron `scheduled` handler, passes `ctx.waitUntil.bind(ctx)` instead.
-The unbound method typechecks and then throws `Illegal invocation` in workerd, after which the row can be lost.
-The sink returns before the insert settles and logs a rejected insert, so a failed insert never fails the audited action.
-
-The wrapper writes an audit row for every refusal its checks make, so a refused caller can fill a persisted audit table cheaply.
-A section bounds that cost by setting the `rateLimit` option, whose members and fallback the [`createSectionAction`](../reference/sveltekit.md#createsectionaction) entry states.
-The 429 the wrapper returns for an exceeded limit writes no row, and neither do the session and CSRF refusals underneath it.
+The server side is complete, and the screen's markup comes next.
 
 ## Compose the screen from the toolkit
 
-The screen's markup composes the admin toolkit's primitives, the same set the engine's screens compose, in place of a hand-rolled table, list, or field.
-The engine's `ManageEditors` screen builds from the toolkit's `PageHeader` and `AdminTable`.
+The screen's markup composes the admin toolkit's primitives in place of a hand-rolled table, list, or field.
+The engine's screens compose the same set, and `ManageEditors` builds from its `PageHeader` and `AdminTable`.
+Each primitive has one job:
+
+- `PageHeader` holds the eyebrow, title, and meta band.
+- `AdminTable` holds the table chrome around your header and row markup.
+- `ListToolbar` holds the search and filter band.
+- `ToolbarDisclosure` is a trigger that opens a floating panel.
+- `Pagination` renders page navigation.
+- `StatusChip` renders a status chip.
+- `EmptyState` renders the centered empty state.
+- `FieldLabel` wraps a control in its label.
+- `ExpandableRow` renders a summary row with an expand-in-place panel.
+- `MediaPicker` is a picker over the media library.
+- `Tooltip` gives an icon-only control a hover and focus description.
 
 To compose the markup, follow these steps:
 
-1. In the screen's markup, import the primitives it needs from the admin toolkit.
+1. In the screen's `+page.svelte`, import the primitives it needs from the admin toolkit.
 2. In each form that posts to one of the screen's actions, mount a `CsrfField` from `@glw907/cairn-cms/admin`.
 
-   Inside the admin shell, the field reads its token from context, so it takes no prop.
-   The guard refuses a form without it with a 403.
-   The signups screen mounts one in its `create` form and in its `remove` form.
+   The guard refuses an admin form POST whose `csrf` field is missing or wrong with a 403.
+   Inside the shell, `CsrfField` takes no `token` prop and reads the token the shell provides.
+   The signups screen mounts it in both its forms.
 
-A smaller screen shows the toolkit alone, as an Events list that composes three primitives with the table inside a card.
-Each of the three primitives has one job:
-
-- `PageHeader` holds the eyebrow, title, and meta band.
-- `AdminTable` holds the table chrome around the caller's header and row markup.
-- `StatusChip` renders a status chip.
+A smaller screen shows the toolkit alone: an Events list that composes three primitives, with the table inside a card.
+It illustrates the composition and is not a second screen to build.
 
 ```svelte
 <script lang="ts">
@@ -303,46 +353,54 @@ alt: Reproduction of a minimal Events screen, showing PageHeader, AdminTable, an
 caption: The screen renders below the shell's topbar. The page header carries the eyebrow, title, and count, and each row's status renders as a status chip.
 ```
 
-The wrapping `<div>` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`, because `AdminTable` sets the horizontal scroll.
-
-The toolkit admits general-purpose primitives only, and a component that renders one of cairn's content concepts, such as an `EditPage` field, does not belong in it.
-A primitive graduates into the toolkit from a site's screens once it has a second real consumer, as `ExpandableRow` did.
-Each primitive ships its compiled classes and scoped styles with the package, so a later release still renders it under the site's route with no change on the site's side.
-
-The [admin toolkit](../reference/admin-toolkit.md) reference lists every export with its props, including the props that change a primitive's behavior.
-The [admin components](../reference/admin.md) reference lists the engine's components a screen can mount beside the toolkit, with each one's props.
+`AdminTable` sets the horizontal scroll, so the wrapping `div` carries `overflow-hidden card-shell card-shadow` and never `overflow-x-auto`.
+Each primitive ships its compiled classes and its scoped styles with the package.
+A later release still renders it under your route with no change on your side.
+The [admin toolkit](../reference/admin-toolkit.md) reference lists every export with its props.
+The [admin components](../reference/admin.md) reference lists the engine's components a screen can mount beside the toolkit.
 
 ## Style the screen
 
-The screen's utility classes compile only through the site admin sheet, `src/admin.css`, which a scaffolded site already builds.
-The screen matches the admin's design by using stock daisyUI classes.
-As the [audit configuration](../reference/cairn-audit.md#configuration) reference describes, the sheet turns off automatic source detection, scans `./routes/admin` and `./lib/admin` through `@source`, and then imports `@glw907/cairn-cms/admin-sources.css`.
-The `build:admin-css` script compiles it to `.cairn/admin.css`, and `src/routes/admin/+layout.svelte` imports the result.
-Because the scaffold's `predev`, `prebuild`, and `precheck` scripts run that compile, a build needs no separate style sheet step.
-The engine's packaged admin sheet scans only the engine's admin components and the toolkit, so the site's markup never feeds it.
+The screen's utility classes compile only through the site admin sheet, so its markup stays under a root that sheet scans.
+A scaffolded site's admin sheet, `src/admin.css`, compiles to `.cairn/admin.css` and scans `./routes/admin` and `./lib/admin`.
+A class in your markup compiles only when its file sits under one of those roots.
+The scaffold's `predev`, `prebuild`, and `precheck` scripts compile that sheet, so a build needs no separate stylesheet step.
+The engine's packaged admin sheet never scans your site's markup.
 
 To style the screen, follow these steps:
 
 1. Under `src/routes/admin` or `src/lib/admin`, keep every file that holds the screen's markup.
 
-   The admin is built in daisyUI and Tailwind, the idiom a custom screen extends.
-   Every daisyUI component and utility class except calendar compiles into the admin sheet, so the screen uses any of them without a safelist entry.
+   The admin is built with daisyUI and Tailwind, and your screen uses the same classes.
+   Every daisyUI component and utility class except calendar compiles into the admin sheet, with no safelist entry.
+   Both admin themes set daisyUI's radius tokens as a corner ladder.
+   `--radius-selector` is `0.25rem` for chips and small markers, `--radius-field` is `0.375rem` for controls, and `--radius-box` is `0.5rem` for cards and dialogs.
 
 2. In the screen's markup, give each rounded corner `rounded-selector`, `rounded-field`, or `rounded-box`, never a fixed Tailwind radius such as `rounded-lg`.
 
-   A fixed radius still compiles in the admin sheet but does not follow the corner ladder.
-   Both admin themes set daisyUI's radius tokens as a three-step ladder.
-   `--radius-selector` covers chips and small markers, `--radius-field` covers controls, and `--radius-box` covers cards and dialogs.
-   The documented norms that `cairn-audit` measures follow the same ladder.
-   They set 6px for buttons, inputs, and selects, 8px for a card, and 4px for a status chip.
+   A fixed Tailwind radius still compiles but does not follow the corner ladder.
+   The norms that `cairn-audit` measures follow the ladder: 6px for ghost and primary buttons, text inputs, and selects, and 8px for cards.
+   A bare `btn` with no color, style, or state renders as a hairline button.
+   A `btn` in a selected form, such as `.btn-active` or `aria-pressed="true"`, renders as the selected segment.
+   `btn-link`, the color variants, `btn-outline`, and `btn-dash` keep their look.
 
-A bare `btn` renders as a hairline button, and a selected `btn`, such as one with `.btn-active` or `aria-pressed="true"`, renders as the neutral selected segment.
-For warning or success text, the screen uses `cairn-text-warning` and `cairn-text-success`, which the packaged admin sheet defines, since that sheet does not compile the bracketed `text-[var(--cairn-warning-ink)]` and `text-[var(--color-positive-ink)]` forms.
+3. For warning or success ink, use `cairn-text-warning` or `cairn-text-success`, the classes the packaged admin sheet defines for those inks.
+
+   The sheet does not compile the bracketed `text-[var(--cairn-warning-ink)]` and `text-[var(--color-positive-ink)]` forms.
+
+The two optional recipes that follow serve a screen with a dialog form or with expanding rows.
 
 ## Build the dialog form
 
-When a screen collects input in a native `<dialog>` submitted with `enhance`, the form survives every result only when its callback handles each of the four result types.
-SvelteKit's [form actions documentation](https://svelte.dev/docs/kit/form-actions#progressive-enhancement) states what the default `update()` does with each type.
+A form in a native `<dialog>` submitted with `enhance` survives every action result when its callback handles all four result types.
+`enhance` hands its callback one of four result types: `'success'`, `'failure'`, `'redirect'`, or `'error'`.
+The default `update()` resets the form and refreshes the page's data on `'success'` only.
+It then calls `applyAction` for a same-page result and for every `'redirect'`.
+On an `'error'` result, `applyAction` renders the nearest error page, which destroys the dialog.
+The callback therefore shows a `'failure'` message and then calls `update()`, and it reports an `'error'` without calling `update()`.
+On `'success'`, it closes the dialog before awaiting `update()`, and it hands `'redirect'` to `update()`.
+The callback's type, `SubmitFunction`, comes from `$app/forms` on SvelteKit 3.
+For the callback's full contract, see SvelteKit's [Customizing use:enhance](https://svelte.dev/docs/kit/form-actions#Progressive-enhancement-Customizing-use:enhance) section.
 
 To build the dialog form, follow these steps:
 
@@ -352,33 +410,22 @@ To build the dialog form, follow these steps:
 
 2. In the handler of the button that opens the dialog, call `showModal()`.
 
-   A dialog opened this way closes on Escape without script.
+   A dialog opened with `showModal()` closes on Escape without script.
+   A `<form method="dialog">` is a form element too, and forms never nest.
 
 3. Inside the dialog, add the action form with `enhance` applied, as a separate form element and never inside a `<form method="dialog">`.
-
-   A `<form method="dialog">` is itself a form element, and nested forms are invalid HTML.
-
 4. In the `enhance` callback, handle each of the four result types, and never call `update()` on `'error'`.
-
-   The callback treats each result type as follows:
-
-   - On `'failure'`, show the message in the dialog, then call `update()`, which for a same-page failure only updates `form` and the page status.
-   - On `'error'`, report the error in the dialog without calling `update()`, because `update()` calls `applyAction`, which renders the nearest `+error` page and destroys the dialog.
-   - On `'success'`, close the dialog before awaiting `update()`, so it never sits open through `refreshAll()`.
-   - On `'redirect'`, hand the result to `update()`.
-
 5. In the form, mount an empty `role="alert"` paragraph for the failure message.
 
-   A live region inserted with its text already present is announced unreliably, so the paragraph is mounted empty and filled on failure.
+   A live region announces only the changes made after it is in the DOM, so it is mounted empty first.
 
 6. On the input, point `aria-describedby` at the alert paragraph.
 7. On the same input, set `aria-invalid="true"` while its value is the failed one.
+8. On the submit button, set `disabled` while the request is pending.
 
-   The error is then read with its field when focus moves to the input.
+   The error is then read with its field when focus moves to the input, and a disabled submit cannot fire the action a second time.
 
-8. On the submit button, set `disabled` while the request is pending, so it cannot fire the action a second time.
-
-The following dialog adds a signup through the signups screen's create action.
+The following dialog is an illustrative create form that posts to the signups screen's `create` action.
 
 ```svelte
 <script lang="ts">
@@ -435,43 +482,52 @@ The following dialog adds a signup through the signups screen's create action.
 </dialog>
 ```
 
+The second recipe loads detail for rows that expand.
+
 ## Load row detail on demand
 
-When a screen's rows expand to show detail, the screen fetches each row's detail as its panel opens and caches it per row.
-A `load` that fetched every row's detail would pay for all of them on every visit.
-Streaming an unawaited promise from `load` does not save that work, because the promise starts running when `load` creates it.
+A screen whose rows expand fetches each row's detail when its panel opens and caches it per row.
+A page's `load` runs on each visit, so a list load that also fetches every row's detail pays for all of them every time.
+Fetching on open costs only the rows a reader opens.
+Returning an unawaited promise from `load` streams it, but the work still runs when `load` creates the promise.
 
 To load row detail on demand, follow these steps:
 
 1. Under the screen's directory, add the detail endpoint as a nested route that returns one row's detail as JSON.
 2. In that route's server file, call `requireAccess`.
+3. In your site's access map, add an entry for the nested route when it needs a different rule from the screen's.
 
-   The nested route needs this call because the screen's `requireAccess` rule does not reach it.
+   It also needs an entry when it starts with a dynamic segment and the map holds a deeper key under the screen's.
+   Otherwise the screen's key already covers it.
+   [Restrict admin access](restrict-admin-access.md) describes how to add an entry.
 
-3. In the site's access map, add an entry for the nested route, as [Restrict admin access](restrict-admin-access.md) describes.
-4. In the screen's markup, render each row as an [`ExpandableRow`](../reference/admin-toolkit.md#expandablerow) inside the `AdminTable`.
+4. In the screen's markup, render each row as an `ExpandableRow` inside the `AdminTable`.
 
-   The rows follow three markup rules:
+   `ExpandableRow` renders your summary cells plus one trailing trigger cell.
+   The `colspan` you pass counts that trigger cell, and the panel snippet receives the row's `datum`.
+   The trigger cell has no visible heading.
+   Your `header` snippet matches it with a `<th scope="col">` whose text sits in an `sr-only` span, as the signups table does for its actions column.
+   A click inside an element carrying `data-cairn-inert-cell` does not toggle the row.
+   An interactive summary cell wraps its content in that attribute in place of calling `stopPropagation()`.
 
-   - The `colspan` the caller passes counts the trailing trigger cell the component adds, since the panel's one `<td>` spans it.
-   - The `header` snippet heads that trigger cell with a `<th scope="col">` holding an `sr-only` span, as the signups table does for its actions column.
-   - An interactive summary cell wraps its content in an element with `data-cairn-inert-cell`, since `ExpandableRow` ignores a row click inside it. The cell needs no `stopPropagation()`.
+5. In the same file, keep the expanded row's id in state, and pass each `ExpandableRow` its `expanded` value and an `onToggle` callback.
 
-5. In the same file, write an open handler for the rows.
-6. On each `ExpandableRow`, connect the open handler as the `ExpandableRow` entry's example shows.
+   `ExpandableRow` holds no expand state, and both its trigger button and a click on the summary row call `onToggle`.
+   The [`ExpandableRow`](../reference/admin-toolkit.md#expandablerow) entry lists its props.
+
+6. In the same file, write an open handler that `onToggle` calls when a row opens.
 7. In the open handler, return the cached detail when the row already has one.
-
-   Fetching on open and caching per row costs only the rows a reader opens.
-
 8. Otherwise, in the same handler, call `fetch` for the row's detail inside a `try` block.
-9. Inside the `try` block, check `response.ok`, since `fetch` resolves on an HTTP error status.
-10. In the same block, parse the body with `Response.json()`, which rejects on a body that is not JSON.
-11. In the same block, cache the detail only after the status check and the parse both succeed, so a failed row stays retryable.
+
+   `fetch` resolves on an HTTP error status, and `Response.json()` rejects on a body that is not JSON, such as an HTML error page.
+
+9. Inside the `try` block, check `response.ok`.
+10. In the same block, parse the body with `Response.json()`.
+11. In the same block, cache the detail only after the status check and the parse both succeed, which leaves a failed row retryable.
 12. In the row's panel snippet, render the cached detail.
 
-    The panel snippet receives the row's `datum`, so it reaches the row's detail without a closure over the row.
-
-The following handler is an illustrative version of the cache and fetch steps, with the detail endpoint's URL passed in.
+The following open handler is illustrative.
+It keys a reactive map by row id, returns a cached detail, and otherwise fetches the URL passed in, caching the parsed JSON only on success.
 
 ```ts
 import { SvelteMap } from 'svelte/reactivity';
@@ -492,71 +548,112 @@ async function openDetail(id: number, url: string): Promise<unknown> {
 }
 ```
 
+The next section states the motion rules an animating screen meets.
+
 ## Animate the screen
 
-When a screen animates, `cairn-audit` holds its motion to the same rules as the engine's screens, so each transition names its duration and easing with the admin's motion tokens.
+An animating screen writes each duration and easing as one of the admin's motion tokens.
 
 To animate the screen, follow this step:
 
-- In the screen's markup or scoped `<style>` block, write each duration and easing as a `var()` of a motion token, such as `var(--cairn-dur-base)`.
+- In the screen's markup or scoped style block, write each duration and easing as a `var()` of a motion token, such as `var(--cairn-dur-base)`.
 
-Both admin theme roots declare the tokens as a closed set of five durations, from `--cairn-dur-instant` to `--cairn-dur-settle`, and three curves, `--cairn-ease-standard`, `--cairn-ease-entrance`, and `--cairn-ease-exit`.
-A bare `transition-*` utility already animates on `--cairn-dur-base` and `--cairn-ease-standard`, which both roots set as Tailwind's default duration and timing function.
-Under `prefers-reduced-motion: reduce`, the admin collapses every duration to `0.01ms`, and only a paint transition may opt back in.
+Both admin themes declare eight motion tokens.
+The five durations are `--cairn-dur-instant` at `70ms`, `--cairn-dur-quick` at `110ms`, `--cairn-dur-base` at `150ms`, `--cairn-dur-shift` at `240ms`, and `--cairn-dur-settle` at `400ms`.
+The three curves are `--cairn-ease-standard`, `--cairn-ease-entrance`, and `--cairn-ease-exit`.
+A `transition-*` utility with no `duration-*` or `ease-*` beside it runs on the base duration and the standard curve.
+Under `prefers-reduced-motion: reduce`, the admin cuts every animation and transition to `0.01ms`.
 
-The audit's three admin-only motion rules, `motion-property`, `motion-vocabulary`, and `motion-hover-gate`, read a component's scoped `<style>` block and what each class in its markup compiles to.
-They read only the components under `static.adminScope` and the `static.cssFiles` entries inside those roots.
-The `static.adminScope` key defaults to `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit`, and a site whose screens live elsewhere names their roots under that key, as the [audit configuration](../reference/cairn-audit.md#configuration) reference describes.
+Three admin-only, error-tier `cairn-audit` rules hold an admin screen's motion to this vocabulary:
+
+- `motion-property` limits which properties a transition names.
+- `motion-vocabulary` fails a literal duration or easing.
+- `motion-hover-gate` fails hover motion outside `@media (hover: hover)`.
+
+The rules scan `src/routes/admin`, `src/lib/admin`, and `src/lib/admin-toolkit` by default.
+A site whose screens live elsewhere names their roots under `static.adminScope`, as the [audit configuration](../reference/cairn-audit.md#configuration) reference describes.
 For what each rule checks, see [The static rules](../reference/cairn-audit.md#the-static-rules).
-For the exemptions and the frame-offset allowance, see [What the motion rules don't cover](../reference/cairn-audit.md#what-the-motion-rules-dont-cover).
+For the exemptions and allowances, see [What the motion rules don't cover](../reference/cairn-audit.md#what-the-motion-rules-dont-cover).
 
 ## Verify the screen
 
-The screen passes when it renders inside the shell, refuses a session the map does not admit, leaves an audit row for each write, and clears the error tier of `cairn-audit`.
+The screen passes when it renders in the shell, refuses an unadmitted session, records each write, and clears the error tier of `cairn-audit`.
+The checks run on a default build that `npm run build` and then `npm run preview` serve, or on the deployed site.
+Under `npm run dev`, the hooks take the dev-backend branch, which signs in an owner on every `/admin` request and wires no audit sink.
+The refusal check and the audit-row check cannot pass there.
+A default build turns the dev backend off, and the scaffold's `preview` script serves the build with `wrangler dev` on port 4173.
 
 To verify the screen, follow these steps:
 
 1. In a browser signed in as an owner, open the screen under `/admin`.
 
-   The screen renders as the children of `CairnAdminShell`, with the shell's nav, user, and theme.
-   A 403 here means the access map has no rule for the route.
-   [Restrict admin access](restrict-admin-access.md) describes how to declare the rule.
+   The screen renders inside the admin shell, with the shell's nav, user menu, and theme.
 
-2. In a browser signed in as an editor whose role the screen's rule does not name, open the screen again.
+   **Symptom:** The owner sees the admin's 403 error page in place of the screen.
 
-   The `requireAccess` call refuses the session with a 403.
+   **Cause:** The access map has no rule for the screen's route, and a route with no rule refuses every session, owner included.
 
-3. In a browser signed in as an owner, submit one of the screen's actions.
+   **Fix:** Add a rule for the route to the adapter's access map, as [Restrict admin access](restrict-admin-access.md) describes, then reload the screen.
+
+2. In a second browser, sign in as an editor whose role the screen's rule does not name, and open the screen.
+
+   The admin's error page reports that the account has no access to the page.
+   An owner adds that account through the **Add editor** form on `/admin/editors`, choosing a role the rule leaves out, such as `editor` for the signups rule.
+   Each role option shows its name, followed by its capability in parentheses when the two differ.
+   [Assign the roles](restrict-admin-access.md#assign-the-roles) describes the roles an owner can assign.
+
+3. In the owner's browser, submit one of the screen's actions.
+
+   **Symptom:** The submit returns a 403, and the logs carry `guard.refused` with `reason: csrf`.
+
+   **Cause:** The form that posted has no `CsrfField`, and the guard refuses an admin form POST without a valid `csrf` field.
+
+   **Fix:** Mount a `CsrfField` from `@glw907/cairn-cms/admin` in each form that posts to one of the screen's actions.
+
 4. In the audit database, query the `audit_log` table for its newest row.
 
-   Each row records the `actor`, `action`, `entity`, `entity_id`, and `detail` of one audited action, with an ISO 8601 timestamp.
-   The row's `action` and `entity` match the wrapper's options, unless the handler's `ctx.audit` call passes either.
+   The row names the action, and its `action` and `entity` match the wrapper's options.
 
-5. In the site directory, run `npm run check:cairn`.
+   **Symptom:** No row arrives in `audit_log` for the action.
 
-   The script compiles the site admin sheet, then runs `cairn-audit` over the whole static registry.
+   **Cause:** The request ran under `npm run dev`, whose dev-backend branch wires no sink, or another cause in the audit path.
 
-6. In the report, fix each unsuppressed error-tier finding, since only such a finding makes `cairn-audit` exit 1.
-7. In the site directory, run the script again until no error-tier finding remains.
+   **Fix:** Serve a default build with `npm run preview`, or use the deployed site, and submit again.
+   If the row still does not arrive, work through [Resolve a missing audit record](#resolve-a-missing-audit-record).
 
-The default scan scope names `src/routes/admin` beside the engine's admin sources, so a custom screen meets the same static rules as the engine's screens.
-The scaffold's CI runs the same script on every push and pull request.
-An advisory finding prints without changing the exit code, as [Tiers and exit codes](../reference/cairn-audit.md#tiers-and-exit-codes) describes.
-A bare run is static, and the `--rendered` flag drives a browser against an already-running server.
-[Run cairn-audit on your site](run-cairn-audit-on-your-site.md) sets up a rendered run for a custom screen, and the reference lists the [rules a rendered run adds](../reference/cairn-audit.md#the-rules).
+5. In the site directory, run the scaffold's `check:cairn` script with npm.
+
+   The script compiles the admin sheet and runs `cairn-audit` over the static rules that the engine's screens meet.
+   The default scope includes `src/routes/admin`.
+
+   **Symptom:** The `check:cairn` script exits 1.
+
+   **Cause:** The report holds an unsuppressed error-tier finding, and advisory findings print without changing the exit code.
+
+   **Fix:** Correct each unsuppressed error-tier finding that the report lists.
+
+6. In the site directory, run the script again until no error-tier finding remains.
+
+A rendered run drives a browser against a running server, and [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) sets one up.
+The reference documents [tiers and exit codes](../reference/cairn-audit.md#tiers-and-exit-codes) and the [rules a rendered run adds](../reference/cairn-audit.md#the-rules).
 
 ## Resolve a missing audit record
 
-A missing audit record means a handler skipped `ctx.audit`, no handle set the sink, or the sink's insert failed.
-In production, a skipped call logs `admin.action.unaudited` where dev throws `UnauditedActionError`, since an error response mid-request would be worse than a gap in the audit trail.
+A missing record means the request ran under the dev backend, a handler skipped `ctx.audit`, no handle set the sink, or the sink's insert failed.
+A handler that returns without calling `ctx.audit` throws `UnauditedActionError`, a 500, in dev.
+In production it logs `admin.action.unaudited` at error level instead.
 
 To find the cause, follow these steps:
 
-1. In the action's handler, check that every successful path calls `ctx.audit` before it returns.
-2. In `hooks.server.ts`, check that a handle sets `event.locals.cairnAuditSink`.
-3. In the logs, look for `audit.sink.write_failed`, whose reason `wait_until_failed` names an unbound `waitUntil`.
+1. In the terminal that serves the site, check that it runs `npm run preview`, not `npm run dev`.
+2. In the action's handler, check that every successful path calls `ctx.audit` before it returns.
+3. In `hooks.server.ts`, check that a handle sets `event.locals.cairnAuditSink` and that `sequence` composes it into the exported `handle`.
+4. In Workers Logs, look for `audit.sink.write_failed`.
 
-[Debug your site](debug-your-site.md) maps `admin.action.unaudited` to its cause, and the [log events](../reference/log-events.md) reference lists both events' fields and the `audit.sink.write_failed` reasons.
+   The reason `wait_until_failed` names an `ExecutionContext`'s `waitUntil` passed unbound, and the row can be lost.
+
+[Debug your site](debug-your-site.md) maps `admin.action.unaudited` and a sink failure to their causes.
+The [log events](../reference/log-events.md) reference lists both events' fields and reasons.
 
 ## See also
 
@@ -566,6 +663,6 @@ The following pages cover the tasks and reasoning around a custom screen:
 - [Arrange the admin sidebar](arrange-the-admin-sidebar.md) describes how to add the screen to the admin's navigation.
 - [Run cairn-audit on your site](run-cairn-audit-on-your-site.md) describes how to configure the audit for the whole site, including rendered runs, suppressions, and allowlists.
 - [Security model](security-model.md) sets out the reasoning behind the access map.
-- [Configure media](configure-media.md) describes how to set up media storage and the media upload protocol.
-- [Define an adapter and schema](define-an-adapter-and-schema.md) describes how to declare a content concept, the alternative to a screen for markdown content.
-- [The admin toolkit](../reference/admin-toolkit.md) reference documents each primitive's props.
+- [Configure media](configure-media.md) describes media storage and the media upload protocol.
+- [Define an adapter and schema](define-an-adapter-and-schema.md) describes how to declare a concept for another kind of markdown content.
+- The [admin toolkit](../reference/admin-toolkit.md) reference documents each primitive's props.

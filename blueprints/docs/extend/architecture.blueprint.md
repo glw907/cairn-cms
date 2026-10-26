@@ -1,7 +1,6 @@
 ---
 page: Architecture
 type: concept
-track: extend
 exemplar: core/rust-analyzer-architecture
 ---
 

@@ -1,7 +1,6 @@
 ---
 page: Add a custom admin screen
 type: task guide
-track: extend
 exemplar: extenders/sanity-custom-tool
 ---
 
@@ -52,7 +51,7 @@ It never says the engine's screens write audit records.
 - See [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink).
 - The admin is two pairs of route files: the layout pair that renders `CairnAdminShell` and the `[...path]` catch-all pair, with the admin's `+error.svelte` beside them. :fact[b8rkq9]
 - The example site, `examples/showcase`, adds a `signups/` screen beside the catch-all. A scaffolded site does not ship it. :fact[onqm6k]
-- The tree below shows the files the page touches in `src/`, with the `signups/` directory marked as the new screen, named after the example site's screen. :fact[b8rkq9] :fact[vkfd7b]
+- Code: the tree below shows the files the page touches in `src/`, with the `signups/` directory marked as the new screen, named after the example site's screen. :fact[b8rkq9] :fact[vkfd7b]
 
 ```text
 src/
@@ -106,7 +105,7 @@ src/
 
 1. In the screen's `+page.server.ts`, call `requireAccess(event)` in `load` before it reads anything.
 
-- The example below is the load from the example site's `examples/showcase/src/routes/admin/signups/+page.server.ts`, minus its logger call and comments. It calls `requireAccess(event)` before the read and fails with a 500 when the `APP_DB` binding is absent. It keeps the binding's `D1Database | undefined` annotation. :fact[onqm6k]
+- Code: the example below is the load from the example site's `examples/showcase/src/routes/admin/signups/+page.server.ts`, minus its logger call and comments. It calls `requireAccess(event)` before the read and fails with a 500 when the `APP_DB` binding is absent. It keeps the binding's `D1Database | undefined` annotation. :fact[onqm6k]
 
 ```ts
 // src/routes/admin/signups/+page.server.ts
@@ -175,7 +174,7 @@ export const load: PageServerLoad = async (event) => {
 2. In the exported `actions`, wrap each handler in that wrapper, passing its `action` and `entity`.
 3. On a destructive action, add `ownerOnly: true` to the options.
 
-- The example below continues the same file with the example site's `sectionAction` declaration and its `create` and `remove` actions, minus the comments. A snippet-check skip comment sits above it, since it reads `Env`, which only the site's generated `worker-configuration.d.ts` declares. :fact[pyt58u]
+- Code: the example below continues the same file with the example site's `sectionAction` declaration and its `create` and `remove` actions, minus the comments. A snippet-check skip comment sits above it, since it reads `Env`, which only the site's generated `worker-configuration.d.ts` declares. :fact[pyt58u]
 
 ```ts
 // src/routes/admin/signups/+page.server.ts, continued
@@ -234,7 +233,7 @@ export const actions: Actions = {
 2. In that handle, guard the env read with `building` from `$app/env`, which every `cloudflare:workers` env read needs while the build prerenders. :fact[i8pbhc]
 3. In the production branch, set `handle` to `sequence(createAuthGuard({ runtime }), wireAuditSink)`. :fact[6quvqm]
 
-- The excerpt below is `src/hooks.server.ts` with the `wireAuditSink` handle from the `createD1AuditSink` reference entry and the production branch's assignment. It imports `runtime` from `#chassis/cairn.server.js` and no access map. Its lead-in marks it as an excerpt, since no file in the repository wires the sink. :fact[i8pbhc] :fact[f21bcz]
+- Code: the excerpt below is `src/hooks.server.ts` with the `wireAuditSink` handle from the `createD1AuditSink` reference entry and the production branch's assignment. It imports `runtime` from `#chassis/cairn.server.js` and no access map. Its lead-in marks it as an excerpt, since no file in the repository wires the sink. :fact[i8pbhc] :fact[f21bcz]
 
 ```ts
 // src/hooks.server.ts (excerpt)
@@ -274,7 +273,7 @@ handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 
 - The guard refuses an admin form POST whose `csrf` field is missing or wrong with a 403. Inside the shell, `CsrfField` takes no `token` prop and reads the shell's token. The signups screen mounts it in both its forms. :fact[fers77]
 - A lead-in marks the switch to a smaller screen, an Events list that composes three primitives with the table inside a card. It is an aside, never a second screen to build.
-- The Events screen below matches `src/lib/reproductions/stories/CustomScreen.svelte` word for word, except that it imports from `@glw907/cairn-cms/admin-toolkit`. The two stay in lockstep.
+- Code: the Events screen below matches `src/lib/reproductions/stories/CustomScreen.svelte` word for word, except that it imports from `@glw907/cairn-cms/admin-toolkit`. The two stay in lockstep.
 
 ```svelte
 <script lang="ts">
@@ -303,7 +302,7 @@ handle = sequence(createAuthGuard({ runtime }), wireAuditSink);
 </div>
 ```
 
-- The reproduction directly after the snippet renders the Events screen inside the admin shell, below the shell's topbar: the page header with its eyebrow, title, and count, and each row's status as a chip.
+- Figure: the reproduction directly after the snippet renders the Events screen inside the admin shell, below the shell's topbar: the page header with its eyebrow, title, and count, and each row's status as a chip.
 
 ```repro
 story: toolkit/custom-screen
@@ -368,7 +367,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 8. On the submit button, set `disabled` while the request is pending. :fact[5vn194]
 
 - The input's description then reads the error with its field when focus moves to it, and a disabled submit cannot fire the action a second time. :fact[5vn194]
-- The example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's dialog confirms a removal and has no visible field, only a hidden `id` input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
+- Code: the example below is an illustrative create dialog that posts to the signups screen's `create` action. The example site's dialog confirms a removal and has no visible field, only a hidden `id` input, so this one is written on that file's imports and patterns, and its lead-in frames it as illustrative.
 
 ```svelte
 <script lang="ts">
@@ -462,7 +461,7 @@ caption: The screen renders below the shell's topbar. The page header carries th
 11. In the same block, cache the detail only after the status check and the parse both succeed, which leaves a failed row retryable. :fact[od9mww]
 12. In the row's panel snippet, render the cached detail. :fact[vao0dd]
 
-- The example below is an illustrative open handler, framed as illustrative in its lead-in: a `SvelteMap` keyed by row id, and an async function that returns the cached detail or fetches the URL passed in, checks `response.ok`, parses JSON, caches, and returns `undefined` on any failure.
+- Code: the example below is an illustrative open handler, framed as illustrative in its lead-in: a `SvelteMap` keyed by row id, and an async function that returns the cached detail or fetches the URL passed in, checks `response.ok`, parses JSON, caches, and returns `undefined` on any failure.
 
 ```ts
 import { SvelteMap } from 'svelte/reactivity';

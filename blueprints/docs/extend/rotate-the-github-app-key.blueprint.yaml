@@ -843,7 +843,7 @@ sections:
         optional: true
       - id: del-dev-vars-link
         kind: link
-        target: scaffolded-site-files.md#devvarsexample
+        target: scaffolded-site-files.md
       - id: s-delete
         kind: step
         text: |

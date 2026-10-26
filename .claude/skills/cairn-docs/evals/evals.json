@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": "rename-item-label",
-      "suite": "regression",
+      "suite": "capability",
       "pin": "663ac5aeb",
       "setup": "setups/rename-item-label.mjs",
       "prompt": "I renamed the `itemLabel` option on `ArrayField` to `itemTitle` in the code (src/lib/content/fields.ts and its callers). Update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
@@ -81,7 +81,7 @@
     },
     {
       "id": "rename-export",
-      "suite": "regression",
+      "suite": "capability",
       "pin": "663ac5aeb",
       "prompt": "Rename the media option `urlForm` to `urlShape` everywhere it is part of the public media config (AssetConfig, ResolvedAssetConfig, normalizeAssets, and the code that reads it), and update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
       "expectations": [
@@ -183,7 +183,7 @@
     },
     {
       "id": "deficiency",
-      "suite": "regression",
+      "suite": "capability",
       "pin": "663ac5aeb",
       "setup": "setups/deficiency.mjs",
       "prompt": "A reader says the Limits on a tidy result section of docs/extend/turn-on-tidy.md doesn't match what happens: they tidied a 15,000-character draft and it went through, though the page says it would be refused. Fix the docs. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",

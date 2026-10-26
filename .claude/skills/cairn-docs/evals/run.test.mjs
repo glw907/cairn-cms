@@ -233,6 +233,9 @@ test('runCheck: transcript checks read the tool calls', () => {
   assert.equal(runCheck({ type: 'agent', name: 'docs-fact-checker' }, ctx).ok, true);
   assert.equal(runCheck({ type: 'agent', name: 'other' }, ctx).ok, false);
   assert.equal(runCheck({ type: 'read', path: 'content-routes-tidy.ts', beforeEdit: true }, ctx).ok, true);
+  const viaShell = [{ name: 'Bash', input: { command: 'sed -n 40,60p src/a/tidy.ts' } }, { name: 'Edit', input: { file_path: '/w/docs/a.md' } }];
+  assert.equal(runCheck({ type: 'read', path: 'src/a/tidy.ts', beforeEdit: true }, { ...ctx, tools: viaShell }).ok, true);
+  assert.equal(runCheck({ type: 'read', path: 'src/a/other.ts', beforeEdit: true }, { ...ctx, tools: viaShell }).ok, false);
   assert.equal(runCheck({ type: 'skillNotCalled', name: 'cairn-docs' }, ctx).ok, false);
   assert.equal(runCheck({ type: 'skillNotCalled', name: 'other-skill' }, ctx).ok, true);
 });

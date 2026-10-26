@@ -382,7 +382,11 @@ export function runCheck(check, ctx) {
     }
     case 'read': {
       const firstEdit = ctx.tools.findIndex((t) => ['Edit', 'Write'].includes(t.name));
-      const at = ctx.tools.findIndex((t) => t.name === 'Read' && (t.input.file_path ?? '').endsWith(check.path));
+      // Any way of looking at the file counts: a Read, a Grep over it, or a shell command naming it.
+      const sees = (t) => (t.name === 'Read' && (t.input.file_path ?? '').endsWith(check.path))
+        || (t.name === 'Grep' && `${t.input.path ?? ''} ${t.input.glob ?? ''}`.includes(check.path))
+        || (t.name === 'Bash' && (t.input.command ?? '').includes(check.path));
+      const at = ctx.tools.findIndex(sees);
       const ok = at !== -1 && (!check.beforeEdit || firstEdit === -1 || at < firstEdit);
       return { ok, detail: `${check.path} ${ok ? 'was read' : 'was not read'}${check.beforeEdit ? ' before the first edit' : ''}` };
     }

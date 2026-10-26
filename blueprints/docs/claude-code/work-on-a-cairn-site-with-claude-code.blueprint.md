@@ -1,10 +1,10 @@
 ---
-page: Using Claude Code with cairn
+page: Work on a cairn site with Claude Code
 type: task guide
 exemplar: operators/gh-exit-codes
 ---
 
-# Using Claude Code with cairn
+# Work on a cairn site with Claude Code
 
 :::reader
 **Who reads it.** The page opens the register's Claude Code track (`docs/internal/docs-register.md`). Its reader is the extend track's developer, per the outline's `job`. That reader is a Svelte-fluent web developer building an organization's site on cairn's seams. They have chosen Claude Code as their coding assistant. Two arrivals:

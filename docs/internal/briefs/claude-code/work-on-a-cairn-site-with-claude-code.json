@@ -1,5 +1,5 @@
 {
-  "page": "docs/claude-code/using-claude-code-with-cairn.md",
+  "page": "docs/claude-code/work-on-a-cairn-site-with-claude-code.md",
   "sentences": [
     {
       "text": "A developer building an organization's site on cairn's seams may choose Claude Code as their coding assistant, and cairn ships guidance for Claude Code to read while it works on the site.",

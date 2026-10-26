@@ -89,7 +89,7 @@ describe('checkDocsPacked', () => {
     'docs/extend/README.md',
     'docs/extend/build-a-site-by-hand.md',
     'docs/claude-code/README.md',
-    'docs/claude-code/using-claude-code-with-cairn.md'
+    'docs/claude-code/work-on-a-cairn-site-with-claude-code.md'
   ];
 
   // What requiredDocsPaths asks for when every arm and the front door are rebuilt.

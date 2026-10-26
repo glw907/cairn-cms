@@ -553,7 +553,7 @@
 
 - **A Claude Code track ships, with its first page.** `docs/claude-code/` holds what cairn ships
   into a site's Claude Code setup and what it leaves to the developer:
-  `docs/claude-code/using-claude-code-with-cairn.md` covers the guidance tree, adopting or refreshing
+  `docs/claude-code/work-on-a-cairn-site-with-claude-code.md` covers the guidance tree, adopting or refreshing
   it with `cairn-guidance install`, wiring the `Stop` hook and the CI step, reading
   `cairn-guidance check`, and diagnosing a failed run. `docs/claude-code/README.md` indexes the
   track, the package's `files` carry it, and the docs gates check it like the other arms. The other

@@ -339,7 +339,7 @@ sections:
           - f:qlgggh
       - id: tree-claude-link
         kind: link
-        target: ../claude-code/using-claude-code-with-cairn.md
+        target: ../claude-code/work-on-a-cairn-site-with-claude-code.md
   - id: root-files
     heading: Root files
     why: |

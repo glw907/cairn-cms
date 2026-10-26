@@ -147,7 +147,7 @@ sections:
         facts: ["f:qlgggh"]
       - id: tree-claude-link
         kind: link
-        target: ../claude-code/using-claude-code-with-cairn.md
+        target: ../claude-code/work-on-a-cairn-site-with-claude-code.md
   - heading: Root files
     opens: |
       Beside a plain SvelteKit project's files, the root carries a CI workflow, a template for
@@ -1253,7 +1253,7 @@ friction:
     crossLink to `add-a-custom-admin-screen` gives "The signups example as a pattern" as its reason.
     The plan keeps the link as the route to building a custom screen.
   - |
-    `tree-claude-link` targets `docs/claude-code/using-claude-code-with-cairn.md`, which is in
+    `tree-claude-link` targets `docs/claude-code/work-on-a-cairn-site-with-claude-code.md`, which is in
     `docs/internal/outlines/claude-code.json` and not on disk yet, so `drafter check-plan` warns
     for it, and errors if the plan is checked against `extend.json` alone. Check this plan with both
     outlines.

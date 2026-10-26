@@ -1,4 +1,4 @@
-# Using Claude Code with cairn
+# Work on a cairn site with Claude Code
 
 A developer building an organization's site on cairn's seams may choose Claude Code as their coding assistant, and cairn ships guidance for Claude Code to read while it works on the site. The guidance is a tree of files under `.claude/`, plus a root [`CLAUDE.md`](https://code.claude.com/docs/en/memory) that imports the tree's fragment. You arrive at this page from one of two situations:
 

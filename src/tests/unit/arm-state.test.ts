@@ -42,7 +42,7 @@ describe('armOf', () => {
     expect(armOf('docs/admin/is-it-working.md')).toBe('admin');
     expect(armOf('docs/editors/sub/deep.md')).toBe('editors');
     expect(armOf('docs/extend/migration-notes.md')).toBe('extend');
-    expect(armOf('docs/claude-code/using-claude-code-with-cairn.md')).toBe('claude-code');
+    expect(armOf('docs/claude-code/work-on-a-cairn-site-with-claude-code.md')).toBe('claude-code');
     expect(armOf('docs/README.md')).toBe('front-door');
     expect(armOf('docs/why-cairn.md')).toBe('front-door');
     expect(armOf('docs/reference/core.md')).toBeNull();

@@ -9,6 +9,9 @@
   In the PR #137 sweep a slice agent's edit script emptied `scripts/checks/gate-tier.mjs` (929 lines) and committed it, and the fast lane printed nothing and exited 0, because the fast lane is that file. Exit nonzero when no leg runs. The sweep-side check (a `git diff --numstat` for unequal counts) lands in the workstation's word-sweep method.
 
 ## Medium
+- [ ] **#85** Tell the docs review description to hold paragraphs only, no heading `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26)*
+  The healthz fix session wrote a `## Brief` heading atop its review description, and `approval-queue docs` refused it as four paragraphs. Step 3 of `.claude/skills/cairn-docs/references/review.md` should say the file holds two or three paragraphs and nothing else.
+
 - [ ] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25)*
   `judgeSourceExclusion` (`src/lib/guidance/check.ts:76-91`) reads only `src/admin.css` and `src/theme/admin.css` and counts as excluded only the literal `SOURCE_EXCLUSION_LINE`, `@source not "./.claude";` (`:21`). Tailwind resolves an `@source` path against the stylesheet that carries it, so in `src/admin.css` that line excludes `src/.claude`, not the project root's `.claude/`; a correct `@source not "../.claude";` reads as not excluded, and the advice at `:201` makes a site add the wrong line. It also never reads the public stylesheet (the scaffold's exclusion is `templates/waymark/src/chassis/tokens.css:55`, `../../.claude`). Fix: resolve each `@source not` path against its file and compare to the root `.claude`, and read the site's Tailwind entries, with tests. Found by the Claude Code page's recheck, 2026-10-25.
 - [ ] **#73** Type-check the hooks snippets instead of skipping them `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*

@@ -1,6 +1,6 @@
 # Internal docs
 
-Maintainer-facing documents. Nothing here is part of the adopter docs; the four public arms
+Maintainer-facing documents. Nothing here is part of the adopter docs; the public arms
 live one level up.
 
 ## The filing rule

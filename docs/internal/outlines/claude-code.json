@@ -3,31 +3,31 @@
   "track": "claude-code",
   "crossLinks": [
     {
-      "from": "using-claude-code-with-cairn",
+      "from": "work-on-a-cairn-site-with-claude-code",
       "to": "scaffolded-site-files",
       "why": "The scaffolded tree outside .claude/, file by file."
     },
     {
-      "from": "using-claude-code-with-cairn",
+      "from": "work-on-a-cairn-site-with-claude-code",
       "to": "run-cairn-audit-on-your-site",
       "why": "What the Stop hook's check:cairn runs and how to read it."
     },
     {
-      "from": "using-claude-code-with-cairn",
+      "from": "work-on-a-cairn-site-with-claude-code",
       "to": "upgrade-cairn",
       "why": "When to refresh the guidance tree after an upgrade."
     },
     {
-      "from": "using-claude-code-with-cairn",
+      "from": "work-on-a-cairn-site-with-claude-code",
       "to": "docs/reference/guidance.md",
       "why": "The CLI's full output and the trust boundary."
     }
   ],
   "pages": [
     {
-      "slug": "using-claude-code-with-cairn",
-      "title": "Using Claude Code with cairn",
-      "path": "docs/claude-code/using-claude-code-with-cairn.md",
+      "slug": "work-on-a-cairn-site-with-claude-code",
+      "title": "Work on a cairn site with Claude Code",
+      "path": "docs/claude-code/work-on-a-cairn-site-with-claude-code.md",
       "job": "Work on a cairn site with Claude Code: know which guidance cairn installs under .claude/, which of the four skills loads for which task, what the review agent reviews, how to wire the Stop hook that runs the audit after each turn, and how to adopt, refresh, and check the guidance tree with cairn-guidance install and check, including their exit codes and the CI step. For the extend track's reader (a Svelte-fluent web developer building an organization's site on cairn's seams) who has chosen Claude Code as their coding assistant. The general docs assume no coding assistant; this page is the one that teaches working with Claude Code.",
       "pageType": "task guide",
       "exemplars": [

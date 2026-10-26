@@ -4,19 +4,19 @@
 // link whose resolved target is that file. It does no prose analysis and parses no numeric claims;
 // a page that exists on disk but is not reachable from its arm's index is the one thing this checks.
 //
-// All four published arms keep their index inside the directory (`docs/reference/README.md`, and so
+// All five published arms keep their index inside the directory (`docs/reference/README.md`, and so
 // on). `docs/why-cairn.md` is the exception the arm shape cannot express: a published page without a
 // directory, reachable only from the front door. FRONT_DOOR_PAGES covers it, so a front
 // door that stops linking the evaluator's page fails the same way an unindexed arm page does.
 //
-// The admin, editors, and extend arms and the front door are checked only in the rebuilt state
+// The admin, editors, extend, and claude-code arms and the front door are checked only in the rebuilt state
 // (arm-state.mjs): an absent arm has no page to index, and extend's kept-only state holds just its
 // per-version records, which stand without an index until the arm is rebuilt. Once an arm holds any
 // page outside the kept set, its index must exist and link every page in it, kept pages included.
 // The state comes from the committed deletion list, never from whether a directory or an index
 // exists, so an arm cannot pass this gate by losing its index.
 //
-// `docs/internal` is a fifth arm, contributor-zone rather than published, and walks non-recursively:
+// `docs/internal` is a sixth arm, contributor-zone rather than published, and walks non-recursively:
 // only its top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
 // record files under `docs/internal/record/` and other subdirectories (`design/`, `feedback/`,
 // `history/`, `probes/`) that keep their own filing rule and their own index, and a recursive walk
@@ -39,6 +39,7 @@ const ARMS = [
   { dir: 'docs/admin', index: 'docs/admin/README.md', state: 'admin' },
   { dir: 'docs/editors', index: 'docs/editors/README.md', state: 'editors' },
   { dir: 'docs/extend', index: 'docs/extend/README.md', state: 'extend' },
+  { dir: 'docs/claude-code', index: 'docs/claude-code/README.md', state: 'claude-code' },
   { dir: 'docs/internal', index: 'docs/internal/README.md', recursive: false },
 ];
 

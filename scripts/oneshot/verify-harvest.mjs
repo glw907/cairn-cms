@@ -24,7 +24,10 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { extractBullets, extractFactId, checkTag, factsFiles, buildBasenameIndex, SKIPPED_SECTIONS } from '../checks/check-facts.mjs';
-import { ARM_DIRS, ARM_NAMES as ARMS, armOf, armPages } from '../checks/arm-state.mjs';
+import { ARM_DIRS, armOf, armPages } from '../checks/arm-state.mjs';
+
+/** The arms the harvest covered, frozen: an arm registered after it (claude-code) is outside its record. */
+const ARMS = ['admin', 'editors', 'extend', 'front-door'];
 
 /** The fixed cut-reason list; anything else on a `cut` disposition fails. */
 export const CUT_REASONS = ['navigation', 'marketing', 'stance-without-owner-basis', 'illustrative', 'external-trivia'];

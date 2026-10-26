@@ -80,7 +80,7 @@ To confirm the new key, follow these steps:
    {"ok":true,"checks":{"githubAppSigning":{"ok":true}}}
    ```
 
-   The route answers with status 200 even when the check fails, so read the `ok` field. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
+   The scaffold's route answers with status 503 when the check fails, and a hand-built route answers 200 unless it sets the status from `ok`, so read the `ok` field in either case. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
 
 2. Wait 55 minutes from the push, so that any token minted with the old key has expired from the cache.
 

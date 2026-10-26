@@ -551,6 +551,15 @@
 
 ### Documentation
 
+- **A Claude Code track ships, with its first page.** `docs/claude-code/` holds what cairn ships
+  into a site's Claude Code setup and what it leaves to the developer:
+  `docs/claude-code/using-claude-code-with-cairn.md` covers the guidance tree, adopting or refreshing
+  it with `cairn-guidance install`, wiring the `Stop` hook and the CI step, reading
+  `cairn-guidance check`, and diagnosing a failed run. `docs/claude-code/README.md` indexes the
+  track, the package's `files` carry it, and the docs gates check it like the other arms. The other
+  tracks still assume no coding assistant.
+
+  Consumers must: nothing.
 - **The reference arm states the access, auth, health, and commit-path changes above.**
   `docs/reference/sveltekit.md` documents the required `runtime`, the two public paths, the 404 on a
   concept-less tidy or dictionary mount, the head guard, the nested-image reads, the live health check

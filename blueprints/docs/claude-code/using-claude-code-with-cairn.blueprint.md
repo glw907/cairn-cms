@@ -57,14 +57,17 @@ of Claude Code itself. That knowledge covers starting a session in a project, wh
 subagent are, and where a project's `.claude/settings.json` lives. Package scripts and a GitHub
 Actions workflow file are assumed. No knowledge of the engine's internals is needed.
 
-**What it leaves to other pages.** Any coding assistant other than Claude Code, which cairn ships nothing for. The review agent's
-purpose and how it relates to the audit gate. The page places only the agent's file, and the
-`cairn-guidance` reference page describes what the agent checks. The scaffolded
-tree outside `.claude/`, file by file, which Scaffolded site files covers. Running the audit
-and reading its findings, which Run cairn-audit on your site covers. The upgrade procedure and
-when to refresh, which Upgrade cairn covers. Writing a consultation brief, whose protocol
-lives in the `cairn-consult` skill itself. The CLI's full option and output listing and the
-trust boundary, which the `cairn-guidance` reference page covers.
+**What it leaves to other pages.**
+
+- Any coding assistant other than Claude Code. cairn ships nothing for one.
+- The review agent's purpose and how it relates to the audit gate. The page places only the
+  agent's file, and the `cairn-guidance` reference page describes what the agent checks.
+- The scaffolded tree outside `.claude/`, file by file: Scaffolded site files.
+- Running the audit and reading its findings: Run cairn-audit on your site.
+- The upgrade procedure and when to refresh: Upgrade cairn.
+- Writing a consultation brief. Its protocol lives in the `cairn-consult` skill.
+- The CLI's full option and output listing, and the trust boundary: the `cairn-guidance`
+  reference page.
 
 **How the introduction runs.** Two paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading.
 

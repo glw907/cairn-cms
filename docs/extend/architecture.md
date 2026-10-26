@@ -1,6 +1,6 @@
 # Architecture
 
-A developer comparing content systems first needs to know what kind of system cairn is, and what adopting it commits a site to. The engine ships as the npm package `@glw907/cairn-cms`, which a site lists as an ordinary dependency. A site's admin and public pages are route files in its SvelteKit app, and their load functions and form actions come from the engine's route factories. The app builds into one Cloudflare Worker, so the engine runs inside the site's Worker and no separate CMS server runs.
+cairn is a library that a site installs as a dependency and runs inside its own Cloudflare Worker, with no CMS server of its own. The engine ships as the npm package `@glw907/cairn-cms`. A site's admin and public pages are route files in its SvelteKit app, and their load functions and form actions come from the engine's route factories. The app builds into that one Worker with `@sveltejs/adapter-cloudflare`.
 
 Content lives as markdown in the site's GitHub repository. A publish is a commit through the site's GitHub App, and the site's existing deploy picks it up. Beyond the Worker, the site uses two Cloudflare stores: a D1 database holds the sign-in rows, and an R2 bucket holds media bytes.
 

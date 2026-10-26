@@ -2,11 +2,11 @@
   "page": "docs/extend/architecture.md",
   "sentences": [
     {
-      "text": "A developer comparing content systems first needs to know what kind of system cairn is, and what adopting it commits a site to.",
-      "id": "no-claim"
+      "text": "cairn is a library that a site installs as a dependency and runs inside its own Cloudflare Worker, with no CMS server of its own.",
+      "id": "f:j0ut9n"
     },
     {
-      "text": "The engine ships as the npm package `@glw907/cairn-cms`, which a site lists as an ordinary dependency.",
+      "text": "The engine ships as the npm package `@glw907/cairn-cms`.",
       "id": "f:j0ut9n"
     },
     {
@@ -14,7 +14,7 @@
       "id": "f:j0ut9n"
     },
     {
-      "text": "The app builds into one Cloudflare Worker, so the engine runs inside the site's Worker and no separate CMS server runs.",
+      "text": "The app builds into that one Worker with `@sveltejs/adapter-cloudflare`.",
       "id": "f:j0ut9n"
     },
     {

@@ -231,8 +231,9 @@ Harvested 2026-09-15 from docs/reference/* (behaviors beyond the gated signature
   must never share a `migrations_dir` with the engine's own `AUTH_DB` migrations. The
   per-deployment identity salt is provisioned lazily via `INSERT OR IGNORE` of 32 random bytes
   under `identity_salt`, deliberately absent from the committed migration file since a migration
-  published on npm can't carry a per-deployment secret. Source: `migrations-channel/0000_channel.sql:19-46`
-  (the four `CREATE TABLE` statements), `src/lib/auth-channel/store.ts:60-84` (`provisionSalt`:
+  published on npm can't carry a per-deployment secret. Source: `migrations-channel/0000_channel.sql:19-49`
+  (`CREATE TABLE`) (the four `CREATE TABLE` statements), `migrations-channel/0000_channel.sql:13-15`
+  (`identity_salt`) (the salt's deliberate absence), `src/lib/auth-channel/store.ts:93-111` (`provisionSalt`:
   `INSERT OR IGNORE INTO cairn_channel_meta`, `randomHex(32)`), `examples/showcase/wrangler.jsonc:26-53`
   (each D1 binding declares its own `migrations_dir`, comment states why). [verified]
 

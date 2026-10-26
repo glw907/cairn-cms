@@ -6,23 +6,31 @@
       "id": "f:pmmtrm"
     },
     {
-      "text": "The guidance is a tree of files under `.claude/`, plus a root `CLAUDE.md` that imports the tree's fragment.",
+      "text": "The guidance is a tree of files under `.claude/`, plus a root [`CLAUDE.md`](https://code.claude.com/docs/en/memory) that imports the tree's fragment.",
       "id": "f:0ygumq"
     },
     {
-      "text": "A developer arrives at this page from one of two situations:",
+      "text": "You arrive at this page from one of two situations:",
       "id": "no-claim"
     },
     {
-      "text": "A site scaffolded by `create-cairn-site` already carries the tree, and the developer wants to know what Claude Code now reads and which skill loads for which task.",
+      "text": "A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which skill loads for each task.",
       "id": "f:0ygumq"
     },
     {
-      "text": "An existing site adopts the tree, or refreshes it after an engine upgrade, and the developer wants to know what `install` writes and what it leaves to them.",
+      "text": "Your existing site adopts the tree, or refreshes it after an engine upgrade.",
       "id": "f:0ygumq"
     },
     {
-      "text": "The rest of cairn's docs assume you work without a coding assistant, and this page is the one that covers working with Claude Code.",
+      "text": "You want to know what `install` writes and what it leaves to you.",
+      "id": "f:0ygumq"
+    },
+    {
+      "text": "The other cairn docs assume you work without a coding assistant.",
+      "id": "no-claim"
+    },
+    {
+      "text": "What's specific to Claude Code lives in this section of the docs.",
       "id": "no-claim"
     },
     {
@@ -42,14 +50,46 @@
       ]
     },
     {
-      "text": "Two edits are left to you: the `Stop` hook in `.claude/settings.json`, and a CI gate if you want one.",
+      "text": "The page's steps leave the following edits to you, each one yours to make or decline:",
       "id": [
+        "f:6ro1n9",
         "f:4nccq6",
         "f:jd54ph"
       ]
     },
     {
-      "text": "`install` exits 0 even when it refuses an entry or fails to write a destination, so what `install` and `check` print is how you learn what they did.",
+      "text": "On a site that adopts the tree, the import line in the root `CLAUDE.md`.",
+      "id": "f:6ro1n9"
+    },
+    {
+      "text": "The [`Stop` hook](https://code.claude.com/docs/en/hooks) in `.claude/settings.json`.",
+      "id": "f:4nccq6"
+    },
+    {
+      "text": "On a site that lacks them, the `check:cairn` script, the `cairn-audit` config file, and the CI workflow.",
+      "id": [
+        "f:mrv24k",
+        "f:4ax489"
+      ]
+    },
+    {
+      "text": "A CI gate on a stale tree, if you want one.",
+      "id": "f:jd54ph"
+    },
+    {
+      "text": "Removing a path that `install` reports the package no longer ships.",
+      "id": "f:4h9fz4"
+    },
+    {
+      "text": "Excluding `.claude/` from the site's Tailwind build, when `check` reports it isn't excluded.",
+      "id": "f:1kwkl0"
+    },
+    {
+      "text": "Deleting a leftover `.orig` file once you have read it.",
+      "id": "f:ohxg28"
+    },
+    {
+      "text": "What `install` and `check` print is how you learn what they did.",
       "id": [
         "f:5ohm23",
         "f:4ax489"
@@ -72,7 +112,7 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "How to wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn ends, including adding that script on a site without one.",
+      "text": "How to wire the `Stop` hook that runs `check:cairn` when a Claude Code turn ends, and add that script where it's missing.",
       "id": "f:4nccq6"
     },
     {
@@ -162,15 +202,19 @@
       ]
     },
     {
-      "text": "A scaffolded site is born with all of it installed.",
+      "text": "A scaffolded site starts with all of it installed.",
       "id": "f:0ygumq"
     },
     {
-      "text": "Each file sits where Claude Code looks for it: the root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line, and the skills and the review agent sit in `.claude/skills/` and `.claude/agents/`.",
+      "text": "Each file sits where Claude Code looks for it.",
       "id": "f:pmmtrm"
     },
     {
-      "text": "The tree holds the following paths:",
+      "text": "The root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line.",
+      "id": "f:pmmtrm"
+    },
+    {
+      "text": "cairn's guidance sits at the following paths:",
       "id": "f:0ygumq"
     },
     {
@@ -178,8 +222,11 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "`.claude/agents/cairn-extension-reviewer.md`, the review agent.",
-      "id": "f:0ygumq"
+      "text": "`.claude/agents/cairn-extension-reviewer.md`, the review agent, a Claude Code subagent.",
+      "id": [
+        "f:0ygumq",
+        "f:pmmtrm"
+      ]
     },
     {
       "text": "For what the agent checks, see [What ships under `claude/`](../reference/guidance.md#what-ships-under-claude) in the `cairn-guidance` reference.",
@@ -208,19 +255,19 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "The root `CLAUDE.md` is the one import line, then a `# Your site` section for the site's guidance.",
+      "text": "On a scaffolded site, the root `CLAUDE.md` is the one import line, then a `# Your site` section for the site's guidance.",
       "id": "f:6ro1n9"
     },
     {
-      "text": "The site's guidance for Claude Code belongs under `# Your site`, because the root file is the site's and the fragment under `.claude/cairn/` is the package's to refresh.",
+      "text": "`install` rewrites the fragment under `.claude/cairn/` when it refreshes the tree, and it never rewrites the root file.",
       "id": "f:6ro1n9"
     },
     {
-      "text": "On a scaffolded site, `VERSION` holds the engine dependency spec with its caret stripped.",
-      "id": "f:dy5cfj"
+      "text": "The site's guidance for Claude Code therefore belongs in the root file, under `# Your site` on a scaffolded site.",
+      "id": "f:6ro1n9"
     },
     {
-      "text": "The scaffold resolved that spec when its template was built, and the stamp isn't a version read from `node_modules`.",
+      "text": "On a scaffolded site, `VERSION` holds the engine dependency spec with its caret stripped, fixed when the scaffold's template was built rather than read from `node_modules`.",
       "id": "f:dy5cfj"
     },
     {
@@ -228,8 +275,8 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "The skills are the part of the tree that acts on the task you ask for.",
-      "id": "no-claim"
+      "text": "Of the files in the tree, the skills are the ones Claude Code loads by task.",
+      "id": "f:o7bkm0"
     },
     {
       "text": "Each of the four packaged skills carries a [description](https://code.claude.com/docs/en/skills) that says when to load it, so the skill that loads depends on what you ask for.",
@@ -284,7 +331,7 @@
       "id": "f:hiif6u"
     },
     {
-      "text": "The protocol a `cairn-consult` consultation brief follows lives inside the skill, and this page doesn't teach it.",
+      "text": "A `cairn-consult` consultation brief follows the protocol inside the skill.",
       "id": "f:o7bkm0"
     },
     {
@@ -324,6 +371,13 @@
       "id": "f:6ro1n9"
     },
     {
+      "text": "In the project root, commit the `.claude/` tree and the root `CLAUDE.md`.",
+      "id": [
+        "f:ohxg28",
+        "f:0ygumq"
+      ]
+    },
+    {
       "text": "`install` never deletes.",
       "id": "f:4h9fz4"
     },
@@ -348,23 +402,19 @@
       "id": "no-claim"
     },
     {
-      "text": "With the tree in place, the one Claude Code setting it needs is yours to add.",
-      "id": "no-claim"
+      "text": "With the tree in place, the `Stop` hook is the one Claude Code setting left to you.",
+      "id": "f:4nccq6"
     },
     {
       "text": "The `Stop` hook runs `npm run check:cairn --if-present` [when a Claude Code turn ends](https://code.claude.com/docs/en/hooks#stop).",
       "id": "f:4nccq6"
     },
     {
-      "text": "You add it to `.claude/settings.json` yourself, because `install` never writes that file.",
+      "text": "It lives in `.claude/settings.json`, a file `install` never writes.",
       "id": "f:4nccq6"
     },
     {
-      "text": "The package ships the hook as a snippet, `claude/snippets/settings-hook.json`, for you to paste in deliberately.",
-      "id": "f:4nccq6"
-    },
-    {
-      "text": "A hook would give the package's code unattended execution inside a Claude Code session, so the engine leaves that one edit to you.",
+      "text": "Because a hook would give the package's code unattended execution inside a Claude Code session, the engine leaves that edit to you.",
       "id": "no-claim"
     },
     {
@@ -372,7 +422,7 @@
       "id": "f:4nccq6"
     },
     {
-      "text": "The snippet holds the whole hook block, ready to merge into `.claude/settings.json`:",
+      "text": "The package ships the whole hook block as `claude/snippets/settings-hook.json`, ready to merge into `.claude/settings.json`:",
       "id": "f:4nccq6"
     },
     {
@@ -440,7 +490,11 @@
       "id": "f:jd54ph"
     },
     {
-      "text": "Gating the build takes both `--strict` and removing the `continue-on-error` line.",
+      "text": "Once its arguments parse, `check` exits 0 whatever the report says, and `--strict` exits 1 only when the guidance tree is stale or missing.",
+      "id": "f:4ax489"
+    },
+    {
+      "text": "Gating the build therefore takes both `--strict` and removing the `continue-on-error` line.",
       "id": "f:jd54ph"
     },
     {
@@ -456,7 +510,11 @@
       "id": "no-claim"
     },
     {
-      "text": "It reads as follows, with the comment above the guidance step left out:",
+      "text": "It reads as follows, with the comment above the guidance step left out.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The comments that remain describe the scaffold.",
       "id": "no-claim"
     },
     {
@@ -464,27 +522,23 @@
       "id": "f:4nccq6"
     },
     {
-      "text": "The choice turns on the exit codes.",
-      "id": "no-claim"
-    },
-    {
-      "text": "Once its arguments parse, `check` exits 0 whatever the report says, and `--strict` exits 1 only when the guidance tree is stale or missing.",
-      "id": "f:4ax489"
-    },
-    {
-      "text": "The scaffold's workflow ends on this step:",
+      "text": "In `.github/workflows/check.yml`, replace the guidance step that the workflow ends on with the following:",
       "id": "f:jd54ph"
     },
     {
-      "text": "In `.github/workflows/check.yml`, change the guidance step to run `npx cairn-guidance check --strict` with no `continue-on-error: true` line.",
+      "text": "The scaffold ships that step as follows:",
       "id": "f:jd54ph"
     },
     {
-      "text": "`--strict` sets the step's exit code, and GitHub's `continue-on-error` setting decides whether a failing step fails the job.",
+      "text": "`--strict` changes only the step's exit code.",
       "id": "f:jd54ph"
     },
     {
-      "text": "[`continue-on-error`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error) in GitHub's workflow syntax reference defines the setting.",
+      "text": "Whether a failing step then fails the job is up to GitHub's `continue-on-error` setting.",
+      "id": "f:jd54ph"
+    },
+    {
+      "text": "For the setting, see [`continue-on-error`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error) in GitHub's workflow syntax reference.",
       "id": "no-claim"
     },
     {
@@ -507,7 +561,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A healthy setup reports the tree fresh and every other line satisfied, and `check --strict` exits 0.",
+      "text": "A healthy setup reports the tree fresh and every other line satisfied, apart from any wiring you chose to leave out, and `check --strict` exits 0.",
       "id": "f:4ax489"
     },
     {
@@ -522,11 +576,7 @@
       ]
     },
     {
-      "text": "The check prints seven report lines, and its exit code follows these rules:",
-      "id": "f:4ax489"
-    },
-    {
-      "text": "Once its arguments parse, it exits 0, whatever the report says.",
+      "text": "The check prints seven report lines.",
       "id": "f:4ax489"
     },
     {
@@ -538,32 +588,12 @@
       "id": "f:4ax489"
     },
     {
-      "text": "A run that ends in an uncaught error exits nonzero with a code the list doesn't give.",
+      "text": "A run that ends in an uncaught error exits nonzero with a code this page doesn't give.",
       "id": "f:4ax489"
     },
     {
       "text": "One line reports whether the root `CLAUDE.md` carries the import line.",
       "id": "f:6ro1n9"
-    },
-    {
-      "text": "The Tailwind line judges whether `.claude/` is excluded from the site's Tailwind build in a fixed order:",
-      "id": "f:1kwkl0"
-    },
-    {
-      "text": "A `.gitignore` line that ignores `.claude` counts as excluded before any stylesheet is read.",
-      "id": "f:1kwkl0"
-    },
-    {
-      "text": "Otherwise, the check reads `src/admin.css`, then the `admin.css` under `src/theme/`, and the first of them that contains `@source` or `source(none)` decides.",
-      "id": "f:1kwkl0"
-    },
-    {
-      "text": "That file reads as excluded when it holds the literal `@source not \"./.claude\";` line or `source(none)` anywhere.",
-      "id": "f:1kwkl0"
-    },
-    {
-      "text": "When neither file carries either, the line reports unknown and names the paths it checked.",
-      "id": "f:1kwkl0"
     },
     {
       "text": "The freshness line ignores the `VERSION` stamp, so a tree that differs only there reads fresh.",
@@ -589,7 +619,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The `Stop` hook runs `check:cairn` as the turn ends, and its output is the audit's report.",
+      "text": "The `Stop` hook runs `check:cairn` as the turn ends, and its output is the admin stylesheet build's log followed by the audit's report.",
       "id": [
         "f:4nccq6",
         "f:mrv24k"
@@ -623,10 +653,6 @@
       "id": "f:5ohm23"
     },
     {
-      "text": "`check` reports each problem on a separate line.",
-      "id": "f:4ax489"
-    },
-    {
       "text": "The hook's `check:cairn` run names a missing peer, or prints nothing.",
       "id": [
         "f:mrv24k",
@@ -641,8 +667,36 @@
       ]
     },
     {
-      "text": "The following tables match each symptom to its cause and its fix.",
-      "id": "no-claim"
+      "text": "`check` reports each problem on a separate line.",
+      "id": "f:4ax489"
+    },
+    {
+      "text": "`install` refuses a path in the following cases, and none of them changes the exit code:",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "A component of the path, or the destination itself, is a symlink.",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "A component exists as something other than a directory, such as a regular file.",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "The destination exists as something other than a regular file, such as a directory.",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "The destination falls outside `.claude`.",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "A `<path>.orig` recovery copy could not be made, which refuses the destination beside it too.",
+      "id": "f:vhxkab"
+    },
+    {
+      "text": "The `.claude/cairn/MANIFEST` path is itself refused, so no `MANIFEST` is written.",
+      "id": "f:vhxkab"
     },
     {
       "text": "The following table covers what `install` prints and how it stops.",
@@ -661,19 +715,27 @@
       "id": "no-claim"
     },
     {
-      "text": "`install` prints a `refused <path>` line on stderr and still exits 0.",
+      "text": "`install` prints a `refused <path>` or `refused packaged entry <path>` line on stderr and still exits 0.",
       "id": [
         "f:vhxkab",
+        "f:vufjc3",
         "f:5ohm23"
       ]
     },
     {
-      "text": "The path is one `install` won't write.",
+      "text": "A `refused <path>` line names a path in one of the refusal cases.",
       "id": "f:vhxkab"
     },
     {
-      "text": "The run refuses it by name and continues.",
-      "id": "f:vhxkab"
+      "text": "A `refused packaged entry` line names an entry the installed package ships that isn't a regular file.",
+      "id": "f:vufjc3"
+    },
+    {
+      "text": "The run refuses each path by name and continues.",
+      "id": [
+        "f:vhxkab",
+        "f:vufjc3"
+      ]
     },
     {
       "text": "See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.",
@@ -703,7 +765,11 @@
       "id": "f:5ohm23"
     },
     {
-      "text": "The run hit a filesystem failure it can't step past, such as a failure creating a directory, writing the `MANIFEST`, or reading a destination that already exists.",
+      "text": "The run hit a failure it can't continue past.",
+      "id": "f:5ohm23"
+    },
+    {
+      "text": "Examples are a failure creating a directory, writing the `MANIFEST`, reading an existing destination, or resolving or reading the installed package's guidance.",
       "id": "f:5ohm23"
     },
     {
@@ -713,34 +779,6 @@
     {
       "text": "See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.",
       "id": "f:5ohm23"
-    },
-    {
-      "text": "`install` refuses a path in the following cases, and none of them changes the exit code:",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "A component of the path, or the destination itself, is a symlink.",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "A component exists as something other than a directory, such as a regular file.",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "The destination exists as something other than a regular file, such as a directory.",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "The destination falls outside `.claude`.",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "A `<path>.orig` recovery copy could not be made, which refuses the destination beside it too.",
-      "id": "f:vhxkab"
-    },
-    {
-      "text": "The `.claude/cairn/MANIFEST` path is itself refused, so no `MANIFEST` is written.",
-      "id": "f:vhxkab"
     },
     {
       "text": "The following table covers the `Stop` hook's `check:cairn` run.",
@@ -841,7 +879,7 @@
       "id": "f:jd54ph"
     },
     {
-      "text": "That is the trade [Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes.",
+      "text": "[Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes this wider failure.",
       "id": "no-claim"
     },
     {
@@ -877,7 +915,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The first line reports the guidance tree stale or missing.",
+      "text": "The freshness line reports the guidance tree stale or missing.",
       "id": "f:4ax489"
     },
     {
@@ -892,7 +930,7 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "The second line reports the root `CLAUDE.md` missing the import line.",
+      "text": "A line reports the root `CLAUDE.md` missing the import line.",
       "id": "f:6ro1n9"
     },
     {
@@ -927,12 +965,16 @@
       "id": "f:4ax489"
     },
     {
-      "text": "The seventh line names a `.orig` file still present.",
+      "text": "A line names a `.orig` file still present.",
       "id": "f:vhxkab"
     },
     {
       "text": "An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there.",
       "id": "f:vhxkab"
+    },
+    {
+      "text": "Read the `.orig` file, keep any edit you need, then delete it.",
+      "id": "f:ohxg28"
     },
     {
       "text": "See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.",
@@ -943,7 +985,11 @@
       "id": "f:1kwkl0"
     },
     {
-      "text": "No `.gitignore` line ignores `.claude`, and the first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not \"./.claude\";` line nor `source(none)`.",
+      "text": "No `.gitignore` line ignores `.claude`.",
+      "id": "f:1kwkl0"
+    },
+    {
+      "text": "The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not \"./.claude\";` line nor `source(none)`.",
       "id": "f:1kwkl0"
     },
     {
@@ -966,7 +1012,11 @@
       "id": "f:4ax489"
     },
     {
-      "text": "Either ends the run.",
+      "text": "Or the installed package's guidance couldn't be resolved or read.",
+      "id": "f:4ax489"
+    },
+    {
+      "text": "Each ends the run.",
       "id": "f:4ax489"
     },
     {

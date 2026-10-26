@@ -1,18 +1,28 @@
 # Using Claude Code with cairn
 
-A developer building an organization's site on cairn's seams may choose Claude Code as their coding assistant, and cairn ships guidance for Claude Code to read while it works on the site. The guidance is a tree of files under `.claude/`, plus a root `CLAUDE.md` that imports the tree's fragment. A developer arrives at this page from one of two situations:
+A developer building an organization's site on cairn's seams may choose Claude Code as their coding assistant, and cairn ships guidance for Claude Code to read while it works on the site. The guidance is a tree of files under `.claude/`, plus a root [`CLAUDE.md`](https://code.claude.com/docs/en/memory) that imports the tree's fragment. You arrive at this page from one of two situations:
 
-- A site scaffolded by `create-cairn-site` already carries the tree, and the developer wants to know what Claude Code now reads and which skill loads for which task.
-- An existing site adopts the tree, or refreshes it after an engine upgrade, and the developer wants to know what `install` writes and what it leaves to them.
+- A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which skill loads for each task.
+- Your existing site adopts the tree, or refreshes it after an engine upgrade. You want to know what `install` writes and what it leaves to you.
 
-The rest of cairn's docs assume you work without a coding assistant, and this page is the one that covers working with Claude Code. The guidance ships in Claude Code's format only, with no `AGENTS.md` and no file for any other coding agent, so a developer who uses another agent has no cairn guidance to read.
+The other cairn docs assume you work without a coding assistant. What's specific to Claude Code lives in this section of the docs. The guidance ships in Claude Code's format only, with no `AGENTS.md` and no file for any other coding agent, so a developer who uses another agent has no cairn guidance to read.
 
-The engine stops at the tree. It never edits Claude Code's settings, never rewrites the root `CLAUDE.md`, and never fails a CI build over a stale tree unless you choose that. Two edits are left to you: the `Stop` hook in `.claude/settings.json`, and a CI gate if you want one. `install` exits 0 even when it refuses an entry or fails to write a destination, so what `install` and `check` print is how you learn what they did. The page covers the following:
+The engine stops at the tree. It never edits Claude Code's settings, never rewrites the root `CLAUDE.md`, and never fails a CI build over a stale tree unless you choose that. The page's steps leave the following edits to you, each one yours to make or decline:
+
+- On a site that adopts the tree, the import line in the root `CLAUDE.md`.
+- The [`Stop` hook](https://code.claude.com/docs/en/hooks) in `.claude/settings.json`.
+- On a site that lacks them, the `check:cairn` script, the `cairn-audit` config file, and the CI workflow.
+- A CI gate on a stale tree, if you want one.
+- Removing a path that `install` reports the package no longer ships.
+- Excluding `.claude/` from the site's Tailwind build, when `check` reports it isn't excluded.
+- Deleting a leftover `.orig` file once you have read it.
+
+What `install` and `check` print is how you learn what they did. The page covers the following:
 
 - What the guidance tree under `.claude/` holds, and the root `CLAUDE.md` that imports it.
 - Which of the four packaged skills loads for which task.
 - Where the review agent's file sits.
-- How to wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn ends, including adding that script on a site without one.
+- How to wire the `Stop` hook that runs `check:cairn` when a Claude Code turn ends, and add that script where it's missing.
 - How to adopt, refresh, and check the tree with `cairn-guidance install` and `cairn-guidance check`, and how to read their exit codes.
 - What `check` reports when a site lacks the scaffold's gate wiring.
 - How to make the scaffold's CI step gate on a stale tree, including starting the workflow on a site without one.
@@ -38,22 +48,22 @@ With both in place, [The guidance tree](#the-guidance-tree) describes what cairn
 
 ## The guidance tree
 
-Apart from the root `CLAUDE.md` that imports the tree's fragment, the guidance for Claude Code sits entirely under `.claude/`. A scaffolded site is born with all of it installed. Each file sits where Claude Code looks for it: the root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line, and the skills and the review agent sit in `.claude/skills/` and `.claude/agents/`.
+Apart from the root `CLAUDE.md` that imports the tree's fragment, the guidance for Claude Code sits entirely under `.claude/`. A scaffolded site starts with all of it installed. Each file sits where Claude Code looks for it. The root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line.
 
-The tree holds the following paths:
+cairn's guidance sits at the following paths:
 
 - `.claude/skills/`, with one directory for each packaged skill.
-- `.claude/agents/cairn-extension-reviewer.md`, the review agent. For what the agent checks, see [What ships under `claude/`](../reference/guidance.md#what-ships-under-claude) in the `cairn-guidance` reference.
+- `.claude/agents/cairn-extension-reviewer.md`, the review agent, a Claude Code subagent. For what the agent checks, see [What ships under `claude/`](../reference/guidance.md#what-ships-under-claude) in the `cairn-guidance` reference.
 - `.claude/cairn/CLAUDE.md`, the fragment of cairn's guidance that the root `CLAUDE.md` imports.
 - `.claude/cairn/VERSION`, the version stamp.
 - `.claude/cairn/MANIFEST`, the list of installed paths.
 - `CLAUDE.md` at the project root.
 
-The root `CLAUDE.md` is the one import line, then a `# Your site` section for the site's guidance. The site's guidance for Claude Code belongs under `# Your site`, because the root file is the site's and the fragment under `.claude/cairn/` is the package's to refresh.
+On a scaffolded site, the root `CLAUDE.md` is the one import line, then a `# Your site` section for the site's guidance. `install` rewrites the fragment under `.claude/cairn/` when it refreshes the tree, and it never rewrites the root file. The site's guidance for Claude Code therefore belongs in the root file, under `# Your site` on a scaffolded site.
 
-On a scaffolded site, `VERSION` holds the engine dependency spec with its caret stripped. The scaffold resolved that spec when its template was built, and the stamp isn't a version read from `node_modules`. For the stamp `install` writes, see [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.
+On a scaffolded site, `VERSION` holds the engine dependency spec with its caret stripped, fixed when the scaffold's template was built rather than read from `node_modules`. For the stamp `install` writes, see [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.
 
-The skills are the part of the tree that acts on the task you ask for.
+Of the files in the tree, the skills are the ones Claude Code loads by task.
 
 ### Skills by task
 
@@ -66,7 +76,7 @@ Each of the four packaged skills carries a [description](https://code.claude.com
 | `cairn-extend` | Changing anything that touches `/admin`, a form action, logging, or an engine seam. |
 | `cairn-public` | Restyling or extending the public side of the site. |
 
-`cairn-public` also carries one catalogue page for each public piece cairn ships, under its `references/` directory. The protocol a `cairn-consult` consultation brief follows lives inside the skill, and this page doesn't teach it. For what each skill teaches, see [The four skills](../reference/guidance.md#the-four-skills) in the `cairn-guidance` reference.
+`cairn-public` also carries one catalogue page for each public piece cairn ships, under its `references/` directory. A `cairn-consult` consultation brief follows the protocol inside the skill. For what each skill teaches, see [The four skills](../reference/guidance.md#the-four-skills) in the `cairn-guidance` reference.
 
 A site without the tree, or one whose engine was upgraded, installs or refreshes it next.
 
@@ -85,21 +95,21 @@ To adopt or refresh the tree, follow these steps:
 
    `install` writes the fragment to `.claude/cairn/CLAUDE.md` and never rewrites the root `CLAUDE.md`, so the import line is yours to add. On a site with no root `CLAUDE.md`, create the file in the project root with that line.
 
+3. In the project root, commit the `.claude/` tree and the root `CLAUDE.md`.
+
 `install` never deletes. A path an earlier `MANIFEST` listed that the package no longer ships is printed as removable, and removing it is left to you.
 
 `install` exits 0 even when it refuses an entry or fails to write a destination, and it prints each case to stderr. A script that must detect a partial install therefore reads stderr. When `install` stops with an error and exits nonzero, see [Diagnose an install or check failure](#diagnose-an-install-or-check-failure).
 
 [The steps in Upgrade cairn](../extend/upgrade-cairn.md#steps) include the refresh and say when to run it.
 
-With the tree in place, the one Claude Code setting it needs is yours to add.
+With the tree in place, the `Stop` hook is the one Claude Code setting left to you.
 
 ## Wire the Stop hook
 
-The `Stop` hook runs `npm run check:cairn --if-present` [when a Claude Code turn ends](https://code.claude.com/docs/en/hooks#stop). You add it to `.claude/settings.json` yourself, because `install` never writes that file. The package ships the hook as a snippet, `claude/snippets/settings-hook.json`, for you to paste in deliberately.
+The `Stop` hook runs `npm run check:cairn --if-present` [when a Claude Code turn ends](https://code.claude.com/docs/en/hooks#stop). It lives in `.claude/settings.json`, a file `install` never writes. Because a hook would give the package's code unattended execution inside a Claude Code session, the engine leaves that edit to you. [The trust boundary](../reference/guidance.md#the-trust-boundary) in the `cairn-guidance` reference records the reasoning.
 
-A hook would give the package's code unattended execution inside a Claude Code session, so the engine leaves that one edit to you. [The trust boundary](../reference/guidance.md#the-trust-boundary) in the `cairn-guidance` reference records the reasoning.
-
-The snippet holds the whole hook block, ready to merge into `.claude/settings.json`:
+The package ships the whole hook block as `claude/snippets/settings-hook.json`, ready to merge into `.claude/settings.json`:
 
 ```json
 {
@@ -148,13 +158,13 @@ The scaffold's CI workflow also checks the guidance tree, and how strictly it ch
 
 ## Make the CI step gate on a stale tree
 
-The scaffold's workflow reports a stale or missing guidance tree in its job log without failing the build. Making it fail the build is a choice you make in `.github/workflows/check.yml`. The workflow's guidance step runs `npx cairn-guidance check` without `--strict`, under `continue-on-error: true`. Gating the build takes both `--strict` and removing the `continue-on-error` line.
+The scaffold's workflow reports a stale or missing guidance tree in its job log without failing the build. Making it fail the build is a choice you make in `.github/workflows/check.yml`. The workflow's guidance step runs `npx cairn-guidance check` without `--strict`, under `continue-on-error: true`. Once its arguments parse, `check` exits 0 whatever the report says, and `--strict` exits 1 only when the guidance tree is stale or missing. Gating the build therefore takes both `--strict` and removing the `continue-on-error` line.
 
 To make the step gate, follow these steps:
 
 1. If the site has no `.github/workflows/check.yml`, create it from the package's `check.yml` snippet.
 
-   The snippet carries the same guidance step as the scaffold's workflow. It reads as follows, with the comment above the guidance step left out:
+   The snippet carries the same guidance step as the scaffold's workflow. It reads as follows, with the comment above the guidance step left out. The comments that remain describe the scaffold.
 
    ```yaml
    name: check
@@ -185,16 +195,20 @@ To make the step gate, follow these steps:
 
    For every file the package ships under `claude/`, see [What ships under `claude/`](../reference/guidance.md#what-ships-under-claude) in the `cairn-guidance` reference.
 
-The choice turns on the exit codes. Once its arguments parse, `check` exits 0 whatever the report says, and `--strict` exits 1 only when the guidance tree is stale or missing. The scaffold's workflow ends on this step:
+2. In `.github/workflows/check.yml`, replace the guidance step that the workflow ends on with the following:
 
-```yaml
-- run: npx cairn-guidance check
-  continue-on-error: true
-```
+   ```yaml
+   - run: npx cairn-guidance check --strict
+   ```
 
-2. In `.github/workflows/check.yml`, change the guidance step to run `npx cairn-guidance check --strict` with no `continue-on-error: true` line.
+   The scaffold ships that step as follows:
 
-`--strict` sets the step's exit code, and GitHub's `continue-on-error` setting decides whether a failing step fails the job. [`continue-on-error`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error) in GitHub's workflow syntax reference defines the setting.
+   ```yaml
+   - run: npx cairn-guidance check
+     continue-on-error: true
+   ```
+
+`--strict` changes only the step's exit code. Whether a failing step then fails the job is up to GitHub's `continue-on-error` setting. For the setting, see [`continue-on-error`](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idstepscontinue-on-error) in GitHub's workflow syntax reference.
 
 Removing `continue-on-error: true` also widens what fails the build. The setting passes the job on any nonzero exit of the step. Without it, any nonzero exit fails the build, not only the `--strict` exit on a stale or missing tree.
 
@@ -202,28 +216,15 @@ Whichever you choose, [Verify the guidance setup](#verify-the-guidance-setup) ch
 
 ## Verify the guidance setup
 
-A healthy setup reports the tree fresh and every other line satisfied, and `check --strict` exits 0.
+A healthy setup reports the tree fresh and every other line satisfied, apart from any wiring you chose to leave out, and `check --strict` exits 0.
 
 To verify the setup, follow these steps:
 
 1. In the project root, run `npx cairn-guidance check`.
 
-   The check prints seven report lines, and its exit code follows these rules:
+   The check prints seven report lines. Under `--strict`, it exits 1 only when the guidance tree is stale or missing. For an unknown command or flag, it prints the usage to stderr and exits 2. A run that ends in an uncaught error exits nonzero with a code this page doesn't give.
 
-   - Once its arguments parse, it exits 0, whatever the report says.
-   - Under `--strict`, it exits 1 only when the guidance tree is stale or missing.
-   - For an unknown command or flag, it prints the usage to stderr and exits 2.
-
-   A run that ends in an uncaught error exits nonzero with a code the list doesn't give.
-
-   One line reports whether the root `CLAUDE.md` carries the import line. The Tailwind line judges whether `.claude/` is excluded from the site's Tailwind build in a fixed order:
-
-   1. A `.gitignore` line that ignores `.claude` counts as excluded before any stylesheet is read.
-   2. Otherwise, the check reads `src/admin.css`, then the `admin.css` under `src/theme/`, and the first of them that contains `@source` or `source(none)` decides.
-   3. That file reads as excluded when it holds the literal `@source not "./.claude";` line or `source(none)` anywhere.
-   4. When neither file carries either, the line reports unknown and names the paths it checked.
-
-   The freshness line ignores the `VERSION` stamp, so a tree that differs only there reads fresh. For every line `check` prints, see [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
+   One line reports whether the root `CLAUDE.md` carries the import line. The freshness line ignores the `VERSION` stamp, so a tree that differs only there reads fresh. For every line `check` prints, see [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
 
 2. In the same shell, run `npx cairn-guidance check --strict; echo $?` to print the strict run's exit code.
 
@@ -231,7 +232,7 @@ To verify the setup, follow these steps:
 
 3. In a Claude Code session in the site's root, end a turn.
 
-   The `Stop` hook runs `check:cairn` as the turn ends, and its output is the audit's report. For where that output appears, see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks).
+   The `Stop` hook runs `check:cairn` as the turn ends, and its output is the admin stylesheet build's log followed by the audit's report. For where that output appears, see [Claude Code's hooks reference](https://code.claude.com/docs/en/hooks).
 
 4. If you gated CI, push a commit from the project root.
 
@@ -244,19 +245,9 @@ When a line reports a problem, [Diagnose an install or check failure](#diagnose-
 The setup's failures surface in four places:
 
 - `install` reports a partial run on stderr, or stops with a nonzero exit.
-- `check` reports each problem on a separate line.
 - The hook's `check:cairn` run names a missing peer, or prints nothing.
 - A gated CI job fails at the guidance step, on a stale tree or on any other nonzero exit.
-
-The following tables match each symptom to its cause and its fix.
-
-The following table covers what `install` prints and how it stops.
-
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| `install` prints a `refused <path>` line on stderr and still exits 0. | The path is one `install` won't write. The run refuses it by name and continues. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
-| `install` prints a `write error <path>: <code>` line on stderr and still exits 0. | A disk or permissions error stopped the write, not a containment refusal. The printed line names its errno code, such as `ENOSPC` or `EACCES`. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
-| `install` stops with an error instead of finishing, and exits nonzero. | The run hit a filesystem failure it can't step past, such as a failure creating a directory, writing the `MANIFEST`, or reading a destination that already exists. Unlike a refusal or a write error, this failure ends the run. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
+- `check` reports each problem on a separate line.
 
 `install` refuses a path in the following cases, and none of them changes the exit code:
 
@@ -266,6 +257,14 @@ The following table covers what `install` prints and how it stops.
 - The destination falls outside `.claude`.
 - A `<path>.orig` recovery copy could not be made, which refuses the destination beside it too.
 - The `.claude/cairn/MANIFEST` path is itself refused, so no `MANIFEST` is written.
+
+The following table covers what `install` prints and how it stops.
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `install` prints a `refused <path>` or `refused packaged entry <path>` line on stderr and still exits 0. | A `refused <path>` line names a path in one of the refusal cases. A `refused packaged entry` line names an entry the installed package ships that isn't a regular file. The run refuses each path by name and continues. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
+| `install` prints a `write error <path>: <code>` line on stderr and still exits 0. | A disk or permissions error stopped the write, not a containment refusal. The printed line names its errno code, such as `ENOSPC` or `EACCES`. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
+| `install` stops with an error instead of finishing, and exits nonzero. | The run hit a failure it can't continue past. Examples are a failure creating a directory, writing the `MANIFEST`, reading an existing destination, or resolving or reading the installed package's guidance. Unlike a refusal or a write error, this failure ends the run. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
 
 The following table covers the `Stop` hook's `check:cairn` run.
 
@@ -279,18 +278,18 @@ The following table covers a gated `check` job that fails at the guidance step.
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | The guidance check's first line in the job log reports the tree stale or missing. | The committed tree is stale or missing. Under `--strict`, the check exits 1 on exactly that, and with `continue-on-error` removed, that exit fails the job. | Run the install step in [Adopt or refresh the guidance tree](#adopt-or-refresh-the-guidance-tree), commit the refreshed `.claude/` tree, and push again. |
-| The guidance check's first line doesn't report the tree stale or missing, or the step prints no report lines at all. | The step exited nonzero for another reason, such as exit 2 for an unknown flag or a file read that failed and ended the run. Without `continue-on-error`, any nonzero exit of the step fails the job. That is the trade [Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes. | Read the guidance step's output in the job log, and compare it with what the [`check`](../reference/guidance.md#check) reference says the command reports. To keep the build passing while you work on it, put the `continue-on-error: true` line back under the step, then push again. The build then no longer fails on a stale tree either, until you remove the line again. |
+| The guidance check's first line doesn't report the tree stale or missing, or the step prints no report lines at all. | The step exited nonzero for another reason, such as exit 2 for an unknown flag or a file read that failed and ended the run. Without `continue-on-error`, any nonzero exit of the step fails the job. [Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes this wider failure. | Read the guidance step's output in the job log, and compare it with what the [`check`](../reference/guidance.md#check) reference says the command reports. To keep the build passing while you work on it, put the `continue-on-error: true` line back under the step, then push again. The build then no longer fails on a stale tree either, until you remove the line again. |
 
 The following table covers the lines `check` reports and the errors that stop it. For every line, see [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| The first line reports the guidance tree stale or missing. | The installed tree differs from the tree the installed package ships, apart from the `VERSION` stamp, or no tree is installed. | In the project root, run `npx cairn-guidance install`. |
-| The second line reports the root `CLAUDE.md` missing the import line. | The root `CLAUDE.md` lacks the `@.claude/cairn/CLAUDE.md` line. `install` never rewrites the root file, so it never adds the line. | Add `@.claude/cairn/CLAUDE.md` as the root `CLAUDE.md`'s first line, creating the file in the project root if the site has none. |
+| The freshness line reports the guidance tree stale or missing. | The installed tree differs from the tree the installed package ships, apart from the `VERSION` stamp, or no tree is installed. | In the project root, run `npx cairn-guidance install`. |
+| A line reports the root `CLAUDE.md` missing the import line. | The root `CLAUDE.md` lacks the `@.claude/cairn/CLAUDE.md` line. `install` never rewrites the root file, so it never adds the line. | Add `@.claude/cairn/CLAUDE.md` as the root `CLAUDE.md`'s first line, creating the file in the project root if the site has none. |
 | A line reports a missing `check:cairn` script, `cairn-audit` config file, or `.github/workflows/check.yml`. | The site lacks the named script or file. `install` writes under `.claude/` alone, so it writes none of them. | Paste the snippet `check` prints under that line, as [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference describes. |
-| The seventh line names a `.orig` file still present. | An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there. | See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
-| The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or reports unknown and names the paths it checked. | No `.gitignore` line ignores `.claude`, and the first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not "./.claude";` line nor `source(none)`. The line reports unknown when neither stylesheet carries `@source` or `source(none)`. | See [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference. |
-| `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of finishing, and exits nonzero. | A file read failed for a reason other than a missing file, or a read would have left the project directory. Either ends the run. | See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference. |
+| A line names a `.orig` file still present. | An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there. | Read the `.orig` file, keep any edit you need, then delete it. See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
+| The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or reports unknown and names the paths it checked. | No `.gitignore` line ignores `.claude`. The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not "./.claude";` line nor `source(none)`. The line reports unknown when neither stylesheet carries `@source` or `source(none)`. | See [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference. |
+| `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of finishing, and exits nonzero. | A file read failed for a reason other than a missing file, or a read would have left the project directory. Or the installed package's guidance couldn't be resolved or read. Each ends the run. | See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference. |
 
 ## See also
 

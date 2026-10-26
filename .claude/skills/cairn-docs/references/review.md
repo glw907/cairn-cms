@@ -25,8 +25,8 @@ Pages: <docs/path.md>, <docs/other.md>. Findings path: <absolute path>/findings.
 
 The agent returns one JSON array, one element per claim in the changed lines:
 `{file, line, claim, verdict, source, proposed}`. `verdict` is `holds`, `wrong`, `imprecise`, or
-`unsupported`. Fix each `wrong` or `imprecise` claim you agree with, commit, push, and dispatch the
-agent again on the new head. A finding you dispute becomes a note (below).
+`unsupported`. Fix each `wrong` or `imprecise` claim you agree with, commit, and push before you write the
+notes. A finding you dispute becomes a note (below).
 
 ## 2. Turn findings into notes
 
@@ -84,15 +84,15 @@ setsid -f approval-queue docs <worktree> <owner/repo#n> "<title>" --description 
 `--replies <replies.json>` answers the comments of an earlier send-back. The command refuses, with
 one line on stderr and exit 2, a pull request that is already in a waiting item, a dirty worktree,
 a worktree not at the pull request's head, a pull request that changes no `docs/**/*.md` page, and
-a notes file with a quote that names no changed page or matches twice.
+a note whose `file` names no changed page, and a quote that matches its page more than once.
 
 ## 5. Act on the decision
 
 Geoff may edit a page in the review. Each edit is a commit in the worktree named `Edit <path> in
 review`.
 
-- **Approve.** The decision carries `pr`, `head`, `commit`, and `calls` (each answered `decide`
-  note as `{id, choice}`).
+- **Approve.** The decision carries `pr`, `head`, `commit`, and `calls` (each answered `decide` or
+  `question` note as `{id, choice}`).
   1. Check `git rev-parse HEAD` prints `commit`. When `commit` is not `head`, push his edits:
      `git push origin HEAD:<branch>`.
   2. Wait for the repo's CI on `commit`: `ci-green <commit> --pr <n> --wait`, reissued on exit 75.

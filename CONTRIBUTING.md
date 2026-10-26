@@ -107,7 +107,8 @@ holds them to it.
   the page that should document it.
 
 `npm run check:options` regenerates the option paths from the built type declarations and fails
-when a row's page, anchor, or section is missing, or when a path has no row, so an option can't
+when a row's page or anchor is missing, when its section does not name the option in inline code,
+or when a path has no row, so an option can't
 ship undocumented. `npm run check:docs-gate` runs it with the rest of the docs checks, including
 links, Vale, snippets, and reference coverage. CI runs the same script.
 

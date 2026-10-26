@@ -594,10 +594,10 @@
   `theme-your-public-site.md`, `sign-in-through-your-organization.md` is
   `replace-magic-links-with-cloudflare-access.md`, and `add-a-second-audience.md` is
   `add-a-second-sign-in-group.md`.
-- **Six extend pages are redrafted from their approved blueprints and checked against the code.**
+- **Six extend pages are redrafted and checked against the code.**
   The pages are `docs/extend/add-a-custom-admin-screen.md`, `architecture.md`,
   `restrict-admin-access.md`, `add-a-second-sign-in-group.md`, `scaffolded-site-files.md`, and
-  `add-cairn-to-a-sveltekit-app.md`, and each blueprint now matches its reviewed page.
+  `add-cairn-to-a-sveltekit-app.md`.
   `restrict-admin-access.md` no longer has the reader create `src/access.ts`, and it warns that
   applying `0001_roles.sql` keeps only the engine's four `editor` columns.
   `scaffolded-site-files.md` lists only what the setup command writes.

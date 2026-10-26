@@ -6686,9 +6686,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 - **Verdict:** decline. `isDevBackendFlagSet` accepts only `'1'` or the boolean `true`
   (`isDevBackendFlagSet` in `src/lib/dev-flag.ts`), because it is also the production tripwire
   (`dev-backend-flag-refusal`), and a wider rule turns a typo into an outage. The scaffold's
-  `npm run dev` sets the value through `spawn`, so the `cmd.exe` trailing space cannot reach it. The
-  fact that states the Windows form is corrected: `f:e8dr5r` reads `set "NAME=1" &&`, with the quotes
-  that keep the space out of the value, and no fact states the unquoted form.
+  `npm run dev` sets the value through `spawn`, so the `cmd.exe` trailing space cannot reach it. The Windows form is `set "NAME=1" &&`, with the quotes that keep the space out of the value, and no page documents the unquoted form.
 - **Reopens on:** a scaffold path that delivers the flag through a shell.
 - **Record:** [the engine-pass design](../specs/2026-10-07-engine-pass-pre-2b-design.md)
   (B4).

@@ -375,6 +375,17 @@ describe('checkOptionMap', () => {
     expect(failures[0]).toContain('`nav`');
   });
 
+  it('fails an anchor row that is an explicit id and not a heading, since it has no section to check', () => {
+    const failures = checkOptionMap({
+      ...base,
+      readDoc: (path: string) => (path === 'docs/reference/core.md' ? `${core}\n\n<a id="explicit-anchor"></a>\n` : null),
+      map: { pendingCount: 1, rows: { ...base.map.rows, 'CairnAdapter.editor.nav': 'docs/reference/core.md#explicit-anchor' } },
+    });
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('CairnAdapter.editor.nav');
+    expect(failures[0]).toContain('not a heading');
+  });
+
   it('does not count a mention outside inline code or inside a code fence', () => {
     const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#other');
     expect(failures).toHaveLength(1);

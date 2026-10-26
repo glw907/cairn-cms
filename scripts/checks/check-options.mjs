@@ -425,7 +425,9 @@ export function checkOptionMap({ generated, map, pages = new Set(), readDoc }) {
       } else {
         const section = sectionText(text, row.anchor);
         const segment = key.split('.').pop() ?? key;
-        if (section !== null && !namesInCode(section, segment)) {
+        if (section === null) {
+          failures.push(`${key}: ${row.page}#${row.anchor} is not a heading, so it has no section to check.`);
+        } else if (!namesInCode(section, segment)) {
           failures.push(`${key}: the section ${row.page}#${row.anchor} does not name \`${segment}\` in inline code.`);
         }
       }

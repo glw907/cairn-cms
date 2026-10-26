@@ -1,3 +1,0 @@
-# Why
-
-A stance claim.

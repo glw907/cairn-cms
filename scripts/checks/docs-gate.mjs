@@ -1,5 +1,5 @@
 // cairn-cms: the docs gate. One script runs every docs check, so CI, the gate-tier classifier's
-// `docs` tier, and a page-chain page's gate all read the identical list from one place
+// `docs` tier, and a single page's gate all read the identical list from one place
 // instead of a separate step per check that can drift apart. `check:package` is deliberately not in
 // this list: it checks the tarball's shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.

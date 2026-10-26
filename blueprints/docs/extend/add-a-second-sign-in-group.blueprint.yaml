@@ -512,9 +512,8 @@ sections:
         use: |
           Only the adapter module's location, `src/theme/cairn.config.ts` on a scaffolded site and
           `src/lib/cairn.config.ts` on the tutorial's site, and, for the hooks step, the clause
-          that the tutorial page's hooks still call `createAuthGuard()` and `devBackendHandle()`
-          with no config, a form that no longer type-checks, so a site built from the tutorial
-          passes `{ runtime }` there. Omit the `src/access.ts` clause.
+          that the tutorial page's hooks pass `{ runtime }` to both handles, as the scaffold's do.
+          Omit the `src/access.ts` clause and the `#lib/cairn.server.js` import.
       - id: s-declare
         kind: step
         text: |
@@ -536,8 +535,8 @@ sections:
         kind: step
         text: |
           In `src/hooks.server.ts`, confirm that `createAuthGuard` and `devBackendHandle` each
-          receive `{ runtime }`, as the scaffold's hooks do. Where either takes no config, pass
-          `{ runtime }`. An older site whose hooks pass `roles` follows Upgrade cairn instead.
+          receive `{ runtime }`, as the scaffold's and the tutorial's hooks do. An older site whose
+          hooks still pass `roles` follows Upgrade cairn instead.
         requires:
           - role-declared
         produces:

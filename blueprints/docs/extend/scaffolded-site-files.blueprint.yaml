@@ -281,6 +281,14 @@ sections:
       requires a shape of; `[gate]` marks a file that runs or feeds a check that can fail the build
       or the CI run.
     items:
+      - id: tree-elision
+        kind: sentence
+        mode: claim
+        text: |
+          The tree leaves out files no section discusses, such as `src/app.html` and the theme's
+          test files, so a reader does not take the listing as complete.
+        facts:
+          - f:i3rn6f
       - id: tree-block
         kind: code
         text: |

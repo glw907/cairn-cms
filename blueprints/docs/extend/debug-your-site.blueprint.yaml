@@ -556,19 +556,19 @@ sections:
         fact: f:u78zg6
         use: |
           Only that `createAuthGuard` and `devBackendHandle` each set `locals.cairnAccess` to
-          `runtime.access ?? {}` on every admin path they cover, right after they set
-          `locals.cairnEditor`, so behind either this reason does not fire; it fires only when
+          `runtime.access ?? {}` right after they set `locals.cairnEditor`, on every admin path
+          where they set one, so behind either this reason does not fire; it fires only when
           other code, such as a site's hook, sets `locals.cairnEditor` without
           `locals.cairnAccess`. Omit the session-check
-          clause, which [[admin-action-session-absent]] carries, the earlier-versions clause, and
-          the `devBackendHandle({ access })` fix.
+          clause, which [[admin-action-session-absent]] carries, and the earlier-versions clause
+          with the fix it gave.
       - id: s-access-map-fix
         kind: sentence
         mode: claim
         text: |
           The fix is a code change: that hook also sets `locals.cairnAccess` to
           `runtime.access ?? {}`, as the guard does, or the route goes behind the guard, which sets
-          it on every admin path it covers.
+          it on every admin path where it sets the editor.
         facts:
           - f:nup3og
           - f:u78zg6
@@ -1269,7 +1269,7 @@ constraints:
     [[the-site-facts-json-check-was-skipped]] describes the warning the build emits when it skips
     the check.
   - |
-    The page never offers `devBackendHandle({ access })` or a guard `access` option as a fix, and
+    The page never offers an `access` or `roles` option on either hook handle as a fix, and
     never says the build reports a stale `site-facts.json` current. An upgrading reader is sent to
     Upgrade cairn's one-declaration section by link, with no history restated.
   - |

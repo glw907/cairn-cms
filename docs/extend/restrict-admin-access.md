@@ -12,10 +12,11 @@ Inside the site's SvelteKit app the map has two readers, since the engine checks
 The engine reads the map from the adapter, and the site's routes read it from the hook handle in `src/hooks.server.ts`.
 In a build, that handle is the guard, `createAuthGuard`.
 Under `npm run dev`, it's `devBackendHandle`.
-The steps that follow declare a role vocabulary and an access map and give the map to both readers.
+The steps that follow declare a role vocabulary and an access map and give both to the adapter, which hands the map to both readers.
 They then enforce the map on your screens' reads and writes and verify each role's reach.
 One example runs through every step.
-It declares a webmaster role, and only webmasters and owners reach the media library and the scaffold's signups screen.
+It declares a webmaster role, and only webmasters and owners reach the media library and the signups screen of the repository's example site, `examples/showcase`.
+On your site, one of your own custom screens takes the signups screen's place.
 
 A developer arrives here to gate a custom admin screen's route, to close an engine screen such as the media library to most editors, or to make the map admit named roles alone.
 [Make the map exhaustive](#make-the-map-exhaustive) covers that case.
@@ -32,9 +33,9 @@ Four related subjects are covered on other pages:
 
 The steps need a cairn site with a custom admin screen, and the checks need a deployed site you can redeploy:
 
-- A site that `create-cairn-site` scaffolded, whose `src/access.ts` holds the access map that its hooks file hands the guard.
-  A hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has no `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.
-- A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the scaffold's signups screen in `src/routes/admin/signups/`.
+- A site that `create-cairn-site` scaffolded, or a hand-built site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
+  Neither has a `src/access.ts` until [Declare the roles](#declare-the-roles) creates it.
+- A custom admin screen whose `load` calls `requireAccess` and whose form actions are `createSectionAction` wrappers, such as the example site's signups screen.
   [Add a custom admin screen](add-a-custom-admin-screen.md) builds another.
 - A deployed site, an email address for a test editor besides the owner's, and a second browser to sign in as that editor.
   The setup command deploys a scaffolded site, and [Move the site to production](add-cairn-to-a-sveltekit-app.md#move-the-site-to-production) deploys a hand-built one.
@@ -93,7 +94,7 @@ export const access = defineAccess(roles, {
 });
 ```
 
-The example replaces the scaffold's owner-only `/admin/signups` rule, so the webmaster role reaches the signups screen.
+The example site's map gives `/admin/signups` an owner-only rule, and the example replaces it so the webmaster role reaches the signups screen.
 
 Restricting `media` also restricts the inline image picker in every image-bearing concept's editor, since the picker calls the same access-gated endpoint.
 An `editor` session can therefore no longer insert an image into a post.
@@ -108,31 +109,29 @@ Composition also throws on a route key that collides with a built-in admin view.
 The [`defineAccess`](../reference/core.md#defineaccess) entry gives the key-shape rules in full.
 The engine's screens and your routes treat a target the map leaves out in opposite ways, as [Decide what the map leaves open](#decide-what-the-map-leaves-open) describes.
 
-## Pass the map to the adapter and the guard
+## Pass the map to the adapter
 
 The adapter's map gates the engine's screens and the sidebar.
-The guard's copy gates your routes, so both need the same map.
+The guard reads the same map from the runtime and hands it to your routes.
 
 The adapter takes `roles` and `access` as optional members.
 The engine's screens, their write actions, and the sidebar read the adapter's `access`, and while it is unset they stay open to every editor-capability session.
-The scaffold passes its map to the two hook handles and not to the adapter, so a scaffolded site's engine screens stay open until the adapter carries the map too.
+The scaffold's adapter declares no `access` member, so a scaffolded site's engine screens stay open until the adapter carries the map.
 
-The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the sign-in page and its auth endpoints.
+The guard, `createAuthGuard` in `src/hooks.server.ts`, gates every `/admin` path except the two pages of the sign-in flow, `/admin/login` and `/admin/auth/confirm`.
+It reads the map from the `runtime` that the hooks file passes it, as `createAuthGuard({ runtime })`.
 It runs on every guarded request and attaches the map to `locals.cairnAccess`, which is why `requireAccess` takes no map argument.
-With no `roles`, the guard resolves every session against the implicit `owner` and `editor` pair.
-A webmaster editor then signs in and is refused everywhere, because the guard's pair does not hold that role.
+When the adapter declares no `roles`, the guard resolves every session against the implicit `owner` and `editor` pair.
+A webmaster editor then signs in at `none` capability, because the guard's pair does not hold that role, and the engine's content and roster screens refuse the session.
 The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's other options.
 
-To pass the map to both readers, follow these steps:
+To pass the map to the adapter, follow this step:
 
-1. In the adapter module, add `roles` and `access`, imported from `src/access.ts`, to the `defineAdapter` call.
-   The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.
-2. In `src/hooks.server.ts`, import both `roles` and `access` from `src/access.ts`.
-3. In the same file, pass `{ roles, access }` to `createAuthGuard`.
-4. If the file's dev branch calls `devBackendHandle()` with no argument, as the tutorial's site does, pass `{ access }` to it as well.
-   Without the map, every section action under `npm run dev` answers `fail(500)` and logs `admin.action.misconfigured`.
+- In the adapter module, add `roles` and `access`, imported from `src/access.ts`, to the `defineAdapter` call.
+  The module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's.
 
-After these steps, the adapter call and the guard line read as follows:
+The hooks file needs no edit, since both hook handles already receive `{ runtime }` and read the map from it.
+After this step, the adapter call reads as follows:
 
 <!-- snippet-check-skip: excerpt; the adapter's content, backend, email, rendering, and editor members stay as they are -->
 ```ts
@@ -146,18 +145,10 @@ export const cairn = defineAdapter({
 });
 ```
 
-<!-- snippet-check-skip: excerpt; the production branch of the scaffold's hooks file, whose handle is declared above it -->
-```ts
-// src/hooks.server.ts (excerpt)
-import { access, roles } from './access.js';
-
-handle = createAuthGuard({ roles, access });
-```
-
 ## Enforce the map on your routes
 
 Your routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.
-The example needs no edit here, since the scaffold's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.
+The example needs no edit here, since the example site's signups screen already calls `requireAccess` in its `load` and wraps its actions in `createSectionAction`.
 Its destructive `remove` action also sets `ownerOnly: true`.
 The steps that follow apply to a route you add.
 
@@ -228,7 +219,7 @@ The sidebar reads the adapter's map through the same check the routes use.
 One function, `canReach`, decides route enforcement and the visibility of every keyed entry.
 The roster's entry stays owner-only.
 An engine screen's entry follows `canReach` directly.
-A `navLayout` site entry, such as the one for the scaffold's signups screen, is gated only when its href matches a key.
+A `navLayout` site entry, such as the example site's Signups entry, is gated only when its href matches a key.
 A gated entry shows to the roles that key admits and to owners.
 
 An href that no key matches stays visible to every editor-capability role, while `requireAccess` and `createSectionAction` refuse the route behind it.
@@ -287,6 +278,8 @@ A demotion therefore takes effect at once, and one test editor can cycle through
 ## Verify each role's reach
 
 On the deployed site, the composition warning names the targets the map leaves open, and each role meets a refusal wherever the map excludes it.
+The checks name the example site's signups screen at `/admin/signups`.
+On your site, open the route you gated in its place, and run its actions in place of the signups add and delete, skipping the delete check on a route with no owner-only action.
 
 To verify the map, run these checks in order:
 
@@ -329,7 +322,7 @@ To verify the map, run these checks in order:
 ## Resolve a refusal
 
 A refusal, or an open screen the map should close, traces to a missing key or `target`.
-It can also trace to a reader never given `roles` or `access`, or to an auth database without the roles migration.
+It can also trace to an adapter never given `roles` or `access`, or to an auth database without the roles migration.
 [Debug your site](debug-your-site.md) covers reading the logs and the admin's other events.
 
 To find the cause, run these checks in order:
@@ -339,10 +332,9 @@ To find the cause, run these checks in order:
    A route with no key needs one, as [Enforce the map on your routes](#enforce-the-map-on-your-routes) describes.
    A parameterized route under a deeper key needs `target`, as [Key nested and parameterized routes](#key-nested-and-parameterized-routes) describes.
 
-2. If a webmaster editor is refused on every screen and the logs show `auth.role.unknown` for that role, check whether the guard was given `roles`.
+2. If a webmaster editor is refused on every screen and the logs show `auth.role.unknown` for that role, check whether the adapter declares `roles`.
 
-   Running `cairn doctor` reports the same gap as the `auth.role-wiring-missing` condition, which the [`cairn doctor` reference](../reference/cli-cairn-doctor.md) lists.
-   The fix is in [Pass the map to the adapter and the guard](#pass-the-map-to-the-adapter-and-the-guard).
+   The fix is in [Pass the map to the adapter](#pass-the-map-to-the-adapter).
 
 3. If an engine screen admits a role the map excludes, check whether the adapter was given `access`.
 

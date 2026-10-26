@@ -2933,9 +2933,9 @@ constraints:
   - |
     Never on the page: the removed `/components` subpath, the retired JavaScript doctor or its
     `github.app` check, `seedContent`, a hand-written `devBuildDefine` plugin, a
-    `declare const __CAIRN_DEV_BUILD__` in `app.d.ts`, `createAuthGuard()` or `devBackendHandle()`
-    called with no argument, `devBackendHandle({ access })`, or an `admin.action.misconfigured`
-    warning about the dev backend.
+    `declare const __CAIRN_DEV_BUILD__` in `app.d.ts`, a hook handle called without `{ runtime }`
+    or given a `roles` or `access` option, or an `admin.action.misconfigured` warning about the dev
+    backend.
   - |
     Running example and names the reader creates: the project and Worker `field-notes`, the
     database `field-notes-auth`, the domain `notes.example.com`, the GitHub account placeholder

@@ -18,14 +18,12 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 is drafting pages from approved blueprints through drafter. Batch 5's PR carries
-the last five extend pages (Build the public routes, Configure media, Define an adapter and schema,
-Migrate existing content, Write a markdown component), each queued for Geoff's approval as its own
-item; the PR merges once all five are approved. Its record is
+Stage 2b part 2 is drafting pages from approved blueprints through drafter. Every extend page now
+has its drafted page; batch 5 (PR #141) merged the last five. Its record is
 `~/Projects/initiatives/docs-system/research/2026-10-25-extend-pages-batch-5/RESUME.md`. Each
 drafting worktree needs Geoff's `~/.config/drafter/cairn-cms.local.toml` copied in as
-`drafter.local.toml` (ignored by git), and drafter runs launch under `setsid -f`. After this batch,
-the one blueprint with no page is `blueprints/docs/claude-code/using-claude-code-with-cairn`; its
+`drafter.local.toml` (ignored by git), and drafter runs launch under `setsid -f`. Several published
+extend pages still disagree with their blueprints; BACKLOG #71 lists them for a redraft. The one blueprint with no page is `blueprints/docs/claude-code/using-claude-code-with-cairn`; its
 draft registers the `claude-code` arm in the gates and adds that arm's track entry to
 `docs-register.md`. The page plans under `internal/briefs/` (`.plan.md` and `.plan.yaml`), which the blueprints
 replaced, still need retiring. Then comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the

@@ -70,7 +70,7 @@ The steps build the `staff` role from the [roles reference](../reference/core.md
 
 ### Declare the role
 
-A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter and passed to the guard, and an object entry's `home` names the `/admin` path its people land on.
+A role is one entry in the site's role vocabulary, declared with `defineRoles` on the adapter, where the guard reads it through the runtime, and an object entry's `home` names the `/admin` path its people land on.
 To declare the role, follow these steps:
 
 1. In the adapter module, set the adapter's `roles` member to a `defineRoles` vocabulary that keeps `owner` and `editor` beside the `staff` entry.
@@ -95,31 +95,8 @@ To declare the role, follow these steps:
 
    A site that already declares `roles`, as [Restrict admin access](restrict-admin-access.md) does in `src/access.ts`, adds the `staff` entry to that vocabulary instead.
 
-2. In `src/hooks.server.ts`, pass the same vocabulary to `createAuthGuard` and `devBackendHandle` as their `roles` option.
-   Keep any option either handle already receives, such as the scaffold's `access`, beside `roles`.
-
-   <!-- snippet-check-skip: reads the __CAIRN_DEV_BUILD__ global that the site declares in its ambient types file -->
-   ```ts
-   // src/hooks.server.ts
-   /// <reference types="node" />
-   import type { Handle } from '@sveltejs/kit/hooks';
-   import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-   import { roles } from '#lib/cairn.config.js';
-
-   let handle: Handle;
-   if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
-     const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
-     handle = devBackendHandle({ roles });
-   } else {
-     handle = createAuthGuard({ roles });
-   }
-
-   export { handle };
-   ```
-
-SvelteKit 3 refuses a `$lib` import.
-The import uses `#lib`, which the `imports` field of `package.json` maps to `src/lib`.
-A scaffolded site imports the adapter module through `#theme` instead.
+2. In `src/hooks.server.ts`, confirm that `createAuthGuard` and `devBackendHandle` each receive `{ runtime }`, as the scaffold's and the tutorial's hooks do.
+   A site whose hooks still pass `roles` follows [Upgrade cairn](upgrade-cairn.md#when-your-range-crosses-the-one-declaration-change) instead.
 
 The vocabulary keeps `owner` and `editor` for two reasons.
 `defineRoles` throws without an `owner` key mapped to owner capability.
@@ -129,7 +106,7 @@ A `home` must be an absolute path under `/admin`, or `defineRoles` throws.
 At `/admin`, the index redirects a role that declares a `home` to that path, and it shows a welcome screen to a `none` role with no `home`.
 The `none` capability keeps the engine's content and roster screens closed to the role's people.
 
-A guard created without `roles` resolves every session against the owner and editor pair, and [Verify the role signs in to its home screen](#verify-the-role-signs-in-to-its-home-screen) checks that wiring.
+An adapter that declares no `roles` leaves the guard resolving every session against the owner and editor pair, and [Verify the role signs in to its home screen](#verify-the-role-signs-in-to-its-home-screen) checks that wiring.
 The [roles reference](../reference/core.md#defineroles) states the full rules for a declaration.
 
 ### Build the role's home screen
@@ -218,7 +195,7 @@ A working role signs its people in by the magic link onto the home screen, with 
 If a check fails, see [Resolve a failed setup](#resolve-a-failed-setup).
 To confirm that the role works, follow these steps:
 
-1. After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means the guard never received the vocabulary.
+1. After a build, in the project directory, run [`cairn doctor`](../reference/cli-cairn-doctor.md) and confirm that it reports no `auth.role-wiring-missing` warning. That warning means `createAuthGuard` was not passed `{ runtime }`.
    The check reads the site facts that a build writes.
 2. As one of the role's people, open `/admin` on the deployed site and sign in with the emailed link.
 3. Confirm that `/admin` lands on `/admin/staff`.

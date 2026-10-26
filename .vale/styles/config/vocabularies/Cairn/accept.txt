@@ -14,3 +14,4 @@ URL
 SEO
 navLayout
 GitHub App
+Claude Code

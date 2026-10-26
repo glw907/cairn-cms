@@ -7,19 +7,12 @@ exemplar: operators/gh-exit-codes
 # Using Claude Code with cairn
 
 :::reader
-**Who reads it.** The page opens the register's Claude Code track (`docs/internal/docs-register.md`).
-Its reader is the extend track's developer, per the outline's `job`. That reader is a
-Svelte-fluent web developer building an organization's site on cairn's seams. They have chosen
-Claude Code as their coding assistant. Two arrivals:
+**Who reads it.** The page opens the register's Claude Code track (`docs/internal/docs-register.md`). Its reader is the extend track's developer, per the outline's `job`. That reader is a Svelte-fluent web developer building an organization's site on cairn's seams. They have chosen Claude Code as their coding assistant. Two arrivals:
 
-1. **The scaffolded-site developer.** The site already carries the guidance tree, and the
-   reader wants to know what Claude Code now reads and which skill fires for which task.
-2. **The adopting or refreshing developer.** The reader adopts the tree on an existing site,
-   or refreshes it after an engine upgrade. They need to know what `install` writes and what
-   it leaves to them.
+1. **The scaffolded-site developer.** The site already carries the guidance tree, and the reader wants to know what Claude Code now reads and which skill fires for which task.
+2. **The adopting or refreshing developer.** The reader adopts the tree on an existing site, or refreshes it after an engine upgrade. They need to know what `install` writes and what it leaves to them.
 
-A developer using another coding agent arrives in the wrong place. The introduction says so in
-one line: cairn ships no guidance for that agent. :fact[pmmtrm]
+A developer using another coding agent arrives in the wrong place. The introduction says so in one line: cairn ships no guidance for that agent. :fact[pmmtrm]
 
 **Background.** cairn's guidance for Claude Code is a tree of files under `.claude/`. A scaffolded site is born with that tree, and `cairn-guidance install` writes it on any other site. :fact[0ygumq]
 The engine stops at that tree. It never edits Claude Code's settings, never rewrites the site's root `CLAUDE.md`, and never makes CI fail on a stale tree unless the developer chooses that. :fact[4nccq6] :fact[6ro1n9] :fact[jd54ph]
@@ -29,88 +22,58 @@ A developer who works with Claude Code therefore needs three things from this pa
 2. The two deliberate edits the engine leaves to them (the `Stop` hook and, if they want it, a CI gate).
 3. How `cairn-guidance install` and `cairn-guidance check` report what they did, since `install` exits 0 even when it refuses an entry or a destination write fails. :fact[5ohm23]
 
-**What the page does for them.** How to work on a cairn site with Claude Code. It covers these
-topics:
+**What the page does for them.** How to work on a cairn site with Claude Code. It covers these topics:
 
 - The guidance tree cairn installs under `.claude/`, and the root `CLAUDE.md` that imports it.
 - Which of the four packaged skills loads for which task.
 - Where the review agent sits (its file, with a link to the reference for what it checks).
-- How to wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn
-  ends. This covers adding that script on a site without one.
-- How to adopt, refresh, and check the tree with `cairn-guidance install` and
-  `cairn-guidance check`.
+- How to wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn ends. This covers adding that script on a site without one.
+- How to adopt, refresh, and check the tree with `cairn-guidance install` and `cairn-guidance check`.
 - Their exit codes, and what `check` reports when a site lacks the scaffold's gate wiring.
 - The scaffold's CI step and how to make it gate (starting the workflow on a site without one).
 
-The reader is the extend track's developer, who has chosen Claude Code as their coding
-assistant. That developer is a Svelte-fluent web developer building an organization's site on
-cairn's seams. Two arrivals are named. The first is a developer whose scaffolded site already
-carries the tree and wants to know what Claude Code now reads. The second is a developer adopting
-the tree on an existing site or refreshing it after an upgrade.
+The reader is the extend track's developer, who has chosen Claude Code as their coding assistant. That developer is a Svelte-fluent web developer building an organization's site on cairn's seams. Two arrivals are named. The first is a developer whose scaffolded site already carries the tree and wants to know what Claude Code now reads. The second is a developer adopting the tree on an existing site or refreshing it after an upgrade.
 
 The framing states that the rest of the docs assume no coding assistant, and that this page is the one that teaches working with Claude Code. It also states that cairn ships its guidance in Claude Code's format only, with no `AGENTS.md` and no file for any other coding agent. A developer using another agent therefore has no cairn guidance to read (one line, f:pmmtrm). :fact[pmmtrm]
-The sections run in the order the reader meets the guidance. First comes what the tree holds,
-then the install that writes it and the two edits the engine leaves to the developer. Last come
-the verification of all of them and the failures it surfaces. See also closes the page.
+The sections run in the order the reader meets the guidance. First comes what the tree holds, then the install that writes it and the two edits the engine leaves to the developer. Last come the verification of all of them and the failures it surfaces. See also closes the page.
 
-**What they already know.** A running cairn site with the engine installed, and working knowledge
-of Claude Code itself. That knowledge covers starting a session in a project, what a skill and a
-subagent are, and where a project's `.claude/settings.json` lives. Package scripts and a GitHub
-Actions workflow file are assumed. No knowledge of the engine's internals is needed.
+**What they already know.** A running cairn site with the engine installed, and working knowledge of Claude Code itself. That knowledge covers starting a session in a project, what a skill and a subagent are, and where a project's `.claude/settings.json` lives. Package scripts and a GitHub Actions workflow file are assumed. No knowledge of the engine's internals is needed.
 
 **What it leaves to other pages.**
 
 - Any coding assistant other than Claude Code. cairn ships nothing for one.
-- The review agent's purpose and how it relates to the audit gate. The page places only the
-  agent's file, and the `cairn-guidance` reference page describes what the agent checks.
+- The review agent's purpose and how it relates to the audit gate. The page places only the agent's file, and the `cairn-guidance` reference page describes what the agent checks.
 - The scaffolded tree outside `.claude/`, file by file: Scaffolded site files.
 - Running the audit and reading its findings: Run cairn-audit on your site.
 - The upgrade procedure and when to refresh: Upgrade cairn.
 - Writing a consultation brief. Its protocol lives in the `cairn-consult` skill.
-- The CLI's full option and output listing, and the trust boundary: the `cairn-guidance`
-  reference page.
+- The CLI's full option and output listing, and the trust boundary: the `cairn-guidance` reference page.
 
 **How the introduction runs.** Two paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading.
 
-1. **The task and the reader.** State the task from the reader's situation: setting up and
-   working with Claude Code on a cairn site. Say who the page is for: the extend track's
-   developer who has chosen Claude Code. Name the two arrivals: a scaffolded site that
-   already carries the tree, and an existing site adopting the tree or refreshing it after an
-   upgrade. State that the rest of the docs assume no coding assistant and that this page is
-   the one that teaches working with Claude Code. Give one line, and only one, to other
-   agents. That line says cairn ships its guidance in Claude Code's format only, with no
-   `AGENTS.md` and no file for any other coding agent. A developer using another agent
-   therefore has no cairn guidance to read (`f:pmmtrm`).
+1. **The task and the reader.** State the task from the reader's situation: setting up and working with Claude Code on a cairn site. Say who the page is for: the extend track's developer who has chosen Claude Code. Name the two arrivals: a scaffolded site that already carries the tree, and an existing site adopting the tree or refreshing it after an upgrade. State that the rest of the docs assume no coding assistant and that this page is the one that teaches working with Claude Code. Give one line, and only one, to other agents. That line says cairn ships its guidance in Claude Code's format only, with no `AGENTS.md` and no file for any other coding agent. A developer using another agent therefore has no cairn guidance to read (`f:pmmtrm`).
 2. **The contract.** Name what the reader does with the page:
    - Learn the guidance tree under `.claude/` and the root `CLAUDE.md` that imports it.
    - Learn which of the four packaged skills loads for which task.
    - Learn where the review agent sits (its file, with the reference for what it checks).
-   - Wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn
-     ends, adding that script on a site without one.
-   - Adopt, refresh, and check the tree with `cairn-guidance install` and
-     `cairn-guidance check`. Learn their exit codes and what `check` reports when a site lacks
-     the scaffold's gate wiring.
-   - Make the scaffold's CI step gate, starting the workflow on a site without one, if they
-     choose to.
+   - Wire the `Stop` hook that runs the site's `check:cairn` script when a Claude Code turn ends, adding that script on a site without one.
+   - Adopt, refresh, and check the tree with `cairn-guidance install` and `cairn-guidance check`. Learn their exit codes and what `check` reports when a site lacks the scaffold's gate wiring.
+   - Make the scaffold's CI step gate, starting the workflow on a site without one, if they choose to.
 
 Then the bounds. The page assumes:
 
 - A running cairn site with the engine installed.
-- Working knowledge of Claude Code (starting a session, what a skill and a subagent are, where a
-  project's `.claude/settings.json` lives).
+- Working knowledge of Claude Code (starting a session, what a skill and a subagent are, where a project's `.claude/settings.json` lives).
 - Package scripts.
 - A GitHub Actions workflow file.
 
-It needs no knowledge of the engine's internals. It leaves out the review agent's purpose and its
-relation to the audit gate. It places only the agent's file, linking the `cairn-guidance`
-reference page for what the agent checks. It leaves to other pages:
+It needs no knowledge of the engine's internals. It leaves out the review agent's purpose and its relation to the audit gate. It places only the agent's file, linking the `cairn-guidance` reference page for what the agent checks. It leaves to other pages:
 
 - The scaffolded tree outside `.claude/` (Scaffolded site files).
 - Running the audit and reading its findings (Run cairn-audit on your site).
 - The upgrade procedure and when to refresh (Upgrade cairn).
 - The consultation brief's protocol (the `cairn-consult` skill itself).
-- The CLI's full option and output listing and the trust boundary (the `cairn-guidance`
-  reference page).
+- The CLI's full option and output listing and the trust boundary (the `cairn-guidance` reference page).
 
 Cautions for the drafter, introduction only:
 

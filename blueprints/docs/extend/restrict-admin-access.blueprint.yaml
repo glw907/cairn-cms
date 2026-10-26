@@ -1125,14 +1125,15 @@ sections:
         kind: failure
         from: v-reload
         symptom: |
-          A webmaster editor is refused on every screen, and the logs show `auth.role.unknown`
-          for that role.
+          A webmaster editor sees only the welcome view at `/admin` and is refused on every other
+          admin screen, and the logs show `auth.role.unknown` for that role.
         cause: |
           The role is absent from the adapter's vocabulary, so it resolves to `none`.
         handledBy: s-roles-declare
         facts:
           - f:zjglk8
           - f:4bazhe
+          - f:kqcyv1
       - id: res-role-unknown
         kind: fact
         fact: f:4bazhe

@@ -1586,7 +1586,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   with `siteFactsAbsentWarning(...)`). [verified]
 - `f:eqlssz` A present `site-facts.json` that no longer matches the adapter fails the build through the same
   `this.error(...)` path the content manifest uses, naming the file and the fix. Source:
-  `src/lib/vite/internal.ts:471-476,190-191` (`RolesDeclaration`) (`checkSiteFacts` compares the derived facts against
+  `src/lib/vite/internal.ts:623-645,301-312` (`checkSiteFacts`) (`checkSiteFacts` compares the derived facts against
   the committed bytes and returns `{ status: 'stale', message }`; `buildStart` calls `this.error`
   with that message). [verified]
 - `f:yio35u` The `cairn-manifest` CLI writes `site-facts.json` in the same run that writes the content
@@ -1596,7 +1596,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
   project root, so it runs from the directory holding `vite.config.ts`; the build's
   stale-`site-facts.json` error names the fix as ``Run `npx cairn-manifest` and commit the
   result.`` Source: `package.json:199-200` (`"cairn-manifest"`), `src/lib/vite/bin.ts#main`,
-  `src/lib/vite/internal.ts:319-324,592-597` (`checkSiteFacts`). [verified]
+  `src/lib/vite/internal.ts:638-644` (`stale`). [verified]
 
 ## docs/reference/supported-toolchain.md
 

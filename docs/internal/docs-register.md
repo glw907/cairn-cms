@@ -638,7 +638,8 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The editing surface | the admin; `/admin` for the path | |
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |
-| Also named | the GitHub App; the Worker | |
+| Also named | the GitHub App, shortened to the App after its first mention on a page; the Worker | The capital A marks the short form as the GitHub App, never an app in general (Geoff, 2026-10-25). |
+| The starter a new site begins from | the Waymark template for the files the setup command copies, and the `templates/waymark/` copy; the Waymark theme for its look | Pick the word by sense: "Waymark is the only template the setup command ships", "Waymark, cairn's reference reading theme". Geoff ruled the split on 2026-10-25. |
 | The people an auth channel signs in beside the editors | a second sign-in group | Never "second audience" or "second population"; the page "Add a second sign-in group" fixes the name. |
 | Retired as names | the library (the word stays for the media library and the content library); the Go tool; the binary, except for the install artifact itself; a bare "the tool"; "second audience"; "second population" | |
 <!-- vale Google.Quotes = YES -->

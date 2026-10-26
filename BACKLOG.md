@@ -9,6 +9,8 @@
   In the PR #137 sweep a slice agent's edit script emptied `scripts/checks/gate-tier.mjs` (929 lines) and committed it, and the fast lane printed nothing and exited 0, because the fast lane is that file. Exit nonzero when no leg runs. The sweep-side check (a `git diff --numstat` for unequal counts) lands in the workstation's word-sweep method.
 
 ## Medium
+- [ ] **#86** Stop the e2e `norms` jobs' Playwright install from failing on apt `#bug` `#cairn-cms` *(2026-10-26)*
+  `./.github/actions/bounded-install` running `npx playwright install --with-deps chromium` exited 100 (an apt failure) four times on 2026-10-26 between 08:50 and 17:11 UTC, failing the e2e workflow on `25fb80fa3`, `c8a1eeb09`, `f17bb8aed`, and PR #147, and each rerun passed. The retry inside the action did not absorb it. Cache the browser and its system deps, or retry the apt step with a backoff.
 - [ ] **#85** Tell the docs review description to hold paragraphs only, no heading `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26)*
   The healthz fix session wrote a `## Brief` heading atop its review description, and `approval-queue docs` refused it as four paragraphs. Step 3 of `.claude/skills/cairn-docs/references/review.md` should say the file holds two or three paragraphs and nothing else.
 

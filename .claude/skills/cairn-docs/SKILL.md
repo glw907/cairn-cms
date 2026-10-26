@@ -1,6 +1,6 @@
 ---
 name: cairn-docs
-description: Changes cairn-cms documentation the docs-as-code way: pages under docs/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes documented behavior, when a docs page is wrong or missing something, when writing, splitting, or restructuring a page, or when queueing or answering a docs review. Not for CHANGELOG entries, code comments, specs, plans, or site content.
+description: Changes cairn-cms documentation the docs-as-code way: pages under docs/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes documented behavior (renaming, adding, or removing an export, option, type, or CLI flag, or changing a default, a return value, or an error), when a docs page is wrong or missing something, when writing, splitting, or restructuring a page, or when queueing or answering a docs review. Not for CHANGELOG entries, code comments, specs, plans, or site content.
 ---
 
 # Change cairn docs

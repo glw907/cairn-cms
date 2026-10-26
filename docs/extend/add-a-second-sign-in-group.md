@@ -1,6 +1,6 @@
 # Add a second sign-in group
 
-Some sites need people besides editors to sign in, to reach screens or pages made for them. The sign-in that cairn ships exists only to gate the admin, so by default it knows only the people who work there, owners and editors, and it signs them in by an emailed magic link. For a second group, cairn supplies the sign-in through one of two mechanisms. What a staff member or a member is, and the records kept about them, stay the site's code.
+Some sites need people besides editors to sign in, to reach screens or pages made for them. The sign-in that cairn ships exists to gate the admin. By default it signs in only owners and editors, by an emailed magic link. For a second group, cairn supplies the sign-in through one of two mechanisms. What a staff member or a member is, and the records kept about them, stay the site's code.
 
 A declared role adds the group to the editors' roster at `none` capability. That roster lives in `AUTH_DB`, the D1 database behind editor sign-in. The role's people sign in by the same magic link, find the engine's content screens closed to them, and land on a screen the site builds under `/admin`. An auth channel, built with `createAuthChannel`, gives the group a separate login instead. Its people sign in with a numeric code sent over the site's transport, and their sessions live in a D1 database apart from `AUTH_DB`. A channel session never becomes an editor's session, and the group's area is made of the site's SvelteKit routes outside `/admin`.
 
@@ -9,13 +9,13 @@ The channel exists for people the owner and editor sign-in was never meant to mo
 Whichever mechanism you choose, by the end the group signs in on your deployed site and lands in an area made for it. The role path follows a `staff` role whose `home` is `/admin/staff`, the declaration the roles reference uses. The channel path follows the members channel in the repository's example site, `examples/showcase`. That channel signs members in at `/members/login` and gates the `/members` page. Both paths end in a deploy and a check on the deployed site, and each covers the following work:
 
 - The role path declares the role, builds its home screen and sidebar link, adds the role's people, and checks their sign-in.
-- The channel path provisions a database, writes the channel module, builds the login route and the member area, and ends a removed member's sessions early with `verify` or `revokeSessions`. It tests the channel on Node with Vitest and `createChannelDb` before the deploy.
+- The channel path provisions a database, writes the channel module, and builds the login route and the member area. It ends a removed member's sessions with `verify` or `revokeSessions`, and it tests the channel on Node with Vitest and `createChannelDb` before the deploy.
 
-The two paths share no steps, so a developer sent here for a `none` role or for a channel builds only that one.
+The two paths share no steps.
 
 The page assumes a site that `create-cairn-site` scaffolded or that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) built. You should know that site's hooks file, its adapter module, its Wrangler bindings, and how to apply a D1 migration, as well as SvelteKit load functions, form actions, and, for the channel's test, Vitest. The page leaves three subjects to other pages:
 
-- A group whose people write the site's content needs editor capability, because `none` capability closes the engine's content screens. [Restrict admin access](restrict-admin-access.md) narrows such a group with an access map, and it owns access maps themselves. This page configures no access map.
+- [Restrict admin access](restrict-admin-access.md) covers access maps and a group whose people write the site's content. Such a group needs editor capability, because `none` capability closes the engine's content screens, and this page configures no access map.
 - [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) signs the editors themselves in through the organization's identity provider.
 - [The security model's auth channel section](security-model.md#the-auth-channels-threat-surface) covers the channel's threat surface and the hazards a site's delivery function can introduce.
 
@@ -28,40 +28,39 @@ Both mechanisms start from a working cairn site, and each path adds the precondi
 - For a role, the `cairn` CLI, for the wiring check that [`cairn doctor`](../reference/cli-cairn-doctor.md) runs. It installs separately from the npm package, with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from a release archive.
 - For a channel, a transport the Worker can call to send a code, such as an email or SMS provider.
 - For a channel, the group's roster in a store the site's code can read.
-- For a channel, a [Cloudflare Turnstile widget](https://developers.cloudflare.com/turnstile/get-started/) and its secret key, because the channel's `challenge` must actually verify a human.
-- For the channel's test, `@glw907/cairn-cms-dev` installed as a dev dependency, as [Wire the dev backend](add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend) installs it. The test needs Node 24 or later, the floor that the package's `engines.node` field declares. Nothing enforces that floor at runtime, and npm only warns on an older release.
+- For a channel, a [Cloudflare Turnstile widget](https://developers.cloudflare.com/turnstile/get-started/) and its secret key, because the channel's `challenge` must verify a human, never return `true` unconditionally.
+- For the channel's test, `@glw907/cairn-cms-dev` installed as a dev dependency, as [Wire the dev backend](add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend) installs it. The test needs Node 24 or later, the floor that the package's `engines.node` field declares.
 
 With these in place, the first decision is which mechanism to build.
 
 ## Choose the mechanism
 
-A second group signs in either as a declared role in the editors' roster in `AUTH_DB` or through a separate login built with `createAuthChannel`. The following table compares the two mechanisms by where each keeps its people and what the site builds.
+The following table compares the two mechanisms by where each keeps its people and what the site builds.
 
 | | A declared role | An auth channel |
 |---|---|---|
 | Sign-in | The same magic link editors use | A numeric code, 8 digits by default, sent over the site's transport |
 | Roster | Rows in the `editor` table of `AUTH_DB`, added by an owner on `/admin/editors` | The site's store, read by the site's `lookup` |
 | Sessions | Sessions in `AUTH_DB` that populate `locals.cairnEditor` with `none` capability | Sessions in the channel's D1 binding, never in `AUTH_DB` and never in `locals.cairnEditor` |
-| Where people land | The role's `home` under `/admin`, or a welcome screen | The site's routes outside `/admin` |
+| Where people land | The role's `home` under `/admin`, or the welcome view | The site's routes outside `/admin` |
 | What the site builds | A screen at the role's `home` | The login route, the member area, the delivery, and the roster lookup |
-
-A role suits a group that an owner adds person by person and that works in screens under `/admin`. A channel suits a group whose roster the site already keeps and that never needs the admin. Whichever fits, what a member, a staff assignment, or a signup means is the site's to model, and cairn only signs the people in.
 
 Make the choice before you build anything:
 
-- Choose the mechanism whose column fits your group.
+- If an owner adds the group's people one at a time and they work in screens under `/admin`, build a role.
+- If the site already keeps the group's roster and its people never need the admin, build a channel.
 
 If you choose a channel, skip the role path and continue at [Sign the group in through a channel](#sign-the-group-in-through-a-channel). Otherwise, continue with [Sign the group in with a role](#sign-the-group-in-with-a-role).
 
 ## Sign the group in with a role
 
-A role adds the group to the editors' roster at `none` capability. Its people sign in by the magic link and reach only the screens the site builds for them. The engine's content screens and its roster screen refuse the role. The running example is a `staff` role declared `{ capability: 'none', home: '/admin/staff' }`. The [`defineRoles`](../reference/core.md#defineroles) reference uses the same declaration.
+The running example is a `staff` role declared `{ capability: 'none', home: '/admin/staff' }`, the declaration the [`defineRoles`](../reference/core.md#defineroles) reference uses. The role's people sign in by the magic link and reach only the screens the site builds for them. The engine's content screens and its roster screen refuse the role.
 
 The role's first step is its declaration.
 
 ### Declare the role
 
-A role is one entry in the site's role vocabulary, declared once on the adapter's `roles` member. `createAuthGuard` reads that vocabulary from `runtime.roles`, and `devBackendHandle` takes the same required `runtime`, so one declaration serves both handles. The dev backend reads only `runtime.access` from it, never the vocabulary. The adapter module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's site.
+A role is one entry in the site's role vocabulary, declared once on the adapter's `roles` member. `composeRuntime` folds the adapter into the runtime that the hooks pass, and `createAuthGuard` reads the vocabulary from `runtime.roles`. `devBackendHandle` takes the same `runtime` but reads only `runtime.access`, so the vocabulary changes nothing under the dev backend. The adapter module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the tutorial's site.
 
 To declare the role, follow these steps:
 
@@ -88,7 +87,7 @@ To declare the role, follow these steps:
 
 The vocabulary keeps `owner` and `editor` for two reasons. `defineRoles` throws when the vocabulary has no `owner` key or maps `owner` to anything but owner capability. A roster row whose role the vocabulary omits resolves to `none`, and dropping `editor` would close the content screens to every existing editor.
 
-`defineRoles` also throws on a `home` outside `/admin`. After sign-in, the `/admin` index redirects a role that declares a `home` to that path before it looks for a reachable concept. A `none`-capability role with no `home` gets a welcome view at `/admin` instead. The [`defineRoles`](../reference/core.md#defineroles) entry lists every validation rule.
+`defineRoles` also throws on a `home` outside `/admin`. After sign-in, the `/admin` index redirects a role that declares a `home` to that path before it looks for a reachable concept. A `none`-capability role with no `home` gets the welcome view at `/admin` instead. The `defineRoles` entry lists every validation rule.
 
 The `home` path needs a screen before anyone lands there.
 
@@ -114,9 +113,9 @@ To build the screen, follow these steps:
    };
    ```
 
-`requireSession` redirects a visitor with no session to the login page and does not consult the access map. The role check therefore works whether or not the site declares an access map. `requireAccess` reads the map through `canReach`, which admits a `none` session to a route only when the deepest matching key lists its role. A site that keeps an access map may instead gate with `requireAccess` and add a route rule naming `staff`, as [Restrict admin access](restrict-admin-access.md) describes.
+`requireSession` redirects a visitor with no session to the login page and does not consult the access map. The role check therefore works whether or not the site declares an access map. `requireAccess` reads the map through `canReach`, which admits a `none` session to a route only when the deepest matching access-map key lists its role. A site that keeps an access map may instead gate with `requireAccess` and add an access-map key that lists `staff`, as [Restrict admin access](restrict-admin-access.md) describes.
 
-SvelteKit runs a form action without its page's load function. An action on the screen therefore checks the session's role in its handler too. [Add a custom admin screen](add-a-custom-admin-screen.md#choose-the-action-wrapper) compares the access checks of the two action wrappers.
+SvelteKit runs a form action before its page's load function, so the load's role check never gates the action. An action on the screen therefore checks the session's role in its handler too. [Add a custom admin screen](add-a-custom-admin-screen.md#choose-the-action-wrapper) compares the access checks of the two action wrappers.
 
 With the screen in place, the sidebar can link to it.
 
@@ -149,41 +148,46 @@ To add the link, follow this step:
   });
   ```
 
-When no access-map key matches its `href`, an entry shows to every session that can see the sidebar. The `roles` list narrows it to the role. The link is not the gate: the screen's role check refuses everyone else, whatever the sidebar shows. [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the layout.
+When no access-map key matches its `href`, an entry shows to every session that can see the sidebar. The `roles` list narrows it to the role. The `roles` list controls only whether the link shows, and the screen's role check refuses every other role. [Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the layout.
 
 With the screen and its link in place, the role is ready to deploy.
 
 ### Deploy the role
 
-The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql` and a local build passes the role-wiring check. That migration lets the roster hold a role beyond owner and editor. The scaffold ships the file, so a scaffolded site already has it, and an existing site without it copies it from the package. Applying it rebuilds the `editor` table with only the engine's four columns. A site that added columns to that table carries them across first.
+The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql` and `cairn doctor` passes the role-wiring check. That migration lets the roster hold a role beyond owner and editor. The scaffold ships the file, and the setup command applies it when it runs a new site's first deploy. A site without the file, such as a hand-built site or one scaffolded before the file shipped, copies it from the package.
 
 To deploy the role, follow these steps:
 
-1. In the project directory, copy `0001_roles.sql` from the package's `migrations` directory into the site's `migrations` directory.
+1. If the site's `migrations` directory doesn't hold `0001_roles.sql`, copy the file there from the package's `migrations` directory.
 
    ```sh
    cp node_modules/@glw907/cairn-cms/migrations/0001_roles.sql migrations/
    ```
 
-   If the site's `migrations` directory already holds the file, skip this step.
+2. If your site added columns to the `editor` table, in your copy of `0001_roles.sql`, add each column to `editor_new` and to the `INSERT ... SELECT` that copies the rows.
 
-2. In the project directory, apply the migrations to the remote auth database with `wrangler d1 migrations apply` and the `--remote` flag.
+   The migration rebuilds `editor` by create, copy, drop, and rename. It keeps every row but only the four columns `email`, `display_name`, `role`, and `created_at`.
+
+3. In the project directory, apply the migrations to the remote auth database with `wrangler d1 migrations apply` and the `--remote` flag.
 
    ```sh
    npx wrangler d1 migrations apply AUTH_DB --remote
    ```
 
-3. In the project directory, after a local build, run `cairn doctor`.
+4. In the project directory, regenerate the site facts with `npx cairn-manifest`.
 
-   The `auth.role-wiring` check reads `src/content/.cairn/site-facts.json`. Until a build writes that file, the check reports only that it needs one build.
+   ```sh
+   npx cairn-manifest
+   ```
 
-4. In the output, confirm that `cairn doctor` reports no `auth.role-wiring-missing` warning.
+   The `auth.role-wiring` check reads the declared roles from `src/content/.cairn/site-facts.json`, which `cairn-manifest` writes. While the committed file no longer matches the adapter, a build fails and names `npx cairn-manifest` as the fix.
 
-   The warning means the adapter declares custom roles but `createAuthGuard` was not passed `{ runtime }`. On this engine such a call is a type error, and a guard built that way throws when `src/hooks.server.ts` loads. The warning's text describes a fallback to the owner and editor pair, which is an older engine's behavior. It concerns a site whose hooks escape the type check, or an older site. The [`cairn doctor` reference](../reference/cli-cairn-doctor.md#the-checks) lists every check.
+5. In the project directory, run `cairn doctor`.
+6. In the output, confirm that `cairn doctor` reports no `auth.role-wiring-missing` warning.
 
-5. In the project directory, build and deploy the site as [Deploy a change](add-cairn-to-a-sveltekit-app.md#deploy-a-change) describes.
+   The warning means that `createAuthGuard` doesn't receive `{ runtime }`, and [Resolve a failed setup](#resolve-a-failed-setup) gives the fix. The [`cairn doctor` reference](../reference/cli-cairn-doctor.md#the-checks) lists every check.
 
-   The admin mount forwards its runtime, and the deployed screen that adds editors validates a posted role against the vocabulary in `runtime.roles`.
+7. In the project directory, build and deploy the site as [Deploy a change](add-cairn-to-a-sveltekit-app.md#deploy-a-change) describes.
 
 Once the deploy finishes, an owner can add the role's people.
 
@@ -206,18 +210,19 @@ A working role signs its people in by the magic link and lands them on the home 
 
 Run the following checks in order:
 
-1. On the deployed site, open `/admin` as one of the role's people.
-2. Sign in with the emailed link.
-3. Confirm that `/admin` lands on `/admin/staff`.
-4. In the sidebar, confirm that the screen's link shows.
-5. Open one of the engine's content screens.
-6. Confirm that the content screen refuses the person.
+1. On `/admin/editors`, make sure an email address you can receive mail at is on the roster with the `staff` role.
+2. On the deployed site, open `/admin` as that person.
+3. Sign in with the emailed link.
+4. Confirm that `/admin` lands on `/admin/staff`.
+5. In the sidebar, confirm that the screen's link shows.
+6. Open one of the engine's content screens.
+7. Confirm that the content screen refuses the person.
 
 A failed check has its fix in [Resolve a failed setup](#resolve-a-failed-setup).
 
 ## Sign the group in through a channel
 
-`createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code, 8 digits by default. The site supplies the routes, the code's delivery, and the roster, and the factory owns the codes, the sessions, and revocation.
+`createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code. It ships no route or UI, so the site builds the login route and the member area.
 
 The running example is the example site's members channel. It binds its database as `MEMBER_DB`, names its session cookie `member_session`, and signs members in at `/members/login` before they reach `/members`. The example site delivers codes through a capture transport that refuses unless `CAIRN_DEV_BACKEND` is `'1'`. The steps replace it with a `deliver` function for your transport.
 
@@ -225,7 +230,7 @@ The channel's database comes first.
 
 ### Provision the channel database
 
-The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB` and never as it. Its packaged migration lives in a sibling migrations directory.
+The channel keeps its codes and sessions in a separate D1 database under a binding of its own, never `AUTH_DB`. Its packaged migration lives in a sibling migrations directory.
 
 To provision the database, follow these steps:
 
@@ -275,36 +280,30 @@ A channel is one `createAuthChannel` call in a [server-only module](https://svel
 
 To write the module, follow these steps:
 
-1. In `src/lib/server/members.ts`, export `findMemberId(contact, { env })`, which resolves to the member's subject or `null`.
+1. In `src/lib/server/members.ts`, export `findMemberId(contact, { env })`, which resolves to the member's subject, a stable identifier for the member, or `null`.
 
-   The `{ env }` context lets the lookup reach the roster's binding, and the function never reads request-shaped data.
+   The `{ env }` context lets the lookup reach the roster's binding, and the function receives only that context, never the request.
 
 2. In the same file, export `sendCodeEmail(contact, code)`, which sends the code over your transport and returns a promise.
 
    The factory types `lookup` as `(contact, ctx: { env }) => Promise<string | null>` and `deliver` as `(contact, code, ctx) => Promise<void>`. A function that declares only `(contact, code)` satisfies `deliver`.
 
-3. In `src/lib/server/member-channel.ts`, create the channel with its six required members, typed over the Worker env.
+3. In `src/lib/server/member-channel.ts`, create the channel with its six required members, typed over the generated Worker `Env`.
 
-   <!-- snippet-check-skip: imports cloudflare:workers and reads env.TURNSTILE_SECRET, which the site's generated Worker types declare -->
+   <!-- snippet-check-skip: imports cloudflare:workers and types the channel over Cloudflare.Env, which the site's generated Worker types declare -->
    ```ts
    // src/lib/server/member-channel.ts
    import { env } from 'cloudflare:workers';
    import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
-   import type { ChannelDatabaseLike } from '@glw907/cairn-cms/auth-channel';
    import { verifyTurnstile } from '@glw907/cairn-cms/cloudflare';
    import { findMemberId, sendCodeEmail } from './members.js';
-
-   /** The one binding resolveDb reads. */
-   interface Env {
-     MEMBER_DB?: ChannelDatabaseLike;
-   }
 
    /** Trims and lowercases a contact, so one address always maps to one identity. */
    export function normalizeContact(raw: string): string {
      return raw.trim().toLowerCase();
    }
 
-   export const memberChannel = createAuthChannel<Env>({
+   export const memberChannel = createAuthChannel<Cloudflare.Env>({
      resolveDb: (bindings) => bindings?.MEMBER_DB,
      deliver: sendCodeEmail,
      lookup: findMemberId,
@@ -315,19 +314,20 @@ To write the module, follow these steps:
    });
    ```
 
-4. In `.dev.vars` beside the Wrangler config, add the Turnstile secret key as `TURNSTILE_SECRET`, creating the file if needed.
-5. If your site carries `.dev.vars.example`, as a site from the Deploy-button tree does, add `TURNSTILE_SECRET` to it with an empty value.
+4. If no `.dev.vars` file sits beside the Wrangler config, create one there.
+5. In `.dev.vars`, add the Turnstile secret key as `TURNSTILE_SECRET`.
+6. If your site carries `.dev.vars.example`, as a site created from the public Waymark template does, add `TURNSTILE_SECRET` to it with an empty value.
 
    A site without that file, such as one the setup command scaffolded, skips this step. `.dev.vars.example` is the template for the local-only `.dev.vars`, and the scaffold's `.gitignore` keeps `.dev.vars` out of git.
 
-6. In the project directory, regenerate the Worker types, so the generated `Env` carries the secret's name.
+7. In the project directory, regenerate the Worker types, so the generated `Env` carries `MEMBER_DB` and the secret's name.
 
    Use the command that fits the site:
 
    - If the first lines of `worker-configuration.d.ts` record a command, as a scaffolded site's do, run that command.
    - If they record none, run `npx wrangler types`, which writes the file.
 
-`challenge` receives only the event and the form, so the module reads `TURNSTILE_SECRET` from the `env` that `cloudflare:workers` exports. The generated `Env` types that export, and the module's local `Env` types only what `resolveDb` receives. `wrangler dev` reads secrets from `.dev.vars` and never from a deployed secret. The production copy of the secret waits for [Deploy the channel](#deploy-the-channel).
+`challenge` receives only the event and the form, so the module reads `TURNSTILE_SECRET` from the `env` that `cloudflare:workers` exports. The generated `Env` type describes that export. `createAuthChannel`'s type parameter describes the `env` that `resolveDb` receives and the `env` in the context of `lookup`, `deliver`, and `verify`. Typing the channel over `Cloudflare.Env`, the generated type, covers every binding those functions read, as the example site's channel does. `wrangler dev` reads secrets from `.dev.vars` and never from a deployed secret. The production copy of the secret waits for [Deploy the channel](#deploy-the-channel).
 
 Each required member is a decision the site makes:
 
@@ -342,7 +342,7 @@ Three of these functions carry an obligation the factory cannot check:
 
 - `normalize` must be idempotent, canonical per identity, and injective across people, because a lossy one maps two people onto one rate budget.
 - `lookup` must return a subject that is stable and canonical per person.
-- `challenge` must actually verify a human, because it is the whole economic bound on guessing a code.
+- `challenge` must verify a human, because it is the whole economic bound on guessing a code.
 
 [Config obligations](../reference/auth-channel.md#config-obligations) states each obligation in full. The [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) entry lists the optional members. The channel returns `actions` with request, confirm, and logout, plus `resolveSubject` and `revokeSessions`, and it ships no route or UI.
 
@@ -470,15 +470,15 @@ To gate the area, follow these steps:
    </form>
    ```
 
-On a site that prerenders by default, the asset layer would otherwise serve a prerendered copy of either member page, and neither gate would run. The subject is the stable string your `lookup` returned, and the page loads the member's records by it from the site's store. Logout ends that one session and never touches another session of the same member.
+The subject is the stable string your `lookup` returned. A member page loads the member's records from the site's store by that subject. Logout ends that one session and never touches another session of the same member.
 
 A member the site removes keeps any open session until it expires or the site ends it.
 
 ### End a removed member's sessions
 
-A channel session lasts 30 days by default, and a site ends a removed member's sessions early with `verify`, with `revokeSessions`, or with both. A site uses either or both of the following:
+A channel session lasts 30 days by default. A site ends a removed member's sessions early with either or both of the following:
 
-- To check the roster on every resolution, give the channel's config a `verify` function that returns `false` for a removed member. A `false` destroys the session row on that resolution, while a throw refuses only that resolution and keeps the row. `verify` takes the same `{ env }` context as `lookup` and never reads request-shaped data.
+- To check the roster on every resolution, give the channel's config a `verify` function that returns `false` for a removed member. A `false` destroys the session row on that resolution, while a throw refuses only that resolution and keeps the row. `verify` takes the same `{ env }` context as `lookup`, never the request.
 - To end sessions at removal, in the site's removal code, call the channel's `revokeSessions` with the binding and the subject. It ends every session for that identity at once, which also suits a reported compromise.
 
 The [`createAuthChannel`](../reference/auth-channel.md#createauthchannel) entry documents `verify` and `revokeSessions`.
@@ -487,13 +487,13 @@ Before the channel deploys, a test proves it on Node.
 
 ### Test the channel on Node
 
-`createChannelDb`, exported from `@glw907/cairn-cms-dev`, applies the channel's migration to an in-memory SQLite database and returns a D1-shaped double. A Vitest run on Node can drive the channel's actions against it with no Worker. The double needs `node:sqlite`, the reason for the Node floor in [Before you begin](#before-you-begin).
+`createChannelDb`, exported from `@glw907/cairn-cms-dev`, applies the channel's migration to an in-memory SQLite database and returns a D1-shaped double. A Vitest run on Node can drive the channel's actions against it with no Worker. The double needs `node:sqlite`, which every Node release at the floor named in [Before you begin](#before-you-begin) provides.
 
 To test the channel, follow these steps:
 
-1. In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does, and add it if it's missing.
+1. In `vitest.config.ts`, if `test.server.deps.inline` doesn't list `@glw907/cairn-cms`, add it.
 
-   The engine imports `cloudflare:workers`, a scheme that Node's loader rejects when Vitest leaves the engine external. Inlined, the engine goes through Vitest's transform, and a test's `vi.mock('cloudflare:workers')` reaches the engine's import.
+   The scaffold's config already lists it. The engine imports `cloudflare:workers`, a scheme that Node's loader rejects when Vitest leaves the engine external. Inlined, the engine goes through Vitest's transform, and a test's `vi.mock('cloudflare:workers')` reaches the engine's import.
 
 2. In `src/lib/server/member-channel.test.ts`, write a test that drives the channel's request action against the double.
 
@@ -596,7 +596,7 @@ To deploy the channel, follow these steps:
    npx wrangler secret put TURNSTILE_SECRET
    ```
 
-   The command creates a new Worker version and deploys it at once. The secret is therefore live before the site's deploy ships the code that reads it.
+   The command creates a new Worker version and deploys it at once, as Cloudflare's [Secrets](https://developers.cloudflare.com/workers/configuration/secrets/) page describes. The secret is therefore live before the site's deploy ships the code that reads it.
 
 3. In the project directory, build and deploy the site as [Deploy a change](add-cairn-to-a-sveltekit-app.md#deploy-a-change) describes.
 
@@ -613,62 +613,59 @@ Run the following checks in order:
 3. On `/members/login`, enter the code your transport delivered.
 4. Confirm that the page redirects to `/members`.
 5. On `/members`, sign out.
-6. Confirm that the login page returns.
-7. Confirm that `/members` now redirects to the login page.
+6. Confirm that the page redirects to `/members/login`.
+7. Open `/members`.
+8. Confirm that it redirects to `/members/login`.
 
 A failed check has its fix in [Resolve a failed setup](#resolve-a-failed-setup).
 
 ## Resolve a failed setup
 
-Each failure in the following list names its symptom, its cause, and its fix, with the role path's failures first and the channel's after them.
+The following failures cover the role path first, then the channel.
 
-1. `cairn doctor` reports `auth.role-wiring-missing`. The adapter declares custom roles, but `createAuthGuard` in `src/hooks.server.ts` was not passed `{ runtime }`.
+- `cairn doctor` reports `auth.role-wiring-missing`. The adapter declares custom roles, but `createAuthGuard` in `src/hooks.server.ts` was not passed `{ runtime }`.
 
-   If so, pass `{ runtime }` to `createAuthGuard` as [Declare the role](#declare-the-role) does. Then rebuild, rerun the check, and deploy as [Deploy the role](#deploy-the-role) does.
+  If so, pass `{ runtime }` to `createAuthGuard` as [Declare the role](#declare-the-role) does. Then rerun the check and deploy as [Deploy the role](#deploy-the-role) does.
 
-2. Adding a person with the new role fails on `/admin/editors`. `AUTH_DB` lacks `0001_roles.sql`, so the `editor` table keeps its original owner-or-editor check, and the write fails as `auth.store-roles-unmigrated`. The condition's message names `0001_roles.sql`, and no tool check raises it.
+- Adding a person with the new role fails on `/admin/editors`. `AUTH_DB` lacks `0001_roles.sql`, so the `editor` table keeps its original owner-or-editor check, and the write fails as `auth.store-roles-unmigrated`. The condition's message names `0001_roles.sql`, and no tool check raises it.
 
-   If adding the person fails, copy and apply `0001_roles.sql` as [Deploy the role](#deploy-the-role) does. Then add the person again.
+  If adding the person fails, copy and apply `0001_roles.sql` as [Deploy the role](#deploy-the-role) does. Then add the person again.
 
-3. The person lands on the minimal signed-in welcome screen instead of the home screen. The deployed vocabulary gives the role no `home`, or it omits the role, which then resolves to `none`.
+- The person lands on the welcome view instead of the home screen. The deployed vocabulary gives the role no `home`, or it omits the role, which then resolves to `none`.
 
-   If the person lands on the welcome screen, check that the vocabulary declares the role with its `home`. Then redeploy as [Deploy the role](#deploy-the-role) does.
+  If the person lands on the welcome view, check that the vocabulary declares the role with its `home`. Then redeploy as [Deploy the role](#deploy-the-role) does.
 
-4. The home screen answers 403 to the role's people. Its load function gates with `requireAccess`, and no route rule in the access map names the role.
+- The home screen answers 403 to the role's people. Its load function gates with `requireAccess`, and no access-map key lists the role.
 
-   If the home screen answers 403, replace `requireAccess` in its load function with the role check from [Build the role's home screen](#build-the-roles-home-screen). Then redeploy as [Deploy the role](#deploy-the-role) does.
+  If the home screen answers 403, replace `requireAccess` in its load function with the role check from [Build the role's home screen](#build-the-roles-home-screen). Then redeploy as [Deploy the role](#deploy-the-role) does.
 
-5. On a site that keeps an access map, the home screen's link does not show in the role's sidebar. `/admin` still lands on the home screen. The deepest map key matching `/admin/staff` does not list `staff`, so the map decides the entry and refuses the role.
+- On a site that keeps an access map, the home screen's link does not show in the role's sidebar. `/admin` still lands on the home screen. The deepest access-map key matching `/admin/staff` does not list `staff`, so the map decides the entry and refuses the role.
 
-   If the link does not show, add `staff` to the map key that matches `/admin/staff`, as [Restrict admin access](restrict-admin-access.md) describes. Then redeploy as [Deploy the role](#deploy-the-role) does. A site with no access map skips this check.
+  If the link does not show, add `staff` to the access-map key that matches `/admin/staff`, as [Restrict admin access](restrict-admin-access.md) describes. Then redeploy as [Deploy the role](#deploy-the-role) does. This failure cannot occur on a site with no access map.
 
-6. The test fails inside `createChannelDb` because `node:sqlite` cannot load on the running Node release. Nothing enforces the dev package's declared `engines.node` floor at runtime, and npm only warned at install.
+- The test fails inside `createChannelDb` because `node:sqlite` cannot load on the running Node release. Nothing enforces the dev package's declared `engines.node` floor at runtime, and npm only warned at install.
 
-   If `node:sqlite` cannot load, switch to Node 24 or later and run the test again.
+  If `node:sqlite` cannot load, switch to Node 24 or later and run the test again.
 
-7. The channel module throws a construction error when it first loads, in the test run or on the deployed site's first request. Construction throws when a required function is missing, and when the cookie name is missing, empty, or starts with `cairn_`.
+- The channel module throws a construction error when it first loads, in the test run or on the deployed site's first request. Construction throws when a required function is missing, and when the cookie name is missing, empty, or starts with `cairn_`.
 
-   If the module throws when it loads, read the construction error and supply the member it names as [Write the channel module](#write-the-channel-module) does. Then run the test again.
+  If the module throws when it loads, read the construction error and supply the member it names as [Write the channel module](#write-the-channel-module) does. Then run the test again.
 
-8. Every code request answers `challenge-required`, and Workers Logs shows `turnstile.verify_failed` with `reason: 'missing_secret'`. The Turnstile secret is blank where the running Worker reads it.
+- Every code request answers `challenge-required`, and Workers Logs shows `turnstile.verify_failed` with `reason: 'missing_secret'`. The Turnstile secret is blank where the running Worker reads it.
 
-   If the reason is `missing_secret`, set `TURNSTILE_SECRET` where the running Worker reads it. Under `wrangler dev` that is `.dev.vars`, and on the deployed site it is the Worker secret. `verifyTurnstile` checks the secret before the token, so a call with both blank logs `missing_secret`.
+  If the reason is `missing_secret`, set `TURNSTILE_SECRET` where the running Worker reads it. Under `wrangler dev` that is `.dev.vars`, and on the deployed site it is the Worker secret. `verifyTurnstile` checks the secret before the token, so a call with both blank logs `missing_secret`.
 
-9. Every code request answers `challenge-required`, and Workers Logs shows `turnstile.verify_failed` with `reason: 'invalid_input'`. The request form posts no Turnstile token under the field your `challenge` reads.
+- Every code request answers `challenge-required`, and Workers Logs shows `turnstile.verify_failed` with `reason: 'invalid_input'`. The request form posts no Turnstile token under the field your `challenge` reads.
 
-   If the reason is `invalid_input`, check that the request form posts the widget's token under the field your `challenge` reads.
+  If the reason is `invalid_input`, check that the request form posts the widget's token under the field your `challenge` reads.
 
-10. The request answers that a code was sent, but no code arrives. Either `lookup` returned `null` for the normalized contact, or `lookup` threw. A `null` means the contact is not on the roster, or its normalized form does not match the roster's.
+- The request answers that a code was sent, but no code arrives. Either `lookup` returned `null` or threw, or the site's `deliver` function threw while it sent the code. A `null` means the contact is not on the roster, or its normalized form does not match the roster's.
 
-    If no code arrives, read the channel's request record in Workers Logs, which [Log events](../reference/log-events.md) describes. An `outcome` of `'unknown'` means the normalized contact is not on the roster `lookup` reads, and `'lookup_failed'` means `lookup` threw.
+  If no code arrives, read the channel's records in Workers Logs, which [Log events](../reference/log-events.md) describes. An `auth.channel.requested` record with an `outcome` of `'unknown'` means the normalized contact is not on the roster `lookup` reads, and `'lookup_failed'` means `lookup` threw. An `auth.channel.send_failed` record means `deliver` threw. In that case, read its `error` field and fix the transport your `deliver` calls.
 
-11. The request answers that a code was sent and no code arrives, and Workers Logs records a delivery failure. The site's `deliver` function threw while it sent the code.
+- Entering the code returns the login page with an error, and no redirect to `/members` follows. The confirm action answered something other than `confirmed`, so the login route answered `fail(400, ...)`. A mistyped code answers `bad-code`, and a code past its 10-minute lifetime or its 5 attempts no longer confirms.
 
-    If Workers Logs records a delivery failure, read that record and fix the transport your `deliver` calls.
-
-12. Entering the code returns the login page with an error, and no redirect to `/members` follows. The confirm action answered something other than `confirmed`, so the login route answered `fail(400, ...)`. A mistyped code answers `bad-code`, and a code past its 10-minute lifetime or its 5 attempts no longer confirms.
-
-    If entering the code returns an error, request a new code and enter it exactly as delivered, within 10 minutes and within 5 attempts.
+  If entering the code returns an error, request a new code and enter it exactly as delivered, within 10 minutes and within 5 attempts.
 
 Otherwise, read the auth channel's records in [Log events](../reference/log-events.md), and work through [Debug your site](debug-your-site.md).
 

@@ -1575,7 +1575,7 @@ Filed by pass A task 4, for the tool-side section task 7 folds into this page.
 
 - `f:ve30i2` `site-facts.json` carries exactly `version`, `mediaBucketBinding`, `roles`, and `aiPosture`;
   `owner`, `repo`, and `from` are never written, even when the adapter declares them.
-  Source: `src/lib/vite/internal.ts:525-533,541-551` (`formatSiteFacts` writes only `version`,
+  Source: `src/lib/vite/internal.ts#formatSiteFacts` (`out.roles = facts.roles`) (`formatSiteFacts` writes only `version`,
   `mediaBucketBinding`, `roles`, and `aiPosture`; `buildSiteFactsFromVite`
   passes it the result of the shared `parseAdapterFacts` validation, never the raw parsed object).
   [verified]

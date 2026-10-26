@@ -6,7 +6,14 @@
       "id": "no-claim"
     },
     {
-      "text": "The sign-in that cairn ships exists only to gate the admin, so by default it knows only the people who work there, owners and editors, and it signs them in by an emailed magic link.",
+      "text": "The sign-in that cairn ships exists to gate the admin.",
+      "id": [
+        "f:zxdoaf",
+        "f:nz890r"
+      ]
+    },
+    {
+      "text": "By default it signs in only owners and editors, by an emailed magic link.",
       "id": [
         "f:zxdoaf",
         "f:nz890r"
@@ -104,21 +111,23 @@
       "id": "no-claim"
     },
     {
-      "text": "The channel path provisions a database, writes the channel module, builds the login route and the member area, and ends a removed member's sessions early with `verify` or `revokeSessions`.",
+      "text": "The channel path provisions a database, writes the channel module, and builds the login route and the member area.",
       "id": [
-        "f:dtz8oa",
-        "f:1rstld"
+        "f:rcpe0n",
+        "f:q7fj6p"
       ]
     },
     {
-      "text": "It tests the channel on Node with Vitest and `createChannelDb` before the deploy.",
+      "text": "It ends a removed member's sessions with `verify` or `revokeSessions`, and it tests the channel on Node with Vitest and `createChannelDb` before the deploy.",
       "id": [
+        "f:dtz8oa",
+        "f:1rstld",
         "f:0l7si2",
         "f:fcqs22"
       ]
     },
     {
-      "text": "The two paths share no steps, so a developer sent here for a `none` role or for a channel builds only that one.",
+      "text": "The two paths share no steps.",
       "id": "f:4673n6"
     },
     {
@@ -137,16 +146,12 @@
       "id": "no-claim"
     },
     {
-      "text": "A group whose people write the site's content needs editor capability, because `none` capability closes the engine's content screens.",
+      "text": "[Restrict admin access](restrict-admin-access.md) covers access maps and a group whose people write the site's content.",
+      "id": "no-claim"
+    },
+    {
+      "text": "Such a group needs editor capability, because `none` capability closes the engine's content screens, and this page configures no access map.",
       "id": "f:4673n6"
-    },
-    {
-      "text": "[Restrict admin access](restrict-admin-access.md) narrows such a group with an access map, and it owns access maps themselves.",
-      "id": "no-claim"
-    },
-    {
-      "text": "This page configures no access map.",
-      "id": "no-claim"
     },
     {
       "text": "[Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) signs the editors themselves in through the organization's identity provider.",
@@ -188,8 +193,11 @@
       "id": "f:cf1avu"
     },
     {
-      "text": "For a channel, a [Cloudflare Turnstile widget](https://developers.cloudflare.com/turnstile/get-started/) and its secret key, because the channel's `challenge` must actually verify a human.",
-      "id": "f:ez788q"
+      "text": "For a channel, a [Cloudflare Turnstile widget](https://developers.cloudflare.com/turnstile/get-started/) and its secret key, because the channel's `challenge` must verify a human, never return `true` unconditionally.",
+      "id": [
+        "f:ez788q",
+        "f:pa2hqh"
+      ]
     },
     {
       "text": "For the channel's test, `@glw907/cairn-cms-dev` installed as a dev dependency, as [Wire the dev backend](add-cairn-to-a-sveltekit-app.md#wire-the-dev-backend) installs it.",
@@ -200,16 +208,8 @@
       "id": "f:fcqs22"
     },
     {
-      "text": "Nothing enforces that floor at runtime, and npm only warns on an older release.",
-      "id": "f:fcqs22"
-    },
-    {
       "text": "With these in place, the first decision is which mechanism to build.",
       "id": "no-claim"
-    },
-    {
-      "text": "A second group signs in either as a declared role in the editors' roster in `AUTH_DB` or through a separate login built with `createAuthChannel`.",
-      "id": "f:b3l3t0"
     },
     {
       "text": "The following table compares the two mechanisms by where each keeps its people and what the site builds.",
@@ -273,8 +273,11 @@
       "id": "no-claim"
     },
     {
-      "text": "The role's `home` under `/admin`, or a welcome screen",
-      "id": "f:7n28wc"
+      "text": "The role's `home` under `/admin`, or the welcome view",
+      "id": [
+        "f:7n28wc",
+        "f:kqcyv1"
+      ]
     },
     {
       "text": "The site's routes outside `/admin`",
@@ -296,30 +299,22 @@
       ]
     },
     {
-      "text": "A role suits a group that an owner adds person by person and that works in screens under `/admin`.",
+      "text": "Make the choice before you build anything:",
+      "id": "no-claim"
+    },
+    {
+      "text": "If an owner adds the group's people one at a time and they work in screens under `/admin`, build a role.",
       "id": [
         "f:nj0nfm",
         "f:7n28wc"
       ]
     },
     {
-      "text": "A channel suits a group whose roster the site already keeps and that never needs the admin.",
+      "text": "If the site already keeps the group's roster and its people never need the admin, build a channel.",
       "id": [
         "f:dtz8oa",
         "f:q7fj6p"
       ]
-    },
-    {
-      "text": "Whichever fits, what a member, a staff assignment, or a signup means is the site's to model, and cairn only signs the people in.",
-      "id": "f:nguseg"
-    },
-    {
-      "text": "Make the choice before you build anything:",
-      "id": "no-claim"
-    },
-    {
-      "text": "Choose the mechanism whose column fits your group.",
-      "id": "no-claim"
     },
     {
       "text": "If you choose a channel, skip the role path and continue at [Sign the group in through a channel](#sign-the-group-in-through-a-channel).",
@@ -330,24 +325,16 @@
       "id": "no-claim"
     },
     {
-      "text": "A role adds the group to the editors' roster at `none` capability.",
-      "id": "f:4673n6"
+      "text": "The running example is a `staff` role declared `{ capability: 'none', home: '/admin/staff' }`, the declaration the [`defineRoles`](../reference/core.md#defineroles) reference uses.",
+      "id": "f:pvs115"
     },
     {
-      "text": "Its people sign in by the magic link and reach only the screens the site builds for them.",
+      "text": "The role's people sign in by the magic link and reach only the screens the site builds for them.",
       "id": "f:4673n6"
     },
     {
       "text": "The engine's content screens and its roster screen refuse the role.",
       "id": "f:4673n6"
-    },
-    {
-      "text": "The running example is a `staff` role declared `{ capability: 'none', home: '/admin/staff' }`.",
-      "id": "f:pvs115"
-    },
-    {
-      "text": "The [`defineRoles`](../reference/core.md#defineroles) reference uses the same declaration.",
-      "id": "f:pvs115"
     },
     {
       "text": "The role's first step is its declaration.",
@@ -358,14 +345,14 @@
       "id": "f:mbx6q1"
     },
     {
-      "text": "`createAuthGuard` reads that vocabulary from `runtime.roles`, and `devBackendHandle` takes the same required `runtime`, so one declaration serves both handles.",
+      "text": "`composeRuntime` folds the adapter into the runtime that the hooks pass, and `createAuthGuard` reads the vocabulary from `runtime.roles`.",
       "id": [
-        "f:4xrx5f",
-        "f:7cv105"
+        "f:3rb362",
+        "f:4xrx5f"
       ]
     },
     {
-      "text": "The dev backend reads only `runtime.access` from it, never the vocabulary.",
+      "text": "`devBackendHandle` takes the same `runtime` but reads only `runtime.access`, so the vocabulary changes nothing under the dev backend.",
       "id": "f:7cv105"
     },
     {
@@ -426,11 +413,14 @@
       ]
     },
     {
-      "text": "A `none`-capability role with no `home` gets a welcome view at `/admin` instead.",
-      "id": "f:7n28wc"
+      "text": "A `none`-capability role with no `home` gets the welcome view at `/admin` instead.",
+      "id": [
+        "f:7n28wc",
+        "f:kqcyv1"
+      ]
     },
     {
-      "text": "The [`defineRoles`](../reference/core.md#defineroles) entry lists every validation rule.",
+      "text": "The `defineRoles` entry lists every validation rule.",
       "id": "f:dbaklx"
     },
     {
@@ -474,22 +464,22 @@
       "id": "no-claim"
     },
     {
-      "text": "`requireAccess` reads the map through `canReach`, which admits a `none` session to a route only when the deepest matching key lists its role.",
+      "text": "`requireAccess` reads the map through `canReach`, which admits a `none` session to a route only when the deepest matching access-map key lists its role.",
       "id": [
         "f:5sx6zl",
         "f:8anql1"
       ]
     },
     {
-      "text": "A site that keeps an access map may instead gate with `requireAccess` and add a route rule naming `staff`, as [Restrict admin access](restrict-admin-access.md) describes.",
+      "text": "A site that keeps an access map may instead gate with `requireAccess` and add an access-map key that lists `staff`, as [Restrict admin access](restrict-admin-access.md) describes.",
       "id": [
         "f:5sx6zl",
         "f:4673n6"
       ]
     },
     {
-      "text": "SvelteKit runs a form action without its page's load function.",
-      "id": "no-claim"
+      "text": "SvelteKit runs a form action before its page's load function, so the load's role check never gates the action.",
+      "id": "f:5pyozi"
     },
     {
       "text": "An action on the screen therefore checks the session's role in its handler too.",
@@ -536,8 +526,11 @@
       "id": "f:16paho"
     },
     {
-      "text": "The link is not the gate: the screen's role check refuses everyone else, whatever the sidebar shows.",
-      "id": "no-claim"
+      "text": "The `roles` list controls only whether the link shows, and the screen's role check refuses every other role.",
+      "id": [
+        "f:altcjp",
+        "f:4673n6"
+      ]
     },
     {
       "text": "[Arrange the admin sidebar](arrange-the-admin-sidebar.md) covers the rest of the layout.",
@@ -548,7 +541,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql` and a local build passes the role-wiring check.",
+      "text": "The role reaches the deployed site once `AUTH_DB` carries `0001_roles.sql` and `cairn doctor` passes the role-wiring check.",
       "id": [
         "f:rn62i1",
         "f:xffr6i",
@@ -560,15 +553,14 @@
       "id": "f:rn62i1"
     },
     {
-      "text": "The scaffold ships the file, so a scaffolded site already has it, and an existing site without it copies it from the package.",
-      "id": "f:rn62i1"
+      "text": "The scaffold ships the file, and the setup command applies it when it runs a new site's first deploy.",
+      "id": [
+        "f:rn62i1",
+        "f:m4y3m4"
+      ]
     },
     {
-      "text": "Applying it rebuilds the `editor` table with only the engine's four columns.",
-      "id": "f:rn62i1"
-    },
-    {
-      "text": "A site that added columns to that table carries them across first.",
+      "text": "A site without the file, such as a hand-built site or one scaffolded before the file shipped, copies it from the package.",
       "id": "f:rn62i1"
     },
     {
@@ -576,60 +568,67 @@
       "id": "no-claim"
     },
     {
-      "text": "In the project directory, copy `0001_roles.sql` from the package's `migrations` directory into the site's `migrations` directory.",
+      "text": "If the site's `migrations` directory doesn't hold `0001_roles.sql`, copy the file there from the package's `migrations` directory.",
       "id": [
         "f:rn62i1",
         "f:xxtooz"
       ]
     },
     {
-      "text": "If the site's `migrations` directory already holds the file, skip this step.",
+      "text": "If your site added columns to the `editor` table, in your copy of `0001_roles.sql`, add each column to `editor_new` and to the `INSERT ... SELECT` that copies the rows.",
+      "id": "f:rn62i1"
+    },
+    {
+      "text": "The migration rebuilds `editor` by create, copy, drop, and rename.",
       "id": [
         "f:rn62i1",
-        "f:xxtooz"
+        "f:xkkt1o"
       ]
+    },
+    {
+      "text": "It keeps every row but only the four columns `email`, `display_name`, `role`, and `created_at`.",
+      "id": "f:rn62i1"
     },
     {
       "text": "In the project directory, apply the migrations to the remote auth database with `wrangler d1 migrations apply` and the `--remote` flag.",
       "id": "f:xxtooz"
     },
     {
-      "text": "In the project directory, after a local build, run `cairn doctor`.",
+      "text": "In the project directory, regenerate the site facts with `npx cairn-manifest`.",
       "id": [
-        "f:hwffph",
-        "f:6oopkt"
+        "f:yio35u",
+        "f:z61ibp"
       ]
     },
     {
-      "text": "The `auth.role-wiring` check reads `src/content/.cairn/site-facts.json`.",
-      "id": "f:6oopkt"
+      "text": "The `auth.role-wiring` check reads the declared roles from `src/content/.cairn/site-facts.json`, which `cairn-manifest` writes.",
+      "id": [
+        "f:6oopkt",
+        "f:ve30i2",
+        "f:yio35u"
+      ]
     },
     {
-      "text": "Until a build writes that file, the check reports only that it needs one build.",
-      "id": "f:6oopkt"
+      "text": "While the committed file no longer matches the adapter, a build fails and names `npx cairn-manifest` as the fix.",
+      "id": [
+        "f:eqlssz",
+        "f:z61ibp"
+      ]
+    },
+    {
+      "text": "In the project directory, run `cairn doctor`.",
+      "id": "f:hwffph"
     },
     {
       "text": "In the output, confirm that `cairn doctor` reports no `auth.role-wiring-missing` warning.",
       "id": "f:hwffph"
     },
     {
-      "text": "The warning means the adapter declares custom roles but `createAuthGuard` was not passed `{ runtime }`.",
-      "id": "f:hwffph"
-    },
-    {
-      "text": "On this engine such a call is a type error, and a guard built that way throws when `src/hooks.server.ts` loads.",
+      "text": "The warning means that `createAuthGuard` doesn't receive `{ runtime }`, and [Resolve a failed setup](#resolve-a-failed-setup) gives the fix.",
       "id": [
-        "f:4xrx5f",
-        "f:hwffph"
+        "f:hwffph",
+        "f:4xrx5f"
       ]
-    },
-    {
-      "text": "The warning's text describes a fallback to the owner and editor pair, which is an older engine's behavior.",
-      "id": "f:hwffph"
-    },
-    {
-      "text": "It concerns a site whose hooks escape the type check, or an older site.",
-      "id": "f:4xrx5f"
     },
     {
       "text": "The [`cairn doctor` reference](../reference/cli-cairn-doctor.md#the-checks) lists every check.",
@@ -638,10 +637,6 @@
     {
       "text": "In the project directory, build and deploy the site as [Deploy a change](add-cairn-to-a-sveltekit-app.md#deploy-a-change) describes.",
       "id": "no-claim"
-    },
-    {
-      "text": "The admin mount forwards its runtime, and the deployed screen that adds editors validates a posted role against the vocabulary in `runtime.roles`.",
-      "id": "f:mbx6q1"
     },
     {
       "text": "Once the deploy finishes, an owner can add the role's people.",
@@ -706,7 +701,15 @@
       "id": "no-claim"
     },
     {
-      "text": "On the deployed site, open `/admin` as one of the role's people.",
+      "text": "On `/admin/editors`, make sure an email address you can receive mail at is on the roster with the `staff` role.",
+      "id": [
+        "f:nj0nfm",
+        "f:mbx6q1",
+        "f:pvs115"
+      ]
+    },
+    {
+      "text": "On the deployed site, open `/admin` as that person.",
       "id": "f:7n28wc"
     },
     {
@@ -737,11 +740,11 @@
       "id": "no-claim"
     },
     {
-      "text": "`createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code, 8 digits by default.",
+      "text": "`createAuthChannel` builds the request, confirm, and logout actions for a separate login over a numeric code.",
       "id": "f:we2lmp"
     },
     {
-      "text": "The site supplies the routes, the code's delivery, and the roster, and the factory owns the codes, the sessions, and revocation.",
+      "text": "It ships no route or UI, so the site builds the login route and the member area.",
       "id": [
         "f:cf1avu",
         "f:q7fj6p"
@@ -772,7 +775,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The channel keeps its codes and sessions in a separate D1 database, bound beside `AUTH_DB` and never as it.",
+      "text": "The channel keeps its codes and sessions in a separate D1 database under a binding of its own, never `AUTH_DB`.",
       "id": "f:rcpe0n"
     },
     {
@@ -842,14 +845,14 @@
       "id": "no-claim"
     },
     {
-      "text": "In `src/lib/server/members.ts`, export `findMemberId(contact, { env })`, which resolves to the member's subject or `null`.",
+      "text": "In `src/lib/server/members.ts`, export `findMemberId(contact, { env })`, which resolves to the member's subject, a stable identifier for the member, or `null`.",
       "id": [
         "f:dtz8oa",
         "f:ffskeq"
       ]
     },
     {
-      "text": "The `{ env }` context lets the lookup reach the roster's binding, and the function never reads request-shaped data.",
+      "text": "The `{ env }` context lets the lookup reach the roster's binding, and the function receives only that context, never the request.",
       "id": "f:ffskeq"
     },
     {
@@ -865,15 +868,22 @@
       "id": "f:dbh3aj"
     },
     {
-      "text": "In `src/lib/server/member-channel.ts`, create the channel with its six required members, typed over the Worker env.",
-      "id": "f:41kl6q"
+      "text": "In `src/lib/server/member-channel.ts`, create the channel with its six required members, typed over the generated Worker `Env`.",
+      "id": [
+        "f:41kl6q",
+        "f:2ihgrk"
+      ]
     },
     {
-      "text": "In `.dev.vars` beside the Wrangler config, add the Turnstile secret key as `TURNSTILE_SECRET`, creating the file if needed.",
+      "text": "If no `.dev.vars` file sits beside the Wrangler config, create one there.",
       "id": "f:86h9o6"
     },
     {
-      "text": "If your site carries `.dev.vars.example`, as a site from the Deploy-button tree does, add `TURNSTILE_SECRET` to it with an empty value.",
+      "text": "In `.dev.vars`, add the Turnstile secret key as `TURNSTILE_SECRET`.",
+      "id": "f:86h9o6"
+    },
+    {
+      "text": "If your site carries `.dev.vars.example`, as a site created from the public Waymark template does, add `TURNSTILE_SECRET` to it with an empty value.",
       "id": "f:nls26c"
     },
     {
@@ -885,8 +895,11 @@
       "id": "f:nls26c"
     },
     {
-      "text": "In the project directory, regenerate the Worker types, so the generated `Env` carries the secret's name.",
-      "id": "f:pe4vuc"
+      "text": "In the project directory, regenerate the Worker types, so the generated `Env` carries `MEMBER_DB` and the secret's name.",
+      "id": [
+        "f:pe4vuc",
+        "f:uci4pa"
+      ]
     },
     {
       "text": "Use the command that fits the site:",
@@ -903,15 +916,23 @@
     {
       "text": "`challenge` receives only the event and the form, so the module reads `TURNSTILE_SECRET` from the `env` that `cloudflare:workers` exports.",
       "id": [
-        "f:pe4vuc",
+        "f:am6hhb",
         "f:41kl6q"
       ]
     },
     {
-      "text": "The generated `Env` types that export, and the module's local `Env` types only what `resolveDb` receives.",
+      "text": "The generated `Env` type describes that export.",
+      "id": "f:pe4vuc"
+    },
+    {
+      "text": "`createAuthChannel`'s type parameter describes the `env` that `resolveDb` receives and the `env` in the context of `lookup`, `deliver`, and `verify`.",
+      "id": "f:2ihgrk"
+    },
+    {
+      "text": "Typing the channel over `Cloudflare.Env`, the generated type, covers every binding those functions read, as the example site's channel does.",
       "id": [
-        "f:pe4vuc",
-        "f:ditn3e"
+        "f:2ihgrk",
+        "f:pe4vuc"
       ]
     },
     {
@@ -986,7 +1007,7 @@
       "id": "f:ez788q"
     },
     {
-      "text": "`challenge` must actually verify a human, because it is the whole economic bound on guessing a code.",
+      "text": "`challenge` must verify a human, because it is the whole economic bound on guessing a code.",
       "id": [
         "f:ez788q",
         "f:pa2hqh"
@@ -1104,11 +1125,11 @@
       "id": "f:k0cryh"
     },
     {
-      "text": "On a site that prerenders by default, the asset layer would otherwise serve a prerendered copy of either member page, and neither gate would run.",
-      "id": "f:k0cryh"
+      "text": "The subject is the stable string your `lookup` returned.",
+      "id": "f:dtz8oa"
     },
     {
-      "text": "The subject is the stable string your `lookup` returned, and the page loads the member's records by it from the site's store.",
+      "text": "A member page loads the member's records from the site's store by that subject.",
       "id": "f:dtz8oa"
     },
     {
@@ -1120,16 +1141,15 @@
       "id": "no-claim"
     },
     {
-      "text": "A channel session lasts 30 days by default, and a site ends a removed member's sessions early with `verify`, with `revokeSessions`, or with both.",
+      "text": "A channel session lasts 30 days by default.",
+      "id": "f:u3qhel"
+    },
+    {
+      "text": "A site ends a removed member's sessions early with either or both of the following:",
       "id": [
-        "f:u3qhel",
         "f:dtz8oa",
         "f:1rstld"
       ]
-    },
-    {
-      "text": "A site uses either or both of the following:",
-      "id": "no-claim"
     },
     {
       "text": "To check the roster on every resolution, give the channel's config a `verify` function that returns `false` for a removed member.",
@@ -1140,7 +1160,7 @@
       "id": "f:dtz8oa"
     },
     {
-      "text": "`verify` takes the same `{ env }` context as `lookup` and never reads request-shaped data.",
+      "text": "`verify` takes the same `{ env }` context as `lookup`, never the request.",
       "id": "f:ffskeq"
     },
     {
@@ -1177,15 +1197,22 @@
       ]
     },
     {
-      "text": "The double needs `node:sqlite`, the reason for the Node floor in [Before you begin](#before-you-begin).",
-      "id": "f:fcqs22"
+      "text": "The double needs `node:sqlite`, which every Node release at the floor named in [Before you begin](#before-you-begin) provides.",
+      "id": [
+        "f:fcqs22",
+        "f:tnvu0a"
+      ]
     },
     {
       "text": "To test the channel, follow these steps:",
       "id": "no-claim"
     },
     {
-      "text": "In `vitest.config.ts`, confirm that `test.server.deps.inline` lists `@glw907/cairn-cms`, as the scaffold's config does, and add it if it's missing.",
+      "text": "In `vitest.config.ts`, if `test.server.deps.inline` doesn't list `@glw907/cairn-cms`, add it.",
+      "id": "f:1stlyv"
+    },
+    {
+      "text": "The scaffold's config already lists it.",
       "id": "f:1stlyv"
     },
     {
@@ -1256,7 +1283,7 @@
       "id": "f:86h9o6"
     },
     {
-      "text": "The command creates a new Worker version and deploys it at once.",
+      "text": "The command creates a new Worker version and deploys it at once, as Cloudflare's [Secrets](https://developers.cloudflare.com/workers/configuration/secrets/) page describes.",
       "id": "f:86h9o6"
     },
     {
@@ -1304,11 +1331,15 @@
       "id": "f:265s4t"
     },
     {
-      "text": "Confirm that the login page returns.",
-      "id": "no-claim"
+      "text": "Confirm that the page redirects to `/members/login`.",
+      "id": "f:265s4t"
     },
     {
-      "text": "Confirm that `/members` now redirects to the login page.",
+      "text": "Open `/members`.",
+      "id": "f:265s4t"
+    },
+    {
+      "text": "Confirm that it redirects to `/members/login`.",
       "id": "f:265s4t"
     },
     {
@@ -1316,7 +1347,7 @@
       "id": "no-claim"
     },
     {
-      "text": "Each failure in the following list names its symptom, its cause, and its fix, with the role path's failures first and the channel's after them.",
+      "text": "The following failures cover the role path first, then the channel.",
       "id": "no-claim"
     },
     {
@@ -1332,7 +1363,7 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "Then rebuild, rerun the check, and deploy as [Deploy the role](#deploy-the-role) does.",
+      "text": "Then rerun the check and deploy as [Deploy the role](#deploy-the-role) does.",
       "id": "no-claim"
     },
     {
@@ -1356,7 +1387,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The person lands on the minimal signed-in welcome screen instead of the home screen.",
+      "text": "The person lands on the welcome view instead of the home screen.",
       "id": "f:kqcyv1"
     },
     {
@@ -1367,7 +1398,7 @@
       ]
     },
     {
-      "text": "If the person lands on the welcome screen, check that the vocabulary declares the role with its `home`.",
+      "text": "If the person lands on the welcome view, check that the vocabulary declares the role with its `home`.",
       "id": "f:pvs115"
     },
     {
@@ -1379,7 +1410,7 @@
       "id": "f:8anql1"
     },
     {
-      "text": "Its load function gates with `requireAccess`, and no route rule in the access map names the role.",
+      "text": "Its load function gates with `requireAccess`, and no access-map key lists the role.",
       "id": [
         "f:8anql1",
         "f:5sx6zl"
@@ -1402,7 +1433,7 @@
       "id": "f:7n28wc"
     },
     {
-      "text": "The deepest map key matching `/admin/staff` does not list `staff`, so the map decides the entry and refuses the role.",
+      "text": "The deepest access-map key matching `/admin/staff` does not list `staff`, so the map decides the entry and refuses the role.",
       "id": [
         "f:altcjp",
         "f:5sx6zl",
@@ -1410,7 +1441,7 @@
       ]
     },
     {
-      "text": "If the link does not show, add `staff` to the map key that matches `/admin/staff`, as [Restrict admin access](restrict-admin-access.md) describes.",
+      "text": "If the link does not show, add `staff` to the access-map key that matches `/admin/staff`, as [Restrict admin access](restrict-admin-access.md) describes.",
       "id": "f:4673n6"
     },
     {
@@ -1418,8 +1449,8 @@
       "id": "no-claim"
     },
     {
-      "text": "A site with no access map skips this check.",
-      "id": "no-claim"
+      "text": "This failure cannot occur on a site with no access map.",
+      "id": "f:5sx6zl"
     },
     {
       "text": "The test fails inside `createChannelDb` because `node:sqlite` cannot load on the running Node release.",
@@ -1501,35 +1532,38 @@
       "id": "f:265s4t"
     },
     {
-      "text": "Either `lookup` returned `null` for the normalized contact, or `lookup` threw.",
-      "id": "f:dtz8oa"
+      "text": "Either `lookup` returned `null` or threw, or the site's `deliver` function threw while it sent the code.",
+      "id": [
+        "f:dtz8oa",
+        "f:dbh3aj",
+        "f:tx48wk"
+      ]
     },
     {
       "text": "A `null` means the contact is not on the roster, or its normalized form does not match the roster's.",
       "id": "f:dtz8oa"
     },
     {
-      "text": "If no code arrives, read the channel's request record in Workers Logs, which [Log events](../reference/log-events.md) describes.",
+      "text": "If no code arrives, read the channel's records in Workers Logs, which [Log events](../reference/log-events.md) describes.",
       "id": "no-claim"
     },
     {
-      "text": "An `outcome` of `'unknown'` means the normalized contact is not on the roster `lookup` reads, and `'lookup_failed'` means `lookup` threw.",
+      "text": "An `auth.channel.requested` record with an `outcome` of `'unknown'` means the normalized contact is not on the roster `lookup` reads, and `'lookup_failed'` means `lookup` threw.",
       "id": [
-        "f:dtz8oa",
-        "f:265s4t"
+        "f:7cot0m",
+        "f:dtz8oa"
       ]
     },
     {
-      "text": "The request answers that a code was sent and no code arrives, and Workers Logs records a delivery failure.",
-      "id": "no-claim"
+      "text": "An `auth.channel.send_failed` record means `deliver` threw.",
+      "id": "f:tx48wk"
     },
     {
-      "text": "The site's `deliver` function threw while it sent the code.",
-      "id": "f:dbh3aj"
-    },
-    {
-      "text": "If Workers Logs records a delivery failure, read that record and fix the transport your `deliver` calls.",
-      "id": "f:dbh3aj"
+      "text": "In that case, read its `error` field and fix the transport your `deliver` calls.",
+      "id": [
+        "f:tx48wk",
+        "f:dbh3aj"
+      ]
     },
     {
       "text": "Entering the code returns the login page with an error, and no redirect to `/members` follows.",
@@ -1591,10 +1625,6 @@
     {
       "id": "f:mfmmof",
       "reason": "Neither path composes the admin toolkit: the member area sits outside `/admin`, where the toolkit's daisyUI classes are unstyled, and the home screen's composition belongs to Add a custom admin screen. The toolkit reference owns its rendering contract."
-    },
-    {
-      "id": "f:tnvu0a",
-      "reason": "Restates `f:fcqs22`'s missing runtime guard, and its `node:sqlite` unflag point (Node 22.13) sits below the declared floor of 24 the page names, so stating both floors gives the reader a hedge no step depends on. No outlined page documents the dev package's Node history."
     },
     {
       "id": "f:2gtftn",

@@ -883,7 +883,7 @@
       "id": "f:86h9o6"
     },
     {
-      "text": "If your site carries `.dev.vars.example`, as a site created from the public Waymark template does, add `TURNSTILE_SECRET` to it with an empty value.",
+      "text": "If your site carries `.dev.vars.example`, add `TURNSTILE_SECRET` to it with an empty value.",
       "id": "f:nls26c"
     },
     {

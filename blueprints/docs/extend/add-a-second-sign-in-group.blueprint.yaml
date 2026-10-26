@@ -1294,7 +1294,7 @@ sections:
         fact: f:nls26c
         use: |
           Only: `.dev.vars.example` is the template for the local-only `.dev.vars`, and only the
-          public Waymark template, `templates/waymark/`, carries it; the setup command's scaffold ships none, and its
+          `templates/waymark/` copy carries it (pre-release); the setup command's scaffold ships none, and its
           `.gitignore` keeps `.dev.vars` out of git. Omit the names the template lists.
       - id: s-types
         kind: step

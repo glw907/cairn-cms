@@ -316,7 +316,7 @@ To write the module, follow these steps:
 
 4. If no `.dev.vars` file sits beside the Wrangler config, create one there.
 5. In `.dev.vars`, add the Turnstile secret key as `TURNSTILE_SECRET`.
-6. If your site carries `.dev.vars.example`, as a site created from the public Waymark template does, add `TURNSTILE_SECRET` to it with an empty value.
+6. If your site carries `.dev.vars.example`, add `TURNSTILE_SECRET` to it with an empty value.
 
    A site without that file, such as one the setup command scaffolded, skips this step. `.dev.vars.example` is the template for the local-only `.dev.vars`, and the scaffold's `.gitignore` keeps `.dev.vars` out of git.
 

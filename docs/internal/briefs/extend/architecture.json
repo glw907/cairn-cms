@@ -6,7 +6,7 @@
       "id": ["f:j0ut9n", "f:cjonmm"]
     },
     {
-      "text": "It runs inside the site's own Cloudflare Worker, with no CMS server of its own.",
+      "text": "It runs inside a site's Cloudflare Worker, with no CMS server of its own.",
       "id": "f:j0ut9n"
     },
     {

@@ -16,13 +16,13 @@ introduction:
     the engine or a build or CI check reads it, because nothing in the tree says which is which.
     The introduction names two readers: a developer who took over a scaffolded site from someone
     else, and a developer who ran the setup command and wants to know what it wrote and why. It
-    lists the subjects in body order: what the scaffold is and who owns it; the file tree, with the
-    files the engine or a check reads marked; the root files, the build and deploy configuration
-    with the Worker's one D1 database, and the database migrations, with why a database the site
-    adds takes a separate directory; the routes and the server hook, including what the local dev
-    server runs; the theme, chassis, content, and style sheets; the settings a new owner edits by
-    hand; the build's crawl rules and the themed 404 page; and the state the setup command left
-    outside the repository.
+    lists the subjects in body order: what the scaffold is, and why the site owns every file; the
+    file tree, with the files the engine or a check reads marked; the root files and the build and
+    deploy configuration; the database migrations, and why an added database takes a separate
+    directory; the routes and the server hook, including what the local dev server runs; the
+    theme, chassis, and content directories, the committed manifests, and the two style sheets;
+    the settings a developer edits by hand, outside the admin; the build's crawl rules and the
+    themed 404 page; and the state the setup command left outside the repository.
   priorKnowledge: |
     Working knowledge of SvelteKit's project structure (routes, layouts, hooks, and prerendering),
     Vite configuration, and Wrangler configuration for a Worker's bindings and D1 migrations. A
@@ -57,10 +57,10 @@ framing:
       App, its repository, and its Cloudflare bindings, and deployed it (`f:kldwss`), so a new owner
       meets a live site, not a starter to deploy.
     - **What the tree is, and why it exists.** The setup command bakes Waymark, cairn's reference
-      reading theme, on a chassis of design-neutral plumbing, from the same tree the engine tests
+      reading theme, on the chassis, the design-neutral code, from the same tree the engine tests
       itself against, with test-only material pruned (`f:n2skkz`, `f:rxj43c`). Waymark is the only
-      template shipped (`f:u705t5`). The scaffold exists so a site starts from the engine's
-      reference wiring, already deployed, rather than from a by-hand build (`f:kldwss`, `f:9slxqf`).
+      template shipped (`f:u705t5`); the page never names Topo, which does not ship. The scaffold
+      exists so a site starts from the engine's reference wiring, already deployed, rather than from a by-hand build (`f:kldwss`, `f:9slxqf`).
     - **Why the site owns every file.** The npm package's `files` list carries neither Waymark nor the
       chassis (`f:rxj43c`), so an engine upgrade moves the `@glw907/cairn-cms` range and leaves the
       tree as it is; each change a release needs in the site's code, a new D1 migration included, is
@@ -92,9 +92,9 @@ framing:
       `migrations/` is that database's one migrations directory (`f:gepykz`), and a database the
       site adds would take a separate one (`f:nv0ok0`, general rule only). The setup run deploys the site
       once (`f:kldwss`); Workers Builds deploys on every push to the default branch only when the
-      same run's Workers Builds chapter connected it rather than recording a decline (`--connect`
-      only re-enters that chapter for a site already past its first deploy, `f:qca0t0`), on the
-      build token that chapter registered (`f:3bbeia`). The intro hedges any deploy claim accordingly and
+      same run's Workers Builds step connected it rather than recording a decline (`--connect`
+      only re-enters that step for a site already past its first deploy, `f:qca0t0`), on the
+      build token that step registered (`f:3bbeia`). The intro hedges any deploy claim accordingly and
       never says every push deploys.
     - **Where GitHub fits.** The repository holds the code and the markdown; the site's GitHub App
       commits each editor's publish to its default branch (`f:cjonmm`); a GitHub Actions workflow runs
@@ -102,9 +102,9 @@ framing:
       builds (`f:guiavc`).
     - **State outside the tree, and why it matters to a new owner.** The setup command keeps its record
       of the run in `~/.config/cairn/sites/<id>.json` on the machine that ran it (`f:3m0oxs`), which a
-      resumed run reads (`f:3my5c1`) and `--sign-in` needs (`f:o8uoci`); an inheritor has no copy. A
-      revoked build token breaks deploys with no warning (`f:3bbeia`). This is the inheritor's sharpest
-      reason to read the page, and the intro names it.
+      resumed run reads (`f:3my5c1`) and `--sign-in` needs (`f:o8uoci`); an inheritor has no copy.
+      When the run connected Workers Builds, it also registered a build token at Cloudflare
+      (`f:3bbeia`). This is the inheritor's sharpest reason to read the page, and the intro names it.
 
     Nothing is left out on purpose: the page touches all three platforms, and the intro places each in
     one clause.
@@ -163,14 +163,13 @@ framing:
        `f:cjonmm`, `f:vrue1g`, `f:2s8u70`); the CI workflow and the build's prerender checks can fail on
        a few more (`f:guiavc`, `f:mrv24k`, `f:2zl3qz`, `f:34rsss`). Those files share directories with
        files only the site reads, as the adapter shares `src/theme/` with the theme's style sheets
-       (`f:qnf469`), so knowing which is which lets an owner change the rest freely and change the few
-       with their contract kept. One idea per sentence; the three kinds of reader may take three
+       (`f:qnf469`). One idea per sentence; the three kinds of reader may take three
        sentences or one with a complete-sentence lead-in, never a reflexive triad for its own sake.
     3. **The readers and their reasons.** A developer who ran the setup command, or who took over a
        site from someone who did, reads on to learn what each file does and whether to change it. One
        who took over also lacks what the command left outside the repository: its saved record on the
-       machine that ran it, and, when the setup run connected Workers Builds, the build token whose
-       revocation stops deploys without warning (`f:3m0oxs`, `f:3bbeia`, `f:qca0t0`). A reader who knows
+       machine that ran it, and, when the setup run connected Workers Builds, the build token it
+       registered at Cloudflare (`f:3m0oxs`, `f:3bbeia`, `f:qca0t0`). A reader who knows
        the engine's import points and seams from Architecture (link `docs/extend/architecture.md`, the
        intro's one link outside the bounds lists) finds where each lands in the tree, and a reader
        working on the theme finds the files around it (no link here; the out-of-scope list carries
@@ -181,7 +180,7 @@ framing:
 
     Then the bounds:
 
-    - **What the page covers.** The eight-item bulleted list of `covers` in body order, under a
+    - **What the page covers.** The nine-item bulleted list of `covers` in body order, under a
       complete lead-in that names the subjects and never the page. Keep "the themed 404 page": the
       numeral is the page's name and matches the [[themed-404-page]] heading, which the no-numeral
       rule (aimed at counts) does not reach.
@@ -194,7 +193,7 @@ framing:
     Cautions for the drafter, each from the background above: never say every push deploys (Workers
     Builds is optional, `f:qca0t0`); never say the CI builds the site (`f:guiavc`); never say the
     package carries none of the tree's files (it ships `migrations` and the guidance sources); keep
-    Topo, the shadcn principle lines, and the state file's path for the body.
+    the shadcn principle lines and the state file's path for the body.
 orderReason: |
   Ownership comes first because every later answer to "may I change this?" rests on it, and the
   annotated tree follows as the map the rest of the page walks. The per-file sections walk the tree
@@ -219,9 +218,8 @@ sections:
       Ownership comes first because every later answer to whether a file may change rests on it: the
       section defines the scaffold and states that the site owns every file.
     opens: |
-      A scaffolded site is Waymark, cairn's reference theme, wired onto a chassis of design-neutral
-      plumbing, and the setup command copies both from the same tree the engine runs its tests
-      against.
+      A scaffolded site is Waymark, cairn's reference theme, wired onto the chassis, the
+      design-neutral code every scaffolded site shares.
     items:
       - id: scaffold-source
         kind: fact
@@ -232,32 +230,25 @@ sections:
           removes, including the `admin/signups` screen with its `migrations-app/`, the
           `admin/error-fixture` route, `src/lib/env-check.ts`,
           `src/routes/(site)/+layout.server.ts`, the members fixture with `migrations-members/`,
-          and 13 of the showcase's 27 posts, so the scaffold keeps the other 14. Then say that the bake writes its `README.md`,
-          `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the
-          showcase's, so the scaffold still carries those files.
+          and 13 of the showcase's 27 posts, so the scaffold keeps the other 14, plus the showcase's
+          `package-lock.json`, which the template build deletes. Then say, in plain words and never
+          the internal term "bake", that the setup command's package is built with its own
+          `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place
+          of the showcase's when it is packed, and that the setup command copies them with the rest
+          of the tree, so the scaffold still carries those files.
       - id: scaffold-one-template
         kind: fact
         fact: f:u705t5
         use: |
-          Only that Waymark is the only template the setup command ships, and that Topo is planned
-          but not shipped.
+          Only that Waymark is the only template the setup command ships. Omit Topo: it does not
+          ship, and the fact's "planned" half rests on no code (`ROADMAP.md:1086`).
       - id: scaffold-same-run
         kind: fact
         fact: f:kldwss
         use: |
           Only the run's outcome: the GitHub App, the repository, the Cloudflare bindings, and the
           deploy, so the tree arrives already live. Leave the Workers Builds connection, which the
-          same run offers in a separate chapter, to [[setup-state-outside-the-tree]].
-      - id: scaffold-ownership
-        kind: sentence
-        mode: claim
-        text: |
-          Every file in the tree belongs to the site: the engine's npm package carries neither the
-          template nor the chassis, and the engine arrives as one ordinary dependency in
-          `package.json`.
-        facts:
-          - f:rxj43c
-          - f:o47i0q
+          same run offers in a separate step, to [[setup-state-outside-the-tree]].
       - id: scaffold-by-hand-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md
@@ -286,9 +277,11 @@ sections:
         mode: claim
         text: |
           The tree leaves out files no section discusses, such as `src/app.html` and the theme's
-          test files, so a reader does not take the listing as complete.
+          test files, and the gitignored root `.cairn/` that the pre-scripts build, so a reader does
+          not take the listing as complete.
         facts:
           - f:i3rn6f
+          - f:666eg6
       - id: tree-block
         kind: code
         text: |
@@ -303,8 +296,8 @@ sections:
           [engine]. `CLAUDE.md` and `.claude/` appear unmarked. The tree has no `src/access.ts`, no
           `migrations-app/`, and no `src/routes/admin/signups/`, and it leaves out files no section
           discusses, such as `src/app.html` and the theme's test files. Draw it from the source
-          directory less the Deploy-button overlay: no `.dev.vars.example` and no `LICENSE`, which
-          only that tree carries (`f:qlgggh`).
+          directory less the files the `templates/waymark/` copy adds: no `.dev.vars.example` and
+          no `LICENSE`, which only that copy carries (`f:qlgggh`).
         facts:
           - f:guiavc
           - f:mrv24k
@@ -347,16 +340,15 @@ sections:
       workflow every push meets.
     opens: |
       Beside a plain SvelteKit project's files, the root carries a CI workflow, the audit's
-      config, and a `.gitignore` that the setup command renames, and local secrets go in a
-      `.dev.vars` the owner creates there.
+      config, and a `.gitignore`, and local secrets go in a `.dev.vars` the developer creates
+      there.
     items:
       - id: root-two-entries
         kind: fact
         fact: f:qlgggh
         use: |
           Only that the root holds `.github/workflows/check.yml`, `cairn-audit.config.json`, and
-          `.gitignore`, which backs the section's opening sentence; [[gitignore]] carries the
-          rename.
+          `.gitignore`, which backs the section's opening sentence.
   - id: github-workflows-check-yml
     heading: '`.github/workflows/check.yml`'
     why: |
@@ -382,7 +374,8 @@ sections:
         fact: f:jd54ph
         use: |
           Only that the last step runs `npx cairn-guidance check` without `--strict` and under
-          `continue-on-error: true`, so it never fails the job. Omit what the check reads.
+          `continue-on-error: true`, so it never fails the job. Label it as the check of the site's
+          Claude Code guidance, and omit what the check reads.
       - id: ci-no-browser
         kind: fact
         fact: f:j7fha2
@@ -391,22 +384,38 @@ sections:
   - id: dev-vars-example
     heading: '`.dev.vars`'
     why: |
-      Local secrets live in a `.dev.vars` the scaffold does not ship, so a new owner who looks for
+      Local secrets live in a `.dev.vars` the scaffold does not ship, so a developer who looks for
       a template at the root needs to learn that none is there and what the file holds.
     level: 3
     opens: |
-      The scaffold ships no `.dev.vars.example`: local secrets go in a `.dev.vars` the owner
-      creates, which the `.gitignore` keeps out of the repository, and only the Deploy-button
-      tree, `templates/waymark/`, carries a template for it.
+      The scaffold ships no `.dev.vars.example`.
     items:
+      - id: devvars-local
+        kind: fact
+        fact: f:nls26c
+        use: |
+          Only that local secrets go in a `.dev.vars` the developer creates and the `.gitignore`
+          keeps out of the repository.
+      - id: devvars-example-location
+        kind: sentence
+        mode: claim
+        text: |
+          An example of that file exists only in the cairn-cms repository, committed at
+          `packages/create-cairn-site/template-repo/.dev.vars.example` and copied into the
+          `templates/waymark/` directory, a separate committed copy of the Waymark template
+          generated from the same source as the scaffold, with a few files added or replaced.
+        facts:
+          - f:nls26c
+          - f:rxj43c
       - id: devvars-contents
         kind: fact
         fact: f:nls26c
         use: |
-          Only that the scaffold ships no template, and the two entries the Deploy-button tree's
-          `.dev.vars.example` names for `.dev.vars`: the private key's placeholder, with why the
-          App id and installation id are absent, and the empty `ANTHROPIC_API_KEY` that tidy reads,
-          noting that the scaffold's `site.config.yaml` ships tidy enabled.
+          Only the two entries the `templates/waymark/` copy's `.dev.vars.example` names for
+          `.dev.vars`, as a list under a lead-in that names that copy: the private key's
+          placeholder, with why the App id and installation id are absent, and the empty
+          `ANTHROPIC_API_KEY` that tidy reads, noting that the scaffold's `site.config.yaml` ships
+          tidy enabled.
       - id: devvars-tidy-link
         kind: link
         target: turn-on-tidy.md
@@ -431,32 +440,41 @@ sections:
   - id: gitignore
     heading: '`.gitignore`'
     why: |
-      The `.gitignore` gets a separate entry because the setup command renames it, and it hides paths
-      other entries name: `.dev.vars` and the `.cairn/` directory that holds the compiled admin
-      sheet.
+      The `.gitignore` gets a separate entry because it hides paths other entries name, `.dev.vars`
+      and the `.cairn/` directory that holds the compiled admin sheet, and because the setup
+      command renames it.
     level: 3
     opens: |
-      The setup command's package stores this file as `gitignore`, because npm's packlist drops a
-      file named `.gitignore`, and the setup command renames it after copying.
+      The file ignores `.dev.vars` and every `.dev.vars.*` file, and no line re-includes any of
+      them.
     items:
-      - id: gitignore-rename
-        kind: fact
-        fact: f:qfv5iw
-        use: |
-          Only the rename, the loud failure when the file is absent, and `.gitattributes` shipping
-          unrenamed.
       - id: gitignore-devvars
         kind: fact
         fact: f:nls26c
         use: |
-          Only that the file ignores `.dev.vars` and every `.dev.vars.*` file, with no line that
-          re-includes any of them.
+          Only what backs the section's opening sentence; add nothing beyond it.
       - id: gitignore-admin-css
         kind: fact
         fact: f:666eg6
         use: |
-          Only that the file ignores the whole root `.cairn/` directory (`/.cairn/`), which holds
-          the compiled `.cairn/admin.css` the pre-scripts rebuild.
+          Only that the file ignores the whole root `.cairn/` directory (`/.cairn/`), where the
+          pre-scripts rebuild the compiled `.cairn/admin.css`.
+      - id: gitignore-two-cairn-dirs
+        kind: sentence
+        mode: claim
+        text: |
+          This root `.cairn/` is separate from the committed `src/content/.cairn/`, which holds the
+          content manifests.
+        facts:
+          - f:666eg6
+          - f:vrue1g
+      - id: gitignore-rename
+        kind: fact
+        fact: f:qfv5iw
+        use: |
+          Only the rename, in a second paragraph: the package stores the file as `gitignore`
+          because npm's packlist drops `.gitignore`, the setup command renames it after copying and
+          fails loudly when it is absent, and `.gitattributes` ships unrenamed.
   - id: other-root-files
     heading: Other root files
     why: |
@@ -574,7 +592,7 @@ sections:
         use: |
           Only the `cf-typegen` row: in the scaffold it holds `wrangler types
           --include-runtime=false`, which reproduces the arguments the committed
-          `worker-configuration.d.ts` records. Only the Deploy-button tree's script adds
+          `worker-configuration.d.ts` records. Only the `templates/waymark/` copy's script adds
           `--env-file=.dev.vars.example`.
   - id: vite-config-ts
     heading: '`vite.config.ts`'
@@ -628,15 +646,15 @@ sections:
       the engine reads at run time.
     level: 3
     opens: |
-      The Worker's config declares four bindings, the static-assets binding `ASSETS` among them,
-      and one variable, and its only D1 database is the auth store.
+      The Worker's config declares the following four bindings and one variable, and `AUTH_DB` is
+      its only D1 database.
     items:
       - id: wrangler-bindings
         kind: fact
         fact: f:n7t4bn
         use: |
-          Only the four bindings (`ASSETS` included) and the variable, as a bulleted list with one item each, and that
-          the scaffold binds no second database.
+          Only the four bindings (`ASSETS` included) and the variable, as a bulleted list with one
+          item each.
       - id: wrangler-media-link
         kind: link
         target: configure-media.md
@@ -760,7 +778,7 @@ sections:
         fact: f:3z1uxv
         use: |
           Only the scaffold's half: its adapter declares no `access` member and takes the
-          zero-config owner and editor floor, and the tree holds no `src/access.ts`.
+          zero-config `owner` and `editor` roles, and the tree holds no `src/access.ts`.
       - id: hook-restrict-link
         kind: link
         target: restrict-admin-access.md
@@ -768,9 +786,8 @@ sections:
         kind: fact
         fact: f:dqjkci
         use: |
-          Only the dev backend's three stand-ins, the owner sign-in with no email, and that its
-          state lives for the server process, so nothing leaves the machine. A second paragraph on
-          the dev branch.
+          Only the dev backend's three stand-ins and its `owner` sign-in without an email loop, so
+          nothing leaves the machine. A second paragraph on the dev branch.
       - id: hook-no-content
         kind: fact
         fact: f:zzjrza
@@ -810,9 +827,10 @@ sections:
         kind: fact
         fact: f:ty4ehh
         use: |
-          Only how `+error.svelte` renders an error inside `/admin`: the 403 and 404 messages with
-          their link back to the dashboard, any other status, and the layout-load failure that still
-          falls to the root error page.
+          Only how `+error.svelte` renders an error inside `/admin` within the admin shell: the
+          **Back to the dashboard** link every status shows, the fixed 403 and 404 messages, any
+          other status's thrown message or its fallback line, and the layout-load failure that
+          still falls to the root error page.
       - id: admin-custom-link
         kind: link
         target: add-a-custom-admin-screen.md
@@ -849,12 +867,11 @@ sections:
   - id: endpoints-at-the-root
     heading: Endpoints at the root
     why: |
-      The root endpoints follow the two route groups, and two of them sit outside `/admin` on
-      purpose.
+      The root endpoints follow the two route groups, and two of them sit outside `/admin`.
     level: 3
     opens: |
       The root holds the feed, sitemap, and robots endpoints beside two routes that sit outside
-      `/admin` on purpose, the media route and `/healthz`.
+      `/admin`, the media route and `/healthz`.
     items:
       - id: endpoints-names
         kind: fact
@@ -896,30 +913,37 @@ sections:
       routes group ends with it.
     level: 3
     opens: |
-      The root `+layout.server.ts` returns the menus, the site name, and whether the site registers
-      any island, and it reads them without importing the full adapter.
+      The root `+layout.server.ts` load returns the menus, the site name, and whether the site
+      registers any island, as `nav`, `footerNav`, `siteName`, and `hasIslands`.
     items:
       - id: rootlayout-data
         kind: fact
         fact: f:ofex2m
         use: |
           Only the four values the load returns, that it reads `site-config.ts` and the island
-          registry to keep requests light, and that `SiteHeader` and the root `+error.svelte`, the
-          themed 404 and error page, read them through `page.data`.
+          registry, not the full adapter, to keep requests light, that `SiteHeader` and the root
+          `+error.svelte` read them through `page.data`, and that the root `+error.svelte` is the
+          themed 404 and error page [[themed-404-page]] describes.
+      - id: rootlayout-404-link
+        kind: link
+        target: '#themed-404-page'
   - id: theme-chassis-and-content
     heading: Theme, chassis, and content
     why: |
-      The theme, chassis, and content are what the routes read, so they follow the routes, and the
-      group states once that a file's directory does not show whether it carries a contract.
+      The theme, chassis, and content are what the routes read, so they follow the routes.
     opens: |
-      `src/theme/` holds the adapter and Waymark's design, `src/chassis/` holds the plumbing every
-      scaffolded site shares, and `src/content/` holds the markdown and its committed manifests.
+      The adapter and Waymark's design share `src/theme/`.
     items:
-      - id: theme-shared-dir
-        kind: reason
+      - id: group-dirs
+        kind: sentence
+        mode: claim
         text: |
-          The adapter shares `src/theme/` with the theme's style sheets, so a file's directory does
-          not show whether it carries a contract.
+          The chassis sits in `src/chassis/`, and the markdown and its committed manifests sit in
+          `src/content/`.
+        facts:
+          - f:rxj43c
+          - f:gj96px
+          - f:vrue1g
   - id: src-theme
     heading: '`src/theme/`'
     why: |
@@ -976,19 +1000,13 @@ sections:
   - id: src-chassis
     heading: '`src/chassis/`'
     why: |
-      The chassis sits beside the theme, and its entry states that the site owns it like every other
-      file.
+      The chassis sits beside the theme, and its entry points to where the chassis ends and the
+      theme begins.
     level: 3
     opens: |
-      The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree
-      with Waymark.
+      The chassis is the design-neutral code every scaffolded site shares, copied into
+      `src/chassis/` with Waymark.
     items:
-      - id: chassis-baked
-        kind: fact
-        fact: f:rxj43c
-        use: |
-          Only that the setup command bakes the chassis into the tree and the engine's package
-          carries none, so the chassis belongs to the site like every other file.
       - id: chassis-boundary-link
         kind: link
         target: theme-your-public-site.md#port-your-theme-onto-the-chassis
@@ -1013,7 +1031,10 @@ sections:
       - id: content-rename-reason
         kind: reason
         text: |
-          Because the adapter names each directory, renaming one is an adapter change.
+          Because the adapter names each directory, renaming one changes the concept's `dir` in the
+          adapter and the matching `cairnManifest` content glob in `vite.config.ts`.
+        facts:
+          - f:gj96px
   - id: src-content-cairn
     heading: '`src/content/.cairn/`'
     why: |
@@ -1021,14 +1042,17 @@ sections:
       build tools, so they get a separate entry after it.
     level: 3
     opens: |
-      This directory holds three committed files that the engine and its build tools write.
+      This directory holds the following committed files, which the engine and its build tools
+      write.
     items:
       - id: dotcairn-files
         kind: fact
         fact: f:vrue1g
         use: |
-          Only the three files and what writes, patches, or checks each. Omit the root-barrel
-          function names.
+          Only the three files, one list item each, with what writes, patches, or checks each, and
+          for `site-facts.json` what it carries: the adapter's media bucket binding, plus its roles
+          and AI posture only when the adapter declares them, so the scaffold's file carries only
+          the bucket binding. Omit the root-barrel function names.
       - id: dotcairn-script
         kind: fact
         fact: f:690k0p
@@ -1137,7 +1161,7 @@ sections:
       The request-time 404 follows the build-time crawl, and it rests on two files from different
       sections, so it is a rule that spans files.
     opens: |
-      A scaffolded site serves a themed 404 page through two pieces that need each other, the root
+      A scaffolded site serves a themed 404 page only when two settings are both in place: the root
       `src/routes/+error.svelte` and `assets.not_found_handling` set to `"none"` in
       `wrangler.jsonc`.
     items:
@@ -1165,27 +1189,36 @@ sections:
   - id: setup-state-outside-the-tree
     heading: Setup state outside the tree
     why: |
-      What lives outside the repository closes the body, ending on the build-token risk, the one
-      item there that can break a live site.
+      What lives outside the repository closes the body, ending on the build token the Workers
+      Builds step registered at Cloudflare.
     opens: |
-      The setup command kept its record of the run on the machine that ran it, and when its Workers
-      Builds chapter connected the repository, it registered the Cloudflare API token pasted during
-      setup as the build token the site's deploys use.
+      The setup command left its record of the run on the machine that ran it and, when the run
+      connected Workers Builds, a build token at Cloudflare.
     items:
       - id: state-record
         kind: fact
         fact: f:3m0oxs
         use: |
           Only the record's path and file modes, that it never sits under the project directory,
-          that it includes the pasted Cloudflare token, and how a `--yes` run takes the token.
+          that each of the two setup steps that use a Cloudflare API token asks for its own and
+          deletes it from the record at the points the fact names, and how a `--yes` run takes the
+          token. Say "step", never "chapter".
+      - id: state-sign-in
+        kind: fact
+        fact: f:o8uoci
+        use: |
+          Only that a resumed run reads the record and that `--sign-in` needs it.
       - id: state-no-copy
         kind: sentence
         mode: claim
         text: |
-          A developer who took over the site from someone else has no copy of that record, since it
-          sits in the home directory of whoever ran the command.
+          A developer who took over the site from someone else has no copy of that record, which
+          sits in the home directory of whoever ran the command, so that developer can neither
+          resume the run nor use `--sign-in`.
         facts:
           - f:3m0oxs
+          - f:3my5c1
+          - f:o8uoci
       - id: state-resume
         kind: fact
         fact: f:3my5c1
@@ -1201,15 +1234,17 @@ sections:
         kind: fact
         fact: f:qca0t0
         use: |
-          Only that the setup run's Workers Builds chapter can connect the repository or record a
-          decline, and that `--connect` re-enters it only for a site at or past its first deploy.
+          Only that the setup run's Workers Builds step either connects the repository or records a
+          decline, and that `--connect` re-enters that step only for a site at or past its first
+          deploy.
       - id: state-build-token
         kind: fact
         fact: f:3bbeia
         use: |
-          Only the build token's name and its reuse, that revoking or rolling it breaks automatic
-          deploys with no prior warning, and how that shows: the next commit still triggers a
-          build, and the build fails. This is the body's last paragraph.
+          Only that the step registers the pasted token as the build token by its name and binds
+          the site's build trigger to it, and that it reuses a build token that already exists for
+          the same Cloudflare token. Omit what revoking or rolling the token does. This is the
+          body's last paragraph.
   - id: related-resources
     heading: Related resources
     why: |
@@ -1446,7 +1481,7 @@ dispositions:
     reference: rotate-the-github-app-key.md
     reason: |
       Key rotation is a separate task with its guide; the page names the key only as the
-      placeholder in the Deploy-button tree's `.dev.vars.example`, in [[dev-vars-example]].
+      placeholder in the `templates/waymark/` copy's `.dev.vars.example`, in [[dev-vars-example]].
   - fact: f:gcuj1j
     disposition: cut
     reason: |
@@ -1483,12 +1518,12 @@ constraints:
     (`f:xluud1`); the health route's 200 and 503 in [[endpoints-at-the-root]] (`f:paotzb`); the
     roles migration in [[database-migrations]] (`f:gepykz`, `f:rn62i1`).
   - |
-    No coding assistant is assumed (register, owner ruling). Claude Code appears once,
-    in the file tree's one line that labels `CLAUDE.md` and `.claude/` and links the Claude Code
-    page (`tree-claude-label`, `tree-claude-link`). The introduction, the out-of-scope list, and
-    every other section name no coding agent, and no sentence addresses one. The `check.yml` entry
-    names the `npx cairn-guidance check` step as a CI step and states only that it cannot fail the
-    job.
+    No coding assistant is assumed (register, owner ruling). Claude Code appears in the file
+    tree's one line that labels `CLAUDE.md` and `.claude/` and links the Claude Code page
+    (`tree-claude-label`, `tree-claude-link`), and in the `check.yml` entry's label for the
+    `npx cairn-guidance check` step (`ci-guidance-step`). The introduction, the out-of-scope list,
+    and every other section name no coding agent, and no sentence addresses one. The `check.yml`
+    entry names that step as a CI step and states only that it cannot fail the job.
   - |
     Scaffold claims only. The page never states that the scaffold carries a signups screen,
     `APP_DB`, `migrations-app/`, or `src/access.ts`. The example site, `examples/showcase`, appears

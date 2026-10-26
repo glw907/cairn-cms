@@ -233,7 +233,11 @@
       "id": "f:n2skkz"
     },
     {
-      "text": "The setup command writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the showcase's, so the scaffold still carries those files.",
+      "text": "When the setup command's package is packed, its build writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` into the package in place of the showcase's.",
+      "id": "f:n2skkz"
+    },
+    {
+      "text": "The setup command copies those files with the rest of the tree, so the scaffold still carries them.",
       "id": "f:n2skkz"
     },
     {
@@ -318,11 +322,11 @@
       "id": "f:nls26c"
     },
     {
-      "text": "An example of that file exists only in the cairn-cms repository's `templates/waymark/` directory.",
+      "text": "An example of that file exists only in the cairn-cms repository, committed at `packages/create-cairn-site/template-repo/.dev.vars.example` and copied into the `templates/waymark/` directory.",
       "id": "f:nls26c"
     },
     {
-      "text": "That directory is a separate committed copy of the Waymark template, generated from the same source as the scaffold, plus a few added files.",
+      "text": "That directory is a separate committed copy of the Waymark template, generated from the same source as the scaffold, with a few files added or replaced.",
       "id": [
         "f:rxj43c",
         "f:nls26c"
@@ -995,11 +999,15 @@
       "id": "f:vrue1g"
     },
     {
-      "text": "`site-facts.json`: the site's media bucket binding, roles, and AI posture, which `cairn-manifest` writes.",
+      "text": "`site-facts.json`: the adapter's media bucket binding, plus its roles and AI posture when the adapter declares them, which `cairn-manifest` writes.",
       "id": [
         "f:vrue1g",
         "f:ve30i2"
       ]
+    },
+    {
+      "text": "The scaffold's file carries only the bucket binding.",
+      "id": "f:vrue1g"
     },
     {
       "text": "The `cairn:manifest` script runs `cairn-manifest`.",
@@ -1163,7 +1171,15 @@
       "id": "f:3m0oxs"
     },
     {
-      "text": "The record holds the Cloudflare API token pasted during setup only until the two setup steps that use the token finish, and each of them deletes it from the record.",
+      "text": "Two setup steps use a Cloudflare API token, and each asks for its own token rather than reusing the other's.",
+      "id": "f:3m0oxs"
+    },
+    {
+      "text": "Each step keeps its pasted token in the record only until the step ends, whether it completes or the developer declines it, and then deletes the token.",
+      "id": "f:3m0oxs"
+    },
+    {
+      "text": "Each step also deletes its token when the token is invalid or lacks a permission it needs, and the Workers Builds step deletes its token when a `--yes` run stops because it cannot open a browser.",
       "id": "f:3m0oxs"
     },
     {

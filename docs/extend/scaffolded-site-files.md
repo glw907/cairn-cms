@@ -43,7 +43,7 @@ A scaffolded site is Waymark, cairn's reference theme, wired onto the chassis, t
 - The showcase's `package-lock.json`
 - The 13 posts dated 2025, out of the showcase's 27, so the scaffold keeps the other 14
 
-The setup command writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the showcase's, so the scaffold still carries those files. Waymark is the only template the setup command ships.
+When the setup command's package is packed, its build writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` into the package in place of the showcase's. The setup command copies those files with the rest of the tree, so the scaffold still carries them. Waymark is the only template the setup command ships.
 
 The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live. A site built by hand starts with no template, no chassis, and no deploy, and [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.
 
@@ -114,7 +114,7 @@ On every push and pull request, the workflow installs dependencies and runs `npm
 
 ### `.dev.vars`
 
-The scaffold ships no `.dev.vars.example`. Local secrets go in a `.dev.vars` file that the developer creates and the `.gitignore` keeps out of the repository. An example of that file exists only in the cairn-cms repository's `templates/waymark/` directory. That directory is a separate committed copy of the Waymark template, generated from the same source as the scaffold, plus a few added files.
+The scaffold ships no `.dev.vars.example`. Local secrets go in a `.dev.vars` file that the developer creates and the `.gitignore` keeps out of the repository. An example of that file exists only in the cairn-cms repository, committed at `packages/create-cairn-site/template-repo/.dev.vars.example` and copied into the `templates/waymark/` directory. That directory is a separate committed copy of the Waymark template, generated from the same source as the scaffold, with a few files added or replaced.
 
 In that copy, `.dev.vars.example` names the following two entries:
 
@@ -287,7 +287,7 @@ This directory holds the following committed files, which the engine and its bui
 
 - `index.json`: the content manifest. `cairn-manifest` regenerates it, the `cairnManifest` plugin fails the build when it drifts from the markdown, and each publish commit patches it.
 - `media.json`: the media registry, written by the admin's media upload, metadata, and delete commits.
-- `site-facts.json`: the site's media bucket binding, roles, and AI posture, which `cairn-manifest` writes.
+- `site-facts.json`: the adapter's media bucket binding, plus its roles and AI posture when the adapter declares them, which `cairn-manifest` writes. The scaffold's file carries only the bucket binding.
 
 The `cairn:manifest` script runs `cairn-manifest`. For more information, see the [`cairnManifest`](../reference/vite.md#cairnmanifest) reference and [The `site-facts.json` contract](../reference/site-facts.md).
 
@@ -317,7 +317,7 @@ On the Worker's side, `"none"` passes an unmatched request to the Worker. The `"
 
 The setup command left its record of the run on the machine that ran it and, when the run connected Workers Builds, a build token at Cloudflare.
 
-The record sits at `~/.config/cairn/sites/<id>.json`, never under the project directory. Its directory has mode 0700 and the file has mode 0600. The record holds the Cloudflare API token pasted during setup only until the two setup steps that use the token finish, and each of them deletes it from the record. A `--yes` run reads the token from `CAIRN_CF_API_TOKEN` and refuses a token-shaped value on the command line.
+The record sits at `~/.config/cairn/sites/<id>.json`, never under the project directory. Its directory has mode 0700 and the file has mode 0600. Two setup steps use a Cloudflare API token, and each asks for its own token rather than reusing the other's. Each step keeps its pasted token in the record only until the step ends, whether it completes or the developer declines it, and then deletes the token. Each step also deletes its token when the token is invalid or lacks a permission it needs, and the Workers Builds step deletes its token when a `--yes` run stops because it cannot open a browser. A `--yes` run reads the token from `CAIRN_CF_API_TOKEN` and refuses a token-shaped value on the command line.
 
 A resumed run reads the record, and `--sign-in` needs it. A developer who took over the site from someone else has no copy of that record, which sits in the home directory of whoever ran the command. That developer can neither resume the run nor use `--sign-in`.
 

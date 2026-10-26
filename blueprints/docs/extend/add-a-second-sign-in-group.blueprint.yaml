@@ -1994,8 +1994,7 @@ sections:
           `cairn doctor` reports `auth.role-wiring-missing`.
         cause: |
           The adapter declares custom roles, but `createAuthGuard` in `src/hooks.server.ts` was not
-          passed `{ runtime }`. On this engine that guard throws when the hooks module loads; the
-          owner-and-editor fallback the warning describes is an older engine's.
+          passed `{ runtime }`.
         handledBy: r-wiring
       - id: r-wiring
         kind: step

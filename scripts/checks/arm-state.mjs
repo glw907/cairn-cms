@@ -14,7 +14,8 @@
 // is a page like any other, so a stage that adds one rebuilds its arm.
 //
 // The front door has no directory. Its pages are the two fixed files below; it has no kept page,
-// so it is only ever absent or rebuilt.
+// so it is only ever absent or rebuilt. The claude-code arm postdates the harvest: it was never on
+// the deletion list and has no kept page either, so it too is only ever absent or rebuilt.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -22,10 +23,15 @@ import { join } from 'node:path';
 export const DELETION_LIST_PATH = 'docs/internal/record/harvest/deletion-list.json';
 
 /** Every arm this reader answers for, in report order. */
-export const ARM_NAMES = ['admin', 'editors', 'extend', 'front-door'];
+export const ARM_NAMES = ['admin', 'editors', 'extend', 'claude-code', 'front-door'];
 
 /** The directory each directory-backed arm lives in. */
-export const ARM_DIRS = { admin: 'docs/admin', editors: 'docs/editors', extend: 'docs/extend' };
+export const ARM_DIRS = {
+  admin: 'docs/admin',
+  editors: 'docs/editors',
+  extend: 'docs/extend',
+  'claude-code': 'docs/claude-code',
+};
 
 /** The front door's pages: the docs index and the evaluator's page. */
 export const FRONT_DOOR_PAGES = ['docs/README.md', 'docs/why-cairn.md'];

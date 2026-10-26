@@ -58,6 +58,7 @@ const ROOT = repoRoot(import.meta.url);
 const DOC_DIRS = [
   { dir: 'docs/reference' },
   { dir: 'docs/extend', arm: 'extend' },
+  { dir: 'docs/claude-code', arm: 'claude-code' },
   { dir: 'docs/admin', arm: 'admin' },
   { dir: 'docs/editors', arm: 'editors' },
 ];

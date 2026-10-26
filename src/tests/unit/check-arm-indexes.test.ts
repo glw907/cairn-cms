@@ -87,6 +87,14 @@ describe('findUnindexedPages: the admin arm regaining a page', () => {
   });
 });
 
+describe('findUnindexedPages: the claude-code arm', () => {
+  it('fails a claude-code page with no index', () => {
+    expect(() => findUnindexedPages(tree(pages('docs/claude-code/a-page.md')))).toThrow(
+      /arm index not found: docs\/claude-code\/README\.md/,
+    );
+  });
+});
+
 describe('findUnindexedPages: the front door', () => {
   it('fails a rebuilt front door that does not link the evaluator page', () => {
     const root = tree({ 'docs/README.md': '# Docs\n', 'docs/why-cairn.md': '# Why\n' });

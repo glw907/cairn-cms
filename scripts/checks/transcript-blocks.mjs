@@ -24,10 +24,10 @@ import { armOf, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// The four published arms plus the front-door index, the same corpus check-visuals.mjs scans.
+// The five published arms plus the front-door index, the same corpus check-visuals.mjs scans.
 // The planning folders and docs/internal discuss the marker convention in prose and would
 // false-positive if scanned as though they carried real marked blocks.
-const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/reference'];
+const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/claude-code', 'docs/reference'];
 const INDEX_FILES = ['docs/README.md'];
 
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);

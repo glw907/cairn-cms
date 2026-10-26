@@ -482,6 +482,7 @@ export const SCAN_ROOTS = [
   'docs/README.md',
   'docs/why-cairn.md',
   'docs/extend',
+  'docs/claude-code',
   'docs/reference',
   'docs/admin',
   'docs/editors',

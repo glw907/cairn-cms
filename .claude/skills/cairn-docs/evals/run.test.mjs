@@ -134,7 +134,7 @@ const STREAM = [
   { type: 'result', subtype: 'success', is_error: false, result: 'done', permission_denials: [
     { tool_name: 'Bash', tool_input: { command: 'gh pr list' } },
     { tool_name: 'Bash', tool_input: { command: 'npm run check:docs-gate -- --page x | tee y' } },
-    { tool_name: 'Bash', tool_input: { command: 'ls docs' } },
+    { tool_name: 'Bash', tool_input: { command: 'curl example.com' } },
   ] },
 ].map((e) => JSON.stringify(e)).join('\n') + '\n{"type":"assis';
 
@@ -146,6 +146,14 @@ test('summarizeStream reads init, tool calls (Task as Agent), reply, and survive
   assert.equal(s.reply, 'done');
   assert.equal(sessionErrored(s), false);
   assert.equal(skillBeforeDocsEdit(s.tools), true);
+});
+
+test('summarizeStream pairs each tool call with its result for the judge', () => {
+  const events = [
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Bash', input: { command: 'git grep -n x' } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: [{ type: 'text', text: 'docs/a.md:1:x' }] }] } },
+  ].map((e) => JSON.stringify(e)).join('\n');
+  assert.equal(summarizeStream(events).tools[0].output, 'docs/a.md:1:x');
 });
 
 test('sessionErrored flags a missing result, is_error, and a usage-limit subtype, but not max turns', () => {

@@ -35,6 +35,9 @@ export const ALLOWED_TOOLS = [
   'Bash(git -C * diff *)', 'Bash(git -C * grep *)', 'Bash(git -C * show *)',
   'Bash(git diff*)', 'Bash(git status*)', 'Bash(git log*)', 'Bash(git add *)', 'Bash(git commit *)',
   'Bash(jq *)', 'Bash(mkdir *)',
+  // The read-only filters a compound command pipes through; a real session's allow rules carry them.
+  'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(sed -n *)', 'Bash(wc *)', 'Bash(cat *)',
+  'Bash(ls*)', 'Bash(grep *)',
 ];
 
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
@@ -43,7 +46,7 @@ export const DENIED_TOOLS = [
 ];
 
 /** Where a denied command is a fault: the allow list was meant to cover it. */
-const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir )/;
+const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir |tail |head |echo |sed -n |wc |cat |ls\b|grep )/;
 /** Where a denied command is an attempt at something the harness forbids. */
 const FORBIDDEN_COMMAND = /^\s*(approval-queue|gh|ssh|git push)\b/;
 
@@ -216,12 +219,20 @@ export function summarizeStream(text) {
   const init = events.find((e) => e.type === 'system' && e.subtype === 'init') ?? null;
   const result = [...events].reverse().find((e) => e.type === 'result') ?? null;
   const tools = [];
+  const byId = new Map();
   let lastText = '';
   for (const e of events) {
-    if (e.type !== 'assistant') continue;
     for (const part of e.message?.content ?? []) {
-      if (part.type === 'tool_use') tools.push({ name: part.name === 'Task' ? 'Agent' : part.name, input: part.input ?? {}, sub: Boolean(e.parent_tool_use_id) });
-      if (part.type === 'text' && !e.parent_tool_use_id) lastText = part.text;
+      if (e.type === 'assistant' && part.type === 'tool_use') {
+        const call = { name: part.name === 'Task' ? 'Agent' : part.name, input: part.input ?? {}, sub: Boolean(e.parent_tool_use_id), output: '' };
+        tools.push(call);
+        byId.set(part.id, call);
+      }
+      if (e.type === 'assistant' && part.type === 'text' && !e.parent_tool_use_id) lastText = part.text;
+      if (e.type === 'user' && part.type === 'tool_result' && byId.has(part.tool_use_id)) {
+        const c = part.content;
+        byId.get(part.tool_use_id).output = typeof c === 'string' ? c : (c ?? []).map((x) => x.text ?? '').join('');
+      }
     }
   }
   return {
@@ -539,7 +550,7 @@ function runSession({ cwd, args, prompt, file }) {
       }
     });
     child.stderr.resume();
-    child.on('close', (code) => { clearTimeout(timer); children.delete(child); out.end(() => resolveRun({ code, timedOut })); });
+    child.on('close', (code, signal) => { clearTimeout(timer); children.delete(child); out.end(() => resolveRun({ code, signal, timedOut })); });
     child.stdin.end(prompt);
   });
 }
@@ -596,7 +607,8 @@ function runGate(root, gate) {
 function toolLog(tools) {
   return tools.map((t) => {
     const arg = t.input.command ?? t.input.file_path ?? t.input.skill ?? t.input.subagent_type ?? t.input.pattern ?? '';
-    return `${t.sub ? '  (subagent) ' : ''}${t.name}: ${String(arg).replace(/\s+/g, ' ').slice(0, 300)}`;
+    const out = t.output ? `\n    -> ${t.output.replace(/\s+/g, ' ').slice(0, 400)}` : '';
+    return `${t.sub ? '  (subagent) ' : ''}${t.name}: ${String(arg).replace(/\s+/g, ' ').slice(0, 300)}${out}`;
   }).join('\n');
 }
 
@@ -620,7 +632,7 @@ async function runTrial({ job, ctx }) {
   }
   try {
     const prompt = renderPrompt(caseDef.prompt, { repo: fixture.root, base: fixture.base, commit: fixture.commit });
-    const { timedOut } = await runSession({ cwd: fixture.root, args: claudeArgs(caseDef), prompt, file: transcript });
+    const { timedOut, code, signal } = await runSession({ cwd: fixture.root, args: claudeArgs(caseDef), prompt, file: transcript });
     if (aborted) return { ...record, status: 'error', detail: `run aborted: ${aborted}` };
     const s = summarizeStream(readFileSync(transcript, 'utf8'));
     record.diagnostics = {
@@ -629,7 +641,7 @@ async function runTrial({ job, ctx }) {
       overlayHash: arm.hash,
       dotfilesCommit: ctx.dotfiles,
     };
-    if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'}` };
+    if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
     const faults = classifyDenials(s.result.denials).faults;
     if (!s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
     if (faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };

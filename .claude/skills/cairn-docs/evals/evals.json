@@ -71,7 +71,7 @@
       "judge": [
         {
           "n": 1,
-          "text": "The reply names the search it ran for remaining mentions of the old name and says nothing outside history records (docs/specs, docs/plans, docs/research, docs/internal/record, released CHANGELOG sections) still carries it as ArrayField.itemLabel."
+          "text": "A search for the old name ArrayField.itemLabel ran after the edits (the tool-call log shows it), and its output, or the reply, shows no remaining hit outside history records (docs/specs, docs/plans, docs/research, docs/internal/record, released CHANGELOG sections)."
         },
         {
           "n": 2,

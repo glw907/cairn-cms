@@ -26,7 +26,7 @@ Steps, in order:
    ~/.claude/projects/<dir>/<session-id>.jsonl, where <dir> is the working directory with / and .
    turned into -. Take the cairn-cms directories (names starting
    -var-home-glw907-Projects-cairn-cms), skip every directory whose name holds docs-eval-, trig-,
-   docs-trigger-, -eval-, or format-test (the eval and trigger-test worktrees), and keep transcripts
+   docs-trigger-, skill-trigger, -eval-, or format-test (the eval and trigger-test worktrees), and keep transcripts
    modified after "since". A transcript qualifies when it holds an Edit, Write, or NotebookEdit
    call whose file_path is under docs/, src/lib, packages, templates, tool/cmd, or tool/internal.
    Read up to 30, newest first. Add Geoff's docs-review decisions and notes since "since" (the

@@ -186,7 +186,7 @@ guard checks, and R2 holds media bytes. The following diagram shows the path and
 ```mermaid
 flowchart LR
   accTitle: Diagram of the write path and the three data tiers, showing which admin action reaches git, D1, or R2
-  accDescr: An editor's save, publish, or media upload reaches the admin routes on the Worker, whose guard looks up the session row in D1 on each request. The routes commit through the GitHub App, a save to the holding branch cairn/concept/id and a publish or a media manifest row to the default branch, a publish copying the holding branch's content. A media upload also stores its bytes in R2. The publish commit triggers the deploy, whose build rebuilds and verifies the content manifest, and the delivery route streams media bytes from R2.
+  accDescr: An editor's save, publish, or media upload reaches the admin routes on the Worker, whose guard looks up the session row in D1 on each guarded admin request when no identity option is set. The routes commit through the GitHub App, a save to the holding branch cairn/concept/id and a publish or a media manifest row to the default branch, a publish copying the holding branch's content. A media upload also stores its bytes in R2. The publish commit triggers the deploy, whose build rebuilds and verifies the content manifest, and the delivery route streams media bytes from R2.
   editor[Editor in the admin]
   worker[Admin routes on the Worker]
   app[GitHub App]
@@ -199,7 +199,7 @@ flowchart LR
   build["Deploy build rebuilds and verifies the manifest"]
   delivery[Delivery route]
   editor -->|Save, publish, or media upload| worker
-  worker -->|Session lookup on each request| d1
+  worker -->|Session lookup on guarded admin requests without identity| d1
   worker -->|Media bytes| r2
   worker --> app
   app -->|Save commit| hold

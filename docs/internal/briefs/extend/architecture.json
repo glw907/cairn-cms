@@ -833,7 +833,10 @@
     },
     {
       "text": "A site that uses `/auth-channel` keeps the `cairn_channel_*` tables in a separate D1 database.",
-      "id": "f:lccuuc"
+      "id": [
+        "f:b6gquz",
+        "f:lccuuc"
+      ]
     },
     {
       "text": "R2",

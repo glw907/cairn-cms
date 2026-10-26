@@ -196,7 +196,7 @@ export function profileFor(relPath) {
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
     path === 'examples/showcase/README.md' ||
-    /^docs\/(?:extend|reference|admin|editors)\/.+\.md$/.test(path) ||
+    /^docs\/(?:extend|reference|admin|editors|claude-code)\/.+\.md$/.test(path) ||
     /^docs\/reference\/schema\/.+\.json$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };

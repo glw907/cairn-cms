@@ -7,7 +7,8 @@ argument: |
   works with Claude Code therefore needs three things from this page: what the tree holds and
   which skill loads for which task, the two deliberate edits the engine leaves to them (the
   `Stop` hook and, if they want it, a CI gate), and how `cairn-guidance install` and
-  `cairn-guidance check` report what they did, since `install` exits 0 even on a partial run.
+  `cairn-guidance check` report what they did, since `install` exits 0 even when it refuses an
+  entry or a destination write fails.
 introduction:
   covers: |
     How to work on a cairn site with Claude Code: the guidance tree cairn installs under
@@ -256,8 +257,8 @@ sections:
     heading: Adopt or refresh the guidance tree
     why: |
       The first task, since every later step reads the tree it produces. It carries the root
-      `CLAUDE.md` import line because `install` never writes that line, and an adopting site would
-      otherwise fail the check's second line.
+      `CLAUDE.md` import line because `install` never writes that line, and the check's second
+      line would otherwise report it missing on an adopting site.
     opens: |
       `cairn-guidance install` writes the guidance tree into an existing site and refreshes it
       after an engine upgrade; a scaffolded site skips this section until its first upgrade.
@@ -597,14 +598,16 @@ sections:
         kind: failure
         from: s-install
         symptom: |
-          `install` prints a `refused <path>` line on stderr and still exits 0.
+          `install` prints a `refused <path>` or `refused packaged entry <path>` line on stderr and
+          still exits 0.
         cause: |
           The path has a symlinked component or destination, has a component that exists as
           something other than a directory (a regular file, say), exists as something other than a
           regular file (a directory, say), or falls outside `.claude`; or a `<path>.orig` recovery
           copy could not be made, which refuses the destination beside it too; or the
           `.claude/cairn/MANIFEST` path is itself refused (a symlinked `MANIFEST`, say), so no
-          `MANIFEST` is written. The run refuses each path by name and continues.
+          `MANIFEST` is written; or, for `refused packaged entry`, the installed package's own
+          entry is not a regular file. The run refuses each path by name and continues.
         handledBy: l-diag-install
       - id: f-diag-refused
         kind: fact
@@ -636,8 +639,9 @@ sections:
         symptom: |
           `install` stops with an error instead of finishing, and exits nonzero.
         cause: |
-          A failure creating a directory, writing the `MANIFEST`, or reading a destination that
-          already exists. Unlike a refusal or a write error, which the run prints and continues
+          A filesystem failure the run can't step past, such as creating a directory, writing the
+          `MANIFEST`, reading a destination that already exists, or resolving or reading the
+          installed package's guidance. Unlike a refusal or a write error, which the run prints and continues
           past, this failure ends the run.
         handledBy: l-diag-install
         facts:
@@ -740,7 +744,7 @@ sections:
         kind: failure
         from: v-check
         symptom: |
-          The last line names a `.orig` file still present.
+          The seventh line names a `.orig` file still present.
         handledBy: l-diag-install
       - id: x-tailwind
         kind: failure
@@ -759,8 +763,9 @@ sections:
           `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of
           finishing, and exits nonzero.
         cause: |
-          A file read failed with anything but the file being absent, or a read would have left
-          the project directory. Either ends the run. Unlike the stale-tree exit, which needs
+          A file read failed with anything but the file being absent, a read would have left the
+          project directory, or the installed package's guidance could not be resolved or read.
+          Each ends the run. Unlike the stale-tree exit, which needs
           `--strict`, this failure happens with or without it.
         handledBy: l-diag-check-throw
         facts:

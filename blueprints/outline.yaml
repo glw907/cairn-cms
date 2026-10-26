@@ -733,7 +733,7 @@ crossLinks:
     to: run-cairn-audit-on-your-site
     why: What the Stop hook's check:cairn runs and how to read it.
   - from: using-claude-code-with-cairn
-    to: upgrade-cairn
+    to: docs/extend/upgrade-cairn.md
     why: When to refresh the guidance tree after an upgrade.
   - from: using-claude-code-with-cairn
     to: docs/reference/guidance.md

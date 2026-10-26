@@ -1,8 +1,11 @@
 // cairn-cms: the option-coverage gate. A committed map (docs/internal/option-map.json) gives every
-// public option path one row: a citable fact id, `exclude <reason>`, or `pending <slug>` naming an
-// outline page or a published page that should dispose it. The walker below regenerates the paths from the built `dist`
-// declarations through the TypeScript compiler API; the gate compares the two and fails on drift, so
-// an option added inside a public type can never ship without a fact or a reviewed exclusion.
+// public option path one row: a reference anchor (`docs/reference/<page>.md#<anchor>`), `exclude
+// <reason>`, or `pending <slug>` naming a published page that should document it. An anchor row must
+// resolve, and the section it names (the heading's text through the line before the next heading of the
+// same or higher level) must name the option's last path segment in inline code. The walker below
+// regenerates the paths from the built `dist` declarations through the TypeScript compiler API; the
+// gate compares the two and fails on drift, so an option added inside a public type can never ship
+// undocumented or without a reviewed exclusion.
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
@@ -37,18 +40,16 @@
 // Interface: `node scripts/checks/check-options.mjs`. Build `dist` first (`npm run check:options`
 // does, and so does the docs gate).
 import ts from 'typescript';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { moduleExports } from './reference-coverage.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
-import { loadFactIndex } from './check-provenance.mjs';
+import { blankCodeFences, headingAnchors } from './docs-links.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const MAP_PATH = join(ROOT, 'docs/internal/option-map.json');
 const DOCS_DIR = join(ROOT, 'docs');
-const OUTLINES_DIR = join(ROOT, 'docs/internal/outlines');
-const FACTS_DIR = join(ROOT, 'docs/internal/facts');
 const DECL_ROOT = join(ROOT, 'dist');
 
 /** Exported functions whose parameters are option-bearing roots. */
@@ -330,12 +331,13 @@ export function generateOptionPaths({
 }
 
 /**
- * Read one map row: a fact id, `exclude <reason>`, or `pending <slug>`.
+ * Read one map row: a reference anchor, `exclude <reason>`, or `pending <slug>`.
  * @param {string} value
- * @returns {{ kind: 'fact', id: string } | { kind: 'exclude', reason: string } | { kind: 'pending', slug: string } | { kind: 'invalid' }}
+ * @returns {{ kind: 'anchor', page: string, anchor: string } | { kind: 'exclude', reason: string } | { kind: 'pending', slug: string } | { kind: 'invalid' }}
  */
 export function parseMapRow(value) {
-  if (/^f:[0-9a-z]{6}$/.test(value)) return { kind: 'fact', id: value };
+  const anchor = /^(docs\/reference\/[\w-]+\.md)#(\S+)$/.exec(value);
+  if (anchor) return { kind: 'anchor', page: anchor[1], anchor: anchor[2] };
   const exclude = /^exclude(?:\s+(.*))?$/s.exec(value);
   if (exclude) return { kind: 'exclude', reason: (exclude[1] ?? '').trim() };
   const pending = /^pending\s+(\S+)$/.exec(value);
@@ -344,17 +346,56 @@ export function parseMapRow(value) {
 }
 
 /**
+ * The text of the section a heading anchor names: the heading through the line before the next heading
+ * of the same or higher level. The slug rule mirrors `headingAnchors`. Null when no heading carries
+ * the anchor (an explicit `id` anchor, say).
+ * @param {string} text
+ * @param {string} anchor
+ * @returns {string | null}
+ */
+export function sectionText(text, anchor) {
+  const lines = blankCodeFences(text).split('\n');
+  /** @type {Map<string, number>} */
+  const seen = new Map();
+  /** @type {{ index: number, level: number, anchor: string }[]} */
+  const heads = [];
+  lines.forEach((line, index) => {
+    const head = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
+    if (!head) return;
+    const base = head[2].replace(/`/g, '').toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    heads.push({ index, level: head[1].length, anchor: n === 0 ? base : `${base}-${n}` });
+  });
+  const at = heads.findIndex((head) => head.anchor === anchor);
+  if (at === -1) return null;
+  const next = heads.slice(at + 1).find((head) => head.level <= heads[at].level);
+  return lines.slice(heads[at].index, next ? next.index : lines.length).join('\n');
+}
+
+/**
+ * Whether some inline code span in the text names the identifier as a whole token.
+ * @param {string} text
+ * @param {string} name
+ * @returns {boolean}
+ */
+function namesInCode(text, name) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\~]/g, '\\$&');
+  const token = new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
+  return [...text.matchAll(/``[^`]*``|`[^`]*`/g)].some((span) => token.test(span[0]));
+}
+
+/**
  * Compare the generated paths to the committed map and return every defect.
  * @param {{
  *   generated: GeneratedPath[],
  *   map: { pendingCount: number, rows: Record<string, string> },
- *   slugs: Set<string>,
  *   pages?: Set<string>,
- *   facts: Map<string, { tag: string | null }>,
+ *   readDoc: (path: string) => string | null,
  * }} input
  * @returns {string[]}
  */
-export function checkOptionMap({ generated, map, slugs, pages = new Set(), facts }) {
+export function checkOptionMap({ generated, map, pages = new Set(), readDoc }) {
   /** @type {string[]} */
   const failures = [];
   const generatedKeys = new Set(generated.map((entry) => entry.key));
@@ -362,7 +403,7 @@ export function checkOptionMap({ generated, map, slugs, pages = new Set(), facts
     if (!(entry.key in map.rows)) {
       failures.push(
         `${entry.key} (export ${entry.exportName}, subpath ${entry.subpath}) has no row in the option map. ` +
-          `File the fact and map the path to its id, or add an "exclude <reason>" row whose reason the diff-reviewer accepts.`,
+          `Document it and map the path to its reference anchor, or add an "exclude <reason>" row whose reason the diff-reviewer accepts.`,
       );
     }
   }
@@ -374,51 +415,36 @@ export function checkOptionMap({ generated, map, slugs, pages = new Set(), facts
     }
     const row = parseMapRow(value);
     if (row.kind === 'invalid') {
-      failures.push(`${key}: the row "${value}" is not a fact id, "exclude <reason>", or "pending <slug>".`);
-    } else if (row.kind === 'fact') {
-      const fact = facts.get(row.id);
-      if (!fact) {
-        failures.push(`${key}: the row names ${row.id}, which is no fact in the container.`);
-      } else if (fact.tag !== 'verified') {
-        failures.push(
-          `${key}: the row names ${row.id}, tagged ${fact.tag ?? 'with no valid tag'}, not verified. ` +
-            `Rewrite the row to "pending <slug>" and raise pendingCount first, then retag the fact.`,
-        );
+      failures.push(`${key}: the row "${value}" is not a reference anchor, "exclude <reason>", or "pending <slug>".`);
+    } else if (row.kind === 'anchor') {
+      const text = readDoc(row.page);
+      if (text === null) {
+        failures.push(`${key}: the row names ${row.page}, which is no page.`);
+      } else if (!headingAnchors(text).has(row.anchor)) {
+        failures.push(`${key}: ${row.page} has no heading "#${row.anchor}".`);
+      } else {
+        const section = sectionText(text, row.anchor);
+        const segment = key.split('.').pop() ?? key;
+        if (section !== null && !namesInCode(section, segment)) {
+          failures.push(`${key}: the section ${row.page}#${row.anchor} does not name \`${segment}\` in inline code.`);
+        }
       }
     } else if (row.kind === 'exclude') {
       if (row.reason === '') failures.push(`${key}: an "exclude" row needs a reason.`);
     } else {
       pending += 1;
-      if (!slugs.has(row.slug) && !pages.has(row.slug)) {
-        failures.push(
-          `${key}: the pending slug "${row.slug}" names neither a page in a committed outline nor a published page ` +
-            `(docs/<arm>/${row.slug}.md). After an arm's outline is deleted, name the published page that owes the row.`,
-        );
+      if (!pages.has(row.slug)) {
+        failures.push(`${key}: the pending slug "${row.slug}" names no published page (docs/<arm>/${row.slug}.md).`);
       }
     }
   }
   if (pending > map.pendingCount) {
     failures.push(
       `the map has ${pending} pending rows, above the committed pendingCount of ${map.pendingCount}. ` +
-        `Pending only shrinks: dispose a row to a fact or an exclusion instead of parking a new one.`,
+        `Pending only shrinks: document the option and anchor the row, or exclude it, instead of parking a new one.`,
     );
   }
   return failures;
-}
-
-/**
- * Every page slug in a committed outline.
- * @param {string} dir
- * @returns {Set<string>}
- */
-function outlineSlugs(dir) {
-  /** @type {Set<string>} */
-  const slugs = new Set();
-  for (const name of readdirSync(dir).filter((file) => file.endsWith('.json'))) {
-    const outline = JSON.parse(readFileSync(join(dir, name), 'utf8'));
-    for (const page of outline.pages ?? []) if (typeof page.slug === 'string') slugs.add(page.slug);
-  }
-  return slugs;
 }
 
 // docs/ directories that hold no published pages.
@@ -448,10 +474,11 @@ function main() {
     declRoot: DECL_ROOT,
   });
   const map = JSON.parse(readFileSync(MAP_PATH, 'utf8'));
-  const { facts } = loadFactIndex(FACTS_DIR);
+  /** @param {string} path */
+  const readDoc = (path) => (existsSync(join(ROOT, path)) ? readFileSync(join(ROOT, path), 'utf8') : null);
   const failures = [
     ...walkFailures,
-    ...checkOptionMap({ generated: paths, map, slugs: outlineSlugs(OUTLINES_DIR), pages: publishedPageSlugs(DOCS_DIR), facts }),
+    ...checkOptionMap({ generated: paths, map, pages: publishedPageSlugs(DOCS_DIR), readDoc }),
   ];
   if (failures.length === 0) {
     console.log(`check:options: OK (${paths.length} option paths)`);

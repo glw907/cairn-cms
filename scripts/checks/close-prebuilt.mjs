@@ -53,8 +53,6 @@ export const CLOSE_COMPONENTS = Object.freeze([
   'npm run check:target-stack',
   'npm run check:arm-indexes',
   'npm run check:editor-quotes',
-  'npm run check:facts',
-  'npm run check:provenance',
   'npm run check:leaks',
   'npm run check:visuals',
   'npm run check:transcripts',

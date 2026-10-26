@@ -17,7 +17,7 @@
 //       copies), and CHANGELOG.md. Whole files get C1 to C4. In src/lib only the doc comments
 //       (`/** */` and `<!-- @component -->`) are scanned, for C1 and C2. The `## Unreleased`
 //       section of CHANGELOG.md is an error; released sections are a warning.
-//   T3  agent inputs: the briefs, outlines, and facts, plus docs-register.md. C1, C2, and C4 only,
+//   T3  agent inputs: docs-register.md. C1, C2, and C4 only,
 //       and C1 leaves out the owner's name and repo owner, since process vocabulary is expected here.
 //
 // A finding is an error unless it is marked a warning (the `ratified` prose word, released CHANGELOG
@@ -102,8 +102,6 @@ const RULES = [
     pattern: /\b(?:Geoff|owner)\b[^)\n]{0,20}20\d\d-\d\d-\d\d/g,
     label: 'a dated attribution',
   },
-  { cls: 'C3', tiers: PUBLIC_TIERS, pattern: /\bf:[a-z0-9]{6}\b/g, label: 'a fact id' },
-  { cls: 'C3', tiers: PUBLIC_TIERS, pattern: /\bfacts container\b/gi, label: 'the facts container' },
   { cls: 'C3', tiers: PUBLIC_TIERS, pattern: /\bconductor\b/gi, label: 'pass machinery' },
   { cls: 'C3', tiers: PUBLIC_TIERS, pattern: /\bstage 2[ab]\b/gi, label: 'a docs-stage name' },
   {
@@ -201,11 +199,7 @@ export function profileFor(relPath) {
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }
-  if (
-    /^docs\/internal\/(?:briefs|outlines|facts)\//.test(path) ||
-    path.startsWith('blueprints/') ||
-    path === 'docs/internal/docs-register.md'
-  ) {
+  if (path === 'docs/internal/docs-register.md') {
     return { tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' };
   }
   if (path === 'CHANGELOG.md') return { tier: 'T2', classes: all, mode: 'changelog' };
@@ -486,11 +480,7 @@ export const SCAN_ROOTS = [
   'docs/reference',
   'docs/admin',
   'docs/editors',
-  'docs/internal/briefs',
-  'docs/internal/outlines',
-  'docs/internal/facts',
   'docs/internal/docs-register.md',
-  'blueprints',
   'skills',
   'claude',
   'migrations',

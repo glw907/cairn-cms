@@ -17,7 +17,7 @@ import {
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
 const T2 = profileFor('skills/cairn-extend/SKILL.md')!;
-const T3 = profileFor('docs/internal/facts/extend.md')!;
+const T3 = profileFor('docs/internal/docs-register.md')!;
 const TSDOC = profileFor('src/lib/admin-toolkit/format.ts')!;
 const CHANGELOG = profileFor('CHANGELOG.md')!;
 
@@ -53,9 +53,6 @@ describe('profileFor', () => {
       expect(profileFor(path)?.tier, path).toBe('T2');
     }
     for (const path of [
-      'docs/internal/briefs/extend/x.plan.md',
-      'docs/internal/outlines/extend.json',
-      'docs/internal/facts/extend.md',
       'docs/internal/docs-register.md',
     ]) {
       expect(profileFor(path), path).toEqual({ tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' });
@@ -163,20 +160,17 @@ describe('C2 domain vocabulary', () => {
 });
 
 describe('C3 process', () => {
-  it('flags rulings, dated attributions, fact ids, and pass jargon in T1 and T2', () => {
+  it('flags rulings, dated attributions, and pass jargon in T1 and T2', () => {
     for (const text of [
       'the owner ruling says',
       'a house ruling',
       '(Geoff, 2026-10-07)',
       'the owner, ratified 2026-07-05',
-      'fact f:o4ur6y says',
-      'the facts container',
       'the conductor decides',
       'at stage 2a',
     ]) {
       expect(hits(text).some((entry) => entry.startsWith('C3:')), text).toBe(true);
     }
-    expect(hits('the facts container', T2)).toEqual(['C3:error']);
   });
 
   it('flags links and paths into maintainer docs and ledgers', () => {
@@ -212,7 +206,7 @@ describe('C3 process', () => {
   });
 
   it('is not checked in T3, where process vocabulary is expected', () => {
-    expect(hits('Owner rulings (Geoff, 2026-10-07): see docs/internal/x.md and the facts container', T3)).toEqual([]);
+    expect(hits('Owner rulings (Geoff, 2026-10-07): see docs/internal/x.md', T3)).toEqual([]);
   });
 
   it('is not checked in TSDoc, which is scanned for C1 and C2 only', () => {
@@ -457,12 +451,6 @@ describe('runLeakCheck over a tree', () => {
       const { findings } = runLeakCheck(planted);
       expect(findings.some((finding) => finding.cls === cls && finding.severity === 'error'), plant).toBe(true);
     }
-  });
-
-  it('scans blueprints at the T3 tier', () => {
-    expect(profileFor('blueprints/docs/extend/x.blueprint.yaml')).toEqual(T3);
-    const root = tree({ 'blueprints/x.blueprint.yaml': 'Deploy ecxc-ski first.\n' });
-    expect(runLeakCheck(root).findings.some((f) => f.cls === 'C1' && f.severity === 'error')).toBe(true);
   });
 
   it('skips seed content and LICENSE inside a template, and scans the rest', () => {

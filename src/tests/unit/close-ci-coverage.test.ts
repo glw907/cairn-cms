@@ -15,7 +15,7 @@ function runCommands(workflow: string): string[] {
 }
 
 const WORKFLOW_COMMANDS = [...runCommands('test.yml'), ...runCommands('design.yml')];
-const DOCS_GATE_LABELS = new Set(buildSteps({ page: null, brief: null }).map((step) => step.label));
+const DOCS_GATE_LABELS = new Set(buildSteps({ page: null }).map((step) => step.label));
 
 /**
  * Whether CI runs a component: as its own workflow step, or as a check inside the docs gate when

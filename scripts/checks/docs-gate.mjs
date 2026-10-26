@@ -4,12 +4,11 @@
 // this list: it checks the tarball's shape (publint, attw, the file manifest), not a doc
 // arm's content, so it keeps its own CI step.
 //
-// Interface: `node scripts/checks/docs-gate.mjs [--prebuilt] [--page <path>] [--brief <path>]`. Every component
-// reads the whole tree except three: `--page <path>` narrows Vale to that one path in place of the
-// fixed list `check:vale` runs by default, and also narrows check:tellgrader to that page;
-// `--brief <path>` narrows check:provenance to that one brief through check-provenance.mjs's
-// positional-argument mode. Both flags exist so a page-chain page's gate (npm run check:docs-gate -- --page {page} --brief {brief}) proves only
-// the page and brief it drafted, not every sibling page's in-flight brief or prose.
+// Interface: `node scripts/checks/docs-gate.mjs [--prebuilt] [--page <path>]`. Every component
+// reads the whole tree except two: `--page <path>` narrows Vale to that one path in place of the
+// fixed list `check:vale` runs by default, and also narrows check:tellgrader to that page, so a
+// single page's gate (npm run check:docs-gate -- --page {page}) proves only the page it edited,
+// not every sibling page's prose.
 //
 // `--prebuilt` skips the build for a caller that already built `dist` in the same run.
 //
@@ -39,31 +38,29 @@ const VALE_RULE_TESTS = [
 const VALE_RULE_TEST_CONFIG = '.vale/tests/vale.ini';
 
 /**
- * Parse the fixed CLI shape: an optional `--page <path>`, an optional `--brief <path>`, and the
+ * Parse the fixed CLI shape: an optional `--page <path>`, and the
  * valueless `--prebuilt`.
  * @param {string[]} argv
- * @returns {{ page: string | null, brief: string | null, prebuilt: boolean }}
+ * @returns {{ page: string | null, prebuilt: boolean }}
  */
 export function parseArgs(argv) {
   let page = null;
-  let brief = null;
   let prebuilt = false;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--page') page = argv[++i] ?? null;
-    else if (argv[i] === '--brief') brief = argv[++i] ?? null;
     else if (argv[i] === '--prebuilt') prebuilt = true;
   }
-  return { page, brief, prebuilt };
+  return { page, prebuilt };
 }
 
 /**
  * The ordered component list this gate runs, each a label plus the command and args `spawnSync`
- * runs (relative to ROOT). `page` and `brief` reach only the components that read them;
+ * runs (relative to ROOT). `page` reaches only the components that read it;
  * every other component runs unscoped.
- * @param {{ page: string | null, brief: string | null }} args
+ * @param {{ page: string | null }} args
  * @returns {{ label: string, command: string, args: string[] }[]}
  */
-export function buildSteps({ page, brief }) {
+export function buildSteps({ page }) {
   /**
    * @param {string} script
    * @param {string[]} [extra]
@@ -86,11 +83,6 @@ export function buildSteps({ page, brief }) {
             args: [`--config=${VALE_RULE_TEST_CONFIG}`, 'test', ...VALE_RULE_TESTS],
           },
         ]),
-    { label: 'check:facts', ...node('scripts/checks/check-facts.mjs') },
-    {
-      label: 'check:provenance',
-      ...node('scripts/checks/check-provenance.mjs', brief ? [brief] : []),
-    },
     { label: 'check:leaks', ...node('scripts/checks/check-leaks.mjs') },
     { label: 'check:symbols', ...node('scripts/checks/check-symbols.mjs') },
     { label: 'check:snippets', ...node('scripts/checks/check-snippets.mjs') },
@@ -110,7 +102,7 @@ export function buildSteps({ page, brief }) {
 }
 
 function main() {
-  const { page, brief, prebuilt } = parseArgs(process.argv.slice(2));
+  const { page, prebuilt } = parseArgs(process.argv.slice(2));
 
   if (!prebuilt) {
     console.log('== npm run package (dist, built once for the whole docs gate) ==');
@@ -122,7 +114,7 @@ function main() {
     }
   }
 
-  const steps = buildSteps({ page, brief });
+  const steps = buildSteps({ page });
   const results = steps.map((step) => {
     console.log(`== ${step.label} ==`);
     const result = spawnSync(step.command, step.args, { cwd: ROOT, stdio: 'inherit' });

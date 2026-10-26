@@ -280,8 +280,12 @@ describe('generateOptionPaths', () => {
 });
 
 describe('parseMapRow', () => {
-  it('reads a fact id, an exclusion with its reason, and a pending slug', () => {
-    expect(parseMapRow('f:abc123')).toEqual({ kind: 'fact', id: 'f:abc123' });
+  it('reads a reference anchor, an exclusion with its reason, and a pending slug', () => {
+    expect(parseMapRow('docs/reference/core.md#defineadapter')).toEqual({
+      kind: 'anchor',
+      page: 'docs/reference/core.md',
+      anchor: 'defineadapter',
+    });
     expect(parseMapRow('exclude engine-internal')).toEqual({ kind: 'exclude', reason: 'engine-internal' });
     expect(parseMapRow('pending security-model')).toEqual({ kind: 'pending', slug: 'security-model' });
   });
@@ -291,6 +295,8 @@ describe('parseMapRow', () => {
     expect(parseMapRow('exclude   ')).toEqual({ kind: 'exclude', reason: '' });
     expect(parseMapRow('nonsense')).toEqual({ kind: 'invalid' });
     expect(parseMapRow('pending')).toEqual({ kind: 'invalid' });
+    expect(parseMapRow('f:abc123')).toEqual({ kind: 'invalid' });
+    expect(parseMapRow('docs/extend/architecture.md#intro')).toEqual({ kind: 'invalid' });
   });
 });
 
@@ -299,23 +305,80 @@ describe('checkOptionMap', () => {
     { key: 'CairnAdapter.editor.nav', exportName: 'defineAdapter', subpath: '.', file: 'content/types.d.ts' },
     { key: 'NavMenuConfig.menu', exportName: 'defineAdapter', subpath: '.', file: 'content/types.d.ts' },
   ];
-  const facts = new Map<string, { tag: string | null }>([
-    ['f:aaaaaa', { tag: 'verified' }],
-    ['f:bbbbbb', { tag: 'docs-drift' }],
-  ]);
-  const slugs = new Set(['security-model', 'architecture']);
+  const core = [
+    '# Core',
+    '',
+    '## Adapter',
+    '',
+    'Intro with no options.',
+    '',
+    '### `nav` member',
+    '',
+    'Set `nav` to a menu. Its `menu` names the menu.',
+    '',
+    '```ts',
+    "const unrelated = { shown: 'only in a fence' };",
+    '```',
+    '',
+    '### Other',
+    '',
+    'Plain nav outside code, and `other` only.',
+    '',
+    '```ts',
+    "const nav = 'inside a fence';",
+    '```',
+  ].join('\n');
+  const docs: Record<string, string> = { 'docs/reference/core.md': core };
+  const readDoc = (path: string) => docs[path] ?? null;
+  const pages = new Set(['security-model', 'architecture']);
   const base = {
     generated,
-    facts,
-    slugs,
+    pages,
+    readDoc,
     map: {
       pendingCount: 1,
-      rows: { 'CairnAdapter.editor.nav': 'f:aaaaaa', 'NavMenuConfig.menu': 'pending architecture' } as Record<string, string>,
+      rows: {
+        'CairnAdapter.editor.nav': 'docs/reference/core.md#nav-member',
+        'NavMenuConfig.menu': 'pending architecture',
+      } as Record<string, string>,
     },
   };
+  const withRow = (key: string, value: string, pendingCount = 1) =>
+    checkOptionMap({ ...base, map: { pendingCount, rows: { ...base.map.rows, [key]: value } } });
 
-  it('passes a map that covers every generated path and holds the pending count', () => {
+  it('passes a map whose anchor row resolves to a section naming the option and holds the pending count', () => {
     expect(checkOptionMap(base)).toEqual([]);
+  });
+
+  it('passes an anchor row whose section is a parent heading, since the section runs through its subheadings', () => {
+    expect(withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#adapter')).toEqual([]);
+  });
+
+  it('fails a row naming a page that does not exist, naming the row', () => {
+    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/missing.md#nav-member');
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('CairnAdapter.editor.nav');
+    expect(failures[0]).toContain('missing.md');
+  });
+
+  it('fails a row naming an anchor the page does not have, naming the row', () => {
+    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#no-such-heading');
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('CairnAdapter.editor.nav');
+    expect(failures[0]).toContain('no-such-heading');
+  });
+
+  it('fails a row whose section does not name the last segment in inline code, naming the row', () => {
+    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#other');
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('CairnAdapter.editor.nav');
+    expect(failures[0]).toContain('`nav`');
+  });
+
+  it('does not count a mention outside inline code or inside a code fence', () => {
+    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#other');
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toContain('does not name');
   });
 
   it('fails a generated path with no row, naming the path, its export, and both ways out', () => {
@@ -324,27 +387,25 @@ describe('checkOptionMap', () => {
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain('CairnAdapter.editor.nav');
     expect(failures[0]).toContain('defineAdapter');
-    expect(failures[0]).toMatch(/file the fact/i);
+    expect(failures[0]).toMatch(/reference anchor/i);
     expect(failures[0]).toMatch(/exclude/);
   });
 
   it('fails a row whose path is no longer generated', () => {
-    const rows = { ...base.map.rows, 'Gone.member': 'exclude removed' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 1, rows } });
+    const failures = withRow('Gone.member', 'exclude removed');
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain('Gone.member');
   });
 
-  it('fails a row naming a fact id that does not exist', () => {
-    const rows = { ...base.map.rows, 'CairnAdapter.editor.nav': 'f:zzzzzz' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 1, rows } });
+  it('fails a fact-id row as unknown', () => {
+    const failures = withRow('CairnAdapter.editor.nav', 'f:aaaaaa');
     expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('f:zzzzzz');
+    expect(failures[0]).toContain('CairnAdapter.editor.nav');
+    expect(failures[0]).toContain('f:aaaaaa');
   });
 
   it('fails an exclude with no reason', () => {
-    const rows = { ...base.map.rows, 'CairnAdapter.editor.nav': 'exclude' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 1, rows } });
+    const failures = withRow('CairnAdapter.editor.nav', 'exclude');
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain('reason');
   });
@@ -360,52 +421,10 @@ describe('checkOptionMap', () => {
     expect(checkOptionMap({ ...base, map: { ...base.map, pendingCount: 5 } })).toEqual([]);
   });
 
-  it('fails a pending row whose slug names no committed page', () => {
-    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'pending invented-page' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 1, rows } });
+  it('fails a pending row whose slug names no published page', () => {
+    const failures = withRow('NavMenuConfig.menu', 'pending invented-page');
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain('invented-page');
-  });
-
-  it('passes a pending row whose slug names a published page with no outline', () => {
-    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'pending upgrade-cairn' };
-    const pages = new Set(['upgrade-cairn']);
-    expect(checkOptionMap({ ...base, pages, map: { pendingCount: 1, rows } })).toEqual([]);
-  });
-
-  it('fails a pending row whose slug names neither an outline page nor a published page, naming both targets', () => {
-    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'pending invented-page' };
-    const pages = new Set(['upgrade-cairn']);
-    const failures = checkOptionMap({ ...base, pages, map: { pendingCount: 1, rows } });
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toMatch(/outline/);
-    expect(failures[0]).toMatch(/published page/);
-  });
-
-  it('fails a malformed row', () => {
-    const rows = { ...base.map.rows, 'NavMenuConfig.menu': 'whatever' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 0, rows } });
-    expect(failures.some((failure) => failure.includes('NavMenuConfig.menu'))).toBe(true);
-  });
-
-  describe('a retag that takes a mapped fact off verified', () => {
-    const retagged = { ...base, map: { pendingCount: 1, rows: { ...base.map.rows, 'CairnAdapter.editor.nav': 'f:bbbbbb' } } };
-
-    it('fails with the row unchanged, naming the FV-10 rewrite as the way out', () => {
-      const failures = checkOptionMap(retagged);
-      expect(failures).toHaveLength(1);
-      expect(failures[0]).toContain('f:bbbbbb');
-      expect(failures[0]).toMatch(/pending/);
-    });
-
-    it('still fails when only the constant is raised', () => {
-      expect(checkOptionMap({ ...retagged, map: { ...retagged.map, pendingCount: 2 } })).not.toEqual([]);
-    });
-
-    it('passes with the row rewritten to pending and the constant raised', () => {
-      const rows = { ...retagged.map.rows, 'CairnAdapter.editor.nav': 'pending security-model' };
-      expect(checkOptionMap({ ...retagged, map: { pendingCount: 2, rows } })).toEqual([]);
-    });
   });
 });
 

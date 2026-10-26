@@ -14,7 +14,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which skill loads for each task.",
+      "text": "A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which [skill](https://code.claude.com/docs/en/skills) loads for each task.",
       "id": "f:0ygumq"
     },
     {
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "text": "The page's steps leave the following edits to you, each one yours to make or decline:",
+      "text": "The page's steps and its diagnosis rows leave the following edits to you, each one yours to make or decline:",
       "id": [
         "f:6ro1n9",
         "f:4nccq6",
@@ -62,11 +62,41 @@
       "id": "f:6ro1n9"
     },
     {
-      "text": "The [`Stop` hook](https://code.claude.com/docs/en/hooks) in `.claude/settings.json`.",
+      "text": "Excluding `.claude/` from the site's Tailwind build, when that build would scan `.claude/`.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "`check` reports such a build as not excluded or unknown.",
+      "id": "f:1kwkl0"
+    },
+    {
+      "text": "Reading and deleting each `.orig` file that `install` reports.",
+      "id": "f:ohxg28"
+    },
+    {
+      "text": "Removing a path that `install` reports the package no longer ships.",
+      "id": "f:4h9fz4"
+    },
+    {
+      "text": "Committing the `.claude/` tree and the root `CLAUDE.md`.",
+      "id": [
+        "f:ohxg28",
+        "f:0ygumq"
+      ]
+    },
+    {
+      "text": "The [`Stop` hook](https://code.claude.com/docs/en/hooks) in [`.claude/settings.json`](https://code.claude.com/docs/en/settings).",
       "id": "f:4nccq6"
     },
     {
-      "text": "On a site that lacks them, the `check:cairn` script, the `cairn-audit` config file, and the CI workflow.",
+      "text": "On a site that lacks them, the `check:cairn` script and the CI workflow.",
+      "id": [
+        "f:mrv24k",
+        "f:4ax489"
+      ]
+    },
+    {
+      "text": "The `cairn-audit` config file, when `check` reports it missing.",
       "id": [
         "f:mrv24k",
         "f:4ax489"
@@ -75,18 +105,6 @@
     {
       "text": "A CI gate on a stale tree, if you want one.",
       "id": "f:jd54ph"
-    },
-    {
-      "text": "Removing a path that `install` reports the package no longer ships.",
-      "id": "f:4h9fz4"
-    },
-    {
-      "text": "Excluding `.claude/` from the site's Tailwind build, when `check` reports it isn't excluded.",
-      "id": "f:1kwkl0"
-    },
-    {
-      "text": "Deleting a leftover `.orig` file once you have read it.",
-      "id": "f:ohxg28"
     },
     {
       "text": "What `install` and `check` print is how you learn what they did.",
@@ -206,12 +224,15 @@
       "id": "f:0ygumq"
     },
     {
-      "text": "Each file sits where Claude Code looks for it.",
+      "text": "The skills and the review agent sit where Claude Code discovers them.",
       "id": "f:pmmtrm"
     },
     {
-      "text": "The root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line.",
-      "id": "f:pmmtrm"
+      "text": "The rest of the tree sits in `.claude/cairn/`, and the root `CLAUDE.md` pulls in the fragment from there with an [`@` import](https://code.claude.com/docs/en/memory) line.",
+      "id": [
+        "f:pmmtrm",
+        "f:0ygumq"
+      ]
     },
     {
       "text": "cairn's guidance sits at the following paths:",
@@ -371,7 +392,42 @@
       "id": "f:6ro1n9"
     },
     {
-      "text": "In the project root, commit the `.claude/` tree and the root `CLAUDE.md`.",
+      "text": "If the site builds CSS with Tailwind v4 using automatic source detection, and its `.gitignore` doesn't ignore `.claude/`, exclude `.claude/` from that build.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "In each stylesheet that imports Tailwind with automatic source detection, add an `@source not` line whose path leads from that stylesheet to the project root's `.claude/`.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "In a stylesheet in `src/`, the line reads as follows:",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "Tailwind resolves the path against the stylesheet that carries it, and the directive needs Tailwind 4.1 or later.",
+      "id": [
+        "f:qzsspl",
+        "f:7jn3wz"
+      ]
+    },
+    {
+      "text": "A scaffolded site already carries the exclusion.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "For why the build must skip `.claude/`, see [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "Read each `.orig` file that `install` reported, keep any edit you need, then delete it.",
+      "id": "f:ohxg28"
+    },
+    {
+      "text": "If `install` printed a path as removable, delete that path.",
+      "id": "f:4h9fz4"
+    },
+    {
+      "text": "In the project root, commit the `.claude/` tree, the root `CLAUDE.md`, and any stylesheet you changed.",
       "id": [
         "f:ohxg28",
         "f:0ygumq"
@@ -382,7 +438,7 @@
       "id": "f:4h9fz4"
     },
     {
-      "text": "A path an earlier `MANIFEST` listed that the package no longer ships is printed as removable, and removing it is left to you.",
+      "text": "A path an earlier `MANIFEST` listed that the package no longer ships is printed as removable, and removing it is left to you, as the steps above say.",
       "id": "f:4h9fz4"
     },
     {
@@ -444,6 +500,18 @@
     {
       "text": "A scaffolded site already carries them.",
       "id": "f:mrv24k"
+    },
+    {
+      "text": "**Caution:** Merging the entries replaces any existing `precheck`, `prebuild`, or `predev` script.",
+      "id": "f:6jtwh2"
+    },
+    {
+      "text": "If the site already has one, chain its command after `npm run build:admin-css &&` instead of replacing it.",
+      "id": "f:6jtwh2"
+    },
+    {
+      "text": "The entries compile `src/admin.css` with `@tailwindcss/cli`, so have both in place before you merge them.",
+      "id": "f:6jtwh2"
     },
     {
       "text": "The hook runs the script under `--if-present`, so on a site without a `check:cairn` script it runs nothing and reports nothing.",
@@ -989,12 +1057,24 @@
       "id": "f:1kwkl0"
     },
     {
-      "text": "The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not \"./.claude\";` line nor `source(none)`.",
+      "text": "The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the literal `@source not \"./.claude\";` line nor `source(none)`.",
       "id": "f:1kwkl0"
     },
     {
       "text": "The line reports unknown when neither stylesheet carries `@source` or `source(none)`.",
       "id": "f:1kwkl0"
+    },
+    {
+      "text": "`check` reads no other stylesheet and accepts no other `@source not` path, so it can report a correct exclusion written another way or in another stylesheet.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "If the site's Tailwind build scans `.claude/`, add the exclusion as the Tailwind step in [Adopt or refresh the guidance tree](#adopt-or-refresh-the-guidance-tree) describes.",
+      "id": "f:7jn3wz"
+    },
+    {
+      "text": "If the site already carries an `@source not` line, confirm that its path resolves from its stylesheet to the project root's `.claude/`.",
+      "id": "f:7jn3wz"
     },
     {
       "text": "See [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference.",

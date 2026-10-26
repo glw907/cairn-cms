@@ -2,20 +2,22 @@
 
 A developer building an organization's site on cairn's seams may choose Claude Code as their coding assistant, and cairn ships guidance for Claude Code to read while it works on the site. The guidance is a tree of files under `.claude/`, plus a root [`CLAUDE.md`](https://code.claude.com/docs/en/memory) that imports the tree's fragment. You arrive at this page from one of two situations:
 
-- A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which skill loads for each task.
+- A site scaffolded by `create-cairn-site` already carries the tree, and you want to know what Claude Code reads and which [skill](https://code.claude.com/docs/en/skills) loads for each task.
 - Your existing site adopts the tree, or refreshes it after an engine upgrade. You want to know what `install` writes and what it leaves to you.
 
 The other cairn docs assume you work without a coding assistant. What's specific to Claude Code lives in this section of the docs. The guidance ships in Claude Code's format only, with no `AGENTS.md` and no file for any other coding agent, so a developer who uses another agent has no cairn guidance to read.
 
-The engine stops at the tree. It never edits Claude Code's settings, never rewrites the root `CLAUDE.md`, and never fails a CI build over a stale tree unless you choose that. The page's steps leave the following edits to you, each one yours to make or decline:
+The engine stops at the tree. It never edits Claude Code's settings, never rewrites the root `CLAUDE.md`, and never fails a CI build over a stale tree unless you choose that. The page's steps and its diagnosis rows leave the following edits to you, each one yours to make or decline:
 
 - On a site that adopts the tree, the import line in the root `CLAUDE.md`.
-- The [`Stop` hook](https://code.claude.com/docs/en/hooks) in `.claude/settings.json`.
-- On a site that lacks them, the `check:cairn` script, the `cairn-audit` config file, and the CI workflow.
-- A CI gate on a stale tree, if you want one.
+- Excluding `.claude/` from the site's Tailwind build, when that build would scan `.claude/`. `check` reports such a build as not excluded or unknown.
+- Reading and deleting each `.orig` file that `install` reports.
 - Removing a path that `install` reports the package no longer ships.
-- Excluding `.claude/` from the site's Tailwind build, when `check` reports it isn't excluded.
-- Deleting a leftover `.orig` file once you have read it.
+- Committing the `.claude/` tree and the root `CLAUDE.md`.
+- The [`Stop` hook](https://code.claude.com/docs/en/hooks) in [`.claude/settings.json`](https://code.claude.com/docs/en/settings).
+- On a site that lacks them, the `check:cairn` script and the CI workflow.
+- The `cairn-audit` config file, when `check` reports it missing.
+- A CI gate on a stale tree, if you want one.
 
 What `install` and `check` print is how you learn what they did. The page covers the following:
 
@@ -48,7 +50,7 @@ With both in place, [The guidance tree](#the-guidance-tree) describes what cairn
 
 ## The guidance tree
 
-Apart from the root `CLAUDE.md` that imports the tree's fragment, the guidance for Claude Code sits entirely under `.claude/`. A scaffolded site starts with all of it installed. Each file sits where Claude Code looks for it. The root `CLAUDE.md` pulls in the fragment with an [`@` import](https://code.claude.com/docs/en/memory) line.
+Apart from the root `CLAUDE.md` that imports the tree's fragment, the guidance for Claude Code sits entirely under `.claude/`. A scaffolded site starts with all of it installed. The skills and the review agent sit where Claude Code discovers them. The rest of the tree sits in `.claude/cairn/`, and the root `CLAUDE.md` pulls in the fragment from there with an [`@` import](https://code.claude.com/docs/en/memory) line.
 
 cairn's guidance sits at the following paths:
 
@@ -95,9 +97,19 @@ To adopt or refresh the tree, follow these steps:
 
    `install` writes the fragment to `.claude/cairn/CLAUDE.md` and never rewrites the root `CLAUDE.md`, so the import line is yours to add. On a site with no root `CLAUDE.md`, create the file in the project root with that line.
 
-3. In the project root, commit the `.claude/` tree and the root `CLAUDE.md`.
+3. If the site builds CSS with Tailwind v4 using automatic source detection, and its `.gitignore` doesn't ignore `.claude/`, exclude `.claude/` from that build. In each stylesheet that imports Tailwind with automatic source detection, add an `@source not` line whose path leads from that stylesheet to the project root's `.claude/`. In a stylesheet in `src/`, the line reads as follows:
 
-`install` never deletes. A path an earlier `MANIFEST` listed that the package no longer ships is printed as removable, and removing it is left to you.
+   ```css
+   @source not "../.claude";
+   ```
+
+   Tailwind resolves the path against the stylesheet that carries it, and the directive needs Tailwind 4.1 or later. A scaffolded site already carries the exclusion. For why the build must skip `.claude/`, see [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference.
+
+4. Read each `.orig` file that `install` reported, keep any edit you need, then delete it. If `install` printed a path as removable, delete that path.
+
+5. In the project root, commit the `.claude/` tree, the root `CLAUDE.md`, and any stylesheet you changed.
+
+`install` never deletes. A path an earlier `MANIFEST` listed that the package no longer ships is printed as removable, and removing it is left to you, as the steps above say.
 
 `install` exits 0 even when it refuses an entry or fails to write a destination, and it prints each case to stderr. A script that must detect a partial install therefore reads stderr. When `install` stops with an error and exits nonzero, see [Diagnose an install or check failure](#diagnose-an-install-or-check-failure).
 
@@ -149,6 +161,8 @@ To wire the hook, follow these steps:
    ```
 
    A scaffolded site already carries them.
+
+   > **Caution:** Merging the entries replaces any existing `precheck`, `prebuild`, or `predev` script. If the site already has one, chain its command after `npm run build:admin-css &&` instead of replacing it. The entries compile `src/admin.css` with `@tailwindcss/cli`, so have both in place before you merge them.
 
 The hook runs the script under `--if-present`, so on a site without a `check:cairn` script it runs nothing and reports nothing. For the flag's behavior, see [`--if-present`](https://docs.npmjs.com/cli/v11/commands/npm-run#if-present) in npm's `npm run` reference.
 
@@ -288,7 +302,7 @@ The following table covers the lines `check` reports and the errors that stop it
 | A line reports the root `CLAUDE.md` missing the import line. | The root `CLAUDE.md` lacks the `@.claude/cairn/CLAUDE.md` line. `install` never rewrites the root file, so it never adds the line. | Add `@.claude/cairn/CLAUDE.md` as the root `CLAUDE.md`'s first line, creating the file in the project root if the site has none. |
 | A line reports a missing `check:cairn` script, `cairn-audit` config file, or `.github/workflows/check.yml`. | The site lacks the named script or file. `install` writes under `.claude/` alone, so it writes none of them. | Paste the snippet `check` prints under that line, as [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference describes. |
 | A line names a `.orig` file still present. | An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there. | Read the `.orig` file, keep any edit you need, then delete it. See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. |
-| The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or reports unknown and names the paths it checked. | No `.gitignore` line ignores `.claude`. The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the `@source not "./.claude";` line nor `source(none)`. The line reports unknown when neither stylesheet carries `@source` or `source(none)`. | See [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference. |
+| The Tailwind line reports `.claude/` not excluded from the site's Tailwind build, or reports unknown and names the paths it checked. | No `.gitignore` line ignores `.claude`. The first of `src/admin.css` and the `admin.css` under `src/theme/` that carries `@source` or `source(none)` holds neither the literal `@source not "./.claude";` line nor `source(none)`. The line reports unknown when neither stylesheet carries `@source` or `source(none)`. `check` reads no other stylesheet and accepts no other `@source not` path, so it can report a correct exclusion written another way or in another stylesheet. | If the site's Tailwind build scans `.claude/`, add the exclusion as the Tailwind step in [Adopt or refresh the guidance tree](#adopt-or-refresh-the-guidance-tree) describes. If the site already carries an `@source not` line, confirm that its path resolves from its stylesheet to the project root's `.claude/`. See [The `.claude/` exclusion from the Tailwind build](../reference/guidance.md#the-claude-exclusion-from-the-tailwind-build) in the `cairn-guidance` reference. |
 | `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of finishing, and exits nonzero. | A file read failed for a reason other than a missing file, or a read would have left the project directory. Or the installed package's guidance couldn't be resolved or read. Each ends the run. | See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference. |
 
 ## See also

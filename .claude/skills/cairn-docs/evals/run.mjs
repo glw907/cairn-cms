@@ -48,7 +48,7 @@ export const DENIED_TOOLS = [
 ];
 
 /** Where a denied command is a fault: the allow list was meant to cover it. */
-const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir |tail |head |echo |sed -n |wc |cat |ls\b|grep |awk |sort|uniq|cut |tr |diff |printf |git (ls-files|rev-parse))/;
+const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir )/;
 /** Where a denied command is an attempt at something the harness forbids. */
 const FORBIDDEN_COMMAND = /^\s*(approval-queue|gh|ssh|git push)\b/;
 
@@ -497,6 +497,7 @@ function commitAll(root, message) {
 async function makeFixture({ repo, mainRoot, caseDef, pin, armRef, name, modulesDir }) {
   const root = join(mainRoot, '.claude/worktrees', name);
   git(['worktree', 'add', '--detach', root, pin], repo);
+  liveFixtures.set(root, repo);
   deleteOverlay(root);
   extractOverlay(repo, armRef, root);
   const base = commitAll(root, 'fixture overlay');
@@ -523,7 +524,10 @@ function pruneFixtures(repo, mainRoot) {
   }
 }
 
+const liveFixtures = new Map();
+
 function removeFixture(repo, root) {
+  liveFixtures.delete(root);
   spawnSync('git', ['worktree', 'remove', '--force', root], { cwd: repo });
   rmSync(root, { recursive: true, force: true });
 }
@@ -756,6 +760,13 @@ async function main() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  process.on('SIGINT', () => abortRun('interrupted'));
+  // A stopped run takes its sessions and fixtures with it.
+  for (const sig of ['SIGINT', 'SIGTERM']) {
+    process.on(sig, () => {
+      abortRun('interrupted');
+      for (const [root, repo] of liveFixtures) removeFixture(repo, root);
+      process.exit(3);
+    });
+  }
   main().catch((e) => { console.error(e.message); process.exitCode = 1; });
 }

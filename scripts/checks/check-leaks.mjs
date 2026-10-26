@@ -10,7 +10,7 @@
 //
 // Three tiers decide what is scanned and for which classes:
 //
-//   T1  published docs: README.md, docs/{extend,reference,admin,editors}, docs/why-cairn.md,
+//   T1  published docs: README.md, docs/{extend,reference,admin,editors,claude-code}, docs/why-cairn.md,
 //       docs/README.md, examples/showcase/README.md. C1 to C4.
 //   T2  shipped files: skills, claude, the showcase chassis, the reproductions, the CLI's messages,
 //       the scaffold and waymark templates (minus seed content, LICENSE, and the synced `.claude/`
@@ -196,7 +196,7 @@ export function profileFor(relPath) {
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
     path === 'examples/showcase/README.md' ||
-    /^docs\/(?:extend|reference|admin|editors)\/.+\.md$/.test(path) ||
+    /^docs\/(?:extend|reference|admin|editors|claude-code)\/.+\.md$/.test(path) ||
     /^docs\/reference\/schema\/.+\.json$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
@@ -482,6 +482,7 @@ export const SCAN_ROOTS = [
   'docs/README.md',
   'docs/why-cairn.md',
   'docs/extend',
+  'docs/claude-code',
   'docs/reference',
   'docs/admin',
   'docs/editors',

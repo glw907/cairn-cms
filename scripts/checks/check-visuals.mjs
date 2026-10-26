@@ -26,7 +26,7 @@ import { readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// The four published arms plus the front-door index. `docs/internal` is a contributor zone with
+// The five published arms plus the front-door index. `docs/internal` is a contributor zone with
 // its filing rules, not a published arm, so it stays out of this gate the same way it stays
 // out of the reader-facing register. An entry naming an arm-state arm (arm-state.mjs) is skipped
 // while that arm is absent; the reference arm has none, so it is always scanned and a missing
@@ -35,6 +35,7 @@ const SCAN_DIRS = [
   { dir: 'docs/admin', arm: 'admin' },
   { dir: 'docs/editors', arm: 'editors' },
   { dir: 'docs/extend', arm: 'extend' },
+  { dir: 'docs/claude-code', arm: 'claude-code' },
   { dir: 'docs/reference' },
 ];
 const INDEX_FILES = ['docs/README.md'];

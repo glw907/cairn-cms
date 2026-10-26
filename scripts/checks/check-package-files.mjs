@@ -69,7 +69,8 @@ export function checkChannelMigrationPacked(filePaths) {
 const ARM_INDEX_PATHS = {
   admin: 'docs/admin/README.md',
   editors: 'docs/editors/README.md',
-  extend: 'docs/extend/README.md'
+  extend: 'docs/extend/README.md',
+  'claude-code': 'docs/claude-code/README.md'
 };
 const REFERENCE_INDEX_PATH = 'docs/reference/README.md';
 
@@ -102,7 +103,8 @@ export const DOCS_ALLOWED_ARM_PREFIXES = [
   'docs/reference/',
   'docs/admin/',
   'docs/editors/',
-  'docs/extend/'
+  'docs/extend/',
+  'docs/claude-code/'
 ];
 
 // The docs/ paths that ship as bare files rather than inside an allowed arm. Both are front doors:

@@ -359,7 +359,7 @@ function outlinePagePaths(root) {
 
 // The published arm paths, the only places a pending link is excused. The rolling STATUS and
 // HISTORY stay strict: they name pages by path while an arm is in flight and must not hide a typo.
-const PUBLISHED_DOC_PREFIXES = ['docs/extend/', 'docs/admin/', 'docs/editors/', 'docs/reference/'];
+const PUBLISHED_DOC_PREFIXES = ['docs/extend/', 'docs/admin/', 'docs/editors/', 'docs/claude-code/', 'docs/reference/'];
 const PUBLISHED_DOC_FILES = ['docs/why-cairn.md'];
 
 /**

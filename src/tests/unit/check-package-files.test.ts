@@ -72,7 +72,7 @@ describe('checkChannelMigrationPacked', () => {
   });
 });
 
-// The published docs arms (reference, admin, editors, extend) plus the two front doors must reach
+// The published docs arms (reference, admin, editors, extend, claude-code) plus the two front doors must reach
 // the tarball, and the write-only-plan trees (internal, specs, plans, research, archive) and the
 // rolling STATUS.md
 // must not, so a future `files` edit cannot silently drop or leak either direction.
@@ -87,7 +87,9 @@ describe('checkDocsPacked', () => {
     'docs/editors/README.md',
     'docs/editors/write-in-the-editor.md',
     'docs/extend/README.md',
-    'docs/extend/build-a-site-by-hand.md'
+    'docs/extend/build-a-site-by-hand.md',
+    'docs/claude-code/README.md',
+    'docs/claude-code/work-on-a-cairn-site-with-claude-code.md'
   ];
 
   // What requiredDocsPaths asks for when every arm and the front door are rebuilt.
@@ -96,11 +98,12 @@ describe('checkDocsPacked', () => {
     'docs/admin/README.md',
     'docs/editors/README.md',
     'docs/extend/README.md',
+    'docs/claude-code/README.md',
     'docs/README.md',
     'docs/why-cairn.md'
   ];
 
-  it('passes when the four arm indexes and both front doors are packed with no internal leak', () => {
+  it('passes when the five arm indexes and both front doors are packed with no internal leak', () => {
     expect(checkDocsPacked(['dist/index.js', ...arms], required)).toEqual({ ok: true, count: arms.length });
   });
 
@@ -233,6 +236,10 @@ describe('requiredDocsPaths, in each arm state', () => {
     expect(result).toMatchObject({ ok: false });
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/admin/README.md');
+  });
+
+  it('asks for the claude-code index once the claude-code arm holds a page', () => {
+    expect(requiredDocsPaths(tree('docs/claude-code/a-page.md'))).toEqual(['docs/reference/README.md', 'docs/claude-code/README.md', ...KEPT]);
   });
 
   it('asks for both front-door files once the front door holds either', () => {

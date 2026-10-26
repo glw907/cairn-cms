@@ -66,6 +66,7 @@ const SCOPE = [
   { path: 'docs/admin', arm: 'admin' },
   { path: 'docs/editors', arm: 'editors' },
   { path: 'docs/extend', arm: 'extend' },
+  { path: 'docs/claude-code', arm: 'claude-code' },
   { path: 'docs/why-cairn.md', arm: 'front-door' },
   { path: 'docs/reference' },
   { path: 'docs/README.md', arm: 'front-door' },

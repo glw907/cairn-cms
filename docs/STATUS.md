@@ -23,7 +23,7 @@ has its drafted page; batch 5 (PR #141) merged the last five. Its record is
 `~/Projects/initiatives/docs-system/research/2026-10-25-extend-pages-batch-5/RESUME.md`. Each
 drafting worktree needs Geoff's `~/.config/drafter/cairn-cms.local.toml` copied in as
 `drafter.local.toml` (ignored by git), and drafter runs launch under `setsid -f`. Several published
-extend pages still disagree with their blueprints; BACKLOG #71 lists them for a redraft. The one blueprint with no page is `blueprints/docs/claude-code/using-claude-code-with-cairn`; its
+extend pages still disagree with their blueprints; BACKLOG #71 lists them for a redraft. The one blueprint with no page is `blueprints/docs/claude-code/work-on-a-cairn-site-with-claude-code`; its
 draft registers the `claude-code` arm in the gates and adds that arm's track entry to
 `docs-register.md`. The page plans under `internal/briefs/` (`.plan.md` and `.plan.yaml`), which the blueprints
 replaced, still need retiring. Then comes the rest of part 2: the relinks and `LEGACY_PATH_MAP` repoints, the

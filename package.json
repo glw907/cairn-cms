@@ -214,7 +214,8 @@
     "docs/reference",
     "docs/admin",
     "docs/editors",
-    "docs/extend"
+    "docs/extend",
+    "docs/claude-code"
   ],
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.105.0 <1",

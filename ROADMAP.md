@@ -324,7 +324,7 @@ The original decision framing, for the record:
   the general docs that a user is not using a coding assistance, and then we can write a separate
   section for claude code."; placed 2026-10-09).** A fifth arm, `docs/claude-code/`, for working on
   a cairn site with Claude Code, outside the developer and editor tracks, which assume no coding
-  assistant. Its first page is "Using Claude Code with cairn": the guidance tree, the four skills and
+  assistant. Its first page is "Work on a cairn site with Claude Code": the guidance tree, the four skills and
   when each loads, the review agent, the `Stop` hook snippet, and `cairn-guidance install` and `check`
   with their exit codes and the CI step. It documents Claude Code only (the ruling above). No arm
   setup belongs in an engine pass: an arm the gates have never seen reads as `absent`

@@ -551,8 +551,7 @@
 
 ### Documentation
 
-- **The shipped `cairn-extend` skill points at the published pages.** Its router no longer links a
-  maintainer-only file of recorded claims. It sends an agent to the extend and reference pages in the
+- **The shipped `cairn-extend` skill points at the published pages.** Its router and its preflight reference no longer point at a maintainer-only file of recorded claims. It sends an agent to the extend and reference pages in the
   installed package and keeps the links to the engine rulings and the admin design system. The skill
   and its copy in the Waymark template change together.
 

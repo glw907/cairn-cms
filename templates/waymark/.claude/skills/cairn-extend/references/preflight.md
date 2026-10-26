@@ -20,8 +20,7 @@ current answer for the cases cairn's admin has already worked through.
 ## 3. Name the seam
 
 A reviewer, human or agent, should be able to find the atom your code calls, the seam it comes
-from, and the pattern's source fact without guessing. `../SKILL.md`'s router table names the atom
-and the fact for the two patterns it covers today; a pattern the table does not yet name still
+from, and the reference page that documents the pattern without guessing. `../SKILL.md`'s router table names the atom, the seam, and the reference page for the patterns it covers today; a pattern the table does not yet name still
 deserves the same treatment in your own commit message or comment: name the atom, not just what
 it does.
 

@@ -957,9 +957,7 @@ the named human gates only):**
   filters. Selection for the node projects stays open. (b)
   Auth-data test-only fix rounds taking the touched tests, the tests of touched helpers, and a
   re-run of the affected named mutations. Won't do while the full node projects run on every task:
-  a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) The docs chain
-  framing-seat A/B at stage 2b's start: two intros, one at `xhigh` and one at `high`; keep `xhigh`
-  unless `high` matches.
+  a test-only `auth-data` round keeps its targeted gate, which already runs them. (c) Retired with the docs-as-code cutover (2026-10-25).
 
   Four more, filed from the gate economy pass (2026-10-10), none a defect of the new gate. (d)
   Chains pipelining: the pass runner's parallel mode does not push or
@@ -1303,8 +1301,7 @@ the named human gates only):**
   answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says
   so, so a site's own D1-backed admin screen returns a 500 under the dev backend. Fix: a binding
   option, or stop overwriting a binding the site already provides; add a line to the
-  `cairn-admin-screens` skill either way, and file a fact so the extend arm's rebuilt
-  custom-screen page carries it.
+  `cairn-admin-screens` skill either way, and state it on the custom-screen page.
   Trigger: the next pass that changes the dev package's double set or `DevBackendConfig`, and before any
   site is told to build a D1-backed screen against the dev backend. The SvelteKit 3 move changed how the
   doubles reach the Worker (`withEnv` over the Worker env), not which exist, so this defers.
@@ -1338,8 +1335,7 @@ the named human gates only):**
 
 - **Deferred from docs reset pass 1 (2026-09-24), each with no recorded failure behind it yet.**
   The baseline record (`docs/internal/record/2026-09-23-docs-reset-baseline.md`, "Build or
-  defer") deferred these, and pass 1 built none of them. Trigger for the chain items: the new
-  draft-documentation approach adopts the v2 chain, and a run records the failure the item answers.
+  defer") deferred these, and pass 1 built none of them. Each item names its own trigger.
   - Harness scope: `CONTRIBUTING.md`'s procedures run literally (F4 and F6 need a browser and
     the installed showcase in the repository image), and a parser run against the goldens for
     the `--json` prose claims on the three `cli-cairn-*` reference pages (D05, D10, D13, D14,
@@ -1510,8 +1506,7 @@ the named human gates only):**
   `npm run build:admin-css`. Candidate: mirror the scaffold's shim in the showcase. Trigger: the
   next pass that edits the showcase's own admin sheet.
 
-- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (docs-to-facts pass,
-  2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
+- **CLAUDE.md sits over the 6000-token `claude-context-budget` hook (2026-09-15).** Every edit to the file trips the hook; a fix-round on task 3 trimmed prose
   mechanically to clear it, which is not the right place to do a full pass. Trigger: a dedicated
   trim task with its own `diff-reviewer` read, never a rider on another task.
 
@@ -1813,8 +1808,7 @@ the named human gates only):**
 - **The docs rewrite (Geoff, 2026-09-12): every published doc rewritten, after extend-1
   lands.** The cairn-case front-door initiative is dead; its frozen record under
   `docs/internal/record/2026-09-04-cairn-case/` is history, not an input. The rewrite follows
-  the `docs-rebuild-not-edit` method (each page rebuilt from a brief, the old page mined for
-  facts, reference entries edited in place) and carries the extend recipe pages,
+  the `docs-rebuild-not-edit` method (each page rebuilt from the code and its job, the old page mined for claims to check, reference entries edited in place) and carries the extend recipe pages,
   one per pattern with its engine ruling linked, that extend-2's skills route to; extend-2
   lands in or just after it. Sequenced after extend-1 so the extend track documents exports
   that exist. **Trigger:** extend-1 merged.

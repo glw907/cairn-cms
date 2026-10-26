@@ -783,8 +783,8 @@ sections:
         fact: f:xluud1
         use: |
           Only that the plugin verifies the committed content manifest on build, opening a second
-          paragraph on the plugin, with `cairnManifest` linked to the options reference at first
-          mention. The define it supplies waits for the dev-backend section.
+          paragraph on the plugin, with `cairnManifest` linked to the plugin's reference entry at
+          first mention. The define it supplies waits for the dev-backend section.
       - id: x-plugin
         kind: fact
         fact: f:fj28xs
@@ -793,7 +793,7 @@ sections:
           `configModule` and `content` in one sentence. Omit the other optional path.
       - id: x-plugin-link
         kind: link
-        target: ../reference/vite.md#cairnmanifestoptions
+        target: ../reference/vite.md#cairnmanifest
       - id: x-steps-lead
         kind: sentence
         mode: verbatim
@@ -1350,9 +1350,9 @@ sections:
       `cairnManifest` plugin supplies, all of which exist by this point.
     level: 3
     opens: |
-      The dev backend, `devBackendHandle` from `@glw907/cairn-cms-dev`, replaces the GitHub backend,
-      the auth database, and the media bucket with in-memory fakes and signs you in as an owner, so
-      the admin runs before any credential exists.
+      The dev backend is `devBackendHandle` from `@glw907/cairn-cms-dev`. It replaces the GitHub
+      backend, the auth database, and the media bucket with in-memory fakes, and it signs you in as
+      an owner. The admin therefore runs before any credential exists.
     items:
       - id: d-what
         kind: fact
@@ -1683,7 +1683,7 @@ sections:
       sections run in the order their outputs are consumed.
     opens: |
       This milestone replaces the dev backend's fakes with a GitHub App you register, a D1 auth
-      database, and the Worker's bindings and secret, and it ends with an edit published from the
+      database, and the Worker's bindings and secret. It ends with an edit published from the
       deployed admin to the public page.
     items:
       - id: p-objectives
@@ -2019,7 +2019,7 @@ sections:
     level: 3
     opens: |
       The App ID and installation ID identify the App and grant nothing, so they pass directly into
-      `createGithubApp` in the adapter source, while the private key lives only as the Worker secret
+      `createGithubApp` in the adapter source. The private key lives only as the Worker secret
       `GITHUB_APP_PRIVATE_KEY_B64`.
     items:
       - id: k-ids
@@ -2187,8 +2187,8 @@ sections:
         fact: f:pkrwom
         use: |
           Only that `0002_audit.sql` is optional and that the `createD1AuditSink` entry, linked at
-          first mention, recommends it on a separate D1 binding with its own `migrations_dir`, which
-          keeps audit writes from contending with session and token lookups (no "never contend",
+          first mention, recommends it on a separate D1 database, bound with its own `migrations_dir`,
+          which keeps audit writes from contending with session and token lookups (no "never contend",
           and no passive "is recommended").
       - id: db-audit-link
         kind: link
@@ -2810,10 +2810,11 @@ dispositions:
   - fact: f:t4pwpw
     disposition: cut
     reason: |
-      The page states the Workers Paid requirement once, through `f:75hawi`: a site carrying the
-      admin needs the plan from that first deploy, which already covers a second person's sign-in
-      mail. The free-to-yourself clause beside it would suggest a site with the admin can run
-      without the plan.
+      The page states the Workers Paid requirement through `f:75hawi` in two deliberate places: the
+      prerequisites, so a reader has the plan before starting, and the refusal step, the first
+      deploy that carries the admin and so the one that needs it. A site carrying the admin needs
+      the plan from that first deploy, which already covers a second person's sign-in mail. The
+      free-to-yourself clause would suggest a site with the admin can run without the plan.
   - fact: f:gglwt4
     disposition: subordinated
     reference: security-model.md#limits-of-the-installation-token

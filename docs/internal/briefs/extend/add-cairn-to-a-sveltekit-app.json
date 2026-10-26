@@ -700,7 +700,7 @@
       "id": "f:7bch04"
     },
     {
-      "text": "The [`cairnManifest`](../reference/vite.md#cairnmanifestoptions) plugin checks the committed manifest, at its default path `/src/content/.cairn/index.json`, against the markdown on every build.",
+      "text": "The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin checks the committed manifest, at its default path `/src/content/.cairn/index.json`, against the markdown on every build.",
       "id": [
         "f:xluud1",
         "f:fj28xs"
@@ -1775,7 +1775,7 @@
       "id": "no-claim"
     },
     {
-      "text": "`0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 binding with a separate `migrations_dir`, which keeps audit writes from contending with session and token lookups.",
+      "text": "`0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 database, bound with its own `migrations_dir`, which keeps audit writes from contending with session and token lookups.",
       "id": "f:pkrwom"
     },
     {
@@ -2229,7 +2229,7 @@
   "cuts": [
     {
       "id": "f:t4pwpw",
-      "reason": "The page states the Workers Paid requirement once, through `f:75hawi`: a site carrying the admin needs the plan from that first deploy, which already covers a second person's sign-in mail. The free-to-yourself clause beside it would suggest a site with the admin can run without the plan."
+      "reason": "The page states the Workers Paid requirement through `f:75hawi` in two deliberate places: the prerequisites, so a reader has the plan before starting, and the refusal step, the first deploy that carries the admin and so the one that needs it. A site carrying the admin needs the plan from that first deploy, which already covers a second person's sign-in mail. The free-to-yourself clause would suggest a site with the admin can run without the plan."
     },
     {
       "id": "f:gglwt4",

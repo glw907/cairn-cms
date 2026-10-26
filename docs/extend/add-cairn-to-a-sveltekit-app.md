@@ -427,7 +427,7 @@ The content module passes [`createSiteIndexes`](../reference/delivery-data.md#cr
 Vite needs the pattern written at the call site, and `createSiteIndexes` throws at build time for a declared concept with no glob.
 The module also exports `origin`, which holds the local dev origin until the production milestone changes it to the deployed origin.
 
-The [`cairnManifest`](../reference/vite.md#cairnmanifestoptions) plugin checks the committed manifest, at its default path `/src/content/.cairn/index.json`, against the markdown on every build.
+The [`cairnManifest`](../reference/vite.md#cairnmanifest) plugin checks the committed manifest, at its default path `/src/content/.cairn/index.json`, against the markdown on every build.
 Its `configModule` option names the module that exports `cairn` and `siteConfig`, and its `content` option maps each concept id to that concept's glob.
 
 To index the content and commit the manifest, follow these steps:
@@ -1092,7 +1092,7 @@ To create and migrate the database, follow these steps:
 The other migrations are opt-in.
 `0001_roles.sql` serves a role vocabulary beyond owner and editor, and `0003_preview.sql` serves draft-preview links.
 [Build the public routes](build-the-public-routes.md#mount-the-draft-preview-route) mounts the draft-preview route.
-`0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 binding with a separate `migrations_dir`, which keeps audit writes from contending with session and token lookups.
+`0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 database, bound with its own `migrations_dir`, which keeps audit writes from contending with session and token lookups.
 
 ### Add the Email Sending binding and name the origin
 

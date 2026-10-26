@@ -247,7 +247,7 @@ framing:
     `docs/extend/add-cairn-to-a-sveltekit-app.md#register-the-github-app`, or the setup command for a
     scaffolded site. Why the key lives only as a Worker secret, and what the App's token can write,
     belong to `docs/extend/security-model.md#the-github-apps-reach`. Setting up `.dev.vars` for
-    local development belongs to `docs/extend/scaffolded-site-files.md#devvarsexample`; the page
+    local development belongs to `docs/extend/scaffolded-site-files.md#devvars`; the page
     covers only replacing the key there. The bounds sentence may name the page.
 
     Cautions for the drafter, introduction only:
@@ -1358,7 +1358,7 @@ sections:
 dispositions:
   - fact: f:nls26c
     disposition: subordinated
-    reference: scaffolded-site-files.md#devvarsexample
+    reference: scaffolded-site-files.md#devvars
     reason: |
       The contents of the scaffold's `.dev.vars.example` belong to the scaffold's file reference.
       This page covers local development only as far as replacing the key's value in `.dev.vars`

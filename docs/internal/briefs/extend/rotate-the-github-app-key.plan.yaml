@@ -728,7 +728,7 @@ sections:
 dispositions:
   - fact: "f:nls26c"
     disposition: subordinated
-    reference: scaffolded-site-files.md#devvarsexample
+    reference: scaffolded-site-files.md#devvars
     reason: |
       The contents of the scaffold's `.dev.vars.example` belong to the scaffold's file reference.
       This page needs only that local `wrangler dev` reads `.dev.vars` (`f:86h9o6`), and the

@@ -1913,7 +1913,7 @@ sections:
           the deployed origin before the production build.
       - id: em-send-link
         kind: link
-        target: "#edit-the-message-in-a-custom-sender"
+        target: "#the-custom-sender-contract"
   - heading: Verify the production site
     level: 3
     opens: |
@@ -2222,7 +2222,7 @@ sections:
       - id: rb-link
         kind: link
         target: ../reference/sveltekit.md#createcairnadmin
-  - heading: Edit the message in a custom sender
+  - heading: The custom sender contract
     level: 3
     opens: |
       A custom `auth.send` is a `SendMagicLink` that replaces the Cloudflare sender and receives the

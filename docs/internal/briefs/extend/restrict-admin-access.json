@@ -66,10 +66,7 @@
     },
     {
       "text": "In it, a `webmaster` role is the only role besides owner that reaches the media library and the example site's signups screen at `/admin/signups`.",
-      "id": [
-        "f:3z1uxv",
-        "f:2dgbff"
-      ]
+      "id": "f:3z1uxv"
     },
     {
       "text": "A reader may arrive to gate a custom admin screen's route or to close an engine screen, such as the media library, to most editors.",
@@ -226,10 +223,7 @@
     },
     {
       "text": "That is why the example keeps `editor` beside `webmaster`.",
-      "id": [
-        "f:zjglk8",
-        "f:2dgbff"
-      ]
+      "id": "f:zjglk8"
     },
     {
       "text": "An adapter that declares no `roles` resolves every session against the default `owner` and `editor` pair.",
@@ -244,8 +238,7 @@
       "id": [
         "f:dbaklx",
         "f:zjglk8",
-        "f:2zytgf",
-        "f:2dgbff"
+        "f:2zytgf"
       ]
     },
     {
@@ -327,17 +320,11 @@
     },
     {
       "text": "In the `access` map, add a `media` key that admits `webmaster`, and a key for your route's path that lists the roles that reach it.",
-      "id": [
-        "f:0qb73i",
-        "f:2dgbff"
-      ]
+      "id": "f:0qb73i"
     },
     {
       "text": "In the example, the `/admin/signups` key admits `webmaster` in place of its owner-only rule.",
-      "id": [
-        "f:3z1uxv",
-        "f:2dgbff"
-      ]
+      "id": "f:3z1uxv"
     },
     {
       "text": "Keep every other key.",
@@ -389,10 +376,7 @@
     },
     {
       "text": "A map given `undefined` for its vocabulary validates against the default pair, so a map that names `webmaster` needs `roles` as its first argument.",
-      "id": [
-        "f:grxpu5",
-        "f:2dgbff"
-      ]
+      "id": "f:grxpu5"
     },
     {
       "text": "Each error message but the empty-map one names the key at fault, and the role where a role is at fault.",
@@ -666,7 +650,7 @@
       ]
     },
     {
-      "text": "A scaffolded site's `migrations/` already holds the file, and the setup command applied it.",
+      "text": "A scaffolded site's `migrations/` already holds the file, and the setup command applies it when it runs the site's first deploy.",
       "id": [
         "f:gepykz",
         "f:m4y3m4"
@@ -932,11 +916,12 @@
       "id": "f:7ji7x0"
     },
     {
-      "text": "If the site refuses the add and logs `auth.access.refused`, the action checks a different target than the load: the load passes a target its section actions do not declare.",
+      "text": "If the site refuses the add and logs `auth.access.refused`, the add action carries `ownerOnly: true`, or it checks a different target than the load, because one of them declares a `target` the other does not.",
       "id": [
         "f:3s23un",
         "f:8anql1",
-        "f:xbjxit"
+        "f:xbjxit",
+        "f:smbsa6"
       ]
     },
     {
@@ -962,8 +947,7 @@
       "text": "The remove is refused because `remove` carries `ownerOnly: true`, while the map admits `webmaster` to the screen.",
       "id": [
         "f:smbsa6",
-        "f:onqm6k",
-        "f:2dgbff"
+        "f:onqm6k"
       ]
     },
     {
@@ -1009,8 +993,7 @@
       "id": [
         "f:8anql1",
         "f:joo5f2",
-        "f:0qb73i",
-        "f:2dgbff"
+        "f:0qb73i"
       ]
     },
     {
@@ -1023,17 +1006,13 @@
     },
     {
       "text": "Add `webmaster` to the key.",
-      "id": [
-        "f:0qb73i",
-        "f:2dgbff"
-      ]
+      "id": "f:0qb73i"
     },
     {
       "text": "If a `webmaster` editor sees only the welcome view at `/admin` and is refused on every other admin screen, check the logs for `auth.role.unknown`.",
       "id": [
         "f:4bazhe",
-        "f:kqcyv1",
-        "f:2dgbff"
+        "f:kqcyv1"
       ]
     },
     {
@@ -1053,8 +1032,7 @@
         "f:xffr6i",
         "f:rn62i1",
         "f:udg87q",
-        "f:3z1uxv",
-        "f:2dgbff"
+        "f:3z1uxv"
       ]
     },
     {
@@ -1083,8 +1061,7 @@
       "text": "If the delete succeeds for the `webmaster` session, the remove action lacks `ownerOnly: true`, or another action carries it instead.",
       "id": [
         "f:smbsa6",
-        "f:onqm6k",
-        "f:2dgbff"
+        "f:onqm6k"
       ]
     },
     {
@@ -1205,5 +1182,8 @@
       "id": "f:wnsv5x",
       "reason": "The scaffold's `src/lib/log.ts` is the scaffold file reference's subject and plays no part in restricting access."
     }
+  ],
+  "local": [
+    "webmaster"
   ]
 }

@@ -226,7 +226,7 @@ The deployed site still runs without these edits.
 The roster and the per-role checks run on the deployed site.
 A vocabulary beyond the default pair needs `0001_roles.sql` in the auth database.
 You apply it by hand with Wrangler before you redeploy.
-A scaffolded site's `migrations/` already holds the file, and the setup command applied it.
+A scaffolded site's `migrations/` already holds the file, and the setup command applies it when it runs the site's first deploy.
 A hand-built site never receives the file and copies it from the package, as does a site scaffolded before the file shipped.
 Applying the file rebuilds the `editor` table, as [Before you begin](#before-you-begin) notes.
 
@@ -328,7 +328,7 @@ To verify the map, run these checks in order:
 11. On the signups screen, enter a name and an email, then select **Add**.
 
     The status line reads `Signup added.`, and the table lists the new row.
-    If the site refuses the add and logs `auth.access.refused`, the action checks a different target than the load: the load passes a target its section actions do not declare.
+    If the site refuses the add and logs `auth.access.refused`, the add action carries `ownerOnly: true`, or it checks a different target than the load, because one of them declares a `target` the other does not.
     Set the same `target` in each section action, as [Key nested and parameterized routes](#key-nested-and-parameterized-routes) does.
 
 12. On the signups screen, select **Delete** on the signup you added.

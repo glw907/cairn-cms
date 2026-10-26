@@ -9,7 +9,7 @@ argument: |
   enforcement points read a target the map leaves out in opposite ways (an engine screen stays
   open, a route that opted in refuses everyone), which is what makes the map safe to add
   incrementally and dangerous to forget on a new route. One running example carries the page: a
-  webmaster role with editor capability that alone, with owners, reaches the media library and the
+  `webmaster` role with editor capability that alone, with owners, reaches the media library and the
   example site's signups screen at `/admin/signups`, declared on the adapter, enforced on the
   reader's route's load and actions (the signups screen shows the finished form), deployed with the roles migration, assigned on the roster, and proved
   on the deployed site by a test editor who meets the admin's error page wherever the map
@@ -17,20 +17,25 @@ argument: |
 introduction:
   covers: |
     The introduction frames the page from above, then states the contract. It opens on the model,
-    as statements: everyone who signs in to the admin has a role; the site declares role names, or uses the default pair, `owner` and `editor`; each role resolves to one capability,
-    `owner`, `editor`, or `none`, and capability is the floor cairn enforces. The access map, the
-    site's declaration keyed by engine screen or `/admin` route, narrows which editor-capability
-    roles reach each target. An owner reaches every mapped target, and the one widening is a `none`
-    role, which only a route rule naming it admits. It then says where the map sits: declared once,
-    as the adapter's `access` member, and read by the engine's screens, the sidebar, and, through
-    the guard, the site's routes. The contract sentence: the steps declare a role vocabulary
-    and an access map on the adapter, enforce the map on your screen's reads and writes, deploy
-    the change with the roles migration, assign the new role, and verify each role's reach. Then
-    the running example in one sentence (a webmaster role that alone, with owners, reaches the
-    media library and the example site's signups screen). It names the readers who arrive: one
-    gating a custom screen's route, one closing an engine screen such as the media library to most
-    editors, and one who wants the map to admit named roles alone, whom it points to
-    [[make-the-map-exhaustive]].
+    as statements: everyone who signs in to the admin has a role; the site declares role names, or
+    uses the default pair, `owner` and `editor`; each role resolves to one of three capabilities,
+    `owner`, `editor`, or `none`, and cairn always enforces capability. The access map restricts it
+    further: its keys are engine screens and `/admin` routes, each key lists the roles that reach
+    that target, and an owner reaches every mapped target whatever the map lists. The map's one
+    widening, a route rule that names a `none` role, belongs to [[declare-the-roles]], not the
+    introduction. It then says where the map sits: declared once, as the adapter's `access` member;
+    the engine's screens, their write actions, and the sidebar read it through the composed
+    runtime; the guard attaches the same map to every admin request but decides no per-route
+    authorization, so a route the site writes checks the map itself, in its `load` and in each form
+    action, because SvelteKit runs a form action without its page's `load`. The contract sentence:
+    the steps declare a role vocabulary and an access map on the adapter, enforce the map on your
+    route's reads and writes, deploy the change with the roles migration, assign the new role, and
+    verify each role's reach. Then the running example in two sentences (the steps follow one
+    example; in it, a `webmaster` role is the only role besides owner that reaches the media library
+    and the example site's signups screen). It names the readers who arrive: one gating a custom
+    admin screen's route and one closing an engine screen such as the media library to most
+    editors, whom the steps serve in order, and one who wants the map to admit only the roles it
+    names, on every engine screen, who also needs [[make-the-map-exhaustive]].
   priorKnowledge: |
     A Svelte-fluent developer: SvelteKit server hooks, `load` functions, form actions, and route
     ids with their groups and parameters; the site's adapter module; and a Workers Logs query, for
@@ -49,6 +54,10 @@ introduction:
     - f:p1xmp5
     - f:zjglk8
     - f:cvzb8z
+    - f:0qb73i
+    - f:iwf4nu
+    - f:2sd4if
+    - f:5pyozi
 framing:
   introPlan: |
     Three paragraphs, then the bounds (prior knowledge and what the page leaves out). No heading.
@@ -56,22 +65,27 @@ framing:
     statement of the model, neither an imperative nor a sentence about the page.
 
     1. **The model.** Open on statements: everyone who signs in to the admin has a role; the site
-       declares role names, or uses the default pair, `owner` and `editor`; each role
-       resolves to one capability, `owner`, `editor`, or `none`, and capability is the floor cairn
-       enforces (`f:zjglk8`). The access map, the site's declaration keyed by engine screen or
-       `/admin` route, narrows which editor-capability roles reach each target. An owner reaches
-       every mapped target, and the one widening is a `none` role, which only a route rule naming it
-       admits (`f:p1xmp5`).
-    2. **Where the map sits, and the contract.** The map is declared once, as the adapter's `access`
-       member, and read by the engine's screens, the sidebar, and, through the guard, the site's
-       routes (`f:cvzb8z`). Then the contract sentence: the steps declare a role vocabulary and an
-       access map on the adapter, enforce the map on your screen's reads and writes, deploy the
-       change with the roles migration, assign the new role, and verify each role's reach.
-    3. **The running example and the readers.** The running example in one sentence: a webmaster
-       role that alone, with owners, reaches the media library and the example site's signups
-       screen. Then the readers who arrive: one gating a custom screen's route, one closing an
-       engine screen such as the media library to most editors, and one who wants the map to admit
-       named roles alone, whom it sends to [[make-the-map-exhaustive]].
+       declares role names, or uses the default pair, `owner` and `editor`; each role resolves to
+       one of three capabilities, `owner`, `editor`, or `none`, and cairn always enforces capability
+       (`f:zjglk8`). The access map restricts it further: its keys are engine screens and `/admin`
+       routes, and each key lists the roles that reach that target (`f:0qb73i`). An owner reaches
+       every mapped target whatever the map lists (`f:p1xmp5`). The `none`-role widening waits for
+       [[declare-the-roles]].
+    2. **Where the map sits, and the contract.** You declare the map once, as the adapter's
+       `access` member; the engine's screens, their write actions, and the sidebar read it through
+       the composed runtime (`f:cvzb8z`). The guard attaches the same map to every admin request,
+       but it decides no per-route authorization (`f:iwf4nu`, `f:2sd4if`), so a route the site
+       writes checks the map itself, in its `load` and in each form action, because SvelteKit runs a
+       form action without running its page's `load` first (`f:5pyozi`). Then the contract
+       sentence: the steps declare a role vocabulary and an access map on the adapter, enforce the
+       map on your route's reads and writes, deploy the change with the roles migration, assign the
+       new role, and verify each role's reach.
+    3. **The running example and the readers.** The steps follow one example throughout: a
+       `webmaster` role is the only role besides owner that reaches the media library and the
+       example site's signups screen at `/admin/signups`. Then the readers who arrive: one gating a
+       custom admin screen's route and one closing an engine screen such as the media library to
+       most editors, whom the steps serve in order; and one who wants the map to admit only the
+       roles it names, on every engine screen, who also needs [[make-the-map-exhaustive]].
 
     Then the bounds. The page assumes a Svelte-fluent developer: SvelteKit server hooks, `load`
     functions, form actions, and route ids with their groups and parameters; the site's adapter
@@ -95,6 +109,7 @@ preconditions:
   - unchecked-route
   - deployed-site
   - test-editor-address
+  - editor-columns-carried
 exemplars:
   - source: extenders/sveltekit-hooks/
     slice: Extenders
@@ -111,33 +126,35 @@ sections:
       The reader learns before any step what the task needs: an admin route in the site whose reads and writes do not yet check the access map, and a deployed site with a second
       person to sign in as, since the dev backend mints an owner editor on `/admin`.
     opens: |
-      The steps need a site with an admin route that does not yet check the access map,
-      and the checks need a deployed site you can redeploy and a second person to sign in as.
+      Before you start, have the following in place:
     items:
       - id: bb-list
         kind: sentence
         mode: claim
         text: |
-          A bulleted list of four preconditions, each with a link to what produces it where a page
-          does: a site that `create-cairn-site` scaffolded (or a hand-built site), with or without
-          an `access` member on its adapter; a site route under `/admin` whose `load`
-          and form actions do not yet check the access map, such as one whose `load` calls
-          `requireEditor`; a deployed site with a way to redeploy it; and an email address for a
-          test editor besides the owner's, with a second browser to sign in as that editor.
+          A bulleted list of five preconditions, each with a link to what produces it where a page
+          does: a site that `create-cairn-site` scaffolded or that was built by hand as in Add cairn
+          to a SvelteKit app, with or without an `access` member on its adapter; a site route under
+          `/admin` whose `load` and form actions do not yet check the access map, such as one whose
+          `load` calls `requireEditor`; a deployed site with a way to redeploy it; an email address
+          for a test editor besides the owner's, with a second browser to sign in as that editor;
+          and, if the site copies `0001_roles.sql` in and added columns to the auth database's
+          `editor` table, an edited copy of the file.
       - id: bb-adapter-module
         kind: fact
         fact: f:q07rd5
         use: |
-          Only the adapter module's two locations, on a scaffolded site and on the hand-built
-          tutorial's site, for the site precondition. Omit the manifest and the tutorial's hooks
+          Only the scaffolded site's adapter module path, `src/theme/cairn.config.ts`, for the site
+          precondition. Name a hand-built site's module generically, as the module that calls
+          `defineAdapter`, and omit the tutorial's path, the manifest, and the tutorial's hooks
           clause.
       - id: bb-no-access-member
         kind: fact
         fact: f:3z1uxv
         use: |
-          Only the scaffold's missing `access` member and `src/access.ts`, as the site
-          precondition's second clause. Omit the example site's map, which
-          [[declare-the-access-map]] carries.
+          Only the scaffold's missing `access` member, as the site precondition's second clause.
+          Omit `src/access.ts` and the example site's map, which [[declare-the-access-map]]
+          carries.
       - id: bb-hand-built-link
         kind: link
         target: add-cairn-to-a-sveltekit-app.md
@@ -172,6 +189,14 @@ sections:
           Only the clause that the dev backend never reads `runtime.roles`, since it mints the
           owner capability, the same reason's second half.
           Omit the one-declaration half, which [[declare-the-access-map]] places.
+      - id: bb-editor-columns
+        kind: fact
+        fact: f:rn62i1
+        use: |
+          Only the rebuild that keeps the engine's four `editor` columns and the edit a site's copy
+          needs (each added column in `editor_new` and in both column lists of its `INSERT`), as
+          the conditional fifth precondition and its two sentences. Omit when the file is needed
+          and where a site gets it, which [[deploy-the-changes]] places.
       - id: bb-handoff
         kind: handoff
         text: |
@@ -182,8 +207,7 @@ sections:
       The map admits roles by name, and `defineAccess` validates every role name against the
       vocabulary it is given, so the vocabulary is declared first.
     opens: |
-      The access map admits roles by name, so the site first declares its role vocabulary,
-      mapping each role name to the capability it resolves to.
+      The role vocabulary maps each role name to the capability it resolves to.
     items:
       - id: roles-member
         kind: fact
@@ -225,7 +249,7 @@ sections:
         use: |
           Only the absent-name rule, as the trap in the paragraph with the vocabulary, with its
           consequence for a renamed or dropped role. It is why the example declares `editor` beside
-          webmaster.
+          `webmaster`.
       - id: roles-default
         kind: fact
         fact: f:4xrx5f
@@ -234,8 +258,8 @@ sections:
       - id: s-roles-declare
         kind: step
         text: |
-          In the adapter module, declare the vocabulary with `defineRoles` and export it as
-          `roles`, mapping `owner` to `'owner'` and both `editor` and webmaster to `'editor'`.
+          In the adapter module, export a `roles` vocabulary built with `defineRoles` that maps
+          `owner` to `'owner'` and both `editor` and `webmaster` to `'editor'`.
         requires:
           - scaffolded-site
         produces:
@@ -247,7 +271,8 @@ sections:
         symptom: |
           The server start throws from `defineRoles`.
         cause: |
-          The vocabulary has no `owner` key mapped to owner capability.
+          The vocabulary fails a check the `defineRoles` entry lists, such as a missing `owner`
+          key mapped to owner capability.
         handledBy: s-roles-declare
       - id: s-roles-member
         kind: step
@@ -275,27 +300,28 @@ sections:
         kind: fact
         fact: f:0qb73i
         use: |
-          Only the screen and route key forms, the value lists, and the owner rule.
+          Only the screen and route key forms and the value lists. Omit the owner rule, which the
+          introduction places.
       - id: map-where
         kind: fact
         fact: f:iwf4nu
         use: |
-          Only where the map goes: the adapter member, `composeRuntime` carrying it onto the
-          runtime, and the guard's attachment on every admin path, so the guard takes no second
-          copy. Omit the earlier-versions clause and any checking of the map's keys, which
-          `composeRuntime` does not do and a later item places.
+          Only where the map goes: the adapter member and nowhere else, and `composeRuntime`
+          carrying it onto the runtime, which both handles take. Omit the earlier-versions clause
+          and any checking of the map's keys, which `composeRuntime` does not do and a later item
+          places.
       - id: map-guard-reads
         kind: fact
         fact: f:4xrx5f
         use: |
-          Only the guard's required `runtime` and the two members it reads from it, in the same
-          paragraph. Omit the earlier-versions clause.
+          Only the guard's required `runtime` and the two members it reads from it, `roles` and
+          `access`, in the same paragraph. Omit the earlier-versions clause.
       - id: map-dev-reads
         kind: fact
         fact: f:7cv105
         use: |
-          Only the clause that `devBackendHandle` takes the same runtime, in the same paragraph, so
-          one declaration serves both handles.
+          Only that `devBackendHandle` takes the same runtime and reads only its `access`, which it
+          attaches to each `/admin` request it mints an owner editor for, in the same paragraph.
       - id: map-scaffold-hooks
         kind: fact
         fact: f:f21bcz
@@ -312,8 +338,7 @@ sections:
         kind: step
         text: |
           If the adapter already declares `access`, in its `defineAccess` call, pass `roles` as
-          the first argument in place of `undefined`, as the example site's call needs. A site
-          with no `access` member skips this step and takes the next.
+          the first argument in place of `undefined`. The example site's call takes this step.
         requires:
           - roles-on-adapter
         produces:
@@ -323,8 +348,7 @@ sections:
         kind: step
         text: |
           If the adapter has no `access` member, in the `defineAdapter` call, add `access` set to
-          a `defineAccess` call that passes `roles` first. A site that already declares `access`
-          skips this step.
+          a `defineAccess` call that passes `roles` first.
         requires:
           - roles-on-adapter
         produces:
@@ -333,10 +357,9 @@ sections:
       - id: s-map
         kind: step
         text: |
-          In the adapter module's `access` map, add a `media` key admitting webmaster and a key
-          for your route's path listing the roles that reach it. In the example, the
-          `/admin/signups` key admits webmaster in place of its owner-only rule. Keep every other
-          key.
+          In the `access` map, add a `media` key that admits `webmaster`, and a key for your
+          route's path that lists the roles that reach it. In the example, the `/admin/signups` key
+          admits `webmaster` in place of its owner-only rule. Keep every other key.
         requires:
           - roles-on-adapter
           - unchecked-route
@@ -381,16 +404,18 @@ sections:
         kind: fact
         fact: f:3z48zf
         use: |
-          Only when the map is checked: `defineAccess`'s construction checks, then the key checks
-          `createContentRoutesContext` runs when the admin routes are built at server start.
-          `composeRuntime` checks only the map's role names, so never attribute the key checks to
-          it.
+          Only the three calls that check the map, opening on their count: `defineAccess`'s
+          construction checks and its `defineAccess:` error; `composeRuntime`'s check of the map's
+          role names against the adapter's vocabulary and its `access:` error; and the key checks
+          `createContentRoutesContext` runs when the admin routes are built at server start. Then
+          that each error message but the empty-map one names the key at fault, and the role where a
+          role is at fault. Never attribute the key checks to `composeRuntime`.
       - id: map-undefined-vocab
         kind: fact
         fact: f:grxpu5
         use: |
-          Only the `undefined` vocabulary rule, in the same paragraph: a map naming webmaster needs
-          the declared vocabulary.
+          Only the `undefined` vocabulary rule, in the same paragraph: a map naming `webmaster`
+          needs the declared vocabulary.
       - id: map-reference-link
         kind: link
         target: ../reference/core.md#defineaccess
@@ -409,8 +434,7 @@ sections:
       - id: map-handoff
         kind: handoff
         text: |
-          The engine now enforces the map on its screens, and your routes enforce it
-          through two calls.
+          Your routes enforce the map through two calls.
   - id: enforce-the-map-on-your-routes
     heading: Enforce the map on your routes
     why: |
@@ -426,8 +450,9 @@ sections:
         kind: fact
         fact: f:2sd4if
         use: |
-          Only the guard's split, backing the opening sentence: it gates the whole `/admin` subtree
-          and decides no per-route authorization.
+          Only the guard's split, as the sentence after the opening one: the guard admits a
+          signed-in session to the `/admin` subtree before any `load` runs, and the route itself
+          decides which roles reach it.
       - id: enf-example
         kind: fact
         fact: f:onqm6k
@@ -492,8 +517,7 @@ sections:
       - id: s-owner-only
         kind: step
         text: |
-          For an action only an owner may run, set `ownerOnly: true` in its wrapper's options. A
-          route with no such action skips this step.
+          For an action only an owner may run, set `ownerOnly: true` in its wrapper's options.
         requires:
           - actions-gated
         produces:
@@ -516,8 +540,7 @@ sections:
         kind: fact
         fact: f:zo034s
         use: |
-          Only the route half and its misconfiguration reason, backing the opening sentence and the
-          refusal that reaches owners too.
+          Only the route half, backing the opening sentence. Omit the misconfiguration reason.
       - id: open-require-editor
         kind: fact
         fact: f:8anql1
@@ -545,15 +568,15 @@ sections:
     level: 3
     anchor: make-the-map-exhaustive
     opens: |
-      To admit only named roles to every engine screen, map every concept and fixed screen until
-      `config.access_unmapped` no longer fires.
+      A map is exhaustive when it keys every concept and fixed screen, and
+      `config.access_unmapped` then stops firing.
     items:
       - id: s-exhaustive
         kind: step
         text: |
-          In the adapter module's `access` map, add a key for each target the warning names,
-          listing the roles that reach it. The running example leaves the warning in place and
-          skips this step.
+          In the adapter module's `access` map, add a key for each target the warning's
+          `unmapped` list names, listing the roles that reach it. The running example leaves the
+          warning in place and skips this step.
         requires:
           - map-declared
         produces:
@@ -565,8 +588,8 @@ sections:
         use: |
           Only that an exhaustive map covers every engine write action, in one sentence after the
           step: the tidy and personal-dictionary actions gate against the entry's concept like any
-          entry action, and the site-wide publish filters each entry by its concept. No write
-          action stays outside the map. Omit the rest, which the limits link carries.
+          entry action, and the site-wide publish filters each entry by its concept. Omit the rest,
+          which the limits link carries.
       - id: exh-limits-link
         kind: link
         target: security-model.md#limits-of-access-map-coverage
@@ -593,20 +616,28 @@ sections:
         kind: fact
         fact: f:8anql1
         use: |
-          Only the default target's normalization and, as the trap in the same paragraph, the
-          parameterized route under a deeper key that must declare `target`.
+          Only the default target's normalization, which drops route groups but keeps a
+          parameterized id verbatim, and, as the trap in the same paragraph, a worked example: with
+          `/admin/money` and the deeper `/admin/money/refunds` in the map, a route under
+          `/admin/money` whose next segment is a dynamic or rest parameter, such as `[id]`, resolves
+          to no rule and refuses every session until it declares `target`.
+      - id: nest-shadow
+        kind: fact
+        fact: f:lmtfkt
+        use: |
+          Only that a dynamic segment under a key with a deeper sibling key resolves to no rule,
+          backing the worked example.
       - id: nest-section-target
         kind: fact
         fact: f:3s23un
         use: |
           Only when a section action's `target` is required, and that a declared one is used
-          verbatim.
+          verbatim, as a separate rule the sentence marks with "Separately".
       - id: s-nest-load-target
         kind: step
         text: |
-          If the route has such a parameter or serves more than one section, in its
-          `+page.server.ts`, pass the governing key as the second argument to `requireAccess`.
-          Any other route skips this step and the next.
+          If the route has one of these parameters or serves several sections, in its
+          `+page.server.ts`, pass the governing key to `requireAccess` as its second argument.
         requires:
           - load-gated
         produces:
@@ -615,7 +646,8 @@ sections:
       - id: s-nest-action-target
         kind: step
         text: |
-          In the same file, set `target` to the same key in each section action's options.
+          If you passed a key to `requireAccess`, in the same file, set `target` to that key in
+          each section action's options.
         requires:
           - load-target-declared
           - actions-gated
@@ -633,14 +665,15 @@ sections:
       rule and the route refusal, so it follows both.
     opens: |
       The sidebar reads the adapter's map through the same check the routes use, so a keyed entry
-      shows only to the roles its key admits.
+      shows to the roles its key admits and to an owner.
     items:
       - id: nav-gating
         kind: fact
         fact: f:altcjp
         use: |
-          Only the two gating rules, for an engine screen's entry and a `navLayout` site entry,
-          backing the opening sentence and its detail.
+          Only the two gating rules, backing the opening sentence and the two after it: an engine
+          screen's entry follows the map directly, and a site entry in the adapter's `navLayout` is
+          gated only when a key matches its href.
       - id: nav-example
         kind: fact
         fact: f:tycp7k
@@ -656,8 +689,7 @@ sections:
       - id: nav-handoff
         kind: handoff
         text: |
-          The edits are complete in the site's files, and the deployed site does not have them
-          yet.
+          The deployed site still runs without these edits.
   - id: deploy-the-changes
     heading: Deploy the changes
     why: |
@@ -665,23 +697,37 @@ sections:
       site, and the roles migration must reach the auth database before a custom role can be
       written.
     opens: |
-      The roster and the per-role checks run on the deployed site, so the roles migration and the
-      new adapter must reach it first.
+      The roster and the per-role checks run on the deployed site.
     items:
       - id: dep-migration-why
         kind: fact
         fact: f:rn62i1
         use: |
-          Only when `0001_roles.sql` is needed and where a site gets it, with the trap in the same
-          paragraph: applying it rebuilds the table, so a site carries any column it added to
-          `editor` across first. Omit the automated-apply clause, since no redeploy path this page
-          names applies a migration (`f:jtl15v`), and omit `0003_preview.sql`.
+          Only when `0001_roles.sql` is needed and where a site gets it: the scaffold ships it, and
+          a site scaffolded before it shipped copies it from the package. Close the paragraph on one
+          pointer sentence: applying the file rebuilds the `editor` table, as [[before-you-begin]]
+          notes, which carries the column trap. Omit the automated-apply clause, since no redeploy
+          path this page names applies a migration (`f:jtl15v`), and omit `0003_preview.sql`.
       - id: dep-scaffold-set
         kind: fact
         fact: f:gepykz
         use: |
           Only `0001_roles.sql` in a scaffolded site's `migrations/`. Omit the rest of the set and
           the audit migration.
+      - id: dep-first-deploy
+        kind: fact
+        fact: f:m4y3m4
+        use: |
+          Only that the setup command's "Deploy to workers.dev" step applies the auth database's
+          migrations, so it applies a scaffolded site's `0001_roles.sql` when it runs the site's
+          first deploy. Omit the `PUBLIC_ORIGIN` write and the second deploy.
+      - id: dep-hand-built
+        kind: fact
+        fact: f:hft8s8
+        use: |
+          Only the two migrations every site applies, `0000_auth.sql` and
+          `0004_login_nonce.sql`, behind the clause that a hand-built site never receives
+          `0001_roles.sql` and copies it from the package. Omit the nonce column.
       - id: dep-by-hand
         kind: fact
         fact: f:jtl15v
@@ -692,8 +738,8 @@ sections:
         kind: step
         text: |
           If the site's `migrations/` directory lacks `0001_roles.sql`, in the project directory,
-          copy it from `node_modules/@glw907/cairn-cms/migrations/`. A site that already holds the
-          file skips this step.
+          copy the file from the package's `migrations/` directory, with the `cp` command from
+          `node_modules/@glw907/cairn-cms/migrations/` as its block.
         requires:
           - deployed-site
         produces:
@@ -711,6 +757,7 @@ sections:
           `npx wrangler d1 migrations apply <auth-database-name> --remote`.
         requires:
           - deployed-site
+          - editor-columns-carried
         produces:
           - roles-migrated
       - id: dep-paths
@@ -719,8 +766,8 @@ sections:
         text: |
           A lead-in that the redeploy takes one of two paths, matching how the site deploys: a
           push to a repository connected to Workers Builds, or a build and deploy with Wrangler.
-          Both paths run the same two commands, a build and a deploy, and neither applies a
-          migration, which is why the apply step comes first.
+          Then three short sentences: both paths run the same two commands, a build and a deploy;
+          neither path applies a migration; that is why the apply step comes first.
         facts:
           - f:qca0t0
           - f:jtl15v
@@ -729,13 +776,14 @@ sections:
         fact: f:qca0t0
         use: |
           Only the Workers Builds path: the setup command's chapter 3 connects it in the same setup
-          run, `--connect` only re-enters that chapter on a site past its first deploy, and the
-          connected repository deploys on every push to the default branch.
+          run, the connected repository deploys on every push to its default branch, and
+          `--connect` re-enters that chapter on a site from its live step onward.
       - id: s-deploy-push
         kind: step
         text: |
-          If the repository is connected to Workers Builds, push the changes to its default
-          branch, which deploys them. Otherwise take the next two steps instead.
+          If the repository is connected to Workers Builds, in the project directory, push the
+          changes to its default branch. The push deploys them, and a site deployed this way skips
+          the next two steps.
         requires:
           - roles-migrated
           - map-declared
@@ -786,8 +834,8 @@ sections:
         kind: fact
         fact: f:pwb0wr
         use: |
-          Only the owner's roster management and the editor's lack of it, backing the opening
-          sentence.
+          Only the owner's roster management, backing the opening sentence and, as the sentence
+          after it, that only an owner can add or remove editors and change their roles.
       - id: asg-form
         kind: fact
         fact: f:udg87q
@@ -797,13 +845,13 @@ sections:
         kind: fact
         fact: f:2dgbff
         use: |
-          Only the option label for a role whose name differs from its capability, as step 1's
-          option.
+          Only the option label for a role whose name differs from its capability, as the sentence
+          before the steps, where `webmaster` reads `webmaster (editor)`, and as step 1's option.
       - id: s-add-editor
         kind: step
         text: |
           In `/admin/editors` on the deployed site, as the owner, add the test editor through the
-          **Add editor** form, choosing `webmaster (editor)` as its **Role**.
+          **Add editor** form, choosing **webmaster (editor)** as its **Role**.
         requires:
           - changes-deployed
           - test-editor-address
@@ -814,17 +862,29 @@ sections:
         kind: failure
         from: s-add-editor
         symptom: |
-          Adding the test editor with the webmaster role fails on `/admin/editors`.
+          The add fails, and the site logs `admin.action.failed` with the `conditionId`
+          `auth.store-roles-unmigrated`.
         cause: |
-          The auth database lacks `0001_roles.sql`, so the `editor` table still accepts only
-          `owner` and `editor`, which the running site reports as `auth.store-roles-unmigrated`.
+          The auth database still lacks `0001_roles.sql`, so the `editor` table accepts only
+          `owner` and `editor`. The reader applies the migration as [[deploy-the-changes]] does,
+          then adds the editor again.
         handledBy: s-apply-migration
+        facts:
+          - f:7ele62
+          - f:xffr6i
       - id: asg-unmigrated
         kind: fact
         fact: f:xffr6i
         use: |
-          Only the failed write and the `auth.store-roles-unmigrated` warning, backing the failure's
-          cause. Omit the statement list and the CHECK text.
+          Only the failed write and its `auth.store-roles-unmigrated` condition, backing the
+          failure's cause. Omit the statement list and the CHECK text.
+      - id: asg-failed-log
+        kind: fact
+        fact: f:7ele62
+        use: |
+          Only the `admin.action.failed` record and its `conditionId`, which names
+          `auth.store-roles-unmigrated` for an editor add on an unmigrated auth database, backing
+          the failure's symptom. Omit the failure strip and the record's other fields.
       - id: s-sign-in-test
         kind: step
         text: |
@@ -847,25 +907,27 @@ sections:
       - id: asg-handoff
         kind: handoff
         text: |
-          One test editor, moved between roles, proves the map.
+          The next-request sentence carries the handoff in its own close: the checks that follow
+          move one test editor between roles.
   - id: verify-each-role-s-reach
     heading: Verify each role's reach
     why: |
       The task guide closes its steps on proof: each check reads the deployed map through the role
       the test editor holds.
     opens: |
-      On the deployed site, the warning logged when the admin routes are built names the targets the map leaves open, and
-      each role meets the admin's error page wherever the map excludes it.
+      On the deployed site, the `config.access_unmapped` warning names the targets the map leaves
+      open. A role the map excludes gets the admin's error page.
     items:
       - id: ver-own-route
         kind: sentence
         mode: claim
         text: |
           The checks name the example site's signups screen at `/admin/signups`. On your site,
-          open the route you gated in its place, and run its actions in place of the signups
-          add and delete; a route with no owner-only action skips the delete check.
+          the route you gated stands in for `/admin/signups`, and its actions stand in for the
+          signups add and delete. A route with no owner-only action skips the delete check.
         facts:
           - f:onqm6k
+          - f:3z1uxv
       - id: ver-lead
         kind: sentence
         mode: verbatim
@@ -910,10 +972,17 @@ sections:
       - id: v-set-editor
         kind: step
         text: |
-          In `/admin/editors`, choose `editor` in the test editor's role select, then select
-          **Change**.
+          In `/admin/editors`, in the test editor's row, choose **editor** in the role select.
         requires:
           - test-editor-signed-in
+        produces:
+          - role-editor-chosen
+      - id: v-change-editor
+        kind: step
+        text: |
+          In the same row, select **Change**.
+        requires:
+          - role-editor-chosen
         produces:
           - role-editor
       - id: v-sidebar-editor
@@ -942,9 +1011,9 @@ sections:
       - id: v-signups-refused
         kind: step
         text: |
-          In the same browser, open `/admin/signups`. The admin's error page reads "You don't have
-          access to this page.", and the site logs `auth.access.refused` with the role and the
-          target.
+          In the same browser, open `/admin/signups`. The admin's error page shows the heading
+          `You don't have access to this page.`, and the site logs `auth.access.refused` with the
+          role and the target.
         requires:
           - role-editor
         produces:
@@ -973,10 +1042,18 @@ sections:
       - id: v-set-webmaster
         kind: step
         text: |
-          In `/admin/editors`, choose `webmaster (editor)` in the test editor's role select, then
-          select **Change**.
+          In `/admin/editors`, in the test editor's row, choose **webmaster (editor)** in the role
+          select.
         requires:
           - role-editor
+        produces:
+          - role-webmaster-chosen
+      - id: v-change-webmaster
+        kind: step
+        text: |
+          In the same row, select **Change**.
+        requires:
+          - role-webmaster-chosen
         produces:
           - role-webmaster
       - id: v-reload
@@ -1004,27 +1081,36 @@ sections:
         kind: failure
         from: v-add-signup
         symptom: |
-          The add is refused for the webmaster session, and the site logs `auth.access.refused`.
+          The add is refused for the `webmaster` session, and the site logs `auth.access.refused`.
         cause: |
-          The route carries a rest or dynamic parameter under a deeper key, or serves more than one
-          section, and its section actions declare no `target`.
+          The add action carries `ownerOnly: true`, or it checks a different target than the load,
+          because one of them declares a `target` the other does not.
         handledBy: s-nest-action-target
         facts:
           - f:3s23un
+          - f:8anql1
           - f:xbjxit
+          - f:smbsa6
       - id: ver-add
         kind: fact
         fact: f:7ji7x0
         use: |
           Only the add form, its status line, and the new row, backing the add check.
+      - id: v-remove-delete
+        kind: step
+        text: |
+          On the signups screen, select **Delete** on the signup you added.
+        requires:
+          - signup-added
+        produces:
+          - delete-confirm-open
       - id: v-remove-refused
         kind: step
         text: |
-          On the signups screen, select **Delete** on the signup you added, then **Delete** in the
-          confirmation dialog. The dialog stays open, the status line reads
-          `You do not have access to this action.`, and the site logs `auth.access.refused`.
+          In the confirmation dialog, select **Delete**. The dialog stays open, the status line
+          reads `You do not have access to this action.`, and the site logs `auth.access.refused`.
         requires:
-          - signup-added
+          - delete-confirm-open
         produces:
           - owner-gate-seen
         canFail: true
@@ -1049,7 +1135,7 @@ sections:
         mode: claim
         text: |
           The remove is refused because `remove` carries `ownerOnly: true`, while the map admits
-          webmaster to the screen.
+          `webmaster` to the screen.
         facts:
           - f:smbsa6
           - f:onqm6k
@@ -1063,10 +1149,8 @@ sections:
       The page's failure path: it traces a result that differs from [[verify-each-role-s-reach]] to
       its cause, so it follows the checks.
     opens: |
-      An unexpected refusal traces to a missing key or `target`, a key that does not list the
-      role, a role the vocabulary does not hold, or an auth database without the roles migration; an open screen the map should close
-      traces to a deploy that predates the map or a route that skips `requireAccess`; and a remove
-      that succeeds traces to a missing `ownerOnly`.
+      Each check pairs a symptom from the verification with the log record or the code that
+      explains it.
     items:
       - id: res-lead
         kind: sentence
@@ -1100,12 +1184,11 @@ sections:
         kind: failure
         from: v-reload
         symptom: |
-          The webmaster session is refused on your route or on the media library, and the
-          `auth.access.refused` record names the webmaster role; a route's record reads
-          `reason` `role`.
+          The `webmaster` session is refused on your route or on the media library, and the
+          `auth.access.refused` record names `webmaster`; a route's record reads `reason` `role`.
         cause: |
-          The map holds a key for the target, but the key does not list webmaster, as the example
-          site's starting owner-only `/admin/signups` key does.
+          The map holds a key for the target, but the key does not list `webmaster`, as the
+          example site's starting owner-only `/admin/signups` key does.
         handledBy: s-map
         facts:
           - f:8anql1
@@ -1125,7 +1208,7 @@ sections:
         kind: failure
         from: v-reload
         symptom: |
-          A webmaster editor sees only the welcome view at `/admin` and is refused on every other
+          A `webmaster` editor sees only the welcome view at `/admin` and is refused on every other
           admin screen, and the logs show `auth.role.unknown` for that role.
         cause: |
           The role is absent from the adapter's vocabulary, so it resolves to `none`.
@@ -1145,7 +1228,7 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          If adding a webmaster editor fails on `/admin/editors`, apply `0001_roles.sql` to the
+          If adding a `webmaster` editor fails on `/admin/editors`, apply `0001_roles.sql` to the
           remote auth database, as [[deploy-the-changes]] does.
         facts:
           - f:xffr6i
@@ -1157,35 +1240,34 @@ sections:
         kind: failure
         from: v-signups-refused
         symptom: |
-          The signups screen opens for an `editor` session.
+          The signups screen opens for an `editor` session, and the route's `load` calls
+          `requireEditor`.
         cause: |
-          The deployed Worker predates the map, or the route's `load` calls `requireEditor`
-          rather than `requireAccess`.
-        handledBy: res-open-handoff
+          `requireEditor` never consults the map; the reader replaces the call with
+          `requireAccess`, as [[enforce-the-map-on-your-routes]] covers.
+        handledBy: s-load-gate
       - id: res-still-open
         kind: fact
         fact: f:8anql1
         use: |
-          Only the `requireEditor` clause, backing the signups check's second cause.
-      - id: res-open-handoff
-        kind: handoff
-        text: |
-          For a Worker that predates the map, redeploy as [[deploy-the-changes]] does. For a
-          `requireEditor` call, replace it with `requireAccess` as [[enforce-the-map-on-your-routes]]
-          does, then redeploy.
-      - id: x-media-open
+          Only the `requireEditor` clause, backing the `requireEditor` check.
+      - id: x-stale-worker
         kind: failure
         from: v-media-refused
         symptom: |
-          The media library opens for an `editor` session.
+          The signups screen or the media library still opens for an `editor` session.
         cause: |
-          The deployed Worker predates the map.
+          The deployed Worker predates your edits; the reader redeploys as [[deploy-the-changes]]
+          does.
         handledBy: res-redeploy-link
+        facts:
+          - f:joo5f2
+          - f:8anql1
       - id: x-remove-succeeds
         kind: failure
         from: v-remove-refused
         symptom: |
-          The delete succeeds for the webmaster session, and the row leaves the table.
+          The delete succeeds for the `webmaster` session.
         cause: |
           The route's remove action carries no `ownerOnly: true` in its wrapper's options, or
           another action carries it instead.
@@ -1357,19 +1439,22 @@ constraints:
     module, and the hooks file needs no edit. An older site's migration is Upgrade cairn's, linked
     from the introduction.
   - |
-    The running example's role name is written in prose as the plain word webmaster, outside code
-    font and quotes, since no fact carries the invented name. The quoted select label
-    `webmaster (editor)` is vouched by `f:2dgbff`. Inside the code block the name is written as
-    code requires.
+    The running example's role name, `webmaster`, is a name the page introduces: the brief lists it
+    in `local`, and no fact carries it, so no sentence cites a fact for the name alone. In prose it
+    is in code font wherever it names the role key, as in the code block. The select label
+    `webmaster (editor)` is vouched by `f:2dgbff`: in prose it is in code font as a value, and in a
+    step it is bold, **webmaster (editor)**, as the option the reader picks.
   - |
     Prose paths are vouched paths only: `/admin/signups` (`f:3z1uxv`, `f:onqm6k`), `/admin/media`
     (`f:joo5f2`), `/admin/editors` (`f:udg87q`), and `/admin/money` with its two neighbors
     (`f:uhoyun`). The signups screen is the example site's and the scaffold does not ship it; never
     call it the scaffold's.
   - |
-    Do not claim that the setup command applied `0001_roles.sql` to the remote auth database, or
-    that applying an already-applied migration is a no-op; no fact states either. The apply step
-    stands for every site.
+    Do not claim that the setup command always applies `0001_roles.sql` to the remote auth
+    database: it applies it only when it runs the site's first deploy, in its "Deploy to
+    workers.dev" step (`f:m4y3m4`), which a declined deploy or `--yes` without `--deploy` skips. Do
+    not claim that applying an already-applied migration is a no-op; no fact states it. The apply
+    step stands for every site.
   - |
     Imports: `defineAdapter`, `defineRoles`, and `defineAccess` from `@glw907/cairn-cms`;
     `createAuthGuard`, `requireAccess`, `requireEditor`, and `createSectionAction` from
@@ -1397,5 +1482,7 @@ constraints:
     why without inventing an organization or its people.
   - |
     Each step names its location before its action and holds one action; a conditional step
-    states its condition first and says in prose who skips it. The checks in [[verify-each-role-s-reach]]
+    states its condition first, and the condition alone tells who skips it, so a step adds a skip
+    sentence only where the skip reaches past the step itself (a push that skips the build and
+    deploy steps) or where the running example skips it. The checks in [[verify-each-role-s-reach]]
     and [[resolve-a-refusal]] are numbered lists.

@@ -13,18 +13,18 @@
       ]
     },
     {
-      "text": "Each role resolves to one of three capabilities, `owner`, `editor`, or `none`, and capability is the floor cairn enforces.",
+      "text": "Each role resolves to one of three capabilities, `owner`, `editor`, or `none`, and cairn always enforces capability.",
       "id": [
         "f:zjglk8",
         "f:p1xmp5"
       ]
     },
     {
-      "text": "The access map narrows that floor.",
+      "text": "The access map restricts it further.",
       "id": "f:p1xmp5"
     },
     {
-      "text": "Its keys are engine screens and `/admin` routes, and each key lists the editor-capability roles that reach that target.",
+      "text": "Its keys are engine screens and `/admin` routes, and each key lists the roles that reach that target.",
       "id": [
         "f:0qb73i",
         "f:p1xmp5"
@@ -35,11 +35,7 @@
       "id": "f:p1xmp5"
     },
     {
-      "text": "The one widening is a `none` role, which only a route rule naming that role admits.",
-      "id": "f:p1xmp5"
-    },
-    {
-      "text": "The map is declared once, as the adapter's `access` member.",
+      "text": "You declare the map once, as the adapter's `access` member.",
       "id": "f:cvzb8z"
     },
     {
@@ -69,11 +65,18 @@
       "id": "no-claim"
     },
     {
-      "text": "In it, a webmaster role is the only role besides owner that reaches the media library and the example site's signups screen at `/admin/signups`.",
-      "id": "f:3z1uxv"
+      "text": "In it, a `webmaster` role is the only role besides owner that reaches the media library and the example site's signups screen at `/admin/signups`.",
+      "id": [
+        "f:3z1uxv",
+        "f:2dgbff"
+      ]
     },
     {
-      "text": "Some readers arrive to gate the route of a custom admin screen, and others to close an engine screen, such as the media library, to most editors; both follow the page in order.",
+      "text": "A reader may arrive to gate a custom admin screen's route or to close an engine screen, such as the media library, to most editors.",
+      "id": "no-claim"
+    },
+    {
+      "text": "The steps serve both in order.",
       "id": "no-claim"
     },
     {
@@ -116,10 +119,6 @@
       "id": "no-claim"
     },
     {
-      "text": "The steps need a site with an admin route that does not yet check the access map, and the checks need a deployed site you can redeploy and a second person to sign in as.",
-      "id": "no-claim"
-    },
-    {
       "text": "Before you start, have the following in place:",
       "id": "no-claim"
     },
@@ -131,11 +130,14 @@
       ]
     },
     {
-      "text": "The adapter module is `src/theme/cairn.config.ts` on a scaffolded site and `src/lib/cairn.config.ts` on the hand-built one.",
-      "id": "f:q07rd5"
+      "text": "On a scaffolded site the adapter module is `src/theme/cairn.config.ts`, and on a hand-built site it is the module that calls `defineAdapter`.",
+      "id": [
+        "f:q07rd5",
+        "f:2zytgf"
+      ]
     },
     {
-      "text": "A fresh scaffold's adapter declares no `access` member, and the scaffold holds no `src/access.ts`.",
+      "text": "A fresh scaffold's adapter declares no `access` member.",
       "id": "f:3z1uxv"
     },
     {
@@ -162,14 +164,29 @@
       "id": "no-claim"
     },
     {
+      "text": "If your site copies `0001_roles.sql` in and added columns to the auth database's `editor` table, an edited copy of the file.",
+      "id": "f:rn62i1"
+    },
+    {
+      "text": "The file rebuilds `editor` with only the engine's four columns.",
+      "id": [
+        "f:rn62i1",
+        "f:xffr6i"
+      ]
+    },
+    {
+      "text": "In your copy, add each of your columns to `editor_new` and to both column lists of its `INSERT` before you apply it.",
+      "id": "f:rn62i1"
+    },
+    {
       "text": "The map admits roles by name, so the vocabulary comes first.",
       "id": "no-claim"
     },
     {
-      "text": "The access map admits roles by name, so the site first declares its role vocabulary, mapping each role name to the capability it resolves to.",
+      "text": "The role vocabulary maps each role name to the capability it resolves to.",
       "id": [
-        "f:0qb73i",
-        "f:zjglk8"
+        "f:zjglk8",
+        "f:2zytgf"
       ]
     },
     {
@@ -208,8 +225,11 @@
       ]
     },
     {
-      "text": "That is why the example keeps `editor` beside webmaster.",
-      "id": "f:zjglk8"
+      "text": "That is why the example keeps `editor` beside `webmaster`.",
+      "id": [
+        "f:zjglk8",
+        "f:2dgbff"
+      ]
     },
     {
       "text": "An adapter that declares no `roles` resolves every session against the default `owner` and `editor` pair.",
@@ -220,15 +240,16 @@
       "id": "no-claim"
     },
     {
-      "text": "In the adapter module, export a `roles` vocabulary built with `defineRoles` that maps `owner` to `'owner'` and both `editor` and webmaster to `'editor'`.",
+      "text": "In the adapter module, export a `roles` vocabulary built with `defineRoles` that maps `owner` to `'owner'` and both `editor` and `webmaster` to `'editor'`.",
       "id": [
         "f:dbaklx",
         "f:zjglk8",
-        "f:2zytgf"
+        "f:2zytgf",
+        "f:2dgbff"
       ]
     },
     {
-      "text": "If the server start then throws from `defineRoles`, the vocabulary has no `owner` key mapped to owner capability.",
+      "text": "If the server start then throws from `defineRoles`, the vocabulary fails a check its entry lists, such as a missing `owner` key.",
       "id": "f:dbaklx"
     },
     {
@@ -252,23 +273,26 @@
       "id": "f:0qb73i"
     },
     {
-      "text": "An owner reaches every mapped target whatever its list says.",
-      "id": "f:0qb73i"
-    },
-    {
       "text": "The map goes on the adapter as its `access` member, and nowhere else.",
       "id": "f:iwf4nu"
     },
     {
-      "text": "`composeRuntime` carries it onto the runtime, and the guard attaches it to every admin request, so the guard takes no second copy.",
+      "text": "`composeRuntime` carries it onto the runtime.",
       "id": "f:iwf4nu"
     },
     {
-      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) takes the composed runtime as its required `runtime` and reads `roles` and `access` from it.",
+      "text": "Both handles take that runtime.",
+      "id": [
+        "f:4xrx5f",
+        "f:7cv105"
+      ]
+    },
+    {
+      "text": "[`createAuthGuard`](../reference/sveltekit.md#createauthguard) reads `roles` and `access` from it.",
       "id": "f:4xrx5f"
     },
     {
-      "text": "`devBackendHandle` takes the same runtime, and one declaration serves both handles.",
+      "text": "`devBackendHandle` reads only its `access`, which it attaches to each `/admin` request it mints an owner editor for.",
       "id": "f:7cv105"
     },
     {
@@ -295,10 +319,6 @@
       "id": "f:3z1uxv"
     },
     {
-      "text": "A site with no `access` member skips it and takes the next step.",
-      "id": "f:3z1uxv"
-    },
-    {
       "text": "If the adapter has no `access` member, in the `defineAdapter` call, add `access` set to a `defineAccess` call that passes `roles` first.",
       "id": [
         "f:2zytgf",
@@ -306,16 +326,18 @@
       ]
     },
     {
-      "text": "A site that already declares `access` skips this step.",
-      "id": "f:2zytgf"
+      "text": "In the `access` map, add a `media` key that admits `webmaster`, and a key for your route's path that lists the roles that reach it.",
+      "id": [
+        "f:0qb73i",
+        "f:2dgbff"
+      ]
     },
     {
-      "text": "In the `access` map, add a `media` key that admits webmaster, and a key for your route's path that lists the roles that reach it.",
-      "id": "f:0qb73i"
-    },
-    {
-      "text": "In the example, the `/admin/signups` key admits webmaster in place of its owner-only rule.",
-      "id": "f:3z1uxv"
+      "text": "In the example, the `/admin/signups` key admits `webmaster` in place of its owner-only rule.",
+      "id": [
+        "f:3z1uxv",
+        "f:2dgbff"
+      ]
     },
     {
       "text": "Keep every other key.",
@@ -350,28 +372,31 @@
       "id": "no-claim"
     },
     {
-      "text": "The map is checked at two points.",
+      "text": "Three calls check the map.",
       "id": "f:3z48zf"
     },
     {
-      "text": "`defineAccess` checks it at construction: an empty map, an empty role list, a role name outside the vocabulary, or a malformed key throws a `defineAccess:` error.",
+      "text": "`defineAccess` checks it at construction and throws a `defineAccess:` error on an empty map, an empty role list, a role name outside the vocabulary, or a malformed key.",
       "id": "f:3z48zf"
     },
     {
-      "text": "When the admin routes are built at server start, `createContentRoutesContext` runs the key checks.",
+      "text": "`composeRuntime` checks the map's role names against the adapter's vocabulary and throws an `access:` error on a role the vocabulary does not declare.",
       "id": "f:3z48zf"
     },
     {
-      "text": "It throws an `access:` error on a screen id that is neither a declared concept nor a fixed screen, and on a route key that collides with a built-in admin view.",
+      "text": "When the admin routes are built at server start, `createContentRoutesContext` throws an `access:` error on a screen id that is neither a declared concept nor a fixed screen, and on a route key that collides with a built-in admin view.",
       "id": "f:3z48zf"
     },
     {
-      "text": "`composeRuntime` checks only the map's role names against the vocabulary.",
-      "id": "f:3z48zf"
+      "text": "A map given `undefined` for its vocabulary validates against the default pair, so a map that names `webmaster` needs `roles` as its first argument.",
+      "id": [
+        "f:grxpu5",
+        "f:2dgbff"
+      ]
     },
     {
-      "text": "A map given `undefined` for its vocabulary validates against the default pair, so a map that names webmaster needs `roles` as its first argument.",
-      "id": "f:grxpu5"
+      "text": "Each error message but the empty-map one names the key at fault, and the role where a role is at fault.",
+      "id": "f:3z48zf"
     },
     {
       "text": "If the server start throws a `defineAccess:` or `access:` error, correct the map against these checks and restart.",
@@ -386,15 +411,18 @@
       "id": "no-claim"
     },
     {
-      "text": "The engine now enforces the map on its screens, and your routes enforce it through two calls.",
-      "id": "f:cvzb8z"
+      "text": "Your routes enforce the map through two calls.",
+      "id": [
+        "f:8anql1",
+        "f:3s23un"
+      ]
     },
     {
       "text": "Your routes check the map themselves, with `requireAccess` in each `load` and a `createSectionAction` wrapper around each form action.",
       "id": "f:2sd4if"
     },
     {
-      "text": "The guard gates the whole `/admin` subtree before any `load` runs, but it decides no per-route authorization.",
+      "text": "The guard admits a signed-in session to the `/admin` subtree before any `load` runs, and the route itself decides which roles reach it.",
       "id": "f:2sd4if"
     },
     {
@@ -472,19 +500,11 @@
       "id": "f:smbsa6"
     },
     {
-      "text": "A route with no such action skips this step.",
-      "id": "no-claim"
-    },
-    {
       "text": "The two enforcement points treat a target the map never names in opposite ways.",
       "id": "f:zo034s"
     },
     {
       "text": "An unnamed engine screen stays open to every editor-capability role, while an unnamed route that calls `requireAccess` refuses every session, owner included.",
-      "id": "f:zo034s"
-    },
-    {
-      "text": "A route that calls `requireAccess` with no rule for its path is treated as a misconfiguration, and the refusal reaches owners too.",
       "id": "f:zo034s"
     },
     {
@@ -519,7 +539,7 @@
       "id": "no-claim"
     },
     {
-      "text": "To admit only named roles to every engine screen, map every concept and fixed screen until `config.access_unmapped` no longer fires.",
+      "text": "A map is exhaustive when it keys every concept and fixed screen, and `config.access_unmapped` then stops firing.",
       "id": "f:8ciz2s"
     },
     {
@@ -535,7 +555,7 @@
       "id": "no-claim"
     },
     {
-      "text": "With every target keyed, no engine write action stays outside the map: the tidy and personal-dictionary actions gate against the entry's concept like any entry action, and the site-wide publish filters each entry by its concept.",
+      "text": "With every target keyed, the tidy and personal-dictionary actions gate against the entry's concept like any entry action, and the site-wide publish filters each entry by its concept.",
       "id": "f:cvv6to"
     },
     {
@@ -559,11 +579,19 @@
       "id": "f:8anql1"
     },
     {
-      "text": "Under a deeper map key, a route with a rest or dynamic parameter therefore refuses every session until it declares `target`.",
-      "id": "f:8anql1"
+      "text": "Suppose the map holds `/admin/money` and the deeper `/admin/money/refunds`.",
+      "id": "f:uhoyun"
     },
     {
-      "text": "A section action's `target` is required on a route that carries a rest parameter or serves more than one section, and a declared `target` is used verbatim.",
+      "text": "A route under `/admin/money` whose next segment is a dynamic or rest parameter, such as `[id]`, then resolves to no rule and refuses every session until it declares `target`.",
+      "id": [
+        "f:8anql1",
+        "f:lmtfkt",
+        "f:uhoyun"
+      ]
+    },
+    {
+      "text": "Separately, a section action's `target` is required on any route that carries a rest parameter or serves more than one section, and a declared `target` is used verbatim.",
       "id": "f:3s23un"
     },
     {
@@ -571,26 +599,25 @@
       "id": "no-claim"
     },
     {
-      "text": "If the route has such a parameter or serves several sections, in its `+page.server.ts`, pass the governing key to `requireAccess` as its second argument.",
+      "text": "If the route has one of these parameters or serves several sections, in its `+page.server.ts`, pass the governing key to `requireAccess` as its second argument.",
       "id": [
         "f:8anql1",
         "f:onqm6k"
       ]
     },
     {
-      "text": "Any other route skips this step and the next.",
-      "id": "no-claim"
-    },
-    {
-      "text": "In the same file, set `target` to the same key in each section action's options.",
-      "id": "f:3s23un"
+      "text": "If you passed a key to `requireAccess`, in the same file, set `target` to that key in each section action's options.",
+      "id": [
+        "f:3s23un",
+        "f:8anql1"
+      ]
     },
     {
       "text": "The sidebar applies the same matching to its entries.",
       "id": "f:uhoyun"
     },
     {
-      "text": "The sidebar reads the adapter's map through the same check the routes use, so a keyed entry shows only to the roles its key admits.",
+      "text": "The sidebar reads the adapter's map through the same check the routes use, so a keyed entry shows to the roles its key admits and to an owner.",
       "id": [
         "f:altcjp",
         "f:cvzb8z"
@@ -601,7 +628,7 @@
       "id": "f:altcjp"
     },
     {
-      "text": "A site entry in the adapter's `navLayout` is gated only when a key matches its href, and it then shows to the roles that key admits and to an owner.",
+      "text": "A site entry in the adapter's `navLayout` is gated only when a key matches its href.",
       "id": "f:altcjp"
     },
     {
@@ -620,11 +647,11 @@
       ]
     },
     {
-      "text": "The edits are complete in the site's files, and the deployed site does not have them yet.",
+      "text": "The deployed site still runs without these edits.",
       "id": "no-claim"
     },
     {
-      "text": "The roster and the per-role checks run on the deployed site, so the roles migration and the new adapter must reach it first.",
+      "text": "The roster and the per-role checks run on the deployed site.",
       "id": "no-claim"
     },
     {
@@ -632,22 +659,29 @@
       "id": "f:rn62i1"
     },
     {
-      "text": "A scaffolded site's `migrations/` already holds the file, and a site scaffolded before it shipped copies it from the package.",
+      "text": "You apply it by hand with Wrangler before you redeploy.",
+      "id": [
+        "f:jtl15v",
+        "f:xxtooz"
+      ]
+    },
+    {
+      "text": "A scaffolded site's `migrations/` already holds the file, and the setup command applied it.",
       "id": [
         "f:gepykz",
+        "f:m4y3m4"
+      ]
+    },
+    {
+      "text": "A hand-built site never receives the file and copies it from the package, as does a site scaffolded before the file shipped.",
+      "id": [
+        "f:hft8s8",
         "f:rn62i1"
       ]
     },
     {
-      "text": "Applying it rebuilds the `editor` table with only the engine's four columns, so a site that added a column to `editor` carries it across first.",
-      "id": [
-        "f:rn62i1",
-        "f:xffr6i"
-      ]
-    },
-    {
-      "text": "You apply the migration by hand with Wrangler before you redeploy.",
-      "id": "f:jtl15v"
+      "text": "Applying the file rebuilds the `editor` table, as [Before you begin](#before-you-begin) notes.",
+      "id": "f:rn62i1"
     },
     {
       "text": "To apply the roles migration, follow these steps:",
@@ -661,10 +695,6 @@
       ]
     },
     {
-      "text": "A site that already holds the file skips this step.",
-      "id": "no-claim"
-    },
-    {
       "text": "In the project directory, apply pending migrations to the auth database with `wrangler d1 migrations apply` and the `--remote` flag.",
       "id": [
         "f:xxtooz",
@@ -676,8 +706,16 @@
       "id": "f:qca0t0"
     },
     {
-      "text": "Both paths run the same two commands, a build and a deploy, and neither applies a migration, which is why the apply step comes first.",
+      "text": "Both paths run the same two commands, a build and a deploy.",
       "id": "f:jtl15v"
+    },
+    {
+      "text": "Neither path applies a migration.",
+      "id": "f:jtl15v"
+    },
+    {
+      "text": "That is why the apply step comes first.",
+      "id": "no-claim"
     },
     {
       "text": "The setup command offers to connect Workers Builds in its chapter 3, during the same setup run.",
@@ -688,7 +726,7 @@
       "id": "f:qca0t0"
     },
     {
-      "text": "On a site at or past its first deploy, `npx create-cairn-site --dir <site-directory> --connect` re-enters that chapter.",
+      "text": "On a site from its live step onward, `npx create-cairn-site --dir <site-directory> --connect` re-enters that chapter.",
       "id": "f:qca0t0"
     },
     {
@@ -724,7 +762,7 @@
       "id": "f:pwb0wr"
     },
     {
-      "text": "An owner can add and remove editors and change their roles, and an editor can do none of these.",
+      "text": "Only an owner can add or remove editors and change their roles.",
       "id": "f:pwb0wr"
     },
     {
@@ -732,7 +770,7 @@
       "id": "f:udg87q"
     },
     {
-      "text": "A role whose name differs from its capability is listed as its name followed by the capability in parentheses, so webmaster reads `webmaster (editor)`.",
+      "text": "A role whose name differs from its capability is listed as its name followed by the capability in parentheses, so `webmaster` reads `webmaster (editor)`.",
       "id": "f:2dgbff"
     },
     {
@@ -740,15 +778,18 @@
       "id": "no-claim"
     },
     {
-      "text": "In `/admin/editors` on the deployed site, as the owner, add the test editor through the **Add editor** form, choosing `webmaster (editor)` as its **Role**.",
+      "text": "In `/admin/editors` on the deployed site, as the owner, add the test editor through the **Add editor** form, choosing **webmaster (editor)** as its **Role**.",
       "id": [
         "f:udg87q",
         "f:2dgbff"
       ]
     },
     {
-      "text": "If the add fails and the site reports the `auth.store-roles-unmigrated` warning, the auth database still lacks `0001_roles.sql`.",
-      "id": "f:xffr6i"
+      "text": "If the add fails and the site logs `admin.action.failed` with the `conditionId` `auth.store-roles-unmigrated`, the auth database still lacks `0001_roles.sql`.",
+      "id": [
+        "f:7ele62",
+        "f:xffr6i"
+      ]
     },
     {
       "text": "Apply the migration as [Deploy the changes](#deploy-the-changes) does, then add the editor again.",
@@ -763,27 +804,24 @@
       "id": "f:dfxxwb"
     },
     {
-      "text": "A role change applies on the editor's next request, with no new sign-in.",
-      "id": "f:uotol3"
+      "text": "A role change applies on the editor's next request, with no new sign-in, so the checks that follow move one test editor between roles.",
+      "id": "f:dfxxwb"
     },
     {
-      "text": "One test editor, moved between roles, proves the map.",
-      "id": "no-claim"
+      "text": "On the deployed site, the `config.access_unmapped` warning names the targets the map leaves open.",
+      "id": "f:8ciz2s"
     },
     {
-      "text": "On the deployed site, the warning logged when the admin routes are built names the targets the map leaves open, and each role meets the admin's error page wherever the map excludes it.",
-      "id": [
-        "f:8ciz2s",
-        "f:ty4ehh"
-      ]
+      "text": "A role the map excludes gets the admin's error page.",
+      "id": "f:ty4ehh"
     },
     {
       "text": "The checks name the example site's signups screen at `/admin/signups`.",
       "id": "f:onqm6k"
     },
     {
-      "text": "On your site, open the route you gated in its place, and run its actions in place of the signups add and delete.",
-      "id": "no-claim"
+      "text": "On your site, the route you gated stands in for `/admin/signups`, and its actions stand in for the signups add and delete.",
+      "id": "f:3z1uxv"
     },
     {
       "text": "A route with no owner-only action skips the delete check.",
@@ -810,7 +848,11 @@
       "id": "f:mou1li"
     },
     {
-      "text": "In `/admin/editors`, choose `editor` in the test editor's role select, then select **Change**.",
+      "text": "In `/admin/editors`, in the test editor's row, choose **editor** in the role select.",
+      "id": "f:dfxxwb"
+    },
+    {
+      "text": "In the same row, select **Change**.",
       "id": "f:dfxxwb"
     },
     {
@@ -840,7 +882,7 @@
       "id": "f:3z1uxv"
     },
     {
-      "text": "The admin's error page shows the heading \"You don't have access to this page.\"",
+      "text": "The admin's error page shows the heading `You don't have access to this page.`",
       "id": "f:ty4ehh"
     },
     {
@@ -856,11 +898,15 @@
       "id": "f:joo5f2"
     },
     {
-      "text": "In `/admin/editors`, choose `webmaster (editor)` in the test editor's role select, then select **Change**.",
+      "text": "In `/admin/editors`, in the test editor's row, choose **webmaster (editor)** in the role select.",
       "id": [
         "f:dfxxwb",
         "f:2dgbff"
       ]
+    },
+    {
+      "text": "In the same row, select **Change**.",
+      "id": "f:dfxxwb"
     },
     {
       "text": "In the test editor's browser, reload the admin.",
@@ -886,18 +932,23 @@
       "id": "f:7ji7x0"
     },
     {
-      "text": "If the site refuses the add and logs `auth.access.refused`, the route has a rest or dynamic parameter under a deeper key, or serves several sections.",
+      "text": "If the site refuses the add and logs `auth.access.refused`, the action checks a different target than the load: the load passes a target its section actions do not declare.",
       "id": [
         "f:3s23un",
+        "f:8anql1",
         "f:xbjxit"
       ]
     },
     {
-      "text": "Its section actions then need the `target` that [Key nested and parameterized routes](#key-nested-and-parameterized-routes) declares.",
+      "text": "Set the same `target` in each section action, as [Key nested and parameterized routes](#key-nested-and-parameterized-routes) does.",
       "id": "f:3s23un"
     },
     {
-      "text": "On the signups screen, select **Delete** on the signup you added, then **Delete** in the confirmation dialog.",
+      "text": "On the signups screen, select **Delete** on the signup you added.",
+      "id": "f:b0kf86"
+    },
+    {
+      "text": "In the confirmation dialog, select **Delete**.",
       "id": "f:b0kf86"
     },
     {
@@ -908,10 +959,11 @@
       ]
     },
     {
-      "text": "The remove is refused because `remove` carries `ownerOnly: true`, while the map admits webmaster to the screen.",
+      "text": "The remove is refused because `remove` carries `ownerOnly: true`, while the map admits `webmaster` to the screen.",
       "id": [
         "f:smbsa6",
-        "f:onqm6k"
+        "f:onqm6k",
+        "f:2dgbff"
       ]
     },
     {
@@ -926,20 +978,8 @@
       "id": "no-claim"
     },
     {
-      "text": "An unexpected refusal traces to a missing key or `target`, a key that does not list the role, a role the vocabulary does not hold, or an auth database without the roles migration.",
-      "id": [
-        "f:8anql1",
-        "f:4bazhe",
-        "f:xffr6i"
-      ]
-    },
-    {
-      "text": "A screen that stays open when the map should close it traces to a deploy that predates the map, or to a route that skips `requireAccess`.",
-      "id": "f:8anql1"
-    },
-    {
-      "text": "A delete that succeeds traces to a missing `ownerOnly`.",
-      "id": "f:smbsa6"
+      "text": "Each check pairs a symptom from the verification with the log record or the code that explains it.",
+      "id": "no-claim"
     },
     {
       "text": "To find the cause, run these checks in order:",
@@ -965,11 +1005,12 @@
       "id": "f:8anql1"
     },
     {
-      "text": "If the webmaster session is refused on your route or the media library, and the record names webmaster, the target's key does not list it.",
+      "text": "If the `webmaster` session is refused on your route or the media library, and the record names `webmaster`, the target's key does not list it.",
       "id": [
         "f:8anql1",
         "f:joo5f2",
-        "f:0qb73i"
+        "f:0qb73i",
+        "f:2dgbff"
       ]
     },
     {
@@ -981,14 +1022,18 @@
       "id": "f:3z1uxv"
     },
     {
-      "text": "Add webmaster to the key.",
-      "id": "no-claim"
+      "text": "Add `webmaster` to the key.",
+      "id": [
+        "f:0qb73i",
+        "f:2dgbff"
+      ]
     },
     {
-      "text": "If a webmaster editor sees only the welcome view at `/admin` and is refused on every other admin screen, check the logs for `auth.role.unknown`.",
+      "text": "If a `webmaster` editor sees only the welcome view at `/admin` and is refused on every other admin screen, check the logs for `auth.role.unknown`.",
       "id": [
         "f:4bazhe",
-        "f:kqcyv1"
+        "f:kqcyv1",
+        "f:2dgbff"
       ]
     },
     {
@@ -1003,41 +1048,43 @@
       "id": "f:dbaklx"
     },
     {
-      "text": "If adding a webmaster editor fails on `/admin/editors`, apply `0001_roles.sql` to the remote auth database, as [Deploy the changes](#deploy-the-changes) does.",
+      "text": "If adding a `webmaster` editor fails on `/admin/editors`, apply `0001_roles.sql` to the remote auth database, as [Deploy the changes](#deploy-the-changes) does.",
       "id": [
         "f:xffr6i",
         "f:rn62i1",
-        "f:udg87q"
+        "f:udg87q",
+        "f:3z1uxv",
+        "f:2dgbff"
       ]
     },
     {
-      "text": "If the signups screen opens for an `editor` session, the deployed Worker predates the map, or the route's `load` calls `requireEditor` rather than `requireAccess`.",
+      "text": "If the signups screen opens for an `editor` session and the route's `load` calls `requireEditor`, replace that call with `requireAccess`.",
       "id": [
         "f:8anql1",
         "f:onqm6k"
       ]
     },
     {
-      "text": "For a Worker that predates the map, redeploy as [Deploy the changes](#deploy-the-changes) does.",
+      "text": "[Enforce the map on your routes](#enforce-the-map-on-your-routes) covers the call.",
       "id": "no-claim"
     },
     {
-      "text": "For a `requireEditor` call, replace it with `requireAccess` as [Enforce the map on your routes](#enforce-the-map-on-your-routes) does, then redeploy.",
-      "id": "f:8anql1"
-    },
-    {
-      "text": "If the media library opens for an `editor` session, the deployed Worker predates the map.",
-      "id": "f:joo5f2"
+      "text": "If the signups screen or the media library still opens for an `editor` session, the deployed Worker predates your edits.",
+      "id": [
+        "f:joo5f2",
+        "f:8anql1"
+      ]
     },
     {
       "text": "Redeploy as [Deploy the changes](#deploy-the-changes) does.",
       "id": "no-claim"
     },
     {
-      "text": "If the delete succeeds for the webmaster session, the remove action lacks `ownerOnly: true`, or another action carries it instead.",
+      "text": "If the delete succeeds for the `webmaster` session, the remove action lacks `ownerOnly: true`, or another action carries it instead.",
       "id": [
         "f:smbsa6",
-        "f:onqm6k"
+        "f:onqm6k",
+        "f:2dgbff"
       ]
     },
     {

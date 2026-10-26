@@ -1314,7 +1314,7 @@ sections:
           Only, for the types step and the sentence after it, that `npx wrangler types` writes
           `worker-configuration.d.ts`, what the generated `Env` names, and which `env` it types.
           Omit the recorded-command clause: the setup command's scaffold regenerates the file with
-          no `--env-file`, so its recorded command reads `.dev.vars`; only the Deploy-button tree's
+          no `--env-file`, so its recorded command reads `.dev.vars`; only the `templates/waymark/` copy's
           reads `.dev.vars.example`.
       - id: wm-types-why
         kind: sentence

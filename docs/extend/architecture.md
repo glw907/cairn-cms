@@ -11,17 +11,16 @@ Content lives as markdown in the site's GitHub repository. A publish is a commit
 GitHub App, and the site's existing deploy picks it up. Beyond the Worker, the site uses two
 Cloudflare stores: a D1 database holds the sign-in rows, and an R2 bucket holds media bytes.
 
-One adapter declaration drives the engine, a site extends the engine through seams without forking
-it, and each export carries a stability tier that states what it promises across versions. Together
-these properties decide which code a site writes and which contracts it relies on.
+Three properties of the engine decide which code a site writes and which contracts it relies on.
+One adapter declaration drives the engine. A site extends the engine through seams rather than by
+forking it. Each export carries a stability tier that states what it promises across versions.
 
-An evaluator reads the page end to end to learn what cairn is and what adopting it commits a site
-to. `create-cairn-site` creates a site's GitHub App, repository, and Cloudflare bindings and deploys
-the site in one run. A developer who takes over a site it set up comes here to map the site's files
-onto the engine's entry points, seams, and stores, and [Scaffolded site
-files](scaffolded-site-files.md) covers those files one by one. A developer partway through a task,
-such as adding a custom admin screen or replacing magic links, follows a link here to place one seam
-among the rest.
+An evaluator reads the page end to end. Some readers inherit a site that `create-cairn-site` set
+up, which created the site's GitHub App, repository, and Cloudflare bindings and deployed it in one
+run. Such a developer uses the page to map the site's files onto the engine's entry points, seams,
+and stores, and [Scaffolded site files](scaffolded-site-files.md) covers those files one by one. A
+developer partway through a task, such as adding a custom admin screen or replacing magic links,
+follows a link here to place one seam among the rest.
 
 The page assumes a working knowledge of SvelteKit routing, load functions, form actions, and server
 hooks, of Cloudflare Worker bindings, and of git branches and GitHub Apps at a user's level. It
@@ -49,13 +48,14 @@ The page leaves the following subjects to other pages:
 
 A cairn site declares one adapter, a single `CairnAdapter` object, and every route factory, admin
 screen, and delivery helper reads its behavior from it. The adapter declares every concept, content
-directory, and field. The engine keeps a few names for itself. Among them are the manifest paths
-under `src/content/.cairn/` and the `/admin` segments the engine's screens own, and no concept may
-take one of those segments as its id.
+directory, and field. The engine reserves a few names, such as the manifest paths under
+`src/content/.cairn/` and the `/admin` segments its screens own. No concept may take a reserved
+segment as its id.
 
-The root barrel's `composeRuntime` folds the adapter into one composed runtime. `createCairnAdmin`
-closes over that runtime, and the site's hooks module hands the same runtime to `createAuthGuard`
-or, under the dev backend, to `devBackendHandle` from a separate dev package. A role vocabulary or
+The root barrel's [`composeRuntime`](../reference/core.md#composeruntime) folds the adapter into
+one composed runtime. [`createCairnAdmin`](../reference/sveltekit.md#createcairnadmin) closes over
+that runtime, and the site's hooks module hands the same runtime to `createAuthGuard` or, under the
+dev backend, to `devBackendHandle` from the `@glw907/cairn-cms-dev` package. A role vocabulary or
 an access map declared once on the adapter therefore reaches every handle that reads it. The adapter
 and its runtime reach the engine through a few files in the site.
 
@@ -64,9 +64,9 @@ and its runtime reach the engine through a few files in the site.
 A site reaches the engine in four places. Between them they import the root barrel and the `/media`,
 `/sveltekit`, `/admin`, and `/delivery` subpaths, as the following list shows:
 
-- The adapter module declares the adapter with `defineAdapter` from the root barrel and builds its
-  media resolver from `/media`. `composeRuntime` folds it into the runtime that `createCairnAdmin`
-  from `/sveltekit` closes over.
+- The adapter module declares the adapter with [`defineAdapter`](../reference/core.md#defineadapter)
+  from the root barrel and builds its media resolver from `/media`. `composeRuntime` folds it into
+  the runtime that `createCairnAdmin` from `/sveltekit` closes over.
 - The admin mount renders `CairnAdmin` and `CairnAdminShell` from `/admin` over that factory's
   `load`, `shellLoad`, and `actions`.
 - The public routes call `createPublicRoutes` and the feed, sitemap, and robots responders from
@@ -83,10 +83,10 @@ Behind those calls, the `/sveltekit` layer reads and writes the content reposito
 store. The admin's Svelte components on `/admin` receive what that layer loads as props.
 
 The render pipeline's directive stamping and dispatch, the commit tree shape sent to the GitHub API,
-and the guard's CSRF and session resolution are engine-internal. Each is covered by a
-stability-tiered subpath (`/render`, `/sveltekit`, or `/auth-crypto`), and none is a seam a site
-reaches into. Those files import part of the export map, and placement rules fix what every subpath
-in the map may hold.
+and the guard's CSRF and session resolution are engine-internal. Each runs behind a
+stability-tiered subpath, `/render`, `/sveltekit`, or `/auth-crypto`, and the mechanism itself is
+not a seam a site reaches into. Those files import part of the export map, and placement rules fix
+what every subpath in the map may hold.
 
 ## Export map
 
@@ -104,8 +104,9 @@ with its subpaths.
 
 In the UI group, `/islands` is the separate client runtime that mounts a site's live components. The
 map also holds subpaths outside the six groups: `/delivery/head`, `/delivery/data`,
-`/reproductions`, `/reproductions/manifest`, `/log`, and the style sheets `/admin-sources.css` and
-`/cairn-public.css`. For each subpath's exports, see [the reference index](../reference/README.md).
+`/reproductions`, `/reproductions/manifest`, `/log`, the style sheets `/admin-sources.css` and
+`/cairn-public.css`, and `./package.json`. For each subpath's exports, see [the reference
+index](../reference/README.md).
 
 The map follows three placement rules:
 
@@ -119,12 +120,12 @@ A build script can therefore import it with no request in scope, as the `cairnMa
 inside the app's Vite graph. [The `cairnManifest` reference](../reference/vite.md#cairnmanifest)
 documents the plugin.
 
-A `/sveltekit` export bundled with plain esbuild outside Vite, such as `createD1AuditSink` in a Cron
-Worker, needs no alias for `$app/env`. `loadPreview`, on the same subpath, imports that module
-dynamically at call time. For more information, see [the `loadPreview`
-reference](../reference/sveltekit.md#loadpreview).
+`loadPreview`, on the `/sveltekit` subpath, imports `$app/env` dynamically at call time rather than
+at module load. A `/sveltekit` export bundled with plain esbuild outside Vite, such as
+`createD1AuditSink` in a Cron Worker, therefore needs no alias for that module. For more
+information, see [the `loadPreview` reference](../reference/sveltekit.md#loadpreview).
 
-The map says where each export lives, and the seams say which exports take a site's code or data.
+The seams are the points in that surface where a site supplies code or data.
 
 ## Seams
 
@@ -138,26 +139,26 @@ it.
 
 | Seam | What a site supplies | Documented in |
 |---|---|---|
-| The `content` map | A `ConceptConfig` for each concept, whose `fields` member holds the fieldset | [Content model](content-model.md) |
+| The `content` map | A `ConceptConfig` for each concept, whose `fields` member holds the fieldset built with the root barrel's `defineFieldset` | [Content model](content-model.md) |
 | `render`, in the adapter's `rendering` group | A renderer built with `createRenderer` | [Write a markdown component](write-a-markdown-component.md) |
 | Roles and the access map | A role vocabulary that maps each role the site names to one capability: `none`, `editor`, or `owner`. An access map that narrows what an editor capability reaches and admits a `none` role only through a route rule that names it. | [Restrict admin access](restrict-admin-access.md) |
-| The `identity` option on `createAuthGuard` | A resolver that reads the site's gate's proof of the editor's email in place of the built-in sign-in path. The guard still looks that email up in the roster. | [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) |
+| The `identity` option on `createAuthGuard` | A resolver that reads the site's gate's proof of the editor's email in place of the built-in sign-in path. The guard still looks that email up in the editor roster, the `editor` table in D1. | [Replace magic links with Cloudflare Access](replace-magic-links-with-cloudflare-access.md) |
 | Custom admin routes | A route file under `src/routes/admin/`. SvelteKit resolves it ahead of the `[...path]` catch-all, and it renders inside the `CairnAdminShell` chrome through the shared admin layout with no registration. | [Add a custom admin screen](add-a-custom-admin-screen.md) |
 | `navLayout` | A site entry under `editor.navLayout` that lists a custom screen in the sidebar | [Arrange the admin sidebar](arrange-the-admin-sidebar.md) |
 | `media` | An `AssetConfig` for the media store | [Configure media](configure-media.md) |
 | `BackendProvider` | A content backend other than GitHub. `createGithubApp` is the one provider the engine ships. | [The core reference's types table](../reference/core.md#types) |
 
-Two of these seams, the role vocabulary and the access map, have several readers inside the engine.
+The seam for roles and the access map has several readers inside the engine.
 
 ### Roles and the access map
 
 The access map is the adapter's `access` member, and `composeRuntime` carries it onto the runtime
 beside the role vocabulary. A site has no second copy to pass to the guard.
 
-On every admin path where it signs an editor in, `createAuthGuard` reads the vocabulary from
-`runtime.roles` and sets `locals.cairnAccess` to the runtime's map, beside `locals.cairnEditor`.
-With no roles declared on the adapter, it falls back to the owner and editor pair.
-`devBackendHandle` attaches the same map.
+On every guarded admin path, `createAuthGuard` reads the vocabulary from `runtime.roles` and sets
+`locals.cairnAccess` to the runtime's map, beside `locals.cairnEditor`. With no roles declared on
+the adapter, it falls back to the default pair, `owner` and `editor`. `devBackendHandle` attaches
+the same map.
 
 The engine's screens, their write actions, and the sidebar read the map through the runtime, and
 `requireAccess` and `createSectionAction` read the same map from `locals.cairnAccess`. Because the
@@ -165,12 +166,11 @@ engine's screens and a site's routes read one declaration, the two cannot be gat
 maps.
 
 The roster screen's routes validate a posted role against `runtime.roles`. The admin mount forwards
-its runtime to them, and a site passes `runtime` itself only when it wires `createEditorRoutes` by
-hand. The guard's `runtime` option is required and has no default, and a call without it is a type
-error.
+its runtime to them. A site passes `runtime` itself only when it wires `createEditorRoutes` by hand.
+On the guard, `runtime` is required and has no default: a call without it is a type error.
 
-The access map decides which admin actions an editor can run. An edit an editor makes to an entry
-reaches the live site along one path.
+The access map decides which admin actions an editor can run. A content edit an editor saves reaches
+the live site along one path.
 
 ## Write path
 
@@ -181,8 +181,7 @@ An edit reaches the live site in three steps:
 3. The publish commit triggers the site's existing deploy.
 
 The path crosses three stores. Git holds the edit and both manifests, D1 holds the session row the
-guard checks on each admin request, and R2 holds media bytes. The following diagram shows the path
-and the three stores.
+guard checks, and R2 holds media bytes. The following diagram shows the path and the three stores.
 
 ```mermaid
 flowchart LR
@@ -228,10 +227,11 @@ the content manifest. The branch holds the edit until a deliberate publish.
 ### The publish commit
 
 A publish copies the holding branch's content onto the default branch as one fresh commit, never a
-merge of the branch. The editor is the author, and the entry's content-manifest row lands in the
-same commit. The content manifest changes only in a default-branch commit that changes an entry, and
-each such commit lands the manifest change together with the entry files. Those commits are a
-publish, a publish-all, a delete, and a rename.
+merge of the branch. The editor is the author. The entry's content-manifest row lands in the same
+commit. The content manifest changes only in a publish, a publish-all, a delete, or a rename, and
+each of those commits lands the manifest change together with the entry files. A media replace and
+an alt propagation also rewrite entry files on the default branch, and neither changes the content
+manifest.
 
 A publish is head-guarded. It reads the default branch's head before it reads the media manifest or
 the content manifest, and it commits with that head as `expectedHead`. When a commit lands after
@@ -253,22 +253,22 @@ Every commit the admin makes meets a moved head under one of two rules:
 
 - The head-merge retry tries three more times after the first attempt before it reports a conflict.
   It covers an entry save and an entry delete or rename.
-- The head guard fails on the first stale head. It covers single publish, publish-all, revert, the
-  nav, tidy settings, the vocabulary, and the personal-dictionary add. It also covers the media
-  upload manifest, media delete (single and bulk), media metadata updates, media replace, and media
-  alt propagation.
+- The head guard refuses on the first stale head. It covers single publish, publish-all, revert,
+  the site navigation, [tidy](turn-on-tidy.md) settings, and the tag vocabulary. It also covers the
+  media upload manifest, media delete (single and bulk), media metadata updates, media replace, and
+  media alt propagation.
 
-A guarded commit reads the head before any file its new contents are computed from. A commit that
-lands in between makes it refuse rather than overwrite what it never read. A media delete that
-conflicts leaves the R2 object in place. The personal-dictionary add retries once after a conflict,
-re-reading the head and the file.
+The personal-dictionary add also commits under the head guard, but after a conflict it retries once,
+re-reading the head and the file. A guarded commit reads the head before any file its new contents
+are computed from. A commit that lands in between makes it refuse rather than overwrite what it
+never read. A media delete that conflicts leaves the R2 object in place.
 
 A publish commit that lands on the default branch then starts the site's deploy.
 
 ### Build verification
 
-The publish commit triggers the site's existing deploy, and the build rebuilds the content manifest
-from the markdown on disk and verifies it against the committed manifest. The `cairnManifest` plugin
+The deploy's build rebuilds the content manifest from the markdown on disk and verifies it against
+the committed manifest. The `cairnManifest` plugin
 runs that check in `buildStart`, and a committed manifest that has drifted from the markdown fails
 the build. For more information, see [the `cairnManifest`
 reference](../reference/vite.md#cairnmanifest).
@@ -278,8 +278,8 @@ default branch.
 
 ## Read path
 
-The admin reads one entry from a concurrent batch of reads through the `Backend`, and it reads the
-whole corpus from the committed content manifest.
+To load one entry, the admin sends a concurrent batch of reads through the `Backend`. To read the
+whole corpus, it reads the committed content manifest.
 
 An entry's edit load batches the file on the default branch, its holding branch's head, the
 committed content manifest, the media manifest when media is on, and the personal dictionary. Its
@@ -291,8 +291,7 @@ default branch's entries from its content manifest instead of crawling the entry
 indexes still parse each holding branch's markdown, and the concept list crawls only in a repository
 with no committed manifest yet.
 
-That manifest is one kind of state the engine keeps in git, and git is one of three stores the
-engine places state in.
+The engine keeps that manifest in git, one of the three stores it places state in.
 
 ## Data tiers
 
@@ -302,34 +301,34 @@ it. The following table lists what each tier holds.
 | Tier | Holds |
 |---|---|
 | Git | The content entries, the content manifest, and the media manifest |
-| D1 | The `editor`, `magic_token`, and `session` tables, plus the opt-in `audit_log` and `preview_tokens` tables |
+| D1 | The `editor`, `magic_token`, and `session` tables, plus the opt-in `audit_log` and `preview_tokens` tables. A site that uses `/auth-channel` keeps the `cairn_channel_*` tables in a separate D1 database. |
 | R2 | Uploaded media bytes, deduplicated by content hash |
 
 Both manifests are committed JSON under `src/content/.cairn/`. The media manifest carries what the
-bytes cannot, such as alt text and the original filename, and only the bytes it describes live in
-R2. The media manifest keys each row by a 16-hex content-hash prefix, and an upload checks it before
-storing anything.
+bytes cannot, such as alt text and the original filename, and R2 holds only the bytes. The media
+manifest keys each row by a 16-hex content-hash prefix, and an upload checks it before storing
+anything.
 
 A content-manifest row carries an entry's title, permalink, summary, links, and edges but never its
-body, and no D1 table stores a body. An entry's body lives only in git. Every publish is a commit on
-the default branch with its editor as author. The default branch's history records who published
-each change and when, with no audit table involved.
+body, and no D1 table stores a body. Every publish is a commit on the default branch with its
+editor as author. The default branch's history records who published each change and when, whether
+or not the site wires the audit log.
 
-The guard looks up the `session` row by its session-cookie id on each admin request, and sign-in
-looks up a `magic_token` row by its SHA-256 hash. The `audit_log` table holds one row per audited
-admin action, and only a site that wires `createD1AuditSink` writes it. The `preview_tokens` table
-holds one hashed token per preview link and names the draft the link shares, and only a site that
-mints preview links writes it. For the security properties of these rows, see [Security
+Without the `identity` option, the guard looks up the `session` row by its session-cookie id on each
+guarded admin request. Sign-in looks up a `magic_token` row by its SHA-256 hash. The `audit_log`
+table holds one row per audited admin action, and only a site that wires `createD1AuditSink` writes
+it. The `preview_tokens` table holds one hashed token per preview link and names the draft the link
+shares, and only a site that mints preview links writes it. For the security properties of these rows, see [Security
 model](security-model.md). For the auth store's exports, see [the auth store
 reference](../reference/auth-store.md).
 
-R2 holds the media bytes, and the delivery route streams them directly. For the media store's
-settings, see [Configure media](configure-media.md).
+The delivery route streams media bytes directly from R2. For the media store's settings, see
+[Configure media](configure-media.md).
 
-A site's data, such as a member roster or an event schedule, goes wherever the site chooses, and
-cairn assigns it no tier. The engine reserves the `cairn_` prefix for cookie names, and its
-auth-channel tables take `cairn_channel_*` names. Each of these stores is a platform the engine
-depends on outright, and only the content store has a seam that replaces it.
+A site's own data, such as a member directory or an event schedule, goes wherever the site chooses,
+and cairn assigns it no tier. The engine reserves the `cairn_` prefix for cookie names, and its
+auth-channel tables take `cairn_channel_*` names. D1 and R2 are Cloudflare stores the engine depends
+on outright. Of the three tiers, only the content store in git has a seam that replaces it.
 
 ## Hard dependencies
 
@@ -372,12 +371,12 @@ The contract is one exported surface among many, and each surface carries a stab
 ## Stability tiers
 
 Every export carries one of three stability tiers, and the tier states what the export promises
-across versions. Extension API and Scaffold API are the frozen contract, and Unstable API stays
-importable with no promise across minor versions. For each export's tier, see [Stability tiers in
+across versions. Extension API and Scaffold API are the tiers the engine means to hold frozen, and
+Unstable API stays importable with no promise across minor versions. For each export's tier, see [Stability tiers in
 the reference index](../reference/README.md#stability-tiers).
 
-Because cairn is pre-1.0, the tiers are a target discipline, and an Extension-tier break can ship in
-a minor release. The `check:surface` snapshot gate fails on any change to an export's declared shape
+Because cairn is pre-1.0, that freeze is a goal rather than a guarantee, and an Extension-tier break
+can ship in a minor release. The `check:surface` snapshot gate fails on any change to an export's declared shape
 until the golden file is regenerated to record it. Until 1.0 it detects and discloses a break rather
 than preventing one.
 
@@ -389,8 +388,8 @@ that read those fields or declared a `navFilter` had code to change before it co
 notes](migration-notes.md#0860) and the [0.94.0 migration notes](migration-notes.md#0940) record
 both changes.
 
-Code a site writes against the Extension tier therefore meets each break as a named change. For the
-upgrade procedure, see [Upgrade cairn](upgrade-cairn.md).
+A site that builds on the Extension tier therefore reads the migration notes for each version it
+upgrades across. For the upgrade procedure, see [Upgrade cairn](upgrade-cairn.md).
 
 ## Related resources
 

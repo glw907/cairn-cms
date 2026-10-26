@@ -115,7 +115,7 @@ exemplar: core/rust-analyzer-architecture
 - Because the engine's screens and a site's routes read one declaration, the two cannot be gated by different maps. :fact[cvzb8z]
 - The roster screen's routes validate a posted role against `runtime.roles`. The admin mount forwards its runtime to them, and a site passes `runtime` itself only when it wires `createEditorRoutes` by hand. :fact[mbx6q1]
 - The guard's `runtime` option is required and has no default: a call without it is a type error. :fact[4xrx5f]
-- The access map decides which admin actions an editor can run, and every action that changes content travels one path to the live site.
+- The access map decides which admin actions an editor can run. A content edit an editor saves reaches the live site along one path.
 
 ## Write path
 

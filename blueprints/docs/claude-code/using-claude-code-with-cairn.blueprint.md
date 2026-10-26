@@ -106,7 +106,7 @@ Cautions for the drafter, introduction only:
 - The review agent is one bullet in "The guidance tree", with no heading: its location and the link to the reference's "What ships under `claude/`" section, nothing on what it reviews or how it relates to `cairn-audit` until a fact states that. :fact[0ygumq]
 - The hand-off bullet that closes each section, and the Fix lines of the rows for a silent hook, a stale tree in CI, and another CI failure, carry no extractable fact (the restored `continue-on-error` line in the last of those rests on the CI workflow fact, which that row cites); the closing bullets of "Before you begin" and "The guidance tree" name `.claude/` and the skills, which earlier or later bullets back. :fact[jd54ph]
 - GitHub's `continue-on-error` behavior and npm's `--if-present` behavior are vendor behavior with no `[vendor]` fact, so each gets its link (GitHub's workflow syntax in "Make the CI step gate on a stale tree", npm's `npm run` page in "Wire the Stop hook") and only the minimal statement this blueprint's bullets word; the drafter adds no further claim about either.
-- The `check:cairn` script step and the starting-workflow step, and the symptoms and fixes of the rows for missing gate wiring and a leftover `.orig` file, rest on the reference page they link (`docs/reference/guidance.md`, the `check` and "What ships under `claude/`" sections) and on the snippet files the `check-cairn.json` and `check.yml` code examples quote, not on a fact; the drafter words them no wider than that page and those files state.
+- The `check:cairn` script step and the starting-workflow step, and the symptoms and fixes of the row for missing gate wiring and the whole row for a leftover `.orig` file, rest on the reference page they link (`docs/reference/guidance.md`, the `check` and "What ships under `claude/`" sections) and on the snippet files the `check-cairn.json` and `check.yml` code examples quote, not on a fact; the drafter words them no wider than that page and those files state.
 - From the exemplar, take the exit code stated flat beside the condition that produces it, and the closing caution that a command may carry codes the table does not list; leave the gh-specific codes and the page's bare list shape.
 :::
 
@@ -241,8 +241,8 @@ Cautions for the drafter, introduction only:
 
 :::row
 **Symptom.** `install` stops with an error instead of finishing, and exits nonzero.
-**Cause.** A filesystem failure the run can't step past, such as creating a directory, writing the `MANIFEST`, reading a destination that already exists, or resolving or reading the installed package's guidance. Unlike a refusal or a write error, which the run prints and continues past, this failure ends the run.
-**Fix.** See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference. :fact[5ohm23]
+**Cause.** A filesystem failure the run can't step past, such as creating a directory, writing the `MANIFEST`, reading a destination that already exists, or resolving or reading the installed package's guidance. Unlike a refusal or a write error, which the run prints and continues past, this failure ends the run. :fact[5ohm23]
+**Fix.** See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.
 :::
 
 :::row
@@ -253,20 +253,20 @@ Cautions for the drafter, introduction only:
 
 :::row
 **Symptom.** The turn ends and no `check:cairn` output appears.
-**Cause.** `package.json` has no `check:cairn` script, so `--if-present` skips the run, or the `Stop` entry is not under `hooks` in `.claude/settings.json`.
-**Fix.** Add the missing script as the `check:cairn` step in [Wire the Stop hook](#wire-the-stop-hook) shows; if the script is there, compare the `Stop` entry in `.claude/settings.json` with the snippet in that section, then end another turn. :fact[4nccq6]
+**Cause.** `package.json` has no `check:cairn` script, so `--if-present` skips the run, or the `Stop` entry is not under `hooks` in `.claude/settings.json`. :fact[4nccq6]
+**Fix.** Add the missing script as the `check:cairn` step in [Wire the Stop hook](#wire-the-stop-hook) shows; if the script is there, compare the `Stop` entry in `.claude/settings.json` with the snippet in that section, then end another turn.
 :::
 
 :::row
 **Symptom.** The `check` job fails at the guidance step, and the guidance check's first line in the job log reports the guidance tree stale or missing.
-**Cause.** The committed tree is stale or missing. Under `--strict` the check exits 1 on exactly that, and with `continue-on-error` removed the exit fails the job.
-**Fix.** Run the install step in [Adopt or refresh the guidance tree](#adopt-or-refresh-the-guidance-tree), commit the refreshed `.claude/` tree, and push again. :fact[4ax489] :fact[jd54ph]
+**Cause.** The committed tree is stale or missing. Under `--strict` the check exits 1 on exactly that, and with `continue-on-error` removed the exit fails the job. :fact[4ax489] :fact[jd54ph]
+**Fix.** Run the install step in [Adopt or refresh the guidance tree](#adopt-or-refresh-the-guidance-tree), commit the refreshed `.claude/` tree, and push again.
 :::
 
 :::row
 **Symptom.** The `check` job fails at the guidance step, but the guidance check's first line in the job log does not report the guidance tree stale or missing, or the step prints no report lines at all.
-**Cause.** The step exited nonzero for a reason other than a stale or missing tree, such as exit 2 for an unknown flag or a file read that failed and ended the run. `--strict` exits 1 only on a stale or missing tree, so this exit is not the gate's, and with `continue-on-error` removed any nonzero exit of the step fails the job: the trade [Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes.
-**Fix.** Read the guidance step's output in the job log, and compare it with what the `cairn-guidance check` reference says the command reports. To keep the build passing while you work on it, put the `continue-on-error: true` line back under the step, which passes the job on any nonzero exit, then push again; the build then no longer fails on a stale tree either until you remove the line again. :fact[4ax489] :fact[jd54ph]
+**Cause.** The step exited nonzero for a reason other than a stale or missing tree, such as exit 2 for an unknown flag or a file read that failed and ended the run. `--strict` exits 1 only on a stale or missing tree, so this exit is not the gate's, and with `continue-on-error` removed any nonzero exit of the step fails the job: the trade [Make the CI step gate on a stale tree](#make-the-ci-step-gate-on-a-stale-tree) describes. :fact[4ax489] :fact[jd54ph]
+**Fix.** Read the guidance step's output in the job log, and compare it with what the `cairn-guidance check` reference says the command reports. To keep the build passing while you work on it, put the `continue-on-error: true` line back under the step, which passes the job on any nonzero exit, then push again; the build then no longer fails on a stale tree either until you remove the line again.
 :::
 
 - See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
@@ -285,13 +285,13 @@ Cautions for the drafter, introduction only:
 
 :::row
 **Symptom.** A line reports a missing `check:cairn` script, `cairn-audit.config.json`, or `.github/workflows/check.yml`; `check` prints the snippet to paste under that line.
-**Cause.** The site lacks the named script or file. A scaffolded site carries each of them, and `install` writes none of them, since it writes under `.claude/` alone. :fact[mrv24k] :fact[guiavc] :fact[pmmtrm]
+**Cause.** The site lacks the named script or file, and `install` writes none of them, since it writes under `.claude/` alone. :fact[mrv24k] :fact[pmmtrm]
 **Fix.** See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
 :::
 
 :::row
 **Symptom.** The seventh line names a `.orig` file still present.
-**Cause.** An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there. :fact[vhxkab]
+**Cause.** An earlier `install` made a `<path>.orig` recovery copy beside a destination before overwriting it, and the copy is still there.
 **Fix.** See [`install`](../reference/guidance.md#install) in the `cairn-guidance` reference.
 :::
 
@@ -303,8 +303,8 @@ Cautions for the drafter, introduction only:
 
 :::row
 **Symptom.** `npx cairn-guidance check`, with or without `--strict`, stops with an error instead of finishing, and exits nonzero.
-**Cause.** A file read failed with anything but the file being absent, a read would have left the project directory, or the installed package's guidance could not be resolved or read. Each ends the run. Unlike the stale-tree exit, which needs `--strict`, this failure happens with or without it.
-**Fix.** See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference. :fact[4ax489]
+**Cause.** A file read failed with anything but the file being absent, a read would have left the project directory, or the installed package's guidance could not be resolved or read. Each ends the run. Unlike the stale-tree exit, which needs `--strict`, this failure happens with or without it. :fact[4ax489]
+**Fix.** See [`check`](../reference/guidance.md#check) in the `cairn-guidance` reference.
 :::
 
 ## See also

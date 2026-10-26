@@ -826,7 +826,7 @@ type adds what its template asks of the opening, as the following anatomies stat
   debugging page instead of a false promise of a purely operational fix. A page of symptom rows
   ends with a see-also section, as `docs/extend/debug-your-site.md:405` does.
 
-## The four tracks
+## The tracks
 
 Every published page belongs to exactly one track, every track serves exactly one profile,
 with the one exception the scripter-or-agent profile below carves out of the reference arm
@@ -908,6 +908,32 @@ an archaeology session.
 than narrating implementation, and would a competent SvelteKit developer find any sentence
 here that their stack's docs already own?
 
+### The Claude Code track (`docs/claude-code/`)
+
+**Profile:** the extend track's developer, working on their site with Claude Code. The other
+tracks assume no coding assistant, so whatever is specific to Claude Code lives here, and no page
+outside this track depends on it (rulings, Geoff, 2026-10-07, in `ROADMAP.md`). **Base guide:**
+Google. **Register:** the extend track's, contract-first. The track documents Claude Code only:
+cairn ships no guidance for any other coding agent, and a page says so in one line rather than
+generalizing.
+
+**Vocabulary contract.** The extend track's, plus Claude Code's terms (skill, subagent, hook,
+`CLAUDE.md`, `.claude/settings.json`), used as Claude Code's documentation uses them and linked
+there on first use. Claude Code's mechanics belong to its documentation. A page here says what
+cairn puts into them and where cairn stops.
+
+**Arrival state.** From a scaffolded site whose `CLAUDE.md` and `.claude/` tree the reader did not
+write, wanting to know what Claude Code now reads; or from a hand-built or upgraded site, adopting
+or refreshing the tree. Claude Code is often already open in the repository.
+
+**Success criterion.** The reader can say what each file in the tree is for, has made or
+deliberately declined each edit cairn leaves to them, and can read from `cairn-guidance install`
+and `cairn-guidance check` output whether the tree is current.
+
+**Counterpart question:** does every sentence describe what cairn ships or leaves to the developer
+rather than teaching Claude Code itself, and does each extend page still read whole for a developer
+who never opens this track?
+
 ### The contributor zone (`CONTRIBUTING.md` and `docs/internal/`)
 
 **Profile:** an experienced library-flavored engineer working on cairn itself. **Base
@@ -965,7 +991,7 @@ alone, and does any behavior require running the tool to learn?
 
 ## The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)
 
-The fifth register case, alongside the four tracks. These three pages are where every
+A register case of its own, alongside the tracks. These three pages are where every
 audience lands, and they carry the whole cairn story.
 
 - **Five routes, not four, in the first screenful.** The evaluator route comes first

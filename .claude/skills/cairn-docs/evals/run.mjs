@@ -37,7 +37,9 @@ export const ALLOWED_TOOLS = [
   'Bash(jq *)', 'Bash(mkdir *)',
   // The read-only filters a compound command pipes through; a real session's allow rules carry them.
   'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(sed -n *)', 'Bash(wc *)', 'Bash(cat *)',
-  'Bash(ls*)', 'Bash(grep *)',
+  'Bash(ls*)', 'Bash(grep *)', 'Bash(awk *)', 'Bash(sort*)', 'Bash(uniq*)', 'Bash(cut *)', 'Bash(tr *)',
+  'Bash(diff *)', 'Bash(printf *)', 'Bash(git ls-files*)', 'Bash(git rev-parse*)',
+  'Bash(git -C * log *)', 'Bash(git -C * status*)',
 ];
 
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
@@ -46,7 +48,7 @@ export const DENIED_TOOLS = [
 ];
 
 /** Where a denied command is a fault: the allow list was meant to cover it. */
-const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir |tail |head |echo |sed -n |wc |cat |ls\b|grep )/;
+const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir |tail |head |echo |sed -n |wc |cat |ls\b|grep |awk |sort|uniq|cut |tr |diff |printf |git (ls-files|rev-parse))/;
 /** Where a denied command is an attempt at something the harness forbids. */
 const FORBIDDEN_COMMAND = /^\s*(approval-queue|gh|ssh|git push)\b/;
 
@@ -224,7 +226,7 @@ export function summarizeStream(text) {
   for (const e of events) {
     for (const part of e.message?.content ?? []) {
       if (e.type === 'assistant' && part.type === 'tool_use') {
-        const call = { name: part.name === 'Task' ? 'Agent' : part.name, input: part.input ?? {}, sub: Boolean(e.parent_tool_use_id), output: '' };
+        const call = { id: part.id, name: part.name === 'Task' ? 'Agent' : part.name, input: part.input ?? {}, sub: Boolean(e.parent_tool_use_id), output: '' };
         tools.push(call);
         byId.set(part.id, call);
       }
@@ -260,13 +262,21 @@ export function sessionErrored(s) {
  * forbidden one.
  * @param {{ tool_name: string, tool_input?: { command?: string } }[]} denials
  */
-export function classifyDenials(denials) {
+export function classifyDenials(denials, tools = []) {
   const faults = [];
   const attempts = [];
+  const deniedIds = new Set(denials.map((d) => d.tool_use_id));
+  const lead = (c) => c.split(/[;&|]/)[0].trim();
   for (const d of denials) {
     const cmd = d.tool_input?.command ?? '';
-    if (d.tool_name === 'Bash' && FORBIDDEN_COMMAND.test(cmd)) attempts.push(cmd);
-    else if (d.tool_name === 'Bash' && NEEDED_COMMAND.test(cmd)) faults.push(cmd);
+    if (d.tool_name !== 'Bash') continue;
+    if (FORBIDDEN_COMMAND.test(cmd)) attempts.push(cmd);
+    else if (NEEDED_COMMAND.test(cmd)) {
+      // A compound command the permission check could not verify is denied whole. The session
+      // reissuing its leading command and getting through leaves the process unharmed.
+      const recovered = tools.some((t) => t.name === 'Bash' && !deniedIds.has(t.id) && lead(t.input.command ?? '') === lead(cmd));
+      if (!recovered) faults.push(cmd);
+    }
   }
   return { faults, attempts };
 }
@@ -503,6 +513,16 @@ async function makeFixture({ repo, mainRoot, caseDef, pin, armRef, name, modules
   return { root, base, commit };
 }
 
+/** Remove the fixtures an aborted run left behind: `docs-eval-*` worktrees idle for three hours. */
+function pruneFixtures(repo, mainRoot) {
+  const dir = join(mainRoot, '.claude/worktrees');
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (!/^docs-eval-\d/.test(name) || Date.now() - statSync(path).mtimeMs < 3 * 3600 * 1000) continue;
+    removeFixture(repo, path);
+  }
+}
+
 function removeFixture(repo, root) {
   spawnSync('git', ['worktree', 'remove', '--force', root], { cwd: repo });
   rmSync(root, { recursive: true, force: true });
@@ -549,7 +569,7 @@ function runSession({ cwd, args, prompt, file }) {
         } catch { /* not an event */ }
       }
     });
-    child.stderr.resume();
+    child.stderr.pipe(createWriteStream(`${file}.stderr`));
     child.on('close', (code, signal) => { clearTimeout(timer); children.delete(child); out.end(() => resolveRun({ code, signal, timedOut })); });
     child.stdin.end(prompt);
   });
@@ -642,9 +662,10 @@ async function runTrial({ job, ctx }) {
       dotfilesCommit: ctx.dotfiles,
     };
     if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
-    const faults = classifyDenials(s.result.denials).faults;
+    const faults = classifyDenials(s.result.denials, s.tools).faults;
     if (!s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
-    if (faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };
+    // A read-only case asks about work outside the repo, where a denied `ls` is the right outcome.
+    if (!caseDef.readOnly && faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };
 
     git(['add', '-A'], fixture.root);
     const changed = git(['diff', '--cached', '--name-status', fixture.commit], fixture.root).split('\n').filter(Boolean)
@@ -693,6 +714,7 @@ async function main() {
   const mainRoot = mainCheckoutRoot(repo);
   const cases = data.evals.filter((c) => (args.suite === 'all' || c.suite === args.suite) && (!args.caseId || c.id === args.caseId));
   if (cases.length === 0) throw new Error('no case matches');
+  pruneFixtures(repo, mainRoot);
   const arms = args.refs.map((ref) => ({ ref, label: ref.replace(/[^\w.-]/g, '_'), hash: overlayHash(repo, ref) }));
   const sessions = cases.length * arms.length * args.trials;
   if (sessions > SESSION_CAP && !args.max) throw new Error(`${sessions} case sessions is over the cap of ${SESSION_CAP}; pass --max to run anyway`);

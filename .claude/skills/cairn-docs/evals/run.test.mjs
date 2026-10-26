@@ -169,6 +169,13 @@ test('classifyDenials separates a needed command (fault) from a forbidden attemp
   assert.deepEqual(faults, ['npm run check:docs-gate -- --page x | tee y']);
 });
 
+test('classifyDenials forgives a denied compound command the session reissued by its leading command', () => {
+  const denials = [{ tool_use_id: 'a', tool_name: 'Bash', tool_input: { command: "cairn-run-gate 'x'; echo exit $?" } }];
+  const call = (id, command) => ({ id, name: 'Bash', input: { command } });
+  assert.deepEqual(classifyDenials(denials, [call('a', "cairn-run-gate 'x'; echo exit $?")]).faults, ["cairn-run-gate 'x'; echo exit $?"]);
+  assert.deepEqual(classifyDenials(denials, [call('a', "cairn-run-gate 'x'; echo exit $?"), call('b', "cairn-run-gate 'x'")]).faults, []);
+});
+
 test('skillBeforeDocsEdit is null with no docs edit and false when the edit comes first', () => {
   assert.equal(skillBeforeDocsEdit([{ name: 'Read', input: {} }]), null);
   assert.equal(skillBeforeDocsEdit([{ name: 'Edit', input: { file_path: '/w/docs/a.md' } }, { name: 'Skill', input: { skill: 'cairn-docs' } }]), false);

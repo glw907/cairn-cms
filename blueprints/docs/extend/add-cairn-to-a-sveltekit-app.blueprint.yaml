@@ -6,7 +6,7 @@ argument: |
   through the developer's GitHub App. Content comes before the admin because the dev backend
   serves the site's content from the working tree and the `cairnManifest` plugin supplies
   the build-time flag the dev backend's hook reads, so a reader who builds in this order never wires
-  a step whose prerequisite does not exist yet. Every file the engine needs appears once, in the
+  a step whose prerequisite does not exist yet. Each file the engine needs is introduced in the
   milestone that needs it, with the reason it exists, so a reader who only wants to see what cairn
   does underneath can read the page through without building anything.
 introduction:
@@ -22,7 +22,7 @@ introduction:
     easier because it creates the GitHub App, the repository, and the Cloudflare bindings and deploys
     in one run (link Scaffolded site files); this tutorial serves a developer with an existing
     SvelteKit app, which the setup command never adds cairn to; a developer who wants cairn without
-    the Waymark theme, since the npm package carries no template; and a developer curious about what
+    the Waymark theme, cairn's reference reading theme, since the package carries no theme; and a developer curious about what
     cairn does underneath, who can read it through. It names the running example, Field Notes, a site
     with one post, and states what the reader can do by the end: an editor signs in to the deployed
     site, edits the post, and publishes it. It lists the four milestones as a numbered list, each
@@ -31,7 +31,7 @@ introduction:
   priorKnowledge: |
     Working knowledge of SvelteKit (routes, layouts, server hooks, and the Vite config that carries
     the kit config), TypeScript, git, and a terminal. The tutorial explains every Cloudflare and
-    cairn step it uses, and it explains no SvelteKit basics. A reader who starts from an existing app
+    cairn step it uses, and it assumes the SvelteKit basics. A reader who starts from an existing app
     works through the same milestones, and the tutorial says where that app skips a step.
   notCovered: |
     A bulleted list under a complete lead-in, each item subject first and its page last: the faster
@@ -39,7 +39,8 @@ introduction:
     adapter option (Define an adapter and schema); the security reasoning behind the GitHub App's
     repository-wide write and the CSRF design (Security model); the delivery routes beyond the entry
     catch-all (Build the public routes); rotating the App's private key later (Rotate the GitHub App
-    key); a custom sender's code (the SvelteKit reference's types section). The retired JavaScript doctor and the removed `/components` subpath are not named at all.
+    key); a custom sender's code (the SvelteKit reference's types section); deploying each push
+    automatically (Cloudflare's Workers Builds docs), since this tutorial's site deploys by hand. The retired JavaScript doctor and the removed `/components` subpath are not named at all.
   facts:
     - f:kldwss
     - f:9slxqf
@@ -110,20 +111,11 @@ sections:
   - id: before-you-begin
     heading: Before you begin
     why: |
-      Every milestone draws on these accounts and tools, so they come before the first step, and the
-      section is where a reader who wants the faster route finds the setup command.
+      Every milestone draws on these accounts and tools, so they come before the first step. The
+      introduction already routes a reader who wants the faster route to the setup command.
     opens: |
-      You need Node 24 or later, a GitHub account, a Cloudflare account on the Workers Paid plan,
-      and a domain whose zone is on that account.
+      You need the following accounts and tools:
     items:
-      - id: intro-scaffold-link
-        kind: link
-        target: scaffolded-site-files.md
-      - id: pre-lead
-        kind: sentence
-        mode: verbatim
-        text: |
-          You need the following accounts and tools:
       - id: pre-accounts
         kind: fact
         fact: f:75hawi
@@ -144,22 +136,21 @@ sections:
         kind: fact
         fact: f:yegr67
         use: |
-          Only the major-version pin, its `svelte-check` reason, and that `npx sv create` already
-          pins it, as a list item; an existing app keeps its `typescript` on 6. Omit the advisory
+          Only the major-version pin, its `svelte-check` reason with its condition (until the 7.1
+          compiler API lands, never "yet"), and that `npx sv create` already pins it, as a list item; an existing app keeps its `typescript` on 6. Omit the advisory
           workflow.
       - id: pre-cli
         kind: fact
         fact: f:1dhk1a
         use: |
-          Only the separate install, as the last list item: once per machine with `go install` or
-          from a release archive, and not part of the npm package. The production milestone runs the
-          CLI as `cairn doctor`.
+          Only the separate install, as the last list item: once per machine with `go install`, and
+          not part of the npm package. The production milestone runs the CLI as `cairn doctor`. Omit
+          the release archive, which no published page covers.
       - id: s-install-cli
         kind: step
         text: |
           Inside the `cairn` CLI list item: on a machine with a Go toolchain, install it with
-          `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` in a command block; on a
-          machine without one, install it from a release archive, which needs no Go.
+          `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` in a command block.
         produces:
           - cairn-cli
       - id: pre-go-link
@@ -174,8 +165,9 @@ sections:
       The first milestone proves the deploy path before any engine code exists to blame for a
       failure, and it holds what an existing app does to meet SvelteKit 3 before the engine install.
     opens: |
-      This milestone ends with a plain SvelteKit site, with no cairn code yet, answering at its
-      `workers.dev` address, so the deploy path works before the engine joins it.
+      This milestone ends with a plain SvelteKit site, with no cairn code, answering at its
+      `workers.dev` address. Deploying it first proves the deploy path before the engine is
+      installed.
     items:
       - id: m1-objectives
         kind: sentence
@@ -447,7 +439,7 @@ sections:
       practices the build-and-deploy loop the later milestones repeat.
     level: 3
     opens: |
-      Change one line of the scaffold's home page, deploy again, and confirm the change at the same
+      This exercise confirms that a second deploy carries a change to the same `workers.dev`
       address.
     items:
       - id: t1-disclosure
@@ -556,11 +548,12 @@ sections:
         kind: fact
         fact: f:vvgpr5
         use: |
-          Only the ambient import's augmentation of `App.Locals` (name the five fields through the
-          ambient reference, never inline), and where a custom route reads Worker bindings: from
-          `cloudflare:workers`, typed by the `Env` that `wrangler types` generates, since adapter 8
-          declares no `App.Platform`. Omit the clause that `src/app.d.ts` references the generated
-          file.
+          Only the ambient import's augmentation of `App.Locals` (link the import to the ambient
+          reference at its first mention, which names the five fields; no separate pointer
+          sentence), and, in one sentence with its cause first, where a custom route reads Worker
+          bindings: adapter 8 declares no `App.Platform`, so a custom route reads them from
+          `cloudflare:workers`, typed by the `Env` that `wrangler types` generates. Omit the clause
+          that `src/app.d.ts` references the generated file.
       - id: i-ambient-link
         kind: link
         target: ../reference/ambient.md
@@ -586,7 +579,16 @@ sections:
           npm stops the install with `ERESOLVE`.
         cause: |
           The app's `package.json` still requires `@sveltejs/kit` `^2`.
-        handledBy: m1-existing-kit
+        handledBy: i-eresolve-fix
+      - id: i-eresolve-fix
+        kind: sentence
+        mode: claim
+        text: |
+          Inside the install step, the recovery addressed to the reader: your app still requires
+          `@sveltejs/kit` `^2`; upgrade it as Upgrade cairn's SvelteKit 3 section describes, and run
+          the install again.
+        facts:
+          - f:skeche
       - id: s-noexternal
         kind: step
         text: |
@@ -625,16 +627,24 @@ sections:
       before the content.
     level: 3
     opens: |
-      The site config is a YAML mapping whose one required key, `siteName`, names the site, and
-      the adapter declares one posts concept, a renderer, and placeholder backend and sender values
-      that the dev backend stands in for until production.
+      The site config is a YAML mapping whose one required key, `siteName`, names the site.
     items:
+      - id: a-declares
+        kind: sentence
+        mode: claim
+        text: |
+          Two sentences: the adapter declares one posts concept, a renderer, and placeholder backend
+          and sender values; the dev backend stands in for both until production.
+        facts:
+          - f:d0sp1t
+          - f:dujlzg
       - id: a-siteconfig
         kind: fact
         fact: f:em69ru
         use: |
-          Only the non-empty `siteName`, the rejection of any top-level key outside the set (name
-          the set through the reference link, not inline), and that the doctor's site-config check
+          Only the non-empty `siteName`, the rejection of any top-level key outside the set (link
+          `parseSiteConfig` to its reference entry at first mention, which names the set; no
+          separate pointer sentence), and that the doctor's site-config check
           tries `src/lib/site.config.yaml` among its four paths. Omit the scaffold's path.
       - id: a-parse-link
         kind: link
@@ -643,8 +653,10 @@ sections:
         kind: fact
         fact: f:shv6wv
         use: |
-          Only the screens that read the one site-config file `editor.siteConfigPath` names, and its
-          default, which is why this site's adapter sets it to `src/lib/site.config.yaml`.
+          Only the screens that read and commit the site-config file `editor.siteConfigPath` names
+          (the nav editor, the **Settings** screen's save, and the **Tags** screen, the screen names
+          in bold), and its default, named as `src/theme/site.config.yaml`, the scaffold's path,
+          which is why this site's adapter sets it to `src/lib/site.config.yaml`.
       - id: a-config-path-link
         kind: link
         target: ../reference/core.md#siteconfigpath-adapter-editor-member
@@ -652,10 +664,12 @@ sections:
         kind: fact
         fact: f:d0sp1t
         use: |
-          Only what the adapter is built from: `defineAdapter`; a concept from `defineConcept` with
+          Only what the adapter is built from: `defineAdapter`, linked to its reference entry at
+          first mention; a concept from `defineConcept` with
           its `dir`, `label`, `singular`, and `routing`, and a `defineFieldset` of the three field
           descriptors; the empty registry and the `renderMarkdown` that `createRenderer` returns,
-          which `rendering.render` calls with the four arguments it forwards; and `email` as a
+          which `rendering.render` calls with the body and the three resolvers it forwards; and
+          `email` as a
           sender with `from`. Omit `composeRuntime`, which [[compose-the-runtime-and-the-admin]]
           places.
       - id: a-placeholder
@@ -699,7 +713,7 @@ sections:
           `title` required, `date`, `description`), a placeholder `createGithubApp` (`owner:
           'your-account'`, `repo: 'field-notes'`, `branch: 'main'`, `appId: '0'`, `installationId:
           '0'`) under a comment that marks both placeholders, `email: { from: 'cms@example.com' }`,
-          `rendering.render` forwarding the four resolver arguments, and `editor: { siteConfigPath:
+          `rendering.render` forwarding the body and the three resolvers, and `editor: { siteConfigPath:
           'src/lib/site.config.yaml' }`; then `export const siteConfig = parseSiteConfig(siteYaml)`.
         source: ../../templates/waymark/src/theme/cairn.config.ts
       - id: a-adapter-link
@@ -746,36 +760,40 @@ sections:
       this section commits, so both come before the route.
     level: 3
     opens: |
-      The site passes `createSiteIndexes` one literal `import.meta.glob` per concept, and the
-      `cairnManifest` plugin checks a committed manifest against the markdown on every build.
+      The content module passes `createSiteIndexes` one literal `import.meta.glob` per concept.
     items:
       - id: x-indexes
         kind: fact
         fact: f:pdgkex
+        use: |
+          Only the Vite reason and the build-time throw, joined in one sentence; link
+          `createSiteIndexes` to its reference entry at its first mention, in the opening sentence.
       - id: x-indexes-link
         kind: link
         target: ../reference/delivery-data.md#createsiteindexes
-      - id: x-plugin
-        kind: fact
-        fact: f:fj28xs
-        use: |
-          Only `configModule`, `content`, and the manifest's default path. Send the other optional
-          path to the reference.
-      - id: x-verify
-        kind: fact
-        fact: f:xluud1
-        use: |
-          Only that the plugin verifies the committed content manifest on build. The define it
-          supplies waits for the dev-backend section.
-      - id: x-plugin-link
-        kind: link
-        target: ../reference/vite.md#cairnmanifestoptions
       - id: x-origin
         kind: fact
         fact: f:7bch04
         use: |
-          Only that the content module also exports an `origin` constant, the local dev origin for
-          now, which the production milestone changes to the deployed origin.
+          Only that the module also exports `origin`, which holds the local dev origin until the
+          production milestone changes it to the deployed origin, as the first paragraph's last
+          sentence.
+      - id: x-verify
+        kind: fact
+        fact: f:xluud1
+        use: |
+          Only that the plugin verifies the committed content manifest on build, opening a second
+          paragraph on the plugin, with `cairnManifest` linked to the options reference at first
+          mention. The define it supplies waits for the dev-backend section.
+      - id: x-plugin
+        kind: fact
+        fact: f:fj28xs
+        use: |
+          Only the manifest's default path, inside the plugin's opening sentence, then
+          `configModule` and `content` in one sentence. Omit the other optional path.
+      - id: x-plugin-link
+        kind: link
+        target: ../reference/vite.md#cairnmanifestoptions
       - id: x-steps-lead
         kind: sentence
         mode: verbatim
@@ -856,12 +874,14 @@ sections:
       the route needs the content module [[index-the-content-and-commit-its-manifest]] writes.
     level: 3
     opens: |
-      The entry route is a prerendered catch-all built on the engine's public routes loader, which
-      resolves one entry by request path and enumerates every routable entry for the prerenderer.
+      The entry route is a prerendered catch-all built on the engine's public routes loader.
     items:
       - id: r-loader
         kind: fact
         fact: f:pkt8i6
+        use: |
+          Only what `createPublicRoutes` returns, `entryLoad` and `entries`, each with what it does,
+          in one sentence that links `createPublicRoutes` at its first mention.
       - id: r-loader-link
         kind: link
         target: ../reference/delivery.md#createpublicroutes
@@ -981,7 +1001,7 @@ sections:
       failures that stop the build from the one that does not.
     level: 3
     opens: |
-      The content wiring fails in four ways, and only the first three stop the build.
+      The content wiring has four common failures, and the first three stop the build.
     items:
       - id: f-modes
         kind: fact
@@ -1078,8 +1098,8 @@ sections:
       practiced before the admin depends on it.
     level: 3
     opens: |
-      Add a second post, build without writing the manifest to see the drift failure, then write
-      the manifest and open the new permalink.
+      This exercise shows the drift check at work: a second post fails the build until the manifest
+      is written again.
     items:
       - id: t2-disclosure
         kind: sentence
@@ -1316,8 +1336,9 @@ sections:
         fact: f:g7zuji
         use: |
           Only what visible chrome around `/admin` (a header, a footer, or a width cap) does to the
-          admin shell, and that in development a width cap logs one console error and changes
-          nothing. An existing app with chrome in its root layout moves it as the linked reference
+          admin shell, and that in development the engine logs one console error for a width cap
+          and leaves the layout as it is (never "changes nothing", which reads as contradicting the
+          chrome's effect). An existing app with chrome in its root layout moves it as the linked reference
           shows. Omit the function names.
       - id: m-chrome-link
         kind: link
@@ -1350,8 +1371,8 @@ sections:
         fact: f:xluud1
         use: |
           Only the define the `cairnManifest` plugin already in `vite.config.ts` supplies, its value
-          under `vite dev`, under a `VITE_CAIRN_E2E=1` build, and in a default build, and that a
-          define the site sets would win, so the site writes none.
+          under `vite dev`, under a `VITE_CAIRN_E2E=1` build, and in a default build, and that the
+          site sets no define for the flag, because a site define would override the plugin's.
       - id: d-noexternal
         kind: fact
         fact: f:2pv4r5
@@ -1359,12 +1380,6 @@ sections:
           Only the `ssr.noExternal` entry a hand-built site adds beside the engine, the
           `cloudflare:workers` import that makes Node's loader reject the package, and the 500
           `/admin` answers under `vite dev` without the entry.
-      - id: d-built
-        kind: fact
-        fact: f:47v0r9
-        use: |
-          Only that the dev package ships built JavaScript in `dist/` and declares no `svelte`
-          export condition. Leave out the build and release scripts.
       - id: d-steps-lead
         kind: sentence
         mode: verbatim
@@ -1427,10 +1442,9 @@ sections:
         kind: fact
         fact: f:f21bcz
         use: |
-          Only the one `if` and its two reads in order (the define, then `CAIRN_DEV_BACKEND ===
-          '1'`), the handle it picks and exports as `handle`, and that both handles take `{ runtime
-          }`, in a paragraph after the hooks code; then the `vite dev` clause, as the reason this
-          site's opt-in reads `process.env`. Omit the Worker-env read that the scaffold's helper
+          Only the `vite dev` clause, as the reason this site's opt-in reads `process.env`, opening
+          the paragraph after the hooks code. Never restate the code's `if`, its two reads, or the
+          handle it exports. Omit the Worker-env read that the scaffold's helper
           adds and this site's code does not, the scaffold's paths, and its `dev-gate` helper.
       - id: d-callsite
         kind: fact
@@ -1447,14 +1461,15 @@ sections:
         kind: fact
         fact: f:4xrx5f
         use: |
-          Only the required `runtime` on `createAuthGuard` and the type error of a call with no
-          `runtime`. Omit the earlier versions.
+          Only the required `runtime` on `createAuthGuard` and the type error of a call with none,
+          in one sentence with `d-runtime-dev` that links `createAuthGuard` at its first mention.
+          Omit the earlier versions.
       - id: d-runtime-dev
         kind: fact
         fact: f:7cv105
         use: |
           Only the same required `runtime` on `devBackendHandle`, so one declaration serves both
-          handles. Omit the earlier versions.
+          handles, in that one sentence. Omit the earlier versions.
       - id: d-guard-link
         kind: link
         target: ../reference/sveltekit.md#createauthguard
@@ -1462,7 +1477,8 @@ sections:
         kind: fact
         fact: f:9mx680
         use: |
-          Only the three layers, as a bulleted list, each tied to where this page meets it: the
+          Only the three layers, as a bulleted list under a lead-in that says three layers keep the
+          package out (no fence figure), each tied to where this page meets it: the
           build-time flag the hooks code names, the `devDependency` boundary the install step set,
           and the runtime tripwire the guard enforces.
       - id: d-flag-link
@@ -1473,14 +1489,15 @@ sections:
         fact: f:n52h8f
         use: |
           Only that `@glw907/cairn-cms/ambient`, already imported in `src/app.d.ts`, declares
-          `__CAIRN_DEV_BUILD__` as a boolean global, so the site declares nothing for it.
+          `__CAIRN_DEV_BUILD__` as a boolean global, so the site needs no declaration, in one
+          sentence.
       - id: d-overlay
         kind: fact
         fact: f:cgt4tk
         use: |
           Only the `'repository'` mode's overlay as the reader meets it: nothing written to disk, an
           overlay entry winning until the dev server restarts, and the list reading the manifest on
-          disk. Omit branches and tombstones.
+          disk until a dev publish commits an overlay copy. Omit branches and tombstones.
       - id: d-wrangler-dev
         kind: fact
         fact: f:2fqe3l
@@ -1491,7 +1508,7 @@ sections:
         kind: fact
         fact: f:7rehzh
         use: |
-          Only the Origin check that a config with no `csrf` key leaves running ahead of every
+          Only the Origin check that a kit config with no `csrf` key leaves running ahead of every
           handle, `/admin` included, and the double-submit token the guard adds on top, in a
           paragraph on the `createAuthGuard` branch the hooks code shows. State it of this site's
           config, not the scaffold's.
@@ -1499,22 +1516,13 @@ sections:
         kind: fact
         fact: f:3cekcy
         use: |
-          Only the removal of `csrf.checkOrigin` in SvelteKit 3, which leaves `trustedOrigins` as
-          the only setting, so the site sets no `csrf` key, and that the check does not run under
-          `vite dev`.
+          Only that SvelteKit skips its Origin check under `vite dev`, naming the Origin check, not
+          a bare "the check". Omit the `csrf.checkOrigin` removal, which
+          [[deploy-a-bare-sveltekit-site]] places for an existing app, so the paragraph gives no
+          circular reason for the missing `csrf` key.
       - id: d-csrf-link
         kind: link
         target: security-model.md#csrf-protection
-      - id: d-access
-        kind: fact
-        fact: f:iwf4nu
-        use: |
-          Only the one declaration, as the section's closing sentence: when the site later declares
-          an access map, it declares it once, as the adapter's `access` member, and the guard reads
-          it from the runtime, so the hooks module needs no edit. Omit the earlier versions.
-      - id: d-restrict-link
-        kind: link
-        target: restrict-admin-access.md
   - id: verify-the-dev-sign-in
     heading: Verify the dev sign-in
     why: |
@@ -1604,8 +1612,7 @@ sections:
       production makes edits real.
     level: 3
     opens: |
-      Edit the post in the admin, confirm that the file on disk is unchanged, then restart the dev
-      server and find the edit gone.
+      This exercise shows where a dev-backend edit lives.
     items:
       - id: t3-disclosure
         kind: sentence
@@ -1617,8 +1624,9 @@ sections:
         kind: fact
         fact: f:cgt4tk
         use: |
-          Only the overlay behavior behind the exercise's expected results: the edit shows in the
-          admin, the file on disk is untouched, and a restart discards the edit.
+          Only the overlay behavior behind the objective, as the sentence after the opening, outside
+          the disclosure: the admin shows the edit while the file on disk stays unchanged, and a
+          restart of the dev server discards it. No explanation inside the disclosure.
       - id: t3-edit
         kind: step
         text: |
@@ -1638,10 +1646,17 @@ sections:
       - id: t3-restart
         kind: step
         text: |
-          In the terminal, restart the dev server with the flag, reopen the post in the admin, and
-          confirm that the edit is gone.
+          In the terminal, restart the dev server with `CAIRN_DEV_BACKEND` set to `1`.
         requires:
           - disk-unchanged
+        produces:
+          - dev-restarted
+      - id: t3-reopen
+        kind: step
+        text: |
+          In the admin, reopen First light, and confirm that the edit is gone.
+        requires:
+          - dev-restarted
         produces:
           - overlay-cleared
   - id: checklist-before-production
@@ -1690,14 +1705,16 @@ sections:
         fact: f:7bch04
         use: |
           Only the three edits, as a bulleted list framed as the edits to files the site already
-          has, beside the App, the secret, and the database the sections create; then that the
-          private key is a Worker secret rather than a file edit, and the hooks clause.
+          has, beside the App, the secret, and the database the sections create; then the private
+          key as a Worker secret that `wrangler.jsonc` never lists, and the hooks clause with its
+          condition first (on a production build the flag is `false` and the build drops the
+          branch, so `hooks.server.ts` stays as it is).
       - id: p-order
         kind: fact
         fact: f:e5vm42
         use: |
-          Only the order the values arrive in: each section makes its edit once the value it needs
-          exists, so the bindings come last.
+          Only the order the values arrive in, as two sentences: the bindings come last; each
+          section edits a file only once the value it needs exists.
   - id: push-the-site-to-github
     heading: Push the site to GitHub
     why: |
@@ -1975,8 +1992,8 @@ sections:
       - id: s-app-installation-id
         kind: step
         text: |
-          In the installation settings address GitHub opens after the install, note the trailing
-          number, which is the installation ID.
+          In the browser's address bar, note the trailing number of the installation settings URL
+          that GitHub opens after the install.
         requires:
           - app-installed
         produces:
@@ -2041,8 +2058,9 @@ sections:
         kind: fact
         fact: f:0w7jar
         use: |
-          Only the five required strings and `branch` as the repository's default branch. Omit the
-          scaffold.
+          Only that its types require the five strings (a type requirement: `createGithubApp`
+          validates nothing at runtime, per `f:dujlzg`) and `branch` as the repository's default
+          branch, with `createGithubApp` linked at its first mention. Omit the scaffold.
       - id: k-createapp-link
         kind: link
         target: ../reference/core.md#creategithubapp
@@ -2062,7 +2080,7 @@ sections:
         kind: fact
         fact: f:vpieos
         use: |
-          Only the documented one-line base64 form and the `atob()` decode before signing, with the
+          Only the one-line base64 form the engine expects and the `atob()` decode before signing, with the
           command `base64 < <path>.pem | tr -d '\n' | npx wrangler secret put
           GITHUB_APP_PRIVATE_KEY_B64`.
       - id: s-move-pem
@@ -2101,7 +2119,8 @@ sections:
         kind: fact
         fact: f:hft8s8
         use: |
-          Only the two migrations every site applies and what the nonce column of
+          Only the two migrations every site applies, named once in the opening sentence, and what
+          the nonce column of
           `0004_login_nonce.sql` binds. The missing-column error waits for
           [[resolve-a-production-failure]].
       - id: db-ship
@@ -2110,9 +2129,6 @@ sections:
         use: |
           Only the shipped `migrations/` directory, the copy into the site's `migrations_dir`,
           and the apply command's `--remote` and `--local` flags.
-      - id: db-create
-        kind: fact
-        fact: f:if45on
       - id: db-steps-lead
         kind: sentence
         mode: verbatim
@@ -2170,8 +2186,10 @@ sections:
         kind: fact
         fact: f:pkrwom
         use: |
-          Only the recommendation, not a requirement, that `0002_audit.sql` go on a separate D1
-          binding with its `migrations_dir`, and the reason for it.
+          Only that `0002_audit.sql` is optional and that the `createD1AuditSink` entry, linked at
+          first mention, recommends it on a separate D1 binding with its own `migrations_dir`, which
+          keeps audit writes from contending with session and token lookups (no "never contend",
+          and no passive "is recommended").
       - id: db-audit-link
         kind: link
         target: ../reference/sveltekit.md#created1auditsink
@@ -2270,7 +2288,7 @@ sections:
           the deployed origin before the production build.
       - id: em-send-link
         kind: link
-        target: '#edit-the-message-in-a-custom-sender'
+        target: '#the-custom-sender-contract'
   - id: verify-the-production-site
     heading: Verify the production site
     why: |
@@ -2278,21 +2296,23 @@ sections:
       publish carried to the deployed page confirms the App, which no command checks.
     level: 3
     opens: |
-      `cairn doctor` confirms the two bindings, and a publish from the deployed admin confirms the
-      App, since no command checks the App itself.
+      No command checks the GitHub App, so this section verifies it with a real publish whose
+      commit lands on `main`.
     items:
       - id: pv-doctor
         kind: fact
         fact: f:m0ouh8
         use: |
-          Only what backs the section's first sentence: the `config.bindings` check, run with no
-          flags from the site's directory, and that checking the App takes a manual publish whose
-          commit lands on `main`.
+          Only the `config.bindings` check, run with no flags from the site's directory, in one
+          sentence that links `cairn doctor` to its checks table at first mention.
+      - id: pv-doctor-link
+        kind: link
+        target: ../reference/cli-cairn-doctor.md#the-checks
       - id: pv-prerender
         kind: reason
         text: |
           The entry route is prerendered, so a published edit reaches the deployed page only after
-          the next build and deploy, which the steps perform.
+          the next build and deploy.
       - id: pv-steps-lead
         kind: sentence
         mode: verbatim
@@ -2340,23 +2360,31 @@ sections:
       - id: s-sign-in
         kind: step
         text: |
-          On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email,
-          and open the link in the email.
+          On the deployed origin, request a sign-in to the admin with the `bootstrapOwner` email.
         requires:
           - prod-deployed
         produces:
-          - prod-signed-in
+          - sign-in-requested
         canFail: true
       - id: pv-bootstrap
         kind: fact
         fact: f:f2vudv
         use: |
           Only that submitting the request with the `bootstrapOwner` email, while the allowlist is
-          empty, inserts the owner row and logs `editor.bootstrapped` before the link is sent, so
-          the row exists before the reader opens the link.
+          empty, inserts the owner row and logs `editor.bootstrapped` before the link is sent, with
+          the event name linked to the log events reference. Omit the restatement that the row
+          exists before the link is opened.
       - id: pv-log-link
         kind: link
         target: ../reference/log-events.md
+      - id: s-open-link
+        kind: step
+        text: |
+          In your mail client, open the sign-in link.
+        requires:
+          - sign-in-requested
+        produces:
+          - prod-signed-in
       - id: s-publish
         kind: step
         text: |
@@ -2405,9 +2433,6 @@ sections:
           - edit-deployed
         produces:
           - production-verified
-      - id: pv-doctor-link
-        kind: link
-        target: ../reference/cli-cairn-doctor.md#the-checks
   - id: resolve-a-production-failure
     heading: Resolve a production failure
     why: |
@@ -2453,9 +2478,10 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          Set `PUBLIC_ORIGIN` under `vars` to the deployed `https` origin.
+          Set `PUBLIC_ORIGIN` under `vars` in `wrangler.jsonc` to the deployed `https` origin.
         facts:
-          - f:ntdafg
+          - f:by1dv5
+          - f:7bch04
       - id: pf-mail
         kind: failure
         from: s-sign-in
@@ -2507,12 +2533,13 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          Check the App's permission and installation on GitHub, and put the secret again if the
-          Worker lacks it.
+          Check the App's permission and installation on GitHub. If the Worker lacks the secret, set
+          it again as [[store-the-app-s-credentials]] shows.
         facts:
           - f:vgw8x9
           - f:rp65d2
           - f:pg2smj
+          - f:7dtrwy
       - id: pf-debug-link
         kind: link
         target: debug-your-site.md
@@ -2523,8 +2550,8 @@ sections:
       database, so the deployed site stays as it is.
     level: 3
     opens: |
-      Apply `0003_preview.sql` to the local development database beside the two every site
-      applies, and find it in the apply output.
+      This exercise applies `0003_preview.sql` to the local development database beside the two
+      migrations every site applies, and the apply output lists it.
     items:
       - id: t4-disclosure
         kind: sentence
@@ -2603,12 +2630,11 @@ sections:
         fact: f:2gtftn
         use: |
           Only the email's engine copy (the subject and the body with its fixed sentence), where the
-          site name and the sender come from, and the two routes to change it: `auth.branding` for
-          the three members it names, and a custom `auth.send` for anything else.
-      - id: ce-handoff
-        kind: handoff
-        text: |
-          The two subsections take the two routes in that order, branding first.
+          site name and the sender come from, and the two routes to change it as a bulleted list,
+          each item linking its section by name: `auth.branding` for the members it names
+          ([[rebrand-the-email]]), and a custom `auth.send` for anything else
+          ([[edit-the-message-in-a-custom-sender]]). No sentence that points at the next sections
+          by position.
   - id: rebrand-the-email
     heading: Rebrand the email
     why: |
@@ -2616,16 +2642,17 @@ sections:
       so it comes first.
     level: 3
     opens: |
-      A supplied `auth.branding` overrides each member it names, `siteName`, `from`, or `replyTo`,
-      and leaves the rest at the site config's name and the adapter's sender.
+      Through `createCairnAdmin`, `auth.branding` is a partial of three members, `siteName`,
+      `from`, and `replyTo`.
     items:
       - id: rb-merge
         kind: fact
         fact: f:v72g9z
         use: |
-          Only `branding` through `createCairnAdmin`: a partial of its three members, each
-          defaulting to the runtime's site name and sender, with a supplied member overriding only
-          its default. Omit `createAuthRoutes`.
+          Only the partial's three members, with `createCairnAdmin` linked at its first mention, and
+          that a supplied member overrides only its default, leaving the rest at the site config's
+          name and the adapter's sender, in one sentence after the opening. Omit
+          `createAuthRoutes`.
       - id: s-branding
         kind: step
         text: |
@@ -2646,9 +2673,10 @@ sections:
         kind: link
         target: ../reference/sveltekit.md#createcairnadmin
   - id: edit-the-message-in-a-custom-sender
-    heading: Edit the message in a custom sender
+    heading: The custom sender contract
     why: |
-      A custom sender covers any change branding cannot make, so it follows branding.
+      A custom sender covers any change branding cannot make, so it follows branding. The section
+      holds no steps, so its heading is a noun phrase.
     level: 3
     opens: |
       A custom `auth.send` is a `SendMagicLink` that replaces the Cloudflare sender and receives the
@@ -2671,9 +2699,9 @@ sections:
         kind: sentence
         mode: claim
         text: |
-          This tutorial writes no custom sender, so the site keeps the Cloudflare sender; the
-          `SendMagicLink` type and the message it receives are in the SvelteKit reference's types
-          section.
+          This tutorial keeps the Cloudflare sender, as one short sentence. `SendMagicLink` is
+          linked to the SvelteKit reference's types section at its first mention, in the opening
+          sentence, and no closing pointer sentence repeats the link.
         facts:
           - f:lbetsq
       - id: cs-types-link
@@ -2735,10 +2763,10 @@ sections:
           One or two paragraphs, in different words from the overview's objectives, of what the
           reader now knows: the engine compiles as part of the site and reads one runtime built from
           the adapter and site config; every build checks the committed manifest against the
-          markdown; the dev backend works on the site's content in memory and never reaches a
-          production bundle because the hook names the build-time flag directly; in production the
-          editors sign in against the D1 database the reader created and their edits commit through
-          the App the reader registered, reaching the public page on the next build and deploy.
+          markdown; the dev backend works on the site's content in memory, and because the hook
+          names the build-time flag directly it never reaches a production bundle; in production
+          editors sign in against the reader's D1 database and each publish commits through the
+          reader's GitHub App, reaching the public page on the next build and deploy.
         facts:
           - f:d0sp1t
           - f:n0laoh
@@ -2765,6 +2793,16 @@ sections:
       - id: next-routes
         kind: link
         target: build-the-public-routes.md
+      - id: next-restrict
+        kind: link
+        target: restrict-admin-access.md
+      - id: d-access
+        kind: fact
+        fact: f:iwf4nu
+        use: |
+          Only the one declaration, as the Restrict admin access item's description: the page
+          declares an access map, which the guard reads from the runtime with no edit to the hooks
+          module. Omit the earlier versions.
       - id: next-security
         kind: link
         target: security-model.md
@@ -2818,11 +2856,11 @@ dispositions:
       States the scaffold's and the example site's access declarations, neither of which the
       tutorial's site has; Restrict admin access owns declaring a map.
   - fact: f:8ciz2s
-    disposition: subordinated
-    reference: debug-your-site.md#configaccess_unmapped
+    disposition: cut
     reason: |
       Access-map validation at composition is diagnosis for a site that declares a map, which this
-      tutorial's site does not; the debugging page owns the event.
+      tutorial's site does not; Restrict admin access, in Next steps, owns declaring a map, and
+      the page carries no pointer to the debugging event.
   - fact: f:b857di
     disposition: subordinated
     reference: ../reference/cloudflare.md#verifyturnstile
@@ -2866,17 +2904,15 @@ dispositions:
       A condition for a site that declares custom roles, which this tutorial's site does not; the
       doctor reference's checks table states it.
   - fact: f:mbx6q1
-    disposition: subordinated
-    reference: ../reference/sveltekit.md#createeditorroutes
+    disposition: cut
     reason: |
-      `createEditorRoutes` is per-route wiring the single-mount admin forwards for the site; its
-      reference entry states the required `runtime`.
+      `createEditorRoutes` is per-route wiring the single-mount admin forwards for the site, and
+      the tutorial never uses it, so the page carries no pointer to it.
   - fact: f:mou1li
-    disposition: subordinated
-    reference: debug-your-site.md#configaccess_unmapped
+    disposition: cut
     reason: |
-      When the access-map warning appears in Workers Logs is diagnosis for a site with a map; the
-      debugging page states it.
+      When the access-map warning appears in Workers Logs is diagnosis for a site with a map, which
+      this tutorial's site does not declare; the page carries no pointer to it.
   - fact: f:n0fg3w
     disposition: subordinated
     reference: upgrade-cairn.md#when-your-range-crosses-sveltekit-3
@@ -2902,24 +2938,33 @@ dispositions:
       The scaffold's and the example site's `navLayout` belong to the sidebar guide; the tutorial's
       adapter declares no layout.
   - fact: f:u78zg6
-    disposition: subordinated
-    reference: debug-your-site.md#adminactionmisconfigured
+    disposition: cut
     reason: |
       With both handles taking `{ runtime }`, the event cannot fire on the tutorial's site, so the
-      page carries no warning about it; the debugging page owns the event.
+      page carries no warning about it and no pointer to it.
   - fact: f:zzjrza
-    disposition: subordinated
-    reference: migration-notes.md#unreleased
+    disposition: cut
     reason: |
       The scaffold's and the example site's hooks are not this site's; the tutorial's hooks
-      pass no `content` option, and the page states the default through `f:p1v88s`.
+      pass no `content` option, and the page states the default through `f:p1v88s`. The page
+      carries no pointer to the migration notes, whose Unreleased anchor moves at each release.
+  - fact: f:47v0r9
+    disposition: cut
+    reason: |
+      The dev package's built form adds nothing a step needs; the `ssr.noExternal` entry rests on
+      its `cloudflare:workers` import through `f:2pv4r5`.
+  - fact: f:if45on
+    disposition: cut
+    reason: |
+      The database steps show the create command, the `AUTH_DB` binding, and `migrations_dir`, so
+      a sentence narrating them would restate the steps.
 constraints:
   - |
     Where the dev backend's behavior and its neighbors land: the working-tree default, the
     in-memory overlay, and the fixtures mode in [[wire-the-dev-backend]] (`f:p1v88s`, `f:cgt4tk`,
     `f:2fqe3l`, `f:dqjkci`); the admin notice in [[verify-the-dev-sign-in]] (`f:7qwrb9`) and the
     in-memory exercise in [[edit-the-post-in-memory]] (`f:cgt4tk`); the dev package's
-    `ssr.noExternal` entry and its built form in [[wire-the-dev-backend]] (`f:2pv4r5`, `f:47v0r9`),
+    `ssr.noExternal` entry in [[wire-the-dev-backend]] (`f:2pv4r5`),
     with the 500 as a failure row; the one declaration as `{ runtime }` on both handles and the
     access map declared once on the adapter (`f:4xrx5f`, `f:7cv105`, `f:iwf4nu`, `f:f21bcz`); the
     branding merge in [[rebrand-the-email]] (`f:v72g9z`, `f:2gtftn`); the engine-supplied define in
@@ -2927,6 +2972,11 @@ constraints:
     plugin and no `app.d.ts` declaration; the stale-manifest message in
     [[resolve-a-content-build-failure]] (`f:fdtgh5`). No `cf-typegen` step is placed (see
     `dispositions`). `seedContent` is named nowhere on the page.
+  - |
+    Each reference entry is linked at its identifier's first mention, and no separate "The [x]
+    entry lists/documents ..." sentence follows it; a separate pointer sentence stays only where
+    it says what the reader finds there (`ga-reach-link`). Each try-it section opens on its
+    objective, stated as what the exercise shows, never as imperatives outside a step.
   - |
     No coding assistant is assumed (register). The page names no coding agent, addresses none, and
     mentions neither `CLAUDE.md` nor `.claude/`.

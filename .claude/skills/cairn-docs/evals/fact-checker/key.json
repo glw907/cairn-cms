@@ -1,0 +1,12 @@
+[
+  {"n": 1, "claim": "The default maximum upload size is 25 MB.", "true": true, "source": "src/lib/media/config.ts:35 (DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024), applied at :71"},
+  {"n": 2, "claim": "The default publicBase is /media.", "true": true, "source": "src/lib/media/config.ts:33 (DEFAULT_PUBLIC_BASE = '/media'), applied at :69"},
+  {"n": 3, "claim": "The built-in transform presets are thumb, inline, card, and hero, and a site can't declare more.", "true": true, "source": "src/lib/media/config.ts:45-48 (BUILT_IN_PRESETS); the comment at :39-42 says a site cannot declare one"},
+  {"n": 4, "claim": "A media block that names no bucketBinding throws a cairn:-prefixed error.", "true": true, "source": "src/lib/media/config.ts:59-61"},
+  {"n": 5, "claim": "transformations is off unless the block sets it to true.", "true": true, "source": "src/lib/media/config.ts:73 (assets.transformations ?? false)"},
+  {"n": 6, "claim": "The default urlForm is opaque, which leaves the file's name out of the URL.", "true": false, "source": "src/lib/media/config.ts:70 (assets.urlForm ?? 'slug'): the default is slug"},
+  {"n": 7, "claim": "The hero preset is 1200 pixels wide and 630 pixels tall.", "true": false, "source": "src/lib/media/config.ts:48 (hero: width 1600, height 900)"},
+  {"n": 8, "claim": "The default allowedTypes list includes image/svg+xml.", "true": false, "source": "src/lib/media/config.ts:37 (DEFAULT_ALLOWED_TYPES: jpeg, png, webp, gif, avif)"},
+  {"n": 9, "claim": "When the adapter declares no media block, normalizeAssets throws instead of leaving media off.", "true": false, "source": "src/lib/media/config.ts:57 (undefined returns { enabled: false })"},
+  {"n": 10, "claim": "A site declares extra presets through a variants field in the media block.", "true": false, "source": "src/lib/media/config.ts:4-6 header comment and :39-42: a site cannot declare presets; the variants field was removed"}
+]

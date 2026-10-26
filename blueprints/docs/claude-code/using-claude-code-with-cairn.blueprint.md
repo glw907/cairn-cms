@@ -7,9 +7,10 @@ exemplar: operators/gh-exit-codes
 # Using Claude Code with cairn
 
 :::reader
-**Who reads it.** The page has no register track. Its reader is therefore the extend track's profile,
-per the outline's `job`. That reader is a Svelte-fluent web developer building an organization's
-site on cairn's seams, who has chosen Claude Code as their coding assistant. Two arrivals:
+**Who reads it.** The page opens the register's Claude Code track (`docs/internal/docs-register.md`).
+Its reader is the extend track's developer, per the outline's `job`. That reader is a
+Svelte-fluent web developer building an organization's site on cairn's seams. They have chosen
+Claude Code as their coding assistant. Two arrivals:
 
 1. **The scaffolded-site developer.** The site already carries the guidance tree, and the
    reader wants to know what Claude Code now reads and which skill fires for which task.
@@ -18,7 +19,7 @@ site on cairn's seams, who has chosen Claude Code as their coding assistant. Two
    it leaves to them.
 
 A developer using another coding agent arrives in the wrong place. The introduction says so in
-one line: cairn ships no guidance for that agent (`f:pmmtrm`).
+one line: cairn ships no guidance for that agent. :fact[pmmtrm]
 
 **Background.** cairn's guidance for Claude Code is a tree of files under `.claude/`. A scaffolded site is born with that tree, and `cairn-guidance install` writes it on any other site. :fact[0ygumq]
 The engine stops at that tree. It never edits Claude Code's settings, never rewrites the site's root `CLAUDE.md`, and never makes CI fail on a stale tree unless the developer chooses that. :fact[4nccq6] :fact[6ro1n9] :fact[jd54ph]

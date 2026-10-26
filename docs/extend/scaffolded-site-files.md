@@ -102,7 +102,7 @@ In the tree the setup command writes, `[engine]` marks a file the engine reads, 
 └── wrangler.jsonc                   [engine]
 ```
 
-The scaffold has no `src/access.ts`, no `.dev.vars.example`, and no `LICENSE`. `CLAUDE.md` and `.claude/` hold Claude Code's guidance files; see [Using Claude Code with cairn](../claude-code/using-claude-code-with-cairn.md).
+The scaffold has no `src/access.ts`, no `.dev.vars.example`, and no `LICENSE`. `CLAUDE.md` and `.claude/` hold Claude Code's guidance files; see [Work on a cairn site with Claude Code](../claude-code/work-on-a-cairn-site-with-claude-code.md).
 
 ## Root files
 

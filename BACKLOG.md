@@ -4,6 +4,8 @@
 
 ## High
 
+- [ ] **#74** Media replace leaves the content manifest's `mediaRefs` on the old hash `#bug` `#cairn-cms` *(2026-10-25)*
+  The replace action commits each rewritten entry plus the new `media.json` row straight to the default branch, but not `runtime.manifestPath` (`src/lib/sveltekit/content-routes-media-metadata.ts:400-411`); delete and rename both rewrite it (`content-routes-entry-destructive.ts:178,388`). The default-branch usage index reads the manifest's `mediaRefs` (`src/lib/media/usage.ts:81-95`), so after a replace the new asset shows as unused and the delete gate would let an editor delete an image live pages render. Alt propagation (`:574-580`) rewrites entry files too; check it the same way. Fix: rebuild each affected entry's manifest row in the same commit, with a test. Found by the Architecture page's fact-check, 2026-10-25.
 - [ ] **#55** Refuse exit 0 in `gate-tier.mjs` when the fast lane prints no legs `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)*
   In the PR #137 sweep a slice agent's edit script emptied `scripts/checks/gate-tier.mjs` (929 lines) and committed it, and the fast lane printed nothing and exited 0, because the fast lane is that file. Exit nonzero when no leg runs. The sweep-side check (a `git diff --numstat` for unequal counts) lands in the workstation's word-sweep method. Record item 61 in `~/Projects/initiatives/docs-system/research/2026-10-22-extend-blueprints-batch-2-friction.md`.
 

@@ -1,6 +1,6 @@
 # Architecture
 
-cairn is a library that a site installs as a dependency and runs inside its own Cloudflare Worker, with no CMS server of its own. The engine ships as the npm package `@glw907/cairn-cms`. A site's admin and public pages are route files in its SvelteKit app, and their load functions and form actions come from the engine's route factories. The app builds into that one Worker with `@sveltejs/adapter-cloudflare`.
+cairn is a Git-based markdown CMS for SvelteKit sites on Cloudflare, installed as the npm package `@glw907/cairn-cms`. It runs inside the site's own Cloudflare Worker, with no CMS server of its own. A site's admin and public pages are route files in its SvelteKit app, and their load functions and form actions come from the engine's route factories. The app builds into that one Worker with `@sveltejs/adapter-cloudflare`.
 
 Content lives as markdown in the site's GitHub repository. A publish is a commit through the site's GitHub App, and the site's existing deploy picks it up. Beyond the Worker, the site uses two Cloudflare stores: a D1 database holds the sign-in rows, and an R2 bucket holds media bytes.
 

@@ -2,11 +2,11 @@
   "page": "docs/extend/architecture.md",
   "sentences": [
     {
-      "text": "cairn is a library that a site installs as a dependency and runs inside its own Cloudflare Worker, with no CMS server of its own.",
-      "id": "f:j0ut9n"
+      "text": "cairn is a Git-based markdown CMS for SvelteKit sites on Cloudflare, installed as the npm package `@glw907/cairn-cms`.",
+      "id": ["f:j0ut9n", "f:cjonmm"]
     },
     {
-      "text": "The engine ships as the npm package `@glw907/cairn-cms`.",
+      "text": "It runs inside the site's own Cloudflare Worker, with no CMS server of its own.",
       "id": "f:j0ut9n"
     },
     {

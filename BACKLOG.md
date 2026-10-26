@@ -14,6 +14,9 @@
 
 ## Medium
 
+- [ ] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25)*
+  `judgeSourceExclusion` (`src/lib/guidance/check.ts:76-91`) reads only `src/admin.css` and `src/theme/admin.css` and counts as excluded only the literal `SOURCE_EXCLUSION_LINE`, `@source not "./.claude";` (`:21`). Tailwind resolves an `@source` path against the stylesheet that carries it, so in `src/admin.css` that line excludes `src/.claude`, not the project root's `.claude/`; a correct `@source not "../.claude";` reads as not excluded, and the advice at `:201` makes a site add the wrong line. It also never reads the public stylesheet (the scaffold's exclusion is `templates/waymark/src/chassis/tokens.css:55`, `../../.claude`). Fix: resolve each `@source not` path against its file and compare to the root `.claude`, and read the site's Tailwind entries, with tests. Found by the Claude Code page's recheck, 2026-10-25.
+
 - [ ] **#73** Type-check the hooks snippets instead of skipping them `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   Engine pass B (`37797ff35`, 2026-10-08) made `{ runtime }` required on the hook handles, and seven extend pages kept the old calls until batch 5's sweep (#142). Every stale block carried `snippet-check-skip`, for reading the site-declared `__CAIRN_DEV_BUILD__` global or for being an excerpt of the scaffold's hooks file, so the snippet check never saw them. Give the check an ambient `declare const __CAIRN_DEV_BUILD__: boolean` and a stub for the excerpts' elided imports, then drop those skips so an API break fails the docs gate.
 - [ ] **#72** Run the unnamed `drafter check` in CI once it reaches zero errors `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*

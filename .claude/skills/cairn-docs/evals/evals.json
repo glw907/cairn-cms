@@ -6,7 +6,7 @@
       "suite": "capability",
       "pin": "663ac5aeb",
       "setup": "setups/rename-item-label.mjs",
-      "prompt": "I renamed the `itemLabel` option on `ArrayField` to `itemTitle` in the code (src/lib/content/fields.ts and its callers). Update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
+      "prompt": "I renamed the `itemLabel` option on `ArrayField` to `itemTitle` in the code (src/lib/content/fields.ts and its callers). Update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
       "expectations": [
         "Every docs page that describes ArrayField.itemLabel says itemTitle, and the option map row is repointed.",
         "The toolkit prop itemLabel (ListToolbar, Pagination) and SlotDef.itemLabel are left alone.",
@@ -83,7 +83,7 @@
       "id": "rename-export",
       "suite": "capability",
       "pin": "663ac5aeb",
-      "prompt": "Rename the media option `urlForm` to `urlShape` everywhere it is part of the public media config (AssetConfig, ResolvedAssetConfig, normalizeAssets, and the code that reads it), and update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
+      "prompt": "Rename the media option `urlForm` to `urlShape` everywhere it is part of the public media config (AssetConfig, ResolvedAssetConfig, normalizeAssets, and the code that reads it), and update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
       "expectations": [
         "urlForm becomes urlShape in src/lib/media/config.ts and src/lib/content/types.ts.",
         "The three pages that mention urlForm are repointed.",
@@ -186,7 +186,7 @@
       "suite": "capability",
       "pin": "663ac5aeb",
       "setup": "setups/deficiency.mjs",
-      "prompt": "A reader says the Limits on a tidy result section of docs/extend/turn-on-tidy.md doesn't match what happens: they tidied a 15,000-character draft and it went through, though the page says it would be refused. Fix the docs. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
+      "prompt": "A reader says the Limits on a tidy result section of docs/extend/turn-on-tidy.md doesn't match what happens: they tidied a 15,000-character draft and it went through, though the page says it would be refused. Fix the docs. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
       "expectations": [
         "The page states the true cap, 24,000 characters.",
         "Only that one sentence changes.",
@@ -234,7 +234,7 @@
       "suite": "regression",
       "pin": "663ac5aeb",
       "install": false,
-      "prompt": "Add a page to the extend track on rotating the session secret. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
+      "prompt": "Add a page to the extend track on rotating the session secret. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
       "expectations": [
         "The run searched src/ for a session secret.",
         "No new page lands under docs/extend/.",
@@ -454,7 +454,7 @@
       "id": "code-and-docs",
       "suite": "capability",
       "pin": "663ac5aeb",
-      "prompt": "Fix BACKLOG #74: media replace leaves the content manifest's mediaRefs on the old hash. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command.",
+      "prompt": "Fix BACKLOG #74: media replace leaves the content manifest's mediaRefs on the old hash. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
       "expectations": [
         "The replace action's commit also writes the content manifest, with a unit test.",
         "docs/extend/architecture.md no longer says a media replace leaves the manifest alone.",

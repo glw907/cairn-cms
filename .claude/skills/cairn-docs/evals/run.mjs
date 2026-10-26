@@ -549,7 +549,9 @@ function abortRun(reason) {
 }
 
 function sessionEnv(extra = {}) {
-  const env = { ...process.env, CAIRN_GATE_LANE: 'light', ...extra };
+  // A headless `-p` run exits soon after the model launches a background subagent, before the
+  // result returns (anthropics/claude-code#73453), so sessions run their subagents in the foreground.
+  const env = { ...process.env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', ...extra };
   delete env.ANTHROPIC_API_KEY;
   return env;
 }

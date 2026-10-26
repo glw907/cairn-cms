@@ -11,6 +11,12 @@ types:
 pages:
   - path: docs/extend/migration-notes.md
     managed: false
+  - path: docs/extend/upgrade-cairn.md
+    managed: false
+  - path: docs/extend/choose-an-ai-posture.md
+    managed: false
+  - path: docs/extend/share-a-draft-preview.md
+    managed: false
   - path: docs/extend/architecture.md
     slug: architecture
     title: Architecture

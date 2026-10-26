@@ -10,20 +10,26 @@
       ]
     },
     {
-      "text": "Its tree is Waymark, cairn's reference reading theme, set on a chassis of design-neutral plumbing and copied from the same tree the engine tests itself against.",
+      "text": "Its files are Waymark, cairn's reference reading theme, together with the design-neutral code in `src/chassis/`.",
       "id": [
         "f:n2skkz",
         "f:rxj43c"
       ]
     },
     {
-      "text": "SvelteKit routes mount the admin and the public site, a server hook guards `/admin`, and the whole SvelteKit config sits inline in `vite.config.ts`, while `wrangler.jsonc` binds the Worker's one D1 database (the auth store), a mail binding, and an R2 bucket.",
+      "text": "On the SvelteKit side, routes mount the admin and the public site, and a server hook guards `/admin`.",
       "id": [
         "f:t2t5lx",
-        "f:f21bcz",
-        "f:n4rg1z",
-        "f:n7t4bn"
+        "f:f21bcz"
       ]
+    },
+    {
+      "text": "The whole SvelteKit config sits inline in `vite.config.ts`.",
+      "id": "f:n4rg1z"
+    },
+    {
+      "text": "On the Cloudflare side, `wrangler.jsonc` binds the Worker's one D1 database (the auth store), a mail binding, and an R2 bucket.",
+      "id": "f:n7t4bn"
     },
     {
       "text": "The repository holds the code and the markdown, the site's GitHub App commits each editor's publish into it, and a GitHub Actions workflow checks every push and pull request.",
@@ -45,7 +51,7 @@
       ]
     },
     {
-      "text": "Ownership still leaves some files with readers that depend on them.",
+      "text": "Some files still carry a contract, because something outside the site's code depends on their shape.",
       "id": "no-claim"
     },
     {
@@ -73,15 +79,11 @@
       "id": "f:qnf469"
     },
     {
-      "text": "An owner who knows which files carry a contract can change the rest freely and change those few with the contract kept.",
-      "id": "no-claim"
-    },
-    {
       "text": "A developer who ran the setup command, or who took over a site from someone who did, reads on to learn what each file does and whether to change it.",
       "id": "no-claim"
     },
     {
-      "text": "One who took over also lacks what the command left outside the repository: its saved record of the run on the machine that ran it and, when the run connected Workers Builds, a build token whose revocation stops deploys without warning.",
+      "text": "One who took over also lacks what the command left outside the repository: its saved record of the run on the machine that ran it and, when the run connected Workers Builds, the build token it registered at Cloudflare.",
       "id": [
         "f:3m0oxs",
         "f:3bbeia",
@@ -93,7 +95,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A developer still choosing between the setup command and a by-hand build sees what the command writes.",
+      "text": "Someone still choosing between the setup command and a by-hand build sees what the command writes.",
       "id": "no-claim"
     },
     {
@@ -113,9 +115,13 @@
       "id": "no-claim"
     },
     {
-      "text": "The root files, the build and deploy configuration with the Worker's one D1 database, and the migrations, with why an added database takes a separate directory",
+      "text": "The root files and the build and deploy configuration",
+      "id": "f:n7t4bn"
+    },
+    {
+      "text": "The database migrations, and why an added database takes a separate directory",
       "id": [
-        "f:n7t4bn",
+        "f:gepykz",
         "f:nv0ok0"
       ]
     },
@@ -128,7 +134,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The settings a new owner edits by hand, outside the admin",
+      "text": "The settings a developer edits by hand, outside the admin",
       "id": "no-claim"
     },
     {
@@ -176,11 +182,15 @@
       "id": "f:guiavc"
     },
     {
-      "text": "A scaffolded site is Waymark, cairn's reference theme, wired onto a chassis of design-neutral plumbing, and the setup command copies both from the same tree the engine runs its tests against.",
+      "text": "A scaffolded site is Waymark, cairn's reference theme, wired onto the chassis, the design-neutral code every scaffolded site shares.",
       "id": [
         "f:n2skkz",
         "f:rxj43c"
       ]
+    },
+    {
+      "text": "The setup command copies both from the same tree the engine runs its tests against.",
+      "id": "f:n2skkz"
     },
     {
       "text": "That tree is `examples/showcase`, and the copy leaves out the following groups:",
@@ -215,11 +225,15 @@
       "id": "f:n2skkz"
     },
     {
+      "text": "The showcase's `package-lock.json`",
+      "id": "f:n2skkz"
+    },
+    {
       "text": "The 13 posts dated 2025, out of the showcase's 27, so the scaffold keeps the other 14",
       "id": "f:n2skkz"
     },
     {
-      "text": "The template build writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the showcase's, so the scaffold still carries those files.",
+      "text": "The setup command writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` in place of the showcase's, so the scaffold still carries those files.",
       "id": "f:n2skkz"
     },
     {
@@ -227,23 +241,15 @@
       "id": "f:u705t5"
     },
     {
-      "text": "A second template, Topo, is planned but not shipped.",
-      "id": "f:u705t5"
-    },
-    {
       "text": "The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live.",
       "id": "f:kldwss"
     },
     {
-      "text": "Every file in the tree belongs to the site: the engine's npm package carries neither the template nor the chassis, and the engine arrives as one ordinary dependency in `package.json`.",
+      "text": "A site built by hand starts with no template, no chassis, and no deploy, and",
       "id": [
         "f:rxj43c",
-        "f:o47i0q"
+        "f:kldwss"
       ]
-    },
-    {
-      "text": "A site built by hand starts with neither.",
-      "id": "f:rxj43c"
     },
     {
       "text": "[Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.",
@@ -262,8 +268,11 @@
       "id": "no-claim"
     },
     {
-      "text": "The tree leaves out files no section discusses, such as `src/app.html` and the theme's test files.",
-      "id": "f:i3rn6f"
+      "text": "The tree leaves out files no section discusses, such as `src/app.html` and the theme's test files, and the gitignored root `.cairn/` that the pre-scripts build.",
+      "id": [
+        "f:i3rn6f",
+        "f:666eg6"
+      ]
     },
     {
       "text": "The scaffold has no `src/access.ts`, no `.dev.vars.example`, and no `LICENSE`.",
@@ -274,10 +283,9 @@
       "id": "f:qlgggh"
     },
     {
-      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, the audit's config, and a `.gitignore` that the setup command renames, and local secrets go in a `.dev.vars` the owner creates there.",
+      "text": "Beside a plain SvelteKit project's files, the root carries a CI workflow, the audit's config, and a `.gitignore`, and local secrets go in a `.dev.vars` the developer creates there.",
       "id": [
         "f:qlgggh",
-        "f:qfv5iw",
         "f:nls26c"
       ]
     },
@@ -294,7 +302,7 @@
       "id": "f:jcux9z"
     },
     {
-      "text": "The last step runs `npx cairn-guidance check` without `--strict` and under `continue-on-error: true`, and that step never fails the job.",
+      "text": "The last step runs `npx cairn-guidance check`, the check of the site's Claude Code guidance, without `--strict` and under `continue-on-error: true`, and that step never fails the job.",
       "id": "f:jd54ph"
     },
     {
@@ -302,19 +310,26 @@
       "id": "f:j7fha2"
     },
     {
-      "text": "The scaffold ships no `.dev.vars.example`: local secrets go in a `.dev.vars` that the owner creates and the `.gitignore` keeps out of the repository.",
+      "text": "The scaffold ships no `.dev.vars.example`.",
       "id": "f:nls26c"
     },
     {
-      "text": "Only the Deploy-button tree, `templates/waymark/`, carries a template for it.",
+      "text": "Local secrets go in a `.dev.vars` file that the developer creates and the `.gitignore` keeps out of the repository.",
       "id": "f:nls26c"
     },
     {
-      "text": "That tree is a separate committed copy, built from the same template build plus an overlay.",
-      "id": "f:rxj43c"
+      "text": "An example of that file exists only in the cairn-cms repository's `templates/waymark/` directory.",
+      "id": "f:nls26c"
     },
     {
-      "text": "In that tree, `.dev.vars.example` names the following two entries:",
+      "text": "That directory is a separate committed copy of the Waymark template, generated from the same source as the scaffold, plus a few added files.",
+      "id": [
+        "f:rxj43c",
+        "f:nls26c"
+      ]
+    },
+    {
+      "text": "In that copy, `.dev.vars.example` names the following two entries:",
       "id": "f:nls26c"
     },
     {
@@ -350,31 +365,38 @@
       "id": "no-claim"
     },
     {
-      "text": "The setup command's package stores this file as `gitignore`, because npm's packlist drops a file named `.gitignore`, and the setup command renames it after copying.",
-      "id": "f:qfv5iw"
-    },
-    {
-      "text": "The rename fails loudly when the file is absent, and `.gitattributes` ships with its name unchanged.",
-      "id": "f:qfv5iw"
-    },
-    {
-      "text": "The file ignores `.dev.vars` and every `.dev.vars.*` file, with no line that re-includes any of them.",
+      "text": "The file ignores `.dev.vars` and every `.dev.vars.*` file, and no line re-includes any of them.",
       "id": "f:nls26c"
     },
     {
-      "text": "It also ignores the whole root `.cairn/` directory (`/.cairn/`).",
+      "text": "It also ignores the whole root `.cairn/` directory (`/.cairn/`), where the pre-scripts rebuild the compiled `.cairn/admin.css`.",
       "id": "f:666eg6"
     },
     {
-      "text": "The pre-scripts rebuild the compiled `.cairn/admin.css` there.",
-      "id": "f:666eg6"
+      "text": "This root `.cairn/` is separate from the committed `src/content/.cairn/`, which holds the content manifests.",
+      "id": [
+        "f:666eg6",
+        "f:vrue1g"
+      ]
+    },
+    {
+      "text": "The setup command's package stores this file as `gitignore`, because npm's packlist drops a file named `.gitignore`.",
+      "id": "f:qfv5iw"
+    },
+    {
+      "text": "The setup command renames it after copying and fails with an error when the file is absent.",
+      "id": "f:qfv5iw"
+    },
+    {
+      "text": "`.gitattributes` ships with its name unchanged.",
+      "id": "f:qfv5iw"
     },
     {
       "text": "The remaining root entries are a plain project's files, plus a generated types file and the directory that holds the dev server's launcher.",
       "id": "f:qlgggh"
     },
     {
-      "text": "The plain files are `README.md`, `.prettierignore`, `.prettierrc`, `tsconfig.json`, and `vitest.config.ts`, and the root has no `LICENSE`.",
+      "text": "The plain files are `README.md`, `.prettierignore`, `.prettierrc`, `tsconfig.json`, and `vitest.config.ts`.",
       "id": "f:qlgggh"
     },
     {
@@ -398,26 +420,15 @@
       "id": "f:o47i0q"
     },
     {
-      "text": "The engine, `@glw907/cairn-cms`, sits in `dependencies`, and the `imports` field declares `#chassis`, `#theme`, and `#lib` as subpath imports rather than config aliases.",
-      "id": [
-        "f:o47i0q",
-        "f:n4rg1z"
-      ]
+      "text": "The engine, `@glw907/cairn-cms`, sits in `dependencies`, and [Upgrade cairn](upgrade-cairn.md) covers moving its range.",
+      "id": "f:o47i0q"
     },
     {
-      "text": "[Upgrade cairn](upgrade-cairn.md) covers moving the engine's range.",
-      "id": "no-claim"
+      "text": "The `imports` field declares `#chassis`, `#theme`, and `#lib` as subpath imports rather than config aliases.",
+      "id": "f:n4rg1z"
     },
     {
-      "text": "The field maps `#lib/*` to `./src/lib/*`.",
-      "id": "f:wnsv5x"
-    },
-    {
-      "text": "That directory holds one file.",
-      "id": "f:wnsv5x"
-    },
-    {
-      "text": "`log.ts` is the site's [`createLogger`](../reference/log.md#createlogger) instance, typed over the site's log event names.",
+      "text": "It maps `#lib/*` to `./src/lib/*`, which holds only `log.ts`, the site's [`createLogger`](../reference/log.md#createlogger) instance typed over the site's log event names.",
       "id": "f:wnsv5x"
     },
     {
@@ -521,7 +532,7 @@
       "id": "f:n0fg3w"
     },
     {
-      "text": "Only the Deploy-button tree's script adds `--env-file=.dev.vars.example`.",
+      "text": "Only the `templates/waymark/` copy's script adds `--env-file=.dev.vars.example`.",
       "id": "f:n0fg3w"
     },
     {
@@ -553,24 +564,27 @@
       "id": "f:xluud1"
     },
     {
-      "text": "Its `config` hook defines `__CAIRN_DEV_BUILD__` for the dev backend to gate on, and the scaffold's config sets no define.",
+      "text": "The scaffold's config sets no `define` entry.",
       "id": "f:xluud1"
     },
     {
-      "text": "The config also lists `@glw907/cairn-cms-dev` in `ssr.noExternal`.",
+      "text": "The plugin's `config` hook defines `__CAIRN_DEV_BUILD__`, which the dev backend gates on.",
+      "id": "f:xluud1"
+    },
+    {
+      "text": "The config also lists `@glw907/cairn-cms-dev`, the dev backend's package, in `ssr.noExternal`.",
+      "id": [
+        "f:2pv4r5",
+        "f:dqjkci"
+      ]
+    },
+    {
+      "text": "Without that entry, `/admin` answers 500 under `vite dev`, because the package ships built JavaScript that imports `cloudflare:workers`, a module Node's loader rejects.",
       "id": "f:2pv4r5"
     },
     {
-      "text": "That package ships built JavaScript that imports `cloudflare:workers`, a module Node's loader rejects, and without the entry `/admin` answers 500 under `vite dev`.",
-      "id": "f:2pv4r5"
-    },
-    {
-      "text": "The Worker's config declares four bindings, the static-assets binding `ASSETS` among them, and one variable, and its only D1 database is the auth store.",
+      "text": "The Worker's config declares the following four bindings and one variable, and `AUTH_DB` is its only D1 database:",
       "id": "f:n7t4bn"
-    },
-    {
-      "text": "The following list names each one:",
-      "id": "no-claim"
     },
     {
       "text": "`ASSETS`, the static-assets binding, on the `assets` block",
@@ -590,10 +604,6 @@
     },
     {
       "text": "`PUBLIC_ORIGIN`, a variable",
-      "id": "f:n7t4bn"
-    },
-    {
-      "text": "The scaffold binds no second database.",
       "id": "f:n7t4bn"
     },
     {
@@ -644,15 +654,15 @@
       "id": "no-claim"
     },
     {
-      "text": "`0001_roles.sql` is needed once a site declares roles beyond the default owner and editor pair, and the scaffold ships it, so a new site already has it.",
+      "text": "The scaffold ships `0001_roles.sql`, which a site needs once it declares roles beyond the default `owner` and `editor` pair.",
       "id": "f:rn62i1"
     },
     {
-      "text": "Any automated `wrangler d1 migrations apply` runs it.",
+      "text": "The migration rebuilds the `editor` table with only the engine's four columns.",
       "id": "f:rn62i1"
     },
     {
-      "text": "Its rebuild keeps only the engine's four `editor` columns, so a site carries any columns it added across first.",
+      "text": "Any automated `wrangler d1 migrations apply` runs it, so a site that added columns to that table carries them over to the rebuilt table first.",
       "id": "f:rn62i1"
     },
     {
@@ -684,7 +694,7 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "The test reads the build-time `__CAIRN_DEV_BUILD__` define first, then the runtime opt-in `CAIRN_DEV_BACKEND === '1'`.",
+      "text": "The condition checks the build-time `__CAIRN_DEV_BUILD__` define first, then the runtime opt-in `CAIRN_DEV_BACKEND === '1'`.",
       "id": "f:f21bcz"
     },
     {
@@ -700,7 +710,7 @@
       "id": "f:2sd4if"
     },
     {
-      "text": "Per-route authorization belongs to `requireAccess` and `createSectionAction`.",
+      "text": "Per-route authorization belongs to [`requireAccess`](../reference/sveltekit.md#requireaccess) and [`createSectionAction`](../reference/sveltekit.md#createsectionaction).",
       "id": "f:2sd4if"
     },
     {
@@ -708,7 +718,7 @@
       "id": "f:f21bcz"
     },
     {
-      "text": "The scaffold's adapter declares no `access` member and takes the zero-config owner and editor floor, and the tree holds no `src/access.ts`.",
+      "text": "The scaffold's adapter declares no `access` member and takes the zero-config `owner` and `editor` roles, and the tree holds no `src/access.ts`.",
       "id": "f:3z1uxv"
     },
     {
@@ -716,28 +726,31 @@
       "id": "no-claim"
     },
     {
-      "text": "On the dev branch, `devBackendHandle` installs in-memory stand-ins for the GitHub backend, the media bucket, and `AUTH_DB`, and it signs in an owner with no email.",
+      "text": "When the dev backend is on, `devBackendHandle` installs in-memory stand-ins for the GitHub backend, the media bucket, and `AUTH_DB`, and it signs in an `owner` without an email loop.",
       "id": "f:dqjkci"
     },
     {
-      "text": "Its state lasts as long as the server process, and nothing leaves the machine.",
+      "text": "Nothing leaves the machine.",
       "id": "f:dqjkci"
     },
     {
-      "text": "The hook passes no `content` option, so the dev admin lists the site's entries from its working tree.",
-      "id": "f:zzjrza"
+      "text": "The hook passes no `content` option, so the dev admin runs in the default `'repository'` mode and lists the site's entries from its working tree.",
+      "id": [
+        "f:zzjrza",
+        "f:p1v88s"
+      ]
     },
     {
-      "text": "That default is the `'repository'` mode, and the `'fixtures'` mode seeds an in-memory repository with sample content instead.",
-      "id": "f:p1v88s"
-    },
-    {
-      "text": "In `'repository'` mode, edits land in an in-memory overlay over the working tree.",
+      "text": "Edits land in an in-memory overlay over that tree.",
       "id": "f:cgt4tk"
     },
     {
       "text": "Nothing is written to disk, and the overlay lasts until the dev server restarts.",
       "id": "f:cgt4tk"
+    },
+    {
+      "text": "The `'fixtures'` mode seeds an in-memory repository with sample content instead.",
+      "id": "f:p1v88s"
     },
     {
       "text": "The admin mount is one catch-all pair, `[...path]/+page.server.ts` and `+page.svelte`, beside the shared layout pair, `+layout.server.ts` and `+layout.svelte`.",
@@ -756,7 +769,11 @@
       "id": "f:ty4ehh"
     },
     {
-      "text": "A 403 and a 404 each show a message and a **Back to the dashboard** link to `/admin`, and any other status shows the thrown message.",
+      "text": "Every status shows a **Back to the dashboard** link to `/admin`.",
+      "id": "f:ty4ehh"
+    },
+    {
+      "text": "A 403 and a 404 each show a fixed message, and any other status shows the thrown message, or a fallback line when there is none.",
       "id": "f:ty4ehh"
     },
     {
@@ -768,7 +785,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The entry catch-all `[...path]` and its raw-markdown twin `[...path=md]` coexist through `createPublicRoutes`, and `src/params.ts` defines the `md` matcher.",
+      "text": "The entry catch-all `[...path]` and its raw-markdown counterpart `[...path=md]` coexist through [`createPublicRoutes`](../reference/delivery.md#createpublicroutes), and `src/params.ts` defines the `md` matcher.",
       "id": [
         "f:4cet3p",
         "f:qtm9y2"
@@ -790,7 +807,7 @@
       ]
     },
     {
-      "text": "The `styleguide/` route renders every registered markdown component, with a sample for each one that declares a `preview`, plus the type scale and the component recipes.",
+      "text": "The `styleguide/` route renders the type scale, the component recipes, and every registered markdown component, with a sample for each component that declares a `preview`.",
       "id": [
         "f:6jxd81",
         "f:qtm9y2"
@@ -801,7 +818,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The root holds the feed, sitemap, and robots endpoints beside two routes that sit outside `/admin` on purpose, the media route and `/healthz`.",
+      "text": "The root holds the feed, sitemap, and robots endpoints beside two routes that sit outside `/admin`, the media route and `/healthz`.",
       "id": [
         "f:qtm9y2",
         "f:qtvesq",
@@ -848,11 +865,11 @@
       "id": "f:paotzb"
     },
     {
-      "text": "The root `+layout.server.ts` returns the menus, the site name, and whether the site registers any island, and it reads them without importing the full adapter.",
+      "text": "The root `+layout.server.ts` load returns the menus, the site name, and whether the site registers any island, as `nav`, `footerNav`, `siteName`, and `hasIslands`.",
       "id": "f:ofex2m"
     },
     {
-      "text": "The load returns `nav`, `footerNav`, `siteName`, and `hasIslands`, and it reads `site-config.ts` and the island registry to keep each request that is not prerendered light.",
+      "text": "It reads them from `site-config.ts` and the island registry, not the full adapter, to keep each request that is not prerendered light.",
       "id": "f:ofex2m"
     },
     {
@@ -860,24 +877,23 @@
       "id": "f:ofex2m"
     },
     {
-      "text": "The root `+error.svelte` is the themed 404 and error page.",
+      "text": "The root `+error.svelte` is the themed 404 and error page that [Themed 404 page](#themed-404-page) describes.",
       "id": "f:ofex2m"
     },
     {
-      "text": "`src/theme/` holds the adapter and Waymark's design, the chassis holds the plumbing every scaffolded site shares, and `src/content/` holds the markdown and its committed manifests.",
+      "text": "The adapter and Waymark's design share `src/theme/`.",
+      "id": "f:qnf469"
+    },
+    {
+      "text": "The chassis sits in `src/chassis/`, and the markdown and its committed manifests sit in `src/content/`.",
       "id": [
-        "f:qnf469",
         "f:rxj43c",
         "f:gj96px",
         "f:vrue1g"
       ]
     },
     {
-      "text": "The adapter shares `src/theme/` with the theme's style sheets, so a file's directory does not show whether it carries a contract.",
-      "id": "f:qnf469"
-    },
-    {
-      "text": "The adapter, `cairn.config.ts`, is one `defineAdapter` call over `content`, `backend`, `email`, `media`, `rendering`, and an `editor` group carrying `nav`, `navLayout`, and `preview`.",
+      "text": "The adapter, `cairn.config.ts`, is one [`defineAdapter`](../reference/core.md#defineadapter) call over `content`, `backend`, `email`, `media`, `rendering`, and an `editor` group carrying `nav`, `navLayout`, and `preview`.",
       "id": "f:qnf469"
     },
     {
@@ -897,7 +913,7 @@
       "id": "no-claim"
     },
     {
-      "text": "`site-config.ts`: the one `parseSiteConfig` call site, over `site.config.yaml`",
+      "text": "`site-config.ts`: the one [`parseSiteConfig`](../reference/core.md#parsesiteconfig) call site, over `site.config.yaml`",
       "id": "f:qnf469"
     },
     {
@@ -905,7 +921,7 @@
       "id": "f:qnf469"
     },
     {
-      "text": "`markdown-components.ts`: nine `defineComponent` declarations, one of them hydrated",
+      "text": "`markdown-components.ts`: nine [`defineComponent`](../reference/core.md#definecomponent) declarations, one of them hydrated",
       "id": "f:qnf469"
     },
     {
@@ -939,11 +955,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The chassis is the design-neutral plumbing every scaffolded site shares, copied into the tree with Waymark.",
-      "id": "f:rxj43c"
-    },
-    {
-      "text": "The engine's package carries none of it, so the chassis belongs to the site like every other file.",
+      "text": "The chassis is the design-neutral code every scaffolded site shares, copied into `src/chassis/` with Waymark.",
       "id": "f:rxj43c"
     },
     {
@@ -963,15 +975,11 @@
       "id": "f:gj96px"
     },
     {
-      "text": "Because the adapter names each directory, renaming one is an adapter change.",
+      "text": "Because the adapter names each directory, renaming one changes the concept's `dir` in the adapter and the matching `cairnManifest` content glob in `vite.config.ts`.",
       "id": "f:gj96px"
     },
     {
-      "text": "This directory holds three committed files that the engine and its build tools write.",
-      "id": "f:vrue1g"
-    },
-    {
-      "text": "Each file has a different writer:",
+      "text": "This directory holds the following committed files, which the engine and its build tools write:",
       "id": "f:vrue1g"
     },
     {
@@ -979,7 +987,7 @@
       "id": "f:vrue1g"
     },
     {
-      "text": "The `cairnManifest` plugin and `cairn-manifest` regenerate it and fail the build when it drifts from the markdown, and each publish commit patches it.",
+      "text": "`cairn-manifest` regenerates it, the `cairnManifest` plugin fails the build when it drifts from the markdown, and each publish commit patches it.",
       "id": "f:vrue1g"
     },
     {
@@ -987,8 +995,11 @@
       "id": "f:vrue1g"
     },
     {
-      "text": "`site-facts.json`: a file that `cairn-manifest` writes.",
-      "id": "f:vrue1g"
+      "text": "`site-facts.json`: the site's media bucket binding, roles, and AI posture, which `cairn-manifest` writes.",
+      "id": [
+        "f:vrue1g",
+        "f:ve30i2"
+      ]
     },
     {
       "text": "The `cairn:manifest` script runs `cairn-manifest`.",
@@ -1019,12 +1030,11 @@
       "id": "f:666eg6"
     },
     {
-      "text": "The audit config still names the engine's precompiled `dist` sheet, and the import does not replace it.",
-      "id": "f:vs6k2k"
-    },
-    {
-      "text": "The compiled `.cairn/admin.css` is the other sheet the config names, and [`cairn-audit.config.json`](#cairn-auditconfigjson) lists both.",
-      "id": "f:guiavc"
+      "text": "The import does not replace the engine's precompiled `dist` sheet, and the audit config names both sheets, as [`cairn-audit.config.json`](#cairn-auditconfigjson) describes.",
+      "id": [
+        "f:vs6k2k",
+        "f:guiavc"
+      ]
     },
     {
       "text": "`theme.css` and `site.css` hold the theme's tokens and page styling.",
@@ -1077,7 +1087,11 @@
       "id": "f:2zl3qz"
     },
     {
-      "text": "A corpus that fits on page one gives that route no entries, and SvelteKit's crawl-completeness check would otherwise fail the build.",
+      "text": "When every post fits on page one, the crawl finds no page of that route.",
+      "id": "f:2zl3qz"
+    },
+    {
+      "text": "Without the exemption, SvelteKit's unseen-route check would fail the build.",
       "id": "f:2zl3qz"
     },
     {
@@ -1105,7 +1119,7 @@
       "id": "no-claim"
     },
     {
-      "text": "A scaffolded site serves a themed 404 page through two pieces that need each other, the root `src/routes/+error.svelte` and `assets.not_found_handling` set to `\"none\"` in `wrangler.jsonc`.",
+      "text": "A scaffolded site serves a themed 404 page only when two settings are both in place: the root `src/routes/+error.svelte` and `assets.not_found_handling` set to `\"none\"` in `wrangler.jsonc`.",
       "id": "f:2qnqkm"
     },
     {
@@ -1133,7 +1147,7 @@
       "id": "no-claim"
     },
     {
-      "text": "The setup command kept its record of the run on the machine that ran it, and when its Workers Builds chapter connected the repository, it registered the Cloudflare API token pasted during setup as the build token the site's deploys use.",
+      "text": "The setup command left its record of the run on the machine that ran it and, when the run connected Workers Builds, a build token at Cloudflare.",
       "id": [
         "f:3m0oxs",
         "f:3bbeia",
@@ -1141,11 +1155,15 @@
       ]
     },
     {
-      "text": "The record sits at `~/.config/cairn/sites/<id>.json`, in a directory with mode 0700 and a file with mode 0600, and never under the project directory.",
+      "text": "The record sits at `~/.config/cairn/sites/<id>.json`, never under the project directory.",
       "id": "f:3m0oxs"
     },
     {
-      "text": "It includes the pasted Cloudflare token.",
+      "text": "Its directory has mode 0700 and the file has mode 0600.",
+      "id": "f:3m0oxs"
+    },
+    {
+      "text": "The record holds the Cloudflare API token pasted during setup only until the two setup steps that use the token finish, and each of them deletes it from the record.",
       "id": "f:3m0oxs"
     },
     {
@@ -1153,11 +1171,25 @@
       "id": "f:3m0oxs"
     },
     {
-      "text": "A developer who took over the site from someone else has no copy of that record, because it sits in the home directory of whoever ran the command.",
+      "text": "A resumed run reads the record, and `--sign-in` needs it.",
+      "id": [
+        "f:3my5c1",
+        "f:o8uoci"
+      ]
+    },
+    {
+      "text": "A developer who took over the site from someone else has no copy of that record, which sits in the home directory of whoever ran the command.",
       "id": "f:3m0oxs"
     },
     {
-      "text": "On a resumed run, `--org`, `--repo-name`, `--app-name`, and `--owner-email` override a saved answer for any chapter that has not yet run.",
+      "text": "That developer can neither resume the run nor use `--sign-in`.",
+      "id": [
+        "f:3my5c1",
+        "f:o8uoci"
+      ]
+    },
+    {
+      "text": "On a resumed run, `--org`, `--repo-name`, `--app-name`, and `--owner-email` override a saved answer for any step that has not yet run.",
       "id": "f:3my5c1"
     },
     {
@@ -1165,23 +1197,19 @@
       "id": "f:498l97"
     },
     {
-      "text": "The setup run's Workers Builds chapter either connects the repository or records a decline.",
+      "text": "The setup run's Workers Builds step either connects the repository or records a decline.",
       "id": "f:qca0t0"
     },
     {
-      "text": "The `--connect` flag re-enters that chapter only for a site at or past its first deploy.",
+      "text": "The `--connect` flag re-enters that step only for a site at or past its first deploy.",
       "id": "f:qca0t0"
     },
     {
-      "text": "The chapter registers the pasted token as the build token named `cairn create-cairn-site build token`, reusing an existing build token that wraps the same token id.",
+      "text": "When the Workers Builds step connects the repository, it registers the pasted token as the build token named `cairn create-cairn-site build token` and binds the site's build trigger to it.",
       "id": "f:3bbeia"
     },
     {
-      "text": "Revoking or rolling that token at Cloudflare breaks automatic deploys with no prior warning.",
-      "id": "f:3bbeia"
-    },
-    {
-      "text": "The next commit still triggers a build, and the build fails.",
+      "text": "If a build token for the same Cloudflare token already exists, the step reuses it.",
       "id": "f:3bbeia"
     },
     {

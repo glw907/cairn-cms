@@ -1,8 +1,6 @@
 # Written by drafter; do not edit by hand.
 version: 1
 pages:
-    docs/claude-code/using-claude-code-with-cairn.md:
-        accepted: a0ab900d9578aacc81178efac7d97073ac7b0e4e
     docs/extend/act-on-newly-published-entries.md:
         page: f24f0a87b180d85ee33f9b365a1ec0bc1a3fb89f
         blueprint: bd5d01080faf2dfa86768d3660cd1abdb3605baf

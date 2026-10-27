@@ -138,6 +138,20 @@ test('deleteSkill removes the skill but keeps evals/, the agent, and CLAUDE.md',
   }
 });
 
+test('deleteSkill keeps an empty .claude/skills/ when the skill was all the directory held', () => {
+  const root = mkdtempSync(join(tmpdir(), 'evals-skillonly-'));
+  try {
+    mkdirSync(join(root, '.claude/skills/cairn-docs/references'), { recursive: true });
+    writeFileSync(join(root, '.claude/skills/cairn-docs/SKILL.md'), 'skill');
+    writeFileSync(join(root, '.claude/skills/cairn-docs/references/a.md'), 'ref');
+    deleteSkill(root);
+    assert.equal(existsSync(join(root, '.claude/skills')), true);
+    assert.equal(existsSync(join(root, '.claude/skills/cairn-docs')), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('controlFault flags a listed or launched cairn-docs and accepts an unknown-skill result', () => {
   const stream = (skills, output) => summarizeStream([
     { type: 'system', subtype: 'init', apiKeySource: 'none', skills, cwd: '/w' },

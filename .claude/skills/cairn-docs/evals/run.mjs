@@ -185,10 +185,13 @@ function removeFiles(root, paths) {
 
 /**
  * Delete the skill's files from a fixture, leaving `evals/`, so the arm runs without `cairn-docs`.
+ * `.claude/skills/` stays even when empty: a session in a linked worktree with no such directory
+ * loads the main checkout's skills instead, and the control arm would see `cairn-docs`.
  * @param {string} root
  */
 export function deleteSkill(root) {
   removeFiles(root, overlayFilesIn(root).filter((p) => p.startsWith(OVERLAY_DIR)));
+  mkdirSync(join(root, '.claude/skills'), { recursive: true });
 }
 
 /**

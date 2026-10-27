@@ -38,7 +38,8 @@ Seven legs, in this order. Each prints only when it applies.
    (`scripts/test/component-rerun-triggers.mjs`), deletes or renames a path under `src/`, or
    selects nothing, including any diff with no `src/` path that is not docs-only. The leg is skipped
    when every path is a docs-bucket path, a harness-bucket path, or on the no-check list, since the
-   component project cannot see them; stderr says so. A selection that cannot be computed runs the whole project.
+   component project cannot see them; stderr says so. A selection that cannot be computed runs the
+   whole project.
 5. `npm test -w packages/create-cairn-site`, when a path matches `packages/create-cairn-site/**`,
    `examples/showcase/**`, `scripts/build/emit-template*`, or the root `package.json`.
 6. The e2e specs the map selects (below), at zero retries, behind

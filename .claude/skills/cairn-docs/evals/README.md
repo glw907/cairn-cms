@@ -7,7 +7,7 @@ costs no context.
 Run a suite as a background command, since it takes far longer than ten minutes:
 
 ```bash
-node .claude/skills/cairn-docs/evals/run.mjs main [<branch>] [--suite regression|capability|all] [--case <id>] [--trials n] [--max]
+node .claude/skills/cairn-docs/evals/run.mjs <ref> [<ref>] [--suite regression|capability|all] [--case <id>] [--trials n] [--max] [--keep] [--control]
 ```
 
 Two refs give an A/B comparison over identical fixtures. `--control` makes the first ref the control

@@ -893,7 +893,6 @@ async function main() {
 
   const runId = newRunId();
   const stateDir = makeRunDir(STATE_ROOT, runId);
-  loopDelay.enable();
   for (const c of cases) c.pinFull = git(['rev-parse', c.pin], repo).trim();
   const modules = new Map();
   for (const c of cases.filter((c) => c.install !== false)) {
@@ -905,6 +904,8 @@ async function main() {
   const jobs = [];
   for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });
   console.error(`run ${runId}: ${sessions} case sessions, state in ${stateDir}`);
+  // Enabled here, after the synchronous setup, so a cold `npm ci` does not show as a pool stall.
+  loopDelay.enable();
   const results = await pool(jobs, CONCURRENCY, async (job) => {
     // An exception in one trial is that trial's fault, not the run's: the table keeps every other row.
     const attempt = (rerun) => runTrial({ job, ctx, rerun }).catch((e) => ({

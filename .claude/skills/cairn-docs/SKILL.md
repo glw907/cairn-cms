@@ -28,8 +28,9 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
    `## Unreleased`, and `docs/internal/record/`, `docs/specs/`, `docs/plans/`, and `docs/research/`
    say what was true at their date.
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
-   `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
-   the old name in `docs/` and `README.md` comes back empty.
+   `file:line` that settles it for your reply. A rename repoints every hit. After your last docs
+   edit, including one a gate failure forces, rerun the `git grep` of the old name in `docs/` and
+   `README.md`, and show that every remaining hit is history or a different symbol.
 4. A public name or option also moves its reference page under `docs/reference/` and its row in
    `docs/internal/option-map.json`. The gate fails on both.
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit

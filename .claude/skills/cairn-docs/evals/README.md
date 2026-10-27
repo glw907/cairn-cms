@@ -10,7 +10,8 @@ Run a suite as a background command, since it takes far longer than ten minutes:
 node .claude/skills/cairn-docs/evals/run.mjs main [<branch>] [--suite regression|capability|all] [--case <id>] [--trials n] [--max]
 ```
 
-Two refs give an A/B comparison over identical fixtures. A run over 120 case sessions needs `--max`.
+Two refs give an A/B comparison over identical fixtures. `--control` waives the harness fault for a
+missing `cairn-docs` skill, for a control arm that removes it on purpose. A run over 120 case sessions needs `--max`.
 Transcripts and raw results land under `~/.local/state/cairn-docs-evals/<run>/`. `evals.json` holds
 the cases, `setups/` the fixture seeds, `sources.md` the guidance the cycle rereads, `history.md`
 the monthly record, and `cycle-prompt.txt` the monthly session's prompt.

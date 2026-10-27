@@ -94,7 +94,8 @@ test('overlayHash differs between arms with different overlays and ignores other
 
 test('parseArgs reads refs and flags and rejects a bad shape', () => {
   assert.deepEqual(parseArgs(['main', '--suite', 'regression', '--trials', '5', '--max']),
-    { refs: ['main'], suite: 'regression', caseId: null, trials: 5, max: true, keep: false });
+    { refs: ['main'], suite: 'regression', caseId: null, trials: 5, max: true, keep: false, control: false });
+  assert.equal(parseArgs(['a', '--control']).control, true);
   assert.deepEqual(parseArgs(['a', 'b', '--case', 'x']).refs, ['a', 'b']);
   assert.throws(() => parseArgs([]), /one or two refs/);
   assert.throws(() => parseArgs(['a', 'b', 'c']), /one or two refs/);

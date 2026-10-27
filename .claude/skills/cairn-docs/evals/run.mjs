@@ -65,7 +65,7 @@ const FORBIDDEN_COMMAND = /^\s*(approval-queue|gh|ssh|git push)\b/;
  * @returns {{ refs: string[], suite: string, caseId: string | null, trials: number, max: boolean, keep: boolean }}
  */
 export function parseArgs(argv) {
-  const out = { refs: [], suite: 'all', caseId: null, trials: DEFAULT_TRIALS, max: false, keep: false };
+  const out = { refs: [], suite: 'all', caseId: null, trials: DEFAULT_TRIALS, max: false, keep: false, control: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--suite') out.suite = argv[++i];
@@ -73,6 +73,7 @@ export function parseArgs(argv) {
     else if (a === '--trials') out.trials = Number(argv[++i]);
     else if (a === '--max') out.max = true;
     else if (a === '--keep') out.keep = true;
+    else if (a === '--control') out.control = true;
     else if (a.startsWith('--')) throw new Error(`unknown flag ${a}`);
     else out.refs.push(a);
   }
@@ -677,7 +678,8 @@ async function runTrial({ job, ctx }) {
     };
     if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
     const faults = classifyDenials(s.result.denials, s.tools).faults;
-    if (!s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
+    // A control run removes the skill on purpose, so its absence is not a fault there.
+    if (!ctx.control && !s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
     // A read-only case asks about work outside the repo, where a denied `ls` is the right outcome.
     if (!caseDef.readOnly && faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };
 
@@ -742,7 +744,7 @@ async function main() {
     if (!modules.has(c.pinFull)) modules.set(c.pinFull, prepareModules(repo, mainRoot, c.pinFull));
   }
   const dotfiles = spawnSync('git', ['-C', join(homedir(), '.dotfiles'), 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
-  const ctx = { repo, mainRoot, runId, stateDir, modules, dotfiles, judgeCalls: 0, keep: args.keep };
+  const ctx = { repo, mainRoot, runId, stateDir, modules, dotfiles, judgeCalls: 0, keep: args.keep, control: args.control };
 
   const jobs = [];
   for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });

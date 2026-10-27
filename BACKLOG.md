@@ -20,8 +20,6 @@
 - [ ] **#90** Show the exact `cairn-run-gate` call shape in the cairn-docs Checks step `#improvement` `#cairn-cms` `#docs-process` `#initiative:docs-system` *(2026-10-26)*
   Eval sessions ran `cairn-run-gate npm run check:docs-gate` unquoted, which made the tool take the second word as a log path and left stray files named `run` and `npm` in the tree (deficiency #2 and #3 in run 20261026-205026). The skill says "through `cairn-run-gate`" and shows no call shape.
   The 2026-10 docs cycle adds a real session: 92480ff1 (the healthz fix) ran `npm run check:docs-gate` bare after the tail-guard hook blocked a piped run. The page was right and the gate exited 0. Geoff deferred the row to this item.
-- [ ] **#89** Trace why headless eval sessions end with exit 0 and no result event `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-26)*
-  About one session in ten ended mid-stream with exit 0, empty stderr, and no `result` event, mostly while a gate ran (run 20261026-234554, 25fb80fa3 #1, died inside a foreground subagent's `cairn-run-gate`). The runner reruns such a session once. One cause is known and fixed (a background subagent, anthropics/claude-code#73453); this one is untraced.
 - [ ] **#86** Stop the e2e `norms` jobs' Playwright install from failing on apt `#bug` `#cairn-cms` *(2026-10-26)*
   `./.github/actions/bounded-install` running `npx playwright install --with-deps chromium` exited 100 (an apt failure) four times on 2026-10-26 between 08:50 and 17:11 UTC, failing the e2e workflow on `25fb80fa3`, `c8a1eeb09`, `f17bb8aed`, and PR #147, and each rerun passed. The retry inside the action did not absorb it. Cache the browser and its system deps, or retry the apt step with a backoff.
 - [ ] **#85** Tell the docs review description to hold paragraphs only, no heading `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26)*
@@ -103,6 +101,9 @@
   Recover from a failed key reads `/healthz` details and one `github.unreachable` shell record but names no `health.failed` record, which `loadHealth` logs when its checks throw (`docs/reference/log-events.md:44`). The Verify step runs `curl`, which Windows PowerShell 5.1 aliases to `Invoke-WebRequest`; add the Windows form beside the Linux and macOS one, verifying the PowerShell behavior first.
 
 ## Done
+- [x] **#89** Trace why headless eval sessions end with exit 0 and no result event `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-26 → 2026-10-27)*
+  About one session in ten ended mid-stream with exit 0, empty stderr, and no `result` event, mostly while a gate ran (run 20261026-234554, 25fb80fa3 #1, died inside a foreground subagent's `cairn-run-gate`). The runner reruns such a session once. One cause is known and fixed (a background subagent, anthropics/claude-code#73453); this one is untraced.
+  Closed by the docs eval trust pass (glw907/cairn-cms#154): 168 sessions graded across runs 20261027-182057-3c51, 20261027-182646-43e8, 20261027-182823-c3ac, and 20261027-225128-c902, with none lost.
 - [x] **#91** Give the docs eval files and the docs rules a gate-tier bucket `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26 → 2026-10-27)*
   `.claude/skills/**` and `.claude/rules/**` sit in no `gate-tier.mjs` bucket, so a change to the eval runner or a rule runs every static check and the whole component project, as the docs-improvement-loop pass saw.
 - [x] **#88** Give the regression suite a case that needs the skill, so a control run can drop `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26 → 2026-10-27)*

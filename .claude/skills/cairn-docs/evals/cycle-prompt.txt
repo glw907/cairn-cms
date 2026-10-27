@@ -20,9 +20,12 @@ Steps, in order:
    "<id> <YYYY-MM>": a previous run queued a triage item that month and ended before the ruling. Use
    that month, not the run month, for <month> below and in the history entry. Run
    `setsid -w approval-queue collect <id>` as a background command, with its stdout in
-   <month>/decision.json, and wait for that command to exit. If it exits 1 with "was withdrawn" on
-   stderr, remove the pending file and end. Otherwise act on the decision as step 6 sets out, write
-   the history entry as step 7 sets out, and end. A resume does not start a new sample; the next
+   <month>/decision.json and its stderr in <month>/collect.err, and wait for that command to exit.
+   The item was withdrawn when it exits 1 with "was withdrawn" (withdrawn while this collect
+   waited) or exits 2 with "no item <id> is queued" (withdrawn before it): remove the pending file
+   and end. Any other nonzero exit is a fault: leave the pending file, report the stderr, and end.
+   On exit 0, act on the decision as step 6 sets out, write the history entry as step 7 sets out,
+   and end. A resume does not start a new sample; the next
    monthly start does.
 
 1. Sample real sessions. Claude Code keeps each session's transcript at

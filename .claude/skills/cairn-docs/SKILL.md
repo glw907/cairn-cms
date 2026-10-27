@@ -28,9 +28,8 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
    `## Unreleased`, and `docs/internal/record/`, `docs/specs/`, `docs/plans/`, and `docs/research/`
    say what was true at their date.
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
-   `file:line` that settles it for your reply. A rename repoints every hit. After your last docs
-   edit, including one a gate failure forces, rerun the `git grep` of the old name in `docs/` and
-   `README.md`, and show that every remaining hit is history or a different symbol.
+   `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
+   the old name in `docs/` and `README.md` comes back empty.
 4. A public name or option also moves its reference page under `docs/reference/` and its row in
    `docs/internal/option-map.json`. The gate fails on both.
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
@@ -63,8 +62,10 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 ## Checks
 
 1. Run `npm run check:docs-gate` through `cairn-run-gate`. Fix what it reports and rerun until it
-   exits 0. A gate you did not run proves nothing about the page (Anthropic's guidance: give the
-   agent a check to run, <https://code.claude.com/docs/en/best-practices>).
+   exits 0. When a fix edits a docs page after a rename, rerun the old-name `git grep` from step A.3
+   after that edit and show its output. A gate you did not run proves nothing about the page
+   (Anthropic's guidance: give the agent a check to run,
+   <https://code.claude.com/docs/en/best-practices>).
 2. Dispatch `docs-fact-checker` in a fresh context, as `references/review.md` says. Do not
    fact-check your edit in the context that wrote it: a fresh context finds what the writing context cannot
    (<https://code.claude.com/docs/en/best-practices>, "A fresh context improves code review").

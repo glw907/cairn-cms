@@ -39,7 +39,8 @@ export const ALLOWED_TOOLS = [
   'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(sed -n *)', 'Bash(wc *)', 'Bash(cat *)',
   'Bash(ls*)', 'Bash(grep *)', 'Bash(awk *)', 'Bash(sort*)', 'Bash(uniq*)', 'Bash(cut *)', 'Bash(tr *)',
   'Bash(diff *)', 'Bash(printf *)', 'Bash(git ls-files*)', 'Bash(git rev-parse*)',
-  'Bash(git -C * log *)', 'Bash(git -C * status*)',
+  'Bash(git -C * log *)', 'Bash(git -C * status*)', 'Bash(git grep*)', 'Bash(git show*)',
+  'Bash(git branch*)',
 ];
 
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
@@ -47,8 +48,11 @@ export const DENIED_TOOLS = [
   'Bash(approval-queue *)', 'Bash(gh *)', 'Bash(git push*)', 'Bash(ssh *)', 'WebFetch', 'WebSearch',
 ];
 
-/** Where a denied command is a fault: the allow list was meant to cover it. */
-const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate |git (-C \S+ )?(diff|grep|show|status|log|add|commit)\b|jq |mkdir )/;
+/**
+ * Where a denied command is a fault: the gate and check commands the docs process runs. A denied
+ * git read or shell filter is friction the session works around, as it would in a real session.
+ */
+const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate )/;
 /** Where a denied command is an attempt at something the harness forbids. */
 const FORBIDDEN_COMMAND = /^\s*(approval-queue|gh|ssh|git push)\b/;
 
@@ -744,7 +748,13 @@ async function main() {
   for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });
   console.error(`run ${runId}: ${sessions} case sessions, state in ${stateDir}`);
   const results = await pool(jobs, CONCURRENCY, async (job) => {
-    const r = await runTrial({ job, ctx });
+    let r = await runTrial({ job, ctx });
+    // A headless session sometimes exits 0 with no result event; the standing answer reruns an
+    // errored session once, and a second error is reported as an error.
+    if (r.status === 'error' && /no result/.test(r.detail) && !aborted) {
+      console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.detail}; rerunning once`);
+      r = { ...(await runTrial({ job, ctx })), retried: true };
+    }
     console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.status}${r.status === 'graded' ? (r.pass ? ' pass' : ' FAIL') : ` (${r.detail})`}`);
     return r;
   });

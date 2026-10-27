@@ -9,6 +9,14 @@
   In the PR #137 sweep a slice agent's edit script emptied `scripts/checks/gate-tier.mjs` (929 lines) and committed it, and the fast lane printed nothing and exited 0, because the fast lane is that file. Exit nonzero when no leg runs. The sweep-side check (a `git diff --numstat` for unequal counts) lands in the workstation's word-sweep method.
 
 ## Medium
+- [ ] **#95** Decide whether `near-miss-06` should expect `cairn-docs` to load `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-27)*
+  The case asks for a pass plan for the media replace bug and checks `skillNotCalled`. In T6 step 1 of the docs eval trust pass (glw907/cairn-cms#154, run 20261027-182823-c3ac), `main` scored 2/3 and the control 1/3. Each failing session reasoned that the fix changes documented behavior, so the plan needs a docs task, and called `cairn-docs` after `pass-core` and `cairn-pass`. That reading is defensible, so the case flakes on a boundary its expectation doesn't settle. Left alone, it keeps `main` off pass^3 in every regression run.
+- [ ] **#94** Count a `cairn-docs` Skill call with no tool result as cut off, not launched `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-27)*
+  `.claude/skills/cairn-docs/evals/run.mjs:346` treats an empty output as a launch, so a control session cut off mid-call reads as a harness fault. Found by the whole-branch review of glw907/cairn-cms#154.
+- [ ] **#93** Check `controlFault` before `sessionErrored` in the eval runner `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-27)*
+  `run.mjs:824-830` tests for an errored session first, so a control session that both errored and leaked `cairn-docs` is reported as an error and the leak goes unseen. Found by the whole-branch review of glw907/cairn-cms#154.
+- [ ] **#92** Keep the end-of-session record when a trial throws after its session `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-27)*
+  In `run.mjs:910-912` the pool wrapper's catch record carries no `end`, so a grading failure (a `gitAsync` error, say) loses the record that #89's tracing reads. Found by the whole-branch review of glw907/cairn-cms#154.
 - [ ] **#91** Give the docs eval files and the docs rules a gate-tier bucket `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-26)*
   `.claude/skills/**` and `.claude/rules/**` sit in no `gate-tier.mjs` bucket, so a change to the eval runner or a rule runs every static check and the whole component project, as the docs-improvement-loop pass saw.
 - [ ] **#90** Show the exact `cairn-run-gate` call shape in the cairn-docs Checks step `#improvement` `#cairn-cms` `#docs-process` `#initiative:docs-system` *(2026-10-26)*

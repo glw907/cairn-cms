@@ -88,15 +88,19 @@ Steps, in order:
      by absolute path and `git -C`; never call EnterWorktree. Run the change rule: both suites on main
      and on the branch, the table in the PR body, every failing transcript read. Open the PR, watch CI
      with `ci-green <sha> --pr <n> --wait` as a background command (re-issue it on exit 75), and
-     merge it with `gh pr merge <n> --merge` once CI is green and the table meets the rule. When the
-     only red is a failed e2e job and the PR changes nothing under src/, packages/, templates/, or
+     never merge it yourself: the table informs Geoff's call and does not decide it. When the only
+     red is a failed e2e job and the PR changes nothing under src/, packages/, templates/, or
      examples/, rerun that job once with `gh run rerun <run-id> --failed` and watch again; a second
-     red stops the row, and its outcome says so. A fix may end as a removal or as no change; say so
-     in the row's outcome.
+     red stays in the PR as a failed check. A fix may end as a removal or as no change; say so in the
+     row's outcome.
    - defer: file a cairn BACKLOG item through the log-issue skill, tagged #docs-process.
    - drop: record it in the history entry as not a failure, with its reason, so the next cycle does
      not raise it again.
    Add a row of your own for a ruling Geoff's note changes.
+   When every row is done and at least one fix PR is open, hand them over in one packet through the
+   approval-packet skill, initiative docs-system, as a background command, and wait for it to exit.
+   Merge each PR the decision approves, as that skill says, and record each verdict in its row's
+   outcome.
 
 7. Write one history entry in .claude/skills/cairn-docs/evals/history.md in the entry format it
    holds: the month, the models, the sample size, both suites' scores, and each row with its call and

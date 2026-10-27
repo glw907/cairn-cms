@@ -18,6 +18,7 @@
       "vitest.config.ts",
       "wrangler.test.jsonc"
     ],
+    "harness": [".claude/"],
     "showcase": ["examples/showcase/", "templates/", "packages/create-cairn-site/"],
     "engine": [
       "src/lib/",
@@ -51,7 +52,7 @@
     "scripts/checks/gate-tier.mjs"
   ],
   "checks": {
-    "check": ["engine", "scripts"],
+    "check": ["engine", "scripts", "harness"],
     "check:package": ["exportSurface"],
     "check:audit-pack": ["exportSurface"],
     "check:reference": ["exportSurface", "docs", "engine"],
@@ -89,7 +90,7 @@
     "check:comments": ["engine", "showcase", "scripts"],
     "check:public-tokens": ["engine", "showcase"],
     "check:tool-heuristics": ["engine"],
-    "test:emit": ["showcase", "engine"],
+    "test:emit": ["showcase", "engine", "harness"],
     "showcase:test:unit": ["showcase", "engine"],
     "check:tellgrader": ["docs"],
     "check:vale-rules": ["docs"]

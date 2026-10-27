@@ -37,8 +37,8 @@ Seven legs, in this order. Each prints only when it applies.
    (`npm run test:component -- --no-file-parallelism`) runs when the diff touches a rerun trigger
    (`scripts/test/component-rerun-triggers.mjs`), deletes or renames a path under `src/`, or
    selects nothing, including any diff with no `src/` path that is not docs-only. The leg is skipped
-   when every path is a docs-bucket path or on the no-check list, since the component project
-   cannot see them; stderr says so. A selection that cannot be computed runs the whole project.
+   when every path is a docs-bucket path, a harness-bucket path, or on the no-check list, since the
+   component project cannot see them; stderr says so. A selection that cannot be computed runs the whole project.
 5. `npm test -w packages/create-cairn-site`, when a path matches `packages/create-cairn-site/**`,
    `examples/showcase/**`, `scripts/build/emit-template*`, or the root `package.json`.
 6. The e2e specs the map selects (below), at zero retries, behind
@@ -58,6 +58,7 @@ matches it:
 | --- | --- |
 | docs | `docs/`, `*.md`, `**/*.md`, `.vale/`, `.vale.ini`, `.tellgrader.json`, `skills/`, `claude/` |
 | scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `vitest.config.ts`, `wrangler.test.jsonc` |
+| harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
 | export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `docs/internal/api-surface.md`, `docs/internal/option-map.json`, `skills/`, `claude/` |
@@ -90,6 +91,8 @@ spell out:
   lint read) selects every static check.
 - A close check the map neither lists nor builds the package for runs on every diff.
 - The docs bucket selects tellgrader and the docs checks.
+- The harness bucket (`.claude/`) selects only `check` and `test:emit`. A diff confined to
+  `.claude/` therefore runs those two, no component leg, and no e2e spec.
 - A path in no bucket and not on the no-check list selects every static check and the whole e2e
   suite. The no-check list is `.gitattributes` and `knip.jsonc`, the only tracked root files no
   check and no test reads; a unit test pins its members.

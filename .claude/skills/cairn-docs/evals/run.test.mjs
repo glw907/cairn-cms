@@ -186,6 +186,10 @@ test('claudeArgs keeps the prompt out of argv, uses the agent model for an agent
   const plain = claudeArgs({});
   assert.ok(plain.includes('--model') && plain.includes('sonnet'));
   assert.ok(plain.includes('Bash(git push*)') === false && plain.join(' ').includes('Bash(git push*)'));
+  const deniedList = plain[plain.indexOf('--disallowedTools') + 1];
+  for (const rule of ['Bash(git push*)', 'Bash(git -C * push*)', 'Bash(gh *)', 'Bash(ssh *)', 'Bash(approval-queue *)']) {
+    assert.ok(deniedList.split(',').includes(rule), `${rule} is denied`);
+  }
   const agent = claudeArgs({ agent: 'docs-fact-checker' });
   assert.ok(agent.includes('--agent') && !agent.includes('--model'));
   const ro = claudeArgs({ readOnly: true });

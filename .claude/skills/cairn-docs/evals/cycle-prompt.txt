@@ -16,11 +16,14 @@ The dates. "Since" is the date in ~/.local/state/cairn-docs-cycle/last when that
 
 Steps, in order:
 
-0. Check for a ruling still waiting. If ~/.local/state/cairn-docs-cycle/pending names an id, a
-   previous run queued a triage item and ended before the ruling. Run `approval-queue collect <id>`
-   as a background command under `setsid -f`, with its stdout in <month>/decision.json, wait for it
-   to exit, act on the decision as step 6 sets out, write the history entry as step 7 sets out, and
-   end. A resume does not start a new sample; the next monthly start does.
+0. Check for a ruling still waiting. If ~/.local/state/cairn-docs-cycle/pending exists, it holds
+   "<id> <YYYY-MM>": a previous run queued a triage item that month and ended before the ruling. Use
+   that month, not the run month, for <month> below and in the history entry. Run
+   `setsid -w approval-queue collect <id>` as a background command, with its stdout in
+   <month>/decision.json, and wait for that command to exit. If it exits 1 with "was withdrawn" on
+   stderr, remove the pending file and end. Otherwise act on the decision as step 6 sets out, write
+   the history entry as step 7 sets out, and end. A resume does not start a new sample; the next
+   monthly start does.
 
 1. Sample real sessions. Claude Code keeps each session's transcript at
    ~/.claude/projects/<dir>/<session-id>.jsonl, where <dir> is the working directory with / and .
@@ -69,8 +72,11 @@ Steps, in order:
    Otherwise queue it: run `approval-queue triage glw907/cairn-cms "Docs improvement cycle
    <YYYY-MM>" <month>/triage.json` as a background command with stdout in <month>/decision.json and
    stderr in <month>/queue.err. Read the id from the "approval-queue: queued <id>" line in
-   queue.err, write it to ~/.local/state/cairn-docs-cycle/pending, run `notify-send -u normal "Docs
-   cycle: triage waiting" "Docs improvement cycle <YYYY-MM>"` once, and wait for the command to exit.
+   queue.err, write "<id> <YYYY-MM>" to ~/.local/state/cairn-docs-cycle/pending, run `notify-send -u
+   normal "Docs cycle: triage waiting" "Docs improvement cycle <YYYY-MM>"` once, and wait for the
+   command to exit. If decision.json then holds {"decision":"defer",...}, Geoff has put the item
+   off: leave the pending file in place, skip steps 6 and 7, and end with a hand-over line saying
+   the ruling is waiting for the next start's step 0.
 
 6. Act on the decision, row by row, by the call Geoff set:
    - now: first write a capability case in evals.json that reproduces the failure and fails on main

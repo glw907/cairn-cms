@@ -37,7 +37,7 @@ export const ALLOWED_TOOLS = [
   'Bash(jq *)', 'Bash(mkdir *)',
   // The read-only filters a compound command pipes through; a real session's allow rules carry them.
   'Bash(tail *)', 'Bash(head *)', 'Bash(echo *)', 'Bash(sed -n *)', 'Bash(wc *)', 'Bash(cat *)',
-  'Bash(ls*)', 'Bash(grep *)', 'Bash(awk *)', 'Bash(sort*)', 'Bash(uniq*)', 'Bash(cut *)', 'Bash(tr *)',
+  'Bash(ls*)', 'Bash(grep *)', 'Bash(sort*)', 'Bash(uniq*)', 'Bash(cut *)', 'Bash(tr *)',
   'Bash(diff *)', 'Bash(printf *)', 'Bash(git ls-files*)', 'Bash(git rev-parse*)',
   'Bash(git -C * log *)', 'Bash(git -C * status*)', 'Bash(git grep*)', 'Bash(git show*)',
   'Bash(git branch*)',
@@ -45,7 +45,7 @@ export const ALLOWED_TOOLS = [
 
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
 export const DENIED_TOOLS = [
-  'Bash(approval-queue *)', 'Bash(gh *)', 'Bash(git push*)', 'Bash(ssh *)', 'WebFetch', 'WebSearch',
+  'Bash(approval-queue *)', 'Bash(gh *)', 'Bash(git push*)', 'Bash(git -C * push*)', 'Bash(ssh *)', 'WebFetch', 'WebSearch',
 ];
 
 /**
@@ -617,7 +617,7 @@ async function judgeTrial({ assertions, diff, reply, toolLog, file }) {
   ].join('\n');
   const cwd = mkdtempSync(join(tmpdir(), 'docs-eval-judge-'));
   const args = ['-p', '--model', 'opus', '--effort', 'medium', '--output-format', 'json', '--json-schema', JSON.stringify(JUDGE_SCHEMA), '--tools', ''];
-  const r = spawnSync('claude', args, { cwd, env: sessionEnv(), input: prompt, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const r = await run('claude', args, { cwd, env: sessionEnv(), input: prompt, timeout: 15 * 60 * 1000 });
   rmSync(cwd, { recursive: true, force: true });
   writeFileSync(file, r.stdout ?? '');
   try {
@@ -629,10 +629,29 @@ async function judgeTrial({ assertions, diff, reply, toolLog, file }) {
   }
 }
 
+/**
+ * Run a command to completion without blocking the event loop, so the other sessions' output
+ * pipes keep draining while a gate or the judge runs.
+ * @returns {Promise<{ status: number | null, stdout: string }>}
+ */
+function run(command, args, { cwd, env, input = '', timeout }) {
+  return new Promise((resolveRun) => {
+    const child = spawn(command, args, { cwd, env, stdio: ['pipe', 'pipe', 'ignore'] });
+    children.add(child);
+    let stdout = '';
+    const timer = setTimeout(() => child.kill('SIGTERM'), timeout);
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.on('error', () => { clearTimeout(timer); children.delete(child); resolveRun({ status: null, stdout }); });
+    child.on('close', (status) => { clearTimeout(timer); children.delete(child); resolveRun({ status, stdout }); });
+    child.stdin.on('error', () => {});
+    child.stdin.end(input);
+  });
+}
+
 /** Run a gate string on the light lane through `cairn-run-gate`, re-issuing on exit 75. */
-function runGate(root, gate) {
+async function runGate(root, gate) {
   for (let i = 0; i < 30; i++) {
-    const r = spawnSync('cairn-run-gate', [gate], { cwd: root, env: sessionEnv(), encoding: 'utf8', timeout: 12 * 60 * 1000 });
+    const r = await run('cairn-run-gate', [gate], { cwd: root, env: sessionEnv(), timeout: 12 * 60 * 1000 });
     if (r.status === 75) continue;
     return r.status === 0;
   }
@@ -651,18 +670,22 @@ function toolLog(tools) {
  * Run and grade one trial.
  * @returns {Promise<object>} the trial's record
  */
-async function runTrial({ job, ctx }) {
+async function runTrial({ job, ctx, rerun = false }) {
   const { caseDef, arm, trial } = job;
-  const stem = `${caseDef.id}-${arm.label}-${trial}`;
+  // A rerun gets its own stem and fixture name, so it keeps the first attempt's transcript.
+  const stem = `${caseDef.id}-${arm.label}-${trial}${rerun ? '-r' : ''}`;
   const transcript = join(ctx.stateDir, `${stem}.jsonl`);
   const record = { caseId: caseDef.id, arm: arm.label, trial, transcript, status: 'graded', pass: false, checks: [], judge: [], diagnostics: {} };
+  const name = `docs-eval-${ctx.runId}-${stem}`;
   let fixture;
   try {
     fixture = await makeFixture({
       repo: ctx.repo, mainRoot: ctx.mainRoot, caseDef, pin: caseDef.pinFull, armRef: arm.ref,
-      name: `docs-eval-${ctx.runId}-${caseDef.id}-${arm.label}-${trial}`, modulesDir: ctx.modules.get(caseDef.pinFull),
+      name, modulesDir: ctx.modules.get(caseDef.pinFull),
     });
   } catch (e) {
+    // makeFixture may have added the worktree before it threw; take it back out.
+    if (!ctx.keep) removeFixture(ctx.repo, join(ctx.mainRoot, '.claude/worktrees', name));
     return { ...record, status: 'fault', detail: `fixture: ${e.message}` };
   }
   try {
@@ -689,8 +712,11 @@ async function runTrial({ job, ctx }) {
     const diff = git(['diff', '--cached', fixture.commit], fixture.root);
     writeFileSync(join(ctx.stateDir, `${stem}.diff`), diff);
 
-    const cctx = { root: fixture.root, changed, tools: s.tools, reply: s.reply, runGate: (g) => runGate(fixture.root, g) };
     const checks = [...caseDef.checks, ...(caseDef.readOnly ? [] : implicitDocsChecks(changed))];
+    // The npm checks run first and asynchronously; runCheck then reads their results.
+    const gates = new Map();
+    for (const k of checks.filter((c) => c.type === 'npm')) gates.set(`npm run ${k.script}`, await runGate(fixture.root, `npm run ${k.script}`));
+    const cctx = { root: fixture.root, changed, tools: s.tools, reply: s.reply, runGate: (g) => gates.get(g) ?? false };
     record.checks = checks.map((k) => ({ type: k.type, ...runCheck(k, cctx) }));
     if (caseDef.judge?.length) {
       ctx.judgeCalls++;
@@ -750,12 +776,16 @@ async function main() {
   for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });
   console.error(`run ${runId}: ${sessions} case sessions, state in ${stateDir}`);
   const results = await pool(jobs, CONCURRENCY, async (job) => {
-    let r = await runTrial({ job, ctx });
+    // An exception in one trial is that trial's fault, not the run's: the table keeps every other row.
+    const attempt = (rerun) => runTrial({ job, ctx, rerun }).catch((e) => ({
+      caseId: job.caseDef.id, arm: job.arm.label, trial: job.trial, status: 'fault', detail: `runner: ${e.message}`, transcript: '', checks: [], judge: [],
+    }));
+    let r = await attempt(false);
     // A headless session sometimes exits 0 with no result event; the standing answer reruns an
     // errored session once, and a second error is reported as an error.
     if (r.status === 'error' && /no result/.test(r.detail) && !aborted) {
       console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.detail}; rerunning once`);
-      r = { ...(await runTrial({ job, ctx })), retried: true };
+      r = { ...(await attempt(true)), retried: true };
     }
     console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.status}${r.status === 'graded' ? (r.pass ? ' pass' : ' FAIL') : ` (${r.detail})`}`);
     return r;

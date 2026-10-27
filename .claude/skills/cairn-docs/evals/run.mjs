@@ -27,6 +27,8 @@ const SESSION_CAP = 120;
 const CONCURRENCY = 4;
 const SESSION_TIMEOUT_MS = 40 * 60 * 1000;
 const STATE_ROOT = join(homedir(), '.local/state/cairn-docs-evals');
+/** Outside every repository, so no session walks up into a checkout's `CLAUDE.md` or `.claude/`. */
+const FIXTURE_ROOT = join(homedir(), '.cache/cairn-docs-evals/fixtures');
 
 /** The tools a docs session gets; the `:*` form is avoided because `check:*` would deny `check:docs-gate`. */
 export const ALLOWED_TOOLS = [
@@ -78,6 +80,7 @@ export function parseArgs(argv) {
     else out.refs.push(a);
   }
   if (out.refs.length < 1 || out.refs.length > 2) throw new Error('give one or two refs');
+  if (out.control && out.refs.length !== 2) throw new Error('--control takes two refs: the first is the control arm');
   if (!['regression', 'capability', 'all'].includes(out.suite)) throw new Error(`bad --suite ${out.suite}`);
   if (!Number.isInteger(out.trials) || out.trials < 1) throw new Error('--trials takes a positive integer');
   return out;
@@ -163,15 +166,43 @@ export function overlayPaths(names) {
 }
 
 /**
+ * Delete the skill's files from a fixture, leaving `evals/`, so the arm runs without `cairn-docs`.
+ * @param {string} root
+ */
+export function deleteSkill(root) {
+  const skill = join(root, OVERLAY_DIR);
+  if (!existsSync(skill)) return;
+  for (const name of readdirSync(skill)) if (name !== 'evals') rmSync(join(skill, name), { recursive: true, force: true });
+}
+
+/**
+ * The paths from `start` up to `/` that would load into a session as project instructions: any
+ * `CLAUDE.md` or `.claude/`, except the user scope at `home/.claude`, which loads in both arms.
+ * @param {string} start
+ * @param {string} home
+ * @returns {string[]}
+ */
+export function ancestorConflicts(start, home) {
+  const found = [];
+  let dir = resolve(start);
+  for (;;) {
+    for (const name of ['CLAUDE.md', '.claude']) {
+      const path = join(dir, name);
+      if (existsSync(path) && path !== join(home, '.claude')) found.push(path);
+    }
+    const up = dirname(dir);
+    if (up === dir) return found;
+    dir = up;
+  }
+}
+
+/**
  * Delete the overlay paths from a fixture: the skill's files except `evals/`, the agent, the docs
  * rules, and CLAUDE.md.
  * @param {string} root
  */
 export function deleteOverlay(root) {
-  const skill = join(root, OVERLAY_DIR);
-  if (existsSync(skill)) {
-    for (const name of readdirSync(skill)) if (name !== 'evals') rmSync(join(skill, name), { recursive: true, force: true });
-  }
+  deleteSkill(root);
   for (const f of OVERLAY_FILES) rmSync(join(root, f), { force: true });
   const rules = join(root, '.claude/rules');
   if (existsSync(rules)) {
@@ -260,6 +291,18 @@ export function summarizeStream(text) {
 export function sessionErrored(s) {
   if (!s.result) return true;
   return s.result.isError || !['success', 'error_max_turns'].includes(s.result.subtype);
+}
+
+/**
+ * Why a control arm's session is a harness fault: the skill was listed at init, or a call to it
+ * did not fail as an unknown skill. Null when the arm is truly without the skill.
+ * @param {ReturnType<typeof summarizeStream>} s
+ * @returns {string | null}
+ */
+export function controlFault(s) {
+  if (s.init?.skills.includes('cairn-docs')) return 'the control arm lists cairn-docs in its session skills';
+  const leaked = s.tools.find((t) => t.name === 'Skill' && /cairn-docs/.test(t.input.skill ?? '') && !/Unknown skill/.test(t.output));
+  return leaked ? `the control arm launched cairn-docs: ${leaked.output.replace(/\s+/g, ' ').slice(0, 120)}` : null;
 }
 
 /**
@@ -503,12 +546,13 @@ function commitAll(root, message) {
  * Build a fixture worktree: the pin, the arm's overlay, the case's setup, each committed.
  * @returns {Promise<{ root: string, base: string, commit: string }>}
  */
-async function makeFixture({ repo, mainRoot, caseDef, pin, armRef, name, modulesDir }) {
-  const root = join(mainRoot, '.claude/worktrees', name);
+async function makeFixture({ repo, caseDef, pin, arm, name, modulesDir }) {
+  const root = join(FIXTURE_ROOT, name);
   git(['worktree', 'add', '--detach', root, pin], repo);
   liveFixtures.set(root, repo);
   deleteOverlay(root);
-  extractOverlay(repo, armRef, root);
+  extractOverlay(repo, arm.ref, root);
+  if (arm.control) deleteSkill(root);
   const base = commitAll(root, 'fixture overlay');
   if (caseDef.setup) {
     const mod = await import(pathToFileURL(join(HERE, caseDef.setup)).href);
@@ -532,8 +576,8 @@ export function newRunId(date = new Date(), suffix = randomBytes(2).toString('he
 }
 
 /** Remove the fixtures an aborted run left behind: `docs-eval-*` worktrees idle for three hours. */
-function pruneFixtures(repo, mainRoot) {
-  const dir = join(mainRoot, '.claude/worktrees');
+function pruneFixtures(repo) {
+  const dir = FIXTURE_ROOT;
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);
     if (!/^docs-eval-\d/.test(name) || Date.now() - statSync(path).mtimeMs < 3 * 3600 * 1000) continue;
@@ -564,7 +608,9 @@ function abortRun(reason) {
 function sessionEnv(extra = {}) {
   // A headless `-p` run exits soon after the model launches a background subagent, before the
   // result returns (anthropics/claude-code#73453), so sessions run their subagents in the foreground.
-  const env = { ...process.env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', ...extra };
+  // Auto-memory is off because a fixture is a linked worktree, which Claude Code maps to the main
+  // checkout's project and its memory.
+  const env = { ...process.env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', ...extra };
   delete env.ANTHROPIC_API_KEY;
   return env;
 }
@@ -688,12 +734,12 @@ async function runTrial({ job, ctx, rerun = false }) {
   let fixture;
   try {
     fixture = await makeFixture({
-      repo: ctx.repo, mainRoot: ctx.mainRoot, caseDef, pin: caseDef.pinFull, armRef: arm.ref,
+      repo: ctx.repo, caseDef, pin: caseDef.pinFull, arm,
       name, modulesDir: ctx.modules.get(caseDef.pinFull),
     });
   } catch (e) {
     // makeFixture may have added the worktree before it threw; take it back out.
-    if (!ctx.keep) removeFixture(ctx.repo, join(ctx.mainRoot, '.claude/worktrees', name));
+    if (!ctx.keep) removeFixture(ctx.repo, join(FIXTURE_ROOT, name));
     return { ...record, status: 'fault', detail: `fixture: ${e.message}` };
   }
   try {
@@ -709,8 +755,11 @@ async function runTrial({ job, ctx, rerun = false }) {
     };
     if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
     const faults = classifyDenials(s.result.denials, s.tools).faults;
-    // A control run removes the skill on purpose, so its absence is not a fault there.
-    if (!ctx.control && !s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
+    // The control arm removes the skill on purpose: there its presence is the fault.
+    if (arm.control) {
+      const leak = controlFault(s);
+      if (leak) return { ...record, status: 'fault', detail: leak };
+    } else if (!s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
     // A read-only case asks about work outside the repo, where a denied `ls` is the right outcome.
     if (!caseDef.readOnly && faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };
 
@@ -764,8 +813,14 @@ async function main() {
   const mainRoot = mainCheckoutRoot(repo);
   const cases = data.evals.filter((c) => (args.suite === 'all' || c.suite === args.suite) && (!args.caseId || c.id === args.caseId));
   if (cases.length === 0) throw new Error('no case matches');
-  pruneFixtures(repo, mainRoot);
-  const arms = args.refs.map((ref) => ({ ref, label: ref.replace(/[^\w.-]/g, '_'), hash: overlayHash(repo, ref) }));
+  mkdirSync(FIXTURE_ROOT, { recursive: true });
+  const conflicts = ancestorConflicts(FIXTURE_ROOT, homedir());
+  if (conflicts.length) throw new Error(`the fixture root sits under project instructions a session would load:\n${conflicts.join('\n')}`);
+  pruneFixtures(repo);
+  const arms = args.refs.map((ref, i) => {
+    const control = args.control && i === 0;
+    return { ref, control, label: control ? 'control' : ref.replace(/[^\w.-]/g, '_'), hash: `${overlayHash(repo, ref)}${control ? '-control' : ''}` };
+  });
   const sessions = cases.length * arms.length * args.trials;
   if (sessions > SESSION_CAP && !args.max) throw new Error(`${sessions} case sessions is over the cap of ${SESSION_CAP}; pass --max to run anyway`);
 
@@ -778,7 +833,7 @@ async function main() {
     if (!modules.has(c.pinFull)) modules.set(c.pinFull, prepareModules(repo, mainRoot, c.pinFull));
   }
   const dotfiles = spawnSync('git', ['-C', join(homedir(), '.dotfiles'), 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
-  const ctx = { repo, mainRoot, runId, stateDir, modules, dotfiles, judgeCalls: 0, keep: args.keep, control: args.control };
+  const ctx = { repo, mainRoot, runId, stateDir, modules, dotfiles, judgeCalls: 0, keep: args.keep };
 
   const jobs = [];
   for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });

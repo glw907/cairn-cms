@@ -8,9 +8,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  claudeArgs, classifyDenials, deleteOverlay, extractOverlay, gradeVerdicts, implicitDocsChecks,
-  newRunId, overlayHash, overlayPaths, parseArgs, rates, renderPrompt, renderTable, runCheck,
-  sessionErrored, skillBeforeDocsEdit, summarizeStream, validateEvals,
+  ancestorConflicts, claudeArgs, classifyDenials, controlFault, deleteOverlay, deleteSkill, extractOverlay,
+  gradeVerdicts, implicitDocsChecks, newRunId, overlayHash, overlayPaths, parseArgs, rates, renderPrompt,
+  renderTable, runCheck, sessionErrored, skillBeforeDocsEdit, summarizeStream, validateEvals,
 } from './run.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -95,13 +95,56 @@ test('overlayHash differs between arms with different overlays and ignores other
 test('parseArgs reads refs and flags and rejects a bad shape', () => {
   assert.deepEqual(parseArgs(['main', '--suite', 'regression', '--trials', '5', '--max']),
     { refs: ['main'], suite: 'regression', caseId: null, trials: 5, max: true, keep: false, control: false });
-  assert.equal(parseArgs(['a', '--control']).control, true);
+  assert.equal(parseArgs(['a', 'a', '--control']).control, true);
   assert.deepEqual(parseArgs(['a', 'b', '--case', 'x']).refs, ['a', 'b']);
   assert.throws(() => parseArgs([]), /one or two refs/);
   assert.throws(() => parseArgs(['a', 'b', 'c']), /one or two refs/);
   assert.throws(() => parseArgs(['a', '--suite', 'nope']), /--suite/);
   assert.throws(() => parseArgs(['a', '--trials', '0']), /positive integer/);
   assert.throws(() => parseArgs(['a', '--wat']), /unknown flag/);
+  assert.throws(() => parseArgs(['a', '--control']), /--control takes two refs/);
+});
+
+test('ancestorConflicts refuses a project .claude/ or CLAUDE.md above the root but passes the user scope', () => {
+  const top = mkdtempSync(join(tmpdir(), 'evals-ancestor-'));
+  const home = join(top, 'home');
+  const root = join(home, '.cache/fixtures');
+  try {
+    mkdirSync(join(home, '.claude'), { recursive: true });
+    mkdirSync(root, { recursive: true });
+    assert.deepEqual(ancestorConflicts(root, home), [], '$HOME/.claude/ is the user scope');
+    mkdirSync(join(home, '.cache/.claude'));
+    assert.deepEqual(ancestorConflicts(root, home), [join(home, '.cache/.claude')]);
+    rmSync(join(home, '.cache/.claude'), { recursive: true });
+    writeFileSync(join(home, 'CLAUDE.md'), 'x');
+    assert.deepEqual(ancestorConflicts(root, home), [join(home, 'CLAUDE.md')], 'a $HOME/CLAUDE.md refuses');
+  } finally {
+    rmSync(top, { recursive: true, force: true });
+  }
+});
+
+test('deleteSkill removes the skill but keeps evals/, the agent, and CLAUDE.md', () => {
+  const repo = overlayRepo();
+  try {
+    deleteSkill(repo);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/SKILL.md')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/references')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/evals/keep.json')), true);
+    assert.equal(existsSync(join(repo, 'CLAUDE.md')), true);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('controlFault flags a listed or launched cairn-docs and accepts an unknown-skill result', () => {
+  const stream = (skills, output) => summarizeStream([
+    { type: 'system', subtype: 'init', apiKeySource: 'none', skills, cwd: '/w' },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Skill', input: { skill: 'cairn-docs' } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: output }] } },
+  ].map((e) => JSON.stringify(e)).join('\n'));
+  assert.match(controlFault(stream(['cairn-docs'], 'Unknown skill: cairn-docs')), /lists cairn-docs/);
+  assert.match(controlFault(stream([], 'Launching skill: cairn-docs')), /launched cairn-docs/);
+  assert.equal(controlFault(stream([], 'Unknown skill: cairn-docs')), null);
 });
 
 test('rates drops errors from the denominator, and pass^k needs every graded trial to pass', () => {

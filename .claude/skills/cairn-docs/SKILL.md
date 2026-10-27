@@ -62,10 +62,8 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 ## Checks
 
 1. Run `npm run check:docs-gate` through `cairn-run-gate`. Fix what it reports and rerun until it
-   exits 0. When a fix edits a docs page after a rename, rerun the old-name `git grep` from step A.3
-   after that edit and show its output. A gate you did not run proves nothing about the page
-   (Anthropic's guidance: give the agent a check to run,
-   <https://code.claude.com/docs/en/best-practices>).
+   exits 0. A gate you did not run proves nothing about the page (Anthropic's guidance: give the
+   agent a check to run, <https://code.claude.com/docs/en/best-practices>).
 2. Dispatch `docs-fact-checker` in a fresh context, as `references/review.md` says. Do not
    fact-check your edit in the context that wrote it: a fresh context finds what the writing context cannot
    (<https://code.claude.com/docs/en/best-practices>, "A fresh context improves code review").

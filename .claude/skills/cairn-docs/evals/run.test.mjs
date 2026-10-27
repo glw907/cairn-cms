@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   claudeArgs, classifyDenials, deleteOverlay, extractOverlay, gradeVerdicts, implicitDocsChecks,
-  overlayHash, overlayPaths, parseArgs, rates, renderPrompt, renderTable, runCheck,
+  newRunId, overlayHash, overlayPaths, parseArgs, rates, renderPrompt, renderTable, runCheck,
   sessionErrored, skillBeforeDocsEdit, summarizeStream, validateEvals,
 } from './run.mjs';
 
@@ -291,4 +291,11 @@ test('validateEvals reports a bad case', () => {
   assert.match(problems, /suite must be/);
   assert.match(problems, /pin must be a commit sha/);
   assert.match(problems, /unknown check type wat/);
+});
+
+test('two runs started in the same second get different ids', () => {
+  const at = new Date('2026-10-27T03:36:34.123Z');
+  assert.equal(newRunId(at, 'ab12'), '20261027-033634-ab12');
+  assert.notEqual(newRunId(at), newRunId(at));
+  assert.match(`docs-eval-${newRunId(at)}-case-main-1`, /^docs-eval-\d/);
 });

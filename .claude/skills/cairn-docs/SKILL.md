@@ -76,6 +76,12 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 - A change to cairn's voice is a PR to `docs/internal/docs-register.md`.
 - A change to a base standard (Google, Microsoft) is a PR to Survey.
 
+## When the process misfires
+
+When the docs process went wrong in a session (a page left stale, the gate skipped, the fact-check
+not run), file a cairn `BACKLOG.md` item tagged `#docs-process` with the session id, through
+`log-issue`.
+
 ## Sources to route to, never copy
 
 - `docs/internal/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting

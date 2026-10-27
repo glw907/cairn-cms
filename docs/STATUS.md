@@ -32,6 +32,9 @@ The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellg
 The residue is the "Docs tooling before stage 2b: the residue" entry in `ROADMAP.md`.
 
 ## Open decisions and watches
+- The docs improvement loop (PR #149 with workstation #154): once both merge and `stow -R bin`
+  links `cairn-docs-cycle`, the first real cycle runs from this checkout and queues a triage for
+  Geoff. Two acceptance runs were unmet; BACKLOG #87 and #88 hold the fixes.
 - Stage 2b part 1, for Geoff: the engine fixture for the
   sidebar figure (the story `nav/worked-navlayout` relabels media to its own default).
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

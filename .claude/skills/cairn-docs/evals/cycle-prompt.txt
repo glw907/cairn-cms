@@ -77,9 +77,9 @@ Steps, in order:
    stderr in <month>/queue.err. Read the id from the "approval-queue: queued <id>" line in
    queue.err, write "<id> <YYYY-MM>" to ~/.local/state/cairn-docs-cycle/pending, run `notify-send -u
    normal "Docs cycle: triage waiting" "Docs improvement cycle <YYYY-MM>"` once, and wait for the
-   command to exit. If decision.json then holds {"decision":"defer",...}, Geoff has put the item
-   off: leave the pending file in place, skip steps 6 and 7, and end with a hand-over line saying
-   the ruling is waiting for the next start's step 0.
+   command to exit. A triage cannot be deferred as a whole (Geoff defers its rows instead), so the
+   command ends only with his ruling. If this session ends first, the pending file lets the next
+   start's step 0 collect the ruling.
 
 6. Act on the decision, row by row, by the call Geoff set:
    - now: first write a capability case in evals.json that reproduces the failure and fails on main

@@ -71,7 +71,7 @@
       "judge": [
         {
           "n": 1,
-          "text": "A search for the old name itemLabel across docs/ ran after the last docs edit (the tool-call log shows the command and its output), and no hit that remains on ArrayField is outside history records (docs/specs, docs/plans, docs/research, docs/internal/record, released CHANGELOG sections)."
+          "text": "A search for the old name itemLabel across docs/ ran after the edits that repoint the pages describing ArrayField.itemLabel (the tool-call log shows the command and its output), and no hit it shows on ArrayField is outside history records (docs/specs, docs/plans, docs/research, docs/internal/record, released CHANGELOG sections). A later edit that only adds a CHANGELOG or migration line, or documents a different symbol's itemLabel such as SlotDef, needs no new search: the deterministic checks grade those pages."
         },
         {
           "n": 2,

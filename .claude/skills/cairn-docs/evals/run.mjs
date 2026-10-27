@@ -11,7 +11,7 @@
 // Sessions run on the subscription: ANTHROPIC_API_KEY is removed from their environment, and the
 // run aborts on the first `init` event whose `apiKeySource` is not `none`.
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import {
   createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync,
   writeFileSync, copyFileSync, statSync,
@@ -523,6 +523,14 @@ async function makeFixture({ repo, mainRoot, caseDef, pin, armRef, name, modules
   return { root, base, commit };
 }
 
+/**
+ * Name a run by its UTC start second plus a random suffix. Two runs started in the same second
+ * would otherwise share one state directory and overwrite each other's results.
+ */
+export function newRunId(date = new Date(), suffix = randomBytes(2).toString('hex')) {
+  return `${date.toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-')}-${suffix}`;
+}
+
 /** Remove the fixtures an aborted run left behind: `docs-eval-*` worktrees idle for three hours. */
 function pruneFixtures(repo, mainRoot) {
   const dir = join(mainRoot, '.claude/worktrees');
@@ -761,7 +769,7 @@ async function main() {
   const sessions = cases.length * arms.length * args.trials;
   if (sessions > SESSION_CAP && !args.max) throw new Error(`${sessions} case sessions is over the cap of ${SESSION_CAP}; pass --max to run anyway`);
 
-  const runId = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, '').replace('T', '-');
+  const runId = newRunId();
   const stateDir = join(STATE_ROOT, runId);
   mkdirSync(stateDir, { recursive: true });
   for (const c of cases) c.pinFull = git(['rev-parse', c.pin], repo).trim();

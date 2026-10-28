@@ -8,9 +8,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  claudeArgs, classifyDenials, deleteOverlay, extractOverlay, gradeVerdicts, implicitDocsChecks,
-  newRunId, overlayHash, overlayPaths, parseArgs, rates, renderPrompt, renderTable, runCheck,
-  sessionErrored, skillBeforeDocsEdit, summarizeStream, validateEvals,
+  ancestorConflicts, claudeArgs, controlFault, deleteOverlay, deleteSkill, deniedFaults, endRecord,
+  extractOverlay, gradeVerdicts, implicitDocsChecks, makeRunDir, newRunId, overlayHash, overlayPaths,
+  parseArgs, rates, renderPrompt, renderTable, runCheck, sessionErrored, summarizeStream, validateEvals,
 } from './run.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -57,7 +57,7 @@ test('overlayPaths takes the skill, agent, docs rules, and CLAUDE.md, and never 
   ]);
 });
 
-test('delete-then-extract swaps the arm in, drops what the arm lacks, and leaves evals and other files', () => {
+test('delete-then-extract swaps the arm in, drops what the arm lacks, and leaves evals and other files', async () => {
   const repo = overlayRepo();
   const root = mkdtempSync(join(tmpdir(), 'evals-fixture-'));
   try {
@@ -68,7 +68,9 @@ test('delete-then-extract swaps the arm in, drops what the arm lacks, and leaves
     assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/references')), false);
     assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/evals/keep.json')), true);
     assert.equal(existsSync(join(wt, '.claude/rules/other.md')), true);
-    const got = extractOverlay(repo, 'new', wt);
+    assert.equal(existsSync(join(wt, '.claude/rules/docs.md')), false, 'the overlay set is derived from the tree listing');
+    assert.equal(existsSync(join(wt, 'CLAUDE.md')), false);
+    const got = await extractOverlay(repo, 'new', wt);
     assert.equal(readFileSync(join(wt, '.claude/skills/cairn-docs/SKILL.md'), 'utf8'), 'new skill');
     assert.equal(readFileSync(join(wt, 'CLAUDE.md'), 'utf8'), 'new claude');
     assert.equal(readFileSync(join(wt, '.claude/rules/docs-with-code.md'), 'utf8'), 'new rule');
@@ -95,13 +97,70 @@ test('overlayHash differs between arms with different overlays and ignores other
 test('parseArgs reads refs and flags and rejects a bad shape', () => {
   assert.deepEqual(parseArgs(['main', '--suite', 'regression', '--trials', '5', '--max']),
     { refs: ['main'], suite: 'regression', caseId: null, trials: 5, max: true, keep: false, control: false });
-  assert.equal(parseArgs(['a', '--control']).control, true);
+  assert.equal(parseArgs(['a', 'a', '--control']).control, true);
   assert.deepEqual(parseArgs(['a', 'b', '--case', 'x']).refs, ['a', 'b']);
   assert.throws(() => parseArgs([]), /one or two refs/);
   assert.throws(() => parseArgs(['a', 'b', 'c']), /one or two refs/);
   assert.throws(() => parseArgs(['a', '--suite', 'nope']), /--suite/);
   assert.throws(() => parseArgs(['a', '--trials', '0']), /positive integer/);
   assert.throws(() => parseArgs(['a', '--wat']), /unknown flag/);
+  assert.throws(() => parseArgs(['a', '--control']), /--control takes two refs/);
+});
+
+test('ancestorConflicts refuses a project .claude/ or CLAUDE.md above the root but passes the user scope', () => {
+  const top = mkdtempSync(join(tmpdir(), 'evals-ancestor-'));
+  const home = join(top, 'home');
+  const root = join(home, '.cache/fixtures');
+  try {
+    mkdirSync(join(home, '.claude'), { recursive: true });
+    mkdirSync(root, { recursive: true });
+    assert.deepEqual(ancestorConflicts(root, home), [], '$HOME/.claude/ is the user scope');
+    mkdirSync(join(home, '.cache/.claude'));
+    assert.deepEqual(ancestorConflicts(root, home), [join(home, '.cache/.claude')]);
+    rmSync(join(home, '.cache/.claude'), { recursive: true });
+    writeFileSync(join(home, 'CLAUDE.md'), 'x');
+    assert.deepEqual(ancestorConflicts(root, home), [join(home, 'CLAUDE.md')], 'a $HOME/CLAUDE.md refuses');
+  } finally {
+    rmSync(top, { recursive: true, force: true });
+  }
+});
+
+test('deleteSkill removes the skill but keeps evals/, the agent, and CLAUDE.md', () => {
+  const repo = overlayRepo();
+  try {
+    deleteSkill(repo);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/SKILL.md')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/references')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/evals/keep.json')), true);
+    assert.equal(existsSync(join(repo, 'CLAUDE.md')), true);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('deleteSkill keeps an empty .claude/skills/ when the skill was all the directory held', () => {
+  const root = mkdtempSync(join(tmpdir(), 'evals-skillonly-'));
+  try {
+    mkdirSync(join(root, '.claude/skills/cairn-docs/references'), { recursive: true });
+    writeFileSync(join(root, '.claude/skills/cairn-docs/SKILL.md'), 'skill');
+    writeFileSync(join(root, '.claude/skills/cairn-docs/references/a.md'), 'ref');
+    deleteSkill(root);
+    assert.equal(existsSync(join(root, '.claude/skills')), true);
+    assert.equal(existsSync(join(root, '.claude/skills/cairn-docs')), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('controlFault flags a listed or launched cairn-docs and accepts an unknown-skill result', () => {
+  const stream = (skills, output) => summarizeStream([
+    { type: 'system', subtype: 'init', apiKeySource: 'none', skills, cwd: '/w' },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Skill', input: { skill: 'cairn-docs' } }] } },
+    { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: output }] } },
+  ].map((e) => JSON.stringify(e)).join('\n'));
+  assert.match(controlFault(stream(['cairn-docs'], 'Unknown skill: cairn-docs')), /lists cairn-docs/);
+  assert.match(controlFault(stream([], 'Launching skill: cairn-docs')), /launched cairn-docs/);
+  assert.equal(controlFault(stream([], 'Unknown skill: cairn-docs')), null);
 });
 
 test('rates drops errors from the denominator, and pass^k needs every graded trial to pass', () => {
@@ -146,7 +205,6 @@ test('summarizeStream reads init, tool calls (Task as Agent), reply, and survive
   assert.deepEqual(s.tools.map((t) => t.name), ['Read', 'Skill', 'Edit', 'Bash', 'Agent']);
   assert.equal(s.reply, 'done');
   assert.equal(sessionErrored(s), false);
-  assert.equal(skillBeforeDocsEdit(s.tools), true);
 });
 
 test('summarizeStream pairs each tool call with its result for the judge', () => {
@@ -164,22 +222,46 @@ test('sessionErrored flags a missing result, is_error, and a usage-limit subtype
   assert.equal(sessionErrored(summarizeStream('{"type":"result","subtype":"error_max_turns","is_error":false}')), false);
 });
 
-test('classifyDenials separates a needed command (fault) from a forbidden attempt and from noise', () => {
-  const { faults, attempts } = classifyDenials(summarizeStream(STREAM).result.denials);
-  assert.deepEqual(attempts, ['gh pr list']);
-  assert.deepEqual(faults, ['npm run check:docs-gate -- --page x | tee y']);
+test('a turn-capped session that Claude Code marks is_error still grades', () => {
+  const s = summarizeStream('{"type":"result","subtype":"error_max_turns","is_error":true}');
+  assert.equal(s.result.isError, true);
+  assert.equal(sessionErrored(s), false);
 });
 
-test('classifyDenials forgives a denied compound command the session reissued by its leading command', () => {
+test('deniedFaults reports a needed command and ignores a forbidden attempt and noise', () => {
+  assert.deepEqual(deniedFaults(summarizeStream(STREAM).result.denials), ['npm run check:docs-gate -- --page x | tee y']);
+});
+
+test('deniedFaults forgives a denied compound command the session reissued by its leading command', () => {
   const denials = [{ tool_use_id: 'a', tool_name: 'Bash', tool_input: { command: "cairn-run-gate 'x'; echo exit $?" } }];
   const call = (id, command) => ({ id, name: 'Bash', input: { command } });
-  assert.deepEqual(classifyDenials(denials, [call('a', "cairn-run-gate 'x'; echo exit $?")]).faults, ["cairn-run-gate 'x'; echo exit $?"]);
-  assert.deepEqual(classifyDenials(denials, [call('a', "cairn-run-gate 'x'; echo exit $?"), call('b', "cairn-run-gate 'x'")]).faults, []);
+  assert.deepEqual(deniedFaults(denials, [call('a', "cairn-run-gate 'x'; echo exit $?")]), ["cairn-run-gate 'x'; echo exit $?"]);
+  assert.deepEqual(deniedFaults(denials, [call('a', "cairn-run-gate 'x'; echo exit $?"), call('b', "cairn-run-gate 'x'")]), []);
 });
 
-test('skillBeforeDocsEdit is null with no docs edit and false when the edit comes first', () => {
-  assert.equal(skillBeforeDocsEdit([{ name: 'Read', input: {} }]), null);
-  assert.equal(skillBeforeDocsEdit([{ name: 'Edit', input: { file_path: '/w/docs/a.md' } }, { name: 'Skill', input: { skill: 'cairn-docs' } }]), false);
+test('endRecord keeps the exit, the signal, the last event, the bytes, and the peak delay in milliseconds', () => {
+  assert.deepEqual(
+    endRecord({ code: 0, signal: null, lastEvent: { type: 'result', subtype: 'success' }, bytes: 1234, maxDelayNs: 52_340_000 }),
+    { exitCode: 0, signal: null, lastEvent: 'result/success', transcriptBytes: 1234, peakLoopDelayMs: 52.34 },
+  );
+  assert.deepEqual(
+    endRecord({ code: null, signal: 'SIGTERM', lastEvent: { type: 'assistant' }, bytes: 9, maxDelayNs: 0 }),
+    { exitCode: null, signal: 'SIGTERM', lastEvent: 'assistant', transcriptBytes: 9, peakLoopDelayMs: 0 },
+  );
+  assert.equal(endRecord({ code: 1, signal: null, lastEvent: null, bytes: 0, maxDelayNs: 1 }).lastEvent, null);
+});
+
+test('makeRunDir creates the root and refuses a leaf that already exists', () => {
+  const top = mkdtempSync(join(tmpdir(), 'evals-rundir-'));
+  const root = join(top, 'state/evals');
+  try {
+    assert.equal(makeRunDir(root, 'r1'), join(root, 'r1'));
+    assert.ok(existsSync(join(root, 'r1')));
+    assert.throws(() => makeRunDir(root, 'r1'), /EEXIST/);
+    assert.ok(makeRunDir(root, 'r2'));
+  } finally {
+    rmSync(top, { recursive: true, force: true });
+  }
 });
 
 test('claudeArgs keeps the prompt out of argv, uses the agent model for an agent case, and denies edits when readOnly', () => {
@@ -194,6 +276,9 @@ test('claudeArgs keeps the prompt out of argv, uses the agent model for an agent
   assert.ok(agent.includes('--agent') && !agent.includes('--model'));
   const ro = claudeArgs({ readOnly: true });
   assert.match(ro[ro.indexOf('--disallowedTools') + 1], /Edit,Write,NotebookEdit/);
+  assert.equal(plain.includes('--max-turns'), false);
+  const capped = claudeArgs({ maxTurns: 21 });
+  assert.equal(capped[capped.indexOf('--max-turns') + 1], '21');
 });
 
 test('renderPrompt fills {repo}, {base}, and {commit}', () => {
@@ -291,6 +376,17 @@ test('validateEvals reports a bad case', () => {
   assert.match(problems, /suite must be/);
   assert.match(problems, /pin must be a commit sha/);
   assert.match(problems, /unknown check type wat/);
+  const withTurns = (maxTurns) => validateEvals({ skill_name: 'x', evals: [{ ...bad.evals[0], suite: 'regression', pin: 'abcdef1', checks: [{ type: 'bash' }], maxTurns }] }).join('\n');
+  assert.doesNotMatch(withTurns(21), /maxTurns/);
+  assert.match(withTurns(0), /maxTurns must be a positive integer/);
+  assert.match(withTurns(2.5), /maxTurns must be a positive integer/);
+});
+
+test('every near-miss case caps its turns', () => {
+  const data = JSON.parse(readFileSync(join(HERE, 'evals.json'), 'utf8'));
+  const nearMisses = data.evals.filter((c) => c.id.startsWith('near-miss-'));
+  assert.ok(nearMisses.length > 0);
+  assert.ok(nearMisses.every((c) => c.maxTurns === 21));
 });
 
 test('two runs started in the same second get different ids', () => {

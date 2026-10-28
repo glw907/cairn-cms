@@ -53,6 +53,7 @@ describe('the table', () => {
     ['scripts', 'eslint.config.js', 'eslint.config.js'],
     ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
+    ['harness', '.claude/', '.claude/skills/cairn-docs/evals/run.mjs'],
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
@@ -113,6 +114,33 @@ describe('the table', () => {
       '.github/ci-green.json',
       '.github/workflows/',
     ]);
+  });
+});
+
+describe('a harness diff', () => {
+  const HARNESS_PATH = '.claude/skills/cairn-docs/evals/run.mjs';
+
+  it('selects the type check and test:emit, and no other static check', () => {
+    expect(labelsFor(HARNESS_PATH).sort()).toEqual(['check', 'test:emit']);
+  });
+
+  it('prints no component or e2e leg in the fast lane', () => {
+    const { lines } = decideFastGate([HARNESS_PATH], { selected: [] });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('npm run check');
+    expect(lines[0]).toContain('npm run test:emit');
+    expect(lines[0]).not.toContain('test:component');
+    expect(e2eSpecs([HARNESS_PATH], {}, context)).toEqual({ all: false, specs: [] });
+  });
+
+  it('still selects the other buckets checks and the component leg beside a src path', () => {
+    const picked = labelsFor(HARNESS_PATH, 'src/lib/log/index.ts');
+    expect(picked).toContain('check:comments');
+    expect(picked).toContain('check:surface');
+    const { lines } = decideFastGate([HARNESS_PATH, 'src/lib/log/index.ts'], {
+      selected: ['src/tests/component/a.test.ts'],
+    });
+    expect(lines).toHaveLength(2);
   });
 });
 
@@ -242,6 +270,15 @@ describe('the component leg', () => {
     expect(plan(['README.md', 'knip.jsonc']).mode).toBe('skip');
     expect(decideGate(['README.md']).gate).not.toContain('test:component');
     expect(decideGate(['README.md']).notes.join('\n')).toContain('component project skipped');
+  });
+
+  it('skips for a harness-only diff', () => {
+    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
+  });
+
+  it('runs a harness path beside a src path through the ordinary rule', () => {
+    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {

@@ -29,7 +29,7 @@
 //      trees, which no import graph can see.
 //   4. The component project, narrowed to the tests Vitest's related selection picks for the
 //      diff. The whole project runs on a rerun trigger, a deleted or renamed path under `src/`, or an
-//      empty selection. A diff whose every path is a docs path (or a path no check reads) skips
+//      empty selection. A diff whose every path is a docs or harness path (or a path no check reads) skips
 //      the leg, since the component project cannot see it.
 //   5. The create-cairn-site suite, when the diff touches the package, the showcase it bakes from,
 //      the emitter, or the root package.json.
@@ -447,14 +447,14 @@ function staticLeg(labels, context) {
 }
 
 /**
- * Whether the docs bucket is the only bucket a path belongs to.
+ * Whether a path belongs only to the docs bucket or only to the harness bucket.
  * @param {string} path - A repo-relative path.
  * @param {Context} context - The check universe and table.
- * @returns {boolean} True for a path only the docs checks read.
+ * @returns {boolean} True for a path no component test can see.
  */
 function isDocsOnlyPath(path, context) {
   const buckets = pathBuckets(path, context);
-  return buckets.size === 1 && buckets.has('docs');
+  return buckets.size === 1 && (buckets.has('docs') || buckets.has('harness'));
 }
 
 /**
@@ -467,7 +467,7 @@ function isDocsOnlyPath(path, context) {
  */
 export function componentPlan(paths, deleted, context) {
   const docsOnly = paths.every((path) => isNoCheck(path, context) || isDocsOnlyPath(path, context));
-  if (docsOnly) return { mode: 'skip', reason: 'every path is a docs path or one no check reads', reach: [] };
+  if (docsOnly) return { mode: 'skip', reason: 'every path is a docs, harness, or no-check path', reach: [] };
   const forcing = paths.filter((path) => matchesAny(path, COMPONENT_RERUN_TRIGGERS));
   if (forcing.length > 0) return { mode: 'full', reason: `rerun trigger ${forcing.join(', ')}`, reach: [] };
   const gone = deleted.filter((path) => path.startsWith('src/'));

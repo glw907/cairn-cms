@@ -183,7 +183,7 @@
     },
     {
       "id": "deficiency",
-      "suite": "capability",
+      "suite": "regression",
       "pin": "663ac5aeb",
       "setup": "setups/deficiency.mjs",
       "prompt": "A reader says the Limits on a tidy result section of docs/extend/turn-on-tidy.md doesn't match what happens: they tidied a 15,000-character draft and it went through, though the page says it would be refused. Fix the docs. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
@@ -283,6 +283,7 @@
     {
       "id": "near-miss-01",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -300,6 +301,7 @@
     {
       "id": "near-miss-02",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -317,6 +319,7 @@
     {
       "id": "near-miss-03",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -334,6 +337,7 @@
     {
       "id": "near-miss-04",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -351,6 +355,7 @@
     {
       "id": "near-miss-05",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -368,6 +373,7 @@
     {
       "id": "near-miss-06",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -385,6 +391,7 @@
     {
       "id": "near-miss-07",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -402,6 +409,7 @@
     {
       "id": "near-miss-08",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -419,6 +427,7 @@
     {
       "id": "near-miss-09",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,
@@ -436,6 +445,7 @@
     {
       "id": "near-miss-10",
       "suite": "regression",
+      "maxTurns": 21,
       "pin": "663ac5aeb",
       "readOnly": true,
       "install": false,

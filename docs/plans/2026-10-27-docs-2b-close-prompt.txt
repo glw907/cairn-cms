@@ -1,0 +1,41 @@
+You are closing draft docs stage 2b part 2 for cairn-cms, started from the main checkout
+/var/home/glw907/Projects/cairn-cms. Geoff works in this session with you. He has not yet approved the
+scope below, so bring it to him as a design (the pass-core design step) before any edit, and take his
+ruling on the one open decision.
+
+Sources, read first:
+- docs/STATUS.md, "Immediate next action".
+- ROADMAP.md, the entry "Stage 2b part 2: the items part 1 carried" (nine carried items, each with its trigger).
+- docs/plans/2026-10-11-draft-docs-2b-part1.md, line 22: part 2's scope as part 1's plan set it.
+- docs/internal/record/harvest/relink.json: the 53 entries whose stage is "2b" (11 are LEGACY_PATH_MAP
+  repoints in scripts/checks/docs-links.mjs; most of the rest restore links in docs/reference/*; the remainder are
+  comment pointers in the showcase and scaffold, the register and briefs, and the symbols allowlist).
+- docs/internal/docs-friction-log.md (untriaged), and the cairn-docs skill for the page-change procedure.
+
+Proposed scope, in:
+1. The 53 stage-2b relink entries.
+2. The 10 fact re-arms of drafted pages.
+3. The reference-arm corrections and the final extend arm index.
+4. The outline deletion, as part 1's plan scoped it.
+5. The consistency read: the siteConfigPath and glob explanations repeated across define-an-adapter-and-schema,
+   turn-on-tidy, build-the-public-routes, and reuse-content-across-entries; "hand-built site" wording across 2a and 2b
+   pages; the add-cairn tutorial's undeclared #lib import and missing root +layout.svelte note; and the registry check
+   on buildNewlyPublished (npm 0.98.0) for act-on-newly-published-entries.
+6. The engine-pass boundary test over the friction log's engine entries and ROADMAP's engine-friction entries, with
+   STATUS stating whether an engine pass is warranted before stage 3.
+7. The friction-log triage (complete-or-move), and a STATUS rewrite.
+
+Out, each already carrying its trigger in ROADMAP: the sidebar figure's fixture (the next engine pass owns
+src/lib/reproductions/), configure-media's tutorial-site coverage, the 27 pending option rows (BACKLOG #78), the
+one-off check:reference flake (acts on a second occurrence), the pre-2b tooling residue, and the claude-code arm.
+
+Shape: one branch off main, one PR. Risk class runner (it edits scripts/checks files), so it goes to Geoff as a
+packet, with the page edits as docs reviews. Each page change runs the docs gate and a fresh docs-fact-checker. CI is
+the full-suite home. No version bump, no publish. Draft docs from the register briefs in
+docs/internal/docs-register.md; the cairn-docs skill carries the procedure.
+
+Open decision for Geoff: does the sidebar-figure fixture block 2b's close? The recommendation is no. The close records
+it as deferred to the engine pass that owns src/lib/reproductions/, where ROADMAP already puts it. If he wants the
+figure first, 2b's close waits on an engine pass.
+
+A pass's state lives in docs/STATUS.md (present tense, 60 lines or fewer). Update it at the close.

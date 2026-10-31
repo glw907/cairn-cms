@@ -1082,7 +1082,8 @@ the named human gates only):**
   - **The 2b close's boundary test (2026-10-31, docs finalization pass 1).** All 94 engine entries
     in the friction log were checked against the code. None was overtaken; the log keeps none of them,
     and `docs/internal/record/2026-10-31-engine-friction-2b-close.md` holds each verbatim with its
-    verdict and page. Seven ride engine pass 2 (numbers 16, 19, 46, 54, 62, 93, 94; scope in
+    verdict and page. `BACKLOG.md` carries the live ones (#98 to #165, 2026-10-31), so removing
+    that record loses none of them. Seven ride engine pass 2 (numbers 16, 19, 46, 54, 62, 93, 94; scope in
     `docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"). Six are dropped with a reason
     (10, 21, 48, 64, 78, 83) and seven were handled on their page (2, 20, 28, 40, 50, 61, 79). The
     rest ride the final engine batch: 25 change no page (class 3), and 49 change a page that carries

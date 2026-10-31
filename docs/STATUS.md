@@ -12,8 +12,10 @@ and engine pass B (PR #113). cairn.pub pins
 `0.94.0-rc.1`, its ceiling `0.98.0` until the one release below
 ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
 
-**The sequence (Geoff, 2026-10-31).** The agent-first pattern lands first, then the held docs
-series (editors and admin arms), then one release, then each site migrates once. Design:
+**The sequence (Geoff, 2026-10-31).** The agent-first pattern lands first, then the media and
+publish pass and the scaffold pass, then the held docs series (editors and admin arms), then the
+final engine batch, then one release, then each site migrates once. `BACKLOG.md` names each
+item's pass. Design:
 `~/Projects/initiatives/shared-standards/specs/2026-10-31-agent-first-pattern-design.md`. Engine
 passes land on `main` and never release.
 
@@ -25,6 +27,9 @@ stays on hold with PRs #159, #160, and #161 open; its state is
 old pass 5's front door. The release holds until the rebuild lands.
 
 ## Open decisions and watches
+- The engine backlog triage of 2026-10-31 landed. Its full sweep of the 68 friction entries it
+  carried in (`BACKLOG.md` #98 to #165) goes to Geoff as a second triage, so those placements are
+  provisional.
 - Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction
   entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
   (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine

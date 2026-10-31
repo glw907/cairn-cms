@@ -2,7 +2,7 @@
 
 Writing a doc is also a design review. This file collects the design friction that documenting and
 building cairn surfaces, so a rough edge becomes a tracked candidate for work instead of a lost
-observation. Triage feeds `ROADMAP.md` and `docs/STATUS.md`; this repo keeps no separate backlog file.
+observation. Triage feeds `BACKLOG.md`, `ROADMAP.md`, and `docs/STATUS.md`.
 A finding here does not block the doc that found it.
 
 Record each finding with its perspective and a short note. The perspective is one of the five
@@ -62,9 +62,8 @@ New findings start in the group they belong to, one per finding, with its perspe
 
 ### Engine
 
-The 94 engine entries moved to `record/2026-10-31-engine-friction-2b-close.md` at the 2b close, each with its boundary-test verdict. New engine findings start here.
+The 94 engine entries moved to `record/2026-10-31-engine-friction-2b-close.md` at the 2b close, each with its boundary-test verdict, and the live ones are in `BACKLOG.md` (#98 to #165, plus five merged into older items). New engine findings start here.
 
-- **`extender`.** The `installation-not-covering-repo` remedy sends the reader to "Only select repositories" (`packages/create-cairn-site/src/github/catalogue.mjs:131`), the option that left a first run without the repository it was about to create (found while writing the capture runbook, 2026-10-31). A resume after `createRepo` also stops with `repo-name-collision` (`src/github/repo.mjs:70`) instead of adopting a repository the tool made. Fix candidates: name "All repositories" for a first run, and adopt an empty repository the run itself created.
 
 ### Docs content
 

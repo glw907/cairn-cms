@@ -345,6 +345,36 @@ The original decision framing, for the record:
   - One whole-tree gate run failed `check:reference` on `admin-toolkit.md` (28 stale exports) and
     passed on rerun; unexplained and not reproduced. Trigger: a second occurrence.
 
+- **Docs content carried from the 2b close (docs finalization pass 1, 2026-10-31).** The friction log's
+  docs-content and repo-tooling entries were verified against the pages and code; 17 were fixed on
+  their pages, 5 found overtaken, and 10 became the rows below, which also carry the six tooling entries that stay, each with its trigger:
+  - Move failure causes to `debug-your-site`. `docs/internal/docs-register.md`'s task-guide anatomy
+    (item 5) points failure paths at the track's recovery surface, but the pages
+    `arrange-the-admin-sidebar`, `write-a-markdown-component`, `share-a-draft-preview`,
+    `configure-media`, `define-an-adapter-and-schema`, `turn-on-tidy`, `build-the-public-routes`, and
+    `rotate-the-github-app-key` keep their causes inline, and `debug-your-site` has no row for a
+    `navLayout:` startup error, a throwing `attention` callback, the render pipeline,
+    `preview.refused`, `media.delivery_failed` or `media.upload_failed`, a concept-wiring build
+    failure, `tidy.failed`, a public-route build failure, or a signing failure after rotation. Trigger:
+    the docs cycle's human gate, or the register's item 5 relaxed.
+  - Unify the tutorial and scaffold layout and name "the adapter". The add-cairn tutorial builds
+    `src/lib/` where the scaffold uses `src/theme/`, and uses "adapter" for both the engine's adapter
+    and SvelteKit's. A Names row, and the `CairnAdapter` doc comments that name only
+    `src/lib/cairn.config.ts` (`src/lib/content/types.ts:5,223`, an engine comment change). Trigger:
+    the final engine batch.
+  - Re-capture the create-cairn-site transcripts live: `01c-resume.txt`, `01d-resume.txt`, and
+    `01-create-cairn-site.txt:9` still show the two-database provisioning lines. Trigger: the capture
+    sitting of the docs finalization series.
+  - A plan-pinned gate string bypasses the classifier and can omit `check`
+    (`scripts/checks/gate-tier.mjs:56`). Trigger: the next gate-tier pass.
+  - A caught red's record names no failing step; add a `failing step` field to the PR score.
+    Trigger: the next replay of the gate.
+  - The classifier selects no unit test for a deletion under `examples/showcase/`
+    (`gate-tier.mjs:173-177,680`); add a bucket for the exclude paths in
+    `examples/showcase/.cairn-template.json`. Trigger: the next gate-tier pass.
+  - `ROADMAP.md` still cites the frozen `docs/HISTORY.md` as live (near lines 409, 413, 422, 442, and
+    1646). Trigger: the ROADMAP restructure pass.
+
 - **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
   the register, `check:snippets`, `check:symbols`, and `link:consumer`, and fixed the showcase tell in the dotfiles repo. What stays, each with its trigger:
   - The second-sign-in-group rename in `src/lib/auth-channel/factory.ts:1` and `:537`,

@@ -12,7 +12,7 @@ The header at the top of the editing screen holds the controls for an entry's li
 story: publish/header-band
 width: desktop
 alt: Reproduction of the editing screen's header on a wide screen, with the More actions menu open beside the Publish and Save buttons.
-caption: This entry is published and has no new edits, so Publish is dimmed and its tooltip reads Nothing new to publish. The menu lists History and Delete. Discard changes appears only when the entry has a saved draft.
+caption: The More actions menu is open beside the dimmed Publish and Save buttons, and it lists History and Delete. Discard changes joins the menu only when the entry has a saved draft.
 ```
 
 On a phone, the header shrinks to a back arrow, the title, and one status chip. The **Save** and **Publish** buttons move to a bar at the bottom of the screen, and **Details** moves into the **More actions** menu.
@@ -21,7 +21,7 @@ On a phone, the header shrinks to a back arrow, the title, and one status chip. 
 story: publish/header-band
 width: narrow
 alt: Reproduction of the editing screen's header on a phone, with a back arrow, the title, a status chip, and the open More actions menu.
-caption: A small dot beside the status chip appears when the entry has unsaved changes. The chip folds in the Hidden marker, so one chip carries the whole state.
+caption: On a phone the menu adds Details to History and Delete, and Publish and Save move to a bar at the foot of the screen.
 ```
 
 The following table describes the header's parts on a wide screen.
@@ -73,7 +73,7 @@ flowchart LR
   live -->|Edit again| write
 ```
 
-*Save and Publish are separate steps. A saved draft stays out of sight until you publish, and editing a live entry starts a new draft while the live version stays on your site.*
+*Editing a live entry starts a new draft while the live version stays on your site.*
 
 ## Publish an entry
 
@@ -93,16 +93,10 @@ If a publish doesn't finish, the editor keeps your edits and shows **Your edits 
 
 On screens outside an open entry, such as a list, the **Publish site** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish site (2)**. It doesn't appear while you have an entry open, and it doesn't appear when no entries are waiting.
 
-```repro
-story: publish/pending-list
-alt: Reproduction of the Publish the whole site confirmation, listing the waiting entries under their content type with Cancel and Publish site buttons.
-caption: Two entries are waiting, so the button behind the window reads Publish site (2). The window names each entry by its address under its content type.
-```
-
 To publish everything that's waiting, follow these steps:
 
 1. On a list screen, select **Publish site**.
-2. In the **Publish the whole site?** window, read the list. It includes every waiting entry you have access to, whoever saved it.
+2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its address under its content type. It includes every waiting entry you have access to, whoever saved it.
 3. Select **Publish site**. To back out, select **Cancel**.
 
 The list then shows a message that reads **Published** followed by the number of entries.

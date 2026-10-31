@@ -11,7 +11,7 @@ Select **Tags** in the sidebar.
 ```repro
 story: tags/screen
 alt: Reproduction of the Tags screen, with an Add a tag field, a list of tags with their stored forms and counts, and a Save changes button.
-caption: A tag that entries use shows how many entries use it, counting entries with unpublished edits, and its remove button is faded and unavailable. A tag no entry uses has an active remove button.
+caption: Trail Guide and Community News are in use, so their trash buttons are grey. Gear shows Unused and a red trash button. Below the list, Already on your entries offers volunteer-spotlight, a tag that entries carry and the list lacks.
 ```
 
 1. The **Add a tag** field is where you type a new tag's name.

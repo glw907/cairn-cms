@@ -44,14 +44,7 @@ caption: The Write tab is selected. The screen is the same for every content typ
 4. The **Details** button opens the panel of settings for the entry.
 5. The writing surface is where you type the entry's text.
 
-The toolbar has three groups of controls, and on wider screens each group has a small label. On a narrow screen the toolbar scrolls sideways, and the **Write** and **Preview** tabs move into the **More formatting** menu.
-
-```repro
-story: editor/toolbar
-width: desktop
-alt: Reproduction of the toolbar, with Format, Structure, and Insert groups followed by the Write and Preview tabs.
-caption: Format holds the four text styles. Structure holds headings, lists, quote, and table, plus the More formatting menu. Insert holds the controls that add links, images, and blocks.
-```
+The toolbar has three groups of controls, Format, Structure, and Insert, and on wider screens each group has a small label. On a narrow screen the toolbar scrolls sideways, and the **Write** and **Preview** tabs move into the **More formatting** menu.
 
 At the right end of the toolbar, the **?** button, named **Markdown help**, opens a short reference and the list of keyboard shortcuts.
 
@@ -129,19 +122,13 @@ The **Insert image** button in the toolbar adds a picture. [Add an image](add-an
 
 A figure is an image with a visible caption and a choice of width. To make one, place the cursor on the image. The figure button then reads **Wrap the image at the cursor in a figure**. Select it to open the **Wrap in a figure** form. After the image is in a figure, the same button reads **Edit the figure at the cursor**, and the form opens as **Edit figure**.
 
-```repro
-story: editor/figure-dialog
-alt: Reproduction of the Edit figure form with a Caption box, an Alt text status, four Placement choices, and Unwrap and Update figure buttons.
-caption: The form is open on a figure whose placement is Wide. Center suits an image narrower than the text column, and Measure keeps an image at the column width.
-```
-
 The following table describes the parts of the form.
 
 | Part | What it does |
 |---|---|
 | **Caption** | Sets the visible line under the image. Everyone sees it, and it isn't the alt text. |
 | **Alt text** | Shows **Described** or **Needs alt** for the image. |
-| **Placement** | Offers **Measure**, **Center**, **Wide**, and **Full**. |
+| **Placement** | Offers **Measure**, **Center**, **Wide**, and **Full**. Center suits an image narrower than the text column, and Measure keeps an image at the column width. |
 | **Wrap in figure**, **Update figure** | Applies your choices. |
 | **Unwrap** | Returns the figure to a plain image. |
 
@@ -224,10 +211,10 @@ The **Preview** tab shows the entry the way your site displays it. It uses your 
 story: editor/preview-tab
 width: desktop
 alt: Reproduction of the Preview tab, with a Preview width button beside the tabs and the rendered entry below.
-caption: The Preview width button names the width in use. Its menu offers Desktop, Tablet at 768 pixels, Phone at 390 pixels, and Small phone at 320 pixels.
+caption: The Preview tab is selected. The width button beside the tabs reads Desktop, the formatting and insert controls are dimmed, and the entry appears below in your site's design.
 ```
 
-To see how the entry looks on a smaller screen, select **Preview width** and choose a size. The editor remembers your choice on this device. Links in the preview don't open, so you can read the page without leaving the editor.
+To see how the entry looks on a smaller screen, select **Preview width** and choose Desktop, Tablet at 768 pixels, Phone at 390 pixels, or Small phone at 320 pixels. The editor remembers your choice on this device. Links in the preview don't open, so you can read the page without leaving the editor.
 
 ## Change an entry's settings
 
@@ -236,7 +223,7 @@ The **Details** button in the header, or Ctrl+., opens the Details panel. **Clos
 ```repro
 story: editor/details-panel
 alt: Reproduction of the Details panel open beside an entry, with boxes for date, tags, and lead picture, then Visibility and Address groups.
-caption: The Hidden checkbox keeps the entry off the site's lists and feeds, even after it's published. The boxes above the Visibility group come from your site, so they differ from site to site.
+caption: The Details panel opens beside the entry. Date, Tags, and Lead picture are this site's boxes, and Visibility, Address, and Share preview follow them.
 ```
 
 The following table describes the panel's groups, from the settings you change most often to the ones you usually set once.

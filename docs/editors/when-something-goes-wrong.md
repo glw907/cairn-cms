@@ -4,12 +4,6 @@ The editor sometimes refuses what you asked, and a screen sometimes shows a mess
 
 You need to be able to reach the admin, or to be trying to. The page doesn't explain how to write, save, or publish. For those, see [Write in the editor](write-in-the-editor.md) and [Publish and history](publish-and-history.md). Messages about pictures are in [Add an image](add-an-image.md) and [Manage the media library](manage-the-media-library.md).
 
-```repro
-story: publish/refusal-banner
-alt: Reproduction of a refused delete, with a red banner naming the post and listing the pages that still link to it.
-caption: A delete is refused while any other page links to the post. The banner states how many pages link to it, and each title in its list opens that page in the editor.
-```
-
 Every message below is quoted exactly as it appears, so you can match it to what you're seeing. Where a message names something of yours, such as a field or a post, the quote uses an example in its place.
 
 ## The sign-in link never arrives
@@ -129,7 +123,7 @@ Two messages cover an address that's already taken:
 
 ## A page won't delete
 
-You can't delete a page while other pages link to it, because those links would lead nowhere. The figure shows this refusal. It starts with the following message, where the word after This names the kind of entry:
+You can't delete a page while other pages link to it, because those links would lead nowhere. It starts with the following message, where the word after This names the kind of entry:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, so a contraction rule cannot rewrite it. -->

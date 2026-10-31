@@ -16,7 +16,7 @@ The panel opens next to your cursor.
 ```repro
 story: media/insert-panel
 alt: Reproduction of the Insert image panel, with an Upload an image button and a search box that lists the site's existing images.
-caption: Upload an image starts a new upload. The search box filters the site's existing images by name and by alt text, and an image with no alt text carries a Needs alt flag. Selecting an image in the list inserts it at the cursor and closes the panel.
+caption: The Insert image panel opens next to the cursor with Upload an image above a search box and the list of the site's images.
 ```
 
 You can also skip the panel. When you paste an image or drag an image file into the draft, the editor opens the upload form directly.
@@ -35,7 +35,7 @@ A reused image brings along the alt text saved with it in the library. A row mar
 
 1. In the **Insert image** panel, select **Upload an image**.
 1. Choose the file in the window that opens. The upload form appears with a small preview of your picture.
-1. In the **Name** field, type a name you'd recognize later. The library lists the image under this name.
+1. In the **Name** field, type a name you'd recognize later. The library lists the image under this name. The field starts with the file's name and a **Suggested** mark. A name from a camera or screenshot tool, such as IMG_4821, gets no suggestion, so the field starts empty.
 1. Under **Alt text**, select **Write a description** and type a short description, or select **Mark as decorative**.
 1. Select **Insert image**.
 
@@ -44,7 +44,7 @@ The picture appears in your draft right away while it uploads, and the editor sw
 ```repro
 story: media/upload-form
 alt: Reproduction of the upload form, with a preview, a Name field marked Suggested, and two Alt text choices.
-caption: The Name field starts with the file's name and shows a Suggested mark. A file named by a camera or a screenshot tool, such as IMG_4821, gets no suggestion, and the field starts empty. Insert image stays available while the alt text is blank.
+caption: The upload form shows a preview, the Name field with its Suggested mark, and the two Alt text choices, with Insert image available before either is chosen.
 ```
 
 If the file is one the site already has, the editor inserts the existing image and shows **Reused an existing image.** Select **Done** to close the panel. If the upload fails, the panel says what went wrong and offers **Retry** and **Cancel**. Your draft stays as it was.
@@ -72,7 +72,7 @@ The lead picture is the one image that leads the page. It's also the picture sho
 ```repro
 story: media/lead-picture-dialog
 alt: Reproduction of the lead picture dialog, with a wide preview, Replace and Remove links, alt text choices, and a Caption box.
-caption: The preview crops the image to a wide 16:9 frame, which shows what a wide crop keeps. Replace returns to the choices for picking another image, and Remove clears the field. The caption is optional, appears under the picture if the site's template uses it, and isn't the alt text.
+caption: The lead picture dialog shows a wide preview with Replace and Remove links, the Describe it and Decorative choices, and the optional Caption box. Replace returns to the choices, and Remove clears the field. The caption appears under the picture only if the site's template uses it, and it isn't the alt text.
 ```
 
 Use this image places the picture in the field but doesn't save the entry. The field then shows a thumbnail, the name, and a status of **Described**, **Needs alt**, or **Decorative**. The button beside it reads **Edit**, or **Add** while the picture still needs alt text. Select it to reopen the dialog.

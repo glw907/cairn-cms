@@ -11,7 +11,7 @@ Select **Library** in the sidebar. Your site can use a different label for it. T
 ```repro
 story: media/library
 alt: Reproduction of the Media library screen in grid view, with an image count, a search box, view buttons, and three filters.
-caption: Each tile shows the image, its name, a Described or Needs alt label, and either a used count or a Not referenced flag. The grid shows a limited number of images at a time, with a count of how many are showing and a Load more button.
+caption: Each tile shows the image, its name, a Described or Needs alt label, and either a used count or a Not referenced flag. A line under the grid reads Showing 5 of 5.
 ```
 
 1. The line under the title gives the number of images in the library, how many of them the site uses, and how much storage they take. Searching and filtering don't change these totals.
@@ -56,7 +56,7 @@ Select a tile in grid view, or a row in list view. The details panel opens besid
 ```repro
 story: media/details-panel
 alt: Reproduction of the details panel for one image, with a preview, Name and Address fields, default alt text, and a Where used list.
-caption: The default alt text note says the default applies the next time the image is placed and doesn't change alt text on pages that already use the image. Where used lists published pages and unpublished edits in separate groups, and each title opens that entry in the editor.
+caption: The details panel for Team Photo. The default alt text note says the default applies the next time the image is placed and leaves alt text on existing pages alone. Where used lists the entry that uses the image, and its title opens that entry in the editor.
 ```
 
 The panel holds the following:
@@ -92,12 +92,6 @@ If the library can't read every place the image is used, the window says **Repla
 ## Select several images
 
 Selecting lets you delete more than one image at a time. Tick the checkbox on each tile. In list view, tick the checkbox at the start of each row. A bar appears and gives the number you selected. It also says how many of those have no references and how many are still used.
-
-```repro
-story: media/bulk-selection
-alt: Reproduction of the library with three images ticked and a selection bar showing a count, Select all, Clear, and Delete.
-caption: The selection bar splits the chosen images into those with no references and those still used. Select all adds every image currently showing, and Clear empties the selection.
-```
 
 The bar has three buttons:
 
@@ -140,7 +134,7 @@ A bulk delete never removes an image that pages still use. It checks each image 
 ```repro
 story: media/delete-in-use
 alt: Reproduction of the delete confirmation for an image that pages still use, listing them and asking for the image's address.
-caption: The window lists the entries that would break, with published pages and unpublished edits in separate groups. Delete anyway stays unavailable until the typed address matches the image's address.
+caption: The window lists each entry that would break and keeps Delete anyway unavailable until the typed address matches.
 ```
 
 After a delete, the library shows **Asset deleted.**

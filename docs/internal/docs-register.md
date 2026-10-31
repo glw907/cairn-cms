@@ -683,11 +683,10 @@ code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanction
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) are empty until their stages
-rebuild them, so no old page awaits a naming sweep; each stage writes to this table from its first
-page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
-`.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
-the Names rule reaches them once they do.
+The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) were rebuilt stage by stage, and
+each stage wrote to this table from its first page. A new page, or a page already open for an unrelated
+edit, writes to this table now. `tool/docs/` still sits outside `.vale.ini`'s scope; the credentials and
+tripwire pages it once held now live in `docs/admin/`, where the Names rule reaches them.
 
 Two further rules carry the admin-or-public split's own retired compounds, kept out of
 `Cairn.Names`/`Cairn.NamesRetired` since those two are case-sensitive by necessity (matching the

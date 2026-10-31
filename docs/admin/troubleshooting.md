@@ -53,7 +53,7 @@ An owner who is locked out can get a fresh link from the computer that created t
 
 If every admin page, the sign-in page included, shows the same branded error, the database binding is missing. [Deploy the Worker with its bindings](./is-it-working.md#deploy-the-worker-with-its-bindings) covers that fix.
 
-**The log event:** `guard.refused`. Its `reason` field names the case: `https`, `csrf`, `identity`, or `bindings`.
+**The log event:** `guard.refused`. Its `reason` field names the case: `https`, `csrf`, `identity`, `bindings`, or `dev_backend_in_prod`. A `dev_backend_in_prod` refusal means the development stand-in is switched on in a deployed site, and a developer has to turn it off.
 
 ## A save or publish reports a conflict, or fails
 

@@ -56,10 +56,10 @@ The following table lists where the domain steps can stop, what each stop means,
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Wait:** nothing needs fixing. A later run prints the decline again and does not ask again. |
+| You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Act when you're ready:** run the command again. It asks again. |
 | The API token was refused | The pasted token is invalid, or it lacks a permission. | **Act:** run the command again. It opens the token page for a fresh token. |
 | Waiting for the nameserver switch | Your registrar still points the domain at its old nameservers, or the change is still spreading. This can take a few minutes to 48 hours. | **Wait:** run the command again in a few minutes. Nothing needs fixing. |
-| The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask whoever controls that account:** they has to release the domain. [Own your domain](./own-your-domain.md#carry-over-existing-dns-records) covers the case. |
+| The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask whoever controls that account:** they have to release the domain. [Own your domain](./own-your-domain.md#carry-over-existing-dns-records) covers the case. |
 | The domain is delegated but not answering | The certificate or the domain's own record hasn't finished spreading. | **Wait:** run the command again in a few minutes. The `workers.dev` address works the whole time. |
 
 ## Turn on sign-in email

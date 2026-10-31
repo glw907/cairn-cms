@@ -57,7 +57,7 @@ Read every row of the token page before you save it. Cloudflare can render a per
 
 Everyone other than you signs in through a link sent to their email address. Sending that mail takes a domain of your own and sign-in email turned on for it. A site that lives only at its `workers.dev` address has no domain to send from.
 
-Cloudflare's [Email Service pricing](https://developers.cloudflare.com/email-service/platform/pricing/) page lists email sending as part of Workers Paid, with a monthly allowance and a charge for sends past it. The page carries the current numbers.
+Workers Paid includes 3,000 outbound emails a month, and Cloudflare charges $0.35 per 1,000 beyond that ([Email Service pricing](https://developers.cloudflare.com/email-service/platform/pricing/), as of 2026-10-31).
 
 Until you add a second writer, you can skip both. Your site works the same either way, and you remain the only person who signs in. [Own your domain](./own-your-domain.md) connects the domain and turns on sign-in email, and [Invite editors](./invite-editors.md) takes over from there.
 

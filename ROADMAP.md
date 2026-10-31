@@ -1382,10 +1382,9 @@ the named human gates only):**
 - **Real defects the pass 1 readers found (2026-09-24; narrowed at the harvest's close,
   2026-09-30).** They are listed in the baseline record (F1 to F6, R1 to R4) and in the
   validation record's "Confirmed real, not counted" notes. The harvest deleted the admin pages
-  two of them sat on, and the code states both (the `send_email` binding shape, the five status words including `UNCHECKED`). Two remain: the missing Email
-  Sending price for the admin arm's "What it costs" job, a Cloudflare price no page holds, which stage 3 sources when it drafts that job; and seven contradictions on the
-  three `cli-cairn-*` reference pages, which still ship. Trigger: stage 3 for the price, the next
-  pass touching a `cli-cairn-*` page for the contradictions.
+  two of them sat on, and the code states both (the `send_email` binding shape, the five status words including `UNCHECKED`). One remains: seven contradictions on the
+  three `cli-cairn-*` reference pages, which still ship. The Email Sending price is now on `docs/admin/before-you-start.md`. Trigger: the next
+  pass touching a `cli-cairn-*` page.
 
 - **`cairn-run-gate` needs a silence watchdog for browser gates (doctor-retirement pre-task,
   2026-09-21; a dotfiles chore, filed here because cairn passes are what hit it).** This pass lost

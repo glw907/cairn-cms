@@ -104,3 +104,5 @@ The docs-content entries cleared at the 2b close (2026-10-31): each was fixed on
 ### Repo tooling
 
 The repo-tooling entries cleared at the 2b close: five became `ROADMAP.md` rows (same entry) and the alignment-triage entry is done. New findings start here.
+
+- The recaptured `01-create-cairn-site.txt` still holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL. No page quotes the path lines, and the package's `files` does not ship `test/`. Fixing it needs a recapture with a neutral scratch path (found by the pass 4 close review, 2026-10-31).

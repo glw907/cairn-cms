@@ -17,7 +17,9 @@ Review: mechanics and failure-risk lenses, folded by the planning session
 
 Geoff, 2026-10-30, on the design's packet: the capture runs Saturday when notified; the run keeps
 going on stacked branches while reviews wait; BACKLOG #46 and #47 fold into Content model. Engine
-friction is logged along the way, as usual. The revision packet's rulings are added here before launch.
+friction is logged along the way, as usual. On the revision packet (item `20261030T185727-536747`):
+the capture scaffolds from a `--tag next` prerelease cut from pass 2's head, published by the conductor
+when the sitting starts.
 
 ## Pre-flight
 
@@ -70,7 +72,7 @@ The conductor sends one packet with no merge step, holding pass 2's runbook as `
 attaches to `cairn-cms-docs-capture` with `claude attach`. The operator works `docs-final-capture`
 cut from pass 2's head, follows the runbook (task 2.5), and records every resource in the ledger.
 
-A `--tag next` prerelease, published from that branch, is the source when Geoff rules for it: the
+A `--tag next` prerelease, published from that branch, is the source: the
 version commit lives on the capture branch only, a GitHub release with `--prerelease --target <sha>`
 fires `publish.yml`, and `main`, `latest`, and the stacked `## Unreleased` entries stay untouched.
 Fixtures are recaptured whole, never edited, and each records its source commit. The fixtures merge
@@ -116,7 +118,7 @@ Gate list: admin `README`, `is-it-working`, `create-your-site`, `own-your-domain
 - Every pass files engine friction under "Engine" in `docs/internal/docs-friction-log.md`, verified
   first, and its close runs the boundary test and states the verdict in STATUS.
 - A pass never bumps the version or publishes. The capture's prerelease is the one exception, on its
-  own branch, if ruled.
+  own branch.
 - No pass touches cairn-pub.
 - An arm is gated whole. A pair's tasks run page-scoped checks (Vale, the fact-check), and the arm gate
   runs once on the merged tree. Relinks that target new pages run after the pages exist.

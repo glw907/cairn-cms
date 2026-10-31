@@ -60,6 +60,10 @@ A developer reads the records through the following surfaces:
 - `cairn health` fails its `errors` check when the engine's error-level records within the `--since`
   window, `24h` by default, exceed `--error-threshold`, `5` by default.
 
+Under `vite dev` or `wrangler dev`, the engine writes each record to the console, as `console.log`,
+`console.warn`, or `console.error` by level, so the records appear in the terminal that runs the
+server. Neither `cairn logs` nor `cairn health` reads that terminal.
+
 A Worker with observability off answers `cairn logs` with zero entries and no error, so an empty
 result is no proof the site is quiet. A failed `errors` check is the cue to read those records with
 `cairn logs` and match each one to its section on this page. The [exit

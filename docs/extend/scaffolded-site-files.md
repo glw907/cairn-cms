@@ -45,7 +45,7 @@ A scaffolded site is Waymark, cairn's reference theme, wired onto the chassis, t
 
 When the setup command's package is packed, its build writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` into the package in place of the showcase's. The setup command copies those files with the rest of the tree, so the scaffold still carries them. Waymark is the only template the setup command ships.
 
-The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live. A site built by hand starts with no template, no chassis, and no deploy, and [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.
+The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live. A hand-built site starts with no template, no chassis, and no deploy, and [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.
 
 Owning a file does not remove a contract on it, and a file that the engine or a check reads can still break the build, the deploy, or the admin when it changes. The file tree marks each file that carries such a contract.
 

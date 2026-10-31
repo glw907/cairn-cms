@@ -64,7 +64,7 @@ Start with the content module.
 
 ## Build one typed index
 
-`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. Vite needs each glob pattern written literally at the call site, so a loop over the concept list can't generate the globs. Vite's [glob import](https://vite.dev/guide/features#glob-import) documentation covers the options.
+`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. [Add a concept](define-an-adapter-and-schema.md#add-a-concept) explains why each glob is written out and how to write it.
 
 To build the index, make one call:
 
@@ -104,7 +104,7 @@ export const site = indexes.site;
 export const posts = indexes.posts;
 ```
 
-Write each glob with `query: '?raw'`, `import: 'default'`, and `eager: true`. A lazy glob, or one without `import: 'default'`, hands the parser a function or a module object. The build then fails with the message that [Diagnose a failed build](#diagnose-a-failed-build) lists.
+Write each glob with the options that [Add a concept](define-an-adapter-and-schema.md#add-a-concept) lists. A glob that breaks them fails the build with the message that [Diagnose a failed build](#diagnose-a-failed-build) lists.
 
 The result holds one index per concept, keyed by concept id, plus `site`, the cross-concept resolver. A concept therefore can't be named `site`. The site config argument doesn't change the indexes, and the call still takes the parsed config.
 
@@ -654,7 +654,7 @@ Declaring `editor.nav` on the adapter turns on the menu editor at `/admin/nav`, 
 To add the menu, follow these steps:
 
 1. In the adapter's `editor` group, declare `nav` with `menuName`, `label`, and an optional `maxDepth`, which defaults to 2.
-2. If your site config isn't at `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path.
+2. If your site config isn't at the default path, set `editor.siteConfigPath` to its path, as [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field) describes.
 3. In the site config, under `menus`, add the menu that `menuName` names, as a list of nodes.
 4. In a server-only module, read the menu with `readMenu(siteConfig, name, maxDepth)`, passing the `maxDepth` that `editor.nav` declares.
 5. In the root `src/routes/+layout.server.ts`, return the menu from its load function.

@@ -430,7 +430,16 @@ To index the content and commit the manifest, follow these steps:
 
 ### Render the entry
 
-The entry route is a prerendered catch-all built on the engine's public routes loader. [`createPublicRoutes`](../reference/delivery.md#createpublicroutes) returns `entryLoad`, which resolves one entry by request path and throws a 404 on a miss, and `entries`, which enumerates every routable entry for the prerenderer. The route imports the site's modules as `#lib/<file>.js`, through the `#lib/*` mapping in the `imports` field of the `package.json` that `sv create` wrote. SvelteKit 3 throws on a `$lib` import. An existing app whose `package.json` lacks the mapping adds it.
+The entry route is a prerendered catch-all built on the engine's public routes loader. [`createPublicRoutes`](../reference/delivery.md#createpublicroutes) returns `entryLoad`, which resolves one entry by request path and throws a 404 on a miss, and `entries`, which enumerates every routable entry for the prerenderer. The route imports the site's modules as `#lib/<file>.js`, through the `#lib/*` mapping in the `imports` field of the `package.json` that `sv create` wrote. SvelteKit 3 throws on a `$lib` import. An existing app whose `package.json` lacks the mapping adds it under a top-level `imports` key:
+
+<!-- snippet-check-skip: a fragment of package.json -->
+```json
+"imports": {
+  "#lib/*": "./src/lib/*"
+}
+```
+
+The root layout that `sv create` wrote needs no change for this route. It imports a favicon and renders its children, so the entry renders inside it as it is.
 
 To render the entry, follow these steps:
 
@@ -934,6 +943,8 @@ To create and migrate the database, follow these steps:
    ```sh
    npx wrangler d1 migrations apply field-notes-auth --remote
    ```
+
+   The `--remote` flag changes only the deployed database. A local `wrangler dev` run reads a separate local D1 database, which needs the same command with `--local` before the real sign-in works there. The dev backend this tutorial runs under `vite dev` uses an in-memory stand-in and needs neither.
 
 The other migrations are opt-in. `0001_roles.sql` serves a role vocabulary beyond owner and editor, and `0003_preview.sql` serves draft-preview links. [Build the public routes](build-the-public-routes.md#mount-the-draft-preview-route) mounts the draft-preview route. `0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 database, bound with its own `migrations_dir`, which keeps audit writes from contending with session and token lookups.
 

@@ -288,8 +288,9 @@ reachable to any editor-capability session.
 [`canReach`](../reference/core.md#canreach-hasaccessrule) is the one function that the guard's
 route checks, the engine's screens, and the sidebar call to decide reach, yet the sidebar and the
 routes can still disagree. A `navLayout` site entry whose href no key matches stays visible while its
-route refuses. The sidebar reads the adapter's map and `requireAccess` reads the guard's, so a map
-given to only one of them gates only that one. The `editors` roster screen stays owner-only whatever the
+route refuses. There is one map, the adapter's `access` member, which the composed runtime carries. The
+sidebar, the engine's screens, and `requireAccess` all read it, the last through `locals.cairnAccess`, which the guard
+sets from that runtime, so no map gates one of them and not the others. The `editors` roster screen stays owner-only whatever the
 map says. Each engine write action gates through the map against one
 target, the concept id or one of the fixed screens `media`, `nav`, `settings`, or `vocabulary`,
 with the exceptions that [Limits of access map coverage](#limits-of-access-map-coverage) names.

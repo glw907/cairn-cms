@@ -100,8 +100,8 @@ after step 3:
 4. In `src/app.d.ts`, delete `App.Platform`, and keep the `import '@glw907/cairn-cms/ambient';` line.
 5. Run `npx wrangler types --env-file=.dev.vars.example`, so `worker-configuration.d.ts` carries
    the secret names. If `src/app.d.ts` references `@cloudflare/workers-types`, as a scaffolded
-   site's does, add `--include-runtime=false`, the command a scaffolded site's
-   `worker-configuration.d.ts` records on its first line.
+   site's does, add `--include-runtime=false`, the form a scaffolded site's `cf-typegen` script in
+   `package.json` runs.
 6. In your server code, import `env` and `waitUntil` from `cloudflare:workers` where you read
    `event.platform`. Wrap `resolve` in `withEnv` in a handle that wrote it.
 7. Import `Handle` from `@sveltejs/kit/hooks`, and move `$lib` to `#lib` through the `imports` field in

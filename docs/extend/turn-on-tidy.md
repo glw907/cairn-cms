@@ -195,11 +195,9 @@ An editor's save on `/admin/settings` commits `tidy.conventions` to the site-con
 applies it only after that commit deploys.
 
 The save writes only the `tidy.conventions` block and leaves `tidy.enabled` and `tidy.model` as you
-set them. The file is the one the adapter's `editor.siteConfigPath` names, with
-`src/theme/site.config.yaml` as the default. The [menu editor](build-the-public-routes.md#add-an-editable-menu) and **Tags** read and commit the
-same file. The [`siteConfigPath`](../reference/core.md#siteconfigpath-adapter-editor-member) entry
-records the default. [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field) covers
-the vocabulary that shares the file.
+set them. The file is the site config that [Mark the tag field](define-an-adapter-and-schema.md#mark-the-tag-field)
+describes, which the adapter's `editor.siteConfigPath` names. The [menu editor](build-the-public-routes.md#add-an-editable-menu) and **Tags** read and commit the
+same file.
 
 A scaffolded site needs no change, because its file sits at the default path. The add-cairn
 tutorial's site keeps its file elsewhere, and it needs one change:

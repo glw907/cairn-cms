@@ -6,7 +6,7 @@ The adapter alone does not make a concept's markdown files readable. Vite resolv
 
 The steps that follow add a concept and register its glob in both places. They then set the concept's public address, its tag field, the checks a save runs on its entries, and the options that shape its summaries, and they end by confirming that the site typechecks and builds with the new declaration.
 
-A scaffolded site's adapter declares the `posts`, `pages`, and `fragments` concepts. A developer on such a site arrives when the site needs a kind of content that the adapter does not declare yet. Others arrive to change a declared concept's public address, its tag field, or the checks a save runs on its entries. A developer who installed the engine by hand arrives to grow a minimal adapter into a full declaration, starting from the `defineAdapter` call and the four groups it requires. The steps name each file by its role and give the scaffold's path for it, and a site built by hand applies the steps to its matching files. A reader whose build failed after a concept change, or whose new concept's entries are missing from the committed manifest, can start at [Resolve a failed check](#resolve-a-failed-check).
+A scaffolded site's adapter declares the `posts`, `pages`, and `fragments` concepts. A developer on such a site arrives when the site needs a kind of content that the adapter does not declare yet. Others arrive to change a declared concept's public address, its tag field, or the checks a save runs on its entries. A developer of a hand-built site arrives to grow a minimal adapter into a full declaration, starting from the `defineAdapter` call and the four groups it requires. The steps name each file by its role and give the scaffold's path for it, and a site built by hand applies the steps to its matching files. A reader whose build failed after a concept change, or whose new concept's entries are missing from the committed manifest, can start at [Resolve a failed check](#resolve-a-failed-check).
 
 The page assumes you know TypeScript literal types, Vite's `import.meta.glob`, and YAML. It also assumes familiarity with the content model. [Content model](content-model.md) explains what a concept is, what routing decides, how an entry gets its id, and the normalized frontmatter a save writes. The page leaves the following topics to other pages:
 
@@ -23,7 +23,7 @@ The page assumes you know TypeScript literal types, Vite's `import.meta.glob`, a
 
 The steps assume the following:
 
-- An installed engine. A scaffolded site has one, and a site built by hand installs one by following [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
+- An installed engine. A scaffolded site has one, and a hand-built site installs one by following [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
 - The content model: what a concept is, what its routing decides, and how an entry gets its id. See [Content model](content-model.md).
 
 With both in place, open the adapter module.

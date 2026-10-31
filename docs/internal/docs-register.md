@@ -637,6 +637,9 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The scaffolder | `create-cairn-site` on first mention on a page, then the setup command | A code identifier is not a sentence subject twenty times on a non-developer page. |
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
+| The editing surface, on the editor track | the editor names the product and the person; the admin appears only where a screen string or a developer cross-reference needs it | Geoff, 2026-10-31. In the developer tracks "the admin" is the surface, and in `docs/editors/` "the editor" names the product and the person who uses it, so the editor track's vocabulary and this table agree. |
+| The `:::` content unit | block, in every track; the figure and an unregistered `:::` container are blocks too | Geoff, 2026-10-31. Retires "component" and "layout block" for this unit; "component" in the Svelte sense stays. "Fragment" keeps the include, and "code block" keeps the Markdown sense. The API names (`defineComponent`, `ComponentDef`, `rendering.components`) stay until the final engine batch renames them. Developer pages quote them and gloss the unit as a block until then. |
+| Who a stuck editor contacts | your site owner; "developer" only where code is involved | Geoff, 2026-10-31. A screen string that says "site developer" is quoted exactly. |
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |
 | Also named | the GitHub App, shortened to the App after its first mention on a page; the Worker | The capital A marks the short form as the GitHub App, never an app in general (Geoff, 2026-10-25). |

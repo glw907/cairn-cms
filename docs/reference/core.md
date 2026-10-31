@@ -126,7 +126,7 @@ per-entry detail read. `normalizeConcepts` throws at declaration when a `summary
 declared field.
 
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
-inside another with the `::include` directive. It
+inside another with the `::include` directive, which the [editor guide](../editors/write-in-the-editor.md#add-components-and-fragments) teaches. It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
 resolves against a non-routable concept, and an embedded entry publishing its live page would
 make the same content reachable two ways.

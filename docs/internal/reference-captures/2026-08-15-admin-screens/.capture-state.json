@@ -2,235 +2,235 @@
   "results": [
     {
       "file": "welcome--sign-in--1440.png",
-      "contract": "welcome.md step 1",
+      "contract": "welcome.md \"## Sign in\" (sign-in page)",
       "state": "the /admin/login form",
       "width": 1440
     },
     {
       "file": "welcome--sign-in--390.png",
-      "contract": "welcome.md step 1",
+      "contract": "welcome.md \"## Sign in\" (sign-in page)",
       "state": "the /admin/login form",
       "width": 390
     },
     {
       "file": "welcome--confirm--1440.png",
-      "contract": "welcome.md step 3",
+      "contract": "welcome.md \"## Sign in\" (confirm page)",
       "state": "the /admin/auth/confirm page (any token)",
       "width": 1440
     },
     {
       "file": "welcome--confirm--390.png",
-      "contract": "welcome.md step 3",
+      "contract": "welcome.md \"## Sign in\" (confirm page)",
       "state": "the /admin/auth/confirm page (any token)",
       "width": 390
     },
     {
       "file": "write-in-the-editor--entry-screen--1440.png",
-      "contract": "write-in-the-editor.md \"## The screen\"",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\"",
       "state": "the seeded post open on Write",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--entry-screen--390.png",
-      "contract": "write-in-the-editor.md \"## The screen\"",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\"",
       "state": "the seeded post open on Write",
       "width": 390
     },
     {
       "file": "write-in-the-editor--entry-screen--1440--dark.png",
-      "contract": "write-in-the-editor.md \"## The screen\" (dark)",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\" (dark)",
       "state": "the seeded post open on Write, dark theme",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--sidebar-list--1440.png",
-      "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+      "contract": "write-in-the-editor.md \"## Open or start an entry\"",
       "state": "the Posts list, office view",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--sidebar-list--390.png",
-      "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+      "contract": "write-in-the-editor.md \"## Open or start an entry\"",
       "state": "the Posts list, office view",
       "width": 390
     },
     {
       "file": "write-in-the-editor--preview-width--1440.png",
-      "contract": "write-in-the-editor.md preview width control",
+      "contract": "write-in-the-editor.md \"## Preview your entry\"",
       "state": "Preview tab active, width menu visible",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--preview-width--390.png",
-      "contract": "write-in-the-editor.md preview width control",
+      "contract": "write-in-the-editor.md \"## Preview your entry\"",
       "state": "Preview tab active, width menu visible",
       "width": 390
     },
     {
       "file": "write-in-the-editor--details-panel--1440.png",
-      "contract": "write-in-the-editor.md \"## The details panel\"",
+      "contract": "write-in-the-editor.md \"## Change an entry's settings\"",
       "state": "Details slide-over open on the seeded post",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--details-panel--390.png",
-      "contract": "write-in-the-editor.md \"## The details panel\"",
+      "contract": "write-in-the-editor.md \"## Change an entry's settings\"",
       "state": "Details slide-over open on the seeded post",
       "width": 390
     },
     {
       "file": "write-in-the-editor--figure-dialog--1440.png",
-      "contract": "write-in-the-editor.md \"## Images\"",
+      "contract": "write-in-the-editor.md \"## Add images and figures\"",
       "state": "figure dialog open on entry 2026-08-16-figure-capture-1440-1786866440271, caption filled",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--figure-dialog--390.png",
-      "contract": "write-in-the-editor.md \"## Images\"",
+      "contract": "write-in-the-editor.md \"## Add images and figures\"",
       "state": "figure dialog open on entry 2026-08-16-figure-capture-390-1786866443184, caption filled",
       "width": 390
     },
     {
       "file": "write-in-the-editor--tidy-review--1440.png",
-      "contract": "write-in-the-editor.md \"## Spelling and style\"",
+      "contract": "write-in-the-editor.md \"## Check spelling and style\"",
       "state": "a live tidy review over the seeded copyedit post",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--tidy-review--390.png",
-      "contract": "write-in-the-editor.md \"## Spelling and style\"",
+      "contract": "write-in-the-editor.md \"## Check spelling and style\"",
       "state": "a live tidy review over the seeded copyedit post",
       "width": 390
     },
     {
       "file": "write-in-the-editor--collapsed-block--1440.png",
-      "contract": "write-in-the-editor.md collapsed-block paragraph",
+      "contract": "write-in-the-editor.md \"## Collapse layout blocks\"",
       "state": "entry 2026-08-16-fold-capture-1440-1786866450005, fold-on-open with the gutter fold control visible",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--collapsed-block--390.png",
-      "contract": "write-in-the-editor.md collapsed-block paragraph",
+      "contract": "write-in-the-editor.md \"## Collapse layout blocks\"",
       "state": "entry 2026-08-16-fold-capture-390-1786866453643, fold-on-open with the gutter fold control visible",
       "width": 390
     },
     {
       "file": "publish-and-history--header-band--1440.png",
-      "contract": "publish-and-history.md header band",
+      "contract": "publish-and-history.md \"## Read the header\"",
       "state": "entry 2026-08-16-band-capture-1786866457131 (pending), overflow menu open",
       "width": 1440
     },
     {
       "file": "publish-and-history--bottom-bar--390.png",
-      "contract": "publish-and-history.md header band (phone)",
+      "contract": "publish-and-history.md \"## Read the header\" (phone)",
       "state": "the seeded post, phone bottom-fixed Save/Publish bar",
       "width": 390
     },
     {
       "file": "publish-and-history--history-list--1440.png",
-      "contract": "publish-and-history.md \"## History\"",
+      "contract": "publish-and-history.md \"## Review and restore earlier versions\"",
       "state": "entry 2026-08-16-history-capture-1786866461253: two real publishes plus a trailing unpublished draft",
       "width": 1440
     },
     {
       "file": "publish-and-history--pending-list--1440.png",
-      "contract": "publish-and-history.md \"## Publishing everything at once\"",
+      "contract": "publish-and-history.md \"## Publish several entries at once\"",
       "state": "office view, Publish site dialog open over the grouped pending entries",
       "width": 1440
     },
     {
       "file": "when-something-goes-wrong--refusal-banner--1440.png",
-      "contract": "when-something-goes-wrong.md",
+      "contract": "when-something-goes-wrong.md \"## A page won't delete\"",
       "state": "a real rename refusal (\"Leave the date out of the address.\") reached by renaming the seed post onto a date-prefixed slug",
       "width": 1440
     },
     {
       "file": "when-something-goes-wrong--refusal-banner--390.png",
-      "contract": "when-something-goes-wrong.md",
+      "contract": "when-something-goes-wrong.md \"## A page won't delete\"",
       "state": "the same refusal at phone width",
       "width": 390
     },
     {
       "file": "add-an-image--insert-panel--1440.png",
-      "contract": "add-an-image.md \"## Inserting an image\"",
+      "contract": "add-an-image.md \"## Insert an image into the text\"",
       "state": "the Insert image popover, chooser view (upload + reuse search)",
       "width": 1440
     },
     {
       "file": "add-an-image--upload-form--1440.png",
-      "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+      "contract": "add-an-image.md \"## Upload a new image\"",
       "state": "the capture card: the Name field with its Suggested mark, the alt-or-decorative choice",
       "width": 1440
     },
     {
       "file": "add-an-image--insert-panel--390.png",
-      "contract": "add-an-image.md \"## Inserting an image\"",
+      "contract": "add-an-image.md \"## Insert an image into the text\"",
       "state": "the Insert image popover, chooser view (upload + reuse search)",
       "width": 390
     },
     {
       "file": "add-an-image--upload-form--390.png",
-      "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+      "contract": "add-an-image.md \"## Upload a new image\"",
       "state": "the capture card: the Name field with its Suggested mark, the alt-or-decorative choice",
       "width": 390
     },
     {
       "file": "add-an-image--lead-picture-dialog--1440.png",
-      "contract": "add-an-image.md \"## The lead picture\"",
+      "contract": "add-an-image.md \"## Set the lead image\"",
       "state": "the hero field dialog, placement view with the social-crop preview",
       "width": 1440
     },
     {
       "file": "add-an-image--lead-picture-dialog--390.png",
-      "contract": "add-an-image.md \"## The lead picture\"",
+      "contract": "add-an-image.md \"## Set the lead image\"",
       "state": "the hero field dialog, placement view with the social-crop preview",
       "width": 390
     },
     {
       "file": "manage-the-media-library--library-screen--1440.png",
-      "contract": "manage-the-media-library.md \"## The library\"",
+      "contract": "manage-the-media-library.md \"## Open the library\"",
       "state": "the seeded media library, grid view",
       "width": 1440
     },
     {
       "file": "manage-the-media-library--library-screen--390.png",
-      "contract": "manage-the-media-library.md \"## The library\"",
+      "contract": "manage-the-media-library.md \"## Open the library\"",
       "state": "the seeded media library, grid view",
       "width": 390
     },
     {
       "file": "manage-the-media-library--library-screen--1440--dark.png",
-      "contract": "manage-the-media-library.md \"## The library\" (dark)",
+      "contract": "manage-the-media-library.md \"## Open the library\" (dark)",
       "state": "the seeded media library, grid view, dark theme",
       "width": 1440
     },
     {
       "file": "manage-the-media-library--details-panel--1440.png",
-      "contract": "manage-the-media-library.md \"## Selecting an image\"",
+      "contract": "manage-the-media-library.md \"## See an image's details\"",
       "state": "the used seeded asset (Mountain pass) detail slide-over",
       "width": 1440
     },
     {
       "file": "manage-the-media-library--bulk-selection--1440.png",
-      "contract": "manage-the-media-library.md \"## Selecting several at once\"",
+      "contract": "manage-the-media-library.md \"## Select several images\"",
       "state": "two thumbnails checked, the sticky selection bar (count, Select all, Delete)",
       "width": 1440
     },
     {
       "file": "manage-the-media-library--delete-in-use--1440.png",
-      "contract": "manage-the-media-library.md \"## Deleting an image\"",
+      "contract": "manage-the-media-library.md \"## Delete images\"",
       "state": "the in-use delete confirmation for Mountain pass: the what-would-break list, the typed-address confirm",
       "width": 1440
     },
     {
       "file": "manage-your-tag-vocabulary--tags-screen--1440.png",
-      "contract": "manage-your-tag-vocabulary.md",
+      "contract": "manage-your-tag-vocabulary.md \"## Open the Tags screen\"",
       "state": "the full Tags screen, seeded vocabulary (listed, in-use, and unlisted-candidate tags)",
       "width": 1440
     },
     {
       "file": "manage-your-tag-vocabulary--tags-screen--390.png",
-      "contract": "manage-your-tag-vocabulary.md",
+      "contract": "manage-your-tag-vocabulary.md \"## Open the Tags screen\"",
       "state": "the full Tags screen, seeded vocabulary (listed, in-use, and unlisted-candidate tags)",
       "width": 390
     },

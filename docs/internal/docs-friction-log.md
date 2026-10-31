@@ -65,6 +65,11 @@ New findings start in the group they belong to, one per finding, with its perspe
 The 94 engine entries moved to `record/2026-10-31-engine-friction-2b-close.md` at the 2b close, each with its boundary-test verdict. New engine findings start here.
 
 - **`extender`.** The `installation-not-covering-repo` remedy sends the reader to "Only select repositories" (`packages/create-cairn-site/src/github/catalogue.mjs:131`), the option that left a first run without the repository it was about to create (found while writing the capture runbook, 2026-10-31). A resume after `createRepo` also stops with `repo-name-collision` (`src/github/repo.mjs:70`) instead of adopting a repository the tool made. Fix candidates: name "All repositories" for a first run, and adopt an empty repository the run itself created.
+- **`editor`.** The trash button on a list row submits `?/delete` at once, with no confirmation, unless other entries link to the entry (`src/lib/admin/ConceptList.svelte:446`), while the delete on the entry's screen confirms in `DeleteDialog.svelte`. `publish-and-history` tells editors to delete from the entry's screen (found while fact-checking the editors arm, 2026-10-31).
+- **`editor`.** The tag-vocabulary save redirects to `/admin/vocabulary?saved=1` (`src/lib/sveltekit/content-routes-settings.ts:444`), but `VocabularyAdmin.svelte` never reads the flag, so the editor sees no confirmation after **Save changes** (found while writing `manage-your-tag-vocabulary`, 2026-10-31).
+- **`editor`.** The media delete-in-use dialog says "Type the name to delete it anyway" (`src/lib/admin/CairnMediaLibrary.svelte:1183`), while its field's placeholder and the typed check use the asset's address (`:1231`). The two disagree about what to type (found writing `manage-the-media-library`, 2026-10-31).
+
+Boundary test at the pass 3 close: all three are ordinary-class changes with no `auth-data` path, and none changes a page the admin arm teaches, so they ride the final engine batch.
 
 ### Docs content
 

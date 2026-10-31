@@ -13,7 +13,8 @@
       "context": "index: 'docs/editors/README.md', state: 'editors'",
       "oldTarget": "docs/editors/README.md",
       "done": "The editors arm's index coverage check runs only while the arm is rebuilt; absent, it is skipped by name.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/check-arm-indexes.mjs",
@@ -42,7 +43,8 @@
       "context": "editors: 'docs/editors/README.md'",
       "oldTarget": "docs/editors/README.md",
       "done": "requiredDocsPaths asks for the editors index in the tarball only while the arm is rebuilt.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/check-package-files.mjs",
@@ -71,7 +73,8 @@
       "context": "{ path: 'docs/editors', arm: 'editors' }",
       "oldTarget": "docs/editors/",
       "done": "The symbol sweep skips the editors arm by name while it is absent; the reference arm and README.md must exist.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/check-symbols.mjs",
@@ -129,7 +132,8 @@
       "context": "editorQuotesReport",
       "oldTarget": "docs/editors/when-something-goes-wrong.md",
       "done": "Skipped by name while the editors arm is not rebuilt. Once the arm holds any page, the pinned page must exist and ground its bolded quotes, or the gate must be repointed at the page that now quotes the editor messages.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -213,7 +217,8 @@
       "context": "'docs/guides/add-an-image.md': 'docs/editors/add-an-image.md'",
       "oldTarget": "docs/editors/add-an-image.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -307,7 +312,8 @@
       "context": "'docs/guides/manage-the-media-library.md': 'docs/editors/manage-the-media-library.md'",
       "oldTarget": "docs/editors/manage-the-media-library.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -324,7 +330,8 @@
       "context": "'docs/guides/publish-and-discard.md': 'docs/editors/publish-and-history.md'",
       "oldTarget": "docs/editors/publish-and-history.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -378,14 +385,16 @@
       "context": "'docs/guides/write-in-the-editor.md': 'docs/editors/write-in-the-editor.md'",
       "oldTarget": "docs/editors/write-in-the-editor.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
       "context": "'docs/reference/authoring-syntax.md': 'docs/editors/write-in-the-editor.md'",
       "oldTarget": "docs/editors/write-in-the-editor.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the editors arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/transcript-blocks.mjs",
@@ -420,7 +429,8 @@
       "context": "{ dir: 'docs/editors', arm: 'editors' }",
       "oldTarget": "docs/editors/",
       "done": "The visuals scan skips the editors arm by name while it is absent.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "scripts/checks/check-visuals.mjs",
@@ -441,7 +451,8 @@
       "context": "{ dir: 'docs/editors', arm: 'editors' }",
       "oldTarget": "docs/editors/",
       "done": "The snippet typecheck skips the editors arm by name while it is absent.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "docs/reference/admin-routes.md",
@@ -527,7 +538,8 @@
       "context": "inside another with the `::include` directive. It",
       "oldTarget": "docs/editors/write-in-the-editor.md#fragments",
       "done": "Link dropped, the directive named plainly; restore a link to the rebuilt editors page that teaches fragments.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "docs/reference/core.md",
@@ -1061,7 +1073,8 @@
       "context": "the editors track's write-in-the-editor page (removed pending its rebuild).",
       "oldTarget": "docs/editors/write-in-the-editor.md",
       "done": "Path replaced by the page named in words; restore the path when the page returns.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "src/lib/reproductions/stories/site.ts",
@@ -1297,7 +1310,8 @@
       "context": "`docs/editors/welcome.md` without hunting, a",
       "oldTarget": "docs/editors/welcome.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "4"
+      "stage": "4",
+      "restoredIn": "docs-final-3"
     },
     {
       "file": "docs/internal/docs-register.md",

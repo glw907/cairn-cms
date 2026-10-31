@@ -15,9 +15,9 @@ The command writes its progress to a record on the computer you ran it from, in 
 npx create-cairn-site --dir <your-site-directory>
 ```
 
-The command reads what it already finished and continues from there. Nothing runs twice: an existing App isn't created again, a pushed repository isn't pushed again, and a connected domain isn't connected again. Every table below ends in this command, sometimes with an extra flag.
+The command reads what it already finished and continues from there. Finished steps don't repeat: an existing App isn't created again, a pushed repository isn't pushed again, and a connected domain isn't connected again. Every table below ends in this command, sometimes with an extra flag.
 
-A local address such as `http://127.0.0.1:36927` can appear during a long step, with a note to leave the run going. The address is served only to your own computer for the length of that step, and it carries no secret. You can open it, ignore it, or close it. The run continues either way, and the page disappears when the step finishes.
+A local address such as `http://127.0.0.1:36927` can appear during a long step, with a note to leave the run going. The address works only on your own computer and only during that step, and the page it serves shows no secret. You can open it, ignore it, or close it. The run continues either way, and the page disappears when the step finishes.
 
 ## Get your site onto GitHub
 
@@ -25,7 +25,6 @@ The following table lists where a run can stop on its way to GitHub, what each s
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| Right after scaffolding | The site exists on your computer. Nothing has touched GitHub. | **Act:** run the command again. It starts the GitHub step fresh. |
 | A browser step was never finished | The App's name was taken, or you closed the page. If the App was created but never installed, its saved credentials are safe. | **Act:** run the command again. Add `--app-name <a-new-name>` if GitHub said the name was taken. |
 | The App may exist but its key was never collected | GitHub allows one hour to collect the new App's credentials, and that hour passed. | **Act:** delete the App on [GitHub's apps page](https://github.com/settings/apps) if it exists, then run the command again, with a new `--app-name` if needed. |
 | GitHub's authorization code expired | The browser step took too long and nothing was collected. | **Act:** run the command again and finish the browser step promptly. |
@@ -59,7 +58,6 @@ The following table lists where the domain steps can stop, what each stop means,
 | --- | --- | --- |
 | You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Wait:** nothing needs fixing. A later run prints the decline again and does not ask again. |
 | The API token was refused | The pasted token is invalid, or it lacks a permission. | **Act:** run the command again. It opens the token page for a fresh token. |
-| The zone exists and nothing past it has run | You closed the browser mid-step. | **Act:** run the command again. |
 | Waiting for the nameserver switch | Your registrar still points the domain at its old nameservers, or the change is still spreading. This can take a few minutes to 48 hours. | **Wait:** run the command again in a few minutes. Nothing needs fixing. |
 | The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask whoever controls that account:** they has to release the domain. [Own your domain](./own-your-domain.md#carry-over-existing-dns-records) covers the case. |
 | The domain is delegated but not answering | The certificate or the domain's own record hasn't finished spreading. | **Wait:** run the command again in a few minutes. The `workers.dev` address works the whole time. |

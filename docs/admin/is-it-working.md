@@ -61,7 +61,7 @@ The report prints a title for each check and never a condition id. This page fil
 
 A site that the setup command built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
 
-`cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, after you register the site with `cairn adopt`. No command runs the others yet. Each section says which case it is.
+Apart from fetching the public `robots.txt`, `cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, after you register the site with `cairn adopt`. No command runs the others yet. Each section says which case it is.
 
 ## Find a check by its title
 
@@ -89,13 +89,13 @@ Three conditions never appear in a report, because your site answers with the re
 
 ## Force HTTPS at the edge
 
-**`edge.https-not-forced`, a blocker.** `cairn health` confirms that your Cloudflare zone sends every visit to HTTPS. The admin's sign-in page posts a plain form, and cairn refuses to serve the admin over plain HTTP, so an admin reached over `http://` fails with a 403 and nobody can sign in.
+**`edge.https-not-forced`, a blocker.** `cairn health` confirms that your Cloudflare zone sends every visit to HTTPS. The admin's sign-in page posts a plain form, and cairn refuses to serve the admin over plain HTTP, so an admin reached over `http://` shows a help page and nobody can sign in.
 
 **Act:** turn on Always Use HTTPS for the zone and keep HSTS on. Cloudflare's [Always Use HTTPS](https://developers.cloudflare.com/ssl/edge-certificates/additional-options/always-use-https/) page shows where the setting lives.
 
 ## Admin CSRF token rejected
 
-**`auth.csrf-token-invalid`, a blocker.** `cairn doctor` never reports this one. Your site's guard refuses a request on the spot and logs it as `guard.refused` with the reason `csrf`. An admin form arrived without a valid CSRF token, which is a one-time value the browser must send back with each form. A stale browser tab or a browser that blocks cookies for the site is almost always the cause.
+**`auth.csrf-token-invalid`, a blocker.** `cairn doctor` never reports this one. Your site's guard refuses a request on the spot and logs it as `guard.refused` with the reason `csrf`. An admin form arrived without a valid CSRF token, a value the browser must send back with each form. A stale browser tab or a browser that blocks cookies for the site is almost always the cause.
 
 **Act:** open the sign-in page fresh, allow cookies for the site, and request a new sign-in link.
 
@@ -119,7 +119,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 **`email.sender-not-onboarded`, a blocker.** `cairn health` confirms that the domain in your site's sign-in address has an enabled Cloudflare sending subdomain. Without one, the site can't send a sign-in email, and nobody besides the owner can sign in. [Own your domain](./own-your-domain.md#turn-on-sign-in-email) normally handles this step, and `cairn health` confirms that it held.
 
-**Act:** run `npx wrangler email sending enable <domain>`, then `npx wrangler deploy`. The domain must match the site's configured sign-in sender. Both commands reuse the Cloudflare sign-in that `create-cairn-site` set up on this computer.
+**Act:** run `npx wrangler email sending enable <domain>`, then `npx wrangler deploy`. The domain must match the site's configured sign-in sender.
 
 **`email.send-failed`, a blocker.** The sending domain is onboarded, but a real send still failed. The cause is a delivery error, a misconfigured `EMAIL` binding, or a failure in a custom sender. No command checks this one. The site logs `auth.link.send_failed`.
 
@@ -133,7 +133,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 ## Declare the media bucket binding
 
-**`config.media-bucket-missing`, a warning.** The site is set up to store uploaded images, but `wrangler.jsonc` declares no matching `r2_buckets` binding, so uploads have nowhere to go. A site without an image library never sees this check.
+**`config.media-bucket-missing`, a warning.** The site is set up to store uploaded images, but `wrangler.jsonc` declares no matching `r2_buckets` binding, so uploads have nowhere to go. A site without an image library sees this check as a SKIP.
 
 **Ask a developer:** declare an `r2_buckets` binding whose name matches the site's media bucket setting, then redeploy. The [Cloudflare reference](../reference/cloudflare.md) shows the shape.
 
@@ -185,7 +185,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 Six conditions concern the database that records who may sign in. No command checks the first five. The sixth, `auth.role-wiring-missing`, is the one `cairn doctor` reports.
 
-**`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. A site that the setup command built does not hit this condition, and a real failure almost always means a site wired by hand.
+**`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. No command checks this condition, and a real failure almost always means a site wired by hand.
 
 **Ask a developer:** create the sign-in tables, seed the owner row, and confirm that the `AUTH_DB` binding names the right database. [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md) shows the steps.
 
@@ -215,7 +215,7 @@ Six conditions concern the database that records who may sign in. No command che
 
 To check, publish an edit and confirm that the newest commit on `main` names your site's App, the App's name followed by `[bot]`, as its committer. An empty error log proves nothing unless `observability.enabled` is on.
 
-**Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the App's id, installation id, or private key, which live in the Worker's secret store. Cloudflare secrets are write-only, so nobody can read the key back, and a developer has to replace it. [Rotate the GitHub App key](../extend/rotate-the-github-app-key.md) describes how.
+**Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the private key secret in the Worker's secret store, or in the App id and installation id that the site's configuration names. Cloudflare secrets are write-only, so nobody can read the key back, and a developer has to replace it. [Rotate the GitHub App key](../extend/rotate-the-github-app-key.md) describes how.
 
 ## Wire the admin mount
 

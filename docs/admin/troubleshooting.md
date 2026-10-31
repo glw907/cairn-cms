@@ -85,9 +85,9 @@ The **Publish site** button appears only when something is waiting to publish. I
 
 **What you see:** the admin shows a short error message in place of the screen you opened, not a raw crash.
 
-**What it means:** cairn caught an unexpected error from a custom screen or action. This needs a developer, because something in the site's code threw. The record names what failed and where.
+**What it means:** cairn caught an unexpected error from one of its admin actions, such as a save or a publish. This needs a developer to look. The record names what failed.
 
-**The log event:** `admin.action.failed`, whose `error` field carries the failure's message. Hand it to whoever built the screen, or see [Debug your site](../extend/debug-your-site.md).
+**The log event:** `admin.action.failed`, whose `error` field carries the failure's message. Hand it to a developer, or see [Debug your site](../extend/debug-your-site.md).
 
 ## The admin sidebar shows no attention badges
 

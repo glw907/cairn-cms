@@ -92,8 +92,8 @@ export const ALLOWLIST = new Set([
   'log-event:preview.published', // docs/reference/sveltekit.md and public.md, PreviewData's `published` field
   'log-event:tidy.enabled', // docs/reference/doctor.md, the site config's `tidy.enabled` field
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
-  'log-event:tidy.conventions', // CHANGELOG.md, the site config's `tidy.conventions` field
-  'log-event:tidy.model', // migration-notes.md, log-events.md, and sveltekit.md, the site config's `tidy.model` field
+  'log-event:tidy.conventions', // CHANGELOG.md and docs/extend/turn-on-tidy.md, the site config's `tidy.conventions` field
+  'log-event:tidy.model', // migration-notes.md, turn-on-tidy.md, log-events.md, and sveltekit.md, the site config's `tidy.model` field
   'log-event:config.csrf-disable-missing', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
   'log-event:auth.csrf-origin-mismatch', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
   'log-event:auth.channel.delivery_inline', // docs/extend/migration-notes.md, the retired log event name a removal entry must still name to say what changed

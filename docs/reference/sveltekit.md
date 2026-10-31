@@ -1222,7 +1222,7 @@ still-live entry). All three close the same id-reuse collision: a stale link tha
 resolve to a different entry's draft. Publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
-feed.
+feed, and [Share a draft preview](../extend/share-a-draft-preview.md) for the task that mounts it.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1376,7 +1376,7 @@ non-editor"): the edit screen's share affordance, the preceding
 [`previewMintAction`](#createcontentroutes) section, mints an opaque token for the entry's pending
 draft, and a site-mounted, never-prerendered
 page renders it through the site's public composition, so the preview is a real page in the
-site's app rather than an approximated shell.
+site's app rather than an approximated shell. [Share a draft preview](../extend/share-a-draft-preview.md) walks through the route and the banner.
 
 **Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
 (`PreviewConfig`) is the site's stylesheets and container classes for the *admin editor's own*
@@ -1659,7 +1659,7 @@ answer for a site that wants to add just one link beside the built-in screens: d
 with that one entry, and every engine screen the declaration omits lands in the trailing fallback
 group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
 site entry's href is additionally gated by the site's declared [access
-map](./core.md#access-map), when one is declared.
+map](./core.md#access-map), when one is declared. [Restrict admin access](../extend/restrict-admin-access.md) covers the access map, and [Arrange the admin sidebar](../extend/arrange-the-admin-sidebar.md) shows a declaration in use.
 
 ### `NavLayoutEntry`
 
@@ -1978,7 +1978,7 @@ badge on the matching visible nav entry, capped at `99+`; a collapsed section's 
 sum of its visible children's counts, computed from the same live items as the leaf badges, and
 disappears once the section opens (the item badges remain); the count lives in the entry link's
 accessible name, never on the badge span itself, which is `aria-hidden`. That is the rendering
-contract in full.
+contract in full. [Arrange the admin sidebar](../extend/arrange-the-admin-sidebar.md) shows the declaration that produces it.
 
 ---
 

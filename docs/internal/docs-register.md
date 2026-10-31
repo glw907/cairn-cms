@@ -1088,7 +1088,7 @@ is demonstrated rather than described:
   a literal, with inline code spans (`` `Cairn` `` and `` `Caim` ``) instead of double quotes.
   Vale skips code spans, the rule stops firing because there is no quoted prose left for it to
   read, and the markup now says the true thing: these are rendered characters, not a remark.
-- **A document identifier, fixed by suppression.** `auth-channel-security-model.md` cites "NIST
+- **A document identifier, fixed by suppression.** A page that cites "NIST
   SP 800-63B," the actual name of a real standards document (the Digital Identity Guidelines
   volume on Authentication and Lifecycle Management), and `Google.Units` read the trailing
   `63B` as a number glued to a unit, wanting a nonbreaking space inserted between them. There is

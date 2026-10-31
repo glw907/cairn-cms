@@ -497,7 +497,7 @@ leaf or a flat `object`, never another `array` and never an `object` of objects.
 an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
 nested reference, or a nested `seo` image throws at the `defineFieldset()` call. No field key may contain a
 dot, top-level or nested, because the editor addresses a nested value by a dotted path. There is
-no escape hatch for a deeper shape today: flatten the fields instead of nesting them.
+no escape hatch for a deeper shape today: flatten the fields instead of nesting them. [Containers](../extend/content-model.md#containers) in Content model covers the nesting rules.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a

@@ -1,7 +1,7 @@
 # Recorded-run transcripts
 
-Real stdout from a live `create-cairn-site` run against a scratch site, plus one
-`cairn doctor` report against a built local site. The admin track's transcript blocks quote
+Real stdout from a live `create-cairn-site` run against a scratch site, plus two
+`cairn doctor` reports against that site. The admin track's transcript blocks quote
 these files, and `check:transcripts` compares every marked block against the fixture it names.
 
 Two rules govern this directory. **No invented output, ever**: a transcript is real stdout or it
@@ -10,26 +10,31 @@ run that needs different bytes is re-captured, never patched.
 
 ## The run
 
-- **Date:** 2026-08-17
-- **Tool commit:** `4e725be1b752f75ba2fba8b778775708ffceb5d8` (tree clean at capture time)
-- **Site:** `cairn-capture-scratch`, workers.dev only, on the glw907 Cloudflare account
-- **Live at:** `https://cairn-capture-scratch.glw907.workers.dev` (torn down after capture)
-- **Scratch directory:** `2026-08-16-capture/`, a throwaway directory outside this repo, since retired
+- **Date:** 2026-10-31
+- **Source commit:** `4471dbde3010bd0bc73394e0a388492f34820ba5` on `docs-final-capture` (tree clean
+  at capture time), the version commit on top of pass 2's head
+- **Packages:** `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` at `0.98.1-rc.1`, published under
+  the `next` dist-tag. `latest` stayed at `0.98.0` throughout.
+- **Site:** `cairn-docs-capture-2`, workers.dev only, on the glw907 Cloudflare account
+- **Live at:** `https://cairn-docs-capture-2.glw907.workers.dev` (torn down after capture)
+- **Scratch directory:** `~/Projects/cairn-scratch/docs-final-capture`, outside this repo, since
+  removed
+
+The `-2` suffix comes from a first attempt that timed out at the browser step, because the App was
+not created from the printed link. That attempt created nothing on GitHub or Cloudflare, and its
+capture stayed out of this repo. App names stay taken, so a rerun never reuses a name.
 
 The template was baked against the published prerelease so the scaffold installed from the
 registry exactly as its specs dictate, rather than from a vendored tarball no reader gets:
 
 ```
-node scripts/bake-template.mjs --to template --engine-spec '^0.95.0-rc.1' --dev-spec '^0.95.0-rc.1'
+node scripts/bake-template.mjs --to template --engine-spec '^0.98.1-rc.1' --dev-spec '^0.98.1-rc.1'
 ```
-
-Both specs resolve to `0.95.0-rc.1`, published under the `next` dist-tag. Engine `latest` stayed
-at `0.94.0` throughout.
 
 ## Capture method
 
 Every invocation ran on a pseudo-terminal pinned to **100 columns by 40 rows**, recorded by
-`ptycapture.py` (kept with the run, outside this repo). A pty is what a real reader has: the
+`ptycapture.py`, committed beside these files. A pty is what a real reader has: the
 sign-in link prints, clack renders its prompts, and the hold loop behaves as documented.
 
 The pass plan specified `script -q`, on the understanding that `-q` suppresses its banner. That
@@ -47,203 +52,98 @@ hold pty bytes only.
 
 ## Environment
 
-Every invocation ran under an `env -u` wrapper clearing the no-fake preflight list and the
-ambient credentials this workstation exports:
+Every invocation ran under `clean-env`, an `env -u` wrapper that cleared the variables below plus
+every name in `~/.local/secrets`, so no ambient credential or test seam reached the tool:
 
 ```
-CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
-GITHUB_APP_ID GITHUB_APP_INSTALLATION_ID GITHUB_APP_PRIVATE_KEY_B64
-CAIRN_GITHUB_API_BASE CAIRN_GITHUB_WEB_BASE CAIRN_CLOUDFLARE_API_BASE
-CAIRN_CF_API_TOKEN CAIRN_STATE_DIR CAIRN_NPM_BIN CAIRN_WRANGLER_BIN HTTPS_PROXY
+CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_KEY CLOUDFLARE_EMAIL
+CF_API_TOKEN CF_ACCOUNT_ID CF_API_KEY CF_EMAIL
+GITHUB_TOKEN GH_TOKEN GITHUB_APP_ID GITHUB_APP_INSTALLATION_ID GITHUB_APP_PRIVATE_KEY_B64
+CAIRN_GITHUB_API_BASE CAIRN_GITHUB_WEB_BASE CAIRN_CLOUDFLARE_API_BASE CAIRN_CF_API_TOKEN
+CAIRN_STATE_DIR CAIRN_NPM_BIN CAIRN_WRANGLER_BIN CAIRN_FORCE_HOLD
+CAIRN_CF_ACCOUNT_ID CAIRN_CF_READ_TOKEN CAIRN_GH_READ_TOKEN CMS_BOT_PAT CAIRN_DOCS_READER_OAUTH_TOKEN
+HTTPS_PROXY https_proxy HTTP_PROXY http_proxy
 ```
 
 `wrangler` was logged out at the start, so the run entered Cloudflare's OAuth sign-in the way a
-first-time reader does.
-
-The `GITHUB_APP_*` entries are not ceremony, and the pass plan's list omitted them. This
-workstation exports the **production** `cairn-cms` App's credentials, so the first bare doctor
-run inherited them, authenticated as the wrong App, and reported
-`FAIL GitHub App: repo glw907/cairn-capture-scratch returned 404`. A reader has none of those
-variables set and sees a SKIP. That first report was discarded and re-captured rather than
-edited, per the never-edit rule.
+first-time reader does. The capture printed Node.js 26.13.0 and wrangler 4.156.0.
 
 ## The invocations
 
-| File | Invocation | Outcome |
-|---|---|---|
-| `01-create-cairn-site.txt` | `node bin.mjs` | Failed creating the repository |
-| `01b-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Failed: repository already exists |
-| `01c-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Stopped at the sign-in email prompt |
-| `01d-resume.txt` | `node bin.mjs --dir cairn-capture-scratch` | Reached the live summary |
-| `04-doctor-report.txt` | `cairn doctor .` | 8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked |
+| File | Command | Outcome |
+| --- | --- | --- |
+| `01-create-cairn-site.txt` | `node bin.mjs`, the `--answer` list below | Exit 0, `This site is set up end to end.` Step `live`, `/` answered 200, `/admin` answered 303 |
+| `04-doctor-report.txt` | `bash -x -c 'cairn doctor .'` | Exit 0, `10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked` |
+| `04b-doctor-report-failing.txt` | `bash -x -c 'cairn doctor .'` with one induced failure | Exit 1, `9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked` |
 
-Four invocations reached a live site where the plan expected one. Three of the four stops have
-causes worth naming, since two of them are tool behavior a reader can hit:
+The scaffold capture, from the scratch directory:
 
-1. **`01` could not have succeeded.** At GitHub's install step the App was approved for "Only
-   select repositories". A first run creates the repository itself, so there is no repository to
-   select yet, and the install can never include it. The remedy the tool prints names that same
-   option, which is the dead end rather than the way out. A first run needs "All repositories".
-2. **`01b` hit a non-idempotent resume.** The failed first run had already created the
-   repository, and the resume refused to continue because a repository of that name exists,
-   rather than adopting one the tool owns. Recovery took deleting the repository and resuming
-   again.
-3. **`01c` stopped for a harness reason, not a tool one.** The driver's prompt table was built
-   from a survey that missed `Sign-in email`, so it waited for a later prompt. No tool defect;
-   the table was corrected and the run resumed.
+```
+python3 -I ptycapture.py \
+  --answer 'Site name=cairn-docs-capture-2' \
+  --answer 'Short description=' \
+  --answer 'Brand color=' \
+  --answer 'AI training crawlers=' \
+  --answer 'Directory=' \
+  --answer 'Create the GitHub App and repository now?=' \
+  --answer 'Where should the GitHub App and repository live?=' \
+  --answer 'Repository name=' \
+  --answer 'GitHub App name=' \
+  --answer 'Install, build, and deploy your site now?=' \
+  --answer 'Sign-in email=my-owner@example.org' \
+  --answer 'Connect a domain you own to this site now?=n' \
+  01-create-cairn-site.txt -- node packages/create-cairn-site/bin.mjs
+```
+
+The App was installed with "All repositories", since the run creates the repository after the
+install page.
 
 ## The doctor capture
 
-`create-cairn-site` no longer scaffolds `npx cairn-doctor`; the doctor is now `cairn doctor`, a
-subcommand of the separate Go `cairn` tool a reader installs once per machine
-(`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`). `04-doctor-report.txt`
-replaces the two npm-era captures with one run of the released binary.
+Both reports ran before teardown, in the deployed site's directory, with the `cairn` binary built
+from the source commit and `npx cairn-manifest` run first, so the facts-derived checks report rather
+than falling back to `unknown`. The site installed the engine from the registry, so the
+dependency-floor line reads `PASS` on a real copy.
 
-**Install:** `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v1.1.0`, the tagged release
-rather than `@latest`, so this procedure names a version a reader can reproduce.
-
-**The site:** this repo's `examples/showcase`, at the `doctor-engine` worktree's commit
-`0612c350dfadf4c884e597601c78aea99c7d7ab6`, the head this task branched from. It is a real
-cairn-cms site, already built, so `cairn doctor` reads committed configuration rather than a
-scaffold that never ran a build. `npx cairn-manifest` was run first from `examples/showcase`, so
-`src/content/.cairn/site-facts.json` exists; without that file the three facts-derived checks
-report `unknown` with "needs engine 0.97.0 or later, and one build" instead of the real result,
-and a capture of that degraded state would publish it as the normal one.
-
-**The command:** `bash -x -c 'cairn doctor .'`, run from `examples/showcase` with `cairn` on
-`PATH`, redirected with a plain `>` into the fixture. `cairn doctor` is a single, non-interactive
-command that writes one report to stdout and exits, so `transcript-blocks.mjs`'s pty-control-stream
-normalizer has nothing to normalize; a shell redirect compares fine against the rendered block, and
-none of the `01` captures' pty harness is needed. Bash's `-x` trace of the command it is about
-to run becomes the fixture's first line, `+ cairn doctor .`, real bytes the shell produced rather
-than a hand-written header.
-
-`examples/showcase` installs `@glw907/cairn-cms` from this repo (`file:../..`), so
-`node_modules/@glw907/cairn-cms` is a symlink out of the site directory. `cairn doctor`'s
-containment rule refuses to read through it
-(`doctor-go-containment-symlink-resolving` in `docs/internal/engine-rulings.md`), which is why the
-dependency-floor line reads `UNCHECKED` rather than `PASS` or `FAIL`: a site installed the normal
-way, with a real copy of the package under its `node_modules`, would not hit this. The capture
-is real and unedited either way, per the never-edit rule.
-
-### Recapture (2026-10-31)
-
-`04-doctor-report.txt` was recaptured whole from a local build of the `cairn` tool at source commit
-`10d6f9811ca23bf563bf366cae6df6e8cd71289e` (branch `docs-final-2`), because that commit makes each
-PASS line print a pass title ("Wrangler bindings are declared") in place of the failure-phrased
-registry title the first capture printed beside PASS. The site is `examples/showcase` at the same
-commit, built with `npm run build` and given `npm run cairn:manifest` first, so the facts-derived
-checks report real results, not the degraded `unknown`. The `cairn` binary came from
-`go build ./cmd/cairn` in `tool/`, on `PATH`, and the ambient credentials listed under
-"Environment" were cleared. The command ran through the committed recorder,
-`ptycapture.py` in this directory, on a 100 by 40 pty:
-
-```
-python3 -I ptycapture.py 04-doctor-report.txt -- bash -x -c 'cairn doctor .'
-```
-
-The recorder writes pty bytes only. Unlike `script -q`, it adds no start or done banner. It also
-answers prompts by pattern (`--answer 'PROMPT=REPLY'`), which the doctor run does not need and the
-`create-cairn-site` runs do. The dependency-floor line still reads `UNCHECKED` for the symlink
-reason above.
+`04-doctor-report.txt` is the site as deployed. A fresh site is healthy, so it shows no `FAIL`.
+`04b-doctor-report-failing.txt` exists to show one: for that capture alone, `observability.enabled`
+was set to `false` in the scratch copy of `wrangler.jsonc`, then restored. The failure is induced
+and the output is real. The August plan's reason for needing no induced failure was a credentialed
+doctor, and today's doctor reads no credentials.
 
 ## The captured sign-in token is dead
 
-`01d-resume.txt` records the bootstrap magic link with its one-time token, which the redaction
-ruling keeps verbatim rather than scrubbing. After capture, `--sign-in` ran uncaptured to
-supersede it.
+`01-create-cairn-site.txt` records the bootstrap magic link with its one-time token, which the
+redaction ruling keeps verbatim rather than scrubbing. The owner's click consumed it. `--sign-in`
+then ran uncaptured to supersede it.
 
-That the token is dead was verified rather than assumed. Magic links are stored as
-`token_hash`, never raw, and are single-use: `SELECT COUNT(*) FROM magic_token` against the
-site's auth database returned **0 rows**, so no magic link could authenticate, the captured one
-included. The ten-minute expiry and the site's teardown close the rest.
+That the token is dead was verified rather than assumed. Magic links are stored as `token_hash`,
+never raw: `SELECT COUNT(*) AS n FROM magic_token WHERE token_hash = '<sha256 of the captured
+token>'` against the site's auth database returned **0**. The site's teardown closes the rest.
 
 ## The secret sweep
 
 Run over every capture before any copy-in:
 
 ```
------BEGIN    CLOUDFLARE_API_TOKEN=    Bearer     ghp_    github_pat_
-ghs_    ?token=    \b[0-9a-fA-F]{40}\b    clientSecret
+-----BEGIN    CLOUDFLARE_API_TOKEN=    Bearer     ghp_    gho_    ghu_    ghr_    ghs_
+github_pat_    ?token=    \b[0-9a-fA-F]{40}\b    clientSecret    client_secret
 ```
 
-Result: one hit, `?token=` in `01d-resume.txt`, the bootstrap magic link handled by the
-supersede above. Every other file was clean on every pattern.
+Result: one hit, `?token=` in `01-create-cairn-site.txt`, the bootstrap magic link retired above.
+Every other file was clean on every pattern.
 
-A name-only comparison against `~/.local/secrets` showed `CLOUDFLARE_API_TOKEN`,
-`GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` appearing by
-name. Those are the doctor's SKIP lines telling a reader which variables to set, so they are
-instructions rather than values. No secret value appears in any fixture.
+A name-only comparison against `~/.local/secrets` showed one name,
+`GITHUB_APP_PRIVATE_KEY_B64`, in `01-create-cairn-site.txt`. It is the secret upload's label, and
+no secret value appears in any fixture.
 
 ## Deliberately unconsumed
 
 No documentation block quotes these; `check:transcripts` treats this list as their citation.
 
-- `01b-resume.txt`, kept as the record of the non-idempotent resume above.
-- `01c-resume.txt`, kept so the run history is complete and auditable, superseded entirely by
-  `01d-resume.txt`.
-
-## Staleness note (2026-09-19)
-
-The scaffold gained `.github/workflows/check.yml` and a baked `npm run check:cairn` script
-after this capture ran, so a fresh run today would show a step these transcripts do not: the
-tool's printed hand-over now names the workflow and the `check:cairn` script. Re-capturing
-needs a live GitHub App and repository creation, a harness outside this repo, so these fixtures
-stay as recorded rather than being hand-edited to add a step never captured. `check:transcripts`
-compares the docs pages' quoted blocks against these fixtures, not against the current
-scaffold's behavior, so it stays green either way.
-
-## Staleness note (2026-09-22)
-
-`01-create-cairn-site.txt` and `01d-resume.txt` predate the doctor's retirement from npm to Go and
-still print `create-cairn-site`'s old hand-over line, "Run `npx cairn-doctor` any time to
-check what is set up and what is still missing." The scaffold no longer prints that line: it now
-prints a `cairn doctor` reminder with an install pointer, unconditionally, and never runs
-`npx cairn-doctor` at all. Re-capturing needs a live GitHub App and repository creation, a harness
-outside this repo, so these fixtures stay as recorded. `check:transcripts` compares the docs
-pages' quoted blocks against these fixtures, not against the current scaffold's behavior, so it
-stays green either way.
-
-## Staleness note (2026-09-20, guidance bake)
-
-The scaffold now ships `.claude/` guidance baked in at create time (every packaged skill, the
-review agent, and `.claude/cairn/CLAUDE.md`/`VERSION`/`MANIFEST`), and its
-`.github/workflows/check.yml` gained a third step, `npx cairn-guidance check` under
-`continue-on-error`. `01-create-cairn-site.txt`'s hand-over text predates both and shows
-neither the guidance sentence nor the workflow's third step. Re-capturing needs a live GitHub
-App and repository creation, a harness outside this repo, so this fixture stays as recorded.
-`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
-the current scaffold's behavior, so it stays green either way.
-
-## Staleness note (2026-09-28)
-
-The Cloudflare deploy consent's detail line changed: a cairn site needs Cloudflare's Workers
-Paid plan from its first deploy, so the consent now states that plan and its cost instead of
-promising "Cloudflare's free workers.dev hosting" and that "nothing in this step costs money".
-`01c-resume.txt` and `01d-resume.txt` both quote the old detail line verbatim (the "Deploy your
-site to Cloudflare" block), so it no longer matches current tool behavior. Re-capturing needs a
-live GitHub App and repository creation, a harness outside this repo, so these fixtures stay as
-recorded rather than being hand-edited to carry new prose no run actually produced.
-`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against
-the current scaffold's behavior, so it stays green either way; the admin arm's create-your-site page
-(removed pending its rebuild) never quoted this specific line, so no docs page was affected.
-
-## Staleness note (2026-09-28, AI posture)
-
-`create-cairn-site` gained a fifth scaffold question between brand color and directory: the
-site's stance toward AI training crawlers (decline, invite, or no preference, the default).
-`01-create-cairn-site.txt` predates it and shows only four questions in that stretch of the run.
-Re-capturing needs a live GitHub App and repository creation, a harness outside this repo, so this
-fixture stays as recorded rather than being hand-edited to add a prompt no run actually produced.
-`check:transcripts` compares the docs pages' quoted blocks against these fixtures, not against the
-current scaffold's behavior, so it stays green either way; the admin arm's create-your-site page
-(removed pending its rebuild) never quoted that stretch of the transcript (only the cost preamble,
-the GitHub App confirmation, and the closing summary), so its prose was fixed to name the new
-question without touching any quoted block.
-
 ## Identifiers
 
-Kept verbatim by ruling. The worker, both databases, the bucket, the App, and the repository
+Kept verbatim by ruling. The worker, the database, the bucket, the App, and the repository
 were torn down after capture and their names name nothing that still exists. The account
 identity, the workers.dev subdomain, the GitHub owner name, and the sign-in address are
 permanent and knowingly published.

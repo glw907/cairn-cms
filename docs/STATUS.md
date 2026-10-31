@@ -12,20 +12,17 @@ and engine pass B (PR #113). cairn.pub pins
 `0.94.0-rc.1`, its ceiling `0.98.0` until the one release below
 ([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
 
-**The sequence (Geoff, 2026-10-07).** Docs stages 2b to 5, then one release, then each site
-migrates (cairn.pub included, none before). Engine passes land on `main` and never release; each
-sits in its slot on `ROADMAP.md`'s boundary-test path.
+**The sequence (Geoff, 2026-10-31).** The agent-first pattern lands first, then the held docs
+series (editors and admin arms), then one release, then each site migrates once. Design:
+`~/Projects/initiatives/shared-standards/specs/2026-10-31-agent-first-pattern-design.md`. Engine
+passes land on `main` and never release.
 
 ## Immediate next action
 
-The docs finalization series runs under `conductor-cairn-cms`, started by a timer at 00:01 on
-2026-10-31: the 2b close, a small engine pass, the editors arm, the admin arm, and the front door.
-The plan is [docs/plans/2026-10-30-docs-finalization.md](plans/2026-10-30-docs-finalization.md), and
-the live state is `~/.local/state/cairn-docs-final/ledger.md`. To start it by hand:
-
-`claude --bg --model claude-opus-5-5 --effort medium --name conductor-cairn-cms "$(cat docs/plans/2026-10-30-docs-finalization-conductor-prompt.txt)"`
-
-The release holds until the docs are complete.
+Write the pattern's four plans under `pass-core`, then launch pass 1. The docs finalization series
+stays on hold with PRs #159, #160, and #161 open; its state is
+`~/.local/state/cairn-docs-final/ledger.md`, and new pass 4 owns the evaluator set that replaces
+old pass 5's front door. The release holds until the rebuild lands.
 
 ## Open decisions and watches
 - Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction

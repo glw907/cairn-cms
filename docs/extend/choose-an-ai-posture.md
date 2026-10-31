@@ -128,4 +128,5 @@ To find why the served posture differs from the declared one, follow these steps
    origin's file in one combined response.
 
 The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the
-condition for whoever runs the zone.
+condition, and [Make the stated AI posture effective](../admin/is-it-working.md#make-the-stated-ai-posture-effective)
+tells whoever runs the zone what to do when it fails.

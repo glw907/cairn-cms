@@ -17,7 +17,9 @@ A `0.x` minor can break a documented seam, so an upgrade is never a blind bump.
 
    or edit the version range by hand and run `npm install`. [Supported
    toolchain](../reference/supported-toolchain.md) names the Node, SvelteKit, and Svelte targets
-   this install checks against.
+   this install checks against. A site owner who isn't a developer reads
+   [what needs a developer](../admin/before-you-start.md#what-needs-a-developer) to see why this
+   job is yours.
 
 2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
    `CHANGELOG.md` ships in the package (`node_modules/@glw907/cairn-cms/CHANGELOG.md`, or the

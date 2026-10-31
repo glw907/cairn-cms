@@ -362,9 +362,6 @@ The original decision framing, for the record:
     and SvelteKit's. A Names row, and the `CairnAdapter` doc comments that name only
     `src/lib/cairn.config.ts` (`src/lib/content/types.ts:5,223`, an engine comment change). Trigger:
     the final engine batch.
-  - Re-capture the create-cairn-site transcripts live: `01c-resume.txt`, `01d-resume.txt`, and
-    `01-create-cairn-site.txt:9` still show the two-database provisioning lines. Trigger: the capture
-    sitting of the docs finalization series.
   - A plan-pinned gate string bypasses the classifier and can omit `check`
     (`scripts/checks/gate-tier.mjs:56`). Trigger: the next gate-tier pass.
   - A caught red's record names no failing step; add a `failing step` field to the PR score.
@@ -653,7 +650,7 @@ The original decision framing, for the record:
      repository and then failed, the resume refused to continue because a repository of that name
      exists, rather than adopting one the tool itself created and owns. Recovery took deleting the
      repository by hand, which a reader without `delete_repo` cannot do, so this one strands a
-     reader outright. Evidence: `01b-resume.txt`. Candidate: adopt an existing repository the App
+     reader outright. Evidence: the August 2026 run, whose `01b-resume.txt` the 2026-10-31 recapture retired. Candidate: adopt an existing repository the App
      owns that matches the saved state record.
   3. **Every scaffold ships the placeholder sign-in from-address `cms@showcase.test`.** The
      domain chapter never personalizes it on the workers.dev path (`writeEmailFrom` in
@@ -1048,11 +1045,6 @@ the named human gates only):**
   - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
     `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
     ships in the package's `files`. Trigger: before that package's first publish.
-  - `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` still holds the maintainer's
-    home path and a `glw907.workers.dev` URL (12 matches), lists the scaffold migrations as `0000` and
-    `0003` with no `0001` (line 837), and ends the key step with "re-run this step" (line 942, where
-    the step now points at the rotation page). Fixing them needs a transcript regeneration that
-    `check:transcripts` replays.
   - `scripts/checks/check-symbols.mjs` (`extractFilePaths`, `:308`) reads the inline import specifier
     `#theme/cairn.config.js` as the file path `theme/cairn.config.js`, so prose cannot name the
     scaffold's real import; fenced blocks strip import specifiers and inline spans do not.

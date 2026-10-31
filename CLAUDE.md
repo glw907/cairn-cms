@@ -159,7 +159,8 @@ Map the symptom to its event: a sign-in failure points at a send-failure or guar
 `reason`); a save that does nothing points at a commit failure (`conflict` is a stale-edit
 collision, `error` is the GitHub failure). On Cloudflare, Workers Logs is the query surface
 (filter by `event` or `editor`). Records carry an editor's email, never a token or session id;
-check a record before pasting it in public.
+check a record before pasting it in public. The operator's version of this map is
+[`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md).
 
 A pass adding a diagnosable code path gives it an event in the vocabulary, not a bare `console`
 call, and updates the reference table in the same pass. `createLogger` is public from the `/log`

@@ -187,11 +187,6 @@ export const ALLOWLIST = new Set([
   'file-path:src/admin-club/lib/announcements.ts', // aksailingclub-org's announcements module
   'file-path:src/tests/announce-list-order.test.ts', // aksailingclub-org's announcement-order test
 
-  // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
-  // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
-  // to fix a GitHub App installation's repository access.
-  'log-event:github.com', // GitHub's hostname, cited in `github.com/settings/installations`
-
   // The Go `cairn` CLI's JSON golden fixture literal, quoted verbatim in
   // docs/reference/cli-cairn-json-output.md's `logs` payload example. It predates this repo's
   // `publish.failed` log-events.md vocabulary and is not a registered cairn-cms event.

@@ -356,8 +356,8 @@ whenever you do.
 
 An automatic Builds deploy handles your site's code. It does not run database migrations:
 `wrangler d1 migrations apply` has no Workers Builds equivalent. An engine update that ships a new
-migration still needs you to run this CLI's update path on your machine, so it is not
-something you can set aside once Builds is connected.
+migration still needs a developer to apply it by hand, as `docs/extend/upgrade-cairn.md` in the
+engine package describes, so it is not something you can set aside once Builds is connected.
 
 ### Waiting is normal
 

@@ -6,7 +6,8 @@
       "context": "index: 'docs/admin/README.md', state: 'admin'",
       "oldTarget": "docs/admin/README.md",
       "done": "The admin arm's index coverage check runs only while the arm is rebuilt; absent, it is skipped by name.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-arm-indexes.mjs",
@@ -36,7 +37,8 @@
       "context": "admin: 'docs/admin/README.md'",
       "oldTarget": "docs/admin/README.md",
       "done": "requiredDocsPaths asks for the admin index in the tarball only while the arm is rebuilt.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-package-files.mjs",
@@ -66,7 +68,8 @@
       "context": "{ path: 'docs/admin', arm: 'admin' }",
       "oldTarget": "docs/admin/",
       "done": "The symbol sweep skips the admin arm by name while it is absent; the reference arm and README.md must exist.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-symbols.mjs",
@@ -104,28 +107,32 @@
       "context": "# Is it working?",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "src/tests/unit/github-slug-contract.test.ts",
       "context": "### You know it worked when",
       "oldTarget": "docs/admin/own-your-domain.md",
       "done": "The heading stays a literal slug case; the source-page check skips it while the page's arm is not rebuilt, and fails once the arm is rebuilt without the page, so the case gets repointed at a live page.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-readiness.mjs",
       "context": "readinessProblemsForArm",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "List mode while the admin arm is not rebuilt: every live docsAnchor must be on scripts/checks/shipped-anchors.json. Once the arm holds any page, the checklist must exist and every live and shipped anchor must resolve on it.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "tool/internal/health/fixes_test.go",
       "context": "anchorProblems",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "TestFixLineAnchorsResolveInDocs takes the same list mode: every fix-table Anchor must be on shipped-anchors.json while the admin arm is not rebuilt; once it is, the checklist must exist and carry every fix and shipped anchor.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-editor-quotes.mjs",
@@ -255,7 +262,8 @@
       "context": "'docs/guides/cloudflare-readiness.md': 'docs/admin/is-it-working.md'",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the admin arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -338,7 +346,8 @@
       "context": "'docs/guides/read-cairn-logs.md': 'docs/admin/troubleshooting.md'",
       "oldTarget": "docs/admin/troubleshooting.md",
       "done": "LEGACY_PATH_MAP value on the deletion list: accepted while the admin arm is not rebuilt; once it is, repoint the entry at the page that carries the job.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -401,28 +410,32 @@
       "context": "'docs/admin/create-your-site.md': 3",
       "oldTarget": "docs/admin/create-your-site.md",
       "done": "The per-page transcript floor holds only while the admin arm is rebuilt; once it is, the page must exist and carry its floor, or the floor must move to the page that now quotes the recorded run.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/transcript-blocks.mjs",
       "context": "'docs/admin/is-it-working.md': 1",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "The per-page transcript floor holds only while the admin arm is rebuilt; once it is, the page must exist and carry its floor, or the floor must move to the page that now quotes the recorded run.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/transcript-blocks.mjs",
       "context": "QUOTING_ARM = 'admin'",
       "oldTarget": "packages/create-cairn-site/test/fixtures/transcripts/*.txt",
       "done": "The every-fixture-is-quoted rule holds only while the admin arm is rebuilt; marked blocks elsewhere are still checked in full.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-visuals.mjs",
       "context": "{ dir: 'docs/admin', arm: 'admin' }",
       "oldTarget": "docs/admin/",
       "done": "The visuals scan skips the admin arm by name while it is absent.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-visuals.mjs",
@@ -444,7 +457,8 @@
       "context": "{ dir: 'docs/admin', arm: 'admin' }",
       "oldTarget": "docs/admin/",
       "done": "The snippet typecheck skips the admin arm by name while it is absent.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-snippets.mjs",
@@ -570,7 +584,8 @@
       "context": "- [The `cairn doctor` command](./cli-cairn-doctor.md) for the setup preflight",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "See-also bullet removed; restore it when the admin checklist returns.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/reference/islands.md",
@@ -778,14 +793,15 @@
       "context": "The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the",
       "oldTarget": "docs/admin/is-it-working.md#make-the-stated-ai-posture-effective",
       "done": "Retargeted to the doctor reference, in the kept page and its brief in lockstep; the admin rebuild may restore a link to the checklist section.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
       "context": "The [`ai.posture-effective` check](../reference/cli-cairn-doctor.md#the-checks) covers the condition",
       "oldTarget": "docs/admin/is-it-working.md#make-the-stated-ai-posture-effective",
-      "done": "Brief sentence matches the kept page edit.",
-      "stage": "3"
+      "done": "Moot: the brief file went with docs/internal/briefs/ when the docs-as-code rulings retired it. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/extend/upgrade-cairn.md",
@@ -800,7 +816,8 @@
       "context": "toolchain](../reference/supported-toolchain.md) names the Node, SvelteKit, and Svelte targets",
       "oldTarget": "docs/admin/what-to-run-and-when.md",
       "done": "One of two links removed; restore the admin link when the page returns.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/extend/upgrade-cairn.md",
@@ -829,7 +846,8 @@
       "context": "stable https `Origin`.",
       "oldTarget": "docs/admin/is-it-working.md#force-https-at-the-edge",
       "done": "Pointer sentence removed; the admin rebuild restores the link to its force-HTTPS section.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/engine-rulings.md",
@@ -1141,7 +1159,8 @@
       "context": "Records carry an\neditor's email, never a token",
       "oldTarget": "docs/admin/troubleshooting.md",
       "done": "Operator how-to pointer removed; docs/reference/log-events.md, linked earlier in the section, holds the event table. The admin rebuild restores the troubleshooting pointer.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/facts/README.md",
@@ -1190,7 +1209,8 @@
       "context": "each live `docsAnchor` must be on `scripts/checks/shipped-anchors.json`",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "Gate description updated to the narrowed states (list mode while the admin arm is not rebuilt).",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "scripts/checks/check-provenance.mjs",
@@ -1211,28 +1231,29 @@
       "context": "exist before the checklist page grows the heading it points at.",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "Comment keeps the checklist path (the shipped-anchor target, rebuilt at stage 3); the stale \"frozen page\" wording is gone.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "tool/internal/health/fixes.go",
       "context": "before it was removed pending its rebuild.",
       "oldTarget": "docs/admin/is-it-working.md",
-      "done": "Comment states the past fact without a path to a deleted page.",
-      "stage": "3"
+      "done": "Moot: the comment this entry guarded no longer says \"removed pending its rebuild\"; nothing to restore. Permanent.",
+      "stage": null
     },
     {
       "file": "packages/create-cairn-site/test/fixtures/transcripts/README.md",
       "context": "(removed pending its rebuild) never quoted this specific line",
       "oldTarget": "docs/admin/create-your-site.md",
-      "done": "Path replaced by the page named in words.",
-      "stage": "3"
+      "done": "Moot: the fixtures README was rewritten by the 2026-10-31 recapture and no longer carries this sentence. Permanent.",
+      "stage": null
     },
     {
       "file": "packages/create-cairn-site/test/fixtures/transcripts/README.md",
       "context": "the admin arm's create-your-site page\n(removed pending its rebuild) never quoted that stretch",
       "oldTarget": "docs/admin/create-your-site.md",
-      "done": "Path replaced by the page named in words.",
-      "stage": "3"
+      "done": "Moot: the fixtures README was rewritten by the 2026-10-31 recapture and no longer carries this sentence. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/internal/src-lib-map.md",
@@ -1268,28 +1289,32 @@
       "context": "ery surface (`admin/setup-recovery.md`,",
       "oldTarget": "setup-recovery.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "`admin/troubleshooting.md`, or `extend/debug-",
       "oldTarget": "troubleshooting.md; debug-your-site.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "ion entry** (`admin/is-it-working.md`): a condition id m",
       "oldTarget": "is-it-working.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "mptom row** (`admin/troubleshooting.md`, `extend/debug-you",
       "oldTarget": "troubleshooting.md; debug-your-site.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "docs/internal/docs-register.md",
@@ -1378,15 +1403,15 @@
       "file": "docs/internal/briefs/README.md",
       "context": "md`. The brief for `docs/admin/is-it-working.md` is",
       "oldTarget": "docs/admin/is-it-working.md",
-      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "done": "Moot: docs/internal/briefs/ no longer exists. Permanent.",
+      "stage": null
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "\"page\": \"docs/admin/is-it-working.md\",",
       "oldTarget": "docs/admin/is-it-working.md",
-      "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "3"
+      "done": "Moot: docs/internal/briefs/ no longer exists. Permanent.",
+      "stage": null
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1553,14 +1578,16 @@
       "context": "t a registered one. docs/admin/setup-recovery.md cites the literal p",
       "oldTarget": "docs/admin/setup-recovery.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": ".github/workflows/tool.yml",
       "context": "- 'docs/admin/is-it-working.md'",
       "oldTarget": "docs/admin/is-it-working.md",
       "done": "Path filter kept: the tool workflow runs again on an edit to the admin checklist once the admin arm rebuilds it (two filters, push and pull_request).",
-      "stage": "3"
+      "stage": "3",
+      "restoredIn": "docs-final-4"
     },
     {
       "file": "package.json",

@@ -168,3 +168,4 @@ machine.
 ## See also
 
 - [The `cairn doctor` command](./cli-cairn-doctor.md) for the setup preflight, a separate concern from guidance.
+- [Check that your site works](../admin/is-it-working.md) for what each `cairn doctor` result means and how to fix it.

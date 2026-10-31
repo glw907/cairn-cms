@@ -73,8 +73,8 @@ The lead image is a single image that belongs to the entry as a whole and not to
 
 ```repro
 story: media/lead-picture-dialog
-alt: Reproduction of the lead picture dialog, with a wide preview, Replace and Remove links, alt text choices, and a Caption box.
-caption: The lead picture dialog shows a wide preview with Replace and Remove links, the Describe it and Decorative choices, and the optional Caption box. Replace returns to the choices, and Remove clears the field. The caption appears under the image only if the site's template uses it, and it isn't the alt text.
+alt: Reproduction of the lead image dialog, with a wide preview, Replace and Remove links, alt text choices, and a Caption box.
+caption: The lead image dialog shows a wide preview with Replace and Remove links, the Describe it and Decorative choices, and the optional Caption box. Replace returns to the choices, and Remove clears the field. The caption appears under the image only if the site's template uses it, and it isn't the alt text.
 ```
 
 **Use this image** places the image in the field but doesn't save the entry. The field then shows a thumbnail, the name, and a status of **Described**, **Needs alt**, or **Decorative**. The button beside it reads **Edit**, or **Add** while the image still needs alt text. Select it to reopen the dialog.

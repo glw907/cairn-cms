@@ -13,7 +13,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
  * `rehype-slug` computes each id with `github-slugger` under the hood, so this is meant to be
  * a tautology today. The point of the test is to keep it one: every case below is a real
  * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus
- * (one case is marked synthetic, below), and its expected id is a literal, not a value computed by
+ * (two cases are marked synthetic, below), and its expected id is a literal, not a value computed by
  * importing `github-slugger` at test time. The last test holds each case to its source page. A
  * source the harvest deleted keeps its heading as a literal stress case while its arm waits for
  * its rebuild, and must name a live page again once the arm is rebuilt. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
@@ -86,10 +86,12 @@ describe('the GitHub-slug contract', () => {
       synthetic: true,
     },
     {
-      // A trailing question mark, which drops without leaving a trailing hyphen.
+      // A trailing question mark, which drops without leaving a trailing hyphen. The register bans
+      // question headings, so no live page carries this shape and the case is synthetic.
       markdown: '# Is it working?',
       id: 'is-it-working',
-      source: 'docs/admin/is-it-working.md',
+      source: 'synthetic',
+      synthetic: true,
     },
   ];
 

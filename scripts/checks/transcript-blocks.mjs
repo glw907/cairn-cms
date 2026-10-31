@@ -12,11 +12,10 @@
 // README's deliberately-unconsumed list, which is an author's declaration this gate takes at its
 // word; naming a fixture there is how a run's unquoted captures stay committed and accounted for.
 //
-// The recorded run is quoted by the admin arm alone, which is deleted and later rebuilt
-// (arm-state.mjs). While that arm holds no page, its per-page floors and the rule that every
-// fixture is quoted have no page to hold, so both wait for the rebuild; any marked block elsewhere
-// is still checked in full. Once the arm holds any page both come back, so a rebuilt arm that
-// drops a pinned page or stops quoting a fixture fails here.
+// The recorded run is quoted by the admin arm alone (arm-state.mjs). While that arm holds no page,
+// its per-page floors and the rule that every fixture is quoted have no page to hold, so both
+// wait; any marked block elsewhere is still checked in full. Once the arm holds any page both
+// apply, so an arm that drops a pinned page or stops quoting a fixture fails here.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -116,8 +115,8 @@ function readUnconsumedList(fixturesRootAbs) {
   const nextHeadingIdx = rest.search(/\n## /);
   const section = nextHeadingIdx === -1 ? rest : rest.slice(0, nextHeadingIdx);
   // Only the name a list item OPENS with declares that fixture unconsumed; a `.txt` name
-  // mentioned later in the same bullet's prose (as `01c-resume.txt`'s does, describing what
-  // superseded it) is context, not its declaration.
+  // mentioned later in the same bullet's prose (a bullet that says which capture superseded it,
+  // say) is context, not its declaration.
   const names = new Set();
   for (const m of section.matchAll(/^-\s*`([\w.-]+\.txt)`/gm)) names.add(m[1]);
   return names;

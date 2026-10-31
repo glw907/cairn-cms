@@ -89,7 +89,8 @@ lets a consumer reach structurally when the package chooses not to give it its b
 ## Also for site admins
 
 Two of the preceding pages serve a second reader beyond the extending developer: a site admin
-running a deployed site day to day, following the admin track's setup and troubleshooting
+running a deployed site day to day, following the admin track's
+[readiness](../admin/is-it-working.md) and [troubleshooting](../admin/troubleshooting.md)
 pages back to the underlying contract rather than a page that repeats it.
 
 - [Log events](./log-events.md)

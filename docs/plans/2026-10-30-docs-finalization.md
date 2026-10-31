@@ -160,6 +160,25 @@ Scope the boundary test can pull in stops at `auth-data` paths.
 
 Each engine change takes `CHANGELOG.md` under `## Unreleased`.
 
+### Pass 2 scope (from pass 1's boundary test, 2026-10-31)
+
+Verdicts and evidence: `docs/internal/record/2026-10-31-engine-friction-2b-close.md`. None touches
+an `auth-data` path. Task 2.4 takes these seven in order, about 90 minutes in all, each with a test,
+each named in the PR with the page it changes. Numbers are the record's.
+
+| # | Fix | Code | Page it changes | Min |
+| --- | --- | --- | --- | --- |
+| 46 | Annotate the scaffold's media constant as `AssetConfig` in the showcase, then run `npm run emit:template` | `templates/waymark/src/theme/cairn.config.ts:50`, `examples/showcase/src/theme/cairn.config.ts:53` | none (the `configure-media` step then works as written) | 10 |
+| 19 | Catch a throwing `attention` in the engine, log `admin.attention_failed`, render no badges | `src/lib/sveltekit/content-routes-shell.ts:204` | `arrange-the-admin-sidebar` (drop the wrapper step and caution), `docs/reference/log-events.md` | 20 |
+| 93 | With `validate: false`, warn once per invalid entry | `src/lib/delivery/site-resolver.ts:65-72` | `migrate-existing-content`, `log-events.md` | 15 |
+| 94 | Warn once per entry `buildSiteManifest` skips as invalid | `src/lib/delivery/manifest.ts:32` | `migrate-existing-content` | 10 |
+| 62 | A site with no `fragments` concept gets a distinct `cairn:` error | `src/lib/delivery/site-resolver.ts:207-212` | `debug-your-site`, `content-model` | 10 |
+| 54 | `resolveReferences` skips a draft target, as its comment promises | `src/lib/delivery/site-resolver.ts:173-174` | `content-model`, `docs/reference/delivery-data.md:436-437` | 15 |
+| 16 | `slugify` strips accents before it removes other characters | `src/lib/content/ids.ts:32-38` | `content-model` | 10 |
+
+If time is left, the order is 55, 65, 77, 14, 15, 4, 52, 42, 1 (record numbers). BACKLOG #48 already
+holds the live-preview `publicBase` defect that `configure-media` works around.
+
 ## Pass 3: editors arm (330 path)
 
 | Task | Outcome and files | Acceptance | Min |

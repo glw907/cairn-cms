@@ -335,30 +335,15 @@ The original decision framing, for the record:
 - **Stage 2b part 2: the items part 1 carried (PR #117 triage, Geoff, 2026-10-12).** Part 1's
   "Found, not done" table (`docs/research/2026-10-11-draft-docs-2b-part1-record.md`,
   "Rulings for Geoff") filed these as defers; Geoff submitted the triage unchanged. Part 2 also owns
-  its own scope from the plan (the relink and `LEGACY_PATH_MAP` repoints, the reference-arm corrections, the final arm index, the boundary test, 2b's close). Each item names its trigger:
+  its own scope from the plan, which docs finalization pass 1 closed (2026-10-31). What stays names its trigger:
   - The sidebar figure's fixture: `nav/worked-navlayout` (`src/lib/reproductions/stories/site.ts:76-86`,
     `fixtures.ts:262-275`) relabels `media` to its own default, "Library", so the figure on
     `arrange-the-admin-sidebar` cannot show a real relabel; the page was reworded to match. Trigger:
     the next engine pass, which owns `src/lib/reproductions/`.
-  - The `siteConfigPath` and glob explanations repeat across `define-an-adapter-and-schema`,
-    `turn-on-tidy`, and `build-the-public-routes`. Trigger: part 2's
-    consistency read.
-  - `act-on-newly-published-entries`: one read found `buildNewlyPublished` in npm 0.98.0, an earlier
-    read did not, so the page's unreleased-engine disposition is unsettled. Trigger: check the
-    registry before the page's claims about it are final.
-  - The add-cairn tutorial (a 2a page) imports `#lib/...` without declaring the subpath import in
-    `package.json`, and never mentions the root `+layout.svelte` that `sv create` writes. Trigger: a
-    pass that edits the tutorial page, or part 2's fix-rule step.
   - The tutorial site has no media block, R2 binding or resolver, so `configure-media`'s
     tutorial-site coverage rests on a doc-only source. Trigger: a code source for it.
-  - The option map holds 27 `pending` rows (BACKLOG #78). Trigger: the next pass that documents a listed
-    option.
   - One whole-tree gate run failed `check:reference` on `admin-toolkit.md` (28 stale exports) and
     passed on rerun; unexplained and not reproduced. Trigger: a second occurrence.
-  - The 2a pages say "hand-built site" differently from the 2b pages. Trigger: part 2's
-    consistency read.
-  - The friction entries in `docs/internal/docs-friction-log.md` are untriaged.
-    Trigger: 2b's close.
 
 - **Docs tooling before stage 2b: the residue (pre-2b tooling pass, 2026-10-12).** The pass fixed
   the register, `check:snippets`, `check:symbols`, and `link:consumer`, and fixed the showcase tell in the dotfiles repo. What stays, each with its trigger:
@@ -1064,6 +1049,16 @@ the named human gates only):**
   pulls it forward, and each docs-stage close re-tests them, since a later stage's page can move one
   into the first class. A row that leaves a page caveat names the page, so the final batch revises it
   in the same pass. Source detail is the friction log at `b38ef6b3`.
+  - **The 2b close's boundary test (2026-10-31, docs finalization pass 1).** All 94 engine entries
+    in the friction log were checked against the code. None was overtaken; the log keeps none of them,
+    and `docs/internal/record/2026-10-31-engine-friction-2b-close.md` holds each verbatim with its
+    verdict and page. Seven ride engine pass 2 (numbers 16, 19, 46, 54, 62, 93, 94; scope in
+    `docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"). Six are dropped with a reason
+    (10, 21, 48, 64, 78, 83) and seven were handled on their page (2, 20, 28, 40, 50, 61, 79). The
+    rest ride the final engine batch: 25 change no page (class 3), and 49 change a page that carries
+    the defect's caveat (class 1, batched), so the batch revises that page in the same pass. When
+    pass 2 has time left it takes these, in order: 55, 65, 77, 14, 15, 4, 52, 42, 1. The verdict
+    for the docs stage close is that pass 2 is warranted before the editors arm.
   - Batched by the engine pass before stage 2b (2026-10-09), each tagged with the page that carries its
     caveat meanwhile:
     - B11b, the setup command's key step takes no `.pem` input, so a regenerated key can't be fed to
@@ -1093,8 +1088,7 @@ the named human gates only):**
       breaks a theme, so it waits for the final batch. Page: theme-your-public-site.
     - D11, the preview frame carries no `data-theme` (`src/lib/admin/preview-doc.ts:101`). A new
       preview option, editor proofing polish. Page: theme-your-public-site.
-  - Comments and examples: `src/lib/sveltekit/health.ts:1,10` and `src/lib/github/signing.ts:126`
-    name `GET /admin/healthz`, which no engine view serves; `section-action.ts:149` and
+  - Comments and examples: `section-action.ts:149` and
     `auth-channel/factory.ts:538` say an uninferred `Env` collapses to `{}` (it is `unknown`);
     `setMenu`'s comment says YAML comments are lost (`src/lib/nav/site-config.ts:354`; only those
     inside the replaced block are); `KNOWN_TOP_LEVEL_KEYS` claims the engine reads `description`,

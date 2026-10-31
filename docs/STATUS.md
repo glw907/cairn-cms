@@ -23,15 +23,15 @@ passes land on `main` and never release.
 
 The plan is approved and merged:
 `~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
-and packet beside it. Queue item 20261031T143358-2306095 ruled yes on all three rulings. Pass 1 waits
-on `~/.dotfiles` reaching `main` level with `origin/main` (session `dotfiles-c0` holds that checkout).
-Then, in order: `secret-receive CAIRN_E2E_OAUTH_TOKEN`; a workstation PR with the nine rules in the
-plan's pre-flight item 3, merged by the session; Geoff runs `claude-tooling-sync apply`; send pass 1
-to its conductor. The `model-review.service` drop-in `agent-first-hold.conf` is applied, and the
-review reports are in `~/.local/state/cairn-agent-first/reviews/`. The docs finalization series
-stays on hold with PRs #159, #160, and #161 open; its state is
-`~/.local/state/cairn-docs-final/ledger.md`, and new pass 4 owns the evaluator set that replaces
-old pass 5's front door. The release holds until the rebuild lands.
+and packet beside it. Queue item 20261031T143358-2306095 ruled yes on all three rulings. Pass 1's
+pre-launch items are done, and `conductor-cairn-cms` runs the plan one pass at a time from
+`2026-10-31-agent-first-conductor-prompt.txt`, beside the plan; its ledger is
+`~/.local/state/cairn-agent-first/ledger.md`. The `model-review.service` drop-in
+`agent-first-hold.conf` is applied, and the review reports are in
+`~/.local/state/cairn-agent-first/reviews/`. The docs finalization series stays on hold with PRs
+#159, #160, and #161 open; its state is `~/.local/state/cairn-docs-final/ledger.md`, and new pass 4
+owns the evaluator set that replaces old pass 5's front door. The release holds until the rebuild
+lands.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

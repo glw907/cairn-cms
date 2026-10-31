@@ -638,7 +638,6 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
 | The editing surface, on the editor track | the editor names the product and the person; the admin appears only where a screen string or a developer cross-reference needs it | Geoff, 2026-10-31. In the developer tracks "the admin" is the surface, and in `docs/editors/` "the editor" names the product and the person who uses it, so the editor track's vocabulary and this table agree. |
-| A `:::` block in an entry | a component; the figure, the one reserved `:::` container, is called a figure | Geoff, 2026-10-31, settling "layout block". The editor track says "component" for the piece of content the toolbar inserts and that `:::` lines mark. A screen string that still says "block" (**Insert block**, **Edit block**) is quoted exactly and renamed in the final engine batch. |
 | Who a stuck editor contacts | your site owner; "developer" only where code is involved | Geoff, 2026-10-31. A screen string that says "site developer" is quoted exactly. |
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |

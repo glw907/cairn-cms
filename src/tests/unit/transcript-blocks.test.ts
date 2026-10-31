@@ -134,7 +134,7 @@ describe('renderTranscript: real fixture ground truths', () => {
     const lines = renderTranscript(raw).split('\n');
     expect(lines).toHaveLength(14);
     expect(lines[0]).toBe('+ cairn doctor .');
-    expect(lines[1]).toBe('PASS  Wrangler bindings are missing: EMAIL and AUTH_DB are declared');
+    expect(lines[1]).toBe('PASS  Wrangler bindings are declared: EMAIL and AUTH_DB are declared');
     expect(lines.at(-1)).toBe('8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked');
   });
 });

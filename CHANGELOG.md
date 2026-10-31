@@ -484,6 +484,11 @@
   Consumers may: expect a conflict from publish when a Library delete, another publish, or a
   dictionary add lands at the same moment, and retry. There is no signature or option change.
 
+- **`cairn doctor` PASS lines print a pass title.** A PASS line used the condition's registry title,
+  which names the failure, so a passing check read "PASS  Wrangler bindings are missing". Each check
+  now declares a `PassTitle` ("Wrangler bindings are declared"), and the other statuses keep the
+  registry title. Anything that matches the text of a PASS line needs changing.
+
 ### Removed
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
@@ -503,6 +508,10 @@
   `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
   `config.csrf-disable-missing` retires with its check; the heading anchors `non-admin-origin-rejected`
   and `wire-cairns-csrf-guard` stay on the shipped list because released binaries print them.
+- **The `config.tidy-key-missing` and `admin.login-probe-failed` conditions.** No check raises
+  either: the tidy-key probe and the live login probe are gone from the tool. The registry now names
+  23 ids. Their heading anchors, `configure-the-tidy-api-key` and `probe-the-deployed-admin`, stay on
+  the shipped list because released binaries print them.
 
 - The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
   `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an

@@ -236,7 +236,7 @@ The concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26 as
 `8bbe78f5`, the proof page whose tone Geoff's ruling says worked. The killed flattened version
 beside it was written for this register to show that failure.
 
-Ratified-good, for the front door only and the one specimen in the first person: the why-cairn
+Ratified-good, for the front door only and the one specimen in the first person: the [Why cairn](../why-cairn.md)
 opener, from Geoff's account (re-ratified 2026-09-08; the earlier specimen, an editor emailing
 changes for the author to commit, was invented and is withdrawn): "Before cairn, the small
 organizations I run sites for lived on WordPress, and later on static site generators with a
@@ -340,7 +340,7 @@ Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-
 - [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
   (Geoff, 2026-09-28).
-- The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
+- The [Why cairn](../why-cairn.md) opener in "Voice" is the exemplar for the voice on the front door only.
 - [`exemplars/google-task-create-project.md`](./exemplars/google-task-create-project.md), a Google
   task page, is an exemplar for anatomy.
 - [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a

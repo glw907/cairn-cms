@@ -1,6 +1,6 @@
 // Creating or adopting the Cloudflare zone chapter 2 needs, and checking whether the admin's
 // domain has finished delegating to it. Every finding below traces to the T4a domain spike
-// (docs/internal/2026-08-11-t4a-domain-spike.md) and its two addenda, dated 2026-08-11 and
+// (docs/internal/record/2026-08-11-t4a-domain-spike.md) and its two addenda, dated 2026-08-11 and
 // 2026-08-12 UTC.
 //
 // createOrAdoptZone reads before it writes: it lists zones by name first and adopts on a hit,

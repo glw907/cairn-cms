@@ -8,9 +8,16 @@ npx create-cairn-site
 
 ## Where to start
 
-- **Looking up a contract?** [The reference](./docs/reference/README.md) has one page per export
-  subpath.
-- **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
+- To decide whether cairn fits, read [Why cairn](./docs/why-cairn.md), which gives the reasoning
+  and the trade-offs.
+- To write on a cairn site, open [Editor help](./docs/editors/README.md).
+- To set up and run a site without writing code, read
+  [Set up and run a cairn site](./docs/admin/README.md).
+- To build on cairn, read [Extend](./docs/extend/README.md), which covers the seams one task per
+  page.
+- To look up a contract, use [the reference](./docs/reference/README.md), which has one page per
+  export subpath.
+- To work on cairn itself, start with [CONTRIBUTING](./CONTRIBUTING.md), which maps the repository and how a
   change lands. [The `src/lib` map](https://github.com/glw907/cairn-cms/blob/main/docs/internal/src-lib-map.md) goes deeper into the library
   tree itself.
 
@@ -43,9 +50,9 @@ and never see any of the branch or commit mechanics underneath.
 
 cairn commits fully to SvelteKit, Cloudflare, and GitHub, with no layer trying to hide any of the
 three, and the admin itself is built in DaisyUI and Tailwind, the idiom a developer's screens
-extend it in.
+extend it in. [Why cairn](./docs/why-cairn.md) sets out the reasoning and what it costs.
 
-## Getting started
+## Get started
 
 `create-cairn-site` scaffolds a complete starter, Waymark: a working site with a component library
 already wired in, built to be restyled or replaced rather than started from a blank page. A second,
@@ -53,14 +60,13 @@ documentation-focused template, Topo, is planned but not shipped yet.
 
 Already have a SvelteKit app and want to add cairn to it instead?
 [Add cairn to a SvelteKit app](./docs/extend/add-cairn-to-a-sveltekit-app.md) walks the install,
-from `npm install @glw907/cairn-cms` to a production deploy, and [the
-reference](./docs/reference/README.md) covers each export subpath.
+from `npm install @glw907/cairn-cms` to a production deploy.
 
 ## Where cairn stands
 
 cairn is pre-1.0. Content stays yours regardless of what happens to cairn: it's markdown in your
 repository, and leaving is a matter of cloning it.
 
-The [docs](./docs/reference/README.md) hold the reference for every export. History is in the
-[CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and the
-license is [MIT](./LICENSE).
+The [docs](./docs/README.md) hold a page for each job and the reference for every export. History is
+in the [CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and
+the license is [MIT](./LICENSE).

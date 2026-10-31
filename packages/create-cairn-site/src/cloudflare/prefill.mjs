@@ -7,7 +7,7 @@
 // live dashboard before shipping, never assumed from the vendor's docs alone: Cloudflare's
 // template mechanism fails an unrecognized key SILENTLY, rendering an empty "Select..." control
 // in its place rather than reporting an error (observed 2026-08-11,
-// docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"). A key that
+// docs/internal/record/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"). A key that
 // looks plausible is not evidence, so PREFILL_PERMISSION_KEYS below records what was actually
 // seen for each key.
 //
@@ -25,7 +25,7 @@ import { makeApi } from './api.mjs';
 /**
  * The `permissionGroupKeys` Cloudflare's create-token template URL accepts: one entry per
  * requested permission, always at `edit`. Verified against the live dashboard rather than the
- * vendor's docs alone, 2026-08-11 (docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the
+ * vendor's docs alone, 2026-08-11 (docs/internal/record/2026-08-11-t4a-domain-spike.md, "Addendum: the
  * minted spike token"). Do not add a key here without opening the resulting URL and confirming
  * Cloudflare actually filled it in; the dashboard gives no error for a key it does not recognize.
  *
@@ -52,9 +52,9 @@ export const PREFILL_PERMISSION_KEYS = [
 /**
  * The three keys chapter 3 (Builds connect) adds to PREFILL_PERMISSION_KEYS. All three confirmed
  * filling their rows on the live dashboard, the same bar every key above met: `workers_ci` on
- * 2026-08-12 (docs/internal/2026-08-12-t4c-builds-spike.md), `d1` and `workers_r2` on 2026-08-13
+ * 2026-08-12 (docs/internal/record/2026-08-12-t4c-builds-spike.md), `d1` and `workers_r2` on 2026-08-13
  * through the full eight-key URL, pasted interactively during the T5 live e2e
- * (docs/internal/2026-08-13-t5-task8-live-e2e.md).
+ * (docs/internal/record/2026-08-13-t5-task8-live-e2e.md).
  *
  * The requirements behind the two data keys carry different evidence. `d1` is observed: a Builds
  * deploy of a cairn-shaped scaffold, run with a token missing it, died on `GET /d1/database/{id}`

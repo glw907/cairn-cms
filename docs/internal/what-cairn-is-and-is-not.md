@@ -1,6 +1,6 @@
 # What cairn is
 
-> The public-facing content of this charter was absorbed by the why-cairn page (removed pending its rebuild) in
+> The public-facing content of this charter was absorbed by [Why cairn](../why-cairn.md) in
 > the 2026-07 docs rewrite; this file remains the internal scope charter.
 
 The canonical statement of cairn's purpose and boundary. `CLAUDE.md` carries the short version; this is

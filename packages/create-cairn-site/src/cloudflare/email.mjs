@@ -1,6 +1,6 @@
 // Email Sending: onboard the admin's apex, poll it once, and send the test message that proves
 // sign-in mail actually works, classifying a send refusal into the right catalogue row. Every
-// finding below traces to the T4b email spike (docs/internal/2026-08-11-t4b-email-spike.md) and
+// finding below traces to the T4b email spike (docs/internal/record/2026-08-11-t4b-email-spike.md) and
 // its amendments, folded into the plan 2026-08-12.
 //
 // ensureSendingDomain reads the subdomain list before ever posting a create, because

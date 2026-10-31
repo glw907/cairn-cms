@@ -4,7 +4,7 @@
 // step that needs no standing OAuth client: the App the admin creates here becomes
 // its OAuth client for every later step.
 //
-// Spike-observed constraints (docs/internal/2026-08-10-t2-own-app-spike.md), pinned by tests so
+// Spike-observed constraints (docs/internal/record/2026-08-10-t2-own-app-spike.md), pinned by tests so
 // neither is later "simplified" away:
 //   - The install redirect (a later chapter step) uses the FIRST registered callback URL
 //     verbatim. callback_urls therefore carries this run's ported loopback URL first, and

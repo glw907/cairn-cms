@@ -10,7 +10,7 @@
 // of the chapter's catalogued errors before ever handing control back to a caller, because the
 // catalogue's whole point is that a run never surfaces a raw fetch error or an API's error
 // shape. The mapping is keyed on HTTP status first, and it was corrected 2026-08-11 by a spike
-// against the live API (docs/internal/2026-08-11-t4a-domain-spike.md): the account-scoped
+// against the live API (docs/internal/record/2026-08-11-t4a-domain-spike.md): the account-scoped
 // zone-create refusal returns HTTP 403 with errors[0].code === 0 and the missing permission
 // named in the message, not code 9109 as originally planned. Code 9109 is real, but observed on
 // other resources (GET /user/tokens), so keying on it would miss the refusal this chapter hits
@@ -92,7 +92,7 @@ export const SENDER_NOT_CONFIGURED_CODE = 10204;
 /**
  * HTTP 404 codes for the two Workers Builds GitHub-App authorization refusals, captured live
  * 2026-08-12/13 against the connections PUT (spike amendment 5,
- * docs/internal/2026-08-12-t4c-builds-spike.md): the owner's GitHub account has never
+ * docs/internal/record/2026-08-12-t4c-builds-spike.md): the owner's GitHub account has never
  * authorized Cloudflare's GitHub App at all (8000008), or the App is authorized but this
  * repository is not in its selection (8000012). Both are Pages-era codes reused for Builds, and
  * Cloudflare's message text is factually wrong for this condition (spike amendment 6), so
@@ -551,7 +551,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
     // --- Workers Builds ---------------------------------------------------------------------
     //
     // `GET /user/tokens/verify` is a bare user-scoped route, not under `/accounts/:id` (the
-    // spike's fixture doc: docs/internal/2026-08-12-t4c-builds-spike.md). `result.id` is the
+    // spike's fixture doc: docs/internal/record/2026-08-12-t4c-builds-spike.md). `result.id` is the
     // `cloudflare_token_id` the chapter needs when it registers the admin's pasted token as
     // the build token.
     async verifyToken() {

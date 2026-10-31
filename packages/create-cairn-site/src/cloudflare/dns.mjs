@@ -16,7 +16,7 @@ import { Resolver } from 'node:dns/promises';
 /**
  * The recursive resolvers this module falls back to, and uses to discover a domain's
  * authoritative nameservers in the first place. Pinned to the pair the T4a domain spike itself
- * used (docs/internal/2026-08-11-t4a-domain-spike.md, Step 3).
+ * used (docs/internal/record/2026-08-11-t4a-domain-spike.md, Step 3).
  */
 export const RECURSIVE_SERVERS = ['1.1.1.1', '8.8.8.8'];
 

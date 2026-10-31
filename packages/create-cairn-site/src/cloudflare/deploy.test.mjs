@@ -7,7 +7,7 @@ import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
 
 /**
  * A realistic deploy transcript, pinned from the T3 spike's real wrangler 4.120.1 output
- * (docs/internal/2026-08-10-t3-cloudflare-spike.md, section (e)), with ANSI color codes wrapped
+ * (docs/internal/record/2026-08-10-t3-cloudflare-spike.md, section (e)), with ANSI color codes wrapped
  * around the URL line so the test actually exercises the strip rather than assuming it.
  */
 const DEPLOY_STDOUT_SAMPLE =

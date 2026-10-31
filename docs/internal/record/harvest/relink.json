@@ -30,7 +30,8 @@
       "context": "{ page: 'docs/why-cairn.md', index: 'docs/README.md' }",
       "oldTarget": "docs/README.md",
       "done": "The front-door link check (docs/README.md must link docs/why-cairn.md) runs only while the front door is rebuilt.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "scripts/checks/check-package-files.mjs",
@@ -61,7 +62,8 @@
       "context": "states['front-door'] === 'rebuilt'",
       "oldTarget": "docs/README.md, docs/why-cairn.md",
       "done": "requiredDocsPaths asks for both front-door files only while the front door is rebuilt; every kept page on disk is required in every state.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "scripts/checks/check-symbols.mjs",
@@ -84,7 +86,8 @@
       "context": "{ path: 'docs/why-cairn.md', arm: 'front-door' }",
       "oldTarget": "docs/README.md, docs/why-cairn.md",
       "done": "The symbol sweep skips both front-door files while the front door is absent.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -450,7 +453,8 @@
       "context": "INDEX_FILES = ['docs/README.md']",
       "oldTarget": "docs/README.md",
       "done": "The visuals scan reads the front-door index only while the front door is rebuilt.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "scripts/checks/check-snippets.mjs",
@@ -719,14 +723,16 @@
       "context": "- **Looking up a contract?** [The reference](./docs/reference/README.md)",
       "oldTarget": "docs/why-cairn.md; docs/editors/welcome.md; docs/admin/README.md; docs/extend/README.md",
       "done": "Four audience-track bullets replaced by one reference bullet; the front-door rebuild restores the reader routing (why-cairn, editors, admin, extend).",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "README.md",
       "context": "extend it in.\n",
       "oldTarget": "docs/why-cairn.md",
       "done": "Pointer sentence removed; the front-door rebuild restores the link.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "README.md",
@@ -741,14 +747,16 @@
       "context": "The [docs](./docs/reference/README.md) hold the reference for every export.",
       "oldTarget": "docs/README.md",
       "done": "Front-door link retargeted to the reference index; the front-door rebuild restores the link to the docs home.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "CONTRIBUTING.md",
       "context": "start with\n[what cairn is and is not](./docs/internal/what-cairn-is-and-is-not.md).",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "Two front-door links replaced by the internal scope charter, which the same file already links; the front-door rebuild may restore them.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "CONTRIBUTING.md",
@@ -762,7 +770,8 @@
       "context": "the front door joins them when it is rebuilt.",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "Two deleted front-door paths replaced by a plain statement; the front-door rebuild names its files again.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "SECURITY.md",
@@ -839,7 +848,8 @@
       "context": "absorbed by the why-cairn page (removed pending its rebuild)",
       "oldTarget": "docs/why-cairn.md",
       "done": "Link dropped, the page named in words; the front-door rebuild restores the link.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/admin-smoke-test.md",
@@ -1020,7 +1030,8 @@
       "context": "For the contracts it uses, start at [`docs/reference/README.md`]",
       "oldTarget": "docs/README.md",
       "done": "Front-door link retargeted to the reference index; the front-door rebuild restores the docs-home link.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "examples/showcase/README.md",
@@ -1131,7 +1142,8 @@
       "context": "`admin/` (running the default site, no code), `editors/`",
       "oldTarget": "docs/admin/README.md; docs/editors/README.md; docs/extend/README.md; docs/why-cairn.md",
       "done": "The four track links became plain names, since the pages are deleted; each arm stage restores its link, and the front door (stage 5) restores why-cairn.md. Admin index at 3, editors at 4, extend at 2a.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "CLAUDE.md",
@@ -1195,14 +1207,16 @@
       "context": "borrows that first person.\n\n### Exemplars",
       "oldTarget": "docs/README.md",
       "done": "R2: the old docs/README.md leaves the front-door exemplar list, since capturing it would put its old text before the stage 5 drafter; stage 5 may name a new exemplar.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "- The why-cairn opener in \"Voice\" is the exemplar for the voice on the front door only.",
       "oldTarget": "docs/README.md",
       "done": "R2: the old docs/README.md leaves the front-door exemplar list; stage 5 may name a new exemplar.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-maintenance.md",
@@ -1268,21 +1282,24 @@
       "context": "| The front door: `docs/README.md`, `docs/why-cairn.m",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "e first person: the why-cairn",
       "oldTarget": "why-cairn",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "- The why-cairn opener in \"Voice\" i",
       "oldTarget": "why-cairn",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
@@ -1321,14 +1338,16 @@
       "context": "## The front door (`docs/README.md`, `docs/why-cairn.m",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "ther cairn fits\" → `docs/why-cairn.md`), then editor, adm",
       "oldTarget": "docs/why-cairn.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
@@ -1343,14 +1362,16 @@
       "context": "ade-offs, stays in `docs/why-cairn.md`.",
       "oldTarget": "docs/why-cairn.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
       "context": "ce at its fullest, `docs/why-cairn.md` above all.",
       "oldTarget": "docs/why-cairn.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/docs-register.md",
@@ -1389,7 +1410,8 @@
       "context": "in that arm. Only `docs/why-cairn.md` and `docs/README.m",
       "oldTarget": "docs/why-cairn.md; docs/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "5"
+      "stage": "5",
+      "moot": "The docs/internal/briefs/ and docs/internal/facts/ trees were deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1594,28 +1616,32 @@
       "context": "\"docs/README.md\",",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "The published-files entries for the front-door pages, and for the admin, editors, and extend directories, stay: npm skips an absent path, and check:package-files requires each entry once its arm is rebuilt.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "scripts/checks/arm-state.mjs",
       "context": "FRONT_DOOR_PAGES = ['docs/README.md', 'docs/why-cairn.md']",
       "oldTarget": "docs/README.md; docs/why-cairn.md",
       "done": "The front door counts as rebuilt as soon as either file exists; the shared arm-state function reads it for every narrowed gate.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "CLAUDE.md",
       "context": "`why-cairn.md` for an evaluator",
       "oldTarget": "docs/why-cairn.md",
       "done": "The docs-section line still names the front-door evaluator page in a code span, now with the statement that the front door holds no page until its stage rebuilds it.",
-      "stage": "5"
+      "stage": "5",
+      "restoredIn": "docs-final-5"
     },
     {
       "file": "docs/internal/facts/README.md",
       "context": "The three narrative doc arms (`docs/admin/`, `docs/editors/`",
       "oldTarget": "docs/admin/; docs/editors/; docs/extend/; docs/why-cairn.md",
       "done": "First line of the empty-until-rebuilt statement that replaced the per-arm freeze; it names the front-door evaluator page in a code span.",
-      "stage": "5"
+      "stage": "5",
+      "moot": "The docs/internal/briefs/ and docs/internal/facts/ trees were deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/extend/add-cairn-to-a-sveltekit-app.md",

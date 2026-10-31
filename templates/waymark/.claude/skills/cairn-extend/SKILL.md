@@ -9,7 +9,7 @@ description: Build or change anything in a cairn site that touches /admin, a for
 
 Ask this before writing any admin markup, not after: does DaisyUI already ship this component,
 and if a home-grown one is the answer instead, is there a dated ruling in
-[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) recording the DaisyUI defect that forces it? A home-grown
+[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) (the GitHub copy, which can run ahead of your installed version) recording the DaisyUI defect that forces it? A home-grown
 component the ledger does not explain is a finding to raise, not a pattern to copy.
 `references/daisyui-first.md` carries the current answer for every place cairn's admin
 already diverges from stock DaisyUI, and why.
@@ -21,7 +21,7 @@ Restyling the public site (a theme token, `prose.css`, a directive's rules, a pu
 
 Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
 page that documents it. This skill and its references cite two docs that live in the cairn-cms
-source repository, not in the installed package: [the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
+source repository, not in the installed package, so the links show the current `main` copy: [the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
 The extend pages under `node_modules/@glw907/cairn-cms/docs/extend/` and the reference pages under
 `node_modules/@glw907/cairn-cms/docs/reference/` ship in the installed package.
 `examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/

@@ -1,6 +1,6 @@
 // Reading the admin's current DNS records before the new zone takes over, and writing them into
 // it behind an explicit confirm. Every finding below traces to the T4a domain spike
-// (docs/internal/2026-08-11-t4a-domain-spike.md), particularly its Step 3 and "Addendum 2: the
+// (docs/internal/record/2026-08-11-t4a-domain-spike.md), particularly its Step 3 and "Addendum 2: the
 // scratch domain".
 //
 // THE DEFECT THIS MODULE EXISTS TO PREVENT: a stale negative DNS cache reads exactly like an

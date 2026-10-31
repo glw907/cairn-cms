@@ -16,7 +16,7 @@ The admin runs against cairn's development backend, so it needs no GitHub App, d
 
 ## What to do with it
 
-Read it as the worked example. Once you have your site, restyle or replace it however you like. For the contracts it uses, start at [`docs/reference/README.md`](../../docs/reference/README.md).
+Read it as the worked example. Once you have your site, restyle or replace it however you like. For the contracts it uses, start at [the docs](../../docs/README.md), which routes to the reference.
 
 ## Fixture convention
 

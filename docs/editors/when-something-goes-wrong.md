@@ -87,7 +87,7 @@ To recover:
 1. Leave the page open and keep your text in place.
 1. Select **Save** again.
 
-If the message comes back, copy your text somewhere safe, and then let your site developer know.
+If the message comes back, copy your text somewhere safe, and then tell your site owner.
 
 ## A tag isn't on the list
 
@@ -174,7 +174,7 @@ The **Publish site** button in the top bar publishes every entry that has unpubl
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
 - **"Nothing to publish. Every entry is already live."** Nothing was waiting. No action is needed.
 - **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish site** again.
-- **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, contact your site developer.
+- **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, tell your site owner.
 <!-- vale Microsoft.Contractions = YES -->
 
 ## Where to go next

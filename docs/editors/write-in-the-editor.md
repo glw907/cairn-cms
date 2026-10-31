@@ -1,6 +1,6 @@
 # Write in the editor
 
-This page shows you how to write a page or post in the editor. It covers starting an entry, formatting text, adding links, images, and blocks, checking your spelling, previewing the result, and changing an entry's settings. An entry is one item of content, such as a page or a post.
+This page shows you how to write a page or post in the editor. It covers starting an entry, formatting text, adding links, images, and components, checking your spelling, previewing the result, and changing an entry's settings. An entry is one item of content, such as a page or a post.
 
 You need access to the editor, which [Welcome to the editor](welcome.md) describes. This page stops when your writing is ready. The page [Publish an entry and review its history](publish-and-history.md) covers saving, publishing, and getting an old version back. The page [Add an image](add-an-image.md) covers uploading pictures.
 
@@ -90,7 +90,7 @@ The following table lists the keyboard shortcuts that work across the editor. Ct
 | Switch between Write and Preview | Ctrl+Alt+P |
 | Turn on Focus mode | Ctrl+Shift+F |
 | Turn on Zen | Ctrl+Shift+. |
-| Fold or unfold a layout block | Ctrl+Shift+[ or ] |
+| Fold or unfold a component | Ctrl+Shift+[ or ] |
 | Go to the next or previous issue | F8 or Shift+F8 |
 
 ## Add a link
@@ -148,7 +148,7 @@ Some images are decoration only. You can mark the lead image as **Decorative** i
 
 ## Add components and fragments
 
-A component is a ready-made piece of content that your site defines, such as a two-column layout. If your site has components, the toolbar shows two more buttons. The following table describes them.
+A component is a ready-made piece of content that your site defines, such as a two-column layout. In your text, a component sits between two lines that start with `:::`. If your site has components, the toolbar shows two more buttons. The following table describes them.
 
 | Button | What it does |
 |---|---|
@@ -164,19 +164,19 @@ A fragment is a reusable piece of content that you write once on the **Fragments
 
 The editor adds a line that it displays as a chip reading **Include:** followed by the fragment's title. When no fragment is published, the picker says **No fragments published yet.** and there is nothing to include. To change the shared text, edit the fragment itself.
 
-## Collapse layout blocks
+## Collapse components
 
-A layout block groups part of an entry, and a line that starts with `:::` marks each end of it. Edit the text inside a layout block, and leave the `:::` lines alone.
+In your text, a line that starts with `:::` marks each end of a component. Edit the text inside a component, and leave the `:::` lines alone. A figure uses the same lines, and it folds the same way.
 
-When you open an entry, the editor collapses each layout block to a pill, which makes the surrounding text easier to read.
+When you open an entry, the editor collapses each component to a pill, which makes the surrounding text easier to read.
 
 ```repro
 story: editor/collapsed-layout-block
-alt: Reproduction of an entry with a collapsed layout block shown as a pill between two paragraphs, with a fold control in the margin.
-caption: The pill names the block, shows its title in quotation marks, and counts the lines it holds.
+alt: Reproduction of an entry with a collapsed component shown as a pill between two paragraphs, with a fold control in the margin.
+caption: The pill names the component, shows its title in quotation marks, and counts the lines it holds.
 ```
 
-Selecting a collapsed layout block's pill opens it. The arrow in the margin does the same, and its tooltip reads **Unfold this section** or **Fold this section**. Ctrl+Shift+[ folds the layout block at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed layout block or edit it, the block opens again.
+Selecting a collapsed component's pill opens it. The arrow in the margin does the same, and its tooltip reads **Unfold this section** or **Fold this section**. Ctrl+Shift+[ folds the component at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed component or edit it, the component opens again.
 
 ## Check spelling and style
 

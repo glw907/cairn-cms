@@ -37,7 +37,7 @@ The library shows **Asset uploaded.** when the upload finishes. [Add an image](a
 
 The admin accepts JPEG, PNG, WebP, and GIF files. An animated GIF stays animated. The admin also accepts HEIC photos, the format many phones use. The admin converts a HEIC photo to WebP in your browser before it uploads, so you don't convert it yourself.
 
-The admin doesn't accept SVG files. Your site also sets a size limit for each file. Unless your developer changed it, the limit is 25 MB.
+The admin doesn't accept SVG files. Your site also sets a size limit for each file. Unless your site owner has changed it, the limit is 25 MB.
 
 When the admin refuses a file, it shows one of these messages:
 
@@ -117,7 +117,7 @@ Those keys work in grid view only. Escape clears the selection in either view.
 
 ## Delete images
 
-You can't undo a delete from the admin. The delete window says a developer can bring the image back later. If you delete something by mistake, ask your site developer.
+You can't undo a delete from the admin. The delete window says a developer can bring the image back later. If you delete something by mistake, ask your site owner to have a developer bring it back.
 
 ### Delete several images
 

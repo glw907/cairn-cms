@@ -33,7 +33,7 @@ Treat the email like a password, and don't forward it.
 
 After you confirm, the editor opens on the page your site sets for your role. Without one, it opens on the list of the first content type you can reach, for example **Posts**. The sidebar lists everything else you can reach. At the bottom of the sidebar, **Sign out** ends your session. You stay signed in on that browser for up to 30 days.
 
-If you see a screen that reads **Welcome** followed by your name, your account can sign in but has no content to manage yet. If that's unexpected, check with whoever administers your site.
+If you see a screen that reads **Welcome** followed by your name, your account can sign in but has no content to manage yet. If that's unexpected, ask your site owner.
 
 ## Where to go next
 

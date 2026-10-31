@@ -743,7 +743,7 @@ The following table maps each build message to its cause and its fix.
 | SvelteKit stops the build on an unseen prerenderable route. | The route's `entries` returned nothing. An archive route does that when the corpus fits on one page. | Exempt the route by its id in `handleUnseenRoutes`, as [Build the archive](#build-the-archive) shows. |
 | The build stops with a `NavValidationError`. | A menu in the site config breaks a node rule. | Correct the node as [Add an editable menu](#add-an-editable-menu) lists. |
 
-With `validate: false` in its fourth argument, `createSiteIndexes` doesn't fail the build on invalid frontmatter. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`.
+With `validate: false` in its fourth argument, `createSiteIndexes` doesn't fail the build on invalid frontmatter. An invalid entry, draft or not, is still left out of the index and listed by the index's `problems()`. The build logs one `content.entry_invalid` warning for each.
 
 ## See also
 

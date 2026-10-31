@@ -9,6 +9,7 @@ import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve } from '../render/resolve-include.js';
 import { extractReferenceEdges, type ReferenceEdge } from '../content/references.js';
 import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
+import { log } from '../log/index.js';
 
 /** One concept's descriptor paired with its built index. */
 export interface ConceptIndex {
@@ -69,6 +70,19 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
     const problems = siteProblems(concepts);
     if (problems.length > 0) {
       throw new Error(`cairn: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
+    }
+  } else {
+    // The index still leaves an invalid entry out, so name each one rather than let it vanish.
+    for (const { descriptor, index } of concepts) {
+      for (const problem of index.problems()) {
+        log.warn('content.entry_invalid', {
+          scope: 'index',
+          concept: descriptor.id,
+          id: problem.id,
+          draft: problem.draft,
+          errors: problem.errors,
+        });
+      }
     }
   }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
@@ -173,7 +187,7 @@ export function resolveReferences(
     const hits: ResolvedReference[] = [];
     for (const edge of fieldEdges) {
       const target = site.concept(edge.concept)?.byId(edge.id);
-      if (target) hits.push(projectReference(edge, target));
+      if (target && !target.draft) hits.push(projectReference(edge, target));
     }
     if (isSingle) {
       if (hits.length > 0) resolved[field.name] = hits[0];
@@ -199,14 +213,20 @@ export function createLinkResolver(site: SiteResolver): LinkResolve {
 }
 
 /**
- * A fragment-body resolver backed by the site resolver, for the build. A miss (an unknown id, or no
- *  fragments concept declared) throws, so a dangling `::include` fails the prerender the same way a
- *  dangling `cairn:` link does. The preview uses a manifest-backed resolver built from the edit
+ * A fragment-body resolver backed by the site resolver, for the build. A miss throws, so a
+ *  dangling `::include` fails the prerender the same way a dangling `cairn:` link does. An unknown id
+ *  and a site with no fragments concept each get their own message. The preview uses a manifest-backed resolver built from the edit
  *  screen's fragment targets instead.
  */
 export function createFragmentResolver(site: SiteResolver): FragmentResolve {
   return (id) => {
-    const body = site.concept(FRAGMENTS_CONCEPT_ID)?.byId(id)?.body;
+    const fragments = site.concept(FRAGMENTS_CONCEPT_ID);
+    if (!fragments) {
+      throw new Error(
+        `cairn: ::include "${id}" needs a "${FRAGMENTS_CONCEPT_ID}" concept, and this site declares none`,
+      );
+    }
+    const body = fragments.byId(id)?.body;
     if (body == null) throw new Error(`cairn: fragment "${id}" not found`);
     return body;
   };

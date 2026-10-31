@@ -201,7 +201,16 @@ export function createShellActions(ctx: ContentRoutesContext) {
     // of which already ran above), then filtered against the same resolved-and-filtered visible
     // href set so a count can never leak past a nav entry the session cannot see: an unreachable
     // queue's item is dropped before any rendering or summing.
-    const attentionRaw: AttentionItem[] = ctx.deps.attention ? await ctx.deps.attention({ editor, event }) : [];
+    // A throw or rejection from the site's function renders no badges and logs the failure, so one
+    // failed count never takes every admin page down with it.
+    let attentionRaw: AttentionItem[] = [];
+    if (ctx.deps.attention) {
+      try {
+        attentionRaw = await ctx.deps.attention({ editor, event });
+      } catch (err) {
+        log.warn('admin.attention_failed', { error: String(err) });
+      }
+    }
     const visibleHrefs = collectVisibleHrefs(nav);
     const attention: Record<string, { count: number; label: string }> = {};
     for (const item of attentionRaw) {

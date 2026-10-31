@@ -175,11 +175,9 @@ An `attention` function passed to `createCairnAdmin` returns count badges for si
 To add badges, follow these steps:
 
 1. In the module that calls `createCairnAdmin`, write a function that takes `{ editor, event }` and returns an array of `AttentionItem`.
-2. In that function, catch any error and return an empty array.
+2. In the same module, pass the function as `attention` in the `createCairnAdmin` config.
 
-   A throw from the function fails the whole admin shell load. The catch keeps one failed count from breaking every admin page.
-
-3. In the same module, pass the function as `attention` in the `createCairnAdmin` config.
+If the function throws or rejects, the shell renders no badges for that request, loads normally, and logs [`admin.attention_failed`](../reference/log-events.md) with the error.
 
 Each item carries an `href` for the entry the badge sits on, a `count`, and an optional `label` that defaults to `pending items`. The engine drops an item in each of these cases:
 
@@ -204,13 +202,8 @@ async function attention({
   editor: Editor;
   event: CairnEvent;
 }): Promise<AttentionItem[]> {
-  try {
-    const count = await countPendingEvents(editor, event);
-    return [{ href: '/admin/team/events', count, label: 'pending events' }];
-  } catch {
-    // A failed count drops the badge instead of failing every admin page.
-    return [];
-  }
+  const count = await countPendingEvents(editor, event);
+  return [{ href: '/admin/team/events', count, label: 'pending events' }];
 }
 
 export const admin = createCairnAdmin({ runtime, tidy: { client }, attention });
@@ -274,7 +267,7 @@ The message names the value at fault, except for a blank section label. To clear
 1. In the adapter's `navLayout`, correct the value the message names.
 2. Restart the server.
 
-When every admin page fails to load after you add a `navFilter` or an `attention` function, the function threw or rejected. The shell load does not catch an error from either function. Catch the error inside the function and return a fallback, as the catch in [Add attention badges](#add-attention-badges) does.
+When every admin page fails to load after you add a `navFilter` function, the function threw or rejected. The shell load does not catch an error from it, so catch the error inside the function and return the items unchanged. A throw from `attention` does not fail the page: the badges disappear and the log carries `admin.attention_failed`.
 
 For a failure outside these two, see [Debug your site](debug-your-site.md).
 

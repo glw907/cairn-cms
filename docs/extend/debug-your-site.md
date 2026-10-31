@@ -140,7 +140,7 @@ When a reference fails, work through the following causes in order:
 When an include fails, work through the following causes in order:
 
 1. The build stops with a setup error that names the piece to fix. `cairn: concept "fragments" requires routing: 'embedded'` points at the concept's declaration, and `cairn: concept "fragments" has no glob passed` points at the content module's `createSiteIndexes` call. A stale-manifest error names `npx cairn-manifest`.
-2. The build stops with `cairn: fragment "<id>" not found`. An include names an id with no file in `src/content/fragments`, or the site declares no fragments concept. Set the id to the fragment's filename without `.md`, or declare the concept and add the fragment.
+2. The build stops with `cairn: fragment "<id>" not found`. An include names an id with no file in `src/content/fragments`. Set the id to the fragment's filename without `.md`. If the build instead stops with `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`, declare the concept and add the fragment.
 3. The page shows the literal `::include{fragment="..."}` text. The render doesn't forward `resolveFragment`.
 4. The page shows a notice in place of the include, and the log carries an `include.missing` record with `reason: 'empty_fragment'`. The directive has no `fragment` attribute. Add the fragment's id to it. The build passes this case, so the notice can reach the live site.
 5. The page shows a `Missing fragment` notice, and the log carries `include.missing` with `reason: 'not_found'`. A resolver other than the public build's returned nothing for the id, where the public build's resolver would have thrown. Check the id against the fragment's filename.

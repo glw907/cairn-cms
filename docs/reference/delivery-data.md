@@ -43,7 +43,7 @@ Build the typed per-concept indexes and the cross-concept `site` resolver from o
 per-concept raw globs keyed by concept id. Vite needs the literal glob at the call site, so the
 engine cannot glob on the site's behalf. The returned object carries one `ContentIndex` per concept
 plus a `site` field, so a concept literally named `site` is not supported. `validate: false` opts out
-of the build gate. The showcase builds its one content layer this way.
+of the build gate, and the build then logs a `content.entry_invalid` warning for each invalid entry. The showcase builds its one content layer this way.
 
 ```ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
@@ -410,9 +410,10 @@ Stability tier: Extension API.
 function createFragmentResolver(site: SiteResolver): FragmentResolve;
 ```
 
-Build a fragment-body resolver backed by the site resolver, for the build. A miss (an unknown
-fragment id, or a site with no `fragments` concept declared) throws, so a dangling `::include`
-fails the prerender the same way a dangling `cairn:` link does. `createPublicRoutes` wires this
+Build a fragment-body resolver backed by the site resolver, for the build. A miss throws, so a
+dangling `::include` fails the prerender the same way a dangling `cairn:` link does. An unknown
+fragment id throws `cairn: fragment "<id>" not found`, and a site with no `fragments` concept throws
+`cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`. `createPublicRoutes` wires this
 into every entry render as `resolveFragment`.
 
 ### `resolveReferences`
@@ -434,7 +435,7 @@ field to a `ResolvedReference[]` in edge order. The resolution lives on the cros
 because only that layer reaches another concept's entries: a post's `author` edge targets a `pages`
 entry the posts index alone can't read. The resolver drops an id with no live target rather than
 throwing. The build's `verifyReferences` gate already fails a true dangling edge, so an unresolved id
-at request time is a mid-flight or draft target. A route reads the resolved map alongside the entry
+at request time is a mid-flight target. The resolver also drops a target that is a draft. A route reads the resolved map alongside the entry
 and renders each target as a link.
 
 ```ts

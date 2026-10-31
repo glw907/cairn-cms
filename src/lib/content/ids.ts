@@ -25,12 +25,16 @@ export function filenameFromId(id: string): string {
 }
 
 /**
- * Lowercase a title into a filename-safe slug stem. Apostrophes are dropped so "O'Brien's"
- * becomes "obriens" (no spurious hyphen). All other non-alphanumeric runs collapse to a
- * single hyphen; leading and trailing hyphens are trimmed.
+ * Lowercase a title into a filename-safe slug stem. Accents are stripped first, so "résumé"
+ * becomes "resume"; a letter with no ASCII base, such as one in a non-Latin script, still
+ * becomes a separator. Apostrophes are dropped so "O'Brien's" becomes "obriens" (no spurious
+ * hyphen). All other non-alphanumeric runs collapse to a single hyphen; leading and trailing
+ * hyphens are trimmed.
  */
 export function slugify(title: string): string {
   return title
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/'/g, '')
     .replace(/[^a-z0-9]+/g, '-')

@@ -29,7 +29,19 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
       // resolve a link the build then rejects as a missing target.
       const { frontmatter, body } = parseMarkdown(file.raw);
       for (const key of Object.keys(frontmatter)) if (!declared.has(key)) undeclared.add(key);
-      if (!descriptor.validate(frontmatter, body).ok) continue;
+      const verdict = descriptor.validate(frontmatter, body);
+      if (!verdict.ok) {
+        // The entry gets no manifest row, so the admin's concept list never shows it. Name it,
+        // drafts included, since a draft is exempt from the build's own validation failure.
+        log.warn('content.entry_invalid', {
+          scope: 'manifest',
+          concept: descriptor.id,
+          path: file.path,
+          draft: frontmatter.draft === true,
+          errors: verdict.errors,
+        });
+        continue;
+      }
       manifest.entries.push(manifestEntryFromFile(descriptor, file));
     }
     // Validation drops an undeclared key from the frontmatter a page reads, so a value an author

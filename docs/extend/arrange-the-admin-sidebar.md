@@ -74,7 +74,7 @@ export const cairn = defineAdapter({
   editor: {
     navLayout: [
       { screen: 'posts' }, // renders as Posts, outside any section
-      { screen: 'pages' }, // renders as Pages
+      { screen: 'pages', label: 'Guides' }, // relabeled: renders as Guides
       {
         label: 'Team', // renders as a section header
         children: [
@@ -93,7 +93,7 @@ export const cairn = defineAdapter({
 story: nav/worked-navlayout
 width: wide
 alt: Reproduction of the admin sidebar the example layout resolves to, with a Team section and a trailing group below a divider.
-caption: For an owner on a site with no public menu editor, Posts and Pages render outside any section, the Team section holds Events and Members, and Library and Site settings follow. Tags, Editors, and Help sit below the divider, because the layout never names them.
+caption: For an owner on a site with no public menu editor, Posts and Guides (the Pages concept, relabeled) render outside any section, the Team section holds Events and Members, and Library and Site settings follow. Tags, Editors, and Help sit below the divider, because the layout never names them.
 ```
 
 ## Hide an engine screen

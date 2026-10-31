@@ -12,6 +12,7 @@ import {
   defineAdapter,
   defineConcept,
   createGithubApp,
+  type AssetConfig,
 } from '@glw907/cairn-cms';
 import {
   normalizeAssets,
@@ -47,7 +48,7 @@ const mediaManifest = readCommittedManifest(
 // The media R2 binding, hoisted once and fed to both normalizeAssets below and the adapter's
 // media: member, so the binding name lives in exactly one place rather than two literals that
 // could drift apart.
-const media = { bucketBinding: 'MEDIA_BUCKET' };
+const media: AssetConfig = { bucketBinding: 'MEDIA_BUCKET' };
 
 // The default public media resolver, backing the public build over the committed manifest. The
 // preview path injects its resolveMedia from the edit page's mediaTargets; this default keeps a

@@ -123,14 +123,6 @@ export const REGISTRY: Record<string, CairnCondition> = {
     remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.10`.",
     docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
   },
-  'config.tidy-key-missing': {
-    id: 'config.tidy-key-missing',
-    severity: 'warning',
-    title: 'The Tidy Anthropic key is missing or invalid',
-    why: "Tidy is enabled in site.config.yaml, but no ANTHROPIC_API_KEY is set anywhere the check can read (neither the wrangler vars nor .dev.vars), or Anthropic rejected a literal key value the check could read locally. Tidy's suggestions are unavailable until this is fixed; nothing else on the site is affected, since tidy is an opt-in feature.",
-    remediation: 'Set ANTHROPIC_API_KEY with `wrangler secret put ANTHROPIC_API_KEY` for a deployed site (or in .dev.vars for local development), and confirm the key is current.',
-    docsAnchor: 'is-it-working.md#configure-the-tidy-api-key',
-  },
   'ai.posture-not-effective': {
     id: 'ai.posture-not-effective',
     severity: 'warning',
@@ -234,14 +226,6 @@ export const REGISTRY: Record<string, CairnCondition> = {
     remediation: 'Ask an owner to add your email to the roster through Manage editors.',
     docsAnchor: 'is-it-working.md#youre-not-on-this-sites-editor-roster',
     logEvent: 'auth.identity.unknown',
-  },
-  'admin.login-probe-failed': {
-    id: 'admin.login-probe-failed',
-    severity: 'blocker',
-    title: 'Live admin login probe failed',
-    why: 'A live request to the deployed admin did not answer with the working sign-in envelope (the login page, its CSRF cookie and hidden field, and the request action), so a real editor cannot sign in either. A probe failure has many possible causes; the detail line names the assertion that failed.',
-    remediation: 'Read the failed assertion in the detail line, run cairn doctor against the same site, and work through the deploy guide; the other checks narrow the cause.',
-    docsAnchor: 'is-it-working.md#probe-the-deployed-admin',
   },
 };
 

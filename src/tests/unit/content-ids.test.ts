@@ -34,6 +34,12 @@ describe('id and filename', () => {
 });
 
 describe('slugify', () => {
+  it('strips accents rather than turning them into separators', () => {
+    expect(slugify('Résumé Tips')).toBe('resume-tips');
+    expect(slugify('Crème brûlée')).toBe('creme-brulee');
+    expect(slugify('日本語')).toBe('');
+  });
+
   it('lowercases and hyphenates a title', () => {
     expect(slugify('First Snow')).toBe('first-snow');
   });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createSiteResolver, resolveReferences, createFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
@@ -32,6 +32,35 @@ describe('createSiteResolver', () => {
 
   it('normalizes a trailing slash', () => {
     expect(site().byPermalink('/about/')?.id).toBe('about');
+  });
+
+  it('with validate: false, warns once per invalid entry and still leaves it out', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const s = createSiteResolver(
+        [
+          {
+            descriptor: posts,
+            index: createContentIndex(
+              [
+                { path: '/p/2026-05-31-snowball.md', raw: '---\ntitle: S\n---\n\nNo date.' },
+                { path: '/p/2026-06-01-ok.md', raw: '---\ntitle: OK\ndate: 2026-06-01\n---\n\nFine.' },
+              ],
+              posts,
+            ),
+          },
+        ],
+        { validate: false },
+      );
+      expect(s.concept('posts')?.all().map((e) => e.id)).toEqual(['2026-06-01-ok']);
+      const records = warn.mock.calls
+        .map(([record]) => record as Record<string, unknown>)
+        .filter((record) => record.event === 'content.entry_invalid');
+      expect(records).toHaveLength(1);
+      expect(records[0]).toMatchObject({ scope: 'index', concept: 'posts', id: '2026-05-31-snowball', draft: false });
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('returns undefined for an unmatched path', () => {
@@ -138,6 +167,35 @@ describe('createSiteResolver', () => {
     ]);
   });
 
+  it('drops a reference whose target entry is a draft', () => {
+    const [postsRef, pagesRef] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        routing: 'feed',
+        permalink: '/:slug',
+        datePrefix: 'day',
+        fields: defineFieldset({ author: fields.reference({ concept: 'pages', label: 'Author' }) }),
+      },
+      pages: { dir: 'g', fields: defineFieldset({}) },
+    });
+    const s = createSiteResolver([
+      { descriptor: postsRef, index: createContentIndex([], postsRef) },
+      {
+        descriptor: pagesRef,
+        index: createContentIndex(
+          [
+            { path: '/g/jane-doe.md', raw: '---\ntitle: Jane\ndraft: true\n---\n\nBio.' },
+            { path: '/g/sam.md', raw: '---\ntitle: Sam\n---\n\nBio.' },
+          ],
+          pagesRef,
+        ),
+      },
+    ]);
+
+    expect(resolveReferences(s, postsRef, { author: 'jane-doe' }).author).toBeUndefined();
+    expect(resolveReferences(s, postsRef, { author: 'sam' }).author).toMatchObject({ id: 'sam' });
+  });
+
   // The routable gate (Fragments Task 1): a non-routable ('embedded') concept's entries stay
   // readable in-process through site.concept(), but never surface through the public union.
   it('excludes a non-routable concept from byPermalink and entries(), while concept() still reaches its body', () => {
@@ -209,6 +267,14 @@ describe('createFragmentResolver', () => {
     ]);
     const resolve = createFragmentResolver(s);
     expect(() => resolve('address')).toThrow(/address/);
+    expect(() => resolve('address')).toThrow(/declares none/);
+  });
+
+  it('keeps the unknown-id message distinct from the no-concept message', () => {
+    const s = createSiteResolver([
+      { descriptor: fragments, index: createContentIndex([], fragments) },
+    ]);
+    expect(() => createFragmentResolver(s)('address')).toThrow(/fragment "address" not found/);
   });
 });
 

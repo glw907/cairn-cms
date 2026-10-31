@@ -23,12 +23,12 @@ func docsURL(anchor string) string {
 }
 
 // Format renders checked as cairn doctor's plain-text report: one "STATUS  Label: detail" line per
-// check, keyed to its condition's registry title, then a why/fix/docs block per failure, then a
+// check, keyed to its condition's registry title (a PASS line prints the check's PassTitle), then a why/fix/docs block per failure, then a
 // count summary. No ANSI, so a terminal and a CI log read the same.
 func Format(checked []CheckedResult) string {
 	lines := make([]string, 0, len(checked)+8)
 	for _, cr := range checked {
-		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.label(), cr.Result.Detail))
+		lines = append(lines, fmt.Sprintf("%s  %s: %s", cr.Result.Status, cr.Check.lineTitle(cr.Result.Status), cr.Result.Detail))
 	}
 
 	for _, cr := range checked {

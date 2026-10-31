@@ -83,7 +83,7 @@ export interface AuthGuardConfig {
 /**
  * A site's identity gate, replacing the guard's session-cookie resolution. `resolve` proves
  * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
- * page and the admin.login-probe-failed condition.
+ * page.
  */
 export interface IdentityResolver {
   /** Prove who is making this request, or say why it could not be proven. */
@@ -94,7 +94,7 @@ export interface IdentityResolver {
    * redirects.
    */
   logoutUrl: string;
-  /** The gate's name for the hand-off page and the admin.login-probe-failed condition (default "your organization's sign-in"). */
+  /** The gate's name for the hand-off page (default "your organization's sign-in"). */
   label?: string;
 }
 

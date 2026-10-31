@@ -64,6 +64,8 @@ New findings start in the group they belong to, one per finding, with its perspe
 
 The 94 engine entries moved to `record/2026-10-31-engine-friction-2b-close.md` at the 2b close, each with its boundary-test verdict. New engine findings start here.
 
+- **`extender`.** The `installation-not-covering-repo` remedy sends the reader to "Only select repositories" (`packages/create-cairn-site/src/github/catalogue.mjs:131`), the option that left a first run without the repository it was about to create (found while writing the capture runbook, 2026-10-31). A resume after `createRepo` also stops with `repo-name-collision` (`src/github/repo.mjs:70`) instead of adopting a repository the tool made. Fix candidates: name "All repositories" for a first run, and adopt an empty repository the run itself created.
+
 ### Docs content
 
 The docs-content entries cleared at the 2b close (2026-10-31): each was fixed on its page, found overtaken, or promoted to the `ROADMAP.md` rows named in "Docs content carried from the 2b close". New findings start here.

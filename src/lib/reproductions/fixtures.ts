@@ -261,14 +261,14 @@ export const fixtureVocabulary: VocabularyData = {
 
 /**
  * The `navLayout` seam's worked example (docs/extend/arrange-the-admin-sidebar.md), resolved to
- * the shape `CairnAdminShell` renders: two engine references, a "Team" section of two site entries,
- * two more engine references (one relabeled), then an unreferenced trailing group after the divider
- * (`vocabulary`, `editors`, `help`, none of which the worked example's tree names).
+ * the shape `CairnAdminShell` renders: Posts, then Pages relabeled Guides, a "Team" section of two
+ * site entries, the media screen, Settings relabeled Site settings, and an unreferenced trailing
+ * group after the divider (`vocabulary`, `editors`, `help`, none of which the tree names).
  */
 export const fixtureNavLayout: ResolvedNavLayout = {
   items: [
     { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: true },
-    { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
+    { screen: 'pages', label: 'Guides', href: '/admin/pages', dated: false },
     {
       label: 'Team',
       children: [

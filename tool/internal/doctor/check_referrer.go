@@ -175,6 +175,7 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 // site-wide default.
 var configNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
+	PassTitle: "No site-wide Referrer-Policy: no-referrer",
 	Condition: spine.ConditionConfigNoReferrerBlanket,
 	Run: func(s Snapshot) Result {
 		hooksText, hooksPath, hooksFound, err := readHooksSource(s)

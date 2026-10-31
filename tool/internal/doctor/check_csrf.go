@@ -211,6 +211,7 @@ func csrfVerdict(path string, entries []string, svelteConfigFound bool) Result {
 // and a leftover svelte.config.js all report unchecked. A definite failure outranks unchecked.
 var configCsrfTrustedOrigins = Check{
 	ID:        "config.csrf-trusted-origins",
+	PassTitle: "Trusted origins keep SvelteKit's origin check",
 	Condition: spine.ConditionConfigCSRFTrustedOriginsWildcard,
 	Run: func(s Snapshot) Result {
 		_, svelteConfigFound, err := s.readFile("svelte.config.js")

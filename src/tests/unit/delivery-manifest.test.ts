@@ -121,6 +121,30 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
     expect(records[0]).toMatchObject({ level: 'warn', concept: 'pages', keys: ['robots'] });
   });
 
+  it('warns once per entry it skips as invalid, a draft included', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = buildSiteManifest(requiredTitleAdapter, config, {
+      posts: {
+        '/src/content/posts/2026-01-04-live.md': '---\ntitle: Live\ndate: 2026-01-04\n---\n\nOK.\n',
+        '/src/content/posts/2026-01-05-broken.md': '---\ntitle: ""\ndate: 2026-01-05\ndraft: true\n---\n\nNo title.\n',
+        '/src/content/posts/2026-01-06-broken-too.md': '---\ntitle: ""\ndate: 2026-01-06\n---\n\nNo title.\n',
+      },
+      pages: globs.pages,
+    });
+    expect(manifest.entries.filter((e) => e.concept === 'posts').map((e) => e.id)).toEqual(['2026-01-04-live']);
+    const records = warn.mock.calls
+      .map((call) => call[0] as Record<string, unknown>)
+      .filter((record) => record.event === 'content.entry_invalid');
+    expect(records).toHaveLength(2);
+    expect(records[0]).toMatchObject({
+      scope: 'manifest',
+      concept: 'posts',
+      path: '/src/content/posts/2026-01-05-broken.md',
+      draft: true,
+    });
+    expect(records[1]).toMatchObject({ draft: false });
+  });
+
   it('stays silent for a concept with no undeclared keys', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     buildSiteManifest(adapter, config, globs);

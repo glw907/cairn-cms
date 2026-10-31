@@ -1,14 +1,14 @@
-PASS  Wrangler bindings are missing: EMAIL and AUTH_DB are declared
+PASS  Wrangler bindings are declared: EMAIL and AUTH_DB are declared
 SKIP  Media bucket binding is missing: no media assets configured
-PASS  Workers Logs has no sink: observability.enabled is true
+PASS  Workers Logs has a sink: observability.enabled is true
 FAIL  Trusted origins bypass SvelteKit's origin check: csrf.trustedOrigins in vite.config.ts bypasses SvelteKit's origin check: "*" turns the check off on every route, /admin included (heuristic text read)
-PASS  Site config does not validate: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
-PASS  PUBLIC_ORIGIN is missing or invalid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
-PASS  Site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
-PASS  Custom /admin mount looks incomplete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-PASS  A framework dependency sits below the engine floor: @sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges
+PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
+PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
+PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
+PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+PASS  Framework dependencies meet the engine floor: @sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges
 SKIP  Guard is missing the declared role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
-PASS  The stated AI posture is not the served one: no AI posture is stated (aiPosture is unset). https://example.com/robots.txt carries no AI-crawler directives, consistent with stating nothing.
+PASS  The stated AI posture is the served one: no AI posture is stated (aiPosture is unset). https://example.com/robots.txt carries no AI-crawler directives, consistent with stating nothing.
 
 Trusted origins bypass SvelteKit's origin check failed.
   Why: A csrf.trustedOrigins entry of "*" turns off SvelteKit's Origin check on every route, and an entry of "null" admits every POST from an opaque origin, which any attacker can produce from a sandboxed iframe. cairn's admin keeps its double-submit token and member actions keep their origin compare, but the site's forms have no Origin check at all. Site actions that read a member session through resolveSubject are among those forms; SameSite=Lax stops a cross-site post but not one from a sibling subdomain.

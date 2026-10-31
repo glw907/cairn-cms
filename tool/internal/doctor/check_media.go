@@ -26,6 +26,7 @@ const (
 // wrangler.
 var configMediaBucket = Check{
 	ID:        "config.media-bucket",
+	PassTitle: "Media bucket binding is declared",
 	Condition: spine.ConditionConfigMediaBucketMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

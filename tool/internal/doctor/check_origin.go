@@ -62,6 +62,7 @@ func validatePublicOrigin(origin string) (failDetail string, ok bool) {
 // falls through to the same empty-origin fail every other unconfigured case gets.
 var configPublicOrigin = Check{
 	ID:        "config.public-origin",
+	PassTitle: "PUBLIC_ORIGIN is set and valid",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
 	Run: func(s Snapshot) Result {
 		_, found, err := ReadWranglerConfig(s)

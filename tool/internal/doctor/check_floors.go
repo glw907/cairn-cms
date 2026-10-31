@@ -343,6 +343,7 @@ var lockfiles = []string{"package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 // lockfiles that exists is the one judged.
 var configDependencyFloors = Check{
 	ID:        "config.dependency-floors",
+	PassTitle: "Framework dependencies meet the engine floor",
 	Condition: spine.ConditionConfigDependencyFloorsUnmet,
 	Run: func(s Snapshot) Result {
 		peers, found, err := readEnginePeers(s)

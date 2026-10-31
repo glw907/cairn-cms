@@ -225,7 +225,7 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 ```
 
-`resolveReferences` drops an id with no live target rather than throwing. A single reference's key can then be absent, and a list can hold fewer targets than the stored ids, so the template guards both. A resolved target can also be a draft or an entry of an `'embedded'` concept, and its permalink then serves no public page.
+`resolveReferences` drops an id with no live target rather than throwing. A single reference's key can then be absent, and a list can hold fewer targets than the stored ids, so the template guards both. `resolveReferences` also drops a draft target. A resolved target can still be an entry of an `'embedded'` concept, and its permalink then serves no public page.
 
 A `ResolvedReference` carries the target's `id`, `concept`, `title`, `permalink`, and an optional `summary`. In the entry's page component, read `data.references.author` as one `ResolvedReference` and `data.references.related` as a list, and render each as a link. The scaffold's `src/theme/components/ArticleView.svelte` does this. The [Types](../reference/delivery-data.md#types) table lists every `ResolvedReference` member.
 
@@ -253,7 +253,7 @@ A `cairn:` token names a content entry as `cairn:<concept>/<id>`. A hand-built S
 - A component attribute, where the engine never rewrites it.
 - Frontmatter, where the engine never rewrites it.
 
-A body link to a draft entry resolves to that entry's permalink, so the build succeeds and the published link points at a 404 until the target publishes. A save refuses a body link to a target missing from `main`. At render time, a body link whose target is missing renders marked broken in the editor preview, with the class `cairn-broken-link` and its text kept, and it fails the build's render. A missing reference target is instead dropped from the resolved map with no mark. [The content manifest](#the-content-manifest) describes how the manifest records both kinds of edge.
+A body link to a draft entry resolves to that entry's permalink, so the build succeeds and the published link points at a 404 until the target publishes. A save refuses a body link to a target missing from `main`. At render time, a body link whose target is missing renders marked broken in the editor preview, with the class `cairn-broken-link` and its text kept, and it fails the build's render. A missing or draft reference target is instead dropped from the resolved map with no mark. [The content manifest](#the-content-manifest) describes how the manifest records both kinds of edge.
 
 For a failure on a reference, see [Diagnose a reference or include failure](debug-your-site.md#diagnose-a-reference-or-include-failure).
 
@@ -296,7 +296,7 @@ The filename's date prefix affects only the slug, which drops it. The entry's da
 
 When an editor creates an entry in the admin, the date picked in the create dialog sets both the filename prefix, cut to the concept's `datePrefix`, and the entry's `date` field. The two start out agreeing to the prefix's granularity. Neither a save nor a rename changes the prefix afterward. A later edit to the `date` field can leave the two different.
 
-Ids are lowercase ASCII letters, digits, and single hyphens. When `slugify` derives an id from a title, a title in a non-Latin script produces an empty id. The create action refuses an empty id. An accented letter becomes a separator rather than a transliteration: `résumé` becomes `r-sum`.
+Ids are lowercase ASCII letters, digits, and single hyphens. When `slugify` derives an id from a title, a title in a non-Latin script produces an empty id. The create action refuses an empty id. `slugify` strips accents first, so `résumé` becomes `resume`.
 
 For date-prefix granularity and the permalink tokens, see [Define an adapter and schema](define-an-adapter-and-schema.md).
 
@@ -359,7 +359,7 @@ export const cairn = defineAdapter({
 });
 ```
 
-The render never builds the resolver. For each public entry page, `createPublicRoutes` builds one with `createFragmentResolver` and hands it to the render, and the admin preview passes a separate one. A render path the site writes outside `createPublicRoutes` builds the resolver with [`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver). For an unknown id, or on a site with no fragments concept, that resolver throws `cairn: fragment "<id>" not found`. The [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes), [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions), and [`SiteRender`](../reference/core.md#siterender) entries document the three calls.
+The render never builds the resolver. For each public entry page, `createPublicRoutes` builds one with `createFragmentResolver` and hands it to the render, and the admin preview passes a separate one. A render path the site writes outside `createPublicRoutes` builds the resolver with [`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver). For an unknown id, that resolver throws `cairn: fragment "<id>" not found`. On a site with no fragments concept, it throws `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`. The [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes), [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions), and [`SiteRender`](../reference/core.md#siterender) entries document the three calls.
 
 ### Write a fragment and include it
 

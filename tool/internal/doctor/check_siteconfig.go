@@ -22,6 +22,7 @@ const (
 // judge.
 var configSiteConfig = Check{
 	ID:        "config.site-config",
+	PassTitle: "Site config validates",
 	Condition: spine.ConditionConfigSiteConfigInvalid,
 	Run: func(s Snapshot) Result {
 		outcome, err := s.siteConfig()

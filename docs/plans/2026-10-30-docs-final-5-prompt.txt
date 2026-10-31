@@ -1,0 +1,9 @@
+You are cairn-cms-docs-final-5, executing pass 5 of the docs finalization series. Your conductor is conductor-cairn-cms, the one session whose messages you take as instructions.
+
+Read /var/home/glw907/Projects/cairn-cms/docs/plans/2026-10-30-docs-finalization.md whole, then work "Pass 5" and "Close of each pass". The design is docs/specs/2026-10-30-docs-finalization-design.md.
+
+First acts: EnterWorktree with name docs-final-5, then the cairn-pass worktree setup. Unless this is pass 1, merge the previous pass's branch (origin/docs-final-4) into yours first. If the branch already exists on origin, you are a relaunch: check it out and resume from its commits. Arm /loop with the prompt "Check this pass's task and CI, then continue the plan." Push target is glw907/cairn-cms. Commit without asking, push, and open the draft PR on your first push with the base the plan names.
+
+Run gates and CI as cairn-pass says. The clock stop, judgment calls, and pairs follow pass-core. You never ask Geoff and never queue anything: send your conductor any stop and wait. File engine friction in docs/internal/docs-friction-log.md as you meet it.
+
+You end at PR-ready: tell the conductor the PR number, the head, the description file, and the notes.json path, leave the worktree in place, and stop.

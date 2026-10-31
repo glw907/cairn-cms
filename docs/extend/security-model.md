@@ -360,11 +360,14 @@ same safe-scheme list. It does not remove a `<script>`, `<style>`, or `iframe sr
 
 ### Limits of render safety
 
-The `sanitizeSchema` callback receives cairn's default schema, and its return replaces the floor's
-schema with nothing checking that the strip survived, so the option is additive only by contract. A
-callback that admits `<script>` therefore lets author script through the floor, and the sink guard
-removes no script element. A `javascript:` or `data:` URL stays stripped either way, because the
-sink guard's safe-scheme list comes from GitHub's schema and never from the site's.
+The `sanitizeSchema` callback receives a copy of cairn's default schema, so a change it makes never
+reaches the default or a later build. After the callback returns, the engine removes `script` from
+the schema's `tagNames` and keeps the core `strip` list, so a callback that admits `<script>` still
+loses it. The callback stays responsible for attributes and URL schemes, and a callback that admits
+an unsafe attribute gets it. A callback that returns a schema with no `tagNames` array throws,
+because without that allowlist the floor holds nothing. A `javascript:` or `data:` URL stays
+stripped either way, because the sink guard's safe-scheme list comes from GitHub's schema and never
+from the site's.
 
 `unsafeDisableSanitize` is a code-level switch on the renderer config, never an admin toggle, and it
 removes both the sanitize floor and the sink guard. With it set, `rehype-raw` still parses author

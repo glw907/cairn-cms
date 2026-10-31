@@ -32,6 +32,11 @@ The release holds until the docs are complete.
   entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
   (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine
   batch (`docs/internal/record/2026-10-31-engine-friction-2b-close.md`).
+- Series pass 2 (PR #158) fixed the seven scoped entries, the sidebar figure's fixture, the doctor
+  PASS titles (with a recapture of the doctor fixture and a committed pty recorder), and retired the
+  tidy-key and login-probe conditions. Its boundary test over the remaining entries is the 2b close
+  verdict: the rest ride the final engine batch. The capture runbook is
+  `docs/plans/2026-10-30-capture-runbook.md`.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

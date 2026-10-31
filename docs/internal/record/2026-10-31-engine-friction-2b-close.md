@@ -99,6 +99,13 @@ The boundary test's verdicts for the 94 engine entries in the docs friction log,
 | 93 | class1 PASS 2 | migrate-existing-content |
 | 94 | class1 PASS 2 | migrate-existing-content |
 
+## Pass 2 outcome (2026-10-31)
+
+Series pass 2 (PR #158) fixed entries 46, 19, 93, 94, 62, 54, and 16, each with a test and its page
+edit. 93 and 94 share one new log event, `content.entry_invalid`, with `scope: 'index'` and
+`scope: 'manifest'`. 19 adds `admin.attention_failed`. The entries below stay as the record of the
+finding; the remaining class1-batched and class3 entries ride the final engine batch.
+
 ## The entries
 
 1. **`extender`.** The root barrel exports `parseMarkdown` but not its inverse `serializeMarkdown`, so a migration script reads frontmatter with cairn's parser and must hand-write the `---` block it writes back. A hand-written block is where the YAML traps bite: an unquoted number, date, or boolean reads as empty in a text-like field, and an unquoted timestamp parses to a `Date`. The migrate-existing-content page has to teach quoting rules a one-line export would make moot. Fix candidate: export `serializeMarkdown` (the `matter.stringify` wrapper) from the root barrel beside `parseMarkdown` (`src/lib/content/frontmatter.ts:387-399`, `src/lib/index.ts:54`; found while writing the migrate-existing-content page, 2026-10-12).

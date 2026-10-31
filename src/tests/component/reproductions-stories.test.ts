@@ -984,6 +984,10 @@ describe('nav/worked-navlayout', () => {
     await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Members' })).toBeInTheDocument();
 
+    // The two relabels the worked example shows: Pages renders as Guides, Settings as Site settings.
+    await expect.element(screen.getByRole('link', { name: 'Guides' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Site settings' })).toBeInTheDocument();
+
     // The unreferenced trailing group after the divider: the three engine screens the worked
     // example's own tree never names.
     const fallback = screen.container.querySelector('[data-testid="cairn-nav-fallback"]');

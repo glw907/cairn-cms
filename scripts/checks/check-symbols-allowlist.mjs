@@ -28,6 +28,9 @@ export const ALLOWLIST = new Set([
   'cli-flag:--types', // sv create's flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's flag, not create-cairn-site's
   'cli-flag:--strict', // cairn-guidance check's flag, not create-cairn-site's
+  'cli-flag:--user', // systemctl's flag, in docs/admin/tripwire.md's systemd example
+  'cli-flag:--now', // systemctl enable's flag, in docs/admin/tripwire.md's systemd example
+  'env-var:XDG_CONFIG_HOME', // the XDG base-directory variable docs/admin/credentials.md names for the Linux registry path
 
   // Illustrative binding and secret names a reader chooses for their site: real D1
   // bindings, rate limiters, and GitHub Actions secrets a worked example names, never a cairn

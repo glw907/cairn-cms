@@ -370,7 +370,7 @@ func TestNoMalformedInOperatorCopy(t *testing.T) {
 // exit-codes page states the reason a cut-short site's unfinished checks carry
 // (spine.ReasonNotRun's wire value) and the cap the per-site share divides against, so the
 // prose cannot drift from the arithmetic. The page now sits outside this module, which is why
-// it is read from the repository root rather than beside tripwire.md.
+// it is read from the repository root rather than beside the tool.
 func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
 	assertNamesTheBudget(t, exitCodesPage, readRepoFile(t, exitCodesPage))
 }
@@ -378,8 +378,8 @@ func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
 // TestTripwireNamesTheCutShortSiteAndTheCap covers the other half of criterion 25, over the
 // tool's operator runbook.
 func TestTripwireNamesTheCutShortSiteAndTheCap(t *testing.T) {
-	const rel = "docs/tripwire.md"
-	assertNamesTheBudget(t, rel, readToolFile(t, rel))
+	const rel = "docs/admin/tripwire.md"
+	assertNamesTheBudget(t, rel, readRepoFile(t, rel))
 }
 
 // assertNamesTheBudget holds one document to both numbers the sweep's budget arithmetic rests

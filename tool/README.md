@@ -72,7 +72,7 @@ version's `go.mod` and a new patch tag, never by deleting the tag.
 `cairn` needs three values to reach a site's Cloudflare zone and its GitHub repository:
 `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`. It resolves each one
 from the environment first, then the OS keyring (`cairn auth set` writes to the keyring).
-[The credentials reference](docs/credentials.md) covers scopes, storage, and the platform-specific
+[The credentials reference](../docs/admin/credentials.md) covers scopes, storage, and the platform-specific
 detail for Linux, macOS, and Windows. `cairn auth check` confirms the permissions this tool itself
 needs against your two tokens, either with credentials alone or, naming one registered site
 (`cairn auth check <site>`), against that site's zone and repository too.
@@ -117,7 +117,7 @@ arithmetic you size a scheduler's cap against.
 
 ## Running it unattended
 
-[Running cairn on a schedule](docs/tripwire.md) covers a cron line, a systemd timer and service
+[Running cairn on a schedule](../docs/admin/tripwire.md) covers a cron line, a systemd timer and service
 unit, a launchd plist, and a Windows scheduled task, so a non-zero exit pages someone.
 
 ## For an agent

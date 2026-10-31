@@ -8,15 +8,15 @@ import (
 	"testing"
 )
 
-// credentialsDocPath is tool/docs/credentials.md, relative to this package: the doc
+// credentialsDocPath is docs/admin/credentials.md, relative to this package: the doc
 // TestPermissionTableMatchesCredentialsDoc reads to keep the permission table and the published
 // page from drifting apart.
-const credentialsDocPath = "../../docs/credentials.md"
+const credentialsDocPath = "../../../docs/admin/credentials.md"
 
 // cloudflareBulletPattern matches one Markdown bullet's text.
 var cloudflareBulletPattern = regexp.MustCompile(`(?m)^- (.+)$`)
 
-// TestPermissionTableMatchesCredentialsDoc asserts permissionTable and tool/docs/credentials.md's
+// TestPermissionTableMatchesCredentialsDoc asserts permissionTable and docs/admin/credentials.md's
 // "Token scopes" section name exactly the same Cloudflare labels, and that the GitHub paragraph
 // names both GitHub labels. A permission added to either without the other fails here.
 func TestPermissionTableMatchesCredentialsDoc(t *testing.T) {
@@ -68,7 +68,7 @@ func TestPermissionTableMatchesCredentialsDoc(t *testing.T) {
 }
 
 // TestEveryPermissionHasAProbe closes the gap the doc drift test leaves: that test holds the
-// table and tool/docs/credentials.md together, and nothing holds the table and the two probe
+// table and docs/admin/credentials.md together, and nothing holds the table and the two probe
 // switches together. A row whose label no switch arm matches yields a nil call, which
 // checkPermission invokes unguarded, so the miss would surface as a panic in an operator's
 // terminal rather than as a failing gate.

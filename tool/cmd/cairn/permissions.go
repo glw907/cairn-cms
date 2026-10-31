@@ -18,7 +18,7 @@ const (
 // permission is one row of cairn auth check's permission table: the label the provider's
 // token page uses, the credential variable it belongs to, and the scope confirming it needs.
 //
-// This is the single source both the command's rows and tool/docs/credentials.md's "Token
+// This is the single source both the command's rows and docs/admin/credentials.md's "Token
 // scopes" section read from. Label is a provider-defined name, not prose this package drafts, so
 // it carries no entry in messages.go's operator-copy catalogue; permissions_test.go fails when
 // this table and the doc's list of labels disagree.
@@ -29,7 +29,7 @@ type permission struct {
 }
 
 // permissionTable is cairn auth check's fixed set of nine permissions: the seven Cloudflare
-// dashboard-named groups tool/docs/credentials.md's "Cloudflare" list names, and GitHub's
+// dashboard-named groups docs/admin/credentials.md's "Cloudflare" list names, and GitHub's
 // Contents and Metadata.
 var permissionTable = []permission{
 	{Label: "Workers Scripts", Credential: varCFReadToken, Scope: scopeAccount},

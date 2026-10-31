@@ -65,15 +65,6 @@ describe('condition registry', () => {
     expect(c.docsAnchor).toBe('is-it-working.md#set-the-public-origin');
   });
 
-  it('resolves the login-probe condition (the doctor DX pass addition)', () => {
-    const c = condition('admin.login-probe-failed');
-    expect(c.severity).toBe('blocker');
-    expect(c.why).toMatch(/sign-in/i);
-    expect(c.remediation).toMatch(/doctor/i);
-    expect(c.docsAnchor).toBe('is-it-working.md#probe-the-deployed-admin');
-    expect(c.logEvent).toBeUndefined();
-  });
-
   it('resolves the admin-mount condition (the doctor mount-shape nudge)', () => {
     const c = condition('admin.mount-incomplete');
     expect(c.severity).toBe('warning');
@@ -112,7 +103,7 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at twenty-five entries', () => {
+  it('pins the registry at twenty-three entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
     // auth.role-wiring-missing for the double-wiring doctor check, plus
@@ -127,8 +118,10 @@ describe('condition registry', () => {
     // framework's own Origin check now covers every route, so neither has a cairn-side failure
     // to name), plus config.csrf-trusted-origins-wildcard for the doctor's trustedOrigins check,
     // plus auth.store-roles-unmigrated for the role write a pre-0001 AUTH_DB refuses.
+    // minus config.tidy-key-missing and admin.login-probe-failed, retired with the tidy-key
+    // probe and the live login probe (their docs anchors stay in shipped-anchors.json).
     // Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(25);
+    expect(allConditions()).toHaveLength(23);
   });
 
   it('resolves the trusted-origins condition with its exposure text and anchor', () => {
@@ -162,15 +155,6 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/media bucket/i);
     expect(c.remediation).toMatch(/r2_buckets/);
     expect(c.docsAnchor).toBe('is-it-working.md#declare-the-media-bucket-binding');
-    expect(c.logEvent).toBeUndefined();
-  });
-
-  it('resolves the tidy-key condition (its own id, no longer borrowing config.bindings-missing)', () => {
-    const c = condition('config.tidy-key-missing');
-    expect(c.severity).toBe('warning');
-    expect(c.why).toMatch(/ANTHROPIC_API_KEY/);
-    expect(c.remediation).toMatch(/wrangler secret put ANTHROPIC_API_KEY/);
-    expect(c.docsAnchor).toBe('is-it-working.md#configure-the-tidy-api-key');
     expect(c.logEvent).toBeUndefined();
   });
 
@@ -220,7 +204,6 @@ describe('condition registry', () => {
       'config.public-origin-invalid',
       'config.dependency-floors-unmet',
       'config.no-referrer-blanket',
-      'config.tidy-key-missing',
     ]) {
       expect(condition(id).logEvent, id).toBeUndefined();
     }

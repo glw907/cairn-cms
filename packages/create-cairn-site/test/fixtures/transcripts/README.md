@@ -126,6 +126,27 @@ dependency-floor line reads `UNCHECKED` rather than `PASS` or `FAIL`: a site ins
 way, with a real copy of the package under its `node_modules`, would not hit this. The capture
 is real and unedited either way, per the never-edit rule.
 
+### Recapture (2026-10-31)
+
+`04-doctor-report.txt` was recaptured whole from a local build of the `cairn` tool at source commit
+`10d6f9811ca23bf563bf366cae6df6e8cd71289e` (branch `docs-final-2`), because that commit makes each
+PASS line print a pass title ("Wrangler bindings are declared") in place of the failure-phrased
+registry title the first capture printed beside PASS. The site is `examples/showcase` at the same
+commit, built with `npm run build` and given `npm run cairn:manifest` first, so the facts-derived
+checks report real results, not the degraded `unknown`. The `cairn` binary came from
+`go build ./cmd/cairn` in `tool/`, on `PATH`, and the ambient credentials listed under
+"Environment" were cleared. The command ran through the committed recorder,
+`ptycapture.py` in this directory, on a 100 by 40 pty:
+
+```
+python3 -I ptycapture.py 04-doctor-report.txt -- bash -x -c 'cairn doctor .'
+```
+
+The recorder writes pty bytes only. Unlike `script -q`, it adds no start or done banner. It also
+answers prompts by pattern (`--answer 'PROMPT=REPLY'`), which the doctor run does not need and the
+`create-cairn-site` runs do. The dependency-floor line still reads `UNCHECKED` for the symlink
+reason above.
+
 ## The captured sign-in token is dead
 
 `01d-resume.txt` records the bootstrap magic link with its one-time token, which the redaction

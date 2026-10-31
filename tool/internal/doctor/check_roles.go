@@ -102,6 +102,7 @@ func guardRoleWiring(text string) guardWiring {
 // factsAbsentDetail when site-facts.json is absent.
 var authRoleWiring = Check{
 	ID:        "auth.role-wiring",
+	PassTitle: "Guard carries the declared role vocabulary",
 	Condition: spine.ConditionAuthRoleWiringMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

@@ -12,6 +12,9 @@ import (
 type Check struct {
 	// ID names the check, stable across releases.
 	ID string
+	// PassTitle is the label a PASS line prints. A condition's registry title names the failure
+	// ("Wrangler bindings are missing"), which reads as a contradiction beside PASS.
+	PassTitle string
 	// Condition is the cairn-doctor condition id this check's failure raises. A check whose
 	// failure raises no catalogued condition leaves this spine.ConditionNone.
 	Condition spine.Condition
@@ -115,6 +118,15 @@ func conditionText(id spine.Condition) spine.ConditionText {
 // check with no condition (Condition: spine.ConditionNone) has no label.
 func (c Check) label() string {
 	return conditionText(c.Condition).Title
+}
+
+// lineTitle returns the title a report line prints for status: the PassTitle on a PASS when the
+// check declares one, otherwise the registry label.
+func (c Check) lineTitle(status Status) string {
+	if status == StatusPass && c.PassTitle != "" {
+		return c.PassTitle
+	}
+	return c.label()
 }
 
 // checks is the complete doctor check set cairn doctor runs, in report order: the eight

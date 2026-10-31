@@ -279,11 +279,11 @@ To run the migration and check it, follow these steps:
 
 6. If you changed the script, repeat these steps from the first step.
 
-For the migration's causes of a listed field, see [Diagnose a failed check](#diagnose-a-failed-check). An invalid draft never fails the build, though the index still leaves it out. To find one, see [Verify the migrated entries](#verify-the-migrated-entries).
+For the migration's causes of a listed field, see [Diagnose a failed check](#diagnose-a-failed-check). An invalid draft never fails the build, though the index and the manifest still leave it out. To find one, see [Verify the migrated entries](#verify-the-migrated-entries).
 
 - To let the build pass while entries still fail, in the module that calls `createSiteIndexes`, pass `{ validate: false }` as the call's fourth argument.
 
-With validation off, each invalid entry drops from the site with no error.
+With validation off, each invalid entry still drops from the site, and the build logs one `content.entry_invalid` warning with `scope: 'index'` for it, naming its concept, id, and field errors.
 
 - Once every migrated entry validates, remove `{ validate: false }` from the `createSiteIndexes` call.
 
@@ -291,28 +291,24 @@ For the signature, see [`createSiteIndexes`](../reference/delivery-data.md#creat
 
 ## Verify the migrated entries
 
-The content index records each entry that fails its validator as a content problem, with its field errors, and leaves it out of the site.
+An entry that fails its validator is left out of the site and out of the content manifest, and the build logs a `content.entry_invalid` warning for it.
 
 To verify the migration, follow these steps:
 
-1. In the module that calls `createSiteIndexes`, add a temporary line that logs each migrated concept's problems, such as `console.log(indexes.posts.problems());`.
+1. In the project directory, run `npx cairn-manifest`.
+2. In its output, confirm that no `content.entry_invalid` warning appears.
 
-   On a scaffolded site, that module is `src/chassis/content.ts`, which holds the result as `indexes`.
+   Each warning names the file's `path`, its `draft` flag, and its field `errors`. A warning for an entry with `draft: true` marks a draft that the build tolerates but the admin's concept list omits, because the entry gets no manifest row. For the warning's fields, see [Log events](../reference/log-events.md).
 
-2. In the project directory, run `npm run build`.
-3. In the build output, confirm that each logged list is empty.
+3. In the same output, confirm that no `content.field_undeclared` warning names a key you meant to keep.
+4. In the project directory, run `npm run build`.
+5. In the build output, confirm that no `content.entry_invalid` warning with `scope: 'index'` appears.
 
-   Each listed problem names the entry's `id`, its `draft` flag, and its field `errors`. A listed entry with `draft: true` passed the build but still fails its validator. For the problem's shape, see the [delivery data types](../reference/delivery-data.md#types).
+   That warning appears only while `validate: false` is set.
 
-4. In the same module, remove the logging line.
-5. In the project directory, run `npx cairn-manifest`.
-6. In its output, confirm that no `content.field_undeclared` warning names a key you meant to keep.
-
-   For the warning's fields, see [Log events](../reference/log-events.md).
-
-7. In the project directory, run `npm run dev`.
-8. In a browser, open a migrated entry at its permalink.
-9. On the page, confirm that its images load and that no shortcode shows as literal text.
+6. In the project directory, run `npm run dev`.
+7. In a browser, open a migrated entry at its permalink.
+8. On the page, confirm that its images load and that no shortcode shows as literal text.
 
 ## Diagnose a failed check
 

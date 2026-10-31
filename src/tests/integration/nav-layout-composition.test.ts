@@ -299,6 +299,31 @@ describe('shellLoad: the attention dep filters, drops, defaults, and calls once 
     });
   });
 
+  it('renders no badges and logs admin.attention_failed when the dep throws or rejects', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      for (const attention of [
+        () => {
+          throw new Error('sync boom');
+        },
+        () => Promise.reject(new Error('async boom')),
+      ]) {
+        warn.mockClear();
+        const routes = createContentRoutes({ runtime: accessRuntime(), attention });
+
+        const webmaster = await routes.shellLoad(accessEvent('webmaster', 'editor'));
+        if (webmaster.shell.public) throw new Error('expected authed shell');
+        expect(webmaster.shell.attention).toEqual({});
+        const records = warn.mock.calls.map(([record]) => record as { event: string; error: string }).filter((r) => r.event === 'admin.attention_failed');
+        expect(records).toHaveLength(1);
+        expect(records[0]?.error).toMatch(/boom/);
+        await webmaster.shell.pendingEntries;
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('serializes an empty record when no attention dep is configured', async () => {
     const routes = createContentRoutes({ runtime: accessRuntime() });
 

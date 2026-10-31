@@ -22,7 +22,18 @@ every route. No `tool/v2.0.0` tag exists yet.
   a remaining `svelte.config.js` each report `UNCHECKED` with a detail. Its docs anchor,
   `is-it-working.md#keep-sveltekits-origin-check-on`, joins the shipped-anchor list.
 
+### Changed
+
+- **A `cairn doctor` PASS line prints the check's pass title.** The plain-text report keyed every
+  line to the condition's registry title, which names the failure, so a passing check read "PASS
+  Wrangler bindings are missing". Each check now declares a `PassTitle`, and the other statuses keep
+  the registry title. The `--json` output carries no title and is unchanged.
+
 ### Removed
+
+- **The `config.tidy-key-missing` and `admin.login-probe-failed` condition ids.** No check raises
+  either. The ids leave `spine.Conditions()`, and their docs anchors, `configure-the-tidy-api-key` and
+  `probe-the-deployed-admin`, stay on the shipped list because released binaries print them.
 
 - **The `config.csrf-disable` check id, and the `config.csrf-disable-missing` and
   `auth.csrf-origin-mismatch` condition ids.** SvelteKit's own origin check now covers every route,

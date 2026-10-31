@@ -2,6 +2,16 @@
 
 ### Added
 
+- **A `content.entry_invalid` log event.** `createSiteIndexes` with `validate: false` logs one warning
+  per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
+  skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
+  migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
+  `CAIRN_LOG_EVENTS` gain the member, and the event table in `docs/reference/log-events.md` its row.
+
+  Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
+
+- **An `admin.attention_failed` log event.** See the `attention` entry under Fixed.
+
 - **`cairn-audit --fail-on advisory`.** The audit exits nonzero when any unsuppressed advisory
   survives, for a pipeline that wants the compositional checks to fail the build. A bare call keeps
   the rule that only an error-tier finding gates, `--fail-on error` states that default, and any other
@@ -484,6 +494,11 @@
   Consumers may: expect a conflict from publish when a Library delete, another publish, or a
   dictionary add lands at the same moment, and retry. There is no signature or option change.
 
+- **`cairn doctor` PASS lines print a pass title.** A PASS line used the condition's registry title,
+  which names the failure, so a passing check read "PASS  Wrangler bindings are missing". Each check
+  now declares a `PassTitle` ("Wrangler bindings are declared"), and the other statuses keep the
+  registry title. Anything that matches the text of a PASS line needs changing.
+
 ### Removed
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
@@ -503,6 +518,10 @@
   `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
   `config.csrf-disable-missing` retires with its check; the heading anchors `non-admin-origin-rejected`
   and `wire-cairns-csrf-guard` stay on the shipped list because released binaries print them.
+- **The `config.tidy-key-missing` and `admin.login-probe-failed` conditions.** No check raises
+  either: the tidy-key probe and the live login probe are gone from the tool. The registry now names
+  23 ids. Their heading anchors, `configure-the-tidy-api-key` and `probe-the-deployed-admin`, stay on
+  the shipped list because released binaries print them.
 
 - The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
   `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
@@ -516,6 +535,23 @@
   `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
 
 ### Fixed
+
+- **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
+  throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
+  error. A site no longer needs its own try/catch around the function.
+- **`resolveReferences` skips a draft target,** as its documentation always said. A reference to a
+  draft entry used to resolve to a link to a page that does not exist.
+
+  Consumers must: a template that read a draft target from the resolved map now finds the key absent
+  and guards for that.
+
+- **A site with no `fragments` concept gets its own `createFragmentResolver` error.** An `::include`
+  there throws `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`
+  instead of the unknown-id message, which sent the reader looking for a missing file.
+- **`slugify` strips accents before it removes other characters.** A title with `résumé` now derives
+  `resume` where it derived `r-sum`. Ids already on disk are unchanged.
+- **The scaffold's media constant is typed `AssetConfig`.** The showcase and the `waymark` template
+  annotate it, so the `configure-media` page's edits type-check as written.
 
 - **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
   `source(none)` now counts as excluding `.claude/`, and the guidance tree hash leaves out the

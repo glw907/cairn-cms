@@ -26,6 +26,7 @@ const (
 // configBindings checks that the wrangler config declares both the EMAIL and AUTH_DB bindings.
 var configBindings = Check{
 	ID:        "config.bindings",
+	PassTitle: "Wrangler bindings are declared",
 	Condition: spine.ConditionConfigBindingsMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadWranglerConfig(s)

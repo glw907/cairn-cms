@@ -281,6 +281,7 @@ func robotsURL(origin string) (target *url.URL, ok bool) {
 // did not produce one; it never dials itself.
 var aiPostureEffective = Check{
 	ID:        "ai.posture-effective",
+	PassTitle: "The stated AI posture is the served one",
 	Condition: spine.ConditionAIPostureNotEffective,
 	Run: func(s Snapshot) Result {
 		facts, found, err := readSiteFacts(s)

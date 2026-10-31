@@ -28,7 +28,6 @@ const (
 	ConditionConfigPublicOriginInvalid        Condition = "config.public-origin-invalid"
 	ConditionConfigSiteConfigInvalid          Condition = "config.site-config-invalid"
 	ConditionConfigDependencyFloorsUnmet      Condition = "config.dependency-floors-unmet"
-	ConditionConfigTidyKeyMissing             Condition = "config.tidy-key-missing"
 	ConditionAIPostureNotEffective            Condition = "ai.posture-not-effective"
 	ConditionAuthStoreUnreachable             Condition = "auth.store-unreachable"
 	ConditionAuthStoreUnmigrated              Condition = "auth.store-unmigrated"
@@ -41,7 +40,6 @@ const (
 	ConditionAdminMountIncomplete             Condition = "admin.mount-incomplete"
 	ConditionAuthIdentityUnresolved           Condition = "auth.identity-unresolved"
 	ConditionAuthIdentityUnknown              Condition = "auth.identity-unknown"
-	ConditionAdminLoginProbeFailed            Condition = "admin.login-probe-failed"
 )
 
 // conditions backs Conditions, ported from src/lib/diagnostics/conditions.ts's REGISTRY.
@@ -57,7 +55,6 @@ var conditions = []Condition{
 	ConditionConfigPublicOriginInvalid,
 	ConditionConfigSiteConfigInvalid,
 	ConditionConfigDependencyFloorsUnmet,
-	ConditionConfigTidyKeyMissing,
 	ConditionAIPostureNotEffective,
 	ConditionAuthStoreUnreachable,
 	ConditionAuthStoreUnmigrated,
@@ -70,7 +67,6 @@ var conditions = []Condition{
 	ConditionAdminMountIncomplete,
 	ConditionAuthIdentityUnresolved,
 	ConditionAuthIdentityUnknown,
-	ConditionAdminLoginProbeFailed,
 }
 
 // Conditions is every known condition id. 2.0 seam kept on purpose: Conditions has no caller in

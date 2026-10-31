@@ -413,13 +413,15 @@ page describes the `timeZone` option.
 ## A stale `site-facts.json` passes the build
 
 The build fails when the committed `site-facts.json` no longer matches the adapter, but when the
-build cannot derive the facts from the adapter, it reports the file current. In the normal case, the
+build cannot derive the facts from the adapter, it skips the check and reports the file current. In the normal case, the
 build error names the file and the fix. The [`site-facts.json`
 contract](../reference/site-facts.md#who-writes-it-and-who-verifies-it) describes what the file
 carries and the warning for an absent file.
 
-An adapter that throws for an unrelated reason leaves the build unable to derive the facts, and the
-build gives no signal. The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference
+An adapter that throws for an unrelated reason leaves the build unable to derive the facts. The
+build then skips the check and prints a warning that the `site-facts.json` check was skipped, with
+the adapter's error message as the reason. The warning doesn't fail the build, so read the build
+log for it. The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference
 describes the command that regenerates the file. After a change to the adapter's media bucket
 binding, its `roles`, or its `aiPosture`, the following steps bring the file current:
 

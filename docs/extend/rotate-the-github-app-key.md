@@ -77,10 +77,12 @@ To confirm the new key, follow these steps:
    The expected response is the following:
 
    ```json
-   {"ok":true,"checks":{"githubAppSigning":{"ok":true}}}
+   {"ok":true,"checks":{"githubAppSigning":{"ok":true,"fingerprint":"SHA256:<digest>"}}}
    ```
 
-   The scaffold's route answers with status 503 when the check fails, and a hand-built route answers 200 unless it sets the status from `ok`, so read the `ok` field in either case. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
+   The `fingerprint` is the `SHA256:` fingerprint of the key's public half. Compare it with the fingerprint that GitHub lists for the new key on the App's settings page.
+
+   The scaffold's route answers with status 503 when the check fails, and a hand-built route answers 200 unless it sets the status from `ok`, so read the `ok` field in either case. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key, unless you request `/healthz?live=1`. That request also mints one installation token and reports the result under `githubAppToken`. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
 
 2. Wait 55 minutes from the push, so that any token minted with the old key has expired from the cache.
 
@@ -94,7 +96,7 @@ To confirm the new key, follow these steps:
 
 5. In the editor, publish the edit.
 
-   The note reads "Published. The live site is rebuilding." That completed publish from the deployed Worker confirms the new key. If the publish does not complete, go to [Recover from a failed key](#recover-from-a-failed-key).
+   The note reads "Published. The live site is rebuilding." That completed publish from the deployed Worker confirms the new key. If the publish does not complete, go to [Recover from a failed key](#recover-from-a-failed-key). A publish refused on a stale branch head is not a key failure. It stays in the editor with the message "Your edits are saved. Publish again."
 
 6. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query records whose `event` field is `github.unreachable`, over the time since the push.
 

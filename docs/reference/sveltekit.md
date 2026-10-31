@@ -154,11 +154,10 @@ against a fake backend. On `/admin`, `/media`, and
 bucket, and it leaves every other path untouched.
 
 The `runtime` member is required, as with the guard: the runtime `composeRuntime` returned for the
-site's adapter. The handle mints an owner editor on each `/admin` request and attaches
-`runtime.access ?? {}` to `locals.cairnAccess`, so the access helpers read the same map under
-either hook. It resolves no capability from `runtime.roles`, because the minted editor always has
-owner capability. It runs no CSRF check, so a custom admin action's own check is the first to
-refuse a bad token here.
+site's adapter. The handle mints an owner editor on each `/admin` request. It attaches
+`runtime.access ?? {}` to `locals.cairnAccess`, so the access helpers read the same map under either hook.
+The minted editor always has owner capability, so the handle resolves none from `runtime.roles`.
+The handle runs no CSRF check. A custom admin action's own check is the first to refuse a bad token.
 
 The `content` member is `'repository'` (the default) or `'fixtures'`. `'repository'` serves the site's
 working tree through an in-memory overlay, writes nothing to disk, and throws under `wrangler dev`

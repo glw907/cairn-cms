@@ -154,10 +154,10 @@ A block is a ready-made piece of content that your site defines, such as a two-c
 
 | Button | What it does |
 |---|---|
-| **Insert block** | Opens a dialog where you search or browse, choose a block, fill in its form, and select **Insert**. |
-| **Edit block** | Reopens the form for the block where your cursor is. |
+| **Insert block** | Opens a dialog where you browse the blocks, choose one, fill in its form, and select **Insert**. A site with many blocks also gets a search box. |
+| The edit button, next to **Insert block** | Reopens the form for the block where your cursor is. |
 
-When the cursor is outside a block, the second button does nothing, and its tooltip tells you to place the cursor in a block. For a block that has no form, it reads **This block can't be edited in the form. Edit it as markdown.**
+When the cursor is outside a block, the edit button is dimmed and does nothing. Hover over it to see why. For a block that has no form, it reads **This block can't be edited in the form. Edit it as markdown.**
 
 A fragment is a reusable piece of content that you write once on the **Fragments** screen and include in many entries. If your site has fragments, the toolbar shows **Include a fragment**. To include one, follow these steps:
 
@@ -168,7 +168,7 @@ The editor adds a line that it displays as a chip reading **Include:** followed 
 
 ## Collapse blocks
 
-A line that starts with `:::` marks each end of a block. Edit the text inside a block, and leave the `:::` lines alone. A figure uses the same lines, so it's a block too.
+Edit the text inside a block, and leave the `:::` lines alone. A figure is a block too.
 
 When you open an entry, the editor collapses each block to a pill, which makes the surrounding text easier to read.
 

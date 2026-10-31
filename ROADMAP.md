@@ -341,7 +341,7 @@ The original decision framing, for the record:
     `arrange-the-admin-sidebar` cannot show a real relabel; the page was reworded to match. Trigger:
     the next engine pass, which owns `src/lib/reproductions/`.
   - The `siteConfigPath` and glob explanations repeat across `define-an-adapter-and-schema`,
-    `turn-on-tidy`, `build-the-public-routes`, and `reuse-content-across-entries`. Trigger: part 2's
+    `turn-on-tidy`, and `build-the-public-routes`. Trigger: part 2's
     consistency read.
   - `act-on-newly-published-entries`: one read found `buildNewlyPublished` in npm 0.98.0, an earlier
     read did not, so the page's unreleased-engine disposition is unsettled. Trigger: check the

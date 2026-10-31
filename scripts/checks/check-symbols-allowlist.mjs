@@ -150,7 +150,6 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
   'file-path:src/lib/markdown-components.ts', // docs/extend/write-a-markdown-component.md's component module on the tutorial's site, a file the reader creates
   'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
-  'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
   'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
   'file-path:node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's tree
   'file-path:dist/components/cairn-admin.css', // docs/extend/migration-notes.md's per-version record of a pre-rename release, which must keep the path that was real when it shipped

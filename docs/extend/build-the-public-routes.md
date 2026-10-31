@@ -195,7 +195,7 @@ export const entries: EntryGenerator = () => routes.entries();
 export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 ```
 
-The scaffold's module also resolves the entry's reference fields in the same load. [Resolve the targets on the entry route](link-content-with-references.md#resolve-the-targets-on-the-entry-route) shows that step. A minimal entry page renders the head, then the body:
+The scaffold's module also resolves the entry's reference fields in the same load. [Resolve the targets on the entry route](content-model.md#resolve-the-targets-on-the-entry-route) shows that step. A minimal entry page renders the head, then the body:
 
 <!-- snippet-check-skip: reads the route's generated $types -->
 ```svelte

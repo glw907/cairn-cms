@@ -122,6 +122,27 @@ once, when the factory is built, as the [log events](../reference/log-events.md)
 Without that flag, the gap leaves no record. The fix is a code change that passes the site's `resolveMedia` to
 `createPublicRoutes`, as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
 
+## Diagnose a reference or include failure
+
+A failed reference or include either stops startup or the build with a `cairn:` error, or leaves the page without the link or the fragment. Most of these failures log no event, except an include that names no fragment. [Reference fields](content-model.md#reference-fields) and [Fragments](content-model.md#fragments) in Content model describe each mechanism.
+
+When a reference fails, work through the following causes in order:
+
+1. Composing the site's content runtime fails with an error naming a concept, a field, and an undeclared target. The field's `concept` names no concept under `content`. Fix the name or declare the concept.
+2. The build fails with an error naming a source entry, a field, and a missing target. A published reference points at an entry that no longer exists. In the admin, pick an existing target for that field, or restore the target entry.
+3. The published page shows no link where a reference is set. The route returns no `references` map, the template reads another key, or the target has no live entry and was dropped.
+4. An admin delete or rename refuses with a 409, or with a 503 when the reference index can't be built. The refusal leaves no log record, so the editor's banner is the only trace.
+
+When an include fails, work through the following causes in order:
+
+1. The build stops with a setup error that names the piece to fix. `cairn: concept "fragments" requires routing: 'embedded'` points at the concept's declaration, and `cairn: concept "fragments" has no glob passed` points at the content module's `createSiteIndexes` call. A stale-manifest error names `npx cairn-manifest`.
+2. The build stops with `cairn: fragment "<id>" not found`. An include names an id with no file in `src/content/fragments`, or the site declares no fragments concept. Set the id to the fragment's filename without `.md`, or declare the concept and add the fragment.
+3. The page shows the literal `::include{fragment="..."}` text. The render doesn't forward `resolveFragment`.
+4. The page shows a notice in place of the include, and the log carries an `include.missing` record with `reason: 'empty_fragment'`. The directive has no `fragment` attribute. Add the fragment's id to it. The build passes this case, so the notice can reach the live site.
+5. The page shows a `Missing fragment` notice, and the log carries `include.missing` with `reason: 'not_found'`. A resolver other than the public build's returned nothing for the id, where the public build's resolver would have thrown. Check the id against the fragment's filename.
+
+The [log events](../reference/log-events.md) reference lists the `include.missing` record's fields, and [Find the records](#find-the-records) shows how to query for it.
+
 ## Admin action events
 
 The wrappers around a custom screen's form actions, `createAdminAction` and `createSectionAction`,

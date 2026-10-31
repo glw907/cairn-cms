@@ -13,8 +13,6 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Content model](./content-model.md)
 - [Define an adapter and schema](./define-an-adapter-and-schema.md)
 - [Write a markdown component](./write-a-markdown-component.md)
-- [Link content with references](./link-content-with-references.md)
-- [Reuse content across entries](./reuse-content-across-entries.md)
 - [Configure media](./configure-media.md)
 - [Migrate existing content](./migrate-existing-content.md)
 

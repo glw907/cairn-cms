@@ -16,7 +16,7 @@ This page leaves the following topics to the pages that cover them:
 - What the sanitize floor and the sink guard protect, in [Render safety](security-model.md#render-safety).
 - Hydrating a component in the browser, in [Add an island](add-an-island.md).
 - Styling the rendered output, in [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown).
-- Fragments and `::include`, in [Reuse content across entries](reuse-content-across-entries.md).
+- Fragments and `::include`, in [Content model](content-model.md#fragments).
 - The media resolver and missing assets, in [Configure media](configure-media.md).
 
 ## Before you begin
@@ -303,6 +303,6 @@ The following pages document the renderer and the tasks beside this one:
 - [Render safety](security-model.md#render-safety): what the sanitize floor and the sink guard protect.
 - [Add an island](add-an-island.md): hydrating a component in the browser.
 - [Style rendered markdown](theme-your-public-site.md#style-rendered-markdown): styling the rendered output.
-- [Reuse content across entries](reuse-content-across-entries.md): fragments and `::include`.
+- [Content model](content-model.md#fragments): fragments and `::include`.
 - [Configure media](configure-media.md): the media resolver and missing assets.
 - [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md): the hand-built site, its adapter, and its render function.

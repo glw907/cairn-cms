@@ -14,7 +14,7 @@ The following tasks belong to other pages:
 - Writing and registering the component that replaces a shortcode: [Write a markdown component](write-a-markdown-component.md).
 - Looking up what the save-time validation checks: [Content model](content-model.md).
 - Turning media on: [Configure media](configure-media.md).
-- Rewriting the old site's internal links as `cairn:` links: [Link content with references](link-content-with-references.md).
+- Rewriting the old site's internal links as `cairn:` links: [Content model](content-model.md#cairn-body-links-and-reference-fields).
 
 This page leaves out redirects from the old site's addresses.
 
@@ -362,6 +362,6 @@ The following pages cover what this migration depends on and the links between m
 - [Content model](content-model.md): entry identity and the frontmatter keys the engine reads.
 - [Write a markdown component](write-a-markdown-component.md): the components that replace shortcodes.
 - [Configure media](configure-media.md): turning media on before moving images.
-- [Link content with references](link-content-with-references.md): linking migrated entries with `cairn:` links.
+- [Content model](content-model.md#cairn-body-links-and-reference-fields): linking migrated entries with `cairn:` links.
 - [Build the public routes](build-the-public-routes.md): the index and routes that read migrated entries.
 - [`parseMarkdown`](../reference/core.md#parsemarkdown): the parser the script reads each old file with.

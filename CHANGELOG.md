@@ -551,7 +551,7 @@
 
 ### Documentation
 
-- **Two pages fold into Content model, and the docs close their stage 2b backlog.** The pages Link
+- **Two pages fold into Content model.** The pages Link
   content with references and Reuse content across entries are now the Reference fields and Fragments
   sections of Content model, and their diagnosis rows sit in Debug your site. The shipped
   `cairn-extend` router links the extend pages for a custom admin screen and a second sign-in group,

@@ -140,6 +140,33 @@ import { theme } from './theme-handle.js';
 export const handle = sequence(theme, createAuthGuard({ runtime }));
 ```
 
+Under the development backend, the hooks module swaps the guard for
+[`devBackendHandle`](#devbackendhandle-dev-package), which takes the same required `runtime` and attaches the
+same access map.
+
+### `devBackendHandle` (dev package)
+
+The development counterpart of [`createAuthGuard`](#createauthguard). The development-only
+`@glw907/cairn-cms-dev` package exports it. It takes a `DevBackendConfig` and returns a SvelteKit
+`Handle`. It replaces the guard in `hooks.server.ts` while the site runs
+against a fake backend. On `/admin`, `/media`, and
+`/preview` requests it layers in-memory doubles for the GitHub backend, `AUTH_DB`, and the media
+bucket, and it leaves every other path untouched.
+
+The `runtime` member is required, as with the guard: the runtime `composeRuntime` returned for the
+site's adapter. The handle mints an owner editor on each `/admin` request and attaches
+`runtime.access ?? {}` to `locals.cairnAccess`, so the access helpers read the same map under
+either hook. It resolves no capability from `runtime.roles`, because the minted editor always has
+owner capability. It runs no CSRF check, so a custom admin action's own check is the first to
+refuse a bad token here.
+
+The `content` member is `'repository'` (the default) or `'fixtures'`. `'repository'` serves the site's
+working tree through an in-memory overlay, writes nothing to disk, and throws under `wrangler dev`
+because it needs a filesystem. `'fixtures'` serves a seeded in-memory repo and runs anywhere. When
+`CAIRN_DEV_BACKEND` is set on the Worker env and the request is to a non-local host, the handle
+refuses every path with a 503 and logs [`guard.refused`](./log-events.md) with
+`reason: 'dev_backend_in_prod'`.
+
 ### `createCairnAdmin`
 
 ```ts
@@ -1012,10 +1039,12 @@ Stability tier: Unstable API.
 declare const NO_PENDING_REQUEST_ERROR: 'no-pending-request';
 ```
 
-The `?error=` code `confirmAction` redirects with when the confirming browser carries no
-pending-login cookie and the submitted token is bound to another browser's nonce. It's distinct
-from `expired` because the two need different instructions: telling someone to request a new link
-reproduces the refusal on a second device, so the copy has to name this browser.
+The `?error=` code `confirmAction` redirects with when the confirm fails and the confirming
+browser carries no pending-login cookie. The code doesn't check why the confirm failed. A token that
+is bound to another browser's nonce, an expired token, an unknown token, and a token already used all
+redirect with it when the cookie is absent. A browser that carries a cookie gets `expired` on any
+failed confirm. The two differ because they need different instructions: telling someone to request a
+new link reproduces the refusal on a second device, so the copy has to name this browser.
 
 `LoginPage` and `ConfirmPage` branch on this constant, and a site rendering its login page
 compares `data.error` against it rather than against a copied string literal. The wire value is the
@@ -1418,8 +1447,10 @@ it), and the entry's file exists on the default branch, the ended page renders w
 `preview.state: 'published'` and `preview.published.permalink` set: "this preview has ended,"
 linking the live version, never a claim that the draft itself went live (a discarded *edit* of an
 already-live entry reaches this same state, and that claim would be false for it). A gone branch
-with nothing published (a discarded, never-published entry) answers the uniform 404 instead,
-reason `branch_gone`.
+with nothing published answers the uniform 404 instead, reason `branch_gone`. Discarding a
+never-published entry doesn't reach that reason, because the discard deletes the entry's link rows
+first and the token then logs `unknown`. `branch_gone` needs the branch gone with its link row still
+present, as when the row cleanup failed or something outside cairn deleted the branch.
 
 `loadPreview` sets its response headers (`x-robots-tag: noindex, nofollow`,
 `cache-control: private, no-store`, `referrer-policy: no-referrer`,
@@ -1596,6 +1627,10 @@ declare function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<H
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
 A backend that isn't a GitHub App reports the check as `{ ok: true, detail: 'not-applicable' }`.
+A failing signing check carries one of three fixed `detail` strings, never the raw crypto error:
+`GITHUB_APP_PRIVATE_KEY_B64 is not configured` (the secret is unset), `key import or sign failed`
+(the key doesn't decode, import, or sign), or `malformed JWT` (the signed token doesn't have three
+parts).
 A passing signing check carries `fingerprint`, the `SHA256:` fingerprint of the key's public half.
 It matches the fingerprint GitHub shows for the key in the App's settings, so you can confirm which
 key the Worker holds. The check computes it offline and omits it when it can't.
@@ -1795,8 +1830,8 @@ interface NavLayoutSection {
 }
 ```
 
-One named group inside a `navLayout` tree, holding a mix of site entries and engine references, no
-nesting. `roles` gates every child in the section at once, composing with each child's gates
+One named group inside a `navLayout` tree. `children` (required) holds a mix of site entries and
+engine references, and no section nests inside another. `roles` gates every child in the section at once, composing with each child's gates
 (an engine reference inside a `roles`-gated section still obeys the engine's capability rule; a
 section's `roles` never widens what a child would otherwise show).
 

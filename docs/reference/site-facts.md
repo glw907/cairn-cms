@@ -38,7 +38,7 @@ adapter's media, roles, or AI-posture declaration, so the committed file tracks 
 states.
 
 The `cairnManifest` plugin verifies the file in `buildStart`, on every build. Verification has
-two outcomes, not one:
+three outcomes, not one:
 
 - **The file does not exist.** This is not drift: a site upgrading to the version that introduces
   this contract has no `site-facts.json` until it runs `cairn-manifest`, and no site's `build`
@@ -46,6 +46,11 @@ two outcomes, not one:
   naming `npx cairn-manifest` as the command that creates the file.
 - **The file exists but no longer matches the adapter.** This is drift, and the build fails with
   an error naming the file and the same fix, `npx cairn-manifest`, then committing the result.
+- **The facts can't be derived from the adapter.** The adapter throws for a reason unrelated to
+  the facts while the plugin derives them, so there is nothing to compare the file against. The
+  check reports `skipped`, and the build logs one warning that names the file and the thrown
+  message and continues. The manifest verification that runs just before this check loads the same
+  adapter, so an adapter that can't load at all still fails the build there.
 
 ## Why a Go program reads it
 

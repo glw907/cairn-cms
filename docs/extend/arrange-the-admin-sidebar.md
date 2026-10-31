@@ -269,7 +269,7 @@ The message names the value at fault, except for a blank section label. To clear
 
 When every admin page fails to load after you add a `navFilter` function, the function threw or rejected. The shell load does not catch an error from it, so catch the error inside the function and return the items unchanged. A throw from `attention` does not fail the page: the badges disappear and the log carries `admin.attention_failed`.
 
-For a failure outside these two, see [Debug your site](debug-your-site.md).
+For a failure outside the sidebar, see [Debug your site](debug-your-site.md).
 
 ## See also
 

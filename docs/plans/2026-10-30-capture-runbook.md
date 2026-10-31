@@ -60,9 +60,21 @@ The template carries one D1 binding. `APP_DB` and `MEMBER_DB` sit inside the sho
 `cairn-template:exclude` markers, so a scaffold gets one database, not the two the August run made.
 The tool's consent and closing copy say "one database" too.
 
-A rerun after a failure uses the suffix `-2` on the site name (so every derived name above gains
-`-2`). Never reuse a name from an earlier attempt, since a GitHub App name stays taken until Geoff
-deletes that App.
+A rerun after a failure uses the suffix `-2`, and every derived name gains it: the App
+`cairn-cairn-docs-capture-2`, the repository `glw907/cairn-docs-capture-2`, the Worker
+`cairn-docs-capture-2`, the database `cairn-docs-capture-2-auth`, the bucket
+`cairn-docs-capture-2-media`, and the record `cairn-docs-capture-2-<six characters>.json`. For the
+rerun:
+
+- Step 2.1 answers `--answer 'Site name=cairn-docs-capture-2'`; the `Directory` default then
+  follows it.
+- `capture.env` sets `SITE=$SCRATCH/cairn-docs-capture-2`.
+- Every later `--dir` (step 4.2) is `--dir cairn-docs-capture-2`, run from `$SCRATCH`, since
+  `findSiteByDir` matches the record against the resolved directory.
+- Every pre-flight check in 1.9 and every teardown and verify call in Part 8 uses the `-2` names.
+
+Never reuse a name from an earlier attempt, since a GitHub App name stays taken until Geoff deletes
+that App.
 
 ## Paths
 
@@ -214,7 +226,9 @@ $CLEAN npx --yes wrangler whoami
 ```
 
 It must report that you are not authenticated. If it reports a login, run
-`$CLEAN npx --yes wrangler logout` and check again.
+`$CLEAN npx --yes wrangler logout` and check again. That signs out any wrangler OAuth session Geoff
+already had on this machine, and teardown step 8.3 signs out the capture's session without restoring
+his. Tell Geoff before running it; he signs wrangler in again himself afterward if he wants it back.
 
 1.9. The names are free. Each of these must come back empty or 404:
 
@@ -257,6 +271,12 @@ Expect `exit 0` and five `matched` lines on stderr. Then `rm $STATE/rehearsal.tx
 - Your browser is signed in to GitHub as `glw907`, and you can sign in to the Cloudflare dashboard.
 - The Cloudflare account has the Workers Paid plan on. The deploy consent states the plan as a
   requirement, and the estate inventory records it as on since 2026-10-25.
+- The account has a workers.dev subdomain registered (August deployed to `glw907.workers.dev`).
+  Without one, `wrangler deploy` fails and the tool raises its `subdomain-unregistered` error
+  (`SUBDOMAIN_UNREGISTERED_STDERR` and `SUBDOMAIN_UNREGISTERED_CODE` in
+  `src/cloudflare/deploy.mjs`). The operator can check it with
+  `curl -s -H "$T" "https://api.cloudflare.com/client/v4/accounts/$ACCT/workers/subdomain" | jq '.result'`
+  after step 1.9's `T` line.
 - Your Cloudflare login sees exactly one account. The August run printed
   `Using your Cloudflare account: glw907.` With more than one, the tool asks
   `Which Cloudflare account should this site deploy to?`, which the answer list below does not
@@ -358,13 +378,30 @@ then the link `https://github.com/apps/<slug>/installations/new`.
 
 - `[you]` On the install page, install on your personal account `glw907`.
 - `[you]` **Choose "All repositories".** This is the step the August run got wrong. The run creates
-  the repository after this page, so "Only select repositories" has nothing to select, the tool's
-  coverage check then fails, and its printed remedy names the same dead end.
+  the repository after this page, so "Only select repositories" has nothing to select yet. The code
+  and the record disagree here: `createRepo`'s comment in `src/github/repo.mjs` says a spike on
+  2026-08-10 confirmed GitHub auto-adds a repository created with the App's user token under either
+  install mode, while the August run (fixtures README, "The invocations", item 1) failed the coverage
+  check under "Only select repositories", and the tool's printed remedy names that same option.
+  Which one holds today is unverified, so "All repositories" is the safe choice.
 - `[you]` Click **Install & Authorize** (GitHub's label, per the tool's code comments).
 - `[you]` Done when the browser shows "Step 2 of 2 is done: the App is installed and authorized.
   Return to the terminal."
 - `[operator]` Waits for `Signed in as glw907`. Mark the installation `created` in the ledger.
   `Pushing <n> files` follows; mark the repository `created`.
+
+2.4a. **Only if it appears: one more sign-in trip.** While the browser step runs, the tool also polls
+GitHub for the installation (`installAndAuthorize` in `src/github/install.mjs`). If the poll finds it
+before the browser's redirect lands, the capture prints
+`GitHub reports the installation is complete; finishing sign-in with one more quick browser step.`,
+then `Open this link if the browser did not open: https://github.com/login/oauth/authorize?...` and
+`Waiting for the browser step to sign you in again... keep the browser window open.`
+(`reauthorize` in `src/github/oauth.mjs`).
+
+- `[you]` Open that link and approve if GitHub asks. Done when the browser shows "Signed in again.
+  Return to the terminal."
+- `[operator]` Waits for `Signed in as glw907` as in 2.4. This trip adds no prompt, so the answer
+  list is unaffected.
 
 2.5. **Optional `[you]`: narrow the installation.** With "All repositories", this App can write
 contents and administer every `glw907` repository until it is deleted. Once the capture shows
@@ -385,8 +422,10 @@ and listens on `localhost:8976`.
 
 - `[you]` Open that link, sign in to Cloudflare if asked, and allow Wrangler's access. The page's
   wording is unverified.
-- `[operator]` Waits for `Successfully logged in.` and then `Using your Cloudflare account: <name>.`
-  (wrangler's wording, as the August capture recorded it). Mark the wrangler OAuth session `created`.
+- `[operator]` Waits for wrangler's own `Successfully logged in.`, then the tool's step title
+  `Find your Cloudflare account` and the tool's log line `Using your Cloudflare account: <name>.`
+  (`ensureAccountId` in `src/cloudflare/account.mjs`, printed only when the record has no saved
+  account id, which is the case on a fresh run). Mark the wrangler OAuth session `created`.
 
 2.8. **Nothing to do while it builds and deploys.** The capture shows `Build your site`,
 `Deploy to workers.dev`, `Deploying to Cloudflare; this can take a few minutes.`, wrangler's deploy
@@ -438,7 +477,9 @@ memory.
 | --- | --- | --- |
 | State record `~/.config/cairn/sites/cairn-docs-capture-*.json` | `Save the site record` | 8.4 |
 | Site directory `$SITE` (and the scratch directory) | `Create cairn-docs-capture from the template` | 8.5 |
-| GitHub App `cairn-cairn-docs-capture` and its installation | 2.3, 2.4 | 8.6 `[you]` |
+| GitHub App `cairn-cairn-docs-capture` | 2.3 | 8.6 `[you]` |
+| The App's installation on `glw907` (All repositories) | 2.4 | 8.6 `[you]`, removed with the App |
+| `delete_repo` scope on Geoff's `gh` token, if step 8.2 grants it | 8.2 | Not torn down: the scope persists on the token until Geoff removes it |
 | Repository `glw907/cairn-docs-capture` (with `.github/workflows/check.yml`) | `Create the private repository` | 8.2 |
 | Worker `cairn-docs-capture` and its secret | `Deploy to workers.dev`, `Protect your site's App key` | 8.1 |
 | D1 `cairn-docs-capture-auth` (owner row, token rows) | `Deploy to workers.dev`, `Sign you in` | 8.1 |
@@ -654,7 +695,8 @@ gh repo delete glw907/cairn-docs-capture --yes
 
 If `gh` lacks the `delete_repo` scope, run `gh auth refresh -h github.com -s delete_repo`. `[you]`
 That opens GitHub's device sign-in in your browser: enter the code the terminal shows and approve.
-Or delete the repository yourself under its Settings, Danger Zone.
+Or delete the repository yourself under its Settings, Danger Zone. A granted scope persists on the
+`gh` token after the sitting; the operator adds a ledger row for it before running the refresh.
 
 8.3. `[operator]` Sign wrangler out. Run it under the wrapper, so wrangler signs out the OAuth
 session rather than seeing the API token:
@@ -719,6 +761,10 @@ These mirror the plan's "The capture sitting" and "Standing answers".
   baked again against it, and the run is redone whole.
 - **A second failure** escalates. Write a STATUS line in the ledger, run `notify-send -u normal`, and
   stop. Pass 4 then writes `create-your-site` from what is proven.
+- **No workers.dev subdomain** (the deploy fails with `subdomain-unregistered`): this counts as a
+  half-done run. `[you]` register the account's workers.dev subdomain in the Cloudflare dashboard
+  (Workers and Pages), then tear down and rerun under the `-2` names. Step 1.11 exists to catch this
+  before the run.
 - **An expired sign-in link** is not a failure. Step 4.2's `--sign-in` issues a fresh one.
 - **A leaked credential in a doctor report** points at the harness. Fix `clean-env` and capture Part
   6 again; the scaffold capture stands.
@@ -728,6 +774,8 @@ These mirror the plan's "The capture sitting" and "Standing answers".
 - The worktree path `$CAP` the conductor creates in Part 0.
 - That `npm version` inside `packages/cairn-cms-dev` also updates the root lockfile's workspace entry
   (step 0.3's `git diff --stat` shows it).
+- Whether GitHub auto-adds the new repository under "Only select repositories" (the code comment
+  says yes, the August run said no). The runbook avoids the question with "All repositories".
 - The label of GitHub's create button on the manifest page.
 - The wording of Cloudflare's wrangler consent page.
 - That Geoff's Cloudflare login sees one account, so no account select appears.

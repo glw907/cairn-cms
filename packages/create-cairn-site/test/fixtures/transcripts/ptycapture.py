@@ -31,12 +31,16 @@ def main() -> int:
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
     if not command:
         parser.error("no command given")
+    for answer in args.answer:
+        if "=" not in answer:
+            parser.error(f"--answer needs PROMPT=REPLY, got {answer!r}")
     answers = [tuple(a.split("=", 1)) for a in args.answer]
 
     pid, fd = pty.fork()
     if pid == 0:
+        # Size the pty before exec so the command never reads the default window.
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", ROWS, COLS, 0, 0))
         os.execvp(command[0], command)
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", ROWS, COLS, 0, 0))
 
     seen = b""
     with open(args.out, "wb") as out:

@@ -53,12 +53,12 @@ If the file is one the site already has, the editor inserts the existing image a
 
 ### Choose between a description and decorative
 
-Alt text is a short description of a image. Screen readers read it aloud to people who can't see the image. Say what the image shows.
+Alt text is a short description of an image. Screen readers read it aloud to people who can't see the image. Say what the image shows.
 
-- Select **Write a description** for a image that carries meaning, such as a photo of a product.
-- Select **Mark as decorative** for a image that adds nothing to the words around it, such as a divider or an ornament. Screen readers skip it.
+- Select **Write a description** for an image that carries meaning, such as a photo of a product.
+- Select **Mark as decorative** for an image that adds nothing to the words around it, such as a divider or an ornament. Screen readers skip it.
 
-You can insert a image without choosing either one. The editor then warns you about images that have no alt text, but the warning never stops you from saving. The editor doesn't remember a decorative choice for a image in the text, so it can still list that image as needing alt text after you reload the draft.
+You can insert an image without choosing either one. The editor then warns you about images that have no alt text, but the warning never stops you from saving. The editor doesn't remember a decorative choice for an image in the text, so it can still list that image as needing alt text after you reload the draft.
 
 ## Set the lead image
 

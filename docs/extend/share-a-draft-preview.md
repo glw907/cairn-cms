@@ -46,6 +46,9 @@ The following topics belong to other pages:
 > The preview page reads no cookie and no editor session, so a forwarded link forwards the access with it.
 > A draft that only signed-in editors may read is not one to share this way.
 > **Revoke all links** in the **Share preview** group ends every outstanding link for the entry.
+>
+> Minting converts one editor's read into a public read for whoever holds the URL, so everyone the access map admits to a concept can hand its drafts out.
+> The URL travels wherever the site's chrome sends URLs, such as analytics beacons and client error reporting, so suppress those on the preview route.
 
 ## Before you begin
 

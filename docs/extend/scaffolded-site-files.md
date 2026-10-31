@@ -45,7 +45,7 @@ A scaffolded site is Waymark, cairn's reference theme, wired onto the chassis, t
 
 When the setup command's package is packed, its build writes a fresh `README.md`, `scripts/dev.mjs`, `.claude` guidance, and `cairn-audit.config.json` into the package in place of the showcase's. The setup command copies those files with the rest of the tree, so the scaffold still carries them. Waymark is the only template the setup command ships.
 
-The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live. A site built by hand starts with no template, no chassis, and no deploy, and [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.
+The same run that writes the tree creates the site's GitHub App and repository, provisions its Cloudflare bindings, and deploys it, so the tree arrives already live. A hand-built site starts with no template, no chassis, and no deploy, and [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) walks through that build.
 
 Owning a file does not remove a contract on it, and a file that the engine or a check reads can still break the build, the deploy, or the admin when it changes. The file tree marks each file that carries such a contract.
 
@@ -230,7 +230,7 @@ The hook picks `devBackendHandle` or `createAuthGuard` in one `if` and exports t
 
 The guard gates the whole `/admin` subtree before any load runs. Per-route authorization belongs to [`requireAccess`](../reference/sveltekit.md#requireaccess) and [`createSectionAction`](../reference/sveltekit.md#createsectionaction). The [`createAuthGuard`](../reference/sveltekit.md#createauthguard) entry documents the guard's config. The scaffold's adapter declares no `access` member and takes the zero-config `owner` and `editor` roles, and the tree holds no `src/access.ts`. [Restrict admin access](restrict-admin-access.md) covers declaring an access map.
 
-When the dev backend is on, `devBackendHandle` installs in-memory stand-ins for the GitHub backend, the media bucket, and `AUTH_DB`, and it signs in an `owner` without an email loop. Nothing leaves the machine. The hook passes no `content` option, so the dev admin runs in the default `'repository'` mode and lists the site's entries from its working tree. Edits land in an in-memory overlay over that tree. Nothing is written to disk, and the overlay lasts until the dev server restarts. The `'fixtures'` mode seeds an in-memory repository with sample content instead.
+When the dev backend is on, `devBackendHandle` installs in-memory stand-ins for the GitHub backend, the media bucket, and `AUTH_DB`, and it signs in an `owner` without an email loop. Nothing leaves the machine. The hook passes no `content` option, so the dev admin runs in the default `'repository'` mode and lists the site's entries from its working tree. Edits land in an in-memory overlay over that tree. Nothing is written to disk, and the overlay lasts until the dev server restarts. The `'fixtures'` mode seeds an in-memory repository with sample content instead. The example site in the cairn-cms repository passes `content: 'fixtures'`, because its end-to-end suite runs under `wrangler dev`.
 
 ### `src/routes/admin/`
 

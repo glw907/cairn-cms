@@ -213,7 +213,7 @@ then hands them to the responder.
 ```ts
 import type { RequestHandler } from './$types';
 import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
-import { site, siteMeta } from '#lib/content';
+import { site, siteMeta } from '#chassis/content.js';
 import { cairn } from '#theme/cairn.config.js';
 
 export const prerender = true;
@@ -267,12 +267,12 @@ Wrap a sitemap in a `Response`. The showcase sitemap route maps every site entry
 
 ```ts
 import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN } from '#lib/content';
+import { site, siteMeta } from '#chassis/content.js';
 
 export const GET = () => {
   const urls: SitemapUrl[] = [
-    { loc: ORIGIN + '/' },
-    ...site.all().map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
+    { loc: siteMeta.origin + '/' },
+    ...site.all().map((s) => ({ loc: siteMeta.origin + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
   ];
   return sitemapResponse(urls);
 };
@@ -292,10 +292,10 @@ route points at the sitemap and disallows `/admin`.
 
 ```ts
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
-import { ORIGIN } from '#lib/content';
+import { siteMeta } from '#chassis/content.js';
 
 export const GET = () =>
-  robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
+  robotsResponse({ sitemapUrl: siteMeta.origin + '/sitemap.xml', disallow: ['/admin'] });
 ```
 
 ### `markdownResponse`
@@ -316,7 +316,7 @@ serve a body the enumerator never listed.
 
 ```ts
 import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
-import { site, siteMeta } from '#lib/content';
+import { site, siteMeta } from '#chassis/content.js';
 import { cairn } from '#theme/cairn.config.js';
 
 const routes = createPublicRoutes({
@@ -351,7 +351,7 @@ object. All URLs in `SeoInput` are absolute, built from the site origin. The `/d
 
 ```ts
 import { buildSeoMeta, type ContentEntry } from '@glw907/cairn-cms/delivery/data';
-import { ORIGIN } from '#lib/content';
+import { siteMeta } from '#chassis/content.js';
 import { siteConfig } from '#theme/cairn.config.js';
 
 declare const entry: ContentEntry;
@@ -359,7 +359,7 @@ declare const entry: ContentEntry;
 const seo = buildSeoMeta({
   title: entry.title,
   description: entry.excerpt,
-  canonicalUrl: ORIGIN + entry.permalink,
+  canonicalUrl: siteMeta.origin + entry.permalink,
   siteName: siteConfig.siteName,
   type: 'article',
   published: entry.date,
@@ -440,7 +440,7 @@ and renders each target as a link.
 ```ts
 import { resolveReferences, type ResolvedReference, type ContentEntry } from '@glw907/cairn-cms/delivery';
 import type { ConceptDescriptor } from '@glw907/cairn-cms';
-import { site } from '#lib/content';
+import { site } from '#chassis/content.js';
 
 declare const postsDescriptor: ConceptDescriptor;
 declare const entry: ContentEntry;

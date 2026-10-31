@@ -205,7 +205,7 @@ The milestone starts from the deployed bare site the previous milestone left. Co
 
 ### Install the engine and let Vite compile it
 
-Before any route exists, the engine needs its package with the `@cloudflare/workers-types` peer, a `noExternal` entry under `ssr` in the Vite config, and an ambient import that types `App.Locals`. `@cloudflare/workers-types` at `^5` is a required peer, because the engine's shipped types import `D1Database` and `R2Bucket` from it. A scaffolded site lists the engine under `dependencies` and `@cloudflare/workers-types` under `devDependencies`, and this site does the same. The engine ships its `.svelte` files from source under its `svelte` export condition. Vite must compile them with the site's Svelte plugin, and without the `noExternal` entry the admin components fail to build. The ambient import, [`@glw907/cairn-cms/ambient`](../reference/ambient.md), augments `App.Locals` with the five fields the engine reads and writes on every admin request. Version 8 of `@sveltejs/adapter-cloudflare` declares no `App.Platform`, so a custom route that needs a Worker binding reads it from `cloudflare:workers`, typed by the `Env` that `wrangler types` generates.
+Before any route exists, the engine needs its package with the `@cloudflare/workers-types` peer, a `noExternal` entry under `ssr` in the Vite config, and an ambient import that types `App.Locals`. `@cloudflare/workers-types` at `^5` is a required peer, because the engine's shipped types import `D1Database` and `R2Bucket` from it. A scaffolded site lists the engine under `dependencies` and `@cloudflare/workers-types` under `devDependencies`, and this site does the same. The engine ships its `.svelte` files from source under its `svelte` export condition. Vite must compile them with the site's Svelte plugin, and without the `noExternal` entry the admin components fail to build. The ambient import, [`@glw907/cairn-cms/ambient`](../reference/ambient.md), augments `App.Locals` with the five fields the engine reads and writes on every admin request. Version 8 of `@sveltejs/adapter-cloudflare` declares no `App.Platform`, so a custom route that needs a Worker binding reads it from `cloudflare:workers`, typed by the `Env` that `wrangler types` generates. A hand-built site can add a `cf-typegen` script that runs `wrangler types --include-runtime=false`, the command a scaffolded site's script runs.
 
 To install the engine, follow these steps:
 
@@ -430,7 +430,16 @@ To index the content and commit the manifest, follow these steps:
 
 ### Render the entry
 
-The entry route is a prerendered catch-all built on the engine's public routes loader. [`createPublicRoutes`](../reference/delivery.md#createpublicroutes) returns `entryLoad`, which resolves one entry by request path and throws a 404 on a miss, and `entries`, which enumerates every routable entry for the prerenderer. The route imports the site's modules as `#lib/<file>.js`, through the `#lib/*` mapping in the `imports` field of the `package.json` that `sv create` wrote. SvelteKit 3 throws on a `$lib` import. An existing app whose `package.json` lacks the mapping adds it.
+The entry route is a prerendered catch-all built on the engine's public routes loader. [`createPublicRoutes`](../reference/delivery.md#createpublicroutes) returns `entryLoad`, which resolves one entry by request path and throws a 404 on a miss, and `entries`, which enumerates every routable entry for the prerenderer. The route imports the site's modules as `#lib/<file>.js`, through the `#lib/*` mapping in the `imports` field of the `package.json` that `sv create` wrote. SvelteKit 3 throws on a `$lib` import. An existing app whose `package.json` lacks the mapping adds it under a top-level `imports` key:
+
+<!-- snippet-check-skip: a fragment of package.json -->
+```json
+"imports": {
+  "#lib/*": "./src/lib/*"
+}
+```
+
+The root layout that `sv create` wrote needs no change for this route. It imports a favicon and renders its children, so the entry renders inside it as it is.
 
 To render the entry, follow these steps:
 
@@ -935,6 +944,8 @@ To create and migrate the database, follow these steps:
    npx wrangler d1 migrations apply field-notes-auth --remote
    ```
 
+   The `--remote` flag changes only the deployed database. A local `wrangler dev` run reads a separate local D1 database, which needs the same command with `--local` before the real sign-in works there. The dev backend this tutorial runs under `vite dev` uses an in-memory stand-in and needs neither.
+
 The other migrations are opt-in. `0001_roles.sql` serves a role vocabulary beyond owner and editor, and `0003_preview.sql` serves draft-preview links. [Build the public routes](build-the-public-routes.md#mount-the-draft-preview-route) mounts the draft-preview route. `0002_audit.sql` is optional, and the [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) entry recommends applying it on a separate D1 database, bound with its own `migrations_dir`, which keeps audit writes from contending with session and token lookups.
 
 ### Add the Email Sending binding and name the origin
@@ -1042,7 +1053,7 @@ This exercise applies `0003_preview.sql` to the local development database besid
 1. In the project directory, copy `0003_preview.sql` from the package's `migrations` directory into `migrations`.
 2. In the project directory, apply the migrations with `--local` in place of `--remote`.
 3. In the output, confirm that `0003_preview.sql` is among the applied migrations.
-4. Unless the site mints draft-preview links, delete the copied file from `migrations`.
+4. Unless the site mints draft-preview links, delete the copied file from `migrations`. Then pass `previewMint={false}` to `CairnAdmin` to hide the **Share preview** group, as [Keep or hide the Share preview group](share-a-draft-preview.md#keep-or-hide-the-share-preview-group) describes.
 
 </details>
 

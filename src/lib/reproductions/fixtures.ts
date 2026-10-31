@@ -260,7 +260,7 @@ export const fixtureVocabulary: VocabularyData = {
 };
 
 /**
- * The `navLayout` seam's worked example, resolved to
+ * The `navLayout` seam's worked example (docs/extend/arrange-the-admin-sidebar.md), resolved to
  * the shape `CairnAdminShell` renders: two engine references, a "Team" section of two site entries,
  * two more engine references (one relabeled), then an unreferenced trailing group after the divider
  * (`vocabulary`, `editors`, `help`, none of which the worked example's tree names).

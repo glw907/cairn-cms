@@ -161,7 +161,7 @@ To prepare the rendered pass, follow these steps:
 3. In the same shell, run `npm run preview`.
 4. In a browser, open `/admin` at `http://localhost:4173` and confirm that the admin loads.
 
-The run finds the site at `BASE_URL`, and the scaffold's `preview` script serves on its default, `http://localhost:4173`.
+The run finds the site at `BASE_URL`, and the scaffold's `preview` script runs `wrangler dev`, whose `dev.port` in `wrangler.jsonc` is `4173`, so it serves at `http://localhost:4173`.
 A site served elsewhere sets `BASE_URL` to its origin.
 When nothing answers at that address, the run fails and names the URL.
 Every configured page renders under both the light and the dark theme.
@@ -290,7 +290,7 @@ Without that setup, keep the static gate in CI and run the rendered pass locally
 
 If your CI job can reach a running site and hold a session it accepts, follow these steps:
 
-1. In `.github/workflows/check.yml`, after the install step, add a step that runs `npx playwright install chromium`.
+1. In `.github/workflows/check.yml`, after the install step, add a step that runs `npx playwright install chromium`. The workflow's `npm install` supplies the `playwright` package only because [Install a browser and start the site](#install-a-browser-and-start-the-site) saved it to `package.json`.
 2. In the same file, add a step that runs the rendered pass, with `BASE_URL` and `CAIRN_AUDIT_COOKIES` read from repository secrets.
 
 The following fragment shows the two added steps:

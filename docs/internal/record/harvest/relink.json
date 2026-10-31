@@ -155,7 +155,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "turn-on-tidy",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -221,7 +222,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "add-an-island",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -230,7 +232,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "define-an-adapter-and-schema",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -239,7 +242,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "act-on-newly-published-entries",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -265,7 +269,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "define-an-adapter-and-schema",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -274,7 +279,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "turn-on-tidy",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -293,7 +299,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "link-content-with-references",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -309,7 +316,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "arrange-the-admin-sidebar",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -342,7 +350,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "reuse-content-across-entries",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -351,7 +360,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "share-a-draft-preview",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -360,7 +370,8 @@
       "done": "LEGACY_PATH_MAP value that names a deleted extend page. The extend arm is rebuilt, so the value points at docs/extend/README.md until the page named in repointedBy lands.",
       "interim": "docs/extend/README.md",
       "repointedBy": "build-the-public-routes",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/docs-links.mjs",
@@ -531,7 +542,8 @@
       "context": "flatten the fields instead of nesting them.",
       "oldTarget": "docs/extend/content-model.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/core.md",
@@ -553,7 +565,8 @@
       "context": "- [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member)",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "See-also bullet removed; restore it when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/log-events.md",
@@ -576,21 +589,24 @@
       "context": "for the `loadPreview` seam it pairs with.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/public.md",
       "context": "replaces the token default in both states.",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/render.md",
       "context": "its own.\n",
       "oldTarget": "docs/extend/configure-rendering.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/supported-toolchain.md",
@@ -644,28 +660,32 @@
       "context": "below for the site-mounted page these actions\nfeed.",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "rather than an approximated shell.\n",
       "oldTarget": "docs/extend/share-a-draft-preview.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "map](./core.md#access-map), when one is declared.\n",
       "oldTarget": "docs/extend/restrict-admin-access.md; docs/extend/organize-your-admin-nav.md",
       "done": "Two pointers removed from a sentence that ends at the access-map link; the reference page keeps the rule, and the pointers return with the rebuilt pages. Two occurrences (the NavLayout and the layout-types sections).",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/reference/sveltekit.md",
       "context": "contract in full.\n",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Link and its sentence removed; restore a link to the rebuilt page.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "README.md",
@@ -730,14 +750,16 @@
       "context": "that the\nscaffold writes.\n",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Link and its relative clause removed from the kept page and its brief in lockstep; restore the pointer when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/internal/briefs/extend/choose-an-ai-posture.json",
       "context": "that the scaffold writes.\"",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md#feed-sitemap-and-robotstxt",
       "done": "Brief sentence matches the kept page edit.",
-      "stage": "2b"
+      "stage": "2b",
+      "moot": "The docs/internal/briefs/ tree was deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/extend/choose-an-ai-posture.md",
@@ -809,35 +831,40 @@
       "context": "// site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "packages/create-cairn-site/src/scaffold.test.mjs",
       "context": "site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture\",",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "AI_POSTURE_COMMENT_BLOCK lockstep: the wire-the-delivery-surface pointer dropped from the emitted comment block (showcase config, substitute.mjs, its two tests, and the emitted template move together); restore a pointer when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "packages/create-cairn-site/src/substitute.mjs",
       "context": "'  // route passes it to robotsResponse, and CairnAdapter.aiPosture',",
       "oldTarget": "docs/extend/wire-the-delivery-surface.md",
       "done": "The emitted decline/invite comment block drops the pointer too (aiPostureBlock).",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "examples/cairn-theme/cairn.css",
@@ -978,14 +1005,16 @@
       "context": "and the reference\npage that documents it.",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "The router names reference pages instead of the shipped recipe pages; the extend rebuild may restore per-pattern recipes. Sites re-run `npx cairn-guidance install` (the changelog carries the Consumers must line).",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "skills/cairn-extend/SKILL.md",
       "context": "docs/reference/auth-channel.md` |",
       "oldTarget": "docs/extend/add-a-custom-admin-screen.md; docs/extend/add-a-second-audience.md",
       "done": "Both table rows now point at the reference pages that document their atoms (same edit as above).",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "src/lib/dev-flag.ts",
@@ -1000,21 +1029,24 @@
       "context": "property replaces the default for the whole banner.\n-->",
       "oldTarget": "docs/extend/share-a-draft-preview.md#override-the-banners-palette",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "src/lib/reproductions/fixtures.ts",
       "context": "The `navLayout` seam's own worked example, resolved to",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Comment pointer dropped or reworded; restore it when the page returns.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "src/tests/unit/reproductions-fixtures.test.ts",
       "context": "it('resolves the navLayout worked example, with",
       "oldTarget": "docs/extend/organize-your-admin-nav.md",
       "done": "Test title named the deleted page by basename; it names the seam now.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "src/lib/reproductions/stories/CustomScreen.svelte",
@@ -1286,28 +1318,32 @@
       "context": "by suppression.** `auth-channel-security-model.md` cites \"NIST",
       "oldTarget": "auth-channel-security-model.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "s own `README.md` (`docs/admin/README.md`,",
       "oldTarget": "docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2b"
+      "stage": "2b",
+      "moot": "The docs/internal/briefs/ tree was deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "`docs/editors/README.md`, `docs/extend/READ",
       "oldTarget": "docs/editors/README.md; docs/extend/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2b"
+      "stage": "2b",
+      "moot": "The docs/internal/briefs/ tree was deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/internal/briefs/README.md",
       "context": "ocs/internal/briefs/admin/README.json`, and so on),",
       "oldTarget": "admin/README",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2b"
+      "stage": "2b",
+      "moot": "The docs/internal/briefs/ tree was deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1321,7 +1357,8 @@
       "context": "`docs/README.md`) never covers `doc",
       "oldTarget": "docs/README.md; docs/admin/README.md",
       "done": "Register or brief line naming a page a stage will rebuild, left in place; the stage that rebuilds the page confirms or rewrites the line. The line names several arms; the admin and editors READMEs re-arm at stages 3 and 4.",
-      "stage": "2b"
+      "stage": "2b",
+      "moot": "The docs/internal/briefs/ tree was deleted with the blueprint retirement, so the entry has nothing to restore."
     },
     {
       "file": "docs/internal/briefs/README.md",
@@ -1366,14 +1403,16 @@
       "context": "log-event:tidy.conventions",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "log-event:tidy.model",
       "oldTarget": "docs/extend/enable-tidy.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1436,7 +1475,8 @@
       "context": "file-path:src/theme/islands/Converter.svelte",
       "oldTarget": "docs/extend/add-an-island.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1451,21 +1491,24 @@
       "context": "file-path:old-site/content/posts/my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/posts/2024-01-15-my-post.md",
       "oldTarget": "docs/extend/migrate-existing-content.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
       "context": "file-path:src/content/fragments/trail-safety.md",
       "oldTarget": "docs/extend/reuse-content-across-entries.md",
       "done": "Allowlist entry (or its provenance comment) names the deleted page it excused; kept so the rebuilt page passes; prune what the rebuild does not carry.",
-      "stage": "2b"
+      "stage": "2b",
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "scripts/checks/check-symbols-allowlist.mjs",
@@ -1576,7 +1619,8 @@
         "f:v72g9z",
         "f:xluud1",
         "f:zzjrza"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/scaffolded-site-files.md",
@@ -1634,7 +1678,8 @@
         "f:xluud1",
         "f:xw0bit",
         "f:zzjrza"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/add-a-custom-admin-screen.md",
@@ -1669,7 +1714,8 @@
         "f:vfpai6",
         "f:wnsv5x",
         "f:xw0bit"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/add-a-second-sign-in-group.md",
@@ -1708,7 +1754,8 @@
         "f:u78zg6",
         "f:v72g9z",
         "f:xffr6i"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/restrict-admin-access.md",
@@ -1751,7 +1798,8 @@
         "f:wnsv5x",
         "f:xffr6i",
         "f:xw0bit"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/replace-magic-links-with-cloudflare-access.md",
@@ -1778,7 +1826,8 @@
         "f:qlgggh",
         "f:tycp7k",
         "f:u78zg6"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/debug-your-site.md",
@@ -1806,7 +1855,8 @@
         "f:tycp7k",
         "f:u78zg6",
         "f:vs9g9e"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/security-model.md",
@@ -1835,7 +1885,8 @@
         "f:tycp7k",
         "f:tzmhqn",
         "f:u78zg6"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/architecture.md",
@@ -1865,7 +1916,8 @@
         "f:qlgggh",
         "f:tycp7k",
         "f:u78zg6"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     },
     {
       "file": "docs/extend/rotate-the-github-app-key.md",
@@ -1881,7 +1933,8 @@
         "f:orz556",
         "f:paotzb",
         "f:tqafd9"
-      ]
+      ],
+      "restoredIn": "99eeddb73"
     }
   ]
 }

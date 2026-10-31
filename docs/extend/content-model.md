@@ -21,10 +21,12 @@ This page covers the following subjects, in order:
 - The fieldset
 - Field options
 - Containers
+- Reference fields
 - Save-time validation
 - Frontmatter keys the engine reads
 - Entry identity
 - Routing
+- Fragments
 - Address collisions
 - The content manifest
 - Renames
@@ -34,8 +36,6 @@ The page assumes familiarity with TypeScript literal types and inference, YAML f
 The following subjects are documented on other pages:
 
 - Writing the adapter and a concept's declaration, including permalinks, date prefixes, tags, and custom validation hooks, in [Define an adapter and schema](define-an-adapter-and-schema.md)
-- Using reference fields and internal links between entries, in [Link content with references](link-content-with-references.md)
-- Fragments and the include directive, in [Reuse content across entries](reuse-content-across-entries.md)
 - Rendering an entry's body, in [Write a markdown component](write-a-markdown-component.md)
 
 ## Concepts
@@ -95,7 +95,7 @@ The `fields` namespace has fifteen builders, in two groups:
 
 `FieldDescriptor` is a closed union of those fifteen types. The engine exposes no seam to register another field type, and a shape outside them is modeled with the existing builders.
 
-[Link content with references](link-content-with-references.md) covers the `reference` builder in use. For each builder's options, see the [Fields](../reference/core.md#fields) table in the core reference.
+[Reference fields](#reference-fields) covers the `reference` builder in use. For each builder's options, see the [Fields](../reference/core.md#fields) table in the core reference.
 
 ## Field options
 
@@ -147,6 +147,115 @@ const schedule = defineFieldset({
 ```
 
 For more information, see the [`fields`](../reference/core.md#fields-1) entry in the core reference.
+
+## Reference fields
+
+A `reference` field stores the id of one entry, typed to the concept its `concept` option names, and `fields.array(fields.reference(...))` stores a list of ids. The frontmatter holds the id alone, because the engine takes the edge's concept from the declaration. Editors choose the target from a picker scoped to that concept. On the public site, a route resolves each id and a template renders a link whose text and address come from the target's `title` and `permalink`.
+
+The site writes the two ends of a reference: the adapter declares the field, and a Svelte component renders the link. The engine supplies the picker, records each reference as an edge in the content manifest, and resolves the id for the route.
+
+### Declare a reference field
+
+A scaffolded site's posts concept already declares the two fields this section follows, an `author` that names one `pages` entry and a `related` list of other posts:
+
+<!-- snippet-check-skip: an excerpt of the posts concept inside the adapter's content group -->
+```ts
+// src/theme/cairn.config.ts
+posts: defineConcept({
+  // dir, label, routing, and the other fields stay as the scaffold wrote them
+  fields: defineFieldset({
+    author: fields.reference({ concept: 'pages', label: 'Author' }),
+    related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), {
+      label: 'Related posts',
+    }),
+  }),
+}),
+```
+
+Beyond the base options, a reference needs only `concept`. A `concept` that names no concept declared under `content` makes `normalizeConcepts` throw when the engine composes the site's content runtime. The error names the concept, the field, and the undeclared target. On the site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds, which declares only `posts`, `author` throws until the site declares a `pages` concept.
+
+After a save, a post's frontmatter holds the target ids alone:
+
+```yaml
+# <post>.md, frontmatter excerpt
+author: <page-id>
+related:
+  - <post-id>
+  - <post-id>
+```
+
+### Resolve the targets on the entry route
+
+`resolveReferences` returns an entry's references keyed by field name: one `ResolvedReference` for a `reference` field, and a list in edge order for an `array(reference)`. It takes the site resolver, the entry's concept descriptor from `buildSiteDescriptors`, and the entry's frontmatter. The [`resolveReferences`](../reference/delivery-data.md#resolvereferences) and [`buildSiteDescriptors`](../reference/delivery-data.md#buildsitedescriptors) entries document both calls.
+
+On a scaffolded site, `withReferences` in `src/chassis/entry-data.ts` makes this call for every entry and adds the result as `data.references`. The public entry route and the preview route both apply it, and a concept with no reference fields gets an empty map. A reference field added to any concept reaches the template with no route change.
+
+On the tutorial's site, return the entry data with a `references` map that `resolveReferences` builds:
+
+```ts
+// src/routes/[...path]/+page.server.ts
+import type { EntryGenerator, PageServerLoad } from './$types';
+import {
+  buildSiteDescriptors,
+  createPublicRoutes,
+  resolveReferences,
+} from '@glw907/cairn-cms/delivery';
+import { cairn, siteConfig } from '#lib/cairn.config.js';
+import { origin, site } from '#lib/content.js';
+
+export const prerender = true;
+
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin,
+  siteName: siteConfig.siteName,
+  description: siteConfig.description ?? '',
+});
+
+const descriptors = new Map(buildSiteDescriptors(cairn, siteConfig).map((d) => [d.id, d]));
+
+export const entries: EntryGenerator = () => routes.entries();
+
+export const load: PageServerLoad = async ({ url }) => {
+  const data = await routes.entryLoad({ url });
+  const descriptor = descriptors.get(data.concept);
+  const references = descriptor ? resolveReferences(site, descriptor, data.entry.frontmatter) : {};
+  return { ...data, references };
+};
+```
+
+`resolveReferences` drops an id with no live target rather than throwing. A single reference's key can then be absent, and a list can hold fewer targets than the stored ids, so the template guards both. A resolved target can also be a draft or an entry of an `'embedded'` concept, and its permalink then serves no public page.
+
+A `ResolvedReference` carries the target's `id`, `concept`, `title`, `permalink`, and an optional `summary`. In the entry's page component, read `data.references.author` as one `ResolvedReference` and `data.references.related` as a list, and render each as a link. The scaffold's `src/theme/components/ArticleView.svelte` does this. The [Types](../reference/delivery-data.md#types) table lists every `ResolvedReference` member.
+
+### Reference guards
+
+The build and the admin check references so that a link points at a real entry. A save with a bad target warns, while a build, a delete, or a rename that would strand a reference refuses.
+
+Once a post is published, the `cairnManifest` plugin runs `verifyReferences` right after `verifyManifest`. It fails the build, naming the source entry, the field, and the missing target. The route can therefore drop an unresolved id instead of throwing. The [Manifest format, parse, and verify](../reference/core.md#manifest-format-parse-and-verify) entry documents `verifyReferences`.
+
+A save whose `reference` field names a missing or still-draft target commits with a warning. A delete reads inbound `cairn:` body links from the published manifest, and it reads inbound reference edges from a cross-branch index built over that manifest and every open `cairn/*` branch. A delete runs its checks in this order:
+
+1. Inbound body links refuse the delete with status 409 and `Cannot delete <id>: N pages link to it.`
+2. For a fragment, entries that include it refuse the delete with status 409 and `Cannot delete <id>: N entries include it. Remove the include first.`
+3. A cross-branch reference index that cannot be built refuses with status 503, rather than counting the references as absent.
+4. Inbound reference edges refuse with status 409 and `Cannot delete <id>: N entries reference it.`, listing each referencing entry's concept, id, title, and permalink.
+
+A reference held in an unpublished draft still counts, and it blocks the delete or rename of its target. A rename refuses, naming the blocking entries, when an open branch other than the entry's branch holds an inbound reference. Otherwise it rewrites each referencing entry's stored id and changes no other byte of the frontmatter. [Renames](#renames) covers the rest of what a rename refuses and rewrites.
+
+### `cairn:` body links and reference fields
+
+A `cairn:` token names a content entry as `cairn:<concept>/<id>`. A hand-built SvelteKit route has no manifest id, so a `cairn:` link to one dangles, and such a link takes an ordinary path instead. A `cairn:` token is live only as an inline markdown link in an entry's body, so a link from a frontmatter field takes a reference. The engine resolves an inline body link, counts it in the manifest's link graph, and checks it at the build. Elsewhere the token stays inert, and none of the following places fails the build:
+
+- A raw HTML anchor, where it survives as a literal `cairn:` href.
+- A reference-style link definition, where it survives as a literal `cairn:` href.
+- A component attribute, where the engine never rewrites it.
+- Frontmatter, where the engine never rewrites it.
+
+A body link to a draft entry resolves to that entry's permalink, so the build succeeds and the published link points at a 404 until the target publishes. A save refuses a body link to a target missing from `main`. At render time, a body link whose target is missing renders marked broken in the editor preview, with the class `cairn-broken-link` and its text kept, and it fails the build's render. A missing reference target is instead dropped from the resolved map with no mark. [The content manifest](#the-content-manifest) describes how the manifest records both kinds of edge.
+
+For a failure on a reference, see [Diagnose a reference or include failure](debug-your-site.md#diagnose-a-reference-or-include-failure).
 
 ## Save-time validation
 
@@ -209,6 +318,80 @@ An `'embedded'` concept keeps a directory, fields, and an admin list and editor.
 
 For more information, see [`defineConcept`](../reference/core.md#defineconcept).
 
+## Fragments
+
+A passage that several entries share, such as a safety notice, can live in one file instead of a copy in each entry. That file is a fragment, an entry of the reserved `fragments` concept, and any entry pulls one into its body with `::include{fragment="<id>"}`. A fragment has no public page and reaches a reader only inside an entry that includes it. The engine splices in the fragment's body each time that entry renders, so one edit to the fragment changes every entry that includes it.
+
+A fragment's text is the same in every entry that includes it, and an include takes the fragment's id and nothing else. When a block should differ on each use, register a custom public component instead. [Write a markdown component](write-a-markdown-component.md) covers custom public components.
+
+### Wire the fragments concept
+
+A scaffolded site already declares the concept, globs its files in both places, and forwards the resolver. Four pieces make an include work, and the site that [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds adds each by hand:
+
+1. Declare a concept under the reserved key `fragments` with `routing: 'embedded'`. Any other routing throws when the engine composes the site's content runtime: `cairn: concept "fragments" requires routing: 'embedded' (the include directive resolves against it)`.
+2. Pass a glob for the fragment files to `createSiteIndexes` in the content module. Without it, the build throws an error that starts `cairn: concept "fragments" has no glob passed`.
+3. Add the same glob to the `cairnManifest` plugin's `content` option. A missing entry fails silently: the plugin builds no manifest rows for the concept and neither throws nor warns.
+4. Forward `resolveFragment` from the adapter's `rendering.render`, beside `resolve` and `resolveMedia`. A render that drops it publishes each include as literal text, with no error.
+
+The following excerpt shows the declaration and the render:
+
+<!-- snippet-check-skip: elides the tutorial's posts concept and the adapter's backend and email groups -->
+```ts
+// src/lib/cairn.config.ts
+export const cairn = defineAdapter({
+  content: {
+    // posts stays as the tutorial wrote it
+    fragments: defineConcept({
+      dir: 'src/content/fragments',
+      label: 'Fragments',
+      singular: 'fragment',
+      routing: 'embedded',
+      fields: defineFieldset({
+        title: fields.text({ label: 'Title', required: true }),
+      }),
+    }),
+  },
+  // backend and email stay as the tutorial wrote them
+  rendering: {
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
+  },
+});
+```
+
+The render never builds the resolver. For each public entry page, `createPublicRoutes` builds one with `createFragmentResolver` and hands it to the render, and the admin preview passes a separate one. A render path the site writes outside `createPublicRoutes` builds the resolver with [`createFragmentResolver`](../reference/delivery-data.md#createfragmentresolver). For an unknown id, or on a site with no fragments concept, that resolver throws `cairn: fragment "<id>" not found`. The [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes), [`CairnManifestOptions`](../reference/vite.md#cairnmanifestoptions), and [`SiteRender`](../reference/core.md#siterender) entries document the three calls.
+
+### Write a fragment and include it
+
+A fragment is a markdown file in `src/content/fragments/`, and an include names it by its id, the filename without `.md`. A fragment holds a `title` and a body:
+
+```md
+---
+title: Trail safety notice
+---
+Check current avalanche and trail conditions before you set out, and carry the ten essentials above treeline.
+```
+
+The including entry puts the directive on a line of its own:
+
+```md
+::include{fragment="trail-safety-notice"}
+```
+
+The manifest records each entry's included fragments, so a new fragment and a new include both change it. A build fails on a manifest that has drifted from the markdown, and its error names `npx cairn-manifest`. In the admin, an editor writes the same line with the **Include a fragment** control, which appears only when the site declares a fragments concept and never while the editor edits a fragment.
+
+### How an include resolves
+
+The engine splices a fragment's body into the including entry before it resolves components, `cairn:` links, and `media:` references. A registered component directive, a `cairn:` link, or a `media:` reference inside a fragment resolves as if it were typed into the including entry. The engine reads the fragment's body at each render, so an edit shows in an including entry at that entry's next render. Resolution runs one pass deep, so a fragment can't include another fragment, and the engine refuses such a save with `A fragment can't include another fragment.`
+
+### Include guards
+
+An include whose id names no fragment fails the build, the same way a dangling `cairn:` link does: the resolver throws `cairn: fragment "<id>" not found`, and on a prerendered entry route that stops the build. An include with no `fragment` attribute never reaches the resolver, so the build doesn't catch it. The page shows a notice, and the log carries an `include.missing` record with `reason: 'empty_fragment'`.
+
+The admin refuses to delete a fragment while a published entry still includes it. A fragment's edit screen lists the entries that include it in an **Included in** group with a count. While any entry includes the fragment, the edit screen shows a status line, ahead of a publish, that names how many including entries a publish updates. Both the guard and the list read the includes that each entry records in the content manifest. A publish updates that record and a save doesn't, so an include counts once its entry is published. A save never checks an include against the manifest, so a dangling include commits and the deploy build is the first thing that fails on it.
+
+For a failure on an include, see [Diagnose a reference or include failure](debug-your-site.md#diagnose-a-reference-or-include-failure).
+
 ## Address collisions
 
 When another published entry on `main` already resolves to the same permalink, the edit page shows a warn-only `address-collision` advisory. A publish rechecks against `main` and every open `cairn/*` branch, and when a collision remains it logs `publish.address_collided` after the publish lands. Neither check blocks a save or a publish, and both fail open: a check that cannot run lets the save or publish go ahead.
@@ -232,7 +415,7 @@ A save to the entry's holding branch commits no manifest change. A publish patch
 
 A `reference` field holds a typed `{ concept, id }` pointer. The manifest records each entry's outbound reference edges. From those edges, the engine finds which entries point at a given entry.
 
-For the manifest's format and functions, see [Content and manifest](../reference/core.md#content-and-manifest) in the core reference. For reference fields in use, see [Link content with references](link-content-with-references.md).
+For the manifest's format and functions, see [Content and manifest](../reference/core.md#content-and-manifest) in the core reference. For reference fields in use, see [Reference fields](#reference-fields).
 
 ## Renames
 
@@ -250,8 +433,6 @@ The engine refuses a rename with a 409 in any of the following cases:
 The following guides put the model to work:
 
 - [Define an adapter and schema](define-an-adapter-and-schema.md): writing the adapter and a concept's declaration
-- [Link content with references](link-content-with-references.md): reference fields and internal links in use
-- [Reuse content across entries](reuse-content-across-entries.md): fragments and the include directive
 - [Write a markdown component](write-a-markdown-component.md): rendering an entry's body
 
 The following pages place the content model in the wider system:

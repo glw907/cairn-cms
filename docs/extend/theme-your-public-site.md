@@ -6,7 +6,7 @@ The setup command, `create-cairn-site`, scaffolds a site with Waymark as its the
 
 Developers come to theming from four starting points, each with its entry section:
 
-- A site built by hand in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has neither Waymark nor the chassis, and it starts at [Theme a hand-built site](#theme-a-hand-built-site).
+- A hand-built site, from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) has neither Waymark nor the chassis, and it starts at [Theme a hand-built site](#theme-a-hand-built-site).
 - A scaffolded site that wants a brand's colors and type, with Waymark's layouts kept, starts at [Re-skin Waymark](#re-skin-waymark).
 - A scaffolded site that moves a design already in hand onto the chassis, in Waymark's place, starts at [Port your theme onto the chassis](#port-your-theme-onto-the-chassis).
 - A site with a finding from a public-scope `cairn-audit` rule starts at [Resolve an audit finding](#resolve-an-audit-finding).
@@ -29,12 +29,12 @@ The steps assume working knowledge of Tailwind CSS v4 theme variables and cascad
 
 The steps assume the following:
 
-- A site that the setup command scaffolded, or a SvelteKit site built by hand in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
+- A site that the setup command scaffolded, or a hand-built SvelteKit site from [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md).
 - For seeded media in local development, a deployed site with a media library, which [Configure media](configure-media.md) sets up.
 
 ## Theme a hand-built site
 
-A site built by hand adds Tailwind, daisyUI, and the engine's public style sheet. It links the sheet from a layout that wraps only the public routes, and names the same URL in the editor preview. See [the public style sheet reference](../reference/public-css.md) for each role the sheet declares.
+A hand-built site adds Tailwind, daisyUI, and the engine's public style sheet. It links the sheet from a layout that wraps only the public routes, and names the same URL in the editor preview. See [the public style sheet reference](../reference/public-css.md) for each role the sheet declares.
 
 The sheet's roles read daisyUI variables, such as `--color-base-content` and `--color-primary`. The sheet declares none of them and activates no daisyUI plugin. A hand-built site therefore installs daisyUI and supplies a theme block.
 

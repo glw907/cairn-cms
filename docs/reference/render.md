@@ -4,7 +4,7 @@ This subpath is type-only: `ComponentContext`, the structured input a component'
 receives. The render pipeline itself stays behind `createRenderer` on the package root, the one
 public, safe-by-default render path; see [Core](./core.md). A component's `build(ctx)` constructs
 its hast directly with hastscript's `h()`; the engine ships no hast-building helper toolkit of
-its own.
+its own. [Write a markdown component](../extend/write-a-markdown-component.md) shows `build(ctx)` in use.
 
 ```ts
 import type { ComponentContext } from "@glw907/cairn-cms/render";

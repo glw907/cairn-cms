@@ -135,6 +135,12 @@ nothing), or `{ outcome: 'not-found' }` when no row matched the email. Pass `own
 call site that knows the target can never be owner-capability, which removes unconditionally with
 no guard.
 
+The cascade runs after the editor row is gone. The session and pending-token deletes run in one
+batch. The preview-token delete runs as a separate statement outside that batch, because a site
+that hasn't applied `migrations/0003_preview.sql` has no `preview_tokens` table, and one missing
+table would fail a whole batch. That statement swallows a "no such table" error and rethrows any
+other D1 error, after the removal has already committed.
+
 ### `removeOwnerIfNotLast`
 
 Stability tier: Extension API.

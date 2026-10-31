@@ -15,7 +15,7 @@ import { PreviewBanner } from '@glw907/cairn-cms/public';
 ## Public preview
 
 `PreviewBanner` is a design-agnostic status notice for a shared preview link. See [Public
-preview](./sveltekit.md#public-preview) for the `loadPreview` seam it pairs with.
+preview](./sveltekit.md#public-preview) for the `loadPreview` seam it pairs with, and [Share a draft preview](../extend/share-a-draft-preview.md) for the task that mounts the route.
 
 ### `PreviewBanner`
 
@@ -48,7 +48,7 @@ The draft state sits on the `base-200` surface with a `warning` border, and the 
 `base-100` with an `info` border, so the banner follows whatever theme the page carries in every
 color scheme. The five custom properties
 `--cairn-preview-bg`, `-fg`, `-border`, `-link`, and `-radius` are the site-override seam: each one
-you declare replaces the token default in both states.
+you declare replaces the token default in both states. [Match the banner to your theme](../extend/share-a-draft-preview.md#match-the-banner-to-your-theme) shows an override.
 
 ```svelte
 <script lang="ts">

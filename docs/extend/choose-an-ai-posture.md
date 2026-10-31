@@ -4,7 +4,7 @@ Decide whether your site declines AI training crawlers, invites them, or states 
 carry that choice through to the file its robots route serves.
 
 This page assumes the prerendered robots route at `src/routes/robots.txt/+server.ts` that the
-scaffold writes.
+scaffold writes. [Serve robots.txt](build-the-public-routes.md#serve-robotstxt) shows that route.
 
 ## Choose a posture
 

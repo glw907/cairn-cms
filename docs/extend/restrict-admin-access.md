@@ -18,7 +18,7 @@ The page assumes you know SvelteKit server hooks, `load` functions, form actions
 
 Before you start, have the following in place:
 
-- A site scaffolded by `create-cairn-site` or built by hand as in [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md), with or without an `access` member. On a scaffolded site the adapter module is `src/theme/cairn.config.ts`, and on a hand-built site it is the module that calls `defineAdapter`. A fresh scaffold's adapter declares no `access` member.
+- A scaffolded site, or a hand-built site as [Add cairn to a SvelteKit app](add-cairn-to-a-sveltekit-app.md) builds it, with or without an `access` member. On a scaffolded site the adapter module is `src/theme/cairn.config.ts`, and on a hand-built site it is the module that calls `defineAdapter`. A fresh scaffold's adapter declares no `access` member.
 - A site route under `/admin` whose `load` and form actions do not yet check the access map, such as one whose `load` calls `requireEditor`.
 - A deployed site and a way to redeploy it, as in [Move the site to production](add-cairn-to-a-sveltekit-app.md#move-the-site-to-production). The checks need a deployed site because the dev backend mints an owner editor on every `/admin` request. It never reads `runtime.roles`, so no role refusal shows in local development.
 - An email address for a test editor besides the owner's, and a second browser to sign in as that editor.

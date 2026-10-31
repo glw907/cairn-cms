@@ -2,11 +2,11 @@
 
 The media library holds every image on your site. This page covers browsing the library, adding images, editing an image's name and default alt text, replacing an image everywhere it appears, and deleting images. It also gives the file types and size limit for uploads.
 
-You need to be signed in to the admin. You don't need a draft open, because everything here happens on the library screen. To put an image into the draft you're writing, see [Add an image](add-an-image.md). If a message on this screen confuses you, see [When something goes wrong](when-something-goes-wrong.md).
+You need to be signed in to the admin. You don't need a draft open, because everything here happens on the library screen. To put an image into the draft you're writing, see [Add an image](add-an-image.md).
 
 ## Open the library
 
-Select **Library** in the sidebar. Your site can use a different label for it. The screen is titled **Media library**.
+Select **Library** in the sidebar. Your site can use a different label for it. The screen is titled **Media library**. The numbered list after the following figure names the controls on the screen.
 
 ```repro
 story: media/library
@@ -21,7 +21,7 @@ caption: Each tile shows the image, its name, a Described or Needs alt label, an
 
 **Needs alt** shows the images that have no default alt text. **No references found** shows the images that no page and no unpublished edit points to.
 
-That second filter needs care. The library finds an image only where a page's text or fields point to it. An image placed another way, such as one written directly into your site's code, doesn't count. When you choose **No references found**, the library reminds you of this. No references found isn't a guarantee that an image is unused, so check anything you're unsure about before you delete it.
+The library finds an image only where a page's text or fields point to it. An image placed another way, such as one written directly into your site's code, doesn't count. When you choose **No references found**, the library reminds you of this. Check anything you're unsure about before you delete it.
 
 ## Add an image to the library
 
@@ -33,9 +33,9 @@ That second filter needs care. The library finds an image only where a page's te
 
 The library shows **Asset uploaded.** when the upload finishes. [Add an image](add-an-image.md) explains how to choose between a description and decorative.
 
-## Accepted image types
+## Check which images the library accepts
 
-The admin accepts JPEG, PNG, WebP, and GIF files. An animated GIF stays animated. It also accepts HEIC photos, the format many phones use. The admin converts a HEIC photo to WebP in your browser before it uploads, so you don't convert it yourself.
+The admin accepts JPEG, PNG, WebP, and GIF files. An animated GIF stays animated. The admin also accepts HEIC photos, the format many phones use. The admin converts a HEIC photo to WebP in your browser before it uploads, so you don't convert it yourself.
 
 The admin doesn't accept SVG files. Your site also sets a size limit for each file. Unless your developer changed it, the limit is 25 MB.
 
@@ -43,15 +43,18 @@ When the admin refuses a file, it shows one of these messages:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
-- **"This image format is not supported. Try a JPEG, PNG, WebP, or GIF."**
-- **"This image could not be converted. Try exporting it as a JPEG first."**
-- **"This image is too large to add, even after shrinking it."**
-- **"The upload could not reach the server. Check your connection and try again."**
+- **This image format is not supported. Try a JPEG, PNG, WebP, or GIF.**
+- **This image could not be converted. Try exporting it as a JPEG first.**
+- **This image is too large to add, even after shrinking it.**
+- **The upload could not reach the server. Check your connection and try again.**
 <!-- vale Microsoft.Contractions = YES -->
 
 ## See an image's details
 
-Select a tile in grid view, or a row in list view. The details panel opens beside the library. It stays open while you keep browsing. Select **Close details**, or press Escape while focus is inside the panel, to close it.
+To see an image's details, follow these steps:
+
+1. In grid view select a tile, or in list view select a row. The details panel opens beside the library and stays open while you keep browsing.
+1. To close the panel, select **Close details**, or press Escape while focus is inside the panel.
 
 ```repro
 story: media/details-panel
@@ -74,7 +77,7 @@ The default alt text applies the next time someone places the image. Changing it
 
 ## Replace an image
 
-Replace an image when you have a better version of the same picture. Every published page that uses the image then shows the new file, and the image keeps its name.
+Replace an image when you have a better version of the same image. Every published page that uses the image then shows the new file, and the image keeps its name.
 
 1. Select the image to open its details panel.
 1. Select **Replace image**.
@@ -85,13 +88,16 @@ Replace an image when you have a better version of the same picture. Every publi
 
 You always type the address, even when only one page uses the image. The button stays unavailable until what you type matches.
 
-Readers see the new picture after the site finishes updating. The alt text on each page is left as it was. An edit that someone saved but hasn't published keeps the old picture until that edit is published again. The review screen lists those edits in a separate group. A developer can bring the old file back.
+Readers see the new image after the site finishes updating. The alt text on each page is left as it was. An edit that someone saved but hasn't published keeps the old image until that edit is published again. The review screen lists those edits in a separate group. A developer can bring the old file back.
 
 If the library can't read every place the image is used, the window says **Replace is on hold** and changes nothing. Select **Check usage again** to try once more.
 
 ## Select several images
 
-Selecting lets you delete more than one image at a time. Tick the checkbox on each tile. In list view, tick the checkbox at the start of each row. A bar appears and gives the number you selected. It also says how many of those have no references and how many are still used.
+Selecting lets you delete more than one image at a time. To select images, follow these steps:
+
+1. Select the checkbox on each tile. In list view, select the checkbox at the start of each row.
+1. Read the bar that appears. It gives the number you selected, and it says how many of those have no references and how many are still used.
 
 The bar has three buttons:
 
@@ -102,7 +108,7 @@ The bar has three buttons:
 In grid view, you can also work from the keyboard:
 
 - The arrow keys move between tiles.
-- Space ticks or unticks the tile you're on.
+- Space selects or clears the tile you're on.
 - Shift with an arrow key extends the selection.
 - Ctrl+A, or Command+A on a Mac, selects every image showing.
 - Enter opens the details panel.
@@ -120,7 +126,7 @@ You can't undo a delete from the admin. The delete window says a developer can b
 1. Select the delete button in the review, such as **Delete 2, skip 1**.
 1. Select **Done** when the summary appears.
 
-A bulk delete never removes an image that pages still use. It checks each image again at the moment it deletes it and skips any that turned out to be in use. To delete one of the skipped images, follow the steps in the next section.
+A bulk delete never removes an image that the library finds in use. It checks each image again at the moment it deletes it and skips any that turned out to be in use. To delete one of the skipped images, follow the steps in [Delete one image](#delete-one-image).
 
 ### Delete one image
 
@@ -138,3 +144,7 @@ caption: The window lists each entry that would break and keeps Delete anyway un
 ```
 
 After a delete, the library shows **Asset deleted.**
+
+## Where to go next
+
+To put an image into an entry you're writing, see [Add an image](add-an-image.md). To keep writing, see [Write in the editor](write-in-the-editor.md).

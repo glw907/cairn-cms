@@ -26,19 +26,19 @@
     },
     {
       "file": "write-in-the-editor--entry-screen--1440.png",
-      "contract": "write-in-the-editor.md \"## The editing screen\"",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\"",
       "state": "the seeded post open on Write",
       "width": 1440
     },
     {
       "file": "write-in-the-editor--entry-screen--390.png",
-      "contract": "write-in-the-editor.md \"## The editing screen\"",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\"",
       "state": "the seeded post open on Write",
       "width": 390
     },
     {
       "file": "write-in-the-editor--entry-screen--1440--dark.png",
-      "contract": "write-in-the-editor.md \"## The editing screen\" (dark)",
+      "contract": "write-in-the-editor.md \"## Find your way around the editing screen\" (dark)",
       "state": "the seeded post open on Write, dark theme",
       "width": 1440
     },
@@ -116,13 +116,13 @@
     },
     {
       "file": "publish-and-history--header-band--1440.png",
-      "contract": "publish-and-history.md \"## The header\"",
+      "contract": "publish-and-history.md \"## Read the header\"",
       "state": "entry 2026-08-16-band-capture-1786866457131 (pending), overflow menu open",
       "width": 1440
     },
     {
       "file": "publish-and-history--bottom-bar--390.png",
-      "contract": "publish-and-history.md \"## The header\" (phone)",
+      "contract": "publish-and-history.md \"## Read the header\" (phone)",
       "state": "the seeded post, phone bottom-fixed Save/Publish bar",
       "width": 390
     },
@@ -176,13 +176,13 @@
     },
     {
       "file": "add-an-image--lead-picture-dialog--1440.png",
-      "contract": "add-an-image.md \"## Set the lead picture\"",
+      "contract": "add-an-image.md \"## Set the lead image\"",
       "state": "the hero field dialog, placement view with the social-crop preview",
       "width": 1440
     },
     {
       "file": "add-an-image--lead-picture-dialog--390.png",
-      "contract": "add-an-image.md \"## Set the lead picture\"",
+      "contract": "add-an-image.md \"## Set the lead image\"",
       "state": "the hero field dialog, placement view with the social-crop preview",
       "width": 390
     },

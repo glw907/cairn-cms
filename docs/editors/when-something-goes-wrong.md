@@ -1,12 +1,12 @@
 # When something goes wrong
 
-The editor sometimes refuses what you asked, and a screen sometimes shows a message you haven't seen before. This page explains each message and what to do next. It covers the sign-in link, saving and publishing, creating an entry, tags, a page that won't delete, and the links inside a draft.
+This page explains the messages the editor shows when it refuses a request, and what to do next. It covers the sign-in link, saving and publishing, creating an entry, tags, a page that won't delete, and the links inside a draft.
 
-You need to be able to reach the admin, or to be trying to. The page doesn't explain how to write, save, or publish. For those, see [Write in the editor](write-in-the-editor.md) and [Publish and history](publish-and-history.md). Messages about pictures are in [Add an image](add-an-image.md) and [Manage the media library](manage-the-media-library.md).
+This page doesn't explain how to write, save, or publish. For those, see [Write in the editor](write-in-the-editor.md) and [Publish an entry and review its history](publish-and-history.md). The messages for a refused image upload are in [Manage the media library](manage-the-media-library.md).
 
 Every message below is quoted exactly as it appears, so you can match it to what you're seeing. Where a message names something of yours, such as a field or a post, the quote uses an example in its place.
 
-## The sign-in link never arrives
+## The sign-in link doesn't arrive
 
 After you enter your email address, the admin shows a **Check your email** screen. That screen also says what to do if nothing arrives:
 
@@ -38,13 +38,13 @@ Depending on what went wrong, you see one of these messages:
 
 All three have the same fix:
 
-1. Go to the sign-in page. On the last message, select **Request a new link**.
+1. Go to the sign-in page. If you see **This sign-in link is invalid or expired.**, select **Request a new link**.
 1. Enter your email address and select **Send sign-in link**.
 1. Open the new email in the same browser where you asked for the link.
 
 ## A save or publish is refused
 
-When you select **Save** or **Publish** and the editor refuses, a red message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it.
+When you select **Save** or **Publish** and the editor refuses, a message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it.
 
 The following table lists the messages, what each one means, and what to do.
 
@@ -52,8 +52,8 @@ The following table lists the messages, what each one means, and what to do.
 |---|---|---|
 | **"Title is required"** | A field that must be filled in is empty. The message starts with the field's name. Yours may say something other than Title. Other field rules, such as a minimum length, name the field and the limit in the same way. | Fill in or fix the field, and then select **Save** or **Publish** again. Fields other than the title are in the **Details** panel. |
 | **"Pick a date for this entry."** | The entry needs a date, and the date field is empty. | Choose a date in the date field in the **Details** panel, and then save again. |
-| **"This file changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in the next section. |
-| **"Your edits are saved. Publish again."** | The site changed while your publish was running. Your edits are saved. | Select **Publish** again. |
+| **"This file changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in [An edit conflict stops your save](#an-edit-conflict-stops-your-save). |
+| **"Your edits are saved. Publish again."** | The site changed while your publish was running. | Select **Publish** again. |
 
 A connection problem or an unexpected error can stop a request. You see this message:
 
@@ -74,9 +74,9 @@ To keep your work:
 1. Sign in there, and then return to the first tab.
 1. Select **Save**. Your text is waiting in the editor.
 
-## An edit conflict
+## An edit conflict stops your save
 
-An edit conflict means the saved copy of the entry changed while your save was on its way. You see this message:
+If your save runs into an edit conflict, you see this message:
 
 **"This file changed since you opened it. Re-read the draft and save again."**
 
@@ -91,7 +91,7 @@ If the message comes back, copy your text somewhere safe, and then let your site
 
 ## A tag isn't on the list
 
-If your site keeps a tag list, you can add only tags from that list to an entry. Tags the entry already carries stay allowed. When a save includes a tag that isn't on it, the editor refuses. The message puts the tag's name in quotation marks and then says:
+If your site keeps a tag list, you can add only tags from that list to an entry. Tags the entry already carries stay allowed. When a save includes a tag that isn't on the list, the editor refuses. The message puts the tag's name in quotation marks and then says:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
@@ -106,9 +106,9 @@ To fix it:
 
 The **Tags** screen appears only for people your site allows to change the list. If you don't see it, ask your site owner to add the tag.
 
-## Creating an entry is refused
+## A new entry is refused
 
-The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New Post**. The dialog closes, and a red message appears above the list. Select the same button again, fix the field the message names, and select **Create**.
+The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New post**. The dialog closes, and a message appears above the list.
 
 Three messages cover date and address problems:
 
@@ -121,9 +121,15 @@ Two messages cover an address that's already taken:
 - **"An entry with that address already exists."** A published entry already has this address. Choose a different address.
 - **"An unpublished entry with that address already exists."** Someone saved an entry at this address and hasn't published it. Choose a different address, or ask the editors you work with whether one of them started it.
 
+To try again after any of these refusals:
+
+1. Select the same button at the top of the list.
+1. Fix the field that the message names.
+1. Select **Create**.
+
 ## A page won't delete
 
-You can't delete a page while other pages link to it, because those links would lead nowhere. It starts with the following message, where the word after This names the kind of entry:
+You can't delete a page while other pages link to it, because those links would lead nowhere. The refusal starts with the following message, where the word after This names the kind of entry:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, so a contraction rule cannot rewrite it. -->
@@ -141,12 +147,12 @@ To delete the page:
 
 1. Select each title in the list to open that page.
 1. Remove the link, or change it to point somewhere else.
-1. Save and publish the page. The check looks at the published site. A change you saved but didn't publish doesn't clear it.
+1. Save and publish the page. For links in the text, the check looks at the published site, so a change you saved but didn't publish doesn't clear this message.
 1. Open the page you want to delete and delete it again.
 
 ## A draft has a broken link
 
-When a draft links to a page that no longer exists, the editor refuses to save it. It shows this message above the draft:
+When a draft links to a page that no longer exists, or to one that has never been published, the editor refuses to save it. It shows this message above the draft:
 
 **"This page links to a page that no longer exists. Remove the broken link and save again."**
 
@@ -158,9 +164,9 @@ Under the message, each broken link appears on a separate line with a **Remove l
 
 If you want to keep a link, point it at a page that exists instead.
 
-A link to a page that exists but isn't published yet doesn't block the save. A warning note appears after you save to say the link won't work until that page is published.
+A link to a page that has never been published gets the same refusal, because the live site has no such page yet. Publish that page first, or remove the link. A link to a published page that's marked **Hidden** doesn't stop the save. A warning appears after you save to say the link shows a page-not-found error until you clear **Hidden** on that page and publish it.
 
-## Publishing the whole site is refused
+## A site-wide publish is refused
 
 The **Publish site** button in the top bar publishes every entry that has unpublished changes. If it can't, you land on an entry list with one of these messages:
 
@@ -170,3 +176,7 @@ The **Publish site** button in the top bar publishes every entry that has unpubl
 - **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish site** again.
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, contact your site developer.
 <!-- vale Microsoft.Contractions = YES -->
+
+## Where to go next
+
+For the steps behind a save or a publish, see [Write in the editor](write-in-the-editor.md) and [Publish an entry and review its history](publish-and-history.md). For an upload that was refused, see [Manage the media library](manage-the-media-library.md). For a refused tag, see [Manage your tag vocabulary](manage-your-tag-vocabulary.md).

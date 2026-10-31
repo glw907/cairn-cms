@@ -4,9 +4,9 @@ This page shows you how to move an entry between a private draft and your live s
 
 You need an entry with some writing in it, which [Write in the editor](write-in-the-editor.md) covers. This page doesn't cover what to do when a save or a publish fails. [When something goes wrong](when-something-goes-wrong.md) covers that.
 
-## The header
+## Read the header
 
-The header at the top of the editing screen holds the controls for an entry's life: its status, whether it has unsaved changes, and the buttons that save and publish it.
+The header at the top of the editing screen shows the entry's status and whether it has unsaved changes. It also holds the buttons that save and publish the entry.
 
 ```repro
 story: publish/header-band
@@ -21,7 +21,7 @@ On a phone, the header shrinks to a back arrow, the title, and one status chip. 
 story: publish/header-band
 width: narrow
 alt: Reproduction of the editing screen's header on a phone, with a back arrow, the title, a status chip, and the open More actions menu.
-caption: On a phone the menu adds Details to History and Delete, and Publish and Save move to a bar at the foot of the screen.
+caption: On a phone the menu adds Details to History and Delete.
 ```
 
 The following table describes the header's parts on a wide screen.
@@ -35,7 +35,7 @@ The following table describes the header's parts on a wide screen.
 | **Publish** | Makes the entry live. |
 | **Save** | Keeps your edits as a draft. |
 
-## The three statuses
+## Read an entry's status
 
 Every entry has one status, and the status tells you what visitors see.
 
@@ -55,9 +55,9 @@ After you save, the editor shows **Saved. Your site keeps showing the published 
 
 If you leave the screen with unsaved changes, your browser asks **You have unsaved changes. Leave anyway?** Stay on the screen if you want to save first.
 
-## How saving and publishing fit together
+## See how saving and publishing fit together
 
-You can save as often as you like. Each save updates the draft, and nothing reaches the live site until you publish. A live entry that you edit again goes back around the same loop.
+You can save as often as you like. Each save updates the draft, and nothing reaches the live site until you publish.
 
 ```mermaid
 flowchart LR
@@ -91,12 +91,12 @@ If a publish doesn't finish, the editor keeps your edits and shows **Your edits 
 
 ## Publish several entries at once
 
-On screens outside an open entry, such as a list, the **Publish site** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish site (2)**. It doesn't appear while you have an entry open, and it doesn't appear when no entries are waiting.
+On a screen outside an open entry, such as a list, the **Publish site** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish site (2)**. It appears only when entries are waiting.
 
 To publish everything that's waiting, follow these steps:
 
 1. On a list screen, select **Publish site**.
-2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its address under its content type. It includes every waiting entry you have access to, whoever saved it.
+2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its address under a heading for its content type. It includes every waiting entry you have access to, whoever saved it.
 3. Select **Publish site**. To back out, select **Cancel**.
 
 The list then shows a message that reads **Published** followed by the number of entries.
@@ -113,10 +113,10 @@ To delete an entry, follow these steps:
 
 1. Open the entry, and then select **More actions**.
 2. Select **Delete**. A window opens with the entry's type in the title, for example **Delete this post?**.
-3. Read the warning that you can't undo the deletion and that any unpublished edits go with it.
+3. Read the warning that you can't undo the deletion. If the entry has unpublished edits, the warning adds that they go with it.
 4. Select the delete button, which repeats the title, for example **Delete this post**.
 
-If other entries link to the one you're deleting, the window blocks the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same block.
+If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal.
 
 On a list, the trash button beside an entry deletes it at once, with no confirmation window, unless other entries link to it. To get the confirmation, delete from the entry's editing screen.
 
@@ -142,14 +142,14 @@ The following table describes the columns in the list.
 
 The list shows up to the 25 most recent published versions. When more exist, the page says **Showing the most recent 25 versions.** The list also reaches back only to the last time the entry's address changed. If you used **Change URL** on the entry, versions published before that change don't appear.
 
+If the entry already has a saved draft, even one of yours, the editor refuses to revert and names the person who saved the draft and when. Publish or discard that draft first.
+
 To bring back an earlier version, follow these steps:
 
 1. In the **Recent versions** list, find the version you want.
 2. In its row, select **Revert**.
 3. Review the text on the editing screen. The editor has saved the old version as a draft, and your site still shows the current version.
 4. Select **Publish** to make the old version live, or select **Discard changes** to drop it.
-
-**Revert** never changes the live site by itself. If the entry already has a saved draft, even one of yours, the editor refuses and names the person who saved the draft and when. Publish or discard that draft before a revert can start.
 
 ## Where to go next
 

@@ -68,6 +68,9 @@
 
 ## Low
 
+- [ ] **#96** Fix the comment above the no-pending-request redirect `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-31)*
+  `src/lib/sveltekit/auth-routes.ts:355-359` says a cookie-less browser gets `no-pending-request` only after failing against a bound row, but `:360-363` redirects with it for any failed consume when no cookie is present. The reference text now matches the code; the comment does not. An `auth-data` path, so it waits for a pass that touches it. Found by the docs finalization pass 1 whole-branch review.
+
 ## Done
 - [x] **#63** Mark a reader-site path so `check:symbols` doesn't reject it `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)*
   dropped: the commented allowlist in `check-symbols-allowlist.mjs` is the standing mechanism, and `src/app.css` is on it (sweep 2026-10-30)

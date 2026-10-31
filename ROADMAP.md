@@ -347,7 +347,7 @@ The original decision framing, for the record:
 
 - **Docs content carried from the 2b close (docs finalization pass 1, 2026-10-31).** The friction log's
   docs-content and repo-tooling entries were verified against the pages and code; 17 were fixed on
-  their pages, 5 found overtaken, and 10 became the rows below, which also carry the six tooling entries that stay, each with its trigger:
+  their pages, 5 found overtaken, and 10 became the rows below, which also carry the five tooling entries that stay, each with its trigger:
   - Move failure causes to `debug-your-site`. `docs/internal/docs-register.md`'s task-guide anatomy
     (item 5) points failure paths at the track's recovery surface, but the pages
     `arrange-the-admin-sidebar`, `write-a-markdown-component`, `share-a-draft-preview`,

@@ -551,6 +551,14 @@
 
 ### Documentation
 
+- **Two pages fold into Content model, and the docs close their stage 2b backlog.** The pages Link
+  content with references and Reuse content across entries are now the Reference fields and Fragments
+  sections of Content model, and their diagnosis rows sit in Debug your site. The shipped
+  `cairn-extend` router links the extend pages for a custom admin screen and a second sign-in group,
+  and the `cairn-public` include reference says a named fragment the build cannot find fails the
+  build. The reference pages document 27 more options, `devBackendHandle`, and the conditions no
+  doctor check raises.
+
 - **The shipped `cairn-extend` skill points at the published pages.** Its router and its preflight reference no longer point at a maintainer-only file of recorded claims. It sends an agent to the extend and reference pages in the
   installed package and keeps the links to the engine rulings and the admin design system. The skill
   and its copy in the Waymark template change together.

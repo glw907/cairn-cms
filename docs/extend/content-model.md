@@ -238,8 +238,9 @@ Once a post is published, the `cairnManifest` plugin runs `verifyReferences` rig
 A save whose `reference` field names a missing or still-draft target commits with a warning. A delete reads inbound `cairn:` body links from the published manifest, and it reads inbound reference edges from a cross-branch index built over that manifest and every open `cairn/*` branch. A delete runs its checks in this order:
 
 1. Inbound body links refuse the delete with status 409 and `Cannot delete <id>: N pages link to it.`
-2. A cross-branch reference index that cannot be built refuses with status 503, rather than counting the references as absent.
-3. Inbound reference edges refuse with status 409 and `Cannot delete <id>: N entries reference it.`, listing each referencing entry's concept, id, title, and permalink.
+2. For a fragment, entries that include it refuse the delete with status 409 and `Cannot delete <id>: N entries include it. Remove the include first.`
+3. A cross-branch reference index that cannot be built refuses with status 503, rather than counting the references as absent.
+4. Inbound reference edges refuse with status 409 and `Cannot delete <id>: N entries reference it.`, listing each referencing entry's concept, id, title, and permalink.
 
 A reference held in an unpublished draft still counts, and it blocks the delete or rename of its target. A rename refuses, naming the blocking entries, when an open branch other than the entry's branch holds an inbound reference. Otherwise it rewrites each referencing entry's stored id and changes no other byte of the frontmatter. [Renames](#renames) covers the rest of what a rename refuses and rewrites.
 

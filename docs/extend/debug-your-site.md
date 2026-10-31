@@ -128,14 +128,14 @@ Without that flag, the gap leaves no record. The fix is a code change that passe
 
 ## Diagnose a reference or include failure
 
-A failed reference or include either stops startup or the build with a `cairn:` error, or leaves the page without the link or the fragment. Most of these failures log no event, except an include that names no fragment. [Reference fields](content-model.md#reference-fields) and [Fragments](content-model.md#fragments) in Content model describe each mechanism.
+A failed reference or include either stops startup or the build with an error, or leaves the page without the link or the fragment. Most of these failures log no event. The exceptions are an include with no fragment and an include that a resolver other than the build's can't find. Both log `include.missing`. [Reference fields](content-model.md#reference-fields) and [Fragments](content-model.md#fragments) in Content model describe each mechanism.
 
 When a reference fails, work through the following causes in order:
 
 1. Composing the site's content runtime fails with an error naming a concept, a field, and an undeclared target. The field's `concept` names no concept under `content`. Fix the name or declare the concept.
 2. The build fails with an error naming a source entry, a field, and a missing target. A published reference points at an entry that no longer exists. In the admin, pick an existing target for that field, or restore the target entry.
 3. The published page shows no link where a reference is set. The route returns no `references` map, the template reads another key, or the target has no live entry and was dropped.
-4. An admin delete or rename refuses with a 409, or with a 503 when the reference index can't be built. The refusal leaves no log record, so the editor's banner is the only trace.
+4. An admin delete or rename refuses with a 409. When the reference index can't be built, a delete refuses with a 503 and a rename with a 409. The refusal leaves no log record, so the editor's banner is the only trace.
 
 When an include fails, work through the following causes in order:
 
@@ -417,7 +417,7 @@ page describes the `timeZone` option.
 ## A stale `site-facts.json` passes the build
 
 The build fails when the committed `site-facts.json` no longer matches the adapter, but when the
-build cannot derive the facts from the adapter, it skips the check and reports the file current. In the normal case, the
+build cannot derive the facts from the adapter, it skips the check, warns that the check was skipped, and the build passes. In the normal case, the
 build error names the file and the fix. The [`site-facts.json`
 contract](../reference/site-facts.md#who-writes-it-and-who-verifies-it) describes what the file
 carries and the warning for an absent file.

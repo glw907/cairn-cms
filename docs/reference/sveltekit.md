@@ -1038,7 +1038,7 @@ Stability tier: Unstable API.
 declare const NO_PENDING_REQUEST_ERROR: 'no-pending-request';
 ```
 
-The `?error=` code `confirmAction` redirects with when the confirm fails and the confirming
+The `?error=` code `confirmAction` redirects with when a submitted token fails to confirm and the
 browser carries no pending-login cookie. The code doesn't check why the confirm failed. A token that
 is bound to another browser's nonce, an expired token, an unknown token, and a token already used all
 redirect with it when the cookie is absent. A browser that carries a cookie gets `expired` on any

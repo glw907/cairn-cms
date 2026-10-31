@@ -64,7 +64,7 @@ Start with the content module.
 
 ## Build one typed index
 
-`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. [Add a concept](define-an-adapter-and-schema.md#add-a-concept) explains why each glob is written out and how to write it.
+`createSiteIndexes` builds one typed index per concept from one literal `import.meta.glob` per concept. [Define an adapter and schema](define-an-adapter-and-schema.md) explains why each glob is written out, and [Add a concept](define-an-adapter-and-schema.md#add-a-concept) shows how to write it.
 
 To build the index, make one call:
 

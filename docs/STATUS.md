@@ -18,29 +18,22 @@ sits in its slot on `ROADMAP.md`'s boundary-test path.
 
 ## Immediate next action
 
-Stage 2b part 2 is down to its close. Every extend page and the Claude Code page are published, and
-the redraft BACKLOG #71 tracked is done. A docs change now lands in the same pull request as the
-code, checked by `npm run check:docs-gate`, and goes to Geoff as a `docs` review; the `cairn-docs`
-skill carries the procedure. What remains of part 2 is the relinks and `LEGACY_PATH_MAP` repoints,
-the reference-arm corrections, the final arm index, the boundary test, and 2b's close, which still
-owns the friction-log triage. Part 1's carried items are the ROADMAP entry "Stage 2b part 2". The
-re-arm list is `docs/internal/record/harvest/relink.json`. The release holds until the docs are
-complete.
+The docs finalization series runs under `conductor-cairn-cms`, started by a timer at 00:01 on
+2026-10-31: the 2b close, a small engine pass, the editors arm, the admin arm, and the front door.
+The plan is [docs/plans/2026-10-30-docs-finalization.md](plans/2026-10-30-docs-finalization.md), and
+the live state is `~/.local/state/cairn-docs-final/ledger.md`. To start it by hand:
 
-The pre-2b tooling PRs are merged: cairn-cms #116 and workstation #25. If `tellgrader` predates
-#25, rebuild it with `make -C ~/.dotfiles/claude/.claude/skills/writing-voice/evals/tellgrader install`.
-The residue is the "Docs tooling before stage 2b: the residue" entry in `ROADMAP.md`.
+`claude --bg --model claude-opus-5-5 --effort medium --name conductor-cairn-cms "$(cat docs/plans/2026-10-30-docs-finalization-conductor-prompt.txt)"`
+
+The release holds until the docs are complete.
 
 ## Open decisions and watches
-- The docs improvement loop (PR #149 with workstation #154): once both merge and `stow -R bin`
-  links `cairn-docs-cycle`, the first real cycle runs from this checkout and queues a triage for
-  Geoff. Two acceptance runs were unmet; BACKLOG #87 and #88 hold the fixes.
-- Stage 2b part 1, for Geoff: the engine fixture for the
-  sidebar figure (the story `nav/worked-navlayout` relabels media to its own default).
+- The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
+  unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
   (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),
   which widens at stage 4's merge.
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
-  (four `./` `bin` entries). `CAIRN_GATE_READ_TOKEN` expires 2026-10-19.
+  (four `./` `bin` entries).

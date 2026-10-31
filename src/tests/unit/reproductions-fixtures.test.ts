@@ -113,6 +113,7 @@ describe('reproduction fixtures', () => {
     }
   });
 
+  // The tree is the worked example in docs/extend/arrange-the-admin-sidebar.md.
   it('resolves the navLayout worked example, with an unreferenced trailing group', () => {
     const referenced = new Set(
       fixtureNavLayout.items.flatMap((node) => ('children' in node ? node.children : [node])).map((child) =>

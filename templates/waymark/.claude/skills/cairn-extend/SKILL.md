@@ -30,8 +30,8 @@ The extend pages under `node_modules/@glw907/cairn-cms/docs/extend/` and the ref
 
 | Building | Atom | Seam | Reference |
 |---|---|---|---|
-| A custom admin screen over your data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md` |
-| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md` |
+| A custom admin screen over your data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md`, with `node_modules/@glw907/cairn-cms/docs/extend/add-a-custom-admin-screen.md` |
+| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`, with `node_modules/@glw907/cairn-cms/docs/extend/add-a-second-sign-in-group.md` |
 
 **A custom admin screen over your data.** `createSectionAction<Env, Db>({ resolveDb })`
 builds a reusable per-section action wrapper that resolves a binding from the site's `Env`

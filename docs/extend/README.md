@@ -1,6 +1,6 @@
 # Extend
 
-The extend track is being rebuilt, so this index lists only the pages in place so far, each under its group.
+The extend track is for a developer who builds a site on cairn's seams. Each page below covers one task or one part of the system, grouped by what you are working on.
 
 ## Start
 
@@ -13,8 +13,6 @@ The extend track is being rebuilt, so this index lists only the pages in place s
 - [Content model](./content-model.md)
 - [Define an adapter and schema](./define-an-adapter-and-schema.md)
 - [Write a markdown component](./write-a-markdown-component.md)
-- [Link content with references](./link-content-with-references.md)
-- [Reuse content across entries](./reuse-content-across-entries.md)
 - [Configure media](./configure-media.md)
 - [Migrate existing content](./migrate-existing-content.md)
 

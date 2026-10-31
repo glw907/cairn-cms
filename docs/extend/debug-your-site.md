@@ -60,6 +60,10 @@ A developer reads the records through the following surfaces:
 - `cairn health` fails its `errors` check when the engine's error-level records within the `--since`
   window, `24h` by default, exceed `--error-threshold`, `5` by default.
 
+Under `vite dev` or `wrangler dev`, the engine writes each record to the console, as `console.log`,
+`console.warn`, or `console.error` by level, so the records appear in the terminal that runs the
+server. Neither `cairn logs` nor `cairn health` reads that terminal.
+
 A Worker with observability off answers `cairn logs` with zero entries and no error, so an empty
 result is no proof the site is quiet. A failed `errors` check is the cue to read those records with
 `cairn logs` and match each one to its section on this page. The [exit
@@ -121,6 +125,27 @@ the site also passes `assetsEnabled: true`, the engine logs `media.resolver_abse
 once, when the factory is built, as the [log events](../reference/log-events.md) reference lists.
 Without that flag, the gap leaves no record. The fix is a code change that passes the site's `resolveMedia` to
 `createPublicRoutes`, as the [`PublicRoutesConfig`](../reference/delivery.md#publicroutesconfig) entry describes.
+
+## Diagnose a reference or include failure
+
+A failed reference or include either stops startup or the build with an error, or leaves the page without the link or the fragment. Most of these failures log no event. The exceptions are an include with no fragment and an include that a resolver other than the build's can't find. Both log `include.missing`. [Reference fields](content-model.md#reference-fields) and [Fragments](content-model.md#fragments) in Content model describe each mechanism.
+
+When a reference fails, work through the following causes in order:
+
+1. Composing the site's content runtime fails with an error naming a concept, a field, and an undeclared target. The field's `concept` names no concept under `content`. Fix the name or declare the concept.
+2. The build fails with an error naming a source entry, a field, and a missing target. A published reference points at an entry that no longer exists. In the admin, pick an existing target for that field, or restore the target entry.
+3. The published page shows no link where a reference is set. The route returns no `references` map, the template reads another key, or the target has no live entry and was dropped.
+4. An admin delete or rename refuses with a 409. When the reference index can't be built, a delete refuses with a 503 and a rename with a 409. The refusal leaves no log record, so the editor's banner is the only trace.
+
+When an include fails, work through the following causes in order:
+
+1. The build stops with a setup error that names the piece to fix. `cairn: concept "fragments" requires routing: 'embedded'` points at the concept's declaration, and `cairn: concept "fragments" has no glob passed` points at the content module's `createSiteIndexes` call. A stale-manifest error names `npx cairn-manifest`.
+2. The build stops with `cairn: fragment "<id>" not found`. An include names an id with no file in `src/content/fragments`, or the site declares no fragments concept. Set the id to the fragment's filename without `.md`, or declare the concept and add the fragment.
+3. The page shows the literal `::include{fragment="..."}` text. The render doesn't forward `resolveFragment`.
+4. The page shows a notice in place of the include, and the log carries an `include.missing` record with `reason: 'empty_fragment'`. The directive has no `fragment` attribute. Add the fragment's id to it. The build passes this case, so the notice can reach the live site.
+5. The page shows a `Missing fragment` notice, and the log carries `include.missing` with `reason: 'not_found'`. A resolver other than the public build's returned nothing for the id, where the public build's resolver would have thrown. Check the id against the fragment's filename.
+
+The [log events](../reference/log-events.md) reference lists the `include.missing` record's fields, and [Find the records](#find-the-records) shows how to query for it.
 
 ## Admin action events
 
@@ -392,13 +417,15 @@ page describes the `timeZone` option.
 ## A stale `site-facts.json` passes the build
 
 The build fails when the committed `site-facts.json` no longer matches the adapter, but when the
-build cannot derive the facts from the adapter, it reports the file current. In the normal case, the
+build cannot derive the facts from the adapter, it skips the check, warns that the check was skipped, and the build passes. In the normal case, the
 build error names the file and the fix. The [`site-facts.json`
 contract](../reference/site-facts.md#who-writes-it-and-who-verifies-it) describes what the file
 carries and the warning for an absent file.
 
-An adapter that throws for an unrelated reason leaves the build unable to derive the facts, and the
-build gives no signal. The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference
+An adapter that throws for an unrelated reason leaves the build unable to derive the facts. The
+build then skips the check and prints a warning that the `site-facts.json` check was skipped, with
+the adapter's error message as the reason. The warning doesn't fail the build, so read the build
+log for it. The [`cairn-manifest`](../reference/cli-cairn-manifest.md) reference
 describes the command that regenerates the file. After a change to the adapter's media bucket
 binding, its `roles`, or its `aiPosture`, the following steps bring the file current:
 

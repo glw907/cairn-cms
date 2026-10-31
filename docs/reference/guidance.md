@@ -70,6 +70,10 @@ ships is reported as removable, left for the site to remove by hand.
 6. Whether `.claude/` is excluded from the site's Tailwind build.
 7. Whether any `.orig` file is still present.
 
+`install` exits 0 even when it refuses a destination or a write fails. It reports each refusal
+and write error by name on stderr, so read the output rather than the exit code. An unknown
+command or flag, or `--strict` with `install`, prints a usage message and exits 2.
+
 `check` exits 0 by default; a missing gate-wiring item never fails the run, it is reported so the
 site can paste the matching snippet. `--strict` exits 1 when the guidance tree itself (line 1) is
 stale or missing, for a site that wants the gate.

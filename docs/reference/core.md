@@ -119,6 +119,12 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 `label` with no warning, so a plural `label` like `'Posts'` reads "New Posts" on the create
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
+`dir` (required) is the repo-relative directory that holds the concept's markdown files, such as
+`'src/content/posts'`. `summaryFields` (default none) lists frontmatter keys to copy onto each
+[`ContentSummary.fields`](delivery-data.md#types), so a list card reads an authored field without a
+per-entry detail read. `normalizeConcepts` throws at declaration when a `summaryFields` key isn't a
+declared field.
+
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
 inside another with the `::include` directive. It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
@@ -275,6 +281,13 @@ editor: {
 },
 ```
 
+#### `publishActions` (adapter `editor` member)
+
+A list of next-step links the edit screen shows after a publish. Each entry is plain data with a
+`label`, an `href` template, and an optional `concepts` list. Omitting the member renders the
+publish-success moment with no links. The [publish-actions seam](./sveltekit.md#the-publish-actions-seam)
+documents the entry shape, the validation, and the `{concept}` and `{id}` substitution.
+
 #### `media` (adapter member)
 
 ```ts
@@ -325,7 +338,7 @@ Stability tier: Extension API.
 declare function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry;
 ```
 
-Build a component registry from a site's component definitions. The render pipeline (the directive
+Build a component registry from the `components` list, an array of the site's component definitions. The render pipeline (the directive
 stamp plus the rehype dispatch) and the editor palette both read it.
 
 ```ts
@@ -392,6 +405,38 @@ const callout = defineComponent({
 });
 ```
 
+##### Slots and picker members
+
+`slots` (default none) declares the component's named content regions as a `SlotDef[]`. Each slot has a
+`name`, a `label`, and a `kind` of `'inline'`, `'markdown'`, or `'repeatable'`. The slot named `title`
+serializes to the directive's `[label]`, and the slot named `body` to its unmarked content.
+
+`SlotDef.required` (default `false`) makes the insert form require the slot. The form shows an asterisk,
+and the insert action stays unavailable until the slot has content. The render never reads it, so a
+hand-typed directive without the slot still renders.
+
+`SlotDef.itemFields` (default none) applies to a `'repeatable'` slot. It is a record of field
+descriptors for each item, and the insert form reads only the first key. Each item is one string
+stored under that key, or under `text` when `itemFields` is absent.
+
+The `slots` member of `ComponentDef.preview` (default none) is a record of sample slot values, keyed by slot name. A string
+fills an `'inline'` or `'markdown'` slot, and an array of strings fills a `'repeatable'` one.
+[`previewMarkdown`](#previewmarkdown) and the insert form's preview pane merge it over empty slot
+values.
+
+`ComponentDef.insertTemplate` (default none) is the markdown the editor inserts at the cursor when an
+author picks a component that declares no `attributes` and no `slots`. A component with either opens
+the insert form instead. A component with neither `insertTemplate` nor a schema doesn't appear in
+the picker.
+
+`ComponentDef.defaultIconByRole` (default none) maps a role string to a glyph key in the site's
+icon set, such as `{ caution: 'warning' }`. The registry resolves a component's default icon from this
+record first, then from the engine's built-in map for `note`, `tip`, `important`, `warning`,
+`caution`, `info`, and `danger`. It resolves nothing for a component with no `icon` attribute, and
+`defineRegistry` throws when a component sets `defaultIconByRole` without one.
+[Write a markdown component](../extend/write-a-markdown-component.md#shape-the-picker-entry) covers
+the picker members.
+
 #### `previewMarkdown`
 
 Stability tier: Extension API.
@@ -425,21 +470,26 @@ cover the container types and the cross-field `refine` hook in full.
 
 | Type | Renders as | Validates |
 | --- | --- | --- |
-| `text` | single-line text input | `min`/`max`/`length` (string length) and `pattern` (a regular expression) |
-| `textarea` | multi-line text input (`rows` sets its height) | the same length and pattern constraints as `text` |
-| `number` | numeric input | coerced to a number; `min`/`max` bound it, `integer: true` rejects a fraction |
-| `select` | single-choice control over the closed `options` list | rejects a value outside `options` |
+| `text` | single-line text input | `min`/`max`/`length` (length of the trimmed value, in characters; the first failing rule reports) and `pattern` (a regular expression) |
+| `textarea` | multi-line text input (`rows` sets its height, default 3) | the same length and pattern constraints as `text` |
+| `number` | numeric input (`min`, `max`, and `integer: true` render as the input's `min`, `max`, and `step` attributes) | coerced to a number; a non-finite value such as `Infinity` is rejected, `min`/`max` bound it, `integer: true` rejects a fraction |
+| `select` | single-choice control over the closed `options` list, with a leading "none" choice that stores no value | rejects a value outside `options` with "contains an unknown value" |
 | `multiselect` | checkboxes when `options` is set and `creatable` is not; a comma-separated tag input otherwise | rejects a value outside `options` whenever `options` is set, including under `creatable: true`; nothing when the field declares no `options` |
-| `url` | URL input | rejects a value that fails the URL format check |
+| `url` | URL input | accepts only an absolute `http://` or `https://` URL with no whitespace; a root-relative path or a `mailto:` value fails |
 | `email` | email-address input | rejects a value that fails the email format check |
 | `date` | calendar-date input | must parse as `YYYY-MM-DD`; `min`/`max` bound it |
-| `datetime` | date-and-time input | accepted as a plain string today; the descriptor's `min`/`max` are not yet enforced by the validator |
+| `datetime` | date-and-time input | a quoted string is kept as written, and a parsed `Date` becomes a zoneless `YYYY-MM-DDTHH:mm` string read in UTC; the descriptor's `min`/`max` are not yet enforced by the validator |
 | `boolean` | checkbox | none; an absent or non-`true` value normalizes to unset |
 | `icon` | glyph picker when the adapter supplies an icon set; a plain text input when it does not | none; the stored value is the picked glyph's name |
 | `image` | hero-image control (upload, alt, optional caption) | a `required` image with no picked source is the one error this type raises |
 | `object` | a labeled group of its leaf fields | a `required` empty group errors on the group's path; otherwise each leaf validates independently |
 | `array` | a repeatable-row editor over its `item`, or the reference picker when `item` is a `reference` | a `required` empty list errors on the array's path; otherwise each row validates by its item descriptor |
 | `reference` | a reference picker over one target concept's entries | rejects a value that is not a well-formed entry id |
+
+`required: true` sets the HTML `required` attribute on the field's control (a closed `multiselect` signals it on the group), makes the inferred key
+non-optional, and makes an empty value fail the save with "<label> is required". `label` is required on
+every builder except `object`. A tag input's `placeholder` defaults to "Separate values with commas"
+when the field sets no `help` text, and the checkbox group of a closed `multiselect` has no placeholder.
 
 #### `fields`
 
@@ -497,13 +547,18 @@ leaf or a flat `object`, never another `array` and never an `object` of objects.
 an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
 nested reference, or a nested `seo` image throws at the `defineFieldset()` call. No field key may contain a
 dot, top-level or nested, because the editor addresses a nested value by a dotted path. There is
-no escape hatch for a deeper shape today: flatten the fields instead of nesting them.
+no escape hatch for a deeper shape today: flatten the fields instead of nesting them. [Containers](../extend/content-model.md#containers) in Content model covers the nesting rules.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a
 validation rule. The `date` field shows a built-in publish-clarity default when its `help` is unset,
 so the date never reads as if it schedules publishing; a field `help` replaces that default, and the
 date hint cannot be suppressed entirely.
+
+`default` (a `string` or `boolean`, default none) is the initial value a new entry's form opens with.
+The `date` field also accepts the sentinel `'today'`, which resolves to the request's date as
+`YYYY-MM-DD`. An empty string or `false` default writes no key, so an untouched field commits nothing.
+It applies to a fresh entry only and never overrides a value already in the frontmatter.
 
 ```ts
 import { defineFieldset, fields } from '@glw907/cairn-cms';
@@ -621,6 +676,17 @@ const { renderMarkdown } = createRenderer(registry);
 // render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
 
+`RendererConfig.unsafeDisableSanitize` (default `false`) removes the sanitize floor and the sink guard,
+which reintroduces the XSS vector they close. Set it only for a site whose content is entirely
+developer-controlled. It is a code-level choice and no editor-facing setting reaches it. To allow more
+HTML while keeping the floor, extend the allowlist with `sanitizeSchema` instead.
+Omitted, `sanitizeSchema` leaves cairn's default schema in force. The callback receives a copy of it, and
+[the sanitize floor](./render.md#the-sanitize-floor) states what it can't lower.
+
+`RendererConfig.anchorRel` (default `'noopener noreferrer'`) is the `rel` value forced on every
+`target="_blank"` anchor, including anchors a component's `build` emits. Set another string to change
+it, or `false` to skip the injection for a site that hardens its own anchors.
+
 `RendererConfig.tableScroll` (default `true`) wraps every rendered table in a labeled,
 keyboard-reachable `role="region"` div, so a narrow viewport scrolls the wrapper instead of
 squeezing the table's columns while the table itself keeps its role in the accessibility tree. Set
@@ -676,6 +742,20 @@ fragment resolution. `concept` and `frontmatter` carry the entry's context, so a
 vary its output per concept or per frontmatter field. Both are optional: an entry render supplies
 them, and the standalone component-insert preview omits them.
 
+#### `rendering.components` and `rendering.icons` (adapter members)
+
+<!-- snippet-check-skip: the members' types in isolation, outside the adapter object they belong to -->
+```ts
+{ components?: ComponentRegistry; icons?: IconSet }
+```
+
+Both sit beside `render` in the adapter's `rendering` group, and both are optional. `components` is the
+[`defineRegistry`](#defineregistry) result that the editor's component picker and the render pipeline
+read. A site that leaves it unset has no picker entries and no registered directives. `icons` is the
+site's [`IconSet`](#types), a glyph name to SVG path-data map that feeds the admin icon picker and the
+renderer. [Write a markdown component](../extend/write-a-markdown-component.md#register-the-component)
+walks the registration.
+
 #### `rendering.islands` (adapter member)
 
 ```ts
@@ -686,7 +766,7 @@ The live Svelte components for hydrated directives, keyed by directive name, dec
 in the adapter's `rendering` group. Every component whose [`hydrate`](#definecomponent) is set needs an
 entry here, and every entry needs a matching `hydrate` component; `defineAdapter` fails closed at
 declaration on either mismatch, naming the offending directive. An absent registry keeps the site
-static, and the client runtime is never imported. The runtime that consumes it lives at the
+static, because the site's root layout loads the client runtime only when the registry holds an island. The runtime that consumes it lives at the
 [`/islands`](./islands.md) subpath; that page carries the boundary contract and the props trust
 boundary.
 
@@ -806,6 +886,37 @@ import { parseSiteConfig } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);
 ```
+
+#### `tidy.conventions` (site-config block)
+
+<!-- snippet-check-skip: the YAML block's shape in isolation, outside the site-config file -->
+```yaml
+tidy:
+  enabled: true
+  conventions:
+    oxfordComma: complex-only
+    smartQuotes: true
+```
+
+The house-style rules tidy applies on top of the objective fixes it always makes, typed as
+`TidyConventions`. The resolved shape fills every boolean with its default, and a variant member
+stays off unless the config names one. The settings screen validates a saved block against the same
+sets, and a value outside its set throws. [Set the conventions](../extend/turn-on-tidy.md#set-the-conventions)
+walks the procedure.
+
+| Member | Values | Default | Behavior |
+| --- | --- | --- | --- |
+| `fixes` | `boolean` | `true` | Governs the Settings toggle for the objective fixes. Setting `false` doesn't stop them from running. |
+| `oxfordComma` | `'always'`, `'complex-only'`, `'never'` | off | Sets the serial comma. `'complex-only'` follows the AP rule. |
+| `numberStyle` | `'under-ten'`, `'under-hundred'`, `'always-numerals'` | off | Sets the spelled-out threshold. Ages, dates, measurements, and percentages stay numerals. |
+| `measurements` | `'abbreviate'`, `'spell-out'` | off | Changes the notation only, never the unit system or the number. |
+| `percent` | `'sign'`, `'word'` | off | Writes `%` or the word *percent*. |
+| `emDash` | `'spaced'`, `'closed'` | off | Sets the spacing around an em dash. |
+| `enDashRanges` | `boolean` | `false` | Turns a hyphen between two numbers into an en dash. |
+| `ellipsis` | `'single-char'`, `'three-dots'` | off | Sets the ellipsis form. |
+| `timeFormat` | `'5 PM'`, `'5pm'`, `'5 p.m.'` | off | Writes times in the chosen form. |
+| `smartQuotes` | `boolean` | `false` | Converts straight quotes to curly ones with the full apostrophe rule set. |
+| `brandCaps` | `boolean` | `false` | Corrects capitalization for names on a curated list only. |
 
 #### `readMenu`
 

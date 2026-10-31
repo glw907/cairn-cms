@@ -137,7 +137,9 @@ interface PublicRoutesConfig {
 ```
 
 The injected dependencies for the public loaders. `render` turns an entry's markdown into html,
-`origin` and `feeds` build the absolute URLs in the head, and `description` and `defaultImage` are the
+`origin` builds the absolute URLs in the head. `feeds.rss` and `feeds.json` are absolute feed URLs
+that become `rel="alternate"` autodiscovery links, typed `application/rss+xml` and
+`application/feed+json`, on a dated entry's head only. An undated entry's head carries neither. `description` and `defaultImage` are the
 site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a frontmatter `media:`
 hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
 builds the body resolver, and when it is absent no `heroImage` projection is derived. `assetsEnabled`

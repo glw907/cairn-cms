@@ -276,7 +276,8 @@ pages, and it defaults to `your organization's sign-in`.
 ## Wire the resolver and deploy the Worker
 
 `createAuthGuard` returns a plain SvelteKit `Handle` whether or not `identity` is set, so the hooks
-module's production branch keeps its shape and the guard takes the resolver as one more option. A
+module's production branch keeps its shape and the guard takes the resolver as one more option. The
+guard reads the adapter's `roles` and `access` from `runtime`, so the call passes neither. A
 deploy puts it into effect.
 
 To turn on identity mode, follow these steps:

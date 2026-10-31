@@ -125,6 +125,16 @@ writes no payload; a directory that is not a cairn-cms site still writes one, ca
 `UNKNOWN` verdict and an empty checks array; any other exit 3 is a run whose only non-passing
 results are `UNCHECKED`.
 
+## Conditions no doctor check raises
+
+The condition registry names 25 ids, and the eleven checks above raise 11 of them. No `cairn doctor`
+check raises the other 14: `edge.https-not-forced`, `auth.csrf-token-invalid`,
+`email.sender-not-onboarded`, `email.send-failed`, `config.tidy-key-missing`,
+`auth.store-unreachable`, `auth.store-unmigrated`, `auth.store-roles-unmigrated`,
+`auth.unknown-role`, `auth.email-not-normalized`, `github.app-unreachable`,
+`auth.identity-unresolved`, `auth.identity-unknown`, and `admin.login-probe-failed`. `cairn health`
+raises `edge.https-not-forced` and `email.sender-not-onboarded`. A doctor run never reports the rest.
+
 ## Checks that need a live site
 
 Seven check ids never appear in this command's report, because each needs a deployed, adopted

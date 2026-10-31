@@ -10,7 +10,7 @@ Authoring:
 
 Reads:
 
-- A missing or unnamed fragment renders a calm notice paragraph carrying the class `cairn-include-missing`, and the page keeps building. The registry does not list the class, and the sheet does not style it, so a theme that wants the notice quiet styles it itself.
+- An include that names no fragment renders a calm notice paragraph carrying the class `cairn-include-missing`, and the page keeps building. A named fragment the public build cannot find fails the build, and the admin preview renders the same notice for it. The registry does not list the class, and the sheet does not style it, so a theme that wants the notice quiet styles it itself.
 - The editor preview wraps an included fragment in a boundary cue, `cairn-fragment-boundary`. That cue belongs to the admin preview and never reaches a public page.
 
 Override seams:

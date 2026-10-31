@@ -140,6 +140,32 @@ import { theme } from './theme-handle.js';
 export const handle = sequence(theme, createAuthGuard({ runtime }));
 ```
 
+Under the development backend, the hooks module swaps the guard for
+[`devBackendHandle`](#devbackendhandle-dev-package), which takes the same required `runtime` and attaches the
+same access map.
+
+### `devBackendHandle` (dev package)
+
+The development counterpart of [`createAuthGuard`](#createauthguard). The development-only
+`@glw907/cairn-cms-dev` package exports it. It takes a `DevBackendConfig` and returns a SvelteKit
+`Handle`. It replaces the guard in `hooks.server.ts` while the site runs
+against a fake backend. On `/admin`, `/media`, and
+`/preview` requests it layers in-memory doubles for the GitHub backend, `AUTH_DB`, and the media
+bucket, and it leaves every other path untouched.
+
+The `runtime` member is required, as with the guard: the runtime `composeRuntime` returned for the
+site's adapter. The handle mints an owner editor on each `/admin` request. It attaches
+`runtime.access ?? {}` to `locals.cairnAccess`, so the access helpers read the same map under either hook.
+The minted editor always has owner capability, so the handle resolves none from `runtime.roles`.
+The handle runs no CSRF check. A custom admin action's own check is the first to refuse a bad token.
+
+The `content` member is `'repository'` (the default) or `'fixtures'`. `'repository'` serves the site's
+working tree through an in-memory overlay, writes nothing to disk, and throws under `wrangler dev`
+because it needs a filesystem. `'fixtures'` serves a seeded in-memory repo and runs anywhere. When
+`CAIRN_DEV_BACKEND` is set on the Worker env and the request is to a non-local host, the handle
+refuses every path with a 503 and logs [`guard.refused`](./log-events.md) with
+`reason: 'dev_backend_in_prod'`.
+
 ### `createCairnAdmin`
 
 ```ts
@@ -1012,10 +1038,12 @@ Stability tier: Unstable API.
 declare const NO_PENDING_REQUEST_ERROR: 'no-pending-request';
 ```
 
-The `?error=` code `confirmAction` redirects with when the confirming browser carries no
-pending-login cookie and the submitted token is bound to another browser's nonce. It's distinct
-from `expired` because the two need different instructions: telling someone to request a new link
-reproduces the refusal on a second device, so the copy has to name this browser.
+The `?error=` code `confirmAction` redirects with when a submitted token fails to confirm and the
+browser carries no pending-login cookie. The code doesn't check why the confirm failed. A token that
+is bound to another browser's nonce, an expired token, an unknown token, and a token already used all
+redirect with it when the cookie is absent. A browser that carries a cookie gets `expired` on any
+failed confirm. The two differ because they need different instructions: telling someone to request a
+new link reproduces the refusal on a second device, so the copy has to name this browser.
 
 `LoginPage` and `ConfirmPage` branch on this constant, and a site rendering its login page
 compares `data.error` against it rather than against a copied string literal. The wire value is the
@@ -1222,7 +1250,7 @@ still-live entry). All three close the same id-reuse collision: a stale link tha
 resolve to a different entry's draft. Publishing deliberately leaves the rows in place, since
 [`loadPreview`](#loadpreview) needs them to answer a stale link with "this preview has ended" rather
 than a bare 404. See [Public preview](#public-preview) below for the site-mounted page these actions
-feed.
+feed, and [Share a draft preview](../extend/share-a-draft-preview.md) for the task that mounts it.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1350,7 +1378,8 @@ interface MediaRouteConfig {
 ```
 
 The media delivery route, a SvelteKit `RequestHandler` a media-enabled site mounts at
-`/media/[...path]`. It streams content-addressed bytes from the site's R2 bucket, validating the
+`/media/[...path]`. The directory follows the site's `publicBase`, and the rest parameter must be named
+`path`. It streams content-addressed bytes from the site's R2 bucket, validating the
 hash and extension before any R2 read and deriving the object key from the validated values alone.
 Every served response carries the load-bearing security headers (`X-Content-Type-Options: nosniff`,
 `Content-Disposition: inline`, a `default-src 'none'; sandbox` CSP, and a one-year immutable cache),
@@ -1376,7 +1405,7 @@ non-editor"): the edit screen's share affordance, the preceding
 [`previewMintAction`](#createcontentroutes) section, mints an opaque token for the entry's pending
 draft, and a site-mounted, never-prerendered
 page renders it through the site's public composition, so the preview is a real page in the
-site's app rather than an approximated shell.
+site's app rather than an approximated shell. [Share a draft preview](../extend/share-a-draft-preview.md) walks through the route and the banner.
 
 **Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
 (`PreviewConfig`) is the site's stylesheets and container classes for the *admin editor's own*
@@ -1418,8 +1447,10 @@ it), and the entry's file exists on the default branch, the ended page renders w
 `preview.state: 'published'` and `preview.published.permalink` set: "this preview has ended,"
 linking the live version, never a claim that the draft itself went live (a discarded *edit* of an
 already-live entry reaches this same state, and that claim would be false for it). A gone branch
-with nothing published (a discarded, never-published entry) answers the uniform 404 instead,
-reason `branch_gone`.
+with nothing published answers the uniform 404 instead, reason `branch_gone`. Discarding a
+never-published entry doesn't reach that reason, because the discard deletes the entry's link rows
+first and the token then logs `unknown`. `branch_gone` needs the branch gone with its link row still
+present, as when the row cleanup failed or something outside cairn deleted the branch.
 
 `loadPreview` sets its response headers (`x-robots-tag: noindex, nofollow`,
 `cache-control: private, no-store`, `referrer-policy: no-referrer`,
@@ -1492,8 +1523,9 @@ admin guard has already run: `event.locals.cairnEditor` is the only editor sourc
 row carries the address it names, and that address lets removing an editor revoke every link they
 minted.
 
-The `target` is the argument's, never the route's, so the call works from any route. A refusal
-comes back as a value on the `outcome` discriminant, not a throw:
+The `target` is the argument's, never the route's, so the call works from any route. A missing
+session redirects to sign-in and an unauthorized one gets the 403 above. An unknown concept, a
+malformed id, or a missing draft comes back as a value on the `outcome` discriminant, not a throw:
 
 ```ts
 type PreviewMintOutcome =
@@ -1529,7 +1561,8 @@ delete. A session without editor capability, or one the site's access map denies
 a 403 before the delete ever runs.
 
 The `target` is the argument's, never the route's, so the call works from any route, exactly like
-`mintPreview`. A refusal comes back as a value on the `outcome` discriminant, not a throw:
+`mintPreview`. A missing session redirects to sign-in and an unauthorized one gets the 403 above.
+An unknown concept or a malformed id comes back as a value on the `outcome` discriminant, not a throw:
 
 ```ts
 type PreviewRevokeOutcome =
@@ -1596,6 +1629,10 @@ declare function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<H
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
 A backend that isn't a GitHub App reports the check as `{ ok: true, detail: 'not-applicable' }`.
+A failing signing check carries one of three fixed `detail` strings, never the raw crypto error:
+`GITHUB_APP_PRIVATE_KEY_B64 is not configured` (the secret is unset), `key import or sign failed`
+(the key doesn't decode, import, or sign), or `malformed JWT` (the signed token doesn't have three
+parts).
 A passing signing check carries `fingerprint`, the `SHA256:` fingerprint of the key's public half.
 It matches the fingerprint GitHub shows for the key in the App's settings, so you can confirm which
 key the Worker holds. The check computes it offline and omits it when it can't.
@@ -1618,8 +1655,8 @@ answers every live request for the next 60 seconds. That bound holds per isolate
 summed over the fleet the route can mint once per isolate per minute. A caller spread across many
 locations reaches many isolates, and each mints on its own. GitHub's secondary rate limits are shared
 with publishing, so a sustained burst of live requests could delay a publish. The entry's branch holds
-each save, so nothing is lost. Each caller waits at most 5 seconds for the shared mint, then reads
-`unreachable`.
+each save, so nothing is lost. Each caller waits at most 5.5 seconds for the shared mint, the mint's 5-second abort plus a 500 ms
+grace, then reads `unreachable`.
 
 On a site that prerenders by default, set `prerender = false` so the check runs at request time rather
 than freezing a build-time failure.
@@ -1659,7 +1696,7 @@ answer for a site that wants to add just one link beside the built-in screens: d
 with that one entry, and every engine screen the declaration omits lands in the trailing fallback
 group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
 site entry's href is additionally gated by the site's declared [access
-map](./core.md#access-map), when one is declared.
+map](./core.md#access-map), when one is declared. [Restrict admin access](../extend/restrict-admin-access.md) covers the access map, and [Arrange the admin sidebar](../extend/arrange-the-admin-sidebar.md) shows a declaration in use.
 
 ### `NavLayoutEntry`
 
@@ -1795,8 +1832,8 @@ interface NavLayoutSection {
 }
 ```
 
-One named group inside a `navLayout` tree, holding a mix of site entries and engine references, no
-nesting. `roles` gates every child in the section at once, composing with each child's gates
+One named group inside a `navLayout` tree. `children` (required) holds a mix of site entries and
+engine references, and no section nests inside another. `roles` gates every child in the section at once, composing with each child's gates
 (an engine reference inside a `roles`-gated section still obeys the engine's capability rule; a
 section's `roles` never widens what a child would otherwise show).
 
@@ -1978,7 +2015,7 @@ badge on the matching visible nav entry, capped at `99+`; a collapsed section's 
 sum of its visible children's counts, computed from the same live items as the leaf badges, and
 disappears once the section opens (the item badges remain); the count lives in the entry link's
 accessible name, never on the badge span itself, which is `aria-hidden`. That is the rendering
-contract in full.
+contract in full. [Arrange the admin sidebar](../extend/arrange-the-admin-sidebar.md) shows the declaration that produces it.
 
 ---
 
@@ -1992,7 +2029,7 @@ entry by its label. SvelteKit's build loads each route's
 server modules, so on a site whose admin routes import the module that calls `createCairnAdmin`,
 the bad entry fails the build instead of silently rendering a broken link after a publish. `editLoad` resolves the validated config for the one
 entry that just went live. It drops any entry a `concepts` list excludes, then substitutes
-`{concept}` and `{id}` into every surviving `href` with that entry's identity. The edit page
+`{concept}` and `{id}` into every surviving `href` with that entry's identity, with no URL encoding. The edit page
 renders the result as quiet links beside the publish-success strip, never inside a callback: no
 function crosses the publish redirect, only a template string resolved server-side.
 

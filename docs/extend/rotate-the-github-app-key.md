@@ -6,7 +6,7 @@ An App can hold several private keys at once, and a new key does not invalidate 
 
 Proving the new key takes at least 55 minutes, because the Worker caches each installation token that long, and a publish inside that window can run on a token the old key minted. For a key that may have been exposed, that window is the cost of avoiding an outage, since GitHub accepts the old key until it is deleted. GitHub's plan for a compromised key runs in the same order, generating a new key and switching the App to it before deleting the old one. If the new key already fails, [Recover from a failed key](#recover-from-a-failed-key) is the place to start.
 
-This page assumes a terminal on your platform and familiarity with Wrangler's secret commands and with querying Workers Logs. The App's first registration happens in [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app) in the hand-built tutorial, or in the setup command for a scaffolded site. [The GitHub App's reach](security-model.md#the-github-apps-reach) in the security model explains why the key lives only as a Worker secret and what the App's token can write.
+This page assumes a terminal on your platform and familiarity with Wrangler's secret commands and with querying Workers Logs. The App's first registration happens in [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app) in the tutorial for a hand-built site, or in the setup command for a scaffolded site. [The GitHub App's reach](security-model.md#the-github-apps-reach) in the security model explains why the key lives only as a Worker secret and what the App's token can write.
 
 ## Before you begin
 
@@ -77,10 +77,14 @@ To confirm the new key, follow these steps:
    The expected response is the following:
 
    ```json
-   {"ok":true,"checks":{"githubAppSigning":{"ok":true}}}
+   {"ok":true,"checks":{"githubAppSigning":{"ok":true,"fingerprint":"SHA256:<digest>"}}}
    ```
 
-   The scaffold's route answers with status 503 when the check fails, and a hand-built route answers 200 unless it sets the status from `ok`, so read the `ok` field in either case. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
+   The `fingerprint` is the `SHA256:` fingerprint of the key's public half. Compare it with the fingerprint that GitHub lists for the new key on the App's settings page.
+
+   On Windows PowerShell 5.1, `curl` is an alias for `Invoke-WebRequest`, which prints a response object and throws on a 503, so run `curl.exe https://<your-site>/healthz` instead, which prints the body for any status.
+
+   The scaffold's route answers with status 503 when the check fails, and a hand-built route answers 200 unless it sets the status from `ok`, so read the `ok` field in either case. A response with `ok: true` proves that the secret decodes, imports, and signs. The check makes no network call, so `ok: true` never proves that GitHub accepts the key, unless you request `/healthz?live=1`. That request also mints one installation token and reports the result under `githubAppToken`. If the response carries `ok: false`, go to [Recover from a failed key](#recover-from-a-failed-key).
 
 2. Wait 55 minutes from the push, so that any token minted with the old key has expired from the cache.
 
@@ -94,7 +98,7 @@ To confirm the new key, follow these steps:
 
 5. In the editor, publish the edit.
 
-   The note reads "Published. The live site is rebuilding." That completed publish from the deployed Worker confirms the new key. If the publish does not complete, go to [Recover from a failed key](#recover-from-a-failed-key).
+   The note reads "Published. The live site is rebuilding." That completed publish from the deployed Worker confirms the new key. If the publish does not complete, go to [Recover from a failed key](#recover-from-a-failed-key). A publish refused on a stale branch head is not a key failure. It stays in the editor with the message "Your edits are saved. Publish again."
 
 6. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query records whose `event` field is `github.unreachable`, over the time since the push.
 
@@ -126,15 +130,19 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    The error page from opening or publishing an entry comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 
+4. If `/healthz` answers 503 with the detail `health check failed`, the check itself threw.
+
+   The anonymous route hides the thrown message. In [Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/), query records whose `event` field is `health.failed`. Its `error` field holds the message, as the [log events](../reference/log-events.md) reference lists.
+
 After the 55-minute wait, a publish that fails while `/healthz` reports `ok: true` and no shell record appears is not a key failure. [Debug your site](debug-your-site.md#read-the-structured-logs) covers reading the logs.
 
 ### Roll back to the old key
 
-Until the old key is deleted, pushing its base64 with the same command restores signing with it immediately. To roll back, follow this step:
+Until the old key is deleted, pushing its base64 with the same command puts the old key back in the Worker's secret at once. Signing with it returns only as the token cache expires: a warm isolate keeps serving the token it already minted, for up to 55 minutes, and only tokens minted after that come from the old key. To roll back, follow this step:
 
 - In the site's directory, run the push command for your platform from [Push the new key to the Worker](#push-the-new-key-to-the-worker) with the old key's PEM file.
 
-The push deploys at once, so the site publishes on the old key while the new key is diagnosed separately. To finish the rotation, delete the failed key on GitHub and start again at [Generate a new key](#generate-a-new-key). Without the old key's file, [Generate a third key](#generate-a-third-key) applies.
+The push deploys at once, and a cached token stays valid until it expires, so publishing continues throughout. Within 55 minutes every isolate signs with the old key, and the new key can be diagnosed separately. To finish the rotation, delete the failed key on GitHub and start again at [Generate a new key](#generate-a-new-key). Without the old key's file, [Generate a third key](#generate-a-third-key) applies.
 
 ### Generate a third key
 
@@ -150,7 +158,7 @@ A third key replaces a failed key after the deletion, or before it when no copy 
 
 The following pages cover related tasks, concepts, and references:
 
-- [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app), the App's first registration in the hand-built tutorial
+- [Register the GitHub App](add-cairn-to-a-sveltekit-app.md#register-the-github-app), the App's first registration in the tutorial for a hand-built site
 - [The GitHub App's reach](security-model.md#the-github-apps-reach), what the key and its installation token can write
 - [`loadHealth`](../reference/sveltekit.md#loadhealth), the signing self-test behind `/healthz`
 - [Log events](../reference/log-events.md), whose `github.unreachable` row lists the event's scopes

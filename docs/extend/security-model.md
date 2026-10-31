@@ -288,8 +288,7 @@ reachable to any editor-capability session.
 [`canReach`](../reference/core.md#canreach-hasaccessrule) is the one function that the guard's
 route checks, the engine's screens, and the sidebar call to decide reach, yet the sidebar and the
 routes can still disagree. A `navLayout` site entry whose href no key matches stays visible while its
-route refuses. The sidebar reads the adapter's map and `requireAccess` reads the guard's, so a map
-given to only one of them gates only that one. The `editors` roster screen stays owner-only whatever the
+route refuses. The adapter's `access` member is the one map, and the composed runtime carries it. The sidebar and the engine's screens read it. `requireAccess` reads it through `locals.cairnAccess`, which the guard sets from that runtime. No map gates one of them and not the others. The `editors` roster screen stays owner-only whatever the
 map says. Each engine write action gates through the map against one
 target, the concept id or one of the fixed screens `media`, `nav`, `settings`, or `vocabulary`,
 with the exceptions that [Limits of access map coverage](#limits-of-access-map-coverage) names.
@@ -360,11 +359,14 @@ same safe-scheme list. It does not remove a `<script>`, `<style>`, or `iframe sr
 
 ### Limits of render safety
 
-The `sanitizeSchema` callback receives cairn's default schema, and its return replaces the floor's
-schema with nothing checking that the strip survived, so the option is additive only by contract. A
-callback that admits `<script>` therefore lets author script through the floor, and the sink guard
-removes no script element. A `javascript:` or `data:` URL stays stripped either way, because the
-sink guard's safe-scheme list comes from GitHub's schema and never from the site's.
+The `sanitizeSchema` callback receives a copy of cairn's default schema, so a change it makes never
+reaches the default or a later build. After the callback returns, the engine removes `script` from
+the schema's `tagNames` and keeps the core `strip` list, so a callback that admits `<script>` still
+loses it. The callback stays responsible for attributes and URL schemes, and a callback that admits
+an unsafe attribute gets it. A callback that returns a schema with no `tagNames` array throws,
+because without that allowlist the floor holds nothing. A `javascript:` or `data:` URL stays
+stripped either way, because the sink guard's safe-scheme list comes from GitHub's schema and never
+from the site's.
 
 `unsafeDisableSanitize` is a code-level switch on the renderer config, never an admin toggle, and it
 removes both the sanitize floor and the sink guard. With it set, `rehype-raw` still parses author

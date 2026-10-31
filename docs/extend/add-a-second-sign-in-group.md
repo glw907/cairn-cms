@@ -335,7 +335,7 @@ Each required member is a decision the site makes:
 - `deliver` sends the code over your transport, in place of the example site's development-only capture transport.
 - `lookup` returns the stable subject for a normalized contact, or `null`, and that answer decides membership.
 - `normalize` puts a contact in its canonical form before the lookup and the rate budgets use it.
-- `challenge` wraps [`verifyTurnstile`](../reference/cloudflare.md#verifyturnstile), which returns `false` on every failure and never throws.
+- `challenge` wraps [`verifyTurnstile`](../reference/cloudflare.md#verifyturnstile), which returns `false` on every failure and never throws. A blank secret logs `turnstile.verify_failed` with the reason `missing_secret`.
 - `cookie.name` is the base name of the session cookie and of its `_pending` nonce cookie. A name that starts with `cairn_` throws.
 
 Three of these functions carry an obligation the factory cannot check:

@@ -159,7 +159,8 @@ login flow needs the surrounding discipline the engine's magic-link guard follow
   The third predicate is the same-browser binding: the third parameter is the hash of the nonce
   the confirming browser carries in its pending-login cookie, so a link opened anywhere else
   matches no row and the requesting browser's link survives. `nonce_hash IS NULL` keeps a row
-  written before that column existed confirmable. Comparing in SQL rather than in TypeScript is
+  written before that column existed confirmable. A confirm from a browser with no pending cookie
+  passes a null hash, which equals no stored hash, so only a row with a null `nonce_hash` matches. Comparing in SQL rather than in TypeScript is
   deliberate: no `===` runs against a secret.
 
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser

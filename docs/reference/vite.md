@@ -27,7 +27,9 @@ function cairnManifest(opts: CairnManifestOptions): Plugin;
 ```
 
 The build plugin. In `buildStart` it evaluates a verify virtual module through a nested Vite SSR
-load, so a manifest that has drifted from the corpus fails the build. Add it to the `plugins` array,
+load, so a manifest that has drifted from the corpus fails the build. The same load then runs
+[`verifyReferences`](./core.md#manifest-format-parse-and-verify), so a published `reference` field that
+points at a missing entry fails the build too. Add it to the `plugins` array,
 after `sveltekit()`. The showcase wires it in its `vite.config.ts`, alongside its build-time
 plugin (`@tailwindcss/vite`) this excerpt omits:
 

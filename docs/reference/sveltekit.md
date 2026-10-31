@@ -1378,7 +1378,8 @@ interface MediaRouteConfig {
 ```
 
 The media delivery route, a SvelteKit `RequestHandler` a media-enabled site mounts at
-`/media/[...path]`. It streams content-addressed bytes from the site's R2 bucket, validating the
+`/media/[...path]`. The directory follows the site's `publicBase`, and the rest parameter must be named
+`path`. It streams content-addressed bytes from the site's R2 bucket, validating the
 hash and extension before any R2 read and deriving the object key from the validated values alone.
 Every served response carries the load-bearing security headers (`X-Content-Type-Options: nosniff`,
 `Content-Disposition: inline`, a `default-src 'none'; sandbox` CSP, and a one-year immutable cache),
@@ -1522,8 +1523,9 @@ admin guard has already run: `event.locals.cairnEditor` is the only editor sourc
 row carries the address it names, and that address lets removing an editor revoke every link they
 minted.
 
-The `target` is the argument's, never the route's, so the call works from any route. A refusal
-comes back as a value on the `outcome` discriminant, not a throw:
+The `target` is the argument's, never the route's, so the call works from any route. A missing
+session redirects to sign-in and an unauthorized one gets the 403 above. An unknown concept, a
+malformed id, or a missing draft comes back as a value on the `outcome` discriminant, not a throw:
 
 ```ts
 type PreviewMintOutcome =
@@ -1559,7 +1561,8 @@ delete. A session without editor capability, or one the site's access map denies
 a 403 before the delete ever runs.
 
 The `target` is the argument's, never the route's, so the call works from any route, exactly like
-`mintPreview`. A refusal comes back as a value on the `outcome` discriminant, not a throw:
+`mintPreview`. A missing session redirects to sign-in and an unauthorized one gets the 403 above.
+An unknown concept or a malformed id comes back as a value on the `outcome` discriminant, not a throw:
 
 ```ts
 type PreviewRevokeOutcome =
@@ -1652,8 +1655,8 @@ answers every live request for the next 60 seconds. That bound holds per isolate
 summed over the fleet the route can mint once per isolate per minute. A caller spread across many
 locations reaches many isolates, and each mints on its own. GitHub's secondary rate limits are shared
 with publishing, so a sustained burst of live requests could delay a publish. The entry's branch holds
-each save, so nothing is lost. Each caller waits at most 5 seconds for the shared mint, then reads
-`unreachable`.
+each save, so nothing is lost. Each caller waits at most 5.5 seconds for the shared mint, the mint's 5-second abort plus a 500 ms
+grace, then reads `unreachable`.
 
 On a site that prerenders by default, set `prerender = false` so the check runs at request time rather
 than freezing a build-time failure.
@@ -2026,7 +2029,7 @@ entry by its label. SvelteKit's build loads each route's
 server modules, so on a site whose admin routes import the module that calls `createCairnAdmin`,
 the bad entry fails the build instead of silently rendering a broken link after a publish. `editLoad` resolves the validated config for the one
 entry that just went live. It drops any entry a `concepts` list excludes, then substitutes
-`{concept}` and `{id}` into every surviving `href` with that entry's identity. The edit page
+`{concept}` and `{id}` into every surviving `href` with that entry's identity, with no URL encoding. The edit page
 renders the result as quiet links beside the publish-success strip, never inside a callback: no
 function crosses the publish redirect, only a template string resolved server-side.
 

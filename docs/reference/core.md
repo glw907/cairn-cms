@@ -281,6 +281,13 @@ editor: {
 },
 ```
 
+#### `publishActions` (adapter `editor` member)
+
+A list of next-step links the edit screen shows after a publish. Each entry is plain data with a
+`label`, an `href` template, and an optional `concepts` list. Omitting the member renders the
+publish-success moment with no links. The [publish-actions seam](./sveltekit.md#the-publish-actions-seam)
+documents the entry shape, the validation, and the `{concept}` and `{id}` substitution.
+
 #### `media` (adapter member)
 
 ```ts
@@ -463,21 +470,26 @@ cover the container types and the cross-field `refine` hook in full.
 
 | Type | Renders as | Validates |
 | --- | --- | --- |
-| `text` | single-line text input | `min`/`max`/`length` (string length) and `pattern` (a regular expression) |
-| `textarea` | multi-line text input (`rows` sets its height) | the same length and pattern constraints as `text` |
-| `number` | numeric input | coerced to a number; `min`/`max` bound it, `integer: true` rejects a fraction |
-| `select` | single-choice control over the closed `options` list | rejects a value outside `options` |
+| `text` | single-line text input | `min`/`max`/`length` (length of the trimmed value, in characters; the first failing rule reports) and `pattern` (a regular expression) |
+| `textarea` | multi-line text input (`rows` sets its height, default 3) | the same length and pattern constraints as `text` |
+| `number` | numeric input (`min`, `max`, and `integer: true` render as the input's `min`, `max`, and `step` attributes) | coerced to a number; a non-finite value such as `Infinity` is rejected, `min`/`max` bound it, `integer: true` rejects a fraction |
+| `select` | single-choice control over the closed `options` list, with a leading "none" choice that stores no value | rejects a value outside `options` with "contains an unknown value" |
 | `multiselect` | checkboxes when `options` is set and `creatable` is not; a comma-separated tag input otherwise | rejects a value outside `options` whenever `options` is set, including under `creatable: true`; nothing when the field declares no `options` |
-| `url` | URL input | rejects a value that fails the URL format check |
+| `url` | URL input | accepts only an absolute `http://` or `https://` URL with no whitespace; a root-relative path or a `mailto:` value fails |
 | `email` | email-address input | rejects a value that fails the email format check |
 | `date` | calendar-date input | must parse as `YYYY-MM-DD`; `min`/`max` bound it |
-| `datetime` | date-and-time input | accepted as a plain string today; the descriptor's `min`/`max` are not yet enforced by the validator |
+| `datetime` | date-and-time input | a quoted string is kept as written, and a parsed `Date` becomes a zoneless `YYYY-MM-DDTHH:mm` string read in UTC; the descriptor's `min`/`max` are not yet enforced by the validator |
 | `boolean` | checkbox | none; an absent or non-`true` value normalizes to unset |
 | `icon` | glyph picker when the adapter supplies an icon set; a plain text input when it does not | none; the stored value is the picked glyph's name |
 | `image` | hero-image control (upload, alt, optional caption) | a `required` image with no picked source is the one error this type raises |
 | `object` | a labeled group of its leaf fields | a `required` empty group errors on the group's path; otherwise each leaf validates independently |
 | `array` | a repeatable-row editor over its `item`, or the reference picker when `item` is a `reference` | a `required` empty list errors on the array's path; otherwise each row validates by its item descriptor |
 | `reference` | a reference picker over one target concept's entries | rejects a value that is not a well-formed entry id |
+
+`required: true` sets the HTML `required` attribute on the field's control (a closed `multiselect` signals it on the group), makes the inferred key
+non-optional, and makes an empty value fail the save with "<label> is required". `label` is required on
+every builder except `object`. A tag input's `placeholder` defaults to "Separate values with commas"
+when the field sets no `help` text, and the checkbox group of a closed `multiselect` has no placeholder.
 
 #### `fields`
 
@@ -668,6 +680,8 @@ const { renderMarkdown } = createRenderer(registry);
 which reintroduces the XSS vector they close. Set it only for a site whose content is entirely
 developer-controlled. It is a code-level choice and no editor-facing setting reaches it. To allow more
 HTML while keeping the floor, extend the allowlist with `sanitizeSchema` instead.
+Omitted, `sanitizeSchema` leaves cairn's default schema in force. The callback receives a copy of it, and
+[the sanitize floor](./render.md#the-sanitize-floor) states what it can't lower.
 
 `RendererConfig.anchorRel` (default `'noopener noreferrer'`) is the `rel` value forced on every
 `target="_blank"` anchor, including anchors a component's `build` emits. Set another string to change
@@ -752,7 +766,7 @@ The live Svelte components for hydrated directives, keyed by directive name, dec
 in the adapter's `rendering` group. Every component whose [`hydrate`](#definecomponent) is set needs an
 entry here, and every entry needs a matching `hydrate` component; `defineAdapter` fails closed at
 declaration on either mismatch, naming the offending directive. An absent registry keeps the site
-static, and the client runtime is never imported. The runtime that consumes it lives at the
+static, because the site's root layout loads the client runtime only when the registry holds an island. The runtime that consumes it lives at the
 [`/islands`](./islands.md) subpath; that page carries the boundary contract and the props trust
 boundary.
 

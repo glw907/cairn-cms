@@ -1,21 +1,27 @@
 # Troubleshoot a live site
 
-A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, what to do, and the log event that confirms the cause. A cause that needs code changed says so and points a developer to [Debug your site](../extend/debug-your-site.md).
+A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to [Debug your site](../extend/debug-your-site.md).
 
-- A `cairn doctor` check named a problem: [Check that your site works](./is-it-working.md).
-- A setup step failed, stopped, or was interrupted before the site went live: [Setup recovery](./setup-recovery.md).
-- The site is live and doing something wrong, and no check names it: this page covers it, below.
+Two other pages cover problems at other moments:
+
+- If a `cairn doctor` check named a problem, read [Check that your site works](./is-it-working.md).
+- If a setup step failed or stopped before the site went live, read [Recover a setup that stopped](./setup-recovery.md).
 
 ## Read your site's logs
 
-Logging has to be on before any row below can help. Run `cairn doctor` and look at the Workers Logs line. If it fails, follow [Turn on observability](./is-it-working.md#turn-on-observability). Once logging is on, the site writes one structured record for each meaningful event. Each record carries an event name, a level, a timestamp, and fields that belong to that event.
+Logging has to be on before any section below can help.
+
+1. Run `cairn doctor` and look at the Workers Logs line.
+2. If the line fails, follow [Turn on observability](./is-it-working.md#turn-on-observability).
+
+Once logging is on, the site writes one structured record for each meaningful event. Each record carries an event name, a level, a timestamp, and fields that belong to that event.
 
 You can read the records in either of two places:
 
 - The Workers Logs tab for your Worker in the Cloudflare dashboard.
 - From the site's folder, `npx wrangler tail`, which streams records live while you reproduce the problem.
 
-Filter by the event name that a row below gives you. [The log events reference](../reference/log-events.md) lists every event and its fields. A record carries the signed-in editor's email address when one is involved. It never carries a sign-in token or a session id, so a record is safe to paste when you ask for help.
+Filter by the event name that a section below gives you. [The log events reference](../reference/log-events.md) lists every event and its fields. A record carries the signed-in editor's email address when one is involved. A record never carries a sign-in token or a session id. Because it can carry an email address, check a record before you paste it anywhere public.
 
 ## Nobody can sign in, or one person can't
 
@@ -31,7 +37,7 @@ The ordinary "check your inbox" message is the same whether or not the address i
 
 A third message points somewhere else. `This browser has no pending sign-in` means the browser that opened the link isn't the browser that asked for it. That happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The same message also appears when a link has already been used. In every case the fix is the same: request a new link and open it in the browser that asked.
 
-If the site has one owner and that owner is locked out entirely, a developer can add a recovery link directly in the `AUTH_DB` database. [The security model](../extend/security-model.md#limits-of-the-browser-binding) explains why a row seeded that way confirms from any browser.
+An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. [The security model](../extend/security-model.md#limits-of-the-browser-binding) explains why a row seeded that way confirms from any browser.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, and `auth.link.refused`.
 
@@ -47,7 +53,7 @@ If the site has one owner and that owner is locked out entirely, a developer can
 
 If every admin page, the sign-in page included, shows the same branded error, the database binding is missing. [Deploy the Worker with its bindings](./is-it-working.md#deploy-the-worker-with-its-bindings) covers that fix.
 
-**The log event:** `guard.refused`. Its `reason` field names the case: `https`, `csrf`, or `bindings`.
+**The log event:** `guard.refused`. Its `reason` field names the case: `https`, `csrf`, `identity`, or `bindings`.
 
 ## A save or publish reports a conflict, or fails
 
@@ -55,7 +61,7 @@ If every admin page, the sign-in page included, shows the same branded error, th
 
 **What it means:** a conflict means the entry changed on GitHub after the editor opened it, most often because two people edited it at once. Nothing is broken. The editor reviews the current version and saves again. A failure that names no conflict more often points at the GitHub App, so check [Install the GitHub App](./is-it-working.md#install-the-github-app). If publishing works and saves still fail, a developer has to look. [Debug your site](../extend/debug-your-site.md) is where they start.
 
-The **Publish site** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending, and it hid the button rather than guess. Check the GitHub App the same way.
+The **Publish site** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending, and it hid the button rather than guess. Check the App the same way.
 
 **The log events:** `commit.failed` for an ordinary save and `publish.failed` for a publish. Their `reason` field is `conflict` in the ordinary case. Otherwise their `error` field carries what GitHub said. A `github.unreachable` record with `scope: 'shell'` is the case where the missing button means something is wrong.
 
@@ -77,7 +83,7 @@ The **Publish site** button appears only when something is waiting to publish. I
 
 ## The admin shows an error strip instead of the screen
 
-**What you see:** the admin shows a calm failure message in place of the screen you opened, not a raw crash.
+**What you see:** the admin shows a short error message in place of the screen you opened, not a raw crash.
 
 **What it means:** cairn caught an unexpected error from a custom screen or action. This needs a developer, because something in the site's code threw. The record names what failed and where.
 
@@ -90,3 +96,9 @@ The **Publish site** button appears only when something is waiting to publish. I
 **What it means:** the site's attention check threw an error, so cairn renders no badges rather than fail the screen. This needs a developer.
 
 **The log event:** `admin.attention_failed`.
+
+## See also
+
+- [Check that your site works](./is-it-working.md) explains each `cairn doctor` result.
+- [Debug your site](../extend/debug-your-site.md) is where a developer starts on a cause that needs code.
+- [The log events reference](../reference/log-events.md) lists every event and its fields.

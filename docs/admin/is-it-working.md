@@ -1,20 +1,24 @@
 # Check that your site works
 
-`cairn doctor` checks a cairn site's configuration and prints one line for each check, and when a line says FAIL it also prints a link to the section of this page that explains it. The page is a lookup. You arrive at one section from one result, read what the check examines and what a failure means, and follow the remedy, so nothing here is meant to be read in order. The `cairn doctor` command reads only the files in the site's folder and needs no credential. It never changes anything.
+The `cairn doctor` command checks a cairn site's configuration and prints one line for each check. When a line says FAIL, it also prints a link to the section of this page that explains the check. Each section covers one check, so a reader arrives from one result and needs only that section. `cairn doctor` reads the files in the site's folder, makes one request for the site's `robots.txt`, needs no credential, and changes nothing.
 
-- A `cairn doctor` check named a problem: this page covers it, below.
-- A setup step failed, stopped, or was interrupted before the site went live: [Setup recovery](./setup-recovery.md).
-- The site is live and doing something wrong, and no check names it: [Troubleshooting](./troubleshooting.md).
+The following list routes you to the right page for each situation.
+
+- If a `cairn doctor` check named a problem, the sections below cover it.
+- If a setup step failed, stopped, or was interrupted before the site went live, read [Recover a setup that stopped](./setup-recovery.md).
+- If the site is live and doing something wrong, and no check names it, read [Troubleshoot a live site](./troubleshooting.md).
 
 ## Run the check
 
-Install the `cairn` command first, with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the [release page](https://github.com/glw907/cairn-cms/releases). Then run the check from the site's folder:
+1. Install the `cairn` CLI from the [release page](https://github.com/glw907/cairn-cms/releases). If you already have Go installed, `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` also works.
+2. Open a terminal in the site's folder.
+3. Run the check:
 
-```
-cairn doctor
-```
+   ```
+   cairn doctor
+   ```
 
-The following report comes from a real run against a site that the setup command had just deployed. Every line passed except one skip, which the next sections explain.
+The following report comes from a run against a site that the setup command, `create-cairn-site`, had just deployed. Every line passed except one skip, which the sections after the report explain.
 
 <!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/04-doctor-report.txt -->
 ```
@@ -37,7 +41,7 @@ Each line starts with one of five words:
 - `UNCHECKED`: the check applied but couldn't read the input it needed.
 - `INFO`: the check couldn't see enough to answer, or it carries an advisory.
 
-A skip is neither a pass nor a failure. The one in the report above belongs to a check that applies only to a site that declares custom roles. This site declares none, so the check had nothing to examine. The line's wording reads like a problem, but the line states that the check was not needed.
+A skip is neither a pass nor a failure. The one in the preceding report belongs to a check that applies only to a site that declares custom roles. This site declares none, so the check had nothing to examine. The title reads like a problem even though the line reports that the check wasn't needed.
 
 When a check fails, the report adds a block that names the problem and gives the link:
 
@@ -53,28 +57,33 @@ Workers Logs has no sink failed.
 9 passed, 1 failed, 1 skipped, 0 info, 0 unchecked
 ```
 
-The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. The jump list that follows maps each title to its section. A passing title reads as a statement about the site. The same title reads as a problem in the FAIL line and in the section heading below.
+The report prints a title for each check and never a condition id. This page files each check under its condition id, a name such as `config.bindings-missing`, because the id is how the rest of cairn's diagnostics refer to the same problem. A check's title changes with its result, so a passing line and a failing line word the same check differently. Each section heading names the remedy. The following table maps each title to its section.
 
-A site that `create-cairn-site` built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
+A site that the setup command built is already wired for the bindings, logging, origin, and admin-mount checks, so those fail only after someone changes the site's code. The dependency check can still fail later as packages drift, with nothing customized.
 
 `cairn doctor` never runs the checks that need a deployed site or a credential. `cairn health` runs two of them, after you register the site with `cairn adopt`. No command runs the others yet. Each section says which case it is.
 
-## Jump list
+## Find a check by its title
 
-- `Always Use HTTPS`—[Force HTTPS at the edge](#force-https-at-the-edge) (`cairn health`, not `cairn doctor`).
-- `Email sending domain`—[Onboard the sending domain](#onboard-the-sending-domain) (`cairn health`, not `cairn doctor`).
-- `Wrangler bindings`—[Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings).
-- `Media bucket binding`—[Declare the media bucket binding](#declare-the-media-bucket-binding).
-- `Workers Logs`—[Turn on observability](#turn-on-observability).
-- `Trusted origins`—[Keep SvelteKit's origin check on](#keep-sveltekits-origin-check-on).
-- `Site-wide Referrer-Policy`—[Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy).
-- `PUBLIC_ORIGIN`—[Set the public origin](#set-the-public-origin).
-- `Site config`—[Validate the site config](#validate-the-site-config).
-- `Framework dependencies`—[Meet the dependency floors](#meet-the-dependency-floors).
-- `AI posture`—[Make the stated AI posture effective](#make-the-stated-ai-posture-effective).
-- `Guard role vocabulary`, and the sign-in database conditions—[Provision the auth store](#provision-the-auth-store).
-- `Custom /admin mount`—[Wire the admin mount](#wire-the-admin-mount).
-- `GitHub App`—[Install the GitHub App](#install-the-github-app) (no command checks it).
+The following table maps each report title to its section and to the command that runs the check.
+
+| Report title | Section | Checked by |
+| --- | --- | --- |
+| Always Use HTTPS | [Force HTTPS at the edge](#force-https-at-the-edge) | `cairn health` |
+| Email sending domain | [Onboard the sending domain](#onboard-the-sending-domain) | `cairn health` |
+| Wrangler bindings | [Deploy the Worker with its bindings](#deploy-the-worker-with-its-bindings) | `cairn doctor` |
+| Media bucket binding | [Declare the media bucket binding](#declare-the-media-bucket-binding) | `cairn doctor` |
+| Workers Logs | [Turn on observability](#turn-on-observability) | `cairn doctor` |
+| Trusted origins | [Keep SvelteKit's origin check on](#keep-sveltekits-origin-check-on) | `cairn doctor` |
+| Site-wide Referrer-Policy | [Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy) | `cairn doctor` |
+| PUBLIC_ORIGIN | [Set the public origin](#set-the-public-origin) | `cairn doctor` |
+| Site config | [Validate the site config](#validate-the-site-config) | `cairn doctor` |
+| Framework dependencies | [Meet the dependency floors](#meet-the-dependency-floors) | `cairn doctor` |
+| AI posture | [Make the stated AI posture effective](#make-the-stated-ai-posture-effective) | `cairn doctor` |
+| Guard role vocabulary | [Provision the auth store](#provision-the-auth-store) | `cairn doctor` |
+| Sign-in database | [Provision the auth store](#provision-the-auth-store) | No command |
+| Custom /admin mount | [Wire the admin mount](#wire-the-admin-mount) | `cairn doctor` |
+| GitHub App | [Install the GitHub App](#install-the-github-app) | No command |
 
 Three conditions never appear in a report, because your site answers with the refusal itself, at the moment it happens: [Admin CSRF token rejected](#admin-csrf-token-rejected), [Sign-in gate refused the request](#sign-in-gate-refused-the-request), and [You're not on this site's editor roster](#youre-not-on-this-sites-editor-roster). Four older checks no longer exist, and a short note for each keeps its link working: [Non-admin origin rejected](#non-admin-origin-rejected), [Wire cairn's CSRF guard](#wire-cairns-csrf-guard), [Configure the Tidy API key](#configure-the-tidy-api-key), and [Probe the deployed admin](#probe-the-deployed-admin).
 
@@ -176,13 +185,13 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 Six conditions concern the database that records who may sign in. No command checks the first five. The sixth, `auth.role-wiring-missing`, is the one `cairn doctor` reports.
 
-**`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. A site that `create-cairn-site` built usually skips this check, and a real failure almost always means a site wired by hand.
+**`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. A site that the setup command built does not hit this condition, and a real failure almost always means a site wired by hand.
 
-**Ask a developer:** apply the auth schema, seed the owner row, and confirm that the `AUTH_DB` binding names the right database. [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md) shows the steps.
+**Ask a developer:** create the sign-in tables, seed the owner row, and confirm that the `AUTH_DB` binding names the right database. [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md) shows the steps.
 
 **`auth.store-unmigrated`, a blocker.** The database lacks the `0004_login_nonce.sql` migration, which adds the column that binds each sign-in link to the browser that asked for it. Every sign-in attempt fails until the migration runs.
 
-**Ask a developer:** copy `migrations/0004_login_nonce.sql` from the package into the site's migrations folder and run `wrangler d1 migrations apply <db> --remote`.
+**Ask a developer:** copy `migrations/0004_login_nonce.sql` from the package into the site's migrations folder and run `npx wrangler d1 migrations apply <db> --remote`.
 
 **`auth.store-roles-unmigrated`, a warning.** The database lacks the `0001_roles.sql` migration, so adding an editor with a role beyond `owner` and `editor` fails. Sign-in and publishing still work.
 
@@ -204,7 +213,7 @@ Six conditions concern the database that records who may sign in. No command che
 
 **`github.app-unreachable`, a blocker.** No command checks this one. The App's key fails to parse, the App fails to authenticate, its short-lived token fails to mint, or the repository refuses a read. Saves and publishes can't commit while this fails.
 
-To check, publish an edit and confirm that a commit by `cairn-cms[bot]` lands on `main`. An empty error log proves nothing unless `observability.enabled` is on.
+To check, publish an edit and confirm that the newest commit on `main` names your site's App, the App's name followed by `[bot]`, as its committer. An empty error log proves nothing unless `observability.enabled` is on.
 
 **Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the App's id, installation id, or private key, which live in the Worker's secret store. Cloudflare secrets are write-only, so nobody can read the key back, and a developer has to replace it. [Rotate the GitHub App key](../extend/rotate-the-github-app-key.md) describes how.
 
@@ -224,4 +233,6 @@ An earlier doctor checked for the API key that the optional Tidy feature needs. 
 
 ## Probe the deployed admin
 
-An earlier doctor probed the site's `workers.dev` address to see whether the admin answered without a gate. That check is retired. Do the check by hand: request `/admin` on the site's `workers.dev` address and on its preview address, unauthenticated. A 200 means the admin is reachable with nothing in front of it. Put the address behind the same access gate as your main address, or set `workers_dev: false` and `preview_urls: false` in `wrangler.jsonc`.
+An earlier version of `cairn doctor` probed the site's `workers.dev` address to see whether the admin answered without a gate. That check is retired, and it matters only to a site whose main address sits behind an access gate such as Cloudflare Access. A default site, which signs in by email link, has no such gate to bypass.
+
+**Ask a developer:** on a gated site, open the site's `workers.dev` address and its preview address with `/admin` added, in a private browser window. If either one loads the admin without asking you to sign in, it is reachable with nothing in front of it. Put the address behind the same access gate as your main address, or set `workers_dev: false` and `preview_urls: false` in `wrangler.jsonc`.

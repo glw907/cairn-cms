@@ -40,6 +40,11 @@ The release holds until the docs are complete.
 - Series pass 3 rebuilt the editors arm: eight pages, 17 live figures, six figures cut after a render
   read. Its boundary test over the three new engine entries (in the friction log's Engine section) finds
   no engine pass warranted before the admin arm: they ride the final engine batch.
+- Series pass 4 rebuilt the admin arm: eight pages, three diagrams, and seven transcript blocks from the
+  `0.98.1-rc.1` capture, with the credentials and tripwire pages moved in from `tool/docs`. Its boundary
+  test over eleven new engine entries (the friction log's Engine section, from the capture and the editors'
+  rule finds) finds no engine pass warranted before the front door: they ride the final engine batch,
+  and the one `auth-data` entry (the spent-link refusal) stays batched. The friction log (Engine) also lists the declined sign-in email that no later run re-offers.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

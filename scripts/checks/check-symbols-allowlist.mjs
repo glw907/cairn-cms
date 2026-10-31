@@ -28,6 +28,10 @@ export const ALLOWLIST = new Set([
   'cli-flag:--types', // sv create's flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's flag, not create-cairn-site's
   'cli-flag:--strict', // cairn-guidance check's flag, not create-cairn-site's
+  // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
+  // not a registered one. The admin, extend, and reference pages name GitHub's host in code font.
+  'log-event:github.com', // GitHub's hostname
+
   'cli-flag:--user', // systemctl's flag, in docs/admin/tripwire.md's systemd example
   'cli-flag:--now', // systemctl enable's flag, in docs/admin/tripwire.md's systemd example
   'env-var:XDG_CONFIG_HOME', // the XDG base-directory variable docs/admin/credentials.md names for the Linux registry path

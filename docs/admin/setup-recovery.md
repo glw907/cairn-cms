@@ -1,10 +1,11 @@
 # Recover a setup that stopped
 
-The setup command saves its progress after every step, so a step that fails, a browser page you close, or a run you interrupt never costs you the steps before it. This page is for the moment a run stopped and you need to know where it stands and what to type next. Each table below lists one stopping point, what it means, and whether to wait, act, or ask someone. The page covers setup only. It doesn't cover a site that is already live.
+The setup command saves its progress after every step, so a step that fails, a browser page you close, or a run you interrupt never costs you the steps before it. This page is for the moment a run stopped and you need to know where it stands and what to type next. Each row in the tables below lists one stopping point, what it means, and whether to wait, act, or ask someone. The page covers setup only. It doesn't cover a site that is already live.
 
-- A `cairn doctor` check named a problem: [Check that your site works](./is-it-working.md).
-- A setup step failed, stopped, or was interrupted before the site went live: this page covers it, below.
-- The site is live and doing something wrong, and no check names it: [Troubleshooting](./troubleshooting.md).
+This page covers a setup that stopped. Two other pages cover problems at other moments:
+
+- If a `cairn doctor` check named a problem, read [Check that your site works](./is-it-working.md).
+- If the site is live and doing something wrong, and no check names it, read [Troubleshoot a live site](./troubleshooting.md).
 
 ## Resume a run
 
@@ -20,6 +21,8 @@ A local address such as `http://127.0.0.1:36927` can appear during a long step, 
 
 ## Get your site onto GitHub
 
+The following table lists where a run can stop on its way to GitHub, what each stop means, and what to do.
+
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
 | Right after scaffolding | The site exists on your computer. Nothing has touched GitHub. | **Act:** run the command again. It starts the GitHub step fresh. |
@@ -27,12 +30,14 @@ A local address such as `http://127.0.0.1:36927` can appear during a long step, 
 | The App may exist but its key was never collected | GitHub allows one hour to collect the new App's credentials, and that hour passed. | **Act:** delete the App on [GitHub's apps page](https://github.com/settings/apps) if it exists, then run the command again, with a new `--app-name` if needed. |
 | GitHub's authorization code expired | The browser step took too long and nothing was collected. | **Act:** run the command again and finish the browser step promptly. |
 | A repository with that name exists | GitHub refused to create it. | **Act:** run the command again with `--repo-name <a-different-name>`. |
-| Waiting on an organization owner | You're creating the App under an organization, and GitHub needs an owner's approval to install it. GitHub has already emailed the owners. | **Ask someone:** once an owner approves, run the command again. |
-| The organization enforces single sign-on | GitHub blocked the request until the App is authorized for the organization. | **Ask someone:** an organization owner authorizes the App under the organization's settings. Then run the command again. |
+| Waiting on an organization owner | You're creating the App under an organization, and GitHub needs an owner's approval to install it. GitHub has already emailed the owners. | **Ask an organization owner:** once they approve, run the command again. |
+| The organization enforces single sign-on | GitHub blocked the request until the App is authorized for the organization. | **Ask an organization owner:** have them authorize the App under the organization's settings. Then run the command again. |
 | The App is installed, but the push was interrupted | Nothing is lost or duplicated. | **Act:** run the command again. The push resumes. |
 | The App's installation doesn't cover your repository | The install page's repository choice left it out. | **Act:** on [GitHub's installations page](https://github.com/settings/installations), open the App, choose **Only select repositories**, add your repository, then run the command again. |
 
 ## Get your site onto Cloudflare
+
+The following table lists where a run can stop on its way to Cloudflare, what each stop means, and what to do.
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
@@ -48,31 +53,37 @@ Once this part finishes, the site is live and you're signed in. [Create your sit
 
 ## Connect your domain
 
+The following table lists where the domain steps can stop, what each stop means, and what to do.
+
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Act when you're ready:** run the command again to be asked. |
+| You declined to connect a domain | Nothing is wrong. The site keeps working at its `workers.dev` address. | **Wait:** nothing needs fixing. A later run prints the decline again and does not ask again. |
 | The API token was refused | The pasted token is invalid, or it lacks a permission. | **Act:** run the command again. It opens the token page for a fresh token. |
 | The zone exists and nothing past it has run | You closed the browser mid-step. | **Act:** run the command again. |
 | Waiting for the nameserver switch | Your registrar still points the domain at its old nameservers, or the change is still spreading. This can take a few minutes to 48 hours. | **Wait:** run the command again in a few minutes. Nothing needs fixing. |
-| The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask someone:** whoever controls it has to release the domain. [Own your domain](./own-your-domain.md#if-this-domain-already-has-dns-records) covers the case. |
+| The domain points at a different Cloudflare account | An agency or a previous developer probably owns that account. | **Ask whoever controls that account:** they has to release the domain. [Own your domain](./own-your-domain.md#carry-over-existing-dns-records) covers the case. |
 | The domain is delegated but not answering | The certificate or the domain's own record hasn't finished spreading. | **Wait:** run the command again in a few minutes. The `workers.dev` address works the whole time. |
 
 ## Turn on sign-in email
 
+The following table lists where the sign-in email steps can stop, what each stop means, and what to do.
+
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Act when you're ready:** run the command again to be asked. |
+| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run prints the decline again and does not ask again. |
 | The account isn't on Workers Paid | The command stopped when it tried to onboard sending. | **Act:** turn on the plan in Cloudflare's dashboard, then run the command again. |
 | The sending records are still spreading | A test send before the records settle fails. This is normal. | **Wait:** run the command again in a few minutes. It doesn't repeat the onboarding. |
 | The test send failed for another reason | Cloudflare refused the send, or the daily limit was reached. | **Act, or wait:** the command prints the cause. Fix it or wait for the limit to reset, then run the command again. |
 
 ## Connect to Workers Builds
 
+The following table lists where the Workers Builds steps can stop, what each stop means, and what to do.
+
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
 | You declined Workers Builds | Nothing is wrong. Deploys still go through the setup command. | **Act when you're ready:** run the command again with `--connect`. |
-| Cloudflare's GitHub App isn't authorized yet | Cloudflare needs a one-time authorization before it can watch any repository. | **Act:** authorize it from Cloudflare's dashboard, then run the command again with `--connect`. |
-| Your repository isn't on Cloudflare's list | The App watches only repositories you add. | **Act:** add the repository on [GitHub's installations page](https://github.com/settings/installations), then run the command again with `--connect`. |
+| Cloudflare's Workers and Pages GitHub App isn't authorized yet | Cloudflare needs a one-time authorization before it can watch any repository. | **Act:** authorize it from Cloudflare's dashboard, then run the command again with `--connect`. |
+| Your repository isn't on Cloudflare's list | That app watches only repositories you add. | **Act:** add the repository on [GitHub's installations page](https://github.com/settings/installations), then run the command again with `--connect`. |
 | The config commit or the first build hasn't finished | The commit needs a sign-in click, or the build is still running. | **Act, or wait:** run the command again with `--connect`. It resumes where it stopped. |
 | A build failed | This needs a fix, not another run. | **Act:** the command prints the end of the build log and a link to the full log. Fix what it names, then run it again with `--connect`. |
 
@@ -88,4 +99,4 @@ The command writes a fresh sign-in link into your site's database and opens it, 
 
 ## Start over
 
-The flag `--start-over` sets the saved progress aside and starts a fresh site in the same folder. It refuses once the site has real resources it can't safely abandon: a live Cloudflare zone with your records copied into it, a Worker attached to your domain, or a Workers Builds connection. When it refuses, it names what to remove first, so it never silently discards a working setup.
+The flag `--start-over` sets the saved progress aside and starts a fresh site in the same folder. It refuses once the site has resources it can't safely abandon: a live Cloudflare zone with your records copied into it, a Worker attached to your domain, or a Workers Builds connection. When it refuses, it names what to remove first, so it never silently discards a working setup.

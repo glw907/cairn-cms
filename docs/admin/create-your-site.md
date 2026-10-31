@@ -1,16 +1,16 @@
 # Create your site
 
-A cairn site runs on accounts you own: a GitHub account holds its content, and a Cloudflare account runs it. The setup command, `create-cairn-site`, creates the site and connects it to both, then signs you in as its owner. Because the accounts are yours, the command stops several times and asks you to approve something in your browser. This page walks one run from an empty terminal to a signed-in admin, and then shows how to sign in again.
+A cairn site runs on accounts you own: a GitHub account holds its content, and a Cloudflare account runs it. The setup command, `create-cairn-site`, creates the site, connects it to both, and signs you in as its owner. Because the accounts are yours, the command stops several times and asks you to approve something in your browser. This page walks one run from an empty terminal to a signed-in admin, and then shows how to sign in again.
 
-The page is for someone who is comfortable pasting a command into a terminal and clicking through a dashboard, and who does not write code. [Before you start](./before-you-start.md) covers what the setup creates and what it costs. [Own your domain](./own-your-domain.md) covers the optional steps that follow, and [Setup recovery](./setup-recovery.md) covers a step that fails or stops partway.
+The page is for someone who is comfortable pasting a command into a terminal and clicking through a dashboard, and who writes no code. [Before you start](./before-you-start.md) covers what the setup creates and what it costs. [Own your domain](./own-your-domain.md) covers the optional steps that follow, and [Recover a setup that stopped](./setup-recovery.md) covers a step that fails or stops partway.
 
 ## Prerequisites
 
-Before you run the command, have the following ready.
+Have the following ready before you run the command.
 
 - A Mac or a Linux computer, or [Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/install). Native Windows isn't supported, and neither are Git Bash or PowerShell. A run there gets partway and then fails with an unclear error.
 - [Node.js](https://nodejs.org) 24 or later. The command checks your version before it asks anything.
-- A [GitHub account](https://github.com/signup) and a [Cloudflare account](https://dash.cloudflare.com/sign-up). Both are free to open. The command signs in to accounts you already have and does not create either one.
+- A [GitHub account](https://github.com/signup) and a [Cloudflare account](https://dash.cloudflare.com/sign-up). Both are free to open. The command signs in to accounts you already have and doesn't create either one.
 - Cloudflare's Workers Paid plan, $5 a month, turned on before the deploy step. [Before you start](./before-you-start.md#what-it-costs) explains the charge.
 
 ## Run the setup command
@@ -37,9 +37,15 @@ Before you start, the honest cost picture.
 Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once per site (as of 2026-08-11, https://developers.cloudflare.com/workers/platform/pricing/). That runs your site on Cloudflare's global network, from the day you deploy it.
 ```
 
-The five prompts are the site's name, an optional one-line description, an optional brand color, whether your `robots.txt` should decline or invite AI training crawlers or state no preference, and the folder to create. The default for the crawler question is no preference.
+The five prompts ask for the following:
 
-The command next prints `Your site is scaffolded`, followed by instructions for running the site on your own computer. Those instructions are for running the site on your own computer. The run continues to GitHub without waiting for them.
+- The site's name.
+- An optional one-line description.
+- An optional brand color.
+- Whether your `robots.txt` should decline or invite AI training crawlers or state no preference. The default is no preference.
+- The folder to create.
+
+The command then prints `Your site is scaffolded` and instructions for running the site on your computer. You can ignore them, because the run continues to GitHub.
 
 ## Create the GitHub App and repository
 
@@ -51,16 +57,19 @@ Confirm the GitHub App and repository
 This step creates a GitHub App named cairn-cairn-docs-capture-2 that only this site uses, a private repository named cairn-docs-capture-2, and needs two trips to your browser.
 ```
 
-The App can write your site's content and manage the repository's settings, including deleting it. GitHub does not let you reduce an App's permissions later, so that access lasts as long as the App does. The App also holds permission to write GitHub Actions workflow files, because your site carries a workflow that checks its own code on every push, and GitHub requires the permission to push it.
+The App can write your site's content and manage the repository's settings, including deleting it. The command warns that GitHub doesn't allow an App's permissions to be reduced later, so that access lasts as long as the App does. The App also holds permission to write GitHub Actions workflow files, because your site carries a workflow that checks its own code on every push, and GitHub requires the permission to push it.
 
 If you create the App under an organization, GitHub can require an organization owner to approve the install. The command then says so and stops cleanly. Run the same command again after an owner approves.
 
 To create and install the App, do the following:
 
-1. Answer **Yes** at the prompt, then choose the account and accept the repository and App names.
-2. In the browser page the command opens, click the button that creates the GitHub App. Sign in to GitHub first if you are signed out.
-3. In the second browser page, install the App on your account and choose **All repositories**.
-4. Click **Install & Authorize**. If GitHub asks you to approve once more to finish signing in, approve it.
+1. If you're signed out of GitHub, sign in.
+2. Answer **Yes** at the prompt.
+3. Choose the account, and accept the repository and App names.
+4. In the browser page the command opens, click the button that creates the GitHub App.
+5. In the second browser page, install the App on your account and choose **All repositories**.
+6. Click **Install & Authorize**.
+7. If GitHub asks you to approve once more to finish signing in, approve it.
 
 The first page is a local address on your own computer that posts the App's settings to GitHub. The terminal prints it and waits:
 
@@ -76,7 +85,7 @@ If GitHub says the name "cairn-cairn-docs-capture-2" is already taken, press Ctr
 
 Open the printed link if no page opened, and use that link rather than going to GitHub yourself. GitHub's own "create an App" form starts blank, and an App made there never reports back to the command.
 
-The command creates the repository after the install page, so a narrower choice than **All repositories** has nothing to select yet. After the push finishes, you can narrow the installation to your repository in your GitHub settings. If you choose a narrower option first, the command later reports that the installation does not include your repository. [Setup recovery](./setup-recovery.md#get-your-site-onto-github) shows the fix.
+The command creates the repository after the install page, so a narrower choice than **All repositories** has nothing to select yet. After the push finishes, you can narrow the installation to your repository in your GitHub settings. If you choose a narrower option first and GitHub doesn't add the new repository to it, the command reports that the installation doesn't include your repository. [Recover a setup that stopped](./setup-recovery.md#get-your-site-onto-github) shows the fix.
 
 ## Deploy to Cloudflare
 
@@ -84,15 +93,16 @@ When your repository exists, the command asks whether to install, build, and dep
 
 1. Answer **Yes** at the prompt.
 2. Enter the email address you will sign in with.
-3. If the command opens Cloudflare's sign-in, sign in and approve wrangler's access. Cloudflare's tool, wrangler, does the deploying.
+3. Wait while the command installs the site's dependencies.
+4. If you aren't signed in to Cloudflare, the command opens Cloudflare's sign-in. Sign in and approve wrangler's access.
 
-The command then installs the site's dependencies, builds it, and deploys it to your Cloudflare account. This creates one Worker, which is where your site runs, one database for sign-ins, and one storage bucket for images. Your content is in none of them: it stays in the GitHub repository from the previous step.
+Wrangler is Cloudflare's tool, and it does the deploying. The command then builds the site and deploys it to your Cloudflare account. This creates one Worker, which is where your site runs, one database for sign-ins, and one storage bucket for images. Your written content stays in the GitHub repository from the previous step, and only uploaded images go in the bucket.
 
-The command next moves the App's private key off your computer and into the Worker's secret store. It keeps no copy, and Cloudflare does not let anyone read a secret back out.
+The command next moves the App's private key off your computer and into the Worker's secret store. It keeps no copy, and Cloudflare doesn't let anyone read a secret back out.
 
 ## Sign in
 
-The command writes your owner record into the new site's database and opens a sign-in page in your browser. This is the last browser moment. Click **Sign in** on that page. You land in your own site's admin, signed in as its owner.
+The command writes your owner record into the new site's database and opens a sign-in page in your browser. This is the last browser step. Click **Sign in** on that page. You land in your site's admin, signed in as its owner.
 
 <!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt -->
 ```
@@ -105,33 +115,37 @@ This site is set up end to end.
 
 The link works for ten minutes. If you miss it, [sign in again](#sign-in-again).
 
+The command then asks whether to connect a domain you own. Answering no changes nothing, and [Own your domain](./own-your-domain.md) covers connecting one now or later.
+
 ```mermaid
 flowchart LR
-  accTitle: Diagram of the setup journey from scaffold to sign-in, with browser moments flagged
-  accDescr: The command scaffolds your site locally, then creates it on GitHub, then on Cloudflare, then signs you in. Browser moments mark the GitHub and Cloudflare stages. They are creating the GitHub App, installing it on your repository, signing in to Cloudflare if you are not signed in already, and the sign-in page that opens at the end.
+  accTitle: Diagram of the setup journey from scaffold to sign-in, with browser steps flagged
+  accDescr: The command scaffolds your site locally, then creates the GitHub App, installs it on your account, creates the repository and pushes the site, installs dependencies, signs in to Cloudflare if you are not signed in already, builds and deploys, and finally opens the sign-in page. Browser steps mark the App creation, the App install, the Cloudflare sign-in, and the final sign-in page.
 
   scaffold["Scaffold<br/>locally"]
 
   subgraph github["GitHub"]
     createApp["Browser:<br/>create GitHub App"]
-    installApp["Browser:<br/>install on repository"]
-    createApp --> installApp
+    installApp["Browser:<br/>install App on account"]
+    pushRepo["Create repository<br/>and push"]
+    createApp --> installApp --> pushRepo
   end
 
   subgraph cloudflare["Cloudflare"]
+    deps["Install<br/>dependencies"]
     cfSignin["Browser:<br/>sign in, if not already"]
-    cfDeploy["Install, build,<br/>and deploy"]
-    cfSignin --> cfDeploy
+    cfDeploy["Build<br/>and deploy"]
+    deps --> cfSignin --> cfDeploy
   end
 
   signin["Browser:<br/>sign-in page opens"]
 
   scaffold --> createApp
-  installApp --> cfSignin
+  pushRepo --> deps
   cfDeploy --> signin
 ```
 
-*Three browser moments mark this path, or four if you are not already signed in to Cloudflare.*
+*Three browser steps mark this path, or four if you aren't already signed in to Cloudflare.*
 
 ## Verify the finished site
 
@@ -154,11 +168,10 @@ Check the result in this order:
 
 1. Open the `Your site is live at` address. The starter site loads.
 2. Open the `Sign in at` address. You land in the admin signed in, from the link the command opened.
-3. Run `cairn doctor` from the site's folder to check the site's configuration. [Is it working?](./is-it-working.md) explains each result.
+3. Install the `cairn` CLI from the [release page](https://github.com/glw907/cairn-cms/releases).
+4. Run `cairn doctor` from the site's folder. [Check that your site works](./is-it-working.md) explains each result.
 
 The site stays at its `workers.dev` address even after you connect a domain. Before you add a second writer, read [what a second writer needs](./before-you-start.md#what-a-second-writer-needs).
-
-After the sign-in step, the command asks whether to connect a domain you own. Answering no costs nothing and changes nothing. [Own your domain](./own-your-domain.md) covers connecting one now or later.
 
 ## Sign in again
 
@@ -171,6 +184,13 @@ The sign-in link the command opens works for ten minutes. If you close the tab, 
    npx create-cairn-site --dir <the-folder-you-created> --sign-in
    ```
 
-The command writes a fresh link straight into your site's database and opens it, with no email involved. It works at any point after the site first goes live. Once you are signed in, that session lasts 30 days, so you rarely need this.
+The command writes a fresh link straight into your site's database and opens it, with no email involved. It works once the site is live. While a domain connection is half done, the same command resumes the domain steps first. Once you're signed in, that session lasts 30 days, so you rarely need this.
 
-If a step before this one failed and the site never went live, see [Setup recovery](./setup-recovery.md).
+If a step before this one failed and the site never went live, see [Recover a setup that stopped](./setup-recovery.md).
+
+## See also
+
+- [Before you start](./before-you-start.md) covers the cost and what stays yours.
+- [Own your domain](./own-your-domain.md) moves the site onto a domain and turns on sign-in email.
+- [Invite editors](./invite-editors.md) adds the people who write on the site.
+- [Troubleshoot a live site](./troubleshooting.md) covers a live site that misbehaves.

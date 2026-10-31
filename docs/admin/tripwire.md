@@ -1,4 +1,4 @@
-# Running the tripwire on a schedule
+# Run cairn on a schedule
 
 `cairn` adds no `tripwire` subcommand. The tripwire is `cairn health` itself, run on a schedule
 and wired to page someone on a non-zero exit. This page has a working example for each of three

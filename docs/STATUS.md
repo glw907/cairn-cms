@@ -37,6 +37,9 @@ The release holds until the docs are complete.
   tidy-key and login-probe conditions. Its boundary test over the remaining entries is the 2b close
   verdict: the rest ride the final engine batch. The capture runbook is
   `docs/plans/2026-10-30-capture-runbook.md`.
+- Series pass 3 rebuilt the editors arm: eight pages, 16 live figures, six figures cut after a render
+  read. Its boundary test over the three new engine entries (95 to 97 in the 2b close record) finds
+  no engine pass warranted before the admin arm: they ride the final engine batch.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

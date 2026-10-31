@@ -27,9 +27,9 @@ stays on hold with PRs #159, #160, and #161 open; its state is
 old pass 5's front door. The release holds until the rebuild lands.
 
 ## Open decisions and watches
-- The engine backlog triage of 2026-10-31 landed. Its full sweep of the 68 friction entries it
-  carried in (`BACKLOG.md` #98 to #165) goes to Geoff as a second triage, so those placements are
-  provisional.
+- The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with
+  a `Placement` line, and `## Won't do` holds Geoff's rulings. The final engine batch has three
+  slices: content rules, admin and tidy, and small API. A pass's design makes its own fold.
 - Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction
   entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
   (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine

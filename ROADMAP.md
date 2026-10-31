@@ -962,6 +962,25 @@ the named human gates only):**
 
 ## Next
 
+- **Rename component to block across the engine, in the final engine batch (Geoff, 2026-10-31).**
+  Geoff ruled "block" the one name for the `:::` content unit in every track, because "component" is
+  off-putting and too generic for editors; the evidence is
+  `docs/internal/record/2026-10-31-block-naming.md`. The docs say block now, and the engine still
+  says component, so the batch makes the code match. Public API: `defineComponent` to `defineBlock`;
+  `ComponentDef`, `ComponentRegistry`, and `ComponentContext` to `BlockDef`, `BlockRegistry`, and
+  `BlockContext`; `defineRegistry({ components })` to `({ blocks })`; `rendering.components` to
+  `rendering.blocks`; `onComponentAtCaret` to `onBlockAtCaret`; the scaffold's
+  `src/theme/markdown-components.ts` to `markdown-blocks.ts`. UI strings: "Insert a component",
+  "Search components", "Back to components", "Edit the component at the cursor", "Layout marker." and
+  the help dialog's "layout blocks" say block, and "Fold this section" becomes "Fold this block".
+  "Place the cursor in a component to edit it" needs rewording, since it misdescribes a caret inside
+  a figure or an unregistered block. Docs: `write-a-markdown-component.md` becomes
+  `write-a-markdown-block.md`, and the reference, `add-an-island.md`, the register, the Vale rules,
+  the skills, and the story `editor/collapsed-layout-block` follow; "component" in the Svelte sense
+  stays. This breaks the public contract with no content migration, because stored entries and the
+  directive grammar do not change. The CHANGELOG entry carries a `Consumers must:` list, and
+  `migration-notes.md` and `upgrade-cairn.md` record it.
+
 - **Gate economy follow-ups (Geoff, 2026-10-08; audit and adversarial review of the per-task gate).**
   Three items deferred from the change that made the per-task gate the diff's blast radius. (a)
   Per-task test selection via `vitest --changed <base>`. Trigger: `forceRerunTriggers` covers

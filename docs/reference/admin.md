@@ -519,8 +519,10 @@ The two-tier tidy settings screen. `data` is the `SettingsData` from the setting
 read-only developer-tier facts (whether tidy is enabled, whether the API key is configured, and the
 model), the truthful gate flag, and the resolved editor-tier `conventions`. The editor tier (the
 per-convention check-and-tint toggles and the radiogroup variant choosers) renders only when tidy is
-enabled and the key is present; otherwise the screen shows the honest gate note with no disabled
-controls. Saving posts the named `?/settingsSave` action, which commits the conventions block to the
+enabled, the key is present, and the key probe has not confirmed it invalid. The screen has three
+states. The editor tier shows when the gate passes, and an unverifiable probe (`unknown`) keeps it
+open. A missing key shows the honest gate note. A present key the probe confirms invalid shows a
+distinct broken-key region. Neither gated state renders disabled controls. Saving posts the named `?/settingsSave` action, which commits the conventions block to the
 same committed site-config YAML the nav editor writes; `form` carries a refused save's
 `ContentFormFailure`, so a stale-edit reload or a rejected conventions block reapplies its message.
 

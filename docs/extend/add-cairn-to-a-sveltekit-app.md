@@ -1053,7 +1053,7 @@ This exercise applies `0003_preview.sql` to the local development database besid
 1. In the project directory, copy `0003_preview.sql` from the package's `migrations` directory into `migrations`.
 2. In the project directory, apply the migrations with `--local` in place of `--remote`.
 3. In the output, confirm that `0003_preview.sql` is among the applied migrations.
-4. Unless the site mints draft-preview links, delete the copied file from `migrations`.
+4. Unless the site mints draft-preview links, delete the copied file from `migrations`. Then pass `previewMint={false}` to `CairnAdmin` to hide the **Share preview** group, as [Keep or hide the Share preview group](share-a-draft-preview.md#keep-or-hide-the-share-preview-group) describes.
 
 </details>
 

@@ -245,7 +245,7 @@ A reference held in an unpublished draft still counts, and it blocks the delete 
 
 ### `cairn:` body links and reference fields
 
-A `cairn:` token is live only as an inline markdown link in an entry's body, so a link from a frontmatter field takes a reference. The engine resolves an inline body link, counts it in the manifest's link graph, and checks it at the build. Elsewhere the token stays inert, and none of the following places fails the build:
+A `cairn:` token names a content entry as `cairn:<concept>/<id>`. A hand-built SvelteKit route has no manifest id, so a `cairn:` link to one dangles, and such a link takes an ordinary path instead. A `cairn:` token is live only as an inline markdown link in an entry's body, so a link from a frontmatter field takes a reference. The engine resolves an inline body link, counts it in the manifest's link graph, and checks it at the build. Elsewhere the token stays inert, and none of the following places fails the build:
 
 - A raw HTML anchor, where it survives as a literal `cairn:` href.
 - A reference-style link definition, where it survives as a literal `cairn:` href.

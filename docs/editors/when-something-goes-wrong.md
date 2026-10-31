@@ -97,7 +97,7 @@ If the message comes back, copy your text somewhere safe, and then let your site
 
 ## A tag isn't on the list
 
-If your site keeps a tag list, you can give an entry only the tags on that list. When a save includes a tag that isn't on it, the editor refuses. The message puts the tag's name in quotation marks and then says:
+If your site keeps a tag list, you can add only tags from that list to an entry. Tags the entry already carries stay allowed. When a save includes a tag that isn't on it, the editor refuses. The message puts the tag's name in quotation marks and then says:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
@@ -106,9 +106,9 @@ If your site keeps a tag list, you can give an entry only the tags on that list.
 
 To fix it:
 
-1. Open **Tags** in the sidebar and add the tag to the list. [Manage your tag vocabulary](manage-your-tag-vocabulary.md) shows how.
+1. Open the **Tags** screen in a new browser tab and add the tag to the list. [Manage your tag vocabulary](manage-your-tag-vocabulary.md) shows how.
 1. Select **Save changes** on the **Tags** screen.
-1. Return to your entry, where your text is still in the editor, and select **Save** again.
+1. Return to the first tab, where your text is still in the editor, and select **Save** again.
 
 The **Tags** screen appears only for people your site allows to change the list. If you don't see it, ask your site owner to add the tag.
 
@@ -173,6 +173,6 @@ The **Publish site** button in the top bar publishes every entry that has unpubl
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
 - **"Nothing to publish. Every entry is already live."** Nothing was waiting. No action is needed.
-- **"The site changed while publishing. Reload and try again."** Your edits are saved, and reloading is safe here. Reload the page and select **Publish site** again.
+- **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish site** again.
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, contact your site developer.
 <!-- vale Microsoft.Contractions = YES -->

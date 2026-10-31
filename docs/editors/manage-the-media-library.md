@@ -51,7 +51,7 @@ When the admin refuses a file, it shows one of these messages:
 
 ## See an image's details
 
-Select a tile in grid view, or a row in list view. The details panel opens beside the library. It stays open while you keep browsing. Select **Close details** or press Escape to close it.
+Select a tile in grid view, or a row in list view. The details panel opens beside the library. It stays open while you keep browsing. Select **Close details**, or press Escape while focus is inside the panel, to close it.
 
 ```repro
 story: media/details-panel
@@ -78,7 +78,7 @@ Replace an image when you have a better version of the same picture. Every publi
 
 1. Select the image to open its details panel.
 1. Select **Replace image**.
-1. Select **Choose a file**, or drop the new image into the window.
+1. Select **Choose a file** and pick the new image.
 1. Read the review screen. Its title says how many published entries change, and the list names them.
 1. Type the image's address in the box. The label shows the address to type.
 1. Select **Replace in** followed by the number of entries, such as **Replace in 3 entries**.

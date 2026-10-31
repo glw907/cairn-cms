@@ -2,7 +2,7 @@
 // and props-or-pose decision comes from https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md; what each render
 // must SHOW comes from the page contracts in
 // https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-08-15-docs-outlines-with-visuals.md, which for these eight is
-// the editors track's write-in-the-editor page (removed pending its rebuild).
+// the editors track's `docs/editors/write-in-the-editor.md`.
 //
 // Three of the rows mount EditPage inside the shell. Two things are load-bearing there and are easy
 // to lose: the shell needs the desk pathname (off it the shell renders office chrome, which moves

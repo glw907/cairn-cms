@@ -12,7 +12,7 @@ The sidebar lists your site's content types, such as Posts or Pages. Select a ty
 story: editor/sidebar-list
 width: wide
 alt: Reproduction of the admin sidebar beside the Posts list, with a New Post button and a status chip on each entry.
-caption: The list shows each entry's title, its date, and a status chip. An entry with changes that aren't published yet carries the Edited chip.
+caption: The list shows each entry's title, its date when the type has one, and a status chip. An entry with changes that aren't published yet carries the Edited chip.
 ```
 
 Select an entry's title to open it. The list has a search box and two sets of filters. **All**, **Pending edits**, and **Published** filter by publish state, and **Shown** and **Hidden** filter by visibility. The status column uses the chips **New**, **Edited**, and **Published**. [Publish an entry and review its history](publish-and-history.md) explains what each one means.

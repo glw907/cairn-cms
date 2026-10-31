@@ -37,7 +37,7 @@ Treat the email like a password, and don't forward it.
 
 ## What you see after you sign in
 
-After you confirm, the editor opens on the list of your site's first content type, for example **Posts**. The sidebar lists everything else you can reach. At the bottom of the sidebar, **Sign out** ends your session. You stay signed in on that browser for up to 30 days.
+After you confirm, the editor opens on the list of the first content type you can reach, for example **Posts**. If your account has no content type to manage, you see a welcome screen instead. The sidebar lists everything else you can reach. At the bottom of the sidebar, **Sign out** ends your session. You stay signed in on that browser for up to 30 days.
 
 If you see a screen that reads **Welcome** followed by your name, your account can sign in but has no content to manage yet. The screen suggests checking with whoever administers your site.
 

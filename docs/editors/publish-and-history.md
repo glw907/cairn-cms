@@ -155,7 +155,7 @@ To bring back an earlier version, follow these steps:
 3. Review the text on the editing screen. The editor has saved the old version as a draft, and your site still shows the current version.
 4. Select **Publish** to make the old version live, or select **Discard changes** to drop it.
 
-**Revert** never changes the live site by itself. If someone else already has a saved draft of the entry, the editor refuses and names that person and when they last saved. That draft has to be published or discarded before a revert can start.
+**Revert** never changes the live site by itself. If the entry already has a saved draft, even one of yours, the editor refuses and names the person who saved the draft and when. Publish or discard that draft before a revert can start.
 
 ## Where to go next
 

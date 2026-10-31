@@ -28,6 +28,10 @@ the live state is `~/.local/state/cairn-docs-final/ledger.md`. To start it by ha
 The release holds until the docs are complete.
 
 ## Open decisions and watches
+- Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction
+  entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
+  (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine
+  batch (`docs/internal/record/2026-10-31-engine-friction-2b-close.md`).
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held

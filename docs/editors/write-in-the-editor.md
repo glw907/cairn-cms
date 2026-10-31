@@ -148,7 +148,7 @@ Some images are decoration only. You can mark the lead image as **Decorative** i
 
 ## Add components and fragments
 
-A component is a ready-made piece of content that your site defines, such as a two-column layout. In your text, a component sits between two lines that start with `:::`. If your site has components, the toolbar shows two more buttons. The following table describes them.
+A component is a ready-made piece of content that your site defines, such as a two-column layout. If your site has components, the toolbar shows two more buttons. The following table describes them.
 
 | Button | What it does |
 |---|---|

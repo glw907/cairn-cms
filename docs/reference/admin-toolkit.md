@@ -31,6 +31,9 @@ The toolkit renders only inside the admin shell, which loads `cairn-admin.css` a
 wrapper. A member area or any other surface outside `/admin` is the site's, styled by the site,
 and a toolkit component mounted there renders without the admin sheet.
 
+No toolkit component reads an editor session. A screen that needs the signed-in editor reads
+`locals.cairnEditor` in its own load and passes what it needs down as props.
+
 ---
 
 ## `format.ts`

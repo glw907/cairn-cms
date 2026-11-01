@@ -67,7 +67,7 @@ A worked note:
 
 Write a file with a background paragraph, then one or two summary paragraphs. The background places
 the change: what came before and why it is in front of Geoff now. The summary says what the pages
-now say and what approving does. Geoff reads on a phone and decides from this text, so follow
+now say and what approving does. Geoff decides from this text, so follow
 `~/.claude/docs/voice/approval-brief.md`. The title is sentence case, has no closing punctuation,
 and runs at most 80 characters.
 

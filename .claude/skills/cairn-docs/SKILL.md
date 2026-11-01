@@ -5,9 +5,8 @@ description: Changes cairn-cms documentation the docs-as-code way: pages under d
 
 # Change cairn docs
 
-The pages under `docs/` are the source. There is no facts file, blueprint, brief, or outline file to
-update beside a page: change the page, check it against the code, run the gate. Pick the case, then
-follow its steps in order.
+The pages under `docs/` are the source: change the page, check it against the code, run the gate.
+Pick the case, then follow its steps in order.
 
 | Case | Start here |
 | --- | --- |

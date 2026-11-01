@@ -1,7 +1,7 @@
 ---
 name: cairn-implementer
 description: Pair subagent for cairn-cms. Implements one task from a pass plan in its own worktree: runs the setup command, writes the code and tests, runs the committed fast lane, commits, and never pushes. Pinned to Sonnet at medium effort; pass model:opus to upshift a task with novel correctness-critical logic the plan does not fully specify.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, Skill
 model: sonnet
 effort: medium
 color: blue
@@ -28,7 +28,7 @@ green lane, report BLOCKED with the exact failing output instead of committing a
 
 ## Workflow
 
-1. Ask any clarifying question before you start if the task or its boundaries are unclear.
+1. If the task or its boundaries are unclear, report NEEDS_CONTEXT before you start.
 2. Meet the task's test mandate. An `auth-data` task writes the failing test first and confirms it
    fails for the right reason. Otherwise write the test at the lowest layer that can see the
    behavior, and extend an existing test before adding a file. A docs-only task needs no test; the

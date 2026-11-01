@@ -13,7 +13,7 @@ disable-model-invocation: true
 A cairn-cms release is a deliberate, occasional act. A finished pass finalizes its `CHANGELOG.md` entry
 under `## Unreleased`, leaves `package.json` alone, and holds. `main` stays releasable, so completed work
 accumulates unpublished until a release is warranted, and this skill is that separate publish step. The
-governing scheme lives in `CLAUDE.md` ("Releases"); this skill is the executable procedure.
+governing rule lives in `CLAUDE.md` ("Working here"); this skill is the executable procedure.
 
 Run it from inside the cairn-cms repo.
 
@@ -115,8 +115,8 @@ instruction; phrases like "point release" are ambiguous and a passing size call 
 final content anyway. When the derived size disagrees with what was said earlier, state the rule, name
 the derived number, and confirm the mismatch in one sentence.
 
-Set the version only now, at the cut (never pre-number a held pass, which mints a phantom like the
-`0.77.0` that rolled into `0.78.0`):
+Set the version only now, at the cut. Never pre-number a held pass, since a later pass can roll
+into the same release and leave that number unpublished:
 
 ```bash
 npm version <x.y.z> --no-git-tag-version   # bumps package.json + the lockfile, no git tag
@@ -129,7 +129,7 @@ format, which is the heading then a blank line then the `<!-- release-size: ... 
 stale "stays unpublished until then" or "set at release time" phrasing from the finalized section.
 
 The release body is the changelog window since the last published tag. When several held minors roll into
-one publish (the common case in this initiative, because passes hold and batch), the body summarizes each
+one publish (the common case, because passes hold and batch), the body summarizes each
 held section in the window and carries every `Consumers must:` line from the breaking ones. Compose it into
 a notes file rather than by hand at the `gh` prompt. Add the matching per-version entry to
 `docs/extend/upgrade-cairn.md` if the pass did not already.
@@ -159,8 +159,7 @@ gh release create v<x.y.z> --target main \
 
 This fires `publish.yml` (OIDC trusted publishing, `npm publish --access public`). The workflow derives
 the dist-tag from the version: a stable number goes to `latest`, and any version carrying a prerelease
-suffix goes to `next`, so a candidate never reaches a bare `npm install` (wired 2026-08-05 for the
-`0.94.0-rc.1` cut). Pass `--prerelease` to `gh release create` on a candidate so the GitHub "Latest" badge
+suffix goes to `next`, so a candidate never reaches a bare `npm install`. Pass `--prerelease` to `gh release create` on a candidate so the GitHub "Latest" badge
 follows suit. A prerelease also has to clear `check:version`, which sizes an entry against the nearest
 earlier heading whose numeric core differs, so `0.94.0-rc.1` and the `0.94.0` it promotes into declare
 their shared `<!-- release-size: minor -->` marker once, on whichever heading is current.
@@ -208,7 +207,7 @@ then push the sites. Flag any deferred live admin smoke tied to a site cutover.
 
 ## References
 
-- The scheme and the 0.x-vs-1.0 reasoning: `CLAUDE.md`, "Releases".
+- The release rule: `CLAUDE.md`, "Working here".
 - npm auth and Trusted Publishing: `.github/workflows/publish.yml` and step 6 above.
 - The path to 1.0 and its readiness checklist: `ROADMAP.md` ("Toward 1.0").
 - The pass that produces the held window: `cairn-running-passes` (which holds unpublished by default and

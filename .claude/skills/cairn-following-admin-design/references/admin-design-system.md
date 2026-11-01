@@ -216,9 +216,9 @@ Three rules carry the model:
   `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
-  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
-  at every width the way it once did; it recedes behind the drawer toggle only through the `lg`-`xl`
-  tablet band (1024-1279px) and persists again at `xl` and up. The evidence for the rider: every
+  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route recedes the sidebar behind
+  the drawer toggle only through the `lg`-`xl` tablet band (1024-1279px) and persists it at `xl`
+  and up. The evidence for the rider: every
   content-management comparable persists nav through editing (Payload, Sanity, Craft, Contentful,
   Notion), and NN/g's zen-mode writeup argues hidden-by-default chrome taxes infrequent,
   non-technical editors hardest. The counter-argument that survives is width economics, which is
@@ -551,8 +551,8 @@ alongside the component recipes above and below it.
   warm tint rather than the violet primary) from a `cairn-idiom` rule, identical in every state, so
   do not add an ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on
   `onsubmit` to show a `loading loading-spinner` and a working label.
-- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`, born 2026-07-20).** Several of the
-  recipes below are no longer hand-rolled per screen. `PageHeader`, `ListToolbar`, `AdminTable`,
+- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`).** Several of the
+  recipes below have shared implementations. `PageHeader`, `ListToolbar`, `AdminTable`,
   `Pagination`, `StatusChip`, and `EmptyState` are the shared implementations of the page-header,
   toolbar, table, pager, status-pill, and first-run-empty devices; `formatCivilDate` is the shared
   date formatter. Every engine screen that owns one of these devices imports the component instead

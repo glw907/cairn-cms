@@ -1,8 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { readVocabulary } from '@glw907/cairn-cms';
+import { buildSeoMeta } from '@glw907/cairn-cms/delivery';
 import { posts } from '#chassis/content.js';
 import { siteConfig } from '#theme/site-config.js';
 import { paginateArchive } from '#chassis/archive.js';
+import { publicRoutesConfig } from '#chassis/public-routes.js';
 
 export const prerender = true;
 
@@ -18,5 +20,13 @@ export const load: PageServerLoad = () => {
   const archive = paginateArchive(entries.slice(1), 1);
   // The home reads its tag-filter options from the site's committed vocabulary (the {value,label}
   // list), so the control labels the slugs editors curate rather than the raw frontmatter tokens.
-  return { featured, archive, vocabulary: readVocabulary(siteConfig) };
+  const seo = buildSeoMeta({
+    title: publicRoutesConfig.siteName,
+    description: publicRoutesConfig.description,
+    canonicalUrl: publicRoutesConfig.origin + '/',
+    siteName: publicRoutesConfig.siteName,
+    type: 'website',
+    feeds: publicRoutesConfig.feeds,
+  });
+  return { featured, archive, vocabulary: readVocabulary(siteConfig), seo };
 };

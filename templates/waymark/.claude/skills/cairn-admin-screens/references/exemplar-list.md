@@ -468,6 +468,8 @@ Its `+page.server.ts`, which reads and writes the developer's `signups` table th
 binding the site declares itself. The access rule it relies on lives in the showcase adapter's
 `access` member; a site that copies the screen adds its rule for the route.
 
+<!-- snippet-check-skip: imports cloudflare:workers and names Env, which only a site's generated Worker types declare -->
+
 ```ts
 // Archetype: the custom admin screen over the site's table.
 // Atoms: requireAccess, createSectionAction, createLogger.

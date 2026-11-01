@@ -24,9 +24,9 @@
   "checks": [
     {
       "type": "read",
-      "path": "logs/worker-logs.jsonl",
+      "path": "worker-logs.jsonl",
       "beforeEdit": true,
-      "source": "docs/extend/debug-your-site.md (Read the structured logs): logs first"
+      "source": "docs/extend/debug-your-site.md (Read the structured logs): logs first. The path is the bare file name so a shell read after `cd logs` counts; no other file in the site shares the name"
     },
     {
       "type": "contains",

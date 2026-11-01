@@ -4,7 +4,7 @@
   "fixture": "site",
   "seam": "the adoption path",
   "bar": 4,
-  "prompt": "This is a plain SvelteKit app on Cloudflare, and the cairn engine is already installed in it. Add cairn to it and move our old Jekyll posts from old-content/posts into it as cairn posts. Keep each post's title, its date, its summary as the description, and its tags, and keep the unpublished post hidden. Don't set up the admin, GitHub, or sign-in yet. It's done when the site type-checks, the production build passes with every migrated post valid, and each post is served at its own address.",
+  "prompt": "This is a plain SvelteKit app on Cloudflare. The cairn engine package is already in node_modules (you can't reach the npm registry from here), but none of cairn's setup is done yet. Add cairn to it and move our old Jekyll posts from old-content/posts into it as cairn posts. Keep each post's title, its date, its summary as the description, and its tags, and keep the unpublished post hidden. Don't set up the admin, GitHub, or sign-in yet, and when you're done tell me what's still a placeholder or left to wire before it can go live. It's done when the site type-checks, the production build passes with every migrated post valid, and each post is served at its own address.",
   "setup": "setups/site/s15-adopt-and-migrate.mjs",
   "knownBad": "setups/site/s15-adopt-and-migrate-bad.mjs",
   "maxTurns": 70,
@@ -66,8 +66,8 @@
     {
       "type": "contains",
       "path": "src/content/posts/2024-03-12-winter-gear-guide.md",
-      "regex": "^tags:.*travel-notes",
-      "source": "docs/extend/migrate-existing-content.md (Map tags to the vocabulary)"
+      "regex": "^tags:(?:[^\\n]*\\n[ \\t]+-)*[^\\n]*\\btravel-notes\\b",
+      "source": "docs/extend/migrate-existing-content.md (Map tags to the vocabulary): the slug in a flow list or a block list"
     },
     {
       "type": "absent",

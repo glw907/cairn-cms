@@ -50,8 +50,8 @@ boundary: the charter, not the club site's feature list, decides what cairn buil
 that the backend interface never grows a `query()` method holds; the custom feature owns its own D1
 binding directly, separate from cairn's content backend. Its canonical documentation is the handbook
 ([handbook.aksailingclub.org](https://handbook.aksailingclub.org), behind Cloudflare Access), sourced
-at `~/Projects/aksailingclub-org/handbook/content/`; the ops-dashboard sections describe the target
-and the D1 schema is `~/Projects/aksailingclub-org/ops/schema.sql`. The competitive-extensibility
+at the sailing club site repository's `handbook/content/`; the ops-dashboard sections describe the target
+and the D1 schema is that repository's `ops/schema.sql`. The competitive-extensibility
 research (`2026-06-28-extensibility-competitive-research.md`, same directory) carries forward as input.
 
 ## Make the breaking changes in the pre-1.0 window

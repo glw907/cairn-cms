@@ -22,7 +22,7 @@ and the other public surfaces the table in "The base guides" names. Geoff ratifi
 2026-07-18 (spec: `docs/specs/2026-07-18-docs-register-standard-design.md`), and the
 specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
-([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
+([`2026-08-14-pass-d-target-manifest.md`](../../../../docs/internal/record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
 style-guide sync (2026-09-28, spec: `docs/specs/2026-09-28-style-guide-sync-design.md`)
 set every surface on a published base guide, wrote one drafting brief per guide as a short
@@ -181,7 +181,7 @@ guide is silent.
   developer. A page may name an agent-specific file
   it must document, such as a file-tree entry, in one line that labels the tool and links the
   dedicated doc or reference ("`CLAUDE.md`: Claude Code's guidance file; see
-  [Guidance](../reference/guidance.md)").
+  [Guidance](../../../../docs/reference/guidance.md)").
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
@@ -235,7 +235,7 @@ most common. It states one limit together with its consequence and hands the det
 reference entry that owns it.
 
 > A `robots.txt` file cannot block a fetch, so `'decline'` reaches only crawlers whose operators
-> honor it. The [`buildRobots`](../reference/delivery-data.md#buildrobots) entry records which
+> honor it. The [`buildRobots`](../../../../docs/reference/delivery-data.md#buildrobots) entry records which
 > operators promise that, which assistants exempt a user-initiated fetch, and why the table leaves
 > out search crawlers and any token without first-party documentation.
 
@@ -354,7 +354,7 @@ Google's check, "Does your introduction provide an accurate overview of the topi
 A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
 Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-30).
 
-- [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
+- [`docs/extend/choose-an-ai-posture.md`](../../../../docs/extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
   (Geoff, 2026-09-28).
 - The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
@@ -720,9 +720,9 @@ so a sentence-initial capital still raises the same finding.
 ## Visuals (every page that carries one)
 
 The visual layer's governing decisions live in the 2026-08-15 sitting record
-([`2026-08-15-docs-visual-layer-rulings.md`](./record/2026-08-15-docs-visual-layer-rulings.md));
+([`2026-08-15-docs-visual-layer-rulings.md`](../../../../docs/internal/record/2026-08-15-docs-visual-layer-rulings.md));
 the per-track vocabulary and per-page contracts live in
-[`2026-08-15-docs-outlines-with-visuals.md`](./record/2026-08-15-docs-outlines-with-visuals.md).
+[`2026-08-15-docs-outlines-with-visuals.md`](../../../../docs/internal/record/2026-08-15-docs-outlines-with-visuals.md).
 This section carries the rules a writer needs at the page, so the records stay records.
 
 - **A visual earns its place or is absent.** Google's threshold governs: an image appears only
@@ -852,7 +852,7 @@ type adds what its template asks of the opening, as the following anatomies stat
 
 Every published page belongs to exactly one track, every track serves exactly one profile,
 with the one exception the scripter-or-agent profile below carves out of the reference arm
-(the full track profiles: [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)),
+(the full track profiles: [`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md)),
 and a page review grades the page against its profile. The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that
@@ -991,7 +991,7 @@ documented complaint.
 ### The scripter-or-agent profile
 
 This overturns the 2026-08-14 ruling, above and in
-[`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md), that every track
+[`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md), that every track
 serves exactly one profile and the reference arm has none (Geoff, 2026-09-21). Three pages
 carry this profile and no others do: `docs/reference/cli-cairn-exit-codes.md`,
 `docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No agent

@@ -16,7 +16,7 @@
 // A dated record keeps the links it was written with, so its links into deletion-list paths are
 // accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
-import { resolve, dirname, join, relative, sep } from 'node:path';
+import { resolve, dirname, join, relative, sep, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ARM_DIRS, armOf, loadDeletionList, readArmStates } from './arm-state.mjs';
 
@@ -65,7 +65,9 @@ export function filesInScope(root = ROOT) {
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
   const skills = walkIfPresent(root, 'skills');
   const claude = walkIfPresent(root, 'claude');
-  return [...rootDocs, ...docs, ...skills, ...claude].map((p) => relative(root, p)).sort();
+  // Repo skills link into docs/ and each other. Captured exemplar pages keep their original links.
+  const repoSkills = walkIfPresent(root, join('.claude', 'skills')).filter((p) => !basename(p).startsWith('exemplar-'));
+  return [...rootDocs, ...docs, ...skills, ...claude, ...repoSkills].map((p) => relative(root, p)).sort();
 }
 
 // Strip fenced code blocks (``` and ~~~), keeping line count stable so reported lines stay right.

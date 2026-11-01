@@ -1,5 +1,11 @@
 # Durable gotchas
 
+Four sections describe the maintainer's workstation wrapper, `cairn-run-gate`, and its hooks: "The
+component project stalls under file parallelism" (its command lines), "`npm run check` runs out of
+memory in the light gate lane", "`/tmp` is a size-limited tmpfs", and the two sections on piping a
+gate and on the 600000 ms timeout. A contributor without that wrapper runs the same commands bare,
+and `npm run lane:fast` replaces the lane they name.
+
 ## Contents
 
 - [Cloudflare email](#cloudflare-email)
@@ -130,7 +136,7 @@ Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-pac
 `scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
 body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
 Do not remove the step or strip `lang="ts"`. Full post-mortem:
-[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](record/2026-06-21-e2e-dist-svelte-build-failure.md).
+[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](../../../../docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## A components-layer rule cannot cancel a utility
 
@@ -458,7 +464,7 @@ fail here. Three shapes recur, and `node scripts/checks/check-symbols.mjs` repro
 seconds without a rebuild.
 
 - A path inside a fenced block's `//` comment is checked against the repo root, not the doc's
-  directory. `// see [x](../reference/sveltekit.md)` extracts `reference/sveltekit.md`, which does not
+  directory. `// see [x](../../../../docs/reference/sveltekit.md)` extracts `reference/sveltekit.md`, which does not
   exist. Cite another doc by bare filename or in prose, with no slash.
 - A `--flag` in a fenced shell block resolves only against `create-cairn-site`'s own argv parser.
   `npx cairn-audit --help` in a fenced example fails as an unresolved `cli-flag` until

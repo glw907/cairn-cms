@@ -21,7 +21,8 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-The plan is approved and merged:
+Pass 1 of the agent-first plan (portable repo) is PR-ready on branch `agent-first-1`; after its
+packet and the cutover steps, the next action is pass 2 (records). The plan is approved and merged:
 `~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
 and packet beside it. Queue item 20261031T143358-2306095 ruled yes on all three rulings. Pass 1's
 pre-launch items are done, and `conductor-cairn-cms` runs the plan one pass at a time from

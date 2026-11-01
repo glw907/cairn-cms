@@ -100,6 +100,17 @@ describe('scope over skills/ and claude/', () => {
     expect(filesInScope(root)).toContain('claude/CLAUDE.md');
   });
 
+  it('includes .claude/skills pages but skips captured exemplar pages', () => {
+    const root = fixtureRoot();
+    const refs = join(root, '.claude', 'skills', 'a-skill', 'references');
+    mkdirSync(refs, { recursive: true });
+    writeFileSync(join(refs, 'guide.md'), '# Guide\n');
+    writeFileSync(join(refs, 'exemplar-capture.md'), '# Capture\n');
+    const scope = filesInScope(root);
+    expect(scope).toContain('.claude/skills/a-skill/references/guide.md');
+    expect(scope).not.toContain('.claude/skills/a-skill/references/exemplar-capture.md');
+  });
+
   it('omits claude/ from scope when the tree does not exist', () => {
     const root = fixtureRoot();
     expect(filesInScope(root).some((f) => f.startsWith('claude/'))).toBe(false);

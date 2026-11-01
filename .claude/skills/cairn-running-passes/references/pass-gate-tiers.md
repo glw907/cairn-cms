@@ -1,5 +1,9 @@
 # Pass gate tiers
 
+The lane names below (`light`, `heavy`) and the `cairn-run-gate` strings belong to the maintainer's
+workstation wrapper. A contributor runs the same legs through `npm run lane:fast`, which executes
+`gate-tier.mjs --fast` for the range and needs no lock or lane.
+
 ## Contents
 
 - [The targeted gate](#the-targeted-gate)

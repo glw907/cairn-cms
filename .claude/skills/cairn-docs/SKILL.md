@@ -35,7 +35,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
    `scripts/checks/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
    breaking change a `Consumers must:` line there and in `docs/extend/migration-notes.md`. The
-   `cairn-pass` skill owns those rules.
+   `cairn-running-passes` skill owns those rules.
 6. Run the checks in "Checks".
 
 ## B. A page is wrong or incomplete
@@ -61,7 +61,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 
 ## Checks
 
-1. Run `npm run check:docs-gate` through `cairn-run-gate`. Fix what it reports and rerun until it
+1. Run `npm run check:docs-gate` directly. Fix what it reports and rerun until it
    exits 0. A gate you did not run proves nothing about the page (Anthropic's guidance: give the
    agent a check to run, <https://code.claude.com/docs/en/best-practices>).
 2. Dispatch `docs-fact-checker` in a fresh context, as `references/review.md` says. Do not

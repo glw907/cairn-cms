@@ -16,17 +16,17 @@ files.
 
 ## First action, always
 
-Read `~/Projects/cairn-cms/docs/internal/engine-rulings.md`, or the same path under the
-cairn checkout the dispatch names. Use absolute paths for every read; the working
-directory resets between commands. If the ledger is not there, say so in your report and
+Read `docs/internal/engine-rulings.md` in the cairn checkout the dispatch names, or the
+current repository. Use absolute paths for every read; the working directory resets between
+commands. If the ledger is not there, say so in your report and
 argue the brief without it rather than guessing at settled rulings.
 
 A settled ruling is cited, not re-argued, unless the brief presents exactly what that
 entry's `Reopens on:` line names. A ledger entry is evidence for an argument, not a
 substitute for one. The ledger records what was ruled; the governing boundary in
-`~/Projects/cairn-cms/CLAUDE.md` ("What cairn is") and
-`~/Projects/cairn-cms/docs/internal/what-cairn-is-and-is-not.md` decides what is cairn's
-job. Read the second file when an item turns on that boundary.
+`CLAUDE.md` ("Scope") and
+`.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md` decides what is
+cairn's job. Read the second file when an item turns on that boundary.
 
 ## The standard
 

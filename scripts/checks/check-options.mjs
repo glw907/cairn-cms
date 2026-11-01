@@ -403,7 +403,7 @@ export function checkOptionMap({ generated, map, pages = new Set(), readDoc }) {
     if (!(entry.key in map.rows)) {
       failures.push(
         `${entry.key} (export ${entry.exportName}, subpath ${entry.subpath}) has no row in the option map. ` +
-          `Document it and map the path to its reference anchor, or add an "exclude <reason>" row whose reason the diff-reviewer accepts.`,
+          `Document it and map the path to its reference anchor, or add an "exclude <reason>" row whose reason the standards:diff-reviewer accepts.`,
       );
     }
   }

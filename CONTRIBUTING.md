@@ -67,6 +67,8 @@ risk classes.
 
 - A new clone's first Claude Code session starts without the plugin. Start it once as
   `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude`, which installs the plugin before the first turn.
+- The plugin does not refresh itself in an open session. Run `claude plugin update standards@glw907-standards`
+  and restart to take a newer version.
 - Cloud sessions get only the skills and agents committed here, not the plugin.
 - The daisyUI Blueprint server is a per-developer license; the admin skills work without it.
 - Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.

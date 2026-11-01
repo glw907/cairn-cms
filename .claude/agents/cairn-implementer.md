@@ -50,7 +50,7 @@ green lane, report BLOCKED with the exact failing output instead of committing a
   or editor docs, by the page's track).
 - Tests live at `src/tests/{unit,integration,component}/<name>.test.ts`.
 - A built-in public component under `src/lib/public/` carries no literal, uses no daisyUI component
-  class, and follows the `cairn-public` skill's recipe.
+  class, and follows the `cairn-following-public-design` skill's recipe.
 - No comment claims more than its assertion proves, and no shipped comment cites a process artifact
   (a pass, plan, ruling id, or task number).
 - Re-emit any generated tree before the gate and commit it in the same commit.

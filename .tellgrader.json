@@ -2,7 +2,6 @@
   "profile": "docs-register",
   "include": ["docs/**"],
   "exclude": [
-    "docs/internal/**",
-    "docs/plans/**"
+    "docs/internal/**"
   ]
 }

@@ -40,8 +40,7 @@ beside it, and `conductor-cairn-cms` runs it one pass at a time; its ledger is
   slices: content rules, admin and tidy, and small API. A pass's design makes its own fold.
 - Docs stage 2b is closed by series pass 1 (PR #157) and series pass 2 (PR #158). The engine friction
   the boundary test found rides the final engine batch as `BACKLOG.md` items; the 94 entries'
-  verdicts are at the `pre-agent-first` tag. The capture runbook is the plan file
-  `docs/plans/2026-10-30-capture-runbook.md`, removed at task 4.13.
+  verdicts are at the `pre-agent-first` tag. The capture runbook is at the `pre-agent-first` tag.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)

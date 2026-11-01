@@ -3,7 +3,7 @@
 // real heading. A dead link or a stale anchor fails the gate, which is what catches docs drift when a
 // pass removes or renames a symbol the prose still points at. The RED output is the fix worklist.
 //
-// Scope is the docs tree (`docs/`, minus the open plans in `docs/plans`)
+// Scope is the docs tree (`docs/`)
 // plus the root-level public docs (the migration notes among them), plus every packaged skill's Markdown (`skills/**/*.md`) and the
 // packaged Claude Code guidance tree (`claude/**/*.md`, scanned when present). Both ship in the
 // tarball, so a dead link inside them is as real as one in `docs/`.

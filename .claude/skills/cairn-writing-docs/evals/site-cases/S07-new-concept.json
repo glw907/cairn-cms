@@ -1,0 +1,47 @@
+{
+  "id": "S07-new-concept",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "defineConcept, defineFieldset, the adapter's content map, createSiteIndexes, the manifest plugin",
+  "bar": 4,
+  "prompt": "The trail crew runs events and wants to manage them in the admin the way they manage posts. Add an Events section where an editor can create an event with a title, a start date, an optional end date, a location, an optional capacity (a whole number), and an optional signup link. An end date earlier than the start date must be refused with a message the editor can read. Two events already exist as markdown files in src/content/events and should show in the admin list. The new button should read \"New event\". Finish when the site type-checks and builds.",
+  "setup": "setups/site/s07-new-concept.mjs",
+  "knownBad": "setups/site/s07-new-concept-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/content/concepts.ts:208 (singular falls back to label, so an omitted singular reads \"New Events\")",
+    "src/lib/content/fieldset.ts:33-38,483-485 (refine returns a field-keyed message map, run after the field checks)",
+    "src/lib/content/fields.ts:145-180 (the field constructors: number, url, date, text)",
+    "src/lib/delivery/site-indexes.ts:57 (createSiteIndexes throws for a concept with no glob)",
+    "src/lib/content/manifest.ts:400 (a committed manifest that drifts from the corpus fails the build; regenerate with npx cairn-manifest)",
+    "docs/extend/define-an-adapter-and-schema.md#add-a-concept (the four registrations: adapter content map, content-module glob, plugin content option, regenerated manifest)"
+  ],
+  "expectations": [
+    "The adapter's content map gains an events concept with dir src/content/events, a plural label, singular 'event', and a defineFieldset of title, date, endDate, location, capacity (number), and signupUrl (url).",
+    "Only title and date are required; endDate, capacity, location, and signupUrl are optional.",
+    "A refine on the fieldset returns a readable sentence keyed to endDate when the end date is before the start date.",
+    "The content module globs src/content/events/*.md with query '?raw', import 'default', and eager true, and passes it to createSiteIndexes under events.",
+    "The cairnManifest plugin's content option in vite.config.ts names events with the same pattern.",
+    "The committed manifest is regenerated with cairn-manifest and holds rows for the two seeded events.",
+    "npm run check and npm run build pass."
+  ],
+  "checks": [
+    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "events:\\s*defineConcept" },
+    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "singular:\\s*['\"]event['\"]" },
+    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "refine" },
+    { "type": "contains", "path": "src/chassis", "regex": "src/content/events/\\*\\.md['\"],\\s*\\{[^}]*eager:\\s*true" },
+    { "type": "contains", "path": "src/chassis", "regex": "events:\\s*eventsRaw|events:\\s*\\w+" },
+    { "type": "contains", "path": "vite.config.ts", "regex": "events:\\s*['\"]/src/content/events/\\*\\.md['\"]" },
+    { "type": "contains", "path": "src/content/.cairn/index.json", "text": "\"concept\": \"events\"" },
+    { "type": "bash", "pattern": "cairn-manifest|cairn:manifest" },
+    { "type": "unchanged", "path": "src/content/events" },
+    { "type": "npm", "script": "check" },
+    { "type": "npm", "script": "build" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The end-date rule is a refine on the events fieldset (or a validate on the endDate field) that refuses an end date earlier than the start date and returns a complete sentence an editor can act on, keyed to endDate." },
+    { "n": 2, "text": "Only title and date are required in the events fieldset; endDate, capacity, location, and signupUrl are not marked required, and capacity is a number field." },
+    { "n": 3, "text": "The manifest rows for the events came from running cairn-manifest (npx cairn-manifest or the cairn:manifest script), not from rows typed into src/content/.cairn/index.json by hand." },
+    { "n": 4, "text": "The session did not edit the two seeded event markdown files to make them fit the schema; the schema was written to fit them." }
+  ]
+}

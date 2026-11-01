@@ -1,0 +1,46 @@
+{
+  "id": "S06-newly-published",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "the committed content manifest, buildNewlyPublished, and the absence of a publish hook",
+  "bar": 4,
+  "prompt": "Subscribers should get an email when a new post goes live on the site: once per post, and never again when the post is edited later. src/lib/notify.ts has the send function as a stub. Write the announcement as a Node script under scripts/ that our deploy pipeline will run after each deploy; do not set up the pipeline itself. The pipeline keeps the file .deploy/last-manifest.json between runs. On the very first run, when that file does not exist, do not email the back catalog. If a send fails, the next run must try that post again. Only posts are announced, never pages. Finish when the script runs cleanly against the site's committed content.",
+  "setup": "setups/site/s06-newly-published.mjs",
+  "knownBad": "setups/site/s06-newly-published-bad.mjs",
+  "maxTurns": 50,
+  "source": [
+    "src/lib/delivery/manifest.ts:55-86 (buildNewlyPublished: an entry is returned when it is not a draft, carries publishedAt, and had no stamp under the same concept/id in before; before: null returns every live stamped entry; the diff spans every concept; pure, the engine sends nothing)",
+    "src/lib/content/manifest.ts:432-462 (publishedAt is stamped on the first publish and carried through later saves)",
+    "src/lib/delivery/data.ts:1-6 (the /delivery/data subpath imports no SvelteKit and no Svelte, so a plain Node script can load it)",
+    "src/lib/sveltekit/publish-actions.ts:1-8 (publishActions is plain data, a templated link; no callback crosses the publish redirect, so the admin offers no hook that runs site code after a publish)",
+    "docs/extend/act-on-newly-published-entries.md#order-the-send-and-the-save and #start-from-a-stored-baseline (save the deployed manifest after the sends so a failed send repeats; a first run stores the baseline and sends nothing)"
+  ],
+  "expectations": [
+    "A script under scripts/ reads src/content/.cairn/index.json and parses it with parseManifest from @glw907/cairn-cms/delivery/data.",
+    "It reads the prior manifest from .deploy/last-manifest.json and diffs the two with buildNewlyPublished, keeping only entries whose concept is posts.",
+    "On a first run, with no stored file, it stores the deployed manifest as the baseline and sends nothing.",
+    "It calls announcePost from src/lib/notify.ts once for each entry the diff returns.",
+    "It writes the deployed manifest to .deploy/last-manifest.json after the sends, so a send that throws leaves the old baseline and the next run tries again.",
+    "Nothing in the admin, the hooks, or the routes calls the send function."
+  ],
+  "checks": [
+    { "type": "contains", "path": "scripts", "regex": "buildNewlyPublished" },
+    { "type": "contains", "path": "scripts", "regex": "from\\s+['\"]@glw907/cairn-cms/delivery/data['\"]" },
+    { "type": "contains", "path": "scripts", "regex": "parseManifest" },
+    { "type": "contains", "path": "scripts", "text": "src/content/.cairn/index.json" },
+    { "type": "contains", "path": "scripts", "text": ".deploy/last-manifest.json" },
+    { "type": "contains", "path": "scripts", "regex": "concept\\s*[!=]==?\\s*['\"]posts['\"]" },
+    { "type": "contains", "path": "scripts", "regex": "announcePost" },
+    { "type": "absent", "path": "src/routes", "regex": "announcePost|notify" },
+    { "type": "absent", "path": "src/hooks.server.ts", "regex": "announcePost|notify" },
+    { "type": "bash", "pattern": "scripts/" },
+    { "type": "npm", "script": "check" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The script decides which posts are new with buildNewlyPublished over the stored and the deployed manifest, not with its own rule built from post dates, git history, or file modification times." },
+    { "n": 2, "text": "The first-run path (no .deploy/last-manifest.json) writes the baseline and returns without calling announcePost, and it does not pass null as the prior manifest to buildNewlyPublished, which would send every live stamped post." },
+    { "n": 3, "text": "The write of .deploy/last-manifest.json comes after the loop that calls announcePost, so a send that throws leaves the old baseline in place." },
+    { "n": 4, "text": "The session did not try to run the announcement from the admin's publish flow (a form action, a hook, a publishActions entry that sends, or a change to the engine) and, if it looked for a publish callback, concluded that the admin offers none." },
+    { "n": 5, "text": "The session exercised the script on a first run and on a later run where a post gained a publishedAt stamp, and saw the announcement go out for that one post only." }
+  ]
+}

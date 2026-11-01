@@ -1,17 +1,203 @@
 # Migration notes
 
-The per-version record of what a consumer must do to take a cairn upgrade, distilled from
-`CHANGELOG.md`'s `Consumers must:` lines. `CHANGELOG.md` is the authoritative, gate-checked
-source; this page exists so you can scan the versions that carried a real action without reading
-the whole file. A version not listed here stated no consumer action for that release.
+How to move a site onto a newer `@glw907/cairn-cms` version, then the per-version record of what a
+consumer must do to take each upgrade, distilled from `CHANGELOG.md`'s `Consumers must:` lines.
+`CHANGELOG.md` is the authoritative, gate-checked source; this file exists so you can scan the
+versions that carried a real action without reading the whole changelog. A version not listed here
+stated no consumer action for that release.
+
+## Upgrade cairn
+
+Move your site onto a newer `@glw907/cairn-cms` version, and confirm nothing broke.
+
+### Precondition
+
+A `0.x` minor can break a documented seam, so an upgrade is never a blind bump. Each export's
+TSDoc carries its stability tier: `@public` is the Extension API, `@scaffold` the Scaffold API, and
+`@beta` an Unstable API with no promise across minors.
+
+### Steps
+
+1. **Bump the version range** in `package.json` and install:
+
+   ```bash
+   npm install @glw907/cairn-cms@latest
+   ```
+
+   or edit the version range by hand and run `npm install`. The package's `engines` and
+   `peerDependencies` name the Node, SvelteKit, and Svelte targets this install checks against.
+
+2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
+   `CHANGELOG.md` ships in the package (`node_modules/@glw907/cairn-cms/CHANGELOG.md`, or the
+   repository itself) and carries one dated section per released version, each stating what a
+   consumer must do or explicitly stating nothing. A caret range admits only its minor, so a
+   site more than one minor behind crosses several of these lists in one jump, and each applies in
+   order. [The per-version notes](#per-version-notes) below are the running record of which recent
+   versions carried a real action, if you want the short list before opening the full file.
+
+3. **Make the changes each crossed `Consumers must:` line names.** Most are a rename, a type
+   widening, or a config addition; a few are structural. Do them in the order the changelog states
+   them when a version's list is ordered, since a later rename sometimes depends on an earlier
+   one already compiling. If a version shipped a D1 migration, apply it by hand with `wrangler d1
+   migrations apply`: a Cloudflare Workers Builds deploy on push has no equivalent step for a
+   database schema change, so nothing runs a new migration for you.
+
+4. **Refresh the engine's guidance:**
+
+   ```bash
+   npx cairn-guidance install
+   ```
+
+   Writes `.orig` beside any local edit the new version's guidance tree diverges from, so you keep
+   what you changed. `npx cairn-guidance --help` lists its commands.
+
+5. **Run the doctor:**
+
+   ```bash
+   cairn doctor
+   ```
+
+   A clean run confirms your bindings and your site config still resolve the way the new version
+   expects. It doesn't reach the GitHub App or the auth store; publish an edit and confirm a
+   `cairn-cms[bot]` commit lands on `main` to prove those. `cairn doctor --help` says what each
+   check verifies.
+
+6. **Typecheck and test your site** before deploying. The doctor checks configuration; it does
+   not typecheck your adapter or your custom routes against the new version's types.
+
+### When your range crosses the public stylesheet export
+
+The window that adds `@glw907/cairn-cms/cairn-public.css` changes what a copied `src/chassis/tokens.css`
+owns. Do these in order, after step 3:
+
+1. Move any key your copied `tokens.css` adds beyond the new template's into your theme.
+2. Replace the copied roles, the two `@theme` colors, the code-block binding, and the focus-ring
+   utility with `@import "@glw907/cairn-cms/cairn-public.css";`, placed after `@import "tailwindcss";`
+   and before `@import "./prose.css";`. Compare your copy's ink, muted, and shadow values first,
+   since those defaults changed.
+3. If `static.scope` or `static.cssFiles` reads the old copy, list it under `static.paletteFiles`
+   until the swap deletes it.
+4. Run `npm run check:cairn`. Install `daisyui` and `tailwindcss` (both optional peers) if the run
+   names one as missing. The three public rules print advisory findings and never fail the run;
+   a configured public root your tree lacks, or one a `public.exclude` path covers, does. A
+   `log-event-grammar`, `log-secret-field`, or `cairn-btn-guarded` finding fails the run too, since
+   those moved to error tier. Run `npx cairn-audit` before you upgrade, then fix each finding or
+   suppress it with a directive that names the rule and gives a reason. The
+   [per-version notes](#per-version-notes) item "Fix `log-event-grammar`, `log-secret-field`, and
+   `cairn-btn-guarded` findings before you upgrade" has the fixes.
+5. Port the template fixes you want by hand: the skip-link idiom, the toggle's `color-scheme`
+   resolution (including `only dark`), radius-token corners, the heading levers, and the CI Node 24
+   pin.
+
+[The per-version notes](#per-version-notes) carry each item with its reason, and the
+`cairn-styling-public-pages` skill's stylesheet contract lists every key and default.
+
+### When your range crosses SvelteKit 3
+
+The window that moves the engine to SvelteKit 3 and `@sveltejs/adapter-cloudflare` 8 changes how a
+site is configured, how it reads its bindings, and how a built site is served. Do these in order,
+after step 3:
+
+1. In `package.json`, set `@sveltejs/kit` to `^3`, `@sveltejs/adapter-cloudflare` to `^8`, `svelte` to
+   `^5.57.1`, and `wrangler` to `^4.118` or later. Then run `npm install` with no
+   `--legacy-peer-deps` or `--force` flag.
+2. In `vite.config`, move the contents of `svelte.config.js` into `sveltekit({ ... })`, then delete
+   `svelte.config.js`.
+3. In the same call, delete the whole `csrf` block, and don't replace it with
+   `trustedOrigins: ['*']`.
+4. In `src/app.d.ts`, delete `App.Platform`, and keep the `import '@glw907/cairn-cms/ambient';` line.
+5. Run `npx wrangler types --env-file=.dev.vars.example`, so `worker-configuration.d.ts` carries
+   the secret names. If `src/app.d.ts` references `@cloudflare/workers-types`, as a scaffolded
+   site's does, add `--include-runtime=false`, the form a scaffolded site's `cf-typegen` script in
+   `package.json` runs.
+6. In your server code, import `env` and `waitUntil` from `cloudflare:workers` where you read
+   `event.platform`. Wrap `resolve` in `withEnv` in a handle that wrote it.
+7. Import `Handle` from `@sveltejs/kit/hooks`, and move `$lib` to `#lib` through the `imports` field in
+   `package.json`.
+8. Run `npm run check`, and expect no errors or warnings. Add `({}) as Env satisfies
+   CairnPlatformBindings` to a server module if you want a missing binding to fail here.
+9. Run `npm run build`, and expect it to exit 0.
+10. Run `wrangler dev .svelte-kit/cloudflare/_worker.js`, because `vite preview` can't serve adapter 8
+    output.
+11. Request `/admin/login` from the running server, and expect a `200` response with the sign-in form.
+
+[The per-version notes](#per-version-notes) carry each item with its reason, and the
+`CairnPlatformBindings` type states what the generated `Env` must carry.
+
+### When your range crosses the one-declaration change
+
+The window that makes the adapter's `roles` and `access` the one declaration changes how the guard is
+wired, tightens two access edges, and regenerates the manifest. Do these in order, after step 3:
+
+1. In the adapter, declare `roles` and `access` as members (`defineAdapter({ roles, access })`). If
+   `src/hooks.server.ts` held a different map, reconcile the two first, because the adapter's now
+   governs every reader. Delete a scaffold's `src/access.ts` once its map sits on the adapter.
+2. In `src/hooks.server.ts`, import the site's runtime and pass `{ runtime }` to `createAuthGuard` and
+   to `devBackendHandle`. Remove their `roles` and `access` options. Do the same for any per-route
+   `createEditorRoutes` call.
+3. Run `npx cairn-manifest` and commit the result. A site that declares an image inside an object or
+   an array fails its build until you do.
+4. Move any site route mounted under `/admin/auth/` outside `/admin` if anonymous visitors must reach
+   it. Only `/admin/login` and `/admin/auth/confirm` are public now.
+5. Mount `tidyAction` and `dictionaryAddAction` only on a route with a `concept` param.
+6. Review any access rule that names a role of `none` capability. The rule now admits that role to the
+   route it names. Remove a role you dropped from `defineRoles` from every access rule, or keep it
+   declared: a rule naming an undeclared role now fails at server start.
+7. Key alerting for a missing Turnstile secret on `missing_secret`, not `invalid_input`.
+8. If you passed a full `auth.branding` without `replyTo`, check the adapter's `email` group: the
+   runtime's `replyTo` applies now.
+9. Optionally, answer 503 from `/healthz` when `ok` is false, and apply `0001_roles.sql` if you declare
+   custom roles on a site scaffolded before the scaffold shipped it.
+10. Run `npm run check`, then `npm run build`, and expect both to exit 0. Run `cairn doctor` and expect
+    its `auth.role-wiring` check to pass.
+
+[The per-version notes](#per-version-notes) carry each item with its reason.
+
+### When your range crosses the scaffold and dev-backend change
+
+The window that moves the site-config path, tightens composition, and changes the dev backend asks for
+these steps, in order, after step 3:
+
+1. Delete `configPath` from `editor.nav`. If your site config does not live at
+   `src/theme/site.config.yaml`, set `editor.siteConfigPath` to its path. A site that builds a
+   `CairnRuntime` by hand adds `siteConfigPath` to it.
+2. Remove `itemLabel` from any `behavior` table and set it on the `array` field descriptor. Rename a
+   concept whose id is `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`.
+   Give every `publishActions` entry a distinct `label`.
+3. Make every `sanitizeSchema` callback return a schema with a `tagNames` array. Move any markup that
+   needed `<script>` into a registered component or an island.
+4. Delete your `devBuildDefine` plugin and the `__CAIRN_DEV_BUILD__` declaration in `app.d.ts`.
+   The `cairnManifest()` plugin defines the flag, and `@glw907/cairn-cms/ambient` declares it.
+5. Add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine.
+6. Drop `seedContent` from `devBackendHandle`. Pass `content: 'fixtures'` when the dev backend runs
+   under `wrangler dev`, or to keep the seeded dev content.
+7. Run `npm run check`, then `npm run build`, and expect both to exit 0.
+
+[The per-version notes](#per-version-notes) carry each item with its reason.
+
+### You know it worked when
+
+`npm run check` (or your site's type-check script) passes, `cairn doctor` reports every check
+passed or skipped, and the admin loads and saves an entry without a new error.
+
+### If something goes wrong
+
+A doctor failure names its condition and remedy. A type error after the bump usually traces
+directly to a `Consumers must:` line you haven't applied yet; re-read the changelog section for the
+version the error's import or field name last appeared in. For a runtime symptom that only shows
+up after deploy, read the site's structured logs; the `cairn-extending-a-site` skill's debug
+reference walks them.
+
+## Per-version notes
 
 This record starts at `0.84.4`, the oldest version among the sites that depend on cairn today (per
 `CHANGELOG.md`'s `0.94.0` entry). A site upgrading from further back crosses more history than
-this page carries; read `CHANGELOG.md` directly for anything older.
+this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
 - **Run `npx cairn-guidance install`, then delete the four old skill directories by hand.** The packaged skills have new names: `cairn-extend` is `cairn-extending-a-site`, `cairn-public` is `cairn-styling-public-pages`, `cairn-admin-screens` is `cairn-building-admin-screens`, and `cairn-consult` is `cairn-consulting-the-engine`. `install` reports an old directory as removable and deletes nothing, so both name sets load until you remove the old ones under `.claude/skills/`. Rewrite any project instruction that names an old skill.
+- **Read upgrade steps from `MIGRATION-NOTES.md` and JSON schemas from `schema/`.** The extend, reference, and Claude Code docs tracks are gone: each export's doc comment carries its contract, and the packaged skills teach each job. A script that read the reference track's schema directory reads `schema/` in the installed package, each `$id` unchanged. Re-run `npx cairn-guidance install` so your copy of the skills drops links to the removed pages.
 - **Move `editor.nav.configPath` to `editor.siteConfigPath`.** The nav editor, Settings, and Tags all read the one site-config file the adapter names, which defaults to `src/theme/site.config.yaml`. Set the member when your file lives elsewhere. A site that builds a `CairnRuntime` by hand adds `siteConfigPath` to it.
 - **Remove `itemLabel` from any `behavior` table, rename any concept whose id names an engine view, and make publish-action labels unique.** `itemLabel` stays on the `array` field descriptor. Composition now throws on a concept id of `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, or `settings`, and on two publish actions that share a label.
 - **Return a `tagNames` array from every `sanitizeSchema` callback.** The callback now gets a copy of the safe schema, and the engine strips `script` after it returns, so a callback can no longer admit author script. Use a registered component or island for that markup, or `unsafeDisableSanitize` to turn the floor off.
@@ -22,7 +208,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 - **Upgrade to SvelteKit 3, `@sveltejs/adapter-cloudflare` 8, Svelte 5.57.1, and Wrangler 4.118.**
   The engine's peer ranges become `@sveltejs/kit` `^3` and `svelte` `^5.57.1`, and a SvelteKit 2 site
   can't run it. The site also needs Vite `^8.0.12`, `@sveltejs/vite-plugin-svelte` `^7`, and Node
-  `>=22.17`, which the scaffold already pins. See [Upgrade cairn](./upgrade-cairn.md#when-your-range-crosses-sveltekit-3)
+  `>=22.17`, which the scaffold already pins. See [When your range crosses SvelteKit 3](#when-your-range-crosses-sveltekit-3)
   for the steps in order.
 - **Move `svelte.config.js` into `sveltekit({ ... })` in `vite.config`, and delete the file.**
   SvelteKit 3 no longer supports `svelte.config.js`. Pass the adapter, `prerender`, and every other
@@ -34,7 +220,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   it outside `/admin`.
 - **Delete `App.Platform` from `app.d.ts`, run `wrangler types`, and type bindings from its `Env`.**
   Adapter 8 passes no `platform`, so the type has nothing to describe.
-  [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings) states what the
+  `CairnPlatformBindings` states what the
   generated `Env` must carry, and `({}) as Env satisfies CairnPlatformBindings` checks it at
   compile time.
 - **Read `event.platform` from `cloudflare:workers` instead.** Import `env` and `waitUntil` from the
@@ -78,9 +264,9 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   SvelteKit's check refuses a cross-origin form POST before the guard runs.
 - **Re-run `npx cairn-guidance install` if your site uses the `cairn-extend` skill.** This release
   drops cairn's narrative guides and its two front-door pages until each set is rebuilt, so the
-  shipped skill now points its recipe table at the [reference pages](../reference/README.md)
-  instead. A reinstall replaces your copy of the skill, which still links to the removed pages.
-  This page, [Upgrade cairn](./upgrade-cairn.md), and `choose-an-ai-posture.md` stay in place.
+  shipped skill now points its recipe table at the reference pages instead. A reinstall replaces
+  your copy of the skill, which still links to the removed pages. The migration notes, the upgrade
+  procedure, and the AI-posture page stayed in place.
 
 - **Pass `{ runtime }` to `createAuthGuard`, `devBackendHandle`, and `createEditorRoutes`, and declare
   `roles` and `access` once on the adapter.** The three factories take one bag with a required
@@ -136,7 +322,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
   automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
   `editor` the same way, so carry site-added columns across before you copy it in.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+See [`CHANGELOG.md`](./CHANGELOG.md#unreleased).
 
 ## 0.98.0
 
@@ -145,7 +331,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   `from '@glw907/cairn-cms/components'` to `from '@glw907/cairn-cms/admin'`.
 - **Import `PreviewBanner` from `@glw907/cairn-cms/public`.** The banner renders on a site's public
   preview route, so it moved to the new `./public` subpath and no longer sits on `./admin`. Change
-  the import on your preview route (see [the `PreviewBanner` reference](../reference/public.md#previewbanner)).
+  the import on your preview route.
 - **Move custom admin components into `src/lib/admin`, or keep them and set `static.scope`.** The
   audit's default roots no longer include `src/lib/components`. To move them, put your custom admin
   components under `src/lib/admin` and add `@source "./lib/admin";` to your admin stylesheet
@@ -162,8 +348,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 - **Know what the audit no longer reads.** `src/lib/components` left `DEFAULT_STATIC_SCOPE`, so
   the rules that read it by default stop reading your components there unless you restore the
   root with `static.scope`, as above. `stripe-trim-parity` and `unlayered-font-clobber` read only the admin roots in
-  `static.scope`, so they never read your public components. The
-  [`cairn-audit` reference](../reference/cairn-audit.md) states the same restore form.
+  `static.scope`, so they never read your public components.
 - **Expect `DEFAULT_ADMIN_SCOPE` to reach `src/lib/admin`.** It is now `src/routes/admin`,
   `src/lib/admin`, and `src/lib/admin-toolkit`, the same three roots as the static default. The
   three admin-only motion rules therefore also read the custom components you move into
@@ -200,8 +385,8 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   focus-ring utility with one line: `@import "@glw907/cairn-cms/cairn-public.css";`. It goes after
   `@import "tailwindcss";` and before `@import "./prose.css";`, so a later `@theme` block of yours
   still wins. A chassis file that still redeclares a role the sheet supplies keeps the old value,
-  and `theme-conformance` names the file. [The public stylesheet
-  reference](../reference/public-css.md) lists every key with its default.
+  and `theme-conformance` names the file. The `cairn-styling-public-pages` skill's stylesheet
+  contract lists every key with its default.
 - **Compare your copy's ink, muted, and shadow values before you delete them.** Three defaults
   changed. Each status ink (`--cairn-{info,success,warning,error}-ink`) derives from its fill as a
   50 percent `color-mix` toward `--color-base-content`, where the old copy used the fill itself.
@@ -227,8 +412,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   run, and a configured root that a `public.exclude` path covers fails it too. Name an entry
   stylesheet under `public.stylesheets` when your theme starts elsewhere than `src/theme/theme.css`.
   A site that serves public pages from a root outside the defaults, or that keeps admin screens
-  under `src/lib/components`, names it under the right key ([the public
-  scope](../reference/cairn-audit.md#the-public-scope)).
+  under `src/lib/components`, names it under the right key.
 - **Port the template fixes by hand.** A site copied from `templates/waymark` earlier has none of
   these; each is a small edit, and none is required for the site to build.
   - The skip link: an `sr-only` anchor to `#main` with `focus:not-sr-only focus:absolute`, and
@@ -392,8 +576,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   gates on the exit code alone still works unmodified (both `1` and `3` are nonzero), but a pnpm
   or yarn site that previously read a silent SKIP on `config.dependency-floors` now gets a real
   verdict. A job that wants to distinguish a real failure (`1`) from an unchecked environment gap
-  (`3`) captures the exit code and branches on it; see `docs/reference/doctor.md#status-vocabulary`
-  for the CI wiring example.
+  (`3`) captures the exit code and branches on it.
 - **Four more names narrow to one canonical home.** Import `AuthBranding` from
   `@glw907/cairn-cms/sveltekit` instead of the root package; import `MediaEntry` from
   `@glw907/cairn-cms/media` instead of `/sveltekit`; import `PublishActionEntry` from
@@ -459,8 +642,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   variants) in hand-authored admin markup.
 - **The bracketed `text-[var(--cairn-warning-ink)]`/`text-[var(--color-positive-ink)]` arbitrary
   values no longer compile.** Replace `text-[var(--cairn-warning-ink)]` with `cairn-text-warning`
-  and `text-[var(--color-positive-ink)]` with `cairn-text-success`, the new named utilities
-  (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms").
+  and `text-[var(--color-positive-ink)]` with `cairn-text-success`, the new named utilities.
 - **`createContentRoutes` no longer returns the ten media-janitorial actions**
   (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`,
   `mediaReplaceAction`, `mediaAltPropagateAction`, `mediaDeleteAction`, `mediaUpdateAction`,
@@ -485,8 +667,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   naming every concept and fixed screen a site's declared map leaves uncovered. Audit your access
   map for coverage: a map you believed was a whitelist may have left a screen or concept open to
   every editor-capability session; the warning names exactly which ones on the next server start,
-  and `docs/extend/security-model.md#allowlist-semantics-from-an-exhaustive-map` gives the
-  exhaustive-map recipe to close the gap.
+  and an exhaustive map that names every screen and concept closes the gap.
 - **Two log event names change to match the vocabulary's grammar.** taxonomy.unmarked_field
   becomes `content.field_unmarked` and `publish.address_collision` becomes
   `publish.address_collided`. Rename both in any log filter or alert.
@@ -542,7 +723,8 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
   to `cairn-*`.** Rename `.ec-head` to `.cairn-head`, `.ec-icon` to `.cairn-icon`,
   `.ec-icon-secondary` to `.cairn-icon-secondary`, `.ec-glyph` to `.cairn-glyph`, and `.ec-grid`
   to `.cairn-grid` in any hand-authored prose CSS that targets `cardShell`/`headRow`/`iconSpan`/
-  `renderGlyph`/`markFirstList` output. See `docs/reference/render.md` for the full emitted list.
+  `renderGlyph`/`markFirstList` output. The `cairn-styling-public-pages` skill's stylesheet contract
+  lists every emitted class.
 - **Six log events rename onto the `refused` verb.** Rename any log subscriber matching on the
   old string, preview.rejected to `preview.refused`, guard.rejected to `guard.refused`,
   media.delete_blocked to `media.delete_refused`, media.replace_blocked to
@@ -640,7 +822,7 @@ Most of this window is a rename set of four or five call-site edits. A site that
 any test that asserts its order. Do the renames first, so the `OfficeList` sweep is the only
 edit left.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full entry.
 
 ## 0.96.0
 
@@ -680,7 +862,7 @@ unaffected. A newly scaffolded site starts on `compatibility_date` `2026-08-21` 
 redundant `nodejs_compat` flag; an existing site keeps its flag. The rest is documentation, gates,
 and internal tooling that ships in no tarball.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0960).
+See [`CHANGELOG.md`](./CHANGELOG.md#0960).
 
 ## 0.95.0
 
@@ -707,14 +889,14 @@ errors rather than runtime failures, and one operational fact.
   singular noun rather than its plural label: these dialogs write sentences about one entry, and the
   plural rendered "Delete this posts?"
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0950).
+See [`CHANGELOG.md`](./CHANGELOG.md#0950).
 
 ## 0.95.0-rc.1
 
 - **The tidy action's SDK dependency moved.** `@anthropic-ai/sdk` is now an optional peer
   dependency instead of a plain one. A site using the tidy action adds it to its dependencies
   (`npm install @anthropic-ai/sdk`); a site not using tidy does nothing, and its install gets
-  lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#0950-rc1).
+  lighter. See [`CHANGELOG.md`](./CHANGELOG.md#0950-rc1).
 
 ## 0.94.0
 
@@ -724,7 +906,7 @@ names, and the `navLayout` types finalized after 0.86.0's introduction; a route-
 rekey; and an access-map rekey for a parameterized `createSectionAction` route. `CHANGELOG.md`
 carries an ordered, numbered checklist for this version rather than scattering the steps
 across prose, specifically so a consumer crossing it has one list to work from. Read [that
-checklist](../../CHANGELOG.md#0940) directly rather than this page's summary; it is long enough
+checklist](./CHANGELOG.md#0940) directly rather than this page's summary; it is long enough
 that reproducing it here would only create a second copy to keep in sync.
 
 ## 0.92.0
@@ -736,7 +918,7 @@ that reproducing it here would only create a second copy to keep in sync.
   above a filled card action now counts as a finding; demote the non-primary fill to `btn-ghost` or
   `btn-outline`.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0920) for the full entries.
+See [`CHANGELOG.md`](./CHANGELOG.md#0920) for the full entries.
 
 ## 0.91.0
 
@@ -745,7 +927,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#0920) for the full entries.
   `.cairn-chip-quiet` recipe; `cairn-audit`'s `stock-default-hazards` check now errors on
   `badge-ghost` directly.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0910) for the full entry, including two informational
+See [`CHANGELOG.md`](./CHANGELOG.md#0910) for the full entry, including two informational
 changes (a `PageHeader` spacing tightening, a `cairn-audit` finding demoted to advisory) that carry
 no required action.
 
@@ -757,7 +939,7 @@ no required action.
   `routing: 'embedded'`: if its entries are meant to have public URLs, declare `routing: 'page'`
   instead; if they were only ever meant to be referenced or included, no action is needed.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0870).
+See [`CHANGELOG.md`](./CHANGELOG.md#0870).
 
 ## 0.86.0
 
@@ -771,4 +953,4 @@ applies this version's shape first and then 0.94.0's rename on top of it.
 - A declared `navFilter` widens its parameter and return type from `ResolvedNavItem[]` to
   `ResolvedLayoutNode[]`; a filter that only reads `.label` needs no other change.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#0860).
+See [`CHANGELOG.md`](./CHANGELOG.md#0860).

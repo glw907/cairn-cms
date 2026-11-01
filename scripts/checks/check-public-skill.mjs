@@ -154,18 +154,29 @@ export function compositionClasses(css) {
   return names;
 }
 
+/** The packaged skill reference that carries the emitted-class registry, repo-relative. */
+export const EMITTED_REGISTRY_PAGE = 'skills/cairn-styling-public-pages/references/public-stylesheet-contract.md';
+
 /**
- * The class names the emitted-class registry lists, read from the reference page's section.
- * @param {string} renderMd `docs/reference/render.md`
+ * The class names the emitted-class registry lists: the code spans in the first column of each
+ * table row in the page's "Emitted classes" section. Prose around the table (a chassis-owned class,
+ * an admin name it warns against) is not registry. An element-qualified entry (`pre.shiki`) is
+ * not a bare class name, so it is left out.
+ * @param {string} pageMd the {@link EMITTED_REGISTRY_PAGE} text
  * @returns {Set<string>}
  */
-export function parseEmittedRegistry(renderMd) {
-  const start = renderMd.indexOf('## Emitted classes');
-  if (start === -1) throw new Error('no emitted-class registry parsed: render.md has no "Emitted classes" section');
-  const rest = renderMd.slice(start + 3);
+export function parseEmittedRegistry(pageMd) {
+  const start = pageMd.indexOf('## Emitted classes');
+  if (start === -1) throw new Error('no emitted-class registry parsed: the page has no "Emitted classes" section');
+  const rest = pageMd.slice(start + 3);
   const end = rest.search(/\n## /);
   const section = end === -1 ? rest : rest.slice(0, end);
-  const names = new Set([...section.matchAll(/`([^`]+)`/g)].map((match) => match[1]).filter((span) => /^[a-z][a-z0-9-]*$/.test(span)));
+  const firstCells = [...section.matchAll(/^\|([^|\n]*)\|/gm)].map((match) => match[1]);
+  const names = new Set(
+    firstCells
+      .flatMap((cell) => [...cell.matchAll(/`([^`]+)`/g)].map((match) => match[1]))
+      .filter((span) => /^[a-z][a-z0-9-]*$/.test(span)),
+  );
   if (names.size === 0) throw new Error('no emitted-class registry parsed: the "Emitted classes" section names no class');
   return names;
 }
@@ -483,7 +494,7 @@ export async function runGate(root) {
     compositionClasses: compositionClasses(readFileSync(resolve(showcase, 'src/chassis/composition.css'), 'utf8')),
     pages: readSkillPages(root),
     mentionsClass: (/** @type {string} */ name) => compiled.mentions(name) || siteSheet.mentions(name) || scopedClasses.has(name),
-    registryClasses: parseEmittedRegistry(readFileSync(resolve(root, 'docs/reference/render.md'), 'utf8')),
+    registryClasses: parseEmittedRegistry(readFileSync(resolve(root, EMITTED_REGISTRY_PAGE), 'utf8')),
     resolvesToken: (/** @type {string} */ name) => declared.has(name),
   };
   const problems = evaluate(ctx);

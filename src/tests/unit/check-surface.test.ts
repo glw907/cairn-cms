@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 import { diffSurface, findHomeViolations, renderExport } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(

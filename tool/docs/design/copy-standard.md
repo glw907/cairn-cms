@@ -567,7 +567,7 @@ This is not stylistic. It is what makes 4.3 and 4.4 possible at all: a linter ca
 scattered across 40 files, and a human cannot read it.
 
 Two invariants a test can hold: every `spine.Condition` has exactly one fix line, and every fix
-line's condition exists (the shape `check:reference` and `check:readiness` already enforce on the
+line's condition exists (the shape `check:readiness` already enforces on the
 TypeScript side).
 
 ### 4.2 The error boundary

@@ -1,5 +1,5 @@
 // The showcase's gated members page, the shape "Gate the member area" in
-// docs/extend/add-a-second-sign-in-group.md builds: its load resolves the signed-in subject and
+// the cairn-extending-a-site skill's second-sign-in-group reference builds: its load resolves the signed-in subject and
 // redirects a visitor without one, and sign-out lives here as the page's named action.
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

@@ -1,10 +1,9 @@
-// cairn-cms: the public-surface snapshot gate. The reference-coverage gate checks a page EXISTS per
-// export and the signatures gate checks a CALLABLE export's declared signature has not drifted;
-// neither sees a non-callable export (an interface, a type alias, a const, the `fields` namespace
-// object) whose declared SHAPE has drifted. A renamed or retyped field on a `*Data` interface, the
-// developer's real upgrade guarantee, slips past both. This gate closes that gap: it walks each
+// cairn-cms: the public-surface snapshot gate. A renamed or retyped field on a `*Data` interface is
+// the developer's real upgrade guarantee, and a callable's signature or a non-callable export's
+// declared SHAPE (an interface, a type alias, a const, the `fields` namespace object) can drift
+// without any compile error in the engine itself. This gate catches that drift: it walks each
 // exported subpath's built `.d.ts`, renders the FULL declared shape of every export (callable form
-// from the same path the signatures gate uses, non-callable shape from `checker.typeToString`), and
+// through normalize-signature.mjs, non-callable shape from `checker.typeToString`), and
 // compares the rendered surface against the committed golden file `scripts/checks/api-surface.md`.
 // Any drift fails the gate; regenerating the golden file (`--update`) is the deliberate disclosure
 // moment, and the diff a reviewer reads. The core (`diffSurface`, `findHomeViolations`) is pure of
@@ -15,7 +14,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports, moduleExports, loadDts } from './dts-exports.mjs';
-import { normalizeSignature } from './check-reference-signatures.mjs';
+import { normalizeSignature } from './normalize-signature.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SNAPSHOT = 'scripts/checks/api-surface.md';
@@ -24,9 +23,8 @@ const REEXPORTS = 'scripts/checks/check-surface-reexports.json';
 
 // The exported subpaths the gate snapshots, drawn directly from package.json `exports`: every entry
 // whose value carries a `types` field. The raw asset entries (`.txt`, `package.json`) have no
-// `types` field and fall out. This list is NOT the reference gate's CONFIG, and the gate does NOT
-// inherit that gate's `excludeDts` page-dedup (for example `/delivery/data`'s re-export of
-// `/delivery`'s names), because the re-exported names ARE real surface here.
+// `types` field and fall out. A re-exported name (for example `/delivery/data`'s re-export of
+// `/delivery`'s names) is listed under each subpath, because it IS real surface there.
 /** @returns {{ subpath: string, dts: string }[]} */
 export function surfaceSubpaths() {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
@@ -44,9 +42,7 @@ export function surfaceSubpaths() {
   return out;
 }
 
-// The TypeFormatFlags the callable rendering shares with check-reference-signatures.mjs so the two
-// gates agree on callable form. Kept here as a named constant rather than re-imported because the
-// signatures gate does not export it.
+// The TypeFormatFlags the callable rendering uses, so every callable renders in one form.
 const CALLABLE_FLAGS =
   ts.TypeFormatFlags.NoTruncation |
   ts.TypeFormatFlags.WriteArrowStyleSignature |
@@ -142,7 +138,7 @@ function shapeTypeOf(checker, sym) {
 // callable check, on purpose: an interface expands member-by-member, and a type alias expands with
 // the shape flags (so a callable alias like `type SiteRender = (input) => …` prints its full
 // signature, not its name). Only a callable VALUE export (a function or const-function) takes
-// the callable branch, where the arrow-style flags match the signatures gate. A non-callable value
+// the callable branch, which renders in the arrow-style form. A non-callable value
 // (a const, the `fields` namespace object) falls through to the shape flags. The result passes
 // through `normalizeSignature` so `import("…")` qualifiers, `| undefined` optional artifacts, and
 // whitespace are canonical and a no-op regenerate is byte-identical.

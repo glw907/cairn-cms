@@ -12,35 +12,34 @@
 // README's deliberately-unconsumed list, which is an author's declaration this gate takes at its
 // word; naming a fixture there is how a run's unquoted captures stay committed and accounted for.
 //
-// The recorded run is quoted by the admin arm alone, which is deleted and later rebuilt
-// (arm-state.mjs). While that arm holds no page, its per-page floors and the rule that every
-// fixture is quoted have no page to hold, so both wait for the rebuild; any marked block elsewhere
-// is still checked in full. Once the arm holds any page both come back, so a rebuilt arm that
-// drops a pinned page or stops quoting a fixture fails here.
+// The recorded run is quoted by docs/admin alone, which can hold no page while that track is
+// rebuilt. While it holds none, its per-page floors and the rule that every fixture is quoted have
+// no page to hold, so both wait; any marked block elsewhere is still checked in full. Once
+// docs/admin holds any page both come back, so a rebuilt track that drops a pinned page or stops
+// quoting a fixture fails here.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname, join, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { armOf, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// The five published arms plus the front-door index, the same corpus check-visuals.mjs scans.
+// The published docs directories plus the front-door index, the same corpus check-visuals.mjs scans.
 // The planning folders and docs/internal discuss the marker convention in prose and would
 // false-positive if scanned as though they carried real marked blocks.
-const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/claude-code', 'docs/reference'];
+const SCAN_DIRS = ['docs/admin', 'docs/editors'];
 const INDEX_FILES = ['docs/README.md'];
 
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 
 const FIXTURES_ROOT_REL = 'packages/create-cairn-site/test/fixtures/transcripts';
 
-// The arm whose pages quote the recorded run. The uncited-fixture rule holds only while it is
-// rebuilt.
-const QUOTING_ARM = 'admin';
+// The directory whose pages quote the recorded run. The uncited-fixture rule holds only while it
+// holds any page.
+const QUOTING_DIR = 'docs/admin';
 
 // The per-page minimum block count. Per-page, not global: a single well-stocked page cannot
-// cover for another page carrying no recorded proof at all. A floor holds only while its page's
-// arm is rebuilt.
+// cover for another page carrying no recorded proof at all. A floor holds only while the quoting
+// directory holds any page.
 const PAGE_FLOORS = {
   'docs/admin/create-your-site.md': 3,
   'docs/admin/is-it-working.md': 1,
@@ -62,7 +61,7 @@ function toPosix(p) {
 
 /**
  * Every `.md` file under `dir`, recursively, skipping SKIP_DIRS. Empty when `dir` does not
- * exist, so a temp-directory root built with only some of the scanned arms is not an error.
+ * exist, so a temp-directory root built with only some of the scanned directories is not an error.
  * @param {string} dir
  * @returns {string[]}
  */
@@ -418,7 +417,7 @@ export function parseMarkedBlocks(file, text) {
  * @param {string} root
  */
 export function scanTree(root = ROOT) {
-  const states = readArmStates(root);
+  const quoting = walkMarkdown(join(root, QUOTING_DIR)).length > 0;
   const fixturesRootAbs = resolve(root, FIXTURES_ROOT_REL);
   const pageFiles = [
     ...SCAN_DIRS.flatMap((dir) => walkMarkdown(join(root, dir))),
@@ -480,7 +479,7 @@ export function scanTree(root = ROOT) {
   }
 
   for (const [page, floor] of Object.entries(PAGE_FLOORS)) {
-    if (states[armOf(page) ?? ''] !== 'rebuilt') continue;
+    if (!quoting) continue;
     const count = blockCounts.get(page) ?? 0;
     if (count < floor) {
       violations.push({
@@ -491,7 +490,7 @@ export function scanTree(root = ROOT) {
     }
   }
 
-  if (states[QUOTING_ARM] === 'rebuilt' && existsSync(fixturesRootAbs)) {
+  if (quoting && existsSync(fixturesRootAbs)) {
     const unconsumed = readUnconsumedList(fixturesRootAbs);
     for (const fx of walkFixtures(fixturesRootAbs)) {
       if (cited.has(fx) || unconsumed.has(fx)) continue;
@@ -510,9 +509,8 @@ export function scanTree(root = ROOT) {
 function main() {
   const { pagesScanned, blocksChecked, violations } = scanTree();
   console.log(`check-transcripts: scanned ${pagesScanned} page(s), checked ${blocksChecked} transcript block(s)`);
-  const quotingState = readArmStates(ROOT)[QUOTING_ARM];
-  if (quotingState !== 'rebuilt') {
-    console.log(`check-transcripts: the ${QUOTING_ARM} arm is ${quotingState}, so its page floors and the uncited-fixture rule wait for its rebuild`);
+  if (walkMarkdown(join(ROOT, QUOTING_DIR)).length === 0) {
+    console.log(`check-transcripts: ${QUOTING_DIR} holds no page, so its page floors and the uncited-fixture rule wait for its pages`);
   }
   if (violations.length === 0) {
     console.log('check-transcripts: OK');

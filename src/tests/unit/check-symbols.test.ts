@@ -26,7 +26,6 @@ import {
   pathExists,
 } from '../../../scripts/checks/check-symbols.mjs';
 import { ALLOWLIST } from '../../../scripts/checks/check-symbols-allowlist.mjs';
-import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 describe('codeVoiceSegments', () => {
   it('extracts an inline span with its 1-based line number', () => {
@@ -488,25 +487,15 @@ describe('the ALLOWLIST', () => {
     expect(ALLOWLIST.has('env-var:--prefix')).toBe(false);
   });
 
-  // A kept per-version record names a retired page in a code span. The page goes, the record
-  // stays immutable, so the path is allowlisted rather than resolved.
-  it('carries the kept migration-notes record\'s code-span path to a retired reference page', () => {
-    const segments = codeVoiceSegments('see `docs/reference/doctor.md#status-vocabulary`');
-    expect(extractFilePaths(segments).map(({ token }) => token)).toEqual(['docs/reference/doctor.md']);
-    expect(ALLOWLIST.has('file-path:docs/reference/doctor.md')).toBe(true);
-  });
 });
 
-// The scan scope follows each arm's state (arm-state.mjs): an absent arm is skipped by name, while
-// a scope entry outside the arms (the reference arm, the root README) must exist or the scan throws,
-// so a vanished directory can never shrink the sweep to nothing and pass.
-describe('filesInScope, by arm state', () => {
-  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
-
-  function tree(files: string[], { list = true } = {}): string {
+// The scan scope: an optional entry (a docs directory, a front-door file) is skipped while it does
+// not exist, while a required entry (the migration notes, the root README) must exist or the scan
+// throws, so a vanished file can never shrink the sweep to nothing and pass.
+describe('filesInScope', () => {
+  function tree(files: string[]): string {
     const root = mkdtempSync(join(tmpdir(), 'cairn-symbols-scope-'));
-    const all: Record<string, string> = { 'README.md': '# Repo\n', 'docs/reference/core.md': '# Core\n' };
-    if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: ['docs/admin/is-it-working.md'], kept: KEPT });
+    const all: Record<string, string> = { 'README.md': '# Repo\n', 'MIGRATION-NOTES.md': '# Notes\n' };
     for (const file of files) all[file] = '# Page\n';
     for (const [path, content] of Object.entries(all)) {
       mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -515,38 +504,35 @@ describe('filesInScope, by arm state', () => {
     return root;
   }
 
-  it('scans the reference arm and the root README with every narrative arm absent', () => {
+  it('scans the migration notes and the root README when no docs page exists', () => {
     const root = tree([]);
     try {
-      expect(filesInScope(root)).toEqual(['README.md', 'docs/reference/core.md']);
+      expect(filesInScope(root)).toEqual(['MIGRATION-NOTES.md', 'README.md']);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('scans a kept-only extend arm and a rebuilt admin arm', () => {
-    const root = tree([...KEPT, 'docs/admin/is-it-working.md']);
+  it('scans the admin and editors directories and the front doors once they hold pages', () => {
+    const root = tree(['docs/admin/is-it-working.md', 'docs/editors/a.md', 'docs/README.md', 'docs/internal/x.md']);
     try {
-      expect(filesInScope(root)).toEqual(['README.md', 'docs/admin/is-it-working.md', ...[...KEPT].sort(), 'docs/reference/core.md']);
+      expect(filesInScope(root)).toEqual([
+        'MIGRATION-NOTES.md',
+        'README.md',
+        'docs/README.md',
+        'docs/admin/is-it-working.md',
+        'docs/editors/a.md',
+      ]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('throws when a scope entry outside the arms is missing', () => {
+  it('throws when a required scope entry is missing', () => {
     const root = tree([]);
     try {
-      rmSync(join(root, 'docs/reference'), { recursive: true });
-      expect(() => filesInScope(root)).toThrow(/docs\/reference/);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
-  });
-
-  it('fails closed without the deletion list', () => {
-    const root = tree([], { list: false });
-    try {
-      expect(() => filesInScope(root)).toThrow(/deletion-list\.json does not exist/);
+      rmSync(join(root, 'MIGRATION-NOTES.md'));
+      expect(() => filesInScope(root)).toThrow(/MIGRATION-NOTES\.md/);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

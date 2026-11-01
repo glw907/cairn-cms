@@ -1,45 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { DEFAULT_SHEET_CANDIDATES, loadConfig } from '../../../lib/audit/config.js';
 import { runStatic, selectRules } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
-import { renderedRules } from '../../../lib/audit/rules/rendered/index.js';
 import { noUncompiledClass } from '../../../lib/audit/rules/static/no-uncompiled-class.js';
 import type { AuditReport, Finding, StaticRule, StaticRuleContext } from '../../../lib/audit/types.js';
-
-const CAIRN_AUDIT_REFERENCE = fileURLToPath(
-  new URL('../../../../docs/reference/cairn-audit.md', import.meta.url)
-);
-
-/** The small set of number words `docs/reference/cairn-audit.md` spells out in its rule-count sentences. */
-const NUMBER_WORDS: Record<string, number> = {
-  two: 2,
-  fifteen: 15,
-  seventeen: 17,
-  eighteen: 18,
-  nineteen: 19,
-  twenty: 20,
-  'twenty-one': 21,
-  'thirty-four': 34,
-  'thirty-five': 35,
-  'thirty-six': 36,
-  'thirty-seven': 37,
-  'thirty-eight': 38,
-};
-
-/** A rule count as the reference page writes it, digits or one of `NUMBER_WORDS`. */
-function parseRuleCount(text: string): number {
-  const digits = /^\d+$/.exec(text);
-  if (digits) return Number(digits[0]);
-  const word = text.toLowerCase();
-  const known = NUMBER_WORDS[word];
-  if (known === undefined) throw new Error(`unrecognized rule count "${text}" in the reference page`);
-  return known;
-}
 
 /**
  * The registry without the public-scope rules: what a test runs over a fixture tree that holds
@@ -146,20 +114,6 @@ describe('the static rule registry', () => {
       expect(byId.get(id)?.tier).toBe('error');
       expect(byId.get(id)?.adminOnly).toBeUndefined();
     }
-  });
-
-  // Locks the reference page's two rule-count sentences to the registries they describe, so a
-  // future rule addition or removal fails this test until docs/reference/cairn-audit.md's own
-  // numbers are updated to match.
-  it('states the same total and static rule counts docs/reference/cairn-audit.md carries', () => {
-    const doc = readFileSync(CAIRN_AUDIT_REFERENCE, 'utf8');
-    const totalMatch = /All\s+([A-Za-z0-9-]+)\s+registered rules/.exec(doc);
-    const staticRunMatch = /^([A-Za-z0-9-]+) rules run:/m.exec(doc);
-    if (!totalMatch || !staticRunMatch) {
-      throw new Error('could not find both rule-count sentences in docs/reference/cairn-audit.md');
-    }
-    expect(parseRuleCount(totalMatch[1])).toBe(staticRules().length + renderedRules().length);
-    expect(parseRuleCount(staticRunMatch[1])).toBe(staticRules().length);
   });
 });
 
@@ -524,7 +478,7 @@ describe('static.adminScope', () => {
   });
 });
 
-// The documented restore form (docs/reference/cairn-audit.md): a site whose own tree still keeps
+// The documented restore form: a site whose own tree still keeps
 // a directory literally named `src/lib/components` (its own convention, unrelated to the engine's
 // own rename) sets `static.scope` to the default roots it has plus that directory, rather than
 // the bare `['src/lib/components']` a literal reading of "restore src/lib/components" might

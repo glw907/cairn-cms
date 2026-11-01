@@ -14,7 +14,7 @@ gets you there at all.
 ## The atoms
 
 The named primitives a site builds on. Each export's full contract is the doc comment on its
-declaration in the installed package's `dist` folder, and the installed skills carry the recipes.
+declaration in `node_modules/@glw907/cairn-cms/dist/`, and the installed skills carry the recipes.
 
 - `requireAccess`, `createSectionAction`, `locals.cairnEditor`: the auth guard and the per-route
   factories. The `cairn-extending-a-site` skill's admin-access reference covers them.
@@ -78,6 +78,6 @@ inspector for DaisyUI markup: https://daisyui.com/blueprint/.
 ## Where the docs are
 
 Start from the installed skills: `cairn-extending-a-site` routes every site job to its reference.
-Each export's contract is its doc comment in the installed package's `dist` declarations, and
-`node_modules/@glw907/cairn-cms/docs/extend/upgrade-cairn.md` carries the upgrade procedure and
-`node_modules/@glw907/cairn-cms/docs/extend/migration-notes.md` the per-version record.
+Each export's contract is its doc comment in `node_modules/@glw907/cairn-cms/dist/`, and
+`node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md` carries the upgrade procedure and the
+per-version record.

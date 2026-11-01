@@ -3,13 +3,11 @@
 ## Contents
 
 - [The base guides](#the-base-guides)
-- [Drafting brief: developer docs](#drafting-brief-developer-docs)
 - [Drafting brief: editor docs](#drafting-brief-editor-docs)
 - [Names](#names)
 - [Visuals (every page that carries one)](#visuals-every-page-that-carries-one)
 - [The page anatomies](#the-page-anatomies)
 - [The tracks](#the-tracks)
-- [The reference (`docs/reference/`), a shared instrument](#the-reference-docsreference-a-shared-instrument)
 - [The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)](#the-front-door-docsreadmemd-docswhy-cairnmd-and-the-root-readmemd)
 - [When a Vale finding is wrong](#when-a-vale-finding-is-wrong)
 - [Deviations from the base guides](#deviations-from-the-base-guides)
@@ -21,7 +19,7 @@ This document is the agent-facing standard for cairn's published documentation, 
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
 2026-07-18 (spec: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-07-18-docs-register-standard-design.md`), and the
 specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
-it around the four audience tracks the rebuild ships
+it around the audience tracks the rebuild ships
 ([`2026-08-14-pass-d-target-manifest.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
 style-guide sync (2026-09-28, spec: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-09-28-style-guide-sync-design.md`)
@@ -58,18 +56,16 @@ follows there.
 
 | Surface | Reader | Base guide | Drafting brief |
 |---|---|---|---|
-| `docs/admin/` | Sets up and runs the default site, starting from the setup command | Google | Developer docs |
-| `docs/extend/` | Builds an organization's site on cairn's seams | Google | Developer docs |
-| `docs/reference/` | Looks up a contract, or scripts against the `cairn` CLI | Google | Developer docs |
-| The front door: `docs/README.md`, `docs/why-cairn.md`, and the root `README.md` | Every audience, led by the developer | Google | Developer docs |
-| `CHANGELOG.md` | A developer reading what an upgrade changes | Google | Developer docs |
-| cairn.pub's own prose | A visitor to the rendered docs site | Google | Developer docs |
+| `docs/admin/` | Sets up and runs the default site, starting from the setup command | Google | None; the guide and its rows in "Deviations from the base guides" |
+| The front door: `docs/README.md`, `docs/why-cairn.md`, and the root `README.md` | Every audience, led by the developer | Google | None; the guide and its rows in "Deviations from the base guides" |
+| `CHANGELOG.md` | A developer reading what an upgrade changes | Google | None; the guide and its rows in "Deviations from the base guides" |
+| cairn.pub's own prose | A visitor to the rendered docs site | Google | None; the guide and its rows in "Deviations from the base guides" |
 | `docs/editors/` | Writes on a cairn site through `/admin` and never opens a terminal | Microsoft | Editor docs |
 | The admin interface's copy | An editor at work in `/admin` | Microsoft, UI text | None; `.claude/skills/cairn-following-admin-design/references/admin-design-system.md` states the voice |
 | `CONTRIBUTING.md` and `docs/internal/` | A contributor working on cairn itself | None; unpublished and unlinted | None |
 
-The cairn docs voice, which the developer brief defines, governs every surface whose base guide
-is Google. Editor docs take Microsoft's voice, tightened only by the editor brief's rules.
+A surface whose base guide is Google takes that guide's voice, as the rows in the Google table of
+"Deviations from the base guides" modify it. Editor docs take Microsoft's voice, tightened only by the editor brief's rules.
 Admin UI copy takes Microsoft's UI-text voice, tightened to professional and restrained copy with
 nothing cute and nothing chatty (Geoff, 2026-09-28), and a departure there is recorded in the
 Microsoft table of "Deviations from the base guides" like any other. The register governs
@@ -77,392 +73,6 @@ public-facing writing only, and internal specs, plans, and agent-facing document
 voice works best for Claude Code (Geoff, 2026-09-28). A Vale finding that is wrong about a specific line is a separate case with
 a separate procedure, "When a Vale finding is wrong," which corrects a misfiring regex and leaves the
 guide untouched.
-
-## Drafting brief: developer docs
-
-This brief governs every page whose base guide is Google: the admin, extend, and reference
-tracks, the front door, the changelog, and cairn.pub's own prose. It supplements the
-[Google developer documentation style guide](https://developers.google.com/style), which is the
-structure source for every such page, and it adds the cairn docs voice, the exemplars a drafter
-imitates, and the tells a draft avoids. A page takes its structure from the guide and speaks in
-the cairn docs voice throughout.
-
-### Structure
-
-Structure every page to the Google developer documentation style guide. The following checklist
-names the guide rules a draft breaks most often, one rule to a line, each linked to the guide page
-that states it.
-
-- A sequence of actions is a numbered list introduced by a complete sentence
-  ([highlights](https://developers.google.com/style/highlights)).
-- Each step holds one action ([procedures](https://developers.google.com/style/procedures)).
-- A procedure of one step is one sentence in a bulleted list
-  ([procedures](https://developers.google.com/style/procedures)).
-- A step names where the action happens before it names the action
-  ([procedures](https://developers.google.com/style/procedures)).
-- A sentence states its condition before its instruction
-  ([highlights](https://developers.google.com/style/highlights)).
-- Parallel items that need no order form a bulleted list
-  ([highlights](https://developers.google.com/style/highlights)).
-- A complete sentence introduces every list, never a fragment that the list items complete
-  ([lists](https://developers.google.com/style/lists)).
-- Every item in a list shares one form ([lists](https://developers.google.com/style/lists)).
-- Every list item opens on a capital letter unless case carries meaning, as in a glossary
-  ([lists](https://developers.google.com/style/lists)).
-- A sentence in a step, a list item, or a task section stays under 26 words
-  ([accessibility](https://developers.google.com/style/accessibility)). The 26-word cap counts each
-  sentence on its own and applies only to a step, a list item, or a sentence in a task section; an
-  introduction or explanation sentence is exempt.
-- Titles and headings take sentence case
-  ([highlights](https://developers.google.com/style/highlights)).
-- A task section's heading starts with a bare infinitive
-  ([headings](https://developers.google.com/style/headings)).
-- A concept section's heading is a noun phrase with no leading -ing word, and no heading opens on
-  an -ing word where another form serves ([headings](https://developers.google.com/style/headings)).
-- A heading carries no link ([headings](https://developers.google.com/style/headings)).
-- Heading levels never skip ([headings](https://developers.google.com/style/headings)).
-- Text follows every heading before the next heading begins
-  ([headings](https://developers.google.com/style/headings)).
-- Commands, code identifiers, file names, and paths sit in code font
-  ([highlights](https://developers.google.com/style/highlights)).
-- UI labels sit in bold ([highlights](https://developers.google.com/style/highlights)).
-- A complete sentence that states the table's purpose introduces every table
-  ([tables](https://developers.google.com/style/tables)).
-- A table of one column becomes a list ([tables](https://developers.google.com/style/tables)).
-- Link text names its destination and makes sense read alone
-  ([link text](https://developers.google.com/style/link-text)).
-- A URL is never the link text, and the page title or a description of the page takes its place
-  ([link text](https://developers.google.com/style/link-text)).
-- A reference names its target, never its position on the page
-  ([procedures](https://developers.google.com/style/procedures)).
-- A notice is rare, and it never carries a prerequisite or an earlier step, which precedes the
-  step instead ([notices](https://developers.google.com/style/notices)).
-- A notice never holds a full procedural step
-  ([notices](https://developers.google.com/style/notices)).
-
-The register adds the following structure rules, each stricter than the guide or set where the
-guide is silent.
-
-- **Ordered checks.** The checks in a verification or failure section run in order, so they form
-  a numbered list as well. A paragraph that chains its checks with first, then, and otherwise is
-  a procedure written as prose.
-- **No question or teaser headings.** A heading names its section's subject, and it is never a
-  question, a teaser, or a conversational phrase. A concept heading names what the section covers,
-  <!-- vale Google.Quotes = NO -->
-  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
-  such as "Robots file output" or "Limits of declining", and a task heading names the action, such
-  as "Verify the served file" or "Pass the posture to the robots route".
-  <!-- vale Google.Quotes = YES -->
-  Geoff killed three such headings from the draft docs proof (2026-09-28):
-  - Killed: "What each posture emits"
-  - Killed: "What declining doesn't buy"
-  - Killed: "You know it worked when"
-- **A vendor's specifics get a link, never a copy** (Geoff, 2026-08-05). Dashboard navigation,
-  plan-availability tiers, expression-language signatures, field references, console walkthroughs,
-  and pricing all sit behind a link to the vendor's page. Whatever cairn copies, cairn owns
-  keeping in sync, and a copy goes stale silently, because vendors rename dashboard sections and
-  move features between tiers without notice; a restated detail is therefore wrong on a schedule
-  cairn does not control, and a reader trusts it precisely because it looks specific. A page
-  writes out in full only cairn's reasoning, which does not drift: why the engine cannot do a
-  thing itself, what an architectural choice costs, and which of two mechanisms is the true source
-  and which a reconstruction. A vendor is quoted verbatim only for a short load-bearing
-  distinction, with the link. A page keeps at most one illustrative snippet, framed as
-  illustrative, with the authoritative reference beside it. When two of a vendor's pages
-  disagree, linking one disposes of the conflict that restating both would force the page to
-  reconcile.
-- **The general docs assume the reader uses no coding assistant, and a separate section covers
-  Claude Code** (Geoff, 2026-10-07: "You should not assume that an implementor is using Claude.";
-  "A page shouldn't even assume that a reader IS using a coding agent."; "If we want to address
-  coding agents, we can create separate docs specifically for that."; "we don't have to assume any
-  other agent than claude code."; "we _should_ assume in the general docs that a user is not using
-  a coding assistance, and then we can write a separate section for claude code."). Every task on a
-  general page is written for a developer working by hand, and no page addresses a coding agent.
-  Working with Claude Code belongs in its own section of the docs, never on a page for the
-  developer. A page may name an agent-specific file
-  it must document, such as a file-tree entry, in one line that labels the tool and links the
-  dedicated doc or reference ("`CLAUDE.md`: Claude Code's guidance file; see
-  [Guidance](../../../../docs/reference/guidance.md)").
-- **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
-  2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
-  guide and reference entry belong to the writers and reviewers who plan a page, and a published
-  page follows its form without naming it.
-- **A page's outline is written before its prose and rides in the pull request** (Geoff,
-  2026-10-01; reworded 2026-10-25 under the docs-as-code rulings, which retired the committed plan
-  file, its fact ids, and the brief kept beside the page). The premise test comes first: the
-  product has the thing the page documents, and no other page owns it. The outline is Google's
-  outline written down: "You might find it useful to think of an outline as the narrative for your
-  document" ([Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)).
-  It holds the page's job; the introduction's three parts (what the document covers, what prior
-  knowledge the reader needs, and what it does not cover); the sections in the order the outline
-  argues for, each with its heading, the one sentence a reader takes from it, and its hand-off; and
-  the ending the page's anatomy requires. The draft follows the outline's order. Section hand-offs
-  belong to the outline: a hand-off it places is not a tell, and a read of the page grades its
-  wording, never whether it is there or where it sits.
-
-### Voice
-
-The docs explain a system to someone trying to use it, and they have no stake in whether the
-reader adopts it, so nothing anywhere in them is a pitch. The reader should still come away
-impressed by the quality of the thought and the professionalism of the prose, since the writing
-does its persuading by being excellent and never by selling. Prose that avoids marketing by
-turning flat and featureless fails the reader as surely as a pitch does, and a reviewer flags it
-as readily.
-
-- **The cairn docs voice** reads as a technical report or the introduction to a systems paper. It
-  is measured and precise, friendly and respectful in the manner of a careful colleague, and free
-  of slang, jokes, and casual asides.
-- **Qualified claims stay whole.** Qualification stays inside the sentence that carries the
-  claim. In explanatory prose, a sentence carries one qualified claim whole, and it may run past
-  26 words when splitting it would separate the claim from its qualification.
-- **A restrained first person** appears only where a sentence states the author's evidence.
-- **The comparison set** is technical and academic writing, such as SQLite's "Appropriate uses"
-  page, a systems paper's introduction, a standards document's overview section, and a mature
-  database's description of itself. The cadence to match is theirs, with longer sentences
-  than a blog carries, fewer of them, and each one carrying one qualified claim.
-- **Imperatives** address the reader only in steps, task headings, cross-references ("For more
-  information, see"), and notices. Chatty asides and staccato runs of short sentences are out of
-  register even when every word is true.
-- **Product terms** are the precise vocabulary, never jargon to remove: concept, adapter, render,
-  seam, island, holding branch, manifest, and role and capability each name a real system object.
-  <!-- vale Google.Quotes = NO -->
-  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
-  Other jargon is checked against the page's actual reader, so an extend page says "admin",
-  "route", and "frontmatter" freely.
-  <!-- vale Google.Quotes = YES -->
-
-The following concept paragraph, from `docs/extend/choose-an-ai-posture.md`, is the voice at its
-most common. It states one limit together with its consequence and hands the detail to the
-reference entry that owns it.
-
-> A `robots.txt` file cannot block a fetch, so `'decline'` reaches only crawlers whose operators
-> honor it. The [`buildRobots`](../../../../docs/reference/delivery-data.md#buildrobots) entry records which
-> operators promise that, which assistants exempt a user-initiated fetch, and why the table leaves
-> out search crawlers and any token without first-party documentation.
-
-Killed: the same paragraph flattened into Google's default conversational register. It detaches
-each qualification into a separate short sentence, turns the pointer into an imperative
-addressed to the reader outside any step, and drops the qualifier about first-party documentation
-on the way.
-
-> Keep in mind that a `robots.txt` file can't block a fetch. It only asks crawlers to stay away.
-> This means `'decline'` only works for crawlers that choose to honor it. To see which operators
-> do, check out the `buildRobots` entry. You'll also find out which assistants skip the file for
-> fetches that you start. And you'll learn why search crawlers aren't in the table.
-
-The concept paragraph is `docs/extend/choose-an-ai-posture.md` lines 23 to 26 as merged at
-`8bbe78f5`, the proof page whose tone Geoff's ruling says worked. The killed flattened version
-beside it was written for this register to show that failure.
-
-Ratified-good, for the front door only and the one specimen in the first person: the why-cairn
-opener, from Geoff's account (re-ratified 2026-09-08; the earlier specimen, an editor emailing
-changes for the author to commit, was invented and is withdrawn): "Before cairn, the small
-organizations I run sites for lived on WordPress, and later on static site generators with a
-git-backed editor in front. WordPress was hard to manage and hard to design in, a mass of plugins
-and theme customization that resisted integration with anything else, and casual editors found
-its block editor confusing." It is concrete, unhurried, and true, and its first person carries the
-author's evidence about why cairn exists, which is why a task, concept, or reference page never
-borrows that first person.
-
-### The introduction
-
-A page's introduction is reasoned fresh for each page, from that page's readers, and this section
-supplies the questions a drafter answers before writing one, never a template to fill. Every
-prompt in it rests on a published source linked beside it, except the two house rulings it marks
-as such. The sources were read on 2026-10-04, and the survey behind them is
-`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-04-docs-introductions-survey.md`.
-
-The first question is who arrives at the page and what they already know. Google's technical
-writing course says to "Begin by identifying your audience's role(s)" and measures what a
-document owes its reader as the gap between what the task needs and what the audience already
-knows ([Defining your audience](https://developers.google.com/tech-writing/one/audience)). It
-also asks of every reader, "Why are they reading this document?"
-([Documents](https://developers.google.com/tech-writing/one/documents)). A page's purpose "is
-based on serving the reader's purpose, but is not necessarily identical with it"
-([Every Page is Page One](https://everypageispageone.com/the-book/)), so the introduction starts
-from what the reader came for, and the page's own scope follows from that. The reader's state
-shapes what the opening owes them. A tutorial "serves the needs of the user who is at study," and
-a how-to guide "serves the needs of the user who is at work"
-([Tutorials and how-to guides](https://diataxis.fr/tutorials-how-to/)), so a learner needs "to
-form an idea of what they will achieve right from the start"
-([Tutorials](https://diataxis.fr/tutorials/)), while a worker needs the problem or task named
-clearly ([How-to guides](https://diataxis.fr/how-to-guides/)). A reader may also arrive from a
-search or a link with no earlier page behind them: "Because a reader can arrive at an Every Page
-is Page One topic from anywhere, the topic must establish its context"
-([Every Page is Page One](https://everypageispageone.com/the-book/)).
-
-**A page may serve several readers** (house ruling, Geoff, 2026-10-04; the survey found no
-published source that covers one page serving readers with different reasons). A page can serve
-more than one reader, each arriving for a different reason, and the introduction names each
-reason so every reader learns early whether the page answers it. The add-cairn tutorial serves a
-reader who wants exactly that install and a reader curious about what cairn does underneath, and
-its introduction is the place to say that the usual route, the setup command, is much easier.
-That example shows the reasoning and is never a pattern to copy, since each page's readers and
-their reasons differ with no fixed shape, so a drafter works them out for each page before
-writing its opening.
-
-**An introduction frames the page from above** (house ruling, Geoff, 2026-10-04, after every
-pilot introduction read thin while the bodies read strong). An introduction carries the
-high-level reasoning a body leaves out. It gives the general model the page sits in, where
-SvelteKit and Cloudflare fit when the page touches them, and why the thing the page covers exists
-(why cairn uses magic links, before a page that replaces them). It starts from the reader, who
-arrives and what they are looking for. It may run two or three paragraphs when the framing needs
-them, and it opens on a statement, never an imperative, which the imperatives rule in "Voice"
-already requires. On a task guide, the anatomy's one-line contract is the sentence in the
-introduction that names what the reader accomplishes, and the framing surrounds it.
-
-The published sources support the framing that ruling asks for. The guidance on explanation reads
-"Provide background and context in your explanation: explain why things are so"
-([Explanation](https://diataxis.fr/explanation/)). A concept introduction can set the stage by
-"explaining the concept's relevance and importance"
-([Concept template](https://www.thegooddocsproject.dev/template/concept)), and it answers "What
-is this?" and "Why would you use it?"
-([GitLab concept topic type](https://docs.gitlab.com/development/documentation/topic_types/concept/)).
-Google's course relates a new thing to one the reader already knows, as when it compares an
-unfamiliar API with a familiar one
-([Documents](https://developers.google.com/tech-writing/one/documents)).
-
-An introduction also sets the page's bounds. Google's course has it state "What the document
-covers," "What prior knowledge you expect readers to have," and "What the document doesn't
-cover," and it warns "don't try to cover everything in the introduction"
-([Large documents](https://developers.google.com/tech-writing/two/large-docs)). Developers bring
-a fundamental grasp of programming, so the introduction skips basic knowledge and keeps to what
-is specific to the product
-([Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)). A
-reference entry keeps its lede to the anatomy's sentence or two, because "Neutral description is
-the key imperative" there ([Reference](https://diataxis.fr/reference/)).
-
-The sources split on self-reference. Google's course writes its sample introduction as "This
-document explains how to publish Markdown files"
-([Large documents](https://developers.google.com/tech-writing/two/large-docs)). GitLab rejects
-"This page shows" because "These phrases slow the user down"
-([GitLab documentation style guide](https://docs.gitlab.com/development/documentation/styleguide/)),
-and Red Hat forbids "self-referential language"
-([Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)).
-The register takes the GitLab and Red Hat side for the opening sentence, which states the subject
-or the reader's situation and never the page, since "No prose about the docs' writing" in "Tells"
-already keeps the docs from describing themselves. A later sentence that bounds the page's scope
-may name the page, as Google's samples do, because what a page leaves out has no subject-first
-form. The Google style guide states no rule on introductions, so this choice tightens the base
-and needs no deviation row.
-
-After the page is drafted, the introduction is reread against what the page delivers, using
-Google's check, "Does your introduction provide an accurate overview of the topics you cover?"
-([Large documents](https://developers.google.com/tech-writing/two/large-docs)).
-
-### Exemplars
-
-A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
-Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-30).
-
-- [`docs/extend/choose-an-ai-posture.md`](../../../../docs/extend/choose-an-ai-posture.md) is the primary
-  exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
-  (Geoff, 2026-09-28).
-- The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
-- [`exemplar-google-task-create-project.md`](./exemplar-google-task-create-project.md), a Google
-  task page, is an exemplar for anatomy.
-- [`exemplar-google-concept-auth-overview.md`](./exemplar-google-concept-auth-overview.md), a
-  Google concept page, is an exemplar for anatomy.
-- **Owner-ruled before and after pairs** (Geoff, 2026-10-07), kept as exemplars for the two
-  habits the tellgrader flags. Read each pair for the move, never the wording.
-  - *Appositive stack.* Flagged: "Every person signed in to a cairn admin holds a role, a name
-    from the site's declared role vocabulary, which is `owner` and `editor` unless the site
-    declares its own." The sentence defines a term inside an appositive that carries its own
-    relative clause, so the reader holds three things open at once. Approved rewrite ("This is
-    *much* better."): "Everyone who signs in to a cairn admin has a role. The site declares its
-    own role names, or uses the default pair, `owner` and `editor`." Two sentences, each one
-    idea, the default named last.
-  - *Trailing hinge.* Flagged, from the scaffolded-site-files `check.yml` section: "The
-    workflow runs `npm install`, `npm run check`, and `npm run check:cairn` on every push and
-    pull request. It pins `node-version: 24`, the only Node version the scaffold names, since
-    it ships neither an `.nvmrc` nor an `engines` field. Its last step runs
-    `npx cairn-guidance check` under `continue-on-error: true`, which "The guidance
-    tree" explains. The workflow installs no browser, so the `check:cairn:rendered` script cannot
-    run in it." Each sentence ends in a comma-hinged tail,
-    so the paragraph repeats one cadence. Approved rewrite: "On every push and pull request, the
-    workflow installs dependencies and runs `npm run check` and `npm run check:cairn`. It uses
-    Node 24. Nothing else in the scaffold names a version: there's no `.nvmrc` and no `engines`
-    field. The last step runs `npx cairn-guidance check`, but that step can't fail the job. No
-    browser is installed, so `check:cairn:rendered` can't run in CI." The move is a fronted
-    condition, a short sentence on its own, and a colon-and-list close, so the lengths vary and
-    the tails stop echoing.
-
-### Tells
-
-A tell is a habit of generated prose that a reader notices before the content. Each killed
-specimen in the following list passed the mechanical gates, since the gates catch slop and miss
-flat taste.
-
-- **No marketing claims and no benefit-forward framing.** Every factual claim is literally true.
-  Killed: "The whole organization works in one place, content and custom functions sharing one
-  admin and one sign-in." It is marketing register, and it is false, since teams are distributed.
-- **No figurative language.** Google's
-  [voice and tone page](https://developers.google.com/style/tone) rules out figurative language,
-  metaphor included, and the register holds that ban. A metaphor does the most damage in a
-  definitional or structural position, where it defines what something is or names the docs'
-  anatomy.
-  - Killed: "writing room" as the docs opener's definition of cairn. Its earlier ratification did
-    not save it, and ratification never defends prose against a live read.
-  - Killed: "The four arms" as the heading for the docs' structure, a metaphor dressing the
-    docs' anatomy.
-- **No prose about the docs' writing.** The docs never admire themselves. Killed: "Eight words
-  the docs use precisely" as the vocabulary intro.
-- **No setup-colon triad**, the inline cadence of a clause, a colon, and three parallel items
-  ("When something breaks: X diagnoses..., Y explains..., Z maps..."). A sequence of actions or
-  checks becomes a numbered list introduced by a complete sentence, parallel options become a
-  bulleted list, and only items that are neither fold into plain sentences. Killed: "When
-  something breaks: cairn-doctor diagnoses..., the logs explain..., troubleshooting maps..."
-- **No em-dash rhythm.** The sentence-final elaborative tail is the tell whatever punctuation
-  carries it, so the remedy restructures it into a second sentence instead of swapping the glyph
-  for a comma or a colon.
-- **No trailing-hinge runs** (Geoff, 2026-10-07, on a paragraph of sentences each ending in
-  ", since ...", ", which [link] explains", or ", so ...": "really awkward AI cadence"). Avoid a
-  run of sentences that each end in a comma-hinged tail: a comma followed by since, which, so, so
-  that, because, as, where, while, whereas, although, or though (", as well as" does not count).
-  Read each paragraph whole for rhythm. Fix a hinge by folding the reason into the main clause, dropping it,
-  giving a link its own clause or sentence, or adding a short sentence. Three in a row fails
-  `check:docs-gate` through `tellgrader` (skipped where the binary is absent, as in CI).
-- **No two-headed headings.** A heading of the shape "X, and Y" hangs a second head off a comma,
-  and a heading names one thing, so a section with two subjects splits or takes a name for the
-  <!-- vale Google.Quotes = NO -->
-  <!-- The quoted strings are literal specimens, so punctuation stays outside the quotes. -->
-  whole. Killed: "The shape, and cairn as one build of it". The `Cairn.TwoHeadedHeading` Vale rule
-  fires on the comma-and shape in any heading (Geoff, 2026-09-08). A serial list in a heading, such
-  as "Roles, capability, and the access map", is a different form and passes.
-  <!-- vale Google.Quotes = YES -->
-- **No balanced-halves constructions.** Two clauses set against each other for their symmetry
-  and not for their claim: "The price is X; the payoff is Y," "for X, A; for Y, B," an echo pair
-  such as "small enough to..., and small enough that...," and a two-beat closer. Each half either
-  carries a separate claim or goes. This is the residue Geoff catches most often, so a review
-  hunts it first.
-- **No list cadence in prose.** Semicolon-chained inventories, section skeletons that repeat one
-  three-sentence shape, and reflexive triads are the setup-colon triad's relatives. Parallel items
-  take a list, as the guide prescribes.
-- **No crafted pivots or cappers.** A short turn such as "Markdown flips the trade.", a paragraph
-  that ends on its strongest line every time, and an aphoristic equation such as "The stack is the
-  product" are tells. A paragraph ends where its content does.
-- **No virtue claims.** "A real answer," "the honest truth," "a fair question," "to be clear,"
-  "genuinely," and "very real" assert the quality that the following sentences must demonstrate.
-- **No noir overcorrection.** Clipped, dramatic declaratives at high density, runs of consecutive
-  short sentences, and dramatic verbs (tools that "lie," "fight," or "betray") are the failure
-  the "qualified claims stay whole" rule in "Voice" guards against. A claim cut into fragments to
-  strip its caveat is the tell. Shortform-video compression is the same failure at the sentence
-  level: telegraphic delivery in place of the measured report voice.
-- **No consumer-help softeners.** Google's
-  [word list](https://developers.google.com/style/word-list) says to try eliminating "simply" and
-  to avoid "just" as filler, keeping "just" where it says one approach is simpler than another;
-  the register extends the ban to "obviously." Folksy softeners, a micro-instructed action in
-  explanatory prose outside a procedure's steps (a step carries one imperative action), and
-  hand-holding such as "you never have to..." are the same family.
-- **No intensifier "own."** "Its own," "cairn's own," and "the author's own" add emphasis and no
-  information. Keep "own" only where it marks a real contrast of ownership that the sentence needs,
-  such as each crawler token taking its own `User-agent` group; otherwise cut it, or say
-  "separate" where separateness is the point (Geoff, 2026-09-29).
-- **No invented material.** A manufactured concrete scenario (an editor on hotel Wi-Fi), a
-  metaphor no sentence established, and biography or deliberation the author never reported all
-  read as evidence and are not.
-- **No restatement or filler.** A trailing evaluative tail, a sentence that ties up the paragraph
-  it ends, a phrase recycled across pages, and a re-explanation of what the reader was just told
-  add length and no information.
 
 ## Drafting brief: editor docs
 
@@ -637,9 +247,8 @@ flat taste.
 ## Names
 
 Every part of the system has one sanctioned name, ruled by Geoff after an adversarial review
-and a precedent survey (2026-09-21). This section is the record; the `Cairn.Names` and
-`Cairn.NamesRetired` Vale rules (`.vale/styles/Cairn/`) enforce what a regex can reach, at
-error and warning level respectively, and a writer still checks this table for what a regex
+and a precedent survey (2026-09-21). This section is the record; the `Cairn.Names` Vale rule (`.vale/styles/Cairn/`) enforces
+what a regex can reach, at error level, and a writer still checks this table for what a regex
 cannot: which sense of "the package" or "the tool" is meant.
 
 <!-- vale Google.Quotes = NO -->
@@ -692,29 +301,27 @@ plain lowercase prose for the system.
 <!-- "Powered by Cairn" here is the bare-quoted form the paragraph names, and moving its
      period inside would misquote it. -->
 **Enforcement and scope.** `Cairn.Names` (error) catches "the Go tool" and a stray capital
-"Cairn" in prose. `Cairn.NamesRetired` (warning) flags "the tool," "the package," "the
-binary," and "the CLI" for a second look, since each is still the right word in the sense the
-table above carves out; a warning is a prompt to check the sense, not an automatic rewrite.
-The rule's escape for the quoted-UI exception is code font: a quoted screen string goes in a
+"Cairn" in prose. "The tool," "the package," "the binary," and "the CLI" take a writer's second
+look rather than a rule, since each is still the right word in the sense the table above carves
+out. The rule's escape for the quoted-UI exception is code font: a quoted screen string goes in a
 code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanctioned form, never
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-The narrative arms (`docs/admin/`, `docs/editors/`, `docs/extend/`) are empty until their stages
+The narrative arms (`docs/admin/`, `docs/editors/`) are empty until their stages
 rebuild them, so no old page awaits a naming sweep; each stage writes to this table from its first
 page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
 `.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
 the Names rule reaches them once they do.
 
-Two further rules carry the admin-or-public split's own retired compounds, kept out of
-`Cairn.Names`/`Cairn.NamesRetired` since those two are case-sensitive by necessity (matching the
-capital wordmark) and their message is about the Go tool and the capital "Cairn", not about a
-component surface. `Cairn.ComponentNames` (error) catches "engine public component", "public
-engine component", "chassis component", and "site component", since each names no page on a
-narrative arm; the reference pages it reaches say "custom public component" instead.
-`Cairn.ComponentNamesRetired` (warning) flags "engine component" and "custom component" for a
-second look, since each can be right in a sense a writer must check. Both are `ignorecase: true`,
-so a sentence-initial capital still raises the same finding.
+A further rule carries the admin-or-public split's own retired compounds, kept out of
+`Cairn.Names` since that rule is case-sensitive by necessity (matching the capital wordmark) and
+its message is about the Go tool and the capital "Cairn", not about a component surface.
+`Cairn.ComponentNames` (error) catches "engine public component", "public engine component",
+"chassis component", and "site component", since each names no page on a narrative arm; a page
+says "custom public component" instead. "Engine component" and "custom component" take a
+writer's second look, since each can be right in a sense a writer must check. The rule is
+`ignorecase: true`, so a sentence-initial capital still raises the same finding.
 <!-- vale Google.Quotes = YES -->
 
 ## Visuals (every page that carries one)
@@ -783,23 +390,15 @@ anatomy it follows by following it, not by naming it; the shapes below exist so 
 reviewer can check a page against a checklist rather than a feeling.
 
 Every page type opens with an introduction and ends with a closing section for its type (Geoff,
-2026-10-01). The introduction is reasoned per page, as "The introduction" above sets out. Each
-type adds what its template asks of the opening, as the following anatomies state.
+2026-10-01). The introduction is reasoned per page. Each type adds what its template asks of the
+opening, as the following anatomies state.
 
-- **Concept page** (the extend track's concept pages). It opens with the introduction, a summary paragraph that introduces the concept,
-  explains its importance or relevance, and gives an overview of the content the page covers,
-  its scope, and that states what is out of scope and the pages that cover it. A definition of
-  the concept follows. Each later section takes one subtopic. The page ends with a
-  related-resources section, grouped as how-to guides, linked concepts, and external resources,
-  with not more than 3 to 5 links in each group ([Good Docs concept
-  template](https://gitlab.com/tgdp/templates/-/blob/main/concept/template_concept.md) and its
-  guide, templates v1.6.0).
-- **Task guide** (most admin and extend pages). Its sections run in the following order:
+- **Task guide** (most admin pages). Its sections run in the following order:
 
   1. An introduction that states the task, when and why the reader would do it, and who the page
      is for, and that names the page to read instead where a reader could be in the wrong place.
-     The one-line contract naming what the reader accomplishes sits inside the framing, per "The
-     introduction", and the contract alone does not meet the introduction requirement ([Good Docs how-to
+     The one-line contract naming what the reader accomplishes sits inside the framing, and the
+     contract alone does not meet the introduction requirement ([Good Docs how-to
      template](https://gitlab.com/tgdp/templates/-/blob/main/how-to/template_how-to.md) and its
      guide, templates v1.6.0).
   2. Preconditions, each stated with a link to whatever produces it.
@@ -810,8 +409,8 @@ type adds what its template asks of the opening, as the following anatomies stat
   4. A verification section, headed with a bare infinitive such as "Verify the served file",
      <!-- vale Google.Quotes = YES -->
      that names the observable result. Checks the reader runs in order form a numbered list.
-  5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md`,
-     `admin/troubleshooting.md`, or `extend/debug-your-site.md`) rather than restating recovery
+  5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md` or
+     `admin/troubleshooting.md`) rather than restating recovery
      prose inline. Ordered diagnostic checks form a numbered list here too.
   6. A see-also section that links related how-to guides, concept pages, and the limitations the
      page leaves out. The recovery link in item 5 is not repeated here.
@@ -819,41 +418,25 @@ type adds what its template asks of the opening, as the following anatomies stat
   Explanation stays subordinate to the steps. A guide carries only the explanation a reader
   needs to choose or verify, and each such section opens with a sentence tying it to the task,
   so the page never turns from instruction to exposition without a lead-in. Anything more (a
-  full output listing, the behavior's limits, its rationale) belongs on the reference entry or
-  a separate page, linked from the step that needs it. The introduction is the one exception:
-  it may say why the thing the guide covers exists, as "The introduction" above allows.
-- **Tutorial** (a page of milestones, the extend track's deep path). It opens with an overview
-  that says what the tutorial teaches the reader to do, who it is intended for, the knowledge it
-  assumes, and what the reader can do by the end, written in second person (Google's voice,
-  and the template's). A prerequisites section follows, then the milestones, each in the shape
-  below. The page ends with a summary of what the reader learned, in different words from the
-  overview's objectives, and a next-steps section that links related tutorials and other
-  documentation ([Good Docs tutorial
-  template](https://gitlab.com/tgdp/templates/-/blob/main/tutorial/template_tutorial.md) and
-  its guide, templates v1.6.0).
-- **Tutorial milestone**: stated objectives, the state the prior milestone produced, steps, a
-  checklist before advancing, and a disclosure block (the Astro "Show me the steps" device) for
-  a reader who wants to try first and check the answer after.
-- **Reference entry** (`docs/reference/`): the existing gated template (signature, parameters,
-  defaults, failure modes), now opening with a short narrative lede, a sentence or two of
-  what the shape is and why it exists, before the table. The lede is additive to the gates,
-  not a replacement for them.
+  full output listing, the behavior's limits, its rationale) belongs on a separate page, linked
+  from the step that needs it. The introduction is the one exception: it may say why the thing
+  the guide covers exists.
 - **Condition entry** (`admin/is-it-working.md`): a condition id matching the doctor's
   registry, what the check reads, what a failure means in plain terms, the remedy, and the
   anchor slug the id resolves to, which must survive a page edit since `check:readiness`
   gates it against the built condition registry.
-- **Symptom row** (`admin/troubleshooting.md`, `extend/debug-your-site.md`): what the reader
-  sees, the log event that correlates (linking `reference/log-events.md`), what it means, and
-  the fix, with a row that needs code changed saying so and pointing at the extend track's
-  debugging page instead of a false promise of a purely operational fix. A page of symptom rows
-  ends with a see-also section, as `docs/extend/debug-your-site.md:405` does.
+- **Symptom row** (`admin/troubleshooting.md`): what the reader sees, the log event that
+  correlates, what it means, and the fix, with a row that needs code changed saying so and
+  sending the reader to their developer instead of a false promise of a purely operational fix.
+  A page of symptom rows ends with a see-also section.
 
 ## The tracks
 
-Every published page belongs to exactly one track, every track serves exactly one profile,
-with the one exception the scripter-or-agent profile below carves out of the reference arm
+Every published page belongs to exactly one track, every track serves exactly one profile
 (the full track profiles: [`2026-08-14-audience-profiles.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-audience-profiles.md)),
-and a page review grades the page against its profile. The five elements below are what a
+and a page review grades the page against its profile. A developer reads no docs track: each
+export's doc comment carries its contract, and the packaged skills under `skills/` teach each job.
+The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that
 kills a page serving the wrong reader.
@@ -907,55 +490,6 @@ developer.
 **Counterpart question:** is any step's success dependent on knowledge the page did not
 state, and is any cost or prerequisite revealed after the step that incurs it?
 
-### The extend track (`docs/extend/`)
-
-**Profile:** a Svelte-fluent web developer building an organization's site on cairn's
-seams. **Base guide:** Google. **Register:** contract-first task, tutorial, and concept
-prose; this reader is fluent in their stack and resents padding or hand-holding on it.
-
-**Vocabulary contract.** Free: the full developer vocabulary, plus cairn's product terms
-(concept, adapter, render, seam, island, holding branch, manifest, role) defined once in the
-track and used precisely after. Nothing is banned; imprecision is. A vendor's specifics get
-a link, cairn's reasoning gets prose.
-
-**Arrival state.** Through npm, GitHub, or the root README, often evaluating cairn against
-alternatives, or taking over a scaffolded site and wanting to know what the tool wrote and
-why. This reader skims first and judges quickly.
-
-**Success criterion.** They extend the site without reading engine source, every documented
-snippet typechecks against the built package, and an upgrade is a read of the changelog, not
-an archaeology session.
-
-**Counterpart question:** does the page state the contract and its stability tier rather
-than narrating implementation, and would a competent SvelteKit developer find any sentence
-here that their stack's docs already own?
-
-### The Claude Code track (`docs/claude-code/`)
-
-**Profile:** the extend track's developer, working on their site with Claude Code. The other
-tracks assume no coding assistant, so whatever is specific to Claude Code lives here, and no page
-outside this track depends on it (rulings, Geoff, 2026-10-07, in `ROADMAP.md`). **Base guide:**
-Google. **Register:** the extend track's, contract-first. The track documents Claude Code only:
-cairn ships no guidance for any other coding agent, and a page says so in one line rather than
-generalizing.
-
-**Vocabulary contract.** The extend track's, plus Claude Code's terms (skill, subagent, hook,
-`CLAUDE.md`, `.claude/settings.json`), used as Claude Code's documentation uses them and linked
-there on first use. Claude Code's mechanics belong to its documentation. A page here says what
-cairn puts into them and where cairn stops.
-
-**Arrival state.** From a scaffolded site whose `CLAUDE.md` and `.claude/` tree the reader did not
-write, wanting to know what Claude Code now reads; or from a hand-built or upgraded site, adopting
-or refreshing the tree. Claude Code is often already open in the repository.
-
-**Success criterion.** The reader can say what each file in the tree is for, has made or
-deliberately declined each edit cairn leaves to them, and can read from `cairn-guidance install`
-and `cairn-guidance check` output whether the tree is current.
-
-**Counterpart question:** does every sentence describe what cairn ships or leaves to the developer
-rather than teaching Claude Code itself, and does each extend page still read whole for a developer
-who never opens this track?
-
 ### The contributor zone (`CONTRIBUTING.md` and `docs/internal/`)
 
 **Profile:** an experienced library-flavored engineer working on cairn itself. **Base
@@ -975,41 +509,6 @@ docs alone.
 **Counterpart question:** does the zone separate the living standard from the record, and is
 every invariant the contributor could violate either a gate or a written rule the index
 surfaces?
-
-## The reference (`docs/reference/`), a shared instrument
-
-Spare contract prose in the third person: signature, parameters, defaults, failure modes, now
-with a short narrative lede (the reference-entry anatomy). No arrival state or vocabulary
-contract of its own except for the three pages named below; it is the extend track's and the
-admin track's shared lookup surface (the index's "also for site admins" grouping names
-`doctor`, `log-events`, and `supported-toolchain`), and the one place the engine contributor's
-zone points a reader outward to rather than restating. Reference stays rigid and gated: the
-four existing gates (`check:reference`, `check:reference:signatures`, `check:snippets`,
-`check:readiness`) are the structural answer to reference drift, the category's loudest
-documented complaint.
-
-### The scripter-or-agent profile
-
-This overturns the 2026-08-14 ruling, above and in
-[`2026-08-14-audience-profiles.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-audience-profiles.md), that every track
-serves exactly one profile and the reference arm has none (Geoff, 2026-09-21). Three pages
-carry this profile and no others do: `docs/reference/cli-cairn-exit-codes.md`,
-`docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No agent
-track is added, and `cairn help agents` stays the agent's primary surface; these pages are
-what a `--json` help line, that command, or an admin page's link sends a reader to next.
-
-**Profile:** anyone automating against `cairn`, a person writing a script or an agent.
-
-**Vocabulary contract.** Fully technical. Nothing is banned; imprecision is the defect.
-
-**Arrival state.** From `cairn help agents`, a `--json` help line, an admin page's link, or a
-failed run with an exit code or a parse error already in hand.
-
-**Success criterion.** They can branch on every exit code and parse every payload without
-running the tool.
-
-**Counterpart question:** could a reader write a correct wrapper and parser from this page
-alone, and does any behavior require running the tool to learn?
 
 ## The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)
 
@@ -1146,10 +645,8 @@ row, and it never licenses a departure on its own authority, whether in this doc
 page's contract. The procedure in "When a Vale finding is wrong" is a different case, since it
 corrects a regex that misreads a line and leaves the guide's rule untouched.
 
-The developer brief shows both kinds. Restricting imperatives to steps, task headings,
-cross-references, and notices forbids what Google permits and prescribes nothing Google asks for,
-so it is a tightening. The measured tone forbids the conversational register Google's tone page
-recommends, so it is an override and carries a row.
+The measured tone shows an override: it forbids the conversational register Google's tone page
+recommends, so it carries a row.
 
 ### Google
 
@@ -1182,30 +679,20 @@ and never assembles it from Google's defaults minus a list of prohibitions (Geof
 ruling 11). The voice departs from Google in three places, the tone, the sentence length, and the
 first person, and the first three rows of the Google table record them.
 
-The rest of the developer brief tightens Google and needs no row. Restricting imperatives to
-steps, task headings, cross-references, and notices is a tightening, and so are the ban on
-question and teaser headings and every tell. The figurative-language rule adopts Google's ban
-in place of the register's earlier allowance for an explanatory metaphor (Geoff, 2026-09-28,
-ruling 8), and the "writing room" and "The four arms" specimens stay as illustrations of it.
-
-The outline rule in both briefs adds a step the base guides are silent on and forbids no form
+The outline rule in the editor brief adds a step the base guides are silent on and forbids no form
 either guide prescribes, so it is a tightening and needs no row. It adopts Google's outline
 guidance as published (Geoff, 2026-10-01). The 2026-10-25 docs-as-code rulings superseded the
 ruling's committed plan file, its fact ids, and the brief kept beside the page, and kept the
 outline and the order it sets. The outline now rides in the pull request.
 
 The editor brief departs from nothing in Microsoft (ruling 4). Its tightenings are the no-pitch
-keystone, the tells that pass this section's test against Microsoft, and the Names rules. Three
-developer-brief rules fail that test on the editors track and stay out of the editor brief: the
-ban on staccato runs of short sentences and the longer cadence it implies, which contradict
-Microsoft's "Shorter is always better," and the ban on question headings, which contradicts
-Microsoft's allowance for the reader's question. The editor brief carries no academic
-framing.
+keystone, the tells that pass this section's test against Microsoft, and the Names rules. It
+carries no academic framing.
 
 ## Sources
 
-The structure checklists and the deviation rows cite the following pages of the Google developer
-documentation style guide, read on 2026-09-28.
+The deviation rows cite the following pages of the Google developer documentation style guide,
+read on 2026-09-28.
 
 - [Highlights](https://developers.google.com/style/highlights)
 - [Procedures](https://developers.google.com/style/procedures)
@@ -1233,20 +720,7 @@ date.
 - [Top 10 tips for Microsoft style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
 
-The introduction section cites the following pages, read on 2026-10-04; the source survey is
-`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-04-docs-introductions-survey.md`.
-
-- [Google Technical Writing One: Defining your audience](https://developers.google.com/tech-writing/one/audience)
-- [Google Technical Writing One: Documents](https://developers.google.com/tech-writing/one/documents)
-- [Google Technical Writing Two: Large documents](https://developers.google.com/tech-writing/two/large-docs)
-- [Every Page is Page One](https://everypageispageone.com/the-book/)
-- [Diátaxis](https://diataxis.fr/): tutorials, how-to guides, explanation, reference, and the tutorials and how-to distinction
-- [The Good Docs Project concept template](https://www.thegooddocsproject.dev/template/concept)
-- [GitLab concept topic type](https://docs.gitlab.com/development/documentation/topic_types/concept/) and [style guide](https://docs.gitlab.com/development/documentation/styleguide/)
-- [Red Hat supplementary style guide](https://redhat-documentation.github.io/supplementary-style-guide/)
-- [Microsoft Writing Style Guide: Developer content](https://learn.microsoft.com/en-us/style-guide/developer-content/)
-
-The outline rule in both briefs cites one page of Google's Technical Writing Two course, read on
+The outline rule in the editor brief cites one page of Google's Technical Writing Two course, read on
 2026-10-03.
 
 - [Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)

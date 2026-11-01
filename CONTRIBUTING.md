@@ -37,19 +37,16 @@ rejects.
 
 ## Choosing a docs track
 
-A new docs page belongs in exactly one of four tracks: `docs/admin/`, `docs/editors/`,
-`docs/extend/`, or `docs/reference/`. The discriminator is the reader, not the content, so
-decide by asking who reads this page and whether that reader can act on it with nothing but
-the page and what they already have.
+A new docs page belongs in exactly one of two tracks: `docs/admin/` or `docs/editors/`. A
+developer's contract lives in each export's doc comment, and a developer's job lives in the
+packaged skills under `skills/`, so neither takes a docs page. The discriminator is the reader,
+not the content, so decide by asking who reads this page and whether that reader can act on it
+with nothing but the page and what they already have.
 
 - **`docs/editors/`**: a non-technical author working in `/admin`, with no terminal and no
   access to the repository.
 - **`docs/admin/`**: a technical non-developer who sets up and runs the default site, runs
   commands, and reads a dashboard, but does not write code.
-- **`docs/extend/`**: a Svelte-fluent developer building an organization's site on cairn's
-  seams.
-- **`docs/reference/`**: dry contract prose (signature, parameters, defaults, failure
-  modes) that the admin and extend readers both look up rather than read start to finish.
 
 A step that assumes a terminal fails an editor page. A step that assumes reading source
 code fails an admin page. If a page's steps split across two readers, it is two pages, not
@@ -128,14 +125,13 @@ holds them to it.
 
 `npm run check:options` regenerates the option paths from the built type declarations and fails
 on a member with no doc comment, so an option can't ship undocumented. `npm run check:tiers`
-fails on an export with no tier tag, and `npm run check:tier-docs` on a reference page whose
-stated tier disagrees with the tag. `npm run check:docs-gate` runs all three with the rest of the
-docs checks, including links, Vale, snippets, and reference coverage. CI runs the same script.
+fails on an export with no tier tag. `npm run check:docs-gate` runs both with the rest of the
+docs checks, including links, Vale, and snippets. CI runs the same script.
 
 To pass the docs gate, make these changes together:
 
-- If you change public behavior, update its page, and the reference page when the behavior is
-  public API.
+- If you change public behavior, update its page, its doc comment, and the skill reference
+  that teaches it.
 - If you add a public option or export, give it a doc comment, and give an export its tier tag.
 - If you move or rename a heading, repoint every link to its anchor.
 
@@ -149,15 +145,13 @@ To pass the docs gate, make these changes together:
 - Code comments follow [TSDoc](https://tsdoc.org/), enforced by `npm run check:comments` over
   `src/lib`. Write the contract and the why, never a paraphrase of the code. The em dash is
   banned in comments.
-- Pages under `docs/reference/`, `docs/admin/`, and `docs/extend/` follow the
+- Pages under `docs/admin/` follow the
   [Google Developer Documentation Style Guide](https://developers.google.com/style);
   `docs/editors/` follows the
   [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) instead,
-  because its reader is a non-technical writer. All four directories ship inside the npm
-  package, so a docs edit is a product change, and a public-API change is not done until its
-  reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
-  from its brief in `.claude/skills/cairn-writing-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
-  the developer brief. Admin UI strings follow the Voice section of
+  because its reader is a non-technical writer. Both directories ship inside the npm package,
+  so a docs edit is a product change. Each track is drafted from its brief in
+  `.claude/skills/cairn-writing-docs/references/docs-register.md`. Admin UI strings follow the Voice section of
   `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
@@ -175,9 +169,8 @@ Each entry gives the rule for what belongs in a directory. Individual files move
 list here, so when the map and the tree disagree, trust the tree and fix the map.
 
 - `src/lib/`: the shipped library. A directory is public exactly when `package.json`'s `exports`
-  map points a subpath into it, and each public subpath has a page in `docs/reference/`. A
-  reference page is not proof of public: `audit` and `media-seed` have one and are
-  reachable only through a `bin`. `npm run check:surface` gates the public surface.
+  map points a subpath into it; `audit` and `media-seed` are reachable only through a `bin`.
+  `npm run check:surface` gates the public surface.
 - `src/tests/`: the vitest projects (`unit/`, `integration/`, `component/`) plus `fixtures/`.
   `lab/` holds engine apparatus that supports development and must never ship in the package.
 - `scripts/`: helpers shared by the three groups below sit at the root.
@@ -193,8 +186,8 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
   [cairn.pub](https://cairn.pub) runs. The ported example themes (AstroPaper, Foxi, the
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).
-- `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
-  the npm package once each holds pages; the front door joins them when it is rebuilt. See
+- `docs/`: the two published tracks (`admin/`, `editors/`) ship in the npm package once each
+  holds pages; the front door joins them when it is rebuilt. See
   "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing,
   `plans/` holds the open plans until they land, and `STATUS.md` is the rolling project status. The
   dated planning record is at the `pre-agent-first` tag.

@@ -7,7 +7,7 @@
 // strings.
 //
 // A shipped site has no equivalent of these: its `challenge` is Turnstile, whose site key is
-// public by design (see docs/reference/auth-channel.md, the `challenge` config field). They exist
+// public by design (see the `challenge` config field's doc comment on `createAuthChannel`). They exist
 // only because CI cannot reach challenges.cloudflare.com.
 
 /** The hidden form field the members login page embeds for `insecureTestChallenge` to read. */

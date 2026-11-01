@@ -64,18 +64,12 @@ import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
-import { readArmStates } from './arm-state.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-// An entry naming an arm-state arm (arm-state.mjs) is skipped while that arm is absent; the
-// reference arm has none, so it is always walked and a missing reference directory throws.
-const DOC_DIRS = [
-  { dir: 'docs/reference' },
-  { dir: 'docs/extend', arm: 'extend' },
-  { dir: 'docs/claude-code', arm: 'claude-code' },
-  { dir: 'docs/admin', arm: 'admin' },
-  { dir: 'docs/editors', arm: 'editors' },
-];
+// The published docs directories, each walked when it exists (a track being rebuilt can hold no
+// page), and the root migration notes, which must exist.
+const DOC_DIRS = ['docs/admin', 'docs/editors'];
+const MIGRATION_NOTES = 'MIGRATION-NOTES.md';
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;
@@ -326,12 +320,11 @@ export function svelteScript(body) {
 
 // Whether a ts/typescript block is PURELY ambient declarations (`declare function`, an
 // `interface`, a `type` alias, ...), a bodyless overload signature (`function NAME(...): Ret;`
-// with no implementation, the reference arm's other signature-listing convention), or a
-// component's bare Props shape (`let { data, form }: { data: AdminData; ... };`, no
-// `= $props()`, the reference arm's convention for documenting a component's wiring props)
-// rather than a runnable example. The reference arm documents a signature this way on purpose (a
-// heading followed by one bare block, which `check-reference-signatures.mjs` already typechecks
-// against the real export); it is exposition, not an example, so the snippet gate excludes it
+// with no implementation, another signature-listing convention), or a component's bare Props
+// shape (`let { data, form }: { data: AdminData; ... };`, no `= $props()`, the convention for
+// documenting a component's wiring props) rather than a runnable example. A page documents a
+// signature this way on purpose (a heading followed by one bare block); it is exposition, not an
+// example, so the snippet gate excludes it
 // automatically, the same way a ```svelte block with no `<script>` is excluded, rather than
 // asking every one of these to carry an opt-out annotation. The Props case is scoped to a
 // single-statement block on purpose: a real, multi-statement example that forgot `= $props()`
@@ -342,7 +335,7 @@ export function isDeclarationOnly(code) {
   if (source.statements.length === 0) return false;
   if (source.statements.length === 1 && isBarePropsShape(source.statements[0])) return true;
   // A bare `{ key?: Type; ... }` with no `type X =` wrapper parses as a single Block statement;
-  // the reference arm uses this for an inline type shape with no separately named type (the
+  // a page uses this for an inline type shape with no separately named type (the
   // `MarkdownEditor` wiring-props listing). It carries no runnable code either.
   if (source.statements.length === 1 && ts.isBlock(source.statements[0])) return true;
   return source.statements.every((stmt) => {
@@ -383,20 +376,20 @@ function skillReferenceDirs(root) {
 }
 
 /**
- * Every doc file under the checked directories that stand, plus every packaged skill reference,
- * repo-relative, sorted. Throws when the deletion list the arm states come from cannot be read.
+ * Every doc file under the checked directories that stand, the migration notes, and every packaged
+ * skill reference, repo-relative, sorted. Throws when the migration notes are missing, since a
+ * corpus that silently lost its one required file would pass over nothing.
  * @param {string} [root]
  */
 export function docFiles(root = ROOT) {
-  const states = readArmStates(root);
-  const dirs = [
-    ...DOC_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent').map(({ dir }) => join(root, dir)),
-    ...skillReferenceDirs(root),
-  ];
-  return dirs
-    .flatMap((dir) => walk(dir, (name) => name.endsWith('.md')))
-    .map((p) => relative(root, p))
-    .sort();
+  if (!existsSync(join(root, MIGRATION_NOTES))) {
+    throw new Error(`check-snippets: ${MIGRATION_NOTES} does not exist`);
+  }
+  const dirs = [...DOC_DIRS.map((dir) => join(root, dir)).filter((dir) => existsSync(dir)), ...skillReferenceDirs(root)];
+  return [
+    MIGRATION_NOTES,
+    ...dirs.flatMap((dir) => walk(dir, (name) => name.endsWith('.md'))).map((p) => relative(root, p)),
+  ].sort();
 }
 
 /**

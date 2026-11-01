@@ -62,7 +62,7 @@ describe('selfIdentityCandidates', () => {
   });
 
   it('offers only the stem itself for a non-check-* helper', () => {
-    expect(selfIdentityCandidates('reference-coverage')).toEqual(['reference-coverage']);
+    expect(selfIdentityCandidates('dts-exports')).toEqual(['dts-exports']);
   });
 });
 

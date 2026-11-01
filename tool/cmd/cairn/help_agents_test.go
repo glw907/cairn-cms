@@ -106,11 +106,10 @@ func TestHelpAgentsStatesEveryPartOfTheContract(t *testing.T) {
 // TestHelpAgentsCitesNoRepositoryDirectory keeps the page's citations durable. Every released
 // binary carries this text for the life of its tag, and a directory inside the cairn-cms
 // repository can be moved by any later docs pass, so the page names each schema's published
-// $id URL and each page's published address, never a path in the repository.
+// $id URL, never a path in the repository.
 //
-// The published addresses contain "docs/reference" as a URL path segment, so the assertion
-// removes every cairn.pub address first and then looks for what is left: a bare repository
-// directory an agent would try to open on a machine that holds no checkout.
+// The assertion removes every cairn.pub address first and then looks for what is left: a bare
+// repository directory an agent would try to open on a machine that holds no checkout.
 func TestHelpAgentsCitesNoRepositoryDirectory(t *testing.T) {
 	d, _ := testDeps(t)
 	out, _, err := execTree(t, d, "help", "agents")
@@ -118,7 +117,7 @@ func TestHelpAgentsCitesNoRepositoryDirectory(t *testing.T) {
 		t.Fatalf("cairn help agents: %v", err)
 	}
 	bare := publishedURL.ReplaceAllString(out, "")
-	if strings.Contains(bare, "docs/reference") {
+	if strings.Contains(bare, "docs/") {
 		t.Errorf("the page cites a repository directory:\n%s", out)
 	}
 }

@@ -4,7 +4,7 @@
     {
       "wider": "/delivery",
       "narrower": "/delivery/data",
-      "reason": "A dependency-axis pair over one source tree, not two barrels: /delivery is /delivery/data plus the SvelteKit route loaders, and its `export *` is the documented superset. The pair is ONE canonical home, the narrower barrel declaring; the reference gate already dedups it the same way (reference-coverage.mjs `excludeDts`). A /delivery duplicate of a name /delivery/data does not export still fails."
+      "reason": "A dependency-axis pair over one source tree, not two barrels: /delivery is /delivery/data plus the SvelteKit route loaders, and its `export *` is the documented superset. The pair is ONE canonical home, the narrower barrel declaring; A /delivery duplicate of a name /delivery/data does not export still fails."
     }
   ],
   "reexports": [

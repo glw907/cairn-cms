@@ -19,6 +19,9 @@
   Friction entry 81 (2b close, page build-the-public-routes): A site's public origin has two homes that nothing ties together. The prerendered routes read the `ORIGIN` literal in the content module, which the build writes into every canonical URL, `og:url`, feed, and sitemap `loc`, while the Worker reads `PUBLIC_ORIGIN` from `wrangler.jsonc` for sign-in and preview links. The scaffold ships them different (`'https://showcase.test'` and `http://localhost:4173`), and no build check or `cairn-audit` rule compares them, so a site that deploys after setting only `PUBLIC_ORIGIN` publishes a placeholder origin in every prerendered file. build-the-public-routes has to tell the developer to edit both before the production build. Fix candidates: have the `cairnManifest` plugin or `cairn doctor` compare the literal against `PUBLIC_ORIGIN`, or derive the literal from one committed value both read (`templates/waymark/src/chassis/content.ts:34-53`, `templates/waymark/wrangler.jsonc:43`; found while writing the build-the-public-routes page, 2026-10-12).
 
 ## Medium
+- [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)*
+  The regression and capability cases in `.claude/skills/cairn-writing-docs/evals/evals.json` that edited a `docs/extend` or `docs/reference` page left with those tracks. Once PR #159 merges and `docs/editors/` holds pages, write the equivalent cases against editor pages so the chain is graded on the track it still covers.
+
 - [ ] **#166** Run the skill form check in the fast lane for a `.claude/skills` or CLAUDE.md change `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)*
   `gate-tier.mjs` selects only `check` and `test:emit` for a change confined to `.claude/skills/**` or `CLAUDE.md`, so `check-skill-budget` runs only in CI. Found by agent-first pass 1's whole-branch review.
 
@@ -40,9 +43,6 @@
   Placement: Agent-first pass 3.
 - [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-10-31)*
   After the human arms land, check that every packaged skill and `claude/CLAUDE.md` route cites a finished target and every target is reachable (the agent-first pattern's pass 4). The `admin-design-system` link at `skills/cairn-extending-a-site/SKILL.md:24` is fixed in pass 1.
-  Placement: Agent-first pass 4.
-- [ ] **#84** Decide whether the owner-review page tooling survives the `docs` review kind `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-10-31)*
-  `scripts/docs-review/` (`embed.mjs`, `runtime.mjs`, `template.html`) builds a standalone owner-review page from a batch of markdown, with its tests (`docs-review-embed`, `docs-review-page`, `docs-review-browsers`, `docs-review-render`, `_docs-review-vm`) and a Firefox install in `.github/workflows/test.yml`. The docs-as-code cutover removed its page-plan pane but kept the page, because the design names only the plan pane. Reviews now go through `approval-queue docs` (`.claude/skills/cairn-writing-docs/references/review.md`) and nothing in the repo calls the script. Retire the script, its tests, and the Firefox step, or record what still uses it.
   Placement: Agent-first pass 4.
 - [ ] **#49** Add `mediaLibraryUpload` to the typed admin routes contract `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)* *(swept 2026-10-31)*
   `mediaUpload` stores bytes and commits no manifest row, so a custom screen's upload resolves as missing until an entry save records it. `mediaLibraryUpload` commits the row but `CairnAdminRoutes` leaves it out (`src/lib/sveltekit/cairn-admin.ts:390`), so typed code reaches it only through a cast. Geoff, 2026-10-24: Configure media documents both paths as the code stands (the uncommitted `mediaUpload`, and `mediaLibraryUpload` reached through a cast) until this lands. When it lands, update the custom-screen upload section of `docs/extend/configure-media.md` in the same pass.
@@ -333,6 +333,9 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#84** Decide whether the owner-review page tooling survives the `docs` review kind `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25 → 2026-10-31)*
+  `scripts/docs-review/` (`embed.mjs`, `runtime.mjs`, `template.html`) builds a standalone owner-review page from a batch of markdown, with its tests (`docs-review-embed`, `docs-review-page`, `docs-review-browsers`, `docs-review-render`, `_docs-review-vm`) and a Firefox install in `.github/workflows/test.yml`. The docs-as-code cutover removed its page-plan pane but kept the page, because the design names only the plan pane. Reviews now go through `approval-queue docs` (`.claude/skills/cairn-writing-docs/references/review.md`) and nothing in the repo calls the script. Retire the script, its tests, and the Firefox step, or record what still uses it.
+  Done: the script, its tests, and the Firefox install are removed; nothing in the repo called them.
 - [x] **#22** Fix the `session expired` claim in `admin-action.ts` `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-20 → 2026-10-31)*
   Step 1 at `src/lib/sveltekit/admin-action.ts:155-156` says the session expired; absence means no hook set an editor, per `docs/reference/log-events.md:75`.
   Done: step 1 of `createAdminAction`'s doc comment says an absent editor means no hook set one, as `docs/reference/log-events.md` does (`src/lib/sveltekit/admin-action.ts:185-189`).

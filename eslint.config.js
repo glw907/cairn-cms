@@ -79,7 +79,7 @@ export default [
       ],
       'tsdoc/syntax': 'error',
       'jsdoc/check-param-names': 'error',
-      // A doc on exports only, and at warn: check:reference owns the hard coverage gate.
+      // A doc on exports only, and at warn: check:comments carries the hard comment gate.
       'jsdoc/require-jsdoc': ['warn', { publicOnly: true }],
       // The deterministic half of the paraphrase gate.
       'jsdoc/informative-docs': 'warn',

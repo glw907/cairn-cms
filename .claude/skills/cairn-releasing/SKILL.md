@@ -131,7 +131,7 @@ The release body is the changelog window since the last published tag. When seve
 one publish (the common case, because passes hold and batch), the body summarizes each
 held section in the window and carries every `Consumers must:` line from the breaking ones. Compose it into
 a notes file rather than by hand at the `gh` prompt. Add the matching per-version entry to
-`docs/extend/upgrade-cairn.md` if the pass did not already.
+`MIGRATION-NOTES.md` if the pass did not already.
 
 A window touching an admin surface (`src/lib/components/*.svelte`, `cairn-admin.css`) also earns a
 re-read of the reproduction stories and docs pages the change reaches: check every affected story's

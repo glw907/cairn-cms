@@ -322,7 +322,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
   needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
   the editor's media chip. Reference it through the `cairn-text-warning` utility
-  (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), never the bracketed
+  (`src/lib/design/grammar-tokens.ts`), never the bracketed
   `text-[var(--cairn-warning-ink)]` form or the bare `text-warning`, which resolves to the
   inaccessible fill tone if it ever compiles at all.
 - `--color-positive-ink` is the green counterpart, the on-surface confirming TEXT ink for a positive
@@ -460,9 +460,8 @@ The design-infrastructure layer beneath the recipes above: eighteen CSS custom p
 (`--cairn-type-title/heading/subtitle/body/meta/label/chip`, each with a paired
 `--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
 `cairn-admin.css`, outside both theme roots, since a structural role does not change with the
-palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory; the reference
-page ([Admin grammar tokens](../../../../docs/reference/admin-grammar-tokens.md)) is the versioned contract a
-site reads, and this section is where an agent extending the admin meets the same vocabulary
+palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory and the versioned
+contract a site reads, and this section is where an agent extending the admin meets the same vocabulary
 alongside the component recipes above and below it.
 
 - **Markup writes the role utility, never the token or a pixel value.** Eleven named utilities in
@@ -520,7 +519,7 @@ alongside the component recipes above and below it.
   already inside a shadowed one reads as a stray outline rather than elevation, not the raised
   read the token is for. A component composes its own `overflow-*` and padding; neither role sets
   them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
-  replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
+  replace (`src/lib/design/grammar-tokens.ts` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`. From daisyUI 5.7.38 the `.menu` recipe styles an `[aria-current]` item
   natively, which would add its own depth shadow under the active item
@@ -556,9 +555,8 @@ alongside the component recipes above and below it.
   toolbar, table, pager, status-pill, and first-run-empty devices; `formatCivilDate` is the shared
   date formatter. Every engine screen that owns one of these devices imports the component instead
   of restating it, and a new screen (built-in or a site's own custom `/admin/` route) reaches for
-  the toolkit first before hand-rolling a parallel. Each component's own prop contract and its
-  exact daisyUI class inventory, the grep surface for a daisy upgrade's blast radius, live on [the
-  admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md); [the absorption
+  the toolkit first before hand-rolling a parallel. Each component's own prop contract lives in its
+  doc comment, and its markup is the grep surface for a daisy upgrade's blast radius; [the absorption
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
@@ -644,7 +642,7 @@ alongside the component recipes above and below it.
   the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
   the same element, so a hand-composed chip carries no weight utility of its own. Values are
   measured, not invented (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md`); the full contract
-  lives on [the admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md#statuschip).
+  lives in `StatusChip`'s doc comment.
 - **Badge tier: every safelisted `badge-*` class, the raw daisyUI alternative to `StatusChip`
   (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** `badge-error`, `badge-success`,
   `badge-soft`, `badge-outline`, and `badge-dash` are all blessed in the admin CSS safelist and
@@ -678,8 +676,8 @@ alongside the component recipes above and below it.
   narrowing a non-empty list to nothing) is `AdminTable`'s own `empty` snippet, never a hand-rolled
   sibling. The register is `AdminTable`'s to own, in its scoped CSS: centered text, padding, the
   muted color, and normal wrapping. A caller's snippet passes bare content, typically one `<p>`, and
-  adds no size, color, or alignment class of its own. See [the admin-toolkit reference
-  page](../../../../docs/reference/admin-toolkit.md#admintable) for the exact contract.
+  adds no size, color, or alignment class of its own. `AdminTable`'s doc comment carries the exact
+  contract.
 - **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
   for the title and the header's ink New button (the ONE create affordance on a populated list, the
   old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),
@@ -877,7 +875,7 @@ alongside the component recipes above and below it.
   `status-chip`/`status-chip-quiet`/`status-chip-warning`/`status-chip-outline`/`status-chip-xs`/
   `status-chip-label` and `PageHeader.svelte`'s `page-h1` do not. Both stay Svelte-scoped (no
   `:global()`), so neither collides with anything on either side of the `cairn-*` render/admin
-  namespace boundary [`render.md`](../../../../docs/reference/render.md#emitted-classes) documents; a rename
+  namespace boundary [the public stylesheet contract](../../../../skills/cairn-styling-public-pages/references/public-stylesheet-contract.md) documents; a rename
   would also touch the canvas-readback measurement suites that pin these exact names
   (`status-chip-register-tuning.test.ts`, `status-chip-register-parity.test.ts`,
   `badge-tier-legibility.test.ts`) and the audit norms that read them
@@ -1385,8 +1383,7 @@ three measurements are why. Reopen it as its own decision, not as a rider.
    every label-sized span that happens to be a flex item. The `gap-*` scale was ratified against
    the untrimmed line boxes, so this quietly re-rules the admin's spacing.
 3. **It breaks a documented contract.** A type role is a size and its leading and nothing else,
-   stated in Grammar tokens above, published in
-   [Admin grammar tokens](../../../../docs/reference/admin-grammar-tokens.md), and pinned by
+   stated in Grammar tokens above, published in `src/lib/design/grammar-tokens.ts`, and pinned by
    `grammar-tokens.test.ts` asserting each role's whole declaration text. Adding a third property
    to `type-label` fails that test, and routing the same declaration through another layer to keep
    the test green would be the same change with the evidence hidden.
@@ -1575,10 +1572,9 @@ investigate.
 
 ## Motion
 
-**This section is canonical.** The published motion guidance, "Animate the screen" in
-`docs/extend/add-a-custom-admin-screen.md`, carries only what a site author acts on (the token
-names and the audit's motion rules) and links the `cairn-audit` reference, never this internal
-page; where the two would say the same thing twice, this section is the source.
+**This section is canonical.** The packaged `cairn-building-admin-screens` skill carries only what a
+site author acts on (the token names and the audit's motion rules), never this internal page;
+where the two would say the same thing twice, this section is the source.
 
 ### Tokens
 

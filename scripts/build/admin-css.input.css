@@ -23,7 +23,7 @@
 /* The thirteen grammar and container role utilities are safelisted, not scanned. A Tailwind
    `@utility` is tree-shaken, so a role with no internal call site would never reach the shipped
    sheet: `type-title` and `gap-control` were both absent until this line went in. They are a
-   DOCUMENTED PUBLIC INTERFACE (docs/reference/admin-grammar-tokens.md), and a consumer's
+   DOCUMENTED PUBLIC INTERFACE (the packaged admin-screens skill names them), and a consumer's
    Tailwind build never sees the `@utility` definitions below, only this compiled sheet, so a role
    a consumer is told to write must ship whether or not cairn's screens happen to use it.
    grammar-tokens.test.ts asserts all thirteen against the plain build for that reason. */
@@ -63,7 +63,7 @@
    rode it keeps resolving; it leaves only as a deliberate, changelog-carried act. */
 @source inline("footer-center");
 /* STATUS-TEXT SAFELIST (2026-08-27 admin sheet fixes). The two idioms below
-   (docs/reference/admin-grammar-tokens.md) are a documented public interface the same way the
+   are a documented public interface the same way the
    grammar and container roles are, so they have to ship whether or not cairn's tree happens
    to reference them yet: a `@utility` is tree-shaken to used candidates, and cairn's screens
    still read --cairn-warning-ink and --color-positive-ink through the pre-existing bracketed

@@ -3,8 +3,8 @@
 // so it skips until dist is built, the same skipIf convention packaging-boundary.test.ts uses).
 // Second, the shipped agent's frontmatter never grows a tool that can write or execute, checked
 // directly off the source tree through the same self-reference resolveSourceRoot uses, so this
-// runs unconditionally. Third, every relative link claude/CLAUDE.md carries resolves inside the
-// packed docs allowlist, and the snippets byte-match (or parse-equal) their in-repo counterparts,
+// runs unconditionally. Third, every installed-package path claude/CLAUDE.md names sits inside
+// package.json's `files`, and the snippets byte-match (or parse-equal) their in-repo counterparts,
 // so neither can drift silently.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { IMPORT_LINE } from '../../lib/guidance/check.js';
 import { resolveSourceRoot } from '../../lib/guidance/install.js';
-import { DOCS_ALLOWED_ARM_PREFIXES, DOCS_ROOT_FILES, parsePackFilePaths } from '../../../scripts/checks/check-package-files.mjs';
+import { parsePackFilePaths } from '../../../scripts/checks/check-package-files.mjs';
 
 const ROOT = resolve(process.cwd());
 const CLAUDE_ROOT = resolveSourceRoot('claude');
@@ -132,20 +132,21 @@ describe('claude/CLAUDE.md word budget and links', () => {
     expect(words.length).toBeLessThan(1500);
   });
 
-  it('every node_modules path it names is inside the packed docs allowlist and exists', () => {
+  it('every node_modules path it names is inside package.json files, and every source path exists', () => {
     const paths = [...fragment.matchAll(/node_modules\/@glw907\/cairn-cms\/([^\s`)]+)/g)].map(
       (m) => m[1]
     );
     expect(paths.length).toBeGreaterThan(0);
 
+    const files: string[] = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).files;
     for (const path of paths) {
-      const allowed =
-        DOCS_ROOT_FILES.includes(path) ||
-        DOCS_ALLOWED_ARM_PREFIXES.some((prefix: string) => path.startsWith(prefix));
-      expect(allowed).toBe(true);
+      const entry = path.replace(/\/$/, '');
+      const packed = files.some((file) => entry === file || entry.startsWith(`${file}/`));
+      expect(packed, `${path} is outside package.json files`).toBe(true);
 
-      const resolved = resolve(ROOT, path);
-      expect(existsSync(resolved)).toBe(true);
+      // dist/ is the build's output, absent until npm run package; every other entry is source.
+      if (entry === 'dist' || entry.startsWith('dist/')) continue;
+      expect(existsSync(resolve(ROOT, path)), `${path} does not exist`).toBe(true);
     }
   });
 });

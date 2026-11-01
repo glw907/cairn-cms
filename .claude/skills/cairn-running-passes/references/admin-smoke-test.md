@@ -1,5 +1,14 @@
 # Admin smoke test (local, per pass)
 
+## Contents
+
+- [The session model (read this once)](#the-session-model-read-this-once)
+- [Prerequisites (once per machine)](#prerequisites-once-per-machine)
+- [The procedure](#the-procedure)
+- [Notes](#notes)
+- [Appendix: Media actions](#appendix-media-actions)
+
+
 How to exercise a site's embedded `/admin` against a real Worker each pass, without the
 email round-trip. Run this on both consumer sites (ecnordic-ski and 907-life) after the
 package gates pass; it is the live half of the cairn-pass verification.

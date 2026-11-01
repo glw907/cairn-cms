@@ -1,5 +1,5 @@
 // cairn-cms: the visuals gate for the published docs' diagram-and-image contract (the "Visuals"
-// section of docs/internal/docs-register.md). It checks the mechanical, authored-source half of
+// section of .claude/skills/cairn-docs/references/docs-register.md). It checks the mechanical, authored-source half of
 // that contract: every mermaid fence carries mermaid's `accTitle:`/`accDescr:` directives and
 // is immediately followed by an emphasis-paragraph caption (`*...*`); every markdown image carries
 // real alt text no longer than 150 characters (a deliberately decorative image is authored as HTML

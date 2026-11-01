@@ -199,7 +199,7 @@ export function profileFor(relPath) {
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }
-  if (path === 'docs/internal/docs-register.md') {
+  if (path === '.claude/skills/cairn-docs/references/docs-register.md') {
     return { tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' };
   }
   if (path === 'CHANGELOG.md') return { tier: 'T2', classes: all, mode: 'changelog' };
@@ -480,7 +480,7 @@ export const SCAN_ROOTS = [
   'docs/reference',
   'docs/admin',
   'docs/editors',
-  'docs/internal/docs-register.md',
+  '.claude/skills/cairn-docs/references/docs-register.md',
   'skills',
   'claude',
   'migrations',

@@ -1,5 +1,14 @@
 # Exemplar: the plain-class kit
 
+## Contents
+
+- [Buttons](#buttons)
+- [Joins](#joins)
+- [Alerts](#alerts)
+- [Controls](#controls)
+- [A chip, a field, and a card](#a-chip-a-field-and-a-card)
+
+
 The kit a custom admin screen is written in: plain daisyUI classes plus cairn's role utilities
 (`type-*`, `gap-*`, `card-shell`, `rounded-*`), with no per-element idiom and no `<style>` block.
 The theme layer carries the look, so every fence below renders correctly as written. Copy the

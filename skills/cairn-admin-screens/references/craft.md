@@ -1,5 +1,14 @@
 # The craft chapter: invisible polish
 
+## Contents
+
+- [The one thesis](#the-one-thesis)
+- [Tokenize](#tokenize)
+- [Numeric rule](#numeric-rule)
+- [Before/after: only demonstrable](#beforeafter-only-demonstrable)
+- [Audit rule](#audit-rule)
+
+
 Load this when refining a component or screen past "it compiles and reads correctly": the pass
 that decides whether a screen feels professional or merely assembled. This file states the
 catalogue directly, on its own authority, the same discipline the exemplar files use, rather

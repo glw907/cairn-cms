@@ -5,7 +5,7 @@
 // developer's real upgrade guarantee, slips past both. This gate closes that gap: it walks each
 // exported subpath's built `.d.ts`, renders the FULL declared shape of every export (callable form
 // from the same path the signatures gate uses, non-callable shape from `checker.typeToString`), and
-// compares the rendered surface against the committed golden file `docs/internal/api-surface.md`.
+// compares the rendered surface against the committed golden file `scripts/checks/api-surface.md`.
 // Any drift fails the gate; regenerating the golden file (`--update`) is the deliberate disclosure
 // moment, and the diff a reviewer reads. The core (`diffSurface`, `findHomeViolations`) is pure of
 // process state so the unit test drives it directly; the CLI reads `dist`, the golden file, the
@@ -18,7 +18,7 @@ import { enumerateExports, moduleExports, loadDts } from './reference-coverage.m
 import { normalizeSignature } from './check-reference-signatures.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const SNAPSHOT = 'docs/internal/api-surface.md';
+const SNAPSHOT = 'scripts/checks/api-surface.md';
 const BANNER = 'GENERATED — run `npm run check:surface -- --update` to regenerate';
 const REEXPORTS = 'scripts/checks/check-surface-reexports.json';
 

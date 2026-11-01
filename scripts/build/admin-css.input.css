@@ -157,7 +157,7 @@
    only 24 uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label
    would match about 14 sites and strand the other 52, and type-heading's display face is a
    dialog-header choice, not a property of 18px text. They belong to a documented component recipe
-   (docs/internal/admin-design-system.md), and color stays palette, not grammar, so it stays a
+   (.claude/skills/cairn-following-admin-design/references/admin-design-system.md), and color stays palette, not grammar, so it stays a
    separate text-muted/text-subtle class on the element. A component <style> block references
    var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not markup; markup uses only
    these named utilities. */

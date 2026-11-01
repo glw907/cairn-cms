@@ -91,7 +91,7 @@ vocabulary rules below, is advisory too; see [The rules](#the-rules) under Rende
 | `grammar-boundary` | CSS never redeclares a grammar token. A site re-tunes the palette tokens freely; a grammar token names structure and holds across both themes |
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `70ms` to `400ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
-| `motion-property` | A transition or animation names only a property on the [motion allowlist](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. `display` and `overlay` also pass when the same transition entry carries `allow-discrete`, the CSS idiom that defers a popover or dialog's discrete top-layer exit until an accompanying paint transition finishes. The transition list splits at the top level only, so a comma inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned property. DaisyUI's component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
+| `motion-property` | A transition or animation names only a property on the [motion allowlist](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md#motion), or the one frame-offset exception: an element carrying `data-cairn-motion="frame-offset"` may transition `margin-left`, one such element per screen. A named-error layout property (`width`, `margin`, and the rest) reports as a judder rather than merely outside the vocabulary. `display` and `overlay` also pass when the same transition entry carries `allow-discrete`, the CSS idiom that defers a popover or dialog's discrete top-layer exit until an accompanying paint transition finishes. The transition list splits at the top level only, so a comma inside `var()` or `cubic-bezier()` reads as a function argument rather than another transitioned property. DaisyUI's component classes and Tailwind's `transition*` utilities are exempt on the class-join half; see [the coverage limits](#what-the-motion-rules-dont-cover) |
 | `motion-vocabulary` | A transition or animation names its duration and easing with a `--cairn-dur-*` and `--cairn-ease-*` token rather than a literal value. The same DaisyUI and Tailwind exemption applies |
 | `motion-hover-gate` | A hand-authored `:hover` selector that declares a transition or animation, on its own or through the rule pairing it with `:focus-visible`, sits inside `@media (hover: hover)`. It does not reach a vendor component's `:hover` rule |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
@@ -241,7 +241,7 @@ and each carries a limit worth knowing before you rely on it:
   `.collapse`, and DaisyUI's other component classes, or `transition`, `transition-all`,
   `transition-colors`, `transition-opacity`, `transition-shadow`, `transition-transform`, even
   where the vendor's sheet disagrees with the language (see [the design system's eleven
-  vendor disagreements](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#the-daisyui-decision-eleven-vendor-disagreements)).
+  vendor disagreements](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md#the-daisyui-decision-eleven-vendor-disagreements)).
   An arbitrary form such as `transition-[color]` isn't exempt.
 - **An `animate-*` utility is checked through its keyframes.** `motion-property` resolves the utility
   to its `--animate-*` custom property and reads the declarations in that property's `@keyframes`
@@ -618,7 +618,7 @@ card  (container)  .card-shell
     sets for a control-identifying boundary rather than for a card hairline, and exempts this one on
     the better of its two ratios against a documented floor of 1.15
   border-radius  8px  15 sites  ratified
-    ratified by https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)
+    ratified by https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-box)
 ```
 
 ### The term

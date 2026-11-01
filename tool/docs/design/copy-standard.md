@@ -187,7 +187,7 @@ The external exemplars this standard imitates, with quotes and URLs, are in the 
 
 Two family documents narrow it, and they win on conflict:
 
-- `docs/internal/admin-design-system.md`, Voice: professional and restrained, never cute or
+- `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, Voice: professional and restrained, never cute or
   chatty. This overrides Microsoft's warmth. Microsoft would write "Don't worry about losing your
   work"; cairn does not reassure an operator, it tells them the state.
 - `src/lib/diagnostics/conditions.ts` and the `cairn-doctor` transcript at

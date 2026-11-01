@@ -7,7 +7,7 @@ including Geoff's binding polish constraint (diagrams carry understated professi
 never stock-theme output). The outlines record's per-page contracts remain the working plan
 except where a ruling below amends one; nothing else in it is reopened, apart from the gate
 relocation ruling 1 announces. The 320/390 release in ruling 1 is an evidenced deviation from the family
-responsive standard, and it lands in [`docs-register.md`](../docs-register.md) under the
+responsive standard, and it lands in [`docs-register.md`](../../../.claude/skills/cairn-docs/references/docs-register.md) under the
 deviation rule alongside ruling 4's visuals section; the responsive-standard bullet in
 `CLAUDE.md`, the one place the numeric bar is stated, gets a one-line scope note with it, so the
 next reader of the standard meets the diagram exemption where the bar is stated.

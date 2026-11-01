@@ -38,7 +38,7 @@
       "scripts/checks/check-surface-reexports.json",
       "scripts/checks/check-self-use-allowlist.json",
       "scripts/checks/check-symbols-allowlist.mjs",
-      "docs/internal/api-surface.md",
+      "scripts/checks/api-surface.md",
       "docs/internal/option-map.json",
       "skills/",
       "claude/"

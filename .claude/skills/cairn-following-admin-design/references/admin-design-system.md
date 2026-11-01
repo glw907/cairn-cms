@@ -1,5 +1,26 @@
 # Cairn admin design system (agent reference)
 
+## Contents
+
+- [The design charter (Geoff, 2026-07-15; grades every admin design decision)](#the-design-charter-geoff-2026-07-15-grades-every-admin-design-decision)
+- [Load-bearing rules (break these and the admin renders wrong)](#load-bearing-rules-break-these-and-the-admin-renders-wrong)
+- [The context model: office and desk](#the-context-model-office-and-desk)
+- [Tokens (Warm Stone)](#tokens-warm-stone)
+- [Type](#type)
+- [Grammar tokens](#grammar-tokens)
+- [Component recipes](#component-recipes)
+- [Chrome and spacing](#chrome-and-spacing)
+- [Vertical alignment mechanics](#vertical-alignment-mechanics)
+- [Icons](#icons)
+- [Voice](#voice)
+- [Adding a new admin surface](#adding-a-new-admin-surface)
+- [The developer-facing vocabulary (the versioned seam)](#the-developer-facing-vocabulary-the-versioned-seam)
+- [The starter template's design](#the-starter-templates-design)
+- [Rehearsing a DaisyUI or Tailwind upgrade](#rehearsing-a-daisyui-or-tailwind-upgrade)
+- [Motion](#motion)
+- [Dates never wrap (Geoff, 2026-07-06)](#dates-never-wrap-geoff-2026-07-06)
+
+
 The polish bar is the live admin components rendered on the showcase, not a static file: they are the
 most-recent version by construction and authored in the real DaisyUI/Tailwind utility classes, so a hand
 twin can never represent them faithfully (the old `2026-06-12-editor-shell-gold-standard.html` is a
@@ -195,9 +216,9 @@ Three rules carry the model:
   `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
-  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
-  at every width the way it once did; it recedes behind the drawer toggle only through the `lg`-`xl`
-  tablet band (1024-1279px) and persists again at `xl` and up. The evidence for the rider: every
+  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route recedes the sidebar behind
+  the drawer toggle only through the `lg`-`xl` tablet band (1024-1279px) and persists it at `xl`
+  and up. The evidence for the rider: every
   content-management comparable persists nav through editing (Payload, Sanity, Craft, Contentful,
   Notion), and NN/g's zen-mode writeup argues hidden-by-default chrome taxes infrequent,
   non-technical editors hardest. The counter-argument that survives is width economics, which is
@@ -441,7 +462,7 @@ The design-infrastructure layer beneath the recipes above: eighteen CSS custom p
 `--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
 `cairn-admin.css`, outside both theme roots, since a structural role does not change with the
 palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory; the reference
-page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is the versioned contract a
+page ([Admin grammar tokens](../../../../docs/reference/admin-grammar-tokens.md)) is the versioned contract a
 site reads, and this section is where an agent extending the admin meets the same vocabulary
 alongside the component recipes above and below it.
 
@@ -530,15 +551,15 @@ alongside the component recipes above and below it.
   warm tint rather than the violet primary) from a `cairn-idiom` rule, identical in every state, so
   do not add an ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on
   `onsubmit` to show a `loading loading-spinner` and a working label.
-- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`, born 2026-07-20).** Several of the
-  recipes below are no longer hand-rolled per screen. `PageHeader`, `ListToolbar`, `AdminTable`,
+- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`).** Several of the
+  recipes below have shared implementations. `PageHeader`, `ListToolbar`, `AdminTable`,
   `Pagination`, `StatusChip`, and `EmptyState` are the shared implementations of the page-header,
   toolbar, table, pager, status-pill, and first-run-empty devices; `formatCivilDate` is the shared
   date formatter. Every engine screen that owns one of these devices imports the component instead
   of restating it, and a new screen (built-in or a site's own custom `/admin/` route) reaches for
   the toolkit first before hand-rolling a parallel. Each component's own prop contract and its
   exact daisyUI class inventory, the grep surface for a daisy upgrade's blast radius, live on [the
-  admin-toolkit reference page](../reference/admin-toolkit.md); [the absorption
+  admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md); [the absorption
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
@@ -624,7 +645,7 @@ alongside the component recipes above and below it.
   the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
   the same element, so a hand-composed chip carries no weight utility of its own. Values are
   measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
-  lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
+  lives on [the admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md#statuschip).
 - **Badge tier: every safelisted `badge-*` class, the raw daisyUI alternative to `StatusChip`
   (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** `badge-error`, `badge-success`,
   `badge-soft`, `badge-outline`, and `badge-dash` are all blessed in the admin CSS safelist and
@@ -659,7 +680,7 @@ alongside the component recipes above and below it.
   sibling. The register is `AdminTable`'s to own, in its scoped CSS: centered text, padding, the
   muted color, and normal wrapping. A caller's snippet passes bare content, typically one `<p>`, and
   adds no size, color, or alignment class of its own. See [the admin-toolkit reference
-  page](../reference/admin-toolkit.md#admintable) for the exact contract.
+  page](../../../../docs/reference/admin-toolkit.md#admintable) for the exact contract.
 - **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
   for the title and the header's ink New button (the ONE create affordance on a populated list, the
   old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),
@@ -857,7 +878,7 @@ alongside the component recipes above and below it.
   `status-chip`/`status-chip-quiet`/`status-chip-warning`/`status-chip-outline`/`status-chip-xs`/
   `status-chip-label` and `PageHeader.svelte`'s `page-h1` do not. Both stay Svelte-scoped (no
   `:global()`), so neither collides with anything on either side of the `cairn-*` render/admin
-  namespace boundary [`render.md`](../reference/render.md#emitted-classes) documents; a rename
+  namespace boundary [`render.md`](../../../../docs/reference/render.md#emitted-classes) documents; a rename
   would also touch the canvas-readback measurement suites that pin these exact names
   (`status-chip-register-tuning.test.ts`, `status-chip-register-parity.test.ts`,
   `badge-tier-legibility.test.ts`) and the audit norms that read them
@@ -1366,7 +1387,7 @@ three measurements are why. Reopen it as its own decision, not as a rider.
    the untrimmed line boxes, so this quietly re-rules the admin's spacing.
 3. **It breaks a documented contract.** A type role is a size and its leading and nothing else,
    stated in Grammar tokens above, published in
-   [Admin grammar tokens](../reference/admin-grammar-tokens.md), and pinned by
+   [Admin grammar tokens](../../../../docs/reference/admin-grammar-tokens.md), and pinned by
    `grammar-tokens.test.ts` asserting each role's whole declaration text. Adding a third property
    to `type-label` fails that test, and routing the same declaration through another layer to keep
    the test green would be the same change with the evidence hidden.

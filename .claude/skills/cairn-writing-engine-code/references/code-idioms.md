@@ -1,5 +1,21 @@
 # Code idioms
 
+## Contents
+
+- [Errors and results](#errors-and-results)
+- [Validation](#validation)
+- [Factories](#factories)
+- [Modules](#modules)
+- [Naming](#naming)
+- [Async](#async)
+- [Logging](#logging)
+- [Tests](#tests)
+- [Svelte components](#svelte-components)
+- [Structural decisions (this pass)](#structural-decisions-this-pass)
+- [Deliberately not standardized](#deliberately-not-standardized)
+- [Sweep clusters (Task 4 partition, riskiest first)](#sweep-clusters-task-4-partition-riskiest-first)
+
+
 The agent-facing idiom charter: one obvious way per pattern, each rule anchored to the
 best existing file (imitate the exemplar; the rule is a summary of it). Derived from the
 2026-07-01 eleven-subsystem survey (`docs/plans/2026-07-01-code-polish-survey.md`)

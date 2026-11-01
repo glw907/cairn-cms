@@ -1,5 +1,14 @@
 # Form anatomy
 
+## Contents
+
+- [The three label levels](#the-three-label-levels)
+- [Row and group spacing](#row-and-group-spacing)
+- [The composition-width rule](#the-composition-width-rule)
+- [The submission row](#the-submission-row)
+- [Cross-references](#cross-references)
+
+
 Load this when laying out a form's rows and labels: which of the three label levels a given
 label is, how a row spaces against its neighbors, and the one composition failure that no
 mechanical check in this engine catches.

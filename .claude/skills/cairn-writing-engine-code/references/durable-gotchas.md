@@ -1,5 +1,55 @@
 # Durable gotchas
 
+Four sections describe the maintainer's workstation wrapper, `cairn-run-gate`, and its hooks: "The
+component project stalls under file parallelism" (its command lines), "`npm run check` runs out of
+memory in the light gate lane", "`/tmp` is a size-limited tmpfs", and the two sections on piping a
+gate and on the 600000 ms timeout. A contributor without that wrapper runs the same commands bare,
+and `npm run lane:fast` replaces the lane they name.
+
+## Contents
+
+- [Cloudflare email](#cloudflare-email)
+- [Pointing a consumer at unreleased engine work](#pointing-a-consumer-at-unreleased-engine-work)
+- [A worktree showcase e2e proves MAIN's engine](#a-worktree-showcase-e2e-proves-mains-engine)
+- [CI-canonical baselines this workstation cannot reproduce](#ci-canonical-baselines-this-workstation-cannot-reproduce)
+- [Vite 8 ships TypeScript in dist `.svelte`](#vite-8-ships-typescript-in-dist-svelte)
+- [A components-layer rule cannot cancel a utility](#a-components-layer-rule-cannot-cancel-a-utility)
+- [The component project stalls under file parallelism](#the-component-project-stalls-under-file-parallelism)
+- [A probe site from `emit:template` sees no shipped guidance](#a-probe-site-from-emittemplate-sees-no-shipped-guidance)
+- [`cloudflare:workers` in the engine](#cloudflareworkers-in-the-engine)
+- [Any `env` read while prerendering fails the build](#any-env-read-while-prerendering-fails-the-build)
+- [`vite preview` cannot serve adapter 8 output](#vite-preview-cannot-serve-adapter-8-output)
+- [`node:sqlite` throws under workerd](#nodesqlite-throws-under-workerd)
+- [Kit 3 emits server sourcemaps by default](#kit-3-emits-server-sourcemaps-by-default)
+- [A plugin must never start and close a nested Vite server under `vite dev`](#a-plugin-must-never-start-and-close-a-nested-vite-server-under-vite-dev)
+- [An installed engine needs vitest's `server.deps.inline`](#an-installed-engine-needs-vitests-serverdepsinline)
+- [An e2e key press waits for hydration, not for server-rendered markup](#an-e2e-key-press-waits-for-hydration-not-for-server-rendered-markup)
+- [Playwright `page.unroute` needs the same function reference `page.route` received](#playwright-pageunroute-needs-the-same-function-reference-pageroute-received)
+- [The full gate tier mirrors `test.yml`, and a tree-grepping helper skips generated directories](#the-full-gate-tier-mirrors-testyml-and-a-tree-grepping-helper-skips-generated-directories)
+- [A scratch showcase copy outside the repo bundles CommonJS `yaml`](#a-scratch-showcase-copy-outside-the-repo-bundles-commonjs-yaml)
+- [A fresh worktree needs CI's setup before a full gate means anything](#a-fresh-worktree-needs-cis-setup-before-a-full-gate-means-anything)
+- [`npm run check` runs out of memory in the light gate lane](#npm-run-check-runs-out-of-memory-in-the-light-gate-lane)
+- [Tailwind scans every file under the project, specs included](#tailwind-scans-every-file-under-the-project-specs-included)
+- [`/tmp` is a size-limited tmpfs](#tmp-is-a-size-limited-tmpfs)
+- [Never pipe a gate or `npm test` through `tail`](#never-pipe-a-gate-or-npm-test-through-tail)
+- [`cairn-run-gate` needs the Bash tool's 600000 ms timeout](#cairn-run-gate-needs-the-bash-tools-600000-ms-timeout)
+- [Do not rebuild `dist` while `npm test` runs](#do-not-rebuild-dist-while-npm-test-runs)
+- [A full-page screenshot does not repaint a fixed element past the page box](#a-full-page-screenshot-does-not-repaint-a-fixed-element-past-the-page-box)
+- [A Vitest browser-mode mock factory cannot close over a file-scope `let`](#a-vitest-browser-mode-mock-factory-cannot-close-over-a-file-scope-let)
+- [Writing a check script or a CLI bin](#writing-a-check-script-or-a-cli-bin)
+- [Docs symbol sweep failures that name no real symbol](#docs-symbol-sweep-failures-that-name-no-real-symbol)
+- [`check:self-use` refuses a showcase call on an auth path](#checkself-use-refuses-a-showcase-call-on-an-auth-path)
+- [Adding or removing an export touches more than the barrel](#adding-or-removing-an-export-touches-more-than-the-barrel)
+- [Adding a diagnostic condition or a log event](#adding-a-diagnostic-condition-or-a-log-event)
+- [A D1 statement change needs the dev fake database](#a-d1-statement-change-needs-the-dev-fake-database)
+- [`check:comments` rejects shapes the other gates accept](#checkcomments-rejects-shapes-the-other-gates-accept)
+- [A local `check:vale` can differ from CI's pinned Vale](#a-local-checkvale-can-differ-from-cis-pinned-vale)
+- [Editing `tool/`, the Go CLI](#editing-tool-the-go-cli)
+- [Showcase chrome traps](#showcase-chrome-traps)
+- [A rename sweep and a tree deletion treat the record docs differently](#a-rename-sweep-and-a-tree-deletion-treat-the-record-docs-differently)
+- [`git commit -- <path>` commits unstaged hunks too](#git-commit----path-commits-unstaged-hunks-too)
+
+
 Detail moved out of `CLAUDE.md` to keep that file inside its context budget. The first five
 entries are indexed from `CLAUDE.md`; the rest live only here. Read the relevant one before
 touching the area it names.
@@ -86,7 +136,7 @@ Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-pac
 `scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
 body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
 Do not remove the step or strip `lang="ts"`. Full post-mortem:
-[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](record/2026-06-21-e2e-dist-svelte-build-failure.md).
+[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](../../../../docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## A components-layer rule cannot cancel a utility
 
@@ -414,7 +464,7 @@ fail here. Three shapes recur, and `node scripts/checks/check-symbols.mjs` repro
 seconds without a rebuild.
 
 - A path inside a fenced block's `//` comment is checked against the repo root, not the doc's
-  directory. `// see [x](../reference/sveltekit.md)` extracts `reference/sveltekit.md`, which does not
+  directory. `// see [x](../../../../docs/reference/sveltekit.md)` extracts `reference/sveltekit.md`, which does not
   exist. Cite another doc by bare filename or in prose, with no slash.
 - A `--flag` in a fenced shell block resolves only against `create-cairn-site`'s own argv parser.
   `npx cairn-audit --help` in a fenced example fails as an unresolved `cli-flag` until
@@ -568,7 +618,7 @@ the guides, and the `engine-rulings.md` ledger. Point-in-time documents describe
 they were written, so a hit in `docs/internal/record/`, `docs/plans/`,
 `docs/internal/history/`, or a dated design or research brief is evidence to leave alone. A plan's
 rename table is the task's own source text. A grep hit is also not drift when the sentence never
-claims the name is public. `docs/internal/admin-smoke-test.md` names internal source paths and raw
+claims the name is public. `.claude/skills/cairn-running-passes/references/admin-smoke-test.md` names internal source paths and raw
 `?/actionName` forms on purpose, to point a curl recipe at the source. Ask of each hit whether the
 sentence claims the name is reachable through the narrowed public surface.
 

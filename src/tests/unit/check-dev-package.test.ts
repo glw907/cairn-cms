@@ -1,5 +1,5 @@
 // cairn-cms: check-dev-package.mjs is the gate that reads packages/cairn-cms-dev/package.json,
-// so the version-match rule (the cairn-release skill has no step enforcing that the root
+// so the version-match rule (the cairn-releasing skill has no step enforcing that the root
 // package.json and the dev-package manifest carry the same version) lives here rather than in
 // check-version.mjs, which never reads the dev-package manifest at all. This test drives the
 // pure comparison function directly.

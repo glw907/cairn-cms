@@ -1,16 +1,16 @@
-# Exemplars
+# Exemplar sources
 
 Three captured pages that show the anatomy and rhythm the two base style guides ask for. A
 writer or register editor reads a page here whole and imitates its structure and pace, never its
 wording. Each file opens with its source URL, capture date, and attribution, and each is
-CC BY 4.0 (Google's code samples are Apache 2.0). Vale and `check:docs` skip this directory, so
+CC BY 4.0 (Google's code samples are Apache 2.0). Vale and `check:docs` read only `docs/`, so
 the captures keep their original links and typography.
 
 | File | Base guide | Role |
 | --- | --- | --- |
-| [`google-task-create-project.md`](google-task-create-project.md) | Google | Task page: a one-sentence purpose, then numbered steps, one action per step, with the UI label in bold and a short result line. |
-| [`google-concept-auth-overview.md`](google-concept-auth-overview.md) | Google | Concept page: a definition up front, a worked analogy, a numbered overview, then a terminology list. |
-| [`microsoft-procedure-blobs-portal.md`](microsoft-procedure-blobs-portal.md) | Microsoft | UI-only procedure page: "follow these steps" lead-ins, imperative steps that name the control, and one screenshot per procedure. |
+| [`exemplar-google-task-create-project.md`](exemplar-google-task-create-project.md) | Google | Task page: a one-sentence purpose, then numbered steps, one action per step, with the UI label in bold and a short result line. |
+| [`exemplar-google-concept-auth-overview.md`](exemplar-google-concept-auth-overview.md) | Google | Concept page: a definition up front, a worked analogy, a numbered overview, then a terminology list. |
+| [`exemplar-microsoft-procedure-blobs-portal.md`](exemplar-microsoft-procedure-blobs-portal.md) | Microsoft | UI-only procedure page: "follow these steps" lead-ins, imperative steps that name the control, and one screenshot per procedure. |
 
 ## Sources and licenses
 

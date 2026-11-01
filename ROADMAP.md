@@ -171,7 +171,7 @@ rebuilt site goes live.
 intent, not a shipped promise).** `theme-conformance` and `theme-contrast` ship at advisory tier on a
 consumer, and the changelog makes no promise about their tier. Promote both to error at the first
 minor cut after all five sites (the four consumer sites and cairn.pub) report zero advisory
-findings from them, counted by the `cairn-release` step that runs the audit's public scope over each
+findings from them, counted by the `cairn-releasing` step that runs the audit's public scope over each
 site at every cut. `public-literals` stays advisory. A site that reports findings is asked to clear
 them first; no calendar date is attached.
 
@@ -304,7 +304,7 @@ The original decision framing, for the record:
   8. **The final engine batch:** every item still in the Next tier's batched engine friction and
      reference-arm corrections entries, the held dependency majors whose tripwires have fired, Phase
      P's open items (below), and the dependency sweep a release starts from.
-  9. **The one release** (`cairn-release`), a `0.x` minor.
+  9. **The one release** (`cairn-releasing`), a `0.x` minor.
   10. Site migrations, one site pass each, cairn.pub first among equals. Their friction takes the same
      test, so a migration can still produce an engine fix after the release.
 
@@ -348,7 +348,7 @@ The original decision framing, for the record:
 - **Docs content carried from the 2b close (docs finalization pass 1, 2026-10-31).** The friction log's
   docs-content and repo-tooling entries were verified against the pages and code; 17 were fixed on
   their pages, 5 found overtaken, and 10 became the rows below, which also carry the five tooling entries that stay, each with its trigger:
-  - Move failure causes to `debug-your-site`. `docs/internal/docs-register.md`'s task-guide anatomy
+  - Move failure causes to `debug-your-site`. `.claude/skills/cairn-docs/references/docs-register.md`'s task-guide anatomy
     (item 5) points failure paths at the track's recovery surface, but the pages
     `arrange-the-admin-sidebar`, `write-a-markdown-component`, `share-a-draft-preview`,
     `configure-media`, `define-an-adapter-and-schema`, `turn-on-tidy`, `build-the-public-routes`, and
@@ -392,7 +392,7 @@ The original decision framing, for the record:
 - **Docs-code sync (Geoff, 2026-09-30; spec `docs/specs/2026-09-30-docs-code-sync-design.md`).**
   Keep the engine and its docs in sync by catching drift (a documented behavior whose code changed) and omission (behavior no page covers). **Shipped in stage 2a
   (2026-10-07):** option coverage (`check:options` over `docs/internal/option-map.json`, in the docs
-  gate and `check:close`), and the release sweep (`cairn-release` step 3, capability releases
+  gate and `check:close`), and the release sweep (`cairn-releasing` step 3, capability releases
   only, its first window seeded at `v0.98.0`). The rest of the spec's deferred table stays deferred with its trigger there.
 
 - **Tell outside developers how the docs stay true (Geoff, 2026-09-30).** Split by reader. A
@@ -429,7 +429,7 @@ The original decision framing, for the record:
   boundary-test entry above: stage 2b's 14 pages, admin (stage 3), editors (stage 4), and the front door
   (stage 5), with each engine pass in its slot. `docs/internal/record/harvest/relink.json` names what each stage re-arms. The
   style-guide sync (2026-09-28 to 29) settled the drafting inputs: each track's brief in
-  `docs/internal/docs-register.md`, the AI posture page as the developer exemplar, and a
+  `.claude/skills/cairn-docs/references/docs-register.md`, the AI posture page as the developer exemplar, and a
   Microsoft Learn capture for editors. The stage 2 and stage 5 outline input is
   `docs/internal/record/2026-09-29-theme-contract-docs-input.md`.
   The docs reset's reader-validation line (passes 1, 1b, and 2a, spec
@@ -597,7 +597,7 @@ The original decision framing, for the record:
   live reproductions); themed mermaid is the vehicle, with a designed cairn diagram theme built in
   cairn-pub before any diagram lands and hand-authored SVG as the escalation path; the proposed
   inventory of seventeen diagrams was re-tested against the actor-and-branching threshold and
-  twelve survive; an alt-and-caption standard lands in `docs/internal/docs-register.md` with a
+  twelve survive; an alt-and-caption standard lands in `.claude/skills/cairn-docs/references/docs-register.md` with a
   `check:` gate in the Astro missing-alt-is-a-build-failure shape; motion is out by decision, with
   its revisit trigger filed in Later; and the three locate-many-controls reproductions gain
   numbered callouts with keyed lists, which appends a callout-overlay capability to the
@@ -723,7 +723,7 @@ The original decision framing, for the record:
   admin toolkit's new `FieldRow` (`items-end`) ships the named composition for a stacked field
   beside a bare control; the new `cairn-icon-label`/`cairn-line-slot` recipes close the one
   confirmed icon-label mechanic; `text-box-trim` was measured and explicitly declined (see
-  `docs/internal/admin-design-system.md`, "Vertical alignment mechanics"). The measured defect surface came in far smaller than either closed entry
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "Vertical alignment mechanics"). The measured defect surface came in far smaller than either closed entry
   assumed; two things carry forward rather than a broader repair:
   - **The sub-bar `ConceptList` family:** fifteen rows reading exactly 1.55px, the same shape as the
     three confirmed defects but under the pass's 2px reporting bar. A firing threshold anywhere in
@@ -941,7 +941,7 @@ the named human gates only):**
 - **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
   consumer sites from Waymark as the dogfood test (Geoff, 2026-07-02 — supersedes the
   upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
-  number free via `npm view`; the `cairn-release` skill owns the mechanics). Then, instead of
+  number free via `npm view`; the `cairn-releasing` skill owns the mechanics). Then, instead of
   upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Waymark on that cut: the end
   result need not be pixel-identical to each site's current look, but it should be close — and
   since the two sites look very different from each other, one template re-expressed into both is
@@ -961,6 +961,25 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Rename component to block across the engine, in the final engine batch (Geoff, 2026-10-31).**
+  Geoff ruled "block" the one name for the `:::` content unit in every track, because "component" is
+  off-putting and too generic for editors, and most surveyed systems (WordPress, Notion, Payload,
+  Sanity) say block. The docs say block now, and the engine still says component, so the batch makes
+  the code match. Public API: `defineComponent` to `defineBlock`;
+  `ComponentDef`, `ComponentRegistry`, and `ComponentContext` to `BlockDef`, `BlockRegistry`, and
+  `BlockContext`; `defineRegistry({ components })` to `({ blocks })`; `rendering.components` to
+  `rendering.blocks`; `onComponentAtCaret` to `onBlockAtCaret`; the scaffold's
+  `src/theme/markdown-components.ts` to `markdown-blocks.ts`. UI strings: "Insert a component",
+  "Search components", "Back to components", "Edit the component at the cursor", "Layout marker." and
+  the help dialog's "layout blocks" say block, and "Fold this section" becomes "Fold this block".
+  "Place the cursor in a component to edit it" needs rewording, since it misdescribes a caret inside
+  a figure or an unregistered block. Docs: `write-a-markdown-component.md` becomes
+  `write-a-markdown-block.md`, and the reference, `add-an-island.md`, the register, the Vale rules,
+  the skills, and the story `editor/collapsed-layout-block` follow; "component" in the Svelte sense
+  stays. This breaks the public contract with no content migration, because stored entries and the
+  directive grammar do not change. The CHANGELOG entry carries a `Consumers must:` list, and
+  `migration-notes.md` and `upgrade-cairn.md` record it.
 
 - **Gate economy follow-ups (Geoff, 2026-10-08; audit and adversarial review of the per-task gate).**
   Three items deferred from the change that made the per-task gate the diff's blast radius. (a)
@@ -1416,7 +1435,7 @@ the named human gates only):**
 - **cairn-pub adopts Vale and routes its own prose to the developer brief (style-guide sync ruling
   13, 2026-09-28).** cairn.pub's own prose, everything it serves outside the engine's shipped doc
   arms, takes the Google base, and the workstation `writing-voice` skill already routes it to the
-  developer brief in `docs/internal/docs-register.md`. No gate reads it: cairn-pub carries no Vale
+  developer brief in `.claude/skills/cairn-docs/references/docs-register.md`. No gate reads it: cairn-pub carries no Vale
   config. The work is cairn-pub's: vendor the same Google package and `Cairn.*` styles this repo
   pins (Vale 3.23.0), point its repo guidance at the brief, and fix what the first run reports.
   Trigger: cairn-pub's next pass that edits its own prose, or its pin bump to the rebuilt arms.
@@ -1797,7 +1816,7 @@ the named human gates only):**
   axis extends the brief; the settled document gets a fresh-context adversarial review; then a
   spec through brainstorming and a plan through writing-plans. Research brief with the
   seven-system comparison and a proposed token set:
-  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `docs/internal/admin-design-system.md`
+  `docs/internal/record/2026-09-13-motion-language-research.md`. Deliverable: a "Motion" section in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`
   with the vocabulary as tokens the sheet carries, the audit rules tightened to enforce it, and a
   sweep of the admin components onto it. Borrowable by consumers through the audit and the
   design tokens, per the extend architecture. **Extend hand-off (Geoff, 2026-09-13):** the pass is built to be used by the
@@ -1819,7 +1838,7 @@ the named human gates only):**
   **visibility**, not its transition, a behavioral override of a vendor component extend-1 decides
   on its own terms; (3) the same follow-up for DaisyUI `.menu`; (4) the `.modal-box` scale
   override's reopen trigger, carried as a `WATCH:` comment beside the recipe in
-  `docs/internal/admin-design-system.md`'s Motion section rather than filed here, since the
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s Motion section rather than filed here, since the
   trigger (the admin adopting `modal-bottom` at narrow widths) is a markup change a future pass
   makes rather than an external event.
 
@@ -2647,7 +2666,7 @@ the named human gates only):**
   then make "try cairn in five minutes" the tutorial's first chapter with provisioning deferred to
   deploy time. Needs verification before documentation; nothing lowers adoption friction more.
 - **Pre-beta DX: publish the surface snapshot as a machine artifact (Geoff, 2026-08-01).**
-  `docs/internal/api-surface.md` is already an exact, gate-enforced rendering of the whole public
+  `scripts/checks/api-surface.md` is already an exact, gate-enforced rendering of the whole public
   contract, precisely what an AI agent wants and cannot get from rendered docs. Ship it (or a JSON
   sibling) in the package or on the docs site; nearly free, and pairs with the filed `/llms` page.
 - **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn doctor`
@@ -3032,7 +3051,7 @@ the named human gates only):**
   rediscovers it. The invocation was correct before the leak-class rider was chained on, and two
   places still print that pre-rider form: the script's own `BANNER`
   (`scripts/checks/check-surface.mjs:22`), which it also writes into the generated
-  `docs/internal/api-surface.md`, and `docs/internal/README.md:31`. A reader who follows either
+  `scripts/checks/api-surface.md`, and `docs/internal/README.md:31`. A reader who follows either
   gets the broken invocation. Candidate fix: split the chain into `check:surface`
   and a `check:surface:update` that runs `npm run package && node scripts/checks/check-surface.mjs --update`,
   then correct both banners. Filed rather than fixed because a non-breaking fix does not join a

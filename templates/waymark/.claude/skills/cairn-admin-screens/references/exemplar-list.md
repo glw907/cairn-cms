@@ -1,5 +1,18 @@
 # Exemplar: a list screen
 
+## Contents
+
+- [Anatomy at a glance](#anatomy-at-a-glance)
+- [The header: one filled action](#the-header-one-filled-action)
+- [The toolbar: search, facets, and the count line (Growth)](#the-toolbar-search-facets-and-the-count-line-growth)
+- [The table: the row register](#the-table-the-row-register)
+- [The status chip: chip passivity in practice (Growth)](#the-status-chip-chip-passivity-in-practice-growth)
+- [The expand-in-place panel (Growth)](#the-expand-in-place-panel-growth)
+- [Pagination (Growth)](#pagination-growth)
+- [The shipped source](#the-shipped-source)
+- [What this exemplar doesn't cover](#what-this-exemplar-doesnt-cover)
+
+
 Load this when building or reviewing a list screen: a table over a collection, with the search,
 filters, and in-place detail a longer list needs.
 

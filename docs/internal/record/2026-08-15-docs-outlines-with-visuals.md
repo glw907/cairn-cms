@@ -61,7 +61,7 @@ authoritative first (Geoff, 2026-08-15).
    means, and where the two part company the standard yields. A deviation must be evidenced (name
    what the guide says, what is being done instead, and why, citing a measured result or
    demonstrated practice in a corpus known to be excellent) and recorded where the next writer
-   meets it. The full rule now lives in [`docs-register.md`](../docs-register.md).
+   meets it. The full rule now lives in [`docs-register.md`](../../../.claude/skills/cairn-docs/references/docs-register.md).
 2. **Known-great exemplars**, studied for visual practice specifically: what kinds of visuals
    appear, at what density per page, how they survive product change, how they behave on small
    screens, and what tooling produces them.

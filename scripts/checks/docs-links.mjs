@@ -16,14 +16,13 @@
 // A dated record keeps the links it was written with, so its links into deletion-list paths are
 // accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
-import { resolve, dirname, join, relative, sep } from 'node:path';
+import { resolve, dirname, join, relative, sep, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ARM_DIRS, armOf, loadDeletionList, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CONTRIBUTING.md'];
 // Captured third-party pages keep their original links, so the link gate skips them.
-const EXEMPLARS_DIR = join('docs', 'internal', 'exemplars');
 // Planning records are write-once history, so their links are never repaired. Matched by path
 // from the repo root, never by directory name, so a published `research` folder would be scanned.
 const PLANNING_DIRS = ['specs', 'plans', 'research', 'archive'].map((name) => join('docs', name));
@@ -60,14 +59,15 @@ function walkIfPresent(root, dirName) {
 export function filesInScope(root = ROOT) {
   const docs = walkMarkdown(join(root, 'docs'), new Set(), []).filter((p) => {
     const rel = relative(root, p);
-    if (rel.startsWith(EXEMPLARS_DIR + sep)) return false;
     if (PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep))) return false;
     return !PLANNING_BRIEFS.includes(rel.split(sep).join('/'));
   });
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
   const skills = walkIfPresent(root, 'skills');
   const claude = walkIfPresent(root, 'claude');
-  return [...rootDocs, ...docs, ...skills, ...claude].map((p) => relative(root, p)).sort();
+  // Repo skills link into docs/ and each other. Captured exemplar pages keep their original links.
+  const repoSkills = walkIfPresent(root, join('.claude', 'skills')).filter((p) => !basename(p).startsWith('exemplar-'));
+  return [...rootDocs, ...docs, ...skills, ...claude, ...repoSkills].map((p) => relative(root, p)).sort();
 }
 
 // Strip fenced code blocks (``` and ~~~), keeping line count stable so reported lines stay right.

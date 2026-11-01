@@ -1,5 +1,23 @@
 # Cairn public design system: Waymark (agent reference)
 
+## Contents
+
+- [Load-bearing rules (break these and the theme renders wrong)](#load-bearing-rules-break-these-and-the-theme-renders-wrong)
+- [Tokens](#tokens)
+- [Type](#type)
+- [The ultrawide posture (locked)](#the-ultrawide-posture-locked)
+- [The chrome (`SiteHeader.svelte`, `SiteFooter.svelte`)](#the-chrome-siteheadersvelte-sitefootersvelte)
+- [The eyebrow (uppercase, letterspaced, `--tracking-eyebrow`)](#the-eyebrow-uppercase-letterspaced---tracking-eyebrow)
+- [The reading surface (`prose.css`)](#the-reading-surface-prosecss)
+- [The cairn theme: the opt-in identity layer](#the-cairn-theme-the-opt-in-identity-layer)
+- [The component model (you own it)](#the-component-model-you-own-it)
+- [The re-skin recipe (the committed N)](#the-re-skin-recipe-the-committed-n)
+- [Accessibility](#accessibility)
+- [Transferable rules from the admin design arc (2026-07-15)](#transferable-rules-from-the-admin-design-arc-2026-07-15)
+- [Vertical alignment mechanics](#vertical-alignment-mechanics)
+- [Pointers](#pointers)
+
+
 Waymark is cairn's public reading template, neutral by default: a humanist sans display face over a
 clean, hue-free paper. Read this before any work on the public theme:
 `examples/showcase/src/theme/theme.css` (the tokens and the re-skin recipe),
@@ -12,7 +30,7 @@ the re-skin recipe.
 The live demo is `/styleguide`. The exhaustive oklch values live in `theme.css`, the single source. The
 design criteria and the settled-design appendix (the chosen faces, the values, the layouts, the
 carry-forwards) are in the design bar
-([`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)),
+([`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../../../../docs/specs/2026-06-25-cairn-b2-design-bar.md)),
 which predates the neutral default and records the earlier branded starting point that became the
 cairn theme.
 
@@ -26,7 +44,7 @@ Voice section of that document, and cairn.pub's own prose follows the developer 
 Waymark is the chassis every new site reskins, so it stays neutral: "not stock DaisyUI" means
 craft (type scale, spacing, restraint), never a cairn identity a site would have to strip out.
 A move that would brand Waymark, such as rotating its primary hue toward cairn's or adopting
-the admin's type pairing, is out. Record: `record/2026-09-13-blueprint-design-spike.md`.
+the admin's type pairing, is out. Record: `docs/internal/record/2026-09-13-blueprint-design-spike.md`.
 
 ## Load-bearing rules (break these and the theme renders wrong)
 
@@ -312,7 +330,7 @@ executes the wider application; until it runs, these are the standard new theme 
 
 ## Vertical alignment mechanics
 
-The same doctrine as the admin's own (`docs/internal/admin-design-system.md`, "Vertical alignment
+The same doctrine as the admin's own (`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "Vertical alignment
 mechanics"), stated here in Waymark's register because it governs a public row the same way it
 governs an admin one. These are chassis mechanics: how a row's declared alignment resolves in the
 browser, never a constraint on a consumer's own `render`.
@@ -379,6 +397,6 @@ measure it, rather than trusting the read.
 - The theme and the re-skin recipe: `examples/showcase/src/theme/theme.css`. The reading surface:
   `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
-  ([`2026-06-25-cairn-b2-design-bar.md`](../specs/2026-06-25-cairn-b2-design-bar.md)).
+  ([`2026-06-25-cairn-b2-design-bar.md`](../../../../docs/specs/2026-06-25-cairn-b2-design-bar.md)).
 - The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),
   `scripts/lab/reskin-fixture.mjs`, and the `design.yml` workflow. The engine highlighter: `src/lib/render/highlight.ts`.

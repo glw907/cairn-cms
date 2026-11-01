@@ -1,7 +1,7 @@
 <!--
 @component
 The label wrapper every admin field composes, in either of two registers (a third, the group
-legend, is a `<legend>` rather than this component; `docs/internal/admin-design-system.md`'s
+legend, is a `<legend>` rather than this component; `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s
 form-row/label register section has the full three). `stacked` (the default: label on its
 line above the control, `flex flex-col gap-label`, the individual-field-label recipe) is the
 robust shape for any multi-column form grid, since a stacked label never competes with its

@@ -1,5 +1,17 @@
 # Aligning the CodeMirror editing surface
 
+## Contents
+
+- [Status (2026-06-30)](#status-2026-06-30)
+- [The problem](#the-problem)
+- [The principle: the upgrade tax is styling CodeMirror's internals, not customizing CodeMirror](#the-principle-the-upgrade-tax-is-styling-codemirrors-internals-not-customizing-codemirror)
+- [The organizing decision: classify each CodeMirror surface as "writing surface" or "chrome"](#the-organizing-decision-classify-each-codemirror-surface-as-writing-surface-or-chrome)
+- [What shipped](#what-shipped)
+- [What remains deferred](#what-remains-deferred)
+- [Boundary and sequencing](#boundary-and-sequencing)
+- [Geoff's steer (2026-06-30): the goal, the three constraints, and prior-art first](#geoffs-steer-2026-06-30-the-goal-the-three-constraints-and-prior-art-first)
+
+
 > The framing for bringing cairn's in-editor CodeMirror surfaces into the Warm Stone design language
 > **without** making CodeMirror upgrades expensive. This is **not** part of the admin
 > idiomatic-re-expression sweep (Phases 2 to 6), which deliberately walls the CodeMirror content theme as

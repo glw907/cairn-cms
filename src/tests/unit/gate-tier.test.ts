@@ -39,7 +39,7 @@ describe('the table', () => {
   // One real path per pattern, so a pattern that matches nothing fails its own row. The dot
   // patterns are literal prefixes or exact paths.
   const rows: [bucket: string, pattern: string, path: string][] = [
-    ['docs', 'docs/', 'docs/internal/pass-gate-tiers.md'],
+    ['docs', 'docs/', 'docs/internal/README.md'],
     ['docs', '*.md', 'README.md'],
     ['docs', '**/*.md', 'examples/showcase/README.md'],
     ['docs', '.vale/', '.vale/tests/vale.ini'],
@@ -72,7 +72,7 @@ describe('the table', () => {
     ['exportSurface', 'scripts/checks/check-surface-reexports.json', 'scripts/checks/check-surface-reexports.json'],
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
-    ['exportSurface', 'docs/internal/api-surface.md', 'docs/internal/api-surface.md'],
+    ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
     ['exportSurface', 'docs/internal/option-map.json', 'docs/internal/option-map.json'],
     ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
     ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
@@ -207,7 +207,7 @@ describe('static check selection', () => {
 
   it('leaves check:surface out for a docs page, since it reads the built types and the golden file only', () => {
     expect(labelsFor('docs/reference/core.md', 'docs/internal/engine-rulings.md')).not.toContain('check:surface');
-    expect(labelsFor('docs/internal/api-surface.md')).toContain('check:surface');
+    expect(labelsFor('scripts/checks/api-surface.md')).toContain('check:surface');
   });
 
   it('keeps the option and reference checks on the engine bucket, so a non-index file selects them', () => {
@@ -905,7 +905,7 @@ describe('--protected', () => {
 // non-browser legs run concurrently, line 2 the related component tests, and CI carries the rest.
 describe('the fast lane', () => {
   const SRC_PATH = 'src/lib/log/index.ts';
-  const DOCS_PATH = 'docs/internal/pass-gate-tiers.md';
+  const DOCS_PATH = 'docs/internal/README.md';
 
   it('prints one line for a docs-only diff: the docs gate and the static checks, no unit or component leg', () => {
     const { lines, notes } = decideFastGate([DOCS_PATH]);

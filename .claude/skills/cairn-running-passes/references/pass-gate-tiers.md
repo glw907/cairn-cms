@@ -1,5 +1,20 @@
 # Pass gate tiers
 
+The lane names below (`light`, `heavy`) and the `cairn-run-gate` strings belong to the maintainer's
+workstation wrapper. A contributor runs the same legs through `npm run lane:fast`, which executes
+`gate-tier.mjs --fast` for the range and needs no lock or lane.
+
+## Contents
+
+- [The targeted gate](#the-targeted-gate)
+- [The fast lane](#the-fast-lane)
+- [Protected paths](#protected-paths)
+- [The pinned tiers](#the-pinned-tiers)
+- [The `tool` tier and mixed diffs](#the-tool-tier-and-mixed-diffs)
+- [The pin](#the-pin)
+- [Verified against the showcase Playwright config (2026-09-15)](#verified-against-the-showcase-playwright-config-2026-09-15)
+
+
 The per-task gate a diff demands. The classifier is `scripts/checks/gate-tier.mjs`; its own header
 carries the same rules this page states. A pass session calls
 
@@ -62,7 +77,7 @@ matches it:
 | harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
-| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `docs/internal/api-surface.md`, `docs/internal/option-map.json`, `skills/`, `claude/` |
+| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `docs/internal/option-map.json`, `skills/`, `claude/` |
 
 A pattern ending in `/` is a literal directory prefix, a pattern with no glob character is an exact
 path, and anything else is a glob. Dot paths (`.vale/`, `.vale.ini`, `.tellgrader.json`,

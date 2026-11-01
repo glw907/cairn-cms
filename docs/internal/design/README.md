@@ -24,7 +24,7 @@ npm --prefix examples/showcase run preview -- --var CAIRN_DEV_BACKEND:1   # serv
 ```
 
 The standing design language (tokens, type, the component recipes, the load-bearing rules) lives in
-`docs/internal/admin-design-system.md`. When polishing or adding an admin surface, match the live
+`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`. When polishing or adding an admin surface, match the live
 components and that doc, not a static file.
 
 ## Mockups: exploring a screen that has no component yet

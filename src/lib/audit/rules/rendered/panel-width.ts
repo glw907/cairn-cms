@@ -1,6 +1,6 @@
 // cairn-audit's panel-width rule: an ExpandableRow's summary row (`.toolkit-expandable-row-summary`)
 // or its expanded panel (`.toolkit-expandable-row-panel`) must not clip its content at 390 or
-// 320, the family's composition floor (docs/internal/public-design-system.md), the same floor
+// 320, the family's composition floor (.claude/skills/cairn-following-public-design/references/public-design-system.md), the same floor
 // `viewport-overflow` enforces everywhere else.
 //
 // MEMBERSHIP: this is a hole `viewport-overflow` declines on purpose, not a duplicate of it.

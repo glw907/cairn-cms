@@ -13,7 +13,7 @@
 // by compiling. Dropping a member from `ContentRoutes` reds this file, which is the narrow
 // direction of the proof. The too-wide direction is carried by `check:surface`: the ten
 // media-janitorial actions must stay absent from the rendered `/sveltekit` shape in
-// `docs/internal/api-surface.md`.
+// `scripts/checks/api-surface.md`.
 //
 // This file imports the source module, not the package barrel, so it proves the SOURCE type.
 import { describe, it, expect } from 'vitest';

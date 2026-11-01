@@ -92,7 +92,7 @@ function readFontParity(): FontParityResult {
   }
 
   // The admin's theme shape: `data-theme` sits on a bare wrapper inside body
-  // (docs/internal/admin-design-system.md's load-bearing rule), which is where the reset's
+  // (.claude/skills/cairn-following-admin-design/references/admin-design-system.md's load-bearing rule), which is where the reset's
   // body-face declaration lands. A page with no such wrapper (a bespoke route rendering outside the
   // admin theme entirely) falls back to body, then the document root, so the rule still answers.
   const themeRoot =

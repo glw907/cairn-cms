@@ -1,11 +1,28 @@
 # The docs register
 
+## Contents
+
+- [The base guides](#the-base-guides)
+- [Drafting brief: developer docs](#drafting-brief-developer-docs)
+- [Drafting brief: editor docs](#drafting-brief-editor-docs)
+- [Names](#names)
+- [Visuals (every page that carries one)](#visuals-every-page-that-carries-one)
+- [The page anatomies](#the-page-anatomies)
+- [The tracks](#the-tracks)
+- [The reference (`docs/reference/`), a shared instrument](#the-reference-docsreference-a-shared-instrument)
+- [The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)](#the-front-door-docsreadmemd-docswhy-cairnmd-and-the-root-readmemd)
+- [When a Vale finding is wrong](#when-a-vale-finding-is-wrong)
+- [Deviations from the base guides](#deviations-from-the-base-guides)
+- [Sources](#sources)
+- [For reviewers grading against this standard](#for-reviewers-grading-against-this-standard)
+
+
 This document is the agent-facing standard for cairn's published documentation, its front door,
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
 2026-07-18 (spec: `docs/specs/2026-07-18-docs-register-standard-design.md`), and the
 specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
-([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
+([`2026-08-14-pass-d-target-manifest.md`](../../../../docs/internal/record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
 style-guide sync (2026-09-28, spec: `docs/specs/2026-09-28-style-guide-sync-design.md`)
 set every surface on a published base guide, wrote one drafting brief per guide as a short
@@ -48,7 +65,7 @@ follows there.
 | `CHANGELOG.md` | A developer reading what an upgrade changes | Google | Developer docs |
 | cairn.pub's own prose | A visitor to the rendered docs site | Google | Developer docs |
 | `docs/editors/` | Writes on a cairn site through `/admin` and never opens a terminal | Microsoft | Editor docs |
-| The admin interface's copy | An editor at work in `/admin` | Microsoft, UI text | None; `docs/internal/admin-design-system.md` states the voice |
+| The admin interface's copy | An editor at work in `/admin` | Microsoft, UI text | None; `.claude/skills/cairn-following-admin-design/references/admin-design-system.md` states the voice |
 | `CONTRIBUTING.md` and `docs/internal/` | A contributor working on cairn itself | None; unpublished and unlinted | None |
 
 The cairn docs voice, which the developer brief defines, governs every surface whose base guide
@@ -164,7 +181,7 @@ guide is silent.
   developer. A page may name an agent-specific file
   it must document, such as a file-tree entry, in one line that labels the tool and links the
   dedicated doc or reference ("`CLAUDE.md`: Claude Code's guidance file; see
-  [Guidance](../reference/guidance.md)").
+  [Guidance](../../../../docs/reference/guidance.md)").
 - **No published page cites Diátaxis**, its terminology, or its arm names (standing ruling, Geoff,
   2026-08-14). A reader does not need the taxonomy a page was planned under. Names such as task
   guide and reference entry belong to the writers and reviewers who plan a page, and a published
@@ -218,7 +235,7 @@ most common. It states one limit together with its consequence and hands the det
 reference entry that owns it.
 
 > A `robots.txt` file cannot block a fetch, so `'decline'` reaches only crawlers whose operators
-> honor it. The [`buildRobots`](../reference/delivery-data.md#buildrobots) entry records which
+> honor it. The [`buildRobots`](../../../../docs/reference/delivery-data.md#buildrobots) entry records which
 > operators promise that, which assistants exempt a user-initiated fetch, and why the table leaves
 > out search crawlers and any token without first-party documentation.
 
@@ -337,13 +354,13 @@ Google's check, "Does your introduction provide an accurate overview of the topi
 A drafter reads each exemplar whole and takes its anatomy and detail per step, never its wording.
 Voice comes only from this brief and the primary exemplar below (Geoff, 2026-09-30).
 
-- [`docs/extend/choose-an-ai-posture.md`](../extend/choose-an-ai-posture.md) is the primary
+- [`docs/extend/choose-an-ai-posture.md`](../../../../docs/extend/choose-an-ai-posture.md) is the primary
   exemplar, for both the task-guide anatomy (choose, set, pass, verify, resolve) and the voice
   (Geoff, 2026-09-28).
 - The why-cairn opener in "Voice" is the exemplar for the voice on the front door only.
-- [`exemplars/google-task-create-project.md`](./exemplars/google-task-create-project.md), a Google
+- [`exemplar-google-task-create-project.md`](./exemplar-google-task-create-project.md), a Google
   task page, is an exemplar for anatomy.
-- [`exemplars/google-concept-auth-overview.md`](./exemplars/google-concept-auth-overview.md), a
+- [`exemplar-google-concept-auth-overview.md`](./exemplar-google-concept-auth-overview.md), a
   Google concept page, is an exemplar for anatomy.
 - **Owner-ruled before and after pairs** (Geoff, 2026-10-07), kept as exemplars for the two
   habits the tellgrader flags. Read each pair for the move, never the wording.
@@ -548,7 +565,7 @@ A drafter reads each exemplar whole and takes its anatomy and detail per step, n
 Voice comes only from this brief and its primary exemplar, when the list below names one (Geoff,
 2026-09-30).
 
-- [`exemplars/microsoft-procedure-blobs-portal.md`](./exemplars/microsoft-procedure-blobs-portal.md),
+- [`exemplar-microsoft-procedure-blobs-portal.md`](./exemplar-microsoft-procedure-blobs-portal.md),
   a Microsoft Learn procedure page, is the exemplar for the anatomy of a UI-only procedure.
 - An in-repo editor exemplar joins this list when the editors stage redrafts its first page
   (Geoff, 2026-09-28).
@@ -637,6 +654,9 @@ cannot: which sense of "the package" or "the tool" is meant.
 | The scaffolder | `create-cairn-site` on first mention on a page, then the setup command | A code identifier is not a sentence subject twenty times on a non-developer page. |
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
+| The editing surface, on the editor track | the editor names the product and the person; the admin appears only where a screen string or a developer cross-reference needs it | Geoff, 2026-10-31. In the developer tracks "the admin" is the surface, and in `docs/editors/` "the editor" names the product and the person who uses it, so the editor track's vocabulary and this table agree. |
+| The `:::` content unit | block, in every track; the figure and an unregistered `:::` container are blocks too | Geoff, 2026-10-31. Retires "component" and "layout block" for this unit; "component" in the Svelte sense stays. "Fragment" keeps the include, and "code block" keeps the Markdown sense. The API names (`defineComponent`, `ComponentDef`, `rendering.components`) stay until the final engine batch renames them. Developer pages quote them and gloss the unit as a block until then. |
+| Who a stuck editor contacts | your site owner; "developer" only where code is involved | Geoff, 2026-10-31. A screen string that says "site developer" is quoted exactly. |
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |
 | Also named | the GitHub App, shortened to the App after its first mention on a page; the Worker | The capital A marks the short form as the GitHub App, never an app in general (Geoff, 2026-10-25). |
@@ -653,7 +673,7 @@ project, and "custom admin screen" stays the name for a whole admin route.
 
 | | Built-in (cairn ships it) | Custom (a site writes it) |
 |---|---|---|
-| **Admin component** | Lives in `src/lib/admin/`, exported at `@glw907/cairn-cms/admin`, beside `cairn-admin.css`. Rulebook: `docs/internal/admin-design-system.md`. Audit scope: the admin static scope. Guidance: the admin design system and `cairn-implementer`. | Lives under the site's `src/routes/admin` or `src/lib/admin/`, built on `@glw907/cairn-cms/admin-toolkit`. Rulebook: the ratified norms, DaisyUI-first. Audit scope: the admin static scope. Guidance: `cairn-admin-screens`, `cairn-extend`'s `daisyui-first.md`, and `cairn-extension-reviewer`. |
+| **Admin component** | Lives in `src/lib/admin/`, exported at `@glw907/cairn-cms/admin`, beside `cairn-admin.css`. Rulebook: `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`. Audit scope: the admin static scope. Guidance: the admin design system and `cairn-implementer`. | Lives under the site's `src/routes/admin` or `src/lib/admin/`, built on `@glw907/cairn-cms/admin-toolkit`. Rulebook: the ratified norms, DaisyUI-first. Audit scope: the admin static scope. Guidance: `cairn-admin-screens`, `cairn-extend`'s `daisyui-first.md`, and `cairn-extension-reviewer`. |
 | **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-public`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, `src/routes`, or `src/lib/components`, as a `defineComponent` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-public`'s custom recipe. |
 
 **The barrel rule.** `@glw907/cairn-cms/admin` exports only admin components.
@@ -700,9 +720,9 @@ so a sentence-initial capital still raises the same finding.
 ## Visuals (every page that carries one)
 
 The visual layer's governing decisions live in the 2026-08-15 sitting record
-([`2026-08-15-docs-visual-layer-rulings.md`](./record/2026-08-15-docs-visual-layer-rulings.md));
+([`2026-08-15-docs-visual-layer-rulings.md`](../../../../docs/internal/record/2026-08-15-docs-visual-layer-rulings.md));
 the per-track vocabulary and per-page contracts live in
-[`2026-08-15-docs-outlines-with-visuals.md`](./record/2026-08-15-docs-outlines-with-visuals.md).
+[`2026-08-15-docs-outlines-with-visuals.md`](../../../../docs/internal/record/2026-08-15-docs-outlines-with-visuals.md).
 This section carries the rules a writer needs at the page, so the records stay records.
 
 - **A visual earns its place or is absent.** Google's threshold governs: an image appears only
@@ -832,7 +852,7 @@ type adds what its template asks of the opening, as the following anatomies stat
 
 Every published page belongs to exactly one track, every track serves exactly one profile,
 with the one exception the scripter-or-agent profile below carves out of the reference arm
-(the full track profiles: [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)),
+(the full track profiles: [`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md)),
 and a page review grades the page against its profile. The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that
@@ -971,7 +991,7 @@ documented complaint.
 ### The scripter-or-agent profile
 
 This overturns the 2026-08-14 ruling, above and in
-[`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md), that every track
+[`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md), that every track
 serves exactly one profile and the reference arm has none (Geoff, 2026-09-21). Three pages
 carry this profile and no others do: `docs/reference/cli-cairn-exit-codes.md`,
 `docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No agent
@@ -1146,7 +1166,7 @@ no page today, and its "What cairn does instead" cell says so.
 ### Microsoft
 
 No departure from a Microsoft rule is recorded. This table also governs admin UI copy, whose
-voice `docs/internal/admin-design-system.md` states, so a departure in either surface lands here
+voice `.claude/skills/cairn-following-admin-design/references/admin-design-system.md` states, so a departure in either surface lands here
 as a row of the same shape as the Google table's.
 
 | Base rule | What cairn does instead | Evidence | Ruling |
@@ -1232,7 +1252,7 @@ The outline rule in both briefs cites one page of Google's Technical Writing Two
 - [Organizing large documents](https://developers.google.com/tech-writing/two/large-docs)
 
 The exemplar captures carry their source URLs and licenses in
-[`exemplars/README.md`](./exemplars/README.md).
+[`exemplar-sources.md`](./exemplar-sources.md).
 
 ## For reviewers grading against this standard
 

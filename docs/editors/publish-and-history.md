@@ -116,7 +116,7 @@ To delete an entry, follow these steps:
 3. Read the warning that you can't undo the deletion. If the entry has unpublished edits, the warning adds that they go with it.
 4. Select the delete button, which repeats the title, for example **Delete this post**.
 
-If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal.
+If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal, and so does a fragment that another editor's unpublished edits include. In that case, ask them to publish or discard their edits first. Renaming a fragment follows the same rule.
 
 On a list, the trash button beside an entry deletes it at once, with no confirmation window, unless other entries link to it. To get the confirmation, delete from the entry's editing screen.
 

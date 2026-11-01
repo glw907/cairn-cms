@@ -113,9 +113,9 @@ To suppress a deliberate finding, put the directive on the line before it, with 
 reason. A directive with no reason, or one that silences nothing, is itself an unsuppressible
 `suppression` error. A suppressed finding still counts on the report's last line.
 
-```svelte
-<!-- cairn-audit-disable-next-line stock-default-hazards -- matches the public site's tag style -->
-<span class="badge badge-ghost">Archived</span>
+```text
+<!-- cairn-audit-disable-next-line <rule id> -- <reason> -->
+<the element the finding names>
 ```
 
 ## The rendered pass

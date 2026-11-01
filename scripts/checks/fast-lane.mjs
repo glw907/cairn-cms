@@ -26,7 +26,11 @@ export function fastLaneLines({ status, stdout }) {
   return { lines };
 }
 
-/** Run the classifier for a range and capture its stdout. */
+/**
+ * Run the classifier for a range and capture its stdout.
+ * @param {string} range
+ * @returns {{ status: number | null, stdout: string }}
+ */
 function classifyRange(range) {
   const run = spawnSync(process.execPath, [CLASSIFIER, '--fast', '--range', range], {
     encoding: 'utf8',
@@ -35,7 +39,11 @@ function classifyRange(range) {
   return { status: run.status, stdout: run.stdout ?? '' };
 }
 
-/** Run one leg through bash with the terminal attached, returning its exit status. */
+/**
+ * Run one leg through bash with the terminal attached, returning its exit status.
+ * @param {string} line
+ * @returns {number}
+ */
 function runLeg(line) {
   console.error(`fast-lane: ${line}`);
   return spawnSync('bash', ['-c', line], { stdio: 'inherit' }).status ?? 1;

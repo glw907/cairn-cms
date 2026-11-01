@@ -97,7 +97,11 @@ const CLAUDE_MD_LIMIT = 200;
 const SKILL_MD_LIMIT = 500;
 const CONTENTS_THRESHOLD = 100;
 
-/** Whether a long file opens with a contents list: the word, or a list of in-page links. */
+/**
+ * Whether a long file opens with a contents list: the word, or a list of in-page links.
+ * @param {string[]} lines
+ * @returns {boolean}
+ */
 function opensWithContents(lines) {
   return lines.slice(0, 25).some((line) => /contents/i.test(line) || /^\s*[-*]\s+\[.*\]\(#/.test(line));
 }
@@ -149,7 +153,12 @@ export function checkSkillForm(root) {
   return problems;
 }
 
-/** Every markdown file under a skill directory, with its path from that directory and its depth. */
+/**
+ * Every markdown file under a skill directory, with its path from that directory and its depth.
+ * @param {string} dir
+ * @param {string} base
+ * @returns {{ abs: string, rel: string, depth: number }[]}
+ */
 function markdownFiles(dir, base) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const abs = join(dir, entry.name);

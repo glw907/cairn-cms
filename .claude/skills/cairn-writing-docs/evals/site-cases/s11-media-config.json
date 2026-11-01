@@ -4,7 +4,7 @@
   "fixture": "site",
   "seam": "AssetConfig, media",
   "bar": 4,
-  "prompt": "Editors keep uploading huge photos. Limit uploads to 8 MiB and to JPEG, PNG, and WebP. Also serve the site's images from /images instead of /media, with web addresses that don't include the original file name. Published pages and the editor's preview must keep showing images, and the image already in our library must keep working. It's done when the site type-checks and the image addresses come out under /images.",
+  "prompt": "Editors keep uploading huge photos. Limit uploads to 8 MiB and to JPEG, PNG, and WebP. Also serve the site's images from /images instead of /media, with web addresses that don't include the original file name. Published pages and the editor's preview must keep showing images, and the image already in our library must keep working. It's done when the site type-checks, the image addresses come out under /images, and the site has a route that serves images at those addresses.",
   "setup": "setups/site/s11-media-config.mjs",
   "knownBad": "setups/site/s11-media-config-bad.mjs",
   "maxTurns": 60,

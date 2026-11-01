@@ -4,13 +4,13 @@
   "fixture": "site",
   "seam": "defineConcept, defineFieldset, the adapter's content map, createSiteIndexes, the manifest plugin",
   "bar": 4,
-  "prompt": "The trail crew runs events and wants to manage them in the admin the way they manage posts. Add an Events section where an editor can create an event with a title, a start date, an optional end date, a location, an optional capacity (a whole number), and an optional signup link. An end date earlier than the start date must be refused with a message the editor can read. Two events already exist as markdown files in src/content/events and should show in the admin list. The new button should read \"New event\". Finish when the site type-checks and builds.",
+  "prompt": "The trail crew runs events and wants to manage them in the admin the way they manage posts. Add an Events section where an editor can create an event with a title, a start date, an optional end date, an optional location, an optional capacity (a whole number), and an optional signup link. An end date earlier than the start date must be refused with a message the editor can read. Two events already exist as markdown files in src/content/events and should show in the admin list. The new button should read \"New event\". Finish when the site type-checks and builds.",
   "setup": "setups/site/s07-new-concept.mjs",
   "knownBad": "setups/site/s07-new-concept-bad.mjs",
   "maxTurns": 60,
   "source": [
     "src/lib/content/concepts.ts:208 (singular falls back to label, so an omitted singular reads \"New Events\")",
-    "src/lib/content/fieldset.ts:33-38,483-485 (refine returns a field-keyed message map, run after the field checks)",
+    "src/lib/content/fieldset.ts:20-27,37-46,461-496 (refine returns a field-keyed message map after the field checks; a behavior entry's validate(value, siblings) is the per-field cross-field alternative)",
     "src/lib/content/fields.ts:145-180 (the field constructors: number, url, date, text)",
     "src/lib/delivery/site-indexes.ts:57 (createSiteIndexes throws for a concept with no glob)",
     "src/lib/content/manifest.ts:400 (a committed manifest that drifts from the corpus fails the build; regenerate with npx cairn-manifest)",
@@ -19,7 +19,7 @@
   "expectations": [
     "The adapter's content map gains an events concept with dir src/content/events, a plural label, singular 'event', and a defineFieldset of title, date, endDate, location, capacity (number), and signupUrl (url).",
     "Only title and date are required; endDate, capacity, location, and signupUrl are optional.",
-    "A refine on the fieldset returns a readable sentence keyed to endDate when the end date is before the start date.",
+    "A refine on the fieldset (or a behavior validate on endDate) returns a readable sentence keyed to endDate when the end date is before the start date.",
     "The content module globs src/content/events/*.md with query '?raw', import 'default', and eager true, and passes it to createSiteIndexes under events.",
     "The cairnManifest plugin's content option in vite.config.ts names events with the same pattern.",
     "The committed manifest is regenerated with cairn-manifest and holds rows for the two seeded events.",
@@ -28,7 +28,7 @@
   "checks": [
     { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "events:\\s*defineConcept" },
     { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "singular:\\s*['\"]event['\"]" },
-    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "refine" },
+    { "type": "contains", "path": "src/theme/cairn.config.ts", "regex": "refine|behavior\\s*:[\\s\\S]*endDate\\s*:\\s*\\{[\\s\\S]*validate" },
     { "type": "contains", "path": "src/chassis", "regex": "src/content/events/\\*\\.md['\"],\\s*\\{[^}]*eager:\\s*true" },
     { "type": "contains", "path": "src/chassis", "regex": "events:\\s*eventsRaw|events:\\s*\\w+" },
     { "type": "contains", "path": "vite.config.ts", "regex": "events:\\s*['\"]/src/content/events/\\*\\.md['\"]" },

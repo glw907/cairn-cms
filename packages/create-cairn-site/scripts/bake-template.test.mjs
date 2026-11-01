@@ -216,7 +216,12 @@ test('the baked README teaches plain npm run dev and never mentions CAIRN_DEV_BA
 // one of the fields it expects to remove, rather than silently doing nothing.
 test('pruneShowcaseOnlyPackageFields throws naming a missing expected script', () => {
   const pkg = {
-    scripts: { dev: 'vite dev', 'test:e2e': 'playwright test', 'design:probe': 'node scripts/design-probe.mjs' },
+    scripts: {
+      dev: 'vite dev',
+      'test:e2e': 'playwright test',
+      'design:probe': 'node scripts/design-probe.mjs',
+      'check:cairn:rendered': 'cairn-audit --rendered',
+    },
     devDependencies: { '@playwright/test': '^1.60.0', '@axe-core/playwright': '^4.10.0' },
   };
   // pretest:e2e is missing from scripts.
@@ -230,6 +235,7 @@ test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDepende
       'pretest:e2e': 'npm --prefix ../.. run package',
       'test:e2e': 'playwright test',
       'design:probe': 'node scripts/design-probe.mjs',
+      'check:cairn:rendered': 'cairn-audit --rendered',
     },
     devDependencies: { '@playwright/test': '^1.60.0' },
   };

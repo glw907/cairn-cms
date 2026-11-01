@@ -29,7 +29,11 @@ export async function feedItemsFrom({
   resolveMedia,
 }: FeedSource): Promise<FeedItem[]> {
   const posts = site.concept('posts');
-  if (!posts) return [];
+  if (!posts) {
+    throw new Error(
+      "feedItemsFrom: the site has no 'posts' concept. Declare a 'posts' concept in the adapter, or remove the feed routes and chassis/feed.ts.",
+    );
+  }
   const toPermalink = createLinkResolver(site);
   const resolve = (ref: Parameters<typeof toPermalink>[0]) => origin + toPermalink(ref);
   const resolveFragment = createFragmentResolver(site);

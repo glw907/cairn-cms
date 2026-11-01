@@ -29,7 +29,8 @@ the mirror token. After #170 merges the sequence is: the media and publish pass,
 final engine batch (`BACKLOG.md` lists each item's pass), the one release, then each site's migration.
 The release needs `create-cairn-site` published first (`BACKLOG.md` #195). Prerelease `0.98.1-rc.2` is on
 npm `next`; `latest` is `0.98.0`. Executor `cairn-cms-agent-first-4`, session `82fe4c13`, under
-`conductor-cairn-cms`; its ledger is `~/.local/state/cairn-agent-first/ledger.md`.
+`conductor-cairn-cms`; its ledger is `~/.local/state/cairn-agent-first/ledger.md`. The scaffold template
+pass (`cairn-cms-scaffold-template`, session `e4573501`, PR #171) is `ordinary` and merges itself.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

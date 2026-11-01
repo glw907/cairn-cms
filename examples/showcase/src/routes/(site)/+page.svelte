@@ -5,8 +5,8 @@
      the markup, a scoped `<style>` only for the lead card, the index grid, and the hairlines a utility
      cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
-  import { page } from '$app/state';
   import type { PageData } from './$types';
+  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
   import { formatDate } from '#chassis/date.js';
   import EntryRow from '#theme/components/EntryRow.svelte';
 
@@ -41,9 +41,7 @@
   const showFeatured = $derived(selected === '' && Boolean(data.featured));
 </script>
 
-<svelte:head>
-  <title>{page.data.siteName}</title>
-</svelte:head>
+<CairnHead seo={data.seo} />
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
   <h1

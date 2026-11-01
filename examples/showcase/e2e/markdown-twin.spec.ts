@@ -50,3 +50,23 @@ test('a noindex entry emits no alternate markdown link', async ({ page }) => {
   expect(response?.status()).toBe(200);
   await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveCount(0);
 });
+
+test('the sitemap lists the home and leaves out a noindex entry', async ({ request }) => {
+  const res = await request.get('/sitemap.xml');
+  expect(res.status()).toBe(200);
+  const xml = await res.text();
+  expect(xml).toContain('<loc>https://showcase.test/</loc>');
+  // src/content/pages/about.md declares `robots: noindex`, so it is not advertised.
+  expect(xml).not.toContain('/about');
+});
+
+test('the home page carries a full head', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /\S/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    'https://showcase.test/',
+  );
+  await expect(page.locator('meta[property="og:title"]')).toHaveCount(1);
+  await expect(page.locator('title')).toHaveCount(1);
+});

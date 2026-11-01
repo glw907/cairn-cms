@@ -205,6 +205,7 @@ describe('installGuidance removal', () => {
       manifest(dir, [OLD_SKILL]);
       const report = await installGuidance(dir, source());
       expect(report.removed).toEqual([OLD_SKILL]);
+      expect(report.origLeft).toEqual([`${OLD_SKILL}.orig`]);
       expect(readFileSync(join(dir, `${OLD_SKILL}.orig`), 'utf8')).toBe('earlier edit');
       expect(readdirSync(join(dir, '.claude/skills/old'))).toEqual(['SKILL.md.orig']);
     }));
@@ -222,6 +223,20 @@ describe('installGuidance removal', () => {
       expect(report.removed).toEqual([OLD_REF]);
       expect(manifestLines(dir)).not.toContain(OLD_SKILL);
       expect(existsSync(join(dir, `${MANIFEST_DEST}.tmp`))).toBe(false);
+    }));
+
+  it('replaces a symlink planted at the temp MANIFEST path instead of following it', () =>
+    withDir(async (dir) => {
+      const outside = tmpDir();
+      try {
+        mkdirSync(join(dir, '.claude/cairn'), { recursive: true });
+        symlinkSync(join(outside, 'victim'), join(dir, `${MANIFEST_DEST}.tmp`));
+        await installGuidance(dir, source());
+        expect(existsSync(join(outside, 'victim'))).toBe(false);
+        expect(lstatSync(join(dir, MANIFEST_DEST)).isFile()).toBe(true);
+      } finally {
+        rmSync(outside, { recursive: true, force: true });
+      }
     }));
 
   it('is a no-op on rerun once everything removable is gone', () =>

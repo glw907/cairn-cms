@@ -116,6 +116,9 @@ async function main(): Promise<void> {
     for (const path of report.removed) {
       console.log(`${args.dryRun ? 'would remove' : 'removed'} (no longer shipped): ${path}`);
     }
+    for (const path of report.origLeft) {
+      console.log(`left ${path}: the copy of an edit you made; read it, then delete it by hand`);
+    }
     for (const dir of report.emptiedDirs) console.log(`removed empty directory ${dir}`);
     for (const { path, reason } of report.kept) {
       const why =

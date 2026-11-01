@@ -193,6 +193,8 @@ export function profileFor(relPath) {
     path === 'README.md' ||
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
+    path === 'docs/architecture.md' ||
+    path === 'guidance-hashes.json' ||
     path === 'examples/showcase/README.md' ||
     path === 'MIGRATION-NOTES.md' ||
     /^docs\/(?:admin|editors)\/.+\.md$/.test(path) ||
@@ -476,8 +478,10 @@ export const SCAN_ROOTS = [
   'CHANGELOG.md',
   'MIGRATION-NOTES.md',
   'schema',
+  'guidance-hashes.json',
   'docs/README.md',
   'docs/why-cairn.md',
+  'docs/architecture.md',
   'docs/admin',
   'docs/editors',
   '.claude/skills/cairn-writing-docs/references/docs-register.md',

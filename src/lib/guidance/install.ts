@@ -240,7 +240,7 @@ export function flattenGuidanceTree(source: GuidanceSource): Record<string, stri
  * True when a path names something inside `.claude/` without leaving a working directory: it is
  *  relative, and normalizing it leaves it under `.claude`. Applied both to a destination before
  *  any write and to a line read back out of a previous `MANIFEST`, which is attacker-editable and
- *  whose lines are printed as removable.
+ *  whose lines `check` reports as removable.
  */
 export function isGuidancePath(destPath: string): boolean {
   if (isAbsolute(destPath)) return false;
@@ -363,6 +363,8 @@ export interface InstallReport {
    *  symlink).
    */
   kept: { path: string; reason: 'edited' | 'unrecognized' | 'not-a-file' }[];
+  /** `.orig` recovery copies left beside a removed file, which stay for the developer to read. */
+  origLeft: string[];
   /** Directories emptied by a removal and deleted with it. */
   emptiedDirs: string[];
   /** Old-name skill directories found with no MANIFEST to authorize their removal. */
@@ -398,6 +400,7 @@ export async function installGuidance(
     writeErrors: [],
     removed: [],
     kept: [],
+    origLeft: [],
     emptiedDirs: [],
     unmanaged: [],
     sourceRefused: [...source.refused],
@@ -462,6 +465,8 @@ export async function installGuidance(
   await mkdir(dirname(manifestAbs), { recursive: true });
   const manifestLines = [...new Set([...writtenPaths, ...keptPaths])].sort();
   const tempAbs = `${manifestAbs}.tmp`;
+  // A crash can leave a temp file, and a planted symlink there must be replaced, not followed.
+  if ((await lstatOrNull(tempAbs)) !== null) await unlink(tempAbs);
   await writeWithoutFollowing(tempAbs, `${manifestLines.join('\n')}\n`, OVERWRITE_FLAGS);
   await rename(tempAbs, manifestAbs);
 
@@ -540,6 +545,7 @@ async function retireUnshipped(args: {
       if (!dryRun) await unlink(abs);
       removedAbs.push(abs);
       report.removed.push(path);
+      if ((await lstatOrNull(`${abs}.orig`))?.isFile()) report.origLeft.push(`${path}.orig`);
     }
   }
 

@@ -6,7 +6,8 @@
 
 /**
  * The refusals that genuinely navigate rather than answering the form that posted: an expired
- *  sign-in link, publish-all's four outcomes, and the one deliberate exception to the
+ *  sign-in link, publish-all's refusals (`nothing_to_publish`, `publish_conflict`,
+ *  `address_collision`), and the one deliberate exception to the
  *  "publish-all only ever redirects to its four outcomes" rule, `publish_failed`, for the
  *  unexpected (non-conflict) commit error that would otherwise reach `viewAction`'s generic
  *  `fail(500)` and be discarded when `/admin`'s load redirects away before it can render

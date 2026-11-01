@@ -388,9 +388,10 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // asset's slug (server-authoritative `row.slug`): a replace changes only the content hash, so the
     // name in every reference stays the same (the new bytes resolve by hash regardless of the slug).
     const newToken = replacementToken(row.slug, record.hash);
-    const contentManifest = await ctx.readManifest(backend);
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<RepointPlacement>({
         backend,
         concepts: runtime.concepts,
@@ -493,9 +494,10 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
 
     // Plan the fill. The planner runs strict, so an unverifiable branch read throws out of here; catch
     // it and fail closed, the same posture replace and delete take.
-    const contentManifest = await ctx.readManifest(backend);
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<AltPlacement>({
         backend,
         concepts: runtime.concepts,
@@ -577,9 +579,10 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
 
     // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an
     // unverifiable branch read throws; catch it and fail closed (commit nothing).
-    const contentManifest = await ctx.readManifest(backend);
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<AltPlacement>({
         backend,
         concepts: runtime.concepts,
@@ -598,7 +601,8 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     if (changed.length === 0) throw redirect(303, '/admin/media?altPropagated=1');
 
     const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
-    changes.push(manifestChangeFor(contentManifest, changed)!);
+    const contentChange = manifestChangeFor(contentManifest, changed);
+    if (contentChange) changes.push(contentChange);
     try {
       await backend.commit(
         backend.defaultBranch,

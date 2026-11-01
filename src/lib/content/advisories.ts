@@ -26,7 +26,7 @@ interface AdvisoryAction {
 export interface AdvisoryNotice {
   /** The notice kind, e.g. "address-collision". */
   kind: string;
-  /** The advisory severity; warn-and-allow, never a gate. */
+  /** The advisory severity; the edit page warns, and publish refuses on the same predicate. */
   severity: 'warn';
   /** The notice text shown to the editor. */
   message: string;

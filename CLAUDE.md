@@ -44,7 +44,7 @@ before a pass builds on it.
 - `cairn-following-admin-design`: the admin design system, behind a rule on `src/lib/admin`.
 - `cairn-following-public-design`: the public theme, behind a rule on `src/lib/public`.
 - `cairn-running-passes`, `cairn-releasing`: pass mechanics and the release procedure.
-- `cairn-docs`: the docs procedure, with the register.
+- `cairn-writing-docs`: the docs procedure, with the register.
 - Agents: `cairn-implementer` (one task in its own worktree), `engine-triage` (consultation briefs),
   `docs-fact-checker`.
 - `.claude/rules/` holds the rules that load by path.
@@ -53,13 +53,13 @@ before a pass builds on it.
 
 Every pass updates the docs for what it changed. A public-API change is not done until its reference
 page matches: `check:reference` fails on an undocumented export, `check:options` on a public option
-member with no row in the option map, and `check:package` on the entry points. The published docs are
+member with no doc comment, `check:tiers` on an export with no tier tag, and `check:package` on the entry points. The published docs are
 five tracks under `docs/`, one reader each: `admin/`, `editors/`, `extend/`, `claude-code/`, and
 `reference/` (one page per export subpath), plus `why-cairn.md` for an evaluator. A page serves one
 track or it is two pages.
 
 - A pass that changes a public behavior edits the affected pages in the same PR, checked by
-  `npm run check:docs-gate`. Load the `cairn-docs` skill for that edit.
+  `npm run check:docs-gate`. Load the `cairn-writing-docs` skill for that edit.
 - A deficiency found on a published page is fixed on the page in the same pass.
 - `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are maintained every pass.
 - A friction finding goes to `BACKLOG.md` through `/log-issue`, or is fixed in the pass that meets it.
@@ -86,7 +86,7 @@ vocabulary, not a bare `console` call, and updates the table. `createLogger` is 
   documented.
 - Developer docs follow the Google Developer Documentation Style Guide, enforced by Vale over
   `docs/**/*.md`. `docs/editors/**` follows Microsoft's plainer voice. Draft each page from its brief in
-  the `cairn-docs` skill's `references/docs-register.md`, and use the sanctioned names in its "Names"
+  the `cairn-writing-docs` skill's `references/docs-register.md`, and use the sanctioned names in its "Names"
   section.
 - Tests live in `src/tests/{unit,integration,component}/`; the Vitest config globs only those.
 

@@ -1,0 +1,172 @@
+{
+  "id": "S15-adopt-and-migrate",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "the adoption path",
+  "bar": 4,
+  "prompt": "This is a plain SvelteKit app on Cloudflare. The cairn engine package is already in node_modules (you can't reach the npm registry from here), but none of cairn's setup is done yet. Add cairn to it and move our old Jekyll posts from old-content/posts into it as cairn posts. Keep each post's title, its date, its summary as the description, and its tags, and keep the unpublished post hidden. Don't set up the admin, GitHub, or sign-in yet, and when you're done tell me what's still a placeholder or left to wire before it can go live. It's done when the site type-checks, the production build passes with every migrated post valid, and each post is served at its own address.",
+  "setup": "setups/site/s15-adopt-and-migrate.mjs",
+  "knownBad": "setups/site/s15-adopt-and-migrate-bad.mjs",
+  "maxTurns": 70,
+  "source": [
+    "src/lib/vite/internal.ts:57,263 cairnManifest: the committed manifest defaults to /src/content/.cairn/index.json and a build on a stale one fails; the plugin's content option maps each concept to its glob",
+    "src/lib/delivery/site-indexes.ts:34,42 createSiteIndexes takes one literal glob per concept and validates every non-draft entry unless validate is false",
+    "src/lib/content/frontmatter.ts:392 parseMarkdown hands an unquoted YAML timestamp over as a Date; a date field reads the Date's UTC day, so 2024-03-12 20:00:00 -08:00 is 2024-03-13",
+    "src/lib/content/manifest.ts:110 and src/lib/delivery/manifest.ts:40: an entry is a draft only when its frontmatter holds the boolean draft: true (published: false reads as published)",
+    "src/lib/content/ids.ts: an entry id is lowercase letters and digits joined by single hyphens",
+    "docs/extend/add-cairn-to-a-sveltekit-app.md (Install the engine and render an entry: ssr.noExternal, the ambient import, site config and adapter, content module, the #lib/* imports map, the [...path] route), docs/extend/migrate-existing-content.md, docs/reference/supported-toolchain.md",
+    "setups/site/s15-adopt-and-migrate.mjs: the engine stays declared and installed (a case run cannot reach the registry), so the install step is not exercised; the unquoted timestamp's UTC day is 2024-03-13 against a filename day of 2024-03-12 (checked with parseMarkdown)"
+  ],
+  "expectations": [
+    "vite.config.ts gains the cairnManifest plugin (configModule and a posts content glob) and ssr.noExternal for @glw907/cairn-cms; src/app.d.ts imports @glw907/cairn-cms/ambient.",
+    "A site config and an adapter module declare a posts concept whose fields include title, date, description, a boolean draft, and a multiselect marked taxonomy: true, so the migrated keys survive the first admin save.",
+    "A content module passes the posts glob to createSiteIndexes with validation left on, and a prerendered [...path] route built on createPublicRoutes serves each post at /posts/<slug>.",
+    "The four old files become src/content/posts/2023-11-02-first-snow.md, 2024-01-19-pack-list.md, 2024-03-12-winter-gear-guide.md, and 2024-04-02-draft-trip.md: lowercase hyphenated ids, no layout key, the summary as description, tags as slugs, the unpublished post as draft: true, and the winter post dated 2024-03-12 and not 2024-03-13.",
+    "The committed manifest (src/content/.cairn/index.json and site-facts.json) is written by cairn-manifest after the migration, and npm run build passes."
+  ],
+  "checks": [
+    {
+      "type": "changed",
+      "path": "src/content/posts/2023-11-02-first-snow.md",
+      "source": "src/lib/content/ids.ts; docs/extend/migrate-existing-content.md (Name each file by its id)"
+    },
+    {
+      "type": "changed",
+      "path": "src/content/posts/2024-01-19-pack-list.md",
+      "source": "docs/extend/migrate-existing-content.md (Reduce each stem to the id shape)"
+    },
+    {
+      "type": "changed",
+      "path": "src/content/posts/2024-03-12-winter-gear-guide.md",
+      "source": "src/lib/content/frontmatter.ts:392; docs/extend/migrate-existing-content.md (Write dates as YYYY-MM-DD): the UTC day of the timestamp is 2024-03-13"
+    },
+    {
+      "type": "changed",
+      "path": "src/content/posts/2024-04-02-draft-trip.md",
+      "source": "docs/extend/migrate-existing-content.md (Mark drafts with draft: true)"
+    },
+    {
+      "type": "contains",
+      "path": "src/content/posts/2024-04-02-draft-trip.md",
+      "regex": "^draft:\\s*true\\s*$",
+      "source": "src/lib/content/manifest.ts:110"
+    },
+    {
+      "type": "contains",
+      "path": "src/content/posts/2024-03-12-winter-gear-guide.md",
+      "regex": "^date:\\s*\"?2024-03-12\"?\\s*$",
+      "source": "src/lib/content/frontmatter.ts:392"
+    },
+    {
+      "type": "contains",
+      "path": "src/content/posts/2024-01-19-pack-list.md",
+      "regex": "^description:\\s*\"?The list we start every trip from",
+      "source": "docs/extend/migrate-existing-content.md (Declare or drop every old key)"
+    },
+    {
+      "type": "contains",
+      "path": "src/content/posts/2024-03-12-winter-gear-guide.md",
+      "regex": "^tags:(?:[^\\n]*\\n[ \\t]+-)*[^\\n]*\\btravel-notes\\b",
+      "source": "docs/extend/migrate-existing-content.md (Map tags to the vocabulary): the slug in a flow list or a block list"
+    },
+    {
+      "type": "absent",
+      "path": "src/content/posts",
+      "regex": "^(layout|published):",
+      "source": "docs/extend/migrate-existing-content.md (Declare or drop every old key)"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "draft\\s*:\\s*fields\\.boolean",
+      "source": "docs/extend/migrate-existing-content.md (Mark drafts with draft: true)"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "taxonomy\\s*:\\s*true",
+      "source": "docs/extend/define-an-adapter-and-schema.md (Mark the tag field)"
+    },
+    {
+      "type": "contains",
+      "path": "vite.config.ts",
+      "regex": "cairnManifest\\(",
+      "source": "src/lib/vite/internal.ts:263"
+    },
+    {
+      "type": "contains",
+      "path": "vite.config.ts",
+      "regex": "noExternal\\s*:\\s*\\[[^\\]]*@glw907/cairn-cms",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Install the engine and let Vite compile it)"
+    },
+    {
+      "type": "contains",
+      "path": "src/app.d.ts",
+      "text": "@glw907/cairn-cms/ambient",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Install the engine and let Vite compile it, step 3)"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "createSiteIndexes\\(",
+      "source": "src/lib/delivery/site-indexes.ts:42"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "regex": "validate\\s*:\\s*false",
+      "source": "src/lib/delivery/site-indexes.ts:34; docs/extend/migrate-existing-content.md (Run the build as the migration check)"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "regex": "\\$lib/",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Render the entry): SvelteKit 3 throws on a $lib import"
+    },
+    {
+      "type": "changed",
+      "path": "src/content/.cairn/index.json",
+      "source": "src/lib/vite/internal.ts:57; docs/reference/cli-cairn-manifest.md"
+    },
+    {
+      "type": "changed",
+      "path": "src/content/.cairn/site-facts.json",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Index the content and commit its manifest, step 3)"
+    },
+    {
+      "type": "npm",
+      "script": "build"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The concept declares draft as a boolean field and its tags as a multiselect marked taxonomy: true, and the migrated entries carry only keys the concept declares (title, date, description, draft, tags), so no key is deleted by the first admin save.",
+      "source": "docs/extend/migrate-existing-content.md (Declare or drop every old key; Mark drafts with draft: true)"
+    },
+    {
+      "n": 2,
+      "text": "The winter post was dated from its filename (2024-03-12), or the session otherwise handled the timestamp's UTC shift; it did not take the Date's UTC day, which is 2024-03-13, and the migrated file is not named 2024-03-13-...",
+      "source": "src/lib/content/frontmatter.ts:392; docs/extend/migrate-existing-content.md (Write dates as YYYY-MM-DD)"
+    },
+    {
+      "n": 3,
+      "text": "The session wrote the committed manifest with cairn-manifest after the migration, then ran the production build as the check; the tool log shows both, and validate: false was never set to get a build through.",
+      "source": "docs/extend/migrate-existing-content.md (Run the build as the migration check)"
+    },
+    {
+      "n": 4,
+      "text": "The site code imports its own modules through the #lib/* subpath import with a package.json imports map, or through relative paths, and nowhere through $lib.",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Render the entry)"
+    },
+    {
+      "n": 5,
+      "text": "The reply states that the admin sign-in path is not wired: it names at least the admin routes or the sign-in, and the GitHub App backend, as still to do, and says the adapter values are placeholders.",
+      "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Mount the admin on the dev backend; Move the site to production)"
+    }
+  ]
+}

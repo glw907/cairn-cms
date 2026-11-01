@@ -388,7 +388,10 @@ export function serializeMarkdown(frontmatter: object, body: string): string {
   return matter.stringify(body, frontmatter);
 }
 
-/** Parse a markdown file into its frontmatter and body: the read-side inverse of serialize. */
+/**
+ * Parse a markdown file into its frontmatter and body: the read-side inverse of serialize.
+ * @public
+ */
 export function parseMarkdown(source: string): {
   frontmatter: Record<string, unknown>;
   body: string;

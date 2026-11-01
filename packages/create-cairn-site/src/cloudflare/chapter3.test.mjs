@@ -1639,7 +1639,7 @@ test('runChapter3: a null build_outcome at a stopped status keeps polling rather
   const siteId = 'builds-null-outcome-site-abc123';
   await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
-  // Cloudflare's write ordering (docs/internal/2026-08-12-t4c-builds-spike.md) writes
+  // Cloudflare's write ordering (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-12-t4c-builds-spike.md) writes
   // `status: "stopped"` before `build_outcome`, so a real poll can observe exactly this
   // combination for a tick. A poll that stops on `status` alone reads this as a finished build
   // and, downstream, as a success; this proves it keeps polling instead.

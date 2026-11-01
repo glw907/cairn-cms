@@ -12,12 +12,21 @@ import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 import { env, waitUntil } from './workers-env.js';
 
-/** The `/healthz` payload. */
+/**
+ * The `/healthz` payload.
+ * @public
+ */
 export interface HealthData {
   /** The signing check's result, and the live token check's when the request asked for one. */
   ok: boolean;
   checks: {
-    /** The offline signing self-test, with the public key's `SHA256:` fingerprint when it passes. */
+    /**
+     * The offline signing self-test, with the public key's `SHA256:` fingerprint when it passes
+     * (the fingerprint GitHub shows in the App's settings, omitted when it cannot be computed). A
+     * failure's `detail` is one of three fixed strings, never the raw crypto error:
+     * `GITHUB_APP_PRIVATE_KEY_B64 is not configured`, `key import or sign failed`, or
+     * `malformed JWT`. A backend that is not a GitHub App reports `{ ok: true, detail: 'not-applicable' }`.
+     */
     githubAppSigning: { ok: boolean; detail?: string; fingerprint?: string };
     /**
      * The live installation-token mint, present only on a `?live=1` request that had a GitHub App
@@ -186,6 +195,14 @@ function memoizedSigningSelfTest(appId: string, key: string): ReturnType<typeof 
  *
  * A throw from the check itself logs `health.failed` with the error's message and rethrows, so the
  * anonymous route can answer its fixed 503 detail while the operator still sees what broke.
+ *
+ * The live mint skips the publishing path's token cache, logs a failure as `github.unreachable`
+ * with `scope: 'health'`, and is bounded per isolate: parallel requests share one mint, whose
+ * verdict answers every live request for the next 60 seconds, and each caller waits at most
+ * 5.5 seconds (the mint's 5-second abort plus a 500 ms grace) before reading `unreachable`. The
+ * bound is per isolate, not per site, and GitHub's secondary rate limits are shared with
+ * publishing. Mount the route outside `/admin`, so the guard does not gate it.
+ * @scaffold
  */
 export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
   try {

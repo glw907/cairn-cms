@@ -16,7 +16,44 @@
         `pre.shiki` and `.cairn-tok-*` binding, the structural `.table-scroll` pair, and the
         `cairn-focus-ring` class a site's markup applies.
      4. One `@source` line over the engine's public component directory, so the utilities those
-        components use compile in the site's sheet. */
+        components use compile in the site's sheet.
+
+   The contract is a floor, never a ceiling: it names what a theme provides so cairn's parts
+   render, and never limits what a theme adds, replaces, or skips. A key enters this sheet only
+   when an engine or chassis file reads it and it carries no site-owned design choice, and the
+   sheet never redefines a Tailwind stock key such as `--leading-tight` or `--font-mono`. Site-owned
+   keys a theme sets itself, in each daisyUI theme block: the styleguide call-to-action set
+   (`--cairn-cta-bg`, `-content`, `-border`, `-btn-bg`, `-btn-content`) and `--cairn-caption-tracking`
+   (the header navigation links' letter-spacing, set in `:root`). A key the chassis reads behind a
+   fallback, such as `--tag-filter-radius`, is an optional override and never a hole.
+
+   Placement of a per-scheme value: write it in that scheme's daisyUI block, and in both blocks
+   when both schemes need it, since a value set in one never reaches the other (the scheme without
+   it falls back to the derived default here, or to nothing for a site-owned key). A value with a
+   comma, such as `--cairn-shadow`, does not survive daisyUI's option parser; write it in that
+   scheme's `:root` block. The two `@theme` colors resolve at `:root`, so a nested theme region
+   sets them itself. Unlayered `:root` values beat this sheet's layered defaults, so a stale copy
+   of the old chassis `tokens.css` cancels the ink derivation silently (the audit's
+   `theme-conformance` rule reports it). A per-scheme `:root` set such as the CTA keys needs its
+   dark values in both dark blocks, `@media (prefers-color-scheme: dark)` guarded by
+   `:root:not([data-theme])` and the explicit `:root[data-theme="<dark name>"]`, because the first
+   applies with no visitor choice on a dark system and the second after a toggle.
+
+   Derived defaults: each status ink is the status fill mixed 50 percent toward the body ink;
+   `--color-muted` is an opaque 80 percent mix of the body ink over `base-100`; `--cairn-shadow`
+   mixes `black`. Some stock daisyUI themes fail AA with a derived ink, so run
+   `npx cairn-audit --rule public-literals --rule theme-conformance --rule theme-contrast` before
+   calling a theme finished, and tune the ink in the block the finding names (lower the lightness
+   on a light scheme, raise it on a dark one). `theme-contrast` resolves `var()` chains and one
+   `color-mix()` form, reports anything else as unmeasured, and measures the root element only.
+   The audit's public scope checks that a value comes from a token, never which token.
+
+   Renaming or removing a key or an emitted class is a disclosed contract change; adding a key with
+   a default is not breaking; changing a default's value is disclosed with a changelog line.
+
+   The sheet does not style `.cairn-place-center`, `.cairn-place-wide`, or `.cairn-place-full`,
+   the placement classes a `figure` directive carries: a placement is a layout decision, so a theme
+   styles every placement it wants to honor. */
 
 @layer theme {
   :root,

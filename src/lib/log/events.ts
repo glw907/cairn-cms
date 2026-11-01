@@ -1,6 +1,6 @@
 // The cairn engine's diagnostic event vocabulary. Each name is the stable `type` a future
 // admin-extension subscriber switches on, so it is public-observable API: renaming one is a
-// breaking change. See docs/reference/log-events.md, kept in step with this union.
+// breaking change. The packaged skill's log-events table is kept in step with this union.
 //
 // The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
 // state adjective names a detected condition. The subject segment may itself be dotted, so a
@@ -14,6 +14,10 @@
 // input would have succeeded. `failed` names a fault the engine did not choose: an upstream call
 // errored, a resource was unavailable, or a runtime precondition broke regardless of what the
 // request asked for.
+/**
+ * Every event name the engine emits through its logger.
+ * @public
+ */
 export type CairnLogEvent =
   | 'auth.link.requested'
   | 'auth.link.refused'

@@ -28,15 +28,19 @@ import { env } from './workers-env.js';
  * The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later), so a
  *  short proofread does not reason at length. Sent only for a model with effort tiers
  *  (content-routes-tidy.ts's `supportsEffort`), never for one without.
+ * @beta
  */
 export type TidyEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 /**
  * The narrow, engine-owned client contract the tidy action calls: correct a text under a system
- *  prompt, and probe a key's health. No `@anthropic-ai/sdk` type reaches this interface (a vendor
- *  field rename stops being a cairn break), and a test injects a fake implementing this shape
- *  directly, with no SDK-mimicking wire body to construct. The real factory
- *  ({@link lazyAnthropicClient}) adapts this contract onto the actual SDK client internally.
+ *  prompt, and probe a key's health. A site implements it to route tidy through its own gateway
+ *  (a proxy, a logging layer, or another provider's endpoint) and passes the factory as
+ *  `createCairnAdmin`'s `tidy.client`; a test injects a fake the same way, with no SDK-mimicking
+ *  wire body to construct. No `@anthropic-ai/sdk` type reaches this interface, so a vendor field
+ *  rename is not a cairn break. The default factory ({@link lazyAnthropicClient}) adapts this
+ *  contract onto the SDK client internally.
+ * @public
  */
 export interface TidyClient {
   /**
@@ -57,11 +61,11 @@ export interface TidyClient {
     tokens: { input: number; output: number };
   }>;
   /**
-   * The zero-token key-health probe (save-500-honest-errors): list available models to
+   * The zero-token key-health probe: list available models to
    *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
    *  only `tidy` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades to
    *  'unknown' when a client omits it rather than throwing. The signal rides the second argument,
-   *  mirroring `tidy`'s options shape (save-500-hardening), so the probe is bounded by the same
+   *  mirroring `tidy`'s options shape, so the probe is bounded by the same
    *  deadline as a tidy call instead of the SDK's multi-minute default.
    */
   models?: {
@@ -188,15 +192,20 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
+/**
+ * The config `createContentRoutes` takes: the composed runtime and the injectable dependencies
+ * of its actions.
+ * @beta
+ */
 export interface ContentRoutesConfig {
   /** The composed runtime the routes close over: concepts, roles, the backend, and every other site-declared seam. */
   runtime: CairnRuntime;
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
-     * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the
-     *  real SDK client. Injected in tests so `messages.create` is stubbed and no network call (or
-     *  real key) is ever needed. The factory runs only after the key is read from the env, so a
+     * Build the tidy action's client from the resolved API key. Defaults to the Anthropic SDK
+     *  client. A site supplies its own {@link TidyClient} to route tidy through its own gateway,
+     *  and a test supplies a stub so no network call (or real key) is needed. The factory runs only after the key is read from the env, so a
      *  disabled or unconfigured site never constructs a client.
      */
     client?: (opts: { apiKey: string }) => TidyClient;
@@ -236,7 +245,9 @@ export interface ContentRoutesConfig {
    *  `href` matches no visible nav entry (an engine door or a site entry, resolved-and-filtered
    *  set), or when it duplicates an earlier item's `href` (first wins, silently). Absent, the
    *  shell payload serializes an empty record and renders exactly as before this seam existed. A
-   *  dep that throws fails the shell load loudly; the site owns its callback's errors.
+   *  dep that throws or rejects renders no badges and logs `admin.attention_failed`, so one failed
+   *  count never takes the shell down. The shell load runs on every admin navigation, so a slow
+   *  dep slows every admin screen.
    */
   attention?: (ctx: {
     editor: Editor;
@@ -253,6 +264,7 @@ export interface ContentRoutesConfig {
  * One pending-work badge a site's `attention` dep contributes for one nav entry. The engine drops
  *  an item whose `count` is non-positive, whose `href` matches no visible nav entry, or that
  *  duplicates an earlier item's `href`; a surviving item's `label` defaults to `'pending items'`.
+ * @public
  */
 export interface AttentionItem {
   /** The admin route whose nav entry carries the pill; also the click-through target. */

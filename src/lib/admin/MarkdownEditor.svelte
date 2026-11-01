@@ -7,6 +7,7 @@ textarea carries the value so the form still submits, and the hidden field mirro
 throughout. The host owns the toolbar and the card chrome, driving selection transforms through
 `EditorApi.format`; the design-accurate preview lives in EditPage through the adapter's render.
 Swapping the editor stays a one-file change.
+@public
 -->
 <script module lang="ts">
   import type { FigureAtImage, FormatKind } from './markdown-format.js';
@@ -25,7 +26,8 @@ Swapping the editor stays a one-file change.
   /** The buffer-scoped editing surface `registerEditor` hands the host on mount, once per mounted
    *  editor: every capability the host can drive against the buffer, insertion, selection, the
    *  view, history, and the tidy/image-placeholder subsystems, as one uniform grant, since the
-   *  host is always EditPage, which always needs the whole surface. */
+   *  host is always EditPage, which always needs the whole surface.
+   *  @public */
   export interface EditorApi {
     // Insertion: writes directly into the document.
     /** Inserts block text at the cursor, separated from adjacent text by a blank line where text
@@ -147,8 +149,7 @@ Swapping the editor stays a one-file change.
      *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
      *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
      *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
-     *  asset resolution. Never set this outside a test; pinned documented-unstable (see
-     *  `docs/reference/admin.md`), never promoted into `StableEditorProps`. */
+     *  asset resolution. Never set this outside a test; pinned documented-unstable (see the `MarkdownEditor` component block), never promoted into `StableEditorProps`. */
     spellcheckTest?: {
       createWorker?: () => import('./spellcheck.js').SpellWorker;
       assumeReady?: boolean;

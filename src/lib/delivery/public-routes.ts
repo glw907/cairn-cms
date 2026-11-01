@@ -18,17 +18,32 @@ import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
 import { log } from '../log/index.js';
 
-/** Injected dependencies for the public loaders. */
+/**
+ * Injected dependencies for the public loaders.
+ * @public
+ */
 export interface PublicRoutesConfig {
+  /** The site resolver `createSiteIndexes` returns, which the loaders look each path up in. */
   site: SiteResolver;
+  /** The site's render function, applied to each entry's body. */
   render: SiteRender;
+  /** The site's origin, prefixed to each permalink for the canonical URL and other absolute links. */
   origin: string;
   /** Site name for og:site_name and the SEO head. */
   siteName: string;
   /** Default description used when an entry has none. */
   description: string;
-  /** Absolute feed URLs for the head's autodiscovery links. */
-  feeds?: { rss?: string; json?: string };
+  /**
+   * Absolute feed URLs for the head's `rel="alternate"` autodiscovery links, typed
+   *  `application/rss+xml` and `application/feed+json`. They land on a dated entry's head only; an
+   *  undated entry's head carries neither.
+   */
+  feeds?: {
+    /** The RSS feed's absolute URL. */
+    rss?: string;
+    /** The JSON Feed's absolute URL. */
+    json?: string;
+  };
   /**
    * A site-wide default OG image, used when an entry declares none. Resolved to absolute like the
    *  canonical URL, so a relative path such as "/og/default.png" works.
@@ -50,7 +65,10 @@ export interface PublicRoutesConfig {
   assetsEnabled?: boolean;
 }
 
-/** One entry's data: the detail entry, its rendered html, and its canonical URL. */
+/**
+ * One entry's data: the detail entry, its rendered html, and its canonical URL.
+ * @public
+ */
 export interface EntryData {
   /** The concept id the entry belongs to, for a template that renders more than one concept. */
   concept: string;
@@ -119,6 +137,7 @@ function deriveHeroImage(
  *  is the first caller to pass these: the marking link and fragment resolvers built from
  *  a pending branch's manifest, and a request-time media resolver built from that branch's
  *  `media.json`. The hero derivation consumes `resolveMedia` from here too, not only the body render.
+ * @beta
  */
 export interface EntryDataOverrides {
   /** Substitutes `createLinkResolver(config.site)`. */
@@ -135,6 +154,7 @@ export interface EntryDataOverrides {
  *  function with no overrides, so its output is unchanged; `loadPreview` is the first
  *  caller to pass `overrides`, substituting the marking resolvers and a request-time media
  *  resolver in place of the build's throwing pair and the site's committed `media.json`.
+ * @beta
  */
 export async function composeEntryData(
   config: PublicRoutesConfig,
@@ -197,7 +217,10 @@ export async function composeEntryData(
   };
 }
 
-/** Build the public route resolver for a site's unified index. */
+/**
+ * Build the public route resolver for a site's unified index.
+ * @scaffold
+ */
 export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   const { site, resolveMedia, assetsEnabled } = config;
 
@@ -266,6 +289,15 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
 /**
  * What `createPublicRoutes` returns: one entry's public data by request path, the prerender
  *  enumerations, and the raw-markdown twin's load.
+ *
+ *  `entryLoad` and `markdownLoad` throw `error(404)` for a path the resolver does not carry, and
+ *  `markdownLoad` also throws it for a `noindex` entry, so the loader and `markdownEntries` agree
+ *  even if the route is not prerendered. Both read only through the injected `SiteResolver`, so
+ *  nothing outside the resolver's committed content reaches a response. `markdownEntries` lists one
+ *  `.md`-suffixed path per entry whose frontmatter `robots` lacks `noindex`. Serve the twin with
+ *  `markdownResponse` from a prerendered `+server.ts`, never a runtime one, so the served set is what
+ *  a build against `main` produced.
+ * @scaffold
  */
 export interface PublicRoutes {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;

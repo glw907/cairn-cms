@@ -5,7 +5,10 @@
 import { parse as parseYaml, parseDocument } from 'yaml';
 import { CairnError } from '../diagnostics/index.js';
 
-/** One navigation node. An omitted or empty `url` is a label-only grouping header; no `children` is a leaf. */
+/**
+ * One navigation node. An omitted or empty `url` is a label-only grouping header; no `children` is a leaf.
+ * @public
+ */
 export interface NavNode {
   label: string;
   url?: string;
@@ -76,11 +79,16 @@ export function validateNavTree(value: unknown, maxDepth: number): NavNode[] {
  * is one of the fields declared below. parseSiteConfig throws on anything else rather than passing
  * it through, so a misspelled key, or one misplaced from cairn.config.ts, fails loudly at parse
  * time. ADAPTER_MISPLACEMENTS names the correct home for the keys that commonly land here.
+ * @public
  */
 export interface SiteConfig {
+  /** The site's name. Required: parsing fails when it is missing or blank. */
   siteName: string;
+  /** A short description of the site. */
   description?: string;
+  /** The site's default author name. */
   author?: string;
+  /** The site's content locale. */
   locale?: string;
   /** Named navigation menus, each a NavNode[] (normalized by readMenu). */
   menus?: Record<string, unknown>;
@@ -89,7 +97,10 @@ export interface SiteConfig {
    *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
    *  unset or unknown dialect resolves to it.
    */
-  spellcheck?: { dialect?: string };
+  spellcheck?: {
+    /** The word-list dialect; an unset or unknown value resolves to US English, the one that ships. */
+    dialect?: string;
+  };
   /**
    * The editor tidy (LLM copy-edit) settings. Opt-in at the site level: tidy is a remote,
    *  costly model call, so the whole block is optional and `enabled` defaults false. The model is a
@@ -108,6 +119,7 @@ export interface SiteConfig {
 /**
  * One vocabulary entry: a frozen slug `value` and an editable display `label`. The object stays open
  * to richer fields later (descriptions, per-concept scope), so this carries only the two locked keys.
+ * @public
  */
 export interface VocabularyEntry {
   /** The stored frontmatter token and the filter key. A lowercase hyphenated slug (SAFE_TAG_VALUE). */
@@ -119,6 +131,7 @@ export interface VocabularyEntry {
 /**
  * The tidy block on the site config. Every field is optional so the YAML can carry as little as
  * `tidy: { enabled: true }` and the defaults fill the rest.
+ * @public
  */
 export interface TidyConfig {
   /** Master switch. Default false; tidy is opt-in. */
@@ -135,15 +148,17 @@ export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
 /**
  * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt
  * builder consumes. Every field carries a concrete value; `resolveTidyConventions` fills the defaults
- * from a partial config. The Fixes group is the objective fixes (default on, governed by the always-on
+ * from a partial config. The Settings screen validates a saved block against the same sets, and a
+ * value outside its set throws. The Fixes group is the objective fixes (default on, governed by the always-on
  * core); the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
  * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
+ * @public
  */
 export interface TidyConventions {
   /**
    * The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
-   *  punctuation). Default on. The always-on core governs it; this toggle lets the screen turn the
-   *  group off.
+   *  punctuation). Default on. Only the Settings toggle reads it: the tidy prompt always applies the
+   *  objective fixes, so `false` does not stop them from running.
    */
   fixes: boolean;
   /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
@@ -282,7 +297,10 @@ export function dictionaryFileForDialect(dialect: string | undefined): string {
   return DICTIONARY_BY_DIALECT[key] ?? DICTIONARY_BY_DIALECT[DEFAULT_DIALECT]!;
 }
 
-/** Thrown by parseSiteConfig and the nav/tidy/vocabulary writers on a malformed site.config.yaml. */
+/**
+ * Thrown by parseSiteConfig and the nav/tidy/vocabulary writers on a malformed site.config.yaml.
+ * @public
+ */
 export class SiteConfigError extends CairnError {
   constructor(message: string) {
     super('config.site-config-invalid', { message });
@@ -317,7 +335,18 @@ const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
   editor: 'cairn: "editor" belongs in cairn.config.ts (the adapter\'s preview/nav/supportContact knobs), not site.config.yaml',
 };
 
-/** Parse the YAML site-config text into a typed object. Throws SiteConfigError on a malformed root. */
+/**
+ * Parse the YAML site-config text into a typed object. Throws SiteConfigError on a malformed root.
+ * @remarks
+ * It enforces the boundary between `site.config.yaml` and `cairn.config.ts`: every top-level key
+ * must be one the engine reads from the YAML (`siteName`, `description`, `author`, `locale`,
+ * `menus`, `spellcheck`, `tidy`, `vocabulary`). A key that belongs on the adapter (`content`,
+ * `backend`, `email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as
+ * its home, and any other unrecognized key throws listing the known keys. It does not check
+ * `spellcheck.dialect`: the editor resolves any other or unset dialect to the one shipped
+ * dictionary, American English, with no error.
+ * @public
+ */
 export function parseSiteConfig(raw: string): SiteConfig {
   const parsed = parseYaml(raw) as unknown;
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
@@ -341,7 +370,10 @@ export function parseSiteConfig(raw: string): SiteConfig {
   return parsed as SiteConfig;
 }
 
-/** Extract one named menu from a parsed config and validate it. Returns [] when the menu is absent. */
+/**
+ * Extract one named menu from a parsed config and validate it. Returns [] when the menu is absent.
+ * @public
+ */
 export function readMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[] {
   const menu = config.menus?.[name];
   if (menu === undefined) return [];
@@ -411,7 +443,10 @@ export function validateVocabulary(value: unknown): VocabularyEntry[] {
   });
 }
 
-/** Extract the tag vocabulary from a parsed config and validate it. Returns [] when the key is absent. */
+/**
+ * Extract the tag vocabulary from a parsed config and validate it. Returns [] when the key is absent.
+ * @public
+ */
 export function readVocabulary(config: SiteConfig): VocabularyEntry[] {
   return config.vocabulary === undefined ? [] : validateVocabulary(config.vocabulary);
 }

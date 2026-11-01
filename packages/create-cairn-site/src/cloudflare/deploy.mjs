@@ -3,7 +3,7 @@
 // maps a non-zero exit to the matching catalogue row so a caller never has to interpret a raw
 // wrangler or npm failure itself.
 //
-// Per the T3 spike (docs/internal/2026-08-10-t3-cloudflare-spike.md): wrangler auto-provisions
+// Per the T3 spike (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-10-t3-cloudflare-spike.md): wrangler auto-provisions
 // id-less D1 and R2 bindings by name and never writes ids back into wrangler.jsonc, on the first
 // deploy or any later one, so this module parses no ids and writes none. Migrations resolve by
 // binding name against the same id-less config, so applyMigrations takes no database-name

@@ -13,6 +13,10 @@ import type { ContainerDirective } from 'mdast-util-directive';
 import { escapeLinkText } from '../content/links.js';
 import { parseMediaToken } from '../media/reference.js';
 
+/**
+ * Every toolbar format the editor applies through `EditorApi.format`.
+ * @public
+ */
 export type FormatKind =
   | 'bold'
   | 'italic'

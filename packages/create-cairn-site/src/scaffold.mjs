@@ -215,7 +215,7 @@ export function dryRunNotice({ dir }) {
 /**
  * Build the printed hand-over block: the terminal script that starts a working local admin, and
  * what T1 does and does not yet cover. Its wording is fixed by the recorded baseline walk
- * (docs/internal/2026-08-unagented-setup-baseline.md), which found a plain `npm run dev` never
+ * (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-unagented-setup-baseline.md), which found a plain `npm run dev` never
  * reached the admin (the dev backend needed `CAIRN_DEV_BACKEND=1` at runtime on top of its
  * build-time define) and that a scaffolded reader has no idea the admin they land on is a local
  * stand-in. The second fact is still load-bearing; the first is now fixed at the source, by the

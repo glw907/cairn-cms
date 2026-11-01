@@ -21,8 +21,10 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-Pass 2 of the agent-first plan (records) is PR-ready on branch `agent-first-2`; after its packet the
-next action is pass 3 (contract, skills, and the measured A/B). Pass 1 is merged. The plan is
+Pass 3 of the agent-first plan (contract in TSDoc, rebuilt skills, and the measured A/B) is PR-ready
+as #168 on branch `agent-first-3`; after its packet the next action is pass 4 (rebuild the rest),
+which starts from the removal commit on `agent-first-3-preview` (a local ref, never merged). Passes
+1 and 2 are merged. The plan is
 `~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
 beside it, and `conductor-cairn-cms` runs it one pass at a time; its ledger is
 `~/.local/state/cairn-agent-first/ledger.md`. The `model-review.service` drop-in

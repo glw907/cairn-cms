@@ -2,6 +2,7 @@
 @component
 The scanner-safe confirm page. A GET renders this static "Confirm sign-in" button with the token
 in a hidden field and consumes nothing; only the explicit POST verifies. JS-free.
+@beta
 -->
 <script lang="ts">
   import './cairn-admin.css';

@@ -16,7 +16,11 @@ Every export carries exactly one stability tier, marked either inline in its sec
 (`Stability tier: <tier> API.`) or as the Stability column of a Types table row. `check:reference`
 enforces this both ways: every enumerated export must carry a tier, and a name that appears in a
 Types table row, a bare export heading, or a `declare` signature but is no longer a real export
-anywhere in the package fails as stale prose (`scripts/checks/reference-coverage.mjs`).
+anywhere in the package fails as stale prose (`scripts/checks/reference-coverage.mjs`). The tier
+is also a tag in the export's doc comment, which ships in the package's type declarations:
+`@public` for the Extension API, `@beta` for the Unstable API, and `@scaffold` for the Scaffold
+API. `check:tiers` fails on an export with no tag, and `check:tier-docs` fails when a page's tier
+disagrees with the tag.
 
 - **Extension API.** The frozen contract: the adapter and schema constructors, the composed
   runtime's read surface, the single-mount facade, and the components a site mounts directly.

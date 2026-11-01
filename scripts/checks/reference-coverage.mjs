@@ -10,41 +10,9 @@ import { loadRegistry } from './check-surface-leaks.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// Load a .d.ts module through the compiler API and return its type checker plus its source file.
-// The two reference gates and the surface gate's ambient-augmentation renderer all start a d.ts
-// program this way, so the `moduleResolution`/`skipLibCheck` options and the missing-source guard
-// stay in one place.
-/** @param {string} dtsPath */
-export function loadDts(dtsPath) {
-  const program = ts.createProgram([dtsPath], {
-    noEmit: true,
-    skipLibCheck: true,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-  });
-  const checker = program.getTypeChecker();
-  const source = program.getSourceFile(dtsPath);
-  if (!source) throw new Error(`cannot load ${dtsPath}`);
-  return { checker, source };
-}
-
-// A .d.ts module's type checker plus its export symbols (re-exports and `export *` resolved).
-// The two reference gates share this so they enumerate the same surface; the signature gate keeps
-// the checker to render each export's type.
-/** @param {string} dtsPath */
-export function moduleExports(dtsPath) {
-  const { checker, source } = loadDts(dtsPath);
-  const moduleSymbol = checker.getSymbolAtLocation(source);
-  if (!moduleSymbol) throw new Error(`no module symbol for ${dtsPath}`);
-  return { checker, symbols: checker.getExportsOfModule(moduleSymbol) };
-}
-
-// Enumerate the exported names of a .d.ts module. Resolves re-exports and `export *`.
-/** @param {string} dtsPath */
-export function enumerateExports(dtsPath) {
-  return moduleExports(dtsPath)
-    .symbols.map((s) => s.name)
-    .sort();
-}
+// The declaration loader lives in dts-exports.mjs; it is re-exported here for this gate's callers.
+import { loadDts, enumerateExports } from './dts-exports.mjs';
+export { loadDts, moduleExports, enumerateExports } from './dts-exports.mjs';
 
 // A whole-word matcher for one export or prop name: the name itself, bounded on both sides by a
 // non-identifier character. `$` is the one name character that also means something to the regex
@@ -83,8 +51,18 @@ const TIER_LINE = /Stability tier:\s*(Extension|Scaffold|Unstable) API/;
  * @returns {boolean}
  */
 export function hasTierMarker(name, pageText) {
-  if (tierFromTableRow(name, pageText)) return true;
-  return tierFromSection(name, pageText) !== null;
+  return docTier(name, pageText) !== null;
+}
+
+// The tier a page states for one export name, read from the same two carriers in the same order
+// (the Types-table row first, then the defining section), or null when the page states none.
+/**
+ * @param {string} name
+ * @param {string} pageText
+ * @returns {'Extension' | 'Scaffold' | 'Unstable' | null}
+ */
+export function docTier(name, pageText) {
+  return tierFromTableRow(name, pageText) ?? tierFromSection(name, pageText);
 }
 
 // The tier from a Types-table row for `name`, or null. The row is `| `name` | <stability> | … |`,

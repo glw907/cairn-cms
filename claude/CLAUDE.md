@@ -8,25 +8,24 @@ cairn owns its core job, managing markdown content and the editor/admin frame, a
 Everything a site needs beyond that, its functionality, actors, auth, data, and domain
 logic, belongs to the developer, and cairn serves it with a thin seam, not a built-in feature.
 When a task reaches for something the engine does not offer, build it as site code first; reach
-for `cairn-consult` only when the same workaround repeats, or when nothing in the engine's seams
+for `cairn-consulting-the-engine` only when the same workaround repeats, or when nothing in the engine's seams
 gets you there at all.
 
 ## The atoms
 
-The named primitives a site builds on, each documented with its full contract. The engine's docs
-ship inside the installed package, so every page below is a path from your site's root, not a
-link this file can follow.
+The named primitives a site builds on. Each export's full contract is the doc comment on its
+declaration in the installed package's `dist` folder, and the installed skills carry the recipes.
 
 - `requireAccess`, `createSectionAction`, `locals.cairnEditor`: the auth guard and the per-route
-  factories. See `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md`.
-- `CairnAdminShell`, `navLayout`: the shared admin frame and its declared navigation. See
-  `node_modules/@glw907/cairn-cms/docs/reference/admin.md`.
-- The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. See
-  `node_modules/@glw907/cairn-cms/docs/reference/admin-toolkit.md`.
+  factories. The `cairn-extending-a-site` skill's admin-access reference covers them.
+- `CairnAdminShell`, `navLayout`: the shared admin frame and its declared navigation. The
+  `cairn-building-admin-screens` skill covers them.
+- The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. The
+  `cairn-building-admin-screens` skill's custom-screen reference covers them.
 - `createAuthChannel`: a site's login channel for a second sign-in group (request, confirm, logout) over
-  a site-owned database. See `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`.
+  a site-owned database. The `cairn-extending-a-site` skill's second-sign-in-group reference covers it.
 - `createLogger`: structured logs in the engine's record shape, with the same redaction
-  rules. See `node_modules/@glw907/cairn-cms/docs/reference/log.md`.
+  rules. The `cairn-extending-a-site` skill's log-events reference lists the record shape.
 
 ## The gates
 
@@ -39,7 +38,7 @@ up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date;
 ## The DaisyUI-first rule
 
 Before building a new admin component by hand, ask whether a stock DaisyUI component or template
-already covers it. The `cairn-extend` skill opens with this question and names the seam and the
+already covers it. The `cairn-extending-a-site` skill opens with this question and names the seam and the
 recipe for the two patterns it covers today; reach for it before writing new markup under
 `/admin`.
 
@@ -78,4 +77,7 @@ inspector for DaisyUI markup: https://daisyui.com/blueprint/.
 
 ## Where the docs are
 
-Read `node_modules/@glw907/cairn-cms/docs/reference/README.md`.
+Start from the installed skills: `cairn-extending-a-site` routes every site job to its reference.
+Each export's contract is its doc comment in the installed package's `dist` declarations, and
+`node_modules/@glw907/cairn-cms/docs/extend/upgrade-cairn.md` carries the upgrade procedure and
+`node_modules/@glw907/cairn-cms/docs/extend/migration-notes.md` the per-version record.

@@ -206,7 +206,10 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     throw redirect(303, `/admin/${concept.id}`);
   }
 
-  /** Delete an entry from its editor. The id comes from the route param. */
+  /**
+   * Delete an entry from its editor. The id comes from the route param. The pending branch is
+   *  deleted after the removal commit lands, and the entry's preview-token rows are cleared.
+   */
   async function deleteAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
@@ -227,7 +230,8 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
    * Rename an entry: change its slug, move the file, and rewrite every inbound cairn token in one
    *  atomic commit, so no internal link breaks. The collision check and the inbound recompute here
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
-   *  caught by the build's fail-closed backstop.
+   *  caught by the build's fail-closed backstop. Refuses `fail(409)` while the entry has a pending
+   *  branch, and clears the old id's preview-token rows once the rename lands.
    */
   async function renameAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);

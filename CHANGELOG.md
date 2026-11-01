@@ -2,6 +2,23 @@
 
 ### Added
 
+- **A stability tier on every export's doc comment.** Each public export now carries `@public` (the
+  Extension tier), `@beta` (Unstable), or `@scaffold` (the wiring a scaffolded site copies), and the
+  built declarations keep the tag. `check:tiers` fails an export with no tag or two, and
+  `check:options` now fails a public option member with no doc comment instead of a row in a
+  maintainer-side option map, which is deleted. `TidyClient` moves from Unstable to Extension,
+  since the gateway wiring a site writes names it.
+
+  Consumers may: read the tag on a declaration to learn how stable it is.
+
+- **The contract of the technical docs pages now sits on the exports.** The per-export promises of
+  `docs/reference` and `docs/extend` (defaults, units, thrown errors, orderings, fail-closed
+  behavior) moved onto the doc comments in the built declarations, and the cairn-audit, cairn-guidance,
+  cairn-media-seed, and cairn-manifest `--help` text and `cairn help` carry the exit codes, flags, and
+  JSON fields. Recipes and cross-export traps moved into the packaged skills.
+
+  Consumers may: read an export's doc comment in `node_modules/@glw907/cairn-cms/dist/` before a page.
+
 - **A `content.entry_invalid` log event.** `createSiteIndexes` with `validate: false` logs one warning
   per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
   skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
@@ -98,6 +115,20 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **The four packaged skills have new names and rebuilt references.** `cairn-extend` is now
+  `cairn-extending-a-site`, `cairn-public` is `cairn-styling-public-pages`, `cairn-admin-screens` is
+  `cairn-building-admin-screens`, and `cairn-consult` is `cairn-consulting-the-engine`. Each
+  `SKILL.md` routes by job to references that carry the recipes, registration points, and silent
+  failures the technical docs pages carried (the audit rule catalogue and the log-event table
+  included). The `cairn-audit` messages and the CLIs' `--help` text no longer print `docs/reference`
+  paths, and `claude/CLAUDE.md` points at the skills.
+
+  Consumers must: run `npx cairn-guidance install` and delete the four old skill directories under
+  `.claude/skills/` by hand, since `install` lists an unlisted directory as removable and deletes
+  nothing; both name sets load until you do. Rewrite any project instruction of your own that names an
+  old skill.
+
 
 - **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where
   they named a real site id (`cairn health my-site-a1b2c3`, `cairn adopt --worker my-site`). The

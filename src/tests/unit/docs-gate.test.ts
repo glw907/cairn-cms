@@ -32,6 +32,8 @@ describe('buildSteps', () => {
     'check:reference',
     'check:reference:signatures',
     'check:options',
+    'check:tiers',
+    'check:tier-docs',
     'check:tellgrader',
   ];
 

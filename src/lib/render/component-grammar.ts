@@ -75,6 +75,7 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
  * A component's `preview` sample as directive markdown, the string the renderer takes, or
  * `undefined` when the component declares no `preview`. A site walks its registry through this to
  * render one sample per component.
+ * @public
  */
 export function previewMarkdown(def: ComponentDef): string | undefined {
   if (!def.preview) return undefined;

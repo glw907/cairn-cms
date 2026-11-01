@@ -34,6 +34,7 @@ re-express on `StatusChip` at a neutral tone (a Tidy pill never
 reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
 bespoke: a single-use control, not a repeated device.
+@beta
 -->
 <script lang="ts">
   import { untrack } from 'svelte';

@@ -158,6 +158,7 @@ const placeholderField = StateField.define<PlaceholderState>({
  *  resolveTo swaps it for the committed image text; cancel removes it leaving the source untouched.
  *  Reached through EditorApi.imagePlaceholders, the object grant MarkdownEditor's registerEditor
  *  hands the host on mount.
+ * @public
  */
 export interface ImagePlaceholderApi {
   /** Land an optimistic placeholder at the current caret from a local object URL; returns its id. */

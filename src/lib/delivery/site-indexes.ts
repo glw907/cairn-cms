@@ -13,7 +13,10 @@ import { createSiteResolver } from './site-resolver.js';
 import type { ContentIndex } from './content-index.js';
 import type { ConceptIndex, SiteResolver } from './site-resolver.js';
 
-/** A per-concept raw glob record (`{ path: raw }`) keyed by concept id, from `import.meta.glob`. */
+/**
+ * A per-concept raw glob record (`{ path: raw }`) keyed by concept id, from `import.meta.glob`.
+ * @public
+ */
 export type SiteGlobs<A extends CairnAdapter> = {
   [K in keyof A['content']]?: Record<string, string>;
 };
@@ -21,6 +24,7 @@ export type SiteGlobs<A extends CairnAdapter> = {
 /**
  * The typed per-concept indexes plus the cross-concept `site` resolver. A concept literally named
  *  `site` is not supported, since `site` is the reserved resolver key.
+ * @public
  */
 export type SiteIndexes<A extends CairnAdapter> = {
   [K in keyof A['content']]: ContentIndex<
@@ -33,13 +37,22 @@ export type SiteIndexes<A extends CairnAdapter> = {
  * globs as `{ posts: import.meta.glob('...?raw', { eager: true }), ... }`; Vite needs the literal
  * glob at the call site, so the engine cannot glob on the site's behalf. `validate: false` opts out
  * of the build-time schema validation the returned resolver otherwise runs against every concept's
- * frontmatter, for a caller that needs the indexes before every entry satisfies its schema.
+ * frontmatter, for a caller that needs the indexes before every entry satisfies its schema; the
+ * build then logs a `content.entry_invalid` warning for each invalid entry instead of failing.
+ * @throws When a concept is named `site`, when a declared concept has no key in `globs` (pass `{}`
+ * for an intentionally empty one), when two entries that are on `main`, non-draft, and routable
+ * resolve to one permalink, or, unless `validate` is `false`, when a non-draft entry fails its
+ * concept's validator.
+ * @public
  */
 export function createSiteIndexes<const A extends CairnAdapter>(
   adapter: A,
   config: SiteConfig,
   globs: SiteGlobs<A>,
-  opts: { validate?: boolean } = {},
+  opts: {
+    /** Set `false` to skip the build-time schema validation the resolver runs over every entry. */
+    validate?: boolean;
+  } = {},
 ): SiteIndexes<A> {
   const descriptors = buildSiteDescriptors(adapter, config);
   const globRecord = globs as Record<string, Record<string, string> | undefined>;

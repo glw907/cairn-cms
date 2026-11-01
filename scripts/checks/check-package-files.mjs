@@ -144,7 +144,7 @@ export function checkDocsPacked(filePaths, required) {
 
 // The packaged skill's always-loaded core. Its presence in the tarball is the floor: without it,
 // `cairn-guidance install` would install nothing into a consumer's `.claude/skills/`.
-const SKILL_ENTRY_PATH = 'skills/cairn-admin-screens/SKILL.md';
+const SKILL_ENTRY_PATH = 'skills/cairn-building-admin-screens/SKILL.md';
 
 /**
  * Check a packed file list for the packaged skill's SKILL.md.

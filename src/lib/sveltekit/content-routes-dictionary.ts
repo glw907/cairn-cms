@@ -25,7 +25,7 @@ export interface DictionaryAddResult {
 
 /**
  * A refused personal-dictionary add: `fail(403)` on a failed CSRF check, `fail(400)` on a body that
- *  carries no valid word. The client keeps its pending additions for the session and re-attempts on
+ *  carries no valid word, `fail(409)` when the retried commit conflicts a second time. The client keeps its pending additions for the session and re-attempts on
  *  the next save, so the word is never silently dropped. Just the one-line summary.
  */
 export interface DictionaryAddFailure {

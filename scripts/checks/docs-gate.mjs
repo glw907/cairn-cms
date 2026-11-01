@@ -15,9 +15,9 @@
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
-// `dist` is built exactly once, before any component runs. Seven of the checks
+// `dist` is built exactly once, before any component runs. Nine of the checks
 // (check:snippets, check:visuals, check:readiness, check:tool-conditions, check:reference,
-// check:reference:signatures, check:options) call `npm run package` themselves when run as their own npm script,
+// check:reference:signatures, check:options, check:tiers, check:tier-docs) call `npm run package` themselves when run as their own npm script,
 // so this runner calls each component's underlying node script directly and pays that cost once.
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
@@ -96,6 +96,8 @@ export function buildSteps({ page }) {
     { label: 'check:reference', ...node('scripts/checks/reference-coverage.mjs') },
     { label: 'check:reference:signatures', ...node('scripts/checks/check-reference-signatures.mjs') },
     { label: 'check:options', ...node('scripts/checks/check-options.mjs') },
+    { label: 'check:tiers', ...node('scripts/checks/check-tiers.mjs') },
+    { label: 'check:tier-docs', ...node('scripts/checks/check-tier-docs.mjs') },
     // Workstation-only: skips with one line and passes when the tellgrader binary is absent (CI).
     { label: 'check:tellgrader', ...node('scripts/checks/check-tellgrader.mjs', page ? [page] : []) },
   ];

@@ -122,7 +122,7 @@ jobs:
       - run: npm --prefix examples/showcase run check:cairn
       - run: npm --prefix examples/showcase run test:unit
       - run: npm --prefix examples/showcase run format:check
-      # The cairn-public skill's coverage gate: every public piece has a catalogue page, every snippet
+      # The cairn-styling-public-pages skill's coverage gate: every public piece has a catalogue page, every snippet
       # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
       # the showcase's own Tailwind, so it runs after the showcase install.
       - run: npm run check:public-skill

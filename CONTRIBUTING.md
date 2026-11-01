@@ -54,7 +54,7 @@ the page and what they already have.
 A step that assumes a terminal fails an editor page. A step that assumes reading source
 code fails an admin page. If a page's steps split across two readers, it is two pages, not
 one page trying to serve both; write each half in its track rather than switching register
-mid-page. `.claude/skills/cairn-docs/references/docs-register.md` carries the full track profiles, vocabulary
+mid-page. `.claude/skills/cairn-writing-docs/references/docs-register.md` carries the full track profiles, vocabulary
 contract, and the counterpart question a reviewer grades a page against; read it before
 writing a page a reviewer will grade on register.
 
@@ -121,22 +121,22 @@ holds them to it.
 - **Pages.** A change to public behavior edits the page that describes it, and the reference
   page when the behavior is public API. Search `docs/` and `README.md` for a changed, renamed,
   or removed name and repoint every hit.
-- **The option map.** `docs/internal/option-map.json` gives every public option path one row: an
-  anchor in a reference page whose section names the option in inline code
-  (`docs/reference/<page>.md#<anchor>`), `exclude` with a reason, or `pending` with the slug of
-  the page that should document it.
+- **Option doc comments.** Every public option member carries a doc comment where it is
+  declared, or an entry with a reason in `EXCLUDED_PATHS` in `scripts/checks/check-options.mjs`.
+- **Stability tiers.** Every public export carries one tier tag in its doc comment: `@public`
+  for the Extension API, `@beta` for the Unstable API, or `@scaffold` for the Scaffold API.
 
 `npm run check:options` regenerates the option paths from the built type declarations and fails
-when a row's page or anchor is missing, when its section does not name the option in inline code,
-or when a path has no row, so an option can't
-ship undocumented. `npm run check:docs-gate` runs it with the rest of the docs checks, including
-links, Vale, snippets, and reference coverage. CI runs the same script.
+on a member with no doc comment, so an option can't ship undocumented. `npm run check:tiers`
+fails on an export with no tier tag, and `npm run check:tier-docs` on a reference page whose
+stated tier disagrees with the tag. `npm run check:docs-gate` runs all three with the rest of the
+docs checks, including links, Vale, snippets, and reference coverage. CI runs the same script.
 
 To pass the docs gate, make these changes together:
 
 - If you change public behavior, update its page, and the reference page when the behavior is
   public API.
-- If you add, rename, or remove a public option, update its row in the option map.
+- If you add a public option or export, give it a doc comment, and give an export its tier tag.
 - If you move or rename a heading, repoint every link to its anchor.
 
 ## Conventions a change is held to
@@ -156,7 +156,7 @@ To pass the docs gate, make these changes together:
   because its reader is a non-technical writer. All four directories ship inside the npm
   package, so a docs edit is a product change, and a public-API change is not done until its
   reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
-  from its brief in `.claude/skills/cairn-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
+  from its brief in `.claude/skills/cairn-writing-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
   the developer brief. Admin UI strings follow the Voice section of
   `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - Commit subjects are imperative, in the

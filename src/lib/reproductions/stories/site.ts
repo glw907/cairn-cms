@@ -4,7 +4,7 @@
 // rows.
 //
 // `toolkit/custom-screen` is the one row with no package component to mount: its subject is the
-// worked snippet in docs/extend/add-a-custom-admin-screen.md, so ./CustomScreen.svelte builds that
+// worked custom-screen snippet in the packaged admin-screens skill, so ./CustomScreen.svelte builds that
 // screen inside this module from the exported `@glw907/cairn-cms/admin-toolkit` primitives, per the
 // audit's row.
 import type { Component } from 'svelte';

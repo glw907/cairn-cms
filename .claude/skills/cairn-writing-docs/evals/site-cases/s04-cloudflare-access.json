@@ -1,0 +1,39 @@
+{
+  "id": "S04-cloudflare-access",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "The identity resolver (createAuthGuard's identity option)",
+  "bar": 5,
+  "prompt": "Our editors all have Google Workspace accounts, and we have put a Cloudflare Access application in front of /admin. Switch the admin sign-in from emailed magic links to Cloudflare Access, and keep our existing editor list as the record of who may edit. The Access team domain is https://trailcrew.cloudflareaccess.com and the application's AUD tag is 4714c1358e65fe4b408ad6d432a5f878f08194bdb4752441fd56faefa9b2b6f2. Leave local development working the way it does now. It's done when the site type-checks and the admin lets in only people whom Access has signed in and who are on our editor list.",
+  "knownBad": "setups/site/s04-cloudflare-access-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/sveltekit/guard.ts:76 AuthGuardConfig.identity: replaces magic-link session resolution with the site's gate",
+    "src/lib/sveltekit/guard.ts:88 IdentityResolver: resolve proves who is making the request; logoutUrl is validated as root-relative or https",
+    "src/lib/sveltekit/guard.ts:297 the guard awaits identity.resolve on every guarded admin request and looks the returned email up in the roster",
+    "src/lib/sveltekit/guard.ts:114 IdentityRefusal reasons: missing, invalid, audience, issuer, expired, no_email, keys",
+    "docs/extend/replace-magic-links-with-cloudflare-access.md (Write the verifier; Close the exposures outside the application)",
+    "Cloudflare, Validate JWTs: https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/"
+  ],
+  "expectations": [
+    "A resolver module exports an IdentityResolver whose resolve reads the Cf-Access-Jwt-Assertion header and verifies the token against the team's /cdn-cgi/access/certs keys, with the team domain as issuer and the AUD tag as audience.",
+    "The resolver refuses a token whose type is not app or that carries no email claim, and returns the email, never a role.",
+    "The production createAuthGuard call in src/hooks.server.ts passes the resolver as identity, and the dev-backend branch stays as it was.",
+    "wrangler.jsonc sets workers_dev and preview_urls to false, so no hostname outside Access serves the admin."
+  ],
+  "checks": [
+    { "type": "contains", "path": "src/hooks.server.ts", "regex": "createAuthGuard\\(\\s*\\{[^)]*\\bidentity\\b", "source": "src/lib/sveltekit/guard.ts:76" },
+    { "type": "contains", "path": "src", "regex": "[Cc][Ff]-[Aa]ccess-[Jj]wt-[Aa]ssertion", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Write the verifier)" },
+    { "type": "contains", "path": "src", "regex": "jwtVerify\\(|crypto\\.subtle\\.verify\\(", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Write the verifier)" },
+    { "type": "contains", "path": "src", "text": "/cdn-cgi/access/certs", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Write the verifier)" },
+    { "type": "contains", "path": "src", "text": "4714c1358e65fe4b408ad6d432a5f878f08194bdb4752441fd56faefa9b2b6f2", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Create the Access application, step 6)" },
+    { "type": "contains", "path": "wrangler.jsonc", "regex": "\"workers_dev\"\\s*:\\s*false", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Close the exposures); src/lib/sveltekit/guard.ts:297 makes no hostname check" },
+    { "type": "contains", "path": "wrangler.jsonc", "regex": "\"preview_urls\"\\s*:\\s*false", "source": "docs/extend/replace-magic-links-with-cloudflare-access.md (Close the exposures)" },
+    { "type": "npm", "script": "check" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The resolver verifies the Access token's signature against the team's certs and checks its issuer and audience before it trusts any claim, rejects an expired token (jose does; a hand-written WebCrypto verifier must check exp and nbf itself), fixes the algorithm to RS256 rather than reading it from the token header, and never takes the email from an unverified header or cookie such as Cf-Access-Authenticated-User-Email or CF_Authorization.", "source": "src/lib/sveltekit/guard.ts:88; docs/extend/replace-magic-links-with-cloudflare-access.md" },
+    { "n": 2, "text": "The resolver refuses a token whose type claim is not `app` and a token with no email claim, and returns only an email (and optionally a display name), never a role.", "source": "src/lib/sveltekit/guard.ts:101; docs/extend/replace-magic-links-with-cloudflare-access.md" },
+    { "n": 3, "text": "Only the production branch of src/hooks.server.ts gains the identity option; the dev-backend branch keeps its existing handle.", "source": "src/lib/sveltekit/guard.ts:76" }
+  ]
+}

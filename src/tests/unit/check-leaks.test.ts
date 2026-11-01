@@ -16,8 +16,8 @@ import {
 } from '../../../scripts/checks/check-leaks.mjs';
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
-const T2 = profileFor('skills/cairn-extend/SKILL.md')!;
-const T3 = profileFor('.claude/skills/cairn-docs/references/docs-register.md')!;
+const T2 = profileFor('skills/cairn-extending-a-site/SKILL.md')!;
+const T3 = profileFor('.claude/skills/cairn-writing-docs/references/docs-register.md')!;
 const TSDOC = profileFor('src/lib/admin-toolkit/format.ts')!;
 const CHANGELOG = profileFor('CHANGELOG.md')!;
 
@@ -43,7 +43,7 @@ describe('profileFor', () => {
 
   it('puts shipped files in T2 and agent inputs in T3 without process vocabulary', () => {
     for (const path of [
-      'skills/cairn-admin-screens/references/exemplar-list.md',
+      'skills/cairn-building-admin-screens/references/exemplar-list.md',
       'claude/CLAUDE.md',
       'examples/showcase/src/chassis/README.md',
       'src/lib/reproductions/fixtures.ts',
@@ -53,7 +53,7 @@ describe('profileFor', () => {
       expect(profileFor(path)?.tier, path).toBe('T2');
     }
     for (const path of [
-      '.claude/skills/cairn-docs/references/docs-register.md',
+      '.claude/skills/cairn-writing-docs/references/docs-register.md',
     ]) {
       expect(profileFor(path), path).toEqual({ tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' });
     }

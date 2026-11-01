@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/tsdoc/v0/tsdoc.schema.json",
+  "tagDefinitions": [{ "tagName": "@scaffold", "syntaxKind": "modifier" }],
+  "supportForTags": {
+    "@public": true,
+    "@beta": true,
+    "@scaffold": true,
+    "@alpha": true,
+    "@experimental": true,
+    "@internal": true,
+    "@deprecated": true,
+    "@defaultValue": true,
+    "@inheritDoc": true,
+    "@label": true,
+    "@link": true,
+    "@override": true,
+    "@packageDocumentation": true,
+    "@param": true,
+    "@privateRemarks": true,
+    "@readonly": true,
+    "@remarks": true,
+    "@returns": true,
+    "@sealed": true,
+    "@see": true,
+    "@throws": true,
+    "@typeParam": true,
+    "@virtual": true
+  }
+}

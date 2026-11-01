@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet, type CompiledSheet } from '../../lib/audit/sheet.js';
 
-// CONTRACT: `cairn-admin-screens`'s own reference docs
+// CONTRACT: `cairn-building-admin-screens`'s own reference docs
 // prescribe class recipes for a developer to copy, and nothing ever checked those recipes
 // against the sheet they ride. `form-anatomy.md` taught `gap-x-6 gap-y-4`, a pair the built
 // sheet never compiled, and `cairn-audit`'s own `no-uncompiled-class` rule then convicted the
@@ -28,7 +28,7 @@ import { parseSheet, type CompiledSheet } from '../../lib/audit/sheet.js';
 // in-memory input string), so a second call against the same input path replays the first
 // call's compiled output instead of re-scanning (grammar-tokens.test.ts documents the same trap).
 const REFERENCES_DIR = fileURLToPath(
-  new URL('../../../skills/cairn-admin-screens/references', import.meta.url)
+  new URL('../../../skills/cairn-building-admin-screens/references', import.meta.url)
 );
 
 /** One candidate class token this file's extraction found, with the position a failure prints. */

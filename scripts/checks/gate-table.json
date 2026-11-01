@@ -15,6 +15,7 @@
       "src/tests/",
       ".github/",
       "eslint.config.js",
+      "tsdoc.json",
       "vitest.config.ts",
       "wrangler.test.jsonc"
     ],
@@ -39,7 +40,6 @@
       "scripts/checks/check-self-use-allowlist.json",
       "scripts/checks/check-symbols-allowlist.mjs",
       "scripts/checks/api-surface.md",
-      "docs/internal/option-map.json",
       "skills/",
       "claude/"
     ]
@@ -58,6 +58,8 @@
     "check:reference": ["exportSurface", "docs", "engine"],
     "check:reference:signatures": ["exportSurface", "docs", "engine"],
     "check:options": ["exportSurface", "docs", "engine"],
+    "check:tiers": ["exportSurface", "engine"],
+    "check:tier-docs": ["exportSurface", "docs", "engine"],
     "check:surface": ["exportSurface"],
     "check:consumers": ["exportSurface", "showcase"],
     "check:self-use": ["exportSurface", "showcase"],

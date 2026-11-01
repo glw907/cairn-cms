@@ -1,5 +1,5 @@
-// cairn-audit's screen-anatomy rule: the mechanical floor under the office screen shape spec 6.3
-// names, "One PageHeader with one h1; the primary action sits in the header slot; content sits in
+// cairn-audit's screen-anatomy rule: the mechanical floor under the office screen shape the admin
+// design system names, "One PageHeader with one h1; the primary action sits in the header slot; content sits in
 // the card region." Three checks, each tied to a markup fact the admin toolkit's recipes make
 // mechanically readable rather than a class-name guess:
 //

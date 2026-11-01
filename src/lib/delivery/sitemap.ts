@@ -2,13 +2,19 @@
 // derives the list from the content index and the routable concepts.
 import { escapeXml } from './xml.js';
 
-/** One sitemap URL. `lastmod` is a YYYY-MM-DD date. */
+/**
+ * One sitemap URL. `lastmod` is a YYYY-MM-DD date.
+ * @public
+ */
 export interface SitemapUrl {
   loc: string;
   lastmod?: string;
 }
 
-/** Build a sitemap XML document from a list of URLs. */
+/**
+ * Build a sitemap XML document from a list of URLs.
+ * @public
+ */
 export function buildSitemap(urls: SitemapUrl[]): string {
   const entries = urls
     .map((url) => {

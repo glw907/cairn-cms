@@ -4,6 +4,8 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import {
+  applyExcerptStubs,
+  collectUnits,
   docFiles,
   extractBlocks,
   findLibImports,
@@ -19,7 +21,7 @@ import {
 describe('extractBlocks', () => {
   it('extracts a fenced ts block with its 1-based fence line', () => {
     const blocks = extractBlocks('intro\n\n```ts\nconst x = 1;\n```\n');
-    expect(blocks).toEqual([{ lang: 'ts', fenceLine: 3, body: 'const x = 1;', skipReason: null }]);
+    expect(blocks).toEqual([{ lang: 'ts', fenceLine: 3, body: 'const x = 1;', skipReason: null, stubs: [] }]);
   });
 
   it('extracts a fenced svelte block', () => {
@@ -51,7 +53,7 @@ describe('extractBlocks', () => {
 describe('extractBlocks under a list item', () => {
   it('extracts an indented fence with a dedented body and the doc fence line', () => {
     const blocks = extractBlocks('1. Step:\n\n   ```ts\n   const x = 1;\n     const y = 2;\n   ```\n');
-    expect(blocks).toEqual([{ lang: 'ts', fenceLine: 3, body: 'const x = 1;\n  const y = 2;', skipReason: null }]);
+    expect(blocks).toEqual([{ lang: 'ts', fenceLine: 3, body: 'const x = 1;\n  const y = 2;', skipReason: null, stubs: [] }]);
   });
 
   it('reads an indented skip comment', () => {
@@ -78,6 +80,48 @@ describe('Node globals under the type environment', () => {
   it('typechecks a node:fs call that carries the reference directive', () => {
     const code = '/// <reference types="node" />\nimport { readFileSync } from \'node:fs\';\nreadFileSync(\'x\', \'utf8\');';
     expect(typecheckUnits([{ file: 'a.md', lineBase: 1, code }])).toEqual([]);
+  });
+});
+
+// What a site declares and a snippet cannot import: the dev-build flag and the Worker bindings
+// types that `wrangler types` generates. These typecheck with no skip comment.
+describe('the ambient site declarations', () => {
+  it('typechecks a cloudflare:workers import, an Env binding, and the dev-build flag', () => {
+    const code = [
+      "import { env } from 'cloudflare:workers';",
+      'const db = env.APP_DB;',
+      'function read(e: Env) { return e.AUDIT_DB; }',
+      'const dev: boolean = __CAIRN_DEV_BUILD__;',
+      'export { db, read, dev };',
+    ].join('\n');
+    expect(typecheckUnits([{ file: 'a.md', lineBase: 1, code }])).toEqual([]);
+  });
+
+  it('still fails a misused real export beside them', () => {
+    const code = "import { env } from 'cloudflare:workers';\nimport { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';\ncreateCairnAdmin(env.X, 'extra');";
+    expect(typecheckUnits([{ file: 'a.md', lineBase: 1, code }]).length).toBeGreaterThan(0);
+  });
+});
+
+describe('the excerpt stub', () => {
+  it('reads the stub names from a comment directly above the fence', () => {
+    const blocks = extractBlocks('<!-- snippet-check-stub: runtime, handle -->\n\n```ts\nx;\n```\n');
+    expect(blocks[0]).toMatchObject({ skipReason: null, stubs: ['runtime', 'handle'] });
+  });
+
+  it('declares each name on the first line, so line numbers still map to the doc', () => {
+    const out = applyExcerptStubs('a;\nb;', ['runtime']);
+    expect(out.split('\n').slice(0, 2)).toEqual(['declare const runtime: any; a;', 'b;']);
+  });
+
+  it('typechecks an excerpt that uses an elided name, in two units stubbing the same name', () => {
+    const unit = { file: 'a.md', lineBase: 1, code: applyExcerptStubs('const r = runtime.backend;', ['runtime']) };
+    expect(typecheckUnits([unit, { ...unit, file: 'b.md' }])).toEqual([]);
+  });
+
+  it('maps an error on a stubbed excerpt back to its doc line', () => {
+    const code = applyExcerptStubs('const r = runtime;\nconst n: number = "x";', ['runtime']);
+    expect(typecheckUnits([{ file: 'a.md', lineBase: 10, code }])).toMatchObject([{ file: 'a.md', line: 12 }]);
   });
 });
 
@@ -324,5 +368,22 @@ describe('docFiles, by arm state', () => {
 
   it('fails closed without the deletion list', () => {
     expect(() => docFiles(tree([], { list: false }))).toThrow(/deletion-list\.json does not exist/);
+  });
+  it("walks a packaged skill's references and nothing else in the skill", () => {
+    const root = tree(['skills/cairn-x/references/guide.md', 'skills/cairn-x/SKILL.md']);
+    expect(docFiles(root)).toContain('skills/cairn-x/references/guide.md');
+    expect(docFiles(root)).not.toContain('skills/cairn-x/SKILL.md');
+  });
+
+  it('fails a broken snippet under a packaged skill reference, naming the file and line', () => {
+    const root = tree([]);
+    const page = 'skills/cairn-x/references/guide.md';
+    mkdirSync(dirname(join(root, page)), { recursive: true });
+    writeFileSync(join(root, page), '# Guide\n\n```ts\nconst count: number = "three";\n```\n');
+    const { units } = collectUnits(root);
+    expect(units.map((u: { file: string }) => u.file)).toEqual([page]);
+    const problems = typecheckUnits(units);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatchObject({ file: page, line: 4 });
   });
 });

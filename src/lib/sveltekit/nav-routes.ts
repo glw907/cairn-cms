@@ -22,7 +22,10 @@ interface NavPageOption {
   url: string;
 }
 
-/** The nav editor's load data: the menu meta, the current tree, page options, and flags. */
+/**
+ * The nav editor's load data: the menu meta, the current tree, page options, and flags.
+ * @public
+ */
 export interface NavData {
   menu: { name: string; label: string; maxDepth: number };
   tree: NavNode[];
@@ -42,13 +45,17 @@ interface NavSaveFailure {
 /**
  * The bag `createNavRoutes` takes, so the factory shares one shape with every other route
  *  factory and a later member has a home beside `runtime`.
+ * @beta
  */
 export interface NavRoutesConfig {
   /** The composed runtime the nav routes close over: the site's menu, roles, and backend. */
   runtime: CairnRuntime;
 }
 
-/** Build the nav editor's load and save functions, closed over `config.runtime`. */
+/**
+ * Build the nav editor's load and save functions, closed over `config.runtime`.
+ * @beta
+ */
 export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   const { runtime } = config;
   /**
@@ -173,7 +180,10 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
   return { navLoad, navSaveAction };
 }
 
-/** What `createNavRoutes` returns: the nav editor's load and save functions. */
+/**
+ * What `createNavRoutes` returns: the nav editor's load and save functions.
+ * @beta
+ */
 export interface NavRoutes {
   navLoad: (event: CairnEvent) => Promise<NavData>;
   navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;

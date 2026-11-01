@@ -52,7 +52,7 @@ describe('checkSkillBudget', () => {
 
   it('enforces the real packaged SKILL.md against the ratified 3,500-token budget', () => {
     const text = readFileSync(
-      resolve(ROOT, 'skills/cairn-admin-screens/SKILL.md'),
+      resolve(ROOT, 'skills/cairn-building-admin-screens/SKILL.md'),
       'utf8'
     );
     const result = checkSkillBudget(text, SKILL_BUDGET_TOKENS);
@@ -102,13 +102,13 @@ describe('discoverSkillFiles and checkAllSkillBudgets', () => {
     expect(under?.ok).toBe(true);
   });
 
-  it('a fixture skill with no tier map passes budget when it is not cairn-admin-screens', () => {
+  it('a fixture skill with no tier map passes budget when it is not cairn-building-admin-screens', () => {
     const root = fixtureRoot();
     writeSkill(root, 'plain-skill', 'a short skill core with no tier map section at all');
     const { ok } = checkAllSkillBudgets(root);
     expect(ok).toBe(true);
     expect(shouldCheckTierMap('skills/plain-skill/SKILL.md')).toBe(false);
-    expect(shouldCheckTierMap('skills/cairn-admin-screens/SKILL.md')).toBe(true);
+    expect(shouldCheckTierMap('skills/cairn-building-admin-screens/SKILL.md')).toBe(true);
   });
 });
 
@@ -144,7 +144,7 @@ function actualTierMap() {
 
 describe('parseTierMap', () => {
   it('reads the real SKILL.md tier-map section into one entry per documented rule id', () => {
-    const text = readFileSync(resolve(ROOT, 'skills/cairn-admin-screens/SKILL.md'), 'utf8');
+    const text = readFileSync(resolve(ROOT, 'skills/cairn-building-admin-screens/SKILL.md'), 'utf8');
     const entries = parseTierMap(text);
     expect(entries).toContainEqual({ id: 'no-uncompiled-class', mode: 'static', tier: 'error' });
     expect(entries).toContainEqual({ id: 'one-filled-action', mode: 'rendered', tier: 'error' });
@@ -158,7 +158,7 @@ describe('parseTierMap', () => {
 
 describe('checkTierMap', () => {
   it('agrees when the real SKILL.md tier map exactly matches the real rule registries', () => {
-    const text = readFileSync(resolve(ROOT, 'skills/cairn-admin-screens/SKILL.md'), 'utf8');
+    const text = readFileSync(resolve(ROOT, 'skills/cairn-building-admin-screens/SKILL.md'), 'utf8');
     const result = checkTierMap(parseTierMap(text), actualTierMap());
     expect(result).toEqual({ ok: true });
   });

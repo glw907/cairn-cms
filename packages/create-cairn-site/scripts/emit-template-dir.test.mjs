@@ -165,7 +165,7 @@ test('findTemplateViolations flags a citation in a root file', async (t) => {
 
 test('findTemplateViolations skips the baked guidance under .claude', async (t) => {
   const root = await tempDir(t);
-  await put(root, '.claude/skills/cairn-consult/SKILL.md', 'writes to docs/internal/consultations\n');
+  await put(root, '.claude/skills/cairn-consulting-the-engine/SKILL.md', 'writes to docs/internal/consultations\n');
   await put(root, '.claude/notes.md', 'Verdict 3\n');
 
   assert.deepEqual(await findTemplateViolations(root), []);

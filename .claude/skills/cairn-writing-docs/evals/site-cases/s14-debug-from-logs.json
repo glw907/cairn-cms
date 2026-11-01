@@ -1,0 +1,76 @@
+{
+  "id": "S14-debug-from-logs",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "log events, createLogger",
+  "bar": 4,
+  "prompt": "Editors say that adding a note on the Notes admin screen fails with an error, while saving posts and pages works. The Worker's structured logs for the last day are in logs/worker-logs.jsonl. Work out why adding a note fails, fix it, and tell me the cause. It's done when the cause is fixed and the site type-checks.",
+  "setup": "setups/site/s14-debug-from-logs.mjs",
+  "knownBad": "setups/site/s14-debug-from-logs-bad.mjs",
+  "maxTurns": 50,
+  "source": [
+    "src/lib/sveltekit/section-action.ts:221 misconfigured(): logs admin.action.misconfigured { path, reason } and answers fail(500); the db_not_bound reason is a resolveDb that returned null or undefined (:148-151)",
+    "src/lib/sveltekit/section-action.ts:189 path is event.url.pathname, so the record's path names the screen",
+    "docs/reference/log-events.md: admin.action.misconfigured (error; path, reason db_not_bound or access_map_not_attached) and commit.failed (warn with reason conflict on a 409, a stale edit)",
+    "docs/extend/debug-your-site.md (Admin action events > admin.action.misconfigured; Read the structured logs), docs/reference/log.md createLogger",
+    "setups/site/s14-debug-from-logs.mjs: the screen's resolveDb reads APP_DB, wrangler.jsonc binds the database as NOTES_DB, and a stale APP_DB line in worker-configuration.d.ts keeps the copy type-checking"
+  ],
+  "expectations": [
+    "The reply names admin.action.misconfigured with reason db_not_bound on /admin/notes as the failing record, and says resolveDb returned undefined.",
+    "The reply names the mismatch: the screen's resolveDb reads APP_DB while wrangler.jsonc binds the notes database as NOTES_DB.",
+    "The reply says the commit.failed record with reason conflict is a stale-edit collision on a post, the engine working, and not the cause.",
+    "The fix is in site code: resolveDb in src/routes/admin/notes/+page.server.ts reads NOTES_DB, with no second database added to wrangler.jsonc."
+  ],
+  "checks": [
+    {
+      "type": "read",
+      "path": "worker-logs.jsonl",
+      "beforeEdit": true,
+      "source": "docs/extend/debug-your-site.md (Read the structured logs): logs first. The path is the bare file name so a shell read after `cd logs` counts; no other file in the site shares the name"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin/notes",
+      "regex": "resolveDb[\\s\\S]{0,160}?\\bNOTES_DB\\b",
+      "source": "src/lib/sveltekit/section-action.ts:148 resolveDb; wrangler.jsonc binds NOTES_DB"
+    },
+    {
+      "type": "absent",
+      "path": "wrangler.jsonc",
+      "text": "APP_DB",
+      "source": "docs/extend/debug-your-site.md (admin.action.misconfigured): declaring the name the code reads would add a second, empty database"
+    },
+    {
+      "type": "absent",
+      "path": "src/routes/admin/notes",
+      "regex": "console\\.(log|warn|error)",
+      "source": "CLAUDE.md Diagnosing a running site: a diagnosable path uses the structured vocabulary, not a bare console call"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The final reply states the cause as admin.action.misconfigured with reason db_not_bound on the /admin/notes path, tied to the screen's resolveDb reading APP_DB while the Worker binds NOTES_DB.",
+      "source": "src/lib/sveltekit/section-action.ts:148,221; docs/reference/log-events.md"
+    },
+    {
+      "n": 2,
+      "text": "The final reply does not blame the commit.failed record with reason conflict for the Notes failure; saying nothing about that record also passes, and if it names the record it calls it a stale-edit collision on a post.",
+      "source": "docs/reference/log-events.md commit.failed"
+    },
+    {
+      "n": 3,
+      "text": "The fix changes which binding resolveDb reads (to NOTES_DB). It does not add an APP_DB database to wrangler.jsonc, does not add a migration or a second table for notes, and does not loosen the access rule for /admin/notes.",
+      "source": "src/lib/sveltekit/section-action.ts:148; docs/extend/debug-your-site.md (admin.action.misconfigured)"
+    },
+    {
+      "n": 4,
+      "text": "The tool log shows the session reading the log file before it edited any site code, and it did not add logging or a console call to find a cause the log already named.",
+      "source": "docs/extend/debug-your-site.md (Read the structured logs)"
+    }
+  ]
+}

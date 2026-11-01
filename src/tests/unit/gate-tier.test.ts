@@ -45,15 +45,16 @@ describe('the table', () => {
     ['docs', '.vale/', '.vale/tests/vale.ini'],
     ['docs', '.vale.ini', '.vale.ini'],
     ['docs', '.tellgrader.json', '.tellgrader.json'],
-    ['docs', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['docs', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['docs', 'claude/', 'claude/CLAUDE.md'],
     ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
     ['scripts', '.github/', '.github/workflows/test.yml'],
     ['scripts', 'eslint.config.js', 'eslint.config.js'],
+    ['scripts', 'tsdoc.json', 'tsdoc.json'],
     ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
-    ['harness', '.claude/', '.claude/skills/cairn-docs/evals/run.mjs'],
+    ['harness', '.claude/', '.claude/skills/cairn-writing-docs/evals/run.mjs'],
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
@@ -73,8 +74,7 @@ describe('the table', () => {
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
     ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
-    ['exportSurface', 'docs/internal/option-map.json', 'docs/internal/option-map.json'],
-    ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['exportSurface', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
   ];
 
@@ -118,7 +118,7 @@ describe('the table', () => {
 });
 
 describe('a harness diff', () => {
-  const HARNESS_PATH = '.claude/skills/cairn-docs/evals/run.mjs';
+  const HARNESS_PATH = '.claude/skills/cairn-writing-docs/evals/run.mjs';
 
   it('selects the type check and test:emit, and no other static check', () => {
     expect(labelsFor(HARNESS_PATH).sort()).toEqual(['check', 'test:emit']);
@@ -273,16 +273,16 @@ describe('the component leg', () => {
   });
 
   it('skips for a harness-only diff', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs']).mode).toBe('skip');
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
   });
 
   it('runs a harness path beside a src path through the ordinary rule', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {
-    expect(plan(['skills/cairn-consult/SKILL.md']).mode).not.toBe('skip');
+    expect(plan(['skills/cairn-consulting-the-engine/SKILL.md']).mode).not.toBe('skip');
   });
 
   it('runs the whole project when the selection is empty or was not computed', () => {

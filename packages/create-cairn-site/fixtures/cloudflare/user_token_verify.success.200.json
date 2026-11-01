@@ -1,7 +1,7 @@
 {
   "provenance": {
     "captured": "2026-08-12",
-    "source": "docs/internal/record/2026-08-12-t4c-builds-spike.md:49",
+    "source": "captured live from the Cloudflare user tokens API (GET /user/tokens/verify) during the Workers Builds spike, 2026-08-12",
     "status": 200,
     "note": "token id replaced with a synthetic value; the fake serves ctx.tokenVerifyId"
   },

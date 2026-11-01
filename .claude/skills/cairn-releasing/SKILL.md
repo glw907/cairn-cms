@@ -79,7 +79,7 @@ re-check existing pages whose code changed.
   lines. One module or one surface per agent context, never a per-file window (the `v0.97.0..v0.98.0`
   window alone spanned about 192 files). Independent verifiers confirm, correct, or refute each finding
   against source at `main`; a finder never verifies its own finding.
-- **Filing.** Fix a verified gap on the page it affects, through the `cairn-docs` skill, in a docs PR
+- **Filing.** Fix a verified gap on the page it affects, through the `cairn-writing-docs` skill, in a docs PR
   reviewed as a `docs` review; the cut never waits on it. A gap with no page home becomes a
   `BACKLOG.md` item, never a new page. A code defect is a `BACKLOG.md` item, never a page fix.
 - **Cap.** 1M tokens per cut, counted across every sweep subagent. At the cap, stop, report the modules

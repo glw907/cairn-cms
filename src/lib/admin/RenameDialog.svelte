@@ -5,6 +5,7 @@ moves the entry and rewrites every inbound cairn link in one commit, so no inter
 dated post keeps its date; only the slug changes. A non-routable concept (routable={false}) renames
 a name rather than a URL, and its inbound edges are includes rather than links. Built on a native
 <dialog>, following the DeleteDialog a11y conventions.
+@beta
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';

@@ -97,10 +97,10 @@ describe('resolveInstalledVersion', () => {
 });
 
 describe('walkPackagedTree (real filesystem)', () => {
-  it('reads this repo\'s own cairn-admin-screens skill tree', async () => {
-    const { files, refused } = await walkPackagedTree(resolveSourceRoot('skills/cairn-admin-screens'));
+  it('reads this repo\'s own cairn-building-admin-screens skill tree', async () => {
+    const { files, refused } = await walkPackagedTree(resolveSourceRoot('skills/cairn-building-admin-screens'));
     expect(Object.keys(files)).toContain('SKILL.md');
-    expect(files['SKILL.md']).toContain('cairn-admin-screens');
+    expect(files['SKILL.md']).toContain('cairn-building-admin-screens');
     expect(refused).toEqual([]);
   });
 
@@ -128,8 +128,8 @@ describe('walkPackagedTree (real filesystem)', () => {
 describe('readPackagedSkills (real filesystem)', () => {
   it('enumerates every directory under skills/, fixtured by whatever the repo actually ships', async () => {
     const { skills, refused } = await readPackagedSkills();
-    expect(Object.keys(skills)).toContain('cairn-admin-screens');
-    expect(skills['cairn-admin-screens']['SKILL.md']).toContain('cairn-admin-screens');
+    expect(Object.keys(skills)).toContain('cairn-building-admin-screens');
+    expect(skills['cairn-building-admin-screens']['SKILL.md']).toContain('cairn-building-admin-screens');
     expect(refused).toEqual([]);
   });
 });

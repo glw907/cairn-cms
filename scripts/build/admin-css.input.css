@@ -44,7 +44,7 @@
    compiled here for any consumer's hand-authored admin markup still riding them. */
 @source inline("badge-ghost badge-warning badge-info badge-neutral gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
 /* SKILL-EXEMPLAR SAFELIST. The
-   cairn-admin-screens skill's reference docs teach class recipes cairn's tree never
+   cairn-building-admin-screens skill's reference docs teach class recipes cairn's tree never
    calls, so a Tailwind tree-shake drops them from the shipped sheet with no warning: a consumer
    who copies the recipe verbatim gets markup that silently renders unstyled, then cairn-audit's
    no-uncompiled-class rule convicts the very code that followed the docs. Each class here is

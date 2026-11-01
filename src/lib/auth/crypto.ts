@@ -1,6 +1,6 @@
 // cairn-cms: token and session-id generation plus SHA-256 token hashing, on Web Crypto so the
 // code runs unchanged in workerd. The store keeps only the hash of a token, never the
-// token itself (spec 7.1).
+// token itself.
 
 /** The base session cookie name, prefixed with __Host- when the cookie is Secure. */
 const COOKIE_BASE = 'cairn_session';
@@ -36,14 +36,18 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * those attributes, this function owns only the name.
  *
  * `secure` must reflect the scheme the browser itself sees. Behind upstream TLS termination
- * (a reverse proxy, a platform edge), `url.protocol` is not that scheme; derive `secure` from
- * the externally visible one instead.
+ * (a reverse proxy, a platform edge), `url.protocol` may not be that scheme. On Cloudflare Workers
+ * it already is the visitor's scheme. Elsewhere follow the engine's own CSRF rule: `secure` is true
+ * for an https request and otherwise comes from the scheme of `PUBLIC_ORIGIN`, never from a
+ * forwarded header, which a client can omit or forge to get a cookie that is neither Secure nor
+ * `__Host-` prefixed.
  *
  * `base` must not already carry a __Host- or __Secure- prefix (double-prefixing is a cookie
  * the browser silently rejects, not a runtime error, so this throws instead) or a character
  * outside the cookie-name token set. Bases starting `cairn_` are the engine's reserved
  * namespace: the engine's cookie names delegate through this function, and a site base in
  * that namespace does not throw, but risks colliding with an engine cookie.
+ * @public
  */
 export function buildCookieName(base: string, secure: boolean): string {
   const lowerBase = base.toLowerCase();
@@ -77,7 +81,13 @@ function randomBase64Url(byteLength = 32): string {
   return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
-/** A fresh 256-bit magic-link token, url-safe. */
+/**
+ * A fresh 256-bit magic-link token, url-safe, drawn from `crypto.getRandomValues`.
+ * @remarks
+ * The one exported generator for every CSPRNG secret: a magic-link token, an offer token, a session id, or
+ * a double-submit CSRF token, which pairs with {@link tokensMatch} on the submitted copy.
+ * @public
+ */
 export function generateToken(): string {
   return randomBase64Url(32);
 }
@@ -92,7 +102,16 @@ export function generateCsrfToken(): string {
   return randomBase64Url(32);
 }
 
-/** The lowercase hex SHA-256 of a token, for storage and lookup. */
+/**
+ * The lowercase hex SHA-256 of a token, for storage and lookup.
+ * @remarks
+ * Store only the digest, never the token, and look a submitted token up by its digest. The digest
+ * protects a stolen store only for a value drawn from a CSPRNG, such as {@link generateToken}'s
+ * output: the digest of anything an attacker can enumerate (a password, a numeric code, an email
+ * address) falls to an offline search over the candidates. A password needs a key-derivation
+ * function, which this package does not ship.
+ * @public
+ */
 export async function hashToken(token: string): Promise<string> {
   const data = new TextEncoder().encode(token);
   const digest = await crypto.subtle.digest('SHA-256', data);
@@ -114,6 +133,7 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * replacement character, so two distinct strings that differ only in a lone surrogate encode to
  * the same bytes and compare equal; harmless for the CSPRNG tokens and hex hashes this function
  * is for, which is exactly why this precondition is stated rather than guarded against.
+ * @public
  */
 export function tokensMatch(a: string, b: string): boolean {
   const aBytes = new TextEncoder().encode(a);

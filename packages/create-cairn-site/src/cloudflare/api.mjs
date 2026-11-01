@@ -10,7 +10,7 @@
 // of the chapter's catalogued errors before ever handing control back to a caller, because the
 // catalogue's whole point is that a run never surfaces a raw fetch error or an API's error
 // shape. The mapping is keyed on HTTP status first, and it was corrected 2026-08-11 by a spike
-// against the live API (docs/internal/2026-08-11-t4a-domain-spike.md): the account-scoped
+// against the live Cloudflare API (observed behavior, not a documented contract): the account-scoped
 // zone-create refusal returns HTTP 403 with errors[0].code === 0 and the missing permission
 // named in the message, not code 9109 as originally planned. Code 9109 is real, but observed on
 // other resources (GET /user/tokens), so keying on it would miss the refusal this chapter hits
@@ -39,7 +39,7 @@
 // text, because that text gets pasted into issues and screenshots.
 //
 // The Workers Builds routes (added T4c) are NOT threaded through OPERATION_CODES/throwMapped:
-// the catalogue (docs/plans/2026-08-12-create-cairn-site-t4c.md, Task 2) catalogued
+// the chapter's error catalogue lists
 // exactly the eight recoverable Builds conditions, a count a test guards, and none of them is a
 // generic "this Builds call failed" row a genuinely unexpected failure could reuse (each row's
 // copy is hardcoded, not built from a `detail` param the way zone-create-failed and its
@@ -91,11 +91,11 @@ export const SENDER_NOT_CONFIGURED_CODE = 10204;
 
 /**
  * HTTP 404 codes for the two Workers Builds GitHub-App authorization refusals, captured live
- * 2026-08-12/13 against the connections PUT (spike amendment 5,
- * docs/internal/2026-08-12-t4c-builds-spike.md): the owner's GitHub account has never
+ * 2026-08-12/13 against the connections PUT (observed behavior, not
+ * a documented contract): the owner's GitHub account has never
  * authorized Cloudflare's GitHub App at all (8000008), or the App is authorized but this
  * repository is not in its selection (8000012). Both are Pages-era codes reused for Builds, and
- * Cloudflare's message text is factually wrong for this condition (spike amendment 6), so
+ * Cloudflare's message text is factually wrong for this condition (observed live), so
  * the catalogue rows these map to never quote it back to the admin.
  */
 export const BUILDS_APP_NOT_AUTHORIZED_CODE = 8000008;
@@ -337,7 +337,7 @@ function throwCatalogued(code, params, token, api) {
  * observed both as HTTP 404 with the refusal at `errors[0]`, but that was one observation, and a
  * warning ahead of the refusal, or Cloudflare re-statusing these Pages-era codes, must not make
  * the row fall through to the plain fallback below, which is the one branch that could otherwise
- * leak Cloudflare's factually-wrong Pages prose (spike amendment 6).
+ * leak Cloudflare's factually-wrong Pages prose (observed live).
  * @param {number} status the HTTP status
  * @param {unknown} json the parsed body
  * @param {string} dir the `--dir` value, interpolated into a catalogued row
@@ -550,8 +550,8 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
 
     // --- Workers Builds ---------------------------------------------------------------------
     //
-    // `GET /user/tokens/verify` is a bare user-scoped route, not under `/accounts/:id` (the
-    // spike's fixture doc: docs/internal/2026-08-12-t4c-builds-spike.md). `result.id` is the
+    // `GET /user/tokens/verify` is a bare user-scoped route, not under `/accounts/:id` (see the
+    // Cloudflare API reference for user tokens). `result.id` is the
     // `cloudflare_token_id` the chapter needs when it registers the admin's pasted token as
     // the build token.
     async verifyToken() {

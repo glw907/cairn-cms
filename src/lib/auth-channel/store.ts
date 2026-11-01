@@ -10,14 +10,20 @@
 // implementation passes every single-caller test while admitting far more than its cap under
 // concurrency, which is exactly the shape the design's threat model rules out.
 
-/** One prepared statement, narrowed to the calls the channel store makes on it. */
+/**
+ * One prepared statement, narrowed to the calls the channel store makes on it.
+ * @public
+ */
 export interface ChannelStatementLike {
   bind(...values: unknown[]): ChannelStatementLike;
   first<T = unknown>(): Promise<T | null>;
   run(): Promise<unknown>;
 }
 
-/** A session over the channel database: prepare plus atomic batch, the two calls a flow shares. */
+/**
+ * A session over the channel database: prepare plus atomic batch, the two calls a flow shares.
+ * @public
+ */
 export interface ChannelSessionLike {
   prepare(query: string): ChannelStatementLike;
   batch(statements: ChannelStatementLike[]): Promise<unknown>;
@@ -28,6 +34,7 @@ export interface ChannelSessionLike {
  * `D1Database` satisfies it, and so does the dev package's `createChannelDb()` result, so a test
  * binds the double to a channel with no cast. The store opens its session with
  * `withSession('first-primary')`, the only constraint it passes.
+ * @public
  */
 export interface ChannelDatabaseLike {
   prepare(query: string): ChannelStatementLike;

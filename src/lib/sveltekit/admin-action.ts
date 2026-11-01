@@ -20,7 +20,10 @@ import type { AccessRefusedReason } from '../log/events.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
 
-/** One audit-log record a mutating admin action must emit through `ctx.audit`. */
+/**
+ * One audit-log record a mutating admin action must emit through `ctx.audit`.
+ * @public
+ */
 export interface AdminActionAudit {
   /** The verb, imperative, lowercase: `"approve"`, `"rollover-season"`, `"update-event"`. */
   action: string;
@@ -37,13 +40,29 @@ export interface AdminActionAudit {
  * verified editor's email. A site may also call a sink directly to record its domain events,
  * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
  * not be a cairn editor.
+ * @public
  */
 export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
-/** A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
+/**
+ * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
+ *
+ * Synchronous and fire-and-forget: `ctx.audit` never awaits the return value (it only attaches a
+ * rejection handler to a returned promise), and every
+ * emit logs `admin.action.audited` before the sink runs, wired or not. The seam is fail-open at
+ * the call site: a sink that throws, or returns a rejecting promise (an async function passes this
+ * type through void-return bivariance), never fails the action; `ctx.audit` logs
+ * `audit.sink.call_failed` without the record's `detail`, and the handler's result returns as if
+ * the sink had succeeded. A SvelteKit `redirect()` or `error()` the sink throws synchronously is
+ * rethrown untouched rather than logged.
+ * @public
+ */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 
-/** What a wrapped handler receives: the verified editor and a bound audit emitter. */
+/**
+ * What a wrapped handler receives: the verified editor and a bound audit emitter.
+ * @public
+ */
 export interface AdminActionContext {
   /** The verified editor; the only identity a wrapped action may act as. */
   editor: Editor;
@@ -60,6 +79,7 @@ export interface AdminActionContext {
  * SvelteKit's `redirect()` or `error()` instead, which carry their status to the browser
  * directly and need no `handleError` mapping; this class carries no production status and never
  * stood for one.
+ * @public
  */
 export class UnauditedActionError extends Error {
   constructor(
@@ -70,7 +90,10 @@ export class UnauditedActionError extends Error {
   }
 }
 
-/** Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path. */
+/**
+ * Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path.
+ * @public
+ */
 export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
@@ -79,9 +102,17 @@ export interface AdminActionOptions {
    * `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on top of
    * the map check rather than standing in for it. Omitted, `createAdminAction` authorizes nothing, its
    * behavior for every existing caller. Present, a refused session is audited through
-   * `ctx.audit` and then thrown as `error(403, ...)`.
+   * `ctx.audit` and then thrown as `error(403, ...)`, so a wired `cairnAuditSink` receives one
+   * denial record per refused request. Opt-in rather than the default because the zero-config
+   * guard attaches an empty map, which has no rule for any target: enforcing by default would
+   * refuse every action on a site that declares no map.
    */
-  access?: { target: string; ownerOnly?: boolean };
+  access?: {
+    /** The access-map key the session is checked against, never a request pathname. */
+    target: string;
+    /** Also require the owner role, on top of the access-map check. */
+    ownerOnly?: boolean;
+  };
 }
 
 /**
@@ -152,15 +183,16 @@ function serializeThrownError(error: unknown): string {
 /**
  * Wrap a custom admin action's handler. In order, fail-closed at every step:
  *
- * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it); its
- *    absence means the session expired or was never established, so this logs
- *    `admin.action.session_absent` and redirects to `/admin/login`, matching `requireSession`
- *    (`./guard.js`) exactly: an editor whose session lapsed needs the login page, not an error
- *    page.
+ * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it).
+ *    Behind the guard, a request with no session redirects at the `Handle` before any route runs,
+ *    so an absent editor here means no hook set one: the route sits outside the guard's
+ *    `/admin/**` coverage, or a site hook cleared it. This logs `admin.action.session_absent` and
+ *    redirects to `/admin/login`, matching `requireSession` (`./guard.js`).
  * 2. The double-submit CSRF token must verify, constant-time, checked the same way the guard
  *    checks it (`./guard.js`): a header witness that was sent at all decides outright, matching or
  *    not, and the cookie-against-`csrf`-form-field check runs only when no `X-Cairn-CSRF` header
- *    was sent. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
+ *    was sent, so a fetch-based action that sets the header and posts `FormData` with no `csrf`
+ *    field passes. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
  *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
@@ -200,9 +232,15 @@ function serializeThrownError(error: unknown): string {
  * contract with no database binding stays on `createAdminAction` itself rather than reaching for
  * that door.
  *
+ * Every refusal in steps 1 to 3 throws SvelteKit's `redirect()` or `error()`, so none needs a
+ * site `handleError` mapping; only the dev-only {@link UnauditedActionError} is not a kit shape.
+ * Without `deps.access` this wrapper authenticates but authorizes nothing: a `none`-capability
+ * session reaches the handler.
+ *
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
  * {@link authorizeAdminTarget} rather than falling back to `canReach`'s permissive nav
  * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
+ * @public
  */
 export function createAdminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
@@ -252,7 +290,7 @@ export function createAdminAction<T>(
         emitted++;
         const full: AdminActionAuditRecord = { ...record, actor: editor.email };
         log.info('admin.action.audited', { ...full });
-        // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
+        // Fail-open, per the seam's documented promise: a site's
         // hand-rolled sink is arbitrary code the engine does not control, and the mutation
         // this record describes already completed. A throw, or a rejected async return, here
         // must never turn that completed write into a failed action. `admin.action.audited`
@@ -272,7 +310,7 @@ export function createAdminAction<T>(
           const outcome = event.locals.cairnAuditSink?.(full);
           // The sink's declared type is `(record) => void`, but TypeScript's void-return
           // bivariance admits an async function with no error (the `waitUntil` advice in
-          // docs/extend/add-a-custom-admin-screen.md is exactly the pressure that writes one). The
+          // the packaged admin-screens skill is exactly the pressure that writes one). The
           // call above is never awaited, since the seam is synchronous by contract; attach a
           // rejection handler instead, fire-and-forget, so a rejecting async sink still logs.
           if (outcome != null && typeof (outcome as { then?: unknown }).then === 'function') {

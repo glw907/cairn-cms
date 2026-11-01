@@ -1,4 +1,4 @@
-// cairn-cms: D1 access for the public preview token table (spec part 3), through prepared
+// cairn-cms: D1 access for the public preview token table, through prepared
 // statements only. No ORM. Follows the D1 access idiom in src/lib/auth/store.ts exactly: each
 // function takes the AUTH_DB binding plus primitives, so it is testable against a real local D1
 // and free of SvelteKit. This module is internal, never exported from any package subpath: a

@@ -178,11 +178,13 @@ const tidyField = StateField.define<TidyState>({
  *  receives it as EditorApi.tidy through registerEditor, and the review surface calls it as the
  *  author works the list. Every accept lands as a CodeMirror transaction; reject and reject-all
  *  write no text.
+ * @public
  */
 export interface TidyApi {
   /**
    * Open tidy with the validated change set: seed the field, show the decorations. The buffer is
-   *  untouched; the originals stay until an accept writes.
+   *  untouched; the originals stay until an accept writes. `Change` is not exported; name an
+   *  element as `Parameters<TidyApi['enter']>[0][number]`.
    */
   enter(changes: Change[]): void;
   /**

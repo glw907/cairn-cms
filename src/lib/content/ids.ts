@@ -41,7 +41,10 @@ export function slugify(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. */
+/**
+ * Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem.
+ * @public
+ */
 export type DatePrefix = 'year' | 'month' | 'day';
 
 /** The leading date-prefix shape for each granularity. */

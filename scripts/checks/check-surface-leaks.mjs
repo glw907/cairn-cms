@@ -41,7 +41,7 @@ import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
 import { repoRoot } from '../repo-root.mjs';
-import { moduleExports } from './reference-coverage.mjs';
+import { moduleExports } from './dts-exports.mjs';
 import { buildSurfaceModel, surfaceSubpaths } from './check-surface.mjs';
 
 const ROOT = repoRoot(import.meta.url);

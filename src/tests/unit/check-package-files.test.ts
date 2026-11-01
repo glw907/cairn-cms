@@ -253,12 +253,12 @@ describe('requiredDocsPaths, in each arm state', () => {
   });
 });
 
-// The packaged cairn-admin-screens skill must reach the tarball, or cairn-guidance install has
+// The packaged cairn-building-admin-screens skill must reach the tarball, or cairn-guidance install has
 // nothing to install into a consumer's .claude/skills/.
 describe('checkSkillPacked', () => {
   it('passes when the skill core is packed', () => {
     expect(
-      checkSkillPacked(['dist/index.js', 'skills/cairn-admin-screens/SKILL.md'])
+      checkSkillPacked(['dist/index.js', 'skills/cairn-building-admin-screens/SKILL.md'])
     ).toEqual({ ok: true });
   });
 
@@ -266,7 +266,7 @@ describe('checkSkillPacked', () => {
     const result = checkSkillPacked(['dist/index.js', 'CHANGELOG.md']);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('skills/cairn-admin-screens/SKILL.md');
+    expect(result.error).toContain('skills/cairn-building-admin-screens/SKILL.md');
     expect(result.error).toContain('files');
   });
 });

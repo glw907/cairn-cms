@@ -46,7 +46,7 @@ green lane, report BLOCKED with the exact failing output instead of committing a
   Svelte 4 store, `$:`, or `on:` idiom. Each component opens with a `<!-- @component -->` doc
   comment and carries JSDoc on its `Props` members.
 - **No em dashes in code comments.** Cairn's comment lint flags them. Docs prose follows the
-  track's drafting brief in the `cairn-docs` skill's `references/docs-register.md` (developer docs
+  track's drafting brief in the `cairn-writing-docs` skill's `references/docs-register.md` (developer docs
   or editor docs, by the page's track).
 - Tests live at `src/tests/{unit,integration,component}/<name>.test.ts`.
 - A built-in public component under `src/lib/public/` carries no literal, uses no daisyUI component
@@ -69,7 +69,7 @@ with the evidence.
 
 ## Documentation
 
-A task that changes documented behavior fixes the page in the same commit, per the `cairn-docs`
+A task that changes documented behavior fixes the page in the same commit, per the `cairn-writing-docs`
 skill. A task that adds, renames, or removes a member of a public option-bearing type also runs
 `npm run check:options`. An `exclude` row is only for a path a developer never sets, and a new
 option is never parked `pending`.

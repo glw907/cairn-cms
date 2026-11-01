@@ -90,7 +90,7 @@ export function authorizeUrl({ clientId, redirectUri, state }) {
  * run, so GitHub redirects straight back with no consent prompt to click through; this is the
  * resume path's authorize/callback round trip, distinct from the manifest flow's.
  *
- * Spike-observed constraint (docs/internal/2026-08-10-t2-own-app-spike.md), pinned here so it is
+ * Spike-observed constraint (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-10-t2-own-app-spike.md), pinned here so it is
  * not later "simplified" away: GitHub's loopback leniency for a registered portless callback URL
  * is PORT-ONLY, not path-flexible. The redirect_uri built here must use the exact path registered
  * in the manifest's callback_urls, `/callback`; any other path lands on GitHub's "Be careful!"

@@ -18,7 +18,10 @@
 // inline where it needs a hash lookup.
 import type { MediaEntry } from './manifest.js';
 
-/** One stored asset in the picker's projected library, keyed elsewhere by the 16-hex content hash. */
+/**
+ * One stored asset in the picker's projected library, keyed elsewhere by the 16-hex content hash.
+ * @public
+ */
 export interface MediaLibraryEntry {
   /** The 16-hex content-hash prefix that names the bytes. */
   hash: string;

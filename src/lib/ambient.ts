@@ -50,11 +50,21 @@ declare global {
   const __CAIRN_DEV_BUILD__: boolean;
 
   namespace App {
+    /**
+     * The fields the engine reads and writes on admin requests, typed by importing
+     * `@glw907/cairn-cms/ambient` once from `src/app.d.ts`. The import is type-only: its module
+     * exports nothing at runtime.
+     */
     interface Locals {
+      /** The signed-in editor, set by `createAuthGuard` on a guarded `/admin/**` request; `null` when signed out, absent on a request the guard never touched. */
       cairnEditor?: Editor | null;
+      /** The per-request content store the dev-backend handle injects, resolved ahead of the real provider (`locals.cairnBackend ?? runtime.backend.connect(env)`); a production request leaves it unset. */
       cairnBackend?: Backend;
+      /** The site's persistence seam for `createAdminAction`'s audit records, assigned in a hooks handle. Left unassigned, every `ctx.audit` emit still logs `admin.action.audited`. */
       cairnAuditSink?: AdminActionAuditSink;
+      /** The site's declared access map, attached by `createAuthGuard` beside `cairnEditor`; the engine never puts it in a page payload. A zero-config guard attaches an empty map, which admits nothing, so a `createAdminAction` that opts into `access` refuses until the site declares a rule for its target; one with no `access` option never reads the field. */
       cairnAccess?: AccessMap;
+      /** The identity-gate snapshot from `createAuthGuard`'s `identity` option, set on every `/admin/**` path under identity mode, the public login and confirm paths included. The guard is its only writer, publishing the value validated once at construction; absent under the magic-link default. */
       cairnIdentity?: { label: string; logoutUrl: string };
     }
   }

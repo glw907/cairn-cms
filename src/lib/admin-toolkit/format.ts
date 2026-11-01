@@ -14,7 +14,10 @@
 // rendering a possibly-absent value never has to remember which formatter tolerates nullish and
 // which throws, nor which one carries its opinion about what absence looks like.
 
-/** Options for {@link formatCivilDate}. */
+/**
+ * Options for {@link formatCivilDate}.
+ * @public
+ */
 export interface FormatCivilDateOptions {
   /** The string to return for a nullish or empty `iso` value. Defaults to `''`. */
   fallback?: string;
@@ -35,6 +38,7 @@ export interface FormatCivilDateOptions {
  * `new Date(iso)` UTC parse would, and never routes a civil date through a time-of-day formatter
  * (the "4:00 PM" artifact a timestamp formatter produces for a value that carries no time). A
  * nullish or empty `iso` reads `options.fallback`.
+ * @public
  */
 export function formatCivilDate(iso: string | null | undefined, options: FormatCivilDateOptions = {}): string {
   const { fallback = '', locale = 'en-US', intlOptions = { year: 'numeric', month: 'short', day: 'numeric' } } =
@@ -46,7 +50,10 @@ export function formatCivilDate(iso: string | null | undefined, options: FormatC
   return new Intl.DateTimeFormat(locale, intlOptions).format(parsed);
 }
 
-/** Options for {@link formatTimestamp}. */
+/**
+ * Options for {@link formatTimestamp}.
+ * @public
+ */
 export interface FormatTimestampOptions {
   /**
    * An IANA time zone name. Defaults to `'UTC'`, the neutral zone a Cloudflare Worker's
@@ -94,6 +101,7 @@ function toCanonicalIso(input: string): string {
  * which is what keeps that guarantee rather than falling back to implementation-defined
  * `Date.parse` behavior. `timeZone` governs only the RENDERED zone. A nullish `input` reads
  * `options.fallback`.
+ * @public
  */
 export function formatTimestamp(input: string | null | undefined, options: FormatTimestampOptions = {}): string {
   const { timeZone = 'UTC', locale = 'en-US', fallback = '' } = options;
@@ -114,6 +122,7 @@ export function formatTimestamp(input: string | null | undefined, options: Forma
  * A count-line noun in both grammatical numbers (the "1 signups" defect: a bare plural noun
  * reads wrong at exactly one). `one` is the singular form, used when the count is exactly 1;
  * `many` is the plural, used for every other count, zero included ("0 signups").
+ * @public
  */
 export interface ItemLabel {
   /** The singular noun, used when the count is exactly 1. */

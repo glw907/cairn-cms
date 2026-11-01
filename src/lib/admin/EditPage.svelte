@@ -17,6 +17,17 @@ Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
 count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's
 persistent "?" carries Markdown help).
+
+Save and Publish submit through `use:enhance`, so a failed request never replaces the page or the
+author's text. A `fail()` result is applied as `form` with no load. A thrown action, a non-JSON
+answer, or a redirect off the entry's concept leaves the page alone and shows a notice; a same-origin
+redirect off the concept (an expired session sent to sign-in) shows "Your session ended" with a
+sign-in link, any other such failure "That did not go through". A save or publish that redirects
+onto the concept reloads the document. Pending personal-dictionary words commit before the request
+is sent, fail-closed under a deadline, so a dictionary failure never blocks the save. The preview
+frame is sandboxed, so a `hydrate` component shows its `build()` fallback there, never the live
+island.
+@beta
 -->
 <script lang="ts">
   import { flushSync, tick, untrack, getContext } from 'svelte';
@@ -94,12 +105,13 @@ persistent "?" carries Markdown help).
      *  inbound linkers, or a rename refusal, each carrying the shared `error` summary. */
     form?: ContentFormFailure | null;
     /**
-     * Whether the mounting admin facade exposes the `previewMint`/`previewRevoke` actions (spec
-     *  part 3, "Public preview for a non-editor"), so the Share preview group renders in the
-     *  Details panel. Defaults to `true`: a site built on `createCairnAdmin`'s actions record
-     *  always carries both keys. A site holding the feature back (before applying
+     * Whether the Share preview group renders in the Details panel. Defaults to `true`: a site
+     *  built on `createCairnAdmin`'s actions record always carries both keys. A site holding the feature back (before applying
      *  `migrations/0003_preview.sql`, say) passes `false` to keep the affordance off the edit
-     *  screen until it is ready, rather than showing a control whose every use fails.
+     *  screen until it is ready, rather than showing a control whose every use fails. Presentational
+     *  only: `false` hides the group but leaves the `previewMint`/`previewRevoke` actions mounted
+     *  with their full entry-scoped authorization, so it is never an access control. Restrict a
+     *  role from minting a preview link in the access map.
      */
     previewMint?: boolean;
     /**
@@ -1788,7 +1800,7 @@ persistent "?" carries Markdown help).
     {flash}
   </div>
 {/if}
-<!-- The site's publish-actions next-step links (docs/reference/sveltekit.md#the-publish-actions-seam):
+<!-- The site's publish-actions next-step links (`publishActions` on `createContentRoutes`):
      quiet links beside the publish-success strip, never their alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
 {#if !failedInPlace && data.publishedFlash && data.publishActions.length}

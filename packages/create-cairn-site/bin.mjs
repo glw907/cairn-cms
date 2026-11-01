@@ -84,7 +84,7 @@ function closingInfoLines(state) {
   const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
   const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
   return {
-    repoLines: [`Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
+    repoLines: [`Your private repository on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
     doctorLine:
       'Run `cairn doctor` any time to check what is set up and what is still missing. Install ' +
       'it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the ' +

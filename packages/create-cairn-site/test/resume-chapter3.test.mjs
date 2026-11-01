@@ -235,7 +235,7 @@ for (const [step, expectedNote] of [
     assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
     assert.ok(result.stdout.includes(expectedNote), `expected the terminal note, got: ${result.stdout}`);
     assert.ok(
-      result.stdout.includes('Your site is live on GitHub:'),
+      result.stdout.includes('Your private repository on GitHub:'),
       `expected the shared repo line, got: ${result.stdout}`,
     );
     assert.equal(result.stdout.includes(SCAFFOLD_MARKER), false, `expected no scaffold output, got: ${result.stdout}`);

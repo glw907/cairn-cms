@@ -302,7 +302,7 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
     `expected the unattended skip hint, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('Your site is live on GitHub:'),
+    result.stdout.includes('Your private repository on GitHub:'),
     `expected the live info block, got: ${result.stdout}`,
   );
   assert.ok(
@@ -435,7 +435,7 @@ for (const [label, step, seed, idSuffix] of [
       `expected the domain named in the closing copy, got: ${result.stdout}`,
     );
     assert.ok(
-      result.stdout.includes('Your site is live on GitHub:'),
+      result.stdout.includes('Your private repository on GitHub:'),
       `expected the shared repo link, got: ${result.stdout}`,
     );
     assert.ok(

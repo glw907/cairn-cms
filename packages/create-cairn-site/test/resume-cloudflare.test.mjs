@@ -167,7 +167,7 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
   // Stopping before chapter 2 must not cost this run its closing block, which every other
   // already-live run prints.
   assert.ok(
-    result.stdout.includes('Your site is live on GitHub:'),
+    result.stdout.includes('Your private repository on GitHub:'),
     `expected the closing block's repo line, got: ${result.stdout}`,
   );
   assert.ok(

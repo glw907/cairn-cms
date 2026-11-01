@@ -221,7 +221,8 @@ export function createLinkResolver(site: SiteResolver): LinkResolve {
 /**
  * A fragment-body resolver backed by the site resolver, for the build. A miss throws, so a
  *  dangling `::include` fails the prerender the same way a dangling `cairn:` link does. An unknown id
- *  and a site with no fragments concept each get their own message. The preview uses a
+ *  throws `cairn: fragment "<id>" not found`, and a site with no fragments concept throws
+ *  `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`. The preview uses a
  *  manifest-backed resolver built from the edit screen's fragment targets instead.
  * @public
  */

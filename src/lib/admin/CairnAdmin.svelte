@@ -56,7 +56,8 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     /** The site's icon set, for the edit view's guided form fields. */
     icons?: IconSet;
     /** Whether the edit view's Share preview group renders (spec part 3, "Public preview for a
-     *  non-editor"); forwarded to `EditPage`. Defaults to `true` there when left unset. */
+     *  non-editor"); forwarded to `EditPage`. Defaults to `true` there when left unset. Presentational
+     *  only: see `EditPage`'s `previewMint`. */
     previewMint?: boolean;
   }
 

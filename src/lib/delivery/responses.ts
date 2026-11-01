@@ -52,6 +52,8 @@ export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; 
 /**
  * A raw-markdown twin response. `body` is an entry's stored markdown, unrendered, so a request for
  *  the `.md` twin gets cairn's native source rather than a reconstruction of the rendered html.
+ *  It applies no `noindex` refusal: that lives in `createPublicRoutes`'s `markdownLoad`, so a lookup
+ *  that bypasses it (a hand-rolled `site.byPermalink`) can serve a body `markdownEntries` never listed.
  * @public
  */
 export function markdownResponse(opts: { body: string }): Response {

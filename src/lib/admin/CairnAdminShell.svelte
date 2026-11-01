@@ -12,6 +12,14 @@ preference reads. It hands descendant forms a CSRF-token getter through context,
 actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
 route. Failure mode: a public payload that carried chrome fields would still render bare (the
 discriminant, not the fields, gates the chrome).
+
+Under a `themeOverride` the shell offers no theme toggle, in the top bar or in `EditPage`'s folded
+overflow control, so nothing flips the theme the host owns. When the streamed pending set is
+non-empty the top bar shows a "Publish site (N)" button; a null set (GitHub unreachable) hides it
+rather than showing a stale count. A nav entry shows a count badge only for a positive
+`data.attention` count for its `href`, capped at `99+`; a collapsed section's header shows the sum of
+its visible children's counts from that same record. The count rides the link's accessible name, so
+a screen reader announces it once.
 @public
 -->
 <script lang="ts">
@@ -52,7 +60,8 @@ discriminant, not the fields, gates the chrome).
      *  both of its reads (the admin theme cookie and the OS `prefers-color-scheme` preference).
      *  Reactive: changing it re-renders the shell in the new theme, so a host that pictures the
      *  admin in both themes updates the prop instead of re-mounting. Absent (every real admin
-     *  mount), the shell resolves its theme exactly as it always has. */
+     *  mount), the shell resolves its theme exactly as it always has. With it set, the shell
+     *  renders no theme toggle. */
     themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
   }
 

@@ -79,10 +79,22 @@ export interface ContentProblem {
  * @public
  */
 export interface ContentIndex<F = Record<string, unknown>> {
+  /**
+   * Summaries in the engine's order, so a caller never re-sorts. A dated concept (`routing.dated`)
+   *  is newest first by `date`, an undated entry last; an undated concept is sorted by `title`.
+   *  Drafts are omitted unless `includeDrafts` is true.
+   */
   all(opts?: { includeDrafts?: boolean }): ContentSummary[];
+  /** One entry by id, drafts included, or undefined. */
   byId(id: string): ContentEntry<F> | undefined;
+  /** Summaries carrying `tag`, in the same order as `all`; drafts omitted unless `includeDrafts` is true. */
   byTag(tag: string, opts?: { includeDrafts?: boolean }): ContentSummary[];
+  /** Every tag on a non-draft entry with its count, sorted alphabetically by tag. */
   allTags(): { tag: string; count: number }[];
+  /**
+   * The neighbors of one entry among non-draft entries in `all` order, `newer` the one before it
+   *  and `older` the one after. An id that is unknown or a draft returns `{}`.
+   */
   adjacent(id: string): { newer?: ContentSummary; older?: ContentSummary };
   /** Per-entry validation failures recorded at build, for the site-level build gate. */
   problems(): ContentProblem[];

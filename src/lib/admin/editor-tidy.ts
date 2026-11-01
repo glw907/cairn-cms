@@ -183,7 +183,8 @@ const tidyField = StateField.define<TidyState>({
 export interface TidyApi {
   /**
    * Open tidy with the validated change set: seed the field, show the decorations. The buffer is
-   *  untouched; the originals stay until an accept writes.
+   *  untouched; the originals stay until an accept writes. `Change` is not exported; name an
+   *  element as `Parameters<TidyApi['enter']>[0][number]`.
    */
   enter(changes: Change[]): void;
   /**

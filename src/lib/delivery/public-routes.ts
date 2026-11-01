@@ -33,7 +33,11 @@ export interface PublicRoutesConfig {
   siteName: string;
   /** Default description used when an entry has none. */
   description: string;
-  /** Absolute feed URLs for the head's autodiscovery links. */
+  /**
+   * Absolute feed URLs for the head's `rel="alternate"` autodiscovery links, typed
+   *  `application/rss+xml` and `application/feed+json`. They land on a dated entry's head only; an
+   *  undated entry's head carries neither.
+   */
   feeds?: {
     /** The RSS feed's absolute URL. */
     rss?: string;
@@ -285,6 +289,14 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
 /**
  * What `createPublicRoutes` returns: one entry's public data by request path, the prerender
  *  enumerations, and the raw-markdown twin's load.
+ *
+ *  `entryLoad` and `markdownLoad` throw `error(404)` for a path the resolver does not carry, and
+ *  `markdownLoad` also throws it for a `noindex` entry, so the loader and `markdownEntries` agree
+ *  even if the route is not prerendered. Both read only through the injected `SiteResolver`, so
+ *  nothing outside the resolver's committed content reaches a response. `markdownEntries` lists one
+ *  `.md`-suffixed path per entry whose frontmatter `robots` lacks `noindex`. Serve the twin with
+ *  `markdownResponse` from a prerendered `+server.ts`, never a runtime one, so the served set is what
+ *  a build against `main` produced.
  * @scaffold
  */
 export interface PublicRoutes {

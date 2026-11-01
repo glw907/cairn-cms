@@ -37,7 +37,11 @@ export type SiteIndexes<A extends CairnAdapter> = {
  * globs as `{ posts: import.meta.glob('...?raw', { eager: true }), ... }`; Vite needs the literal
  * glob at the call site, so the engine cannot glob on the site's behalf. `validate: false` opts out
  * of the build-time schema validation the returned resolver otherwise runs against every concept's
- * frontmatter, for a caller that needs the indexes before every entry satisfies its schema.
+ * frontmatter, for a caller that needs the indexes before every entry satisfies its schema; the
+ * build then logs a `content.entry_invalid` warning for each invalid entry instead of failing.
+ * @throws When a concept is named `site`, when a declared concept has no key in `globs` (pass `{}`
+ *  for an intentionally empty one), when two entries resolve to one permalink, or, unless
+ *  `validate` is `false`, when a non-draft entry fails its concept's validator.
  * @public
  */
 export function createSiteIndexes<const A extends CairnAdapter>(

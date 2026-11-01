@@ -24,7 +24,10 @@ const CONTENT_SIGNAL = {
 } as const;
 
 /**
- * Build a robots.txt body. `posture` is optional and defaults to stating nothing: an unset
+ * Build a robots.txt body. `disallow` paths always emit under the `User-agent: *` group, so they
+ * cannot decline a named crawler. The crawler table is fixed: no option adds a token to it, and a
+ * token with no first-party operator documentation (Bytespider) is absent. Search crawlers stay
+ * out of the table. `posture` is optional and defaults to stating nothing: an unset
  * posture produces byte-identical output to a site that never states one. `'decline'` adds one
  * `User-agent`/`Disallow` group per {@link AI_CRAWLERS} token plus a `Content-Signal` line
  * declining training. `'invite'` adds a `Content-Signal` line inviting training and no

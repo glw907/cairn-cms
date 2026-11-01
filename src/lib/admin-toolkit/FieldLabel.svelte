@@ -28,6 +28,12 @@ A hint or an error line is the same question with a different answer. It is cont
 affordance, so it may sit inside the label, but the bottom-aligned row recipe above has one
 caveat: a field that renders a trailing line stops having its control as its bottom edge, and a
 row levelling on that edge then levels the wrong thing.
+
+In the stacked register, an input, select, or textarea that is a DIRECT child of this component fills
+its width; one nested a level deeper (a compact row of controls) keeps its own width. The component
+renders one wrapping `<label>` with no `for`, and a browser names only the FIRST labelable descendant
+from a wrapping label, so in a row of two or more controls every control after the first needs its
+own `<label>` or `aria-label`.
 @public
 -->
 <script lang="ts">

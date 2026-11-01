@@ -151,9 +151,28 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     const body = String(form.get('body') ?? '');
     const isNew = form.get('new') === '1';
 
-    // The backend is resolved up front: the branch-first prior-tags read below (the orphan union)
-    //  needs it before the validate.
     const backend = ctx.resolveBackend(event);
+
+    // Read the default branch's head BEFORE the prior read below and every read of main's
+    // media.json or index.json, so the publish commit's expectedHead is at-or-before every byte of
+    // those snapshots it sends.
+    const guardedHead = guardMainHead ? await backend.branchHead(backend.defaultBranch) : undefined;
+
+    // The entry's prior file, read once branch-first like editLoad: the pending branch when its head
+    //  is non-null, else the default branch. It feeds the tag vocabulary's orphan union and the
+    //  undeclared-key merge below. A create has none. A failed read or parse fails closed, since
+    //  proceeding on "no prior keys" would silently delete every key the fieldset does not declare.
+    let priorData: Record<string, unknown> = {};
+    if (!isNew) {
+      try {
+        const branch = pendingBranch(concept.id, id);
+        const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
+        const priorRaw = await backend.readFile(path, priorBranch);
+        if (priorRaw !== null) priorData = parseMarkdown(priorRaw).frontmatter;
+      } catch {
+        return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
+      }
+    }
 
     // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
     //  concept marks a taxonomy field. Otherwise the bare path runs unchanged (the open creatable
@@ -168,21 +187,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (vocabValues.length === 0 || taxField === null) {
       decoded = frontmatterFromForm(concept.fields, form);
     } else {
-      // Read the entry's prior tags branch-first, mirroring editLoad: the pending branch when its
-      //  head is non-null, else the default branch. A create has no prior tags. A failed read
-      //  degrades to no prior tags so it never blocks the save.
-      let priorTags: string[] = [];
-      if (!isNew) {
-        try {
-          const branch = pendingBranch(concept.id, id);
-          const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
-          const priorRaw = await backend.readFile(path, priorBranch);
-          if (priorRaw !== null) priorTags = coerceTags(parseMarkdown(priorRaw).frontmatter[taxField]);
-        } catch {
-          priorTags = [];
-        }
-      }
-      allowed = resolveAllowed(vocabValues, priorTags);
+      allowed = resolveAllowed(vocabValues, coerceTags(priorData[taxField]));
       decoded = frontmatterFromForm(closeTaxonomyField(concept.fields, allowed), form);
     }
 
@@ -218,11 +223,14 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       }
     }
 
-    const markdown = serializeMarkdown(result.data, body);
-
-    // Read the default branch's head BEFORE any read of main's media.json or index.json, so the
-    // publish commit's expectedHead is at-or-before every byte of those snapshots it sends.
-    const guardedHead = guardMainHead ? await backend.branchHead(backend.defaultBranch) : undefined;
+    // Keep every prior key the fieldset does not declare (a hand-written `draft: true`, say), so a
+    //  save never deletes what the form cannot show. A declared field the form omitted stays removed.
+    const declared = new Set(concept.fields.map((f) => f.name));
+    const merged: Record<string, unknown> = { ...result.data };
+    for (const [key, value] of Object.entries(priorData)) {
+      if (!declared.has(key) && !(key in merged)) merged[key] = value;
+    }
+    const markdown = serializeMarkdown(merged, body);
 
     // Merge the editor's optimistic media records into the media manifest, gated on media being on
     // and at least one valid record posted. The base is read from the default branch (never the

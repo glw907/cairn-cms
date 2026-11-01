@@ -60,6 +60,9 @@ Ids the engine refuses: `login`, `auth`, `editors`, `help`, `media`, `vocabulary
 Every field is optional unless it sets `required: true`. Mark only the fields the task requires
 (usually the title and the start date); leave the rest bare. An empty optional field is dropped from
 the saved frontmatter and typed optional, so code reading it under strict settings checks it is set.
+A key the fieldset does not declare (a hand-written `draft: true`) is not shown in the form and
+survives every save and publish; a declared field the form leaves empty is removed. A bare YAML date
+in an undeclared key is rewritten as a full ISO instant (`2026-01-01T00:00:00.000Z`).
 
 `fields.text`, `textarea`, `number`, `url`, `email`, `date` (`YYYY-MM-DD`), `datetime`, `boolean`,
 `select`, `multiselect`, `image`, `reference`, `object`, `array`. `number` is the whole-number field

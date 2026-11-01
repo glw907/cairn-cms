@@ -85,7 +85,8 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  *  reference. It returns the bare full-size path (transformed variants are the imageDetail side
  *  channel's job, keyed off the asset's known width) so a fresh zone with Image Transformations
  *  disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns undefined when
- *  media is off or no entry carries the hash (the preview-miss backstop).
+ *  media is off or no entry carries the hash (the preview-miss backstop), unless `opts.strict` makes
+ *  a miss with media on throw.
  * @remarks
  * Pass `normalizeAssets` the same object the adapter's `media` member receives, so the two
  * normalizations agree. The resolved `<img>` also gains intrinsic `width` and `height` when the entry
@@ -98,11 +99,21 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
 export function createMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
+  opts: {
+    /**
+     * Throw a `cairn:`-prefixed error on a hash with no manifest row while media is on, so a
+     *  prerender or request-time render fails on a broken reference instead of shipping
+     *  `src="#"`. Media off stays silent, and a preview passes its own resolver, so previews keep
+     *  marking misses broken. Defaults to false.
+     */
+    strict?: boolean;
+  } = {},
 ): MediaResolve {
   const resolve: MediaResolveWithDetail = (ref: MediaRef): string | undefined => {
     if (!resolved.enabled) return undefined;
     const entry = findByHash(manifest, ref.hash);
     if (!entry) {
+      if (opts.strict) throw new Error(`cairn: media asset "${ref.hash}" not found in the manifest`);
       // A real miss: media is on but the hash has no manifest row, the broken-reference case. The
       // media-off path above stays silent, since an unresolved token there is expected, not a fault.
       log.warn('media.resolve_missing', { hash: ref.hash });

@@ -1029,7 +1029,10 @@ function run(command, args, { cwd, env, input = '', timeout }) {
 /** Run a gate string on the light lane through `cairn-run-gate`, re-issuing on exit 75. */
 async function runGate(root, gate) {
   for (let i = 0; i < 30; i++) {
-    const r = await run('cairn-run-gate', [gate], { cwd: root, env: sessionEnv(), timeout: 12 * 60 * 1000 });
+    // svelte-check peaks near 1GB, and the light lane's memory cap leaves Node a default heap of about
+    // that size, so a grading gate would die with an out-of-memory exit now and then.
+    const env = { ...sessionEnv(), NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=2048`.trim() };
+    const r = await run('cairn-run-gate', [gate], { cwd: root, env, timeout: 12 * 60 * 1000 });
     if (r.status === 75) continue;
     return r.status === 0;
   }
@@ -1144,7 +1147,7 @@ async function main() {
   const mainRoot = mainCheckoutRoot(repo);
   const kindOf = (c) => c.fixture ?? 'pin';
   const cases = data.evals.filter((c) => (args.suite === 'all' || c.suite === args.suite)
-    && (!args.caseId || c.id === args.caseId) && (!args.fixture || kindOf(c) === args.fixture));
+    && (!args.caseId || args.caseId.split(',').includes(c.id)) && (!args.fixture || kindOf(c) === args.fixture));
   if (cases.length === 0) throw new Error('no case matches');
   mkdirSync(FIXTURE_ROOT, { recursive: true });
   const conflicts = ancestorConflicts(FIXTURE_ROOT, homedir());

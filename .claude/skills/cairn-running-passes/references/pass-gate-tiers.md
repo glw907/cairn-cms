@@ -77,7 +77,7 @@ matches it:
 | harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
-| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `docs/internal/option-map.json`, `skills/`, `claude/` |
+| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `skills/`, `claude/` |
 
 A pattern ending in `/` is a literal directory prefix, a pattern with no glob character is an exact
 path, and anything else is a glob. Dot paths (`.vale/`, `.vale.ini`, `.tellgrader.json`,

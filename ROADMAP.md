@@ -290,7 +290,7 @@ The original decision framing, for the record:
   - `tellgrader` in CI (vendoring the binary), and the unreproduced `cairn-run-gate` "gate vanished".
 
 - **Tell outside developers how the docs stay true (Geoff, 2026-09-30).** Split by reader. A
-  contributor needs the mechanics: the option map, `check:options`, and what a change must update to pass the docs gate. An evaluator or site developer needs only the promise: every public option is documented or
+  contributor needs the mechanics: the option doc comments, `check:options`, and what a change must update to pass the docs gate. An evaluator or site developer needs only the promise: every public option is documented or
   excluded with a reason, CI fails otherwise, and the docs match the installed engine version.
   That claim belongs in `docs/why-cairn.md`, written from the shipped mechanism, never an extend
   page, since no extend job needs it. Trigger: stage 5's outline of the front door.

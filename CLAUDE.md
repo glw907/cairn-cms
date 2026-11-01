@@ -53,7 +53,7 @@ before a pass builds on it.
 
 Every pass updates the docs for what it changed. A public-API change is not done until its reference
 page matches: `check:reference` fails on an undocumented export, `check:options` on a public option
-member with no row in the option map, and `check:package` on the entry points. The published docs are
+member with no doc comment, `check:tiers` on an export with no tier tag, and `check:package` on the entry points. The published docs are
 five tracks under `docs/`, one reader each: `admin/`, `editors/`, `extend/`, `claude-code/`, and
 `reference/` (one page per export subpath), plus `why-cairn.md` for an evaluator. A page serves one
 track or it is two pages.

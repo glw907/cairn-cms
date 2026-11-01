@@ -73,7 +73,6 @@ describe('the table', () => {
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
     ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
-    ['exportSurface', 'docs/internal/option-map.json', 'docs/internal/option-map.json'],
     ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
     ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
   ];

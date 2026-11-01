@@ -28,8 +28,8 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
    `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
    the old name in `docs/` and `README.md` comes back empty.
-4. A public name or option also moves its reference page under `docs/reference/` and its row in
-   `docs/internal/option-map.json`. The gate fails on both.
+4. A public name or option also moves its reference page under `docs/reference/`, and a public
+   option member keeps a doc comment where it is declared. The gate fails on both.
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
    `scripts/checks/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
    breaking change a `Consumers must:` line there and in `docs/extend/migration-notes.md`. The

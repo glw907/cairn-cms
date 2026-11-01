@@ -11,7 +11,6 @@ this index, or the gate fails naming it.
   at the `pre-agent-first` tag.
 - `consultations/`: briefs from consuming sites, each needing a verdict before a pass builds on it.
   Its [README](consultations/README.md) has the protocol.
-- `option-map.json`: the public-option map `check:options` reads (removed with the walker in pass 3).
 - `credentials.md`: machine-local credential locations. Gitignored; it exists only on the
   maintainer's workstation.
 

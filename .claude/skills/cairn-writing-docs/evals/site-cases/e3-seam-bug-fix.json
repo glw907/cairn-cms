@@ -26,7 +26,7 @@
     { "type": "changed", "path": "src/tests", "source": "the prompt asks for a regression test" },
     { "type": "contains", "path": "src/tests", "regex": "createSectionAction[\\s\\S]*ownerOnly:\\s*true", "source": "after the setup, no test file under src/tests holds both createSectionAction and ownerOnly: true at either ref" },
     { "type": "npm", "script": "test:unit -- src/tests/unit/section-action.test.ts" },
-    { "type": "npm", "script": "check" }
+    { "type": "npm", "script": "package && npm run check --node-options=--max-old-space-size=2048", "source": "the type check resolves the package's own entry points through dist (packages/cairn-cms-dev, scripts/checks, the admin-toolkit import), and the fixture's `npm ci --ignore-scripts` skips `prepare`, so no earlier gate in this case builds dist and `npm run check` is red on the untouched setup at both refs (29 errors). The heap flag is there because Node sizes its default heap from the light lane's cgroup cap (about 1GB), where svelte-check intermittently runs out of heap (scripts/checks/gate-tier.mjs FAST_LINE_1_LANE)" }
   ],
   "judge": [
     {

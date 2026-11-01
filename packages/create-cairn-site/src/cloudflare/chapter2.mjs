@@ -197,6 +197,22 @@ export async function deleteApiToken(siteId) {
 }
 
 /**
+ * Save a token chapter 2 collected under `cloudflare.apiToken` and drop
+ * `cloudflare.buildsTokenSavedAt` in the same write. That marker tells chapter 3 the saved token
+ * is its own eight-key one; left beside chapter 2's narrower token, chapter 3 would adopt it, skip
+ * its consent and prefill, and fail at its first Builds call. `updateSite` cannot remove a key, so
+ * this rebuilds the freshly loaded record and saves it whole, as `deleteApiToken` does.
+ * @param {string} siteId the site id to save under
+ * @param {string} token the token chapter 2 now holds
+ * @returns {Promise<void>}
+ */
+async function saveChapter2Token(siteId, token) {
+  const current = (await loadSite(siteId)) ?? {};
+  const { buildsTokenSavedAt: _chapter3Marker, ...cloudflare } = current.cloudflare ?? {};
+  await saveSite(siteId, { ...current, cloudflare: { ...cloudflare, apiToken: token } });
+}
+
+/**
  * Ask for the domain until a non-empty answer comes back, the interactive counterpart of
  * `--domain`. An empty submit is nudged rather than accepted, since every hop after this one keys
  * off the name.
@@ -542,7 +558,7 @@ export async function runChapter2({
       async () => {
         token = await ensureApiToken({ record, log, openBrowser, yes: args.yes, promptSecretFn, env, argv });
         if (!dryRun && token !== record?.cloudflare?.apiToken) {
-          await updateSite(siteId, { cloudflare: { apiToken: token } });
+          await saveChapter2Token(siteId, token);
         }
       },
     );

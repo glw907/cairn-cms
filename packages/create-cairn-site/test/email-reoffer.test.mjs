@@ -301,6 +301,29 @@ test('reoffer: a yes from builds-connect-declined writes the Builds decline mark
   assert.equal(state.step, 'email-onboarded');
 });
 
+test("reoffer: chapter 2's own token clears chapter 3's saved-token marker, so chapter 3 never adopts it", async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  await setupWrangler(t);
+  // A `--connect` that consented and parked before its trigger left chapter 3's marker behind.
+  await seedDeclined('reoffer-marker', dir, 'builds-connect-declined', {}, {
+    buildsTokenSavedAt: '2026-10-31T00:00:00.000Z',
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { promise } = await run('reoffer-marker', dir, {
+    confirm: recordingConfirm(true, []),
+    promptSecretFn: async () => 'chapter2-token',
+    fetchImpl: async () => new Response(null, { status: 200 }),
+  });
+  await promise;
+
+  const state = await loadSite('reoffer-marker');
+  assert.equal(state.cloudflare.apiToken, 'chapter2-token');
+  assert.equal('buildsTokenSavedAt' in state.cloudflare, false, "the saved token is no longer chapter 3's");
+});
+
 test('reoffer: --yes --email with CAIRN_CF_API_TOKEN reaches onboarding with no prompt', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

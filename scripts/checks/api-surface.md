@@ -402,7 +402,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/media`
 
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; transformations?: boolean }
-- `createMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig) => MediaResolve
+- `createMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig, opts?: { strict?: boolean }) => MediaResolve
 - `formatMediaToken`: (ref: MediaRef) => string
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaManifest`: { [x: string]: MediaEntry }

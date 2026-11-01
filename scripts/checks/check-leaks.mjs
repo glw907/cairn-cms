@@ -65,7 +65,7 @@ const PUBLIC_TIERS = ['T1', 'T2'];
 
 // A link into the engine repo's GitHub tree is the sanctioned way for a shipped page to point at
 // a maintainer doc, so the internal-path and ledger rules skip a path that follows it.
-const GITHUB_BLOB = 'github\\.com/glw907/cairn-cms/(?:blob|tree)/main/';
+const GITHUB_BLOB = 'github\\.com/glw907/cairn-cms/(?:blob|tree)/(?:main|pre-agent-first)/';
 
 /** @type {Rule[]} */
 const RULES = [

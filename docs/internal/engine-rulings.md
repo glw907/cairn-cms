@@ -299,7 +299,7 @@ A `decline` or `retire` entry with a live reopen condition is a heading and its 
 - **Verdict:** defer. Deferred at the site's own request: Gate 3 of the requirements'
   governance model is "direction, not v1", and "a third team is its own future initiative".
 - **Reopens on:** a third team, or the site reopening Gate 3.
-- **Record:** [engine-harvest-candidates.md](engine-harvest-candidates.md) section 3
+- **Record:** [engine-harvest-candidates.md](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-harvest-candidates.md) section 3
   (xcathletes multi-team isolation).
 
 ---

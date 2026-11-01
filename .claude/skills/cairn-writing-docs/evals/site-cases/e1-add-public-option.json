@@ -1,0 +1,59 @@
+{
+  "id": "E1-add-public-option",
+  "suite": "site",
+  "fixture": "tree",
+  "seam": "The public option contract (PublicRoutesConfig), its stability tier, and the version record",
+  "bar": 4,
+  "prompt": "Sites want link cards to credit their X (Twitter) account. Add an optional `twitterSite` member to `PublicRoutesConfig`, the config `createPublicRoutes` takes: a handle such as \"@trailcrew\" that every entry page's SEO head then carries as a `twitter:site` meta tag. When it is unset, no such tag appears. This is a new public option, so record it everywhere this repo requires for one. It's done when the repo's gates for a public API change pass.",
+  "knownBad": "setups/tree/e1-add-public-option-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/delivery/public-routes.ts:22 PublicRoutesConfig; :144 composeEntryData destructures the config and builds the head through buildSeoMeta",
+    "src/lib/delivery/seo.ts:5 SeoInput, :34 buildSeoMeta (the twitter:* meta tags live here)",
+    "scripts/checks/check-options.mjs:1-40 every member reached from a create*/define* root's parameters needs a row in docs/internal/option-map.json (an anchor whose section names the member in inline code, or a reviewed exclude); :398 checkOptionMap. This holds on the pre-agent-first tag and on this branch tip",
+    "scripts/checks/check-surface.mjs:1-12 the committed surface snapshot must match dist; regenerate with `npm run check:surface -- --update`. The snapshot moved from docs/internal/api-surface.md (tag) to scripts/checks/api-surface.md (tip)",
+    "docs/reference/README.md:13 every export carries a stability tier; PublicRoutesConfig is Extension API (docs/reference/delivery.md:121)",
+    "CHANGELOG.md:1 the ## Unreleased section, entries with a Consumers may/must line (CLAUDE.md: a pass finalizes its CHANGELOG entry under ## Unreleased)"
+  ],
+  "expectations": [
+    "PublicRoutesConfig gains `twitterSite?: string`, and composeEntryData passes it to the SEO head so buildSeoMeta emits { name: 'twitter:site', content } on every entry, dated or not, and nothing when it is unset.",
+    "A unit test proves the tag appears with the configured handle and is absent when the option is unset.",
+    "The option's contract is recorded where this tree's gates require it: on a tree whose check:options reads docs/internal/option-map.json, a `PublicRoutesConfig.twitterSite` row anchored at the reference section that names `twitterSite` in inline code; on a tree whose gate reads TSDoc, a TSDoc comment on the member with the tier tag the gate wants.",
+    "The API surface snapshot is regenerated, and CHANGELOG.md's ## Unreleased section gains an Added entry naming the option.",
+    "check:options, check:reference, check:surface, check:comments, the type check, and the SEO and public-routes unit tests pass."
+  ],
+  "checks": [
+    { "type": "contains", "path": "src/lib/delivery", "regex": "twitterSite\\?:\\s*string", "source": "src/lib/delivery/public-routes.ts:22" },
+    { "type": "contains", "path": "src/lib/delivery", "text": "twitter:site", "source": "src/lib/delivery/seo.ts:34" },
+    { "type": "contains", "path": "src/tests", "text": "twitter:site", "source": "src/tests/unit/delivery-seo.test.ts, src/tests/unit/public-routes.test.ts (where the head's twitter tags are tested today)" },
+    { "type": "contains", "path": "CHANGELOG.md", "text": "twitterSite", "source": "CHANGELOG.md:1" },
+    { "type": "npm", "script": "check:options" },
+    { "type": "npm", "script": "check:reference" },
+    { "type": "npm", "script": "check:surface" },
+    { "type": "npm", "script": "check:comments" },
+    { "type": "npm", "script": "check" },
+    { "type": "npm", "script": "test:unit -- seo public-routes twitter", "source": "the whole unit project is red on this workstation (src/tests/unit/docs-review-browsers.test.ts needs a Playwright Firefox build that is not installed), so the check runs the unit files whose paths name the SEO head, the public routes, or the new tag" }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The new option's contract is recorded where this tree's own option gate requires it: either a `PublicRoutesConfig.twitterSite` row in docs/internal/option-map.json pointing at a reference-page anchor whose section names `twitterSite` in inline code, or (on a tree whose gate reads TSDoc instead) a TSDoc comment on the member carrying the tier tag that gate requires; an `exclude` or `pending` row does not count.",
+      "source": "scripts/checks/check-options.mjs:1-12,398"
+    },
+    {
+      "n": 2,
+      "text": "A unit test asserts both that the SEO head carries a `twitter:site` meta tag with the configured handle and that no `twitter:site` tag appears when `twitterSite` is unset.",
+      "source": "src/lib/delivery/seo.ts:34"
+    },
+    {
+      "n": 3,
+      "text": "The tag reaches every entry's head, an undated page included, because composeEntryData forwards the option to buildSeoMeta unconditionally rather than only for dated entries the way it forwards `feeds`.",
+      "source": "src/lib/delivery/public-routes.ts:179"
+    },
+    {
+      "n": 4,
+      "text": "CHANGELOG.md's `## Unreleased` section gains an entry that names `twitterSite` as an added, optional `PublicRoutesConfig` member.",
+      "source": "CHANGELOG.md:1"
+    }
+  ]
+}

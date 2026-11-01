@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeAssets, BUILT_IN_PRESETS } from '../../lib/media/config.js';
-import { presetUrl, variantUrl } from '../../lib/media/transform-url.js';
+import { normalizeAssets } from '../../lib/media/config.js';
 import type { AssetConfig } from '../../lib/content/types.js';
 
 const DEFAULT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
@@ -50,21 +49,4 @@ describe('normalizeAssets', () => {
   it('returns disabled media when no assets block is declared', () => {
     expect(normalizeAssets(undefined)).toEqual({ enabled: false });
   });
-});
-
-describe('BUILT_IN_PRESETS', () => {
-  // Ruling 4 (2026-09-01, the `variants` evidence sweep) retires a site's ability to declare its
-  // own transform presets; the four built-ins are the whole vocabulary presetUrl resolves
-  // against, so they must keep working through it with no AssetConfig in the loop.
-  it('names exactly the thumb, inline, card, and hero presets', () => {
-    expect(Object.keys(BUILT_IN_PRESETS).sort()).toEqual(['card', 'hero', 'inline', 'thumb']);
-  });
-
-  it.each(['thumb', 'inline', 'card', 'hero'] as const)(
-    'resolves the %s preset through presetUrl to the variantUrl its spec would build',
-    (name) => {
-      const path = '/media/x.a1b2c3d4e5f6a7b8.webp';
-      expect(presetUrl(path, name, BUILT_IN_PRESETS)).toBe(variantUrl(path, BUILT_IN_PRESETS[name]));
-    },
-  );
 });

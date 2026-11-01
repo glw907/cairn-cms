@@ -2,11 +2,10 @@
 // adapter; this module validates that block and resolves it into the engine-internal
 // ResolvedAssetConfig the upload, storage, and delivery paths read. An absent block means media is
 // off, so the resolved value carries an `enabled` discriminant rather than throwing. A site cannot
-// declare its transform presets (the `variants` field had zero reachable
-// runtime consumers); BUILT_IN_PRESETS is the whole preset vocabulary. This module is
-// engine-internal; later phases call normalizeAssets, but the contract surface stays AssetConfig.
+// declare transform presets (the `variants` field had zero reachable runtime consumers). This
+// module is engine-internal; later phases call normalizeAssets, but the contract surface stays
+// AssetConfig.
 import type { AssetConfig } from '../content/types.js';
-import type { VariantSpec } from './transform-url.js';
 import { extForMediaType } from './sniff.js';
 
 /**
@@ -26,7 +25,7 @@ export type ResolvedAssetConfig =
       allowedTypes: string[];
       /**
        * Whether Cloudflare Image Transformations are enabled for the zone. With it false, the media
-       *  resolver serves the bare full-size delivery path and ignores any preset.
+       *  resolver serves the bare full-size delivery path and builds no transform URL.
        */
       transformations: boolean;
     };
@@ -39,29 +38,16 @@ const DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 /**
- * The built-in named transform presets, the whole vocabulary `presetUrl` resolves against. A site
- *  cannot declare one: a size beyond these four is built directly against
- *  Cloudflare's `/cdn-cgi/image/<options>/` transform-URL format.
- */
-export const BUILT_IN_PRESETS: Record<string, VariantSpec> = Object.freeze({
-  thumb: { width: 320, height: 320, fit: 'cover' },
-  inline: { width: 800 },
-  card: { width: 640, height: 400, fit: 'cover' },
-  hero: { width: 1600, height: 900, fit: 'cover' },
-});
-
-/**
  * Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves
  *  media off and returns `{ enabled: false }` rather than throwing. A declared block must name its R2
  *  bucket and carry a known urlForm; each failure throws a cairn:-prefixed error.
  * @remarks
  * Hoist the media block once and pass the same object here and to the adapter's `media` member, so
  * the binding name lives in one place. The engine itself normalizes the adapter's block once at
- * compose time into `CairnRuntime.resolvedAssets`. The four built-in transform presets are the
- * whole vocabulary: a site needing another size builds a URL against Cloudflare's
- * `/cdn-cgi/image/<options>/<path>` format directly. An `allowedTypes` entry the upload path cannot
- * store (one `extForMediaType` answers null for) throws, since the type could never match a sniffed
- * upload.
+ * compose time into `CairnRuntime.resolvedAssets`. There are no named transform presets: a site
+ * needing another size builds a URL against Cloudflare's `/cdn-cgi/image/<options>/<path>` format
+ * directly. An `allowedTypes` entry the upload path cannot store (one `extForMediaType` answers
+ * null for) throws, since the type could never match a sniffed upload.
  * @public
  */
 export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig {

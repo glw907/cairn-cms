@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { variantUrl, presetUrl, type VariantSpec } from '../../lib/media/transform-url.js';
+import { variantUrl } from '../../lib/media/transform-url.js';
 
 const PUBLIC_PATH = '/media/x.a1b2c3d4e5f6a7b8.webp';
 
@@ -56,19 +56,5 @@ describe('variantUrl', () => {
   it('omits upscale when the spec leaves it unset', () => {
     const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
     expect(out).not.toContain('upscale');
-  });
-});
-
-describe('presetUrl', () => {
-  const variants: Record<string, VariantSpec> = { thumb: { width: 320 } };
-
-  it('resolves a known preset to the variantUrl the spec would build', () => {
-    expect(presetUrl(PUBLIC_PATH, 'thumb', variants)).toBe(
-      variantUrl(PUBLIC_PATH, variants.thumb),
-    );
-  });
-
-  it('throws a cairn: error on an unknown preset name', () => {
-    expect(() => presetUrl(PUBLIC_PATH, 'nope', variants)).toThrow(/cairn:/);
   });
 });

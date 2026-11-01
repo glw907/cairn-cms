@@ -53,9 +53,8 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   options.push(`format=${spec.format ?? 'auto'}`);
   options.push(`gravity=${spec.gravity ?? 'auto'}`);
   // WATCH: gravity and format interpolate a VariantSpec's string fields with no escaping or
-  // allowlist check. Safe today because every VariantSpec is engine-owned (BUILT_IN_PRESETS,
-  // media/config.ts, whose map is now Object.frozen, though the freeze is shallow and does not
-  // reach into each nested VariantSpec value) and validateVariant was retired alongside the
+  // allowlist check. Safe today because every VariantSpec is engine-owned (the resolver's fixed
+  // srcset ladder) and validateVariant was retired alongside the
   // site-declared `variants` field (see docs/internal/engine-rulings.md). Reintroducing a caller-supplied
   // VariantSpec (a site declaring its preset again) reopens comma/slash injection into the
   // transform URL's options segment; re-add a value check on gravity and format before that seam
@@ -65,21 +64,4 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   // guards a caller that passes a relative path from fusing the options and the source.
   const source = publicPath.startsWith('/') ? publicPath : `/${publicPath}`;
   return `/cdn-cgi/image/${options.join(',')}${source}`;
-}
-
-/**
- * Build a variant URL from a named preset. Looks up presetName in variants and builds its spec with
- *  variantUrl. Throws a cairn:-prefixed error naming the unknown preset when the name is absent, so a
- *  typo in a preset name fails loudly rather than silently rendering an unsized image.
- */
-export function presetUrl(
-  publicPath: string,
-  presetName: string,
-  variants: Record<string, VariantSpec>,
-): string {
-  const spec = variants[presetName];
-  if (spec === undefined) {
-    throw new Error(`cairn: unknown image variant preset "${presetName}"`);
-  }
-  return variantUrl(publicPath, spec);
 }

@@ -40,26 +40,13 @@ One complete daisyUI theme block. daisyUI does not merge a block that names no b
 }
 ```
 
-The keys fall into four groups.
+`name` is the string `data-theme` selects and the cookie stores. `default: true` marks the first-visit scheme and `prefersdark: true` the block a dark system selects. `--color-base-300` is a rule color, never the ground under text. `--depth` and `--noise` are `0` or `1`.
 
-- **The block header.** `name` is the string `data-theme` selects and the cookie stores. `default: true` marks the scheme a first-time visitor sees, and `prefersdark: true` marks the block a dark system scheme selects. Set `color-scheme` to `light` or `dark`.
-- **Surface and ink.** `--color-base-100` is the page paper, `-200` and `-300` step away from it, and `--color-base-content` is the body ink. `--color-base-300` is a rule color and never the ground under text.
-- **Roles.** `primary`, `secondary`, `accent`, `neutral`, and the four statuses `info`, `success`, `warning`, and `error` each carry a fill and a `-content` color for text on that fill.
-- **Geometry.** `--radius-selector`, `--radius-field`, and `--radius-box` set the three corners. `--size-selector` and `--size-field` scale the small controls. `--border` is the border width, and `--depth` and `--noise` are `0` or `1` and switch daisyUI's shading and grain.
-
-A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block too, and in the other scheme's block. The "Placement of a per-scheme value" section of `node_modules/@glw907/cairn-cms/docs/reference/public-css.md` covers the keys that cannot go here.
+A hand-tuned ink, `--color-muted`, or `--cairn-<status>-ink` goes in this block too, and in the other scheme's block. `references/retheme-by-tokens.md` ("Where a value goes") covers the keys that cannot go here.
 
 ## The design scale
 
-The chassis `tokens.css` defaults every design-scale key inside `@theme`, so a theme may omit any of them and still generate every named utility. The defaulted keys are:
-
-- the three faces `--font-display`, `--font-body`, and `--font-mono`
-- `--font-weight-heading`
-- `--text-step--1` through `--text-step-5`
-- the eight spacing steps `--spacing-3xs`, `-2xs`, `-xs`, `-s`, `-m`, `-l`, `-xl`, and `-2xl`
-- `--leading-body`, `--leading-snug`, and `--leading-tight`
-- `--tracking-tight` and `--tracking-eyebrow`
-- `--container-measure` and `--container-measure-wide`
+The chassis `tokens.css` defaults every design-scale key inside `@theme` (faces, `--font-weight-heading`, `--text-step-*`, `--spacing-*`, `--leading-*`, `--tracking-*`, the two measures), so a theme may omit any and still generate every named utility.
 
 A theme sets a defaulted key only to change its value. Redeclare it in the theme's `@theme` block, after the `tokens.css` import.
 

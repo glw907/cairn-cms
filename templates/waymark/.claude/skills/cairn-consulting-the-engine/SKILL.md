@@ -13,7 +13,7 @@ edit a cairn-cms checkout, even if one happens to be on disk.
 `references/the-standard.md` carries the gate the engine applies to every consultation. An item
 reaches the engine only when the site cannot legally reach or patch the surface, or a ratified,
 measured grammar has diverged from what the engine ships. Read it before drafting: an item that
-fails the gate there is not worth filing. The standard's constraints shape how you write each
+fails the gate there is not worth filing, and so is a third-party verifier or notifier proposed for the `/cloudflare` subpath, which takes Cloudflare-native primitives only. The standard's constraints shape how you write each
 field, not just whether you write it at all.
 
 ## Write the brief

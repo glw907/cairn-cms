@@ -22,6 +22,11 @@ Constraints on top of that gate:
 An item fails the gate when the hand-roll is small, domain-shaped, or a discoverability
 problem an export would not fix.
 
+Scope rule for the `@glw907/cairn-cms/cloudflare` subpath: it takes Cloudflare-native platform
+primitives only (Turnstile is the platform's bot defense, `RateLimit` is a platform binding). A
+third-party verifier, a payment processor's webhook check, or a chat platform's notifier stays the
+site's code, whatever precedent those two exports appear to set. Do not file one as an engine item.
+
 The gate serves cairn's standing goal: the engine stays clean,
 even, beautiful, and broadly useful. Membership and shape are per-item tests; evenness
 and coherence are properties of the whole surface, and the audit judges them at that

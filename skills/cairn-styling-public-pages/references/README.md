@@ -51,5 +51,7 @@ The `cairn-styling-public-pages` gate holds the list complete: a directive, an i
 
 - [What a theme directory holds](theme-directory.md)
 - [Checking a theme](checking-a-theme.md)
+- [Retheme by tokens](retheme-by-tokens.md)
+- [The public stylesheet contract](public-stylesheet-contract.md)
 - [Styling a public component](public-component.md)
 - [Theme starter](theme-starter.md)

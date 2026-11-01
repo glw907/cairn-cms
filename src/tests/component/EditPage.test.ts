@@ -8,6 +8,7 @@ import * as tidyValidateModule from '../../lib/admin/tidy-validate.js';
 import * as componentGrammar from '../../lib/render/component-grammar.js';
 import type { RoundTripSafety } from '../../lib/render/component-grammar.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
+import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/admin/media-base-context.js';
 
 // The optimistic upload loop touches createImageBitmap (ingestFile) and a real fetch (sendUpload);
 // mock those two so the in-session-upload-renders-in-preview test reaches the success swap
@@ -424,6 +425,28 @@ describe('EditPage', () => {
     await expect
       .poll(() => previewSrcdoc(screen))
       .toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
+
+  it('resolves a preview media reference under the shell-provided media base', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)',
+        mediaTargets: {
+          a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
+        },
+      }),
+      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
+    };
+    const screen = await render(EditPage, {
+      props,
+      context: new Map<unknown, unknown>([[MEDIA_BASE_CONTEXT_KEY, '/images']]),
+    });
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    // The preview is a sandboxed srcdoc iframe, so the image is read from the parsed document.
+    await expect.poll(() => previewSrcdoc(screen)).toContain('<img');
+    const doc = new DOMParser().parseFromString(previewSrcdoc(screen), 'text/html');
+    expect(doc.querySelector('img')!.getAttribute('src')).toBe('/images/blue-running-shoes.a1b2c3d4e5f6a7b8.webp');
   });
 
   it('resolves an ::include directive in the preview from fragmentTargets', async () => {

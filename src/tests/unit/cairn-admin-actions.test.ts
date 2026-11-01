@@ -445,6 +445,12 @@ describe('media replace and alt actions (composer wiring)', () => {
     });
   }
 
+  it('types mediaLibraryUpload on the public CairnAdminRoutes with no cast', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
+    await expect(admin.actions.mediaLibraryUpload(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
+  });
+
   it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });
@@ -697,7 +703,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
 
   it('a throwing save action on the edit view logs the concept, id, and editor, and returns fail(500) with the calm copy', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
-    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = (await admin.actions.save(event)) as { status?: number; data?: { error?: string } };

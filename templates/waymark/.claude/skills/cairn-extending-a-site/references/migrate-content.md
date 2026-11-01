@@ -12,8 +12,9 @@ Contents:
 
 ## Before the script
 
-- Declare the concept with a field for every old key you keep (`references/content-model.md`). The
-  first admin save deletes undeclared keys. Drafts need `draft: fields.boolean(...)`; tags need one
+- Declare the concept with a field for every old key the admin should edit (`references/content-model.md`).
+  An undeclared key survives each save but never shows in the form.
+  Drafts need `draft: fields.boolean(...)`; tags need one
   `multiselect` with `taxonomy: true`.
 - Register the glob in the content module and in `cairnManifest`'s `content`.
 - Copy the old files outside the content directories (`old-content/posts`). Convert Hugo TOML

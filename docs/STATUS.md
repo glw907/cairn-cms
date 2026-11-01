@@ -21,16 +21,16 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-The agent-first pattern has landed and its second stage is PR-ready as #170: the editors and admin arms
-are on `main`, the evaluator pages link to them, and the capture-era plans are gone. Three bars read
-unmet by Geoff's choice (the install and editor sittings, and the docs review of the human pages), and
-Evaluate reads unmet after one structural fix. The Contribute check waits on a pull request scope for
-the mirror token. After #170 merges the sequence is: the media and publish pass, the scaffold pass, the
-final engine batch (`BACKLOG.md` lists each item's pass), the one release, then each site's migration.
-The release needs `create-cairn-site` published first (`BACKLOG.md` #195). Prerelease `0.98.1-rc.2` is on
-npm `next`; `latest` is `0.98.0`. Executor `cairn-cms-agent-first-4`, session `82fe4c13`, under
-`conductor-cairn-cms`; its ledger is `~/.local/state/cairn-agent-first/ledger.md`. The scaffold template
-pass (`cairn-cms-scaffold-template`, session `e4573501`, PR #171) is `ordinary` and merges itself.
+The media and publish pass has landed (PR #172, `ordinary`, merged by its executor on Geoff's 2026-11-01
+approval): ten backlog items (#74, #106, #31, #137, #49, #48, #127, #128, #129, #111) are Done, the
+`CHANGELOG.md` entry sits under `## Unreleased`, and nothing is bumped or published. The next pass is
+the scaffold pass, then the final engine batch (`BACKLOG.md` lists each item's pass), a cleanup round,
+the one release, then each site's migration. The release needs `create-cairn-site` published first
+(`BACKLOG.md` #195). Three bars read unmet by Geoff's choice (the install and editor sittings, and the
+docs review of the human pages), and Evaluate reads unmet after one structural fix. Prerelease
+`0.98.1-rc.2` is on npm `next`; `latest` is `0.98.0`. The full backlog triage of 2026-11-01 waits in
+the Approval Queue; its decision lands in
+`~/.local/state/cairn-agent-first/2026-11-01-backlog-triage.decision.json`.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

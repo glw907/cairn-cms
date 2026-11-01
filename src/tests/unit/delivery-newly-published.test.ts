@@ -1,7 +1,7 @@
 // buildNewlyPublished diffs two manifests to find entries a deploy just carried across the
-// first-publish transition. Presence-of-stamp is most of the signal (see
-// manifest-published-at.test.ts for the stamp rules this relies on): a carried stamp never matches
-// its own counterpart, and a legacy unstamped entry never matches. A currently-drafted entry never
+// first-publish transition. Newness is the stamp value (see manifest-published-at.test.ts for the
+// stamp rules this relies on): a stamp already on a before row never matches, wherever that row's
+// key now sits, and a legacy unstamped entry never matches. A currently-drafted entry never
 // matches either, but not because it lacks a stamp: upsertEntry carries a prior publishedAt forward
 // through an ordinary save, including one that flips draft back to true, so the draft check is load
 // bearing on its own. The engine performs no I/O here; a consumer persists `before` across deploys
@@ -69,7 +69,25 @@ describe('buildNewlyPublished', () => {
     expect(buildNewlyPublished(before, after)).toEqual([]);
   });
 
-  it('matches counterparts by concept+id, so a same-id entry in a different concept is unrelated', () => {
+  it('omits an entry renamed with its stamp carried', () => {
+    const before = manifest(entry({ id: 'old', permalink: '/posts/old', publishedAt: EARLIER }));
+    const after = manifest(entry({ id: 'new', permalink: '/posts/new', publishedAt: EARLIER }));
+    expect(buildNewlyPublished(before, after)).toEqual([]);
+  });
+
+  it('returns each peer of a first-publish batch sharing one stamp', () => {
+    const before = manifest(entry({ id: 'a', draft: true }), entry({ id: 'b', draft: true }));
+    const after = manifest(entry({ id: 'a', publishedAt: NOW }), entry({ id: 'b', publishedAt: NOW }));
+    expect(buildNewlyPublished(before, after).map((e) => e.id)).toEqual(['a', 'b']);
+  });
+
+  it('returns a deleted-and-recreated entry that carries a fresh stamp', () => {
+    const before = manifest(entry({ publishedAt: EARLIER }));
+    const after = manifest(entry({ publishedAt: NOW }));
+    expect(buildNewlyPublished(before, after)).toEqual([entry({ publishedAt: NOW })]);
+  });
+
+  it('treats an unrelated entry in another concept with a fresh stamp as new', () => {
     const before = manifest(entry({ concept: 'pages', publishedAt: EARLIER }));
     const after = manifest(entry({ concept: 'posts', publishedAt: NOW }));
     expect(buildNewlyPublished(before, after)).toEqual([entry({ concept: 'posts', publishedAt: NOW })]);

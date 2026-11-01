@@ -100,7 +100,7 @@ export type AdminData =
  *
  * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
  *  reachable from no package subpath, so its `actions` record is free to carry every one of the
- *  ten media-janitorial actions the engine's Media Library screen needs, which the public
+ *  ten media-janitorial actions the engine's Media Library screen needs, nine of which the public
  *  {@link createCairnAdmin}'s declared {@link CairnAdminRoutes} narrows away. Module-internal
  *  callers (this module's single caller, `createCairnAdmin`, and a test proving the wide
  *  shape directly) import it by relative path; no barrel re-exports it.
@@ -374,18 +374,20 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  * What `createCairnAdmin` returns: the one load, the shared shell load, and the deliberately
  *  narrowed action vocabulary a site wiring the single-mount admin actually dispatches to.
  *
- *  Ten media-janitorial actions are absent on purpose, mirroring `ContentRoutes`'s
- *  narrowing exactly (`content-routes.ts`): `mediaDelete`, `mediaUpdate`, `mediaLibraryUpload`,
- *  `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`, `mediaAltPropagate`,
- *  `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`. Each wraps one of `ContentRoutes`'s
- *  ten excluded internal actions, reachable only from the engine's Media Library screen.
+ *  Nine media-janitorial actions are absent on purpose, narrowing `ContentRoutes`'s ten
+ *  (`content-routes.ts`) by one: `mediaDelete`, `mediaUpdate`, `mediaReplacePreview`,
+ *  `mediaReplace`, `mediaAltPreview`, `mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`,
+ *  `mediaOrphanPurge`. `mediaLibraryUpload` is the one difference from `ContentRoutes`, which keeps
+ *  ten excluded: it is typed here so a custom screen can post a Library-direct upload with no cast.
+ *  Each absent action wraps one of `ContentRoutes`'s excluded internal actions, reachable only
+ *  from the engine's Media Library screen.
  *  `mediaUpload` stays: it wraps the SAME `uploadAction` the kept `upload` action wraps (the one
  *  `ContentRoutes` itself exposes), just gated to the media view instead of the edit view.
  *
  *  The narrowing is TYPE-LEVEL, not a runtime boundary, exactly as `ContentRoutes`'s doc
  *  comment states: `createCairnAdmin` returns the internal object itself, so every action is
  *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
- *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always
+ *  cast recovers the nine. Each of them still runs the session, CSRF, and view gates it always
  *  ran; the narrowing withdraws the SUPPORTED seam, not the reachability.
  *
  *  Name this type rather than `ReturnType<typeof createCairnAdmin>`. `shellLoad` is the
@@ -412,7 +414,7 @@ export interface CairnAdminRoutes {
    *  settings; `vocabularySave` on vocabulary; `upload`, `publish`, `discard`, `rename`,
    *  `previewMint`, `previewRevoke`, `dictionaryAdd`, and `tidy` on edit; `delete` on edit or a
    *  list (the id from the path, or from the form body on a list); `revert` on history;
-   *  `mediaUpload` on media; `publishAll` on every authed view, the index included; and
+   *  `mediaUpload` and `mediaLibraryUpload` on media; `publishAll` on every authed view, the index included; and
    *  `editorAdd`, `editorRemove`, and `editorSetRole` on editors, each gated to owners. An
    *  unexpected throw inside an action answers `fail(500, { error })` in place and logs
    *  `admin.action.failed`; a redirect or an HTTP error passes through.
@@ -437,6 +439,7 @@ export interface CairnAdminRoutes {
     | 'tidy'
     | 'delete'
     | 'mediaUpload'
+    | 'mediaLibraryUpload'
     | 'publishAll'
     | 'editorAdd'
     | 'editorRemove'

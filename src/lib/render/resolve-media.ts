@@ -11,6 +11,7 @@ import { publicPath } from '../media/naming.js';
 import { variantUrl } from '../media/transform-url.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
 import { log } from '../log/index.js';
+import { DEFAULT_MEDIA_BASE } from '../admin/media-base-context.js';
 import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
 
 /** The VFile data key the renderer sets the per-call media resolver under. */
@@ -85,7 +86,8 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  *  reference. It returns the bare full-size path (transformed variants are the imageDetail side
  *  channel's job, keyed off the asset's known width) so a fresh zone with Image Transformations
  *  disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns undefined when
- *  media is off or no entry carries the hash (the preview-miss backstop).
+ *  media is off or no entry carries the hash (the preview-miss backstop), unless `opts.strict` makes
+ *  a miss with media on throw.
  * @remarks
  * Pass `normalizeAssets` the same object the adapter's `media` member receives, so the two
  * normalizations agree. The resolved `<img>` also gains intrinsic `width` and `height` when the entry
@@ -98,11 +100,21 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
 export function createMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
+  opts: {
+    /**
+     * Throw a `cairn:`-prefixed error on a hash with no manifest row while media is on, so a
+     *  prerender or request-time render fails on a broken reference instead of shipping
+     *  `src="#"`. Media off stays silent, and a preview passes its own resolver, so previews keep
+     *  marking misses broken. Defaults to false.
+     */
+    strict?: boolean;
+  } = {},
 ): MediaResolve {
   const resolve: MediaResolveWithDetail = (ref: MediaRef): string | undefined => {
     if (!resolved.enabled) return undefined;
     const entry = findByHash(manifest, ref.hash);
     if (!entry) {
+      if (opts.strict) throw new Error(`cairn: media asset "${ref.hash}" not found in the manifest`);
       // A real miss: media is on but the hash has no manifest row, the broken-reference case. The
       // media-off path above stays silent, since an unresolved token there is expected, not a fault.
       log.warn('media.resolve_missing', { hash: ref.hash });
@@ -137,17 +149,19 @@ export function createMediaResolver(
 /**
  * A resolver backed by the lean `mediaTargets` projection, for the admin preview. It mirrors
  *  manifestLinkResolver: a hash present in the projection builds the slug delivery path
- *  (`/media/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
+ *  (`<base>/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
  *  broken rather than throwing. Pure over the projection, with no manifest and no config, so the
- *  edit page reaches it with the data it actually has.
+ *  edit page reaches it with the data it actually has. The base defaults to the engine's
+ *  `/media`; the edit page passes the site's resolved base so the preview matches delivery.
  */
 export function manifestMediaResolver(
   targets: Record<string, { slug: string; ext: string; contentType: string }>,
+  base: string = DEFAULT_MEDIA_BASE,
 ): MediaResolve {
   return (ref: MediaRef): string | undefined => {
     const entry = targets[ref.hash];
     if (!entry) return undefined;
-    return publicPath(entry.slug, ref.hash, entry.ext, 'slug');
+    return publicPath(entry.slug, ref.hash, entry.ext, 'slug', base);
   };
 }
 

@@ -27,7 +27,8 @@
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
 // and deletes the token at the moment it happens, and a LATER re-entry on a record with an open
 // decline (hasOpenEmailDecline) asks the email question again before any token hop, since a
-// decline is a choice an owner can still reconsider. A no, or a run that cannot ask, prints the
+// decline is a choice an owner can still reconsider until Workers Builds is connected. A no, or a
+// run that cannot ask, prints the
 // row's reoffered copy and leaves the step; a yes continues as a resume at `domain-live`. The
 // step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
 // (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
@@ -116,23 +117,34 @@ function isTerminalStep(step) {
 }
 
 /**
- * True for a record whose owner declined email sign-in and has not turned it on since: no
- * `cloudflare.emailOnboardedAt`, and either `paid-plan-declined` (whatever its other fields) or a
- * chapter 3 terminal step (`builds-connect-declined`, `builds-live`) that still carries
- * `cloudflare.emailDeclinedAt`. Chapter 3 overwrites `step`, so for those two steps the timestamp
- * is the only surviving trace of the decline. `email-live` is never open, since its onboarding is
- * done.
- * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string } } | null | undefined} record
+ * True once Workers Builds is connected for a record: a saved `cloudflare.buildsTriggerUuid`, or a
+ * record at `builds-live`, which is only ever reached after the trigger is saved. From then on
+ * editors publish to the repository and Builds deploys from it, so the owner's local tree can lag
+ * the live site, and nothing in chapter 2 may build or deploy from it again.
+ * @param {{ step?: string, cloudflare?: { buildsTriggerUuid?: string } } | null | undefined} record
  *  the site's state record
  * @returns {boolean}
  */
+export function isBuildsConnected(record) {
+  return Boolean(record?.cloudflare?.buildsTriggerUuid) || record?.step === 'builds-live';
+}
+
+/**
+ * True for a record whose owner declined email sign-in, has not turned it on since, and has not
+ * connected Workers Builds: no `cloudflare.emailOnboardedAt`, no Builds connection
+ * (`isBuildsConnected`), and either `paid-plan-declined` (whatever its other fields) or
+ * `builds-connect-declined` still carrying `cloudflare.emailDeclinedAt`. Chapter 3 overwrites
+ * `step`, so at `builds-connect-declined` the timestamp is the only surviving trace of the decline.
+ * A connected record is never open: turning email on ends in a local build and deploy, which would
+ * replace a site Builds deploys from the repository with the owner's possibly older checkout.
+ * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string,
+ *  buildsTriggerUuid?: string } } | null | undefined} record the site's state record
+ * @returns {boolean}
+ */
 export function hasOpenEmailDecline(record) {
-  if (!record || record.cloudflare?.emailOnboardedAt) return false;
+  if (!record || record.cloudflare?.emailOnboardedAt || isBuildsConnected(record)) return false;
   if (record.step === 'paid-plan-declined') return true;
-  return (
-    (record.step === 'builds-connect-declined' || record.step === 'builds-live') &&
-    Boolean(record.cloudflare?.emailDeclinedAt)
-  );
+  return record.step === 'builds-connect-declined' && Boolean(record.cloudflare?.emailDeclinedAt);
 }
 
 /**

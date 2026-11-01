@@ -1,6 +1,7 @@
 // The email re-offer (#183), driven in process against runChapter2 through its confirm and
 // promptSecretFn seams. A record that declined email sign-in is asked again on a later run, from
-// `paid-plan-declined` or from a chapter 3 terminal step that still carries `emailDeclinedAt`.
+// `paid-plan-declined` or from `builds-connect-declined` while it still carries `emailDeclinedAt`,
+// and never once Workers Builds is connected.
 // bin.mjs's routing into and out of this behavior is proven in resume-chapter3.test.mjs, which
 // can reach it only unprompted; the prompted paths live here.
 import test from 'node:test';
@@ -12,7 +13,7 @@ import { makeFakeBin } from './fake-bin.mjs';
 import { startFakeCloudflare } from './fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from '../src/cloudflare/api.mjs';
 import { saveSite, loadSite } from '../src/state.mjs';
-import { runChapter2 } from '../src/cloudflare/chapter2.mjs';
+import { runChapter2, hasOpenEmailDecline } from '../src/cloudflare/chapter2.mjs';
 
 const WORKERS_DEV_URL = 'https://email-reoffer-site.glw907.workers.dev';
 const DOMAIN = 'email-reoffer.example';
@@ -89,7 +90,7 @@ function sendingDisabledBody() {
  * real zone on the fake so a yes has an onboarding read to reach.
  * @param {string} siteId
  * @param {string} dir
- * @param {string} step `paid-plan-declined`, `builds-connect-declined`, or `builds-live`
+ * @param {string} step `paid-plan-declined` or `builds-connect-declined`
  * @param {object} cloudflare
  * @param {Record<string, unknown>} [overrides] merged over the seeded `cloudflare` object
  */
@@ -159,6 +160,23 @@ function isZoneOrDnsWrite(request) {
   return request.method === 'POST' && /\/zones(\/[^/]+\/dns_records)?$/.test(request.path);
 }
 
+const DECLINED_AT = '2026-10-30T00:00:00.000Z';
+
+for (const [label, record, expected] of [
+  ['paid-plan-declined', { step: 'paid-plan-declined', cloudflare: {} }, true],
+  ['builds-connect-declined with emailDeclinedAt', { step: 'builds-connect-declined', cloudflare: { emailDeclinedAt: DECLINED_AT } }, true],
+  ['builds-connect-declined without emailDeclinedAt', { step: 'builds-connect-declined', cloudflare: {} }, false],
+  ['a decline whose onboarding is done', { step: 'paid-plan-declined', cloudflare: { emailOnboardedAt: DECLINED_AT } }, false],
+  ['builds-live with a trigger', { step: 'builds-live', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, false],
+  ['builds-live without a trigger', { step: 'builds-live', cloudflare: { emailDeclinedAt: DECLINED_AT } }, false],
+  ['paid-plan-declined with a trigger', { step: 'paid-plan-declined', cloudflare: { buildsTriggerUuid: 't-1' } }, false],
+  ['builds-connect-declined with a trigger', { step: 'builds-connect-declined', cloudflare: { emailDeclinedAt: DECLINED_AT, buildsTriggerUuid: 't-1' } }, false],
+]) {
+  test(`hasOpenEmailDecline: ${label} is ${expected ? 'open' : 'not open'}`, () => {
+    assert.equal(hasOpenEmailDecline(record), expected);
+  });
+}
+
 for (const [step, extra] of [
   ['paid-plan-declined', {}],
   ['builds-connect-declined', { emailDeclinedAt: '2026-10-30T00:00:00.000Z' }],
@@ -211,7 +229,7 @@ test('reoffer: a run that cannot ask (no terminal, no --yes) declines without ca
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await setupCloudflare(t);
-  await seedDeclined('reoffer-notty', dir, 'builds-live', { buildsTriggerUuid: 'trigger-1' });
+  await seedDeclined('reoffer-notty', dir, 'builds-connect-declined', {});
 
   const { logs, promise } = await run('reoffer-notty', dir, {
     isTTY: false,
@@ -224,7 +242,7 @@ test('reoffer: a run that cannot ask (no terminal, no --yes) declines without ca
   assert.ok(logs.some((line) => line.includes('chose again')));
   assert.ok(logs.some((line) => line.includes('Re-run with --email')), `expected the flag line, got: ${logs.join('\n')}`);
   const state = await loadSite('reoffer-notty');
-  assert.equal(state.step, 'builds-live', 'a decline keeps the Builds terminal step');
+  assert.equal(state.step, 'builds-connect-declined', 'a decline keeps the Builds terminal step');
   assert.equal('apiToken' in state.cloudflare, false);
 });
 
@@ -288,7 +306,7 @@ test('reoffer: --yes --email with CAIRN_CF_API_TOKEN reaches onboarding with no 
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
   await setupWrangler(t);
-  const zoneId = await seedDeclined('reoffer-yes-email', dir, 'builds-live', { buildsTriggerUuid: 'trigger-1' });
+  const zoneId = await seedDeclined('reoffer-yes-email', dir, 'builds-connect-declined', {});
   cloudflare.failNext('email_send', 403, sendingDisabledBody());
   const requestsBefore = cloudflare.requests.length;
 

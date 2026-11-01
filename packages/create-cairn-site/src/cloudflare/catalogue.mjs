@@ -559,7 +559,8 @@ const ROWS = {
           `Your way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
           'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-          `${params.dir} to do it.`
+          `${params.dir} to do it, before you connect Workers Builds: once Builds is ` +
+          'connected, this tool no longer offers it.'
         );
       }
       return (
@@ -571,7 +572,8 @@ const ROWS = {
         "writes a fresh sign-in link straight into the site's database without touching email. " +
         'Your current sign-in lasts 30 days.\n' +
         'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-        `${params.dir} when you are ready.`
+        `${params.dir} when you are ready, before you connect Workers Builds: once Builds is ` +
+        'connected, this tool no longer offers it.'
       );
     }
   },

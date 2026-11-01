@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, rm, writeFile, chmod, mkdir } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, readFile, chmod, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -655,10 +655,10 @@ for (const step of ['builds-connected', 'config-reconciled', 'builds-live', 'bui
 //
 // A record whose email admission was declined before it ever reached chapter 3 keeps
 // `emailDeclinedAt` set. Chapter 3 overwrites `step`, so that field is the only trace of the
-// decline: `hasOpenEmailDecline` reads it to re-offer email sign-in from `builds-connect-declined`
-// and `builds-live`. This proves bin.mjs's chapter-3 routing carries the field through unchanged,
+// decline: `hasOpenEmailDecline` reads it to re-offer email sign-in from `builds-connect-declined`,
+// and the `builds-live` closing block reads it to say that offer is over. This proves bin.mjs's chapter-3 routing carries the field through unchanged,
 // rather than the state store's flat-merge losing it: a record at `builds-connected` still has it
-// on disk after a plain re-run, so it can drive the re-offer once the chapter settles.
+// on disk after a plain re-run, so it is still there once the chapter settles.
 
 test('bin.mjs: a record advanced to builds-connected still carries its earlier emailDeclinedAt', async (t) => {
   const stateDir = await freshStateDir(t);
@@ -796,7 +796,6 @@ async function makeEmailScaffoldDir(t) {
 const EMAIL_DECLINED_AT = '2026-10-30T00:00:00.000Z';
 
 for (const [step, extra, note] of [
-  ['builds-live', { buildsTriggerUuid: 'trigger-uuid-1' }, 'Every commit to your default branch now builds'],
   ['builds-connect-declined', {}, 'Workers Builds is not connected'],
 ]) {
   for (const flags of [[], ['--yes']]) {
@@ -828,59 +827,63 @@ for (const [step, extra, note] of [
   }
 }
 
-test('bin.mjs --yes --email at builds-live carries a changed sender through and re-enters chapter 3 to park its reconcile', async (t) => {
-  const stateDir = await freshStateDir(t);
-  const dir = await makeEmailScaffoldDir(t);
-  const fake = await makeFakeBin('chapter3-reoffer-email-yes');
-  t.after(() => fake.close());
-  await fake.respond('deploy', { code: 0, stdout: 'Deployed (0.1 sec)\n  https://chapter3-resume-site.glw907.workers.dev\n' });
-  await fake.respond('run build', { code: 0, stdout: 'built.\n' });
-  const fakeOpenerDir = await makeFakeOpenerDir(t);
-  const cloudflare = await startFakeCloudflare({ zoneStatus: 'active' });
-  t.after(() => cloudflare.close());
-  const github = await startFakeGithub();
-  t.after(() => github.close());
+for (const flags of [[], ['--yes', '--email']]) {
+  test(`bin.mjs ${flags.join(' ') || 'plain'} at builds-live with an email decline never re-offers: no sender write, build, or deploy`, async (t) => {
+    const stateDir = await freshStateDir(t);
+    const dir = await makeEmailScaffoldDir(t);
+    const configPath = path.join(dir, 'src', 'theme', 'cairn.config.ts');
+    const configBefore = await readFile(configPath, 'utf8');
+    const fake = await makeFakeBin(`chapter3-no-reoffer-live-${flags.length}`);
+    t.after(() => fake.close());
+    await fake.respond('deploy', { code: 0, stdout: 'Deployed (0.1 sec)\n  https://chapter3-resume-site.glw907.workers.dev\n' });
+    await fake.respond('run build', { code: 0, stdout: 'built.\n' });
+    const fakeOpenerDir = await makeFakeOpenerDir(t);
+    const cloudflare = await startFakeCloudflare({ zoneStatus: 'active' });
+    t.after(() => cloudflare.close());
 
-  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
-  t.after(() => {
-    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
+    process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
+    t.after(() => {
+      delete process.env.CAIRN_CLOUDFLARE_API_BASE;
+    });
+    const created = await makeApi({ token: 'seed', accountId: 'acct-1', dir }).createZone('no-reoffer.example');
+    const requestsBefore = cloudflare.requests.length;
+
+    const siteId = makeSiteId(`nolive-${flags.length}`);
+    await seedSite(siteId, dir, 'builds-live', {
+      buildsConnectionUuid: 'connection-uuid-1',
+      buildsTriggerUuid: 'trigger-uuid-1',
+      emailDeclinedAt: EMAIL_DECLINED_AT,
+      domain: 'no-reoffer.example',
+      zoneId: created.id,
+      nameServers: created.name_servers,
+      alreadyActive: true,
+    });
+
+    const result = await runCli(['--dir', dir, ...flags], {
+      stateDir,
+      wranglerBin: fake.binPath,
+      apiBase: cloudflare.apiBase,
+      fakeOpenerDir,
+      extraEnv: { CAIRN_CF_API_TOKEN: 'env-token', CAIRN_NPM_BIN: fake.binPath },
+    });
+
+    assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout} stderr: ${result.stderr}`);
+    assert.deepEqual(await fake.invocations(), [], 'a Builds-connected site must never build or deploy from the local tree');
+    assert.equal(await readFile(configPath, 'utf8'), configBefore, 'the sender must not be rewritten');
+    assert.deepEqual(cloudflare.requests.slice(requestsBefore), [], 'no Cloudflare call is made');
+    assert.equal(result.stdout.includes('chose again'), false, `the email question must not be re-offered: ${result.stdout}`);
+    assert.ok(result.stdout.includes('Every commit to your default branch now builds'), `got: ${result.stdout}`);
+    assert.ok(
+      result.stdout.includes('until Workers Builds is connected'),
+      `expected the line saying the email offer ends once Builds is connected, got: ${result.stdout}`,
+    );
+    const state = await loadSite(siteId);
+    assert.equal(state.step, 'builds-live');
+    assert.equal('emailFrom' in state.cloudflare, false);
   });
-  const created = await makeApi({ token: 'seed', accountId: 'acct-1', dir }).createZone('reoffer-live.example');
-
-  const siteId = makeSiteId('rmail-live');
-  await seedSite(siteId, dir, 'builds-live', {
-    buildsConnectionUuid: 'connection-uuid-1',
-    buildsTriggerUuid: 'trigger-uuid-1',
-    emailDeclinedAt: EMAIL_DECLINED_AT,
-    domain: 'reoffer-live.example',
-    zoneId: created.id,
-    nameServers: created.name_servers,
-    alreadyActive: true,
-  });
-
-  const result = await runCli(['--dir', dir, '--yes', '--email'], {
-    stateDir,
-    wranglerBin: fake.binPath,
-    apiBase: cloudflare.apiBase,
-    githubApiBase: github.apiBase,
-    fakeOpenerDir,
-    extraEnv: { CAIRN_CF_API_TOKEN: 'env-token', CAIRN_NPM_BIN: fake.binPath },
-  });
-
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout} stderr: ${result.stderr}`);
-  assert.ok(
-    result.stdout.includes('the reconcile found a real difference'),
-    `expected chapter 3's builds-live re-entry to park the changed sender's reconcile, got: ${result.stdout}`,
-  );
-  assert.equal(result.stdout.includes(CHAPTER3_TOKEN_TITLE), false);
-  const state = await loadSite(siteId);
-  assert.equal(state.step, 'builds-live', 'a finished email half returns the record to its Builds step');
-  assert.equal(state.cloudflare.emailFrom, 'no-reply@reoffer-live.example');
-  assert.equal('apiToken' in state.cloudflare, false, 'no token survives the run');
-});
+}
 
 for (const [label, extra, expectedStep] of [
-  ['a Builds trigger', { buildsTriggerUuid: 'trigger-uuid-1' }, 'builds-live'],
   ['an earlier Builds decline', { buildsDeclinedAt: EMAIL_DECLINED_AT }, 'builds-connect-declined'],
 ]) {
   test(`bin.mjs --yes at domain-live with ${label} settles at ${expectedStep} without entering chapter 3`, async (t) => {
@@ -915,37 +918,6 @@ for (const [label, extra, expectedStep] of [
     assert.equal(state.step, expectedStep);
   });
 }
-
-test('bin.mjs --connect at domain-live with a Builds trigger saves builds-live first, so chapter 3 takes its re-entry path', async (t) => {
-  const stateDir = await freshStateDir(t);
-  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-trigger-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
-  const fake = await makeFakeBin('chapter3-connect-trigger');
-  t.after(() => fake.close());
-  const fakeOpenerDir = await makeFakeOpenerDir(t);
-  const github = await startFakeGithub();
-  t.after(() => github.close());
-
-  const siteId = makeSiteId('conn-trig');
-  await seedSite(siteId, dir, 'domain-live', {
-    domain: 'connect-trigger.example',
-    buildsConnectionUuid: 'connection-uuid-1',
-    buildsTriggerUuid: 'trigger-uuid-1',
-  });
-
-  const result = await runCli(['--dir', dir, '--connect', '--yes'], {
-    stateDir,
-    wranglerBin: fake.binPath,
-    githubApiBase: github.apiBase,
-    fakeOpenerDir,
-  });
-
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout} stderr: ${result.stderr}`);
-  assert.ok(result.stdout.includes('Reconcile your deploy config'), `got: ${result.stdout}`);
-  assert.equal(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), false, 'the admission hop must not run again');
-  const state = await loadSite(siteId);
-  assert.equal(state.step, 'builds-live');
-});
 
 test('bin.mjs --sign-in without a terminal prints no literal <dir> and does not claim a page opened', async (t) => {
   const stateDir = await freshStateDir(t);

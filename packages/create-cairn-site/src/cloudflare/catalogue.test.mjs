@@ -448,6 +448,13 @@ test('paid-plan-declined differs between its first and re-offered forms', () => 
   assert.match(reoffered.message, /Next:/);
 });
 
+test('paid-plan-declined, in both forms, says the offer ends once Workers Builds is connected', () => {
+  for (const reoffered of [false, true]) {
+    const err = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered });
+    assert.match(err.message, /before you connect Workers Builds/);
+  }
+});
+
 test('paid-plan-missing deep-links the plan page and states the price', () => {
   const err = cloudflareError('paid-plan-missing', { dir: './alpine' });
   assert.match(err.message, /\$5/);

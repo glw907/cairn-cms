@@ -165,7 +165,7 @@ const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Re
  *  vocabulary caller: vocabularyLoad's degrade-path emit also carries `scope: 'vocabulary'`
  *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
  *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
- *  See docs/reference/log-events.md's `config.invalid` row, which documents this collision
+ *  See the `config.invalid` entry in `src/lib/log/events.ts`, which documents this collision
  *  directly.
  */
 function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {

@@ -100,7 +100,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     {#if isIdentity(data)}
       <!-- The hand-off page: identity mode's gate is the sign-in surface, so this renders no
            form and mints nothing. data-cairn-identity is the marker the doctor's login probe
-           reads (docs/reference/doctor.md) to tell this page apart from the magic-link one. -->
+           reads (the cairn doctor login probe) to tell this page apart from the magic-link one. -->
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">
         Sign in through {data.identity.label}

@@ -1802,7 +1802,7 @@ island.
     {flash}
   </div>
 {/if}
-<!-- The site's publish-actions next-step links (docs/reference/sveltekit.md#the-publish-actions-seam):
+<!-- The site's publish-actions next-step links (`publishActions` on `createContentRoutes`):
      quiet links beside the publish-success strip, never their alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
 {#if !failedInPlace && data.publishedFlash && data.publishActions.length}

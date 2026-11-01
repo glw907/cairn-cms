@@ -149,8 +149,7 @@ Swapping the editor stays a one-file change.
      *  `import.meta.url` and do not load under the vitest browser dev server, so the component test
      *  injects a deterministic fake Worker factory and asks the lint source to skip the `ready` wait.
      *  When this is absent the production path is untouched: the real `new Worker(...)` and the real
-     *  asset resolution. Never set this outside a test; pinned documented-unstable (see
-     *  `docs/reference/admin.md`), never promoted into `StableEditorProps`. */
+     *  asset resolution. Never set this outside a test; pinned documented-unstable (see the `MarkdownEditor` component block), never promoted into `StableEditorProps`. */
     spellcheckTest?: {
       createWorker?: () => import('./spellcheck.js').SpellWorker;
       assumeReady?: boolean;

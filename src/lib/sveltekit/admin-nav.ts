@@ -335,7 +335,7 @@ const ACCESS_FIXED_SCREENS = FIXED_SCREEN_IDS;
  * Non-throwing once the shape checks above pass: logs `config.access_unmapped` when the map
  *  declares at least one screen-id key and leaves a declared concept or fixed screen without a
  *  rule, since that target stays reachable to every editor-capability session by `canReach`'s
- *  permissive default (see "Access map coverage," docs/extend/security-model.md). A map of href
+ *  permissive default (see "Access map coverage," docs/architecture.md). A map of href
  *  keys alone gates only the site's routes and says nothing about the engine's screens, so it
  *  is silent. This never blocks composition; it exists only to surface a screen map a site
  *  believed was exhaustive but is not.

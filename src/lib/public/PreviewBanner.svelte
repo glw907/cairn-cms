@@ -39,7 +39,7 @@ fight required.
 The five custom properties, `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`,
 `--cairn-preview-link`, and `--cairn-preview-radius`, are the intended site-override seam, not an
 implementation detail. A site that sets a color property applies it to both states, since each
-property replaces the default for the whole banner. docs/extend/share-a-draft-preview.md shows an override.
+property replaces the default for the whole banner. The cairn-extending-a-site skill shows an override.
 @public
 -->
 <script lang="ts">

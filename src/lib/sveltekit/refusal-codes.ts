@@ -12,7 +12,7 @@
  *  `fail(500)` and be discarded when `/admin`'s load redirects away before it can render
  *  (`publishAllAction`, `content-routes-entry-write.ts`). `expired` keeps its
  *  shipped spelling; the rest are snake_case, matching the log vocabulary's grammar
- *  (`docs/reference/log-events.md`).
+ *  (`src/lib/log/events.ts`).
  */
 export type RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed';
 

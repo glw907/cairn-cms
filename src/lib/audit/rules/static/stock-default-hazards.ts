@@ -22,7 +22,7 @@ const BADGE_GHOST_MESSAGE =
   'warning (StatusChip\'s `register="warning"`, or the shared cairn-chip-warning class) for a ' +
   'state needing attention, and outline (StatusChip\'s `register="outline"`, or the shared ' +
   'cairn-chip-outline class) for a transient or reversible absence ' +
-  '(docs/reference/admin-toolkit.md, StatusChip\'s register rationale)';
+  '(the cairn-building-admin-screens skill, StatusChip\'s register rationale)';
 
 const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +
@@ -43,7 +43,7 @@ const CARD_BORDER_MESSAGE =
 
 const GUARDED_RETIREMENT_MESSAGE =
   'class "cairn-btn-guarded" is retired; wrap the control in Tooltip for the reason text instead ' +
-  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). The class itself ' +
+  'of a native title attribute (the cairn-building-admin-screens skill, Tooltip). The class itself ' +
   'stays compiled until a later release removes it';
 
 // The promotion version stated in every finding the three retired-patch arms below raise: the

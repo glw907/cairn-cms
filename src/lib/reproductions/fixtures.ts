@@ -260,7 +260,7 @@ export const fixtureVocabulary: VocabularyData = {
 };
 
 /**
- * The `navLayout` seam's worked example (docs/extend/arrange-the-admin-sidebar.md), resolved to
+ * The `navLayout` seam's worked example (the cairn-building-admin-screens skill), resolved to
  * the shape `CairnAdminShell` renders: Posts, then Pages relabeled Guides, a "Team" section of two
  * site entries, the media screen, Settings relabeled Site settings, and an unreferenced trailing
  * group after the divider (`vocabulary`, `editors`, `help`, none of which the tree names).

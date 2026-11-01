@@ -156,8 +156,8 @@ writes `site-facts.json` and keeps first-publish stamps.
   with the descriptor from `buildSiteDescriptors` (`references/public-routes.md`).
 - `::include{fragment="<id>"}` needs a `fragments` concept. The admin's **Include a fragment**
   control appears only when one is declared and never while editing a fragment. A fragment cannot
-  include another. A save never checks an include against the manifest, so a dangling include
-  commits and the deploy build is the first to fail (`cairn: fragment "<id>" not found`).
+  include another. A save refuses (400) an include that names no fragment row in the manifest or has
+  no id; a draft fragment passes. A site with no `fragments` concept therefore refuses every include.
 
 ## Integrity guards
 
@@ -168,13 +168,15 @@ Delete checks, in order:
 
 1. Inbound body links: 409 `Cannot delete <id>: N pages link to it.`
 2. Fragment includes: 409 `Cannot delete <id>: N entries include it. Remove the include first.`
-   (includes count once the including entry is published; a save does not update the manifest).
+   (includes count once the including entry is published), also 409 while an open branch includes
+   it, and 503 when a branch cannot be read.
 3. Cross-branch reference index cannot be built: 503.
 4. Inbound reference edges: 409 `Cannot delete <id>: N entries reference it.`, listing each
    referencing entry's concept, id, title, and permalink.
 
 A rename refuses with 409 when the new id collides, the entry has unpublished edits, another open
-branch holds an inbound reference (naming the blockers), or the reference index cannot be built.
+branch holds an inbound reference (naming the blockers), or the reference index cannot be built. A
+fragment rename also refuses while an open branch includes it, or when the branches cannot be read.
 Otherwise it rewrites each referencing entry's stored id and no other frontmatter byte. These
 refusals leave no log record; the editor's banner is the trace.
 

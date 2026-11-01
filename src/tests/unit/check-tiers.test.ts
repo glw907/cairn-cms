@@ -36,7 +36,7 @@ describe('exportTiers', () => {
       }),
     );
     expect(result.failures).toEqual([]);
-    expect(result.entries.map((e: { name: string; tier: string }) => `${e.name}=${e.tier}`).sort()).toEqual([
+    expect(result.entries.map((e) => `${e.name}=${e.tier}`).sort()).toEqual([
       'Draft=Unstable',
       'defineThing=Extension',
       'wiring=Scaffold',
@@ -68,7 +68,7 @@ describe('exportTiers', () => {
         'star.d.ts': "export * from './impl.js';\n",
       }),
     );
-    const tiers = result.entries.map((e: { subpath: string; name: string; tier: string | null }) => `${e.subpath}:${e.name}=${e.tier}`);
+    const tiers = result.entries.map((e) => `${e.subpath}:${e.name}=${e.tier}`);
     expect(tiers).toEqual(expect.arrayContaining(['.:helper=Unstable', '/star:helper=Unstable', '/star:untagged=null']));
     expect(result.failures).toHaveLength(1);
     expect(result.failures[0]).toContain('untagged');

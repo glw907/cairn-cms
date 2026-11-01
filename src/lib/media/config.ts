@@ -7,6 +7,7 @@
 // engine-internal; later phases call normalizeAssets, but the contract surface stays AssetConfig.
 import type { AssetConfig } from '../content/types.js';
 import type { VariantSpec } from './transform-url.js';
+import { extForMediaType } from './sniff.js';
 
 /**
  * The resolved media config the engine serves from. When a site declares no assets block, media is
@@ -58,7 +59,9 @@ export const BUILT_IN_PRESETS: Record<string, VariantSpec> = Object.freeze({
  * the binding name lives in one place. The engine itself normalizes the adapter's block once at
  * compose time into `CairnRuntime.resolvedAssets`. The four built-in transform presets are the
  * whole vocabulary: a site needing another size builds a URL against Cloudflare's
- * `/cdn-cgi/image/<options>/<path>` format directly.
+ * `/cdn-cgi/image/<options>/<path>` format directly. An `allowedTypes` entry the upload path cannot
+ * store (one `extForMediaType` answers null for) throws, since the type could never match a sniffed
+ * upload.
  * @public
  */
 export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig {
@@ -69,6 +72,12 @@ export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetC
   }
   if (assets.urlForm !== undefined && assets.urlForm !== 'slug' && assets.urlForm !== 'opaque') {
     throw new Error(`cairn: media urlForm must be "slug" or "opaque", got "${assets.urlForm}"`);
+  }
+
+  for (const type of assets.allowedTypes ?? []) {
+    if (extForMediaType(type) === null) {
+      throw new Error(`cairn: media allowedTypes entry "${type}" is not a type the upload path stores`);
+    }
   }
 
   return {

@@ -34,6 +34,15 @@ describe('normalizeAssets', () => {
     expect(() => normalizeAssets({ publicBase: '/m' } as AssetConfig)).toThrow(/cairn:/);
   });
 
+  it('throws cairn: for an allowedTypes entry the upload path cannot store', () => {
+    expect(() => normalizeAssets({ bucketBinding: 'X', allowedTypes: ['image/svg+xml'] })).toThrow(/cairn:.*image\/svg\+xml/);
+  });
+
+  it('accepts every default type and a narrowed subset', () => {
+    expect(() => normalizeAssets({ bucketBinding: 'X', allowedTypes: DEFAULT_TYPES })).not.toThrow();
+    expect(() => normalizeAssets({ bucketBinding: 'X', allowedTypes: ['image/png'] })).not.toThrow();
+  });
+
   it('throws cairn: for an unknown urlForm', () => {
     expect(() => normalizeAssets({ bucketBinding: 'X', urlForm: 'weird' as 'slug' })).toThrow(/cairn:/);
   });

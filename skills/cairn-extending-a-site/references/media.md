@@ -19,7 +19,8 @@ Contents:
 ## Upload limits
 
 - `allowedTypes` narrows the five stored types (`image/jpeg`, `image/png`, `image/gif`,
-  `image/webp`, `image/avif`); it cannot widen them. The type is sniffed from the bytes. HEIC,
+  `image/webp`, `image/avif`); it cannot widen them, and a type outside them throws a `cairn:` error
+  at startup. The type is sniffed from the bytes. HEIC,
   unknown bytes, SVG, HTML, XML, and anything starting with `<` are always refused.
 - `maxUploadBytes` defaults to 25 MB. Cloudflare's plan body cap also applies and answers a plain 413.
 - Both apply to new uploads only. Narrowing `allowedTypes` leaves stored assets and their manifest

@@ -482,13 +482,28 @@ function createGetPublicUserHandler(ctx) {
   };
 }
 
+/**
+ * Build the GET /user/installations/:iid/repositories handler, paged the way GitHub pages it:
+ * `per_page` defaults to 30 and caps at 100, `page` counts from 1, the body carries `total_count`,
+ * and a `Link` header names the next page while one remains. A caller that reads only the first
+ * page misses whatever an installation with more repositories lists after it.
+ */
 function createListLinkedReposHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, url) => {
     const installation = ctx.state.installations.find((candidate) => String(candidate.id) === params.iid);
-    const repositories = (installation?.repositories ?? [])
+    const all = (installation?.repositories ?? [])
       .map((rid) => ctx.state.repos.find((repo) => String(repo.id) === String(rid)))
       .filter(Boolean);
-    sendJson(res, 200, { repositories });
+    const perPage = Math.min(Number(url.searchParams.get('per_page')) || 30, 100);
+    const page = Math.max(Number(url.searchParams.get('page')) || 1, 1);
+    const repositories = all.slice((page - 1) * perPage, page * perPage);
+    if (page * perPage < all.length) {
+      const next = new URL(url.pathname, ctx.apiBase);
+      next.searchParams.set('per_page', String(perPage));
+      next.searchParams.set('page', String(page + 1));
+      res.setHeader('link', `<${next}>; rel="next"`);
+    }
+    sendJson(res, 200, { total_count: all.length, repositories });
   };
 }
 

@@ -222,6 +222,29 @@ test('verifyInstallationCovers: passes once the fake auto-adds the created repo'
   });
 });
 
+test('verifyInstallationCovers: finds the created repo past the first page of a large installation', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  seedInstallation(github);
+  // An "All repositories" install on an account with 150 earlier repositories: the new one is
+  // listed 151st, on page 2 even at the 100-per-page maximum.
+  for (let index = 0; index < 150; index += 1) {
+    const id = 10_000 + index;
+    github.state.repos.push({ id, name: `older-${index}`, full_name: `fake-admin/older-${index}`, owner: { login: 'fake-admin' } });
+    github.state.installations[0].repositories.push(id);
+  }
+
+  await createRepo('fake-user-token', { name: 'alpine-club', ownerType: 'user', dir: '/tmp/alpine-club' });
+
+  await verifyInstallationCovers('fake-user-token', {
+    installationId: 1,
+    owner: 'fake-admin',
+    repo: 'alpine-club',
+    dir: '/tmp/alpine-club'
+  });
+});
+
 test('verifyInstallationCovers: raises installation-not-covering-repo when suppressAutoLink kept it off', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

@@ -1,5 +1,6 @@
 // cairn-cms: the doc-snippet typecheck gate. It extracts every fenced ```ts, ```typescript, and
-// ```svelte code block from the published docs directories (DOC_DIRS below), and typechecks each
+// ```svelte code block from the published docs directories (DOC_DIRS below) and every packaged
+// skill's references (`skills/*/references`, which ship in the tarball), and typechecks each
 // one against the BUILT package (run `npm run package` first) through the TypeScript compiler API.
 // A page that teaches a retired export or a stale call signature fails the gate; the RED output
 // names the doc file, the line, and the compiler's message.
@@ -45,11 +46,12 @@
 // Use it sparingly: a page thick with opt-outs has stopped proving anything. Prefer making a block
 // standalone (repeat the small amount of surrounding context) over annotating it away.
 import ts from 'typescript';
-import { readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
-import { CONFIG, runIfMain } from './reference-coverage.mjs';
+import { surfaceSubpaths } from './check-surface.mjs';
 import { readArmStates } from './arm-state.mjs';
 
 const ROOT = repoRoot(import.meta.url);
@@ -325,14 +327,32 @@ function isBarePropsShape(stmt) {
 }
 
 /**
- * Every doc file under the checked directories that stand, repo-relative, sorted. Throws when the
- * deletion list the arm states come from cannot be read.
+ * Every packaged skill's `references` directory under `root`, absolute. A skill with no references,
+ * or a tree with no `skills` directory, contributes none.
+ * @param {string} root
+ */
+function skillReferenceDirs(root) {
+  const skills = join(root, 'skills');
+  if (!existsSync(skills)) return [];
+  return readdirSync(skills, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(skills, entry.name, 'references'))
+    .filter((dir) => existsSync(dir));
+}
+
+/**
+ * Every doc file under the checked directories that stand, plus every packaged skill reference,
+ * repo-relative, sorted. Throws when the deletion list the arm states come from cannot be read.
  * @param {string} [root]
  */
 export function docFiles(root = ROOT) {
   const states = readArmStates(root);
-  return DOC_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent')
-    .flatMap(({ dir }) => walk(join(root, dir), (name) => name.endsWith('.md')))
+  const dirs = [
+    ...DOC_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent').map(({ dir }) => join(root, dir)),
+    ...skillReferenceDirs(root),
+  ];
+  return dirs
+    .flatMap((dir) => walk(dir, (name) => name.endsWith('.md')))
     .map((p) => relative(root, p))
     .sort();
 }
@@ -343,8 +363,9 @@ export function docFiles(root = ROOT) {
  * `<script>`. `lineBase` is added to a diagnostic's (1-based) internal line to get the doc's
  * line. Also returns the skipped blocks (for the summary) and a count of blocks silently excluded
  * (declaration-only, or a ```svelte block with no `<script>`).
+ * @param {string} [root]
  */
-export function collectUnits() {
+export function collectUnits(root = ROOT) {
   /** @type {{ file: string, lineBase: number, code: string }[]} */
   const units = [];
   /** @type {{ file: string, line: number, message: string }[]} */
@@ -352,8 +373,8 @@ export function collectUnits() {
   /** @type {{ file: string, fenceLine: number, reason: string }[]} */
   const skipped = [];
   let excluded = 0;
-  for (const file of docFiles()) {
-    const text = readFileSync(join(ROOT, file), 'utf8');
+  for (const file of docFiles(root)) {
+    const text = readFileSync(join(root, file), 'utf8');
     for (const block of extractBlocks(text)) {
       if (block.skipReason) {
         skipped.push({ file, fenceLine: block.fenceLine, reason: block.skipReason });
@@ -392,12 +413,12 @@ export function collectUnits() {
   return { units, libProblems, skipped, excluded };
 }
 
-// The `paths` map from each package subpath to its built `.d.ts`, shared with the reference
-// gates' CONFIG so a new subpath needs no second registration.
+// The `paths` map from each package subpath to its built `.d.ts`, read from package.json's
+// `exports` the way the surface gate reads them, so a new subpath needs no second registration.
 function packagePaths() {
   /** @type {Record<string, string[]>} */
   const paths = {};
-  for (const entry of CONFIG) {
+  for (const entry of surfaceSubpaths()) {
     const specifier = entry.subpath === '.' ? PACKAGE_NAME : `${PACKAGE_NAME}${entry.subpath}`;
     paths[specifier] = [entry.dts];
   }
@@ -502,4 +523,4 @@ function main() {
   process.exitCode = 1;
 }
 
-runIfMain(main, import.meta.url);
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

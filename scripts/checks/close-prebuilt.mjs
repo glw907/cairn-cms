@@ -38,6 +38,8 @@ export const CLOSE_COMPONENTS = Object.freeze([
   'npm run check:reference',
   'npm run check:reference:signatures',
   'npm run check:options',
+  'npm run check:tiers',
+  'npm run check:tier-docs',
   'npm run check:surface',
   'npm run check:self-use',
   'npm run check:custom-surface',

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import {
+  collectUnits,
   docFiles,
   extractBlocks,
   findLibImports,
@@ -324,5 +325,22 @@ describe('docFiles, by arm state', () => {
 
   it('fails closed without the deletion list', () => {
     expect(() => docFiles(tree([], { list: false }))).toThrow(/deletion-list\.json does not exist/);
+  });
+  it("walks a packaged skill's references and nothing else in the skill", () => {
+    const root = tree(['skills/cairn-x/references/guide.md', 'skills/cairn-x/SKILL.md']);
+    expect(docFiles(root)).toContain('skills/cairn-x/references/guide.md');
+    expect(docFiles(root)).not.toContain('skills/cairn-x/SKILL.md');
+  });
+
+  it('fails a broken snippet under a packaged skill reference, naming the file and line', () => {
+    const root = tree([]);
+    const page = 'skills/cairn-x/references/guide.md';
+    mkdirSync(dirname(join(root, page)), { recursive: true });
+    writeFileSync(join(root, page), '# Guide\n\n```ts\nconst count: number = "three";\n```\n');
+    const { units } = collectUnits(root);
+    expect(units.map((u: { file: string }) => u.file)).toEqual([page]);
+    const problems = typecheckUnits(units);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatchObject({ file: page, line: 4 });
   });
 });

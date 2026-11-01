@@ -39,6 +39,8 @@
     "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/checks/check-reference-signatures.mjs",
     "check:options": "npm run package && node scripts/checks/check-options.mjs",
+    "check:tiers": "npm run package && node scripts/checks/check-tiers.mjs",
+    "check:tier-docs": "npm run package && node scripts/checks/check-tier-docs.mjs",
     "check:surface": "npm run package && node scripts/checks/check-surface-leaks.mjs && node scripts/checks/check-surface.mjs",
     "check:self-use": "npm run package && node scripts/checks/check-self-use.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",

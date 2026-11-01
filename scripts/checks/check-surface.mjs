@@ -14,7 +14,7 @@ import ts from 'typescript';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports, moduleExports, loadDts } from './reference-coverage.mjs';
+import { enumerateExports, moduleExports, loadDts } from './dts-exports.mjs';
 import { normalizeSignature } from './check-reference-signatures.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');

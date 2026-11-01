@@ -10,12 +10,12 @@ a hook, a route, or the engine.
 The first publish that takes an entry live stamps its manifest row with `publishedAt`; later saves
 keep the stamp. `buildNewlyPublished(before, after)` (from `@glw907/cairn-cms/delivery/data`, which
 imports no SvelteKit or Svelte, so plain Node loads it) returns each `after` entry that is not a
-draft, carries `publishedAt`, and had no stamp under the same `concept`/`id` in `before`. It spans
+draft, carries `publishedAt`, and whose `publishedAt` value appears on no `before` entry. It spans
 every concept and sends nothing. Decide newness with it, never with dates, git history, or mtimes.
 
 - `before: null` returns every live stamped entry: the whole back catalogue. Never pass `null` on a
   first run unless a backfill is wanted.
-- Re-drafted entries keep their stamp but are excluded. A rename reads as new (new key). A delete is
+- Re-drafted entries keep their stamp but are excluded. A rename carries its stamp, so it is not new; a deleted and recreated entry gets a fresh stamp and is. A delete is
   never returned. An entry committed outside the admin has no stamp and is never returned.
 
 ## The job

@@ -37,7 +37,8 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  *
  * `secure` must reflect the scheme the browser itself sees. Behind upstream TLS termination
  * (a reverse proxy, a platform edge), `url.protocol` is not that scheme; derive `secure` from
- * the externally visible one instead.
+ * the externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto`
+ * header the platform sets.
  *
  * `base` must not already carry a __Host- or __Secure- prefix (double-prefixing is a cookie
  * the browser silently rejects, not a runtime error, so this throws instead) or a character
@@ -79,7 +80,10 @@ function randomBase64Url(byteLength = 32): string {
 }
 
 /**
- * A fresh 256-bit magic-link token, url-safe.
+ * A fresh 256-bit magic-link token, url-safe, drawn from `crypto.getRandomValues`.
+ * @remarks
+ * The one generator for every CSPRNG secret: a magic-link token, an offer token, a session id, or
+ * a double-submit CSRF token, which pairs with {@link tokensMatch} on the submitted copy.
  * @public
  */
 export function generateToken(): string {
@@ -98,6 +102,12 @@ export function generateCsrfToken(): string {
 
 /**
  * The lowercase hex SHA-256 of a token, for storage and lookup.
+ * @remarks
+ * Store only the digest, never the token, and look a submitted token up by its digest. The digest
+ * protects a stolen store only for a value drawn from a CSPRNG, such as {@link generateToken}'s
+ * output: the digest of anything an attacker can enumerate (a password, a numeric code, an email
+ * address) falls to an offline search over the candidates. A password needs a key-derivation
+ * function, which this package does not ship.
  * @public
  */
 export async function hashToken(token: string): Promise<string> {

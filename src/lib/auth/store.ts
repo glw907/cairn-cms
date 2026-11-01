@@ -280,6 +280,10 @@ export async function deleteSession(db: D1Database, id: string): Promise<Deleted
 
 /**
  * The full allowlist, sorted by email.
+ * @remarks
+ * Every row carries the trimmed, lowercased email the store writes, so compare it against an
+ * address from elsewhere (a user record in the site's database, say) only after lowercasing
+ * both sides.
  * @public
  */
 export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
@@ -291,6 +295,18 @@ export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
 
 /**
  * Add an editor to the allowlist.
+ * @param db - The site's `AUTH_DB` binding.
+ * @param email - Trimmed and lowercased before the write, so pass an address as a user typed it.
+ * The email is the `editor` table's case-sensitive primary key and the column sessions and tokens
+ * join on, so a row written under another case could never sign in yet would still count toward
+ * the last-owner guards.
+ * @param displayName - The name the admin shows for the editor.
+ * @param role - A role name from the site's declared vocabulary.
+ * @param now - The creation time, in epoch milliseconds.
+ * @throws The underlying D1 primary-key constraint error, as a rejection, when the email is
+ * already on the allowlist, including under a different case.
+ * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
+ * `AUTH_DB` lacks `migrations/0001_roles.sql` and `role` is neither `owner` nor `editor`.
  * @public
  */
 export async function insertEditor(
@@ -419,7 +435,20 @@ async function editorRowStillPresent(
  * has to commit and report its `changes` before the sweep runs, since the sweep is
  * conditional on the removal having happened. Access dies with the editor row regardless of when
  * the sweep lands, because `resolveSession` INNER JOINs `editor`, so a session row outliving its
- * editor by a moment resolves to null and authorizes nothing.
+ * editor by a moment resolves to null and authorizes nothing. The session and pending-token
+ * deletes share one batch; the preview-token delete runs alone, since a site that has not applied
+ * `migrations/0003_preview.sql` has no `preview_tokens` table and one missing table would fail a
+ * whole batch. That delete ignores a "no such table" error and rejects on any other D1 error,
+ * after the removal has already committed.
+ * @param db - The site's `AUTH_DB` binding.
+ * @param email - Trimmed and lowercased before it matches, so any case of a stored address
+ * names the same editor.
+ * @param ownerRoles - The site's owner-capability role names. Derive them with
+ * `resolveOwnerLevelRoles` rather than writing them out: a list that omits a name the vocabulary
+ * maps to owner capability undercounts the owners, so the guard refuses a safe removal, or allows
+ * an unsafe one when the omitted name sits on the target row.
+ * @returns `removed` on success; `last-owner` when the row is the last owner-capability row, with
+ * nothing written; `not-found` when no row matched the email.
  * @public
  */
 export async function deleteEditor(
@@ -463,6 +492,12 @@ export async function deleteEditor(
  * matches only an owner-capability row, so it refuses outright (`not-eligible`) on a row that is
  * not owner-capability at all, rather than removing it. On success the editor's sessions, pending
  * token, and minted preview links all go too, the same cascade {@link deleteEditor} runs.
+ * @param db - The site's `AUTH_DB` binding.
+ * @param email - Trimmed and lowercased before it matches.
+ * @param ownerRoles - The site's owner-capability role names, from `resolveOwnerLevelRoles`; an
+ * empty list answers `not-eligible` without a write.
+ * @returns `ok` on success; `last-owner` when this is the last owner-capability row;
+ * `not-eligible` when no owner-capability row matched the email. Either refusal writes nothing.
  * @public
  */
 export async function removeOwnerIfNotLast(
@@ -536,6 +571,15 @@ export async function insertOwnerIfEmpty(
  * plain `UPDATE` runs. `defineRoles` always resolves at least one owner-capability name, so `[]`
  * is unreachable through the engine's callers; it is reachable only from a site calling this
  * `/auth-store` export directly.
+ * @param db - The site's `AUTH_DB` binding.
+ * @param email - Trimmed and lowercased before it matches.
+ * @param role - The new role name, from the site's declared vocabulary.
+ * @param ownerRoles - The site's owner-capability role names, from `resolveOwnerLevelRoles`; a
+ * hand-written list that omits one undercounts the owners, as {@link deleteEditor} describes.
+ * @returns `ok` on success; `last-owner` when the row is the last owner-capability row and `role`
+ * would demote it, with nothing written; `not-found` when no row matched the email.
+ * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
+ * `AUTH_DB` lacks `migrations/0001_roles.sql` and `role` is neither `owner` nor `editor`.
  * @public
  */
 export async function setEditorRole(
@@ -575,6 +619,15 @@ export async function setEditorRole(
  * narrower, owner-only twin of {@link setEditorRole}: its `WHERE` matches only an
  * owner-capability row, so it refuses outright (`not-eligible`) on a row that is not
  * owner-capability at all, rather than changing it.
+ * @param db - The site's `AUTH_DB` binding.
+ * @param email - Trimmed and lowercased before it matches.
+ * @param ownerRoles - The site's owner-capability role names, from `resolveOwnerLevelRoles`; an
+ * empty list answers `not-eligible` without a write.
+ * @param newRole - The role the owner moves to, from the site's declared vocabulary.
+ * @returns `ok` on success; `last-owner` when this is the last owner-capability row;
+ * `not-eligible` when no owner-capability row matched the email. Either refusal writes nothing.
+ * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
+ * `AUTH_DB` lacks `migrations/0001_roles.sql` and `newRole` is neither `owner` nor `editor`.
  * @public
  */
 export async function demoteOwnerIfNotLast(

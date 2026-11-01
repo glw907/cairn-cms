@@ -165,7 +165,7 @@
     },
     {
       "n": 5,
-      "text": "The reply states what is not done: the admin routes, the GitHub App backend, the auth database, and the sign-in email are still to wire for production, and the adapter's backend and email values are placeholders.",
+      "text": "The reply states that the admin sign-in path is not wired: it names at least the admin routes or the sign-in, and the GitHub App backend, as still to do, and says the adapter values are placeholders.",
       "source": "docs/extend/add-cairn-to-a-sveltekit-app.md (Mount the admin on the dev backend; Move the site to production)"
     }
   ]

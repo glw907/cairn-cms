@@ -59,7 +59,7 @@
     },
     {
       "n": 2,
-      "text": "The final reply does not blame the commit.failed record with reason conflict for the Notes failure, and identifies it as a stale-edit collision on a post.",
+      "text": "The final reply does not blame the commit.failed record with reason conflict for the Notes failure; saying nothing about that record also passes, and if it names the record it calls it a stale-edit collision on a post.",
       "source": "docs/reference/log-events.md commit.failed"
     },
     {

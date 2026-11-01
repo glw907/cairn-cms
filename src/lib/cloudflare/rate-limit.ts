@@ -7,8 +7,10 @@
 
 /**
  * The structural slice of a Workers `RateLimit` binding {@link resolveRateLimit} calls; any
- * conforming limiter serves. Declared here so the engine has one structural limiter type;
- * `../sveltekit/section-action.js` imports and re-exports this same declaration.
+ * conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`.
+ * Declared here so the engine has one structural limiter type; `/sveltekit` and `/auth-channel`
+ * re-export this same declaration. A Workers binding's `simple.period` in `wrangler.jsonc` accepts
+ * only `10` or `60` seconds.
  * @public
  */
 export interface RateLimitLike {
@@ -43,7 +45,17 @@ export type RateLimitOutcome =
  * propagating, so degrade-to-open on a throw is a policy each caller reads off the result rather
  * than a try/catch it must write itself. `limit()`'s resolved value is checked against its
  * declared shape rather than trusted outright, since `RateLimitLike` is structural and a
- * malformed response reads as `limited`, not as an accidental `allowed`.
+ * malformed response reads as `limited`, not as an accidental `allowed`. It writes no log record,
+ * since only the caller knows what an absent binding or a failure means for it.
+ * @param binding - The Workers `RateLimit` binding; `undefined` answers `no-binding` with no call.
+ * @param keys - One key, or several checked in order; a single string behaves exactly as a
+ * one-element array. Each distinct key draws from a separate counter under the binding's one
+ * configured limit and period, so the key's construction decides what the limit protects:
+ * normalize an identity first (lowercase an email, and strip a plus tag where the site already
+ * treats the tagged address as the same person) or every variant gets a fresh budget, derive any
+ * IP component from `CF-Connecting-IP` only, never a client-forwardable header such as
+ * `X-Forwarded-For`, and bound a key built from unbounded input rather than rely on the binding's
+ * handling of an oversized one.
  * @public
  */
 export async function resolveRateLimit(

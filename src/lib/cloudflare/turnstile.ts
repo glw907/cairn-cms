@@ -25,9 +25,9 @@ export interface VerifyTurnstileOptions {
    * siteverify).
    */
   ip?: string;
-  /** The hostname a solved token must match; required whenever a sitekey serves more than one form. */
+  /** The hostname a solved token must match; required whenever a sitekey serves more than one form. An explicit `undefined` (an unset env var, say) skips the check silently, exactly as omitting it does. */
   hostname?: string;
-  /** The Turnstile `action` a solved token must match, the per-form companion to `hostname`. */
+  /** The Turnstile `action` a solved token must match, the per-form companion to `hostname`. An explicit `undefined` skips the check silently. */
   action?: string;
 }
 
@@ -64,14 +64,16 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * Verify a Turnstile token against Cloudflare's siteverify endpoint.
  *
  * Every failure mode returns false rather than throwing: a missing or blank token or secret, a
- * token past the length Turnstile issues, a fetch that throws or hangs past its deadline, a
- * non-200 response, a body that does not parse or carries a field of the wrong shape, a
- * siteverify rejection, and a hostname or action mismatch. This function is fail-closed by
- * contract, so a future refactor cannot flip it open by accident. Degrade-to-open (skipping the
+ * token over 2048 characters (past the length Turnstile documents), a fetch that throws or hangs
+ * past a 5-second deadline, a non-200 response, a body that does not parse or carries a field of
+ * the wrong shape, a siteverify rejection, and a hostname or action mismatch. This function is
+ * fail-closed by contract, so a future refactor cannot flip it open by accident. Degrade-to-open (skipping the
  * check entirely when a site has no secret configured) is the caller's convention
  * (`if (secret && ...)`), never this function's; verification and that policy stay separate.
- * Supplying `hostname` and `action` is what stops a token solved on one widget from replaying
- * against another form that shares the same sitekey; without them, siteverify only proves the
+ * That branch runs with no bot protection and never calls this function, so nothing logs the skip;
+ * a site adopting the convention logs or alerts on that missing-secret branch itself. Supplying
+ * `hostname` and `action` is what stops a token solved on one widget from replaying against
+ * another form that shares the same sitekey; without them, siteverify only proves the
  * token is genuine, not which form it was solved for. `hostname` compares case-insensitively,
  * since siteverify reports it lowercased regardless of the sitekey's configured casing.
  *
@@ -86,6 +88,16 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * result rule: every failure mode collapses to the one fail-closed answer a caller needs
  * (`false`), and a discriminated result naming each reason would tempt a caller into treating one
  * refusal as more admissible than another, which this function's contract forbids.
+ *
+ * A pass is bot resistance, not a claim ticket. Siteverify, not this function, enforces a solved
+ * token's single use and its validity window, so a site gating a privileged one-shot action (an
+ * account claim, a first login, a redemption) still binds the token, or a value derived from it,
+ * to its server-side state, consumed atomically by the first caller.
+ * @param token - The solved token the client widget posted, typically `cf-turnstile-response`.
+ * @param secret - The siteverify secret, the second parameter. Both strings typecheck in either
+ * order, so a swapped call compiles and fails every submission closed, signalled only by the
+ * `turnstile.verify_failed` records.
+ * @param opts - The optional `ip`, `hostname`, and `action` narrowing.
  * @public
  */
 export async function verifyTurnstile(

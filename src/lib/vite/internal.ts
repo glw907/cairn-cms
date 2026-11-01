@@ -260,6 +260,15 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
  *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
  *  server's start.
+ * @remarks
+ * The verify also runs `verifyReferences`, so a published `reference` field naming a missing entry
+ * fails the build too. A missing `site-facts.json` only warns; a stale one fails the build the way
+ * a drifted manifest does. Regenerate the manifest with the `cairn-manifest` bin.
+ *
+ * Its `config` hook defines `__CAIRN_DEV_BUILD__`: `true` under `vite dev` and in a build with
+ * `VITE_CAIRN_E2E=1` (read from the process env and the working directory's `.env` files), `false`
+ * otherwise, so a guarded dev-backend branch folds out of a deployed Worker. A `define` the site
+ * already sets for the name wins.
  * @public
  */
 export function cairnManifest(opts: CairnManifestOptions): Plugin {

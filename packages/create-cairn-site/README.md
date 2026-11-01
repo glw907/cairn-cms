@@ -259,14 +259,16 @@ only turns on sign-in email for your domain; it does not ask about Workers Paid 
 
 ### Declining costs you nothing
 
-If you say no, the run stops there and exits `0`. Your site keeps serving on your domain, and you
-keep editing and publishing as its owner. What you cannot do is invite anyone else, since there is
-no way to send them a link.
+If you say no, the email chapter stops there, and the run goes on to offer the Builds chapter.
+Your site keeps serving on your domain, and you keep editing and publishing as its owner. What you
+cannot do is invite anyone else, since there is no way to send them a link.
 
 Your way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
 expires out from under you while you decide. Running the command again re-offers turning on email
-sign-in.
+sign-in until you connect Workers Builds. Once Builds is connected, the command no longer offers
+it, so turn sign-in email on first. `--yes` consents to the Builds chapter, so a `--yes` run
+without `--email` declines email and connects Builds in the same run.
 
 ### What it does
 

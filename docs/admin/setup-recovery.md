@@ -69,7 +69,7 @@ The following table lists where the sign-in email steps can stop, what each stop
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again. For an unattended run, pass `--email` and `--yes`. |
+| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, until you connect Workers Builds. After that, the command no longer offers it. For an unattended run, pass `--email` and `--yes`. |
 | The account isn't on Workers Paid | The command stopped when it tried to onboard sending. | **Act:** turn on the plan in Cloudflare's dashboard, then run the command again. |
 | The sending records are still spreading | A test send before the records settle fails. This is normal. | **Wait:** run the command again in a few minutes. It doesn't repeat the onboarding. |
 | The test send failed for another reason | Cloudflare refused the send, or the daily limit was reached. | **Act, or wait:** the command prints the cause. Fix it or wait for the limit to reset, then run the command again. |

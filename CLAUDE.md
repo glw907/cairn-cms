@@ -26,6 +26,9 @@ before a pass builds on it.
 - Cut a worktree off `main` for each pass so `main` stays releasable. The `cairn-running-passes` skill
   has the setup command, the risk classes, and the close checklist. After each task, run
   `npm run lane:fast -- --range <base>..HEAD`. CI on the pull request carries the whole suites.
+- Every change reaches a pull request through agents: hand each task to `cairn-implementer`, which
+  works in its own worktree, and dispatch `standards:diff-reviewer` on the branch before you open the
+  pull request. Fold what the reviewer finds first.
 - The plugin `standards` supplies the review agents (`standards:diff-reviewer`,
   `standards:svelte-reviewer`, `standards:cloudflare-workers-reviewer`,
   `standards:web-auth-security-reviewer`, `standards:daisyui-a11y-reviewer`) and craft skills. Accept the
@@ -34,7 +37,7 @@ before a pass builds on it.
   `## Unreleased` and stops. Publishing is a separate act with two triggers: a consumer site needs the
   change now, or a coherent capability has landed. Default to holding. The `cairn-releasing` skill is
   the procedure; the path to `1.0` is in `ROADMAP.md` ("Toward 1.0").
-- `tool/` is the Go tool. Load `go-conventions` for every file under it, and `golang-spf13-cobra` for
+- `tool/` is the Go tool. Load `standards:go-conventions` for every file under it, and `standards:golang-spf13-cobra` for
   `tool/cmd/cairn`. Its architecture is in `tool/docs/adr/0001-the-spine-is-the-product.md`.
 
 ## Skills, agents, and rules in this repo
@@ -62,7 +65,7 @@ is two pages.
   `npm run check:docs-gate`. Load the `cairn-writing-docs` skill for that edit.
 - A deficiency found on a published page is fixed on the page in the same pass.
 - `MIGRATION-NOTES.md` (upgrade steps and per-version notes) is maintained every pass.
-- A friction finding goes to `BACKLOG.md` through `/log-issue`, or is fixed in the pass that meets it.
+- A friction finding goes to `BACKLOG.md` through `/standards:log-issue`, or is fixed in the pass that meets it.
   There is no friction log.
 - cairn.pub renders the doc arms from its installed engine version, so docs on `main` go public at
   the next release and pin bump.
@@ -99,7 +102,7 @@ form.
 
 ## Visual work
 
-Any rebuild, theme port, or design migration loads the `visual-fidelity` skill first. Site rebuilds are
+Any rebuild, theme port, or design migration loads the `standards:visual-fidelity` skill first. Site rebuilds are
 quite-close-and-improved; theme ports are glance-indistinguishable. Nothing deploys without a
 full-page render read by the main loop's own eyes. Every family artifact meets the five-viewport bar
 (320, 390, 768, 1440, 2560), gated by the showcase's CI width matrix; baselines regenerate on CI.

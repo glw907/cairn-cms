@@ -4,13 +4,13 @@ Before cairn, the small organizations I run sites for lived on WordPress, and la
 
 Today, cairn is an editor-first, git-backed content management system (CMS) for SvelteKit sites hosted on Cloudflare. It is also a toolkit that a developer extends into the organization's admin. It was first framed for small organizations. Since a site can replace the default sign-in with its identity provider, cairn also suits larger organizations, especially ones already committed to Cloudflare.
 
-If you write for a site built on cairn, the editor help begins at Welcome to the editor. Nothing on this page is needed for writing.
+If you write for a site built on cairn, the editor help begins at [Welcome to the editor](./editors/welcome.md). Nothing on this page is needed for writing.
 
-This page is for someone deciding whether cairn fits, most often a developer who builds and maintains sites for an organization. It covers the bargain cairn offers, the stack it commits to and what that stack costs, the choice of markdown, how the docs are kept accurate, what a site costs to run, and where the project stands. It assumes a general familiarity with web development and git. The setup guide covers setting up a site. Building on the engine belongs to each export's doc comment and the packaged skills, which [Architecture](./architecture.md) describes.
+This page is for someone deciding whether cairn fits, most often a developer who builds and maintains sites for an organization. It covers the bargain cairn offers, the stack it commits to and what that stack costs, the choice of markdown, how the docs are kept accurate, what a site costs to run, and where the project stands. It assumes a general familiarity with web development and git. The [setup guide](./admin/README.md) covers setting up a site. Building on the engine belongs to each export's doc comment and the packaged skills, which [Architecture](./architecture.md) describes.
 
 ## What cairn offers
 
-A new site works as a CMS before anyone writes code. Editors sign in from a link emailed to them, with no GitHub account and no password. They write markdown in a plain-text editor beside a live preview, which the same render function that draws the public pages produces. A save holds the edit on a branch for that entry. Publishing copies it to the site's default branch through the site's GitHub App, with the editor recorded as the commit's author, and the site's existing deploy carries it live. The default roles are owner and editor, and an owner also manages who may sign in.
+A new site works as a CMS before anyone writes code. cairn has one fixed concept shape and is not an open-ended collection model, and each site brings its own `render` for the public output. Editors sign in from a link emailed to them, with no GitHub account and no password. They write markdown in a plain-text editor beside a live preview, which the same render function that draws the public pages produces. A save holds the edit on a branch for that entry. Publishing copies it to the site's default branch through the site's GitHub App, with the editor recorded as the commit's author, and the site's existing deploy carries it live. The default roles are owner and editor, and an owner also manages who may sign in.
 
 The admin is also where a developer adds the organization's screens. A route under `src/routes/admin/` renders inside the admin shell and sits behind the same sign-in guard as the engine's screens. It can compose from the admin toolkit, which is built with DaisyUI and Tailwind, as the admin is. Editors and staff then work in one admin, with the organization's screens beside the engine's.
 
@@ -72,11 +72,11 @@ The content stays yours. Every entry is a markdown file in your repository and e
 
 ## What a site costs
 
-cairn is free, MIT-licensed code. A site's running cost is its Cloudflare account. The Workers Paid plan costs $5 a month and a cairn site needs it from its first deploy ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of 2026-08-11). A domain name costs about $10 to $15 a year for the common endings, and only if you connect your own. The database, the storage bucket, and the GitHub repository cost nothing at a small site's size. The admin guide's Before you start page gives the full list with its dates.
+cairn is free, MIT-licensed code. A site's running cost is its Cloudflare account. The Workers Paid plan costs $5 a month and a cairn site needs it from its first deploy ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of 2026-08-11). A domain name costs about $10 to $15 a year for the common endings, and only if you connect your own. The database, the storage bucket, and the GitHub repository cost nothing at a small site's size. The admin guide's [Before you start](./admin/before-you-start.md) page gives the full list with its dates.
 
 ## Pages by reader
 
-- Editor help, for anyone who writes in the admin.
-- Set up and run a cairn site, with no code.
+- [Editor help](./editors/README.md), for anyone who writes in the admin.
+- [Set up and run a cairn site](./admin/README.md), with no code.
 - [Architecture](./architecture.md), for a developer who wants the shape of the system, its security model, and how it works with Claude Code.
 - [Contributing](../CONTRIBUTING.md), for a developer who changes cairn itself.

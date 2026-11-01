@@ -35,7 +35,7 @@ A chassis task (`examples/showcase/src/chassis/`, `templates/waymark/`) takes th
 
 ## Review checklists by path
 
-The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, action, or hook code; `standards:cloudflare-workers-reviewer` for Worker, D1, and `wrangler.*`; `standards:web-auth-security-reviewer` for every `auth-data` path; `standards:daisyui-a11y-reviewer` for markup, styles, and theme config; and the `go-conventions` skill for `tool/**`.
+The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, action, or hook code; `standards:cloudflare-workers-reviewer` for Worker, D1, and `wrangler.*`; `standards:web-auth-security-reviewer` for every `auth-data` path; `standards:daisyui-a11y-reviewer` for markup, styles, and theme config; and the `standards:go-conventions` skill for `tool/**`.
 
 ## Close checklist
 
@@ -44,7 +44,7 @@ The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, a
 - **Changelog and version records.** A behavior change updates `CHANGELOG.md` under `## Unreleased` and the per-version record in `MIGRATION-NOTES.md`. A breaking change carries one `Consumers must:` line per consumer action.
 - **Public surface.** An intended change runs `npm run check:surface -- --update` and commits `scripts/checks/api-surface.md`.
 - **Rulings.** A ruling on a consultation item updates `docs/internal/engine-rulings.md`.
-- **Friction.** A finding goes to `BACKLOG.md` through `/log-issue`, with a `Placement` line, or is fixed in the pass that meets it. An engine change reads `engine-rulings.md` and runs the charter's premise test (`cairn-judging-scope`) first.
+- **Friction.** A finding goes to `BACKLOG.md` through `/standards:log-issue`, with a `Placement` line, or is fixed in the pass that meets it. An engine change reads `engine-rulings.md` and runs the charter's premise test (`cairn-judging-scope`) first.
 - **Docs-stage close.** Run the engine-pass boundary test over the open engine friction (BACKLOG items tagged for the engine batch), and state in `docs/STATUS.md` whether an engine pass is warranted before the next stage (Geoff, 2026-10-07). The test: fix before the next stage any item whose fix would change what a written or outlined page tells the reader (a workaround, caveat, or step the page carries only because of the defect); fix promptly any item that blocks a page or a migration step; batch every other item into the final engine batch, tagging a batched item with the page that carries its caveat so that pass revises the page.
 - **No release.** A pass never bumps the version or publishes. It finalizes its `CHANGELOG.md` entry and stops. The `cairn-releasing` skill cuts a release when one is warranted. Never write cairn state into a site's STATUS.
 

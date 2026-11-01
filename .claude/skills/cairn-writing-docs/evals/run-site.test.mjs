@@ -197,6 +197,21 @@ test('buildEnv passes the allowed names and no credential', async () => {
   assert.ok(DENIED_TOOLS.some((t) => /wrangler\*--remote/.test(t)) && DENIED_TOOLS.some((t) => /wrangler secret/.test(t)));
 });
 
+test('loginEnv hands a claude process the container login and nothing else', async () => {
+  const { loginEnv, buildEnv } = await import('./run.mjs');
+  assert.equal(buildEnv({ CLAUDE_CODE_OAUTH_TOKEN: 'x', PATH: '/bin' }).CLAUDE_CODE_OAUTH_TOKEN, undefined, 'a gate env never carries the login');
+  const saved = process.env.CLAUDE_CODE_OAUTH_TOKEN;
+  try {
+    process.env.CLAUDE_CODE_OAUTH_TOKEN = 'tok';
+    assert.deepEqual(loginEnv(), { CLAUDE_CODE_OAUTH_TOKEN: 'tok' });
+    delete process.env.CLAUDE_CODE_OAUTH_TOKEN;
+    assert.deepEqual(loginEnv(), {});
+  } finally {
+    if (saved === undefined) delete process.env.CLAUDE_CODE_OAUTH_TOKEN;
+    else process.env.CLAUDE_CODE_OAUTH_TOKEN = saved;
+  }
+});
+
 test('deniedFaults counts a denied build command as a fault on a site or tree case only', () => {
   const denial = [{ tool_use_id: 'd', tool_name: 'Bash', tool_input: { command: 'npm install' } }];
   assert.deepEqual(deniedFaults(denial, [], 'site'), ['npm install']);

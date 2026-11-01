@@ -52,7 +52,7 @@ binding directly, separate from cairn's content backend. Its canonical documenta
 ([handbook.aksailingclub.org](https://handbook.aksailingclub.org), behind Cloudflare Access), sourced
 at the sailing club site repository's `handbook/content/`; the ops-dashboard sections describe the target
 and the D1 schema is that repository's `ops/schema.sql`. The competitive-extensibility
-research (`2026-06-28-extensibility-competitive-research.md`, same directory) carries forward as input.
+research (`2026-06-28-extensibility-competitive-research.md`, kept at the `pre-agent-first` tag) carries forward as input.
 
 ## Make the breaking changes in the pre-1.0 window
 

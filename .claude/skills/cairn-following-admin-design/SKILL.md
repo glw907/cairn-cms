@@ -14,7 +14,7 @@ Read `references/admin-design-system.md` before any admin markup or style change
 Two rules decide most reviews:
 
 - `data-theme` goes on a bare wrapper element, never on a styled one. A styled element that carries it recolors its own border and background in ways the tokens do not predict.
-- Use a stock DaisyUI component. A home-grown one needs a dated ruling in `docs/internal/engine-rulings.md` that records the DaisyUI defect forcing it. The `daisyui` skill is the component reference, and this design system wins where the two disagree.
+- Use a stock DaisyUI component. A home-grown one needs a dated ruling in `docs/internal/engine-rulings.md` that records the DaisyUI defect forcing it. The `standards:daisyui` skill is the component reference, and this design system wins where the two disagree.
 
 ## References
 

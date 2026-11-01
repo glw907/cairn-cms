@@ -80,7 +80,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 
 When the docs process went wrong in a session (a page left stale, the gate skipped, the fact-check
 not run), file a cairn `BACKLOG.md` item tagged `#docs-process` with the session id, through
-`log-issue`.
+`standards:log-issue`.
 
 ## Sources to route to, never copy
 

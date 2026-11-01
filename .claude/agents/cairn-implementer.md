@@ -89,7 +89,7 @@ the fast lane's evidence, the files changed and the commit SHA, and any deviatio
 
 ## DaisyUI
 
-cairn's admin is DaisyUI. Before writing or changing admin markup, load the `daisyui` skill and
+cairn's admin is DaisyUI. Before writing or changing admin markup, load the `standards:daisyui` skill and
 prefer the stock component. The `cairn-following-admin-design` skill and the rulings ledger
 `docs/internal/engine-rulings.md` win over it on any conflict, and a home-grown component the
 ledger does not explain is a finding to report.

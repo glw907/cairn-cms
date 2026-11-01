@@ -182,11 +182,11 @@ function serializeThrownError(error: unknown): string {
 /**
  * Wrap a custom admin action's handler. In order, fail-closed at every step:
  *
- * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it); its
- *    absence means the session expired or was never established, so this logs
- *    `admin.action.session_absent` and redirects to `/admin/login`, matching `requireSession`
- *    (`./guard.js`) exactly: an editor whose session lapsed needs the login page, not an error
- *    page.
+ * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it).
+ *    Behind the guard, a request with no session redirects at the `Handle` before any route runs,
+ *    so an absent editor here means no hook set one: the route sits outside the guard's
+ *    `/admin/**` coverage, or a site hook cleared it. This logs `admin.action.session_absent` and
+ *    redirects to `/admin/login`, matching `requireSession` (`./guard.js`).
  * 2. The double-submit CSRF token must verify, constant-time, checked the same way the guard
  *    checks it (`./guard.js`): a header witness that was sent at all decides outright, matching or
  *    not, and the cookie-against-`csrf`-form-field check runs only when no `X-Cairn-CSRF` header

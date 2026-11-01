@@ -202,7 +202,7 @@ export interface ObjectField extends Omit<FieldBase, 'label'> {
   fields: Record<string, FieldDescriptor>;
 }
 /**
- * A single edge to one entry of a named concept, stored as that target's permanent id. Not allowed
+ * A single edge to one entry of a named concept, stored as that target's id. Not allowed
  * inside an `object`. A value that is not a well-formed entry id fails the save.
  * @public
  */
@@ -226,7 +226,12 @@ export interface ArrayField extends FieldBase {
   type: 'array';
   /** The descriptor each list element conforms to: a leaf, or a flat object of leaves. */
   item: FieldDescriptor;
-  /** A label for one row, shown beside the add and remove controls. */
+  /**
+   * The key of one sub-field of an `object` item, whose value the editor shows as a collapsed row's
+   *  summary. It names a key, not display text: a key that matches no sub-field, or a blank value,
+   *  falls back to the field's label and the row number, with no error. A leaf item ignores it and
+   *  summarizes each row by the row's value.
+   */
   itemLabel?: string;
 }
 /**
@@ -286,7 +291,7 @@ export const fields = {
   object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, 'type' | 'fields'>>(
     o: { fields: F } & O,
   ): ObjectField & { fields: F } & O => ({ type: 'object', ...o }),
-  /** A single reference field storing one target entry's permanent id. */
+  /** A single reference field storing one target entry's id. */
   reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
   /**
    * A repeatable field over one item descriptor, preserving the item type for inference. The item is

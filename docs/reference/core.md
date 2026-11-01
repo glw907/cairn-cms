@@ -1247,7 +1247,7 @@ function signatures above reference these.
 | `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
 | `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` (a top-level key, then a row index and/or a leaf sub-key) and its message. |
 | `StandardInput` | Extension API | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
-| `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
+| `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and id. |
 | `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `Manifest` | Extension API | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
@@ -1287,12 +1287,12 @@ function signatures above reference these.
 | `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set; the stored value is the glyph's name. |
 | `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object; `seo` marks it as the social-card image. |
 | `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. Holds only leaves, no nested container. |
-| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's id. |
 | `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its `item`'s values. |
 | `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. |
 | `FieldBehavior` | Extension API | `interface FieldBehavior { validate? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate`. Resident in the app bundle, never the `load` payload. |
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
-| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
+| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept. Posts are dated feed entries; pages are plain navigable structure. |
 | `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |
 | `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)`/`attr(key)` readers, and the stamped `node`. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |

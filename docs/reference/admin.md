@@ -268,7 +268,7 @@ summary), so a blocked save re-renders the author's edits and the broken links t
 per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
 
 **`previewMint` is presentational only.** It gates whether the details sidebar's "Share preview"
-group renders at all (spec part 3, "Public preview for a non-editor"): the mint and revoke controls,
+group renders at all: the mint and revoke controls,
 the minted-link display, and the expiry line. Setting it to `false` hides that group from the
 markup. It does **not** turn off the underlying `previewMint`/`previewRevoke` facade actions
 (`previewMintAction`/`previewRevokeAction`, [SvelteKit](./sveltekit.md#public-preview)), which stay

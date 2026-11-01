@@ -1,5 +1,5 @@
 // cairn-cms: mintPreview, the public entry point for issuing a preview link, and loadPreview, the
-// public entry point for serving one (spec part 3, "Public preview for a non-editor"). mintPreview
+// public entry point for serving one to a reader who is not an editor. mintPreview
 // carries the engine's entry-scoped authorization itself, so every path to a minted token runs
 // the same check the mintPreview admin action (content-routes-preview.ts) runs, and a caller reaching
 // it from its workflow route owns nothing beyond signing the editor in. loadPreview is the

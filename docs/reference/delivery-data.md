@@ -651,14 +651,14 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set. |
 | `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object. |
 | `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. |
-| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's id. |
 | `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its item's values. |
 | `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `defineFieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
 | `InferFieldset` | Extension API | `type InferFieldset<S>` | Extracts the normalized frontmatter type from a `Fieldset`. |
 | `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. |
 | `FieldBehavior` | Extension API | `interface FieldBehavior` | Function-valued behavior a field descriptor cannot carry as plain data. |
 | `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept. |
-| `CairnRef` | Extension API | `interface CairnRef { concept: string; id: string }` | A resolved reference to a content entry by its concept and permanent id. |
+| `CairnRef` | Extension API | `interface CairnRef { concept: string; id: string }` | A resolved reference to a content entry by its concept and id. |
 | `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry. See [`ReferenceEdge`](./core.md#types). |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. |

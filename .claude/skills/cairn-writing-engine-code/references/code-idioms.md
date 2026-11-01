@@ -38,8 +38,12 @@ elsewhere (`check:comments`) and not restated here.
   kin. Exemplar: `src/lib/content/fieldset.ts` (`validateField`). The dividing line is the
   audience: a developer's mistake throws at declaration; an author's input comes back as data.
 - **E4. Route factories**: a form-action failure is `fail(status, {...} satisfies XFailure)`
-  with a named `*Failure`/`*Refusal` interface carrying `error: string` plus context
-  (exemplar: the `content-routes.ts` failure family, ~460-655). A hard end-of-request is
+  with a named `*Failure` interface carrying `error: string` plus context (exemplar: the
+  `content-routes.ts` failure family, ~460-655). `Failure` is the family suffix; `Refusal` and
+  `Skip` are retired as type-name suffixes (a discriminant value or a field name is not a
+  suffix), per the ledger's `convention-failure-suffix`. `RevertOutcome` is its one ruled
+  exception. `IdentityRefusal` (`sveltekit/guard.ts`) is a live straggler no entry argues for,
+  ruled a rename to `IdentityFailure` (BACKLOG #187). A hard end-of-request is
   `error(status, message)`. A `redirect(303, '?error=...')` bounce is only for a failure on a
   page whose reload restores safe state; never a substitute for `fail` inside a form action.
   Ad hoc `fail(400, { error })` literals and dropped `satisfies` annotations converge.
@@ -95,9 +99,15 @@ elsewhere (`check:comments`) and not restated here.
 
 ## Naming
 
-- **N1.** Computed-value functions are verbNoun (`derive*`, `resolve*`, `extract*`,
-  `build*`); internal bare-noun stragglers converge. Booleans are `is*`/`has*`
-  (fix `altIsEdited`).
+- **N1.** An exported function's name begins with a verb and an exported value's does not
+  (`convention-bare-noun-functions`). The verbs follow `convention-verb-rules`: `verify*` is an
+  engine-owned integrity check that throws; `validate*` returns issues; `read*` reads a committed
+  artifact or declaration into typed shape; `parse*` and `format*` are a string codec pair;
+  `build*` derives pure data (so `deriveExcerpt` became `buildExcerpt`); `create*` makes a
+  function factory. `check*` retires as a verb (its members fall to the outcome idiom) and
+  `extract*` retires to `read*`; the `check*`, `extract*`, and `derive*` names still in `src/lib`
+  are stragglers that converge, as do internal bare nouns. Booleans are `is*`/`has*` (fix
+  `altIsEdited`).
 - **N2.** POST form-action handlers end in `Action`; loads and saves are `<subject>Load` /
   `<subject>Save`. The media-era handlers that dropped the suffix are a **filed
   surface-want** (their names appear in the public factory return type), not a sweep item.

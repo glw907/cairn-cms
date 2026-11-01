@@ -46,8 +46,8 @@ export interface CairnAdminConfig {
     branding?: Partial<AuthBranding>;
   };
   /**
-   * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
-   *  to avoid a real network call.
+   * Forwarded to the content routes verbatim; a site that enables tidy passes a `TidyClient`
+   *  factory here to route tidy through its own gateway, and a test passes a stub.
    */
   tidy?: ContentRoutesConfig['tidy'];
   /**
@@ -304,7 +304,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // Preview (spec part 3, "Public preview for a non-editor"): mint returns the minted URL and
+    // Preview, a draft link for a reader who is not an editor: mint returns the minted URL and
     // expiry directly (no redirect), so the edit screen's share panel can show and copy it in
     // place; revoke deletes every outstanding link for the entry. Both gate on the edit view,
     // where the share affordance lives.

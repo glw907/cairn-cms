@@ -34,11 +34,13 @@ export type TidyEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 /**
  * The narrow, engine-owned client contract the tidy action calls: correct a text under a system
- *  prompt, and probe a key's health. No `@anthropic-ai/sdk` type reaches this interface (a vendor
- *  field rename stops being a cairn break), and a test injects a fake implementing this shape
- *  directly, with no SDK-mimicking wire body to construct. The real factory
- *  ({@link lazyAnthropicClient}) adapts this contract onto the actual SDK client internally.
- * @beta
+ *  prompt, and probe a key's health. A site implements it to route tidy through its own gateway
+ *  (a proxy, a logging layer, or another provider's endpoint) and passes the factory as
+ *  `createCairnAdmin`'s `tidy.client`; a test injects a fake the same way, with no SDK-mimicking
+ *  wire body to construct. No `@anthropic-ai/sdk` type reaches this interface, so a vendor field
+ *  rename is not a cairn break. The default factory ({@link lazyAnthropicClient}) adapts this
+ *  contract onto the SDK client internally.
+ * @public
  */
 export interface TidyClient {
   /**
@@ -59,11 +61,11 @@ export interface TidyClient {
     tokens: { input: number; output: number };
   }>;
   /**
-   * The zero-token key-health probe (save-500-honest-errors): list available models to
+   * The zero-token key-health probe: list available models to
    *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
    *  only `tidy` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades to
    *  'unknown' when a client omits it rather than throwing. The signal rides the second argument,
-   *  mirroring `tidy`'s options shape (save-500-hardening), so the probe is bounded by the same
+   *  mirroring `tidy`'s options shape, so the probe is bounded by the same
    *  deadline as a tidy call instead of the SDK's multi-minute default.
    */
   models?: {
@@ -201,9 +203,9 @@ export interface ContentRoutesConfig {
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
-     * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the
-     *  real SDK client. Injected in tests so `messages.create` is stubbed and no network call (or
-     *  real key) is ever needed. The factory runs only after the key is read from the env, so a
+     * Build the tidy action's client from the resolved API key. Defaults to the Anthropic SDK
+     *  client. A site supplies its own {@link TidyClient} to route tidy through its own gateway,
+     *  and a test supplies a stub so no network call (or real key) is needed. The factory runs only after the key is read from the env, so a
      *  disabled or unconfigured site never constructs a client.
      */
     client?: (opts: { apiKey: string }) => TidyClient;

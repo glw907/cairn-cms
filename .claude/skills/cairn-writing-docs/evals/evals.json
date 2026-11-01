@@ -380,12 +380,12 @@
       "install": false,
       "prompt": "Write a pass plan for the media replace bug.",
       "expectations": [
-        "The cairn-writing-docs skill is not loaded for: Write a pass plan for the media replace bug."
+        "The session plans without editing any docs page. Loading cairn-writing-docs is allowed: the fix changes documented behavior, so a plan that loads the skill to scope its docs task is a defensible reading, and the case no longer checks skillNotCalled."
       ],
       "checks": [
         {
-          "type": "skillNotCalled",
-          "name": "cairn-writing-docs"
+          "type": "unchanged",
+          "path": "docs/"
         }
       ]
     },

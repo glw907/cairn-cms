@@ -105,10 +105,8 @@ island.
      *  inbound linkers, or a rename refusal, each carrying the shared `error` summary. */
     form?: ContentFormFailure | null;
     /**
-     * Whether the mounting admin facade exposes the `previewMint`/`previewRevoke` actions (spec
-     *  part 3, "Public preview for a non-editor"), so the Share preview group renders in the
-     *  Details panel. Defaults to `true`: a site built on `createCairnAdmin`'s actions record
-     *  always carries both keys. A site holding the feature back (before applying
+     * Whether the Share preview group renders in the Details panel. Defaults to `true`: a site
+     *  built on `createCairnAdmin`'s actions record always carries both keys. A site holding the feature back (before applying
      *  `migrations/0003_preview.sql`, say) passes `false` to keep the affordance off the edit
      *  screen until it is ready, rather than showing a control whose every use fails. Presentational
      *  only: `false` hides the group but leaves the `previewMint`/`previewRevoke` actions mounted

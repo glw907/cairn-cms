@@ -45,6 +45,18 @@
 //
 // Use it sparingly: a page thick with opt-outs has stopped proving anything. Prefer making a block
 // standalone (repeat the small amount of surrounding context) over annotating it away.
+//
+// Two things a site declares that no snippet can import get ambient stand-ins instead of a skip
+// (AMBIENT_DECLARATIONS below): the `__CAIRN_DEV_BUILD__` global a site's Vite `define` sets, and
+// the `cloudflare:workers` module with the `Env` and `Cloudflare.Env` bindings types that
+// `wrangler types` generates. Each binding reads as `any`, since the binding names are the site's.
+//
+// Per-block excerpt stub: an excerpt that uses a name its elided surroundings declare (the
+// scaffold's `runtime`, or the `handle` a hooks file opened above) names it in a comment on the
+// line before the fence, and the check declares each one `any` for that block alone, so the
+// block's real-package calls still typecheck:
+//
+//   <!-- snippet-check-stub: runtime, handle -->
 import ts from 'typescript';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -67,6 +79,32 @@ const DOC_DIRS = [
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;
+const STUB_RE = /^<!--\s*snippet-check-stub:\s*(.+?)\s*-->$/;
+
+/**
+ * The ambient stand-ins every unit typechecks against, for what a site declares and a snippet
+ * cannot import: the dev-build flag a site's Vite `define` sets, and the Worker bindings types and
+ * `cloudflare:workers` module that `wrangler types` generates. The binding names are the site's,
+ * so each one reads as `any`.
+ */
+export const AMBIENT_DECLARATIONS = [
+  'declare const __CAIRN_DEV_BUILD__: boolean;',
+  'declare namespace Cloudflare { interface Env { [binding: string]: any } }',
+  'interface Env extends Cloudflare.Env {}',
+  "declare module 'cloudflare:workers' { export const env: Cloudflare.Env; }",
+].join('\n');
+
+/**
+ * Declare each excerpt-stub name `any` for one unit. The declarations share the first line, so a
+ * diagnostic's line still maps to the doc, and a trailing `export {}` keeps them module-scoped,
+ * so two excerpts stubbing the same name never collide in the shared program.
+ * @param {string} code
+ * @param {string[]} names
+ */
+export function applyExcerptStubs(code, names) {
+  if (names.length === 0) return code;
+  return `${names.map((n) => `declare const ${n}: any;`).join(' ')} ${code}\nexport {};`;
+}
 // A fence may sit indented under a list item; the indent is captured so the body can be dedented.
 const FENCE_OPEN_RE = /^(\s*)```(ts|typescript|svelte)\s*$/;
 const FENCE_CLOSE_RE = /^\s*```\s*$/;
@@ -243,12 +281,13 @@ export function stripGlobalAugmentations(code) {
 /**
  * Every fenced `ts`, `typescript`, or `svelte` block in a Markdown doc, with its 1-based fence
  * line and, when the line immediately above (skipping blanks) carries a `snippet-check-skip:`
- * comment, the opt-out reason.
+ * comment, the opt-out reason, or, when it carries a `snippet-check-stub:` comment, the names to
+ * stub.
  * @param {string} markdown
  */
 export function extractBlocks(markdown) {
   const lines = markdown.split('\n');
-  /** @type {{ lang: string, fenceLine: number, body: string, skipReason: string | null }[]} */
+  /** @type {{ lang: string, fenceLine: number, body: string, skipReason: string | null, stubs: string[] }[]} */
   const blocks = [];
   for (let i = 0; i < lines.length; i++) {
     const open = lines[i].match(FENCE_OPEN_RE);
@@ -262,8 +301,11 @@ export function extractBlocks(markdown) {
       .join('\n');
     let k = i - 1;
     while (k >= 0 && lines[k].trim() === '') k--;
-    const skip = k >= 0 ? lines[k].trim().match(SKIP_RE) : null;
-    blocks.push({ lang: open[2], fenceLine: i + 1, body, skipReason: skip ? skip[1] : null });
+    const above = k >= 0 ? lines[k].trim() : '';
+    const skip = above.match(SKIP_RE);
+    const stub = above.match(STUB_RE);
+    const stubs = stub ? stub[1].split(',').map((n) => n.trim()).filter(Boolean) : [];
+    blocks.push({ lang: open[2], fenceLine: i + 1, body, skipReason: skip ? skip[1] : null, stubs });
     i = j;
   }
   return blocks;
@@ -396,7 +438,7 @@ export function collectUnits(root = ROOT) {
         units.push({
           file,
           lineBase: block.fenceLine + script.lineOffset,
-          code: rewriteLocalImports(stripGlobalAugmentations(script.code)),
+          code: applyExcerptStubs(rewriteLocalImports(stripGlobalAugmentations(script.code)), block.stubs),
         });
       } else {
         if (isDeclarationOnly(block.body)) {
@@ -406,7 +448,11 @@ export function collectUnits(root = ROOT) {
         for (const p of findLibImports(block.body)) {
           libProblems.push({ file, line: block.fenceLine + p.line, message: p.message });
         }
-        units.push({ file, lineBase: block.fenceLine, code: rewriteLocalImports(stripGlobalAugmentations(block.body)) });
+        units.push({
+          file,
+          lineBase: block.fenceLine,
+          code: applyExcerptStubs(rewriteLocalImports(stripGlobalAugmentations(block.body)), block.stubs),
+        });
       }
     }
   }
@@ -436,6 +482,9 @@ export function typecheckUnits(units) {
   // specifier) still finds the repo's own, rather than walking off the filesystem root.
   const virtualDir = join(ROOT, '.snippet-check-virtual');
   const virtual = new Map(units.map((u, i) => [join(virtualDir, `${i}.ts`), u]));
+  // The ambient file is a program root beside the units, never a unit itself, so no diagnostic
+  // maps to a doc line through it.
+  const ambientPath = join(virtualDir, 'ambient.d.ts');
   const options = {
     baseUrl: ROOT,
     paths: packagePaths(),
@@ -460,19 +509,18 @@ export function typecheckUnits(units) {
   const realFileExists = host.fileExists.bind(host);
   const realReadFile = host.readFile.bind(host);
   const realGetSourceFile = host.getSourceFile.bind(host);
-  host.fileExists = (fileName) => virtual.has(fileName) || realFileExists(fileName);
-  host.readFile = (fileName) => {
-    const unit = virtual.get(fileName);
-    return unit ? unit.code : realReadFile(fileName);
-  };
+  /** @param {string} fileName */
+  const virtualText = (fileName) => (fileName === ambientPath ? AMBIENT_DECLARATIONS : virtual.get(fileName)?.code);
+  host.fileExists = (fileName) => virtualText(fileName) !== undefined || realFileExists(fileName);
+  host.readFile = (fileName) => virtualText(fileName) ?? realReadFile(fileName);
   host.getSourceFile = (fileName, versionOrOpts, onError) => {
-    const unit = virtual.get(fileName);
-    return unit
-      ? ts.createSourceFile(fileName, unit.code, versionOrOpts ?? ts.ScriptTarget.ES2022, true)
+    const text = virtualText(fileName);
+    return text !== undefined
+      ? ts.createSourceFile(fileName, text, versionOrOpts ?? ts.ScriptTarget.ES2022, true)
       : realGetSourceFile(fileName, versionOrOpts, onError);
   };
 
-  const program = ts.createProgram([...virtual.keys()], options, host);
+  const program = ts.createProgram([ambientPath, ...virtual.keys()], options, host);
   const diagnostics = ts.getPreEmitDiagnostics(program);
 
   /** @type {{ file: string, line: number, message: string }[]} */

@@ -34,9 +34,10 @@ export interface PublishActionLink {
 /**
  * Validate a site's raw publishActions config once at construction (server start): every entry
  *  needs a non-empty label and href, and a label is unique across entries, and a `concepts` filter
- *  must name only concepts the site actually configures. Throws an actionable error naming the bad entry, so a typo'd concept id or a
- *  blank field fails at server start rather than silently rendering no link, or the wrong one, after
- *  a publish.
+ *  must name only concepts the site actually configures. Throws an actionable error naming the
+ *  bad entry, so a typo'd concept id or a blank field fails at server start (and in `vite build`,
+ *  whose analysis loads every route's server module) rather than silently rendering no link, or
+ *  the wrong one, after a publish.
  * @param entries - The raw config, or undefined when the site declares none.
  * @param concepts - The site's concepts, so a `concepts` filter can be checked against real ids.
  * @returns The validated entries, in declaration order.

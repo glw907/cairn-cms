@@ -133,7 +133,7 @@
 // weight no human on the page can see, and cairn's `<h1 class="sr-only">` on the desk route
 // split a region and erased a real violation without changing anything visible.
 //
-// Advisory tier, by ruling (design spec 6.3): no shipped design system anywhere gates on a
+// Advisory tier, by ruling: no shipped design system anywhere gates on a
 // compositional weight count, so this rule reports and never fails the run. `WEIGHT_BUDGET` itself
 // is the spec's stated number, not independently derived here, and is flagged in the same breath as
 // a threshold worth revisiting once cairn's and a consumer's screens have run against it.

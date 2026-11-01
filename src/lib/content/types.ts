@@ -325,8 +325,10 @@ export interface CairnAdapter {
     /**
      * The live Svelte components for hydrated directives, keyed by directive name.
      *  Every component whose {@link ComponentDef.hydrate} is set needs an entry here, and every entry
-     *  needs a matching `hydrate` component; `defineAdapter` checks both. Absent leaves the site
-     *  static, and the island client runtime is never imported.
+     *  needs a matching `hydrate` component; `defineAdapter` checks both. The engine reads this
+     *  registry for that check only: the site's root layout owns the gate that imports the island
+     *  client runtime and the map it passes to `hydrateIslands`, and a name missing from that map
+     *  mounts nothing, with no error.
      */
     islands?: IslandRegistry;
   };
@@ -373,8 +375,11 @@ export interface CairnAdapter {
      * Next-step links rendered on the publish-success moment (the `navLayout` site-entry grammar
      *  applied to after a publish): a plain-data `{label, href}` list, `href` a template string
      *  substituted with the published entry's concept and id, filterable to specific concepts. The
-     *  engine validates each entry when it composes, so a blank field or an unknown concept fails at
-     *  server start. Absent renders the publish-success moment exactly as it renders today.
+     *  engine validates each entry when it composes, so a blank field, a duplicate label, or an
+     *  unknown concept fails at server start, and in `vite build` too, since SvelteKit's build
+     *  analysis loads every route's server module. The links follow a single publish only: Publish
+     *  all returns to the concept list, whose confirmation renders none. Absent renders the
+     *  publish-success moment with no links.
      */
     publishActions?: PublishActionEntry[];
   };

@@ -22,7 +22,7 @@
 //  - A band flagged `single-observation` rests on one element site, not a distribution, and the
 //    finding says so in those words rather than presenting a one-point band as an observed range.
 //
-// The measurement half matches spec 6.3's four categories: control heights, padding-to-type ratios,
+// The measurement half matches the norms' four categories: control heights, padding-to-type ratios,
 // radii, and border treatments. It excludes every `relationship` (color) property the manifest
 // carries, since `interactive-contrast` and `chip-ground-collision` already measure those against
 // the rendered page, and it excludes font-size, font-weight, letter-spacing, and line-height, which
@@ -63,7 +63,7 @@ const VIEWPORT = { width: 1440, height: 900 };
 const UNBANDED_FLAGS = ['open-question', 'ratified-drift'] as const;
 
 /**
- * The manifest properties this rule checks, spec 6.3's four categories in the manifest's
+ * The manifest properties this rule checks, the norms' four categories in the manifest's
  * property names. Deliberately narrower than every non-color property the manifest carries; see
  * this file's header for what is excluded and why.
  */

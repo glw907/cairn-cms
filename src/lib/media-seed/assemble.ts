@@ -6,8 +6,19 @@ import { HASH_RE, R2_EXT_RE } from '../media/naming.js';
 import type { R2BucketEntry } from './wrangler-config.js';
 
 /** Printed for `--help` and on a rejected argument, at exit 0 and exit 2 respectively. */
-export const USAGE =
-  "Usage: cairn-media-seed --from <base-url> [--header 'Name: value']... [--bucket <name>] [--help]";
+export const USAGE = [
+  "Usage: cairn-media-seed --from <base-url> [--header 'Name: value']... [--bucket <name>] [--help]",
+  '',
+  '  --from    Required. The deployed site to download from; each manifest entry is fetched from',
+  '            <base-url>/media/<slug>.<hash>.<ext>. A trailing slash is tolerated.',
+  '  --header  Repeatable; sent on every download. A later header of the same name wins.',
+  '  --bucket  The R2 bucket name to write into. Wins over the wrangler config; without it the',
+  '            sole r2_buckets entry with a bucket_name is used.',
+  '  --help    Print this message and exit 0, without requiring --from.',
+  '',
+  'Exit codes: 0 every entry synced, or the manifest holds none; 1 at least one entry failed',
+  '(each prints FAILED <slug>: <message> to stderr); 2 bad flags or no resolvable bucket name.',
+].join('\n');
 
 /** The parsed CLI flags: the deployed site to download from, any auth headers, and an optional explicit bucket name. */
 export interface MediaSeedArgs {

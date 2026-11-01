@@ -20,6 +20,13 @@ export const USAGE = `Usage: cairn-guidance <install|check> [--strict]
   --strict  With check, exit 1 when the guidance tree is stale or missing.
             Otherwise check always exits 0.
   --help    Print this message and exit 0.
+
+Every write stays under .claude/; a destination outside it, or reached through a symlink, is
+refused by name and the run continues. install never writes .claude/settings.json, the root
+CLAUDE.md, package.json, or anything under .github/, and exits 0 even when it refuses or a write
+fails, so read its stderr. An existing .orig is never rewritten. check reports seven lines, none
+of which fails the run except the tree freshness under --strict. An unknown command or flag, or
+--strict with install, exits 2.
 `;
 
 export interface GuidanceArgs {

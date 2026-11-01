@@ -67,8 +67,8 @@ function validateDeclaration(name: string, decl: RoleDeclaration): void {
  * caller's use. Throws on an empty record, a missing or misvalued `owner`, an empty role name,
  * a malformed declaration, or a non-`/admin` home.
  * @remarks
- * `owner` is the one reserved name, because the last-owner guard and the bootstrap owner both
- * anchor on it. Every other name is free: `editor` may be omitted or declared like any other. A
+ * `owner` is the one reserved name, because the bootstrap owner row is written as `owner` and must
+ * resolve to owner capability; the last-owner guard counts every owner-capability name. Every other name is free: `editor` may be omitted or declared like any other. A
  * role name types as `string` everywhere the engine reads one; only the capability is a closed union.
  * @public
  */

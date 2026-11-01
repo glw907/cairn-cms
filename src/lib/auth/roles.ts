@@ -66,6 +66,10 @@ function validateDeclaration(name: string, decl: RoleDeclaration): void {
  * vocabulary fails at build rather than at runtime, and const-captures the literal key set for the
  * caller's use. Throws on an empty record, a missing or misvalued `owner`, an empty role name,
  * a malformed declaration, or a non-`/admin` home.
+ * @remarks
+ * `owner` is the one reserved name, because the last-owner guard and the bootstrap owner both
+ * anchor on it. Every other name is free: `editor` may be omitted or declared like any other. A
+ * role name types as `string` everywhere the engine reads one; only the capability is a closed union.
  * @public
  */
 export function defineRoles<const R extends RolesDeclaration>(roles: R): R {

@@ -171,6 +171,10 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
  * App's non-secret identity (so the build-time, health, and doctor readers narrow on kind and read
  * it) whose connect(env) mints and caches the installation token from the Worker's private-key
  * secret. The missing-secret CairnError stays on first token use, inside connect.
+ * @remarks
+ * The private key is never in the adapter: the engine reads it at request time from the Worker secret
+ * `GITHUB_APP_PRIVATE_KEY_B64`. The backend covers read, commit, and branch operations over files and
+ * is deliberately not a query interface, so content querying stays build-time over the committed manifest.
  * @public
  */
 export function createGithubApp(config: {

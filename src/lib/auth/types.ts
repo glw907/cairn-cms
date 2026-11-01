@@ -12,6 +12,7 @@ import type { Capability } from './roles.js';
  * @public
  */
 export interface Editor {
+  /** Always trimmed and lowercased: the store holds that invariant at every write and lookup path. */
   email: string;
   displayName: string;
   role: string;

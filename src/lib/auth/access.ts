@@ -166,6 +166,11 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
  * enforcement for an unmatched or ambiguous target is `requireAccess`'s job, via
  * {@link hasAccessRule}, not this function's.
  *
+ * Nav placement is never authorization: hiding a screen or entry from the sidebar (a `navLayout`
+ * node's `hidden: true`, an unmapped href) does not stop a signed-in editor reaching it by URL. Deny at
+ * the route through this function, which the nav resolver reads for visibility, so the sidebar and the
+ * route agree.
+ *
  * Posture: permissive by default. A target the map never names stays reachable, because this one
  * reading gates both an engine screen's route enforcement and that screen's nav visibility,
  * and every route relies on the zero-config any-editor floor an unmapped target admits.

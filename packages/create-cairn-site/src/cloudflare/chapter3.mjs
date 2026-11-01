@@ -497,7 +497,7 @@ export async function watchAndComplete({
       // A resumed run with no diff and no tracked buildsLastBuildUuid has nothing to match a
       // commit hash against (this is the manual-kick-not-push-build case, amendment 10), so
       // position is the only signal available: `listBuildsForWorker` was observed newest-first
-      // live, captured in docs/internal/2026-08-12-t4c-builds-spike.md ("Two shapes captured
+      // live, captured in https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-12-t4c-builds-spike.md ("Two shapes captured
       // after the fact"). That capture is explicitly one observation on one account, not a
       // documented contract, which is why every OTHER build-discovery site in this module still
       // matches on `build_trigger_metadata.commit_hash` (amendment 10) rather than position; do

@@ -1,6 +1,6 @@
 // cairn-cms: token and session-id generation plus SHA-256 token hashing, on Web Crypto so the
 // code runs unchanged in workerd. The store keeps only the hash of a token, never the
-// token itself (spec 7.1).
+// token itself.
 
 /** The base session cookie name, prefixed with __Host- when the cookie is Secure. */
 const COOKIE_BASE = 'cairn_session';

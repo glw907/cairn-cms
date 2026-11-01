@@ -18,7 +18,7 @@
 // interval instead of the full maxWaitMs. When the callback wins instead (the common fresh-run
 // case), the poll is cancelled and the happy path is unchanged: exchange the code and return.
 //
-// Spike-observed constraint (docs/internal/2026-08-10-t2-own-app-spike.md), pinned here so it is
+// Spike-observed constraint (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-10-t2-own-app-spike.md), pinned here so it is
 // not later "simplified" away: the install redirect (request_oauth_on_install) lands on the
 // FIRST registered callback URL verbatim, with no port-only leniency, which the manifest flow
 // (Task 6) registered as this run's ported loopback `/callback`. On a resumed run that port

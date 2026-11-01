@@ -1,6 +1,6 @@
 // The rollback-safe cutover: attach the admin's domain to the already-deployed Worker, confirm
 // it actually serves this site, then move the site's recorded origin over and redeploy.
-// Every finding below traces to the T4a domain spike (docs/internal/2026-08-11-t4a-domain-spike.md),
+// Every finding below traces to the T4a domain spike (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4a-domain-spike.md),
 // particularly its Step 4 and "Addendum 2: the scratch domain".
 //
 // This attaches a Workers CUSTOM DOMAIN (`PUT /accounts/:id/workers/domains`), never a Workers

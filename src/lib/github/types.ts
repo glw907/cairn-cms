@@ -21,7 +21,7 @@ export interface RepoFile {
 }
 
 /**
- * A commit author: the signed-in editor (spec §7.4). The committer is left to the App.
+ * A commit author: the signed-in editor. The committer is left to the App.
  * @public
  */
 export interface CommitAuthor {

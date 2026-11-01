@@ -196,7 +196,12 @@ export function claudeArgs(c, opts = {}) {
   if (c.agent) args.push('--agent', c.agent);
   else args.push('--model', 'sonnet', '--effort', 'medium');
   // A built fixture loads only the project's own settings, so no user skill or plugin reaches it.
-  if (built) args.push('--setting-sources', 'project');
+  if (built) {
+    args.push('--setting-sources', 'project');
+    // The session's permission rules deny a compound command or a shell write, and a session that
+    // does not notice the denial loses a file silently, so both arms are told the working form.
+    args.push('--append-system-prompt', 'Shell redirects, heredocs, and compound commands (`&&`, `;`, pipes) that write files are not permitted here. Create and edit files with the Write and Edit tools, and run one command per Bash call.');
+  }
   for (const dir of opts.pluginDirs ?? []) args.push('--plugin-dir', dir);
   // The variadic tool flags would swallow a trailing prompt, so the prompt goes in on stdin.
   args.push('--allowedTools', [...ALLOWED_TOOLS, ...(built ? BUILD_TOOLS : [])].join(','), '--disallowedTools', denied.join(','));

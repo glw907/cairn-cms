@@ -160,6 +160,8 @@ test('claudeArgs gives a site or tree case the project-only settings, its plugin
   const at = site.indexOf('--setting-sources');
   assert.deepEqual(site.slice(at, at + 2), ['--setting-sources', 'project']);
   assert.equal(site[site.indexOf('--plugin-dir') + 1], '/p/standards');
+  assert.match(site[site.indexOf('--append-system-prompt') + 1], /Write and Edit tools/);
+  assert.equal(claudeArgs({}).includes('--append-system-prompt'), false);
   assert.match(site[site.indexOf('--allowedTools') + 1], /Bash\(npm \*\)/);
   const docs = claudeArgs({});
   assert.equal(docs.includes('--setting-sources'), false);

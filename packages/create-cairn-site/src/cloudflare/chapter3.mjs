@@ -975,7 +975,8 @@ export async function runChapter3({
     await runStep(
       frame,
       'Get a fresh Cloudflare API token',
-      "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
+      'Uses the token this chapter saved on an earlier run, if there is one. Otherwise it opens ' +
+        "Cloudflare's create-token page with the permissions this chapter needs already " +
         'filled in (the same five chapter 2 already asked for, plus the Workers Builds ones), ' +
         'and asks you to paste the token back.',
       async () => {

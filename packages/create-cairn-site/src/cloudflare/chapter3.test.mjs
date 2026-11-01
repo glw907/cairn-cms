@@ -498,6 +498,10 @@ test('runChapter3: the admission copy states the App authorization, the token pa
   assert.match(printed, /Reconcile your deploy config/);
   assert.match(printed, /Watch your first Workers Builds deploy/);
 
+  // The token step's detail must not promise a browser trip on a re-run that holds a saved token.
+  assert.match(printed, /Uses the token this chapter saved/);
+  assert.doesNotMatch(printed, /Opens Cloudflare's create-token page/);
+
   // The consent point must disclose what the pasted token becomes, not only what it costs in
   // money. Registering it as the build token hands Cloudflare a secret it keeps and injects into
   // every build, and the token the prefill asks for is account-wide, so a commit to the default

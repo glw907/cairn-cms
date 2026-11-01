@@ -1,5 +1,5 @@
 // The rollback-safe cutover: attach the admin's domain to the already-deployed Worker, confirm
-// it actually serves this site, then move the site's recorded origin over and redeploy.
+// it actually serves this site, then move the site's recorded origin over, rebuild, and redeploy.
 // Every finding below traces to the T4a domain spike (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4a-domain-spike.md),
 // particularly its Step 4 and "Addendum 2: the scratch domain".
 //
@@ -58,7 +58,7 @@
 // GET /zones/:id/ssl/certificate_packs and GET /zones/:id/ssl/verification returned 9109
 // Unauthorized even with SSL and Certificates Edit granted at Zone scope. Progress is observed
 // by probing the hostname itself, which is exactly what confirmHostname does.
-import { deployWorker } from './deploy.mjs';
+import { buildSite, deployWorker } from './deploy.mjs';
 import { writePublicOrigin } from './config.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { readAuthoritativeAndRecursive } from './dns.mjs';
@@ -324,14 +324,16 @@ function stripNestedNext(message) {
 
 /**
  * Cut the admin's domain over to the already-deployed Worker: attach the Custom Domain, confirm
- * the existing deployment answers there, then move the site's recorded origin and redeploy once.
- * A confirm failure that means the site is simply not there yet (still propagating, or the
- * certificate has not issued) is returned as a wait outcome; a confirm failure that means
+ * the existing deployment answers there, then move the site's recorded origin, rebuild, and
+ * redeploy once. A confirm failure that means the site is simply not there yet (still
+ * propagating, or the certificate has not issued) is returned as a wait outcome; a confirm
+ * failure that means
  * something else is answering there (`hostname-not-serving`) is thrown, the same as the attach
- * itself failing (`custom-domain-failed`) or the redeploy failing (`cutover-deploy-failed`).
+ * itself failing (`custom-domain-failed`) or the rebuild or redeploy failing
+ * (`cutover-deploy-failed`).
  *
- * A redeploy failure restores the origin on disk to the pre-cutover workers.dev URL before
- * throwing, so a failed cutover never leaves the site's config pointing at an origin the
+ * A rebuild or redeploy failure restores the origin on disk to the pre-cutover workers.dev URL
+ * before throwing, so a failed cutover never leaves the site's config pointing at an origin the
  * Worker was never redeployed under.
  * @param {object} args
  * @param {object} args.record the site's in-memory state record; reads `record.dir` and
@@ -363,11 +365,14 @@ export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns
   await writePublicOrigin(dir, `https://${domain}`);
 
   try {
+    // The origin in cairn.config.ts is baked into the prerendered pages, so the rebuild runs
+    // inside the try: a failed build restores the origin the same way a failed deploy does.
+    await buildSite({ dir, log });
     await deployWorker({ dir, log, accountId });
   } catch (err) {
-    // The site is still live and working on its workers.dev address; the redeploy under its new
-    // origin is what failed, so the origin on disk is restored rather than left pointing at a
-    // Worker that was never actually redeployed to serve it.
+    // The site is still live and working on its workers.dev address; the rebuild or redeploy
+    // under its new origin is what failed, so the origin on disk is restored rather than left
+    // pointing at a Worker that was never actually redeployed to serve it.
     await writePublicOrigin(dir, workersDevUrl);
     throw cloudflareError('cutover-deploy-failed', { dir, detail: stripNestedNext(err.message) });
   }

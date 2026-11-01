@@ -23,7 +23,8 @@ const MINIMAL_WRANGLER_JSONC = JSON.stringify(
  * writeEmailFrom targets, shaped exactly like the real template's placeholder so the pattern
  * match (and its re-parse) exercise the real production shape rather than a stand-in.
  */
-const MINIMAL_CAIRN_CONFIG_TS = "export default {\n  email: { from: 'cms@showcase.test' },\n};\n";
+const MINIMAL_CAIRN_CONFIG_TS =
+  "export const publicOrigin = 'https://showcase.test';\nexport default {\n  email: { from: 'cms@showcase.test' },\n};\n";
 
 const WORKERS_DEV_URL = 'https://cairn-domain-site.glw907.workers.dev';
 
@@ -1904,6 +1905,41 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
   assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
   assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');
+});
+
+test('email admission and closing copy: the prompt warns of the domain-wide p=reject policy, and the close names no sender list', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-email-dmarc-copy', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-dmarc-copy',
+    record: await loadSite('site-email-dmarc-copy'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+  assert.equal(outcome.outcome, 'email-live');
+
+  const admission = logs.find((line) => line.includes('Turning this on onboards'));
+  assert.ok(admission, 'expected the admission detail to print');
+  assert.match(admission, /p=reject/);
+  assert.match(admission, /whole domain/);
+  assert.match(admission, /every sender/);
+  assert.doesNotMatch(admission, /replace|overwrit|existing/i, 'must not claim what happens to an existing record');
+
+  const closing = logs.find((line) => line.includes('cairn adopt'));
+  assert.ok(closing, 'expected the closing message');
+  assert.doesNotMatch(closing, /add it to that record/, 'a p=reject record has no sender list to add to');
+  assert.match(closing, /authenticat/, 'must tell the owner to authenticate each new service against the domain');
 });
 
 // --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------

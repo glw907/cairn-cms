@@ -197,7 +197,8 @@ const EMAIL_ADMISSION_DETAIL =
   "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is what " +
   "sends this site's sign-in email. Turning this on onboards your domain for Cloudflare Email " +
   'Sending, then sends a real test message to your sign-in address to prove it works before ' +
-  'it hands the feature to anyone else.';
+  'it hands the feature to anyone else. Onboarding also writes a p=reject DMARC policy for your ' +
+  'whole domain. That policy governs every sender that mails as your domain, not only cairn.';
 
 /**
  * @typedef {object} RunChapter2Input
@@ -592,7 +593,7 @@ export async function runChapter2({
         frame,
         'Connect your domain to your site',
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
-          "switches your site's address over and redeploys once.",
+          "switches your site's address over, rebuilds it, and redeploys once.",
         async () => {
           const waitForClear = composeCutoverWaitForClear({
             runArgs: args,
@@ -768,9 +769,7 @@ export async function runChapter2({
     }
 
     // --- Sender address, then one deploy. Both skip when the address is already correct, so a
-    // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
-    // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
-    // fresh build first.
+    // park-and-resume never buys a second deploy; the redeploy needs a fresh build first.
     let addressChanged = false;
     await runStep(
       frame,
@@ -803,10 +802,12 @@ export async function runChapter2({
             'providers can take a while to trust it enough to deliver its first messages. That ' +
             'trust builds on its own as the domain keeps sending. If a sign-in link does not ' +
             'arrive yet, this warm-up period is the usual reason.\n' +
-            `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
-            "isn't from Cloudflare's sending infrastructure. That record stays in place even " +
-            'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
-            'to this domain later, add it to that record too, or its mail will be rejected.\n' +
+            `Onboarding also wrote a p=reject DMARC policy at _dmarc.${domain}, which asks ` +
+            'receivers to reject mail that claims to come from your domain without ' +
+            'authenticating. That record covers every sender on the domain and stays in place ' +
+            'even if you turn Email Sending off again, so authenticate each new service you add ' +
+            "later, such as a newsletter tool or mailing list, against the domain's mail " +
+            'records, or its mail will be rejected.\n' +
             'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
             'install it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or ' +
             'from the release page at https://github.com/glw907/cairn-cms/releases. Run ' +

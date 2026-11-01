@@ -410,6 +410,8 @@ test('cutover-deploy-failed says the site is still working on workers.dev with n
   assert.match(err.message, /workers\.dev/);
   assert.match(err.message, /restored/);
   assert.match(err.message, /still working/);
+  assert.match(err.message, /Rebuilding and redeploying/);
+  assert.match(err.message, /The build or wrangler reported/, 'a build failure must not read as wrangler\'s');
 });
 
 test('carry-over-declined now reports the declined kind', () => {

@@ -16,7 +16,7 @@
 // each new step; this file proves what happens once runChapter2 itself is running.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm, stat, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin } from './fake-bin.mjs';
@@ -62,6 +62,11 @@ async function fixtureScaffoldDir(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-safety-net-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await writeFile(path.join(dir, 'wrangler.jsonc'), MINIMAL_WRANGLER_JSONC);
+  await mkdir(path.join(dir, 'src', 'theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'src', 'theme', 'cairn.config.ts'),
+    "export const publicOrigin = 'https://showcase.test';\n",
+  );
   return dir;
 }
 
@@ -99,9 +104,15 @@ async function setupWrangler(t, { deployReply = { code: 0, stdout: `Deployed (0.
     stdout: JSON.stringify({ loggedIn: true, accounts: [{ id: 'acct-1', name: 'Test Account' }] }),
   });
   await fake.respond('deploy', deployReply);
+  // The cutover and the sender rewrite both build before they deploy, so npm needs a fake too. It
+  // is separate from the wrangler fake so the tests' wrangler call counts stay about wrangler.
+  const npm = await makeFakeBin('chapter2-safety-npm');
+  t.after(() => npm.close());
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = npm.binPath;
   t.after(() => {
     delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
   });
   return fake;
 }

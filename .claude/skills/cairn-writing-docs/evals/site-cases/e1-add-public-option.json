@@ -18,7 +18,7 @@
   "expectations": [
     "PublicRoutesConfig gains `twitterSite?: string`, and composeEntryData passes it to the SEO head so buildSeoMeta emits { name: 'twitter:site', content } on every entry, dated or not, and nothing when it is unset.",
     "A unit test proves the tag appears with the configured handle and is absent when the option is unset.",
-    "The option's contract is recorded where this tree's gates require it: on a tree whose check:options reads docs/internal/option-map.json, a `PublicRoutesConfig.twitterSite` row anchored at the reference section that names `twitterSite` in inline code; on a tree whose gate reads TSDoc, a TSDoc comment on the member with the tier tag the gate wants.",
+    "The option's contract is recorded where this tree's gates require it: on a tree whose check:options reads docs/internal/option-map.json, a `PublicRoutesConfig.twitterSite` row anchored at the reference section that names `twitterSite` in inline code; on a tree whose gate reads TSDoc, a TSDoc comment on the new member with prose (tier tags sit on exports, not on members).",
     "The API surface snapshot is regenerated, and CHANGELOG.md's ## Unreleased section gains an Added entry naming the option.",
     "check:options, check:surface, check:comments, the type check, and the SEO and public-routes unit tests pass."
   ],
@@ -36,7 +36,7 @@
   "judge": [
     {
       "n": 1,
-      "text": "The new option's contract is recorded where this tree's own option gate requires it: either a `PublicRoutesConfig.twitterSite` row in docs/internal/option-map.json pointing at a reference-page anchor whose section names `twitterSite` in inline code, or (on a tree whose gate reads TSDoc instead) a TSDoc comment on the member carrying the tier tag that gate requires; an `exclude` or `pending` row does not count.",
+      "text": "The new option's contract is recorded where this tree's own option gate requires it: either a `PublicRoutesConfig.twitterSite` row in docs/internal/option-map.json pointing at a reference-page anchor whose section names `twitterSite` in inline code, or (on a tree whose gate reads TSDoc instead) a TSDoc comment on the new member that states what it promises (tier tags sit on exports, never on members; the gate requires only a doc comment with prose); an `exclude` or `pending` row does not count.",
       "source": "scripts/checks/check-options.mjs:1-12,398"
     },
     {

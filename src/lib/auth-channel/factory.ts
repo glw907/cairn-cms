@@ -214,7 +214,8 @@ export type ChannelRequestOutcome = {
 };
 
 /**
- * `confirm`'s result. `challenge-required` is a retry invitation, never a hard failure.
+ * `confirm`'s result. `challenge-required` is a retry invitation, never a hard failure: the site's
+ * confirm form renders its challenge widget and the member submits again.
  * @public
  */
 export type ChannelConfirmOutcome = {
@@ -238,20 +239,27 @@ export type ChannelConfirmOutcome = {
  */
 export interface AuthChannelConfig<Env> {
   /**
-   * The channel's D1 binding, never `AUTH_DB` (spec, decision 1: physical separation). Absent
-   * fails an action closed with `{outcome: 'unavailable'}`. Typed as {@link ChannelDatabaseLike},
+   * The channel's D1 binding, never `AUTH_DB`: the channel's roster and sessions live in a
+   * database physically separate from the engine's editor store. An absent binding, or one whose
+   * `schema_version` row does not match the version the packaged
+   * `migrations-channel/0000_channel.sql` seeds, fails an action closed with
+   * `{outcome: 'unavailable'}` without touching a row. Typed as {@link ChannelDatabaseLike},
    * the subset of D1 the store uses, which a real `D1Database` and the dev package's
    * `createChannelDb()` result both satisfy.
    */
   resolveDb: (env: Env | undefined) => ChannelDatabaseLike | undefined;
   /**
-   * Send the code to `contact`. A throw is scrubbed, logged, deletes the pending row, and refunds
-   * the send charge; called only for a known subject.
+   * Send the code to `contact`; called only for a known subject. `request` hands the delivery to
+   * `waitUntil` and answers without waiting for it. A throw is caught: the error is logged with
+   * every occurrence of `contact` redacted and the message capped at 300 characters, the pending
+   * code row is deleted, and the requester's send charge is refunded, so a provider outage costs a
+   * member nothing but a retry.
    */
   deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>;
   /**
-   * Normalized contact to subject id, or null for an unknown contact. A throw is caught, logged as
-   * `lookup_failed`, and treated as a miss.
+   * Normalized contact to subject id, or null for an unknown contact. The returned subject must be
+   * stable and canonical per person, since sessions and revocation key on it. A throw is caught,
+   * logged as the `lookup_failed` outcome of `auth.channel.requested`, and treated as a miss.
    *
    * `ctx` carries the Worker env and nothing else, mirroring {@link DeliverContext}: a
    * roster read needs a binding, and the binding is all it needs. This callback must not read
@@ -262,15 +270,22 @@ export interface AuthChannelConfig<Env> {
   lookup: (contact: string, ctx: { env: Env | undefined }) => Promise<string | null>;
   /**
    * Identifier shape: must be idempotent and canonical per identity, and injective across
-   * distinct people. Output over 254 characters is invalid; a throw is caught and treated as
-   * invalid. Pure and synchronous, unlike the I/O-bound config functions above.
+   * distinct people. A lossy `normalize` maps two people onto one identity, handing them a shared
+   * rate-limit budget and session subject. Empty output or output over 254 characters answers
+   * `{outcome: 'invalid'}`, and so does a throw. Pure and synchronous, unlike the I/O-bound config
+   * functions above.
    */
   normalize: (raw: string) => string;
   /**
    * The bot challenge, the most load-bearing of the three correctness obligations this factory
    * cannot itself verify. Required: cairn runs on Cloudflare, where Turnstile is free and native.
-   * Awaited before any mint on `request`, and on an escalated `confirm`; false or a throw answers
-   * `challenge-required` without ever hard-failing, so a member always has a retry path.
+   * Awaited before any mint on `request`, and on a `confirm` whose identity has crossed the
+   * escalation threshold. A truthy result counts as a pass: the factory cannot tell a real
+   * siteverify call from `async () => true`, and the escalation gate's bound on guessing codes
+   * across many addresses rests on this check. A false result or a throw never hard-fails: `request` answers
+   * `challenge-required` with no row written and no `deliver` call, and an escalated `confirm`
+   * answers `challenge-required` with no attempt charged and no row consumed, so a member always
+   * has a retry path.
    */
   challenge: (event: CairnEvent, form: FormData) => Promise<boolean>;
   /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's admin cookies). */
@@ -279,7 +294,9 @@ export interface AuthChannelConfig<Env> {
     name: string;
   };
   /**
-   * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
+   * Consulted by `resolveSubject` on every resolution. A `false` revokes on the spot: the session
+   * row is deleted and the resolution answers null. A throw refuses the resolution (null) without
+   * touching the row, so a transient roster-backend outage cannot mass-revoke every session.
    *
    * `ctx` carries the Worker env and nothing else, for the same reason `lookup`'s does:
    * a roster read needs a binding, and this callback must not read request-shaped data. A `false`
@@ -292,8 +309,10 @@ export interface AuthChannelConfig<Env> {
   /**
    * Clamped overrides for the Defaults table (spec, Defaults and clamps), in three groups: the
    * one-time code, the pressure controls, and the session. Every group and every field is
-   * optional and independently clamped, so a site that tunes one knob names one knob; an
-   * out-of-range override rejects at construction on whichever bound the table states for it.
+   * optional and independently clamped, so a site that tunes one knob names one knob. An
+   * out-of-range or non-integer override throws at construction with a message naming the group,
+   * the field, and the bound; a non-positive value always throws, even where the clamp states only
+   * a ceiling.
    *
    * The groups are what a site tunes together, re-derived for a reader rather than transplanted
    * from the design document. The retired `ttl` bag held all nine knobs in one flat family because
@@ -330,9 +349,12 @@ export interface AuthChannelConfig<Env> {
     };
   };
   /**
-   * Optional back pressure on `request` and `confirm`, never a security control (spec,
-   * Residual risks: the Cloudflare binding is per-colo and eventually consistent). An unresolved
-   * binding degrades to open.
+   * Optional back pressure on `request` and `confirm`, never a security control: the Workers
+   * binding is per-location and eventually consistent. An unresolved binding degrades to open
+   * (`auth.channel.rate_limit_absent`), and so does a throwing `key()` or `limit()` call
+   * (`auth.channel.rate_limit_failed`), except that a thrown SvelteKit `redirect()` or `error()`
+   * rethrows. A denial answers `throttled`. Both actions run the check after deriving the identity
+   * the default key needs, before any budget is charged or row is consumed.
    */
   rateLimit?: {
     /** Resolve the Workers RateLimit binding off the Worker env; absent degrades to open. */
@@ -344,6 +366,9 @@ export interface AuthChannelConfig<Env> {
 
 /**
  * What `createAuthChannel` returns: the three form actions, session resolution, and roster-removal revocation.
+ * @remarks
+ * `request` and `confirm` need `getClientAddress()` beside the `CairnEvent` members, because the
+ * requester bucket keys on the client address; a real SvelteKit `RequestEvent` passes unchanged.
  * @public
  */
 export interface AuthChannel<Env> {
@@ -555,8 +580,8 @@ async function checkChannelRateLimit<Env>(
  * ever served.
  *
  * `Env` (a site's `wrangler types` type) does not infer from `resolveDb`'s parameter alone; annotate
- * it explicitly (as in the example) or it collapses to `{}` and every downstream binding read stops
- * typechecking usefully.
+ * it explicitly (as in the example) or it infers as `unknown` and a binding read such as
+ * `env?.MEMBER_DB` fails to typecheck.
  *
  * ```ts
  * const channel = createAuthChannel<Env>({
@@ -564,10 +589,26 @@ async function checkChannelRateLimit<Env>(
  *   deliver: sendOtp,
  *   lookup: (contact, ctx) => contactToPersonId(ctx.env?.MEMBER_DB, contact),
  *   normalize: normalizeContact,
- *   challenge: verifyTurnstile,
+ *   challenge: (_event, form) =>
+ *     verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), env.TURNSTILE_SECRET ?? ''),
  *   cookie: { name: 'member_session' },
  * });
  * ```
+ * @remarks
+ * Every action refuses a forged or downgraded request by throwing a SvelteKit `HttpError` 403 (an
+ * origin mismatch, or plain http on any host but a local one). When `CAIRN_DEV_BACKEND` is set in
+ * the Worker env and the request reaches a deployed runtime, `request`, `confirm`, and `logout`
+ * each throw an `HttpError` 503 first, before touching a row, minting a code, or calling `deliver`.
+ * Both are throws rather than `outcome` results because no result union carries a wire code for
+ * them, so SvelteKit renders the site's error page. "Deployed" means `PUBLIC_ORIGIN` in the Worker
+ * env names a non-local host, or, failing that, the request's hostname is not local. Local
+ * development with the flag set is untouched, which is what lets a dev transport use the flag as its
+ * enable contract.
+ *
+ * The actions read only the `schema_version` row to confirm the binding is migrated; none of them
+ * runs a migration. Expired rows need no site-side cleanup job: each successful code mint also
+ * deletes expired code rows, expired sessions, and budget rows whose window began two or more
+ * hours earlier, through `waitUntil`, so the cleanup never delays a response.
  * @throws Error on any misconfiguration: a missing required function, an unsupported `kind`, a
  * `cairn_`-prefixed cookie base, an invalid cookie-name token, or a `config.limits` override outside
  * its clamp.

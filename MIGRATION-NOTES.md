@@ -322,6 +322,11 @@ this file carries; read `CHANGELOG.md` directly for anything older.
   automated `wrangler d1 migrations apply`, a deploy pipeline's included, runs it and rebuilds
   `editor` the same way, so carry site-added columns across before you copy it in.
 
+The setup tool's changes ask nothing of an existing site. In the showcase and the scaffold template,
+the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from
+`src/theme/cairn.config.ts`, which `create-cairn-site` now writes with the site's real address. A site
+that keeps its own origin constant still builds, and it can adopt the import when it likes.
+
 See [`CHANGELOG.md`](./CHANGELOG.md#unreleased).
 
 ## 0.98.0

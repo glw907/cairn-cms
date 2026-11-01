@@ -230,7 +230,8 @@ repository; every payload carries a schemaVersion that is incremented whenever a
 consumer has to re-read its schema.
 
 A payload carries schemaVersion, kind, verdict, and exitCode, except that a per-site
-line of the stream omits exitCode. A check carries checkId, state, checkedAt, and tier
+line of the stream omits exitCode. kind is site, summary, sites, logs, adoptCandidates,
+authCheck, or doctor, and its schema is cairn-<name>.schema.json under the $id above. A check carries checkId, state, checkedAt, and tier
 (none, cloudflare, github, or both), and when it has them detail, code, condition,
 reason, fix, hold, fields, and observed. reason is always present on a skip or an
 unknown. fields are values cairn derived; observed maps each key to a value and the
@@ -329,7 +330,8 @@ const (
 		"WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.\n" +
 		"Under --json the states are pass, fail, skip, and unknown: INFO writes pass with a note, SKIP\n" +
 		"writes reason.not-run, UNCHECKED writes reason.not-observable, and a fail carries a fix with a\n" +
-		"summary and no actor. The payload carries dir and checkedAt, and no tier, hold, or severity.\n\n" +
+		"summary and no actor. The payload carries dir (the resolved directory, never the argument as\n" +
+		"typed) and checkedAt, and no tier, hold, or severity.\n\n" +
 		"The report is plain text on stdout only, so --color, --theme, and --width are validated and\n" +
 		"then ignored. --json beats --quiet; --quiet writes nothing on a clean run.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. Exit 3 also covers a usage error, a run\n" +

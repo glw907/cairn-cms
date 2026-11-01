@@ -54,7 +54,8 @@
    card-shell alone. Corners follow the daisyUI ladder rounded-selector, rounded-field, rounded-box;
    a fixed step such as rounded-lg compiles but is off the ladder. cairn-text-warning and
    cairn-text-success read the on-surface text inks (--cairn-warning-ink, --color-positive-ink),
-   never the fills. A class used only in a directory this sheet's build does not scan compiles to
+   never the fills. A bracketed text-[Npx] sets font-size only, while a named step such as text-2xl
+   sets line-height too. A class used only in a directory this sheet's build does not scan compiles to
    nothing, so it resolves to no style at runtime. */
 :root {
   /* The seven-role type scale: title, heading (dialog and section headings; the bold

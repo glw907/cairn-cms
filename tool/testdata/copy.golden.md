@@ -136,7 +136,8 @@ Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for
 WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.
 Under --json the states are pass, fail, skip, and unknown: INFO writes pass with a note, SKIP
 writes reason.not-run, UNCHECKED writes reason.not-observable, and a fail carries a fix with a
-summary and no actor. The payload carries dir and checkedAt, and no tier, hold, or severity.
+summary and no actor. The payload carries dir (the resolved directory, never the argument as
+typed) and checkedAt, and no tier, hold, or severity.
 
 The report is plain text on stdout only, so --color, --theme, and --width are validated and
 then ignored. --json beats --quiet; --quiet writes nothing on a clean run.
@@ -224,7 +225,8 @@ repository; every payload carries a schemaVersion that is incremented whenever a
 consumer has to re-read its schema.
 
 A payload carries schemaVersion, kind, verdict, and exitCode, except that a per-site
-line of the stream omits exitCode. A check carries checkId, state, checkedAt, and tier
+line of the stream omits exitCode. kind is site, summary, sites, logs, adoptCandidates,
+authCheck, or doctor, and its schema is cairn-<name>.schema.json under the $id above. A check carries checkId, state, checkedAt, and tier
 (none, cloudflare, github, or both), and when it has them detail, code, condition,
 reason, fix, hold, fields, and observed. reason is always present on a skip or an
 unknown. fields are values cairn derived; observed maps each key to a value and the

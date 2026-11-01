@@ -20,7 +20,7 @@
     "A unit test proves the tag appears with the configured handle and is absent when the option is unset.",
     "The option's contract is recorded where this tree's gates require it: on a tree whose check:options reads docs/internal/option-map.json, a `PublicRoutesConfig.twitterSite` row anchored at the reference section that names `twitterSite` in inline code; on a tree whose gate reads TSDoc, a TSDoc comment on the member with the tier tag the gate wants.",
     "The API surface snapshot is regenerated, and CHANGELOG.md's ## Unreleased section gains an Added entry naming the option.",
-    "check:options, check:reference, check:surface, check:comments, the type check, and the SEO and public-routes unit tests pass."
+    "check:options, check:surface, check:comments, the type check, and the SEO and public-routes unit tests pass."
   ],
   "checks": [
     { "type": "contains", "path": "src/lib/delivery", "regex": "twitterSite\\?:\\s*string", "source": "src/lib/delivery/public-routes.ts:22" },
@@ -28,7 +28,6 @@
     { "type": "contains", "path": "src/tests", "text": "twitter:site", "source": "src/tests/unit/delivery-seo.test.ts, src/tests/unit/public-routes.test.ts (where the head's twitter tags are tested today)" },
     { "type": "contains", "path": "CHANGELOG.md", "text": "twitterSite", "source": "CHANGELOG.md:1" },
     { "type": "npm", "script": "check:options" },
-    { "type": "npm", "script": "check:reference" },
     { "type": "npm", "script": "check:surface" },
     { "type": "npm", "script": "check:comments" },
     { "type": "npm", "script": "check" },

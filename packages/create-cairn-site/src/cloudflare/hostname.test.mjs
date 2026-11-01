@@ -485,6 +485,28 @@ test('a mixed-case domain on the record still cuts over to a lowercase bare orig
   assert.ok((await readOrigin(dir)).includes('https://carin-test.org'));
 });
 
+test('a Unicode domain on the record cuts over to its punycode bare origin', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir, domain: 'b\u00fccher.example' });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} });
+
+  assert.deepEqual(await bin.lines(), [
+    'run build | https://xn--bcher-kva.example',
+    'deploy | https://xn--bcher-kva.example',
+  ]);
+  assert.ok((await readOrigin(dir)).includes('https://xn--bcher-kva.example'));
+});
+
 test('the cutover builds under the new origin before its deploy', async (t) => {
   const { api } = await setupCloudflare(t);
   const dir = await setupDir(t);

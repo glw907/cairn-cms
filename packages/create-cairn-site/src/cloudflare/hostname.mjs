@@ -373,7 +373,7 @@ export async function cutOverHostname({
   const beforeRedeploy = await confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear });
   if (beforeRedeploy !== 'live') return { outcome: beforeRedeploy };
 
-  const domainOrigin = `https://${domain.toLowerCase()}`;
+  const domainOrigin = originFor(domain);
   try {
     // The forward write sits inside the try too: it writes two files, and a failure after the
     // first lands must restore the pair like any later failure. The origin in cairn.config.ts is
@@ -407,4 +407,18 @@ export async function cutOverHostname({
 
   log(`${domain} is live.`);
   return { outcome: 'live' };
+}
+
+/**
+ * Build the public origin for a stored domain. The URL parser's host lowercases and punycodes it,
+ * so a record that predates normalization still cuts over to the bare form the checks expect.
+ * @param {string} domain the domain on the record
+ * @returns {string} the `https://` origin, falling back to a lowercased copy when the parse throws
+ */
+function originFor(domain) {
+  try {
+    return `https://${new URL(`https://${domain}`).hostname}`;
+  } catch {
+    return `https://${domain.toLowerCase()}`;
+  }
 }

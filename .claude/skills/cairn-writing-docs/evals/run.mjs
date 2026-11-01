@@ -63,7 +63,7 @@ export const DENIED_TOOLS = [
  */
 const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate )/;
 /** On a site or tree fixture every build command is needed, so a denied one is a fault too. */
-const NEEDED_BUILD_COMMAND = /^\s*(npm|npx|node|make|go|cd)\s/;
+const NEEDED_BUILD_COMMAND = /^\s*(npm|npx|node|make|go)\s/;
 
 /** The fixture kinds: a pinned commit with the arm's overlay, an emitted site, or the arm's whole tree. */
 const FIXTURES = ['pin', 'site', 'tree'];
@@ -470,12 +470,14 @@ export function tokensOf(u) {
 export function deniedFaults(denials, tools = [], fixture = 'pin') {
   const faults = [];
   const deniedIds = new Set(denials.map((d) => d.tool_use_id));
-  const lead = (c) => c.split(/[;&|]/)[0].trim();
+  // A `cd <dir> &&` prefix only moves the shell; the command that matters follows it.
+  const bare = (c) => c.replace(/^\s*cd\s+\S+\s*(&&|;)\s*/, '');
+  const lead = (c) => bare(c).split(/[;&|]/)[0].trim();
   const needed = fixture === 'pin' ? NEEDED_COMMAND : new RegExp(`${NEEDED_COMMAND.source}|${NEEDED_BUILD_COMMAND.source}`);
   for (const d of denials) {
     const cmd = d.tool_input?.command ?? '';
     if (d.tool_name !== 'Bash') continue;
-    if (!needed.test(cmd)) continue;
+    if (!needed.test(bare(cmd))) continue;
     // A compound command the permission check could not verify is denied whole. The session
     // reissuing its leading command and getting through leaves the process unharmed.
     const recovered = tools.some((t) => t.name === 'Bash' && !deniedIds.has(t.id) && lead(t.input.command ?? '') === lead(cmd));

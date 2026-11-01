@@ -172,6 +172,14 @@ test('deniedFaults counts a denied build command as a fault on a site or tree ca
   assert.deepEqual(deniedFaults(denial, []), []);
 });
 
+test('deniedFaults looks past a cd prefix: a denied read compound is friction, a denied build is a fault unless reissued', () => {
+  const den = (id, command) => [{ tool_use_id: id, tool_name: 'Bash', tool_input: { command } }];
+  assert.deepEqual(deniedFaults(den('d', 'cd /w && git ls-files | grep x'), [], 'site'), []);
+  assert.deepEqual(deniedFaults(den('d', 'cd /w && npm test'), [], 'site'), ['cd /w && npm test']);
+  const again = [{ id: 'a', name: 'Bash', input: { command: 'npm test' } }];
+  assert.deepEqual(deniedFaults(den('d', 'cd /w && npm test'), again, 'site'), []);
+});
+
 test('overlayPaths carries the skill folder before and after its rename, and neither one\'s evals', async () => {
   const { overlayPaths } = await import('./run.mjs');
   const got = overlayPaths([

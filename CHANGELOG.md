@@ -585,10 +585,28 @@
 - **The App trip warns against GitHub's own form.** The setup prints "use this link, not GitHub's own
   form" beside the App link, and the abandon message names a profile-free way to open it.
 
-- **A declined sign-in email is offered again on a re-run.** A re-run at a recorded email decline,
-  including after a Workers Builds step, asks the question again and settles back where it was. A
-  non-interactive run with `--yes` and no `--email` stays a decline, and `--sign-in` still skips the
-  question. `README.md` and the setup recovery text now match.
+- **A declined sign-in email is offered again on a re-run, until Workers Builds is connected.** A
+  re-run at a recorded email decline, including after a declined Workers Builds step, asks the
+  question again and settles back where it was. Once Builds is connected (a saved trigger, or
+  `builds-live`), the question is not asked again, because turning email on ends in a local build
+  and deploy that would replace the site Builds deploys from the repository; a re-run there prints
+  the Builds closing block and a line saying the offer has ended. A run that cannot ask (`--yes`
+  with no `--email`, or no terminal on stdin or stdout) stays a decline, and `--sign-in` still
+  skips the question. `README.md`, the setup recovery page, and the domain page now match.
+
+- **The installation coverage check reads every page.** The check that the GitHub App's
+  installation covers the new repository read only GitHub's first page of 30, so an "All
+  repositories" install on an account with more could fail on every resume. It now reads 100 per
+  page until the list ends.
+
+- **The site origin is validated before it is written.** `create-cairn-site` refuses an origin that
+  is not a bare `scheme://host` (a path, a quote, a trailing slash) before it touches
+  `wrangler.jsonc` or `src/theme/cairn.config.ts`, and names the value.
+
+- **A failed domain cutover restores the origin even when the first write fails.** A failure while
+  writing the domain origin now restores both files the way a failed build or deploy does. When the
+  restore also fails, the error keeps the original cause and says the files may still name the
+  domain, instead of claiming they were restored.
 
 - **The email prompt names what DMARC `p=reject` does.** It says the policy covers every sender on the
   domain, and the closing copy no longer tells the owner to add a service to a record that has no
@@ -597,7 +615,8 @@
 - **Setup output copy is corrected.** The private repository is no longer called "live on GitHub", the
   hand-over says the run offers to create the repository and deploy, the default App name no longer
   doubles "cairn", a sign-in page is announced only when one opened, a non-interactive `--sign-in`
-  prints the real `--dir`, and the cost preamble opens with the costs.
+  withholds the link and says to re-run the same command with `--sign-in` from an interactive
+  terminal, and the cost preamble opens with the costs.
 
 - **`create-cairn-site` is ready to publish.** Its manifest carries `repository` with `directory`, the
   `bin` shape `npm pkg fix` writes, and a `files` list that leaves the `*.test.mjs` files out of the

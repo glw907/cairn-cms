@@ -1,0 +1,186 @@
+{
+  "skill_name": "cairn-writing-docs",
+  "expectSkills": { "pin": ["cairn-docs", "cairn-writing-docs"] },
+  "evals": [
+    {
+      "id": "near-miss-01",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Add a CHANGELOG entry under Unreleased for the media replace fix.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Add a CHANGELOG entry under Unreleased for the media replace fix."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-02",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Write the homepage copy for the new about section on 907.life.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Write the homepage copy for the new about section on 907.life."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-03",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Write the design spec for the next engine pass.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Write the design spec for the next engine pass."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-04",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Add a TSDoc comment to createAuthGuard explaining what it returns.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Add a TSDoc comment to createAuthGuard explaining what it returns."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-05",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Fix the failing unit test in src/tests/unit/check-options.test.ts.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Fix the failing unit test in src/tests/unit/check-options.test.ts."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-06",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Write a pass plan for the media replace bug.",
+      "expectations": [
+        "The session plans without editing any docs page. Loading cairn-writing-docs is allowed: the fix changes documented behavior, so a plan that loads the skill to scope its docs task is a defensible reading, and the case no longer checks skillNotCalled."
+      ],
+      "checks": [
+        {
+          "type": "unchanged",
+          "path": "docs/"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-07",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Draft the PR description for this branch.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Draft the PR description for this branch."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-08",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Update the Survey repo's README with the new theme tokens.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Update the Survey repo's README with the new theme tokens."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-09",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Refactor src/lib/delivery/site-resolver.ts to remove the duplicated cache lookup. No behavior changes.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Refactor src/lib/delivery/site-resolver.ts to remove the duplicated cache lookup. No behavior changes."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "near-miss-10",
+      "suite": "regression",
+      "maxTurns": 21,
+      "pin": "663ac5aeb",
+      "readOnly": true,
+      "install": false,
+      "prompt": "Write the commit message for the staged changes.",
+      "expectations": [
+        "The cairn-writing-docs skill is not loaded for: Write the commit message for the staged changes."
+      ],
+      "checks": [
+        {
+          "type": "skillNotCalled",
+          "name": "cairn-writing-docs"
+        }
+      ]
+    }
+  ]
+}

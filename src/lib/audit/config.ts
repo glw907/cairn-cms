@@ -402,6 +402,23 @@ export type AuditArgs =
 export const USAGE = [
   'Usage: cairn-audit [--rendered] [--config <path>] [--rule <id>]... [--fail-on error|advisory] [--help]',
   '       cairn-audit norms <selector-or-role>',
+  '',
+  '  (default)   Static audit of the working directory (config: cairn-audit.config.json).',
+  '  --rendered  Drive a browser against an already-running server (BASE_URL, default',
+  '              http://localhost:4173) under both themes. It never starts a server and exits 2',
+  '              when nothing answers or Playwright is absent.',
+  '  --rule      Run only the named rule id; repeat for several. An unknown id exits 2.',
+  '  --fail-on   advisory: exit 1 on any unsuppressed finding of either tier. error (the default):',
+  '              only an error-tier finding exits 1.',
+  '  norms       Look up a measured design norm from the shipped manifest; needs no config, no',
+  '              built stylesheet, and no browser, and takes no --rendered. A term that names no',
+  '              role exits 2 with the role list.',
+  '',
+  'Exit codes: 0 no unsuppressed finding at the gating tier; 1 at least one; 2 the run could not',
+  'start or finish (bad flag, malformed config, no server, no browser). 2 is never a design verdict.',
+  'Suppress one finding with a comment above it: cairn-audit-disable-next-line <rule-id> -- <reason>.',
+  'The reason is required and a directive that silences nothing is itself an error. Rendered mode',
+  'exempts through rendered.allowlist in the config, and only an advisory rule can exempt itself.',
 ].join('\n');
 
 /**

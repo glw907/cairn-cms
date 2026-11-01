@@ -96,7 +96,7 @@ causes worth naming, since two of them are tool behavior a reader can hit:
 
 `create-cairn-site` no longer scaffolds `npx cairn-doctor`; the doctor is now `cairn doctor`, a
 subcommand of the separate Go `cairn` tool a reader installs once per machine
-(`docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`). `04-doctor-report.txt`
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-21-doctor-retirement-tool-sizing.md`). `04-doctor-report.txt`
 replaces the two npm-era captures with one run of the released binary.
 
 **Install:** `go install github.com/glw907/cairn-cms/tool/cmd/cairn@v1.1.0`, the tagged release

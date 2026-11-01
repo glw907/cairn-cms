@@ -1,17 +1,12 @@
 # The `cairn` CLI's reference pages moved
 
-The contract pages this directory held are published in the engine's reference arm, which
-ships in the `@glw907/cairn-cms` npm package, so an installed package puts them in a consumer's
-tree:
+The contract this directory once held now lives in the binary, so a machine that holds only the
+installed tool can read it:
 
-- The exit codes: `docs/reference/cli-cairn-exit-codes.md`,
-  <https://cairn.pub/docs/reference/cli-cairn-exit-codes>
-- The `--json` payloads: `docs/reference/cli-cairn-json-output.md`,
-  <https://cairn.pub/docs/reference/cli-cairn-json-output>
-- `cairn doctor`: `docs/reference/cli-cairn-doctor.md`,
-  <https://cairn.pub/docs/reference/cli-cairn-doctor>
-- The log events this tool reads: `docs/reference/log-events.md`,
-  <https://cairn.pub/docs/reference/log-events>
+- `cairn help agents` carries the exit codes, their precedence, and every `--json` payload field.
+- `cairn doctor --help` lists every check and its severity.
+- `cairn <command> --help` carries each command's own contract.
 
-The published JSON schemas moved with them, to `docs/reference/schema/`. Each one is also served
-at the `$id` it carries, under <https://cairn.pub/schema/>.
+The published JSON schemas live in `schema/` at the cairn-cms repository root and ship in the
+`@glw907/cairn-cms` npm package. Each one is also served at the `$id` it carries, under
+<https://cairn.pub/schema/>.

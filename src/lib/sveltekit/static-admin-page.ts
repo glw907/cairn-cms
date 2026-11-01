@@ -2,7 +2,7 @@
 // identity-unresolved, identity-unknown). Each is a
 // self-contained document with inlined Warm Stone tokens for both colour schemes and the system
 // font stack, served raw before SvelteKit renders. The cairn glyph is the same public-domain
-// Temaki mark the admin chrome uses. See docs/internal/admin-design-system.md.
+// Temaki mark the admin chrome uses. See .claude/skills/cairn-following-admin-design/references/admin-design-system.md.
 import { escapeHtml } from '../escape.js';
 
 // The cairn stone-stack glyph (Temaki, CC0), drawn in currentColor like CairnLogo.svelte.

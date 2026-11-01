@@ -35,6 +35,7 @@ import { env } from './workers-env.js';
  *  refusal without a second type. One flat interface (`audit-sveltekit-contentformfailure`):
  *  every field optional, replacing the earlier
  *  `Partial<>` intersection over the eleven now-module-internal arm shapes.
+ * @beta
  */
 export interface ContentFormFailure {
   /** The one-line human summary every content action failure carries. */

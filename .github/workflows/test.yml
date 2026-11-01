@@ -40,18 +40,17 @@ jobs:
       # with cairn's own and breaks check:snippets on the Handle type (tried and reverted,
       # 2026-08-20).
       - run: npm run check
-      # The component test project runs in real Chromium via @vitest/browser-playwright, and the
-      # docs-review page test (a unit spec) clicks the review page's controls in real Firefox too.
+      # The component test project runs in real Chromium via @vitest/browser-playwright.
       - uses: ./.github/actions/bounded-install
         timeout-minutes: 22
         with:
-          command: npx playwright install --with-deps chromium firefox
+          command: npx playwright install --with-deps chromium
       # dist-sveltekit-app-import-boundary.test.ts (and packaging-boundary.test.ts) need a real
       # dist/ to run their gate against. `npm ci` above already triggers this through the
       # `prepare` life cycle script, but that is an implicit dependency on a hook a future
       # refactor could drop; a step named for its own purpose here is the explicit guarantee.
       # `npm run package` is otherwise idempotent (svelte-package is a full rebuild every time),
-      # so running it again ahead of the later check:package/check:reference/etc. steps (which
+      # so running it again ahead of the later check:package/check:options/etc. steps (which
       # each call it themselves) costs a rebuild, not a correctness risk.
       - run: npm run package
       # `npm test` is its two Vitest runs spelled out, one step each, so each can write its own retry
@@ -122,7 +121,7 @@ jobs:
       - run: npm --prefix examples/showcase run check:cairn
       - run: npm --prefix examples/showcase run test:unit
       - run: npm --prefix examples/showcase run format:check
-      # The cairn-public skill's coverage gate: every public piece has a catalogue page, every snippet
+      # The cairn-styling-public-pages skill's coverage gate: every public piece has a catalogue page, every snippet
       # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
       # the showcase's own Tailwind, so it runs after the showcase install.
       - run: npm run check:public-skill
@@ -132,10 +131,10 @@ jobs:
             | sudo tar -xz -C /usr/local/bin vale
           vale --version
       # The docs gate: every CI check that reads a doc arm's content (check:docs, check:vale,
-      # check:leaks, check:symbols, check:snippets, check:transcripts,
-      # check:visuals, check:arm-indexes, check:editor-quotes, check:readiness,
-      # check:tool-conditions, check:target-stack, check:reference, check:reference:signatures,
-      # check:options, check:tellgrader, which skips itself in CI because the binary is absent),
+      # check:vale-rules, check:leaks, check:symbols, check:snippets, check:transcripts,
+      # check:visuals, check:editor-quotes, check:readiness, check:tool-conditions,
+      # check:options, check:tiers, and check:tellgrader, which skips itself in
+      # CI because the binary is absent),
       # run through the one docs-gate.mjs script so CI and a single-page run read the identical list. It runs here, after Vale is installed, since check:vale is one of its
       # components. Error-tier only for Vale: warnings and suggestions are advisory and are not
       # gated (the standing repo rule). The Google and Microsoft style packages are vendored under

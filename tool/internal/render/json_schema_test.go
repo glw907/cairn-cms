@@ -24,10 +24,9 @@ const jsonGoldenDir = "testdata/json"
 
 // schemaDirName is where the published schemas live, relative to the repository root. They ship
 // in the repository rather than in the binary: a consumer validating a payload reads the file,
-// and a schema in the binary would be unreachable to every tool that does that. They sit under
-// the engine's reference arm because that arm is what the npm tarball carries, so an
-// installed package puts every schema in a consumer's tree.
-const schemaDirName = "docs/reference/schema"
+// and a schema in the binary would be unreachable to every tool that does that. The npm tarball
+// carries the directory, so an installed package puts every schema in a consumer's tree.
+const schemaDirName = "schema"
 
 // schemaDir resolves schemaDirName through providers.RepoRoot, so the directory is found from
 // the repository root rather than by climbing out of this package with a relative path.
@@ -39,11 +38,6 @@ func schemaDir(t *testing.T) string {
 	}
 	return filepath.Join(root, schemaDirName)
 }
-
-// docPathName is the reference page every published key and both freeze lists are stated on,
-// relative to the repository root. It sits in the engine's reference arm, beside the
-// schemas it describes, so the npm tarball carries both.
-const docPathName = "docs/reference/cli-cairn-json-output.md"
 
 // jsonGoldenCase is one committed payload file, the schema it must validate against, and the
 // bytes it holds.
@@ -145,8 +139,7 @@ func jsonGoldens(t *testing.T) []jsonGoldenCase {
 // without producing: its marshaller lives in internal/doctor, whose posture check dials over
 // HTTP, and this package's contract is purity with its direct requires pinned by name, so it
 // never imports that package outside a test. internal/doctor's TestGoldenDoctorPayload cuts
-// the file from the real checks; the cases here hold it to the published schema and to
-// cli-cairn-json-output.md.
+// the file from the real checks; the cases here hold it to the published schema.
 const doctorGoldenFile = "doctor.json"
 
 // doctorGolden reads that payload as bytes.
@@ -509,129 +502,14 @@ func sameScalar(value, want any) bool {
 	return fmt.Sprint(value) == fmt.Sprint(want)
 }
 
-// dynamicKeyParents names the two objects whose keys are data rather than schema: a check's
-// derived fields and its copied ones are keyed by whatever the producing check measured, so
-// their children are not published field names and cli-cairn-json-output.md does not list them.
-var dynamicKeyParents = []string{"fields", "observed"}
-
-// TestDocNamesEveryFieldTheGoldensCarry asserts the reference page and the committed corpus
-// cannot drift apart: a key that reaches a payload without being documented fails here.
-func TestDocNamesEveryFieldTheGoldensCarry(t *testing.T) {
-	doc := readDoc(t)
-	seen := make(map[string]bool)
-	for _, c := range publishedGoldens(t) {
-		for line := range strings.SplitSeq(strings.TrimRight(string(c.data), "\n"), "\n") {
-			var value any
-			if err := json.Unmarshal([]byte(line), &value); err != nil {
-				t.Fatalf("%s does not parse: %v", c.name, err)
-			}
-			collectKeys(value, "", seen)
-		}
-	}
-	for key := range seen {
-		if !strings.Contains(doc, "`"+key+"`") {
-			t.Errorf("cli-cairn-json-output.md does not name the key %q the goldens carry", key)
-		}
-	}
-}
-
-// collectKeys walks a decoded payload and records every published key name, skipping the
-// children of the two objects whose keys are data.
-func collectKeys(node any, parent string, seen map[string]bool) {
-	switch typed := node.(type) {
-	case map[string]any:
-		for key, child := range typed {
-			if slices.Contains(dynamicKeyParents, parent) {
-				collectKeys(child, key, seen)
-				continue
-			}
-			seen[key] = true
-			collectKeys(child, key, seen)
-		}
-	case []any:
-		for _, child := range typed {
-			collectKeys(child, parent, seen)
-		}
-	}
-}
-
-// TestDocCarriesBothFreezeLists asserts the page states what a major version is needed to change
-// and what stays free to move, and that every check id and verdict word in the frozen list
-// matches the code rather than a copy of it that has since drifted.
-//
-// cairn doctor's eleven ids are held to the same section by internal/doctor's
-// TestBothPublishedPagesNameEveryCheckID. They cannot be checked from here: internal/doctor
-// imports this package for DoctorSchemaVersion, so a test file here importing it back is an
-// import cycle Go rejects even across the test boundary.
-func TestDocCarriesBothFreezeLists(t *testing.T) {
-	doc := readDoc(t)
-
-	frozen, notFrozen := "## What freezes at 1.0", "## What does not freeze"
-	for _, heading := range []string{frozen, notFrozen} {
-		if !strings.Contains(doc, heading) {
-			t.Fatalf("cli-cairn-json-output.md carries no %q section", heading)
-		}
-	}
-	frozenSection := doc[strings.Index(doc, frozen):strings.Index(doc, notFrozen)]
-
-	for _, check := range health.All {
-		if !strings.Contains(frozenSection, "`"+check.ID()+"`") {
-			t.Errorf("the frozen list does not name the check id %q", check.ID())
-		}
-	}
-	for _, verdict := range []spine.Verdict{spine.VerdictOK, spine.VerdictWarning, spine.VerdictCritical, spine.VerdictUnknown} {
-		if !strings.Contains(frozenSection, verdict.String()) {
-			t.Errorf("the frozen list does not name the verdict word %q", verdict)
-		}
-	}
-	for _, word := range []string{"pass", "fail", "held", "skip", "unknown"} {
-		if !strings.Contains(frozenSection, "`"+word+"`") {
-			t.Errorf("the frozen list does not name the state word %q", word)
-		}
-	}
-
-	notFrozenSection := doc[strings.Index(doc, notFrozen):]
-	for _, item := range []string{"durationMs", "glyph"} {
-		if !strings.Contains(notFrozenSection, item) {
-			t.Errorf("the not-frozen list does not name %q", item)
-		}
-	}
-}
-
-// TestDocPublishesTheWholeReasonVocabulary asserts every reason a run can emit is on the page,
-// read from spine's closed set rather than from a list retyped here.
-func TestDocPublishesTheWholeReasonVocabulary(t *testing.T) {
-	doc := readDoc(t)
-	for _, reason := range spine.ReasonCodes() {
-		if !strings.Contains(doc, "`"+string(reason)+"`") {
-			t.Errorf("cli-cairn-json-output.md does not publish the reason %q", reason)
-		}
-	}
-}
-
-// readDoc reads the reference page, resolving it through providers.RepoRoot the same way
-// schemaDir resolves the schemas rather than climbing out of this package.
-func readDoc(t *testing.T) string {
-	t.Helper()
-	root, err := providers.RepoRoot()
-	if err != nil {
-		t.Fatalf("providers.RepoRoot: %v", err)
-	}
-	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(docPathName)))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
-}
-
 // TestSkipAndUnknownRequireAReason covers the conditional the health schema gained on
-// 2026-09-21 and the doctor schema was written with: cli-cairn-json-output.md promises every
+// 2026-09-21 and the doctor schema was written with: the payload contract promises every
 // skip and every unknown carries a reason, and "required" alone cannot say so, because it
 // applies to every state. Both halves are asserted against both schemas, since a validator
 // that ignored the conditional would pass the whole golden corpus silently.
 //
 // The doctor payload rides this test rather than a sibling: the rule is one promise
-// the page makes about every published check, so a second copy would be the place the two
+// the contract makes about every published check, so a second copy would be the place the two
 // schemas drift apart.
 func TestSkipAndUnknownRequireAReason(t *testing.T) {
 	schemas := []struct {

@@ -1,7 +1,7 @@
 <!--
 @component
 `toolkit/custom-screen`'s mounted subject: a faithful transcription of the worked example under
-"Compose the screen from the toolkit" in `docs/extend/add-a-custom-admin-screen.md`, the page whose
+"Compose the screen from the toolkit" in the cairn-building-admin-screens skill, the guidance whose
 render this story exists to prove. No component in the package renders one of a site's content concepts,
 so this file lives inside the reproductions module rather than `src/lib/admin`, and composes
 only the toolkit primitives the doc snippet names: `PageHeader`, `AdminTable`, `StatusChip`. The

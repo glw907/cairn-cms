@@ -160,7 +160,7 @@ describe('admin css build', () => {
 
   it('fixes the desk-route sidebar to the viewport at xl, its own persist breakpoint', () => {
     // The unlayered `xl:drawer-open` companion (PINNED unlayered rule 4 of the unlayered
-    // allowlist scripts/checks/custom-surface-budget.json enumerates, spec §5's desk rider):
+    // allowlist scripts/checks/custom-surface-budget.json enumerates, the desk rider):
     // a desk route persists its sidebar at xl instead of lg, and needs the identical fixed-position
     // fix so it does not scroll-bleed either. Confirms Tailwind 4 actually generates the xl:drawer-open
     // utility this rule overrides (the locked build assumption verified at first touch).

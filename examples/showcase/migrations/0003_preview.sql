@@ -1,4 +1,4 @@
--- The share-a-draft preview token table (spec part 3, "Public preview for a non-editor"). Opt-in:
+-- The share-a-draft preview token table, for a reader who is not an editor. Opt-in:
 -- only a site that mints preview links (previewMint, ./sveltekit) ever touches this table.
 -- `token_hash` follows `magic_token`'s idiom exactly, the lowercase hex SHA-256 digest of the
 -- token (hashToken, src/lib/auth/crypto.ts); the plaintext token is never stored. `expires_at`

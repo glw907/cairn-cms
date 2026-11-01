@@ -1,6 +1,6 @@
 // Owner-gated editor management. The editor table is the allowlist, so add and remove are
 // insert and delete. The anti-lockout rule is the last remaining owner: the system refuses to
-// drop below one owner (spec 7.1), enforced in the store by an atomic guarded write rather
+// drop below one owner, enforced in the store by an atomic guarded write rather
 // than a separate count, so concurrent removals cannot strand the allowlist at zero owners.
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -39,7 +39,10 @@ export interface EditorsData {
   vocabulary: { role: string; capability: Capability }[];
 }
 
-/** Configuration for `createEditorRoutes`: the composed runtime. */
+/**
+ * Configuration for `createEditorRoutes`: the composed runtime.
+ * @beta
+ */
 export interface EditorRoutesConfig {
   /**
    * The runtime `composeRuntime` returned for the site's adapter. The routes read its `roles`, the
@@ -51,7 +54,14 @@ export interface EditorRoutesConfig {
   runtime: Pick<CairnRuntime, 'roles'>;
 }
 
-/** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
+/**
+ * Build the owner-gated editor-management routes: list, add, remove, and role-change. Every load
+ *  and action calls `requireOwner` first. The add and role-change actions check a posted role against the declared
+ *  vocabulary and answers an unknown one with a `fail()` form error, never a silent coercion to
+ *  `'editor'`; every refusal answers through `fail()`. A hand-mounted route registers the actions
+ *  as `editorAdd`, `editorRemove`, and `editorSetRole`, the names the view posts.
+ * @beta
+ */
 export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
   const vocabulary: RolesDeclaration = config.runtime.roles ?? DEFAULT_ROLES;
   const ownerRoles = resolveOwnerLevelRoles(vocabulary);
@@ -157,6 +167,7 @@ export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
  *  the declaration emit this contract requires) but never re-exported from the `/sveltekit`
  *  barrel, since `ManageEditors.svelte` reads its `error` field loosely and no other module has a
  *  reason to import the name directly (`convention-internal-sibling-comment`).
+ * @beta
  */
 export interface EditorRoutes {
   editorsLoad: (event: CairnEvent) => Promise<EditorsData>;

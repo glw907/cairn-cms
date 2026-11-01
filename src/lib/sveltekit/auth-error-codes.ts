@@ -11,13 +11,16 @@
 // declaring file).
 
 /**
- * The `?error=` code a confirm redirects with when this browser carries no pending-login cookie
- * and the token row it submitted is bound to some other browser's nonce, deliberately distinct
- * from `expired`. The two need different instructions: "request a new one" is the exact advice
- * that reproduces the failure for someone clicking on a second device.
+ * The `?error=` code a confirm redirects with when the submitted token fails to confirm and this
+ * browser carries no pending-login cookie, whatever the failure's cause (an empty token field is the exception and always redirects with `expired`): a token bound to another
+ * browser's nonce, an expired, unknown, or already-used token all redirect with it when the cookie
+ * is absent. A browser that carries a cookie gets `expired` on any failed confirm. The two need
+ * different instructions: "request a new one" is the exact advice that reproduces the failure for
+ * someone clicking on a second device.
  *
  * Exported so `LoginPage` and `ConfirmPage` branch on this value rather than on a duplicated
  * string literal. The wire format is the literal below, so a site rendering its login page
  * may compare `data.error` against it too.
+ * @beta
  */
 export const NO_PENDING_REQUEST_ERROR = 'no-pending-request';

@@ -15,6 +15,7 @@ import type { SiteGlobs } from './site-indexes.js';
 /**
  * Build the whole-corpus manifest from a site's adapter, config, and per-concept globs. Drafts are
  *  included and flagged, so the admin picker and the guards see the full graph.
+ * @public
  */
 export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>): Manifest {
   const globRecord = globs as Record<string, Record<string, string> | undefined>;
@@ -73,6 +74,7 @@ const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
  *
  * Pure and node-safe: no I/O, no clock read, so a caller supplies both manifests and the result is
  *  deterministic. The engine performs no network sends; a consumer diffs and then acts.
+ * @public
  */
 export function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[] {
   // A null `before` indexes to nothing, which is already the full-fan-out answer: no key it is asked

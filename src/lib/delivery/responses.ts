@@ -9,6 +9,7 @@ import type { AiPosture } from '../content/types.js';
 /**
  * An RSS 2.0 feed response, served as `application/rss+xml; charset=utf-8` and with no cache
  *  header, so a site that wants one sets it at the route.
+ * @public
  */
 export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildRssFeed(channel, items), {
@@ -19,6 +20,7 @@ export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
 /**
  * A JSON Feed 1.1 response, served as `application/feed+json; charset=utf-8` and with no cache
  *  header, so a site that wants one sets it at the route.
+ * @public
  */
 export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response {
   return new Response(buildJsonFeed(channel, items), {
@@ -29,6 +31,7 @@ export function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Respo
 /**
  * A sitemap response, served as `application/xml; charset=utf-8` and with no cache header, so a
  *  site that wants one sets it at the route.
+ * @public
  */
 export function sitemapResponse(urls: SitemapUrl[]): Response {
   return new Response(buildSitemap(urls), {
@@ -36,7 +39,10 @@ export function sitemapResponse(urls: SitemapUrl[]): Response {
   });
 }
 
-/** A robots.txt response. `posture` passes through to {@link buildRobots} unchanged. */
+/**
+ * A robots.txt response. `posture` passes through to {@link buildRobots} unchanged.
+ * @public
+ */
 export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): Response {
   return new Response(buildRobots(opts), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
@@ -46,6 +52,9 @@ export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; 
 /**
  * A raw-markdown twin response. `body` is an entry's stored markdown, unrendered, so a request for
  *  the `.md` twin gets cairn's native source rather than a reconstruction of the rendered html.
+ *  It applies no `noindex` refusal: that lives in `createPublicRoutes`'s `markdownLoad`, so a lookup
+ *  that bypasses it (a hand-rolled `site.byPermalink`) can serve a body `markdownEntries` never listed.
+ * @public
  */
 export function markdownResponse(opts: { body: string }): Response {
   return new Response(opts.body, {

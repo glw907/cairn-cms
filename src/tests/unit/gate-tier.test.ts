@@ -24,7 +24,6 @@ import {
 } from '../../../scripts/checks/gate-tier.mjs';
 import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../../../scripts/test/component-rerun-triggers.mjs';
-import { loadDeletionList } from '../../../scripts/checks/arm-state.mjs';
 import { buildSteps } from '../../../scripts/checks/docs-gate.mjs';
 import { RERUN_TRIGGER_PATHS } from './_rerun-trigger-paths.js';
 
@@ -39,21 +38,22 @@ describe('the table', () => {
   // One real path per pattern, so a pattern that matches nothing fails its own row. The dot
   // patterns are literal prefixes or exact paths.
   const rows: [bucket: string, pattern: string, path: string][] = [
-    ['docs', 'docs/', 'docs/internal/pass-gate-tiers.md'],
+    ['docs', 'docs/', 'docs/internal/README.md'],
     ['docs', '*.md', 'README.md'],
     ['docs', '**/*.md', 'examples/showcase/README.md'],
     ['docs', '.vale/', '.vale/tests/vale.ini'],
     ['docs', '.vale.ini', '.vale.ini'],
     ['docs', '.tellgrader.json', '.tellgrader.json'],
-    ['docs', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['docs', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['docs', 'claude/', 'claude/CLAUDE.md'],
     ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
     ['scripts', '.github/', '.github/workflows/test.yml'],
     ['scripts', 'eslint.config.js', 'eslint.config.js'],
+    ['scripts', 'tsdoc.json', 'tsdoc.json'],
     ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
-    ['harness', '.claude/', '.claude/skills/cairn-docs/evals/run.mjs'],
+    ['harness', '.claude/', '.claude/skills/cairn-writing-docs/evals/run.mjs'],
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
@@ -72,9 +72,9 @@ describe('the table', () => {
     ['exportSurface', 'scripts/checks/check-surface-reexports.json', 'scripts/checks/check-surface-reexports.json'],
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
-    ['exportSurface', 'docs/internal/api-surface.md', 'docs/internal/api-surface.md'],
-    ['exportSurface', 'docs/internal/option-map.json', 'docs/internal/option-map.json'],
-    ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
+    ['exportSurface', 'schema/', 'schema/cairn-health.schema.json'],
+    ['exportSurface', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
   ];
 
@@ -118,7 +118,7 @@ describe('the table', () => {
 });
 
 describe('a harness diff', () => {
-  const HARNESS_PATH = '.claude/skills/cairn-docs/evals/run.mjs';
+  const HARNESS_PATH = '.claude/skills/cairn-writing-docs/evals/run.mjs';
 
   it('selects the type check and test:emit, and no other static check', () => {
     expect(labelsFor(HARNESS_PATH).sort()).toEqual(['check', 'test:emit']);
@@ -206,26 +206,27 @@ describe('static check selection', () => {
   });
 
   it('leaves check:surface out for a docs page, since it reads the built types and the golden file only', () => {
-    expect(labelsFor('docs/reference/core.md', 'docs/internal/engine-rulings.md')).not.toContain('check:surface');
-    expect(labelsFor('docs/internal/api-surface.md')).toContain('check:surface');
+    expect(labelsFor('docs/editors/write-in-the-editor.md', 'docs/internal/engine-rulings.md')).not.toContain('check:surface');
+    expect(labelsFor('scripts/checks/api-surface.md')).toContain('check:surface');
   });
 
-  it('keeps the option and reference checks on the engine bucket, so a non-index file selects them', () => {
-    const forOther = labelsFor('src/lib/content/types.ts');
-    for (const label of ['check:options', 'check:reference', 'check:reference:signatures']) {
-      expect(forOther, label).toContain(label);
-    }
+  it('keeps the option check on the engine bucket, so a non-index file selects it', () => {
+    expect(labelsFor('src/lib/content/types.ts')).toContain('check:options');
   });
 
   it('treats a package.json exports target that is not an index.ts as the export surface too', () => {
-    expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:reference');
+    expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:surface');
+    expect(labelsFor('src/lib/content/types.ts')).not.toContain('check:surface');
   });
 
   it('selects the docs checks and tellgrader for a docs page, and no package-building engine check', () => {
-    const picked = labelsFor('docs/reference/core.md');
-    expect(picked).toEqual(expect.arrayContaining(['check:vale', 'check:leaks', 'check:tellgrader']));
-    expect(picked).not.toContain('check:audit-pack');
-    expect(decideGate(['docs/reference/core.md']).gate).toContain('node scripts/checks/check-tellgrader.mjs');
+    for (const page of ['docs/editors/write-in-the-editor.md', 'docs/admin/is-it-working.md', 'MIGRATION-NOTES.md']) {
+      const picked = labelsFor(page);
+      expect(picked, page).toEqual(expect.arrayContaining(['check:docs', 'check:vale', 'check:leaks', 'check:tellgrader']));
+      expect(picked, page).not.toContain('check:audit-pack');
+      expect(picked, page).not.toContain('check:surface');
+      expect(decideGate([page]).gate, page).toContain('node scripts/checks/check-tellgrader.mjs');
+    }
   });
 
   it('selects the Cairn rule-case vale test for a .vale or .vale.ini change, with the docs gate\'s own command', () => {
@@ -238,9 +239,7 @@ describe('static check selection', () => {
 
   it('selects the checks a script file reaches through its imports, and every check for a file none reach', () => {
     expect(labelsFor('scripts/checks/check-surface.mjs')).toContain('check:surface');
-    expect(labelsFor('scripts/checks/reference-coverage.mjs')).toEqual(
-      expect.arrayContaining(['check:reference', 'check:surface']),
-    );
+    expect(labelsFor('scripts/checks/normalize-signature.mjs')).toEqual(expect.arrayContaining(['check:surface']));
     expect(selectChecks(['scripts/checks/orphaned-new-script.mjs'], context).all).toBe(true);
     expect(selectChecks(['scripts/ci/retries-notice.mjs'], context).all).toBe(false);
   });
@@ -273,16 +272,16 @@ describe('the component leg', () => {
   });
 
   it('skips for a harness-only diff', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs']).mode).toBe('skip');
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
   });
 
   it('runs a harness path beside a src path through the ordinary rule', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {
-    expect(plan(['skills/cairn-consult/SKILL.md']).mode).not.toBe('skip');
+    expect(plan(['skills/cairn-consulting-the-engine/SKILL.md']).mode).not.toBe('skip');
   });
 
   it('runs the whole project when the selection is empty or was not computed', () => {
@@ -506,9 +505,8 @@ describe('decideGate', () => {
     expect(decideGate(['templates/waymark/src/hooks.server.ts']).gate).not.toContain('npm test -w packages/create-cairn-site');
   });
 
-  it('classifies the harvest deletion diff as a docs diff with no component or e2e leg', () => {
-    const { deleted } = loadDeletionList(resolve(process.cwd()));
-    expect(deleted.length).toBeGreaterThan(0);
+  it('classifies a diff that deletes docs pages as a docs diff with no component or e2e leg', () => {
+    const deleted = ['docs/reference/core.md', 'docs/extend/upgrade-cairn.md', 'docs/claude-code/README.md'];
     const gate = decideGate(deleted, { deleted }).gate;
     expect(gate).not.toContain('test:component');
     expect(gate).not.toContain('test:e2e');
@@ -648,7 +646,7 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
 const CI_NOT_LOCAL: Record<string, string> = {
   'npm ci': 'installs dependencies; the worktree already has them',
   'npm ci --prefix examples/showcase': 'installs the showcase dependencies; the showcase gates need them installed',
-  'npx playwright install --with-deps chromium firefox': 'installs browsers on the CI runner',
+  'npx playwright install --with-deps chromium': 'installs browsers on the CI runner',
   'npm run package': 'builds dist; every check script that needs dist builds it itself',
   'node scripts/ci/retries-notice.mjs "$RUNNER_TEMP/vitest-node-retries.json" "$RUNNER_TEMP/vitest-component-retries.json"':
     'annotates the CI run with the retried tests; the reports it reads exist only after a CI run',
@@ -905,7 +903,7 @@ describe('--protected', () => {
 // non-browser legs run concurrently, line 2 the related component tests, and CI carries the rest.
 describe('the fast lane', () => {
   const SRC_PATH = 'src/lib/log/index.ts';
-  const DOCS_PATH = 'docs/internal/pass-gate-tiers.md';
+  const DOCS_PATH = 'docs/internal/README.md';
 
   it('prints one line for a docs-only diff: the docs gate and the static checks, no unit or component leg', () => {
     const { lines, notes } = decideFastGate([DOCS_PATH]);
@@ -988,7 +986,7 @@ describe('the fast lane', () => {
   });
 
   // The lane (pass-gate-tiers.md, "The fast lane"): the light lane's cap starves Node's default heap
-  // and check:reference fails there, so line 1 stays on the heavy lane. A lane change is proven by a
+  // and a dist-reading check fails there, so line 1 stays on the heavy lane. A lane change is proven by a
   // run under its own cap, and the constant is pinned here.
   it('leaves line 1 and line 2 on the heavy lane, with no lane prefix', () => {
     expect(FAST_LINE_1_LANE).toBe('');

@@ -1,13 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  generateOptionPaths,
-  checkOptionMap,
-  parseMapRow,
-  publishedPageSlugs,
-} from '../../../scripts/checks/check-options.mjs';
+import { generateOptionPaths, checkOptionDocs } from '../../../scripts/checks/check-options.mjs';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -279,180 +274,55 @@ describe('generateOptionPaths', () => {
   });
 });
 
-describe('parseMapRow', () => {
-  it('reads a reference anchor, an exclusion with its reason, and a pending slug', () => {
-    expect(parseMapRow('docs/reference/core.md#defineadapter')).toEqual({
-      kind: 'anchor',
-      page: 'docs/reference/core.md',
-      anchor: 'defineadapter',
-    });
-    expect(parseMapRow('exclude engine-internal')).toEqual({ kind: 'exclude', reason: 'engine-internal' });
-    expect(parseMapRow('pending security-model')).toEqual({ kind: 'pending', slug: 'security-model' });
-  });
-
-  it('reads a bare exclude as an exclusion with no reason, and anything else as invalid', () => {
-    expect(parseMapRow('exclude')).toEqual({ kind: 'exclude', reason: '' });
-    expect(parseMapRow('exclude   ')).toEqual({ kind: 'exclude', reason: '' });
-    expect(parseMapRow('nonsense')).toEqual({ kind: 'invalid' });
-    expect(parseMapRow('pending')).toEqual({ kind: 'invalid' });
-    expect(parseMapRow('f:abc123')).toEqual({ kind: 'invalid' });
-    expect(parseMapRow('docs/extend/architecture.md#intro')).toEqual({ kind: 'invalid' });
+describe('generateOptionPaths doc comments', () => {
+  it('marks a member with a doc comment documented and a bare member not', () => {
+    const result = generateOptionPaths(
+      fixture({
+        'index.d.ts': `
+          export interface Cfg {
+            /** The label a site shows. */
+            label: string;
+            bare: string;
+            /** @deprecated */
+            tagOnly?: string;
+          }
+          export declare function defineCfg(cfg: Cfg): Cfg;
+        `,
+      }),
+    );
+    expect(result.paths.map((p: { key: string; documented: boolean }) => `${p.key}=${p.documented}`)).toEqual([
+      'Cfg.bare=false',
+      'Cfg.label=true',
+      'Cfg.tagOnly=false',
+    ]);
   });
 });
 
-describe('checkOptionMap', () => {
-  const generated = [
-    { key: 'CairnAdapter.editor.nav', exportName: 'defineAdapter', subpath: '.', file: 'content/types.d.ts' },
-    { key: 'NavMenuConfig.menu', exportName: 'defineAdapter', subpath: '.', file: 'content/types.d.ts' },
-  ];
-  const core = [
-    '# Core',
-    '',
-    '## Adapter',
-    '',
-    'Intro with no options.',
-    '',
-    '### `nav` member',
-    '',
-    'Set `nav` to a menu. Its `menu` names the menu.',
-    '',
-    '```ts',
-    "const unrelated = { shown: 'only in a fence' };",
-    '```',
-    '',
-    '### Other',
-    '',
-    'Plain nav outside code, and `other` only.',
-    '',
-    '```ts',
-    "const nav = 'inside a fence';",
-    '```',
-  ].join('\n');
-  const docs: Record<string, string> = { 'docs/reference/core.md': core };
-  const readDoc = (path: string) => docs[path] ?? null;
-  const pages = new Set(['security-model', 'architecture']);
-  const base = {
-    generated,
-    pages,
-    readDoc,
-    map: {
-      pendingCount: 1,
-      rows: {
-        'CairnAdapter.editor.nav': 'docs/reference/core.md#nav-member',
-        'NavMenuConfig.menu': 'pending architecture',
-      } as Record<string, string>,
-    },
-  };
-  const withRow = (key: string, value: string, pendingCount = 1) =>
-    checkOptionMap({ ...base, map: { pendingCount, rows: { ...base.map.rows, [key]: value } } });
+describe('checkOptionDocs', () => {
+  const path = (key: string, documented: boolean) => ({ key, exportName: 'defineCfg', subpath: '.', file: 'x.d.ts', documented });
 
-  it('passes a map whose anchor row resolves to a section naming the option and holds the pending count', () => {
-    expect(checkOptionMap(base)).toEqual([]);
+  it('passes when every member is documented or excluded with a reason', () => {
+    const generated = [path('Cfg.label', true), path('Cfg.type', false)];
+    expect(checkOptionDocs({ generated, exclusions: { 'Cfg.type': 'a builder sets it' } })).toEqual([]);
   });
 
-  it('passes an anchor row whose section is a parent heading, since the section runs through its subheadings', () => {
-    expect(withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#adapter')).toEqual([]);
-  });
-
-  it('fails a row naming a page that does not exist, naming the row', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/missing.md#nav-member');
+  it('fails an undocumented option member, naming the path, its export, and the subpath', () => {
+    const failures = checkOptionDocs({ generated: [path('Cfg.label', true), path('Cfg.bare', false)], exclusions: {} });
     expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('missing.md');
+    expect(failures[0]).toContain('Cfg.bare');
+    expect(failures[0]).toContain('defineCfg');
+    expect(failures[0]).toContain('subpath .');
   });
 
-  it('fails a row naming an anchor the page does not have, naming the row', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#no-such-heading');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('no-such-heading');
-  });
-
-  it('fails a row whose section does not name the last segment in inline code, naming the row', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#other');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('`nav`');
-  });
-
-  it('fails an anchor row that is an explicit id and not a heading, since it has no section to check', () => {
-    const failures = checkOptionMap({
-      ...base,
-      readDoc: (path: string) => (path === 'docs/reference/core.md' ? `${core}\n\n<a id="explicit-anchor"></a>\n` : null),
-      map: { pendingCount: 1, rows: { ...base.map.rows, 'CairnAdapter.editor.nav': 'docs/reference/core.md#explicit-anchor' } },
-    });
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('not a heading');
-  });
-
-  it('does not count a mention outside inline code or inside a code fence', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'docs/reference/core.md#other');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('does not name');
-  });
-
-  it('fails a generated path with no row, naming the path, its export, and both ways out', () => {
-    const rows = { 'NavMenuConfig.menu': 'pending architecture' };
-    const failures = checkOptionMap({ ...base, map: { pendingCount: 1, rows } });
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('defineAdapter');
-    expect(failures[0]).toMatch(/reference anchor/i);
-    expect(failures[0]).toMatch(/exclude/);
-  });
-
-  it('fails a row whose path is no longer generated', () => {
-    const failures = withRow('Gone.member', 'exclude removed');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('Gone.member');
-  });
-
-  it('fails a fact-id row as unknown', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'f:aaaaaa');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('CairnAdapter.editor.nav');
-    expect(failures[0]).toContain('f:aaaaaa');
-  });
-
-  it('fails an exclude with no reason', () => {
-    const failures = withRow('CairnAdapter.editor.nav', 'exclude');
+  it('fails an exclusion with no reason', () => {
+    const failures = checkOptionDocs({ generated: [path('Cfg.type', false)], exclusions: { 'Cfg.type': ' ' } });
     expect(failures).toHaveLength(1);
     expect(failures[0]).toContain('reason');
   });
 
-  it('fails a pending count above the constant', () => {
-    const failures = checkOptionMap({ ...base, map: { ...base.map, pendingCount: 0 } });
+  it('fails an exclusion for a path the walker no longer generates', () => {
+    const failures = checkOptionDocs({ generated: [], exclusions: { 'Gone.member': 'removed' } });
     expect(failures).toHaveLength(1);
-    expect(failures[0]).toMatch(/pending/);
-    expect(failures[0]).toContain('1');
-  });
-
-  it('passes a pending count below the constant', () => {
-    expect(checkOptionMap({ ...base, map: { ...base.map, pendingCount: 5 } })).toEqual([]);
-  });
-
-  it('fails a pending row whose slug names no published page', () => {
-    const failures = withRow('NavMenuConfig.menu', 'pending invented-page');
-    expect(failures).toHaveLength(1);
-    expect(failures[0]).toContain('invented-page');
-  });
-});
-
-describe('publishedPageSlugs', () => {
-  it('collects a page slug from each arm and skips README.md, internal, and the planning folders', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'check-options-docs-'));
-    dirs.push(dir);
-    for (const arm of ['extend', 'reference', 'internal', 'specs', 'plans', 'research', 'archive']) mkdirSync(join(dir, arm));
-    writeFileSync(join(dir, 'extend', 'README.md'), '');
-    writeFileSync(join(dir, 'extend', 'add-a-screen.md'), '');
-    writeFileSync(join(dir, 'reference', 'README.md'), '');
-    writeFileSync(join(dir, 'reference', 'core.md'), '');
-    writeFileSync(join(dir, 'internal', 'notes.md'), '');
-    for (const arm of ['specs', 'plans', 'research', 'archive']) writeFileSync(join(dir, arm, `${arm}-record.md`), '');
-    writeFileSync(join(dir, 'why-cairn.md'), '');
-    const slugs = publishedPageSlugs(dir);
-    expect([...slugs].sort()).toEqual(['add-a-screen', 'core']);
-    expect(slugs.has('README')).toBe(false);
+    expect(failures[0]).toContain('Gone.member');
   });
 });

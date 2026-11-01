@@ -102,6 +102,7 @@ The count line and (on `Pagination`) the item-range line are `role="status"` liv
 no focus move, so an AT user only hears the new scope if it is announced as a status message. The
 count line's text carries `font-variant-numeric: tabular-nums`, so a changing count never
 reflows its neighboring characters.
+@public
 -->
 <script module lang="ts">
   import {

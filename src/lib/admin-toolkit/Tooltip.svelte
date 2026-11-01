@@ -55,6 +55,12 @@ A closed popover is not rendered at all, but an element referenced by `aria-desc
 contributes its text however it is hidden (the accessible-description computation traverses into a
 hidden referenced subtree by design), so the description resolves on a trigger this component's
 hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
+
+The wrapper is a `<span>`, which HTML bars directly inside `<tr>` or `<ul>`/`<ol>` whatever its
+`display`: wrap the control inside the cell or list item, not the row or list. A natively `disabled`
+control can receive no pointer events, so a reason that must reach a mouse user takes the
+`aria-disabled` guarded shape instead.
+@public
 -->
 <script module lang="ts">
   /** Whether this browser resolves CSS anchor positioning, tested once and cached at module scope

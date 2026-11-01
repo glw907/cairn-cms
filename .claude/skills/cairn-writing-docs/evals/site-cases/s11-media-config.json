@@ -1,0 +1,95 @@
+{
+  "id": "S11-media-config",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "AssetConfig, media",
+  "bar": 4,
+  "prompt": "Editors keep uploading huge photos. Limit uploads to 8 MiB and to JPEG, PNG, and WebP. Also serve the site's images from /images instead of /media, with web addresses that don't include the original file name. Published pages and the editor's preview must keep showing images, and the image already in our library must keep working. It's done when the site type-checks, the image addresses come out under /images, and the site has a route that serves images at those addresses.",
+  "setup": "setups/site/s11-media-config.mjs",
+  "knownBad": "setups/site/s11-media-config-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/media/config.ts:60 normalizeAssets: publicBase (default /media), urlForm ('slug' or 'opaque', anything else throws), maxUploadBytes (default 25 MB), allowedTypes (default the five web image types)",
+    "src/lib/media/naming.ts:129 publicPath: the slug form is <base>/<slug>.<hash>.<ext>; the opaque form is <base>/<aa>/<hash>.<ext> and ignores the slug",
+    "src/lib/sveltekit/media-route.ts:97 createMediaRoute reads event.params.path and takes the hash and extension from the last segment, so the route must sit at <publicBase>/[...path]",
+    "src/lib/sveltekit/content-routes-media-ingest.ts:105,138 the upload action refuses above maxUploadBytes (too_large) and a sniffed type outside allowedTypes (unsupported_type); a type check on upload leaves stored assets alone",
+    "src/lib/admin/media-base-context.ts:5 DEFAULT_MEDIA_BASE '/media': the editor's live preview builds /media paths whatever publicBase says, so the /media route must stay",
+    "src/lib/media-seed/assemble.ts:122 cairn-media-seed downloads <from>/media/<slug>.<hash>.<ext>, a path the kept /media route still serves",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/configure-media.md (Set the upload limits; Change the image URLs), https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/core.md AssetConfig, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/media.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cloudflare.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cli-cairn-media-seed.md"
+  ],
+  "expectations": [
+    "The adapter's media block sets maxUploadBytes to 8 MiB (8388608) and allowedTypes to image/jpeg, image/png, and image/webp, with no gif or avif.",
+    "The same block sets publicBase to /images and urlForm to 'opaque'.",
+    "A media route using createMediaRoute is mounted at src/routes/images/[...path]/+server.ts, with the catch-all param named path.",
+    "The existing route at src/routes/media/[...path]/+server.ts stays, so the editor's live preview and cairn-media-seed's /media downloads keep working.",
+    "The committed media manifest and its GIF row are untouched, since narrowing allowedTypes limits new uploads only."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src/theme",
+      "regex": "maxUploadBytes\\s*:\\s*(8\\s*\\*\\s*1024\\s*\\*\\s*1024|8_?388_?608|8\\s*<<\\s*20)",
+      "source": "src/lib/media/config.ts:71"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme",
+      "regex": "allowedTypes\\s*:\\s*\\[(?=[^\\]]*image/jpeg)(?=[^\\]]*image/png)(?=[^\\]]*image/webp)[^\\]]*\\]",
+      "source": "src/lib/media/config.ts:72"
+    },
+    {
+      "type": "absent",
+      "path": "src/theme",
+      "regex": "allowedTypes\\s*:\\s*\\[[^\\]]*image/(gif|avif)",
+      "source": "src/lib/sveltekit/content-routes-media-ingest.ts:138"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme",
+      "regex": "publicBase\\s*:\\s*['\"`]/images['\"`]",
+      "source": "src/lib/media/config.ts:69"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme",
+      "regex": "urlForm\\s*:\\s*['\"`]opaque['\"`]",
+      "source": "src/lib/media/config.ts:62,70"
+    },
+    {
+      "type": "changed",
+      "path": "src/routes/images/[...path]/+server.ts",
+      "source": "src/lib/sveltekit/media-route.ts:97 reads params.path; the route sits at <publicBase>/[...path]"
+    },
+    {
+      "type": "unchanged",
+      "path": "src/routes/media",
+      "source": "src/lib/admin/media-base-context.ts:5; src/lib/media-seed/assemble.ts:122"
+    },
+    {
+      "type": "unchanged",
+      "path": "src/content/.cairn/media.json",
+      "source": "src/lib/sveltekit/content-routes-media-ingest.ts:138 checks types on upload only"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The media route under src/routes/images is a createMediaRoute handler whose directory is [...path] (the param named path), and the route at src/routes/media/[...path] is kept, not moved or deleted.",
+      "source": "src/lib/sveltekit/media-route.ts:97; src/lib/admin/media-base-context.ts:5"
+    },
+    {
+      "n": 2,
+      "text": "The session left the library's existing GIF (hash 00112233445566aa) in the manifest and did not remove gif from the list on the grounds that the asset exists; the reply says the type limit applies to new uploads and the existing GIF keeps serving.",
+      "source": "src/lib/sveltekit/content-routes-media-ingest.ts:138"
+    },
+    {
+      "n": 3,
+      "text": "The reply says the /media route was kept on purpose, because the editor's live preview builds /media paths whatever publicBase says.",
+      "source": "src/lib/admin/media-base-context.ts:5; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/configure-media.md (Change the image URLs, step 3)"
+    }
+  ]
+}

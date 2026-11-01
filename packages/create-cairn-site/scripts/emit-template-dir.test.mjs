@@ -142,7 +142,7 @@ async function put(root, relativePath, content) {
 
 test('findTemplateViolations flags an internal path and a verdict citation under src', async (t) => {
   const root = await tempDir(t);
-  await put(root, 'src/theme/a.css', '/* see docs/internal/design.md */\n');
+  await put(root, 'src/theme/a.css', '/* see docs/internal/notes.md */\n');
   await put(root, 'src/theme/b.css', '/* Verdict 7 (motion): a cross-fade */\n');
   await put(root, 'src/theme/clean.css', '/* a public reason, docs at https://cairn.pub */\n');
 
@@ -165,7 +165,7 @@ test('findTemplateViolations flags a citation in a root file', async (t) => {
 
 test('findTemplateViolations skips the baked guidance under .claude', async (t) => {
   const root = await tempDir(t);
-  await put(root, '.claude/skills/cairn-consult/SKILL.md', 'writes to docs/internal/consultations\n');
+  await put(root, '.claude/skills/cairn-consulting-the-engine/SKILL.md', 'writes to docs/internal/consultations\n');
   await put(root, '.claude/notes.md', 'Verdict 3\n');
 
   assert.deepEqual(await findTemplateViolations(root), []);

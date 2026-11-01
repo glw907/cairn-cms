@@ -28,13 +28,14 @@ import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
 
 /**
- * The two-tier tidy settings load (spec 2.8). The developer tier is read-only: `enabled`,
+ * The two-tier tidy settings load. The developer tier is read-only: `enabled`,
  *  `keyConfigured`, and `model`/`modelLabel` are deploy-time facts the editor sees but cannot change.
  *  The editor tier is the resolved `conventions` block, written back through the save. The visibility
  *  gate is truthful: `enabled` is true only when `tidy.enabled` is set AND the API key is present, so
  *  the screen renders the convention list only then and the honest gate note otherwise. The key is a
  *  Worker secret, so `keyConfigured` is the presence of `ANTHROPIC_API_KEY` in the load's env, never
  *  the key itself; nothing here returns or logs the secret.
+ * @public
  */
 export interface SettingsData {
   /**
@@ -83,6 +84,7 @@ export interface SettingsData {
  * The vocabulary admin screen's data: the committed tag vocabulary, a per-value cross-branch usage
  *  count, and the in-use-but-unlisted seed set. The usage overlay is best-effort, so it degrades to
  *  an empty `usage`/`unlisted` while the committed `vocabulary` stays visible when a read fails.
+ * @public
  */
 export interface VocabularyData {
   /** The committed `{ value, label }` entries, in config order. */
@@ -163,7 +165,7 @@ const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Re
  *  vocabulary caller: vocabularyLoad's degrade-path emit also carries `scope: 'vocabulary'`
  *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
  *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
- *  See docs/reference/log-events.md's `config.invalid` row, which documents this collision
+ *  See the `config.invalid` entry in `src/lib/log/events.ts`, which documents this collision
  *  directly.
  */
 function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {
@@ -202,7 +204,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Load the two-tier tidy settings (spec 2.8). The developer tier (enabled, key, model) is
+   * Load the two-tier tidy settings. The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
    *  `enabled` flag is true only when `tidy.enabled` is set, the key is present, AND the key is not
    *  confirmed invalid, so the screen renders the convention list only then. No secret is returned: only

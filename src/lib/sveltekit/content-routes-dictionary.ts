@@ -1,4 +1,4 @@
-// cairn-cms: the git-committed personal dictionary's add action (spec 1.6). createDictionaryActions
+// cairn-cms: the git-committed personal dictionary's add action. createDictionaryActions
 // closes over the shared ContentRoutesContext (content-routes-context.ts), built once per call by
 // createContentRoutesInternal; createContentRoutes, the public entry point, is only a thin wrapper
 // around it.
@@ -14,7 +14,7 @@ import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
 
 /**
- * The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
+ * The personal-dictionary add outcome: the merged, canonical sorted word list after the
  *  add landed. The client reconciles its pending-additions set against this (a word now in the list
  *  is committed and dropped from pending). Retired from the public surface; the
  *  module-level export stays, since `content-routes-dictionary.test.ts` imports it directly.
@@ -25,7 +25,7 @@ export interface DictionaryAddResult {
 
 /**
  * A refused personal-dictionary add: `fail(403)` on a failed CSRF check, `fail(400)` on a body that
- *  carries no valid word. The client keeps its pending additions for the session and re-attempts on
+ *  carries no valid word, `fail(409)` when the retried commit conflicts a second time. The client keeps its pending additions for the session and re-attempts on
  *  the next save, so the word is never silently dropped. Just the one-line summary.
  */
 export interface DictionaryAddFailure {
@@ -80,7 +80,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
+   * Add a word (or batch) to the git-committed personal dictionary. The transport mirrors
    *  the media raw-body actions exactly: a `text/plain` POST, the CSRF token in `X-Cairn-CSRF` validated
    *  by validateCsrfHeader (CSRF first, then the session), and a small JSON body `{ word }` or
    *  `{ words }`. It reads the current file from the default branch, inserts the validated words in

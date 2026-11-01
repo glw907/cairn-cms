@@ -78,7 +78,7 @@ function page(body: string): string {
 
 describe('screen-anatomy against a real browser', () => {
   // The canonical catch: ConceptList's own removed defect, "the old trailing foot row that
-  // duplicated it and read as a content row" (docs/internal/admin-design-system.md, "Office list
+  // duplicated it and read as a content row" (.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Office list
   // (the concept list view)"). A second, accent-filled "New post" renders after the card, neither
   // in the header nor in the card region.
   it('catches a filled action buried below the card, the ConceptList trailing-foot-row defect', async () => {

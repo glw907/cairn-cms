@@ -1,5 +1,5 @@
 // The showcase's members login channel, the worked exemplar for
-// docs/extend/add-a-second-sign-in-group.md. Two named divergences from that page, stated here so
+// the cairn-extending-a-site skill's second-sign-in-group reference. Two named divergences from that reference, stated here so
 // "living exemplar" does not overclaim: the module lives under src/members/ rather than
 // src/lib/server/, grouped with the rest of the members feature instead of a generic server
 // folder, and `challenge` is `insecureTestChallenge`
@@ -32,7 +32,7 @@ export const MEMBER_ROSTER: ReadonlyMap<string, string> = new Map([
  * challenges.cloudflare.com, so the showcase cannot ship the real Turnstile verifier
  * `createAuthChannel` expects for this field. It checks only that the login form carries the
  * expected static token, never a real proof of humanity. A real site wires `verifyTurnstile` into
- * this same `challenge` field instead (docs/reference/auth-channel.md); this function exists only
+ * this same `challenge` field instead (the `challenge` field's doc comment); this function exists only
  * so the fixture satisfies the required `challenge` config field.
  */
 export async function insecureTestChallenge(_event: CairnEvent, form: FormData): Promise<boolean> {

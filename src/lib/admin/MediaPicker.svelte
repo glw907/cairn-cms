@@ -19,6 +19,14 @@ empty. Search filters across the display name and the alt, case-insensitive.
 The media-type facet (Images, Documents) is a designed-in seam: it renders only once the library
 holds more than one distinct top-level content type, so the structure is present without dead UI
 while a site stores images only.
+
+Mount it on an `/admin` route only, never a public page: the entries come from authed load data.
+It writes nothing and holds no selection; the caller owns what a pick does next. Rows list in the
+array's order, and the array is never mutated. Thumbnails compose under the delivery base the shell
+supplies through the media-base context, so inside `CairnAdminShell` they follow
+`assets.publicBase`, and with no provider they fall back to `/media`. Escape is left to bubble, so a
+host dialog or popover keeps its own dismiss.
+@public
 -->
 <script module lang="ts">
   // The picker's library entry is the shared node-safe projection (../media/library-entry), not a
@@ -30,7 +38,8 @@ while a site stores images only.
   export type { MediaLibraryEntry };
 
   /** The picked asset the picker emits to its host: the library entry, its media: reference token,
-   *  and the manifest alt to prefill the placement. */
+   *  and the manifest alt to prefill the placement.
+   *  @public */
   export interface MediaSelection {
     /** The chosen library entry. */
     entry: MediaLibraryEntry;

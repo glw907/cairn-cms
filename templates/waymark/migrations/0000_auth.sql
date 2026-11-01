@@ -1,4 +1,4 @@
--- Self-owned magic-link auth on D1 (spec 7.1). Timestamps are epoch milliseconds.
+-- Self-owned magic-link auth on D1. Timestamps are epoch milliseconds.
 CREATE TABLE editor (
   email TEXT PRIMARY KEY,
   display_name TEXT NOT NULL,

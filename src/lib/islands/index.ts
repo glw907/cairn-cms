@@ -74,6 +74,12 @@ function observeIsland(node: Element, Comp: Component<Record<string, unknown>>):
  *  or a component that throws leaves the static fallback in place, so one bad island never breaks the page.
  *  Mount-and-replace clears the fallback, so an island whose fallback holds a focusable control should
  *  restore focus itself; the shipped fallbacks are non-interactive.
+ * @remarks
+ * Import it dynamically and only when the site registers an island, so a static site never ships the
+ * runtime. A previous pass's instances are unmounted without outro transitions and its pending
+ * observers disconnected before the scan, which is why it belongs on `afterNavigate`, not a one-time
+ * `onMount`.
+ * @public
  */
 export function hydrateIslands(islands: IslandRegistry, root: ParentNode = document): void {
   teardown();

@@ -1,7 +1,6 @@
 <!--
 @component
-The Share preview group inside the edit page's slide-over (spec part 3, "Public preview for
-a non-editor"): mint a link so someone who is not an editor can read the pending draft, and
+The Share preview group inside the edit page's slide-over: mint a link so someone who is not an editor can read the pending draft, and
 revoke every outstanding link in one move. It renders as a sibling of `DetailsPanel`, not
 inside it. Renders nothing when the mounting admin facade does not expose the
 `previewMint`/`previewRevoke` actions.

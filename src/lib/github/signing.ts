@@ -118,7 +118,7 @@ interface CachedToken {
  * redirecting admin view) can be canceled this way, and the promise it left behind never settles.
  * A cache keyed on that promise would then serve the dead promise to every later caller in the
  * isolate, and each would await it for the full TTL with no way out. See
- * `docs/internal/2026-07-13-admin-token-cache-poisoning.md` for the production incident this
+ * `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-07-13-admin-token-cache-poisoning.md` for the production incident this
  * traces to. Two concurrent misses on a cold isolate therefore each mint their token rather
  * than sharing one pending promise; a duplicate mint is the cheap and safe side of that trade.
  */

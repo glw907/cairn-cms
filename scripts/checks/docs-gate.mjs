@@ -15,10 +15,9 @@
 // Tree mode (no `--page`) also runs `vale test` over the Cairn rules' cases, since a rule's
 // pass and fail cases guard the rule itself, not any one page.
 //
-// `dist` is built exactly once, before any component runs. Seven of the checks
-// (check:snippets, check:visuals, check:readiness, check:tool-conditions, check:reference,
-// check:reference:signatures, check:options) call `npm run package` themselves when run as their own npm script,
-// so this runner calls each component's underlying node script directly and pays that cost once.
+// `dist` is built exactly once, before any component runs. Six of the checks (check:snippets,
+// check:visuals, check:readiness, check:tool-conditions, check:options, check:tiers) call
+// `npm run package` themselves when run as their own npm script, so this runner calls each component's underlying node script directly and pays that cost once.
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,14 +87,11 @@ export function buildSteps({ page }) {
     { label: 'check:snippets', ...node('scripts/checks/check-snippets.mjs') },
     { label: 'check:transcripts', ...node('scripts/checks/transcript-blocks.mjs') },
     { label: 'check:visuals', ...node('scripts/checks/check-visuals.mjs') },
-    { label: 'check:arm-indexes', ...node('scripts/checks/check-arm-indexes.mjs') },
     { label: 'check:editor-quotes', ...node('scripts/checks/check-editor-quotes.mjs') },
     { label: 'check:readiness', ...node('scripts/checks/check-readiness.mjs') },
     { label: 'check:tool-conditions', ...node('scripts/checks/check-tool-conditions.mjs') },
-    { label: 'check:target-stack', ...node('scripts/checks/check-target-stack.mjs') },
-    { label: 'check:reference', ...node('scripts/checks/reference-coverage.mjs') },
-    { label: 'check:reference:signatures', ...node('scripts/checks/check-reference-signatures.mjs') },
     { label: 'check:options', ...node('scripts/checks/check-options.mjs') },
+    { label: 'check:tiers', ...node('scripts/checks/check-tiers.mjs') },
     // Workstation-only: skips with one line and passes when the tellgrader binary is absent (CI).
     { label: 'check:tellgrader', ...node('scripts/checks/check-tellgrader.mjs', page ? [page] : []) },
   ];

@@ -1,4 +1,4 @@
-// Task 15: the two-tier tidy settings screen (spec 2.8). The visibility gate must be truthful: when
+// Task 15: the two-tier tidy settings screen. The visibility gate must be truthful: when
 // tidy is disabled the editor tier is ABSENT (not disabled), no convention control sits in the tab
 // order, and the honest gate note renders; when enabled-with-key the convention list renders with the
 // check-and-tint toggles and the radiogroup variant choosers, and a toggle updates the summary

@@ -1,5 +1,5 @@
 // cairn-audit's viewport-overflow rule: nothing on an admin page renders wider than the viewport,
-// at 390px AND at 320px, the family's composition floor (docs/internal/public-design-system.md).
+// at 390px AND at 320px, the family's composition floor (.claude/skills/cairn-following-public-design/references/public-design-system.md).
 // The motivating finding, ExpandableRow's overflow, was rediscovered independently by two
 // consumers before this rule existed, which is the fail-open this rule closes: a layout that fits
 // at 390 can still overflow at 320, so checking one width and calling the floor covered is exactly

@@ -15,6 +15,7 @@ before a since-published revert) still renders a revert form whose `head` no lon
 was given. A refusal renders as an alert above the table, naming what blocked it: `draft-exists`
 names the blocking draft's author and last-save date, `history-stale` and `ref-unknown` each name
 what moved, and an unexpected failure falls back to its bare message.
+@beta
 -->
 <script lang="ts">
   import type { HistoryData, RevertOutcome } from '../sveltekit/types.js';

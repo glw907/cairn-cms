@@ -21,6 +21,7 @@ export type { BackendCommit } from './types.js';
  * A live, connected content store pinned to a default branch. The GitHub implementation already
  * holds a minted token behind it; the engine resolves one per request. Read, commit, and branch
  * over files only: this interface never grows a query() method.
+ * @public
  */
 export interface Backend {
   /** The site's default branch, for example "main". Callers reading published state pass it as the ref. */
@@ -80,7 +81,10 @@ export interface Backend {
   deleteBranch(name: string): Promise<void>;
 }
 
-/** The adapter's backend value: a provider that connect()s to a live Backend given the Worker env. */
+/**
+ * The adapter's backend value: a provider that connect()s to a live Backend given the Worker env.
+ * @public
+ */
 export interface BackendProvider {
   /** A stable tag for the implementation, for example "github-app". The non-request readers narrow on it. */
   readonly kind: string;
@@ -90,7 +94,10 @@ export interface BackendProvider {
   connect(env: CairnEnv): Backend;
 }
 
-/** What createGithubApp() returns: the generic provider plus the GitHub App's non-secret identity facts. */
+/**
+ * What createGithubApp() returns: the generic provider plus the GitHub App's non-secret identity facts.
+ * @public
+ */
 export interface GithubAppProvider extends BackendProvider {
   readonly kind: 'github-app';
   readonly owner: string;
@@ -164,12 +171,22 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
  * App's non-secret identity (so the build-time, health, and doctor readers narrow on kind and read
  * it) whose connect(env) mints and caches the installation token from the Worker's private-key
  * secret. The missing-secret CairnError stays on first token use, inside connect.
+ * @remarks
+ * The private key is never in the adapter: the engine reads it at request time from the Worker secret
+ * `GITHUB_APP_PRIVATE_KEY_B64`. The backend covers read, commit, and branch operations over files and
+ * is deliberately not a query interface, so content querying stays build-time over the committed manifest.
+ * @public
  */
 export function createGithubApp(config: {
+  /** The account or organization that owns the content repository. */
   owner: string;
+  /** The content repository's name. */
   repo: string;
+  /** The branch the engine reads content from and commits to. */
   branch: string;
+  /** The GitHub App's numeric id, as a string. */
   appId: string;
+  /** The App's installation id on the repository, as a string. */
   installationId: string;
 }): GithubAppProvider {
   return {

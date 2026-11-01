@@ -15,6 +15,7 @@ import type { SitemapUrl } from './sitemap.js';
  *  `extraRoutes` carries the site's bespoke, non-concept pages (an about page, a tag index) as
  *  root-relative paths; each becomes an origin-anchored `SitemapUrl` with no `lastmod`, ahead of
  *  every concept URL.
+ * @public
  */
 export function buildSitemapView(
   site: SiteResolver,

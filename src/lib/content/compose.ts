@@ -26,6 +26,7 @@ const DEFAULT_SUPPORT_CONTACT = 'https://cairn.pub/help';
 /**
  * The input to {@link composeRuntime}. `siteConfig` is required: it is the canonical home for the
  *  site name, the spellcheck dialect, and the tidy block, so they can never be silently dropped.
+ * @public
  */
 export interface ComposeInput {
   adapter: CairnAdapter;
@@ -38,6 +39,7 @@ export interface ComposeInput {
  * convention. Each concept declares its routing and URL policy, so the runtime and delivery
  * permalinks cannot diverge. The media slot (seam 4) passes through untouched. Throws when an
  * access rule names a role the adapter's vocabulary does not declare.
+ * @scaffold
  */
 export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRuntime {
   if (!siteConfig) throw new Error('cairn: composeRuntime needs a site config for the site name and editor settings');

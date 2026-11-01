@@ -1,5 +1,5 @@
 // The tidy diff: a Longest Common Subsequence over tokens, poplar's DiffRanges model rebuilt in
-// TypeScript (spec 2.4). A small pure module, not a diff library. The tidy action returns only the
+// TypeScript. A small pure module, not a diff library. The tidy action returns only the
 // corrected string; this module owns every range, offset, and line label. It is the sole source of
 // positional truth for the review surface (Tasks 13 and 14 consume its output), so all positions are
 // computed locally from this diff against the captured original, never taken from the model.

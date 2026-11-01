@@ -122,13 +122,13 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
 // R4 re-export, not a second home (canonical-home rule); the full set with its
 // per-name reason is `scripts/checks/check-surface-reexports.json`, and
-// `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
+// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
 // `ContentRoutes` was narrowed and this closure re-derived without shrinking the list: the
 // narrowing was necessary for the media-janitorial retires, not sufficient, since
 // `createCairnAdmin` still named every one of those types. `CairnAdminRoutes` needs the same
 // narrowing as the remaining precondition; the retire itself (the list actually shrinking) is
 // still open, tracked at the re-derivation record
-// (`docs/internal/record/2026-08-30-r4-rederivation.md`).
+// (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md`).
 export type { AccessMap } from '../auth/access.js';
 export type { Backend, BackendProvider } from '../github/backend.js';
 export type {

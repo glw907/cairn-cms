@@ -7,15 +7,15 @@ import { parseArgs, USAGE } from '../../../lib/guidance/bin.js';
 
 describe('parseArgs', () => {
   it('parses install with no flags', () => {
-    expect(parseArgs(['install'])).toEqual({ command: 'install', strict: false, help: false });
+    expect(parseArgs(['install'])).toEqual({ command: 'install', strict: false, dryRun: false, help: false });
   });
 
   it('parses check with no flags', () => {
-    expect(parseArgs(['check'])).toEqual({ command: 'check', strict: false, help: false });
+    expect(parseArgs(['check'])).toEqual({ command: 'check', strict: false, dryRun: false, help: false });
   });
 
   it('parses check --strict', () => {
-    expect(parseArgs(['check', '--strict'])).toEqual({ command: 'check', strict: true, help: false });
+    expect(parseArgs(['check', '--strict'])).toEqual({ command: 'check', strict: true, dryRun: false, help: false });
   });
 
   it('rejects install --strict, naming that it applies only to check', () => {
@@ -37,8 +37,8 @@ describe('parseArgs', () => {
   });
 
   it('treats --help anywhere as help, before any command validation', () => {
-    expect(parseArgs(['--help'])).toEqual({ command: 'check', strict: false, help: true });
-    expect(parseArgs(['bogus', '--help'])).toEqual({ command: 'check', strict: false, help: true });
+    expect(parseArgs(['--help'])).toEqual({ command: 'check', strict: false, dryRun: false, help: true });
+    expect(parseArgs(['bogus', '--help'])).toEqual({ command: 'check', strict: false, dryRun: false, help: true });
   });
 });
 
@@ -116,7 +116,7 @@ describe('packaged bin (needs dist/guidance/bin.js; run npm run package to unski
       });
       expect(first.status).toBe(0);
       expect(existsSync(join(dir, '.claude/cairn/MANIFEST'))).toBe(true);
-      expect(existsSync(join(dir, '.claude/skills/cairn-admin-screens/SKILL.md'))).toBe(true);
+      expect(existsSync(join(dir, '.claude/skills/cairn-building-admin-screens/SKILL.md'))).toBe(true);
 
       const second = spawnSync(process.execPath, [BIN, 'check', '--strict'], {
         cwd: dir,

@@ -32,6 +32,7 @@ export interface MediaUsageInfo {
  * The Media Library screen's data: the unioned assets, the per-hash usage overlay, and the
  *  degraded-load error. The usage overlay is keyed by content hash; an asset with no references
  *  simply has no key, which the screen renders as "no references found".
+ * @public
  */
 export interface MediaLibraryData {
   assets: MediaLibraryEntry[];

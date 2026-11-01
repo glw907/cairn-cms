@@ -8,6 +8,7 @@ validates on save.
 
 The header band is `PageHeader`, its
 title the menu's declared label; the sortable-list card below stays untouched.
+@beta
 -->
 <script lang="ts">
   import { untrack } from 'svelte';

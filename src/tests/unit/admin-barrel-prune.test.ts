@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 
 // The four names the surface-pruning pass demotes from the /admin barrel (Task 3), verbatim
-// from `docs/plans/2026-07-01-surface-pruning-pass.md` and the audit verdicts doc's
-// `## ./components` section (`docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
+// from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md` and the audit verdicts doc's
+// `## ./components` section (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
 const DEMOTED = ['ComponentInsertDialog', 'ComponentForm', 'IconPicker', 'LinkPicker'];
 
 // The keep list for the /admin subpath: the twelve KEEP-verdict page-level components plus

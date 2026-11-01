@@ -1,5 +1,5 @@
 // cairn-cms: the cairn: internal-link token. An internal link is a standard CommonMark link
-// whose href is `cairn:<concept>/<id>`, keyed to the target's permanent filename stem so it
+// whose href is `cairn:<concept>/<id>`, keyed to the target's filename stem so it
 // survives a slug, date, or permalink change (content-graph design). This module owns the
 // grammar; the render resolver (resolve-links.ts) reuses parseCairnToken.
 import { unified } from 'unified';
@@ -9,7 +9,10 @@ import { visit } from 'unist-util-visit';
 import type { Link } from 'mdast';
 import { isValidId, splitConceptIdToken } from './ids.js';
 
-/** A resolved reference to a content entry by its concept and permanent id. */
+/**
+ * A resolved reference to a content entry by its concept and id.
+ * @public
+ */
 export interface CairnRef {
   concept: string;
   id: string;
@@ -18,6 +21,7 @@ export interface CairnRef {
 /**
  * Resolve a reference to its live permalink. Returns undefined when the target is missing (the
  *  preview marks it); the build resolver throws instead, so a dangling token fails the build.
+ * @public
  */
 export type LinkResolve = (ref: CairnRef) => string | undefined;
 

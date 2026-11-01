@@ -39,6 +39,7 @@ unhandled.
 
 It is node-safe by construction: it types assets with MediaLibraryEntry from the shared node-safe
 projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak).
+@beta
 -->
 <script lang="ts">
   import { flushSync, getContext, tick } from 'svelte';

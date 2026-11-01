@@ -115,8 +115,8 @@ Gate list: admin `README`, `is-it-working`, `create-your-site`, `own-your-domain
 - Page work follows `cairn-docs` (case C and `references/new-page.md`) and the register brief for
   its track. Every page gets a fresh `docs-fact-checker`, and `figure-verifier` when it carries a
   figure, before its review. `register-check` runs on each arm.
-- Every pass files engine friction under "Engine" in `docs/internal/docs-friction-log.md`, verified
-  first, and its close runs the boundary test and states the verdict in STATUS.
+- Every pass files engine friction in `BACKLOG.md` through `/log-issue` (the friction log was retired
+  by agent-first pass 2), verified first, and its close runs the boundary test and states the verdict in STATUS.
 - A pass never bumps the version or publishes. The capture's prerelease is the one exception, on its
   own branch.
 - No pass touches cairn-pub.

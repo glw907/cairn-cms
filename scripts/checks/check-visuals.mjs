@@ -1,5 +1,5 @@
 // cairn-cms: the visuals gate for the published docs' diagram-and-image contract (the "Visuals"
-// section of docs/internal/docs-register.md). It checks the mechanical, authored-source half of
+// section of .claude/skills/cairn-writing-docs/references/docs-register.md). It checks the mechanical, authored-source half of
 // that contract: every mermaid fence carries mermaid's `accTitle:`/`accDescr:` directives and
 // is immediately followed by an emphasis-paragraph caption (`*...*`); every markdown image carries
 // real alt text no longer than 150 characters (a deliberately decorative image is authored as HTML
@@ -22,23 +22,15 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
-import { readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// The five published arms plus the front-door index. `docs/internal` is a contributor zone with
-// its filing rules, not a published arm, so it stays out of this gate the same way it stays
-// out of the reader-facing register. An entry naming an arm-state arm (arm-state.mjs) is skipped
-// while that arm is absent; the reference arm has none, so it is always scanned and a missing
-// reference directory throws.
-const SCAN_DIRS = [
-  { dir: 'docs/admin', arm: 'admin' },
-  { dir: 'docs/editors', arm: 'editors' },
-  { dir: 'docs/extend', arm: 'extend' },
-  { dir: 'docs/claude-code', arm: 'claude-code' },
-  { dir: 'docs/reference' },
-];
-const INDEX_FILES = ['docs/README.md'];
+// The published docs directories plus the front-door index. `docs/internal` is a contributor zone
+// with its filing rules, not a published page set, so it stays out of this gate the same way it
+// stays out of the reader-facing register. A directory or index that does not exist is skipped,
+// since a track being rebuilt can hold no page.
+const SCAN_DIRS = ['docs/admin', 'docs/editors'];
+const INDEX_FILES = ['docs/README.md', 'docs/why-cairn.md', 'docs/architecture.md'];
 
 // Directory names skipped while walking an arm, since they hold generated or fixture output
 // rather than published pages.
@@ -328,13 +320,8 @@ function walkMarkdown(dir) {
  * @param {typeof import('../../src/lib/reproductions/manifest.js').validateReproFence} [validateFence]
  */
 export function scanTree(root = ROOT, manifest = [], validateFence) {
-  const states = readArmStates(root);
-  const files = SCAN_DIRS.filter(({ arm }) => !arm || states[arm] !== 'absent').flatMap(({ dir }) =>
-    walkMarkdown(join(root, dir)),
-  );
-  if (states['front-door'] === 'rebuilt') {
-    for (const indexFile of INDEX_FILES) if (existsSync(join(root, indexFile))) files.push(join(root, indexFile));
-  }
+  const files = SCAN_DIRS.filter((dir) => existsSync(join(root, dir))).flatMap((dir) => walkMarkdown(join(root, dir)));
+  for (const indexFile of INDEX_FILES) if (existsSync(join(root, indexFile))) files.push(join(root, indexFile));
 
   const violations = [];
   let diagrams = 0;

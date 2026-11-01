@@ -15,9 +15,9 @@ import {
   SCAN_ROOTS,
 } from '../../../scripts/checks/check-leaks.mjs';
 
-const T1 = profileFor('docs/reference/sveltekit.md')!;
-const T2 = profileFor('skills/cairn-extend/SKILL.md')!;
-const T3 = profileFor('docs/internal/docs-register.md')!;
+const T1 = profileFor('docs/admin/run.md')!;
+const T2 = profileFor('skills/cairn-extending-a-site/SKILL.md')!;
+const T3 = profileFor('.claude/skills/cairn-writing-docs/references/docs-register.md')!;
 const TSDOC = profileFor('src/lib/admin-toolkit/format.ts')!;
 const CHANGELOG = profileFor('CHANGELOG.md')!;
 
@@ -33,7 +33,8 @@ describe('profileFor', () => {
       'docs/README.md',
       'docs/why-cairn.md',
       'examples/showcase/README.md',
-      'docs/extend/migration-notes.md',
+      'MIGRATION-NOTES.md',
+      'schema/cairn-doctor.schema.json',
       'docs/editors/write.md',
       'docs/admin/run.md',
     ]) {
@@ -43,7 +44,7 @@ describe('profileFor', () => {
 
   it('puts shipped files in T2 and agent inputs in T3 without process vocabulary', () => {
     for (const path of [
-      'skills/cairn-admin-screens/references/exemplar-list.md',
+      'skills/cairn-building-admin-screens/references/exemplar-list.md',
       'claude/CLAUDE.md',
       'examples/showcase/src/chassis/README.md',
       'src/lib/reproductions/fixtures.ts',
@@ -53,7 +54,7 @@ describe('profileFor', () => {
       expect(profileFor(path)?.tier, path).toBe('T2');
     }
     for (const path of [
-      'docs/internal/docs-register.md',
+      '.claude/skills/cairn-writing-docs/references/docs-register.md',
     ]) {
       expect(profileFor(path), path).toEqual({ tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' });
     }
@@ -196,8 +197,13 @@ describe('C3 process', () => {
   });
 
   it('lets an absolute GitHub link to a maintainer doc through', () => {
-    expect(hits('[x](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#motion)')).toEqual([]);
+    expect(hits('[x](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md#motion)')).toEqual([]);
     expect(hits('[roadmap](https://github.com/glw907/cairn-cms/blob/main/ROADMAP.md)')).toEqual([]);
+  });
+
+  it('lets a pre-agent-first tag link to a removed record through', () => {
+    expect(hits('https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md')).toEqual([]);
+    expect(hits('see docs/internal/record/repro-story-audit.md')).not.toEqual([]);
   });
 
   it('reports ratified prose as a warning, and skips it inside backticks', () => {
@@ -439,7 +445,7 @@ describe('runLeakCheck over a tree', () => {
   }
 
   it('passes a clean tree and fails planted leaks in a published page', () => {
-    const clean = tree({ 'docs/reference/a.md': '# A\n\nA clean page about signups.\n' });
+    const clean = tree({ 'docs/editors/a.md': '# A\n\nA clean page about signups.\n' });
     expect(runLeakCheck(clean).findings).toEqual([]);
 
     for (const [plant, cls] of [
@@ -447,7 +453,7 @@ describe('runLeakCheck over a tree', () => {
       ['Count the households.', 'C2'],
       ['Chosen (Geoff, 2026-10-07) as the default.', 'C3'],
     ]) {
-      const planted = tree({ 'docs/reference/a.md': `# A\n\n${plant}\n` });
+      const planted = tree({ 'docs/editors/a.md': `# A\n\n${plant}\n` });
       const { findings } = runLeakCheck(planted);
       expect(findings.some((finding) => finding.cls === cls && finding.severity === 'error'), plant).toBe(true);
     }
@@ -466,11 +472,11 @@ describe('runLeakCheck over a tree', () => {
 
   it('formats errors first and folds released-CHANGELOG warnings into one count line', () => {
     const root = tree({
-      'docs/reference/a.md': 'ecxc-ski\n',
+      'docs/editors/a.md': 'ecxc-ski\n',
       'CHANGELOG.md': '## 1.0.0\necxc-ski\nhousehold\n',
     });
     const lines = formatFindings(runLeakCheck(root).findings);
-    expect(lines[0]).toMatch(/^docs\/reference\/a\.md:1: error \[T1 C1\]/);
+    expect(lines[0]).toMatch(/^docs\/editors\/a\.md:1: error \[T1 C1\]/);
     expect(lines[1]).toBe('CHANGELOG.md: 2 warning(s) in released sections (run with --warnings to list)');
     expect(formatFindings(runLeakCheck(root).findings, true)).toHaveLength(3);
   });

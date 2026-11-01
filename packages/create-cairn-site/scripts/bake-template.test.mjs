@@ -240,7 +240,7 @@ test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDepende
 test('bake writes the guidance tree under .claude, VERSION equal to the resolved engine version', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
-  await access(path.join(to, '.claude', 'skills', 'cairn-admin-screens'));
+  await access(path.join(to, '.claude', 'skills', 'cairn-building-admin-screens'));
   await access(path.join(to, '.claude', 'agents', 'cairn-extension-reviewer.md'));
   const fragment = await readFile(path.join(to, '.claude', 'cairn', 'CLAUDE.md'), 'utf8');
   assert.ok(fragment.length > 0);

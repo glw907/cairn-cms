@@ -1,0 +1,153 @@
+# What cairn is
+
+## Contents
+
+- [Purpose](#purpose)
+- [What cairn commits to (the opinions, as choices)](#what-cairn-commits-to-the-opinions-as-choices)
+- [The one boundary that governs everything](#the-one-boundary-that-governs-everything)
+- [Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)](#threat-position-geoff-2026-09-30-the-sign-in-flow-named-2026-10-08)
+- [The failure mode this resists](#the-failure-mode-this-resists)
+- [How the boundary is held](#how-the-boundary-is-held)
+
+
+> The public-facing content of this charter was absorbed by the why-cairn page (removed pending its rebuild) in
+> the 2026-07 docs rewrite; this file remains the internal scope charter.
+
+The canonical statement of cairn's purpose and boundary. `CLAUDE.md` carries the short version; this is
+the fuller why. Read it before any change that adds an abstraction, a subsystem, an actor, or new surface.
+
+## Purpose
+
+cairn is a lean, opinionated CMS that makes a non-technical author productive editing raw markdown on a
+SvelteKit + Cloudflare site, and publishes through a GitHub App. It serves a developer who wants a
+content-managed site fast, then appends their own functionality to it. cairn is a starting framework and
+an admin skeleton, not a platform: it does one job well and gets out of the way.
+
+## What cairn commits to (the opinions, as choices)
+
+- **SvelteKit + Cloudflare, fully.** A hard dependency on the stack is the point. Islands mount via
+  Svelte's own `mount()`; the engine reaches for D1/R2/Workers directly. No framework- or host-agnostic
+  layer. (The full stack list and the scaffold-copy site-template direction are in the
+  `cairn-scope-opinionated-stack` memory.)
+- **Content is markdown in git**, in one fixed concept shape (`defineConcept`); the set is the site's to
+  declare, with Posts and Pages out of the box, and never an open-ended collection model. No runtime content
+  database; querying is build-time over a committed manifest.
+- **A cairn site feeds AIs easily.** Making a site's content trivial for a machine to read and organize is
+  a first-class goal, and cairn is well-placed for it: the content is already markdown in git (the cleanest
+  input an LLM can get) over a structured manifest of the whole corpus. The engine builds on that with
+  passive, machine-readable affordances, the raw markdown an agent can request and per-topic feeds chief
+  among them, emitted at build the way feeds and sitemaps are, and invested where machine consumption is
+  actually evidenced rather than where a standard is merely hyped. Two things stay in scope and one stays
+  out: cairn makes content easy for an AI to read, and it may use AI as an optional assist inside the
+  editor (the tidy polisher and spellcheck already do); it does not put AI in the public runtime, where a
+  reader-facing model or generated output is the developer's to build, not the engine's.
+- **A small default identity, owner/editor, on magic-link**, so a content site runs with zero config.
+  Owner also manages the editor roster. Auth exists only to gate the admin.
+- **Tuned for a small editorial team, by default.** The zero-config posture assumes one to a handful of
+  editors who share context, not a large or anonymous contributor pool. This is a floor, not a ceiling
+  (the auth and authorization seams let a developer scale past it), but it sets where the defaults sit:
+  feature decisions optimize for a small team that can coordinate informally, so cairn favors light,
+  low-friction tooling over the heavy coordination and governance machinery a many-contributor system
+  needs.
+- **An admin skeleton a developer extends**, built with DaisyUI + Tailwind (the idiom custom admin screens
+  follow; see `admin-design-system.md`). Public output stays design-agnostic, each site brings its own
+  `render`.
+- **`cairn-audit` ships whole, as consumer product.** A cleanup-pass rulings sitting (2026-08-08) settled
+  a positioning question this doc used to hold open: whether the audit's design-conformance rules were
+  consumer product or engine-internal apparatus, with a hypothesized split (consumer rules ship, engine
+  ones don't) as the likely answer. The rule inventory dissolved that split on evidence rather than
+  confirming it: 35 of the 38 registered rules (18 static, 17 rendered) audit the `/admin` surface, and a consumer's admin IS cairn's
+  admin toolkit, so conformance to cairn's own design system is exactly the product being audited, not
+  apparatus that measures the engine from outside. The other three, `public-literals`,
+  `theme-conformance`, and `theme-contrast`, audit a site's public files under the public scope and
+  run at advisory tier on a consumer. The `cairn-building-admin-screens` skill's
+  `audit-rules.md` reference covers what the package ships and what stays engine-side.
+
+## The one boundary that governs everything
+
+**cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
+Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic, belongs
+to the developer, and cairn serves it with a thin seam, not a built-in feature.**
+
+This single rule adjudicates any scope question without an enumerated denylist:
+
+- **The defaults are floors, not ceilings.** Owner/editor and magic-link are the zero-config start. A
+  developer can replace the admin auth with their own framework (cairn then mints no session and reads an
+  owner/editor identity through a defined hand-off) and override the default authorization through a thin
+  seam. cairn ships a sensible default and a clean way to replace it, never a configurable engine for the
+  general case.
+- **A site's domain is the site's.** Whatever a particular system needs, members, customers, assets,
+  dues, a directory, is the developer's to build on cairn, in their own routes, data, and auth. cairn
+  never names or models a domain actor; it only ever knows owner/editor.
+- **Seam, not feature.** When a real extension need appears, the answer is the thinnest seam that lets the
+  developer build it, plus a versioned public surface, with every break disclosed, so their work survives
+  engine updates with the changes named.
+  cairn provides the frame; the developer provides the functionality.
+- **The contract is stable, and every break is disclosed.** The seams form a narrow, versioned public surface across the
+  kind-based export subpaths, held by a public-surface snapshot gate plus gated Extension-API/Scaffold-API
+  stability tiers (not a single `./extend` subpath; see the 2026-06-28 developer-extensibility redesign
+  design); cairn evolves its internals freely behind it. Until 1.0 the gate detects and discloses a break
+  (the changelog's `Consumers must:` line and the migration notes), never prevents one, and two
+  Extension-tier breaks have shipped inside 0.x minors (0.86.0, 0.94.0); from 1.0 a breaking change to
+  that surface is a deliberate, signposted major-version event, not an everyday occurrence. Keeping the surface narrow is what keeps that promise cheap to honor, one more reason the
+  answer to a new need is the thinnest seam.
+
+### The `cairn` tool is the operator's cockpit, not engine surface
+
+The boundary above governs the engine a consumer site inherits. The Go `cairn` tool
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`) is a different thing:
+an owner-side product over every cairn site a machine knows, and by decision an operator
+cockpit (Geoff, 2026-08-20). It replicates administrative operations the web admin also offers,
+user management and site settings among them, as a second front over the same contracts, and it
+never adds to the engine's public surface or models a domain actor. "Little else" is a rule
+about what a consumer inherits; the operator's own console is where the owner's work
+accumulates, and it stays lean by the same test, one job served by the thinnest mechanism.
+
+The `cairn` CLI is an assumed part of the cairn system, never an optional companion (Geoff,
+2026-09-21). It ships apart from the npm package only because its install targets differ
+(`go install` and prebuilt binaries per platform). Two consequences follow. Docs, the site
+upgrade brief, the scaffold, and the admin track may assume the operator has `cairn`
+installed, and no docs or packaging answer treats it as a separate product. And its contract lives in the
+binary (`cairn help agents` and each command's `--help`), its operator how-tos under
+`docs/admin/`, while `tool/docs/` keeps only ADRs, design inputs, and the operator runbooks.
+
+## Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)
+
+cairn assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing behind `/admin` except the two pages of the sign-in flow: the form and the confirm page.
+
+## The failure mode this resists
+
+Over-building: speculative generality, abstraction layers, and "a developer might want…" features that
+aren't cairn's job. "Out of scope" and "we don't accommodate that universe" are valid, and usually
+correct, answers. Add to the engine only when it demonstrably serves the core job, and prefer the leanest
+seam over a general feature. A reviewer asked to find gaps will always find some; that is not license to
+build them.
+
+One lesson behind this doc: an extensibility effort once misread "let developers extend cairn" as "cairn
+should own an identity and permissions substrate," and grew a principal model, scopes, trust tiers, and
+member login in the engine before it was caught and reverted. The tell was that correctness and security
+reviews all passed, each checking the design within the wrong premise. So the premise check, "is this
+cairn's job, and is it the leanest form?", runs before the correctness checks, on every spec.
+
+## Rebuild decisions that still bind
+
+The 2026-05-28 rebuild spec is gone (it lives at the `pre-agent-first` tag); three of its decisions
+are not derivable from the code and still hold.
+
+- **The engine is fat and the site is thin.** Anything security-critical or prone to fixes lives in
+  the engine, so a fix reaches every site on a version bump. Copied site code holds presentation
+  only: the component registry, icons, CSS, the adapter, and thin route shims.
+- **Classic `load` and form actions are the production path.** SvelteKit's remote functions stay out
+  while experimental; `ROADMAP.md` "Toward 1.0" decides at their stable release.
+- **Server code holds no module-level state.** Construct heavy objects inside the request handler,
+  never at module scope: Workers cap startup CPU at one second, and a module-level store leaks
+  between requests. Read `$app/state`, not `$app/stores`.
+- **No styled component library enters the package.** shadcn-svelte, Skeleton, and Flowbite each bring
+  a competing visual layer that fights the neutral admin theme. DaisyUI components are the default
+  for every admin surface (`cairn-following-admin-design`).
+
+## How the boundary is held
+
+Machine-checkable boundaries live in gates, not prose (`check:tiers`, `check:package`, the dev-fence
+e2e gate, the `check:surface` public-surface snapshot). This doc and the `CLAUDE.md` block carry the conceptual
+boundary a gate can't, and are meant to be read first and honored.

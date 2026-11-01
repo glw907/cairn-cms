@@ -4,7 +4,7 @@ cairn is the embedded, git-backed CMS this repository publishes to npm as
 [`@glw907/cairn-cms`](https://www.npmjs.com/package/@glw907/cairn-cms). This guide orients you
 in the repository and describes what a change needs before it can land. For what cairn is and
 why it works the way it does, start with
-[what cairn is and is not](./docs/internal/what-cairn-is-and-is-not.md).
+[what cairn is and is not](./.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md).
 
 ## Set up and run the suite
 
@@ -13,6 +13,9 @@ npm install       # needs Node 24 or newer, the version CI runs
 npm test          # vitest: the unit, integration, and component projects
 npm run check     # svelte-check
 ```
+
+The component tests drive Chromium. Run `npx playwright install chromium` once, and on Linux
+`npx playwright install-deps chromium` for its system libraries.
 
 `npm install` also builds the package, because `npm run package` runs as the `prepare` script.
 To see a change in a running admin, use the showcase: `npm install` in `examples/showcase`,
@@ -27,33 +30,47 @@ Before opening an issue, check whether the idea belongs in the engine. cairn own
 content and the editor/admin frame, and little else: a site's own functionality, actors,
 auth, data, and domain logic belongs to the developer, served through a thin seam rather
 than built into cairn. Read
-[`docs/internal/what-cairn-is-and-is-not.md`](./docs/internal/what-cairn-is-and-is-not.md)
+[`.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md`](./.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md)
 before proposing anything that adds an abstraction, a subsystem, an actor, or new public
 surface. Settling this first is faster than writing code against a premise a review later
 rejects.
 
 ## Choosing a docs track
 
-A new docs page belongs in exactly one of four tracks: `docs/admin/`, `docs/editors/`,
-`docs/extend/`, or `docs/reference/`. The discriminator is the reader, not the content, so
-decide by asking who reads this page and whether that reader can act on it with nothing but
-the page and what they already have.
+A new docs page belongs in exactly one of two tracks: `docs/admin/` or `docs/editors/`. A
+developer's contract lives in each export's doc comment, and a developer's job lives in the
+packaged skills under `skills/`, so neither takes a docs page. The discriminator is the reader,
+not the content, so decide by asking who reads this page and whether that reader can act on it
+with nothing but the page and what they already have.
 
 - **`docs/editors/`**: a non-technical author working in `/admin`, with no terminal and no
   access to the repository.
 - **`docs/admin/`**: a technical non-developer who sets up and runs the default site, runs
   commands, and reads a dashboard, but does not write code.
-- **`docs/extend/`**: a Svelte-fluent developer building an organization's site on cairn's
-  seams.
-- **`docs/reference/`**: dry contract prose (signature, parameters, defaults, failure
-  modes) that the admin and extend readers both look up rather than read start to finish.
 
 A step that assumes a terminal fails an editor page. A step that assumes reading source
 code fails an admin page. If a page's steps split across two readers, it is two pages, not
 one page trying to serve both; write each half in its track rather than switching register
-mid-page. `docs/internal/docs-register.md` carries the full track profiles, vocabulary
+mid-page. `.claude/skills/cairn-writing-docs/references/docs-register.md` carries the full track profiles, vocabulary
 contract, and the counterpart question a reviewer grades a page against; read it before
 writing a page a reviewer will grade on register.
+
+## Working with Claude Code
+
+Open the clone in Claude Code and accept the folder's trust dialog; the repository's skills, agents,
+and rules load, and so does the `standards` plugin that supplies the review agents. The
+`cairn-running-passes` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
+risk classes.
+
+- A new clone's first Claude Code session starts without the plugin. Start it once as
+  `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude`, which installs the plugin before the first turn.
+- The plugin does not refresh itself in an open session. Run `claude plugin update standards@glw907-standards`
+  and restart to take a newer version.
+- Cloud sessions get only the skills and agents committed here, not the plugin.
+- The daisyUI Blueprint server is a per-developer license; the admin skills work without it.
+- Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.
+- `tellgrader`, the prose-tell checker the docs gate can run, is optional; the gate skips it when absent.
+- `gh`, the GitHub CLI, opens and watches a pull request; install it when you do either.
 
 ## Proposing a change
 
@@ -101,22 +118,21 @@ holds them to it.
 - **Pages.** A change to public behavior edits the page that describes it, and the reference
   page when the behavior is public API. Search `docs/` and `README.md` for a changed, renamed,
   or removed name and repoint every hit.
-- **The option map.** `docs/internal/option-map.json` gives every public option path one row: an
-  anchor in a reference page whose section names the option in inline code
-  (`docs/reference/<page>.md#<anchor>`), `exclude` with a reason, or `pending` with the slug of
-  the page that should document it.
+- **Option doc comments.** Every public option member carries a doc comment where it is
+  declared, or an entry with a reason in `EXCLUDED_PATHS` in `scripts/checks/check-options.mjs`.
+- **Stability tiers.** Every public export carries one tier tag in its doc comment: `@public`
+  for the Extension API, `@beta` for the Unstable API, or `@scaffold` for the Scaffold API.
 
 `npm run check:options` regenerates the option paths from the built type declarations and fails
-when a row's page or anchor is missing, when its section does not name the option in inline code,
-or when a path has no row, so an option can't
-ship undocumented. `npm run check:docs-gate` runs it with the rest of the docs checks, including
-links, Vale, snippets, and reference coverage. CI runs the same script.
+on a member with no doc comment, so an option can't ship undocumented. `npm run check:tiers`
+fails on an export with no tier tag. `npm run check:docs-gate` runs both with the rest of the
+docs checks, including links, Vale, and snippets. CI runs the same script.
 
 To pass the docs gate, make these changes together:
 
-- If you change public behavior, update its page, and the reference page when the behavior is
-  public API.
-- If you add, rename, or remove a public option, update its row in the option map.
+- If you change public behavior, update its page, its doc comment, and the skill reference
+  that teaches it.
+- If you add a public option or export, give it a doc comment, and give an export its tier tag.
 - If you move or rename a heading, repoint every link to its anchor.
 
 ## Conventions a change is held to
@@ -129,16 +145,14 @@ To pass the docs gate, make these changes together:
 - Code comments follow [TSDoc](https://tsdoc.org/), enforced by `npm run check:comments` over
   `src/lib`. Write the contract and the why, never a paraphrase of the code. The em dash is
   banned in comments.
-- Pages under `docs/reference/`, `docs/admin/`, and `docs/extend/` follow the
+- Pages under `docs/admin/` follow the
   [Google Developer Documentation Style Guide](https://developers.google.com/style);
   `docs/editors/` follows the
   [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) instead,
-  because its reader is a non-technical writer. All four directories ship inside the npm
-  package, so a docs edit is a product change, and a public-API change is not done until its
-  reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
-  from its brief in `docs/internal/docs-register.md`, and the front door and `CHANGELOG.md` take
-  the developer brief. Admin UI strings follow the Voice section of
-  `docs/internal/admin-design-system.md`.
+  because its reader is a non-technical writer. Both directories ship inside the npm package,
+  so a docs edit is a product change. Each track is drafted from its brief in
+  `.claude/skills/cairn-writing-docs/references/docs-register.md`. Admin UI strings follow the Voice section of
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.
@@ -146,7 +160,7 @@ To pass the docs gate, make these changes together:
   `Consumers must:` line when upgrading requires action. Releases are cut separately.
 - Work on the `/admin` interface (the admin components in `src/lib/admin/` or
   `cairn-admin.css`) follows the design system at
-  [`docs/internal/admin-design-system.md`](./docs/internal/admin-design-system.md); read it
+  [`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`](./.claude/skills/cairn-following-admin-design/references/admin-design-system.md); read it
   first.
 
 ## Repository map
@@ -154,11 +168,9 @@ To pass the docs gate, make these changes together:
 Each entry gives the rule for what belongs in a directory. Individual files move too often to
 list here, so when the map and the tree disagree, trust the tree and fix the map.
 
-- `src/lib/`: the shipped library. Public entry points are package subpaths, each with a
-  matching page in `docs/reference/`; a directory without a reference page is internal.
-  `npm run check:surface` gates the public surface. For the directory-by-directory public/internal
-  split, the admin request flow, and the rest of the tree's internal structure, see
-  [`docs/internal/src-lib-map.md`](docs/internal/src-lib-map.md).
+- `src/lib/`: the shipped library. A directory is public exactly when `package.json`'s `exports`
+  map points a subpath into it; `audit` and `media-seed` are reachable only through a `bin`.
+  `npm run check:surface` gates the public surface.
 - `src/tests/`: the vitest projects (`unit/`, `integration/`, `component/`) plus `fixtures/`.
   `lab/` holds engine apparatus that supports development and must never ship in the package.
 - `scripts/`: helpers shared by the three groups below sit at the root.
@@ -174,11 +186,11 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
   [cairn.pub](https://cairn.pub) runs. The ported example themes (AstroPaper, Foxi, the
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).
-- `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
-  the npm package once each holds pages; the front door joins them when it is rebuilt. See
+- `docs/`: the two published tracks (`admin/`, `editors/`) ship in the npm package once each
+  holds pages; the front door joins them when it is rebuilt. See
   "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing,
-  `specs/`, `plans/`, `research/`, and `archive/` hold the dated specs, plans, and reviews as
-  history, and `STATUS.md` is the rolling project status.
+  `plans/` holds the open plans until they land, and `STATUS.md` is the rolling project status. The
+  dated planning record is at the `pre-agent-first` tag.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.
 - `migrations/`: the D1 schema migrations for the auth store. They ship with the package.

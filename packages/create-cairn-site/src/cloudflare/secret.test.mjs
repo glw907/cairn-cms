@@ -100,7 +100,7 @@ test('moves the PEM to a Worker secret and deletes it from state, keeping siblin
   assert.doesNotMatch(stateFileText, /BEGIN PRIVATE KEY/);
 });
 
-test('the closing message points at the rotation page, not at re-running the step', async (t) => {
+test('the closing message names the rotation command, not re-running the step', async (t) => {
   await freshStateDir(t);
   const scaffoldDir = tmpdir();
   await seedSite('alpine-club-000007');
@@ -119,7 +119,8 @@ test('the closing message points at the rotation page, not at re-running the ste
   });
 
   const closing = log.join('\n');
-  assert.match(closing, /https:\/\/cairn\.pub\/docs\/extend\/rotate-the-github-app-key/);
+  assert.match(closing, /wrangler secret put GITHUB_APP_PRIVATE_KEY_B64/);
+  assert.doesNotMatch(closing, /cairn\.pub\/docs/);
   assert.doesNotMatch(closing, /re-run this step/);
 });
 

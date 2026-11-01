@@ -12,7 +12,7 @@
 // ./index.ts, on the `@glw907/cairn-cms/reproductions` subpath. Nothing here may import it.
 //
 // The ids, their order, and the flags come from the story inventory whose per-story mechanism
-// evidence is https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/repro-story-audit.md.
+// evidence is https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md.
 
 /**
  * The prerendered iframe height for each embed width a docs page may ask for, in CSS pixels.
@@ -20,6 +20,7 @@
  * A width with no declared height is a width the fence schema refuses, which is how a page is kept
  * from pinning a story to a face nobody sized. Hydration refines the shipped height against the
  * measured content, so these are a good first paint rather than a promise about the render.
+ * @beta
  */
 export interface ReproHeights {
   /** The responsive default embed, filling the docs content column. */
@@ -32,7 +33,10 @@ export interface ReproHeights {
   narrow?: number;
 }
 
-/** One story's node-safe description: everything a gate can check without mounting anything. */
+/**
+ * One story's node-safe description: everything a gate can check without mounting anything.
+ * @beta
+ */
 export interface ReproManifestEntry {
   /** The id a `repro` fence names, `<group>/<name>`, with exactly one slash. */
   id: string;
@@ -63,6 +67,7 @@ export interface ReproManifestEntry {
  *
  * Adding, removing, or renaming an entry is a spec edit: cairn.pub docs pages cite these ids, and
  * a fence naming an id the installed manifest does not carry fails the consumer's build.
+ * @beta
  */
 export const manifest: ReproManifestEntry[] = [
   {
@@ -309,6 +314,7 @@ export const manifest: ReproManifestEntry[] = [
  * a mounting site's asset route can enumerate them for `entries()` without importing the
  * Svelte-carrying `./index.js` half of this module. Served at the base the mounting page passes
  * `ReproContext` as its `mediaBase` prop (`'/repro-assets'` when the page passes none).
+ * @beta
  */
 export const fixtureMediaFiles: string[] = [
   'trailhead-view.4dcfd814c4ebd018.png',

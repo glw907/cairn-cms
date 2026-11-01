@@ -7,6 +7,7 @@
 // line terminators, so an author pasting one into frontmatter would corrupt the JSON-LD block.
 /**
  * Build the `application/ld+json` script element for `data`, escaping `<` so the JSON cannot terminate the script tag early.
+ * @public
  */
 export function renderJsonLdScript(data: Record<string, unknown>): string {
   const json = JSON.stringify(data)

@@ -4,6 +4,7 @@ The Delete control and its modal. With no inbound links it is a plain confirm th
 ?/delete action. With inbound links it blocks: it names how many entries link to (or include) this
 one and lists them, each linking to its edit page, so the author clears those references first.
 Built on a native <dialog>, following the LinkPicker a11y conventions.
+@beta
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';

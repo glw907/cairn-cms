@@ -24,7 +24,12 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
   }
 }
 
-/** Declare a site's adapter while preserving each concept's concrete schema type for typed reads. */
+/**
+ * Declare a site's adapter while preserving each concept's concrete schema type for typed reads.
+ * @throws When a component declares `hydrate` with no `rendering.islands` entry, or `rendering.islands`
+ * holds a name no component hydrates.
+ * @public
+ */
 export function defineAdapter<const A extends CairnAdapter>(adapter: A): A {
   assertIslandsConsistent(adapter.rendering);
   return adapter;

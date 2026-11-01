@@ -1,7 +1,7 @@
 <!--
 @component
 The label wrapper every admin field composes, in either of two registers (a third, the group
-legend, is a `<legend>` rather than this component; `docs/internal/admin-design-system.md`'s
+legend, is a `<legend>` rather than this component; `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s
 form-row/label register section has the full three). `stacked` (the default: label on its
 line above the control, `flex flex-col gap-label`, the individual-field-label recipe) is the
 robust shape for any multi-column form grid, since a stacked label never competes with its
@@ -28,6 +28,13 @@ A hint or an error line is the same question with a different answer. It is cont
 affordance, so it may sit inside the label, but the bottom-aligned row recipe above has one
 caveat: a field that renders a trailing line stops having its control as its bottom edge, and a
 row levelling on that edge then levels the wrong thing.
+
+In the stacked register, an input, select, or textarea that is a DIRECT child of this component fills
+its width; one nested a level deeper (a compact row of controls) keeps its own width. The component
+renders one wrapping `<label>` with no `for`, and a browser names only the FIRST labelable descendant
+from a wrapping label, so in a row of two or more controls every control after the first needs its
+own `<label>` or `aria-label`.
+@public
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

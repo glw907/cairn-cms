@@ -12,6 +12,15 @@ preference reads. It hands descendant forms a CSRF-token getter through context,
 actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
 route. Failure mode: a public payload that carried chrome fields would still render bare (the
 discriminant, not the fields, gates the chrome).
+
+Under a `themeOverride` the shell offers no theme toggle, in the top bar or in `EditPage`'s folded
+overflow control, so nothing flips the theme the host owns. When the streamed pending set is
+non-empty the top bar shows a "Publish site (N)" button; a null set (GitHub unreachable) hides it
+rather than showing a stale count. A nav entry shows a count badge only for a positive
+`data.attention` count for its `href`, capped at `99+`; a collapsed section's header shows the sum of
+its visible children's counts from that same record. The count rides the link's accessible name, so
+a screen reader announces it once.
+@public
 -->
 <script lang="ts">
   import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';
@@ -51,7 +60,8 @@ discriminant, not the fields, gates the chrome).
      *  both of its reads (the admin theme cookie and the OS `prefers-color-scheme` preference).
      *  Reactive: changing it re-renders the shell in the new theme, so a host that pictures the
      *  admin in both themes updates the prop instead of re-mounting. Absent (every real admin
-     *  mount), the shell resolves its theme exactly as it always has. */
+     *  mount), the shell resolves its theme exactly as it always has. With it set, the shell
+     *  renders no theme toggle. */
     themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
   }
 
@@ -697,7 +707,7 @@ discriminant, not the fields, gates the chrome).
      scoped sheet style them. -->
 <div data-theme={theme} bind:this={rootEl}>
   <!-- The persistent desktop sidebar persists at a route-kind-specific breakpoint: office routes at
-       lg (1024px), desk routes at xl (1280px, the desk rider, spec §5). A desk route recedes the
+       lg (1024px), desk routes at xl (1280px, the desk rider). A desk route recedes the
        sidebar behind the toggle through the lg-xl tablet band instead of dropping it outright, since
        the wider desk layout needs the room the office layout does not. This resolves at SSR from
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
@@ -1079,7 +1089,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-box bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
-            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
+            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in .claude/skills/cairn-following-admin-design/references/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="cairn-chip-quiet rounded-selector px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
           </a>

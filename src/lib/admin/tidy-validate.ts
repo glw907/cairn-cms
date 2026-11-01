@@ -1,5 +1,5 @@
 // The tidy output validation: the safety backstop that proves a tidy result is a proofread and not
-// a restructure (spec 2.6) or a successful prompt injection (spec 2.3.3). A pure module taking the
+// a restructure or a successful prompt injection. A pure module taking the
 // captured original and the model's corrected string and returning either the validated change set
 // (the diff) or a typed rejection reason. A rejected result is discarded by the caller with
 // an honest message and the document is left untouched; nothing here mutates the buffer.

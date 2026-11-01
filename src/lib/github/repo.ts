@@ -1,6 +1,6 @@
 // cairn-cms: repo reads and the commit, over the GitHub REST API. Listing a concept
-// directory uses the Git Trees API (the contents API silently truncates at 1,000 entries,
-// spec §7.3); a single-file read uses the contents API. An optional token lifts reads to
+// directory uses the Git Trees API (the contents API silently truncates at 1,000
+// entries); a single-file read uses the contents API. An optional token lifts reads to
 // the authenticated rate limit and unlocks private repos; ecnordic's repo is public, 907's
 // is not.
 import { idFromFilename } from '../content/ids.js';
@@ -58,7 +58,7 @@ export function markdownFilesIn(dir: string, tree: TreeEntry[]): RepoFile[] {
  * List the markdown files in a concept directory through the Git Trees API. A truncated tree
  * (GitHub caps the recursive listing near 100,000 entries) throws rather than returning a
  * silent partial list; a concept directory sits far below that, and sharding is deferred
- * until one approaches it (spec §7.3).
+ * until one approaches it.
  */
 export async function listMarkdown(repo: RepoRef, dir: string, token?: string): Promise<RepoFile[]> {
   const res = await fetch(treeUrl(repo), { headers: ghHeaders('application/vnd.github+json', token) });
@@ -77,7 +77,7 @@ export function contentsUrl(repo: RepoRef, path: string): string {
 /**
  * Fetch a file's raw markdown, or null if it does not exist. The contents API caps a raw
  * read at 1 MB; a concept's files sit far below that, and sharding is deferred until one
- * approaches it (spec §7.3).
+ * approaches it.
  */
 export async function readRaw(repo: RepoRef, path: string, token?: string): Promise<string | null> {
   const res = await fetch(contentsUrl(repo, path), { headers: ghHeaders('application/vnd.github.raw', token) });
@@ -144,7 +144,10 @@ export async function fetchCommitLog(
   }));
 }
 
-/** A path change for an atomic commit: write `content`, or delete the path when `content` is null. */
+/**
+ * A path change for an atomic commit: write `content`, or delete the path when `content` is null.
+ * @public
+ */
 export interface FileChange {
   path: string;
   content: string | null;

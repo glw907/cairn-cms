@@ -18,6 +18,7 @@ A page count beyond a handful windows down to first, last, and a run around the 
 (`computePageWindow`, imported from the pure `pagination-window.ts` module so the windowing logic
 is unit tested without mounting the component); a single page renders no nav at all, only the range
 line (and the page-size select, if given) if one applies.
+@public
 -->
 <script lang="ts">
   import { computeItemRange, computePageWindow } from './pagination-window.js';

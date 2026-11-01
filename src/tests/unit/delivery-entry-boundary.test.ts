@@ -1,7 +1,7 @@
 // The /delivery entry must not pull the server backend into a public bundle. The delivery
 // modules (including the public-routes loader the barrel re-exports) must import nothing from
 // github, auth, or email. This reads the source statically rather than introspecting a built
-// graph. A second walk proves the docs/reference/delivery-data.md claim: nothing reachable
+// graph. A second walk proves the /delivery/data entry's node-safe claim: nothing reachable
 // from the node-safe data barrel imports @sveltejs/kit or a .svelte component.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';

@@ -1,7 +1,8 @@
 <!--
 @component
 The scanner-safe confirm page. A GET renders this static "Confirm sign-in" button with the token
-in a hidden field and consumes nothing; only the explicit POST verifies (spec §7.1). JS-free.
+in a hidden field and consumes nothing; only the explicit POST verifies. JS-free.
+@beta
 -->
 <script lang="ts">
   import './cairn-admin.css';
@@ -47,7 +48,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   <div class="w-full max-w-sm card-shell p-7 text-center card-shadow">
     <div class="mb-6 flex items-center justify-center gap-2">
       <CairnLogo class="h-8 w-8 text-primary" />
-      <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
+      <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in .claude/skills/cairn-following-admin-design/references/admin-design-system.md. -->
       <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
     </div>
 

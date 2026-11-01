@@ -22,6 +22,7 @@ export interface LogRecord {
  * (`tokenlength`) and `hasSession` (`hassession`) are not a match and pass through unchanged.
  * Frozen: a site adds its keys through `createLogger`'s `redactKeys` option, which unions with
  * this list rather than replacing it.
+ * @public
  */
 export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
   'token',
@@ -152,8 +153,23 @@ export function buildRecord(
  * regardless of how many createLogger callers exist. `options.redactKeys` names a site's
  * additional field names, which union with `REDACTED_LOG_KEYS` and never replace it: a site cannot
  * narrow the engine's list by passing its own.
+ * @remarks
+ * A record's last three keys are `level`, `event`, and `timestamp`, in that order, and a caller field
+ * of the same name is dropped. A key is redacted when its normalized form equals a list member, in
+ * a record's fields and in plain objects and arrays nested to three levels (a field, a field inside a
+ * headers bag, a field inside an object inside an array); deeper keys pass as written. A repeated
+ * reference reads `'<repeated>'`, so a cyclic payload cannot hang the logger. A class instance
+ * (`Headers`, `Map`, `Set`, `Date`, `Error`) is never walked, so a secret inside one is not matched:
+ * convert `request.headers` with `Object.fromEntries` before logging it. Redaction matches a key,
+ * never a value, so scrub a token out of a `url` or an error message at the call site. A getter that
+ * throws while the fields are read yields a fallback record with `fields: '<unserializable>'`
+ * instead of throwing out of the call.
+ * @public
  */
-export function createLogger<Event extends string>(options?: { redactKeys?: readonly string[] }): {
+export function createLogger<Event extends string>(options?: {
+  /** A site's additional field names to redact, unioned with `REDACTED_LOG_KEYS`. */
+  redactKeys?: readonly string[];
+}): {
   info(event: Event, fields?: Record<string, unknown>): void;
   warn(event: Event, fields?: Record<string, unknown>): void;
   error(event: Event, fields?: Record<string, unknown>): void;

@@ -22,8 +22,8 @@
    color system, the named secondary-text tones, and the soft-elevation pair, each pinned to a measured
    contrast floor in its co-located comment. The load-bearing rules below (the embed-anywhere reset, the
    cascade-layered overrides, and the four unlayered rules) are part of the same floor. This section may
-   only SHRINK, and only with a matching update to docs/internal/design/2026-06-29-custom-surface-ledger.md;
-   it is never extended ad hoc. check:custom-surface guards the same floor structurally. Each token's
+   only SHRINK, and never extends ad hoc. check:custom-surface guards the same floor structurally
+   (the classification of each property is at https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-29-custom-surface-ledger.md). Each token's
    declaration stays inside the theme root it themes (light here, dark below): the two daisyUI theme
    blocks are the Tier-1 home, and the Tier-2 vars cluster at the end of each plain root rule. */
 
@@ -32,7 +32,7 @@
    theme block. A grammar token names a RELATIONSHIP (a heading's role, a control-to-control gap),
    not a palette choice, so it holds across light and dark: a consuming site re-tunes the
    `--color-*` palette tokens above and never redeclares one of these. Values are measured from
-   the current call sites (spec section 4), not invented. The audit rule, the reference docs page, and this file's
+   the current call sites, not invented. The audit rule, the reference docs page, and this file's
    definition test all read the single inventory at src/lib/design/grammar-tokens.ts; keep the two
    in sync by name. This is a plain :root rule, so the build's scoper is what confines it to the
    admin theme roots at compile time, and check:custom-surface (which pins only rules anchored on
@@ -42,12 +42,26 @@
    in src/lib/admin-toolkit only: those components ship on a public subpath and a consumer can mount
    one outside the admin theme root, where these tokens are undefined, so their scoped styles carry
    the measured literal as a var() fallback. Engine screens under src/lib/admin always render
-   inside CairnAdminShell's themed wrapper and reference the token bare. */
+   inside CairnAdminShell's themed wrapper and reference the token bare.
+
+   The markup vocabulary is eleven grammar utilities, never a pixel value or a bracketed var():
+   type-title, type-heading, type-subtitle, type-body, type-meta, type-label, type-chip (each sets
+   font-size and line-height from the role's two tokens) and gap-label, gap-control, gap-group,
+   gap-section (each sets gap). A type role is size plus leading only; weight, case, tracking, font
+   family, and color belong to a component recipe, and color stays a separate text-muted or
+   text-subtle class. Two container utilities complete the set: card-shell (radius, 1px border,
+   fill) and card-shadow (elevation), where a surface nested inside an already-shadowed one takes
+   card-shell alone. Corners follow the daisyUI ladder rounded-selector, rounded-field, rounded-box;
+   a fixed step such as rounded-lg compiles but is off the ladder. cairn-text-warning and
+   cairn-text-success read the on-surface text inks (--cairn-warning-ink, --color-positive-ink),
+   never the fills. A bracketed text-[Npx] sets font-size only, while a named step such as text-2xl
+   sets line-height too. A class used only in a directory this sheet's build does not scan compiles to
+   nothing, so it resolves to no style at runtime. */
 :root {
   /* The seven-role type scale: title, heading (dialog and section headings; the bold
      display face they read in is a call-site recipe, not part of the role), the T4 chrome scale
      (nav items, table cells, card-row titles), body, meta, label (the eyebrow recipe), and chip.
-     Each role also carries a paired leading token (spec section 13): body, title,
+     Each role also carries a paired leading token: body, title,
      and heading take the named Tailwind steps they replace (text-sm's 20px, text-2xl's 32px,
      text-lg's 28px); subtitle, meta, label, and chip are the dominant computed line-height
      measured at their live call sites. The role utilities in scripts/admin-css.input.css set a
@@ -1642,7 +1656,7 @@
 }
 
 /* The desk rider's `.xl:drawer-open` companion to the rule above: a desk route (an open document)
-   persists its sidebar at `xl` instead of `lg` (spec §5), and that sidebar needs the same fixed-
+   persists its sidebar at `xl` instead of `lg`, and that sidebar needs the same fixed-
    positioning fix for the same scroll-bleed reason. Grepping the built CSS confirmed Tailwind 4
    generates the `xl:drawer-open` utility from this component's class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for

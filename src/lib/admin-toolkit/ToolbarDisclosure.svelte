@@ -64,6 +64,7 @@ The containing element itself is deliberately non-interactive (no role, no tabin
 and focusout listeners are event delegation over whatever the trigger/extra/panel snippets render,
 not an affordance of their own an AT user should be told about, so they attach imperatively from
 `$effect`/an inline handler rather than a declarative `role`-bearing element.
+@public
 -->
 <script module lang="ts">
   import { createAttachmentKey, type Attachment } from 'svelte/attachments';
@@ -73,7 +74,8 @@ not an affordance of their own an AT user should be told about, so they attach i
    *  one on the same element. `aria-expanded` and `aria-controls` track this disclosure's open
    *  state; `aria-haspopup` forwards the `ariaHaspopup` prop when given; the symbol-keyed
    *  attachment captures the trigger's DOM node on mount, for Escape's focus-return (see
-   *  this component's header comment). */
+   *  this component's header comment).
+   *  @public */
   export interface ToolbarDisclosureTriggerAttrs {
     'aria-expanded': boolean;
     'aria-controls': string;
@@ -88,13 +90,17 @@ not an affordance of their own an AT user should be told about, so they attach i
    *  panel root can never leave the panel visible and tabbable while `aria-expanded` reads
    *  `false`. The caller's panel root still wants `dropdown-content` for positioning (this
    *  component's style block also neutralizes daisyUI's `:focus-within` reveal on that
-   *  class), but showing/hiding the panel is this component's job, not the caller's class string. */
+   *  class), but showing/hiding the panel is this component's job, not the caller's class string.
+   *  @public */
   export interface ToolbarDisclosurePanelAttrs {
     id: string;
     hidden: true | undefined;
   }
 
-  /** The trigger's `aria-haspopup` value, forwarded through unchanged. */
+  /**
+   * The trigger's `aria-haspopup` value, forwarded through unchanged.
+   * @public
+   */
   export type ToolbarDisclosureAriaHaspopup = 'menu' | 'listbox' | 'dialog' | 'grid' | 'tree' | 'true';
 </script>
 

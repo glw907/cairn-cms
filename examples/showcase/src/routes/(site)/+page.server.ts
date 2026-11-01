@@ -11,7 +11,7 @@ export const prerender = true;
 // (paginateArchive is the one shared shape both routes build from), keeping this URL exactly "/".
 //
 // posts.all() is already newest-first (a dated concept's engine ordering contract, documented in
-// docs/reference/delivery.md), so this route relies on that order rather than re-sorting it.
+// the concept reader's doc comment), so this route relies on that order rather than re-sorting it.
 export const load: PageServerLoad = () => {
   const entries = posts.all();
   const featured = entries[0];

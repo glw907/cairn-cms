@@ -4,7 +4,7 @@ import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 import {
   collectReachableNames,
   collectDeclaredTypeNames,
@@ -17,7 +17,7 @@ import {
 } from '../../../scripts/checks/check-surface-leaks.mjs';
 
 // The type-checker model, proven against a real compile-only fixture (the move record's own
-// technique, `docs/internal/record/2026-08-30-retires-move-record.md`): a two-hop nested shape,
+// technique, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md`): a two-hop nested shape,
 // the exact `AdvisoryAction` proof case (invisible to the renderer, which expands one member
 // level; `EditData.advisories[].actions[]` needs a second hop into `AdvisoryNotice`'s own,
 // separately unexported, members).

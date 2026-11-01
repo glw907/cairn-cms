@@ -665,7 +665,7 @@ describe('CairnAdminShell', () => {
 
   it('recedes the nav drawer to the xl breakpoint on a desk route (SSR markup, no flash)', async () => {
     // A desk route no longer drops the persistent sidebar outright: it recedes it behind the
-    // toggle through the lg-xl tablet band and persists it again at xl (the desk rider, spec §5).
+    // toggle through the lg-xl tablet band and persists it again at xl (the desk rider).
     // The class is conditional in the rendered markup (no effect flips it), so the chrome state
     // resolves at SSR and never flashes.
     const screen = await render(CairnAdminShellDeskHarness, {
@@ -791,7 +791,7 @@ describe('CairnAdminShell', () => {
 
   it('recedes the persistent sidebar under zen at every width, and restores it on exit', async () => {
     // Zen is an explicit, reversible editor choice (plan-locked call 1,
-    // docs/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
+    // https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
     // topbar in stepping back so the manuscript takes the whole frame, at every width, not just the
     // desk route's tablet band. The overlay checkbox keeps reaching the nav under zen; only the
     // persistent breakpoint classes recede.

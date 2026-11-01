@@ -150,42 +150,15 @@ func headingSlugsIn(path string) (map[string]bool, error) {
 // normalizes each entry to ("is-it-working.md#<anchor>").
 const checklistFile = "is-it-working.md"
 
-// adminArmRebuilt reports whether the admin docs arm under root holds any page outside the
-// deletion list's kept set. scripts/checks/arm-state.mjs is the source of truth for that rebuilt
-// state; this Go copy must agree with it. The list is read fail-closed: a missing or malformed
-// list is an error, never an empty arm.
+// adminArmRebuilt reports whether the admin docs arm under root holds any Markdown page. An
+// absent directory is an empty arm, never an error.
 func adminArmRebuilt(root string) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(root, "docs", "internal", "record", "harvest", "deletion-list.json"))
-	if err != nil {
-		return false, fmt.Errorf("read deletion list: %w", err)
-	}
-	var list struct {
-		Deleted *[]string `json:"deleted"`
-		Kept    *[]string `json:"kept"`
-	}
-	if err := json.Unmarshal(data, &list); err != nil {
-		return false, fmt.Errorf("parse deletion list: %w", err)
-	}
-	if list.Deleted == nil || list.Kept == nil {
-		return false, errors.New("deletion list: want \"deleted\" and \"kept\" arrays")
-	}
-	kept := make(map[string]bool, len(*list.Kept))
-	for _, page := range *list.Kept {
-		kept[page] = true
-	}
 	rebuilt := false
-	err = filepath.WalkDir(filepath.Join(root, "docs", "admin"), func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(filepath.Join(root, "docs", "admin"), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || !strings.HasSuffix(d.Name(), ".md") {
-			return nil
-		}
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		if !kept[filepath.ToSlash(rel)] {
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".md") {
 			rebuilt = true
 		}
 		return nil
@@ -352,35 +325,25 @@ func TestAnchorProblems(t *testing.T) {
 }
 
 func TestAdminArmRebuilt(t *testing.T) {
-	const list = `{"deleted": ["docs/admin/is-it-working.md"], "kept": ["docs/admin/kept.md"]}`
 	tests := []struct {
-		name    string
-		list    string
-		pages   []string
-		want    bool
-		wantErr bool
+		name  string
+		pages []string
+		want  bool
 	}{
-		{name: "absent: no admin directory", list: list},
-		{name: "kept-only: only a kept page", list: list, pages: []string{"docs/admin/kept.md"}},
-		{name: "rebuilt: a page outside the kept set", list: list, pages: []string{"docs/admin/kept.md", "docs/admin/new.md"}, want: true},
-		{name: "rebuilt: a nested page", list: list, pages: []string{"docs/admin/deep/page.md"}, want: true},
-		{name: "a non-Markdown file is no page", list: list, pages: []string{"docs/admin/diagram.png"}},
-		{name: "missing deletion list", pages: []string{"docs/admin/new.md"}, wantErr: true},
-		{name: "malformed deletion list", list: "{ nope", wantErr: true},
-		{name: "deletion list without a kept array", list: `{"deleted": []}`, wantErr: true},
+		{name: "absent: no admin directory"},
+		{name: "rebuilt: a page", pages: []string{"docs/admin/new.md"}, want: true},
+		{name: "rebuilt: a nested page", pages: []string{"docs/admin/deep/page.md"}, want: true},
+		{name: "a non-Markdown file is no page", pages: []string{"docs/admin/diagram.png"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := t.TempDir()
-			if tt.list != "" {
-				writeTestFile(t, filepath.Join(root, "docs", "internal", "record", "harvest", "deletion-list.json"), tt.list)
-			}
 			for _, page := range tt.pages {
 				writeTestFile(t, filepath.Join(root, filepath.FromSlash(page)), "# Page\n")
 			}
 			got, err := adminArmRebuilt(root)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("adminArmRebuilt error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				t.Fatalf("adminArmRebuilt: %v", err)
 			}
 			if got != tt.want {
 				t.Errorf("adminArmRebuilt = %v, want %v", got, tt.want)

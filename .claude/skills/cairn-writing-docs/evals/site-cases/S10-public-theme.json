@@ -1,0 +1,50 @@
+{
+  "id": "S10-public-theme",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "the public theme's daisyUI role tokens (theme.css), cairn-public.css roles",
+  "bar": 4,
+  "prompt": "BRAND.md at the site root describes a new look for the public site: the crew's forest green in place of the blue, and a warmer page background. Apply it to the public site in both the light and the dark scheme. Finish when the site type-checks and the public pages carry the new colors.",
+  "setup": "setups/site/s10-public-theme.mjs",
+  "knownBad": "setups/site/s10-public-theme-bad.mjs",
+  "maxTurns": 50,
+  "source": [
+    "src/lib/public/cairn-public.css:32,54 (the engine's code-keyword and focus-ring roles read --color-primary, so a role token change reaches them and a literal in component CSS does not)",
+    "src/lib/audit/rules/static/public-literals.ts (the public-literals rule flags a color literal outside a token)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/theme-your-public-site.md#re-skin-waymark steps 1 and 2 (change --color-primary and the --color-base-* steps in both daisyUI blocks of src/theme/theme.css; leave --color-primary-content unchanged; the site's own theme.css recipe says only that it \"keeps its light/dark value\", so the check pins its lightness and chroma, the contrast-bearing parts, and accepts a hue rotated with the accent; the prose elements read the same tokens, so no edit to prose.css)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/public-css.md#placement-of-a-per-scheme-value (a value set in one daisyUI block never reaches the other scheme)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/public-css.md#ink-derivation (run the public-scope audit before calling a theme finished)",
+    "src/theme/theme.css header, RE-SKIN RECIPE (the site's own statement of the same steps)",
+    "Verified by applying a reference solution to the emitted site: npm run check and the three-rule public audit both pass."
+  ],
+  "expectations": [
+    "In src/theme/theme.css, both daisyUI theme blocks set --color-primary to the BRAND.md green for that scheme (oklch(45% 0.1 150) light, oklch(74% 0.1 150) dark).",
+    "Both blocks set --color-base-100 to the BRAND.md page background for that scheme, and the -200 and -300 steps follow it (BRAND.md asks for the bands, panels, and rules to sit with the warmer page but names no values, so the session maps that to the base steps from the theme recipe).",
+    "--color-primary-content keeps its lightness and chroma in both blocks (its hue may follow the new accent, which at that chroma changes neither the look nor the contrast); the body text color and the status fills stay as they were.",
+    "No green literal is written into src/theme/site.css, the Svelte components, or the chassis files.",
+    "The session runs the public-scope cairn-audit and it reports no errors.",
+    "npm run check passes."
+  ],
+  "checks": [
+    { "type": "changed", "path": "src/theme/theme.css" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-primary:\\s*oklch\\(\\s*45%\\s+0?\\.1\\s+150\\s*\\)" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-primary:\\s*oklch\\(\\s*74%\\s+0?\\.1\\s+150\\s*\\)" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-base-100:\\s*oklch\\(\\s*97\\.5%\\s+0?\\.012\\s+100\\s*\\)" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-base-100:\\s*oklch\\(\\s*22%\\s+0?\\.01\\s+150\\s*\\)" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-primary-content:\\s*oklch\\(\\s*99%\\s+0?\\.01\\s+\\d+(\\.\\d+)?\\s*\\)" },
+    { "type": "contains", "path": "src/theme/theme.css", "regex": "--color-primary-content:\\s*oklch\\(\\s*22%\\s+0?\\.03\\s+\\d+(\\.\\d+)?\\s*\\)" },
+    { "type": "unchanged", "path": "src/theme/site.css" },
+    { "type": "unchanged", "path": "src/theme/components" },
+    { "type": "unchanged", "path": "src/chassis" },
+    { "type": "unchanged", "path": "src/theme/cairn.config.ts" },
+    { "type": "absent", "path": "src/theme/components", "regex": "oklch\\(\\s*(45|74|97\\.5)%\\s+0?\\.\\d+\\s+(150|100)" },
+    { "type": "bash", "pattern": "cairn-audit" },
+    { "type": "npm", "script": "check" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The new green and page-background values were written into both daisyUI theme blocks of src/theme/theme.css (the light block and the dark block), each with its own scheme's value from BRAND.md, rather than set once in :root or in one block only." },
+    { "n": 2, "text": "The --color-base-200 and --color-base-300 steps were retuned in both blocks to sit with the new --color-base-100, so cards and rules do not keep the old neutral grey against the warmer page." },
+    { "n": 3, "text": "The session ran the public-scope audit (npx cairn-audit with the public-literals, theme-conformance, and theme-contrast rules, or an equivalent) after the change and did not leave a reported error unaddressed." },
+    { "n": 4, "text": "The change reaches the engine's own roles through the tokens, with no per-component or per-selector override that re-colors links, buttons, focus rings, or code keywords individually." }
+  ]
+}

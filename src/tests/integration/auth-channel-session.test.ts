@@ -1,5 +1,5 @@
 // Task 4 of the auth-channel factory plan: the session half of the flow (spec
-// docs/specs/2026-08-03-auth-channel-factory-design.md, Flows: logout,
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-03-auth-channel-factory-design.md, Flows: logout,
 // resolveSubject, revokeSessions), proven against real miniflare D1.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';

@@ -1,5 +1,5 @@
-// cairn-cms: the public preview link's mint and revoke actions (spec part 3, "Public preview for a
-// non-editor"). createPreviewActions closes over the shared ContentRoutesContext
+// cairn-cms: the public preview link's mint and revoke actions, which hand a
+// pending draft to a reader who is not an editor. createPreviewActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts), built once per call by createContentRoutesInternal;
 // createContentRoutes, the public entry point, is only a thin wrapper around it.
 import { error, fail, type ActionFailure } from '@sveltejs/kit';
@@ -41,15 +41,16 @@ function missingPreviewTableFailure(): ActionFailure<ContentFormFailure> {
  */
 export function createPreviewActions(ctx: ContentRoutesContext) {
   /**
-   * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
-   *  non-editor"). This action is the route half of `mintPreview` (preview.ts): it names the
+   * Mint a public preview link for an entry's pending draft, readable by someone
+   *  who is not an editor. This action is the route half of `mintPreview` (preview.ts): it names the
    *  target from the route's params and dresses each outcome in the refusal this screen
    *  speaks, while the entry-scoped authorization, the draft check, the token hygiene, and the
    *  `preview.token.minted` log all live in `mintPreview` itself, so the engine's route and a
    *  site's custom mint run the identical sequence and log the identical event.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
-   *  affordance can show and copy it in place. Refuses on the page when the entry carries no
+   *  affordance can show and copy it in place. The URL is built from `PUBLIC_ORIGIN`, never the
+   *  request's host, and the response carries `cache-control: no-store`. Refuses on the page when the entry carries no
    *  pending draft (there is nothing to share) or when `AUTH_DB` is missing the `preview_tokens`
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */

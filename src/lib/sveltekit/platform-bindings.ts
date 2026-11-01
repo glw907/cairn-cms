@@ -27,13 +27,14 @@ import type { EmailSender } from '../email.js';
  *  they name which App the commit signer authenticates as, so the adapter passes them as compile-time
  *  config to `createGithubApp({ appId, installationId })`, constructed at module scope before any
  *  request runs. Only the private key is a Worker secret the engine reads at runtime.
+ * @public
  */
 export interface CairnPlatformBindings {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
   AUTH_DB: D1Database;
   /** Cloudflare Email Sending binding for the magic-link message. */
   EMAIL: EmailSender;
-  /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
+  /** Canonical origin for confirmation links, never read from a request header. */
   PUBLIC_ORIGIN: string;
   /** The GitHub App's private key, base64 of the PEM on one line, decoded with `atob()` before signing. */
   GITHUB_APP_PRIVATE_KEY_B64: string;
@@ -46,7 +47,10 @@ export interface CairnPlatformBindings {
 
 /**
  * The R2 binding a media-enabled site adds, checked alongside {@link CairnPlatformBindings}. A
- *  text-only site (no `assets` block on its adapter) omits it.
+ *  text-only site (no `assets` block on its adapter) omits it. `MEDIA_BUCKET` is the conventional
+ *  binding name; a site whose adapter names a different `bucketBinding` checks that name itself
+ *  instead of using this type.
+ * @public
  */
 export interface CairnMediaBindings {
   /**

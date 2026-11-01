@@ -16,8 +16,7 @@ import (
 // make every consumer of every payload re-read a schema because one unrelated payload gained a
 // field. Each starts at health.Report's schema version, the number the tool already
 // published, so a consumer reading the report's version before this boundary existed is not
-// handed a lower number now. docs/reference/cli-cairn-json-output.md carries the promise each one
-// makes: a key is added within a version, and never removed or retyped within one.
+// handed a lower number now. Each one makes one promise: a key is added within a version, and never removed or retyped within one.
 const (
 	// siteSchemaVersion versions the single-site health payload and every per-site NDJSON line.
 	siteSchemaVersion = 1

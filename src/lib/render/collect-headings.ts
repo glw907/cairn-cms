@@ -16,6 +16,7 @@ export const DOC_HEADINGS = 'docHeadings';
  *  final rehype tree carries (rehypeSlug's stamp, or a site rehypePlugins rewrite of it); `text`
  *  is the heading's flattened plain text, with inline code, emphasis, and links reduced to their
  *  text content.
+ * @public
  */
 export interface DocHeading {
   /** The heading's id. */

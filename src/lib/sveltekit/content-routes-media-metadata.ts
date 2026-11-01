@@ -426,7 +426,8 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
   /**
    * Preview an alt-propagation: the display-only fetch action (the 2a transport). It plans filling the
    *  asset's default alt across every published main entry that references it, bucketing each placement
-   *  (a will-fill empty alt, a customized alt left as-is, a decorative hero skipped), and returns the
+   *  (a will-fill empty alt, a customized alt left as-is, a decorative hero skipped, an image nested
+   *  in a container field reported and never written), and returns the
    *  enriched entries, the report-only cross-branch delta, and the bucket counts. It commits nothing.
    *  The plan runs strict (fail-closed): an unverifiable usage read returns a 503 rather than a partial
    *  plan, so the dialog never shows a count it cannot stand behind.

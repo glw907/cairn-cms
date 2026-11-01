@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { constants, type Dirent, type Stats } from 'node:fs';
 import { createRequire } from 'node:module';
-import { lstat, mkdir, open, readdir, readFile, realpath } from 'node:fs/promises';
+import { lstat, mkdir, open, readdir, readFile, realpath, rename, rmdir, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
 /** Where cairn-guidance writes into a consumer repo, relative to its working directory. */
@@ -22,6 +22,11 @@ export const VERSION_DEST = `${CAIRN_DIR}/VERSION`;
 
 /** The destination path for the write manifest a later install and `check` read. */
 export const MANIFEST_DEST = `${CAIRN_DIR}/MANIFEST`;
+
+/** The sha256 of one file's text, the form `guidance-hashes.json` records. */
+export function hashContent(content: string): string {
+  return createHash('sha256').update(content, 'utf8').digest('hex');
+}
 
 /**
  * Hash a file tree keyed by relative path. Sorted before hashing, so an unrelated directory-walk
@@ -153,6 +158,22 @@ export async function readPackagedSnippets(): Promise<WalkResult> {
   return { files: walked.files, refused: walked.refused.map((p) => `claude/snippets/${p}`) };
 }
 
+/**
+ * Every hash a shipped release has carried for a path under `.claude/skills/` or
+ *  `.claude/agents/`, keyed by destination path. Generated into `guidance-hashes.json` from each
+ *  release tag that shipped the bin, so it is the whole authority on what `install` may delete.
+ *  Empty when the package ships no table, which leaves every retired path kept.
+ */
+export async function readShippedHashes(): Promise<Record<string, string[]>> {
+  try {
+    const text = await readFile(resolveSourceRoot('guidance-hashes.json'), 'utf8');
+    return (JSON.parse(text) as { files: Record<string, string[]> }).files;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return {};
+    throw err;
+  }
+}
+
 /** Every packaged tree cairn-guidance installs, resolved against the installed package. */
 export interface GuidanceSource {
   /** Skill directory name, resolved under `skills/`, mapped to its relative path to content. */
@@ -171,15 +192,18 @@ export interface GuidanceSource {
    *  which the site should see rather than silently install around.
    */
   refused: string[];
+  /** Hashes of every file a shipped release carried, by destination path. Absent means none. */
+  shippedHashes?: Record<string, string[]>;
 }
 
 /** Read every packaged tree off the real filesystem, resolved against the installed package. */
 export async function readGuidanceSource(): Promise<GuidanceSource> {
-  const [skills, agents, fragment, snippets] = await Promise.all([
+  const [skills, agents, fragment, snippets, shippedHashes] = await Promise.all([
     readPackagedSkills(),
     readPackagedAgents(),
     readPackagedFragment(),
     readPackagedSnippets(),
+    readShippedHashes(),
   ]);
   return {
     skills: skills.skills,
@@ -188,6 +212,7 @@ export async function readGuidanceSource(): Promise<GuidanceSource> {
     version: resolveInstalledVersion(),
     snippets: snippets.files,
     refused: [...skills.refused, ...agents.refused, ...snippets.refused],
+    shippedHashes,
   };
 }
 
@@ -215,7 +240,7 @@ export function flattenGuidanceTree(source: GuidanceSource): Record<string, stri
  * True when a path names something inside `.claude/` without leaving a working directory: it is
  *  relative, and normalizing it leaves it under `.claude`. Applied both to a destination before
  *  any write and to a line read back out of a previous `MANIFEST`, which is attacker-editable and
- *  whose lines are printed as removable.
+ *  whose lines `check` reports as removable.
  */
 export function isGuidancePath(destPath: string): boolean {
   if (isAbsolute(destPath)) return false;
@@ -329,8 +354,21 @@ export interface InstallReport {
    *  an operator to check disk space or permissions instead of the containment rules.
    */
   writeErrors: { path: string; code: string }[];
-  /** Paths the previous MANIFEST listed that this run's package no longer ships. */
-  removable: string[];
+  /** Retired paths deleted this run, or that a dry run would delete. */
+  removed: string[];
+  /**
+   * Retired paths left in place and still listed in the MANIFEST, so the next run names them
+   *  again: `edited` (the file's hash is not one a release shipped), `unrecognized` (no release
+   *  shipped the path at all), or `not-a-file` (a symlink, a directory, or a path behind a
+   *  symlink).
+   */
+  kept: { path: string; reason: 'edited' | 'unrecognized' | 'not-a-file' }[];
+  /** `.orig` recovery copies left beside a removed file, which stay for the developer to read. */
+  origLeft: string[];
+  /** Directories emptied by a removal and deleted with it. */
+  emptiedDirs: string[];
+  /** Old-name skill directories found with no MANIFEST to authorize their removal. */
+  unmanaged: string[];
   /** Packaged entries the source walk refused, carried through from {@link GuidanceSource}. */
   sourceRefused: string[];
 }
@@ -340,11 +378,18 @@ export interface InstallReport {
  *  `<cwd>/.claude`, and never through a symlink at any point of a destination's path (either is
  *  refused by name, with nothing else in that entry written and the run continuing); never
  *  clobbers an existing `.orig`, and refuses the destination too when the `.orig` beside it
- *  cannot be made, so an edit is never overwritten without its recovery copy; never deletes a
- *  path the package stopped shipping, listing it as removable instead. Writes
- *  {@link MANIFEST_DEST} every run.
+ *  cannot be made, so an edit is never overwritten without its recovery copy. Deletes a path the
+ *  package stopped shipping only when the previous `MANIFEST` lists it, it is a regular file
+ *  under `.claude/skills` or `.claude/agents`, and its hash is one a release shipped; it keeps
+ *  and names every other one, and leaves each in the `MANIFEST`. Writes {@link MANIFEST_DEST} by
+ *  temp file and rename every run. With `dryRun`, mutates nothing and reports what it would do.
  */
-export async function installGuidance(cwd: string, source: GuidanceSource): Promise<InstallReport> {
+export async function installGuidance(
+  cwd: string,
+  source: GuidanceSource,
+  options: { dryRun?: boolean } = {}
+): Promise<InstallReport> {
+  const dryRun = options.dryRun === true;
   const tree = flattenGuidanceTree(source);
   const report: InstallReport = {
     written: [],
@@ -353,7 +398,11 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     origPresent: [],
     refused: [],
     writeErrors: [],
-    removable: [],
+    removed: [],
+    kept: [],
+    origLeft: [],
+    emptiedDirs: [],
+    unmanaged: [],
     sourceRefused: [...source.refused],
   };
 
@@ -378,6 +427,10 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
       report.unchanged.push(destRelPath);
       continue;
     }
+    if (dryRun) {
+      report.written.push(destRelPath);
+      continue;
+    }
     if (existing !== null && !(await preserveOriginal(destAbs, destRelPath, existing, report))) {
       report.refused.push(destRelPath);
       continue;
@@ -394,17 +447,124 @@ export async function installGuidance(cwd: string, source: GuidanceSource): Prom
     report.written.push(destRelPath);
   }
 
-  report.removable = removableFromManifest(previousManifestText, Object.keys(tree));
+  const keptPaths = await retireUnshipped({
+    cwd,
+    realCwd,
+    tree,
+    source,
+    previousManifestText,
+    dryRun,
+    report,
+  });
 
   if (manifestAbs === null) {
     report.refused.push(MANIFEST_DEST);
     return report;
   }
+  if (dryRun) return report;
   await mkdir(dirname(manifestAbs), { recursive: true });
-  const manifestLines = [...writtenPaths].sort();
-  await writeWithoutFollowing(manifestAbs, `${manifestLines.join('\n')}\n`, OVERWRITE_FLAGS);
+  const manifestLines = [...new Set([...writtenPaths, ...keptPaths])].sort();
+  const tempAbs = `${manifestAbs}.tmp`;
+  // A crash can leave a temp file, and a planted symlink there must be replaced, not followed.
+  if ((await lstatOrNull(tempAbs)) !== null) await unlink(tempAbs);
+  await writeWithoutFollowing(tempAbs, `${manifestLines.join('\n')}\n`, OVERWRITE_FLAGS);
+  await rename(tempAbs, manifestAbs);
 
   return report;
+}
+
+const RETIRABLE_ROOTS = [`${GUIDANCE_ROOT}/skills/`, `${GUIDANCE_ROOT}/agents/`];
+
+function isRetirablePath(path: string): boolean {
+  return isGuidancePath(path) && RETIRABLE_ROOTS.some((root) => normalize(path).split(sep).join('/').startsWith(root));
+}
+
+/**
+ * Delete the paths a previous `MANIFEST` lists that the package no longer ships, where the rules
+ *  on {@link installGuidance} allow it, and fill `report.removed`, `kept`, `emptiedDirs`, and
+ *  `unmanaged`. Returns the kept paths, which the caller writes back into the `MANIFEST`. A path
+ *  already gone is dropped silently, which is what makes a rerun after a crash finish the job.
+ */
+async function retireUnshipped(args: {
+  cwd: string;
+  realCwd: string;
+  tree: Record<string, string>;
+  source: GuidanceSource;
+  previousManifestText: string | null;
+  dryRun: boolean;
+  report: InstallReport;
+}): Promise<string[]> {
+  const { cwd, realCwd, tree, source, previousManifestText, dryRun, report } = args;
+  const shippedHashes = source.shippedHashes ?? {};
+  const keptPaths: string[] = [];
+
+  if (previousManifestText === null) {
+    const stillShipped = new Set(Object.keys(source.skills));
+    const oldDirs = new Set(
+      Object.keys(shippedHashes)
+        .filter((path) => path.startsWith(`${GUIDANCE_ROOT}/skills/`))
+        .map((path) => path.split('/')[2])
+        .filter((name) => !stillShipped.has(name))
+    );
+    for (const name of [...oldDirs].sort()) {
+      const rel = `${GUIDANCE_ROOT}/skills/${name}`;
+      const stats = await lstatOrNull(join(realCwd, rel));
+      if (stats?.isDirectory()) report.unmanaged.push(rel);
+    }
+    return keptPaths;
+  }
+
+  const stillShipped = new Set(Object.keys(tree));
+  const candidates = [
+    ...new Set(
+      previousManifestText
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '' && !stillShipped.has(line) && isRetirablePath(line))
+    ),
+  ].sort();
+
+  const removedAbs: string[] = [];
+  for (const path of candidates) {
+    const abs = await resolveWritableDest(cwd, realCwd, path);
+    if (abs === null) {
+      keptPaths.push(path);
+      report.kept.push({ path, reason: 'not-a-file' });
+      continue;
+    }
+    const content = await readIfExists(abs);
+    if (content === null) continue;
+    const known = shippedHashes[path];
+    if (known === undefined) {
+      keptPaths.push(path);
+      report.kept.push({ path, reason: 'unrecognized' });
+    } else if (!known.includes(hashContent(content))) {
+      keptPaths.push(path);
+      report.kept.push({ path, reason: 'edited' });
+    } else {
+      if (!dryRun) await unlink(abs);
+      removedAbs.push(abs);
+      report.removed.push(path);
+      if ((await lstatOrNull(`${abs}.orig`))?.isFile()) report.origLeft.push(`${path}.orig`);
+    }
+  }
+
+  if (!dryRun) {
+    const floors = RETIRABLE_ROOTS.map((root) => join(realCwd, root.slice(0, -1)));
+    for (const abs of removedAbs.sort((a, b) => b.length - a.length)) {
+      let dir = dirname(abs);
+      while (floors.every((floor) => dir !== floor) && dir.startsWith(realCwd + sep)) {
+        try {
+          await rmdir(dir);
+        } catch {
+          break;
+        }
+        report.emptiedDirs.push(relative(realCwd, dir).split(sep).join('/'));
+        dir = dirname(dir);
+      }
+    }
+  }
+  return keptPaths;
 }
 
 /**

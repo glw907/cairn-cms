@@ -78,7 +78,17 @@ function truncate(rawValue: unknown, max: number): string {
  * redundant line for the same attempt. The audited action already completed by the time any of
  * this runs, so this is the only surviving record of the *persisted row*; the untruncated original
  * already logged as `admin.action.audited` (`./admin-action.js`) before this sink was ever called.
- * @param db - The D1 binding the packaged `audit_log` table lives in.
+ *
+ * A site may also call the returned sink directly with a record it composes (a roster change, a
+ * domain event); the sink has no admin-specific behavior, `actor` need not be a cairn editor, and
+ * a namespaced `action` (`roster.add`) keeps such a row distinguishable in the shared table. A
+ * direct call logs nothing on the way in, since `admin.action.audited` is `ctx.audit`'s record;
+ * only a failure logs. Each field is cut before binding, counted in code points: `actor` to 320,
+ * `action` and `entity` to 100, `entityId` to 200, `detail` to 500. The table is append-only and
+ * the package prunes nothing.
+ * @param db - The D1 binding the packaged `audit_log` table lives in. Any D1 binding serves, not
+ *   only `AUTH_DB`; a dedicated database keeps audit writes from contending with session and token
+ *   lookups, since D1 serializes writes per database.
  * @param waitUntil - Required, and explicitly accepting `undefined`: an optional parameter would
  *   make the shortest call the one that silently drops the insert if the isolate tears down
  *   before it settles, so omitting it (passing `undefined`) has to be a decision the caller makes
@@ -89,6 +99,7 @@ function truncate(rawValue: unknown, max: number): string {
  *   `ExecutionContext.waitUntil`'s structural type matches this parameter, so passing the
  *   unbound method typechecks and then throws "Illegal invocation" in workerd, a failure this
  *   sink's try/catch absorbs but that still silently drops the insert.
+ * @public
  */
 export function createD1AuditSink(
   db: D1Database,

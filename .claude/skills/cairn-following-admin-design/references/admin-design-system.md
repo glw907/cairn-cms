@@ -1,0 +1,1752 @@
+# Cairn admin design system (agent reference)
+
+## Contents
+
+- [The design charter (Geoff, 2026-07-15; grades every admin design decision)](#the-design-charter-geoff-2026-07-15-grades-every-admin-design-decision)
+- [Load-bearing rules (break these and the admin renders wrong)](#load-bearing-rules-break-these-and-the-admin-renders-wrong)
+- [The context model: office and desk](#the-context-model-office-and-desk)
+- [Tokens (Warm Stone)](#tokens-warm-stone)
+- [Type](#type)
+- [Grammar tokens](#grammar-tokens)
+- [Component recipes](#component-recipes)
+- [Chrome and spacing](#chrome-and-spacing)
+- [Vertical alignment mechanics](#vertical-alignment-mechanics)
+- [Icons](#icons)
+- [Voice](#voice)
+- [Adding a new admin surface](#adding-a-new-admin-surface)
+- [The developer-facing vocabulary (the versioned seam)](#the-developer-facing-vocabulary-the-versioned-seam)
+- [The starter template's design](#the-starter-templates-design)
+- [Rehearsing a DaisyUI or Tailwind upgrade](#rehearsing-a-daisyui-or-tailwind-upgrade)
+- [Motion](#motion)
+- [Dates never wrap (Geoff, 2026-07-06)](#dates-never-wrap-geoff-2026-07-06)
+
+
+The polish bar is the live admin components rendered on the showcase, not a static file: they are the
+most-recent version by construction and authored in the real DaisyUI/Tailwind utility classes, so a hand
+twin can never represent them faithfully (the old `2026-06-12-editor-shell-gold-standard.html` is a
+superseded historical record). When a judgment call here feels ambiguous, match the live components and
+the recipes below. A new screen with no component yet gets a utility-class HTML mockup in the
+gitignored `.mockups/` folder, built with `npm run design:mockup-css`, never hand-rolled token CSS. Read this before any work on the
+`/admin` interface (`src/lib/admin/*.svelte` and
+`src/lib/admin/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
+written for an implementing agent, so it leads with the rules that are easy to break and not visible in
+the markup, then the tokens, the type system, and the component recipes. Match these; do not reinvent
+them per component.
+
+The admin is self-styled: the engine ships a scoped stylesheet (`dist/admin/cairn-admin.css`,
+compiled from `cairn-admin.css` plus DaisyUI/Tailwind by `scripts/build/build-admin-css.mjs`) so the admin
+looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 runes.
+
+## The design charter (Geoff, 2026-07-15; grades every admin design decision)
+
+The admin aims to be **warm, refined, polished, classic, intuitive, and designed for an editor**. It
+must not be splashy, trendy, dated, complex, or hard to use. It follows CMS design best practices
+with an aggressive focus on the editing experience: when a convention and the editor's flow
+conflict, the editor's flow wins. It keeps **a clear interface idiom**, so a developer's custom
+section reads as built in from the start, not bolted on; the recipes and tokens in this doc are
+that idiom, and a gap in them that forces a developer to improvise is a defect against this
+charter. And it is **cleanly responsive**: composed at every width, not merely unbroken (the
+family five-viewport bar: 320, 390, 768, 1440, 2560).
+
+Use the charter's own words as review lenses. "Classic, not trendy" means a device must survive a
+decade, so prefer typographic hierarchy, whitespace, and restraint over effects; "warm" lives in
+the Warm Stone palette, the type pairing, and the voice, never in decoration; "polished" is the
+absence of small defects (keming, misalignment, inconsistent spacing rhythm) more than the
+presence of flourish.
+
+Calibration (Geoff, 2026-07-15):
+
+- **"An extended cairn should still feel like one visually coherent system."** The idiom's
+  reach includes screens cairn never shipped: a developer's custom admin section inherits the
+  grammars (the emphasis ladder, the accent reservation, the corner ladder, the type rules)
+  through tokens, shared helpers, the public extension docs, and ultimately the component kit —
+  never by the developer re-deriving them from prose. A ruling that exists only in this internal
+  doc has not finished shipping.
+- **Developers inherit the responsive craft too (Geoff, 2026-07-15).** The shell already grants
+  a custom route its chrome behavior and the office content cap for free; the kit's components
+  must extend that to the component level — responsive by construction, composed at the family
+  five-viewport bar out of the box — so a custom screen built from kit parts recomposes at 320
+  and 2560 without the developer having thought about either.
+
+- **The anchor product, in spirit, is iA Writer**: calm, typography-first, the chrome defers to
+  the manuscript, restraint as the aesthetic. Not a visual clone; the spirit.
+- **The archetypal editor is the ASC volunteer**, the less technical writer. When a design choice
+  trades their ease against a technical user's power, the volunteer wins; technical editors
+  adapt, and the harder design problem is the one worth solving.
+- **Microcopy voice: professional and restrained, no cute, no chatty.** UI copy takes Microsoft's
+  UI-text voice as its base. Warmth stays material (color, type, spacing); it does not become
+  cute, chatty, or illustrated.
+- **A phone is a full writing device.** The edit experience must be genuinely good at phone
+  widths, designed for the context rather than merely responsive, while accepting it cannot equal
+  a desktop.
+- **Standing grades against the current admin** (small issues, the whole "pretty good"): the
+  color reads a little too aggressive, and there are probably too many popping colors on one
+  screen (the count of attention-demanding moments, not only the primary's intensity); the
+  sidebar looks a little too complex at a glance; the icons and help around the editor may
+  challenge a less technical writer; the base font size might be a little too small (Geoff's
+  hedge is real, so verify against the anchor's generosity rather than assuming). These seed
+  any refinement work until resolved.
+
+## Load-bearing rules (break these and the admin renders wrong)
+
+- **`data-theme` goes on a bare wrapper, never on an element that also carries styled classes.** Every
+  scoped rule is a descendant selector (`:where([data-theme]) .foo`), so a class on the theme element
+  itself never matches. Put `data-theme` on an outer `<div>` and the styled layout one level in. This
+  broke the drawer (it stayed `display:block`) and both auth pages (they would not center); both were
+  real shipped bugs.
+- **A scoped override has exactly three homes (amended 2026-09-27, the theme identity pass).**
+  `@layer components`: a rule on cairn's own classes that competes with nothing DaisyUI ships (the
+  anchor reset, the `<summary>`/caret rules, `::selection`, `:focus-visible`, the bare-button
+  Preflight replacement). `@layer utilities { @layer cairn-idiom { ... } }`:
+  every rule that overrides a DaisyUI declaration (the button ladder, the selected-segment wash,
+  the alert panels, the toggle geometry and its checked fill, the field-edge fixes, the
+  `.btn-primary` lift, the `.modal-box` repair), because DaisyUI 5 compiles its own component
+  rules into sublayers of `@layer utilities` (`daisyui.l1.l2...`) and cascade layers resolve
+  before specificity, so a `components`-layer rule can never win against one.
+  `build-admin-css.mjs` pins `cairn-idiom` after DaisyUI's own sublayer
+  (`@layer utilities.daisyui, utilities.cairn-idiom;`), so a `cairn-idiom` rule beats every
+  DaisyUI sublayer and still loses to a plain markup utility, which Tailwind compiles unlayered.
+  Unlayered, outside every layer: the plain rule on the two `[data-theme]` selectors (cairn's own
+  tokens and the non-custom declarations), the box-sizing reset on every descendant of both theme
+  roots (embed-anywhere infrastructure, not an override of any DaisyUI declaration), and a small
+  pinned set of forced workarounds a layered rule structurally cannot win (the developer-facing
+  vocabulary section below names the current set). Do not add a fourth home for an override, and
+  do not add an unlayered rule without the same forcing reason a pinned one already carries; the
+  newest re-asserts `will-change: auto` on a showing drawer panel, which daisyUI's own
+  `:where()`-wrapped reset cannot win (`daisyui-drawer-will-change-where-wrapper` in the rulings
+  ledger). This three-home rule covers overrides only: the sheet also carries a scoped `@layer
+  base` block (the UA-reset floor for form controls, `dialog`, `fieldset`/`legend`, and `.list`,
+  sorted below `components` so DaisyUI's own classes still win), which is not an override home
+  and never grows a fourth entry in this list.
+- **DaisyUI 5 quirks an override meets (checked against daisyUI 5.7.47).** A few declarations sit
+  unnested in `@layer utilities`, outside the `daisyui` sublayers, so a `cairn-idiom` rule cannot
+  outrank them: `.alert`'s `border-color`, `.kbd`'s `box-shadow`, and `.collapse`'s `visibility`.
+  Override one through the variable DaisyUI exposes for it (`--alert-border-color` for the alert).
+  `.alert` is a grid, so `flex-col` does nothing on it. A `.modal-box` rendered statically open
+  paints nothing, because `.modal` stays `visibility: hidden` until it carries `[open]`. `.list`
+  sets only a flex column and a font size, so it does not remove list markers. `.menu` sets
+  `display: flex`, which beats the browser's `[hidden]` rule, so hiding a menu needs an explicit
+  scoped rule. DaisyUI's option parser drops a comma-bearing value inside a `@plugin
+  "daisyui/theme"` block, so such a value goes in the scheme's `:root` block.
+- **A reduced-motion restatement ties the blanket block, and source order decides.** The floor's
+  selector, `[data-theme='cairn-admin'] *`, has specificity (0,1,0), the same as a class-bearing
+  restatement, and both carry `!important`. Whichever rule the built sheet places later wins. A
+  consumer's sheet loads after the engine's and wins by default; an engine-authored restatement
+  must sit after the blanket block in `cairn-admin.css`. Measure the order in the built sheet.
+- **`outline-hidden` removes the admin's whole focus indicator.** The admin's `:focus-visible` rule
+  is an outline (`outline: 2px solid var(--color-primary)`), not a ring, so an `outline-hidden`
+  utility on a control leaves nothing behind. Reserve it for a programmatically focused heading
+  (`tabindex="-1"`), as `MediaOrphanTools` does, and give any other control its own visible state.
+- **The build flattens CSS nesting before scoping.** `build-admin-css.mjs` runs lightningcss with
+  `Features.Nesting` between the Tailwind compile and `postcss-prefix-selector`, because the prefixer
+  prepends the scope to the front of every rule and would sever a nested combinator selector
+  (`> .drawer-toggle ~ .drawer-side` becoming `:where(scope) > .x`). Do not author nested combinator CSS
+  expecting the scoper to handle it; the flatten step is what makes it work, and a test pins it.
+- **`@font-face` is added after compile, not in the partial.** The `@import` inlining rebases a `url()`
+  against the source tree, so the woff2 url would 404 for a consumer. The `@font-face` rules (the two
+  brand faces plus the four iA Writer Mono editor faces) are appended in `build-admin-css.mjs` with an
+  output-relative `./fonts/` url; the woff2 files ship in `dist/admin/fonts/`. A build test pins
+  the urls.
+- **Borders and shadows are theme-adaptive vars.** Use `var(--cairn-card-border)` and
+  `var(--cairn-shadow)`, never a fixed `base-300` border on a floating card. In light the border is a
+  near-invisible hairline and the soft shadow carries the lift; in dark the border is defined because a
+  shadow barely shows. Structural chrome borders use the same var.
+- **Classes ship automatically.** `build-admin-css.mjs` scans the `.svelte` sources with `@source`, so
+  any DaisyUI or Tailwind class a component adds is compiled into the sheet with no build change. Run
+  `npm run package` after a component or `cairn-admin.css` change, then rebuild the showcase to preview.
+- **Component tests render against the compiled sheet, not the raw partial (amended 2026-09-27,
+  the theme identity pass).** `CairnAdminShell`, `LoginPage`, `ConfirmPage`, `ReproContext`, and
+  every component test that imports `cairn-admin.css` by any relative path get
+  `dist/admin/cairn-admin.css` instead: a Vite plugin in `vitest.config.ts` redirects the
+  resolved import for the component project only, since the source partial is compile-input (its
+  DaisyUI theme lives in `@plugin "daisyui/theme"` blocks a browser drops, and its sublayer order
+  would reverse if it ever loaded beside the compiled sheet). The component project's own
+  `globalSetup` rebuilds the sheet before the project's test files start, so a stale build never
+  masks a real failure; a bare `npx vitest run --project component <file>` bypasses that setup, so
+  run `npm run package` first when invoking a single file directly. DaisyUI component styling and
+  every `cairn-idiom` rule are present in a component test the same way they are on the showcase.
+  Still preview a real page on `examples/showcase` (`npm run package` then the showcase
+  build/preview, mounting the authed shell at `/admin/posts`) for anything a computed-style
+  assertion cannot see: layout, spacing, and the felt read.
+- **Identity lives in the theme layer.** A new idiom is a theme variable, on the two
+  `[data-theme]` blocks, or a `cairn-idiom` rule (see "A scoped override has exactly three homes"
+  above), never a per-element patch (a bracketed inline style, a one-off recipe built from raw
+  utility classes, a hand-tuned radius on a single component). A per-element idiom is a defect: it
+  never reaches a screen built from plain DaisyUI classes, which is the whole promise a
+  developer's own admin route depends on.
+- **A bare button needs the scoped reset, or it shows UA chrome.** The admin omits global Preflight
+  (it would reset the host site's elements), so a `<button>` styled with utilities instead of DaisyUI's
+  `.btn` keeps the native outset border and gray fill. One scoped rule in `cairn-admin.css`
+  (`:where([data-theme...]) button:not(.btn)`) levels every bare admin button to a flat baseline;
+  a utility (a `bg-*`, a `border-l` divider) still opts a control back into a fill or border. Use
+  `.btn` for a real button, or rely on the reset and add only the utilities the control needs. This
+  was a real shipped blemish on the footer toggles and the list's sort headers.
+- **The edit page's preview iframe is a second, separately-hashed consumer of the public
+  `theme.css`.** `buildPreviewDoc` (`src/lib/admin/preview-doc.ts`) links every stylesheet the
+  adapter's preview knob hands it into the sandboxed `srcdoc` document, and a site's preview knob
+  points at the same `theme.css` the public layout links, so the admin loads that file too, inside
+  its own iframe document, isolated from the admin's own `cairn-admin.css` by the sandbox boundary
+  rather than by cascade layers. Anyone pruning or splitting the public CSS needs to keep this
+  consumer in mind: a token or a selector the reading surface still needs but a refactor moved out
+  of `theme.css` breaks the preview along with the public pages, even though the preview never
+  touches the admin's own stylesheet.
+
+## The context model: office and desk
+
+The admin runs two contexts, and each gets the chrome that serves it. **List and settings pages are
+the office**: the persistent sidebar and the full topbar, for moving between content and managing it.
+**An open document is the desk**: the editor takes the shell, and the surrounding chrome recedes so
+the manuscript is the page. A route is a desk route when its path has three segments
+(`/admin/<concept>/<id>`); `CairnAdminShell` (`src/lib/admin/CairnAdminShell.svelte`) derives
+this as `isDeskRoute`.
+
+Three rules carry the model:
+
+- **One header band on a desk route.** A desk route renders exactly one header band, the 64px topbar.
+  The edit page owns no header of its own; it feeds its controls (status, save-state, Details,
+  overflow, Publish, Save) up into the topbar through a context portal (`topbar-context.ts`:
+  `CairnAdminShell` holds a `$state` holder, `EditPage` registers a `desk` snippet into it in an `$effect`
+  and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
+  toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
+  hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save). The way
+  back starts at the band's own left padding, the same edge an office route's site name starts at, so
+  the two bands share one left edge; the breadcrumb's first crumb sits 4px inside that edge, the
+  list's own inline padding, which the crumb's keyboard focus ring needs. The breadcrumb carries
+  `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
+- **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
+  sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
+  for desk routes (the desk rider, 2026-07-14). A desk route recedes the sidebar behind
+  the drawer toggle only through the `lg`-`xl` tablet band (1024-1279px) and persists it at `xl`
+  and up. The evidence for the rider: every
+  content-management comparable persists nav through editing (Payload, Sanity, Craft, Contentful,
+  Notion), and NN/g's zen-mode writeup argues hidden-by-default chrome taxes infrequent,
+  non-technical editors hardest. The counter-argument that survives is width economics, which is
+  exactly why the persist breakpoint sits one step wider than the office's, not why the sidebar
+  disappears outright. The classes are conditional on `isDeskRoute` (`lg:drawer-open`/`lg:ml-56` for
+  an office route, `xl:drawer-open`/`xl:ml-56` for a desk route), resolved at SSR so the chrome state
+  never flashes; the drawer toggle mirrors the same breakpoint (`lg:hidden` or `xl:hidden`), so it
+  never dangles beside a persistent sidebar. Below each route's own breakpoint the overlay drawer
+  behaves identically to today: the checkbox and the toggle (and Cmd/Ctrl+B) open it over the
+  document. Details fields still move behind a slide-over panel, and zen still fades the whole band
+  regardless of width. Through all of it the way back and the save state never disappear: the
+  breadcrumb is the exit, and zen keeps a floating chip carrying the save state and an Exit control.
+  This is the one rule WordPress and Ghost both hold even at their most minimal.
+- **Office content width.** The shell caps every non-desk route's content at `max-w-5xl`, centered, so
+  a 2560px office list does not stretch its rows into a dead band between title and date. The desk route
+  is excluded, since the editor already caps its own manuscript. At 320 the office list recomposes rather
+  than squeezing: the title column takes the freed width while the status and actions columns trade cell
+  padding down, the status badge compacts to `badge-xs`, the header's search stacks full-width instead of
+  collapsing to a sliver, and the segmented triage chips stay one line with a horizontal-scroll fallback.
+- **Presentation only.** The context model is layout. The same one form, the same actions, the same
+  loads; `CairnAdmin`'s view switching is untouched. A consumer site sees only the new chrome.
+
+## Tokens (Warm Stone)
+
+Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light) and
+`[data-theme='cairn-admin-dark']` (dark). Same hues across both (warm 75, violet 293 primary).
+
+- Surfaces: `base-100` is the panel surface (sidebar, topbar, cards); `base-200` is the app background
+  (the content area, recessed); `base-300` is for incidental borders and chips. `base-content` is text.
+- Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.15 293)`). Use it for
+  the active state, the primary action, links-on-hover, the brand. `primary-content` reverses out on it.
+- Secondary text: `--color-muted` (labels, dates, hints) and `--color-subtle` (nav item text). Subtle is
+  the stronger of the two. Reference them through the named role utilities `text-muted` / `text-subtle`,
+  never an arbitrary bracket wrapper. The utilities are defined in `scripts/build/admin-css.input.css` and are
+  the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
+  keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
+- Radii: the corner ladder, `--radius-selector: 0.25rem`, `--radius-field: 0.375rem`,
+  `--radius-box: 0.5rem`. See Corner system below for the role mapping and the exceptions.
+- **Depth is zero, deliberately, with one exception.** `--depth: 0` and `--noise: 0` on both theme
+  roots pull DaisyUI's own bevel lever all the way down: no button or input inset, no lifted
+  active-menu-item shadow, no toggle or checkbox shading. The one exception is `btn-primary`,
+  which keeps a faint warm lift set as `--btn-shadow` in a `cairn-idiom` rule
+  (`0 1px 2px -1px oklch(35% 0.04 75 / 0.35)` in light, `0 1px 2px -1px oklch(10% 0.02 75 / 0.35)`
+  in dark, dark's own `--cairn-shadow` tint at the light lift's geometry and alpha), identical in
+  every state; it replaces the old primary-tinted pair that never rendered before this rule moved
+  into the `cairn-idiom` sublayer (a `@layer components` rule cannot outrank a DaisyUI
+  declaration). `.modal-box`'s warm shadow is the other exception, and it comes from a scoped
+  rule rather than from `--depth`, since DaisyUI's own modal shadow is theme-invariant black.
+- **Alerts are a tinted panel with a hairline edge, in place of DaisyUI's solid slab.** Each color
+  variant excludes DaisyUI's own style variants (`alert-soft`, `alert-outline`, `alert-dash`, which
+  keep DaisyUI's stock look untouched) and sets a per-root panel tint, edge mix, and on-surface
+  ink, measured in a real browser (paint-to-canvas, the method the audit engine itself uses):
+
+  | Alert | Panel | Edge | Ink | Ink/panel contrast, light / dark |
+  | --- | --- | --- | --- | --- |
+  | error | `--cairn-error-tint` | `--cairn-error-border` | `--cairn-error-ink` | 5.774 / 6.705 |
+  | warning | warning 12% over base-100 | warning 45% | `--cairn-warning-ink` | 5.486 / 6.935 |
+  | success | success 7% over base-100 (dark 12%) | success 30% | `--color-positive-ink` | 5.439 / 7.229 |
+  | info | info 7% over base-100 (dark 12%) | info 30% | `--cairn-info-ink`, `oklch(44% 0.12 240)` light / `oklch(82% 0.08 240)` dark | 6.658 / 7.966 |
+
+  Every ink clears >= 4.5:1 against its own panel in both themes; the error alert's nested link
+  (`ConceptList.svelte:325`) inherits the same ink and the same measured ratio. A bare `.alert`
+  with no color variant is unchanged.
+- **The switch keeps DaisyUI's own construction, dressed in the theme.** Checked fills the track
+  with `--color-neutral` and turns the knob `--color-base-100`, on all three of DaisyUI's own
+  checked forms (`:checked`, `[aria-checked='true']`, `:has(> input:checked)`), for a toggle
+  carrying none of DaisyUI's eight color modifiers (`toggle-primary` and its seven siblings keep
+  their own color, unaffected). Off keeps DaisyUI's construction outright, the 50% `base-content`
+  edge and knob. Measured against `base-100`: checked track 12.333:1 light / 8.802:1 dark, checked
+  knob against the checked track the same ratio; unchecked edge and knob 3.118:1 light / 4.370:1
+  dark, both clearing the WCAG 1.4.11 3:1 non-text floor. See Corner system below for why the
+  switch is exempt from the ladder.
+- **The ink story (design arc, 2026-07-15).** Exactly two dark-fill tones exist on a page:
+  standing dark fills (the ink-opener buttons, the profile avatar) rest on the solid `neutral`
+  token, and hover/press deepens to `--cairn-ink-hover` (set per theme root; light deepens, dark
+  brightens). Never build a dark fill from an opacity blend over the ground (`bg-neutral/85`,
+  `bg-base-content/80`): the blend with the warm surfaces manufactures a third, browner tone and
+  the page loses its one black story.
+- Elevation: `--cairn-shadow` (soft layered shadow) and `--cairn-card-border` (the theme-adaptive
+  hairline). Both are set per theme root. Both themes' shadows are warm-tinted at hue 75, never
+  achromatic (the dark value was pure black until the invisible-craft pass; the
+  `check:invisible-craft` gate now holds the no-achromatic rule). `.modal-box` carries the same
+  pair through a scoped rule, so the highest-elevation surface speaks the one elevation
+  vocabulary.
+- Quiet-surface defaults on both theme roots (invisible-craft pass, 2026-07-17):
+  `font-synthesis: none` (every requested weight and style has a real face; nothing may faux-bold
+  or faux-italic), `scrollbar-width: thin` with a `scrollbar-color` thumb of
+  `color-mix(in oklab, var(--color-base-content) 55%, transparent)` (a flat `--color-base-300`
+  thumb measured only ~1.3:1 against its surface once the UA default is overridden; this mix
+  measures 3.59:1 light / 4.98:1 dark against base-100, both above the 3:1 non-text floor), and a
+  faint `-webkit-tap-highlight-color` press wash,
+  `color-mix(in oklab, var(--color-base-content) 10%, transparent)` (not a bare removal: a
+  segmented-control segment or a plain text-link button carries no styled `:active` state, so the
+  tap still needs its own acknowledgment). A checkbox-in-label row gets hit-slop from one scoped
+  `:has()` rule (padding grown, margin refunded), so its touch target clears ~44px with zero flow
+  change.
+- The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
+  lower dark `--color-primary` lightness or the `/10` opacity without re-checking contrast.
+- `--cairn-warning-ink` is the on-surface warning TEXT ink, distinct from `--color-warning`, which is
+  a FILL tone. The fill tone fails 4.5:1 as small text on a light surface (about 2.2:1), so a warning
+  word or glyph drawn on `base-100` uses this token instead. Light is `oklch(50% 0.13 70)` (5.98:1 on
+  base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
+  needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
+  the editor's media chip. Reference it through the `cairn-text-warning` utility
+  (`src/lib/design/grammar-tokens.ts`), never the bracketed
+  `text-[var(--cairn-warning-ink)]` form or the bare `text-warning`, which resolves to the
+  inaccessible fill tone if it ever compiles at all.
+- `--color-positive-ink` is the green counterpart, the on-surface confirming TEXT ink for a positive
+  status word on `base-100`. Light is `oklch(48% 0.12 150)` (~4.9:1 on base-100); dark is
+  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it
+  through the `cairn-text-success` utility, for the same reason. It is a defined token, not a
+  mockup-only color; a chip that references an undefined custom property falls back to body ink
+  with no gate to catch it.
+- **Unchecked checkbox/radio edge (2026-08-27).** DaisyUI's own `.checkbox`/`.radio` border a
+  20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
+  variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
+  dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A `cairn-idiom` rule in
+  `cairn-admin.css` (moved out of the unlayered set in the theme identity pass, since a
+  components-layer rule could never have outranked DaisyUI's own border declaration in the first
+  place) raises the unchecked edge to a 55% mix, the same one already locked for the scrollbar
+  thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle` needed no change; its
+  own construction already mixes 50% and clears the floor unaided.
+- **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
+  above).** All three share the identical faint-edge construction: daisyUI resolves their border
+  through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
+  transparent)`), and no admin call site supplies a color variant. Measured against the compiled
+  sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A
+  `cairn-idiom` rule in `cairn-admin.css` (moved out of the unlayered set alongside the
+  checkbox/radio fix above, same reason) raises the edge to the same 55% mix already locked above:
+  3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
+  underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
+  since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)
+  and the unlayered override would otherwise outrank that state too.
+
+### Corner system
+
+Every framed element in the admin resolves to one of the three ladder tokens, mapped by role,
+never a fixed Tailwind radius:
+
+- `--radius-selector: 0.25rem` — chip, tag, count, small inline marker.
+- `--radius-field: 0.375rem` — control, button-like element, small thumbnail.
+- `--radius-box: 0.5rem` — panel, card, tile, popover, sheet, the brand tile (side forms such as
+  `rounded-t-box` for the mobile bottom sheet).
+
+Four rules keep the ladder from reaching shapes it was never meant to touch:
+
+- **True circles stay round, judged by shape.** An element with equal width and height that reads
+  as a dot, disc, medallion, spinner, or avatar keeps `rounded-full`. A padded text chip does not:
+  it takes `rounded-selector` instead (see the chip rule under Component recipes).
+- **Structural zeros stay.** Edge-zeroing on a fused or joined edge (`rounded-l-none`,
+  `rounded-r-none`, `rounded-t-none`) is structure, not a radius choice, and the ladder leaves it
+  alone.
+- **Concentric corners.** An item inside a padded rounded panel takes the panel's radius minus the
+  inset. DaisyUI's `.menu` items read `--radius-field`, but `.menu` never declares that variable
+  itself, so a `dropdown-content menu` pair (cairn's own or a developer's) gets one `cairn-idiom`
+  rule setting `--radius-field: calc(var(--radius-box) - 0.25rem)`, sized to the panel it sits
+  inside rather than the ambient page value. An item's own `rounded-none` utility still wins.
+- **The switch is exempt.** DaisyUI derives both the toggle track and knob radii from
+  `--radius-selector`; a `cairn-idiom` rule pins `border-radius: 9999px` on `.toggle` and its
+  `::before` unconditionally, so the switch reads as a pill at every ladder setting. A
+  `rounded-none` utility on either element still wins from the utilities layer's own unnested
+  position.
+
+Nothing else reaches zero.
+
+A minifier is free to relocate the `@layer utilities.daisyui, utilities.cairn-idiom;` order-pin
+statement below both sublayer blocks, where it sets nothing: a cascade layer's priority is fixed
+by the first statement that names it, and both sublayers already do that by appearing first in
+the sheet. Emission order in the compiled, minified sheet, not the pin statement's own position,
+is what actually keeps every corner rule (and every other `cairn-idiom` rule) winning over
+DaisyUI's own in a downstream build; `admin-css-build.test.ts` guards the order directly against
+`dist/admin/cairn-admin.css` and a minified compile of it, rather than trusting the pin.
+
+## Type
+
+Three self-hosted fonts (SIL OFL, in `src/lib/admin/fonts/`), wired through vars on the
+theme roots, with font-smoothing on. The brand pair is variable; the editor face is four static files.
+
+- Display: `var(--font-display)` = Bricolage Grotesque. Brand wordmark and page `h1` only, so it stays
+  an accent and never overbears. Apply as `font-[family-name:var(--font-display)]`.
+- Body and UI: `var(--font-body)` = IBM Plex Sans. The default everywhere else, chosen to
+  harmonize with the editor face (iA Writer Mono descends from IBM Plex Mono, so chrome and
+  manuscript share one superfamily skeleton; Geoff's direction, 2026-06-12).
+- Editor writing surface: `var(--font-editor)` = iA Writer Mono, on the CodeMirror `.cm-content` only.
+  Chosen 2026-06-12 by the editor-experience pass's font trial over the Monaspace, Courier Prime,
+  JetBrains Mono, Intel One Mono, and Atkinson Hyperlegible Mono candidates.
+
+Recipes:
+
+- Page heading: `type-title font-[550] font-[family-name:var(--font-display)]` — normal tracking,
+  the same K4 reasoning as the brand wordmark below. Weight 550 (`PageHeader.svelte`) replaced the
+  old `font-bold` (700) in the theme identity pass; the 18px `type-heading` dialog heading and the
+  editor's 30px document title stay at 700.
+- Icon strokes: Lucide glyphs render at 1.75px by default, down from the library's stock 2px
+  (`svg.lucide[stroke-width='2'] { stroke-width: 1.75 }`, a `@layer components` rule keyed on
+  Lucide's own default attribute value, so an icon size or an `absoluteStrokeWidth` pick that
+  still computes to exactly 2 is caught the same way an explicit `strokeWidth={2}` is). A
+  hand-authored inline SVG carrying `class="lucide"` and `stroke-width="2"` moves to 1.75 the
+  same way. A deliberate 2px stroke is written `2.01`, or documented as a scoped exception, never
+  bare `2`, since the rule keys on the literal attribute value.
+- Eyebrow (sidebar group headers and table column labels):
+  `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
+  utility; the weight, case, and tracking are this recipe's own.
+- **Form-row/label register, three levels (Pass 2 Task 12).** ASC's own two-level label ruling
+  (`decisions.md`, "Form field labels, two-level register", 2026-07-16), translated to cairn's
+  grammar layer, plus the inline-label shape ASC's ruling does not name:
+  - **Group or section legend:** the Eyebrow recipe above, on a `<legend>` that groups several
+    controls under one name (`EditPage`'s Visibility/Address/Included-in sidebar panels,
+    `ConceptList`'s table column headers). Keeps the uppercase, tracked, muted register.
+  - **Individual field label,** its own line above one control: sentence case, `font-medium`, no
+    `text-muted` (base-content ink), no tracking, no uppercase, no display face. Recipe:
+    `type-body font-medium`, or `type-meta font-medium` when the label sits inside an
+    already-compact panel running its whole scale at the meta role (`CairnMediaLibrary`'s
+    asset-detail rename form). Already the established recipe at every individual-field call site
+    across `ConceptList`, `ManageEditors`, `FieldInput`, `RenameDialog`, `WebLinkDialog`,
+    `LoginPage`, `MediaHeroField`, `ObjectGroupField`, `ComponentForm`, `MediaCaptureCard`, and
+    `ReferenceField`. ASC's own ruling specifies weight 600; cairn's established weight for this
+    tier is one step lighter (`font-medium`, 500) and is already consistent everywhere a field
+    label appears, so this recipe keeps that value rather than reweighting the whole admin, which
+    would move pixels well beyond a single field's own label.
+  - **Inline control-adjacent label,** on one line beside its control rather than above it:
+    `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
+    `admin-toolkit` subpath's `FieldLabel` renders both this register and the individual-field-label
+    register above through its `register` prop (`'inline' | 'stacked'`, design ratchet Task 3);
+    `'stacked'` is the default (the robust shape for any multi-column form grid, finding 3). A
+    field composing `FieldLabel` directly passes the prop straight through, the same way the
+    retired `SelectInput`/`TextInput` components (the retires pass, batch 1a) used to.
+- Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
+  `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
+  table cells share it via `table type-subtitle`.
+- Brand wordmark: `text-[1.375rem] font-semibold font-[family-name:var(--font-display)]` — normal
+  tracking on purpose. The K4 keming fix (design arc, 2026-07-15): at the old
+  `text-xl font-bold tracking-[-0.01em]` the rn pair merged and "Cairn" read "Caim"; larger,
+  lighter, and untracked resolves it. The topbar site name drops `tracking-tight` for the same
+  reason. Do not reintroduce negative tracking on the display face at these sizes.
+
+## Grammar tokens
+
+The design-infrastructure layer beneath the recipes above: eighteen CSS custom properties
+(`--cairn-type-title/heading/subtitle/body/meta/label/chip`, each with a paired
+`--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
+`cairn-admin.css`, outside both theme roots, since a structural role does not change with the
+palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory and the versioned
+contract a site reads, and this section is where an agent extending the admin meets the same vocabulary
+alongside the component recipes above and below it.
+
+- **Markup writes the role utility, never the token or a pixel value.** Eleven named utilities in
+  `scripts/build/admin-css.input.css` (`type-title`, `type-heading`, `type-subtitle`, `type-body`,
+  `type-meta`, `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`)
+  are the only
+  supported way to reach a grammar token from a template. A `type-*` utility sets `font-size` and
+  the role's ruled `line-height`; a `gap-*` utility sets `gap`. Neither sets anything else.
+- **A type role is a size and its leading, not a recipe.** Weight, case, tracking, font family, and
+  color stay with the component recipes above (the eyebrow's uppercase and tracking, the nav item's
+  weight swap, the wordmark's own sizing) rather than folding into the role utility. Color is a
+  palette choice, so it stays a separate `text-muted` / `text-subtle` class on the element, the same
+  rule the Tokens section states for those two utilities.
+- **The heading recipe.** `type-heading` plus `font-bold` plus
+  `font-[family-name:var(--font-display)]` is the dialog and section heading, 18px in Bricolage.
+  Write all three; the role carries only the size and its leading. One deliberate partial use: the
+  media library's stat numerals take `type-heading` for its size and keep `tabular-nums` without the
+  display family, because a numeral is not prose.
+- **A component `<style>` block references the token directly.** `font-size:
+  var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
+  not markup.
+- **The one scoped-style exception: `src/lib/admin-toolkit`.** Those components ship on a public
+  subpath and a consumer can mount one outside the admin theme root, where the grammar tokens are
+  undefined. Their scoped styles carry the measured literal as a `var()` fallback,
+  `font-size: var(--cairn-type-meta, 0.8125rem)`, so the component still renders correctly outside
+  `CairnAdminShell`. Engine screens under `src/lib/admin` always render inside the shell's
+  themed wrapper and reference the token bare, with no fallback.
+- **A site re-tunes the palette and never redeclares a grammar token.** Grammar names structure
+  (a heading's size, a gap's relationship) and holds across light and dark; palette
+  (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
+  re-tuned palette.
+- **Every type role now has call sites, and every admin font size resolves to one**, with five
+  ratified exceptions carrying counted `cairn-audit-disable-next-line type-scale` directives: the
+  three wordmark sites and the editor canvas's two. `gap-control` remains reachable only through its
+  token, from the toolbar's scoped styles. The reference page lists the exceptions; the deviations
+  ledger (`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`) keeps the spacing
+  vocabulary questions, which are still open.
+- **Never convert between a named Tailwind step and a bracketed size casually.** A named step such
+  as `text-2xl` sets `font-size` and `line-height`; a bracketed `text-[1.5rem]` sets `font-size`
+  alone. Writing a bracketed value in place of a step silently drops the leading, which is how the
+  editor's document title lost 2.25rem during this migration. Use `text-[1.5rem]/[2rem]` when a
+  bracketed value genuinely needs both.
+- **A class used only outside the stylesheet's scan roots never compiles.** The roots are
+  `src/lib/admin` and `src/lib/admin-toolkit` (the retired `admin-fields` subpath merged into
+  the latter in the C2 breaking-window pass). A class used only in a directory that is not scanned
+  resolves to nothing at runtime rather than failing a build, so a new admin-rendering directory
+  joins both the `@source` list and `check:admin-css-classes`.
+
+## Component recipes
+
+- **Floating card:** `card-shell card-shadow`, the two container-role utilities (Pass 2 Task 11) for
+  the shell's radius, hairline border, and fill plus its elevation. Use for the list table, the
+  editor panes, the auth card. A nested surface inside an already-shadowed container (the media
+  library's picked tiles, its row-link cards) takes `card-shell` alone; a shadow on a surface
+  already inside a shadowed one reads as a stray outline rather than elevation, not the raised
+  read the token is for. A component composes its own `overflow-*` and padding; neither role sets
+  them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
+  replace (`src/lib/design/grammar-tokens.ts` has the full contract).
+- **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
+  `font-medium text-subtle`. From daisyUI 5.7.38 the `.menu` recipe styles an `[aria-current]` item
+  natively, which would add its own depth shadow under the active item
+  (`box-shadow: 0 2px calc(var(--depth) * 3px) -2px var(--menu-active-bg)`) if depth were nonzero.
+  Both theme roots pin `--depth: 0` (the theme identity pass, Material round), so the shadow's
+  blur term computes to zero and the active item already renders flat with no shadow; the
+  utilities above carry the fill and the ink alone. No cancel rule is needed, and none should be
+  written: `--depth` is the one lever, already pulled all the way down, and the same zero reaches
+  an active toggle button the same way (daisyUI 5.7.38 gives a `.btn` carrying
+  `aria-pressed="true"`, `aria-checked="true"`, or `aria-current` the `.btn-active` treatment).
+- **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
+  own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
+  category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar
+  actually reaches never earns back (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-07-14-admin-reorganization-design.md`,
+  §1). A site that declares its own `navLayout` sections gets the collapsible-group recipe: a native
+  `<details>` per group, its `open` computed one-way from a label-keyed `collapsed` Set seeded from
+  `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash) and
+  an `ontoggle` handler that mirrors each change back into that Set and the cookie. The `<summary>` is
+  the eyebrow plus a gentle band (`bg-base-content/[0.04] hover:bg-base-content/[0.08]`) and a
+  `.cairn-caret` chevron that the scoped rule rotates when open. Items align with the group label and the
+  brand mark on one left edge.
+- **Brand mark:** the cairn glyph in a filled app-icon tile:
+  `h-8 w-8 rounded-box bg-primary text-primary-content shadow-sm` wrapping `<CairnLogo class="h-5 w-5" />`,
+  then the wordmark. It links to `/admin`. The mark is `CairnLogo.svelte` (the public-domain Temaki
+  cairn); the favicon is `cairn-favicon.ts`.
+- **Primary action:** `btn btn-primary`. It gets a soft warm lift (`--btn-shadow`, the shadow's own
+  warm tint rather than the violet primary) from a `cairn-idiom` rule, identical in every state, so
+  do not add an ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on
+  `onsubmit` to show a `loading loading-spinner` and a working label.
+- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`).** Several of the
+  recipes below have shared implementations. `PageHeader`, `ListToolbar`, `AdminTable`,
+  `Pagination`, `StatusChip`, and `EmptyState` are the shared implementations of the page-header,
+  toolbar, table, pager, status-pill, and first-run-empty devices; `formatCivilDate` is the shared
+  date formatter. Every engine screen that owns one of these devices imports the component instead
+  of restating it, and a new screen (built-in or a site's own custom `/admin/` route) reaches for
+  the toolkit first before hand-rolling a parallel. Each component's own prop contract lives in its
+  doc comment, and its markup is the grep surface for a daisy upgrade's blast radius; [the absorption
+  ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
+  release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
+  screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
+- **Tooltip on an icon-only action control (`admin-toolkit`'s `Tooltip`).** The replacement for a
+  native `title` attribute, which never reaches a keyboard user (no `:focus-visible` trigger, no
+  Escape dismissal) and never reaches a touch user (no hover at all). Wrap the trigger: `<Tooltip
+  text="Insert block"><button aria-label="Insert block">...</button></Tooltip>`. Shows on hover and
+  on `:focus-visible`, hides on Escape without moving focus off the trigger, and shows on a
+  coarse-pointer tap (read from the triggering event's own `pointerType`, never `matchMedia`,
+  since a hybrid device can carry both a mouse and a touchscreen). The bubble is a manual popover
+  placed by CSS anchor positioning, the same recipe the editor toolbar's own menus use, so it
+  renders in the top layer and no transformed, scaled, or `overflow: hidden` ancestor (an open
+  modal's box is all three) can displace or clip it; never position a tooltip bubble by writing
+  coordinates onto a fixed box. A guarded control (the
+  `cairn-btn-guarded` pattern below) passes its guard reason as `text`, empty when unguarded:
+  `Tooltip` treats an empty string as opt-out, never an empty bubble. Every engine screen sweeps its
+  own icon-only `title` onto this component; a new one does the same rather than reaching for
+  `title` again.
+  - **Name versus description.** When the bubble text is already the trigger's own accessible name
+    (its `aria-label`, or its rendered text when it has no label), `Tooltip` sets no
+    `aria-describedby`: the name carries the words, and a description repeating them has a screen
+    reader read the same sentence twice. When the text says more than the name, as a guard reason
+    on a control labelled with its action does, the description is set. Both branches still render
+    the bubble, which is what a sighted mouse user reads. So a screen's own assertion about a
+    reason reads the bubble, never the description.
+  - **Motion.** Enter on `--cairn-dur-base` and `--cairn-ease-entrance`, exit one band down on
+    `--cairn-dur-quick` and `--cairn-ease-exit`, the Motion section's own enter/exit asymmetry for
+    a surface that leaves and does not stay nearby. A hover-shown bubble additionally carries a
+    75ms `transition-delay`, inside `@media (prefers-reduced-motion: no-preference)`, so a pointer
+    crossing a dense toolbar row does not flash a bubble on every trigger it passes. The delay is a
+    paint delay on the fade, never a delay on the open state, and a reduced-motion reader waits for
+    nothing.
+  - **All three WCAG 1.4.13 bullets are the component's own**, because it authors the bubble
+    rather than leaving it to the user agent's `title` presentation. Dismissible: a
+    `document`-level Escape listener, non-capturing and propagating, so an enclosing dialog still
+    closes on the same press. Hoverable: the bubble takes pointer events, and a hover-leave from
+    the trigger holds the bubble open for a 150ms grace (`HOVER_HIDE_GRACE_MS`, matching
+    `--cairn-dur-base`) before clearing it, since Chromium's hit-testing for a top-layer popover
+    does not extend into the gap between trigger and bubble, so a pointer that merely pauses there
+    would otherwise dismiss the bubble with nowhere to land. Persistent: the bubble stays open
+    until the input mode that opened it says otherwise; the grace only defers a hover-leave's own
+    dismissal, never dismisses on its own initiative.
+  - **Where the wrapper can sit.** The wrapper is a `<span>`, which HTML's content model bars
+    directly inside `<tr>` (only `<td>`/`<th>` are valid children there) or `<ul>`/`<ol>` (only
+    `<li>`), regardless of the wrapper's own `display: contents`, a CSS property with no bearing on
+    HTML content-model validity. Wrap the control inside the cell or the list item, never the row
+    or the list itself. A natively `disabled` control receives no pointer events in some browsers,
+    so a reason that must reach a mouse user takes the `aria-disabled` guarded shape.
+- **Chip geometry: `rounded-selector`, not the pill (the theme identity pass).** Every chip, tag,
+  and count (`StatusChip`'s `badge` base, the hand-built `cairn-chip-quiet`/`cairn-chip-warning`/
+  `cairn-chip-outline` classes, and the media library's inline kind tags) reads its corner from
+  `--radius-selector`, the same token any other small inline marker uses on the corner ladder, in
+  place of the old `rounded-full` pill silhouette. The one exception is a chip that is also a true
+  circle by shape (a status dot, never a padded text chip), which keeps `rounded-full` under the
+  Corner system rule above.
+- **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
+  Geoff's own ratification: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md`).** `StatusChip`
+  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
+  `cairn-chip-outline` classes, composed with `badge`) render in one of three ratified registers,
+  replacing the stock daisyUI ghost badge outright: its hardcoded background and border can match
+  a row or card color and melt into it, and neither it nor an un-tuned `badge-outline` clears the
+  audit's own 3:1 border-contrast floor. The first generation (design infrastructure Pass 3) split
+  a `tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet`
+  register (the shape); the owner probe measured the dot illegible toolkit-wide across three
+  consumer screens and ratified fusing tone INTO the register instead, so `tone` and the dot both
+  retire. `quiet` (the default) tints the ground with a low-contrast wash off
+  `--color-base-content`, for a settled, put-away state (Published) that should recede rather than
+  compete. `warning` tints the same way off `--color-warning`, carrying its own on-surface ink
+  (`--cairn-warning-ink`), for a state that needs attention (an unpublished-changes marker, a
+  needs-alt notice). `outline` (`register="outline"`) drops the fill and demotes `badge-outline`'s
+  full-strength inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a
+  hairline that clears 3:1 against both zebra stripes and both page grounds in both themes (the
+  successor of the first generation's `bounded`, unchanged recipe); it inherits its color from the
+  chip's own ancestor, so it can drop under the floor inside a `text-muted` ancestor (verify a new
+  call site). Every tinted fill (`quiet`, `warning`) is tuned to a 1.16-1.47:1 contrast band
+  against its own row ground (plain and zebra, both admin themes), and `warning`'s ink additionally
+  clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root. The tinted
+  band's upper bound (1.47:1) sits under the audit's own 1.5:1 ground-collision floor, so every
+  `quiet`/`warning` chip sits under that floor by design, on every row ground, not only a
+  `base-300`-derived one (`chip-ground-collision` stays advisory, so this is documented rather
+  than retuned). There is no chip-level danger tier; a state that must
+  stand out beyond quiet is a `warning` chip. Every register pins `font-weight: 400`; since none of
+  the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
+  the same element, so a hand-composed chip carries no weight utility of its own. Values are
+  measured, not invented (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md`); the full contract
+  lives in `StatusChip`'s doc comment.
+- **Badge tier: every safelisted `badge-*` class, the raw daisyUI alternative to `StatusChip`
+  (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** `badge-error`, `badge-success`,
+  `badge-soft`, `badge-outline`, and `badge-dash` are all blessed in the admin CSS safelist and
+  compile into the packaged sheet on both admin themes. Reach for one directly, without
+  `StatusChip`, only for a stock daisyUI-flavored surface outside the chip vocabulary (a raw
+  `badge` a site's own markup already builds on daisyUI's own semantic-color convention); reach
+  for `StatusChip` for anything in the chip register grammar above, since only `StatusChip`
+  carries the register set's ground-tuned band, the `size` vocabulary, and the `legend`
+  accessible-name pattern. Two shapes, two measurements, both against the register set's own
+  floors on both packaged themes, and both clearing with no retune needed: `badge-error`,
+  `badge-success`, and `badge-soft` each paint their own fill and their own base-content-derived
+  ink (daisyUI 5.7.20's `badge-soft` recipe carries a fill and an ink of its own even with no tone
+  class set), each clearing the >= 4.5:1 text floor (WCAG 1.4.3) against its own fill; `badge-outline`
+  and `badge-dash` paint no fill of their own and inherit their ink and currentColor border from the
+  surrounding row, clearing the same text floor against the row ground and the unrelated >= 3:1
+  non-text floor (WCAG 1.4.11) on the border. `badge-tier-legibility.test.ts` (the same
+  canvas-readback method `status-chip-register-tuning.test.ts` measures the chip registers with)
+  is the one canonical home for the measured numbers themselves.
+  `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32
+  under `chip-ground-collision`'s 1.5:1 floor, and the gap is a deliberate exemption, not an
+  oversight: `badge-soft` is boundary-less by design, the same shape choice `badge-outline` and
+  `badge-dash` make, and carries no claim that its fill alone reads as distinct from the row. Its
+  label names the state in text (WCAG 1.4.1 Use of Color), so the badge never depends on a reader
+  distinguishing its fill from its ground to know what it means.
+- **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
+  and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
+  `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
+  (the office list with no entries), the state drops the list card and centers on the content area so a
+  first-run office reads as composed, not as a small box hugging the top of a tall page.
+- **In-card empty notice (Finding 10, Pass 2 Task 11):** a filtered-to-zero state (a search or filter
+  narrowing a non-empty list to nothing) is `AdminTable`'s own `empty` snippet, never a hand-rolled
+  sibling. The register is `AdminTable`'s to own, in its scoped CSS: centered text, padding, the
+  muted color, and normal wrapping. A caller's snippet passes bare content, typically one `<p>`, and
+  adds no size, color, or alignment class of its own. `AdminTable`'s doc comment carries the exact
+  contract.
+- **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
+  for the title and the header's ink New button (the ONE create affordance on a populated list, the
+  old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),
+  `ListToolbar` for the search box, the two independent segmented filters (a pick-one publish-state
+  partition — All, Pending edits, Published — and an orthogonal Hidden toggle, each carrying a live
+  count from the loaded set; the axes are independent, so a published-but-hidden entry counts in
+  both Published and Hidden), and the count line, `AdminTable` for the sortable ONE-LINE-row table
+  shell (the sortable `th`s are the screen's own markup in the `header` snippet; a filtered-to-zero
+  search or filter keeps the card and offers a Clear action through the screen's own `empty`
+  snippet), `Pagination` for the numbered pager and the rows-per-page select, `StatusChip` for the
+  publish-state pill, and `formatCivilDate` for the date column. Filtering, counts, and search all
+  run client-side over the already-loaded entries. What the toolkit leaves to the screen:
+  - The whole page composes at the document list's natural measure, one centered `max-w-3xl` column
+    inside the shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list
+    opens a dead band between short titles and the date).
+  - The page follows the F3 proximity-grouping scale (the named 4/8px steps documented as a comment
+    beside the theme tokens in `cairn-admin.css`; design arc 2026-07-15): the header stands apart as
+    the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
+    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). A custom `/admin/` screen
+    composing `PageHeader` beside `AdminTable` inside the floating card recipe (`overflow-hidden
+    card-shell card-shadow`) follows the same F3 header rhythm: `PageHeader` sets the offset
+    (`mb-10`, `gap-0.5`, the `meta` line at `type-meta`), and the card hugs that offset directly
+    with no toolbar tier between them, `AdminTable`'s own wrapper carrying the horizontal scroll
+    and the card's own `overflow-hidden` clipping the table's square edges to its rounded corners.
+  - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
+  - Chip register (ruling 9 of the 2026-07-20 admin-toolkit adoption map, re-expressed for the
+    second-generation register grammar): New, Edited, and Published all take `StatusChip`'s
+    default `quiet` register; the label text alone carries the distinction a tone dot used to
+    carry.
+  - Hidden is a row treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title)
+    and carries an eye-off "Hidden" tag inline beside the title, leaving the status cell to one
+    publish-state chip.
+- **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
+  button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
+  dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
+  HTML the parser repairs by dropping the outer tag, which breaks SSR and hydration. `EditPage` mounts
+  all its dialogs headless at the bottom and renders plain triggers where they belong.
+- **Dialog sizing (governs every modal, the picker and palette included):** a modal never fills the
+  viewport on a normal screen. The `modal-box` sizes to its content under a cap
+  (`max-height: min(content, 85vh)`, with a `max-width` on the content scale) so the backdrop frames it
+  above and below and the surface reads as an overlay over the author's work, not a page takeover. The
+  box is the scroll container: its own header and footer hold while the body scrolls, never the page
+  behind it. Filling the height is correct in exactly one place, the small viewport: below the narrow
+  breakpoint a dialog may become a full-height or bottom sheet. Light dismiss on the backdrop is for a
+  non-destructive dialog; a destructive `alertdialog` keeps an explicit confirm and does not
+  light-dismiss.
+- **Component insert picker:** `ComponentInsertDialog` is a two-step dialog. Step one is the catalog:
+  a single-column list grouped under eyebrow headings by the component's `group`, in declaration
+  order, each row a glyph (the component's `icon`), the label, the description, and the intended-use
+  line. A search input appears above the list only past eight components, with focus on open, an
+  `aria-live` count, and a no-match state in the office voice. Step two is the configure form. It
+  opens two panes, the form left and a live preview right, only when the picked component declares a
+  `preview` and the host passes a `render`; otherwise it stays one column. The preview renders the
+  serialized directive through the adapter `render` into a sandboxed `<iframe srcdoc>` from
+  `buildPreviewDoc`, the same path the edit-page preview uses, debounced with a latest-wins counter so
+  it settles rather than re-rendering each keystroke. It carries three honest states and never
+  fabricates a finished block: a settle cue (a visual chip, never a live region, so it does not
+  announce on every edit), an incomplete skeleton that calls out each empty required region while
+  Insert stays disabled, and a render-failed surface that keeps the form. Required fields carry an
+  asterisk and `aria-required` and gate Insert with an inline `role="alert"` message; repeatable rows
+  take their label from the slot's `itemLabel`, falling back to `${label} ${i + 1}`. Back lives in the
+  dialog header beside the eyebrow breadcrumb, one step to the catalog; the modal collapses to one
+  column on a narrow screen. The toolbar also carries an **Edit block** control beside Insert block:
+  it opens a component already placed in the document back into the same form (the header reads
+  "Edit", the button "Update"), enabled only when the caret sits in a component whose guided edit is
+  provably lossless (the `componentRoundTripSafety` gate); a block the form cannot round-trip is left
+  for hand-editing, never silently rewritten. Edit mode skips the catalog and has no Back; Update
+  replaces the block's source range in place.
+- **Popover menu:** the small action menus (the edit header's overflow, the toolbar's More formatting)
+  are DaisyUI v5 popover dropdowns, never the focus-driven `.dropdown` wrapper, which opens on
+  focus-in-transit and ignores Escape. The trigger is a `<button popovertarget="<id>">` with an
+  `anchor-name`, carrying `aria-expanded` mirrored from the popover's `toggle` event; the panel is a
+  `<ul class="dropdown menu" popover id="<id>">` with the matching `position-anchor`. Escape and light
+  dismiss come from the Popover API. A pick runs its action, then `hidePopover()` if still open.
+- **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
+  destinations plus View-site and theme, filtered as you type. Built in `CairnAdminShell`. The box
+  keeps a top inset at every width (`mt-4` below `sm`, `sm:mt-[12vh]` above) so it never sits flush
+  against the viewport top on a phone, and its search input carries no `outline-hidden`, so the admin's
+  `:focus-visible` brand ring applies rather than a bare UA outline.
+- **The desk band (the edit route's one header):** the edit page has no header of its own; it fills the
+  topbar through the context portal (see the context model above). The `desk` snippet supplies the
+  status cluster (the status badge, a `Hidden` badge when `draft`, the save-state with a `bg-warning`
+  dot fading via `transition-opacity`) and the actions cluster (an `sr-only` default submit button
+  FIRST, then Details, the overflow popover, a hairline, outline Publish, solid Save), all tied to the
+  form by `form="cairn-edit-form"`. The `sr-only` default submit must stay first in the actions cluster:
+  the band precedes the form, so it is the first form-owned submit in tree order, which keeps Enter in a
+  single-line field saving rather than firing the Publish formaction. On a desk route `CairnAdminShell`
+  drops its own palette trigger and the site-wide Publish, so the band has one job. Publish renders in
+  every entry state (the 2026-07 CMS survey norm: WordPress, Ghost, Sanity, and Contentful all keep it
+  persistent) and is actionable whenever anything could go live (dirty, pending, or a new entry).
+  Otherwise it takes the guarded-button pattern (`aria-disabled`, `cairn-btn-guarded`, a resting fill at
+  the same 10% base-content weight a real inactive control carries so it reads as deliberately disabled
+  rather than as a rendering gap, the `not-allowed` cursor, the stateful "Nothing new to publish"
+  reason), never native `disabled` and never hidden; the label stays "Publish", and native `disabled` is
+  reserved for the mid-submit busy state. Below `sm` the band composes rather than shrinks: the
+  save-state text drops to the dot alone, the decorative hairlines collapse, and the non-primary controls
+  (the Details trigger and the shell's theme toggle, the latter mirrored into the band through the
+  context portal) fold into the overflow popover, so Save and Publish stay directly reachable at every
+  width without any control clipping or overlapping.
+- **The busy idiom (wait versus refusal):** a control mid-action takes one of two shapes, chosen by
+  whether the busy state is a wait or a refusal, never a third improvised in between. A control that stays
+  on screen while a short round trip runs (Save's own submit, Publish's mid-submit state above) takes
+  native `disabled` plus an always-mounted status region: the region sits in the DOM before and after
+  the action, its text swapping rather than the region itself appearing or disappearing, so a screen
+  reader already tracking the region hears the update without a fresh-mount announcement race. Native
+  `disabled` is honest here, since the control truly cannot be activated again until the round trip
+  resolves. A control refused with a reason instead (Publish with nothing new to publish, the Figure
+  button off the caret below) keeps `aria-disabled` plus the `cairn-btn-guarded` marker: the control
+  stays perceivable and its Tooltip keeps naming the reason, which native `disabled` would strip
+  from the accessibility tree and which DaisyUI 5.6's `[aria-disabled="true"]` `pointer-events: none`
+  rule would also silence without the marker's unlayered restore. The two shapes are not
+  interchangeable: a wait resolves on its own and needs no reason attached, while a refusal needs its
+  reason to stay readable for as long as the refusal holds. The upload recipe's own
+  replace-the-control-with-a-status-panel shape (`MediaUploadDialog`, `MediaHeroField`,
+  `MediaReplaceDialog`, `MediaCaptureCard`) is that recipe's own case, not a third busy shape: it swaps
+  the whole control for a status panel rather than disabling either control in place, and it is
+  promoted to a family shape only when a second instance of it appears outside the media upload
+  family.
+- **The details slide-over panel:** the frontmatter fields live in a right slide-over (`role="region"`,
+  `aria-label="Entry details"`), opened by the band's Details trigger and `Ctrl+.`. It stays physically
+  inside the edit form and toggles with the `hidden` attribute, so a closed panel is out of the a11y
+  tree and tab order while its `display:none` fields still submit (the uncontrolled-field guarantee).
+  Focus moves to the close button on open and returns to the trigger on close; Escape closes it. The
+  panel header carries the `Details` eyebrow; the first fieldset's legend is `sr-only` so the eyebrow
+  shows once. The capture-phase `invalid` handler opens the panel when an invalid control lives in it.
+- **Zen:** a footer toggle (and `Ctrl+Shift+.`) fades the chrome to leave the manuscript alone on the
+  recessed ground. It is a `localStorage` preference (`cairn-editor-zen`), and it composes with focus
+  mode and the postures. The band disappears through the context holder's `zen` flag (`CairnAdminShell`
+  drops the whole topbar and the persistent sidebar, at every width), and a floating `.cairn-zen-chip`
+  keeps the two things that never vanish: the
+  live save state and an Exit control with the `Esc` hint. Escape exits zen, after closing the details
+  panel if it is open. Entering zen moves focus into the editor if the focused control hid.
+- **Segmented control and check-and-tint toggle:** a pick-one control is one bordered group (the shared
+  border carries the semantics) whose segments are borderless and whose active segment tints
+  (`bg-base-content/[0.07] text-base-content font-semibold`, weight rather than hue carrying the
+  state, since the accent budget reserves color for act-on states) and shows a check glyph; the
+  check is the non-color state cue (WCAG 1.4.1). A standalone on/off toggle (focus mode,
+  typewriter, zen) is borderless and transparent until hover, tinting and check-marking when
+  `aria-pressed`. A reference link (Markdown help) is a borderless underlined button, not a
+  control. The editor footer uses all three; no group labels (the segmented border carries
+  pick-one). **Every active/pressed state also carries a 1px inset hairline in its family's own
+  ink** (invisible-craft pass, 2026-07-17; closes the weight-only pressed-cue advisory): the
+  neutral pick-one family adds `ring-1 ring-inset ring-base-content/55` (through
+  `segmentTintClass` in `segmented-control.ts`; a 20% mix measured under the 3:1 floor, which is
+  why the ring is 55%), and the primary pressed family adds `ring-1 ring-inset ring-primary/35`.
+  The hairline is the non-color, non-weight cue that also covers icon-only controls; never give a
+  neutral segment a primary edge (the accent budget).
+
+  **The third family, a join-style picker's `.btn-active`** (`ListToolbar`'s segmented facet,
+  `Pagination`, the editor's Write/Preview capsule), now takes the same neutral-wash treatment as
+  a `cairn-idiom` rule, superseding the old dark-only hardcoded `.btn-active` fill and its hover
+  step (the theme identity pass). The rule keys on all five of cairn's selected forms, matching
+  DaisyUI's own active/checked treatment (`button.css`, 5.7.44): `.btn-active`,
+  `[aria-pressed='true']`, `[aria-checked='true']`,
+  `[aria-current]:not([aria-current='false'], [aria-current=''])`, and
+  `:checked:not(.filter [type='radio'].btn)`. It excludes every color variant, `btn-outline`, and
+  `btn-dash`, so a `join-item btn btn-primary` or `btn-error` selected segment keeps its own fill
+  and ink, never the neutral wash, and a plain selected segment carrying `text-error` keeps the red
+  ink. `--btn-bg` is `color-mix(in oklab, var(--color-base-content) 7%, var(--color-base-100))` in
+  both themes, at weight 600, with a state hairline on `--btn-border` in BOTH themes now, not
+  dark-only as before: light is `color-mix(in oklab, var(--color-base-content) 65%, transparent)`
+  (4.862:1 against `base-100`, 3.131:1 against a resting sibling's own 22% edge), dark is
+  `oklch(70% 0.012 75)` (6.115:1 against `base-100`, 3.230:1 against a resting sibling). Both moved
+  past their own seed value in lightness only: light seeded from the neutral pick-one family's own
+  55% mix (3.579:1 against `base-100`, but only 2.303:1 against a resting sibling, under the
+  floor), and dark seeded from the superseded rule's own locked `oklch(57% 0.012 75)` (3.661:1
+  against `base-100`, but only 1.935:1 against a resting sibling). The check glyph is still the
+  caller's job, the same as for the tint families; `Pagination` is the one caller that renders no
+  glyph at all, relying on `aria-current="page"` plus the wash and the hairline above for its
+  non-color cue on both themes.
+- **Plain bulleted list (`.toolkit-list`, 2026-08-27; ruling rewritten 2026-08-27 review):** a bare
+  `<ul>`/`<ol>` that wants an ordinary bulleted or numbered list, not daisyUI's own `.list`
+  component, adds `class="toolkit-list"` to drop the UA's 40px marker gutter
+  (`padding-inline-start: 0`, same reset as the `.list` opt-in, on its own class). `.list` is not a
+  substitute: it is daisyUI's structured-ROWS component (`display: flex; flex-direction: column;
+  font-size: .875rem`), and applying it to a plain list carries that real baggage: forced flex/column
+  layout instead of normal block flow between items, and a forced .875rem font-size instead of
+  inheriting the ambient one. Rendered against the compiled sheet, a `<ul class="list">` still paints
+  a bullet (a flex item with a `list-item` computed display keeps its `::marker` box in Chromium);
+  the zero px gap between the `<li>`'s content and the `<ul>`'s own edge, identical under
+  `.toolkit-list`, comes from `padding-inline-start: 0` on both classes alike, not from marker
+  suppression. `.toolkit-list` carries no `display` or `font-size` of its own, so a plain list keeps
+  normal block flow and inherits its ambient font-size (measured against the built sheet: 16px
+  inherited under `.toolkit-list` versus `.list`'s forced 14px, same render). Never `list-style: none`
+  on either class (WCAG 1.3.1 removes list semantics from the accessibility tree in
+  WebKit/VoiceOver), and never a bare `ul`/`ol` ancestry selector (the admin wrapper also hosts the
+  editor's rendered markdown preview, which needs its own bullets untouched). No admin screen
+  carries a plain bulleted list today (a grep of every bare `<ul>`/`<ol>` in `src/lib/admin` and
+  `src/lib/admin-toolkit` found only structured lists: menus, listboxes, flex rows with their own
+  gap, daisyUI's `.steps`), so `.toolkit-list` ships as documented infrastructure for the next screen
+  that needs one, rather than an in-tree call site today.
+- **Registration note (internals-C, coherence pass, Task 4): two `admin-toolkit` naming
+  defectors and a repeated eyebrow-label literal, documented rather than renamed.** Every other
+  class `admin-toolkit` component owns carries the `toolkit-` prefix; `StatusChip.svelte`'s
+  `status-chip`/`status-chip-quiet`/`status-chip-warning`/`status-chip-outline`/`status-chip-xs`/
+  `status-chip-label` and `PageHeader.svelte`'s `page-h1` do not. Both stay Svelte-scoped (no
+  `:global()`), so neither collides with anything on either side of the `cairn-*` render/admin
+  namespace boundary [the public stylesheet contract](../../../../skills/cairn-styling-public-pages/references/public-stylesheet-contract.md) documents; a rename
+  would also touch the canvas-readback measurement suites that pin these exact names
+  (`status-chip-register-tuning.test.ts`, `status-chip-register-parity.test.ts`,
+  `badge-tier-legibility.test.ts`) and the audit norms that read them
+  (`src/lib/audit/norms.ts`, `src/lib/audit/rules/rendered/screen-anatomy.ts`), a blast radius out
+  of proportion to a naming-convention fix. Registered here instead: both names are known,
+  intentional exceptions to the `toolkit-` prefix, scoped-safe, and not available for reuse
+  elsewhere in the admin sheet. Separately, the eyebrow-label utility bundle (`type-label
+  font-semibold uppercase tracking-[0.08em] text-muted`, with a `tracking-wide` variant in
+  `CairnTidySettings.svelte`) is written out under two local names (`headerLabel`, `col`) across
+  ten call sites rather than one shared constant; it is a Tailwind utility combination, not a
+  custom class, so it carries no namespace-collision risk, and is registered here as the admin
+  sheet's own "eyebrow label" convention rather than extracted, since no shared home for it
+  exists yet.
+- **Field/button focus-ring color, decline-with-reason (2026-08-27):** a field's `:focus` outline and
+  a neutral button's `:focus-visible` outline both resolve to the same color, `base-content`
+  (daisyUI's own defaults: `.input:focus`/`.select:focus`/`.textarea:focus` set
+  `--input-color: var(--color-base-content)`, and `.btn`'s own base rule sets
+  `outline-color: var(--btn-color, var(--color-base-content))`), measured directly against the
+  compiled sheet. A `.btn-primary` button reads a primary-toned ring only because it supplies
+  `--btn-color: var(--color-primary)` through its own variant class, and no admin field ever carries
+  an analogous `.input-primary`/`.select-primary`/`.textarea-primary` variant, so a primary action
+  button (Save, Publish) and a plain text field read as differently colored on focus in practice, even
+  though the underlying mechanism (variant supplies the ring color, neutral falls back to
+  `base-content`) is identical for both control families and already the pattern this file's own
+  Truthfulness note (above, "One brand-violet keyboard-focus ring") accepts for `.btn`. Forcing a
+  primary ring onto every field regardless of variant would need its own unlayered override (the
+  same later-layer-wins mechanic the Truthfulness note already documents as otherwise unfixable) for
+  a purely cosmetic unification with no accessibility gain, since `base-content` already clears a
+  higher-margin ring than a primary tint would on either theme. Report-and-change-nothing, the same
+  posture `ExpandableRow`'s trigger-target bullet models.
+- **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
+  the container's innermost rail bar on the opener row (down while the caret is inside, right while
+  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.
+  While folded (ratified 7B), the opener's own fence machinery is absorbed into the placeholder chip
+  too, not just the body and the closer: the chip reads "`<label> · “<title>” · N lines`" when the
+  opener carries a `title`/`[label]` attribute (the middle dot is the pill grammar's one separator;
+  the admin voice keeps the em dash out of UI strings), otherwise the plain "`<label> · N lines`" (or a bare
+  `N lines` for an unnamed container). A folded row carries a square full-row accent wash (~7%) and the
+  chip is a focusable button (`aria-label` naming the section, the title when present, and the hidden
+  line count). Ranges come only from `fenceScan`'s paired containers, so a half-typed fence never
+  folds; any edit or selection touching a folded range, including the now-absorbed opener line, unfolds
+  it in the same transaction, revealing exact source. Fold state is session-local, never persisted.
+  Driven by `@codemirror/language` folding in `editor-folding.ts`.
+- **Editor instrument strip (design-arc D2, "grouped micro-eyebrows"):** one card frame holds the
+  toolbar, the editing surface, and the footer environment strip (word count left, the posture
+  segmented control and the focus/typewriter/zen toggles right; Markdown help no longer lives here,
+  see below). The toolbar clusters its ghost `btn-sm btn-square` glyph buttons into three named
+  groups, Format (bold, italic, strike, inline code), Structure (headings, lists, quote, table,
+  ending in the More popover for the low-frequency formats), and Insert (the host's insert controls
+  through a snippet), divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines. Each
+  cluster wrapper carries `role="group"` with an `aria-label` naming it, and, at `sm` and up, a
+  presentational (`aria-hidden`) eyebrow above the row in the standard eyebrow recipe. "Blocks"
+  never labels a cluster: cairn's own vocabulary already uses block for a component (Insert block /
+  Edit block), so the word appears only inside those two control labels. Below `sm` the eyebrows
+  disappear and the whole strip becomes one horizontally scrolling row (design-arc C1) instead of
+  wrapping; the hairlines still divide the three clusters inside it. The Write/Preview capsule sits
+  inside the scrolling region, pinned right at `sm` and up (hidden below `sm`, folded into the More
+  popover's `moreExtra` instead). A persistent 44px "?" control (a glyph plus a sr-only "Markdown
+  help" label) sits OUTSIDE the scrolling region at the strip's right end at every width, so it is
+  never scrolled out of reach or hidden by the phone fold (audit finding 7); it never disables. The
+  `role="tablist"` wrapper holds only the two tabs (ARIA required children), and the capsule is
+  drawn with manual corner rounding (`rounded-r-none`, `rounded-l-none -ml-px`) rather than
+  daisyUI's `.join`, so the device trigger can sit beside the tablist instead of inside it. Roving
+  tabindex carries keyboard traversal across every control, including the persistent help control.
+  Formatting and insert controls disable while Preview shows; the help control does not, since it is
+  a reference, not an edit action.
+- **Preview frame:** the Preview tabpanel is a recessed ground (`bg-base-200 px-4 py-6 lg:px-8`)
+  holding a centered frame column whose width follows the picked device, eased with
+  `transition-[width]` under the reduced-motion guard. Inside the column, the standard floating
+  card wraps the sandboxed iframe, and a right-aligned eyebrow caption names the device and its
+  width for any non-desktop pick. A device trigger reads as the capsule's third segment but sits
+  after the tablist wrapper (a plain button, never a tab). It opens the standard popover list of
+  widths: plain buttons carrying `aria-pressed` and the check glyph, each naming its width
+  ("Tablet · 768 px"), never the ARIA menu pattern. The pick persists under
+  `cairn-editor-preview-device`. While Preview shows, the sidebar hides so the document proofs at
+  the full content width.
+- **Document title input:** when the adapter defines a `title` field it renders above the editor
+  card as `cairn-doc-title`: `text-3xl font-bold` in the display face, normal tracking (the K4
+  reasoning above), borderless on the recessed background. This input is the page's visible h1
+  (the header h1 is `sr-only`), which is why the toolbar offers only H2/H3.
+- **Editor: the quiet writing surface (0.52.0).** The manuscript carries the page; everything
+  else recedes. The face is self-hosted iA Writer Mono via `--font-editor` at 1rem on a centered
+  `70ch` measure. Heading sizes step by level (`tags.heading1/2/3` at 1.5/1.3/1.17em) in
+  `base-content`, never primary. Every syntax marker (`##`, `**`, `>`, list marks, link brackets,
+  URLs) drops to `--color-muted`; quote and struck *text* keep full content ink (muted means
+  machinery, never content). Inline code sits on a `--cairn-code-chip` background in content ink.
+  Links keep the page's one accent. The `HighlightStyle` rule ORDER in `editor-highlight.ts` is
+  load-bearing: later rules win ties on mark spans, so `processingInstruction` stays last.
+- **Editor: the directive grammar (rails, never bands).** Identity lives in a left rail plus a
+  labeled head, never painted rows. A directive line at depth N stacks all rails 1..N as inset
+  bars at 2/6/10px offsets (with `base-100` spacer layers), so a container reads as one bracketed
+  region and nesting reads as nested brackets. Fence machinery (colon runs, `[` `]`, `{attrs}`)
+  is marker-muted; the name and label carry depth-stepped accent inks
+  (`--cairn-directive-ink-2/3`). The caret's innermost container steps up one notch
+  (`--cairn-directive-rail-active`/`--cairn-directive-ink-active`, plus a 1px rail-width step);
+  rails step alpha through `--cairn-directive-rail-1/2/3` with every bar holding 3:1 non-text on
+  `base-100` (the locked floors sit beside the vars in `cairn-admin.css`). Directive lines carry
+  a plain-language `title` tooltip and a constant left gutter. Depth and roles come from one
+  cached scan in `markdown-directives.ts` (`fenceScan`), which pairs a bare closer with the most
+  recent named opener and disowns fence-shaped lines inside code blocks.
+- **Editor: the include chip (`editor-include.ts`).** A resolved `::include{fragment="id"}` leaf
+  directive line renders as one atomic accent chip ("Include: Office contact"), the whole opener
+  line's fence machinery absorbed the way the media chip absorbs a `media:` reference token, in the
+  same directive accent language. The chip names the fragment's published title, falling back to the
+  raw id when the title is unavailable (never a hidden state). Deletion is atomic (the whole line in
+  one transaction, one undo step restores it), mirroring the media chip's own atomic-token mechanism
+  but scoped to the whole line, since a leaf directive's grammar already confines it there. The title
+  lookup (`fragmentTitles`, `EditData.fragmentTargets` projected to id -> title) is reactive, the same
+  compartment wiring as `mediaLibrary`.
+- **Editor: the surface postures and the footer strip.** The editor card's footer is the
+  writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
+  writing): word count left, then the posture pair and the writing-mode toggles, all ghost `btn-xs`
+  with `aria-pressed` and the `bg-primary/10 text-primary` pressed pair. Markdown help does not live
+  here (design-arc D2): the toolbar's own persistent "?" control carries it at every width instead,
+  so the footer never needs a width-dependent duplicate. The strip wraps at every nesting level
+  below `sm` (each control `shrink-0` and `whitespace-nowrap`), so a control moves whole to a new
+  row rather than truncating its label or clipping off-frame. The postures: Prose (default) is the writing instrument, a 72ch measure centered
+  in a 49rem card at a 1.125rem type step and 1.85 leading (the T4 manuscript generosity, design
+  arc 2026-07-15); Wide (labeled "Markup" in the
+  `cairn-editor-surface` persisted value, since the calibrated voice sweep renamed only the
+  visible label) is the working surface, a 56rem card the text fills at 1rem/1.8 for tables,
+  attributed directives, and long URLs. The posture persists as `cairn-editor-surface`; the card
+  cap and the title wrapper follow it.
+- **Editor: the writing modes.** Focus mode dims non-caret paragraphs to `--cairn-focus-dim-ink`,
+  a DELIBERATE sub-AA transient-state call (~3:1 floor, user-toggled, one activation from full
+  contrast; G174 is the conformance shape) that also flattens chip backgrounds on dimmed lines
+  AND eases the rails and the document title back with the field. Typewriter scroll recenters
+  via an instant `scrollIntoView`, so no reduced-motion gate is owed. Both persist per browser
+  (`cairn-editor-focus-mode`, `cairn-editor-typewriter`) as visible `aria-pressed` toggles in
+  the footer strip (never `menuitemcheckbox` in the More popover; that list is deliberately not
+  an ARIA menu).
+- Light `--color-accent` is a locked margin at `oklch(54% 0.16 300)`: it must hold AA both on
+  `base-100` and on its own 8% tint (the leaf/inline directive chips). The editor's focus indicator is a deliberate 1px 70%-alpha primary hairline, never a 2px
+  ring: a focused text surface sits in keyboard modality, so `:focus-visible` cannot quiet it. That
+  70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
+  measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document
+  title input the same hairline.
+- **Editor: the suggestion popover (`.cairn-cm-suggest`).** The spellcheck and objective-error suggestion
+  surface, rendered as cairn's own recipe DOM through CodeMirror's public `showTooltip` facet
+  (`src/lib/admin/editor-suggestion-popover.ts`), NOT a skinned `.cm-tooltip-lint`; the built-in
+  lint tooltip is suppressed via `tooltipFilter` (returning `null`, since @codemirror/lint 6.9.7 still
+  mounts an empty tooltip for `[]`). It is a generic renderer over `Diagnostic.message` and
+  `Diagnostic.actions`, so one recipe serves both diagnostic kinds: the spellcheck popover (a row of
+  suggestion buttons plus Add to dictionary and Ignore) and the objective-error popover (a single Fix
+  button). That genericity is why every action button gets the same uniform styling
+  (`.btn.btn-sm`), never a per-kind treatment. The structure is `role="group"` with an `aria-label` set
+  from the diagnostic message, a `.cairn-cm-suggest__msg` message line, and a `.cairn-cm-suggest__actions`
+  wrapping row of buttons. The Warm Stone surface comes from `--color-base-100`, `--cairn-card-border`,
+  `--radius-box`, `--cairn-shadow`, and `--font-body` (escaping CodeMirror's mono editing face, like the
+  media chip and figure pill do). The non-color hover cue is an underline on the button label (a
+  color-only cue fails WCAG 1.4.1); the focus ring is the amber `--cairn-warning-ink`, tying the popover
+  to the same ink as the misspelling underline it answers. The sole sanctioned internal-class touch is
+  neutralizing `.cm-tooltip`, the class CodeMirror force-adds to every tooltip it mounts; `npm run
+  check:cm-internals` holds that coupling to its allowlisted floor so a new `.cm-*` touch cannot slip in
+  unnoticed. Its accessibility model has no `MediaInsertPopover` analogue: the caret sitting inside a
+  diagnostic's range shows the popover without stealing focus, a polite `aria-live` region announces the
+  message and the key that opens it, `Alt-Enter` moves focus into the popover's first button, and a
+  native (non-CodeMirror) Escape listener returns focus to `.cm-content`. It is deliberately `role="group"`,
+  never `role="dialog"`, and has no `aria-modal`, no focus trap, and no auto-focus: it is ambient chrome
+  tied to caret position, not a flow the editor opens and must dismiss. Contrast with `MediaInsertPopover`
+  immediately below, which is a real modal.
+- **Media: the at-caret insert popover (`MediaInsertPopover`).** This is the one sanctioned exception
+  to the Dialog recipe. Where every other modal is a centered `<dialog>`, the image insert surface is
+  an anchored popover positioned at the CodeMirror caret, so an editor names and describes an image
+  without leaving the line they are on. It is still a real modal in the a11y sense: a
+  `role="dialog" aria-modal="true"` container with a manual Tab focus trap (no native `<dialog>` to
+  give it for free), Escape and a backdrop click that dismiss it and restore focus to the editor, and
+  `var(--cairn-shadow)` for the lift. The modal-sizing rule still binds it, so below the narrow
+  breakpoint it drops the caret anchor and becomes a full-height bottom sheet. It routes by the signal
+  that opened it: a paste or a drag opens straight on the capture card with the dropped file, while
+  the toolbar button opens the chooser (upload first, the picker below it).
+- **Media: the source chip and the optimistic placeholder (editor decorations).** Like the directive
+  rails and the fold gutter, these live in the `MarkdownEditor` `EditorView.theme`, not in the
+  document text. A resolved `media:` reference token renders as an atomic accent chip carrying the
+  thumbnail, the display name, and a needs-alt marker (the `.cm-cairn-media-needs-alt` rule, in
+  `--cairn-warning-ink`) when the alt text is still missing. An upload still in flight shows a
+  widget-only placeholder, a thumbnail beside a determinate `<progress>`, that never writes any text
+  into the document until the upload resolves. The doc only ever holds the final `media:` token, so a
+  failed or abandoned upload leaves no orphaned text behind.
+- **Media: the combobox picker (`MediaPicker`).** The reuse surface is a WAI-ARIA combobox over a
+  listbox. Focus stays in the text input and `aria-activedescendant` tracks the highlighted option;
+  the listbox is always rendered (never built on first keystroke) so the relationship is stable for
+  AT. Two separate live regions carry the result count and the selection announcement, since one
+  region cannot voice both without clobbering itself. A type-facet seam filters by media type but
+  stays hidden while a site has only one type, so it does not show an empty control. The needs-alt
+  label on a result uses `cairn-text-warning`.
+- **Media: the capture card (`MediaCaptureCard`).** The card where an editor names and describes a
+  newly added image. Its submit is never disabled: alt text is treated as debt, not a gate, so an
+  editor can insert now and add the description later (the needs-alt notice tracks the gap). The alt
+  choice is a radiogroup (describe it, or mark it decorative), and the name pre-fills from the
+  filename. Because an async insert can unmount the focused submit and drop focus to `<body>`, focus
+  moves deliberately to the next state's primary control through an `$effect` keyed on the status
+  discriminant plus `tick()`.
+- **Media: the needs-alt publish notice (EditPage).** A non-blocking notice that surfaces images
+  inserted without alt text. It is an always-present `role="status"` region (rendered unconditionally
+  so it can announce when it fills, the live-region rule), holding a warning glyph, a count, and a
+  jump-to-each control. It is modeled on the broken-link banner but is a warning, never a block: it
+  never stops a save or a Publish. It tells the editor about the gap and helps them close it, and
+  leaves the decision with them.
+- **Fragments: the preview boundary cue and the blast-radius line (ratified 4B and 5,
+  2026-07-16).** The edit-page preview wraps each spliced fragment's rendered blocks in a quiet
+  boundary: a 2px directive-accent hairline (35% alpha) with a `From “<fragment title>”` eyebrow
+  (the eyebrow recipe in the accent ink; the id when no title resolves). Preview only, always
+  visible (an editor deciding what to edit needs it before hover): the cue marker rides the
+  preview's own resolver (`previewTitle` on the resolver function, `resolve-include.ts`), which
+  the public delivery resolver never sets, and a byte-level test pins that separation. The
+  publish blast radius rides the same notice region as the needs-alt notice (`role="status"`,
+  non-blocking, muted ink): a fragment with includers reads "Publishing updates 3 entries that
+  include this fragment." above the actions; it never sits in the desk band (the band composes
+  at 320 and holds three quiet clusters).
+- **Office ledgers stack below `sm` (vocabulary and tidy settings, 2026-07-17).** A multi-column
+  ledger row never squeezes into a phone width: below `sm` the row recomposes into two lines,
+  the primary control full-width on line one and the metadata as a self-labeling muted line
+  under it (slug `·` count in the vocabulary ledger; label-over-value in the settings card,
+  with the developer pill dropping under the grid). The header band keeps only the primary
+  column's label, since the meta line labels itself. The `sm`+ grid stays exactly as designed.
+- **Media: the figure control (`MediaFigureControl`).** The form that gives an inline image a caption
+  and a placement. It is the persistent Edit-block pattern: a toolbar Figure button, always rendered,
+  enabled only when the caret sits on a media image (bare or already in a `:::figure`), opening a
+  headless dialog over a caret snapshot so a later caret move never re-targets it. The unavailable
+  button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed by the
+  same guarded-button pattern as Publish above (`cairn-btn-guarded`, the `not-allowed` cursor, no
+  `opacity` utility layered on top): DaisyUI 5.6 added `[aria-disabled="true"]` to the `.btn` disabled
+  selector with `pointer-events: none`, which would kill the Tooltip naming why the control is
+  off, so a guarded button that must keep its Tooltip carries the `cairn-btn-guarded` marker; an
+  unlayered rule in `cairn-admin.css` restores `pointer-events` for it (the click handler already
+  guards inertness). The form carries a caption field (with the hint that the caption is shown to
+  everyone and is not the alt text), an alt-status row that names the image's alt state distinct from
+  the caption, and the placement as the segmented check-and-tint recipe rendered as a roving-tabindex
+  radiogroup (Measure, Center, Wide, Full; Measure is the null role). The decorative-plus-caption
+  warning sits in an always-present `role="status"` live region in `--cairn-warning-ink`, so it
+  announces when an author makes the contradiction. The control writes markdown source only; the
+  preview stays read-only.
+- **Media: the figure role pill on the source chip.** When a `media:` token sits inside a `:::figure`,
+  the source chip carries a small role pill (the role name, or `figure` for the measure default) in the
+  directive accent language (the accent ink, a `color-mix` accent border, the body font at `0.625rem`),
+  so the visible decoration agrees with the source (the no-hidden-state rule). A bare token shows no
+  pill. The pill is `aria-hidden` like the rest of the chip; the `{.wide}` in the source is the
+  AT-readable truth. The accent ink holds AA as small text on `base-100` in both themes (5.28:1 light,
+  5.86:1 dark).
+- **Media: the placement default CSS (`.cairn-place-*`).** cairn defines the figure placement class
+  contract; a site owns the pixels. The reference values live in the showcase
+  (`examples/showcase/src/theme/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
+  a below-measure centered image, `.cairn-place-wide` a viewport-centered breakout past the measure,
+  and `.cairn-place-full` a full-bleed image with its `figcaption` returned to the measure. A site
+  copies and restyles those classes. This is content CSS, not admin chrome, so it lives with the site's
+  rendered-content stylesheet, not in `cairn-admin.css`.
+- **Media: the hero field (`MediaHeroField`).** The persistent details-panel field that sets a
+  concept's frontmatter hero. At rest, when a hero is set, it is one row at sibling weight: the
+  resolved thumbnail, the display name, an alt-status chip, and an Edit control, with the caption
+  shown beneath as a read-only italic preview. The alt-status chip is glyph-plus-label, never hue
+  alone: Described in `--color-positive-ink`, Needs alt in `--cairn-warning-ink`, Decorative in
+  `--color-muted`. Empty, the field is a slim labeled dropzone (hover and focus-visible states, real
+  drag-and-drop) plus one plain unify line stating the image is also the social card. Edit or Add
+  opens a native `<dialog class="modal">` (the Dialog recipe) holding the chooser (an upload button
+  and the `MediaPicker` combobox) and, after a pick or upload, the placement view: a 16:9 crop
+  preview, the describe-or-decorative alt radiogroup, the caption field, and Replace/Remove as quiet
+  text controls beneath the preview. Two load-bearing constraints, both from the field rendering
+  inside the edit `<form>`: it carries no `<form>` of its own (the dialog's working inputs are
+  name-less and never submit; the committed value rides three named hidden inputs the decode arm
+  reads), and the alt radios share a component-unique `name` so native arrow-key navigation works
+  while staying out of the three decoded sub-fields. It reuses `MediaPicker` directly and replicates
+  `MediaCaptureCard`'s alt model rather than mounting it (that card holds its own `<form>`, illegal
+  nested here, and a Name field a hero does not use). Alt is debt: confirm is never disabled for a
+  missing alt, and the needs-alt notice counts a hero with an empty alt and focuses its alt input.
+- **Media: the Library screen (`CairnMediaLibrary`).** The admin Media Library, a first-class office
+  view at `/admin/media`, a peer of Posts and Pages. It composes from the admin toolkit: `PageHeader`
+  (the Media eyebrow, the display-face "Media library" heading, its `meta` line carrying the live
+  count and stored-bytes summary in place of a toolbar count line, the Upload primary action), then
+  `ListToolbar` (search, the triage as a segmented filter, and a `trailing` snippet carrying the two
+  screen-specific view controls the toolkit has no vocabulary for, the on-demand orphan-scan entry
+  and the grid/list density toggle), then the asset surface. The resting surface is a contact-sheet
+  grid (`role="listbox"`) of image tiles; the density toggle flips it to `AdminTable`, the same
+  table shell the office list uses. Activating a tile or row opens the detail in a non-modal
+  slide-over (the details-slide-over recipe), which carries the preview, the name and `media:`
+  reference, the alt editor, the grouped where-used list, the metadata, and the actions. Delete opens a
+  two-faced safe-delete `alertdialog`. The screen and the 2b picker share the row vocabulary but keep
+  different ARIA models on purpose (the picker is a combobox, this grid is a roving listbox).
+  Load-bearing a11y patterns:
+  - **Roving tabindex on the grid.** One tabstop for the whole listbox: the active tile carries
+    `tabindex="0"` and every other carries `-1`; arrows move the active index, Home/End jump, Space or
+    Enter opens the detail, and `aria-selected` tracks the open asset. Filtering preserves a valid
+    active index.
+  - **The triage is a true radiogroup, not a toggle group.** `ListToolbar`'s segmented-display
+    contract: `role="radiogroup"` over `role="radio"` segments with `aria-checked` (never
+    `aria-pressed`), the same roving-tabindex keyboard model the ARIA radio pattern owes (the
+    selected radio is the only tabstop, arrows move and select). The selected segment shows a check
+    glyph so hue is not the only state cue (WCAG 1.4.1).
+  - **The list sorts through real header buttons.** The Added column header is a `<button>` inside a
+    `<th>` carrying `aria-sort`, never a div with a click handler.
+  - **The slide-over is a non-modal region.** `role="region"` with an `aria-label`, no scrim, so the
+    grid stays in the a11y tree and the tab order. Focus moves into the panel on open and returns to the
+    originating tile or row on close, and a window Escape listener closes it (the EditPage
+    details-panel recipe). It never traps focus or inerts the list.
+  - **The safe-delete is a modal alertdialog with no light dismiss.** A native `<dialog>` opened with
+    `showModal()` (native focus trap and Escape), `role="alertdialog"`, and no `method="dialog"`
+    backdrop, so a stray backdrop click cannot dismiss a destructive surface. The in-use face names the
+    breaking entries (grouped published-then-branch) and gates Delete behind a type-the-slug
+    confirmation (`confirmMatches`), the one legitimate disabled submit, a visible typed confirmation
+    rather than a hidden requirement. The orphan face is a calm confirm. A server refusal forces the
+    dialog back to the in-use face with the fresh list.
+
+  Alt-status ink tokens (each glyph-plus-label, never hue alone): Described is `--color-positive-ink`,
+  Needs alt is `--cairn-warning-ink`, and the safe-delete danger surface uses the `--cairn-error-*`
+  family (`--cairn-error-ink` for the "these would break" label and the danger Delete text,
+  `--cairn-error-tint` for the break-list surface, `--cairn-error-border` for the tint hairline and the
+  type-to-confirm input). The error ink is the readable small-text counterpart to `--color-error`,
+  which is tuned as a button fill and fails AA as small text; the locked contrast floors sit beside the
+  token in `cairn-admin.css`.
+- **Tidy: the review-mode step-in diff (`TidyReview`).** The tidy copy-edit's review surface, a native
+  `<dialog class="modal">` opened with `showModal()`, so the focus trap, Escape, and inert background
+  come from the platform (the Dialog recipe). It opens only when tidy returns changes: a no-op shows a
+  quiet "Nothing to fix" and never opens an empty review, and a validation rejection shows the honest
+  message and opens nothing. While it is open the editor underneath is read-only, and the author's
+  original buffer text is never touched until Apply.
+  - **The diff run vocabulary.** Each change is one hunk in a unified-diff idiom: a deletion row gutter
+    `&minus;` over the struck original text, an insertion row gutter `+` over the proposed text, and one
+    unchanged context row above and below. Color rides a glyph, never hue alone: a deletion is
+    `--cairn-error-ink` (reserved exclusively for tidy deletions) struck through with `line-through`, and
+    an insertion is `--color-positive-ink` (the locked insertion-and-addition token, note it is
+    `--color-positive-ink`, NOT the nonexistent `--cairn-positive-ink`). The two tokens are a locked
+    pair, so a tidy deletion and a spellcheck underline (amber `--cairn-warning-ink`) are never the same
+    color.
+  - **The safety-ranked hunk treatment (decision 9).** Objective hunks (Spelling, Doubled word,
+    Whitespace, Punctuation) read quiet, open pre-kept, and are swept by Accept fixes. A judgment hunk
+    (a declared style normalization, a grammar reword) carries the review-this treatment: a
+    `--cairn-warning-ink` left edge (an inset shadow rail) and a faint warm wash on the head
+    (`color-mix` of the warning ink), opens undecided, and is NOT swept by Accept fixes until confirmed.
+    The category is inferred locally from the diff, never a model claim, and a normalization carries a
+    mandatory because-line computed from the convention config alone (a hunk with no computable rationale
+    is not offered). The same in-buffer decorations render through the `editor-tidy.ts` apply seam:
+    insertions as content-bearing mark decorations in `--color-positive-ink`, deletions as
+    strike-through over the original run in `--cairn-error-ink`.
+  - **The two live regions (the MediaPicker discipline).** One `role="status"` region carries the bulk
+    tally (kept / to review / skipping), updated only on a bulk action and debounced; a second
+    `aria-live="polite"` region narrates the single last per-hunk action. Keyboard step-through is
+    `j`/`k` (or `n`/`p`) to move and `a`/`r` to accept or reject the focused hunk.
+  - **Apply is one batched transaction.** Per-hunk Accept/Reject and the bulk Accept fixes / Reject all
+    only set disposition in the component's own state; nothing writes until Apply, which collects the
+    kept indexes into one `acceptMany`, a single undoable step (the session "Undo tidy"). An undecided
+    judgment hunk is never in the kept set. Cancel closes and writes nothing.
+- **The tidy settings screen reuses the shipped primitives, no new control.** The two-tier convention
+  screen (`CairnTidySettings`) renders each on/off convention as the shipped check-and-tint
+  `aria-pressed` button (the Segmented control and check-and-tint recipe), and each variant chooser as
+  the shipped pick-one (`role="radiogroup"` over `role="radio"` with `aria-checked`, roving tabindex,
+  the check glyph as the non-color cue, the same handler the Media Library triage uses). It adds no
+  DaisyUI `.toggle` and no new primitive. The truthful visibility gate is the load-bearing rule: when
+  tidy is not enabled (or the key is absent), the editor-tier convention section is ABSENT, not shown
+  disabled, replaced by a `role="region"` gate note with a read-only "what your developer needs to do"
+  checklist; no convention control sits in the tab order. The developer tier (the master switch, the
+  key presence, the model) is read-only, and the API key value never leaves the server.
+
+### Help surfaces
+
+- **A help or reference panel is a non-modal `role="region"` with an `aria-label`, no scrim.** It
+  reuses the details-slide-over geometry (`top:64px; right:0; bottom:0`, `19rem`, hairline-plus-shadow,
+  on `base-200`). Focus moves in on open and back to the trigger on close; a window Escape closes it;
+  it leaves the a11y tree and the tab order via the `hidden` attribute when closed. Only a destructive
+  or commit surface is a modal `<dialog>`. A help cheat sheet is not destructive, so it is non-modal.
+- **The right slide-over region holds one panel at a time.** Help and the Details panel claim the same
+  slot, so opening one closes the other. State this so two right panels never stack.
+- **The disclosure button for a slide-over** mirrors `aria-expanded` from open state and carries a
+  visible text label at its primary home. The two surface types take different attributes: a trigger
+  that opens a modal `<dialog>` carries `aria-haspopup="dialog"`; a trigger for the non-modal
+  `role="region"` panel carries `aria-controls` pointing at the region and no `aria-haspopup`, because
+  `aria-haspopup="dialog"` would promise a dialog the region is not. A bare glyph is allowed only for a
+  secondary, contextual instance, never as the sole standing trigger.
+- **The getting-started progress recipe** borrows the check-and-tint look and the
+  `--color-positive-ink` token for a short checklist, each item glyph-backed when done (never color
+  alone, WCAG 1.4.1). The authoritative count lives in real adjacent text ("2 of 4 done"); the visual
+  bar is a decorative, non-focusable, non-interactive element marked `role="presentation"`. A focusable
+  or interactive node drops `role="presentation"` under the ARIA conflict rules, so echo the segmented
+  control's look on an inert element rather than reusing the interactive control as the bar. Steps
+  derive from observable content and publish state, so the recipe shows a real count, never a stored
+  one.
+- **The empty-state recipe gains an optional starter-content slot:** beside the create CTA, a site may
+  surface labeled, openable starter entries. The label marks them as starters so they read as
+  removable, not as the author's own work.
+- **The Help home recipe** (`HelpHome.svelte`) is one calm column inside `CairnAdminShell`: a masthead (a
+  plain eyebrow over a real-sentence h1, the page's single Bricolage display beat), then three co-equal
+  eyebrow-plus-display sections, getting started, formatting, and get help. The cadence carries the
+  equality (one section icon per section would break it), not a per-section accent. Because it mounts
+  inside `CairnAdminShell`, it roots on a bare `<div>`, never a second `<main>` (a nested `main` is a
+  duplicate landmark), and it carries no `data-theme` wrapper and imports no CSS; it consumes the Warm
+  Stone tokens through its scoped `<style>`. Getting started follows the preceding progress recipe
+  and recedes-and-omits: at 0 of 3 the cairn mark presides in the warmer empty-state shape with a faint
+  seed bar, at 1 or 2 a calm peer card, and at 3 of 3 the whole section is gone (never a done checklist
+  greeting a fluent author). The done cue reaches assistive tech three ways and never by color: a
+  filled glyph-backed box (decorative, `aria-hidden`), a visible "Done" tag, and an `sr-only` "not
+  done" on every open step. The unchecked step-box ring is `color-mix(in oklab,
+  var(--color-base-content) 55%, transparent)` (about 3:1 on base-100, the WCAG 1.4.11 floor for a
+  control conveying state, kept a thin ring so it never reads as filled). The formatting reference is a
+  real `<table>` with `th scope="col"` and `th scope="row"`, the syntax cells in `var(--font-editor)`,
+  rendered from the shared `markdown-reference.ts` source the editor's Ctrl+/ dialog also renders. The
+  get-help hand-off renders only when the adapter sets `supportContact`, shaped to the contact (an
+  email opens a `mailto`, a URL opens an external link with `rel="noopener"`, anything else shows as a
+  note); the unset state is the canonical default, a self-serve line with no control, never a button to
+  a blank contact.
+
+## Chrome and spacing
+
+- The sidebar and topbar form one flat header strip: both `h-16` (the topbar PINNED with
+  `h-16 min-h-16 py-0`, since a content-driven navbar drifts with font metrics and the two
+  border-bottoms stop meeting at the seam), `bg-base-100`, the same hairline border-bottom, no
+  shadow, so they read as one band across the sidebar seam. The nav sidebar is `w-56` on office
+  routes and recedes on desk routes. On the desk the chrome cedes all width to the editor: the
+  details fields move to a ~19rem right slide-over, so the editor card (hairline-only, no shadow)
+  centers as the page's one floating object in both postures. The content area is
+  `bg-base-200`; panels are `bg-base-100`.
+- Align the brand mark, the group eyebrows, and the nav-item icons on one left edge. Keep consistent
+  vertical rhythm between groups. The list table drops its Date column below `sm` and stacks its header.
+- The editor's fold gutter is a sanctioned exception to the otherwise gutter-free prose surface. The
+  markdown editor folds directive containers, and the fold control lives in a real CodeMirror
+  `gutter()` column (fixed-x, ~22px), not floating in the text. It stays quiet because it is empty at
+  rest and the chevron reveals only on gutter hover (the Obsidian precedent: a calm prose surface
+  keeps its fold gutter empty-until-hover). Do not move the chevron back into the text to "reclaim"
+  the column; the in-text band was the version this replaced. The gutter rules live in the
+  `EditorView.theme` in `MarkdownEditor.svelte`, with `.cm-gutters` neutralized to blend in. Design
+  detail and rationale: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-14-fold-gutter-design.md`.
+
+## Vertical alignment mechanics
+
+A row's vertical alignment cannot be judged by reading its markup. The 2026-08 inventory rendered
+every admin screen at three widths in both themes, took 5028 readings, and found seven rows above a
+2px bar, five of them real. Two of those five were rows that had already declared the correct
+alignment and still missed, because the property the browser aligned on was not the property the
+eye reads. What follows is what that measurement established.
+
+### The two-class diagnosis
+
+Ask one question about a row before touching it: **is this pair two runs of type, or is it
+something else beside a run of type?**
+
+- **Two runs of type share a BASELINE.** A mixed-size pair that shares a baseline has centres that
+  diverge by exactly the cap-height ratio, and that divergence is correct typography, not a defect.
+  Levelling such a pair on centres is the bug.
+- **Anything else beside a run of type shares an INK CENTRE.** An icon, a control, or a painted
+  chip has no baseline worth sharing, so what levels it is its visible content against the text's
+  cap centre. The converse of the rule above holds too: a pair the row deliberately centred has
+  baselines that diverge by design, and levelling those baselines is equally a bug.
+
+Two consequences that catch people out. A padded chip is a BOX, not a run of type: its border and
+fill draw ink at its own edges, so its padding-box centre is the reading, and the type inside it is
+a separate optical question. And an icon beside a text BLOCK pairs with that block's first line,
+never with the block, because the eye reads the icon against the line it sits beside.
+
+### Metric by pair class
+
+| Pair | Metric | Read it off |
+| --- | --- | --- |
+| text beside text | alphabetic baseline | the element that renders the line, never its container |
+| text beside text, in a row that declared a centre | cap centre | as above |
+| icon beside text | ink centre against cap centre | SVG ink through the screen CTM, not the `<svg>` box |
+| control beside text | border box centre against cap centre | the control's own border box |
+| chip or badge beside text | padding-box centre against the line box | the painted box, not the type inside it |
+| glyph inside a button or chip | cap centre against padding-box centre | the glyph and its own container |
+
+`src/tests/lab/vertical-metrics.ts` is the executable form of this table. It is lab apparatus
+rather than shipped engine code, and it stays the single definition: a test that measures alignment
+restates these rules rather than inventing its own.
+
+### The recipes
+
+- **`.cairn-icon-label`** (`cairn-admin.css`): a label that is a glyph plus a word, for a row that
+  declares `items-baseline`. Without it the label reports the icon's bottom margin edge as its
+  baseline, because a flex container synthesises a baseline from its first item when no item is
+  baseline-aligned. The recipe baseline-aligns the label's own items so the word supplies the
+  baseline, then gives the glyph `align-self: start` and `min-height: 1lh` so its ink centres on
+  the label's FIRST line. Both rules are load-bearing, for different reasons. The first fixes the
+  baseline the label reports; the second fixes where the glyph sits, and dropping it costs 2.50px
+  of glyph offset rather than the baseline (Chromium reads the word's baseline either way). Two
+  measured traps sit behind the second rule's exact wording: `align-self: center` levels the glyph
+  on the whole label, so a wrapping label floats it 16.71px down, and `height: 1lh` never applies,
+  because a call site's `h-*` utility outranks this components-layer rule whatever the specificity.
+- **`.cairn-line-slot`** (`cairn-admin.css`): a one-line-tall slot that centres a painted chip on
+  the line it labels, so the chip levels on that line box instead of on the top edge of the block
+  beside it. Give the slot the same type role as the line, since `1lh` is what sets its height.
+- **An icon in a button is a flex item, never an inline box.** Put the `<svg>` straight into the
+  button, or into an `inline-flex` wrapper when a wrapper is needed for something else. A bare
+  `<span>` around the glyph makes it an inline box that sits on the wrapper's text baseline, which
+  rides it about half an icon height above the label's cap centre. That is the whole of the Write
+  tab defect: 2.33px high, against thirteen sibling icon-in-button rows at 0.5 to 0.75px.
+- **The bottom-aligned field row** (`display: flex; align-items: flex-end;
+  gap: var(--cairn-gap-control, 0.5rem)`): levels a row's children on their bottom edges, for a
+  row mixing a stacked field with a bare control. **No measured defect drove this.** The inventory
+  found no misaligned field row anywhere in the admin. It shipped as the named `FieldRow`
+  component through `0.94.0`; retired from `/admin-toolkit` in the retires pass (batch 1a, zero
+  consumers), it is now a hand-rolled recipe rather than a component. Its one caveat still applies:
+  a field rendering an error line below its control breaks bottom alignment.
+### `text-box: trim-both cap alphabetic`, measured and NOT landed
+
+The 2026-08 spec declared this trim as a silent default on the label-like recipes (`type-label`,
+`type-chip`, the button recipes), with no measured defect behind it. It is not in the sheet, and
+three measurements are why. Reopen it as its own decision, not as a rider.
+
+1. **It is inert exactly where the spec wanted it.** `text-box-trim` does not inherit, and the text
+   inside a flex container lives in an anonymous flex item. A padded `inline-flex` chip and a
+   daisyUI `.btn` are both flex containers, so a declaration on either computes and trims nothing.
+   Measured with the declaration live: the developer pill stayed 23.00px, a `.btn btn-sm` stayed
+   32.00px, and the button's cap centre did not move.
+2. **Where it does bite, it is not silent.** It applies to a block container, and a flex item is
+   blockified into one. A `type-chip` block went 13.00px to 7.14px and a `type-label` block went
+   14.00px to 7.86px, about six pixels per instance across roughly 25 block-level call sites plus
+   every label-sized span that happens to be a flex item. The `gap-*` scale was ratified against
+   the untrimmed line boxes, so this quietly re-rules the admin's spacing.
+3. **It breaks a documented contract.** A type role is a size and its leading and nothing else,
+   stated in Grammar tokens above, published in `src/lib/design/grammar-tokens.ts`, and pinned by
+   `grammar-tokens.test.ts` asserting each role's whole declaration text. Adding a third property
+   to `type-label` fails that test, and routing the same declaration through another layer to keep
+   the test green would be the same change with the evidence hidden.
+
+If the trim is still wanted, it belongs on a component recipe that owns its own padding, and it
+needs the spacing scale re-measured beside it.
+
+## Icons
+
+Lucide via `@lucide/svelte` (per-icon imports). `admin-icons.ts` is the chrome glyph set; import nav and
+content glyphs directly. Default stroke is 1.75px, not Lucide's stock 2px; see the icon-strokes
+recipe under Type above for the exact mechanism and the `2.01` escape hatch. Conventions in use:
+signpost = the nav-menu editor (kept distinct from the
+Settings gear), gear = Settings, users = Editors, file-text = an undated content concept, newspaper = a
+dated concept, layers = Fragments (the reserved concept id keys `ENGINE_NAV_ICONS` directly; "one thing
+present in many places", ratified 2026-07-16 over puzzle, which stays reserved for component blocks),
+puzzle/blocks = developer extensions and the editor's component-block controls.
+
+## Voice
+
+The copy is part of the brand, held to the same bar as the visuals. Editors read these strings on
+every screen, so a single AI-flavored line cheapens the whole admin. Treat every user-facing string as
+brand prose, not filler.
+
+The base is the Microsoft Writing Style Guide's UI-text voice, tightened to professional and
+restrained: no cute, no chatty. The repo's `writing-voice` tells apply on top:
+
+- Plain and professional. No marketing gloss.
+- One idea per sentence. Short sentences are good. A two-sentence hint beats one clause-stacked line.
+- No AI tells: no em dashes, no "not X, but Y" frame, no tacked-on closer ("No password to remember."),
+  no reflexive three-item lists.
+- Name the concept, not a generic noun ("No posts yet", not "No entries").
+- No figurative language. Say the plain thing (Microsoft's
+  [writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
+  rule out idioms and colloquial phrasing).
+
+This covers button labels, headings, empty states, hints, confirmations, and the standalone pages the
+engine serves outside the components (the guard's HTTPS-required page in `https-required-page.ts`).
+
+The component copy ships compiled inside the published package, so a consuming site's `prose-guard` hook
+never sees it. It is guarded here instead by `npm run check:prose` (`scripts/checks/check-admin-prose.mjs`),
+which extracts the user-facing strings from `src/lib/admin/*.svelte` and runs the blocking tells
+from the `writing-voice` standard over them. It runs in CI alongside the other `check:*` gates. The
+mechanical rules catch the lexical and structural class (marketing words, banned phrases, the
+antithesis frame, and the like); they cannot catch a judgment-level tell such as a tacked-on closer, so
+run `node scripts/checks/check-admin-prose.mjs --list` for a release-time read of all admin copy at once. The
+non-component surfaces (the standalone pages) sit outside that gate, so read them by hand against this
+same bar.
+
+## Adding a new admin surface
+
+Mock it first, in component-idiomatic utility classes. A surface worth designing gets an HTML mockup
+under the gitignored `.mockups/` folder authored in the same DaisyUI/Tailwind utility classes the
+component will carry (never hand-rolled token CSS), built with `npm run design:mockup-css` and served
+from that folder. That keeps the screenshot honest to what ships and the Svelte port a
+transcription. Ground the mockup in the closest live component, since the live components are the bar.
+
+Then build the component: wrap it in a `data-theme` wrapper (or render it inside `CairnAdminShell`, which
+already provides one), import `./cairn-admin.css`, build it from the recipes above (the card, the eyebrow,
+the type vars, the theme-adaptive border and shadow), and preview on the showcase. Add component or unit
+tests for new behavior and keep `npm run check` 0/0 and `npm test` exit 0.
+
+## The developer-facing vocabulary (the versioned seam)
+
+An extending developer builds a custom admin screen in the same idiom as the built-in admin. The parts
+they build on are a stable, versioned contract. A breaking change to any of them is a major-version event,
+not an everyday one, so a developer's screen survives an engine update.
+
+The contract is three things:
+
+- **The Warm Stone theme tokens.** The DaisyUI 5 role variables in the two `[data-theme]` blocks: the
+  `base-*` surfaces, `base-content`, `primary` and its `-content`, the status pairs, and the geometry
+  (`--radius-selector`, `--radius-field`, `--radius-box`). A screen reads them the DaisyUI way,
+  through `bg-base-100`, `text-primary`, and the rest, so it recolors with the theme.
+- **The `text-muted` / `text-subtle` role utilities.** The two named secondary-text roles, defined in
+  `scripts/build/admin-css.input.css` and frozen as the role interface. Use them for labels, dates, hints
+  (`text-muted`) and nav-item text (`text-subtle`). A standing test keeps them compiled and pointing at
+  their vars.
+- **The documented component recipes.** The card, the eyebrow, the active nav item, the empty state, the
+  dialog, the segmented check-and-tint control, and the rest of the recipes above. Match them, so a custom
+  screen reads as part of the admin, not a bolt-on.
+
+Not everything in `cairn-admin.css` is the contract. Some of it is cairn's own internal frame, which the
+engine may change between versions without a major bump. A screen should not build on these:
+
+- **The accessibility text inks** (`--cairn-warning-ink`, `--color-positive-ink`, the `--cairn-error-*`
+  family). These are on-surface ink counterparts to the DaisyUI fill tones, at locked, measured contrast.
+  The admin uses them for its own status words and markers; they are frame, not a public palette.
+- **The theme-adaptive elevation pair** (`--cairn-shadow`, `--cairn-card-border`). A custom card gets the
+  same lift through the floating-card recipe, which names them; the tokens themselves are cairn's.
+- **The embed-anywhere infrastructure** (the box-sizing reset, the bare-button Preflight replacement, the
+  anchor and `summary` resets, the focus-ring rule). These exist because the admin self-styles on any host
+  with no host Preflight. They are the frame that makes the sheet portable, not an API. The packaged sheet
+  also zeroes the host `body` margin while an admin theme root is mounted, the one host-element reset the
+  sheet carries.
+- **The editor (CodeMirror) system** (the directive rails, the fold gutter, the syntax highlight, the
+  `--cairn-directive-*` and `--cairn-focus-dim-*` tokens). This is a settled design in the editor's
+  `EditorView.theme` territory, walled out of the sweep on purpose.
+- **The admin's own unlayered rules,** thirteen entries pinned by exact selector in
+  `scripts/checks/custom-surface-budget.json`'s `unlayeredAllowlist` after this pass (the theme
+  identity pass shrank the set from eighteen by moving several pinned rules into `cairn-idiom`,
+  where a layered rule can win): the two theme-root selectors and the embed-anywhere infrastructure
+  named above, plus a handful of forced workarounds a layered rule structurally cannot win, among
+  them the `.menu` focus-visible restore and the `.cairn-btn-guarded` pointer-events restore. All
+  fix a real shipped bug or a hostile-host hazard; none may be deleted, nor an untracked one added,
+  without a reviewed allowlist change.
+
+The split is recorded token by token in the admin custom-surface ledger
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-29-custom-surface-ledger.md`), which classifies every custom property into
+Tier 1 (the theme), Tier 2 (the documented floor), and Tier 3 (the folded remainder, now at zero). The
+`check:custom-surface` gate holds the line: it caps the `@layer components` rules, pins the unlayered set
+by whole-selector equality, and keeps the retired-token budget at zero, so a new arbitrary
+`text-[var(--color-muted)]` bracket in the admin markup fails the build. The cap is a ratchet, not a
+ceiling nobody may touch: raising it is a deliberate act carried in the commit that adds the rules, which
+is what the three vertical-alignment recipe selectors did (16 to 19, 2026-08).
+
+## The starter template's design
+
+The showcase (`examples/showcase`) is the starter template a scaffolded site copies. Its design is the
+site's own, not the admin's, so its tokens live with the site and a developer restyles them freely. The
+showcase custom-surface ledger (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
+records the tiers.
+
+- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/theme/theme.css`
+  holds two `@plugin "daisyui/theme"` blocks, `cairn` (light) and `cairn-dark` (under
+  `prefers-color-scheme: dark`), a warm stone pairing that is the showcase's brand and distinct from the
+  admin's Warm Stone. The public output stays design-agnostic by charter, so the template does not impose
+  the admin theme.
+- **The corner ladder and the hairline outline are a shared family trait (ruling 2, the theme
+  identity pass).** Both theme blocks take the same three radius tokens the admin uses,
+  `--radius-selector: 0.25rem`, `--radius-field: 0.375rem`, `--radius-box: 0.5rem` (down from
+  `0.28rem` / `0.4rem` / `0.625rem`), and a `@layer utilities { @layer site-theme { ... } }` rule
+  gives an uncolored `btn-outline` and `badge-outline` the same hairline edge the admin's own
+  idiom does (`--btn-border`/`border-color` at a 22% `base-content` mix); a color variant
+  (`btn-outline btn-primary`, a colored `badge-outline`) keeps its own edge untouched. The rule
+  lives in `theme.css`, the one file a re-skin edits, so a site can drop it; the re-skin recipe's
+  own numbered steps name the ladder as family geometry a site is free to retune, from square to
+  fully rounded. Everything else in this file (palette, faces, heading weights, size step, depth
+  and noise) is unchanged.
+- **The design-scale tokens live in Tailwind 4 `@theme`, which generates the named utilities.** The type
+  scale, the space scale, the faces, the rhythm, the reading measure, the muted ink, and the card hairline
+  sit in the `@theme` block. Tailwind emits a named utility for each, so the chrome markup writes
+  `text-step-*`, the spacing utilities (`gap-m`, `px-m`, `mt-2xl`), `font-display`, `tracking-*`,
+  `leading-*`, `max-w-measure` / `max-w-measure-wide`, `text-muted`, and `border-card-border` instead of an
+  arbitrary-value bracket. `@theme` re-emits each token at `:root`, and the `var()` consumers in
+  `theme.css`, `prose.css`, and `site.css` keep resolving from there. Editing one token re-tunes both the
+  `var()` reference and the utility.
+- **The owned Tier 2 is the site's design, walled and documented.** The reading surface (`prose.css`, the
+  hand-authored article typography), the `.cairn-place-*` figure-placement contract in `site.css`, the
+  on-surface status inks (`--cairn-<status>-ink`), the elevation pair, the CTA pair, and the code-highlight
+  binding (`pre.shiki` plus the engine-owned `.cairn-tok-*` class contract). cairn names the class
+  contracts (`.cairn-place-*`, `.cairn-tok-*`); the site colors them.
+- **The re-skin recipe sits at the top of `theme.css`.** It names the two theme blocks to edit for a new
+  accent and paper-and-ink, the `@theme` tokens to retune the scale, and the status-ink seam to keep in
+  step with the fills. About fourteen role values cover the brand-and-base headline change most owners
+  make. The `check:public-tokens` gate proves the re-skinned theme still clears AA in both sRGB and P3.
+
+## Rehearsing a DaisyUI or Tailwind upgrade
+
+A DaisyUI or Tailwind major can shift a value or drop a class the admin sheet and the template both
+compile against. A maintainer rehearses the bump against the visual baselines and the gates before taking
+it, so an upstream change surfaces as a reviewed screenshot diff before it ships. The scheduled
+watcher (a `schedule` routine) pings when a new major publishes; it points here.
+
+The runbook:
+
+1. Bump the dependency (`daisyui` or `tailwindcss`) to the new major.
+2. Recompile the admin sheet: `npm run package`. This rebuilds `dist/admin/cairn-admin.css` from the
+   partial plus the new DaisyUI/Tailwind, and it also runs the doc-tree scan, so a bad doc candidate shows
+   up here.
+3. Run the visual baselines in `examples/showcase`: `CI=1 npx playwright test admin-visual site-visual`.
+   These render the admin chrome and the public site in light and dark against the committed screenshots.
+4. Run the vocabulary and contrast gates: `npm run check:custom-surface` (both trees, so the retired-token
+   budget and the layer cap still hold) and `npm run check:public-tokens` (the theme still clears AA in
+   both gamuts).
+5. Confirm the role utilities still resolve. The `admin-css-build.test.ts` unit test asserts `text-muted`
+   and `text-subtle` compile into the sheet and keep pointing at their vars, so a Tailwind change that
+   tree-shakes or renames a `@utility` fails here.
+6. Read the screenshot diff. A pixel change is either an upstream regression to work around or an intended
+   shift to accept. When it is intended, update the committed baselines
+   (`npx playwright test --update-snapshots` for the affected specs) so the new screenshots are the
+   reviewed record of the drift, and note the reason in the commit.
+
+The bump is safe once all six steps run green. Hold it on any red gate or an unexplained diff, and
+investigate.
+
+## Motion
+
+**This section is canonical.** The packaged `cairn-building-admin-screens` skill carries only what a
+site author acts on (the token names and the audit's motion rules), never this internal page;
+where the two would say the same thing twice, this section is the source.
+
+### Tokens
+
+Five durations and three curves, each a Carbon `@carbon/motion` alias. A component needing a sixth
+duration or a fourth curve is wrong.
+
+| cairn token | Value | Carbon alias | Use |
+|---|---|---|---|
+| `--cairn-dur-instant` | 70ms | `duration-fast-01` | Press, focus ring, any paint feedback on the control under the pointer |
+| `--cairn-dur-quick` | 110ms | `duration-fast-02` | Small fades: a caret, a chip, a disclosure marker |
+| `--cairn-dur-base` | 150ms | `duration-moderate-01` | The default: hover paint, menus, popovers, tooltips, most enter and exit |
+| `--cairn-dur-shift` | 240ms | `duration-moderate-02` | Expansion, toast, system communication, the shell's content offset |
+| `--cairn-dur-settle` | 400ms | `duration-slow-01` | Large expansion: a surface whose travel is the viewport, an important notification |
+| `--cairn-ease-standard` | `cubic-bezier(0.2, 0, 0.38, 0.9)` | `easing.standard.productive` | The element stays visible throughout and moves or resizes |
+| `--cairn-ease-entrance` | `cubic-bezier(0, 0, 0.38, 0.9)` | `easing.entrance.productive` | The element appears |
+| `--cairn-ease-exit` | `cubic-bezier(0.2, 0, 1, 0.9)` | `easing.exit.productive` | The element leaves and does not stay nearby |
+
+The band ladder is `instant`, `quick`, `base`, `shift`, `settle`.
+
+### The property allowlist and the snap list
+
+A transition or a finite animation may name only: `opacity`, `color`, `background-color`,
+`border-color`, `box-shadow`, `outline-color`, `outline-width`, `outline-offset`, `rotate`,
+`translate`, `scale`, `transform`, `grid-template-rows`.
+
+Nine properties are named errors, the layout-thrashing set: `width`, `height`, `top`, `left`,
+`right`, `bottom`, `margin` (and its longhands), `padding` (and its longhands), `font-size`.
+`transition: all` and `transition-all` are `motion-band`'s one finding; rule 1 never re-reports
+them. A property that is neither allowlisted nor named still fails, as merely outside the
+vocabulary.
+
+**The one exception: the frame offset.** An element carrying `data-cairn-motion="frame-offset"`
+may transition `margin-left` and nothing else, one such element per screen. There is no file key
+and no selector key: the exception is keyed on the attribute plus the property. A second layout
+property on the carrying element is a finding, and a second carrying element on the same screen is
+a finding on that second element.
+
+**The discrete-popover arm.** `display` and `overlay` also pass when the same transition entry
+carries `allow-discrete`: with it, the discrete flip defers to the end of the transition so the
+paint property beside it (typically `opacity`) finishes first, the documented CSS idiom for a
+popover or dialog leaving the top layer. Without `allow-discrete` on that entry, `display` and
+`overlay` remain outside the vocabulary.
+
+### Enter and exit, with the floor
+
+An exit runs one duration band faster than its enter, on `--cairn-ease-exit`. `instant` is the
+floor: an `instant`-band exit stays at 70ms and changes only its curve, because there is no band
+below it. Asymmetry never applies to hover, press, or focus, which are states of one element
+rather than arrivals and departures.
+
+**The stays-nearby carve-out.** An element that leaves but stays nearby, ready to reappear, uses
+`--cairn-ease-standard` and keeps its band in both directions rather than taking the one-band
+reduction. The zen chrome is the case.
+
+**The frame offset's explicit exception to the carve-out.** The frame offset fits the
+stays-nearby description and does not take the carve-out: it runs at `shift` in on the entrance
+curve and `base` out on the exit curve, because the offset is the motion the reader asked for and
+the way back out is the one the finger is waiting on. This is a deliberate exception, not an
+oversight.
+
+### The modality gate
+
+Every hand-authored `:hover` transition sits inside `@media (hover: hover)`. The gate governs
+cairn's own authored rules only; it does not reach a vendor component, because reaching one means
+an unlayered rule pinned by a DaisyUI internal selector.
+
+**The selector-list split.** The admin authors a hover and focus pair as one selector list, for
+example `.btn-quiet:hover, .btn-quiet:focus-visible`. Wrapping that whole list in the hover media
+feature would carry `:focus-visible` into the guard and kill focus motion for a keyboard attached
+to a touch device. So a pair splits before the guard goes on: the `:hover` alternative moves
+inside the guard and the `:focus-visible` alternative stays outside it.
+
+### Reduced motion, by property class
+
+The blanket block, the `@media (prefers-reduced-motion: reduce)` rule scoped to the two admin
+theme roots, stays unchanged in shape, covering DaisyUI's ungated components. It sets
+`0.01ms` rather than `0s`, so `transitionend` still fires, and it zeroes `transition-delay` and
+`animation-delay` alongside duration.
+
+| Property class | Policy |
+|---|---|
+| Paint (`opacity`, `color`, `background-color`, `border-color`, `box-shadow`, `outline-*`) | May opt back in by restating the transition inside the same guard with `!important`. This is a permission, not a behavior |
+| Transform (`translate`, `scale`, `rotate`, `transform`) | Stays at the floor |
+| Layout (`grid-template-rows`) | Stays at the floor |
+| The frame offset | Stays at the floor |
+| Looping motion (a skeleton shimmer) | Off entirely, static tint instead |
+| Indeterminate progress (a spinner) | Runs; it conveys state |
+
+**The empty opt-back-in list, and its budget reason.** cairn's own admin restates none of the nine
+paint opt-back-ins this pass. `check-custom-surface.mjs:158` compares the unlayered rule list to
+the allowlist by length, so every restatement costs one allowlist entry even when it reuses a
+selector already pinned; nine entries is a 53% growth in a budget whose stated direction is zero,
+in the same pass that declines the vendor hover guards and the `.modal-box` override on the same
+reasoning. The loss is small regardless: under the floor the paint still changes, instantly. The
+permission stands for a consumer, who owns their own budget.
+
+### Responsive rules
+
+The register does not change with viewport or input device; what changes is how far a surface
+travels, and duration follows travel. A breakpoint flip snaps, because the properties that change
+at a breakpoint are the ones the snap list already bans, and a resize is not feedback for an
+action taken inside the interface.
+
+### The DaisyUI decision: eleven vendor disagreements
+
+DaisyUI's shipped sheet and this language disagree in eleven places. Each is recorded rather than
+fixed, because an override is not a CSS edit here, it is a budget change: no layered admin rule
+can outrank a DaisyUI rule, so every override is an unlayered rule pinned by exact selector in
+`scripts/checks/custom-surface-budget.json`, a budget whose stated direction is down. Seven are
+disagreements over timing, curve, or modality; four are over property, and the vendor exemption on
+`motion-property`'s class join records those four instead of convicting them.
+
+The rules' own `DAISYUI_VENDOR_CLASSES` exemption lists are broader than these eleven
+disagreements: `motion-property.ts` (about `:81`-`:90`) also names `modal-box`, `dropdown`,
+`dropdown-content`, `checkbox`, and `card`, classes the compiled-sheet class join would convict on
+their own vendor motion but for this exemption, and that do not appear as numbered disagreements
+above. A reader should not take the two lists as the same set.
+
+1. **`.btn`, press.** Runs 200ms where the language says `instant` (70ms), and transitions
+   `transform`.
+2. **`.modal`, dialog.** Runs 300ms where the language's nearest band is `shift` (240ms), and
+   opens with a `scale: .98` (the declined override below).
+3. **`.drawer`, overlay.** Runs 300ms where the language says `settle` (400ms) for a panel whose
+   travel is the viewport edge.
+4. **`.collapse`, disclosure.** Ships `transition-property: all`, the one construct
+   `motion-band` bans in cairn's own code.
+5. **`.drawer`, at the breakpoint flip.** DaisyUI declares the drawer transition outside the
+   breakpoint media query, so the sidebar slides and resizes when the viewport crosses `lg` or
+   `xl`, where the language says furniture snaps. Nothing in this pass covers it.
+6. **`.tooltip`, hover.** Ships an ungated `:hover` transition, so a coarse pointer can long-press
+   the tooltip open and strand it. Filed to the borrowable-patterns borrow-1 pass.
+7. **`.menu`, hover.** Ships an ungated `:hover` transition, same shape. Filed with the same
+   follow-up.
+8. **`.drawer-side > :not(.drawer-overlay)`** transitions `width` beside `translate`. `width` is a
+   named error, and cairn's own shell markup carries `class="drawer-side"`.
+9. **`.filter input`** transitions `margin`, `padding`, and `border-width` beside `visibility` and
+   `opacity`: three named errors in one declaration.
+10. **`.collapse …::details-content`** transitions `min-height`, `padding`, and `height` among
+    seven properties, the shorthand the vocabulary rule abstains on.
+11. **`.toggle:before`** transitions `inset-inline-start`, a logical `left`, outside both the
+    allowlist and the named-error list.
+
+**The one candidate override, declined.** `.modal-box` opens with `scale: .98` to `1` over 300ms;
+dropping the scale and keeping the rest was the candidate. Declined: an unlayered override of
+`.modal` is already forbidden, the measured travel is small (roughly 10px of edge movement on a
+512px box), and it is zeroed under reduced motion regardless.
+
+<!-- WATCH: if the admin adopts modal-bottom at narrow widths, the modal-box scale override
+becomes warranted, because a bottom sheet's travel is the viewport rather than 10px. Re-open the
+declined override above at that point. -->
+
+### Limitations
+
+Four limitations are named here rather than left to inference.
+
+- **The breakpoint flip is not honored by the shipped sheet, and this pass does not cover it.**
+  The vendor drawer transition (disagreement 5) runs at every breakpoint flip, dragged or
+  scripted, and the resize stopper that would have suppressed it is cut from this pass.
+- **The frame offset's travel window is unasserted against WCAG 2.4.11.** Zen's synchronous focus
+  sequence lands while the frame is still traveling, which is necessary and not sufficient; the
+  travel window's non-obscured behavior has not been measured.
+- **The skeleton shimmer's 2.2.2 answer is DaisyUI's own reduced-motion off switch, not the
+  spinner's replaces-the-content reasoning.** A skeleton shimmer is an infinite loop presented in
+  parallel with other content, which the spinner's own exemption does not cover; what discharges it
+  is the reduced-motion off switch DaisyUI already ships on `.skeleton`.
+- **A focus indicator's own geometry animates at `instant` and no longer band.** Transitioning
+  `outline-width` and `outline-offset` can thin the indicator below 2.4.13's minimum mid-transition;
+  at 70ms the exposure is negligible, which is the bound that keeps both properties on the
+  allowlist.
+
+## Dates never wrap (Geoff, 2026-07-06)
+
+A date is one visual token: every rendered date gets `whitespace-nowrap` (with
+`tabular-nums` where dates align in columns). A wrapped date ("Jun 20," / "2026") is a
+defect, not a reflow. Size date columns to the longest realistic value instead.

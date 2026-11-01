@@ -281,7 +281,7 @@ describe('the engine built-in list', () => {
 const showcaseInstalled = existsSync(resolve(ROOT, 'examples/showcase/node_modules/.bin/tailwindcss'));
 
 describe.skipIf(!showcaseInstalled)('the .claude exclusion', () => {
-  it('keeps a utility used only under .claude/skills/cairn-public out of a scaffolded site sheet', () => {
+  it('keeps a utility used only under .claude/skills/cairn-styling-public-pages out of a scaffolded site sheet', () => {
     const result = compileClaudeExclusion(ROOT);
     expect(result.control).toBe(true);
     expect(result.leaked).toBe(false);

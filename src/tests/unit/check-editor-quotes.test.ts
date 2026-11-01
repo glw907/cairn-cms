@@ -12,7 +12,6 @@ import {
   hasQuotesToCheck,
   editorQuotesReport,
 } from '../../../scripts/checks/check-editor-quotes.mjs';
-import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const LIB_DIR = join(ROOT, 'src/lib');
@@ -177,24 +176,23 @@ describe('hasQuotesToCheck (the zero-quote floor)', () => {
   });
 });
 
-// The gate runs only while the editors arm is rebuilt (arm-state.mjs). Once the arm holds any page,
-// the pinned page must exist and carry a grounded quote, so a stage that renames or drops it fails
-// here instead of disarming the gate.
-describe('editorQuotesReport, by editors-arm state', () => {
+// The gate runs only while docs/editors holds a page. Once it holds any page, the pinned page must
+// exist and carry a grounded quote, so a stage that renames or drops it fails here instead of
+// disarming the gate.
+describe('editorQuotesReport, by whether docs/editors holds a page', () => {
   const PAGE = 'docs/editors/when-something-goes-wrong.md';
   const roots: string[] = [];
   afterEach(() => {
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
   });
 
-  function tree(files: Record<string, string>, { list = true } = {}): string {
+  function tree(files: Record<string, string>): string {
     const root = mkdtempSync(join(tmpdir(), 'cairn-editor-quotes-'));
     roots.push(root);
     const all: Record<string, string> = {
       'src/lib/messages.ts': "export const DATE_MISSING = 'Pick a date for this entry.';\n",
       ...files,
     };
-    if (list) all[DELETION_LIST_PATH] = JSON.stringify({ deleted: [PAGE], kept: [] });
     for (const [path, content] of Object.entries(all)) {
       mkdirSync(dirname(join(root, path)), { recursive: true });
       writeFileSync(join(root, path), content);
@@ -202,13 +200,13 @@ describe('editorQuotesReport, by editors-arm state', () => {
     return root;
   }
 
-  it('skips, naming the state, while the editors arm is absent', () => {
+  it('skips, naming the directory, while docs/editors holds no page', () => {
     const report = editorQuotesReport(tree({}));
     expect(report.ok).toBe(true);
-    expect(report.lines.join('\n')).toMatch(/editors arm is absent/);
+    expect(report.lines.join('\n')).toMatch(/docs\/editors holds no page/);
   });
 
-  it('fails a rebuilt editors arm that no longer carries the pinned page', () => {
+  it('fails a docs/editors that holds pages but no longer carries the pinned page', () => {
     const report = editorQuotesReport(tree({ 'docs/editors/welcome.md': '# Welcome\n' }));
     expect(report.ok).toBe(false);
     expect(report.lines.join('\n')).toContain(`${PAGE} does not exist`);
@@ -231,10 +229,6 @@ describe('editorQuotesReport, by editors-arm state', () => {
       ok: true,
       lines: ['check-editor-quotes: OK (1 quotes grounded)'],
     });
-  });
-
-  it('fails closed without the deletion list', () => {
-    expect(() => editorQuotesReport(tree({ [PAGE]: SAMPLE_PAGE }, { list: false }))).toThrow(/deletion-list\.json does not exist/);
   });
 
   it('passes on the real tree', () => {

@@ -156,7 +156,7 @@ Concrete change, in order of value:
 2. A `FOR AGENTS` section appended to the root `--help` long description: three lines, naming
    `cairn help agents`, `--json`, and the four exit codes.
 3. A shipped skill fragment. The engine already ships agent guidance in its npm package
-   (`claude/CLAUDE.md`, `claude/agents/`, `skills/cairn-extend`), so the family pattern exists:
+   (`claude/CLAUDE.md`, `claude/agents/`, `skills/cairn-extending-a-site`), so the family pattern exists:
    add `skills/cairn-health/SKILL.md` whose body is the `help agents` text plus the remedy-actor
    rule and the untrusted-field warning (C2). Per the workstation rule, a skill on disk reaches
    every agent while an MCP server reaches only the main loop, so this is the cheap high-coverage

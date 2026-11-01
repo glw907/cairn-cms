@@ -1,11 +1,12 @@
-// Compiles a preview admin stylesheet for the design-mockup HTML under docs/internal/design/, then
+// Compiles a preview admin stylesheet for the design-mockup HTML under .mockups/, then
 // copies the self-hosted fonts beside it, so a mockup serves with the real admin look. It reuses the
 // shipped buildAdminCss pipeline (one scoping and font path, no drift from production) but widens the
 // Tailwind @source scan to the design HTML, so a mockup authored in the SAME DaisyUI/Tailwind utility
 // classes the components carry compiles those classes into this sheet. The output and the copied fonts
-// are gitignored (see docs/internal/design/.gitignore); only the mockup HTML is the tracked record.
+// are gitignored along with the whole .mockups/ folder: a mockup is scratch work, and the live
+// component is the record.
 //
-// Run it with `npm run design:mockup-css`, then serve the folder (see docs/internal/design/README.md).
+// Run it with `npm run design:mockup-css`, then serve the folder.
 // A mockup must never hand-author CSS against the design tokens: author it in utility classes so the
 // screenshot renders what ships and the Svelte port is a transcription, not a re-derivation.
 import { cpSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -13,11 +14,12 @@ import { fileURLToPath } from 'node:url';
 import { buildAdminCss } from './build-admin-css.mjs';
 
 const repoRoot = new URL('../../', import.meta.url);
-const designDir = fileURLToPath(new URL('docs/internal/design', repoRoot));
+const designDir = fileURLToPath(new URL('.mockups', repoRoot));
 const fontsSrc = fileURLToPath(new URL('dist/admin/fonts', repoRoot));
 
 // The glob is relative to the input CSS (scripts/build/), the base buildAdminCss resolves @source against.
-const css = await buildAdminCss({ extraSources: ['../../docs/internal/design/*.html'] });
+const css = await buildAdminCss({ extraSources: ['../../.mockups/*.html'] });
+mkdirSync(designDir, { recursive: true });
 writeFileSync(`${designDir}/cairn-admin.css`, css);
 
 // The fonts ship from dist/admin/fonts after `npm run package`; copy them beside the sheet so the

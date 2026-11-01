@@ -9,11 +9,17 @@ import type { ConceptDescriptor } from '../content/types.js';
 
 /**
  * One developer-declared publish-success next-step link. `href` is a template string: `{concept}`
- *  and `{id}` are substituted with the published entry's identity at resolve time, so a callback
- *  never needs to cross the publish redirect.
+ *  and `{id}` are substituted with the published entry's identity at resolve time, with no URL
+ *  encoding, so a callback never needs to cross the publish redirect. The entries are validated
+ *  when `createContentRoutes` or `createCairnAdmin` builds, not when the runtime composes: an
+ *  empty label or href, a label declared twice, or a `concepts` id the site does not configure
+ *  throws an error naming the entry.
+ * @public
  */
 export interface PublishActionEntry {
+  /** The link's text on the publish-success notice. */
   label: string;
+  /** The link's target template; `{concept}` and `{id}` are replaced with the published entry's. */
   href: string;
   /** Restricts this link to the named concept ids; absent renders it after every concept's publish. */
   concepts?: string[];
@@ -28,9 +34,10 @@ export interface PublishActionLink {
 /**
  * Validate a site's raw publishActions config once at construction (server start): every entry
  *  needs a non-empty label and href, and a label is unique across entries, and a `concepts` filter
- *  must name only concepts the site actually configures. Throws an actionable error naming the bad entry, so a typo'd concept id or a
- *  blank field fails at server start rather than silently rendering no link, or the wrong one, after
- *  a publish.
+ *  must name only concepts the site actually configures. Throws an actionable error naming the
+ *  bad entry, so a typo'd concept id or a blank field fails at server start (and in `vite build`,
+ *  whose analysis loads every route's server module) rather than silently rendering no link, or
+ *  the wrong one, after a publish.
  * @param entries - The raw config, or undefined when the site declares none.
  * @param concepts - The site's concepts, so a `concepts` filter can be checked against real ids.
  * @returns The validated entries, in declaration order.

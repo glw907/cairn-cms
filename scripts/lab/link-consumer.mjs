@@ -25,7 +25,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { runIfMain } from '../checks/reference-coverage.mjs';
+import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 
@@ -339,4 +339,4 @@ function main() {
   }
 }
 
-runIfMain(main, import.meta.url);
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

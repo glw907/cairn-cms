@@ -32,8 +32,14 @@ import { log } from '../log/index.js';
 import { env } from './workers-env.js';
 import type { CairnEvent } from './types.js';
 
+/**
+ * The config `createAuthRoutes` takes: the magic-link branding, the sender, and the bootstrap owner.
+ * @beta
+ */
 export interface AuthRoutesConfig {
+  /** The site name and sender identity the magic-link email carries. */
   branding: AuthBranding;
+  /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
   /**
    * A site-declared owner to seed the allowlist through the request action, in place of a
@@ -41,16 +47,26 @@ export interface AuthRoutesConfig {
    * is compared trimmed and lowercased, matching the normalization every write path already
    * applies. Inert under identity mode: `requestAction`, its only call site, 404s before ever
    * reaching this check, so the first owner must be seeded out of band before `identity` is
-   * enabled.
+   * enabled. On a matching request against an empty `editor` table, `requestAction` inserts the
+   * owner in one atomic `INSERT ... WHERE NOT EXISTS` before the normal magic-link flow and logs
+   * `editor.bootstrapped`; a non-matching email on an empty table is treated as an unknown email.
    */
-  bootstrapOwner?: { email: string; displayName: string };
+  bootstrapOwner?: {
+    /** The owner's email address, compared trimmed and lowercased. */
+    email: string;
+    /** The owner's display name on the seeded row. */
+    displayName: string;
+  };
 }
 
 /**
  * The request-action result. `outcome` is the discriminant; `sent` is kept for a site rendering
  * its form against `form.sent`, so the field is additive. The neutral and send-ok paths return
  * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
- * membership.
+ * membership. `requestAction` awaits the send, so the outcome reflects it: `send-error` means the
+ * email could not be sent, and `throttled` means the same address asked again inside the send
+ * cooldown, a signal that does reveal membership.
+ * @beta
  */
 export type RequestOutcome =
   | { outcome: 'sent'; sent: true }
@@ -163,6 +179,7 @@ function scrubSendError(err: unknown): string {
  * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
  * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
  * a hand-run D1 insert.
+ * @beta
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   const send = config.send ?? cloudflareSend;
@@ -353,9 +370,10 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // and the editor would have to notice they must request the link again from this browser.
     //
     // Which refusal the editor reads is decided here, after the consume, since only the consume's
-    // predicate knows whether the row was bound. A cookie-less browser that failed against a
-    // bound row gets the distinct no-pending-request code, because "request a new one" is the
-    // exact advice that reproduces the failure on a second device; everything else, including a
+    // predicate knows whether the row was bound. A cookie-less browser whose confirm failed gets
+    // the distinct no-pending-request code, whatever the cause (a row bound to another browser,
+    // an expired, unknown, or spent token), because "request a new one" is the exact advice that
+    // reproduces the failure on a second device; a browser that carries a cookie, including a
     // present-but-wrong nonce, reads as expired.
     if (!email) {
       if (!nonce) {
@@ -489,11 +507,21 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };
 }
 
-/** What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. */
+/**
+ * What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. The view
+ * components post named actions, so a hand-mounted route registers each under the name its view
+ * posts (`request`, `confirm`, `logout`); a `default` action never receives a named post.
+ * @beta
+ */
 export interface AuthRoutes {
+  /** The `/admin/login` load; under identity mode it returns the hand-off shape and mints no nonce or CSRF token. */
   loginLoad: (event: CairnEvent) => LoginData;
+  /** The `?/request` action on `/admin/login`: awaits the send and resolves a {@link RequestOutcome}; 404s under identity mode. */
   requestAction: (event: CairnEvent) => Promise<RequestOutcome>;
+  /** The `/admin/auth/confirm` load: renders the confirm form and consumes nothing; 404s under identity mode. */
   confirmLoad: (event: CairnEvent) => ConfirmData;
+  /** The `?/confirm` action: consumes the token, starts a session, and redirects to `/admin`; a failed confirm redirects to the login page with an `?error=` code; 404s under identity mode. */
   confirmAction: (event: CairnEvent) => Promise<never>;
+  /** The `?/logout` action the shell posts on `/admin`: clears the cookies and any session row, then redirects to `/admin/login`, or to the identity gate's `logoutUrl`. */
   logoutAction: (event: CairnEvent) => Promise<never>;
 }

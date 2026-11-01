@@ -6,7 +6,9 @@ import type { CairnLogEvent } from './events.js';
 
 /**
  * Every CairnLogEvent member. Frozen, since the array is public and a push would corrupt the
- * vocabulary two gates parse by shape.
+ * vocabulary two gates parse by shape. A site validating an event string read from untyped input (a
+ * webhook payload, a stored log line) checks it against this array.
+ * @public
  */
 export const CAIRN_LOG_EVENTS = Object.freeze([
   'auth.link.requested',

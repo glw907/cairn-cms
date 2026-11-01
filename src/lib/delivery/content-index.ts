@@ -19,7 +19,10 @@ export interface RawFile {
   raw: string;
 }
 
-/** The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. */
+/**
+ * The cheap, plain-data view of one entry, for lists, feeds, and the sitemap.
+ * @public
+ */
 export interface ContentSummary {
   /**
    * The descriptor id this entry belongs to, e.g. "posts". Lets a list or page branch per
@@ -54,25 +57,44 @@ export interface ContentSummary {
  * The detail view: a summary plus the frontmatter and the body to render. The frontmatter
  *  type defaults to `Record<string, unknown>`; a site's typed reads can infer it from the
  *  concept fields. Generic now so that change does not break this signature.
+ * @public
  */
 export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {
   frontmatter: F;
   body: string;
 }
 
-/** One entry's validation failure, recorded at build for the site aggregator's gate. */
+/**
+ * One entry's validation failure, recorded at build for the site aggregator's gate.
+ * @public
+ */
 export interface ContentProblem {
   id: string;
   draft: boolean;
   errors: Record<string, string>;
 }
 
-/** The per-concept query surface. */
+/**
+ * The per-concept query surface.
+ * @public
+ */
 export interface ContentIndex<F = Record<string, unknown>> {
+  /**
+   * Summaries in the engine's order, so a caller never re-sorts. A dated concept (`routing.dated`)
+   *  is newest first by `date`, an undated entry last; an undated concept is sorted by `title`.
+   *  Drafts are omitted unless `includeDrafts` is true.
+   */
   all(opts?: { includeDrafts?: boolean }): ContentSummary[];
+  /** One entry by id, drafts included, or undefined. */
   byId(id: string): ContentEntry<F> | undefined;
+  /** Summaries carrying `tag`, in the same order as `all`; drafts omitted unless `includeDrafts` is true. */
   byTag(tag: string, opts?: { includeDrafts?: boolean }): ContentSummary[];
+  /** Every tag on a non-draft entry with its count, sorted alphabetically by tag. */
   allTags(): { tag: string; count: number }[];
+  /**
+   * The neighbors of one entry among non-draft entries in `all` order, `newer` the one before it
+   *  and `older` the one after. An id that is unknown or a draft returns `{}`.
+   */
   adjacent(id: string): { newer?: ContentSummary; older?: ContentSummary };
   /** Per-entry validation failures recorded at build, for the site-level build gate. */
   problems(): ContentProblem[];

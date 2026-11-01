@@ -8,7 +8,7 @@
 // order.
 //
 // Every response body below is copied verbatim from a real Cloudflare API call, captured on
-// 2026-08-11 and recorded in `docs/internal/2026-08-11-t4a-domain-spike.md`. Nothing here is
+// 2026-08-11 against a scratch domain. Nothing here is
 // invented; where a shape was NOT observed, this file says so in the doc comment for that piece
 // rather than guessing.
 //
@@ -27,7 +27,7 @@
 //    success on its own, so this fake supports it defensively rather than leaving it unreachable.
 //
 // The zone-already-exists body (error 1061) IS captured now, from the estate account
-// (docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"): 1061
+// with a minted token scoped to it: 1061
 // carries no ownership field, so it cannot distinguish a zone this account holds from one held
 // elsewhere, which is why ensureZone (zone.mjs) follows it with a zone-list lookup rather than
 // reading ownership out of the body. A test arms it with `failNext('zone_create', 400, ...)`.
@@ -91,7 +91,7 @@ const TOKEN_VERIFY_MESSAGES = loadFixture('cloudflare', 'user_token_verify.succe
  *  for a fresh zone (this pass's spike could not create a real zone to confirm it, so the default
  *  is documented rather than observed). `tokenVerifyId` sets the `result.id` `GET
  *  /user/tokens/verify` returns, the value the Builds chapter reuses as `cloudflare_token_id`;
- *  defaults to the id captured live in `docs/internal/2026-08-12-t4c-builds-spike.md`.
+ *  defaults to an id captured live from that route on 2026-08-12.
  * @returns {Promise<FakeCloudflare>} the running fake, ready for requests
  */
 export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyId = 'd07b2a25f05151591830c45053186979' } = {}) {
@@ -527,9 +527,7 @@ function createWorkersDomainListHandler(ctx) {
 
 // --- Email Sending routes -----------------------------------------------------------------
 //
-// Response bodies below are copied verbatim from
-// docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
-// captured live against the scratch domain and against a second zone on 2026-08-12. Two things a
+// Response bodies below are copied verbatim from real Email Sending API calls, captured live against the scratch domain and against a second zone on 2026-08-12. Two things a
 // later edit must not "fix":
 //
 // 1. `preview_enabled` is NOT a constant (a fresh create returns `true`; a zone onboarded
@@ -548,7 +546,7 @@ const EMAIL_SEND_SUCCESS_FIXTURE = loadFixture('cloudflare', 'email_send.success
 
 /**
  * The second sender-not-ready send refusal, captured live 2026-08-12 alongside the 10203 body
- * (docs/internal/2026-08-11-t4b-email-spike.md, "There is a second refusal code"): observed only
+ * from the same send route: observed only
  * on domains that were never onboarded, and not consistently even there (two domains with no
  * sending subdomain entry returned different codes). A test drives it the same way as the 10203
  * body, via `cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY)`.
@@ -613,8 +611,8 @@ function createEmailSendHandler() {
 
 // --- Workers Builds routes -----------------------------------------------------------------
 //
-// Response bodies below are copied verbatim from
-// docs/internal/2026-08-12-t4c-builds-spike.md, captured live 2026-08-12/13 against the glw907
+// Response bodies below are copied verbatim from real Workers Builds API calls, captured live
+// 2026-08-12/13 against the glw907
 // account and the `cairn-t4c-spike` scratch repo. Three route corrections that spike amendments
 // 7-9 made against the plan's original assumption, load-bearing for anyone extending this file:
 //
@@ -932,8 +930,8 @@ function createBuildGetHandler(ctx) {
  * parameter, page 0 is served. With one, the page immediately after whichever page's
  * `cursor` field matches it is served (falling back to the last page when nothing matches),
  * modelling a cursor-based "resume after this point" route: this exact query-parameter shape was
- * never captured live (docs/internal/2026-08-12-t4c-builds-spike.md records only the response
- * body, `{cursor, truncated, lines, events}`), so it is inferred, not observed, and paired one-to-
+ * never captured live (only the response body, `{cursor, truncated, lines, events}`, was), so it
+ * is inferred, not observed, and paired one-to-
  * one with `api.mjs`'s `getBuildLogs`, which is the only caller. Do not treat this shape as a
  * captured fixture the way the rest of this file's Builds bodies are.
  * @param {{ state: { buildLogs: Map<string, object[]> } }} ctx

@@ -61,10 +61,25 @@ export default [
       'house/no-em-dash-in-comments': 'error',
       // The contract, never the type. The signature already carries the types.
       'jsdoc/no-types': 'error',
-      'jsdoc/check-tag-names': ['error', { typed: true }],
+      // `typed: true` would reject `@public`, one of the three stability-tier tags check:tiers reads;
+      // `@scaffold` is the custom third, defined here and in tsdoc.json.
+      'jsdoc/check-tag-names': ['error', { definedTags: ['scaffold'] }],
+      // check:snippets typechecks docs and skill references, never a doc comment, so a code sample
+      // lives on a page the gate proves rather than in an unchecked `@example`.
+      'jsdoc/no-restricted-syntax': [
+        'error',
+        {
+          contexts: [
+            {
+              comment: 'JsdocBlock:has(JsdocTag[tag=example])',
+              message: 'No @example in a doc comment. Put the sample on a page check:snippets typechecks.',
+            },
+          ],
+        },
+      ],
       'tsdoc/syntax': 'error',
       'jsdoc/check-param-names': 'error',
-      // A doc on exports only, and at warn: check:reference owns the hard coverage gate.
+      // A doc on exports only, and at warn: check:comments carries the hard comment gate.
       'jsdoc/require-jsdoc': ['warn', { publicOnly: true }],
       // The deterministic half of the paraphrase gate.
       'jsdoc/informative-docs': 'warn',

@@ -8,7 +8,7 @@ export const prerender = true;
 // The full archive minus the page-one lead (the same slice the home route paginates page one
 // from), so this route's page count always agrees with the home page's. posts.all() is already
 // newest-first (a dated concept's engine ordering contract, documented in
-// docs/reference/delivery.md), so no re-sort is needed here.
+// the concept reader's doc comment), so no re-sort is needed here.
 function archiveEntries() {
   return posts.all().slice(1);
 }

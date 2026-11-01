@@ -1,5 +1,5 @@
-// cairn-cms: the typed frontmatter content graph. A `reference` field stores a target's permanent id
-// in frontmatter; this module surgically rewrites that id on rename. The rewriter is byte-preserving:
+// cairn-cms: the typed frontmatter content graph. A `reference` field stores a target's id in
+// frontmatter; this module surgically rewrites that id on rename. The rewriter is byte-preserving:
 // it splices the value substring by source offset rather than round-tripping through gray-matter
 // (which reformats YAML and is not byte stable), so every other byte of the entry, body, sibling
 // keys, comments, and the exact CRLF/BOM bytes, survives the edit exactly.
@@ -16,15 +16,16 @@ import {
 
 /**
  * One typed frontmatter edge from a content entry to a target entry: the `field` the edge was
- *  declared on, the target's `concept`, and the target's permanent `id`. The manifest records these
+ *  declared on, the target's `concept`, and the target's `id`. The manifest records these
  *  per entry, the cross-branch index reverse-maps them, and the build verifies each one resolves.
+ * @public
  */
 export interface ReferenceEdge {
   /** The frontmatter key the edge was declared on. */
   field: string;
   /** The target's concept, taken from the field descriptor, never the value. */
   concept: string;
-  /** The target's permanent id. */
+  /** The target's id, which a rename of the target rewrites in every referencing entry. */
   id: string;
 }
 

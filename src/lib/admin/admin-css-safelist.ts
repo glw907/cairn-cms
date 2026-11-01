@@ -60,7 +60,7 @@ export const ADMIN_CSS_SAFELIST = [
   // region on several admin surfaces shares the token, coincidentally, with daisyUI's `status`
   // dot class), so it stays blessed here for one documented, audit-complete list even though the
   // dot itself is gone. The chip register second generation
-  // (https://github.com/glw907/cairn-cms/blob/main/docs/internal/probes/2026-08-26-chip-registers-v2.md)
+  // (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md)
   // retired StatusChip's `status`-dot rendering: the owner probe ruled the 6px dot illegible
   // toolkit-wide and fused its tone signal into the chip register instead, so every color and size variant this family used to bless, thirteen
   // entries, is removed here. CHANGELOG carries the removal. Naming a member class literally in
@@ -105,7 +105,7 @@ export const ADMIN_CSS_SAFELIST = [
   // of preserving the de facto public sheet once that prose left with the tone/dot retirement. The
   // blessing is now deliberate and covers every blessed badge class, not just these two: each
   // class is measured against the register set's floors on both packaged themes, the raw
-  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the
+  // daisyUI alternative to `StatusChip` (.claude/skills/cairn-following-admin-design/references/admin-design-system.md names the
   // when-to-use line). `badge-tier-legibility.test.ts` carries the measured numbers and is the one
   // place they're allowed to live; a comment repeating them here would just be a second copy to
   // fall out of date the next time daisyUI's recipe moves.

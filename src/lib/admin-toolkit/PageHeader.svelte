@@ -24,11 +24,12 @@ a snippet the caller fully authors, so this component carries no domain knowledg
 eyebrow names or what an action does.
 
 Typography and layout classes only, no daisyUI component class. The classes here come from the
-eyebrow and page-heading recipes in `docs/internal/admin-design-system.md`. `src/lib/admin-toolkit`
+eyebrow and page-heading recipes in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`. `src/lib/admin-toolkit`
 is inside `scripts/build/admin-css.input.css`'s `@source` roots, so a utility class used only here
 still compiles into the shipped sheet. The `h1`'s even-line-rag balancing is a `text-wrap: balance`
 rule in the scoped `<style>` below, so a long title's line rags evenly rather than leaving a lone
 last word; it stays scoped CSS rather than a utility class, which ships the same way regardless.
+@public
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

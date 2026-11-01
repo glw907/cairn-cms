@@ -243,7 +243,9 @@ export interface ContentRoutesConfig {
    *  `href` matches no visible nav entry (an engine door or a site entry, resolved-and-filtered
    *  set), or when it duplicates an earlier item's `href` (first wins, silently). Absent, the
    *  shell payload serializes an empty record and renders exactly as before this seam existed. A
-   *  dep that throws fails the shell load loudly; the site owns its callback's errors.
+   *  dep that throws or rejects renders no badges and logs `admin.attention_failed`, so one failed
+   *  count never takes the shell down. The shell load runs on every admin navigation, so a slow
+   *  dep slows every admin screen.
    */
   attention?: (ctx: {
     editor: Editor;

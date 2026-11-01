@@ -47,7 +47,9 @@ export interface CairnPlatformBindings {
 
 /**
  * The R2 binding a media-enabled site adds, checked alongside {@link CairnPlatformBindings}. A
- *  text-only site (no `assets` block on its adapter) omits it.
+ *  text-only site (no `assets` block on its adapter) omits it. `MEDIA_BUCKET` is the conventional
+ *  binding name; a site whose adapter names a different `bucketBinding` checks that name itself
+ *  instead of using this type.
  * @public
  */
 export interface CairnMediaBindings {

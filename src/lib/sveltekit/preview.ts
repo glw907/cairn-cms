@@ -397,7 +397,14 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  row's expiry, the row's stored concept and id against the live runtime, and finally the branch
  *  read, whose miss is the branch-gone signal (there is no separate `branchHead` pre-check).
  *  Every refusal answers the identical `error(404, NOT_FOUND_MESSAGE)`; only the `preview.refused`
- *  log distinguishes why, and it never carries the token or any attacker-supplied string.
+ *  log distinguishes why, and it never carries the token or any attacker-supplied string. A
+ *  missing `AUTH_DB` binding answers `error(503)` instead, after the same log.
+ *
+ * Its first statement sets `x-robots-tag: noindex, nofollow`, `cache-control: private, no-store`,
+ *  `referrer-policy: no-referrer`, `x-content-type-options: nosniff`, and `x-frame-options: DENY`,
+ *  on every path including both refusal classes, since `/preview` sits outside the admin guard's
+ *  header layer. A gone branch renders the ended page (`preview.state: 'published'`) only when the
+ *  entry's file exists on the default branch; with nothing published it answers the uniform 404.
  *
  * No cookie is read or set, and `locals.cairnEditor`/`locals.cairnAccess` are never read: the
  *  token itself is the sole credential, an unauthenticated read on one entry, so this load carries

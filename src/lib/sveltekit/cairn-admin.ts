@@ -29,7 +29,8 @@ import type { CairnEvent, HistoryData } from './types.js';
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
  *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
- *  is not a dep here.
+ *  is not a dep here. Neither are `roles` and `access`: they live on the adapter and reach the
+ *  admin through `runtime.roles` and `runtime.access`.
  * @public
  */
 export interface CairnAdminConfig {
@@ -386,13 +387,36 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
  *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always
  *  ran; the narrowing withdraws the SUPPORTED seam, not the reachability.
+ *
+ *  Name this type rather than `ReturnType<typeof createCairnAdmin>`. `shellLoad` is the
+ *  `/admin/+layout.server.ts` load: a bare payload for the two public paths, and the authed
+ *  chrome with a streamed pending count otherwise, loaded once for the whole `/admin/**` subtree.
  * @public
  */
 export interface CairnAdminRoutes {
+  /**
+   * The one per-view load: parses the pathname, 404s on an unrecognized path, returns bare page
+   *  data for `/admin/login` and `/admin/auth/confirm`, and the view's `page` data otherwise. The
+   *  `/admin` landing redirects a role with a declared `home` there, sends an owner or editor to
+   *  the first concept list it can reach, and gives a `none` role the `welcome` view. The nav view
+   *  404s unless the runtime has a `navMenu`.
+   */
   load: InternalCairnAdminRoutes['load'];
   // WATCH: check:tool-heuristics greps this exact member for the Go tool's admin.mount-shape
   // heuristic, which proves a site's admin layout calls .shellLoad.
   shellLoad: InternalCairnAdminRoutes['shellLoad'];
+  /**
+   * Every named admin action. Each parses the pathname as `load` does and throws a 404 when the
+   *  parsed view does not accept it: `request` on login; `confirm` on confirm; `logout` on any
+   *  view; `create` on a list; `save` on edit or nav (404 without a `navMenu`); `settingsSave` on
+   *  settings; `vocabularySave` on vocabulary; `upload`, `publish`, `discard`, `rename`,
+   *  `previewMint`, `previewRevoke`, `dictionaryAdd`, and `tidy` on edit; `delete` on edit or a
+   *  list (the id from the path, or from the form body on a list); `revert` on history;
+   *  `mediaUpload` on media; `publishAll` on every authed view, the index included; and
+   *  `editorAdd`, `editorRemove`, and `editorSetRole` on editors, each gated to owners. An
+   *  unexpected throw inside an action answers `fail(500, { error })` in place and logs
+   *  `admin.action.failed`; a redirect or an HTTP error passes through.
+   */
   actions: Pick<
     InternalCairnAdminRoutes['actions'],
     | 'request'

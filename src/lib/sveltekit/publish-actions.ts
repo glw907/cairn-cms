@@ -9,8 +9,11 @@ import type { ConceptDescriptor } from '../content/types.js';
 
 /**
  * One developer-declared publish-success next-step link. `href` is a template string: `{concept}`
- *  and `{id}` are substituted with the published entry's identity at resolve time, so a callback
- *  never needs to cross the publish redirect.
+ *  and `{id}` are substituted with the published entry's identity at resolve time, with no URL
+ *  encoding, so a callback never needs to cross the publish redirect. The entries are validated
+ *  when `createContentRoutes` or `createCairnAdmin` builds, not when the runtime composes: an
+ *  empty label or href, a label declared twice, or a `concepts` id the site does not configure
+ *  throws an error naming the entry.
  * @public
  */
 export interface PublishActionEntry {

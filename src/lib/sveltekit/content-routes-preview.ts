@@ -49,7 +49,8 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
    *  site's custom mint run the identical sequence and log the identical event.
    *
    *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
-   *  affordance can show and copy it in place. Refuses on the page when the entry carries no
+   *  affordance can show and copy it in place. The URL is built from `PUBLIC_ORIGIN`, never the
+   *  request's host, and the response carries `cache-control: no-store`. Refuses on the page when the entry carries no
    *  pending draft (there is nothing to share) or when `AUTH_DB` is missing the `preview_tokens`
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */

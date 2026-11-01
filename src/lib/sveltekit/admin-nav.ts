@@ -49,7 +49,9 @@ export const ADMIN_NAV_ICON_NAMES = [
 ] as const;
 
 /**
- * One of the bundled custom-nav icon names.
+ * One of the bundled custom-nav icon names. A name outside this list, on a site entry or an engine
+ *  reference's `icon`, throws when `createContentRoutes` or `createCairnAdmin` validates the
+ *  declared `navLayout`, not when the runtime composes.
  * @public
  */
 export type NavIcon = (typeof ADMIN_NAV_ICON_NAMES)[number];
@@ -63,7 +65,10 @@ export interface NavLayoutEntry {
   label: string;
   /** One of the bundled nav icon names. */
   icon: NavIcon;
-  /** The link's target, a site route under `/admin/` that no built-in view claims. */
+  /**
+   * The link's target, a site route under `/admin/` that no built-in view claims; a colliding href
+   *  throws at validation, naming the built-in view.
+   */
   href: string;
   /** Hides the link from a non-owner; cosmetic only, so the route must still gate server-side. */
   ownerOnly?: boolean;
@@ -131,7 +136,10 @@ export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
  * @public
  */
 export interface NavLayoutEngineRef {
-  /** The engine screen this node places: a concept id or one of the fixed utility screens. */
+  /**
+   * The engine screen this node places: a concept id or one of the fixed utility screens. `'nav'`
+   *  is valid only when the adapter configures a nav menu.
+   */
   screen: EngineScreenId;
   /** Relabels the screen's sidebar link. */
   label?: string;
@@ -165,6 +173,12 @@ export interface NavLayoutSection {
 
 /**
  * A site's whole declared sidebar: engine references, its entries, and sections, in declaration order.
+ *  Validated when `createContentRoutes` or `createCairnAdmin` builds: a bad icon, a colliding or
+ *  duplicate href, an unknown or repeated screen, or a role the vocabulary does not declare throws.
+ *  An engine screen the tree never references still renders, in the trailing `fallback` group, so
+ *  declaring one site entry is enough to add one link. Absent, the default arrangement resolves
+ *  through the same resolver. Nav placement is never authorization: a hidden door's route stays
+ *  live and gates itself.
  * @public
  */
 export type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];

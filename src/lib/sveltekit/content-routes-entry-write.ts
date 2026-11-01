@@ -555,7 +555,9 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
 
   /**
    * Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
-   *  the edit page when the entry lives on main, else to the list (the entry is gone entirely).
+   *  the edit page when the entry lives on main (`?discarded=1`), else to the list (the entry is
+   *  gone entirely). A never-published entry's preview-token rows are cleared; a published entry's
+   *  are left, since its id still names the same live entry.
    */
   async function discardAction(event: CairnEvent): Promise<never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);

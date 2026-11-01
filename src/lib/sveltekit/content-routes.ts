@@ -137,6 +137,21 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  session, CSRF, and view gates it always ran, so nothing is exposed that was not exposed before.
  *  What the narrowing withdraws is the SUPPORTED seam, not the reachability, which is why the
  *  removal is a documented capability change rather than a security fix.
+ *
+ * Member contracts a hand-mounting site relies on (each implementing function carries the full
+ *  detail): a save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and never
+ *  touches the default branch. `publishAction` validates and holds the posted form like a save,
+ *  then copies it to the default branch with its manifest row in one commit, deleting the branch
+ *  only when its head still matches that commit. Every action that commits to the default branch
+ *  from files it read earlier (publish, publish-all, the dictionary add) commits against the head
+ *  it read first, so an intervening commit answers that action's conflict message, and a default
+ *  branch with no readable head refuses. `discardAction` returns to the edit page for a published
+ *  entry, else to the list. `renameAction` refuses with a 409 while a pending branch exists, and a
+ *  delete cascades to the pending branch after its commit lands. `historyLoad` lists at most the
+ *  25 most recent publishes, and `revertAction` reaches only those. `dictionaryAddAction` and
+ *  `tidyAction` are fetch actions on the upload transport and read the route's `concept` param,
+ *  answering 404 on a route without one. A hand-mounted route registers each action under the name
+ *  its view posts (`?/save`, `?/publish`, and the rest).
  * @beta
  */
 export type ContentRoutes = Pick<

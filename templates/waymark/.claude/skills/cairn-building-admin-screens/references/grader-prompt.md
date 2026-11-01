@@ -11,7 +11,7 @@
 - [Output shape](#output-shape)
 
 
-This is the coherence-read gate from the standard doc's done-gate, step 3: the
+This is the coherence-read gate, step 3 of the done-gate in `../SKILL.md`: the
 compositional judgment no mechanical rule carries. A builder runs it against their
 captures before calling a derivation or a novel composition done. Execute this prompt
 exactly as written, given only the image paths supplied to you; do not add or drop a

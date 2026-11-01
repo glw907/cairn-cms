@@ -2,136 +2,76 @@
 
 ## Contents
 
-- [Anatomy at a glance](#anatomy-at-a-glance)
-- [This screen renders as an office route, and screen-anatomy does flag it](#this-screen-renders-as-an-office-route-and-screen-anatomy-does-flag-it)
-- [The header: identity, status, and light verbs](#the-header-identity-status-and-light-verbs)
-- [The card: the shell recipe](#the-card-the-shell-recipe)
-- [The section: heading, one light verb, a list of rows](#the-section-heading-one-light-verb-a-list-of-rows)
-- [The dialog: one filled action, and the label register in practice](#the-dialog-one-filled-action-and-the-label-register-in-practice)
-- [The cancel-guests dialog: an inline label beside a checkbox](#the-cancel-guests-dialog-an-inline-label-beside-a-checkbox)
-- [What this exemplar doesn't cover](#what-this-exemplar-doesnt-cover)
+- [Anatomy](#anatomy)
+- [A custom detail route is an office screen to the audit](#a-custom-detail-route-is-an-office-screen-to-the-audit)
+- [The header](#the-header)
+- [A card section](#a-card-section)
+- [An edit dialog](#an-edit-dialog)
+- [Checkbox rows](#checkbox-rows)
 
+A detail screen shows one record, its sections of related data, and the dialogs that change it:
+for example `/admin/signups/[id]`, reached from a list row. Gate it like any screen
+(`custom-screen.md`); a parameterized route may need an explicit access target
+(`sidebar-and-access.md`).
 
-Load this when building or reviewing a detail (desk) screen: a single record's full
-picture, its sections of related data, and the dialogs that mutate it.
+## Anatomy
 
-Source: the Signups screen in `examples/showcase`, the cairn-cms repo's worked custom-screen
-example (`src/routes/admin/signups/+page.svelte`). A scaffolded site ships neither that screen
-nor a detail route; the screen's full source is inline at the end of `exemplar-list.md`. What
-the screen holds that a detail screen reuses is one real dialog, the shared delete confirm,
-reproduced below, and the form-and-outcome wiring a detail screen's dialogs share. This file
-annotates that dialog where it applies and shows, under a **Growth** label, the detail route a
-developer builds next: `/admin/signups/<id>`, one signup's page, reached from a list row.
-Growth snippets are not shipped code. They are written in the Signups
-vocabulary and assume the developer's tables carry the related data (guests, payments,
-notes) the cards show. Several annotations translate the markup into the cairn-native call
-(`StatusChip` registers, the `card-shell card-shadow` primitive) rather than transcribing it.
+A back link, a header with the record's identity, its status chip, and light verbs, then a stack
+of cards (Contact, Guests, Payments, Notes), each opening a dialog for a heavier verb. The header
+is hand-written because `PageHeader`'s one-child `action` slot cannot hold a chip and several
+verbs.
 
-## Anatomy at a glance
+## A custom detail route is an office screen to the audit
 
-Growth: a back link, a header with the record's identity and its light verbs, then a stack of
-cards (Contact, Guests, Payments, Notes), each opening its dialog for a heavier verb (edit,
-add, move, record a payment, refund). No `PageHeader`: a desk route's header is bespoke
-because it carries state (a status chip) and several verbs a generic header snippet doesn't
-have vocabulary for.
+The shell treats a route as a desk only when it has three segments and the second names a
+content concept. `/admin/signups/<id>` does not, so it renders as an office screen and
+`screen-anatomy` expects one `h1` and a `card-shell` region. Write cards as
+`card-shell card-shadow p-6`, never a hand-assembled `rounded-box border ... shadow-[...]`
+literal; the literal is not the class the rule looks for, and it drifts.
 
-## This screen renders as an office route, and screen-anatomy does flag it
+The page underneath keeps zero fills. Each open dialog is its own surface with exactly one fill.
 
-`screen-anatomy`'s desk exemption is earned by the admin shell's concept-based route
-classification, never by a screen being conceptually a desk (`screen-anatomy.ts`'s
-comment: "The exemption is read off the RENDER, never off the path, and that is the whole
-point"). The shell's `isDeskRoute` (`CairnAdminShell.svelte`) requires the path to have exactly
-three segments and the SECOND segment to name a registered content concept; this desk lives at
-`/admin/signups/<id>`, whose second segment is `signups`, which is not one of the site's
-registered content concepts. The shell therefore renders the office drawer class
-(`lg:drawer-open`), and `screen-anatomy` reads that render and judges the page as an office
-screen, not a desk.
-
-That matters because a card written as a hand-assembled literal (the `cardCls` shown below)
-is not the class `.card-shell`, and `screen-anatomy` looks for that class name to find the card
-region. A desk whose cards carry only the literal draws the rule's "this office route renders no
-`.card-shell` region inside `<main>`" advisory. That is not a false positive to allowlist; it is
-the same drift the next section's recipe already fixes: swapping `cardCls` for
-`card-shell card-shadow` both satisfies the rule and is the cairn-native call on its own terms.
-
-One check still applies regardless of how a given route classifies, because it's judgment
-rather than a mechanical check the rule can scope by route: **one filled action per surface.**
-This page holds several open dialogs, and each dialog is its own surface (`one-filled-action`
-reads the topmost open layer). The page underneath keeps zero fills; every dialog keeps
-exactly one (its "Save", or the destructive confirm's error-toned fill).
-
-## The header: identity, status, and light verbs
+## The header
 
 ```svelte
 <header class="mb-6 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
   <div class="flex flex-col gap-0.5">
     <span class={HEADER_CELL}>Signups</span>
-    <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{desk.name}</h1>
-    {#if desk.email}<p class="text-sm text-muted">{desk.email}</p>{/if}
+    <h1 class="type-title font-bold font-[family-name:var(--font-display)]">{desk.name}</h1>
+    {#if desk.email}<p class="type-body text-muted">{desk.email}</p>{/if}
   </div>
   <div class="flex items-center gap-2">
-    {#if status}
-      <span class="badge {chip.cls}">{chip.label}</span>
-      <button type="button" class="btn btn-ghost btn-sm" onclick={...}>Cancel signup&hellip;</button>
-    {/if}
+    <StatusChip label={chip.label} register={chip.register} />
     <button type="button" class="btn btn-ghost btn-sm" onclick={openSignupDialog}>Edit signup</button>
-    <button type="button" class="btn btn-ghost btn-sm" onclick={...}>Move&hellip;</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick={openMoveDialog}>Move&hellip;</button>
   </div>
 </header>
 ```
 
-- The eyebrow (`HEADER_CELL`, `type-label` in cairn's vocabulary) plus the `h1` is the same
-  identity pattern the list exemplar's `PageHeader` carries, hand-rolled here because the
-  header's right side needs room for a chip and three verbs a header snippet's `action`
-  slot (one child) can't hold.
-  `type-title font-bold font-[family-name:var(--font-display)]` is a cairn-native rewrite of
-  the literal `text-2xl font-bold tracking-tight`. Both resolve to the same 1.5rem, but the
-  role utility carries the ruled leading and drops the `tracking-tight`, which the admin
-  design system reserves for the wordmark's K4 correction, not a page heading.
-- The status badge (`<span class="badge {chip.cls}">`) is a hand-assembled daisyUI badge from
-  a per-status class map. A cairn-native build calls
-  `<StatusChip label={...} register={...} />` instead: the header's identity chip is
-  exactly the kind of state a reader needs to register at a glance (Pending) or can safely
-  skim past (Confirmed), so which register applies is the same judgment call
-  `exemplar-list.md` walks through for the same status vocabulary.
-- Every header verb here is `btn btn-ghost btn-sm` (one carries `text-error` for the
-  destructive "Cancel signup" direction, ink-color only, still no fill). None of the three
-  competes with a dialog's filled Save; ghost is the correct weight for a verb that
-  opens a second surface rather than acting immediately in place.
+- The eyebrow plus `h1` is the same identity pattern `PageHeader` renders. Use `type-title`,
+  not `text-2xl`, and no `tracking-tight`.
+- The status is a `StatusChip`, never a hand-built `badge` from a class map.
+- Header verbs are `btn btn-ghost btn-sm`. A destructive verb adds `text-error` ink, never a
+  fill: each opens a second surface rather than acting in place.
 
-## The card: the shell recipe
+## A card section
 
 ```svelte
-const cardCls = 'rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-6 shadow-[var(--cairn-shadow)]';
-```
-
-This literal is what `card-shell card-shadow` replaces: the two safelisted container-role
-utilities that resolve to the identical radius, hairline border, fill, and elevation
-(`docs/reference/admin-grammar-tokens.md`, "Container roles"). A cairn-native build writes
-`class="card-shell card-shadow p-6"` instead of restating the recipe by hand. That was the
-whole point of graduating those two utilities: a repeated literal like this one is a
-drift risk a role name isn't.
-
-## The section: heading, one light verb, a list of rows
-
-```svelte
-<div class={cardCls}>
+<div class="card-shell card-shadow p-6">
   <div class="flex items-center justify-between">
     <h2 class={HEADER_CELL}>Guests</h2>
     <button type="button" class="btn btn-ghost btn-xs" onclick={openAddGuestDialog}>Add guest</button>
   </div>
-  <ul class="mt-3 flex flex-col divide-y divide-[var(--cairn-card-border)]">
+  <ul role="list" class="mt-3 flex flex-col divide-y divide-[var(--cairn-card-border)]">
     {#each desk.guests as guest (guest.id)}
-      <li class="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
+      <li role="listitem" class="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
         <div>
-          <p class="font-semibold {guest.cancelled ? 'opacity-50' : ''}">{guest.name}</p>
-          <p class="text-sm text-muted">{guest.email ?? 'No email on file'}</p>
+          <p class="font-semibold">{guest.name}</p>
+          <p class="type-body text-muted">{guest.email ?? 'No email on file'}</p>
         </div>
         <div class="flex items-center gap-2">
           {#if guest.cancelled}<StatusChip label="Cancelled" />{/if}
-          <a class="btn btn-ghost btn-xs" href="...">Notes</a>
-          <button type="button" class="btn btn-ghost btn-xs" onclick={...}>Edit</button>
-          ...
+          <button type="button" class="btn btn-ghost btn-xs" onclick={() => editGuest(guest)}>Edit</button>
         </div>
       </li>
     {/each}
@@ -139,62 +79,25 @@ drift risk a role name isn't.
 </div>
 ```
 
-Every card in this screen (Contact, Guests, Payments, Notes) repeats this same skeleton:
-`type-label` section heading beside at most one light verb, then a divided list of rows, each
-row a two-part flex (identity block, then chips-plus-verbs block). This is the detail screen's
-own register, worth naming because it recurs once per card rather than once:
+- One section heading in the eyebrow role, beside at most one light verb a size below the
+  header's (`btn-xs`).
+- The list's `flex` items suppress the marker, so the list carries `role="list"` and each item
+  `role="listitem"` (`list-role`).
+- Every row verb is `btn btn-ghost btn-xs`, destructive ones included.
+- A divided list (`divide-y` in the card-border token) separates a feed of related records; zebra
+  stripes are for a scannable table.
+- A settled state such as Cancelled or Refunded is the default `quiet` chip, not a faded badge.
 
-- **The section heading's light verb stays `btn-ghost btn-xs`**, one size down from the
-  header's `btn-sm` verbs, since a section-scoped action ("Add guest") is a lower-stakes
-  ask than a record-scoped one ("Edit signup").
-- **The fence above writes the cairn-native call, `<StatusChip label="Cancelled" />`.**
-  A hand-written badge for "Cancelled" or "Refunded" would read
-  `badge-ghost badge-sm font-medium opacity-60`, the ghost recipe cairn's audit retires
-  (`stock-default-hazards`'s `BADGE_GHOST_MESSAGE`). "Cancelled" and "Refunded" are the
-  settled, put-away states `StatusChip`'s default `quiet` register exists for, and it carries
-  the documented recipe rather than a hand-tuned opacity demotion.
-- **Row-level verbs are uniformly `btn-ghost btn-xs`**, whether the row's action is
-  benign (Edit, Move) or destructive (Cancel, carrying `text-error` on the label, still no
-  fill). A row can hold several verbs at once without ever competing for the surface's one
-  fill, because none of them is one.
-- **The divider (`divide-y divide-[var(--cairn-card-border)]`) plus `py-3 first:pt-0
-  last:pb-0`** is the row-rhythm a repeated list uses instead of the table zebra
-  `exemplar-list.md` covers; a desk's related-data lists read as a flat feed of
-  records, not a scannable grid, so a divider carries the separation a zebra stripe would
-  overstate here.
-
-## The dialog: one filled action, and the label register in practice
-
-From the showcase's Signups screen, the shared delete confirm, one dialog serving every row:
-
-```svelte
-<dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="signup-delete-title" bind:this={deleteDialog}>
-  <div class="modal-box">
-    <h2 id="signup-delete-title" class="type-heading font-bold">Delete {pendingDeleteName}?</h2>
-    <p class="mb-3 type-body">This cannot be undone.</p>
-    <form method="POST" action="?/remove" class="flex justify-end gap-2" use:enhance={onRemove}>
-      <CsrfField />
-      <input type="hidden" name="id" value={pendingDeleteId} />
-      <button type="button" class="btn btn-sm" onclick={cancelDelete}>Cancel</button>
-      <button type="submit" class="btn btn-sm btn-error">Delete</button>
-    </form>
-  </div>
-</dialog>
-```
-
-Growth, the edit dialog a desk header opens:
+## An edit dialog
 
 ```svelte
 <dialog bind:this={signupDialog} class="modal" aria-labelledby="signup-dialog-title">
   <div class="modal-box">
-    <h2 id="signup-dialog-title" class="text-lg font-bold">Edit signup</h2>
-    <form method="post" action="?/updateSignup" class="flex flex-col gap-3" use:enhance={...}>
+    <h2 id="signup-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Edit signup</h2>
+    <form method="POST" action="?/updateSignup" class="flex flex-col gap-3" use:enhance={onSave}>
       <CsrfField />
       <FieldLabel label="Name">
         <input class="input input-sm" name="name" bind:value={signupName} />
-      </FieldLabel>
-      <FieldLabel label="Email">
-        <input class="input input-sm" name="email" bind:value={signupEmail} />
       </FieldLabel>
       <FieldLabel label="Status">
         <select class="select select-sm" name="status" bind:value={signupStatus}>...</select>
@@ -208,44 +111,12 @@ Growth, the edit dialog a desk header opens:
 </dialog>
 ```
 
-- The shipped confirm is the destructive-dialog recipe: a native `<dialog>` opened with
-  `showModal` (native focus trap and Escape), `role="alertdialog"`, and no `method="dialog"`
-  backdrop, so a stray click cannot dismiss it. One dialog serves every row by setting the
-  pending row's id and name from the trigger, so the heading's `aria-labelledby` names the row
-  being deleted. Its one fill is the error-toned submit, beside a plain `Cancel`.
-- Each row of the edit dialog composes `FieldLabel` directly around a bare control (an
-  `<input>`, or a `<select>` for the status row), rendering its default `register="stacked"`
-  register here with no extra prop (`form-anatomy.md` states the full three-level contract this
-  is one of); a single-column dialog form has no shared-row width to compete for, so the default
-  is the right choice, not a call for the inline exception.
-- `modal-action`'s two-button pattern, plain `Cancel` beside filled `Save`, is this dialog's
-  `one-filled-action` surface satisfied: exactly one accent fill, and it's the
-  submitting action. Every dialog on the page repeats the identical pair.
-- `<h2 class="text-lg font-bold">` is the dialog title's register: a cairn-native build
-  writes `type-heading font-bold font-[family-name:var(--font-display)]`, the same Heading
-  recipe the admin design system states for a dialog or section heading (18px in Bricolage);
-  `text-lg` (1.125rem) already matches the size, so only the display face and the ruled
-  leading are missing from the literal. The shipped confirm already writes `type-heading
-  font-bold`.
+`FieldLabel` defaults to the stacked register, right for a single-column dialog
+(`form-anatomy.md`). The footer pair, plain Cancel beside filled Save, is the dialog's one fill.
+Handle all four `enhance` result types (`custom-screen.md`).
 
-## The cancel-guests dialog: an inline label beside a checkbox
+## Checkbox rows
 
-```svelte
-<label class="flex items-center gap-2" for={`guest-select-${guest.id}`}>
-  <input id={...} type="checkbox" class="checkbox checkbox-sm" name="guestIds" ... />
-</label>
-```
-
-A checkbox's clickable label area is a touch target in `touch-targets`'s own sense: the
-label, even carrying no visible text here (the accessible name comes from `aria-label` on
-the input), still counts as one of the regions the rule unions with the control's box.
-`checkbox-sm` renders 20px; a real hit-area expansion (padding, never a `::before` clipped by
-a truncating ancestor) is what closes that gap when a checkbox row measures under the 24px
-floor, the same touch-target fix cairn's `ConceptList` sort controls needed for the same
-reason.
-
-## What this exemplar doesn't cover
-
-The group-level dialogs this screen opens (signup edit, add or edit guest, record a payment)
-are each a small form; their row/label composition, including the wrap failure a wider
-two-column form can hit, is `form-anatomy.md`'s subject.
+A `checkbox-sm` renders 20px, under `touch-targets`' 24px floor. The control's activating label
+counts toward its target, so wrap the checkbox in a padded `<label>` (never a `::before` that a
+truncating ancestor clips) until the row measures at least 24px.

@@ -5,8 +5,8 @@
 - **A stability tier on every export's doc comment.** Each public export now carries `@public` (the
   Extension tier), `@beta` (Unstable), or `@scaffold` (the wiring a scaffolded site copies), and the
   built declarations keep the tag. `check:tiers` fails an export with no tag or two, and
-  `check:options` now fails a public option member with no doc comment instead of a row in
-  `docs/internal/option-map.json`, which is deleted. `TidyClient` moves from Unstable to Extension,
+  `check:options` now fails a public option member with no doc comment instead of a row in a
+  maintainer-side option map, which is deleted. `TidyClient` moves from Unstable to Extension,
   since the gateway wiring a site writes names it.
 
   Consumers may: read the tag on a declaration to learn how stable it is.

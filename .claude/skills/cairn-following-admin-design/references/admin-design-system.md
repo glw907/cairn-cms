@@ -496,9 +496,8 @@ alongside the component recipes above and below it.
 - **Every type role now has call sites, and every admin font size resolves to one**, with five
   ratified exceptions carrying counted `cairn-audit-disable-next-line type-scale` directives: the
   three wordmark sites and the editor canvas's two. `gap-control` remains reachable only through its
-  token, from the toolbar's scoped styles. The reference page lists the exceptions; the deviations
-  ledger (`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`) keeps the spacing
-  vocabulary questions, which are still open.
+  token, from the toolbar's scoped styles. The reference page lists the exceptions, and the spacing
+  vocabulary questions are still open.
 - **Never convert between a named Tailwind step and a bracketed size casually.** A named step such
   as `text-2xl` sets `font-size` and `line-height`; a bracketed `text-[1.5rem]` sets `font-size`
   alone. Writing a bracketed value in place of a step silently drops the leading, which is how the

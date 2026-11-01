@@ -38,9 +38,9 @@ up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date;
 ## The DaisyUI-first rule
 
 Before building a new admin component by hand, ask whether a stock DaisyUI component or template
-already covers it. The `cairn-extending-a-site` skill opens with this question and names the seam and the
-recipe for the two patterns it covers today; reach for it before writing new markup under
-`/admin`.
+already covers it. The `cairn-extending-a-site` skill opens with the question of whose job a thing is, and its
+`daisyui-first.md` reference names the seam and the recipe; reach for it before writing new markup
+under `/admin`.
 
 ## The Stop hook
 

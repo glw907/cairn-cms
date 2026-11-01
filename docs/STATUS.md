@@ -21,18 +21,15 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-The agent-first pattern has landed, once PR #169 (pass 4, stage A) merges: the technical pages and
-their gates are gone, `cairn-guidance install` removes what it no longer ships by hash, and the
-evaluator set (`README.md`, `docs/why-cairn.md`, `docs/architecture.md`) stands. Passes 1 to 3 are
-merged. The next action is stage B of pass 4, branch `agent-first-4b`: resume #159 and #160 with
-Geoff's page calls (the plan's task table has them), cut the `next` prerelease, run the two
-sittings and the Contribute and Extend checks, tear down, and prove the bars. The series resumes
-there; the docs finalization PRs #159 and #160 stay open and #161 is closed. The plan is
-`~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
-beside it, and `conductor-cairn-cms` runs it one pass at a time; its ledger is
-`~/.local/state/cairn-agent-first/ledger.md`. Executor `cairn-cms-agent-first-4`, session
-`82fe4c13`. The `model-review.service` drop-in `agent-first-hold.conf` stays applied until task
-4.13. The release holds until pass 4 closes.
+The agent-first pattern has landed and its second stage is PR-ready as #170: the editors and admin arms
+are on `main`, the evaluator pages link to them, and the capture-era plans are gone. Three bars read
+unmet by Geoff's choice (the install and editor sittings, and the docs review of the human pages), and
+Evaluate reads unmet after one structural fix. The Contribute check waits on a pull request scope for
+the mirror token. After #170 merges the sequence is: the media and publish pass, the scaffold pass, the
+final engine batch (`BACKLOG.md` lists each item's pass), the one release, then each site's migration.
+The release needs `create-cairn-site` published first (`BACKLOG.md` #195). Prerelease `0.98.1-rc.2` is on
+npm `next`; `latest` is `0.98.0`. Executor `cairn-cms-agent-first-4`, session `82fe4c13`, under
+`conductor-cairn-cms`; its ledger is `~/.local/state/cairn-agent-first/ledger.md`.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

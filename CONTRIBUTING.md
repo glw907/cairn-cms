@@ -67,7 +67,8 @@ writing a page a reviewer will grade on register.
 ## Working with Claude Code
 
 Open the clone in Claude Code and accept the folder's trust dialog; the repository's skills, agents,
-and rules load, and so does the `standards` plugin that supplies the review agents. The
+and rules load, and so does the `standards` plugin that supplies the review agents. The plugin's repository,
+`glw907/standards`, is public, so it installs with no access grant. The
 `cairn-running-passes` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
 risk classes.
 

@@ -561,7 +561,7 @@ audience lands, and they carry the whole cairn story.
   trade-offs, stays in `docs/why-cairn.md`.
 - **The author's frame, not a reconstructed one.** Any "why cairn" prose traces to Geoff's
   account of why cairn exists and who it serves:
-  `record/2026-09-08-polish-inputs/front-door-author-brief.md`. Read it before drafting or
+  <https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-08-polish-inputs/front-door-author-brief.md>. Read it before drafting or
   reviewing the front door or any audience-facing rationale. The audience spans small
   organizations through large ones already committed to Cloudflare (the brief's 2026-09-22
   amendment), never only small ones.

@@ -27,7 +27,7 @@ const REGISTRAR_URL = 'https://www.cloudflare.com/products/registrar/';
  */
 export function costPreamble() {
   return [
-    'Before you start, the honest cost picture.',
+    'Before you start, here is what this costs.',
     '',
     "Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once " +
       `per site (${AS_OF}, ${WORKERS_PRICING_URL}). That runs your site on Cloudflare's ` +

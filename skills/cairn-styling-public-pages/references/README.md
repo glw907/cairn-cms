@@ -1,7 +1,7 @@
 # The catalogue
 
 One page per public piece cairn ships. Each page gives the rendered markup, the classes and tokens the markup reads, and the seams that override it.
-The `cairn-public` gate holds the list complete: a directive, an island, a component, a composition class, or a prose group with no page fails it.
+The `cairn-styling-public-pages` gate holds the list complete: a directive, an island, a component, a composition class, or a prose group with no page fails it.
 
 ## Directives
 

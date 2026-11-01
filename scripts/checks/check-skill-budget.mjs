@@ -7,7 +7,7 @@
 // pulling a tokenizer dependency into the packaged CLI for one counting check, and fails loud, by
 // how much and where the detail belongs (references/), above the ceiling.
 //
-// This also gates `cairn-admin-screens`' SKILL.md "Tier map" section against the real rule
+// This also gates `cairn-building-admin-screens`' SKILL.md "Tier map" section against the real rule
 // registries (src/lib/audit/rules/static/index.ts and rendered/index.ts): a retiered or renamed
 // rule that forgets the doc's table is exactly the kind of drift no reader catches, since the
 // table reads as plausible prose either way. The tier map is that skill's artifact, bound to
@@ -24,7 +24,7 @@ export const SKILL_BUDGET_TOKENS = 3500;
 const CHARS_PER_TOKEN = 4;
 
 /** The one packaged skill whose SKILL.md carries a "Tier map" section bound to the rule registries. */
-const ADMIN_SCREENS_PATH = 'skills/cairn-admin-screens/SKILL.md';
+const ADMIN_SCREENS_PATH = 'skills/cairn-building-admin-screens/SKILL.md';
 
 /** Where the packaged dist build's static rule registry lands after `npm run package`. */
 const DIST_STATIC_RULES = 'dist/audit/rules/static/index.js';
@@ -316,7 +316,7 @@ async function main() {
   }
 
   if (!results.some((r) => shouldCheckTierMap(r.path))) {
-    console.log('check-skill-budget: tier map skipped (cairn-admin-screens not packaged)');
+    console.log('check-skill-budget: tier map skipped (cairn-building-admin-screens not packaged)');
     return;
   }
   if (!distRulesAvailable(root)) {

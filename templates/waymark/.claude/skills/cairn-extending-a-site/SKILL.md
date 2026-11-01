@@ -1,5 +1,5 @@
 ---
-name: cairn-extend
+name: cairn-extending-a-site
 description: Build or change anything in a cairn site that touches /admin, a form action, logging, or one of the engine's seams. Load before writing a custom admin screen, a new login channel, a form action with more than two outcomes, or any code that imports from @glw907/cairn-cms. Routes to the matching seam and its shipped recipe rather than inventing a pattern from scratch.
 ---
 
@@ -15,7 +15,7 @@ component the ledger does not explain is a finding to raise, not a pattern to co
 already diverges from stock DaisyUI, and why.
 
 Restyling the public site (a theme token, `prose.css`, a directive's rules, a public component) is
-`cairn-public`, not a row below.
+`cairn-styling-public-pages`, not a row below.
 
 ## The router
 
@@ -61,7 +61,7 @@ the raw SvelteKit `RequestEvent` and switching on its outcome, never a boolean.
 
 `references/preflight.md` is the checklist: the boundary question, what `cairn-guidance check`
 reports about a site's gate wiring, and when a second workaround is the signal to reach for
-`cairn-consult` instead of a third one.
+`cairn-consulting-the-engine` instead of a third one.
 
 ## Adding a new archetype
 

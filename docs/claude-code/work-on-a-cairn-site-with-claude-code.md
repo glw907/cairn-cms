@@ -36,7 +36,7 @@ The page assumes a running cairn site with the engine installed, familiarity wit
 - For the upgrade procedure and when to refresh the tree, see [Upgrade cairn](../extend/upgrade-cairn.md).
 - For what the review agent checks, see [What ships under `claude/`](../reference/guidance.md#what-ships-under-claude).
 - For the full option and output listing of `cairn-guidance`, and its trust boundary, see [The `cairn-guidance` CLI](../reference/guidance.md).
-- For the protocol of a consultation brief, see the `cairn-consult` skill itself.
+- For the protocol of a consultation brief, see the `cairn-consulting-the-engine` skill itself.
 
 ## Before you begin
 
@@ -73,12 +73,12 @@ Each of the four packaged skills carries a [description](https://code.claude.com
 
 | Skill | Loads for |
 | --- | --- |
-| `cairn-admin-screens` | Building or reviewing a screen inside `/admin`. |
-| `cairn-consult` | Writing a consultation brief after you work around an engine behavior twice, or want something the seams don't reach. |
-| `cairn-extend` | Changing anything that touches `/admin`, a form action, logging, or an engine seam. |
-| `cairn-public` | Restyling or extending the public side of the site. |
+| `cairn-building-admin-screens` | Building or reviewing a screen inside `/admin`. |
+| `cairn-consulting-the-engine` | Writing a consultation brief after you work around an engine behavior twice, or want something the seams don't reach. |
+| `cairn-extending-a-site` | Changing anything that touches `/admin`, a form action, logging, or an engine seam. |
+| `cairn-styling-public-pages` | Restyling or extending the public side of the site. |
 
-`cairn-public` also carries one catalogue page for each public piece cairn ships, under its `references/` directory. A `cairn-consult` consultation brief follows the protocol inside the skill. For what each skill teaches, see [The four skills](../reference/guidance.md#the-four-skills) in the `cairn-guidance` reference.
+`cairn-styling-public-pages` also carries one catalogue page for each public piece cairn ships, under its `references/` directory. A `cairn-consulting-the-engine` consultation brief follows the protocol inside the skill. For what each skill teaches, see [The four skills](../reference/guidance.md#the-four-skills) in the `cairn-guidance` reference.
 
 A site without the tree, or one whose engine was upgraded, installs or refreshes it next.
 

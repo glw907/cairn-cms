@@ -1,4 +1,4 @@
-// cairn-cms: the coverage gate for the `cairn-public` skill (skills/cairn-public). The skill's
+// cairn-cms: the coverage gate for the `cairn-styling-public-pages` skill (skills/cairn-styling-public-pages). The skill's
 // catalogue teaches a designer the markup and tokens of every public piece cairn ships, so a piece
 // with no page, a class that never compiles, or a token that resolves nowhere is a teaching error no
 // reader would catch. Three assertions:
@@ -25,7 +25,7 @@
 //
 // A fourth check guards the packaging boundary: a scaffolded site keeps its agent skills under
 // `.claude/`, whose files quote utility classes as worked examples. The compile here proves a
-// utility used only under `.claude/skills/cairn-public/` never reaches the site's compiled sheet.
+// utility used only under `.claude/skills/cairn-styling-public-pages/` never reaches the site's compiled sheet.
 //
 // Needs `npm run package` first (the audit and the engine's public stylesheet come from `dist/`) and
 // the showcase's installed dependencies. Wired as `npm run check:public-skill`.
@@ -47,7 +47,7 @@ export const ENGINE_BUILTIN_DIRECTIVES = ['figure', 'include'];
 export const PROSE_PAGES = ['headings-and-lead', 'links', 'lists', 'blockquote', 'code', 'tables-and-figures'];
 
 /** The skill directory, repo-relative. */
-const SKILL_DIR = 'skills/cairn-public';
+const SKILL_DIR = 'skills/cairn-styling-public-pages';
 
 /**
  * One directive of the showcase registry.
@@ -304,7 +304,7 @@ export function evaluate(ctx) {
 
 /**
  * Compile the showcase's chassis into a standalone copy that also carries a skill file under
- * `.claude/skills/cairn-public/`, and report whether a utility used only in that file reached the
+ * `.claude/skills/cairn-styling-public-pages/`, and report whether a utility used only in that file reached the
  * compiled sheet. A control utility used in a plain source file must reach it, so a compile that
  * generates nothing cannot pass.
  * @param {string} root the repository root
@@ -328,8 +328,8 @@ export function compileClaudeExclusion(root, { exclusionLine } = {}) {
       if (!/^@source not .*;$/m.test(css)) throw new Error('the chassis tokens.css carries no @source not line to replace');
       writeFileSync(tokens, css.replace(/^@source not .*;$/m, exclusionLine));
     }
-    mkdirSync(join(dir, '.claude/skills/cairn-public/references'), { recursive: true });
-    writeFileSync(join(dir, '.claude/skills/cairn-public/references/exclusion-probe.md'), '```html\n<p class="bg-[#0c1d2e]">probe</p>\n```\n');
+    mkdirSync(join(dir, '.claude/skills/cairn-styling-public-pages/references'), { recursive: true });
+    writeFileSync(join(dir, '.claude/skills/cairn-styling-public-pages/references/exclusion-probe.md'), '```html\n<p class="bg-[#0c1d2e]">probe</p>\n```\n');
     writeFileSync(join(dir, 'src/exclusion-control.svelte'), '<p class="bg-[#2e1d0c]">control</p>\n');
     const out = join(dir, 'out.css');
     execFileSync(join(dir, 'node_modules/.bin/tailwindcss'), ['-i', 'src/theme/theme.css', '-o', out], { cwd: dir, stdio: 'pipe' });
@@ -490,7 +490,7 @@ export async function runGate(root) {
 
   const exclusion = compileClaudeExclusion(root);
   if (!exclusion.control) problems.push('the .claude exclusion compile generated no utility for its control file, so it proves nothing');
-  if (exclusion.leaked) problems.push('a utility used only under .claude/skills/cairn-public reached a scaffolded site sheet: the chassis @source not line does not exclude the project-root .claude');
+  if (exclusion.leaked) problems.push('a utility used only under .claude/skills/cairn-styling-public-pages reached a scaffolded site sheet: the chassis @source not line does not exclude the project-root .claude');
 
   const sources = expectedPages({
     directives,

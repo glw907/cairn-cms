@@ -116,7 +116,7 @@ describe('packaged bin (needs dist/guidance/bin.js; run npm run package to unski
       });
       expect(first.status).toBe(0);
       expect(existsSync(join(dir, '.claude/cairn/MANIFEST'))).toBe(true);
-      expect(existsSync(join(dir, '.claude/skills/cairn-admin-screens/SKILL.md'))).toBe(true);
+      expect(existsSync(join(dir, '.claude/skills/cairn-building-admin-screens/SKILL.md'))).toBe(true);
 
       const second = spawnSync(process.execPath, [BIN, 'check', '--strict'], {
         cwd: dir,

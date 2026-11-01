@@ -1,5 +1,5 @@
 ---
-name: cairn-consult
+name: cairn-consulting-the-engine
 description: Write a consultation brief when you have worked around a cairn engine behavior twice, or want something the documented seams do not reach at all. Load instead of a third hand-roll; either files the brief against the engine repo or hands it to you to send yourself.
 ---
 

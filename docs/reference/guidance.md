@@ -117,17 +117,17 @@ The package's `claude/` directory, added to `files` alongside `skills/`, carries
 
 `install` copies every directory the package ships under `skills/` into `.claude/skills/`:
 
-- **`cairn-admin-screens`** teaches an agent the register cairn's admin holds itself to
+- **`cairn-building-admin-screens`** teaches an agent the register cairn's admin holds itself to
   before touching anything under `/admin`, admin-toolkit components, or `cairn-admin.css`,
   pointing at `cairn-audit`'s mechanical checks rather than restating their formulas.
-- **`cairn-extend`** is the recipe router: given what a developer is building, it opens with
+- **`cairn-extending-a-site`** is the recipe router: given what a developer is building, it opens with
   whether a stock DaisyUI component already covers it, then names the atom, the seam, and the
   shipped recipe doc for each case, and closes with a pre-flight checklist reference.
-- **`cairn-public`** teaches an agent the public side of a site: the job-to-token table for a
+- **`cairn-styling-public-pages`** teaches an agent the public side of a site: the job-to-token table for a
   theme, where a per-scheme value goes, the two escapes from a literal, and one catalogue page for
   each public piece cairn ships, giving its rendered markup, the classes and tokens it reads, and
   its override seams. It defers to the official DaisyUI skill for component classes.
-- **`cairn-consult`** triggers when a developer has worked around the engine twice, or wants
+- **`cairn-consulting-the-engine`** triggers when a developer has worked around the engine twice, or wants
   something the seams do not reach, and writes a consultation brief in the four-field format
   (what the site is building, the engine edge it presses, evidence for the any-site case, the site's
   fallback if declined) filed at the installed package's `bugs.url` when it is reachable, or

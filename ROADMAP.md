@@ -877,7 +877,7 @@ The original decision framing, for the record:
   answers only the signups SQL. `DevBackendConfig` has no binding hook, and no shipped page says
   so, so a site's own D1-backed admin screen returns a 500 under the dev backend. Fix: a binding
   option, or stop overwriting a binding the site already provides; add a line to the
-  `cairn-admin-screens` skill either way, and state it on the custom-screen page.
+  `cairn-building-admin-screens` skill either way, and state it on the custom-screen page.
   Trigger: the next pass that changes the dev package's double set or `DevBackendConfig`, and before any
   site is told to build a D1-backed screen against the dev backend. The SvelteKit 3 move changed how the
   doubles reach the Worker (`withEnv` over the Worker env), not which exist, so this defers.
@@ -1520,7 +1520,7 @@ The original decision framing, for the record:
   neighbors, all the same warm-stone hue: quiet's 14%-tint mix over `--color-base-300` (e.g.
   daisyUI's `.table-zebra` row-hover) measures ~1.34/1.41, under the 1.5 floor the register
   otherwise clears everywhere else, documented rather than retuned in
-  `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md` (design
+  `docs/reference/admin-toolkit.md` and `skills/cairn-building-admin-screens/SKILL.md` (design
   infrastructure Pass 3, 2026-07-29 review triage);
   `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
   button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
@@ -2340,7 +2340,7 @@ The original decision framing, for the record:
   calls recur across them (static versus hydrated as the default, directive naming and attribute
   conventions, how a component behaves in the editor preview under the one-renderer rule, the design
   tokens a component is expected to reach for), that recurrence is both the skill's content and its
-  justification, the same way `cairn-admin-screens` was born from measured admin-screen drift rather
+  justification, the same way `cairn-building-admin-screens` was born from measured admin-screen drift rather
   than from anticipation. Write it against the same constraints: the always-loaded core stays inside
   the `check:package` token budget, and it points at the docs and `cairn-audit`'s mechanical checks
   rather than restating them. If the harvest shows no recurring judgment call, that is a real answer

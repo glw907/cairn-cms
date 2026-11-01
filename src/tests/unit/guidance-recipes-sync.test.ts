@@ -20,12 +20,12 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const HEADING = '## Write this, get this';
 
 const GUIDANCE_FILES = [
-  'skills/cairn-admin-screens/SKILL.md',
-  'skills/cairn-extend/references/daisyui-first.md',
+  'skills/cairn-building-admin-screens/SKILL.md',
+  'skills/cairn-extending-a-site/references/daisyui-first.md',
   'claude/agents/cairn-extension-reviewer.md',
 ];
 
-const EXEMPLAR = 'skills/cairn-admin-screens/references/exemplar-kit.md';
+const EXEMPLAR = 'skills/cairn-building-admin-screens/references/exemplar-kit.md';
 const FIXTURE = 'examples/showcase/src/routes/admin/theme-kit/+page.svelte';
 
 // One marker per kit topic the exemplar must keep excerpting. A marker is a class attribute a

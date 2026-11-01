@@ -1,5 +1,5 @@
 ---
-name: cairn-admin-screens
+name: cairn-building-admin-screens
 description: Build or review a screen inside a cairn site's /admin, to the register cairn's admin holds itself to. Load before touching anything under /admin routes, admin-toolkit components, or cairn-admin.css. Points at cairn-audit's mechanical checks and cairn-audit norms rather than restating them.
 ---
 

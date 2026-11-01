@@ -1,5 +1,5 @@
 ---
-name: cairn-public
+name: cairn-styling-public-pages
 description: Restyle or extend the public side of a cairn site, the pages a visitor reads. Load before editing theme.css, prose.css, composition.css, a directive's rules, or a public component, and before choosing a color, face, or corner for the site. Gives the job-to-token table, where a value goes, and one catalogue page per public piece cairn ships. Defers to the official daisyUI skill for component classes.
 ---
 
@@ -7,8 +7,8 @@ description: Restyle or extend the public side of a cairn site, the pages a visi
 
 This skill teaches an agent to restyle the public side of a cairn site: the reading surface, the
 chrome, and every piece cairn writes into public markup. It stops at the public side. Anything
-under `/admin` belongs to `cairn-admin-screens`, and a seam a developer builds on belongs to
-`cairn-extend`. For a daisyUI component class (`btn`, `badge`, `card`), use the official daisyUI
+under `/admin` belongs to `cairn-building-admin-screens`, and a seam a developer builds on belongs to
+`cairn-extending-a-site`. For a daisyUI component class (`btn`, `badge`, `card`), use the official daisyUI
 skill rather than this one.
 
 ## The contract

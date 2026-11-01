@@ -45,7 +45,7 @@ describe('the table', () => {
     ['docs', '.vale/', '.vale/tests/vale.ini'],
     ['docs', '.vale.ini', '.vale.ini'],
     ['docs', '.tellgrader.json', '.tellgrader.json'],
-    ['docs', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['docs', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['docs', 'claude/', 'claude/CLAUDE.md'],
     ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
@@ -74,7 +74,7 @@ describe('the table', () => {
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
     ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
-    ['exportSurface', 'skills/', 'skills/cairn-consult/SKILL.md'],
+    ['exportSurface', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['exportSurface', 'claude/', 'claude/CLAUDE.md'],
   ];
 
@@ -282,7 +282,7 @@ describe('the component leg', () => {
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {
-    expect(plan(['skills/cairn-consult/SKILL.md']).mode).not.toBe('skip');
+    expect(plan(['skills/cairn-consulting-the-engine/SKILL.md']).mode).not.toBe('skip');
   });
 
   it('runs the whole project when the selection is empty or was not computed', () => {

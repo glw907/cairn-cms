@@ -8,7 +8,7 @@ cairn owns its core job, managing markdown content and the editor/admin frame, a
 Everything a site needs beyond that, its functionality, actors, auth, data, and domain
 logic, belongs to the developer, and cairn serves it with a thin seam, not a built-in feature.
 When a task reaches for something the engine does not offer, build it as site code first; reach
-for `cairn-consult` only when the same workaround repeats, or when nothing in the engine's seams
+for `cairn-consulting-the-engine` only when the same workaround repeats, or when nothing in the engine's seams
 gets you there at all.
 
 ## The atoms
@@ -39,7 +39,7 @@ up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date;
 ## The DaisyUI-first rule
 
 Before building a new admin component by hand, ask whether a stock DaisyUI component or template
-already covers it. The `cairn-extend` skill opens with this question and names the seam and the
+already covers it. The `cairn-extending-a-site` skill opens with this question and names the seam and the
 recipe for the two patterns it covers today; reach for it before writing new markup under
 `/admin`.
 

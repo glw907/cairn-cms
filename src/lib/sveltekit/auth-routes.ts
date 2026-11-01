@@ -32,8 +32,14 @@ import { log } from '../log/index.js';
 import { env } from './workers-env.js';
 import type { CairnEvent } from './types.js';
 
+/**
+ * The config `createAuthRoutes` takes: the magic-link branding, the sender, and the bootstrap owner.
+ * @beta
+ */
 export interface AuthRoutesConfig {
+  /** The site name and sender identity the magic-link email carries. */
   branding: AuthBranding;
+  /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
   /**
    * A site-declared owner to seed the allowlist through the request action, in place of a
@@ -43,7 +49,12 @@ export interface AuthRoutesConfig {
    * reaching this check, so the first owner must be seeded out of band before `identity` is
    * enabled.
    */
-  bootstrapOwner?: { email: string; displayName: string };
+  bootstrapOwner?: {
+    /** The owner's email address, compared trimmed and lowercased. */
+    email: string;
+    /** The owner's display name on the seeded row. */
+    displayName: string;
+  };
 }
 
 /**
@@ -51,6 +62,7 @@ export interface AuthRoutesConfig {
  * its form against `form.sent`, so the field is additive. The neutral and send-ok paths return
  * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
  * membership.
+ * @beta
  */
 export type RequestOutcome =
   | { outcome: 'sent'; sent: true }
@@ -163,6 +175,7 @@ function scrubSendError(err: unknown): string {
  * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
  * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
  * a hand-run D1 insert.
+ * @beta
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   const send = config.send ?? cloudflareSend;
@@ -489,7 +502,10 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };
 }
 
-/** What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. */
+/**
+ * What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers.
+ * @beta
+ */
 export interface AuthRoutes {
   loginLoad: (event: CairnEvent) => LoginData;
   requestAction: (event: CairnEvent) => Promise<RequestOutcome>;

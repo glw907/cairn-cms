@@ -44,6 +44,7 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * outside the cookie-name token set. Bases starting `cairn_` are the engine's reserved
  * namespace: the engine's cookie names delegate through this function, and a site base in
  * that namespace does not throw, but risks colliding with an engine cookie.
+ * @public
  */
 export function buildCookieName(base: string, secure: boolean): string {
   const lowerBase = base.toLowerCase();
@@ -77,7 +78,10 @@ function randomBase64Url(byteLength = 32): string {
   return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
-/** A fresh 256-bit magic-link token, url-safe. */
+/**
+ * A fresh 256-bit magic-link token, url-safe.
+ * @public
+ */
 export function generateToken(): string {
   return randomBase64Url(32);
 }
@@ -92,7 +96,10 @@ export function generateCsrfToken(): string {
   return randomBase64Url(32);
 }
 
-/** The lowercase hex SHA-256 of a token, for storage and lookup. */
+/**
+ * The lowercase hex SHA-256 of a token, for storage and lookup.
+ * @public
+ */
 export async function hashToken(token: string): Promise<string> {
   const data = new TextEncoder().encode(token);
   const digest = await crypto.subtle.digest('SHA-256', data);
@@ -114,6 +121,7 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * replacement character, so two distinct strings that differ only in a lone surrogate encode to
  * the same bytes and compare equal; harmless for the CSPRNG tokens and hex hashes this function
  * is for, which is exactly why this precondition is stated rather than guarded against.
+ * @public
  */
 export function tokensMatch(a: string, b: string): boolean {
   const aBytes = new TextEncoder().encode(a);

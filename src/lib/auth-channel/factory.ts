@@ -196,6 +196,7 @@ type ChannelEvent = CairnEvent & { getClientAddress(): string };
  * credentials, or a dev-only transport's opt-in flag) and Cloudflare's background-task hook,
  * both the Workers runtime's exports. A `deliver` implementation attaches `.catch()` before
  * anything reaches `waitUntil`, matching the factory's delivery call (spec, Delivery).
+ * @public
  */
 export interface DeliverContext<Env> {
   /** The Worker env, typed as the site's `Env`. */
@@ -204,12 +205,18 @@ export interface DeliverContext<Env> {
   waitUntil: (promise: Promise<unknown>) => void;
 }
 
-/** `request`'s result: `sent` even for an unknown contact, so the response never leaks roster membership. */
+/**
+ * `request`'s result: `sent` even for an unknown contact, so the response never leaks roster membership.
+ * @public
+ */
 export type ChannelRequestOutcome = {
   outcome: 'sent' | 'invalid' | 'throttled' | 'challenge-required' | 'unavailable';
 };
 
-/** `confirm`'s result. `challenge-required` is a retry invitation, never a hard failure. */
+/**
+ * `confirm`'s result. `challenge-required` is a retry invitation, never a hard failure.
+ * @public
+ */
 export type ChannelConfirmOutcome = {
   outcome:
     | 'confirmed'
@@ -227,6 +234,7 @@ export type ChannelConfirmOutcome = {
  * where a compliant implementation can resolve synchronously (`SendMagicLink`'s convention),
  * except `resolveDb` and `normalize`, which are plain synchronous reads and pure string
  * transforms respectively and carry no I/O.
+ * @public
  */
 export interface AuthChannelConfig<Env> {
   /**
@@ -266,7 +274,10 @@ export interface AuthChannelConfig<Env> {
    */
   challenge: (event: CairnEvent, form: FormData) => Promise<boolean>;
   /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's admin cookies). */
-  cookie: { name: string };
+  cookie: {
+    /** The session cookie's base name; a `cairn_`-prefixed base is rejected. */
+    name: string;
+  };
   /**
    * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
    *
@@ -331,7 +342,10 @@ export interface AuthChannelConfig<Env> {
   };
 }
 
-/** What `createAuthChannel` returns: the three form actions, session resolution, and roster-removal revocation. */
+/**
+ * What `createAuthChannel` returns: the three form actions, session resolution, and roster-removal revocation.
+ * @public
+ */
 export interface AuthChannel<Env> {
   actions: {
     /** POST handler for the `contact` form field; mints and delivers a code. */
@@ -557,6 +571,7 @@ async function checkChannelRateLimit<Env>(
  * @throws Error on any misconfiguration: a missing required function, an unsupported `kind`, a
  * `cairn_`-prefixed cookie base, an invalid cookie-name token, or a `config.limits` override outside
  * its clamp.
+ * @public
  */
 export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChannel<Env> {
   requireFn('resolveDb', config.resolveDb);

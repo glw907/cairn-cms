@@ -20,6 +20,7 @@ import type { Editor } from './types.js';
  * A site's whole access declaration: a target (an engine screen id, or an `/admin`-prefixed route
  * path) to the role names admitted to it. A target absent from the map keeps today's behavior (any
  * editor-capability session reaches it); see {@link canReach}.
+ * @public
  */
 export type AccessMap = Record<string, string[]>;
 
@@ -70,6 +71,7 @@ function validateKeyShape(key: string): void {
  * to for a site that declares none of its own. Concept-id existence and engine-route collision are
  * validated later, at composition, once the real concept list and engine-route table are
  * available.
+ * @public
  */
 export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A): A {
   const keys = Object.keys(map);
@@ -167,6 +169,7 @@ function resolveHrefMatch(access: AccessMap, target: string): { key: string | un
  * Posture: permissive by default. A target the map never names stays reachable, because this one
  * reading gates both an engine screen's route enforcement and that screen's nav visibility,
  * and every route relies on the zero-config any-editor floor an unmapped target admits.
+ * @public
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {
@@ -195,6 +198,7 @@ export function canReach(access: AccessMap | undefined, editor: Editor, target: 
  * Whether the map carries any rule for `target`, exact match for a screen id, deepest-prefix match
  * for an href. Backs `requireAccess`'s fail-closed contract: a route that opts into the helper 403s
  * every session, owner included, when the map has no opinion on its path at all.
+ * @public
  */
 export function hasAccessRule(access: AccessMap | undefined, target: string): boolean {
   if (!access) {

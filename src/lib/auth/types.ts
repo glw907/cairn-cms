@@ -9,6 +9,7 @@ import type { Capability } from './roles.js';
  * materializes an `Editor`; the store itself does not know the vocabulary, so it returns the
  * narrower `UnresolvedEditor` (see `../auth/store.js`) and only the guard and the routes that read the
  * vocabulary fill this field.
+ * @public
  */
 export interface Editor {
   email: string;
@@ -20,6 +21,7 @@ export interface Editor {
 /**
  * A recipient address for the Email Sending API: a bare address string, or an object naming an
  * optional display name alongside it. `cc`/`bcc` accept one of these or an array of them.
+ * @public
  */
 export type EmailRecipient = string | { email: string; name?: string };
 
@@ -27,6 +29,7 @@ export type EmailRecipient = string | { email: string; name?: string };
  * A file or inline attachment for the Email Sending API. `content` is base64-encoded text or raw
  * binary; `disposition` distinguishes a standard file attachment from an image embedded in the
  * HTML body.
+ * @public
  */
 export interface EmailAttachment {
   content: string | ArrayBuffer | ArrayBufferView;

@@ -67,6 +67,7 @@ function normalizeEmail(email: string): string {
  * An allowlist row as the store reads it, `Editor` minus `capability`. The store has no access to
  * the site's declared vocabulary, so it can never resolve that field; a caller that needs a full
  * `Editor` (the guard, `editorsLoad`) resolves capability itself and spreads it onto this shape.
+ * @public
  */
 export type UnresolvedEditor = Omit<Editor, 'capability'>;
 
@@ -277,7 +278,10 @@ export async function deleteSession(db: D1Database, id: string): Promise<Deleted
   return row ? { email: row.email, expiresAt: row.expires_at } : null;
 }
 
-/** The full allowlist, sorted by email. */
+/**
+ * The full allowlist, sorted by email.
+ * @public
+ */
 export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
   const { results } = await db
     .prepare('SELECT email, display_name, role FROM editor ORDER BY email')
@@ -285,7 +289,10 @@ export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
   return results.map(toEditor);
 }
 
-/** Add an editor to the allowlist. */
+/**
+ * Add an editor to the allowlist.
+ * @public
+ */
 export async function insertEditor(
   db: D1Database,
   email: string,
@@ -300,13 +307,19 @@ export async function insertEditor(
   );
 }
 
-/** What {@link deleteEditor} returns: removed, refused as the last owner-capability row, or no such editor. */
+/**
+ * What {@link deleteEditor} returns: removed, refused as the last owner-capability row, or no such editor.
+ * @public
+ */
 export type DeleteEditorOutcome =
   | { outcome: 'removed' }
   | { outcome: 'last-owner' }
   | { outcome: 'not-found' };
 
-/** What {@link setEditorRole} returns: changed, refused as a last-owner demotion, or no such editor. */
+/**
+ * What {@link setEditorRole} returns: changed, refused as a last-owner demotion, or no such editor.
+ * @public
+ */
 export type SetEditorRoleOutcome =
   | { outcome: 'ok' }
   | { outcome: 'last-owner' }
@@ -318,6 +331,7 @@ export type SetEditorRoleOutcome =
  * for this guard at all. `not-eligible` (never `not-found`) because the atomic write's `WHERE`
  * only matches owner-capability rows, so a `changes === 0` result cannot tell an absent row apart
  * from a present, non-owner one; the discriminant names only what the predicate knows.
+ * @public
  */
 export type OwnerGuardOutcome =
   | { outcome: 'ok' }
@@ -406,6 +420,7 @@ async function editorRowStillPresent(
  * conditional on the removal having happened. Access dies with the editor row regardless of when
  * the sweep lands, because `resolveSession` INNER JOINs `editor`, so a session row outliving its
  * editor by a moment resolves to null and authorizes nothing.
+ * @public
  */
 export async function deleteEditor(
   db: D1Database,
@@ -448,6 +463,7 @@ export async function deleteEditor(
  * matches only an owner-capability row, so it refuses outright (`not-eligible`) on a row that is
  * not owner-capability at all, rather than removing it. On success the editor's sessions, pending
  * token, and minted preview links all go too, the same cascade {@link deleteEditor} runs.
+ * @public
  */
 export async function removeOwnerIfNotLast(
   db: D1Database,
@@ -520,6 +536,7 @@ export async function insertOwnerIfEmpty(
  * plain `UPDATE` runs. `defineRoles` always resolves at least one owner-capability name, so `[]`
  * is unreachable through the engine's callers; it is reachable only from a site calling this
  * `/auth-store` export directly.
+ * @public
  */
 export async function setEditorRole(
   db: D1Database,
@@ -558,6 +575,7 @@ export async function setEditorRole(
  * narrower, owner-only twin of {@link setEditorRole}: its `WHERE` matches only an
  * owner-capability row, so it refuses outright (`not-eligible`) on a row that is not
  * owner-capability at all, rather than changing it.
+ * @public
  */
 export async function demoteOwnerIfNotLast(
   db: D1Database,

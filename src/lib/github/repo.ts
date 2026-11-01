@@ -144,7 +144,10 @@ export async function fetchCommitLog(
   }));
 }
 
-/** A path change for an atomic commit: write `content`, or delete the path when `content` is null. */
+/**
+ * A path change for an atomic commit: write `content`, or delete the path when `content` is null.
+ * @public
+ */
 export interface FileChange {
   path: string;
   content: string | null;

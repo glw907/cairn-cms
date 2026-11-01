@@ -8,16 +8,28 @@
 /**
  * The three capability levels the engine understands. `owner` can manage the roster, `editor` can
  * edit content, `none` is an authenticated identity with no engine content access.
+ * @public
  */
 export type Capability = 'owner' | 'editor' | 'none';
 
 /**
  * One role's mapping. A bare capability is the common case; the object form additionally names a
  * `home`, the `/admin`-prefixed route the admin root sends that role to.
+ * @public
  */
-export type RoleDeclaration = Capability | { capability: Capability; home?: string };
+export type RoleDeclaration =
+  | Capability
+  | {
+      /** The capability the role maps to. */
+      capability: Capability;
+      /** The `/admin`-prefixed route the admin root sends this role to. */
+      home?: string;
+    };
 
-/** A site's whole vocabulary: role name to declaration. `owner` is the one reserved name. */
+/**
+ * A site's whole vocabulary: role name to declaration. `owner` is the one reserved name.
+ * @public
+ */
 export type RolesDeclaration = Record<string, RoleDeclaration>;
 
 /** The implicit vocabulary a site that declares no roles receives. */
@@ -54,6 +66,7 @@ function validateDeclaration(name: string, decl: RoleDeclaration): void {
  * vocabulary fails at build rather than at runtime, and const-captures the literal key set for the
  * caller's use. Throws on an empty record, a missing or misvalued `owner`, an empty role name,
  * a malformed declaration, or a non-`/admin` home.
+ * @public
  */
 export function defineRoles<const R extends RolesDeclaration>(roles: R): R {
   const names = Object.keys(roles);
@@ -79,6 +92,7 @@ export function defineRoles<const R extends RolesDeclaration>(roles: R): R {
  * Resolve a role name to its capability against the given vocabulary. An `undefined` vocabulary
  * uses the default owner/editor pair. A name absent from the vocabulary resolves to `none`, so a
  * pruned config or a hand-edited row fails closed rather than locking the person out of sign-in.
+ * @public
  */
 export function resolveCapability(roles: RolesDeclaration | undefined, role: string): Capability {
   const vocabulary: RolesDeclaration = roles ?? DEFAULT_ROLES;
@@ -104,6 +118,7 @@ export function roleHome(roles: RolesDeclaration | undefined, role: string): str
 /**
  * The names in the vocabulary that carry owner capability. The last-owner guard counts rows across
  * this set rather than the literal `owner` string, so a site with two owner-level names is safe.
+ * @public
  */
 export function resolveOwnerLevelRoles(roles: RolesDeclaration | undefined): string[] {
   const vocabulary: RolesDeclaration = roles ?? DEFAULT_ROLES;

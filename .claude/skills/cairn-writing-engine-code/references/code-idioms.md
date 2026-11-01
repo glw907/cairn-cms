@@ -89,9 +89,8 @@ elsewhere (`check:comments`) and not restated here.
   its job and the non-obvious rationale (exemplar: `src/lib/github/repo.ts`, which records
   why Trees-over-Contents). The stragglers (`pending.ts`, `fields.ts`, `env.ts`, two auth
   files) converge.
-- **M2.** Bins are thin shells (argv + I/O) delegating to a logic module (exemplar:
-  `src/lib/doctor/bin.ts`). Barrels exist only at public subpath entries and stay
-  re-export-only; `doctor/index.ts` moves its resident logic out to honor this.
+- **M2.** Bins are thin shells (argv + I/O) delegating to a logic module. Barrels exist only
+  at public subpath entries and stay re-export-only.
 - **M3.** Internal re-export shims left over from moves are retired by retargeting their
   importers (`content/permalink.ts`).
 - **M4.** Indentation is 2-space everywhere; the tab-indented `doctor/` tree and its test

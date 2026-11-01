@@ -303,6 +303,10 @@
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
   Placement: After the release.
 
+- [ ] **#192** Bring tidy's model defaults and effort gate to the Claude 5.5 family `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  The pass 4 prompt audit found `supportsEffort` (`src/lib/sveltekit/content-routes-tidy.ts:58`) withholds `effort` from Haiku 5 and Fable 5, `DEFAULT_TIDY_MODEL` (`src/lib/nav/site-config.ts:146`) is `claude-sonnet-5` against Geoff's call that it track the latest Sonnet (`ROADMAP.md:960`), and the settings screen recommends `claude-haiku-4-5` (`src/lib/admin/CairnTidySettings.svelte:402`). The change moves a site that leaves `tidy.model` unset to Sonnet 5.5, so it needs a before-and-after proofreading check on real entries, a changelog entry, a migration note, and a fact-check of the tidy docs.
+  Placement: Final engine batch, admin and tidy slice.
+
 ## Won't do
 
 - **#69** Loosen the register's task-guide item 5 for a feature with no log event: the conflict leaves with the extend arm; admin recovery pages are not log-event pages (Geoff, 2026-10-31)

@@ -8,7 +8,7 @@
 - [Visuals (every page that carries one)](#visuals-every-page-that-carries-one)
 - [The page anatomies](#the-page-anatomies)
 - [The tracks](#the-tracks)
-- [The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)](#the-front-door-docsreadmemd-docswhy-cairnmd-and-the-root-readmemd)
+- [The front door (`docs/why-cairn.md` and the root `README.md`)](#the-front-door-docswhy-cairnmd-and-the-root-readmemd)
 - [When a Vale finding is wrong](#when-a-vale-finding-is-wrong)
 - [Deviations from the base guides](#deviations-from-the-base-guides)
 - [Sources](#sources)
@@ -57,7 +57,7 @@ follows there.
 | Surface | Reader | Base guide | Drafting brief |
 |---|---|---|---|
 | `docs/admin/` | Sets up and runs the default site, starting from the setup command | Google | None; the guide and its rows in "Deviations from the base guides" |
-| The front door: `docs/README.md`, `docs/why-cairn.md`, and the root `README.md` | Every audience, led by the developer | Google | None; the guide and its rows in "Deviations from the base guides" |
+| The front door: `docs/why-cairn.md` and the root `README.md` | Every audience, led by the developer | Google | None; the guide and its rows in "Deviations from the base guides" |
 | `CHANGELOG.md` | A developer reading what an upgrade changes | Google | None; the guide and its rows in "Deviations from the base guides" |
 | cairn.pub's own prose | A visitor to the rendered docs site | Google | None; the guide and its rows in "Deviations from the base guides" |
 | `docs/editors/` | Writes on a cairn site through `/admin` and never opens a terminal | Microsoft | Editor docs |
@@ -510,9 +510,9 @@ docs alone.
 every invariant the contributor could violate either a gate or a written rule the index
 surfaces?
 
-## The front door (`docs/README.md`, `docs/why-cairn.md`, and the root `README.md`)
+## The front door (`docs/why-cairn.md` and the root `README.md`)
 
-A register case of its own, alongside the tracks. These three pages are where every
+A register case of its own, alongside the tracks. These two pages are where every
 audience lands, and they carry the whole cairn story.
 
 - **Five routes, not four, in the first screenful.** The evaluator route comes first

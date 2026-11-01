@@ -1118,7 +1118,7 @@ alongside the component recipes above and below it.
   5.86:1 dark).
 - **Media: the placement default CSS (`.cairn-place-*`).** cairn defines the figure placement class
   contract; a site owns the pixels. The reference values live in the showcase
-  (`examples/showcase/src/lib/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
+  (`examples/showcase/src/theme/site.css`): the bare `figure` at the text measure, `.cairn-place-center`
   a below-measure centered image, `.cairn-place-wide` a viewport-centered breakout past the measure,
   and `.cairn-place-full` a full-bleed image with its `figcaption` returned to the measure. A site
   copies and restyles those classes. This is content CSS, not admin chrome, so it lives with the site's

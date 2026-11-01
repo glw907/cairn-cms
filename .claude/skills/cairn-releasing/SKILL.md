@@ -136,7 +136,7 @@ held section in the window and carries every `Consumers must:` line from the bre
 a notes file rather than by hand at the `gh` prompt. Add the matching per-version entry to
 `MIGRATION-NOTES.md` if the pass did not already.
 
-A window touching an admin surface (`src/lib/components/*.svelte`, `cairn-admin.css`) also earns a
+A window touching an admin surface (`src/lib/admin/**`, `cairn-admin.css`) also earns a
 re-read of the reproduction stories and docs pages the change reaches: check every affected story's
 caption against what it now renders, and, on a page carrying a keyed callout list, that the list still
 matches. A reproduction pictures a live render, so an admin change can silently falsify the prose

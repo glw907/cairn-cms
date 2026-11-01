@@ -51,6 +51,7 @@ describe('the table', () => {
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
     ['scripts', '.github/', '.github/workflows/test.yml'],
     ['scripts', 'eslint.config.js', 'eslint.config.js'],
+    ['scripts', 'tsdoc.json', 'tsdoc.json'],
     ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
     ['harness', '.claude/', '.claude/skills/cairn-writing-docs/evals/run.mjs'],

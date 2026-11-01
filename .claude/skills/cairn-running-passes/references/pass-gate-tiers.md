@@ -73,7 +73,7 @@ matches it:
 | Bucket | Patterns |
 | --- | --- |
 | docs | `docs/`, `*.md`, `**/*.md`, `.vale/`, `.vale.ini`, `.tellgrader.json`, `skills/`, `claude/` |
-| scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `vitest.config.ts`, `wrangler.test.jsonc` |
+| scripts | `scripts/`, `src/tests/`, `.github/`, `eslint.config.js`, `tsdoc.json`, `vitest.config.ts`, `wrangler.test.jsonc` |
 | harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |

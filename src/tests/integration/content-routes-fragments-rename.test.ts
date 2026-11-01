@@ -126,6 +126,23 @@ describe('renameAction: fragment rename repoints ::include directives (Task 5)',
     expect(renameCalls.filter((c) => c.method === 'POST' && c.url.endsWith('/git/commits')).length).toBe(1);
   });
 
+  it('refuses (409) naming the entry when only a pending branch includes the fragment (#137)', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    await redirectedTo(routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' })));
+    await redirectedTo(
+      routes.saveAction(
+        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: '::include{fragment="welcome"}' }),
+      ),
+    );
+    const out = await rename(routes, 'fragments', 'welcome', 'new-welcome');
+    expect(out.status).toBe(409);
+    expect(out.error).toContain('posts/2026-05-hi');
+    expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
+    expect(gh.read('main', 'src/content/fragments/new-welcome.md')).toBeNull();
+  });
+
   it('keeps today\'s 409 when the rename collides with an existing fragment id', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();

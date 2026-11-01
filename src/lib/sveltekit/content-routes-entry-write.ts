@@ -10,7 +10,7 @@
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken } from '../content/links.js';
-import { extractIncludes } from '../content/includes.js';
+import { extractIncludes, hasIdlessInclude } from '../content/includes.js';
 import { extractReferenceEdges } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, parseMarkdown, serializeMarkdown } from '../content/frontmatter.js';
@@ -18,7 +18,7 @@ import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, enforceTaxonomy } from '../content/taxonomy-enforce.js';
 import { asDate, entryIdentity } from '../content/identity.js';
 import { permalinkUsesDateToken } from '../content/url-policy.js';
-import { buildAddressIndex, addressCollision, type AddressEntry } from '../content/advisories.js';
+import { heldAddress } from '../content/advisories.js';
 import { filenameFromId } from '../content/ids.js';
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
@@ -151,9 +151,28 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     const body = String(form.get('body') ?? '');
     const isNew = form.get('new') === '1';
 
-    // The backend is resolved up front: the branch-first prior-tags read below (the orphan union)
-    //  needs it before the validate.
     const backend = ctx.resolveBackend(event);
+
+    // Read the default branch's head BEFORE the prior read below and every read of main's
+    // media.json or index.json, so the publish commit's expectedHead is at-or-before every byte of
+    // those snapshots it sends.
+    const guardedHead = guardMainHead ? await backend.branchHead(backend.defaultBranch) : undefined;
+
+    // The entry's prior file, read once branch-first like editLoad: the pending branch when its head
+    //  is non-null, else the default branch. It feeds the tag vocabulary's orphan union and the
+    //  undeclared-key merge below. A create has none. A failed read or parse fails closed, since
+    //  proceeding on "no prior keys" would silently delete every key the fieldset does not declare.
+    let priorData: Record<string, unknown> = {};
+    if (!isNew) {
+      try {
+        const branch = pendingBranch(concept.id, id);
+        const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
+        const priorRaw = await backend.readFile(path, priorBranch);
+        if (priorRaw !== null) priorData = parseMarkdown(priorRaw).frontmatter;
+      } catch {
+        return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
+      }
+    }
 
     // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
     //  concept marks a taxonomy field. Otherwise the bare path runs unchanged (the open creatable
@@ -168,21 +187,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (vocabValues.length === 0 || taxField === null) {
       decoded = frontmatterFromForm(concept.fields, form);
     } else {
-      // Read the entry's prior tags branch-first, mirroring editLoad: the pending branch when its
-      //  head is non-null, else the default branch. A create has no prior tags. A failed read
-      //  degrades to no prior tags so it never blocks the save.
-      let priorTags: string[] = [];
-      if (!isNew) {
-        try {
-          const branch = pendingBranch(concept.id, id);
-          const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
-          const priorRaw = await backend.readFile(path, priorBranch);
-          if (priorRaw !== null) priorTags = coerceTags(parseMarkdown(priorRaw).frontmatter[taxField]);
-        } catch {
-          priorTags = [];
-        }
-      }
-      allowed = resolveAllowed(vocabValues, priorTags);
+      allowed = resolveAllowed(vocabValues, coerceTags(priorData[taxField]));
       decoded = frontmatterFromForm(closeTaxonomyField(concept.fields, allowed), form);
     }
 
@@ -218,11 +223,14 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       }
     }
 
-    const markdown = serializeMarkdown(result.data, body);
-
-    // Read the default branch's head BEFORE any read of main's media.json or index.json, so the
-    // publish commit's expectedHead is at-or-before every byte of those snapshots it sends.
-    const guardedHead = guardMainHead ? await backend.branchHead(backend.defaultBranch) : undefined;
+    // Keep every prior key the fieldset does not declare (a hand-written `draft: true`, say), so a
+    //  save never deletes what the form cannot show. A declared field the form omitted stays removed.
+    const declared = new Set(concept.fields.map((f) => f.name));
+    const merged: Record<string, unknown> = { ...result.data };
+    for (const [key, value] of Object.entries(priorData)) {
+      if (!declared.has(key) && !(key in merged)) merged[key] = value;
+    }
+    const markdown = serializeMarkdown(merged, body);
 
     // Merge the editor's optimistic media records into the media manifest, gated on media being on
     // and at least one valid record posted. The base is read from the default branch (never the
@@ -275,6 +283,18 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         brokenLinks: absent,
         body,
       } satisfies SaveFailure);
+    }
+
+    // Include guard: an include must name a fragment with a row in the upserted manifest. A draft
+    // fragment row passes (the build's fragments.byId holds drafts). A site with no fragments concept
+    // has no rows, so its include refuses, matching the build's throw. An include with no id is
+    // refused too, since extractIncludes skips it and the build's resolver does not.
+    if (hasIdlessInclude(body)) {
+      return fail(400, saveRefusal('An include is missing its fragment. Pick a fragment or remove the include.', body));
+    }
+    const unknownFragments = extractIncludes(body).filter((fid) => !byKey.has(`${FRAGMENTS_CONCEPT_ID}/${fid}`));
+    if (unknownFragments.length) {
+      return fail(400, saveRefusal(`This page includes a fragment that does not exist: ${unknownFragments.join(', ')}.`, body));
     }
 
     // Frontmatter reference warning: classify each typed reference edge against the same upserted
@@ -351,9 +371,9 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    */
   async function publishAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
-    const held = await saveToBranch(event, editor, concept, id, true);
-    if (!('branchSha' in held)) return held;
-    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange, mainHead } = held;
+    const saved = await saveToBranch(event, editor, concept, id, true);
+    if (!('branchSha' in saved)) return saved;
+    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange, mainHead } = saved;
 
     // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
     // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
@@ -369,22 +389,29 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     ];
     if (mediaChange) changes.push(mediaChange);
 
-    // The cross-branch address-collision re-check: warn-and-allow, last-write-wins, never a gate.
-    // Resolve this entry's address the way editLoad does and look it up in the index built from
-    // the same manifest the publish carries. The read fails open: a thrown index build degrades to
-    // no event and the publish proceeds, so a transient GitHub error never blocks a publish.
-    let address = '';
-    let collision: AddressEntry | null = null;
-    try {
-      const { frontmatter } = parseMarkdown(markdown);
-      address = entryIdentity(concept, path, frontmatter).permalink;
-      const addressIndex = await buildAddressIndex(backend, runtime.concepts, manifest);
-      collision = addressCollision(addressIndex, { concept: concept.id, id }, address);
-    } catch (err) {
-      // Fail open, the same as editLoad: a thrown index build degrades to no event and the publish
-      // proceeds. Log it so a persistently failing advisory build is diagnosable, not invisible.
-      collision = null;
-      log.warn('github.unreachable', { scope: 'publish_advisories', error: String(err) });
+    // Refuse a publish onto an address a live entry already holds: the build's duplicate-permalink
+    // throw would otherwise red the deploy. The branch keeps the edits and main takes no commit.
+    // Reads the manifest this publish carries, no branch, so a pending edit elsewhere never counts.
+    const held = heldAddress(manifest, runtime.concepts, {
+      concept: concept.id,
+      id,
+      permalink: row.permalink,
+      draft: row.draft,
+    });
+    if (held) {
+      log.warn('publish.address_collided', {
+        editor: editor.email,
+        address: row.permalink,
+        heldByConcept: held.concept,
+        heldById: held.id,
+      });
+      return fail(
+        409,
+        saveRefusal(
+          `Another entry already uses the address ${row.permalink}. Your edits are saved. Change the address of one of the two, then publish again.`,
+          body,
+        ),
+      );
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
@@ -399,15 +426,6 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         mainHead,
       );
       log.info('entry.published', { ...commitFields, batch: false });
-      // Only after the publish lands: a diagnostic that a live address now has a new owner.
-      if (collision) {
-        log.warn('publish.address_collided', {
-          editor: editor.email,
-          address,
-          displacedConcept: collision.concept,
-          displacedId: collision.id,
-        });
-      }
     } catch (err) {
       // The branch already holds the just-committed edits, so a conflict here loses nothing.
       return ctx.commitFailure(
@@ -503,6 +521,25 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (published.length === 0) {
       throw redirect(303, `${listPage}?error=nothing_to_publish`);
     }
+
+    // Refuse the whole batch when any published row lands on an address a live entry holds,
+    // including another row of this batch. Nothing commits and every branch stays. A duplicate on
+    // main that involves no batch row is not this batch's fault, so only published rows are checked.
+    let collided = false;
+    for (const entry of published) {
+      const row = manifestRow(next, entry.concept, entry.id);
+      if (!row) continue;
+      const held = heldAddress(next, runtime.concepts, row);
+      if (!held) continue;
+      collided = true;
+      log.warn('publish.address_collided', {
+        editor: editor.email,
+        address: row.permalink,
+        heldByConcept: held.concept,
+        heldById: held.id,
+      });
+    }
+    if (collided) throw redirect(303, `${listPage}?error=address_collision`);
     changes.push({ path: runtime.manifestPath, content: formatManifest(next) });
 
     const noun = published.length === 1 ? 'entry' : 'entries';

@@ -19,7 +19,8 @@ Contents:
 ## Upload limits
 
 - `allowedTypes` narrows the five stored types (`image/jpeg`, `image/png`, `image/gif`,
-  `image/webp`, `image/avif`); it cannot widen them. The type is sniffed from the bytes. HEIC,
+  `image/webp`, `image/avif`); it cannot widen them, and a type outside them throws a `cairn:` error
+  at startup. The type is sniffed from the bytes. HEIC,
   unknown bytes, SVG, HTML, XML, and anything starting with `<` are always refused.
 - `maxUploadBytes` defaults to 25 MB. Cloudflare's plan body cap also applies and answers a plain 413.
 - Both apply to new uploads only. Narrowing `allowedTypes` leaves stored assets and their manifest
@@ -65,10 +66,8 @@ Moving the base takes a route at the new base. `publicBase` moves the URLs, not 
    export const GET = createMediaRoute({ runtime });
    ```
 
-3. Keep `src/routes/media/[...path]/+server.ts`. The editor's live preview builds `/media/...` paths
-   whatever `publicBase` says, and `cairn-media-seed` downloads `/media/<slug>.<hash>.<ext>`. Without
-   that route, preview images break while published pages render. The same handler serves both
-   shapes at both bases. Say in your reply that it was kept on purpose.
+3. Keep `src/routes/media/[...path]/+server.ts` only if the site runs `cairn-media-seed`, which
+   downloads `/media/<slug>.<hash>.<ext>`. Say in your reply that it was kept on purpose.
 
 ## Responsive images
 
@@ -82,21 +81,15 @@ the `/cdn-cgi/image/<options>/<path>` URL itself.
 
 By default a `media:` reference with no manifest row logs `media.resolve_missing` and renders
 `src="#"` with class `cairn-broken-media`, and the build passes. To fail a prerendered build instead,
-wrap the resolver where the adapter module defines it (on a scaffold `publicMediaResolver` feeds both
-`render` and the public routes' `resolveMedia`, so one wrap covers both). Copy `imageDetail` onto the
-wrapper, or images lose their dimensions and `srcset`. Previews keep marking misses broken, since
-they pass their own resolver.
+pass `{ strict: true }` as the third argument to `createMediaResolver`, where the adapter module
+defines it (on a scaffold `publicMediaResolver` feeds both `render` and the public routes'
+`resolveMedia`, so one change covers both). A miss with media on throws a `cairn:`-prefixed error;
+media off stays silent, and the resolver keeps its `imageDetail`. Previews keep marking misses
+broken, since they pass their own resolver.
 
 <!-- snippet-check-skip: continues the scaffold's adapter module, which declares mediaManifest and resolvedAssets -->
 ```ts
-const baseMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
-const failOnMissing: typeof baseMediaResolver = (ref) => {
-  const url = baseMediaResolver(ref);
-  if (url === undefined) throw new Error(`Missing media asset: ${ref.hash}`);
-  return url;
-};
-Object.assign(failOnMissing, { imageDetail: (baseMediaResolver as { imageDetail?: unknown }).imageDetail });
-export const publicMediaResolver = failOnMissing;
+export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets, { strict: true });
 ```
 
 On a request-time page the throw becomes a 500.
@@ -121,6 +114,11 @@ failure's `data.error` is `length_required`, `too_large`, or `unsupported_type`.
 bytes but commits no row: the asset resolves as missing until an entry save posts the `record` in
 its `media` form field. A status-0 `opaqueredirect` means the session expired; a 403 with
 `guard.refused` `reason: csrf` means a stale token.
+
+To commit the row too, post to `/admin/media?/mediaLibraryUpload` with the same headers. It stores
+the bytes and commits the `media.json` row to the main branch in one step, and a hash already in the
+manifest succeeds as a no-op. `admin.actions.mediaLibraryUpload` is typed on `CairnAdminRoutes`, so
+a custom screen reaches it with no cast.
 
 ## Hand-built wiring
 

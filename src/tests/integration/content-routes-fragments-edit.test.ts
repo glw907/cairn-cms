@@ -238,6 +238,49 @@ describe('editLoad: usage visibility for a fragments-concept entry (Task 6)', ()
   });
 });
 
+describe('saveToBranch: the include guard (#137)', () => {
+  async function save(routes: ReturnType<typeof createContentRoutes>, body: string) {
+    return (await routes.saveAction(
+      saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body }),
+    )) as unknown as { status: number; data: { error: string; body: string } };
+  }
+
+  it('refuses an include naming no fragment, commits nothing, and reseeds the body', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    const body = 'See.\n\n::include{fragment="ghost"}';
+    const result = await save(routes, body);
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/ghost/);
+    expect(result.data.body).toBe(body);
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toBeNull();
+  });
+
+  it.each(['::include{}', '::include{fragment=""}'])('refuses an include with no id: %s', async (body) => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    const result = await save(routes, body);
+    expect(result.status).toBe(400);
+    expect(result.data.body).toBe(body);
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toBeNull();
+  });
+
+  it('commits an include naming a draft fragment', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    await redirectedTo(
+      routes.publishAction(saveEvent('fragments', 'wip', { title: 'Wip', body: 'Hi.', draft: 'on' })),
+    );
+    const location = await redirectedTo(routes.saveAction(
+      saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: '::include{fragment="wip"}' }),
+    ));
+    expect(location).toMatch(/^\/admin\/posts\/2026-05-hi\?saved=1/);
+  });
+});
+
 describe('saveToBranch: the nested-include bounce (Task 6)', () => {
   it("refuses a fragments-concept save whose body contains an include, with the fixed copy", async () => {
     const gh = new GithubDouble({ main: {} });

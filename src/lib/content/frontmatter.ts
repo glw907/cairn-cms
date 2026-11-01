@@ -396,6 +396,8 @@ export function parseMarkdown(source: string): {
   frontmatter: Record<string, unknown>;
   body: string;
 } {
-  const parsed = matter(source);
+  // Empty options skip gray-matter's source cache, which would otherwise swallow a parse failure
+  //  after the first throw and read the same malformed file as an empty header the next time.
+  const parsed = matter(source, {});
   return { frontmatter: parsed.data, body: parsed.content };
 }

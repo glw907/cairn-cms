@@ -11,7 +11,7 @@ import { initialValues } from '../content/fieldset.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, unlistedTags } from '../content/taxonomy-enforce.js';
 import { asString, entryIdentity } from '../content/identity.js';
-import { mainAddressIndex, addressCollision, type AdvisoryNotice } from '../content/advisories.js';
+import { heldAddress, type AdvisoryNotice } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId } from '../content/ids.js';
 import { pendingBranch } from '../content/pending.js';
 import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type InboundLink } from '../content/manifest.js';
@@ -394,17 +394,21 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       fragmentTargets = bodies.filter((b): b is FragmentTarget => b !== null);
     }
 
-    // The address-collision advisory: warn-and-allow, never a gate. At edit-load it checks the
-    // published corpus only, built synchronously from the same manifest read above (no extra GitHub
-    // read per editor open); publishAction re-checks the full cross-branch index before it lands. The
-    // try/catch degrades to no notice if entryIdentity throws on a malformed-date entry. Skip the build
-    // with no manifest to index.
+    // The held-address advisory: the same heldAddress predicate publishAction refuses on, so the page
+    // warns exactly when a publish would be refused. It reads the manifest already held (no extra
+    // GitHub read per editor open), with this entry's identity and frontmatter draft flag because the
+    // entry may have no row yet or a branch-side permalink. The try/catch degrades to no notice if
+    // entryIdentity throws on a malformed-date entry. Skip with no manifest to check.
     let advisories: AdvisoryNotice[] = [];
     if (manifest !== null) {
       try {
         const identity = entryIdentity(concept, path, parsed.frontmatter);
-        const addressIndex = mainAddressIndex(manifest);
-        const other = addressCollision(addressIndex, { concept: concept.id, id }, identity.permalink);
+        const other = heldAddress(manifest, runtime.concepts, {
+          concept: concept.id,
+          id,
+          permalink: identity.permalink,
+          draft: parsed.frontmatter.draft === true,
+        });
         if (other) {
           const otherConcept = findConcept(runtime.concepts, other.concept);
           const label = otherConcept ? otherConcept.label : other.concept;
@@ -412,7 +416,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
             {
               kind: 'address-collision',
               severity: 'warn',
-              message: `Another ${label} already uses the address ${identity.permalink}. Publish this one and it replaces the other at that address.`,
+              message: `Another ${label} already uses the address ${identity.permalink}. Change the address of one of the two before you publish, or the publish is refused.`,
               actions: [{ label: `Open ${other.title}`, href: `/admin/${other.concept}/${other.id}` }],
             },
           ];

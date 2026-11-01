@@ -12,6 +12,16 @@ import { visit } from 'unist-util-visit';
 import type { Root } from 'mdast';
 import type { LeafDirective } from 'mdast-util-directive';
 
+/** Every `::include` leaf directive's raw `fragment` attribute (possibly absent or empty), in source order. */
+function includeAttrs(body: string): (string | null | undefined)[] {
+  const tree = unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(body) as Root;
+  const attrs: (string | null | undefined)[] = [];
+  visit(tree, 'leafDirective', (node: LeafDirective) => {
+    if (node.name === 'include') attrs.push(node.attributes?.fragment);
+  });
+  return attrs;
+}
+
 /**
  * The fragment ids a markdown body includes via `::include{fragment="<id>"}`, in first-occurrence
  *  order, deduped. Parses the body as mdast, so an include token inside a code span or fence is
@@ -19,17 +29,16 @@ import type { LeafDirective } from 'mdast-util-directive';
  *  the same name contributes nothing, as does a missing or empty `fragment` attribute.
  */
 export function extractIncludes(body: string): string[] {
-  const tree = unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(body) as Root;
-  const seen = new Set<string>();
-  const ids: string[] = [];
-  visit(tree, 'leafDirective', (node: LeafDirective) => {
-    if (node.name !== 'include') return;
-    const id = node.attributes?.fragment;
-    if (!id || seen.has(id)) return;
-    seen.add(id);
-    ids.push(id);
-  });
-  return ids;
+  return [...new Set(includeAttrs(body).filter((id): id is string => !!id))];
+}
+
+/**
+ * Whether the body holds an `::include` leaf directive with a missing or empty `fragment`
+ *  attribute. extractIncludes skips such a directive (the manifest depends on that), so the save
+ *  guard asks this separately: the build's resolver throws on it.
+ */
+export function hasIdlessInclude(body: string): boolean {
+  return includeAttrs(body).some((id) => !id);
 }
 
 /**

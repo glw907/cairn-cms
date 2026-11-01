@@ -18,7 +18,7 @@ import type {
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
 } from '../../lib/sveltekit/content-routes-media-metadata.js';
-import { formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { formatManifest, manifestEntryFromFile, parseManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
@@ -362,6 +362,28 @@ describe('mediaAltApply', () => {
     );
     // media.json is NOT rewritten: the default alt is read from it, never changed there.
     expect(gh.read('main', MEDIA_PATH)).toBe(mediaManifest(mediaEntry(HASH, 'sunset', { alt: DEFAULT_ALT })));
+  });
+
+  it("rebuilds the changed entry's manifest row from the filled file (a ] in the alt reaches the summary)", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const concept = runtime().concepts[0];
+    const path = 'src/content/posts/2026-05-empty.md';
+    const alt = 'A [sunset] over the bay';
+    const seeded = manifestEntryFromFile(concept, { path, raw: emptyAltBody('sunset', HASH, 'Empty Alt') });
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH, 'sunset', { alt })),
+        [MANIFEST_PATH]: contentManifest([seeded]),
+        [path]: emptyAltBody('sunset', HASH, 'Empty Alt'),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutesInternal({ runtime: runtime() });
+    await expect(routes.mediaAltPropagateAction(applyEvent({ hash: HASH }))).rejects.toMatchObject({ status: 303 });
+
+    const rebuilt = manifestEntryFromFile(concept, { path, raw: gh.read('main', path)! });
+    expect(rebuilt.summary).not.toBe(seeded.summary);
+    expect(parseManifest(gh.read('main', MANIFEST_PATH)!).entries[0]).toEqual(rebuilt);
   });
 
   it('with overwrite:true also overwrites the custom alt but still never touches the decorative hero', async () => {

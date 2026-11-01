@@ -9,6 +9,8 @@ import { log } from '../log/index.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
 import type { UsageEntry } from '../media/usage.js';
+import { manifestEntryFromFile, formatManifest, upsertEntry, type Manifest } from '../content/manifest.js';
+import { findConcept } from '../content/concepts.js';
 import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
 import { planMediaRewrite } from '../media/rewrite-plan.js';
@@ -154,6 +156,23 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
   const { runtime } = ctx;
 
   /**
+   * The content-manifest change that rides a rewrite commit: each rewritten entry's row rebuilt from
+   *  its new markdown and folded in (upsertEntry keeps `publishedAt`). The build verifies the
+   *  committed manifest against the content files, so a rewrite that skipped this would fail the
+   *  next build. Null when no entry was rewritten, so the commit leaves the manifest alone.
+   */
+  function manifestChangeFor(manifest: Manifest, rewritten: { concept: string; path: string; newMarkdown: string }[]): FileChange | null {
+    if (rewritten.length === 0) return null;
+    let next = manifest;
+    for (const e of rewritten) {
+      const concept = findConcept(runtime.concepts, e.concept);
+      if (!concept) continue;
+      next = upsertEntry(next, manifestEntryFromFile(concept, { path: e.path, raw: e.newMarkdown }));
+    }
+    return { path: runtime.manifestPath, content: formatManifest(next) };
+  }
+
+  /**
    * Edit a committed asset's metadata: its display name, slug, and default alt. A single media.json
    *  row commit, with NO reference rewrite: the resolver and the delivery route key on the hash, so a
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
@@ -294,7 +313,8 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
 
   /**
    * Apply a replace-in-place: rewrite every published main entry that references the old asset to the
-   *  new asset's `media:` token, and add the new media.json row, in ONE atomic commit. The plan is
+   *  new asset's `media:` token, rebuild each rewritten entry's content-manifest row, and add the new
+   *  media.json row, in ONE atomic commit (media.json alone when no entry is rewritten). The plan is
    *  re-derived here from a FRESH read (never a client-passed plan), so a concurrent edit between the
    *  preview and the apply is rewritten too. EVERY replace is gated behind the typed-slug confirm
    *  (unlike delete, which only gates an in-use asset): a replace silently repoints published content,
@@ -368,12 +388,14 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     // asset's slug (server-authoritative `row.slug`): a replace changes only the content hash, so the
     // name in every reference stays the same (the new bytes resolve by hash regardless of the slug).
     const newToken = replacementToken(row.slug, record.hash);
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<RepointPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<RepointPlacement>({
         backend,
         concepts: runtime.concepts,
-        contentManifest: await ctx.readManifest(backend),
+        contentManifest,
         hash: oldHash,
         transform: (md) => repointMediaRef(md, oldHash, newToken),
       });
@@ -398,10 +420,12 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
       } satisfies MediaReplaceFailure);
     }
 
-    // Commit atomically: every rewritten entry plus the new media.json row (the OLD row stays, so the
-    // old bytes keep a row). One commit, the same conflict handling as delete.
+    // Commit atomically: every rewritten entry, its rebuilt content-manifest row, and the new
+    // media.json row (the OLD row stays, so the old bytes keep a row). One commit, the same conflict handling as delete.
     const changes: FileChange[] = plan.entries.map((e) => ({ path: e.path, content: e.newMarkdown }));
     changes.push({ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, record)) });
+    const contentChange = manifestChangeFor(contentManifest, plan.entries);
+    if (contentChange) changes.push(contentChange);
 
     try {
       await backend.commit(
@@ -470,9 +494,10 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
 
     // Plan the fill. The planner runs strict, so an unverifiable branch read throws out of here; catch
     // it and fail closed, the same posture replace and delete take.
-    const contentManifest = await ctx.readManifest(backend);
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<AltPlacement>({
         backend,
         concepts: runtime.concepts,
@@ -513,7 +538,8 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
    *  published corpus (and, on the `overwrite` opt-in, customized placements too), in ONE atomic
    *  commit. The plan is re-derived from a FRESH read (never a client plan). Three deliberate
    *  differences from replace: there is NO typed-slug gate (alt fill is reversible and frequent), there
-   *  is NO media.json change (the default alt is READ from the row, never rewritten there), and a
+   *  is NO media.json change (the default alt is READ from the row, never rewritten there; the commit
+   *  is the changed entries plus their rebuilt content-manifest rows), and a
    *  decorative hero is never written regardless of `overwrite` (enforced inside fillAltForHash). A run
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
@@ -553,12 +579,14 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
 
     // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an
     // unverifiable branch read throws; catch it and fail closed (commit nothing).
+    let contentManifest: Awaited<ReturnType<typeof ctx.readManifest>>;
     let plan: Awaited<ReturnType<typeof planMediaRewrite<AltPlacement>>>;
     try {
+      contentManifest = await ctx.readManifest(backend);
       plan = await planMediaRewrite<AltPlacement>({
         backend,
         concepts: runtime.concepts,
-        contentManifest: await ctx.readManifest(backend),
+        contentManifest,
         hash,
         transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite }),
       });
@@ -573,6 +601,8 @@ export function createMediaMetadataActions(ctx: ContentRoutesContext) {
     if (changed.length === 0) throw redirect(303, '/admin/media?altPropagated=1');
 
     const changes: FileChange[] = changed.map((e) => ({ path: e.path, content: e.newMarkdown }));
+    const contentChange = manifestChangeFor(contentManifest, changed);
+    if (contentChange) changes.push(contentChange);
     try {
       await backend.commit(
         backend.defaultBranch,

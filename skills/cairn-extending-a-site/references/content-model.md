@@ -60,6 +60,9 @@ Ids the engine refuses: `login`, `auth`, `editors`, `help`, `media`, `vocabulary
 Every field is optional unless it sets `required: true`. Mark only the fields the task requires
 (usually the title and the start date); leave the rest bare. An empty optional field is dropped from
 the saved frontmatter and typed optional, so code reading it under strict settings checks it is set.
+A key the fieldset does not declare (a hand-written `draft: true`) is not shown in the form and
+survives every save and publish; a declared field the form leaves empty is removed. A bare YAML date
+in an undeclared key is rewritten as a full ISO instant (`2026-01-01T00:00:00.000Z`).
 
 `fields.text`, `textarea`, `number`, `url`, `email`, `date` (`YYYY-MM-DD`), `datetime`, `boolean`,
 `select`, `multiselect`, `image`, `reference`, `object`, `array`. `number` is the whole-number field
@@ -153,8 +156,8 @@ writes `site-facts.json` and keeps first-publish stamps.
   with the descriptor from `buildSiteDescriptors` (`references/public-routes.md`).
 - `::include{fragment="<id>"}` needs a `fragments` concept. The admin's **Include a fragment**
   control appears only when one is declared and never while editing a fragment. A fragment cannot
-  include another. A save never checks an include against the manifest, so a dangling include
-  commits and the deploy build is the first to fail (`cairn: fragment "<id>" not found`).
+  include another. A save refuses (400) an include that names no fragment row in the manifest or has
+  no id; a draft fragment passes. A site with no `fragments` concept therefore refuses every include.
 
 ## Integrity guards
 
@@ -165,20 +168,24 @@ Delete checks, in order:
 
 1. Inbound body links: 409 `Cannot delete <id>: N pages link to it.`
 2. Fragment includes: 409 `Cannot delete <id>: N entries include it. Remove the include first.`
-   (includes count once the including entry is published; a save does not update the manifest).
+   (includes count once the including entry is published), also 409 while an open branch includes
+   it, and 503 when a branch cannot be read.
 3. Cross-branch reference index cannot be built: 503.
 4. Inbound reference edges: 409 `Cannot delete <id>: N entries reference it.`, listing each
    referencing entry's concept, id, title, and permalink.
 
 A rename refuses with 409 when the new id collides, the entry has unpublished edits, another open
-branch holds an inbound reference (naming the blockers), or the reference index cannot be built.
+branch holds an inbound reference (naming the blockers), or the reference index cannot be built. A
+fragment rename also refuses while an open branch includes it, or when the branches cannot be read.
 Otherwise it rewrites each referencing entry's stored id and no other frontmatter byte. These
 refusals leave no log record; the editor's banner is the trace.
 
-Address collisions: the edit page shows a warn-only `address-collision` advisory when another
-published entry on `main` has the same permalink, and a publish rechecks `main` and every open
-`cairn/*` branch and logs `publish.address_collided` after it lands. Neither blocks, and both fail
-open. Two published routable entries on one permalink fail the build.
+Address collisions: two published routable entries on one permalink fail the build, so a publish
+onto an address a live entry holds is refused. The edit page shows an `address-collision` advisory
+under the same rule beforehand. A draft, a fragment, or another entry's pending branch holds no
+address. A single publish answers 409 with the edits kept on the branch and nothing on `main`; a
+batch publish commits nothing and redirects with `?error=address_collision`. Each refusal logs
+`publish.address_collided`. Change the address of one entry, then publish again.
 
 ## Resolve a failed check
 

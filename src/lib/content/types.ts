@@ -231,8 +231,7 @@ export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 /**
  * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
  *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
- *  engine normalizes this into a `ResolvedAssetConfig`; the built-in thumb, inline, card, and hero
- *  presets are the whole preset vocabulary, since a site cannot declare one.
+ *  engine normalizes this into a `ResolvedAssetConfig`.
  * @public
  */
 export interface AssetConfig {
@@ -252,7 +251,7 @@ export interface AssetConfig {
   /**
    * Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
    *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
-   *  it off, the media resolver serves the bare full-size delivery path and ignores any preset, so
+   *  it off, the media resolver serves the bare full-size delivery path, so
    *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL.
    *  It governs only the responsive `srcset` a rendered image gets beside its full-size `src`. Set it
    *  `true` only after enabling Transformations on the zone.

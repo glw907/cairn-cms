@@ -5,7 +5,7 @@
 // check:surface/check:consumers, not this file), then binds a call's result to the named type
 // directly and back again, proving the declared contract and the factory's actual return are
 // mutually assignable with no `ReturnType<typeof f>` detour anywhere in the chain. The
-// CairnAdminRoutes block additionally proves the ten media-janitorial actions the membership
+// CairnAdminRoutes block additionally proves the nine media-janitorial actions the membership
 // decision withdraws are genuinely absent from the narrowed type, not merely unlisted, the same
 // shape model `retires-task2-sanctioned-leak-replacements.test.ts` uses for a leak proof.
 import { describe, it, expect } from 'vitest';
@@ -35,28 +35,28 @@ function typeOnlyCairnAdminContract(runtime: CairnRuntime): void {
   const roundTrip: ReturnType<typeof createCairnAdmin> = admin;
   void roundTrip;
 
-  // The membership decision (Task 2's own ledger annotation): the ten media-janitorial actions
+  // The membership decision (Task 2's own ledger annotation): the nine media-janitorial actions
   // genuinely do not exist on the narrowed contract, a type-level capability withdrawal proven
   // here the same way the sanctioned-leak fixture proves a retired name's absence.
-  // @ts-expect-error mediaDelete is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaDelete is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaDelete;
-  // @ts-expect-error mediaUpdate is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaUpdate is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaUpdate;
-  // @ts-expect-error mediaLibraryUpload is one of the ten actions CairnAdminRoutes withdraws.
+  // mediaLibraryUpload is the one media action CairnAdminRoutes keeps typed, so no expect-error.
   void admin.actions.mediaLibraryUpload;
-  // @ts-expect-error mediaReplacePreview is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaReplacePreview is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaReplacePreview;
-  // @ts-expect-error mediaReplace is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaReplace is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaReplace;
-  // @ts-expect-error mediaAltPreview is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaAltPreview is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaAltPreview;
-  // @ts-expect-error mediaAltPropagate is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaAltPropagate is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaAltPropagate;
-  // @ts-expect-error mediaBulkDelete is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaBulkDelete is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaBulkDelete;
-  // @ts-expect-error mediaOrphanScan is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaOrphanScan is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaOrphanScan;
-  // @ts-expect-error mediaOrphanPurge is one of the ten actions CairnAdminRoutes withdraws.
+  // @ts-expect-error mediaOrphanPurge is one of the nine actions CairnAdminRoutes withdraws.
   void admin.actions.mediaOrphanPurge;
   // mediaUpload stays: it wraps the same uploadAction the kept `upload` action wraps, just
   // gated to the media view instead of the edit view.
@@ -66,7 +66,7 @@ void typeOnlyCairnAdminContract;
 
 // createCairnAdminInternal: the wide shape the single-mount composer and the engine's own media
 // components keep driving in full, module-internal (no package subpath re-exports it). Every one
-// of the ten actions withdrawn above is still reachable here, proving the narrowing above is
+// of the nine actions withdrawn above is still reachable here, proving the narrowing above is
 // type-level only, never a runtime boundary.
 function typeOnlyCairnAdminInternalContract(runtime: CairnRuntime): void {
   const admin = createCairnAdminInternal({ runtime });

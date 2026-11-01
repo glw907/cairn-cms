@@ -54,19 +54,16 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
   return manifest;
 }
 
-/** The identity key an entry's counterpart is matched on, the same concept+id spelling upsertEntry uses. */
-const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
-
 /**
  * The `after` entries a deploy just carried across the first-publish transition: the entry is
- *  currently live (non-draft), `publishedAt` is set, and the same concept+id entry in `before` was
- *  absent or itself unstamped. Presence of the stamp is most of the signal, given the stamping rules
- *  in `stampFirstPublish`, but not all of it: a carried stamp never matches its counterpart, and a
- *  legacy entry that is non-draft but was never stamped never matches, but a drafted entry CAN carry a
- *  stamp forward (`upsertEntry` preserves a prior `publishedAt` through an ordinary save, including one
- *  that flips `draft` back to `true`), so the draft check below is what actually excludes a currently
- *  unpublished entry rather than the stamp check alone. An entry present only in `before` (deleted in
- *  `after`) is never returned.
+ *  currently live (non-draft), carries a `publishedAt` stamp, and that stamp value appears on no
+ *  `before` row. Newness is the stamp's, not the key's: `stampFirstPublish` issues a stamp at the
+ *  first publish and every later save carries it, so a rename (new key, same stamp) is not new, the
+ *  peers of one first-publish batch (one shared stamp, one commit) each are, and an entry deleted
+ *  and recreated gets a fresh stamp and reads as new. A drafted entry can carry a stamp forward
+ *  (`upsertEntry` preserves it through a save that flips `draft` back to `true`), so the draft check
+ *  is what excludes a currently unpublished entry. A legacy non-draft entry with no stamp is never
+ *  returned, and an entry present only in `before` (deleted in `after`) is never returned.
  *
  * `before: null` means no prior manifest is known and returns every currently-live stamped entry in
  *  `after`, the full fan-out. A consumer wiring announce-on-publish persists the prior manifest across
@@ -77,12 +74,8 @@ const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
  * @public
  */
 export function buildNewlyPublished(before: Manifest | null, after: Manifest): ManifestEntry[] {
-  // A null `before` indexes to nothing, which is already the full-fan-out answer: no key it is asked
-  // for carries a stamp, so every currently-live stamped entry in `after` reads as newly published.
-  const priorStamps = new Map(before?.entries.map((e) => [keyOf(e), e.publishedAt]) ?? []);
-  return after.entries.filter((e) => {
-    if (e.draft) return false;
-    if (!e.publishedAt) return false;
-    return !priorStamps.get(keyOf(e));
-  });
+  // A null `before` has no stamps, so every currently-live stamped entry in `after` reads as new.
+  const priorStamps = new Set<string>();
+  for (const e of before?.entries ?? []) if (e.publishedAt) priorStamps.add(e.publishedAt);
+  return after.entries.filter((e) => !e.draft && !!e.publishedAt && !priorStamps.has(e.publishedAt));
 }

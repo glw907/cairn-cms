@@ -48,12 +48,20 @@ When you select **Save** or **Publish** and the editor refuses, a message appear
 
 The following table lists the messages, what each one means, and what to do.
 
+<!-- vale Microsoft.Contractions = NO -->
+<!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
+
 | Message | What it means | What to do |
 |---|---|---|
 | **"Title is required"** | A field that must be filled in is empty. The message starts with the field's name. Yours may say something other than Title. Other field rules, such as a minimum length, name the field and the limit in the same way. | Fill in or fix the field, and then select **Save** or **Publish** again. Fields other than the title are in the **Details** panel. |
 | **"Pick a date for this entry."** | The entry needs a date, and the date field is empty. | Choose a date in the date field in the **Details** panel, and then save again. |
 | **"This file changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in [An edit conflict stops your save](#an-edit-conflict-stops-your-save). |
 | **"Your edits are saved. Publish again."** | The site changed while your publish was running. | Select **Publish** again. |
+| **"Another entry already uses the address /posts/hello. Your edits are saved. Change the address of one of the two, then publish again."** | Another entry already has the address your entry would publish to. Yours may name a different address. Two entries can't share an address, so nothing was published. | Open the other entry and select **Change URL** in its **Details** panel. If that entry has unpublished edits, publish or discard them first. Then select **Publish** again. |
+| **"This page includes a fragment that does not exist: welcome."** | The entry includes a fragment the site doesn't have. The message names the fragment. | Remove the **Include:** chip, or include a fragment that exists. Then save again. |
+| **"An include is missing its fragment. Pick a fragment or remove the include."** | An **Include:** chip in the entry has no fragment chosen. | Remove the chip, or include a fragment again. Then save. |
+
+<!-- vale Microsoft.Contractions = YES -->
 
 A connection problem or an unexpected error can stop a request. You see this message:
 
@@ -175,6 +183,7 @@ The **Publish site** button in the top bar publishes every entry that has unpubl
 - **"Nothing to publish. Every entry is already live."** Nothing was waiting. No action is needed.
 - **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish site** again.
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, tell your site owner.
+- **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** Two of the waiting entries have the same address. Use the **Pending edits** filter on a list to find them. Change the address of one, and then select **Publish site** again.
 <!-- vale Microsoft.Contractions = YES -->
 
 ## A revert is refused

@@ -5,6 +5,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { createContentIndex } from '../../lib/delivery/content-index.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { parseManifest, formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
@@ -281,46 +283,123 @@ describe('publishAction', () => {
     expect(record?.batch).toBe(false);
   });
 
-  it('logs publish.address_collided but still publishes when another entry holds the address', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    // A pages concept with an undated permalink, so the address is the entry's own path-derived
-    // permalink. Publishing pages/about-copy resolves to /about-copy; a different published entry
-    // "about" is manually pinned to that same /about-copy in the manifest, so the publish overrides it.
-    const rt = pagesRuntime();
-    const gh = new GithubDouble({
-      main: {
-        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
-        [MANIFEST_PATH]: formatManifest({
-          version: 1,
-          entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [] }],
-        }),
-      },
-      'cairn/pages/about-copy': { 'src/content/pages/about-copy.md': '---\ntitle: About copy\n---\npending body' },
+  describe('a publish onto a held address', () => {
+    const live = (over: Partial<ManifestEntry> = {}): ManifestEntry => ({
+      id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [], ...over,
     });
-    gh.install();
-    const routes = createContentRoutes({ runtime: rt });
+    const mainWith = (...entries: ManifestEntry[]) => ({
+      'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+      [MANIFEST_PATH]: formatManifest({ version: 1, entries }),
+    });
+    const COPY_BRANCH = 'cairn/pages/about-copy';
+    const COPY_MD = '---\ntitle: About copy\n---\npending body';
 
-    const location = await redirectedTo(
-      routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' })),
-    );
-    // The publish still commits: it redirects to the published page and the entry lands on main.
-    expect(location).toBe('/admin/pages/about-copy?published=1');
-    expect(gh.read('main', 'src/content/pages/about-copy.md')).toContain('about copy text');
-    const published = infoSpy.mock.calls
-      .map((c) => c[0] as { event?: string })
-      .find((r) => r.event === 'entry.published');
-    expect(published).toBeTruthy();
+    it('refuses with 409, logs heldBy fields, commits nothing to main, and keeps the branch', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({ main: mainWith(live()), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const mainBefore = gh.headSha('main');
 
-    // A publish.address_collided warning is emitted naming the displaced entry.
-    const collision = warnSpy.mock.calls
-      .map((c) => c[0] as { event?: string; editor?: string; address?: string; displacedConcept?: string; displacedId?: string })
-      .find((r) => r.event === 'publish.address_collided');
-    expect(collision).toBeTruthy();
-    expect(collision?.address).toBe('/about-copy');
-    expect(collision?.displacedConcept).toBe('pages');
-    expect(collision?.displacedId).toBe('about');
-    expect(collision?.editor).toBe('ed@t');
+      const result = (await routes.publishAction(
+        pagesActionEvent('about-copy', { title: 'About copy', body: 'typed text' }),
+      )) as unknown as { status: number; data: { error: string; body: string } };
+
+      expect(result.status).toBe(409);
+      expect(result.data.error).toContain('/about-copy');
+      expect(result.data.body).toBe('typed text');
+      expect(gh.headSha('main')).toBe(mainBefore);
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.read('main', 'src/content/pages/about-copy.md')).toBeNull();
+      // The branch keeps the posted edits.
+      expect(gh.read(COPY_BRANCH, 'src/content/pages/about-copy.md')).toContain('typed text');
+
+      const record = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string; editor?: string; address?: string; heldByConcept?: string; heldById?: string })
+        .find((r) => r.event === 'publish.address_collided');
+      expect(record).toMatchObject({ editor: 'ed@t', address: '/about-copy', heldByConcept: 'pages', heldById: 'about' });
+    });
+
+    it('publishes when the holder is a draft', async () => {
+      const gh = new GithubDouble({ main: mainWith(live({ draft: true })), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const location = await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })));
+      expect(location).toBe('/admin/pages/about-copy?published=1');
+    });
+
+    it('publishes when the holder is a fragment row, and a fragment publishes at a page permalink', async () => {
+      const rt = pagesRuntime();
+      rt.concepts.push({
+        id: 'snippets', label: 'Snippet', singular: 'Snippet', dir: 'src/content/snippets',
+        routing: { routable: false, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day',
+        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),
+      });
+      const gh = new GithubDouble({
+        main: mainWith(
+          live({ id: 'about-copy', concept: 'snippets', permalink: '/about-copy' }),
+          live({ id: 'contact', permalink: '/contact' }),
+        ),
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+        'cairn/snippets/contact': { 'src/content/snippets/contact.md': '---\ntitle: Contact\n---\nFragment.' },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: rt });
+      expect(await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })))).toBe(
+        '/admin/pages/about-copy?published=1',
+      );
+      const snippetEvent = contentEvent({ url: 'https://t.example/admin/snippets/contact', params: { concept: 'snippets', id: 'contact' }, form: { title: 'Contact', body: 'b' } });
+      expect(await redirectedTo(routes.publishAction(snippetEvent))).toBe('/admin/snippets/contact?published=1');
+    });
+
+    it('publishes when only another entry\'s pending branch would take the address', async () => {
+      const gh = new GithubDouble({
+        main: mainWith(),
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+        'cairn/pages/other': { 'src/content/pages/other.md': '---\ntitle: Other\n---\nx' },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const location = await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })));
+      expect(location).toBe('/admin/pages/about-copy?published=1');
+    });
+
+    it('leaves a main tree the site resolver accepts (the duplicate never lands)', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // A second routable concept holds /about-copy through its own file, so a publish that
+      // landed pages/about-copy.md would put two files on one address in main's tree.
+      const rt = pagesRuntime();
+      rt.concepts.push({
+        id: 'notes', label: 'Note', singular: 'Note', dir: 'src/content/notes',
+        routing: { routable: true, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day',
+        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),
+      });
+      const gh = new GithubDouble({
+        main: {
+          'src/content/notes/about-copy.md': '---\ntitle: Held\n---\nLive.',
+          [MANIFEST_PATH]: formatManifest({ version: 1, entries: [live({ id: 'about-copy', concept: 'notes', title: 'Held' })] }),
+        },
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: rt });
+      // A publish that lands throws its success redirect; swallow it so the tree is checked either way.
+      await routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })).catch(() => undefined);
+
+      const tree = gh.branches.get('main') ?? {};
+      const conceptIndexes = rt.concepts.map((descriptor) => ({
+        descriptor,
+        index: createContentIndex(
+          Object.entries(tree).filter(([path]) => path.startsWith(`${descriptor.dir}/`)).map(([path, raw]) => ({ path, raw })),
+          descriptor,
+        ),
+      }));
+      expect(() => createSiteResolver(conceptIndexes, { validate: false })).not.toThrow();
+    });
   });
 
   it('emits no publish.address_collided when the address is free', async () => {
@@ -550,6 +629,62 @@ describe('publishAllAction', () => {
     expect(gh.branches.has(BRANCH)).toBe(true);
   });
 
+  describe('an address collision in the batch', () => {
+    const PAGES_MD = (t: string) => `---\ntitle: ${t}\n---\nbody`;
+    const row = (id: string, permalink: string, draft = false): ManifestEntry => ({
+      id, concept: 'pages', title: id, permalink, draft, links: [],
+    });
+
+    it('redirects address_collision, commits nothing, and keeps every branch when a row meets a live holder', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [row('about', '/hi')] }) },
+        'cairn/pages/hi': { 'src/content/pages/hi.md': PAGES_MD('Hi') },
+        'cairn/pages/fresh': { 'src/content/pages/fresh.md': PAGES_MD('Fresh') },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: multiRuntime() });
+
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?error=address_collision');
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.branches.has('cairn/pages/hi')).toBe(true);
+      expect(gh.branches.has('cairn/pages/fresh')).toBe(true);
+    });
+
+    it('counts a duplicate between two rows of the batch, logging one record per colliding entry', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
+        'cairn/pages/hi': { 'src/content/pages/hi.md': PAGES_MD('Hi') },
+        'cairn/pages/hi-two': { 'src/content/pages/hi-two.md': PAGES_MD('Hi two') },
+      });
+      gh.install();
+      const rt = multiRuntime();
+      // Pin both pages to one address by overriding the permalink template.
+      rt.concepts[1] = { ...rt.concepts[1], permalink: '/same' };
+      const routes = createContentRoutes({ runtime: rt });
+
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?error=address_collision');
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.branches.has('cairn/pages/hi')).toBe(true);
+      expect(gh.branches.has('cairn/pages/hi-two')).toBe(true);
+      const records = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string })
+        .filter((r) => r.event === 'publish.address_collided');
+      expect(records).toHaveLength(2);
+    });
+
+    it('does not count a duplicate on main that involves no batch row', async () => {
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [row('a', '/dup'), row('b', '/dup')] }) },
+        'cairn/pages/fresh': { 'src/content/pages/fresh.md': PAGES_MD('Fresh') },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: multiRuntime() });
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?publishedAll=1');
+    });
+  });
+
   it('publishes only the pending entries the access map admits, leaving the rest pending', async () => {
     const gh = new GithubDouble({
       main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
@@ -763,5 +898,90 @@ describe('discardAction', () => {
     expect(record?.concept).toBe('posts');
     expect(record?.id).toBe('2026-05-01-hi');
     expect(record?.editor).toBe('ed@t');
+  });
+});
+
+describe('undeclared frontmatter keys through a save or publish', () => {
+  const PRIOR =
+    '---\ntitle: Old\nsubtitle: gone from the form\ndraft: true\nupdated: 2026-01-01\nseo:\n  noindex: true\n  tags:\n    - a\n---\nold body';
+
+  /** Fail the prior-file read of the entry (a GET of its contents), leaving every other route on the double. */
+  function failEntryRead(): void {
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'GET' && url.includes('/contents/') && url.includes('2026-05-01-hi.md')) {
+        return new Response('boom', { status: 500 });
+      }
+      return double(input, init);
+    });
+  }
+
+  function runtimeWithSubtitle(): CairnRuntime {
+    const r = runtime();
+    r.concepts[0].fields = [
+      { type: 'text', name: 'title', label: 'Title', required: true },
+      { type: 'text', name: 'subtitle', label: 'Subtitle' },
+    ];
+    return r;
+  }
+
+  it('keeps draft, a bare date, and a nested object on save, and a removed declared field stays removed', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtimeWithSubtitle() });
+
+    await redirectedTo(routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'new body' })));
+
+    const saved = gh.read(BRANCH, ENTRY_PATH) ?? '';
+    expect(saved).toContain('draft: true');
+    expect(saved).toContain('updated: 2026-01-01T00:00:00.000Z');
+    expect(saved).toMatch(/seo:\n {2}noindex: true\n {2}tags:\n {4}- a/);
+    expect(saved).not.toContain('subtitle');
+  });
+
+  it('publishes an entry hand-marked draft as a draft row with no publishedAt', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' })));
+
+    expect(gh.read('main', ENTRY_PATH)).toContain('draft: true');
+    const row = parseManifest(gh.read('main', MANIFEST_PATH) ?? '').entries.find((e) => e.id === '2026-05-01-hi');
+    expect(row?.draft).toBe(true);
+    expect(row?.publishedAt).toBeUndefined();
+    const list = await routes.listLoad(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' } }));
+    expect(list.entries.find((e) => e.id === '2026-05-01-hi')?.draft).toBe(true);
+  });
+
+  it('answers 503 with the body reseeded and commits nothing when the prior read throws', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    failEntryRead();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    const result = (await routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'unsaved work' }))) as unknown as {
+      status: number;
+      data: { body: string };
+    };
+    expect(result.status).toBe(503);
+    expect(result.data.body).toBe('unsaved work');
+    expect(gh.read(BRANCH, ENTRY_PATH)).toBe(PRIOR);
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('answers 503 and commits nothing on each of two saves over malformed prior YAML', async () => {
+    const bad = '---\ntitle: [unclosed\n---\nbody';
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: bad } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    for (let i = 0; i < 2; i++) {
+      const result = (await routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' }))) as unknown as { status: number };
+      expect(result.status).toBe(503);
+    }
+    expect(gh.read(BRANCH, ENTRY_PATH)).toBe(bad);
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 });

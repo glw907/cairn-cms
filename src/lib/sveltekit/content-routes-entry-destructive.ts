@@ -9,7 +9,9 @@
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { formatCairnToken, rewriteCairnLink } from '../content/links.js';
-import { rewriteIncludeDirective } from '../content/includes.js';
+import { rewriteIncludeDirective, extractIncludes } from '../content/includes.js';
+import { buildCrossBranchIndex } from '../content/cross-branch-index.js';
+import type { Backend } from '../github/backend.js';
 import { rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { isValidId, filenameFromId, slugFromId, renameId } from '../content/ids.js';
@@ -39,6 +41,33 @@ import {
   invalidIdMessage,
   type ContentFormFailure,
 } from './content-routes-shared.js';
+
+/**
+ * The entries whose open `cairn/*` branch includes the fragment, in the {@link InboundLink} shape
+ *  (permalink empty: the edit is unpublished). Strict, so a branch read failure rejects and the
+ *  caller fails closed; main rows are omitted because the manifest's includes already cover main.
+ *  Publish-all runs no save guard, so a pending include stranded by a delete or rename would
+ *  dangle at the build.
+ */
+async function pendingIncluders(backend: Backend, concepts: ConceptDescriptor[], fragmentId: string): Promise<InboundLink[]> {
+  const index = await buildCrossBranchIndex<InboundLink>(
+    backend,
+    concepts,
+    [],
+    ({ concept, id, frontmatter, body }) =>
+      extractIncludes(body).map((fid) => ({
+        key: fid,
+        entry: {
+          concept: concept.id,
+          id,
+          title: typeof frontmatter.title === 'string' && frontmatter.title ? frontmatter.title : id,
+          permalink: '',
+        },
+      })),
+    { strict: true },
+  );
+  return index.get(fragmentId) ?? [];
+}
 
 /**
  * A refused delete: `fail(409)` while other entries still link to (or include) this one. Stays
@@ -110,14 +139,32 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
 
     // The fragments-concept delete guard: a fragment id is unique within the fragments concept (the
     // only concept an ::include directive can target), so only this concept's entries need the check.
-    // Same degrade-to-allow posture as the links gate above; a dangling include is the build's
-    // include-resolver backstop, not this request-time gate.
+    // The manifest arm degrades to allow on an absent manifest, like the links gate above; the
+    // pending-branch arm below is fail-closed, since the build only sees main.
     if (concept.id === FRAGMENTS_CONCEPT_ID) {
       const includers = inboundIncludes(manifest, id);
       if (includers.length) {
         return fail(409, {
           error: `Cannot delete ${id}: ${includers.length} ${includers.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first.`,
           inboundLinks: includers,
+          inboundKind: 'include',
+          id,
+        } satisfies DeleteFailure);
+      }
+      let pending: InboundLink[];
+      try {
+        pending = await pendingIncluders(backend, runtime.concepts, id);
+      } catch {
+        return fail(503, {
+          error: 'Could not verify where this fragment is included. Try again.',
+          inboundLinks: [],
+          id,
+        } satisfies DeleteFailure);
+      }
+      if (pending.length) {
+        return fail(409, {
+          error: `Cannot delete ${id}: ${pending.length} ${pending.length === 1 ? 'entry includes' : 'entries include'} it in unpublished edits. Remove the include first.`,
+          inboundLinks: pending,
           inboundKind: 'include',
           id,
         } satisfies DeleteFailure);
@@ -296,6 +343,22 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     if (conflictBranches.length > 0) {
       const names = [...new Set(conflictBranches)].join(', ');
       return fail(409, { error: `Another editor has unpublished edits referencing this entry: ${names}. Ask them to publish or discard, then rename.` } satisfies RenameFailure);
+    }
+
+    // Pending-branch include gate (fail-closed), run after the reference fan-out above and never
+    // merged into it (workerd throttles simultaneous outbound connections). Publish-all runs no
+    // save guard, so renaming under a pending include would dangle it at the build.
+    if (concept.id === FRAGMENTS_CONCEPT_ID) {
+      let pending: InboundLink[];
+      try {
+        pending = await pendingIncluders(backend, runtime.concepts, id);
+      } catch {
+        return fail(409, { error: 'Could not verify includes. Try again.' } satisfies RenameFailure);
+      }
+      if (pending.length) {
+        const names = [...new Set(pending.map((r) => `${r.concept}/${r.id}`))].join(', ');
+        return fail(409, { error: `Another editor has unpublished edits including this fragment: ${names}. Ask them to publish or discard, then rename.` } satisfies RenameFailure);
+      }
     }
 
     const oldHref = formatCairnToken({ concept: concept.id, id });

@@ -84,6 +84,7 @@ island.
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import { postFormAction } from './client-action.js';
   import { arbitrateChecked } from './spellcheck.js';
   import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';
@@ -1357,7 +1358,7 @@ island.
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
 
-  // The media analog: it turns a media: reference into its /media delivery path in the preview, and
+  // The media analog: it turns a media: reference into its delivery path in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-media. The
   // committed mediaTargets projection is merged with this session's uploaded records (the same
   // override the picker's library does), so a just-uploaded image renders its thumbnail in the live
@@ -1368,7 +1369,11 @@ island.
       uploadedRecords.map((r) => [r.hash, { slug: r.slug, ext: r.ext, contentType: r.contentType }]),
     ),
   });
-  const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets));
+  // The site's delivery base, provided by CairnAdminShell; a bare mount (a test, the reproductions
+  // module) falls back to the /media default, as MediaPicker does. The slug form matches the
+  // picker, since the delivery route reads hash and extension from the last path segment.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
+  const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets, mediaBase));
 
   // The fragment analog: it turns an ::include directive's fragment id into its raw markdown body
   // in the preview, so an included fragment's content renders in place, the way a native entry's

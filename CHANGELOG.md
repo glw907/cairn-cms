@@ -2,6 +2,18 @@
 
 ### Added
 
+- **`actions.mediaLibraryUpload` is typed on `CairnAdminRoutes`,** so a custom media screen reaches the
+  upload action, which records its manifest row, with no cast. The admin routes still omit nine of
+  `ContentRoutes`'s media actions.
+
+  Consumers may: drop a cast around `admin.actions.mediaLibraryUpload`.
+
+- **`createMediaResolver` takes `{ strict: true }`.** A strict resolver throws a `cairn:`-prefixed
+  error on a hash missing from the manifest while media is on, so a build fails on a missing asset
+  with no wrapper. Media off stays silent, and `imageDetail` is unchanged.
+
+  Consumers may: replace a hand-written throwing wrapper with the option.
+
 - **`cairn-guidance install` removes what it no longer ships.** It deletes a file a previous install
   wrote only when the file's hash matches a version the package shipped (the new
   `guidance-hashes.json`, built from each release tag from `0.97.0` on), the `MANIFEST` lists it, and it
@@ -641,6 +653,40 @@
   removed pages.
 
 ### Fixed
+
+- **A media replace or an alt push keeps the content manifest in step.** Both actions now commit each
+  rewritten entry's rebuilt manifest row in the same commit, so the next build's `verifyManifest`
+  passes. Before, the first deploy after a replace failed on a stale `mediaRefs`.
+- **A save or publish keeps every frontmatter key the fieldset does not declare.** A hand-written
+  `draft: true` survives, so the entry stays hidden. A save reads the prior file once and fails closed
+  with a 503 when that read or its parse fails. A bare YAML date such as `updated: 2026-01-01` is
+  written back as `2026-01-01T00:00:00.000Z`: the instant survives and the text changes. A malformed
+  file now throws on every parse, where it used to throw once per isolate and then read as empty.
+- **A publish onto an address a live entry holds is refused.** Single publish answers 409 and keeps
+  the branch. Site-wide publish commits nothing, keeps every branch, and redirects with
+  `address_collision`. The edit page warns beforehand by the same rule. The build used to throw on the
+  duplicate while the screen said the new entry would replace the other. The `publish.address_collided`
+  event now names the holder as `heldByConcept` and `heldById`.
+
+  Consumers must: read `heldByConcept` and `heldById` in any log query that matched `publish.address_collided`.
+
+- **A save refuses an include that names no fragment, and a fragment that a pending branch includes
+  can't be deleted or renamed.** An `::include` with a missing or empty `fragment` attribute is
+  refused too. A draft fragment still counts as present.
+- **A rename no longer reads as a new publish.** `buildNewlyPublished` decides newness by stamp
+  membership: an entry is new only when its `publishedAt` appears on no prior row. A rename carries
+  its stamp, so a site no longer re-notifies over one.
+
+  Consumers must: expect `buildNewlyPublished` to omit a renamed entry, and drop any workaround that
+  filtered renames by key.
+
+- **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
+  base, so an image in the preview resolves under it instead of `/media`.
+- **`normalizeAssets` throws on an `allowedTypes` entry the upload path cannot store.** The error is
+  `cairn:`-prefixed and names the type. The sniffer's five types stay the only source.
+
+  Consumers must: remove any `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`,
+  `image/gif`, and `image/avif`, since the site now fails at startup on one.
 
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the

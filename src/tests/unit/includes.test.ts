@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { extractIncludes, rewriteIncludeDirective } from '../../lib/content/includes.js';
+import { extractIncludes, hasIdlessInclude, rewriteIncludeDirective } from '../../lib/content/includes.js';
+
+describe('hasIdlessInclude', () => {
+  it.each(['::include', '::include{}', '::include{fragment=""}'])('is true for %s', (body) => {
+    expect(hasIdlessInclude(body)).toBe(true);
+  });
+  it('is false for a named include, a code span, or no include', () => {
+    expect(hasIdlessInclude('::include{fragment="x"}')).toBe(false);
+    expect(hasIdlessInclude('`::include`')).toBe(false);
+    expect(hasIdlessInclude('plain')).toBe(false);
+  });
+});
 
 describe('extractIncludes', () => {
   it('collects a fragment id from a leaf include directive', () => {

@@ -54,7 +54,7 @@ host dialog or popover keeps its own dismiss.
   import { getContext } from 'svelte';
   import { formatMediaToken } from '../media/reference.js';
   // The bare delivery path under transformations: false (the same path the source chip uses).
-  // SEAM: when transformations are on, the row thumbnail should request the `thumb` preset URL
+  // SEAM: when transformations are on, the row thumbnail could request a resized variant
   // instead of the bare path; that is a later transformations-on refinement.
   import { publicPath } from '../media/naming.js';
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';

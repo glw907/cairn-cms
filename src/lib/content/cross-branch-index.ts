@@ -1,5 +1,5 @@
-// cairn-cms: the shared cross-branch fan-out-with-per-item-degrade builder (A2). Four indexes
-// (advisories' address index, reference-index, tag-usage-index, and media/usage.ts) each union a
+// cairn-cms: the shared cross-branch fan-out-with-per-item-degrade builder (A2). Three indexes
+// (reference-index, tag-usage-index, and media/usage.ts) each union a
 // synchronous main-arm read (already-known manifest fields, no backend call) with an async per-branch
 // read of every open cairn/* branch, keyed differently per index but sharing one identical fan-out
 // shape underneath: resolve a branch name to its concept-scoped file path, read that one file, extract

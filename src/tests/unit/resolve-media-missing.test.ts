@@ -51,4 +51,47 @@ describe('createMediaResolver media.resolve_missing', () => {
     expect(resolve({ slug: null, hash: 'a1b2c3d4e5f6a7b8' })).toBe('/media/shoes.a1b2c3d4e5f6a7b8.webp');
     expect(warnSpy).not.toHaveBeenCalled();
   });
+
+  describe('strict', () => {
+    const hash = 'a1b2c3d4e5f6a7b8';
+    const manifest: MediaManifest = {
+      [hash]: {
+        hash,
+        sha256: hash.repeat(4),
+        slug: 'shoes',
+        displayName: 'Shoes',
+        originalFilename: 'IMG.HEIC',
+        alt: 'alt',
+        ext: 'webp',
+        contentType: 'image/webp',
+        bytes: 1024,
+        width: 100,
+        height: 100,
+        createdAt: '2026-06-16T00:00:00.000Z',
+      },
+    };
+
+    it('throws a cairn: error on a missing hash while media is on', () => {
+      vi.spyOn(log, 'warn').mockImplementation(() => {});
+      const resolve = createMediaResolver(empty, resolved, { strict: true });
+      expect(() => resolve({ slug: null, hash })).toThrow(/^cairn: .*a1b2c3d4e5f6a7b8/);
+    });
+
+    it('keeps the url and imageDetail on a hit', () => {
+      const resolve = createMediaResolver(manifest, resolved, { strict: true });
+      expect(resolve({ slug: null, hash })).toBe(`/media/shoes.${hash}.webp`);
+      const detail = (resolve as { imageDetail?: (r: { slug: null; hash: string }) => unknown }).imageDetail;
+      expect(detail?.({ slug: null, hash })).toMatchObject({ width: 100, height: 100 });
+    });
+
+    it('stays silent with media off', () => {
+      const off = createMediaResolver(empty, normalizeAssets(undefined), { strict: true });
+      expect(off({ slug: null, hash })).toBeUndefined();
+    });
+
+    it('still returns undefined on a miss when not strict', () => {
+      vi.spyOn(log, 'warn').mockImplementation(() => {});
+      expect(createMediaResolver(empty, resolved)({ slug: null, hash })).toBeUndefined();
+    });
+  });
 });

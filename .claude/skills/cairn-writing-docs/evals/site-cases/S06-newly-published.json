@@ -20,7 +20,7 @@
     "It reads the prior manifest from .deploy/last-manifest.json and diffs the two with buildNewlyPublished, keeping only entries whose concept is posts.",
     "On a first run, with no stored file, it stores the deployed manifest as the baseline and sends nothing.",
     "It calls announcePost from src/lib/notify.ts once for each entry the diff returns.",
-    "It writes the deployed manifest to .deploy/last-manifest.json after the sends, so a send that throws leaves the old baseline and the next run tries again.",
+    "A post is recorded as sent in .deploy/last-manifest.json only after its announcePost call resolves, so a send that throws leaves that post unrecorded and the next run tries it again. Saving the whole deployed manifest after the loop, as the guide does, is one way; recording each post as its send succeeds is another.",
     "Nothing in the admin, the hooks, or the routes calls the send function."
   ],
   "checks": [
@@ -39,7 +39,7 @@
   "judge": [
     { "n": 1, "text": "The script decides which posts are new with buildNewlyPublished over the stored and the deployed manifest, not with its own rule built from post dates, git history, or file modification times." },
     { "n": 2, "text": "The first-run path (no .deploy/last-manifest.json) writes the baseline and returns without calling announcePost, and it does not pass null as the prior manifest to buildNewlyPublished, which would send every live stamped post." },
-    { "n": 3, "text": "The write of .deploy/last-manifest.json comes after the loop that calls announcePost, so a send that throws leaves the old baseline in place." },
+    { "n": 3, "text": "No write of .deploy/last-manifest.json records a post as sent before that post's announcePost call has resolved, so a post whose send throws comes back from the next run's diff. Either mechanism passes: one save of the deployed manifest after the loop (a throw then leaves the old baseline), or a save that records only the posts whose sends succeeded (a failed post keeps its prior row, loses its stamp, or is left out). A write before the loop that already holds the new stamps fails, and so does a save after a caught send failure that records the failed post as sent." },
     { "n": 4, "text": "The session did not try to run the announcement from the admin's publish flow (a form action, a hook, a publishActions entry that sends, or a change to the engine) and, if it looked for a publish callback, concluded that the admin offers none." },
     { "n": 5, "text": "The session exercised the script on a first run and on a later run where a post gained a publishedAt stamp, and saw the announcement go out for that one post only." }
   ]

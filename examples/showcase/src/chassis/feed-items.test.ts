@@ -40,6 +40,13 @@ function stubSite(): SiteResolver {
 }
 
 describe('feedItemsFrom', () => {
+  it('throws naming the posts concept when the site has none', async () => {
+    const site = { concept: () => undefined, routable: () => true } as unknown as SiteResolver;
+    await expect(
+      feedItemsFrom({ site, origin: ORIGIN, render, resolveMedia: () => undefined }),
+    ).rejects.toThrow(/posts/);
+  });
+
   it('renders an include through the fragment resolver and a media image at an absolute URL', async () => {
     const items = await feedItemsFrom({
       site: stubSite(),

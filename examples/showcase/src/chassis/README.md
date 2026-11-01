@@ -25,7 +25,7 @@ the mechanism.
 | --- | --- |
 | `content.ts` | The delivery content layer: globs the markdown, builds the site/posts indexes through `createSiteIndexes`. |
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
-| `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, and the preview route so their rendering config can never drift apart. |
+| `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, the preview route, and the home page's SEO head so their rendering config can never drift apart. |
 | `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |
 | `cairn.server.ts` | The one server-side runtime composition point (`composeRuntime`, `createCairnAdmin`); every server route that needs the runtime imports it from here. |
 | `dev-gate.ts` | The runtime half of the dev-backend gate (`CAIRN_DEV_BACKEND=1`), read by hooks and the runtime composition; its build-time half is the `__CAIRN_DEV_BUILD__` define the `cairnManifest()` plugin supplies. |
@@ -248,7 +248,7 @@ a build it silently breaks) fails this file's promise.
 
 | File | Real dependents | Removal note |
 | --- | --- | --- |
-| `content.ts` | Every delivery route: `+page.server.ts` (site and `[...path]`), `robots.txt`, `feed.json`, `feed.xml`, `sitemap.xml`. | Not a bare deletion: it is the one content-index builder every delivery route reads. A theme dropping it must replace all six route imports with the theme's index logic in the same change, never delete it alone. |
+| `content.ts` | `public-routes.ts`, `feed.ts`, `entry-data.ts`, the home `(site)/+page.server.ts`, `archive/[page]/+page.server.ts`, `robots.txt`, `feed.json`, `feed.xml`, `sitemap.xml`. | Not a bare deletion: it is the one content-index builder the delivery code reads. A theme dropping it must replace all nine importers with the theme's index logic in the same change, never delete it alone. |
 | `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, `cairn.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), the one branch in `hooks.server.ts` and the one in `cairn.server.ts` that read the flag, and the `__CAIRN_DEV_BUILD__` define in `vite.config.ts` with its `app.d.ts` declaration; the gate defaults closed everywhere else, so nothing else changes behavior. |

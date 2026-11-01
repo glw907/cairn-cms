@@ -1,18 +1,23 @@
 # Give cairn its credentials
 
-The `cairn` command checks a live site's Cloudflare zone and its GitHub repository, so it needs read access to both. This page shows how to create the two tokens, store them, and confirm that they reach what the command reads. Do this before you run `cairn health` or `cairn auth check`, and again when a token is close to expiring.
+The `cairn` CLI checks a live site's Cloudflare zone and its GitHub repository, so it needs read access to both. This page shows how to create the two tokens, store them, and confirm that they reach what the CLI reads. Do this before you run `cairn health` or `cairn auth check`, and again when a token is close to expiring.
 
-You need your Cloudflare account id, a Cloudflare account where you can create API tokens, and a GitHub account that owns the site's repository. The `cairn` command is installed, as [Check that your site works](./is-it-working.md#run-the-check) describes.
+## Before you begin
+
+You need the following:
+
+- The `cairn` CLI, installed as [Check that your site works](./is-it-working.md#run-the-check) describes.
+- A Cloudflare account where you can create API tokens, and that account's ID.
+- A GitHub account that owns your site's repository.
+- A site registered with `cairn adopt`, for the per-site checks.
 
 ## Create the tokens
 
-`cairn` reads three values.
+`cairn` reads three values: `CAIRN_CF_ACCOUNT_ID`, `CAIRN_CF_READ_TOKEN`, and `CAIRN_GH_READ_TOKEN`.
 
-- `CAIRN_CF_ACCOUNT_ID` is the id of the Cloudflare account that holds the site's zone.
-- `CAIRN_CF_READ_TOKEN` is a read-only Cloudflare API token.
-- `CAIRN_GH_READ_TOKEN` is a read-only GitHub token.
-
-Both tokens grant read access only. The next section lists the permissions each one needs.
+1. In the Cloudflare dashboard, create an API token with the permissions in [Cloudflare](#cloudflare).
+2. On GitHub, create a fine-grained personal access token with the permissions in [GitHub](#github).
+3. Note your Cloudflare account ID.
 
 ## Token scopes
 
@@ -20,7 +25,7 @@ Both tokens grant read access only. The next section lists the permissions each 
 
 ### Cloudflare
 
-Create `CAIRN_CF_READ_TOKEN` as an API token with read permission in the seven dashboard-named groups below, scoped to the account `CAIRN_CF_ACCOUNT_ID` names and all zones of that account:
+Create `CAIRN_CF_READ_TOKEN` as an API token scoped to the account that `CAIRN_CF_ACCOUNT_ID` names and to all zones in that account. Give it read permission in the following seven groups, named as the dashboard names them:
 
 - Workers Scripts
 - Workers Builds Configuration
@@ -30,17 +35,19 @@ Create `CAIRN_CF_READ_TOKEN` as an API token with read permission in the seven d
 - DNS
 - Email Sending
 
-Zone Settings is the group people most often leave out. Without it, the check that your site forces HTTPS fails every time, and a missing scope doesn't show as an error, because that check reports UNKNOWN instead.
+Without Zone Settings, the check that your site forces HTTPS can't read the setting. It reports UNKNOWN on every run rather than an error, so a missing scope is easy to miss.
 
 ### GitHub
 
-Create `CAIRN_GH_READ_TOKEN` as a fine-grained personal access token with Contents and Metadata read, at the shortest expiry you can live with. Choose all repositories your account owns, not a hand-picked list. Adopting a second site then needs no new token, and `cairn` reads only the repositories the sites you adopted name. It also reads the public `glw907/cairn-cms` repository for the changelog check, which a token limited to your own repositories still reaches. A narrower token fails silently: a check that cannot read a repository reports UNKNOWN and never CRITICAL.
+Create `CAIRN_GH_READ_TOKEN` as a fine-grained personal access token with Contents and Metadata read, with the shortest expiration date that suits your schedule. Choose all repositories your account owns, not a hand-picked list. Adopting a second site then needs no new token, and `cairn` reads only the repositories the sites you adopted name. It also reads the public `glw907/cairn-cms` repository for the changelog check, which a token limited to your account's repositories still reaches. A narrower token fails silently: a check that cannot read a repository reports UNKNOWN and never CRITICAL.
 
 ## Store the tokens
 
-Use one of two ways. The environment is read first, so a scheduled job or a container works with no keyring at all.
+Use one of two ways. `cairn` reads the environment first, so a scheduled job or a container works without a keyring.
 
-**Environment variables.** On Linux and macOS, export the three values from a file your shell reads on login:
+### Store the tokens in environment variables
+
+On Linux and macOS, export the three values from a file your shell reads on login. A file keeps a value out of your shell history, and a value typed at a prompt can land there.
 
 ```sh
 export CAIRN_CF_ACCOUNT_ID="..."
@@ -48,7 +55,7 @@ export CAIRN_CF_READ_TOKEN="..."
 export CAIRN_GH_READ_TOKEN="..."
 ```
 
-On Windows, set them as user environment variables in Settings, or from a shell:
+On Windows, set them as user environment variables in Settings, which keeps the values out of your shell history. From a shell, use `setx`:
 
 ```powershell
 setx CAIRN_CF_ACCOUNT_ID "..."
@@ -56,15 +63,21 @@ setx CAIRN_CF_READ_TOKEN "..."
 setx CAIRN_GH_READ_TOKEN "..."
 ```
 
-`setx` takes effect in new shells only, not the one that ran it. A value typed at a prompt can land in your shell history, so prefer a file your shell reads over a command typed at the prompt.
+Replace each `...` with the value for that name. `setx` takes effect in new shells only, not the one that ran it.
 
-**The operating system's keyring.** `cairn auth set` keeps a value out of every file you manage. It asks for the value with echo off and stores it in Keychain on macOS, Credential Manager on Windows, or the Secret Service on Linux, which needs a running keyring daemon that most desktop sessions provide.
+### Store the tokens in the keyring
 
-```sh
-cairn auth set CAIRN_GH_READ_TOKEN
-```
+`cairn auth set` keeps a value out of every file you manage. It stores the value in Keychain on macOS, Credential Manager on Windows, or the Secret Service on Linux, which needs a running keyring daemon that most desktop sessions provide.
 
-Run it once for each of the three names. With no terminal at all, such as in a script, pipe the value in:
+1. Run `cairn auth set` for one name, and enter the value when it asks. It asks with echo off.
+
+   ```sh
+   cairn auth set CAIRN_GH_READ_TOKEN
+   ```
+
+2. Repeat for the other two names.
+
+With no terminal, such as in a script, pipe the value in. In this command, `$v` holds the token value.
 
 ```sh
 printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
@@ -74,17 +87,21 @@ printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
 
 1. Run `cairn auth list`. It reports whether the environment, the keyring, or neither answers for each of the three names, and never prints a value.
 2. Run `cairn auth check` to confirm the account-scoped permissions.
-3. Run `cairn auth check <site>` with the name of a site you adopted, to confirm Zone Settings, DNS, Email Sending, and Contents. Without a site name, those four rows report `skip`.
+3. Run `cairn auth check <site>` with the name of a site you registered, to confirm Zone Settings, DNS, Email Sending, and Contents. Without a site name, those four rows report `skip`.
 
-A GitHub token over a public repository can't prove its Contents permission, because GitHub serves a public repository to anyone. A real confirmation needs a site whose repository is private. A private repository the token can't see answers not-found, not forbidden, so when you see `not-found` for a repository you expect the token to reach, check the token's repository list first.
+A GitHub token over a public repository can't prove its Contents permission, because GitHub serves a public repository to anyone. A real confirmation needs a site whose repository is private. A private repository that the token can't see returns `not-found`, not `forbidden`. If a repository you expect the token to reach reports `not-found`, check the token's repository list first.
 
 ## Replace a token before it expires
 
 `cairn health` reports a token that is close to expiring.
 
 1. Create a new token with the same permissions.
-2. Run `cairn auth set` for that name again.
+2. Store the new value where you stored the old one: update the environment variable, or run `cairn auth set` for that name again.
+3. Run `cairn auth check` to confirm the new token.
 
-A GitHub token expires when you said it would. `cairn` checks a Cloudflare token against Cloudflare's token verification endpoint.
+A GitHub token expires on the date you set when you created it. `cairn` checks a Cloudflare token against Cloudflare's token verification endpoint.
 
-`cairn logs --since` reads at most 7 days of Workers Logs, even on a plan that keeps more, and a plan with a shorter retention window returns less. The dashboard shows your plan's boundary.
+## See also
+
+- [Check that your site works](./is-it-working.md), for the doctor checks these tokens feed.
+- [Rotate the GitHub App key](./rotate-the-github-app-key.md), for the key your site signs its commits with.

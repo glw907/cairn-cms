@@ -25,9 +25,10 @@
 // by an explicit whole-record rebuild and save, since state.mjs's updateSite merge can never
 // express removing a key. T4a implemented the rule and its keep half (domain-live keeps the
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
-// and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
-// (this module's top-of-function short-circuit) re-offers with the row's reoffered copy
-// rather than returning silently, since a decline is a choice an owner can still reconsider. The
+// and deletes the token at the moment it happens, and a LATER re-entry on a record with an open
+// decline (hasOpenEmailDecline) asks the email question again before any token hop, since a
+// decline is a choice an owner can still reconsider. A no, or a run that cannot ask, prints the
+// row's reoffered copy and leaves the step; a yes continues as a resume at `domain-live`. The
 // step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
 // (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
 // itself is no longer a choice made here: chapter 1's consent confirms it before the first
@@ -85,7 +86,8 @@ const STEP_ORDER = [
  * declined email sign-in for the domain, with Workers Paid already on, which is also a clean
  * stop; the name predates that framing and stays put, since it is a stable contract the Go tool
  * mirrors and existing site records already carry). Neither name appears in STEP_ORDER, since
- * reaching one short-circuits this function before any `hasReached` check ever runs against it.
+ * `stepIndex` would read an unlisted step as `live`: `email-live` returns before any `hasReached`
+ * check, and an open decline either returns or resumes under `domain-live` as the effective step.
  * @type {string[]}
  */
 export const TERMINAL_STEPS = ['email-live', 'paid-plan-declined'];
@@ -111,6 +113,38 @@ function hasReached(step, target) {
 /** True once a step names a fully finished chapter, per TERMINAL_STEPS. */
 function isTerminalStep(step) {
   return TERMINAL_STEPS.includes(step);
+}
+
+/**
+ * True for a record whose owner declined email sign-in and has not turned it on since: no
+ * `cloudflare.emailOnboardedAt`, and either `paid-plan-declined` (whatever its other fields) or a
+ * chapter 3 terminal step (`builds-connect-declined`, `builds-live`) that still carries
+ * `cloudflare.emailDeclinedAt`. Chapter 3 overwrites `step`, so for those two steps the timestamp
+ * is the only surviving trace of the decline. `email-live` is never open, since its onboarding is
+ * done.
+ * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string } } | null | undefined} record
+ *  the site's state record
+ * @returns {boolean}
+ */
+export function hasOpenEmailDecline(record) {
+  if (!record || record.cloudflare?.emailOnboardedAt) return false;
+  if (record.step === 'paid-plan-declined') return true;
+  return (
+    (record.step === 'builds-connect-declined' || record.step === 'builds-live') &&
+    Boolean(record.cloudflare?.emailDeclinedAt)
+  );
+}
+
+/**
+ * The same record with any saved `cloudflare.apiToken` withheld, so nothing in a run reuses a
+ * token this run has just deleted. Never writes.
+ * @param {object} record the site's in-memory state record
+ * @returns {object} the record without a saved token
+ */
+function withoutSavedToken(record) {
+  if (!record.cloudflare || !('apiToken' in record.cloudflare)) return record;
+  const { apiToken: _withheld, ...cloudflare } = record.cloudflare;
+  return { ...record, cloudflare };
 }
 
 /**
@@ -340,12 +374,81 @@ export async function runChapter2({
 }) {
   const frame = { dryRun, log };
 
-  if (!dryRun && isTerminalStep(record?.step)) {
+  /**
+   * Run the email question as its own hop and report whether the owner said yes. `--yes` answers
+   * for itself (yes only with `--email`); anything else asks through `confirm`.
+   * @returns {Promise<boolean>}
+   */
+  async function askEmailAdmission() {
+    let consented = false;
+    await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
+      log(EMAIL_ADMISSION_DETAIL);
+      if (args.yes && !args.email) {
+        log(
+          'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+            'it on unattended, or without --yes to be asked.',
+        );
+        return;
+      }
+      if (args.yes && args.email) {
+        consented = true;
+        return;
+      }
+      const answer = await confirm({
+        message: 'Turn on email sign-in for your domain now?',
+      });
+      if (isCancel(answer)) exitOnCancel();
+      consented = Boolean(answer);
+    });
+    return consented;
+  }
+
+  // `step` is the effective step for every hop below. It equals the record's step except after an
+  // accepted re-offer, which resumes the record as if it were at `domain-live`; `record` is stale
+  // by then, so no hop reads `record.step` directly.
+  let step = record?.step;
+  let emailAdmitted = false;
+
+  if (!dryRun && hasOpenEmailDecline(record)) {
+    // The saved token goes first, and the rest of the run works from a copy without it, so a
+    // decline cannot leave a credential behind and a yes cannot reuse the deleted one.
     await deleteApiToken(siteId);
-    // A re-entry at a recorded decline is not silently ignored: the owner can still change their
-    // mind, and this is the one place that later re-run would ever be told so. `email-live`
-    // prints nothing here, since its completion hop already said everything once, on the run
-    // that reached it; bin.mjs's closing print covers a later re-entry there.
+    record = withoutSavedToken(record);
+
+    // A run that cannot ask declines for the owner. confirm never settles on a closed stdin, so
+    // it is not called at all.
+    const cannotAsk = args.yes ? !args.email : !isTTY;
+    if (cannotAsk) {
+      log(
+        args.yes
+          ? 'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+              'it on unattended, or without --yes to be asked.'
+          : 'Skipping email sign-in: this run cannot ask. Re-run with --email and --yes to turn ' +
+              'it on unattended, or from a terminal to be asked.',
+      );
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
+      return { outcome: 'paid-plan-declined' };
+    }
+    if (!(await askEmailAdmission())) {
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
+      return { outcome: 'paid-plan-declined' };
+    }
+
+    // Saved before the token hop, so a crash after it resumes at `domain-live` under the normal
+    // rules. Leaving a Builds decline this way records it, since the step that held it is gone.
+    await updateSite(siteId, {
+      step: 'domain-live',
+      ...(record.step === 'builds-connect-declined'
+        ? { cloudflare: { buildsDeclinedAt: new Date().toISOString() } }
+        : {}),
+    });
+    step = 'domain-live';
+    emailAdmitted = true;
+  } else if (!dryRun && isTerminalStep(record?.step)) {
+    await deleteApiToken(siteId);
+    // `email-live` prints nothing here, since its completion hop already said everything once, on
+    // the run that reached it; bin.mjs's closing print covers a later re-entry there. A decline
+    // that is not open (its onboarding is somehow done) is only acknowledged.
     if (record.step === 'paid-plan-declined') {
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
@@ -362,7 +465,7 @@ export async function runChapter2({
 
   // --- Admission: consent, then the domain itself. Only asked from `live`; a resumed record past
   // it already answered both, and re-asking would repeat a browser-adjacent decision for nothing.
-  if (!hasReached(record?.step, 'zone-created')) {
+  if (!hasReached(step, 'zone-created')) {
     let consented = false;
     await runStep(frame, 'Connect your domain', ADMISSION_DETAIL, async () => {
       log(ADMISSION_DETAIL);
@@ -435,7 +538,7 @@ export async function runChapter2({
 
     // --- Zone create: only from `live`/pre-`zone-created`; a resumed record already carries
     // zoneId/nameServers.
-    if (!hasReached(record?.step, 'zone-created')) {
+    if (!hasReached(step, 'zone-created')) {
       await runStep(
         frame,
         'Create your Cloudflare zone',
@@ -462,7 +565,7 @@ export async function runChapter2({
     // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
     // (its guard: a probe would read this tool's writes), so this skips both the read and
     // the gate entirely rather than letting that refusal surface as a developer-facing exception.
-    if (!hasReached(record?.step, 'records-carried')) {
+    if (!hasReached(step, 'records-carried')) {
       let declined = false;
       // carryOver.outcome is 'carried' when records were copied, or 'not-needed' when the zone
       // arrived already active. A decline leaves this undefined: that path returns before reaching
@@ -526,7 +629,7 @@ export async function runChapter2({
 
     // --- Delegation: only from `records-carried`. Pending or still-propagating parks with the
     // instructions printed; wrong nameservers is an act row, thrown; only `active` advances.
-    if (!hasReached(record?.step, 'delegated')) {
+    if (!hasReached(step, 'delegated')) {
       let delegationOutcome;
       let waitError;
       await runStep(
@@ -587,7 +690,7 @@ export async function runChapter2({
 
     // --- Cutover: only from `delegated`. Still-propagating or certificate-pending parks; anything
     // else that is not `live` (resolved-but-wrong-site, the attach itself, the redeploy) throws.
-    if (!hasReached(record?.step, 'domain-live')) {
+    if (!hasReached(step, 'domain-live')) {
       let cutoverOutcome;
       await runStep(
         frame,
@@ -665,29 +768,9 @@ export async function runChapter2({
     // succeeded, this is never re-asked. A decline writes the terminal step directly (rather than
     // going through TERMINAL_STEPS' short-circuit, which only fires on a LATER re-entry) and
     // deletes the token at the point it happens, per the terminal-state token rule.
-    if (!hasReached(record?.step, 'email-onboarded')) {
-      let emailConsented = false;
+    if (!hasReached(step, 'email-onboarded') && !emailAdmitted) {
       const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
-      await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
-        log(EMAIL_ADMISSION_DETAIL);
-        if (args.yes && !args.email) {
-          log(
-            'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
-              'it on unattended, or without --yes to be asked.',
-          );
-          emailConsented = false;
-          return;
-        }
-        if (args.yes && args.email) {
-          emailConsented = true;
-          return;
-        }
-        const answer = await confirm({
-          message: 'Turn on email sign-in for your domain now?',
-        });
-        if (isCancel(answer)) exitOnCancel();
-        emailConsented = Boolean(answer);
-      });
+      const emailConsented = await askEmailAdmission();
       if (!dryRun && !emailConsented) {
         const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
         log(declineErr.message);
@@ -703,7 +786,7 @@ export async function runChapter2({
     // --- Onboard the sending domain, then poll once. Only from before email-onboarded; a resumed
     // record past it already carries emailOnboardedAt, read below regardless of which run set it.
     let onboardedAt = record?.cloudflare?.emailOnboardedAt;
-    if (!hasReached(record?.step, 'email-onboarded')) {
+    if (!hasReached(step, 'email-onboarded')) {
       let onboardEnabled = false;
       await runStep(
         frame,

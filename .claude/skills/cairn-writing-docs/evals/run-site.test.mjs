@@ -198,7 +198,8 @@ test('buildEnv passes the allowed names and no credential', async () => {
 });
 
 test('loginEnv hands a claude process the container login and nothing else', async () => {
-  const { loginEnv } = await import('./run.mjs');
+  const { loginEnv, buildEnv } = await import('./run.mjs');
+  assert.equal(buildEnv({ CLAUDE_CODE_OAUTH_TOKEN: 'x', PATH: '/bin' }).CLAUDE_CODE_OAUTH_TOKEN, undefined, 'a gate env never carries the login');
   const saved = process.env.CLAUDE_CODE_OAUTH_TOKEN;
   try {
     process.env.CLAUDE_CODE_OAUTH_TOKEN = 'tok';

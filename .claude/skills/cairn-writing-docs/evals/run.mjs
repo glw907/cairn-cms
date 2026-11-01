@@ -942,8 +942,8 @@ export function buildEnv(source, extra = {}) {
 
 /**
  * The login a `claude` process needs when the host has no credentials file, such as a container started
- * with `CLAUDE_CODE_OAUTH_TOKEN`. Only the two `claude` spawns take it; a gate running a fixture's own
- * scripts never sees it.
+ * with `CLAUDE_CODE_OAUTH_TOKEN`. Only the two `claude` spawns take it; a grading gate never sees it.
+ * A session's own shell calls inherit it, since they run under the `claude` process.
  * @returns {Record<string, string>}
  */
 export function loginEnv() {

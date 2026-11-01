@@ -17,7 +17,7 @@ never refuses a route. Use the map to deny; use the layout to arrange.
 
 | Mechanism | Hides the link | Refuses the route | Owner bypass |
 |---|---|---|---|
-| Access-map rule plus `requireAccess` in the route's `load` | yes, for roles the rule leaves out | yes | yes: the owner reaches every ruled route |
+| Access-map rule plus `requireAccess` in the route's `load` and every action through `createSectionAction` | yes, for roles the rule leaves out | yes (a form action runs without the `load`, so the wrapper must gate it) | yes: the owner reaches every ruled route |
 | `roles` on a section or site entry | yes, for roles not listed | no | **no**: an owner whose role is not listed loses the link |
 | `ownerOnly` on a site entry | yes, for non-owners | no | yes |
 | `hidden: true` on an engine reference | yes, for everyone | no | n/a |
@@ -35,7 +35,8 @@ Two traps follow from this table:
   refuses.
 
 For a role-limited screen, the access map alone does both jobs: one rule, `requireAccess` in the
-route's `load`, and a site entry with no `roles`.
+route's `load` and every form action wrapped in `createSectionAction` (an action runs without the
+`load`, so the load's check never guards it), and a site entry with no `roles`.
 
 ## Declare roles and the access map
 
@@ -153,6 +154,6 @@ or `access:` error names the bad key or role.
 Verify on a preview build or the deployed site, since the dev backend always signs in an owner:
 
 1. As an owner, the sections render in declaration order, and the role-limited section shows.
-2. As an editor the rule leaves out, the section is gone, and typing the route's URL returns
-   the admin's 403 page.
+2. As an editor the rule leaves out, the section is gone, typing the route's URL returns the
+   admin's 403 page, and posting one of its actions returns the wrapper's 403.
 3. As the new role, the section shows and the route opens.

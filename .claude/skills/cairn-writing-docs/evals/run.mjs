@@ -20,7 +20,7 @@ import { dirname, join, resolve } from 'node:path';
 import { rm } from 'node:fs/promises';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildSiteBase, copySite, readStripList } from './site-fixture.mjs';
+import { buildSiteBase, copySite, readStripList, stripKey } from './site-fixture.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EVALS_DIR_REL = '.claude/skills/cairn-writing-docs/evals/';
@@ -55,6 +55,9 @@ export const BUILD_TOOLS = ['Bash(npm *)', 'Bash(npx *)', 'Bash(node *)', 'Bash(
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
 export const DENIED_TOOLS = [
   'Bash(approval-queue *)', 'Bash(gh *)', 'Bash(git push*)', 'Bash(git -C * push*)', 'Bash(ssh *)', 'WebFetch', 'WebSearch',
+  // The sessions run with no Cloudflare credential in their environment, but wrangler can read the
+  // workstation's own login from HOME, so anything that reaches the account is denied by name.
+  'Bash(*wrangler login*)', 'Bash(*wrangler secret*)', 'Bash(*wrangler deploy*)', 'Bash(*wrangler publish*)', 'Bash(*wrangler*--remote*)',
 ];
 
 /**
@@ -195,9 +198,9 @@ export function claudeArgs(c, opts = {}) {
   if (c.maxTurns) args.push('--max-turns', String(c.maxTurns));
   if (c.agent) args.push('--agent', c.agent);
   else args.push('--model', 'sonnet', '--effort', 'medium');
-  // A built fixture loads only the project's own settings, so no user skill or plugin reaches it.
+  // Every fixture loads only the project's own settings, so no user skill, plugin, or allow rule reaches it.
+  args.push('--setting-sources', 'project');
   if (built) {
-    args.push('--setting-sources', 'project');
     // The session's permission rules deny a compound command or a shell write, and a session that
     // does not notice the denial loses a file silently, so both arms are told the working form.
     args.push('--append-system-prompt', 'Shell redirects, heredocs, and compound commands (`&&`, `;`, pipes) that write files are not permitted here. Create and edit files with the Write and Edit tools, and run one command per Bash call.');
@@ -714,9 +717,13 @@ export function readRows(file) {
   return rows;
 }
 
-/** The keys a resume skips: graded and fault rows are final, and an error row runs again. */
+/**
+ * The keys a resume skips: graded rows and harness-fault rows are final. An error row runs again, and
+ * so does a fault from the runner or a fixture build, which a disk or worktree hiccup can cause.
+ */
 export function finishedKeys(rows) {
-  return new Set(rows.filter((r) => r.status === 'graded' || r.status === 'fault').map((r) => trialKey(r.caseId, r.arm, r.trial)));
+  const transient = (r) => r.status === 'fault' && /^(fixture|runner):/.test(r.detail ?? '');
+  return new Set(rows.filter((r) => (r.status === 'graded' || r.status === 'fault') && !transient(r)).map((r) => trialKey(r.caseId, r.arm, r.trial)));
 }
 
 /**
@@ -916,14 +923,29 @@ function abortRun(reason) {
   for (const c of children) c.kill('SIGTERM');
 }
 
+/** The environment names a session or a gate may inherit; every credential is absent by construction. */
+const ENV_ALLOW = /^(PATH|HOME|USER|LOGNAME|SHELL|LANG|LC_[A-Z_]+|TERM|TMPDIR|TZ|XDG_[A-Z_]+|MISE_[A-Z_]+|NODE_[A-Z_]+|npm_config_[a-z_]+|GOPATH|GOROOT|GOFLAGS|HOMEBREW_[A-Z_]+|DBUS_SESSION_BUS_ADDRESS|CLAUDE_CONFIG_DIR)$/;
+
+/**
+ * The environment for a session, the judge, or a gate: only the allowed names from `source`, never one
+ * that looks like a credential, plus the harness's own settings.
+ * @param {Record<string, string | undefined>} source
+ * @param {Record<string, string>} [extra]
+ */
+export function buildEnv(source, extra = {}) {
+  const env = {};
+  for (const [k, v] of Object.entries(source)) {
+    if (v !== undefined && ENV_ALLOW.test(k) && !/TOKEN|SECRET|KEY|PASSWORD|CREDENTIAL/i.test(k)) env[k] = v;
+  }
+  return { ...env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', ...extra };
+}
+
 function sessionEnv(extra = {}) {
   // A headless `-p` run exits soon after the model launches a background subagent, before the
   // result returns (anthropics/claude-code#73453), so sessions run their subagents in the foreground.
   // Auto-memory is off because a fixture is a linked worktree, which Claude Code maps to the main
   // checkout's project and its memory.
-  const env = { ...process.env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', ...extra };
-  delete env.ANTHROPIC_API_KEY;
-  return env;
+  return buildEnv(process.env, extra);
 }
 
 /**
@@ -998,12 +1020,25 @@ async function judgeTrial({ assertions, diff, reply, toolLog, file }) {
   const r = await run('claude', args, { cwd, env: sessionEnv(), input: prompt, timeout: 15 * 60 * 1000 });
   await rm(cwd, { recursive: true, force: true });
   writeFileSync(file, r.stdout ?? '');
+  return parseJudgeOutput(r.stdout ?? '');
+}
+
+/**
+ * Read a judge call's JSON output. A call that returned no verdicts (a usage limit, a timeout, a
+ * crash) is a failure of the judge, never a failing grade, so it comes back as `{ failure }` and the
+ * trial is an error that a resume runs again.
+ * @param {string} stdout
+ * @returns {{ verdicts: { n: number, verdict: string, reason: string }[] } | { failure: string, limit: boolean }}
+ */
+export function parseJudgeOutput(stdout) {
   try {
-    const out = JSON.parse(r.stdout);
+    const out = JSON.parse(stdout);
     const v = out.structured_output ?? JSON.parse(out.result);
-    return v.verdicts;
+    if (Array.isArray(v?.verdicts) && v.verdicts.length > 0) return { verdicts: v.verdicts };
+    return { failure: 'the judge returned no verdicts', limit: false };
   } catch {
-    return assertions.map((a) => ({ n: a.n, verdict: 'unknown', reason: 'the judge call returned no verdicts' }));
+    const text = String(stdout).slice(0, 400);
+    return { failure: text.trim() ? `the judge output did not parse: ${text.trim().slice(0, 160)}` : 'the judge call returned nothing', limit: /usage limit|limit reached|rate.?limit|resets? (at )?\d/i.test(String(stdout)) };
   }
 }
 
@@ -1054,7 +1089,9 @@ function toolLog(tools) {
 async function runTrial({ job, ctx, rerun = false }) {
   const { caseDef, arm, trial } = job;
   // A rerun gets its own stem and fixture name, so it keeps the first attempt's transcript.
-  const stem = `${caseDef.id}-${arm.label}-${trial}${rerun ? '-r' : ''}`;
+  let stem = `${caseDef.id}-${arm.label}-${trial}${rerun ? '-r' : ''}`;
+  // A resumed errored trial keeps the first attempt's transcript.
+  for (let n = 2; existsSync(join(ctx.stateDir, `${stem}.jsonl`)); n++) stem = `${caseDef.id}-${arm.label}-${trial}${rerun ? '-r' : ''}-a${n}`;
   const transcript = join(ctx.stateDir, `${stem}.jsonl`);
   const record = { caseId: caseDef.id, arm: arm.label, trial, transcript, status: 'graded', pass: false, checks: [], judge: [] };
   const name = `docs-eval-${ctx.runId}-${stem}`;
@@ -1108,7 +1145,12 @@ async function runTrial({ job, ctx, rerun = false }) {
     record.checks = checks.map((k) => ({ type: k.type, ...runCheck(k, cctx) }));
     if (caseDef.judge?.length) {
       ctx.judgeCalls++;
-      record.judge = await judgeTrial({ assertions: caseDef.judge, diff, reply: s.reply, toolLog: toolLog(s.tools), file: join(ctx.stateDir, `${stem}.judge.json`) });
+      const judged = await judgeTrial({ assertions: caseDef.judge, diff, reply: s.reply, toolLog: toolLog(s.tools), file: join(ctx.stateDir, `${stem}.judge.json`) });
+      if (judged.failure) {
+        if (judged.limit) abortRun('usage limit');
+        return { ...record, status: 'error', detail: `judge: ${judged.failure}` };
+      }
+      record.judge = judged.verdicts;
     }
     record.pass = record.checks.every((c) => c.ok) && caseDef.judge?.every((a) => record.judge.find((v) => v.n === a.n)?.verdict === 'pass') !== false;
     return record;
@@ -1169,9 +1211,13 @@ async function main() {
   if (args.resume && !existsSync(stateDir)) throw new Error(`no run ${runId} to resume`);
   const rowsFile = join(stateDir, 'results.jsonl');
   const rows = readRows(rowsFile);
+  const strip = args.strip ? readStripList(resolve(args.strip)) : [];
   if (args.reuseBaseline) {
     // The smoke run's baseline trials stand as this run's, so the A/B does not repeat them.
-    const reused = readRows(join(STATE_ROOT, args.reuseBaseline, 'results.jsonl')).filter((r) => r.arm === arms[0].label && r.status === 'graded');
+    // Only a trial of the same ref, strip list, and a selected case stands in for this run's baseline.
+    const selected = new Set(cases.map((c) => c.id));
+    const reused = readRows(join(STATE_ROOT, args.reuseBaseline, 'results.jsonl')).filter((r) => r.arm === arms[0].label && r.status === 'graded'
+      && selected.has(r.caseId) && (!r.armSha || r.armSha === arms[0].sha) && (r.strip ?? '') === stripKey(strip));
     for (const r of reused) if (!rows.some((x) => trialKey(x.caseId, x.arm, x.trial) === trialKey(r.caseId, r.arm, r.trial))) {
       const row = { ...r, reused: args.reuseBaseline };
       appendRow(rowsFile, row);
@@ -1185,7 +1231,6 @@ async function main() {
     if (!modules.has(c.pinFull)) modules.set(c.pinFull, prepareModules(repo, mainRoot, c.pinFull));
   }
   // A site arm builds once: its tarballs, emitted template, install, and guidance, cached by ref and strip list.
-  const strip = args.strip ? readStripList(resolve(args.strip)) : [];
   if (cases.some((c) => kindOf(c) === 'site')) {
     for (const arm of arms) {
       if (!modules.has(arm.sha)) modules.set(arm.sha, prepareModules(repo, mainRoot, arm.sha));
@@ -1232,8 +1277,9 @@ async function main() {
     console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.status}${r.status === 'graded' ? (r.pass ? ' pass' : ' FAIL') : ` (${r.detail})`}`);
     // A trial an abort cut short is not a result; a resume runs it again.
     if (!aborted) {
-      appendRow(rowsFile, r);
-      rows.push(r);
+      const row = { ...r, armSha: job.arm.sha, strip: stripKey(strip) };
+      appendRow(rowsFile, row);
+      rows.push(row);
     }
     return r;
   });

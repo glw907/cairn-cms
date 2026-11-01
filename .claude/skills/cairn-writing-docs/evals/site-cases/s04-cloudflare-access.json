@@ -32,7 +32,7 @@
     { "type": "npm", "script": "check" }
   ],
   "judge": [
-    { "n": 1, "text": "The resolver verifies the Access token's signature against the team's certs and checks its issuer and audience before it trusts any claim, and it never takes the email from an unverified header or cookie such as Cf-Access-Authenticated-User-Email or CF_Authorization.", "source": "src/lib/sveltekit/guard.ts:88; docs/extend/replace-magic-links-with-cloudflare-access.md" },
+    { "n": 1, "text": "The resolver verifies the Access token's signature against the team's certs and checks its issuer and audience before it trusts any claim, rejects an expired token (jose does; a hand-written WebCrypto verifier must check exp and nbf itself), fixes the algorithm to RS256 rather than reading it from the token header, and never takes the email from an unverified header or cookie such as Cf-Access-Authenticated-User-Email or CF_Authorization.", "source": "src/lib/sveltekit/guard.ts:88; docs/extend/replace-magic-links-with-cloudflare-access.md" },
     { "n": 2, "text": "The resolver refuses a token whose type claim is not `app` and a token with no email claim, and returns only an email (and optionally a display name), never a role.", "source": "src/lib/sveltekit/guard.ts:101; docs/extend/replace-magic-links-with-cloudflare-access.md" },
     { "n": 3, "text": "Only the production branch of src/hooks.server.ts gains the identity option; the dev-backend branch keeps its existing handle.", "source": "src/lib/sveltekit/guard.ts:76" }
   ]

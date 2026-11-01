@@ -164,8 +164,37 @@ test('claudeArgs gives a site or tree case the project-only settings, its plugin
   assert.equal(claudeArgs({}).includes('--append-system-prompt'), false);
   assert.match(site[site.indexOf('--allowedTools') + 1], /Bash\(npm \*\)/);
   const docs = claudeArgs({});
-  assert.equal(docs.includes('--setting-sources'), false);
+  assert.equal(docs.includes('--setting-sources'), true, 'every fixture loads project settings only');
   assert.doesNotMatch(docs[docs.indexOf('--allowedTools') + 1], /Bash\(npm \*\)/);
+});
+
+test('a judge call with no verdicts is a judge failure, never a failing grade', async () => {
+  const { parseJudgeOutput } = await import('./run.mjs');
+  const good = JSON.stringify({ structured_output: { verdicts: [{ n: 1, verdict: 'pass', reason: 'x' }] } });
+  assert.deepEqual(parseJudgeOutput(good), { verdicts: [{ n: 1, verdict: 'pass', reason: 'x' }] });
+  assert.match(parseJudgeOutput('').failure, /returned nothing/);
+  assert.equal(parseJudgeOutput('').limit, false);
+  const limit = parseJudgeOutput(JSON.stringify({ is_error: true, result: "You've hit your usage limit. Resets 5pm." }));
+  assert.equal(limit.limit, true);
+  assert.match(limit.failure, /judge/);
+  assert.match(parseJudgeOutput(JSON.stringify({ structured_output: { verdicts: [] } })).failure, /no verdicts/);
+});
+
+test('a resume runs a runner or fixture fault again but keeps a harness fault', () => {
+  const f = (detail) => ({ caseId: 'a', arm: 'x', trial: 1, status: 'fault', detail });
+  assert.equal(finishedKeys([f('runner: git add failed')]).size, 0);
+  assert.equal(finishedKeys([f('fixture: npm ci failed')]).size, 0);
+  assert.equal(finishedKeys([f('a needed command was denied: npm test')]).size, 1);
+});
+
+test('buildEnv passes the allowed names and no credential', async () => {
+  const { buildEnv, DENIED_TOOLS } = await import('./run.mjs');
+  const env = buildEnv({
+    PATH: '/bin', HOME: '/h', LANG: 'C', ANTHROPIC_API_KEY: 'a', CLOUDFLARE_API_TOKEN: 'c', GH_TOKEN: 'g', GITHUB_TOKEN: 'g',
+    SUDO_ASKPASS: 's', AGE_KEY_FILE: 'k', NODE_OPTIONS: '--x', MISE_DATA_DIR: '/m', CAIRN_E2E_GH_TOKEN: 't',
+  });
+  assert.deepEqual(Object.keys(env).sort(), ['CAIRN_GATE_LANE', 'CLAUDE_CODE_DISABLE_AUTO_MEMORY', 'CLAUDE_CODE_DISABLE_BACKGROUND_TASKS', 'HOME', 'LANG', 'MISE_DATA_DIR', 'NODE_OPTIONS', 'PATH']);
+  assert.ok(DENIED_TOOLS.some((t) => /wrangler\*--remote/.test(t)) && DENIED_TOOLS.some((t) => /wrangler secret/.test(t)));
 });
 
 test('deniedFaults counts a denied build command as a fault on a site or tree case only', () => {

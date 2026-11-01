@@ -63,8 +63,9 @@ with `auth.store-roles-unmigrated` means `0001_roles.sql` is not applied.
 2. Write the channel in a server-only module, typed over the generated `Cloudflare.Env`:
    `resolveDb` returns `MEMBER_DB`; `deliver(contact, code, ctx)` sends; `lookup(contact, { env })`
    returns a stable subject or `null`; `normalize` is idempotent and injective (trim and lowercase an
-   email); `challenge` verifies a human with `verifyTurnstile` from `/cloudflare` (never return
-   `true` unconditionally); `cookie.name` must not start with `cairn_`.
+   email); `challenge` verifies a human with `verifyTurnstile` from `/cloudflare`, passing
+   `hostname`, `action` and `ip` (without the first two a token solved on another widget with the
+   same sitekey replays against this form), and never returns `true` unconditionally; `cookie.name` must not start with `cairn_`.
 3. Login route (`prerender = false`): a `request` action and a `confirm` action that pass the event
    to `channel.actions.request` and `.confirm` and switch on `outcome` (`sent`, `confirmed`; anything
    else is `fail(400, ...)`). The load redirects a visitor whose `resolveSubject(event)` is set.
@@ -102,7 +103,7 @@ discipline:
   token to that browser. A confirm with no pending cookie passes a null hash, which equals no stored
   hash, so only a row whose `nonce_hash` is null matches.
 - Send tokens in a POST body, never a URL (logs, history, `Referer`).
-- Set `Referrer-Policy: same-origin` on the landing page. The engine's security headers cover only
+- Set `Referrer-Policy: strict-origin` on the landing page (the engine's own pages use it; `same-origin` would send the token-bearing landing URL as `Referer` on every same-origin request). The engine's security headers cover only
   `/admin`; a second group's routes set their own.
 - Use `generateToken` with `tokensMatch` for double-submit CSRF on the group's forms.
 - Rate limit by email and by IP.

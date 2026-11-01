@@ -212,6 +212,15 @@
 
 ## Low
 
+- [ ] **#189** Close the second-sign-in-group reference's roll-your-own gaps `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  The security read of agent-first pass 3 found `skills/cairn-extending-a-site/references/second-sign-in-group.md` lists the basics of a hand-rolled login without a fresh session id at login (fixation), the cookie attributes (HttpOnly, Secure, SameSite=Lax, Max-Age, `__Host-` on the CSRF cookie), logout deleting the server-side row, and one response for an unknown contact (enumeration). Add them, and settle the guard-first versus guard-last hook order that `custom-screen.md` and the `createAuthGuard` doc comment word differently.
+  Placement: Agent-first pass 4 (skill reference edit).
+- [ ] **#190** Require draft-preview links to be minted from a POST action `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  `draft-preview.md` and the S05 judge never say that minting changes state and so belongs in a form action, not a `load`. `mintPreview` and `revokePreview` also answer `unknown-concept` before the access check (`src/lib/sveltekit/preview.ts`), which lets any editor probe which concepts exist.
+  Placement: Agent-first pass 4 (skill reference and judge text), final engine batch (the ordering).
+- [ ] **#191** Harden the eval harness's session sandbox further `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  The read-only filters in `ALLOWED_TOOLS` still allow writes or execution through flags (`sed -n` with a `w` command, `git diff --output`, `git grep -O`, `sort -o`, `git difftool`), so `DENIED_TOOLS` is advisory and the fixture sandbox is the boundary. The judge prompt embeds the session's reply unescaped, which can skew a grade, and the hard-linked `node_modules` is shared across trials, so an in-place write under it reaches later trials. Pass 3 added an environment allowlist, project-only settings for every fixture, and wrangler denies.
+  Placement: Agent-first pass 4 (harness).
 - [ ] **#187** Rename `IdentityRefusal` to `IdentityFailure` `#improvement` `#cairn-cms` *(2026-10-31)*
   `convention-failure-suffix` retires `Refusal` as a type-name suffix, and `IdentityRefusal` (`src/lib/sveltekit/guard.ts:123`, `@beta`) is the one live straggler; no ledger entry argues an exception. Rename it, its `sveltekit` barrel export, `scripts/checks/api-surface.md`, and the `docs/reference/sveltekit.md` rows, with a migration note. Ruled while closing #169 (agent-first pass 3).
   Placement: Final engine batch (small API).

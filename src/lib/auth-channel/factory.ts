@@ -593,8 +593,12 @@ async function checkChannelRateLimit<Env>(
  *   deliver: sendOtp,
  *   lookup: (contact, ctx) => contactToPersonId(ctx.env?.MEMBER_DB, contact),
  *   normalize: normalizeContact,
- *   challenge: (_event, form) =>
- *     verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), env.TURNSTILE_SECRET ?? ''),
+ *   challenge: (event, form) =>
+ *     verifyTurnstile(String(form.get('cf-turnstile-response') ?? ''), env.TURNSTILE_SECRET ?? '', {
+ *       hostname: event.url.hostname,
+ *       action: 'member-login',
+ *       ip: event.getClientAddress(),
+ *     }),
  *   cookie: { name: 'member_session' },
  * });
  * ```

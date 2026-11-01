@@ -47,7 +47,8 @@ export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 /**
  * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
  *
- * Synchronous and fire-and-forget: `ctx.audit` never reads or awaits the return value, and every
+ * Synchronous and fire-and-forget: `ctx.audit` never awaits the return value (it only attaches a
+ * rejection handler to a returned promise), and every
  * emit logs `admin.action.audited` before the sink runs, wired or not. The seam is fail-open at
  * the call site: a sink that throws, or returns a rejecting promise (an async function passes this
  * type through void-return bivariance), never fails the action; `ctx.audit` logs
@@ -289,7 +290,7 @@ export function createAdminAction<T>(
         emitted++;
         const full: AdminActionAuditRecord = { ...record, actor: editor.email };
         log.info('admin.action.audited', { ...full });
-        // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
+        // Fail-open, per the seam's documented promise: a site's
         // hand-rolled sink is arbitrary code the engine does not control, and the mutation
         // this record describes already completed. A throw, or a rejected async return, here
         // must never turn that completed write into a failed action. `admin.action.audited`
@@ -309,7 +310,7 @@ export function createAdminAction<T>(
           const outcome = event.locals.cairnAuditSink?.(full);
           // The sink's declared type is `(record) => void`, but TypeScript's void-return
           // bivariance admits an async function with no error (the `waitUntil` advice in
-          // docs/extend/add-a-custom-admin-screen.md is exactly the pressure that writes one). The
+          // the packaged admin-screens skill is exactly the pressure that writes one). The
           // call above is never awaited, since the seam is synchronous by contract; attach a
           // rejection handler instead, fire-and-forget, so a rejecting async sink still logs.
           if (outcome != null && typeof (outcome as { then?: unknown }).then === 'function') {

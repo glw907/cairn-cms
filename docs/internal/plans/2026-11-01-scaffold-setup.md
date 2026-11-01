@@ -11,9 +11,9 @@ Repo: glw907/cairn-cms. Main checkout `/var/home/glw907/Projects/cairn-cms`. Pus
 Executor: `cairn-cms-scaffold-setup`, Sonnet at medium, launched by `conductor-cairn-cms`. It ends at
 PR-ready and never merges. Pairs go to `cairn-implementer` at `sonnet` and `medium`. Reviewers and
 `docs-fact-checker` run at `opus` and `medium`.
-Path estimate: 310 minutes (design 245, ceiling 490). The rise is #183: the re-offer was unreachable
+Path estimate: 325 minutes (design 245, ceiling 490). The rise is #183: the re-offer was unreachable
 on the normal path, so it became its own task. Review: three lenses, folded by the planner, then a
-verification read.
+verification read, also folded. It found no blocker, so no second read ran.
 
 Cleared items: #42, #97, #174, #175, #177, #183, #184, and #195's workflow half. #185 moves to the
 release act. Nothing bumps or publishes. `RUN_GATE_IF_BUSY` is never set on this pass.
@@ -169,38 +169,62 @@ and `test/resume-chapter3.test.mjs:238`. Neither edits `packages/create-cairn-si
   - `src/scaffold.mjs:260`: the hand-over names what the run does next and lacks "next release".
   - `src/money.mjs:30`: drop "the honest cost picture". The opening states the costs plainly.
 
-### T3. The email re-offer (#183) (`auth-data`, 90 minutes, alone)
+### T3. The email re-offer (#183) (`auth-data`, 105 minutes, alone)
 
 - Files: `packages/create-cairn-site/src/cloudflare/chapter2.mjs`, `packages/create-cairn-site/bin.mjs`,
   and `packages/create-cairn-site/test/**`.
-- An open decline is a record with `cloudflare.emailDeclinedAt` set and `cloudflare.emailOnboardedAt`
-  absent. The step may be `paid-plan-declined`, `builds-connect-declined`, or `builds-live`.
-- `bin.mjs`: a plain re-run with no `--connect` or `--sign-in` at either chapter 3 terminal step, with
-  an open decline, routes to `continueIntoChapter2`, ahead of the closing block at `:569`. If chapter 2
-  returns the decline from such a step, print the builds closing block and stop, with no chapter 3.
-  Rewrite the comment at `:475-481` to match.
+- An open decline is a record with no `cloudflare.emailOnboardedAt` that is either at
+  `paid-plan-declined`, whatever its other fields, or at `builds-connect-declined` or `builds-live`
+  with `cloudflare.emailDeclinedAt` set. `email-live` keeps its short-circuit
+  (`test/chapter2-safety-net.test.mjs:735`).
+- `cloudflare.buildsTriggerUuid` marks a completed Builds connection: it is saved only with
+  `step: 'builds-connected'` (`chapter3.mjs:1095-1098`). Don't use `buildsConnectionUuid`, which a park
+  can leave with no trigger, or `buildsLastBuildOutcome`.
+- `bin.mjs` entry: a plain re-run with no `--connect` or `--sign-in` at either chapter 3 terminal step,
+  with an open decline, routes to `continueIntoChapter2`, ahead of the closing block at `:569`.
+- `bin.mjs` `--connect` branch: a chapter 2 step on a record with `buildsTriggerUuid` saves `builds-live`
+  first, so chapter 3 takes its re-entry path, with a fresh token and no stale build uuid, and its
+  `finally` deletes the token.
 - `runChapter2`, at entry on an open decline:
   1. Always call `deleteApiToken(siteId)`, then go on from a copy of `record` with no `apiToken`, the
      shape of `withoutSavedToken` in chapter 3, so nothing reuses a deleted token.
-  2. `--yes` with no `--email` is a decline: reoffered copy, the "Re-run with --email" line, step
-     unchanged, returning `paid-plan-declined`. It never calls `confirm`.
+  2. `--yes` with no `--email`, or a run with `isTTY` false and no `--yes`, is a decline: reoffered copy,
+     the "Re-run with --email" line, step unchanged, returning `paid-plan-declined`. It never calls
+     `confirm`, because clack never settles on a closed stdin.
   3. Anything else asks the email question before the token hop, with the same step title, detail, and
      prompt. A no prints the reoffered decline, leaves the step, and returns the same outcome.
   4. A yes, or `--yes --email`, saves `step: 'domain-live'` before the token hop, holds it in a local
      since `record` is stale, and skips the `:667` admission once. Every `hasReached` then reads right.
      `STEP_ORDER`, the saved names, and the Go mirror don't change. After a crash the run resumes at
-     `domain-live` under the normal rules, where `:667` asks again.
-- `builds-live` needs one more step. Chapter 2 rewrites `cairn.config.ts`, and the next Workers Build
-  reverts the sender unless the repository gets it. So when chapter 2 reaches `email-live` on a record
-  carrying the completed Builds connection fields chapter 3 saved, `bin.mjs` saves `step: 'builds-live'`
-  before `runChapter3AndReport`, whose `builds-live` re-entry reconciles. Read those fields; add none.
-  It keys on the record, so a park and a later resume take the same path.
-- Test, through `bin.mjs` with the fake Cloudflare, from each of the three steps: a no prompts for no
-  token, leaves none on disk (seed one), keeps the step, and doesn't enter chapter 3 from a builds
-  step. A yes from `paid-plan-declined` reaches onboarding, makes no `POST /zones` or carry-over DNS
-  write, prompts once, and saves the new token. A yes from `builds-live` ends at `builds-live` with
-  the sender reconciled. `--yes` alone never calls `confirm`. `--yes --email` with
-  `CAIRN_CF_API_TOKEN` set reaches onboarding. A throw after the token hop leaves `domain-live`.
+     `domain-live` under the normal rules, where `:667` asks again. Leaving `builds-connect-declined`
+     this way also writes `cloudflare.buildsDeclinedAt`. No Go code reads the Builds fields, so nothing
+     mirrors the marker.
+- `bin.mjs`, when chapter 2 settles, by one rule keyed on the record, so a park and a later resume take
+  the same path. The trigger is checked first.
+  - `buildsTriggerUuid` present, chapter 2 returned `email-live` or the decline: save `builds-live`. On
+    `email-live`, run `runChapter3AndReport`. Its `builds-live` re-entry has no `--connect` gate
+    (`chapter3.mjs:840`), and `RECONCILED_FILES` includes `src/theme/cairn.config.ts`, so the next
+    Workers Build keeps the new sender. On the decline, print the builds closing block and stop.
+  - `buildsDeclinedAt` present with no trigger, on either return: save `builds-connect-declined`, print
+    the closing block, and skip chapter 3. The earlier Builds decline stands.
+- Comments that go false, cited by opening words since lines move: `bin.mjs` "A recorded decline is
+  terminal", `bin.mjs` "A plain re-run at one of chapter 3's terminal steps", the two in `chapter2.mjs`
+  at `:27-30` and `:344-347`, and `test/resume-chapter3.test.mjs:653-661`.
+- Test through `bin.mjs`, unprompted only, since no bin test drives a clack prompt and bin has no DNS or
+  HTTPS seam (`test/resume-chapter3.test.mjs:7-14`). All with `input: ''`:
+  - A plain run and `--yes` alone from each builds step, with a seeded token: the closing block, no
+    chapter 3, no token on disk, and the step kept.
+  - `--yes --email` with `CAIRN_CF_API_TOKEN` from `builds-live`, a changed sender, and the fake npm:
+    ends on `builds-reconcile-parked` at `builds-live`, the way `:553` proves re-entry.
+  - Seeded at `domain-live` with `--yes`: with `buildsTriggerUuid`, ends at `builds-live`; with
+    `buildsDeclinedAt`, ends at `builds-connect-declined`. Neither enters chapter 3.
+  - `--connect` seeded at `domain-live` with `buildsTriggerUuid` saves `builds-live` first.
+- Test in process against `runChapter2`, using the `confirm` and `promptSecretFn` seams as
+  `chapter2.test.mjs` does: a no with a seeded token leaves none and prompts for none. A yes from
+  `paid-plan-declined` reaches onboarding, makes no `POST /zones` or carry-over DNS write, prompts
+  once, and saves the new token. A yes from `builds-connect-declined` writes the marker. `--yes
+  --email` with `CAIRN_CF_API_TOKEN` set reaches onboarding. A throw after the token hop leaves
+  `domain-live`. Reconcile's commit is already proven in `chapter3.test.mjs`.
 - One more test, since pair 1 is merged: a non-TTY `--sign-in` prints no literal `<dir>` and doesn't
   claim a page opened.
 - Acceptance: each decline and yes case fails on the base commit.
@@ -208,7 +232,8 @@ and `test/resume-chapter3.test.mjs:238`. Neither edits `packages/create-cairn-si
 ### Pair 2 (path 60)
 
 Run T4 and T5 as a pair, descriptions `scaffold-setup task T4` and `scaffold-setup task T5`. Merge T5
-first, then T4, so the job commit stays the tip. Run the fast lane, push, and wait for CI on that head.
+first, then rebase T4 onto that head and fast-forward, so the job commit stays the tip. Run the fast
+lane, push, and wait for CI on that head.
 
 **T4. Publish readiness (#195's workflow half). `runner`. 60 minutes.**
 
@@ -224,7 +249,8 @@ first, then T4, so the job commit stays the tip. Run the fast lane, push, and wa
 - `check:leaks`: add `bin.mjs`, `src`, and `README.md` under the package to `SCAN_ROOTS`, and a
   `profileFor` branch for them at the T2 tier, whole mode, all classes, skipping `.test.mjs`.
 - The job, as the design states: `publish-create-site`, `needs: [publish, publish-dev]`, the sibling's
-  setup and npm pin, `npm ci` through the bounded-install action, then this order, all before the bake:
+  setup and npm pin, `npm ci` through the bounded-install action, then one `run:` block, as the siblings
+  use, since a guard's `exit 0` ends only its own step. The block runs this order, all before the bake:
   1. Probe the package name. `code E404` gives a `::notice::` and exit 0. Any other failure fails.
   2. Fail when the package's version differs from the root's. This follows step 1 so a cut before the
      first publish stays green while the package is at `0.0.0`.

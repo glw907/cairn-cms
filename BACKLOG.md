@@ -3,10 +3,14 @@
 > Project issue tracker. Managed by `/log-issue`.
 
 ## High
+- [ ] **#203** Scope the App's installation and its minted token to the one repository `#improvement` `#cairn-cms` *(2026-11-01)*
+  The install prompt and the `installation-not-covering-repo` remedy steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), while the App holds `contents: write`, `administration: write`, and `workflows: write` (`packages/create-cairn-site/src/github/manifest.mjs:58-62`) and the engine mints unscoped installation tokens (`src/lib/github/signing.ts:87` POSTs `/access_tokens` with no `repositories` or `permissions` body). A token minted for one site can then write, administer, and change workflows on every repository the owner's account holds. Options: scope the minted token to the one repository and `contents: write`, and/or keep "Only select repositories" as the default advice, and add a closing-block line telling the owner to narrow the installation (`docs/admin/create-your-site.md:88` already says to). An `auth-data` engine change and a product and security call. Found by the scaffold-setup pass's security review (H1).
+  Placement: Needs Geoff's decision before the release.
+
 ## Medium
 - [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)*
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
-  Placement: Scaffold pass.
+  Placement: After the release.
 
 - [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-01)*
   The regression and capability cases in `.claude/skills/cairn-writing-docs/evals/evals.json` that edited a technical docs page left with those tracks. Once PR #159 merges and `docs/editors/` holds pages, write the equivalent cases against editor pages so the chain is graded on the track it still covers.
@@ -144,6 +148,18 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
+  `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
+  Placement: After the release.
+
+- [ ] **#205** Narrow `publish.yml`'s OIDC permission to the publish steps `#improvement` `#cairn-cms` *(2026-11-01)*
+  `.github/workflows/publish.yml:20` grants `id-token: write` workflow-wide, and each job runs `npm ci` and the template bake with install scripts enabled under it, the same as the sibling jobs, so a compromised dependency's install script could mint a publish token. The actions are pinned to tags, and `npm install -g npm@11` floats. Fix candidate: job-level permissions, or split build and publish into separate jobs, and pin the actions and npm. Found by the scaffold-setup pass's security review (L7).
+  Placement: After the release.
+
+- [ ] **#204** Keep an env token out of the state file, and write the state file atomically `#improvement` `#cairn-cms` *(2026-11-01)*
+  `runChapter2`'s token hop (`packages/create-cairn-site/src/cloudflare/chapter2.mjs`, search `saveChapter2Token`) copies a `CAIRN_CF_API_TOKEN` env token into the state file, including on the email re-offer, so a token the owner meant to keep only in the environment lands on disk until a terminal step deletes it. `saveSite` (`packages/create-cairn-site/src/state.mjs:60`) also writes in place without a temp file and rename, so a crash mid-write can truncate the record. Fix candidate: hold an env token in memory only, and write through a temp file and `rename`. Found by the scaffold-setup pass's security review (L3).
+  Placement: After the release.
+
 - [ ] **#197** Refuse a rename onto an address another entry holds `#bug` `#cairn-cms` *(2026-11-01)*
   `renameAction`'s collision check (`src/lib/sveltekit/content-routes-entry-destructive.ts:265`) reads only the new file path in the same concept, so a rename that lands on a live entry's permalink in another concept commits to main. `createSiteResolver`'s duplicate throw (`src/lib/delivery/site-resolver.ts:104`) then fails every later deploy until someone moves an entry. The media and publish pass closes this for publish (#31) and leaves rename. Found while planning that pass, 2026-11-01.
   Placement: Final engine batch, content rules.

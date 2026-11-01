@@ -300,8 +300,7 @@ script exits `UNKNOWN` rather than silently sweeping the wrong count. Prefer the
 for the loop only when a single combined verdict genuinely will not do, since it is one command
 and one exit code per site to route instead of one.
 
-The concurrent form of the sweep, where every site's checks run at once instead of one after
-another, is 2.0 work; 1.0's bare sweep runs each site in turn.
+The bare sweep runs each site in turn.
 
 ## `--quiet`: silent on green, always loud on anything else
 
@@ -335,8 +334,8 @@ exit: 2
 ```
 
 The complementary `OK` path, byte-empty stdout and stderr on a fully green run, needs real
-Cloudflare and GitHub credentials against a live site to prove directly; `TestQuietWritesNothingOnAnOKRun`
-in `cmd/cairn/health_test.go` proves the same rule with a synthetic passing report, and running
+Cloudflare and GitHub credentials against a live site to prove directly; the tool's test suite
+proves the same rule with a synthetic passing report, and running
 this exact invocation against your adopted sites once, before you trust the scheduled job, is
 worth doing before you rely on the silence.
 

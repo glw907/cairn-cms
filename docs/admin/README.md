@@ -2,7 +2,7 @@
 
 A person who is comfortable pasting a command into a terminal and following written steps exactly can set up and run a cairn site without writing code. The setup command, `create-cairn-site`, does the work, and these pages explain what it does, state what it costs, and get you moving again when a step stops.
 
-If you write content on a site that someone else set up, you want the editors' help instead, which opens from the admin's **Help** link. If you build custom screens or features on cairn, you want the [extend track](../extend/README.md).
+If you write content on a site that someone else set up, you want the editors' help instead, which opens from the admin's **Help** link. If you build custom screens or features on cairn, start from the [cairn repository](https://github.com/glw907/cairn-cms), whose README routes a developer.
 
 ## Pick the page that fits
 
@@ -25,5 +25,6 @@ The following table routes you by what is happening now.
 
 ## Also in this track
 
+- [Rotate the GitHub App key](./rotate-the-github-app-key.md) replaces the key your site signs its commits with.
 - [Credentials](./credentials.md) says which secrets the `cairn` CLI stores and where.
 - [Run cairn on a schedule](./tripwire.md) describes a scheduled health check that pages someone when a site needs attention.

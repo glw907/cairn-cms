@@ -129,13 +129,13 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 **`config.bindings-missing`, a blocker.** The wrangler config, which is Cloudflare's configuration file for the site, declares no `send_email` binding named `EMAIL`, no `d1_databases` binding named `AUTH_DB`, or neither. Sign-in mail then has nothing to send through and sessions have nowhere to live.
 
-**Ask a developer:** declare both bindings in `wrangler.jsonc`, then redeploy. [Wire the delivery surface](../extend/build-the-public-routes.md) and the [Cloudflare reference](../reference/cloudflare.md) show the shape.
+**Ask a developer:** declare both bindings in `wrangler.jsonc`, then redeploy. The [adopt-cairn guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/adopt-cairn.md) shows the shape.
 
 ## Declare the media bucket binding
 
 **`config.media-bucket-missing`, a warning.** The site is set up to store uploaded images, but `wrangler.jsonc` declares no matching `r2_buckets` binding, so uploads have nowhere to go. A site without an image library sees this check as a SKIP.
 
-**Ask a developer:** declare an `r2_buckets` binding whose name matches the site's media bucket setting, then redeploy. The [Cloudflare reference](../reference/cloudflare.md) shows the shape.
+**Ask a developer:** declare an `r2_buckets` binding whose name matches the site's media bucket setting, then redeploy. The [adopt-cairn guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/adopt-cairn.md) shows the shape.
 
 ## Turn on observability
 
@@ -155,7 +155,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 A PASS covers only those two files. It says nothing about a policy set in a module the files import, in a layout, or in a Cloudflare response-header rule outside the repository. A SKIP means the check found neither file, and it doesn't mean the site is safe.
 
-**Ask a developer:** serve `strict-origin-when-cross-origin` or `same-origin` as the site's default `Referrer-Policy`. Restrict `no-referrer` to routes protected by a double-submit token, as cairn's own `/admin` responses are. [Security model](../extend/security-model.md#the-auth-guard) explains why.
+**Ask a developer:** serve `strict-origin-when-cross-origin` or `same-origin` as the site's default `Referrer-Policy`. Restrict `no-referrer` to routes protected by a double-submit token, as cairn's own `/admin` responses are.
 
 ## Set the public origin
 
@@ -179,7 +179,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 **`ai.posture-not-effective`, a warning.** The site states a position on AI crawlers, but the `robots.txt` it serves carries nothing consistent with that position, so crawlers read a different position than the one the site states.
 
-**Act, or ask a developer:** if the served file doesn't match, something ahead of the site is probably rewriting it, usually a managed `robots.txt` on your Cloudflare zone. Check the zone's settings on Cloudflare's [managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/) page. If the served file matches what the site declares and the position is still wrong, a developer has to fix it. [Choose an AI posture](../extend/choose-an-ai-posture.md) describes how a site declares one.
+**Act, or ask a developer:** if the served file doesn't match, something ahead of the site is probably rewriting it, usually a managed `robots.txt` on your Cloudflare zone. Check the zone's settings on Cloudflare's [managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/) page. If the served file matches what the site declares and the position is still wrong, a developer has to fix it. The [tidy and AI posture guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes how a site declares one.
 
 ## Provision the auth store
 
@@ -187,7 +187,7 @@ Six conditions concern the database that records who may sign in. No command che
 
 **`auth.store-unreachable`, a blocker.** The `AUTH_DB` database is missing, lacks the sign-in tables, or holds no owner row, so nobody can sign in. No command checks this condition, and a real failure almost always means a site wired by hand.
 
-**Ask a developer:** create the sign-in tables, seed the owner row, and confirm that the `AUTH_DB` binding names the right database. [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md) shows the steps.
+**Ask a developer:** create the sign-in tables, seed the owner row, and confirm that the `AUTH_DB` binding names the right database. The [adopt-cairn guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/adopt-cairn.md) shows the steps.
 
 **`auth.store-unmigrated`, a blocker.** The database lacks the `0004_login_nonce.sql` migration, which adds the column that binds each sign-in link to the browser that asked for it. Every sign-in attempt fails until the migration runs.
 
@@ -203,7 +203,7 @@ Six conditions concern the database that records who may sign in. No command che
 
 **`auth.role-wiring-missing`, a warning.** The site declares custom roles, but its guard was never given them and falls back to `owner` and `editor`. Anyone with another role signs in and is refused everywhere. A SKIP on this check, as in the report above, means the site declares no custom roles.
 
-**Ask a developer:** [Restrict admin access](../extend/restrict-admin-access.md) describes the wiring.
+**Ask a developer:** The [admin access guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/admin-access.md) describes the wiring.
 
 **`auth.email-not-normalized`, a warning.** An editor's address is stored with capital letters or stray spaces, usually after a manual database edit, and the rest of the sign-in system assumes trimmed lowercase.
 
@@ -215,13 +215,13 @@ Six conditions concern the database that records who may sign in. No command che
 
 To check, publish an edit and confirm that the newest commit on `main` names your site's App, the App's name followed by `[bot]`, as its committer. An empty error log proves nothing unless `observability.enabled` is on.
 
-**Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the private key secret in the Worker's secret store, or in the App id and installation id that the site's configuration names. Cloudflare secrets are write-only, so nobody can read the key back, and a developer has to replace it. [Rotate the GitHub App key](../extend/rotate-the-github-app-key.md) describes how.
+**Act, or ask a developer:** confirm that the App is installed on your repository at [GitHub's installations page](https://github.com/settings/installations). If it is, the fault is in the private key secret in the Worker's secret store, or in the App id and installation id that the site's configuration names. Cloudflare secrets are write-only, so nobody can read the key back, and the fix is to replace it. [Rotate the GitHub App key](./rotate-the-github-app-key.md) describes how.
 
 ## Wire the admin mount
 
 **`admin.mount-incomplete`, a warning.** This is a best-effort text check that the site's `/admin` route renders cairn's admin shell. A site wired in an unusual way can trip it without being broken, so treat a result as a prompt to look, not a verdict. On a failure the report prints INFO and never FAIL.
 
-**Ask a developer:** compare the site's `/admin` mount with [The canonical admin mount](../reference/admin-routes.md).
+**Ask a developer:** compare the site's `/admin` mount with the canonical mount in the [admin mount guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-building-admin-screens/references/admin-mount.md).
 
 ## Wire cairn's CSRF guard
 
@@ -229,7 +229,7 @@ An earlier doctor checked that the site had handed form protection from the fram
 
 ## Configure the Tidy API key
 
-An earlier doctor checked for the API key that the optional Tidy feature needs. That check is retired, and no command checks the key now. To test it, run one Tidy suggestion in the admin and see whether it works. A developer sets the key with `wrangler secret put ANTHROPIC_API_KEY`, as [Turn on Tidy](../extend/turn-on-tidy.md) describes.
+An earlier doctor checked for the API key that the optional Tidy feature needs. That check is retired, and no command checks the key now. To test it, run one Tidy suggestion in the admin and see whether it works. A developer sets the key with `wrangler secret put ANTHROPIC_API_KEY`, as the [tidy guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes.
 
 ## Probe the deployed admin
 

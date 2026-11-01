@@ -63,11 +63,10 @@ Until you add a second writer, you can skip both. Your site works the same eithe
 
 ## What needs a developer
 
-You do everything in the preceding sections yourself, without writing code. Three jobs need a developer:
+You do everything in the preceding sections yourself, without writing code. Rotating the App's private key is a terminal task you can also do yourself, and [Rotate the GitHub App key](./rotate-the-github-app-key.md) walks through it. Two jobs need a developer:
 
-- Rotating the App's private key, which is a terminal task. See [Rotate the GitHub App key](../extend/rotate-the-github-app-key.md).
-- Taking a new cairn release. See [Upgrade cairn](../extend/upgrade-cairn.md).
-- Adding anything cairn doesn't ship, such as a custom admin screen or a second sign-in group. The [extend track](../extend/README.md) covers that, and it is the link to hand a developer.
+- Taking a new cairn release. The package's `MIGRATION-NOTES.md` lists each version's upgrade steps, so hand a developer that file.
+- Adding anything cairn doesn't ship, such as a custom admin screen or a second sign-in group. The [cairn repository](https://github.com/glw907/cairn-cms) is the link to hand a developer.
 
 [Check that your site works](./is-it-working.md) routes several more conditions to a developer. Most of them appear only on a site that someone has customized or built by hand, and that page says which is which.
 

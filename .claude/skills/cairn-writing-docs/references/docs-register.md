@@ -405,6 +405,9 @@ opening, as the following anatomies state.
   4. A verification section, headed with a bare infinitive such as "Verify the served file",
      <!-- vale Google.Quotes = YES -->
      that names the observable result. Checks the reader runs in order form a numbered list.
+     One exception stands (Geoff, 2026-10-31): `admin/own-your-domain.md` keeps "You know it
+     worked when" on its three sections, because `github-slug-contract.test.ts` pins their
+     slugs, so the slug contract outranks the heading rule there. Each body is a full sentence.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md` or
      `admin/troubleshooting.md`) rather than restating recovery
      prose inline. Ordered diagnostic checks form a numbered list here too.

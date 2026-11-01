@@ -112,7 +112,7 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    returns 200 with the action result serialized in the body (both are correct). The deployed
    site has the same dependency, which is why a consuming site must force HTTPS so the magic-link
    form always posts over a stable https `Origin`. The admin track's
-   [Force HTTPS at the edge](../admin/is-it-working.md#force-https-at-the-edge) section covers the fix.
+   [Force HTTPS at the edge](../../../../docs/admin/is-it-working.md#force-https-at-the-edge) section covers the fix.
 
 4. **Clean up.**
    ```bash

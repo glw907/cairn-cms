@@ -117,7 +117,7 @@ Workers Builds is free at this scale. [Workers pricing](https://developers.cloud
 
 The command watches your first Workers Builds deploy through to the end and confirms that the site answers. From then on, every commit to the default branch deploys itself.
 
-A build deploys code and doesn't apply database migrations. A cairn update that ships a migration still needs a developer to run it, as [Upgrade cairn](../extend/upgrade-cairn.md) describes.
+A build deploys code and doesn't apply database migrations. A cairn update that ships a migration still needs a developer to run it. The package's `MIGRATION-NOTES.md` says which versions do.
 
 ## See also
 

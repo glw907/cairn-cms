@@ -1,6 +1,6 @@
 # Troubleshoot a live site
 
-A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to [Debug your site](../extend/debug-your-site.md).
+A cairn site writes a log record for every event that matters, and each symptom below names the event to look for. This page is for the owner of a live site who sees it do something wrong when no `cairn doctor` check names the problem. Each section gives what you see, what it means, and the log event that confirms the cause. A cause you can fix yourself comes with the fix. A cause that needs code changed says so and points a developer to the [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md).
 
 Two other pages cover problems at other moments:
 
@@ -21,7 +21,7 @@ You can read the records in either of two places:
 - The Workers Logs tab for your Worker in the Cloudflare dashboard.
 - From the site's folder, `npx wrangler tail`, which streams records live while you reproduce the problem.
 
-Filter by the event name that a section below gives you. [The log events reference](../reference/log-events.md) lists every event and its fields. A record carries the signed-in editor's email address when one is involved. A record never carries a sign-in token or a session id. Because it can carry an email address, check a record before you paste it anywhere public.
+Filter by the event name that a section below gives you. The [log events table](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/log-events.md) lists every event and its fields. A record carries the signed-in editor's email address when one is involved. A record never carries a sign-in token or a session id. Because it can carry an email address, check a record before you paste it anywhere public.
 
 ## Nobody can sign in, or one person can't
 
@@ -37,7 +37,7 @@ The ordinary "check your inbox" message is the same whether or not the address i
 
 A third message points somewhere else. `This browser has no pending sign-in` means the browser that opened the link isn't the browser that asked for it. That happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The same message also appears when a link has already been used. In every case the fix is the same: request a new link and open it in the browser that asked.
 
-An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. [The security model](../extend/security-model.md#limits-of-the-browser-binding) explains why a row seeded that way confirms from any browser.
+An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, and `auth.link.refused`.
 
@@ -59,7 +59,7 @@ If every admin page, the sign-in page included, shows the same branded error, th
 
 **What you see:** an editor's save or publish is refused, sometimes with the word conflict.
 
-**What it means:** a conflict means the entry changed on GitHub after the editor opened it, most often because two people edited it at once. Nothing is broken. The editor reviews the current version and saves again. A failure that names no conflict more often points at the GitHub App, so check [Install the GitHub App](./is-it-working.md#install-the-github-app). If publishing works and saves still fail, a developer has to look. [Debug your site](../extend/debug-your-site.md) is where they start.
+**What it means:** a conflict means the entry changed on GitHub after the editor opened it, most often because two people edited it at once. Nothing is broken. The editor reviews the current version and saves again. A failure that names no conflict more often points at the GitHub App, so check [Install the GitHub App](./is-it-working.md#install-the-github-app). If publishing works and saves still fail, a developer has to look. The [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md) is where they start.
 
 The **Publish site** button appears only when something is waiting to publish. Its absence usually means nothing is pending, or that you're inside an entry, where the button never shows. If an editor has saved work that hasn't gone live and the button is still missing from the main screen, the site couldn't read GitHub to count what is pending, and it hid the button rather than guess. Check the App the same way.
 
@@ -77,7 +77,7 @@ The **Publish site** button appears only when something is waiting to publish. I
 
 **What you see:** adding an image in the editor or the media library fails.
 
-**What it means:** the `reason` field on the log event names the cause. The values `too_large` and `unsupported_type` mean what they say, and the fix is a different file. The value `session_expired` means sign in again. Any other value points at the site's configuration, not the file, and needs a developer: `media_disabled`, `binding_missing`, `length_required`, `csrf`, `access_denied`, or `hash_collision`. [Debug your site](../extend/debug-your-site.md) is where they start.
+**What it means:** the `reason` field on the log event names the cause. The values `too_large` and `unsupported_type` mean what they say, and the fix is a different file. The value `session_expired` means sign in again. Any other value points at the site's configuration, not the file, and needs a developer: `media_disabled`, `binding_missing`, `length_required`, `csrf`, `access_denied`, or `hash_collision`. The [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md) is where they start.
 
 **The log event:** `media.upload_failed`.
 
@@ -87,7 +87,7 @@ The **Publish site** button appears only when something is waiting to publish. I
 
 **What it means:** cairn caught an unexpected error from one of its admin actions, such as a save or a publish. This needs a developer to look. The record names what failed.
 
-**The log event:** `admin.action.failed`, whose `error` field carries the failure's message. Hand it to a developer, or see [Debug your site](../extend/debug-your-site.md).
+**The log event:** `admin.action.failed`, whose `error` field carries the failure's message. Hand it to a developer, along with the [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md).
 
 ## The admin sidebar shows no attention badges
 
@@ -100,5 +100,5 @@ The **Publish site** button appears only when something is waiting to publish. I
 ## See also
 
 - [Check that your site works](./is-it-working.md) explains each `cairn doctor` result.
-- [Debug your site](../extend/debug-your-site.md) is where a developer starts on a cause that needs code.
-- [The log events reference](../reference/log-events.md) lists every event and its fields.
+- The [debug guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/debug.md) is where a developer starts on a cause that needs code.
+- The [log events table](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/log-events.md) lists every event and its fields.

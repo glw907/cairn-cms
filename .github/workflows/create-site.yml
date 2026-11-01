@@ -208,6 +208,18 @@ jobs:
           npm run build
           npm run format:check
           npm run test:unit
+      - name: Scaffold carries its real origin and the tarball is publishable
+        working-directory: /tmp/ci-site
+        env:
+          ORIGIN: https://ci-site.example.workers.dev
+          TGZ: ${{ steps.create-pack.outputs.create }}
+        run: |
+          node --input-type=module -e '
+            import { writePublicOrigin } from "/tmp/create-scratch/node_modules/create-cairn-site/src/cloudflare/config.mjs";
+            await writePublicOrigin("/tmp/ci-site", process.env.ORIGIN);
+          '
+          npm run build
+          node "$GITHUB_WORKSPACE/scripts/ci/assert-scaffold-origin.mjs" /tmp/ci-site "$ORIGIN" "$TGZ"
       - name: Dev server reaches the admin
         working-directory: /tmp/ci-site
         run: |

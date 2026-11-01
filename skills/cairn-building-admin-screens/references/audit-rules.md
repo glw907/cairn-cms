@@ -22,7 +22,8 @@ npx cairn-audit --fail-on advisory
 npx cairn-audit norms <role>     # a component's measured norm
 ```
 
-Run the audit before the first edit, so the fix answers the findings it names. Exit 0 means no
+Run the audit before the first edit, so the fix answers the findings it names. Rerun it after the
+fix, and report each rule id that fired, what it required, and the final exit code. Exit 0 means no
 unsuppressed error-tier finding; 1 means at least one; 2 means the run could not start or finish
 (bad flag, malformed config, no server, no browser) and is never a design verdict. Advisory
 findings print without changing the exit code unless `npx cairn-audit --fail-on advisory` is set. An unknown

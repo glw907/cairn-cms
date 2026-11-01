@@ -109,6 +109,9 @@ A screen is done, in order, only after:
 3. **For a derivation or a composition the toolkit does not cover**, the grader prompt
    (`references/grader-prompt.md`) passes against your captures.
 
+Run the static audit before the first edit and again after the fix. In the report, name each rule
+id that fired (`list-role`, not "list semantics"), what it required, and the final exit code.
+
 Fix a finding in the screen's markup. A suppression comment, an allowlist entry, or a config that
 drops the screen from scope is for a finding you judge deliberate, with its reason, and you report
 it. A build that passes by suppression is a disguised failure. A clean audit means the vocabulary

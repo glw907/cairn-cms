@@ -30,7 +30,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // stays out of the reader-facing register. A directory or index that does not exist is skipped,
 // since a track being rebuilt can hold no page.
 const SCAN_DIRS = ['docs/admin', 'docs/editors'];
-const INDEX_FILES = ['docs/README.md'];
+const INDEX_FILES = ['docs/README.md', 'docs/why-cairn.md', 'docs/architecture.md'];
 
 // Directory names skipped while walking an arm, since they hold generated or fixture output
 // rather than published pages.

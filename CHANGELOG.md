@@ -576,8 +576,8 @@
   teach each job. Upgrade steps and the per-version notes move to `MIGRATION-NOTES.md` at the package
   root, and the `cairn` CLI's JSON schemas move to `schema/`, each `$id` unchanged. The `cairn`
   CLI's help no longer links a docs page, and a released binary's links into the reference track
-  stop resolving. The admin and editors arms and the front-door pages (`docs/README.md` and
-  `docs/why-cairn.md`) are removed pending their rebuild, and each returns as its rebuild lands.
+  stop resolving. The admin and editors arms and `docs/README.md` are removed, and the arms return as their
+  rebuild lands; `docs/why-cairn.md` returns with the evaluator set under Added.
 
   Consumers must: read upgrade steps from `node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md`, read
   a JSON schema from `node_modules/@glw907/cairn-cms/schema/` rather than the reference track,

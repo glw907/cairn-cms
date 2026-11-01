@@ -3,7 +3,7 @@
 ## Unreleased
 
 This is a major release: it removes three ids that `docs/reference/cli-cairn-json-output.md`
-published, and it ships at `v2.0.0` with the engine cut that moves SvelteKit's origin check onto
+(at the `pre-agent-first` tag) published, and it ships at `v2.0.0` with the engine cut that moves SvelteKit's origin check onto
 every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
@@ -24,6 +24,7 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Changed
 
+- **`cairn --help`, `cairn doctor --help`, and `cairn health --help` print no documentation URL, and the JSON schemas move to `schema/`.** The help text no longer links the removed reference pages, so a released binary's old links stop resolving. The schemas move from `docs/reference/schema/` to `schema/` in the engine package, each `$id` unchanged.
 - **A `cairn doctor` PASS line prints the check's pass title.** The plain-text report keyed every
   line to the condition's registry title, which names the failure, so a passing check read "PASS
   Wrangler bindings are missing". Each check now declares a `PassTitle`, and the other statuses keep

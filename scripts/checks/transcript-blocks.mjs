@@ -27,7 +27,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // The planning folders and docs/internal discuss the marker convention in prose and would
 // false-positive if scanned as though they carried real marked blocks.
 const SCAN_DIRS = ['docs/admin', 'docs/editors'];
-const INDEX_FILES = ['docs/README.md'];
+const INDEX_FILES = ['docs/README.md', 'docs/why-cairn.md', 'docs/architecture.md'];
 
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 

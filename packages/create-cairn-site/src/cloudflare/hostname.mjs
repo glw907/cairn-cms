@@ -332,9 +332,10 @@ function stripNestedNext(message) {
  * itself failing (`custom-domain-failed`) or the rebuild or redeploy failing
  * (`cutover-deploy-failed`).
  *
- * A rebuild or redeploy failure restores the origin on disk to the pre-cutover workers.dev URL
- * before throwing, so a failed cutover never leaves the site's config pointing at an origin the
- * Worker was never redeployed under.
+ * A failure writing the new origin, rebuilding, or redeploying restores the origin on disk to the
+ * pre-cutover workers.dev URL before throwing, so a failed cutover does not leave the site's
+ * config pointing at an origin the Worker was never redeployed under. When that restore fails
+ * too, the thrown row keeps the original cause and says the files may still name the domain.
  * @param {object} args
  * @param {object} args.record the site's in-memory state record; reads `record.dir` and
  *  `record.cloudflare.{domain,zoneId,workerName,accountId,url}`
@@ -350,9 +351,19 @@ function stripNestedNext(message) {
  *  The re-check after the redeploy stays one-shot on purpose: a completed redeploy has already
  *  proven this hostname serves the site once, so a park there is both rare and terminal, and
  *  holding on it would keep a console up over a wait nothing is expected to clear.
+ * @param {typeof writePublicOrigin} [args.writePublicOriginFn] writes the origin pair; a test seam
+ *  defaulting to config.mjs's `writePublicOrigin`
  * @returns {Promise<CutOverResult>} the outcome
  */
-export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns, waitForClear }) {
+export async function cutOverHostname({
+  record,
+  api,
+  fetchImpl = fetch,
+  log,
+  dns,
+  waitForClear,
+  writePublicOriginFn = writePublicOrigin,
+}) {
   const { dir } = record;
   const { domain, zoneId, workerName, accountId, url: workersDevUrl } = record.cloudflare;
 
@@ -362,19 +373,32 @@ export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns
   const beforeRedeploy = await confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear });
   if (beforeRedeploy !== 'live') return { outcome: beforeRedeploy };
 
-  await writePublicOrigin(dir, `https://${domain}`);
-
+  const domainOrigin = `https://${domain}`;
   try {
-    // The origin in cairn.config.ts is baked into the prerendered pages, so the rebuild runs
-    // inside the try: a failed build restores the origin the same way a failed deploy does.
+    // The forward write sits inside the try too: it writes two files, and a failure after the
+    // first lands must restore the pair like any later failure. The origin in cairn.config.ts is
+    // baked into the prerendered pages, so the rebuild is inside it for the same reason.
+    await writePublicOriginFn(dir, domainOrigin);
     await buildSite({ dir, log });
     await deployWorker({ dir, log, accountId });
   } catch (err) {
     // The site is still live and working on its workers.dev address; the rebuild or redeploy
     // under its new origin is what failed, so the origin on disk is restored rather than left
     // pointing at a Worker that was never actually redeployed to serve it.
-    await writePublicOrigin(dir, workersDevUrl);
-    throw cloudflareError('cutover-deploy-failed', { dir, detail: stripNestedNext(err.message) });
+    const detail = stripNestedNext(err.message);
+    try {
+      await writePublicOriginFn(dir, workersDevUrl);
+    } catch (restoreErr) {
+      // The original failure stays the headline; the row then says the files may still name the
+      // domain instead of claiming a restore that did not happen.
+      throw cloudflareError('cutover-deploy-failed', {
+        dir,
+        detail,
+        restoreFailed: stripNestedNext(restoreErr.message),
+        domainOrigin,
+      });
+    }
+    throw cloudflareError('cutover-deploy-failed', { dir, detail });
   }
 
   log(`Re-checking ${domain} after redeploying.`);

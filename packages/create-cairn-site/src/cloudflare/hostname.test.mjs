@@ -518,6 +518,67 @@ test('a failed build in the cutover restores both origin files and says the rebu
   assert.ok(!(await bin.lines()).some((l) => l.startsWith('deploy')), 'no deploy after a failed build');
 });
 
+test('a failure partway through the forward origin write still restores both files', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const fake = await setupWrangler(t);
+  const record = await buildRecord({ api, dir });
+  const { writePublicOrigin } = await import('./config.mjs');
+  const writes = [];
+  // The forward write lands its first file and then fails, the way a second file that cannot be
+  // written would leave the pair.
+  const writePublicOriginFn = async (target, url) => {
+    writes.push(url);
+    await writePublicOrigin(target, url);
+    if (writes.length === 1) throw new Error('EACCES: permission denied, open cairn.config.ts');
+  };
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await assert.rejects(
+    () => cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {}, writePublicOriginFn }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'cutover-deploy-failed');
+      assert.match(err.message, /EACCES/);
+      assert.match(err.message, /already restored/);
+      return true;
+    },
+  );
+
+  assert.deepEqual(writes, [`https://${record.cloudflare.domain}`, WORKERS_DEV_URL]);
+  assert.ok((await readOrigin(dir)).includes(WORKERS_DEV_URL));
+  assert.ok((await readConfig(dir)).includes(`'${WORKERS_DEV_URL}'`));
+  assert.deepEqual(await fake.invocations(), [], 'nothing builds or deploys after a failed write');
+});
+
+test('a restore that fails too keeps the original cause and says the origin is left on the domain', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  await setupWrangler(t, { code: 1, stderr: 'ERROR: script size limit exceeded' });
+  const record = await buildRecord({ api, dir });
+  const { writePublicOrigin } = await import('./config.mjs');
+  let calls = 0;
+  const writePublicOriginFn = async (target, url) => {
+    calls += 1;
+    if (calls === 2) throw new Error('EROFS: read-only file system');
+    await writePublicOrigin(target, url);
+  };
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await assert.rejects(
+    () => cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {}, writePublicOriginFn }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'cutover-deploy-failed');
+      assert.match(err.message, /script size limit exceeded/, 'the original failure is still named');
+      assert.match(err.message, /EROFS/, 'the restore failure is named');
+      assert.ok(err.message.includes(`https://${record.cloudflare.domain}`), `got: ${err.message}`);
+      assert.equal(/already restored/.test(err.message), false, 'no claim of a restore that did not happen');
+      return true;
+    },
+  );
+
+  assert.ok((await readOrigin(dir)).includes(`https://${record.cloudflare.domain}`));
+});
+
 // --- The hold seam (Task 4a): the pre-redeploy confirm, held ------------------------------------
 
 /** The console URL the injected server handle reports; a stand-in for the real secret prefix. */

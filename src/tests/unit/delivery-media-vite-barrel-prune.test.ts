@@ -60,7 +60,7 @@ const DATA_KEPT = [
 // factory and its types), unaffected by this task.
 const DELIVERY_ONLY_KEPT = ['createPublicRoutes', 'PublicRoutesConfig', 'EntryData'];
 
-// The fourteen names the pass demotes from the /media barrel, verbatim from the plan's Task 4 and
+// The thirteen names the pass demotes from the /media barrel, verbatim from the plan's Task 4 and
 // the audit verdicts doc's `## ./media` section.
 const MEDIA_DEMOTED = [
   'parseMediaManifest',
@@ -74,12 +74,11 @@ const MEDIA_DEMOTED = [
   'slugifyFilename',
   'r2Key',
   'publicPath',
-  'presetUrl',
   'variantUrl',
   'manifestMediaResolver',
 ];
 
-// The /media keep list, from the audit verdicts doc, minus the fourteen demotions above.
+// The /media keep list, from the audit verdicts doc, minus the thirteen demotions above.
 // `VariantSpec` retired outright by the conformance pass (Task 14, ruling 4): the `variants` field
 // it typed had no reachable runtime consumer, so it no longer publishes anywhere.
 const MEDIA_KEPT = [

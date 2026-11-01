@@ -19,7 +19,8 @@ Contents:
 ## Upload limits
 
 - `allowedTypes` narrows the five stored types (`image/jpeg`, `image/png`, `image/gif`,
-  `image/webp`, `image/avif`); it cannot widen them. The type is sniffed from the bytes. HEIC,
+  `image/webp`, `image/avif`); it cannot widen them, and a type outside them throws a `cairn:` error
+  at startup. The type is sniffed from the bytes. HEIC,
   unknown bytes, SVG, HTML, XML, and anything starting with `<` are always refused.
 - `maxUploadBytes` defaults to 25 MB. Cloudflare's plan body cap also applies and answers a plain 413.
 - Both apply to new uploads only. Narrowing `allowedTypes` leaves stored assets and their manifest
@@ -65,10 +66,8 @@ Moving the base takes a route at the new base. `publicBase` moves the URLs, not 
    export const GET = createMediaRoute({ runtime });
    ```
 
-3. Keep `src/routes/media/[...path]/+server.ts`. The editor's live preview builds `/media/...` paths
-   whatever `publicBase` says, and `cairn-media-seed` downloads `/media/<slug>.<hash>.<ext>`. Without
-   that route, preview images break while published pages render. The same handler serves both
-   shapes at both bases. Say in your reply that it was kept on purpose.
+3. Keep `src/routes/media/[...path]/+server.ts` only if the site runs `cairn-media-seed`, which
+   downloads `/media/<slug>.<hash>.<ext>`. Say in your reply that it was kept on purpose.
 
 ## Responsive images
 

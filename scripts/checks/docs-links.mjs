@@ -56,7 +56,7 @@ function walkIfPresent(root, dirName) {
 // Every Markdown file in scope, as repo-relative paths, sorted.
 /** @param {string} root */
 export function filesInScope(root = ROOT) {
-  const docs = walkMarkdown(join(root, 'docs'), new Set(), []).filter((p) => {
+  const docs = walkIfPresent(root, 'docs').filter((p) => {
     const rel = relative(root, p);
     return !PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep));
   });

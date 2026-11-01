@@ -307,6 +307,13 @@
   The pass 4 prompt audit found `supportsEffort` (`src/lib/sveltekit/content-routes-tidy.ts:58`) withholds `effort` from Haiku 5 and Fable 5, `DEFAULT_TIDY_MODEL` (`src/lib/nav/site-config.ts:146`) is `claude-sonnet-5` against Geoff's call that it track the latest Sonnet (`ROADMAP.md:960`), and the settings screen recommends `claude-haiku-4-5` (`src/lib/admin/CairnTidySettings.svelte:402`). The change moves a site that leaves `tidy.model` unset to Sonnet 5.5, so it needs a before-and-after proofreading check on real entries, a changelog entry, a migration note, and a fact-check of the tidy docs.
   Placement: Final engine batch, admin and tidy slice.
 
+- [ ] **#193** Rename the editor screens' words to the ones Geoff ruled `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  Geoff's answers on #160's notes (2026-10-31) settle the editor screens' vocabulary, and the screens still say the old words. Entry replaces page as the generic noun where a screen counts or names one (`3 pages now link to it`, the delete refusal); the Tags screen drops slug and keeps "Stored as"; the list filters become All, Unpublished changes, and Published (Published includes a live Edited entry); the Publish site button becomes Publish all, and its confirmation lists titles in place of raw addresses; hero becomes lead image in every string; the media dialog's "Push alt to placements" becomes "Apply default alt to entries"; Change URL becomes Change address; Revert becomes Restore as draft; the three upload labels become Upload image. The editors pages follow in the same pass.
+  Placement: Final engine batch, admin and tidy slice.
+- [ ] **#194** Make the bulk media delete window say who undoes a delete `#bug` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  `src/lib/admin/MediaBulkDeleteDialog.svelte:255` says "Every removal is one revertible commit you can undo", then says a developer reverts it. The single delete window and `docs/editors/manage-the-media-library.md` both say an editor cannot undo a delete. Drop "you can undo" from the string.
+  Placement: Final engine batch, admin and tidy slice.
+
 ## Won't do
 
 - **#69** Loosen the register's task-guide item 5 for a feature with no log event: the conflict leaves with the extend arm; admin recovery pages are not log-event pages (Geoff, 2026-10-31)

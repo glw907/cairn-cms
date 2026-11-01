@@ -11,8 +11,8 @@ npx create-cairn-site
 - **Deciding whether cairn fits?** [Why cairn](./docs/why-cairn.md) gives the trade-offs, and
   [Architecture](./docs/architecture.md) gives the shape of the system, its security model, and how it
   works with Claude Code.
-- **Writing in a cairn site?** The editor help in `docs/editors` begins at its Welcome page.
-- **Setting up and running a site?** The admin guide in `docs/admin` begins with Before you start.
+- **Writing in a cairn site?** [The editor help](./docs/editors/README.md) begins at [Welcome to the editor](./docs/editors/welcome.md).
+- **Setting up and running a site?** [The admin guide](./docs/admin/README.md) begins with [Before you start](./docs/admin/before-you-start.md).
 - **Building on cairn?** Each export's doc comment, shipped in the package's type declarations,
   carries its contract, and [the packaged skills](./skills/) teach each job. A site that uses Claude
   Code imports [`claude/CLAUDE.md`](./claude/CLAUDE.md).

@@ -187,7 +187,7 @@ shape. **One release follows docs stage 5, and it is a `0.x` minor, the old "rel
 `1.0.0-beta.1` cannot be that cut: beta waits for the new ASC site and ecxc by Geoff's 2026-08-26
 ruling ("Toward 1.0"), and no site migrates before the release, so the sites reach the release first
 and the beta follows their migrations. Engine passes land on `main` and never release. The path, with
-each pass in its slot, is the boundary-test entry in the Now tier. "Release one" elsewhere in this file
+each pass in its slot, is the sequence in `docs/STATUS.md`. "Release one" elsewhere in this file
 means the one release.
 
 What the old series carried, as it stands:
@@ -748,7 +748,7 @@ The original decision framing, for the record:
   itself reads each snapshot by branch name, not at the head SHA it just read
   (`src/lib/github/repo.ts:72-86`, `contentsUrl` pins `?ref=<branch>`), so replica lag could return
   a snapshot older than the head and defeat it; the hardening reads each file at the head SHA.
-  Trigger: the final engine batch (path item 7 above) at the latest, and sooner if any engine
+  Trigger: the final engine batch (`docs/STATUS.md`'s sequence) at the latest, and sooner if any engine
   pass touches these files.
 
 - **Reference-arm corrections the extend rebuild surfaced (stage 2a's close, 2026-10-07).** Trigger:

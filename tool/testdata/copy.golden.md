@@ -124,11 +124,26 @@ Run the command again in %s
 - %s was not stored in the keyring
 
 - Add a Cloudflare Worker to the registry as a site
-- Check a cairn-cms site's checked-in configuration, read straight off the directory. It covers bindings, CSRF wiring, the site config, and more. It needs no credential and no adopted site, and makes at most one network request, a GET of the declared origin's /robots.txt.
+- Check a cairn-cms site's checked-in configuration, read straight off the directory. It needs no credential and no adopted site, and makes at most one network request, a credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, never a registered site id, and defaults to the current directory.
 
-The report is plain text, so --color, --theme, and --width do not change it.
+Checks run in this order, each with the severity its failure carries:
+  config.bindings blocker, config.media-bucket warning, config.observability warning,
+  config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,
+  config.no-referrer-blanket warning, admin.mount-shape (never fails),
+  config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.
 
-Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.
+Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and
+WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.
+Under --json the states are pass, fail, skip, and unknown: INFO writes pass with a note, SKIP
+writes reason.not-run, UNCHECKED writes reason.not-observable, and a fail carries a fix with a
+summary and no actor. The payload carries dir and checkedAt, and no tier, hold, or severity.
+
+The report is plain text on stdout only, so --color, --theme, and --width are validated and
+then ignored. --json beats --quiet; --quiet writes nothing on a clean run.
+
+Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. Exit 3 also covers a usage error, a run
+whose only non-passing results are UNCHECKED, and a directory that is not a cairn-cms site
+(which still writes a payload carrying an empty checks array). Test for nonzero, not for 3.
 Run `cairn health` after deploying to reach the checks that need a live site.
 - Check a cairn-cms site's configuration, no credential or deploy needed
 - Cloudflare: skip, %s
@@ -190,7 +205,8 @@ order: 3 does not beat 2. One site's failure is never masked by another site's
 unknown.
 
 A usage error exits 3 and writes nothing to stdout, so an empty stdout means the
-invocation was wrong, never that the site is healthy.
+invocation was wrong, never that the site is healthy. cairn sites list exits 0 or
+3 only.
 
 A check result is pass, fail, held, skip, or unknown. skip is a check that was
 not attempted, by configuration: a credential you have not set. unknown is a
@@ -206,6 +222,15 @@ stream that carries no summary line is UNKNOWN. Each schema is published at the
 $id it carries, under https://cairn.pub/schema/, and ships in the cairn-cms
 repository; every payload carries a schemaVersion that is incremented whenever a
 consumer has to re-read its schema.
+
+A payload carries schemaVersion, kind, verdict, and exitCode, except that a per-site
+line of the stream omits exitCode. A check carries checkId, state, checkedAt, and tier
+(none, cloudflare, github, or both), and when it has them detail, code, condition,
+reason, fix, hold, fields, and observed. reason is always present on a skip or an
+unknown. fields are values cairn derived; observed maps each key to a value and the
+source it was copied from. hold carries until and expired, and a check reads held only
+until its hold expires. fix carries summary, actor, outward, and url, plus command for
+an operator's fix. actor is operator, developer, provider-console, or registrar.
 
 Run a fix only when its actor is operator, its outward is false, and it carries a
 command. Every other fix is for a person to read.

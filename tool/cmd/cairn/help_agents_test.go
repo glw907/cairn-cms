@@ -14,7 +14,7 @@ import (
 // which exit-3 cases it adds to the ones cairn health already states. It was raised from 50 to
 // 55 for the three published addresses the page now ends with, which are what an agent follows
 // when this summary is not enough and the machine holds no cairn-cms checkout.
-const agentsPageLineBound = 55
+const agentsPageLineBound = 70
 
 // TestHelpAgentsIsReachableAndExitsZero covers the surface itself: the topic resolves, it is not
 // hidden from `cairn --help`, and reaching it is a success.

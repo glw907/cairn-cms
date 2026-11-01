@@ -17,6 +17,11 @@ on:
   pull_request:
     paths-ignore: ['tool/**']
 
+# Every step reads the checkout and talks only to local fakes and the npm registry, so the job
+# token needs nothing beyond reading the repository.
+permissions:
+  contents: read
+
 jobs:
   create-site:
     runs-on: ubuntu-latest

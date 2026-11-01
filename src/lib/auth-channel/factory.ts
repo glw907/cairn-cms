@@ -242,8 +242,9 @@ export interface AuthChannelConfig<Env> {
    * The channel's D1 binding, never `AUTH_DB`: the channel's roster and sessions live in a
    * database physically separate from the engine's editor store. An absent binding, or one whose
    * `schema_version` row does not match the version the packaged
-   * `migrations-channel/0000_channel.sql` seeds, fails an action closed with
-   * `{outcome: 'unavailable'}` without touching a row. Typed as {@link ChannelDatabaseLike},
+   * `migrations-channel/0000_channel.sql` seeds, fails `request` and `confirm` closed with
+   * `{outcome: 'unavailable'}` without touching a row. `logout` has no such outcome: it still clears
+   * both cookies, and `resolveSubject` never runs the schema check. Typed as {@link ChannelDatabaseLike},
    * the subset of D1 the store uses, which a real `D1Database` and the dev package's
    * `createChannelDb()` result both satisfy.
    */
@@ -259,7 +260,8 @@ export interface AuthChannelConfig<Env> {
   /**
    * Normalized contact to subject id, or null for an unknown contact. The returned subject must be
    * stable and canonical per person, since sessions and revocation key on it. A throw is caught,
-   * logged as the `lookup_failed` outcome of `auth.channel.requested`, and treated as a miss.
+   * logged as the `lookup_failed` outcome of `auth.channel.requested` once the request gets past the
+   * rate limit and requester suppression, and treated as a miss.
    *
    * `ctx` carries the Worker env and nothing else, mirroring {@link DeliverContext}: a
    * roster read needs a binding, and the binding is all it needs. This callback must not read
@@ -310,9 +312,9 @@ export interface AuthChannelConfig<Env> {
    * Clamped overrides for the Defaults table (spec, Defaults and clamps), in three groups: the
    * one-time code, the pressure controls, and the session. Every group and every field is
    * optional and independently clamped, so a site that tunes one knob names one knob. An
-   * out-of-range or non-integer override throws at construction with a message naming the group,
-   * the field, and the bound; a non-positive value always throws, even where the clamp states only
-   * a ceiling.
+   * out-of-range override throws at construction with a message naming the group, the field, and
+   * the bound; a non-integer or non-positive value always throws too, naming the group and the
+   * field, even where the clamp states only a ceiling.
    *
    * The groups are what a site tunes together, re-derived for a reader rather than transplanted
    * from the design document. The retired `ttl` bag held all nine knobs in one flat family because
@@ -584,6 +586,8 @@ async function checkChannelRateLimit<Env>(
  * `env?.MEMBER_DB` fails to typecheck.
  *
  * ```ts
+ * import { env } from 'cloudflare:workers';
+ *
  * const channel = createAuthChannel<Env>({
  *   resolveDb: (env) => env?.MEMBER_DB,
  *   deliver: sendOtp,

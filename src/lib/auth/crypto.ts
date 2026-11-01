@@ -82,7 +82,7 @@ function randomBase64Url(byteLength = 32): string {
 /**
  * A fresh 256-bit magic-link token, url-safe, drawn from `crypto.getRandomValues`.
  * @remarks
- * The one generator for every CSPRNG secret: a magic-link token, an offer token, a session id, or
+ * The one exported generator for every CSPRNG secret: a magic-link token, an offer token, a session id, or
  * a double-submit CSRF token, which pairs with {@link tokensMatch} on the submitted copy.
  * @public
  */

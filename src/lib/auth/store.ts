@@ -304,7 +304,8 @@ export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
  * @param role - A role name from the site's declared vocabulary.
  * @param now - The creation time, in epoch milliseconds.
  * @throws The underlying D1 primary-key constraint error, as a rejection, when the email is
- * already on the allowlist, including under a different case.
+ * already on the allowlist, including under a different case when the stored row was written by
+ * this store, which lowercases every email.
  * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
  * `AUTH_DB` lacks `migrations/0001_roles.sql` and `role` is neither `owner` nor `editor`.
  * @public

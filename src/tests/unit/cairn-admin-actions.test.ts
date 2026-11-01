@@ -445,6 +445,12 @@ describe('media replace and alt actions (composer wiring)', () => {
     });
   }
 
+  it('types mediaLibraryUpload on the public CairnAdminRoutes with no cast', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin({ runtime: runtime(), ...deps });
+    await expect(admin.actions.mediaLibraryUpload(actionEvent('/admin/posts'))).rejects.toMatchObject({ status: 404 });
+  });
+
   it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdminInternal({ runtime: runtime(), ...deps });

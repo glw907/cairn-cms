@@ -122,6 +122,11 @@ bytes but commits no row: the asset resolves as missing until an entry save post
 its `media` form field. A status-0 `opaqueredirect` means the session expired; a 403 with
 `guard.refused` `reason: csrf` means a stale token.
 
+To commit the row too, post to `/admin/media?/mediaLibraryUpload` with the same headers. It stores
+the bytes and commits the `media.json` row to the main branch in one step, and a hash already in the
+manifest succeeds as a no-op. `admin.actions.mediaLibraryUpload` is typed on `CairnAdminRoutes`, so
+a custom screen reaches it with no cast.
+
 ## Hand-built wiring
 
 A site with no media needs three pieces: an `r2_buckets` binding plus the `media` block; a resolver

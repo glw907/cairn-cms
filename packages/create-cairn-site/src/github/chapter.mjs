@@ -158,7 +158,7 @@ export async function runGithubChapter({
   // which for an org-owned App is the org itself. Without this fallback ctx.org stays undefined
   // and every later request (the membership check, createRepo) hits /orgs/undefined/... forever.
   const ctx = {
-    appName: flags.appName ?? `cairn-${slug}`,
+    appName: flags.appName ?? (slug.startsWith('cairn-') ? slug : `cairn-${slug}`),
     repoName: flags.repoName ?? slug,
     ownerType,
     org: resuming && ownerType === 'org' ? (flags.org ?? savedGithub.owner) : flags.org,

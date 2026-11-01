@@ -433,6 +433,35 @@ test('runGithubChapter: a dry run prints the App/repo/install action details and
   assert.ok(logs.some((line) => line.includes('Install the App and sign in')));
 });
 
+for (const [siteName, appName] of [
+  ['Cairn Docs', 'cairn-docs'],
+  ['Alpine Club', 'cairn-alpine-club'],
+]) {
+  test(`runGithubChapter: the default App name for "${siteName}" is ${appName}, never a doubled cairn- prefix`, async (t) => {
+    const github = await startFakeGithub();
+    t.after(() => github.close());
+    pointAtFake(t, github);
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+
+    const logs = [];
+    await runGithubChapter({
+      siteId: 'name-default-000000',
+      siteName,
+      dir,
+      flags: { yes: true, github: true },
+      log: (line) => logs.push(line),
+      dryRun: true,
+      openBrowser: async () => {},
+    });
+
+    assert.ok(
+      logs.some((line) => line.includes(`creates a GitHub App named ${appName} that`)),
+      `expected the consent to name ${appName}, got: ${logs.join('\n')}`,
+    );
+  });
+}
+
 /**
  * Register a real App in the fake, exactly as the manifest action would have, without ever
  * driving runGithubChapter through it. Every resume test needs a real, JWT-verifiable App

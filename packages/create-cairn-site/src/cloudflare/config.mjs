@@ -131,18 +131,44 @@ const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 const PUBLIC_ORIGIN_EXPORT_PATTERN = /(export const publicOrigin\s*=\s*')([^']*)(')/;
 
 /**
+ * Refuse anything but a bare origin (scheme, plain host, optional port) before either file is
+ * touched. cairn.config.ts takes the value inside a single-quoted TypeScript literal unescaped, so
+ * a quote would end the literal and splice code into a file the build runs; a path or trailing
+ * slash would also break every link the build derives from it.
+ * @param {string} url the origin about to be written
+ * @returns {void}
+ */
+function assertBareOrigin(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    parsed = null;
+  }
+  if (!parsed || parsed.origin !== url || !/^[a-z0-9.-]+$/i.test(parsed.hostname)) {
+    throw new Error(
+      `writePublicOrigin: ${JSON.stringify(url)} is not a bare origin such as ` +
+        'https://example.com (a scheme and a host made of letters, digits, dots, and hyphens, ' +
+        'with no path, quote, or trailing slash), so neither config file was changed.',
+    );
+  }
+}
+
+/**
  * Write the site's real origin into both places it lives: wrangler.jsonc's `PUBLIC_ORIGIN` var,
  * which the Worker reads at runtime, and cairn.config.ts's `publicOrigin` export, which the
  * build bakes into the sitemap, feeds, and canonical links. The cairn.config.ts value reaches a
  * deployed site only through a rebuild, so every caller rebuilds before its deploy. Both files
  * are read and checked before either is written, so a file that has lost its target leaves the
  * pair as it was instead of half-updated. Matched by pattern on the key, not an exact literal,
- * since after a resumed run the prior value may already be a workers.dev URL.
+ * since after a resumed run the prior value may already be a workers.dev URL. A value that is not
+ * a bare origin (`assertBareOrigin`) throws before either file is read.
  * @param {string} dir the scaffold root
  * @param {string} url the site's real origin (the deploy's workers.dev URL, or its own domain)
  * @returns {Promise<void>}
  */
 export async function writePublicOrigin(dir, url) {
+  assertBareOrigin(url);
   const wranglerPath = path.join(dir, WRANGLER_CONFIG_RELATIVE);
   const configPath = path.join(dir, CAIRN_CONFIG_RELATIVE);
   const wrangler = await readFile(wranglerPath, 'utf8');

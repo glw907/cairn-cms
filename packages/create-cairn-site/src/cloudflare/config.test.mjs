@@ -217,6 +217,40 @@ test('writePublicOrigin throws naming cairn.config.ts when its literal is missin
   assert.equal(await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8'), configBefore);
 });
 
+for (const [label, url] of [
+  ['a quote', "https://evil.example';import('x');'"],
+  ['a quote in the host', "https://a'b.example"],
+  ['a path', 'https://example.com/admin'],
+  ['a trailing slash', 'https://example.com/'],
+  ['no scheme', 'example.com'],
+]) {
+  test(`writePublicOrigin refuses an origin with ${label}, naming it, and writes neither file`, async (t) => {
+    const dir = await originFixtureDir(t);
+    const wranglerBefore = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+    const configBefore = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+
+    await assert.rejects(
+      () => writePublicOrigin(dir, url),
+      (err) => {
+        assert.ok(err.message.includes(JSON.stringify(url)), `expected the value named, got: ${err.message}`);
+        return true;
+      },
+    );
+
+    assert.equal(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'), wranglerBefore);
+    assert.equal(await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8'), configBefore);
+  });
+}
+
+for (const url of ['https://alpine-club.my-account.workers.dev', 'https://www.alpine-club.example']) {
+  test(`writePublicOrigin accepts the origin ${url}`, async (t) => {
+    const dir = await originFixtureDir(t);
+    await writePublicOrigin(dir, url);
+    const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+    assert.ok(config.includes(`export const publicOrigin = '${url}';`));
+  });
+}
+
 test('writePublicOrigin throws naming wrangler.jsonc when its key is missing, and writes neither file', async (t) => {
   const dir = await originFixtureDir(t, { wrangler: '{ "name": "x" }\n' });
   const configBefore = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');

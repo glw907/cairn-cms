@@ -637,6 +637,104 @@ test('runGithubChapter: resume at awaiting-org-approval with no --org on the re-
   assert.equal(state.github.repo.owner, 'alpine-org');
 });
 
+test('runGithubChapter: an installation that misses the new repository fails with the All repositories row, and the re-run reuses the repository', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { openBrowser } = makeHappyPathOpenBrowser(github);
+
+  github.state.suppressAutoLink = true;
+  await assert.rejects(
+    () =>
+      runGithubChapter({
+        siteId: 'alpine-club-uncovered',
+        siteName: 'Alpine Club',
+        dir,
+        flags: { yes: true, github: true },
+        log: () => {},
+        dryRun: false,
+        openBrowser,
+      }),
+    (err) => {
+      assert.equal(err.cause.catalogue.code, 'installation-not-covering-repo');
+      assert.match(err.message, /All repositories/);
+      return true;
+    },
+  );
+
+  const parked = await loadSite('alpine-club-uncovered');
+  assert.equal(parked.step, 'repo-created', 'the repository the run made must be on the record');
+  assert.equal(parked.github.repo.repo, 'alpine-club');
+
+  // The owner widens the installation, as the remedy says, then re-runs.
+  const repoRow = github.state.repos.find((candidate) => candidate.name === 'alpine-club');
+  github.state.installations.find((candidate) => candidate.id === 99).repositories = [repoRow.id];
+  // The re-run's reauthorize loopback has a new port; a real App's portless-loopback leniency
+  // (see seedFakeApp) lets it through, so give the fake's App the same registered URL.
+  for (const app of github.state.apps) app.callback_urls = ['http://127.0.0.1/callback'];
+
+  const outcome = await runGithubChapter({
+    siteId: 'alpine-club-uncovered',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, github: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser,
+  });
+
+  assert.equal(outcome, 'pushed');
+  const repoCreates = github.requests.filter((r) => r.method === 'POST' && r.pathname === '/user/repos');
+  assert.equal(repoCreates.length, 1, 'the re-run must not create a second repository');
+});
+
+test('runGithubChapter: a timed-out install on a repo-created record keeps that step', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  github.state.orgs.push({ login: 'alpine-org' });
+
+  const appJson = await seedFakeApp(github);
+  const { updateSite } = await import('../state.mjs');
+  await updateSite('alpine-org-repo-park', {
+    name: 'Alpine Club',
+    dir,
+    step: 'repo-created',
+    github: {
+      appId: appJson.id,
+      appSlug: appJson.slug,
+      clientId: appJson.client_id,
+      clientSecret: appJson.client_secret,
+      pem: appJson.pem,
+      webhookSecret: appJson.webhook_secret,
+      owner: 'alpine-org',
+      ownerType: 'org',
+      installationId: 77,
+      repo: { owner: 'alpine-org', repo: 'alpine-club', defaultBranch: 'main' },
+    },
+  });
+
+  const outcome = await runGithubChapter({
+    siteId: 'alpine-org-repo-park',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, github: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async () => {},
+    installPollIntervalMs: 10,
+    installMaxWaitMs: 30,
+  });
+
+  assert.equal(outcome, 'parked');
+  const state = await loadSite('alpine-org-repo-park');
+  assert.equal(state.step, 'repo-created', 'a park must not write the step backward');
+});
+
 test('runGithubChapter: after a stale record is retired (the --start-over path), the same siteId runs a full fresh chapter', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

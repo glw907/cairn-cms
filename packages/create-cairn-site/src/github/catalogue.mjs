@@ -128,8 +128,9 @@ const ROWS = {
       return (
         `The App's installation does not include ${params.repo}, so it has no permission to ` +
         'commit there.\n' +
-        `Next: open ${params.webBase}/settings/installations, choose "Only select ` +
-        `repositories", add ${params.repo}, then re-run npx create-cairn-site --dir ${params.dir}.`
+        `Next: open ${params.webBase}/settings/installations, set the App's repository access ` +
+        `to "All repositories" (or, under "Only select repositories", add ${params.repo}), then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
   },

@@ -136,12 +136,56 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
   });
 });
 
+describe('deleteEntry: the pending-branch include gate (#137)', () => {
+  /** Publish a fragment, then save (never publish) a post that includes it. */
+  async function pendingIncluder() {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    await redirectedTo(routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' })));
+    await redirectedTo(
+      routes.saveAction(
+        saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: '::include{fragment="welcome"}' }),
+      ),
+    );
+    return { gh, routes };
+  }
+
+  it('refuses (409) when only a pending branch includes the fragment', async () => {
+    const { gh, routes } = await pendingIncluder();
+    const out = await del(routes, 'fragments', 'welcome');
+    expect(out.status).toBe(409);
+    expect(out.data?.inboundKind).toBe('include');
+    expect(out.data?.inboundLinks?.some((l) => l.id === '2026-05-hi')).toBe(true);
+    expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
+  });
+
+  it('refuses (503) when a branch read throws', async () => {
+    const { gh, routes } = await pendingIncluder();
+    const real = globalThis.fetch as typeof fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (String(input).includes('src/content/posts/2026-05-hi.md') && /cairn/.test(String(input))) {
+          return new Response('boom', { status: 500 });
+        }
+        return real(input, init);
+      }),
+    );
+    const out = await del(routes, 'fragments', 'welcome');
+    expect(out.status).toBe(503);
+    expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
+  });
+});
+
 describe('saveAction/publishAction: the write-path round trip for includes (Task 4)', () => {
   it('saves the include directive to the pending branch, then publishes an includes row to main', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
     const form = { title: 'Hi', date: '2026-05-01', body: 'See.\n\n::include{fragment="welcome"}' };
+    // The save guard needs the fragment to exist, so publish it first.
+    await redirectedTo(routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi.' })));
 
     // saveAction: the branch commit is real (the entry's own file), and nothing lands on main yet,
     // since save never touches the content manifest (only publish does).
@@ -149,7 +193,7 @@ describe('saveAction/publishAction: the write-path round trip for includes (Task
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain(
       '::include{fragment="welcome"}',
     );
-    expect(gh.read('main', MANIFEST_PATH)).toBeNull();
+    expect(gh.read('main', MANIFEST_PATH)).not.toContain('2026-05-hi');
 
     // publishAction re-holds the same body (publish-what-you-see) and lands the manifest row on
     // main with its includes computed by the engine's own extractIncludes, not a hand-written entry.

@@ -10,7 +10,7 @@
 import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken } from '../content/links.js';
-import { extractIncludes } from '../content/includes.js';
+import { extractIncludes, hasIdlessInclude } from '../content/includes.js';
 import { extractReferenceEdges } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, parseMarkdown, serializeMarkdown } from '../content/frontmatter.js';
@@ -283,6 +283,18 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         brokenLinks: absent,
         body,
       } satisfies SaveFailure);
+    }
+
+    // Include guard: an include must name a fragment with a row in the upserted manifest. A draft
+    // fragment row passes (the build's fragments.byId holds drafts). A site with no fragments concept
+    // has no rows, so its include refuses, matching the build's throw. An include with no id is
+    // refused too, since extractIncludes skips it and the build's resolver does not.
+    if (hasIdlessInclude(body)) {
+      return fail(400, saveRefusal('An include is missing its fragment. Pick a fragment or remove the include.', body));
+    }
+    const unknownFragments = extractIncludes(body).filter((fid) => !byKey.has(`${FRAGMENTS_CONCEPT_ID}/${fid}`));
+    if (unknownFragments.length) {
+      return fail(400, saveRefusal(`This page includes a fragment that does not exist: ${unknownFragments.join(', ')}.`, body));
     }
 
     // Frontmatter reference warning: classify each typed reference edge against the same upserted

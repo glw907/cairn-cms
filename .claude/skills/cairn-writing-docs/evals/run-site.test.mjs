@@ -178,6 +178,9 @@ test('deniedFaults looks past a cd prefix: a denied read compound is friction, a
   assert.deepEqual(deniedFaults(den('d', 'cd /w && npm test'), [], 'site'), ['cd /w && npm test']);
   const again = [{ id: 'a', name: 'Bash', input: { command: 'npm test' } }];
   assert.deepEqual(deniedFaults(den('d', 'cd /w && npm test'), again, 'site'), []);
+  const split = [{ id: 'b', name: 'Bash', input: { command: 'npm run check:cairn' } }];
+  assert.deepEqual(deniedFaults(den('d', 'npm run check:cairn >/tmp/c.log 2>&1; echo $?; tail /tmp/c.log'), split, 'site'), [], 'a split compound recovers by its verb');
+  assert.equal(deniedFaults(den('d', 'npm run check:cairn >/tmp/c.log 2>&1; echo $?'), [{ id: 'b', name: 'Bash', input: { command: 'npm run build' } }], 'site').length, 1, 'a different script is not a recovery');
 });
 
 test('overlayPaths carries the skill folder before and after its rename, and neither one\'s evals', async () => {

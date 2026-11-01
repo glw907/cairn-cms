@@ -472,7 +472,12 @@ export function deniedFaults(denials, tools = [], fixture = 'pin') {
   const deniedIds = new Set(denials.map((d) => d.tool_use_id));
   // A `cd <dir> &&` prefix only moves the shell; the command that matters follows it.
   const bare = (c) => c.replace(/^\s*cd\s+\S+\s*(&&|;)\s*/, '');
-  const lead = (c) => bare(c).split(/[;&|]/)[0].trim();
+  // The same command reissued is the same verb: `npm run <script>`, or the first two words otherwise,
+  // with any redirect dropped, so a session that split a denied compound and ran its parts recovered.
+  const lead = (c) => {
+    const words = bare(c).split(/[;&|>]/)[0].trim().split(/\s+/);
+    return words.slice(0, words[0] === 'npm' && words[1] === 'run' ? 3 : 2).join(' ');
+  };
   const needed = fixture === 'pin' ? NEEDED_COMMAND : new RegExp(`${NEEDED_COMMAND.source}|${NEEDED_BUILD_COMMAND.source}`);
   for (const d of denials) {
     const cmd = d.tool_input?.command ?? '';

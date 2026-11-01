@@ -6,7 +6,7 @@
   per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
   skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
   migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
-  `CAIRN_LOG_EVENTS` gain the member, and the event table in `docs/reference/log-events.md` its row.
+  `CAIRN_LOG_EVENTS` gain the member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
 
@@ -23,7 +23,7 @@
   each frontmatter key on that concept's entries that the concept's schema does not declare.
   Validation drops such a key, so a value an author wrote there (a `robots: noindex` on a concept
   with no `robots` field) was lost without a word. `CairnLogEvent` and `CAIRN_LOG_EVENTS` gain the
-  member, and the event table in `docs/reference/log-events.md` its row.
+  member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.field_undeclared` to find the keys.
 
@@ -523,16 +523,18 @@
   23 ids. Their heading anchors, `configure-the-tidy-api-key` and `probe-the-deployed-admin`, stay on
   the shipped list because released binaries print them.
 
-- The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
-  `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
-  agent-facing record, and each arm returns as its own rebuild lands. `docs/reference/`
-  is unchanged, and `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`, and
-  `docs/extend/choose-an-ai-posture.md` stay in place. A release cut before the rebuild ships the
-  reference arm and those three pages only. The shipped `cairn-extend` skill now points its
-  recipe table at the reference pages instead of the removed extend recipes.
+- **The developer docs tracks.** The extend, reference, and Claude Code tracks under `docs/` are
+  removed. Each export's doc comment carries its contract, and the packaged skills under `skills/`
+  teach each job. Upgrade steps and the per-version notes move to `MIGRATION-NOTES.md` at the package
+  root, and the `cairn` CLI's JSON schemas move to `schema/`, each `$id` unchanged. The `cairn`
+  CLI's help no longer links a docs page, and a released binary's links into the reference track
+  stop resolving. The admin and editors arms and the front-door pages (`docs/README.md` and
+  `docs/why-cairn.md`) are removed pending their rebuild, and each returns as its rebuild lands.
 
-  Consumers must: a site scaffolded with the `cairn-extend` skill re-runs
-  `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
+  Consumers must: read upgrade steps from `node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md`, read
+  a JSON schema from `node_modules/@glw907/cairn-cms/schema/` rather than the reference track,
+  and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
+  removed pages.
 
 ### Fixed
 

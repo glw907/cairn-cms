@@ -1,9 +1,9 @@
 // Archetype: the public form with a domain action.
 // Atoms: memberChannel (createAuthChannel), createLogger.
-// Recipe: docs/extend/add-a-second-sign-in-group.md.
+// Recipe: the cairn-extending-a-site skill's second-sign-in-group reference.
 //
 // The showcase's member login route, request and confirm as two named form actions on one page,
-// as "Build the login route" in docs/extend/add-a-second-sign-in-group.md lays out; logout lives
+// as "Build the login route" in the cairn-extending-a-site skill's second-sign-in-group reference lays out; logout lives
 // on the members page. Both actions pass the raw SvelteKit `RequestEvent`
 // straight to `memberChannel.actions.*`: it satisfies the actions' `CairnEvent` constraint
 // structurally, and the factory owns every cookie, origin, and challenge check itself. The

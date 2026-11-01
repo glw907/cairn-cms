@@ -194,8 +194,9 @@ export function profileFor(relPath) {
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
     path === 'examples/showcase/README.md' ||
-    /^docs\/(?:extend|reference|admin|editors|claude-code)\/.+\.md$/.test(path) ||
-    /^docs\/reference\/schema\/.+\.json$/.test(path)
+    path === 'MIGRATION-NOTES.md' ||
+    /^docs\/(?:admin|editors)\/.+\.md$/.test(path) ||
+    /^schema\/.+\.json$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }
@@ -473,11 +474,10 @@ export function scanText(text, profile, path = '') {
 export const SCAN_ROOTS = [
   'README.md',
   'CHANGELOG.md',
+  'MIGRATION-NOTES.md',
+  'schema',
   'docs/README.md',
   'docs/why-cairn.md',
-  'docs/extend',
-  'docs/claude-code',
-  'docs/reference',
   'docs/admin',
   'docs/editors',
   '.claude/skills/cairn-writing-docs/references/docs-register.md',

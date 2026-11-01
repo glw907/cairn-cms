@@ -53,7 +53,7 @@ A worked note:
 ```json
 {
   "id": "N1",
-  "file": "docs/extend/rotate-the-github-app-key.md",
+  "file": "docs/admin/is-it-working.md",
   "kind": "info",
   "anchor": {"quote": "answers with status 503", "prefix": "The route ", "suffix": " when"},
   "title": "Fact check corrected the status code",

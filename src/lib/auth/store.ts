@@ -232,7 +232,7 @@ export async function createSession(
     // equality with an unindexed range under OR cannot use either index. No index on
     // session.expires_at or magic_token.expires_at backs either scan: an editor roster is small
     // enough that a full-table scan here is negligible, and adding the index later is a
-    // hand-applied migration a consumer runs themselves (docs/extend/upgrade-cairn.md), not
+    // hand-applied migration a consumer runs themselves (MIGRATION-NOTES.md), not
     // worth asking for at this scale. migrations/0003_preview.sql indexes the identical
     // expires_at-sweep idiom for preview_tokens instead, the deliberate counter-example this
     // ruling does not extend to. Reopen if editor rosters stop being small.

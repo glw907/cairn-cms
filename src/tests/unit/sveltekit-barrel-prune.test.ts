@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports, moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { enumerateExports, moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 
 // The four names the surface-pruning pass demotes from the /sveltekit barrel (Task 2), verbatim
 // from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`.

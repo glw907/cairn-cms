@@ -43,8 +43,7 @@ evaluator set that replaces old pass 5's front door. The release holds until the
 - Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)
   is due for deletion at claude.ai/code/routines (an agent cannot); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
-  (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),
-  which widens at stage 4's merge.
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).

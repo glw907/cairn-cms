@@ -21,18 +21,18 @@
 // modules) rather than a curated list of "known message files": a message moving to a new
 // component should not need this gate's source edited to keep tracking it.
 //
-// The page lives in the editors arm, which is deleted and later rebuilt (arm-state.mjs). While the
-// arm holds no page there is nothing to check, and the gate says so by name. Once the arm holds any
-// page it is rebuilt, and the pinned page must exist and ground its quotes again: a rebuild that
-// renames or drops the page fails here, so the gate is re-armed on purpose rather than lost.
+// The page lives under docs/editors, which can hold no page while that track is rebuilt. While it
+// holds none there is nothing to check, and the gate says so by name. Once it holds any page, the
+// pinned page must exist and ground its quotes again: a rebuild that renames or drops the page
+// fails here, so the gate is re-armed on purpose rather than lost.
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
 import { repoRoot } from '../repo-root.mjs';
-import { armState } from './arm-state.mjs';
 
 const ROOT = repoRoot(import.meta.url);
+const EDITORS_DIR = 'docs/editors';
 const DOC = 'docs/editors/when-something-goes-wrong.md';
 
 // A candidate whose non-wildcard text totals less than this many characters proves nothing (an
@@ -243,21 +243,20 @@ export function hasQuotesToCheck(markdown) {
 }
 
 /**
- * The gate's verdict and the lines it prints, for the tree under `root`. Throws when the deletion
- * list the editors arm's state comes from cannot be read.
+ * The gate's verdict and the lines it prints, for the tree under `root`.
  * @param {string} root
  * @returns {{ ok: boolean, lines: string[] }}
  */
 export function editorQuotesReport(root) {
-  const state = armState(root, 'editors');
-  if (state !== 'rebuilt') {
-    return { ok: true, lines: [`check-editor-quotes: skipped (the editors arm is ${state}, so ${DOC} has no page to pin)`] };
+  const editorsAbs = join(root, EDITORS_DIR);
+  if (!existsSync(editorsAbs) || walk(editorsAbs, (name) => name.endsWith('.md')).length === 0) {
+    return { ok: true, lines: [`check-editor-quotes: skipped (${EDITORS_DIR} holds no page, so ${DOC} has no page to pin)`] };
   }
   const docAbs = join(root, DOC);
   if (!existsSync(docAbs)) {
     return {
       ok: false,
-      lines: [`check-editor-quotes: the editors arm holds pages but ${DOC} does not exist; restore the page or repoint this gate at the page that now quotes the editor's messages`],
+      lines: [`check-editor-quotes: ${EDITORS_DIR} holds pages but ${DOC} does not exist; restore the page or repoint this gate at the page that now quotes the editor's messages`],
     };
   }
   const markdown = readFileSync(docAbs, 'utf8');

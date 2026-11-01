@@ -54,12 +54,11 @@ Readiness checklist:
 - [ ] **Both consumer sites run the latest published cairn on the v2 adapter**, with their URL policies
   transcribed onto `defineConcept` (the per-site cutover watch items), so the real surface is exercised and
   needs no engine break to serve them.
-- [ ] **The enforced boundary is green and complete**: `check:surface`, `check:reference` (including
-  its every-export tier requirement and its reverse stale-name check), `check:reference:signatures`,
-  `check:package`, and the packaging boundary test (`src/tests/unit/packaging-boundary.test.ts`, the
+- [ ] **The enforced boundary is green and complete**: `check:surface`, `check:tiers` (every export
+  carries a tier tag), `check:package`, and the packaging boundary test (`src/tests/unit/packaging-boundary.test.ts`, the
   deep-import lock) pass, and the surface they enumerate is the whole intended public API with
   nothing accidental.
-- [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
+- [ ] **Every export carries its contract in its doc comment**, the packaged skills and the migration notes are current, and the
   extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
   contract a developer builds on.
 - [ ] **The docs claims-verification audit has run** (Geoff, 2026-08-02): an adversarial sweep of the
@@ -711,9 +710,6 @@ The original decision framing, for the record:
   - The sample outputs in `docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
     the border-contrast exemption sample) are hand-copied from `src/lib/audit/norms.ts` and
     `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
-  - `scripts/checks/check-arm-indexes.mjs` walks the filesystem, not tracked files, so a gitignored
-    page such as `docs/internal/credentials.md` fails it locally and passes in CI; the allowlist entry
-    at `:59` is the workaround.
   - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
     `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
     ships in the package's `files`. Trigger: before that package's first publish.
@@ -1173,8 +1169,8 @@ The original decision framing, for the record:
   `design.yml`, or the next CI-only design-gate failure nobody can reproduce locally.
 
 - **The Names convention reaches only prose Vale lints (promoted from the friction log,
-  2026-09-22).** `docs-register.md`'s "Names" section and the `Cairn.Names`/`Cairn.NamesRetired`
-  rules grade prose. Mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carry no
+  2026-09-22).** `docs-register.md`'s "Names" section and the `Cairn.Names`
+  rule grades prose. Mermaid `accDescr:`/`accTitle:` text, image alt text, and nav labels carry no
   code font and sit inside fences, attributes, or config strings, so Vale never reads them (the
   deleted admin setup page's diagram text "The tool moves through four stages" was one). The
   shape: a small text scan in `scripts/checks/` over alt attributes, the two mermaid directives,
@@ -1682,7 +1678,7 @@ The original decision framing, for the record:
   installed engine's non-optional `peerDependencies`, today `svelte`, `@sveltejs/kit`, and
   `@cloudflare/workers-types`. It is the only floor enforcement that reaches a real consumer site
   (CI only proves the engine's own repo), and it covers only those rows of the
-  [supported-toolchain matrix](docs/reference/supported-toolchain.md)'s rows. Extending it needs a
+  supported-toolchain matrix's rows (the retired `docs/reference/supported-toolchain.md`). Extending it needs a
   source for each additional floor: `typescript`'s 5.0 floor has no `peerDependencies` entry to
   read (it would need a hardcoded constant, since the engine's own devDependency range does not
   describe the consumer floor), and `vite`/`wrangler`/`@cloudflare/workers-types` carry no engine
@@ -1727,15 +1723,6 @@ The original decision framing, for the record:
   compile-time check, so a stale one 404s at submit. A test
   asserting `Object.keys(admin.actions)` against a committed list, cross-checked against both
   reference tables, closes the table drift and the wire-name drift together.
-
-- **Gate gap: `check:reference:signatures` cannot see a table-only signature (filed by the
-  pre-beta C1 seam-shape pass's review fold, 2026-08-01).** The gate reads only fenced `ts` code
-  blocks; a callback's signature stated solely in a reference table's own Signature or Meaning
-  column is invisible to it. `docs/reference/core.md`'s Extension API table already carries both
-  conventions side by side (the resolver family states its signature in the Signature column,
-  `SiteRender`/`SendMagicLink` state theirs in the Meaning column instead), so the gate cannot
-  catch a drift in either form today. Worth closing before C2's naming pass adds more table-only
-  entries the gate can't check.
 
 - **Pre-beta polish: the cold-reader front-door pass, with a visual first impression (Geoff,
   2026-08-01).** README to tutorial to first deploy, read by fresh context with no family
@@ -1865,7 +1852,7 @@ The original decision framing, for the record:
 - **An engine-level rate-limit seam for `loadPreview` (filed 2026-08-06, preview pass).**
   `loadPreview` currently calls no rate limit of its own; the guide's WAF-rule recommendation on
   `/preview/*` is the whole story until this lands. A seam accepting the existing
-  [`RateLimitLike`](docs/reference/sveltekit.md#ratelimitlike) (the same structural interface
+  `RateLimitLike` (the same structural interface
   `createSectionAction` already takes, degrade-to-open on an absent binding) would let a site wire
   a Workers `RateLimit` binding directly to the load, matching the engine's own idiom rather than
   leaning on the zone's edge rules alone. **Trigger:** real-world spray traffic against a deployed

@@ -94,8 +94,8 @@ The registry. "Sheet" means `cairn-public.css`; "theme" means the reading-surfac
 | `cairn-glyph` | the inline SVG glyph | theme |
 | `cairn-grid` | marks the first `<ul>` in a component's stamped children | theme |
 | `pre.shiki` | the build-time highlighter, for a fenced block | sheet, from `--cairn-code-bg`, `--cairn-code-ink`, `--cairn-code-border` |
-| `cairn-tok-keyword`, `-string`, `-comment`, `-function`, `-number`, `-punct` | the highlighter, on spans in `pre.shiki`, with no inline style | sheet, from the `--cairn-code-*` roles |
-| `cairn-place-center`, `-wide`, `-full` | a `figure` directive's placement; absent when none is named | theme only; a placement is a layout decision, so style each you honor |
+| `cairn-tok-keyword`, `cairn-tok-string`, `cairn-tok-comment`, `cairn-tok-function`, `cairn-tok-number`, `cairn-tok-punct` | the highlighter, on spans in `pre.shiki`, with no inline style | sheet, from the `--cairn-code-*` roles |
+| `cairn-place-center`, `cairn-place-wide`, `cairn-place-full` | a `figure` directive's placement; absent when none is named | theme only; a placement is a layout decision, so style each you honor |
 | `table-scroll` | the wrapper around every rendered table | sheet (the structural pair); theme adds design |
 
 A site's component code stamps more classes on top (`cairn-alert-body`, `cairn-head-title`); those

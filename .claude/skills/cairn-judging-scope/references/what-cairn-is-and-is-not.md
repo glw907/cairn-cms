@@ -60,8 +60,8 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   admin toolkit, so conformance to cairn's own design system is exactly the product being audited, not
   apparatus that measures the engine from outside. The other three, `public-literals`,
   `theme-conformance`, and `theme-contrast`, audit a site's public files under the public scope and
-  run at advisory tier on a consumer. See `docs/reference/cairn-audit.md` for what the
-  package ships and what stays engine-side.
+  run at advisory tier on a consumer. The `cairn-building-admin-screens` skill's
+  `audit-rules.md` reference covers what the package ships and what stays engine-side.
 
 ## The one boundary that governs everything
 
@@ -107,10 +107,9 @@ The `cairn` CLI is an assumed part of the cairn system, never an optional compan
 2026-09-21). It ships apart from the npm package only because its install targets differ
 (`go install` and prebuilt binaries per platform). Two consequences follow. Docs, the site
 upgrade brief, the scaffold, and the admin track may assume the operator has `cairn`
-installed, and no docs or packaging answer treats it as a separate product. And its docs
-single-source on cairn.pub with every other page: contracts under `docs/reference/`, operator
-how-tos under `docs/admin/`, while `tool/docs/` keeps only ADRs and design inputs, since a
-second docs home drifts.
+installed, and no docs or packaging answer treats it as a separate product. And its contract lives in the
+binary (`cairn help agents` and each command's `--help`), its operator how-tos under
+`docs/admin/`, while `tool/docs/` keeps only ADRs, design inputs, and the operator runbooks.
 
 ## Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)
 
@@ -149,6 +148,6 @@ are not derivable from the code and still hold.
 
 ## How the boundary is held
 
-Machine-checkable boundaries live in gates, not prose (`check:reference`, `check:package`, the dev-fence
+Machine-checkable boundaries live in gates, not prose (`check:tiers`, `check:package`, the dev-fence
 e2e gate, the `check:surface` public-surface snapshot). This doc and the `CLAUDE.md` block carry the conceptual
 boundary a gate can't, and are meant to be read first and honored.

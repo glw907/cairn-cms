@@ -94,7 +94,7 @@ describe('createD1AuditSink', () => {
     ]);
   });
 
-  // The sanctioned direct-call case (docs/reference/sveltekit.md#created1auditsink): site code
+  // The sanctioned direct-call case (`createD1AuditSink`'s doc comment): site code
   // records its own domain event, so `actor` names whatever identity that event names and the sink
   // inspects it no more than it inspects an editor's email.
   it('binds an actor that is not a cairn editor, and a namespaced domain action', async () => {

@@ -4,7 +4,7 @@ import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 import {
   collectReachableNames,
   collectDeclaredTypeNames,

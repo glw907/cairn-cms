@@ -9,7 +9,10 @@
 // readability: an elided expression `{...}` reads as `{_}`, and a line holding only `...` is
 // dropped. Each fence is also prefixed with `<script lang="ts"></script>` so a TypeScript
 // snippet parameter (`{#snippet panel(datum: SignupListRow)}`) parses. A fence that still
-// does not parse fails this test naming its file and line; it is never skipped.
+// does not parse fails this test naming its file and line; it is never skipped. A finding a
+// `cairn-audit-disable-next-line` directive with a reason covers is silenced, as a real run
+// silences it, since a reference that teaches suppression has to show one; a reasonless or dead
+// directive still fails here.
 //
 // One stated exemption: stock-default-hazards's guarded-retirement arm (identified by its own
 // message, which names "cairn-btn-guarded") is not counted. At the time this test was written it
@@ -25,6 +28,7 @@ import { parseComponent } from '../../../lib/audit/markup.js';
 import { parseSheet } from '../../../lib/audit/sheet.js';
 import { radiusScale } from '../../../lib/audit/rules/static/radius-scale.js';
 import { stockDefaultHazards } from '../../../lib/audit/rules/static/stock-default-hazards.js';
+import { applySuppressions } from '../../../lib/audit/suppress.js';
 import { walk } from '../../../../scripts/walk-files.mjs';
 import type { ParsedComponent } from '../../../lib/audit/markup.js';
 import type { Finding } from '../../../lib/audit/types.js';
@@ -126,9 +130,18 @@ describe("radius-scale and stock-default-hazards over cairn's own tree and shipp
 
     const files = [...engine, ...guidance];
 
-    expect(radiusScale.check({ files, sheet: SHEET, config: CONFIG })).toEqual([]);
+    // Each rule runs alone, so a directive naming another rule is skipped rather than judged dead.
+    const suppressed = (ruleId: string, findings: Finding[]) =>
+      applySuppressions(findings, files, new Set([ruleId])).findings;
 
-    const hazardFindings = stockDefaultHazards.check({ files, sheet: SHEET, config: CONFIG });
+    expect(
+      suppressed(radiusScale.id, radiusScale.check({ files, sheet: SHEET, config: CONFIG }))
+    ).toEqual([]);
+
+    const hazardFindings = suppressed(
+      stockDefaultHazards.id,
+      stockDefaultHazards.check({ files, sheet: SHEET, config: CONFIG })
+    );
     const uncounted = hazardFindings.filter((finding) => !isGuardedRetirementFinding(finding));
     expect(uncounted).toEqual([]);
   });

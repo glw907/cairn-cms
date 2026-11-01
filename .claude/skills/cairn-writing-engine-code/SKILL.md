@@ -16,7 +16,7 @@ Three rules apply to every change:
 
 - Tests live under `src/tests/{unit,integration,component}/`. The Vitest config globs only those three directories, so a test beside its source never runs.
 - Code comments follow TSDoc, enforced by `npm run check:comments`: write the contract and the why, never the type the signature states. The em dash is banned in code comments. An exported symbol keeps a one-line doc comment even when self-evident.
-- A diagnosable code path gets an event in the log vocabulary (`src/lib/log/`), not a bare `console` call, and the reference table in `docs/reference/log-events.md` changes in the same pass.
+- A diagnosable code path gets an event in the log vocabulary (`src/lib/log/`), not a bare `console` call, and the table in `skills/cairn-extending-a-site/references/log-events.md` changes in the same pass.
 
 ## References
 

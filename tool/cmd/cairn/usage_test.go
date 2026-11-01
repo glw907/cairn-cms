@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -496,26 +495,21 @@ func readRegistryBytes(t *testing.T, dir string) string {
 	return all.String()
 }
 
-// requestsPerCheck reads the "Requests per check" table out of the published exit-codes page. The
-// test below measures the arithmetic from what the doc says rather than from a second table in Go,
-// so the page an operator sizes a scheduler against and the budget the tool ships cannot drift.
-func requestsPerCheck(t *testing.T) map[string]int {
-	t.Helper()
-	body := readRepoFile(t, exitCodesPage)
-	row := regexp.MustCompile(`(?m)^\| ` + "`" + `([a-z-]+)` + "`" + ` \| (\d+) \|`)
-
-	counts := map[string]int{}
-	for _, m := range row.FindAllStringSubmatch(body, -1) {
-		n, err := strconv.Atoi(m[2])
-		if err != nil {
-			t.Fatalf("parse %q: %v", m[2], err)
-		}
-		counts[m[1]] = n
+// requestsPerCheck is the maximum provider request count each health check can make, the table an
+// operator sizes a scheduler against. The test below holds it to the checks the sweep runs, so a
+// check added without its count, or a count left for a removed check, fails.
+func requestsPerCheck() map[string]int {
+	return map[string]int{
+		"creds":        2,
+		"serving":      6,
+		"delegation":   2,
+		"https-forced": 1,
+		"email":        9,
+		"deploy":       4,
+		"publish-path": 2,
+		"engine":       4,
+		"errors":       1,
 	}
-	if len(counts) == 0 {
-		t.Fatalf("%s publishes no per-check request counts", exitCodesPage)
-	}
-	return counts
 }
 
 // healthCheckIDs returns the check ids the shipped sweep runs, in report order.
@@ -528,24 +522,24 @@ func healthCheckIDs() []string {
 }
 
 // TestTheSingleSiteBudgetFitsTheRequestArithmetic is the arithmetic an operator sizes a
-// scheduler's cap against: every check the sweep runs is published with a maximum request
-// count, and the worst case where every request runs to its 15-second timeout still fits
+// scheduler's cap against: every check the sweep runs carries a maximum request count, and the
+// worst case where every request runs to its 15-second timeout still fits
 // inside one site's default budget.
 func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
-	counts := requestsPerCheck(t)
+	counts := requestsPerCheck()
 
 	total := 0
 	for _, id := range healthCheckIDs() {
 		n, ok := counts[id]
 		if !ok {
-			t.Errorf("%s publishes no request count for the %s check", exitCodesPage, id)
+			t.Errorf("requestsPerCheck carries no request count for the %s check", id)
 			continue
 		}
 		total += n
 	}
 	for id := range counts {
 		if !strings.Contains(strings.Join(healthCheckIDs(), " "), id) {
-			t.Errorf("%s publishes a count for %q, which is not a check the sweep runs", exitCodesPage, id)
+			t.Errorf("requestsPerCheck carries a count for %q, which is not a check the sweep runs", id)
 		}
 	}
 
@@ -555,16 +549,16 @@ func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
 	}
 }
 
-// TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula on the
-// exit-codes page is written from, so the worked examples on that page stay arithmetic rather
-// than assertion.
+// TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula in the tripwire
+// runbook is written from, so the worked examples there stay arithmetic rather than assertion.
 func TestTheSweepCapIsThePublishedOne(t *testing.T) {
-	body := readRepoFile(t, exitCodesPage)
+	const rel = "docs/tripwire.md"
+	body := readToolFile(t, rel)
 
-	formula := "min(" + strconv.Itoa(int(defaultTimeout.Seconds())) + " seconds x sites, " +
-		strconv.Itoa(int(maxSweepTimeout.Seconds())) + " seconds)"
+	formula := "min(" + strconv.Itoa(int(defaultTimeout.Seconds())) + "s x sites, " +
+		strconv.Itoa(int(maxSweepTimeout.Seconds())) + "s)"
 	if !strings.Contains(body, formula) {
-		t.Errorf("%s does not carry the formula %q", exitCodesPage, formula)
+		t.Errorf("%s does not carry the formula %q", rel, formula)
 	}
 }
 

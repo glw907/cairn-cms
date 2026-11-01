@@ -1,12 +1,14 @@
 ---
 name: cairn-writing-docs
-description: Changes cairn-cms documentation the docs-as-code way: pages under docs/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes documented behavior (renaming, adding, or removing an export, option, type, or CLI flag, or changing a default, a return value, or an error), when a docs page is wrong or missing something, when writing, splitting, or restructuring a page, or when queueing or answering a docs review. Not for CHANGELOG entries, code comments, specs, plans, or site content.
+description: Changes cairn-cms's editor and admin documentation the docs-as-code way: pages under docs/editors/ and docs/admin/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes behavior an editor or admin page describes (a screen, a command, a default, an error), when one of those pages is wrong or missing something, when writing, splitting, or restructuring one, or when queueing or answering a docs review. Not for export doc comments, the packaged skills, CHANGELOG entries, code comments, specs, plans, or site content.
 ---
 
 # Change cairn docs
 
-The pages under `docs/` are the source: change the page, check it against the code, run the gate.
-Pick the case, then follow its steps in order.
+The pages under `docs/editors/` and `docs/admin/` are the source: change the page, check it against
+the code, run the gate. A developer's contract lives in each export's doc comment and a developer's
+job in the packaged skills under `skills/`, so neither is a docs page. Pick the case, then follow its
+steps in order.
 
 | Case | Start here |
 | --- | --- |
@@ -23,16 +25,16 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
    `git grep -n -i "<phrase the page would use>" -- docs`. A page can describe a behavior without
    naming the symbol, and a search for the symbol alone misses it. When the search finds nothing,
    say so in your reply and show the command.
-2. Skip history: released `CHANGELOG.md` sections, `docs/extend/migration-notes.md` below
+2. Skip history: released `CHANGELOG.md` sections, `MIGRATION-NOTES.md` below
    `## Unreleased`, and the open plans under `docs/plans/` say what was true at their date.
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
    `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
    the old name in `docs/` and `README.md` comes back empty.
-4. A public name or option also moves its reference page under `docs/reference/`, and a public
-   option member keeps a doc comment where it is declared. The gate fails on both.
+4. A public option member keeps a doc comment where it is declared. The gate fails on one
+   without it.
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
    `scripts/checks/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
-   breaking change a `Consumers must:` line there and in `docs/extend/migration-notes.md`. The
+   breaking change a `Consumers must:` line there and in `MIGRATION-NOTES.md`. The
    `cairn-running-passes` skill owns those rules.
 6. Run the checks in "Checks".
 
@@ -82,7 +84,8 @@ not run), file a cairn `BACKLOG.md` item tagged `#docs-process` with the session
 
 ## Sources to route to, never copy
 
-- `.claude/skills/cairn-writing-docs/references/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting
-  brief for the page's track.
-- `~/.claude/docs/voice/technical-doc-web.md` for developer pages, and
+- `.claude/skills/cairn-writing-docs/references/docs-register.md`: "The tracks", "The page anatomies", "Names", the
+  editor brief for an editor page, and the Google rows of "Deviations from the base guides" for an
+  admin page.
+- `~/.claude/docs/voice/technical-doc-web.md` for admin pages, and
   `~/.claude/docs/voice/editor.md` for editor pages.

@@ -33,7 +33,7 @@ Answer any prompt ahead of time with a flag, and the command skips it:
 
 The scaffolded `src/routes/robots.txt/+server.ts` already passes `aiPosture` to `robotsResponse`,
 so answering the prompt (or the flag) is the only step: your `robots.txt` reflects it on the next
-build with no route edit. See `docs/extend/choose-an-ai-posture.md` in the engine package for the
+build with no route edit. See the `cairn-extending-a-site` skill in the engine package for the
 full wiring this scaffold gives you.
 
 ## What the generated site requires

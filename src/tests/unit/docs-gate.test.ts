@@ -24,16 +24,11 @@ describe('buildSteps', () => {
     'check:snippets',
     'check:transcripts',
     'check:visuals',
-    'check:arm-indexes',
     'check:editor-quotes',
     'check:readiness',
     'check:tool-conditions',
-    'check:target-stack',
-    'check:reference',
-    'check:reference:signatures',
     'check:options',
     'check:tiers',
-    'check:tier-docs',
     'check:tellgrader',
   ];
 
@@ -54,9 +49,9 @@ describe('buildSteps', () => {
   });
 
   it('scopes Vale to only the given --page path', () => {
-    const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md' });
+    const steps = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
     const vale = steps.find((step) => step.label === 'check:vale');
-    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/extend/choose-an-ai-posture.md']);
+    expect(vale?.args).toEqual(['--minAlertLevel=error', 'docs/editors/write-in-the-editor.md']);
   });
 
   it('runs the Cairn rules\' vale test cases over both test files under the fixture config in tree mode', () => {
@@ -72,21 +67,21 @@ describe('buildSteps', () => {
   });
 
   it('leaves the rule test cases out of a page-scoped run', () => {
-    const steps = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md' });
+    const steps = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
     expect(steps.map((step) => step.label)).not.toContain('check:vale-rules');
   });
 
   it('scopes check:tellgrader to only the given --page path and scans the tree otherwise', () => {
     const unscoped = buildSteps({ page: null }).find((step) => step.label === 'check:tellgrader');
     expect(unscoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs']);
-    const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md' }).find(
+    const scoped = buildSteps({ page: 'docs/editors/write-in-the-editor.md' }).find(
       (step) => step.label === 'check:tellgrader',
     );
-    expect(scoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs', 'docs/extend/choose-an-ai-posture.md']);
+    expect(scoped?.args).toEqual(['scripts/checks/check-tellgrader.mjs', 'docs/editors/write-in-the-editor.md']);
   });
 
   it('leaves every other component unscoped by --page', () => {
-    const scoped = buildSteps({ page: 'docs/extend/choose-an-ai-posture.md' });
+    const scoped = buildSteps({ page: 'docs/editors/write-in-the-editor.md' });
     const unscoped = buildSteps({ page: null });
     for (const label of LABELS) {
       if (['check:vale', 'check:vale-rules', 'check:tellgrader'].includes(label)) continue;

@@ -87,7 +87,7 @@ func TestDiffIDSets(t *testing.T) {
 // against constant, not constant against a second repository's source.
 //
 // A failure here is a decision for a human, never an automatic follow. Condition ids are
-// frozen in the tool's copy and published in docs/reference/cli-cairn-json-output.md, so
+// frozen in the tool's copy and in every --json payload's condition field, so
 // renaming one here to match the engine breaks every agent reading that contract. Renaming the
 // id is a major-version event carrying a "Consumers must:" line; adding one is not.
 func TestConditionsMatchEmbeddedMirror(t *testing.T) {

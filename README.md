@@ -8,8 +8,10 @@ npx create-cairn-site
 
 ## Where to start
 
-- **Looking up a contract?** [The reference](./docs/reference/README.md) has one page per export
-  subpath.
+- **Looking up a contract?** Each export's doc comment, shipped in the package's type
+  declarations, carries its full contract.
+- **Building a site with Claude Code?** [The packaged skills](./skills/) teach each job, and
+  [`claude/CLAUDE.md`](./claude/CLAUDE.md) is the guidance a site imports.
 - **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
   change lands.
 
@@ -51,15 +53,15 @@ already wired in, built to be restyled or replaced rather than started from a bl
 documentation-focused template, Topo, is planned but not shipped yet.
 
 Already have a SvelteKit app and want to add cairn to it instead?
-[Add cairn to a SvelteKit app](./docs/extend/add-cairn-to-a-sveltekit-app.md) walks the install,
-from `npm install @glw907/cairn-cms` to a production deploy, and [the
-reference](./docs/reference/README.md) covers each export subpath.
+[The adopt-cairn reference](./skills/cairn-extending-a-site/references/adopt-cairn.md) in the
+`cairn-extending-a-site` skill walks the install, from `npm install @glw907/cairn-cms` to a
+production deploy.
 
 ## Where cairn stands
 
 cairn is pre-1.0. Content stays yours regardless of what happens to cairn: it's markdown in your
 repository, and leaving is a matter of cloning it.
 
-The [docs](./docs/reference/README.md) hold the reference for every export. History is in the
-[CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and the
+History is in the [CHANGELOG](./CHANGELOG.md), upgrade steps are in the
+[migration notes](./MIGRATION-NOTES.md), security reporting goes through the [policy](./SECURITY.md), and the
 license is [MIT](./LICENSE).

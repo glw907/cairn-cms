@@ -1,6 +1,6 @@
 // Archetype: the custom admin screen over the site's table.
 // Atoms: requireAccess, createSectionAction, createLogger.
-// Recipe: docs/extend/add-a-custom-admin-screen.md.
+// Recipe: the cairn-building-admin-screens skill's custom-screen reference.
 //
 // A developer's custom admin screen, proving the extension seam. It is a concrete route
 // under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders

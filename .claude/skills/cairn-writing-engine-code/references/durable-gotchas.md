@@ -400,10 +400,9 @@ contention can also pass 600 seconds, so do not poll that either.
 
 ## Do not rebuild `dist` while `npm test` runs
 
-Several `check:*` scripts (`check:reference`, `check:surface`, `check:consumers`, `check:visuals`,
-and more) run `npm run package` first, which rebuilds `dist/` in place. A few unit tests
+Several `check:*` scripts (`check:surface`, `check:consumers`, `check:package`, and more) run `npm run package` first, which rebuilds `dist/` in place. A few unit tests
 (`sveltekit-barrel-prune.test.ts`, `delivery-media-vite-barrel-prune.test.ts`) load `.d.ts` files out
-of `dist/` through `scripts/checks/reference-coverage.mjs`. A rebuild that overlaps a running
+of `dist/` through `scripts/checks/dts-exports.mjs`. A rebuild that overlaps a running
 `npm test` can catch `dist/` mid-write and fail those tests with
 `cannot load .../dist/sveltekit/index.d.ts`, with nothing wrong in your code. Run `npm run package`
 once, then `npm test` alone, and run the `check:*` scripts before it or after it.
@@ -464,7 +463,7 @@ fail here. Three shapes recur, and `node scripts/checks/check-symbols.mjs` repro
 seconds without a rebuild.
 
 - A path inside a fenced block's `//` comment is checked against the repo root, not the doc's
-  directory. `// see [x](../../../../docs/reference/sveltekit.md)` extracts `reference/sveltekit.md`, which does not
+  directory. `// see [x](../../../../docs/admin/README.md)` extracts `admin/README.md`, which does not
   exist. Cite another doc by bare filename or in prose, with no slash.
 - A `--flag` in a fenced shell block resolves only against `create-cairn-site`'s own argv parser.
   `npx cairn-audit --help` in a fenced example fails as an unresolved `cli-flag` until
@@ -528,7 +527,7 @@ reader's situation. The registry is mirrored into `tool/internal/spine/condition
 custom `message` should name the fix, since the default is the condition's `title`.
 
 A new `CairnLogEvent` is two edits. Add the union arm in `src/lib/log/events.ts` and a row in the
-matching section of `docs/reference/log-events.md`. `src/tests/unit/log-events-table.test.ts`
+matching section of `skills/cairn-extending-a-site/references/log-events.md`. `src/tests/unit/log-events-table.test.ts`
 parses both and asserts the sorted name lists are equal, so one without the other is red under
 `npm test`. `check:symbols` resolves a dotted lowercase name in docs prose against the same union,
 so the arm must exist before a CHANGELOG line can mention the event.
@@ -585,9 +584,6 @@ gate round.
   package, since the extraction parses source.
 - `cairn help agents` is capped by `agentsPageLineBound` in `cmd/cairn/help_agents_test.go`. Raise it
   the way the constant's doc comment records, with the reason, not silently.
-- `tool/internal/version.Documented` is the release the published contract pages state in their
-  opening line. `TestThePagesDescribeTheDocumentedRelease` compares it with the pages, so a release
-  that changes what the pages describe bumps the constant with them.
 - `govulncheck` reports only a reachable vulnerability. To prove the gate can fail, pin a vulnerable
   module and call the vulnerable function from `main()`, confirm the red, then remove both. An unused
   import is silently excluded.
@@ -613,8 +609,8 @@ width, where the band's ground color should touch both viewport edges.
 
 ## A rename sweep edits the living docs only
 
-A drift-hunt after a rename or a public-surface narrowing edits the living docs: `docs/reference/`,
-the guides, and the `engine-rulings.md` ledger. Point-in-time documents (the open plans under
+A drift-hunt after a rename or a public-surface narrowing edits the living docs: the doc comments,
+the packaged skills, the guides, and the `engine-rulings.md` ledger. Point-in-time documents (the open plans under
 `docs/plans/`, a released `CHANGELOG.md` section) describe what was true when they were written, so a
 hit there is evidence to leave alone. A plan's rename table is the task's source text. A grep hit is
 also not drift when the sentence never claims the name is public.

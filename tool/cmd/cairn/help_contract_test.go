@@ -9,6 +9,38 @@ import (
 	"github.com/glw907/cairn-cms/tool/internal/spine"
 )
 
+// namedVerdicts returns every verdict spine names, walking codes upward from zero until one
+// reports Verdict.String's fallback form. The set is derived rather than retyped here, so a
+// fifth verdict added to spine reaches this test with no edit to it.
+func namedVerdicts() []spine.Verdict {
+	var out []spine.Verdict
+	for code := 0; ; code++ {
+		v := spine.Verdict(code)
+		if strings.HasPrefix(v.String(), "Verdict(") {
+			return out
+		}
+		out = append(out, v)
+	}
+}
+
+// TestHelpLinksNoDocsPage keeps the help text free of a docs page address. The help is the
+// contract, and a released binary carries its text for the life of its tag, so a link to a page
+// a later docs pass removes would outlive the page. A schema's $id under cairn.pub/schema/ is
+// not a docs page and stays.
+func TestHelpLinksNoDocsPage(t *testing.T) {
+	d, _ := testDeps(t)
+	for _, args := range [][]string{{"help", "agents"}, {"--help"}, {"health", "--help"}, {"doctor", "--help"}} {
+		name := strings.Join(args, " ")
+		out, _, err := execTree(t, d, args...)
+		if err != nil {
+			t.Fatalf("cairn %s: %v", name, err)
+		}
+		if strings.Contains(out, "cairn.pub/docs") {
+			t.Errorf("cairn %s links a docs page:\n%s", name, out)
+		}
+	}
+}
+
 // TestHelpListsEveryExitCode holds the help text a program reads to spine's verdicts, so the
 // contract survives with no docs page beside the binary.
 func TestHelpListsEveryExitCode(t *testing.T) {

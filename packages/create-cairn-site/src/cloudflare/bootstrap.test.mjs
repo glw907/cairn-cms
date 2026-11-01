@@ -5,6 +5,13 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
+import { SIGN_IN_OPENED_NOTICE } from './bootstrap.mjs';
+
+test('SIGN_IN_OPENED_NOTICE stays true when no page opened', () => {
+  assert.doesNotMatch(SIGN_IN_OPENED_NOTICE, /just opened/, 'a headless run opens no page');
+  assert.match(SIGN_IN_OPENED_NOTICE, /if no page opened|no page opened/);
+  assert.match(SIGN_IN_OPENED_NOTICE, /re-run with --sign-in/);
+});
 
 /**
  * Build a `wrangler d1 execute --json` style result array: one entry per statement, in the

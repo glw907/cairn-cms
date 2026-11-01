@@ -629,6 +629,38 @@ test('runCloudflareChapter: a dry run makes zero fake-bin invocations and prints
   assert.ok(logs.some((line) => line.includes('Sign you in')));
 });
 
+/**
+ * Run the chapter under --dry-run and return everything it printed, titles and details.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the printed lines joined by newlines
+ */
+async function dryRunPrinted(t) {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const logs = [];
+  await runCloudflareChapter({
+    siteId: 'alpine-club-copy',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true, ownerEmail: 'owner@example.com' },
+    log: (line) => logs.push(line),
+    dryRun: true,
+    openBrowser: async () => {},
+  });
+  return logs.join('\n');
+}
+
+test('the "Sign you in" detail holds when no browser can open', async (t) => {
+  const printed = await dryRunPrinted(t);
+  assert.match(printed, /then tries to open it in your browser/);
+  assert.doesNotMatch(printed, /then opens it\./);
+});
+
+test('the deploy consent warns that a Worker already carrying the name is replaced', async (t) => {
+  const printed = await dryRunPrinted(t);
+  assert.match(printed, /replaces any Worker of that name already in your account/);
+});
+
 test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-run re-enters at the install action', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

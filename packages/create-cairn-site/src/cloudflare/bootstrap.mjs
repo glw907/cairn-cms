@@ -20,14 +20,15 @@ import { cloudflareError, trailingStderr } from './catalogue.mjs';
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 
 /**
- * What to print once a seeded sign-in link has been opened. Both callers that open one (the
- * chapter's sign-in action and bin.mjs's `--sign-in` recovery) print this, and it lives
- * beside the lifetime it quotes so a change to `TOKEN_TTL_MS` cannot leave one of them promising
- * the old number.
+ * What to print after a seeded sign-in link was handed to the browser opener. Both callers that
+ * open one (the chapter's sign-in action and bin.mjs's `--sign-in` recovery) print this, and it
+ * lives beside the lifetime it quotes so a change to `TOKEN_TTL_MS` cannot leave one of them
+ * promising the old number. The opener is best-effort, and a non-interactive run prints no link,
+ * so the wording holds whether or not a page opened.
  */
 export const SIGN_IN_OPENED_NOTICE =
-  'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
-  'expires, re-run with --sign-in for a fresh one.';
+  'If a sign-in page opened, click Sign in there. The link works for ten minutes; if it ' +
+  'expires or no page opened, re-run with --sign-in for a fresh one.';
 
 /**
  * Escape a value for embedding in a single-quoted SQL string literal, by doubling any single

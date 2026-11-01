@@ -765,3 +765,86 @@ describe('discardAction', () => {
     expect(record?.editor).toBe('ed@t');
   });
 });
+
+describe('undeclared frontmatter keys through a save or publish', () => {
+  const PRIOR =
+    '---\ntitle: Old\nsubtitle: gone from the form\ndraft: true\nupdated: 2026-01-01\nseo:\n  noindex: true\n  tags:\n    - a\n---\nold body';
+
+  /** Fail the prior-file read of the entry (a GET of its contents), leaving every other route on the double. */
+  function failEntryRead(): void {
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'GET' && url.includes('/contents/') && url.includes('2026-05-01-hi.md')) {
+        return new Response('boom', { status: 500 });
+      }
+      return double(input, init);
+    });
+  }
+
+  function runtimeWithSubtitle(): CairnRuntime {
+    const r = runtime();
+    r.concepts[0].fields = [
+      { type: 'text', name: 'title', label: 'Title', required: true },
+      { type: 'text', name: 'subtitle', label: 'Subtitle' },
+    ];
+    return r;
+  }
+
+  it('keeps draft, a bare date, and a nested object on save, and a removed declared field stays removed', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtimeWithSubtitle() });
+
+    await redirectedTo(routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'new body' })));
+
+    const saved = gh.read(BRANCH, ENTRY_PATH) ?? '';
+    expect(saved).toContain('draft: true');
+    expect(saved).toContain('updated: 2026-01-01T00:00:00.000Z');
+    expect(saved).toMatch(/seo:\n {2}noindex: true\n {2}tags:\n {4}- a/);
+    expect(saved).not.toContain('subtitle');
+  });
+
+  it('publishes an entry hand-marked draft as a draft row with no publishedAt', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' })));
+
+    expect(gh.read('main', ENTRY_PATH)).toContain('draft: true');
+    const row = parseManifest(gh.read('main', MANIFEST_PATH) ?? '').entries.find((e) => e.id === '2026-05-01-hi');
+    expect(row?.draft).toBe(true);
+    expect(row?.publishedAt).toBeUndefined();
+  });
+
+  it('answers 503 with the body reseeded and commits nothing when the prior read throws', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: PRIOR } });
+    gh.install();
+    failEntryRead();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    const result = (await routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'unsaved work' }))) as unknown as {
+      status: number;
+      data: { body: string };
+    };
+    expect(result.status).toBe(503);
+    expect(result.data.body).toBe('unsaved work');
+    expect(gh.read(BRANCH, ENTRY_PATH)).toBe(PRIOR);
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('answers 503 and commits nothing on each of two saves over malformed prior YAML', async () => {
+    const bad = '---\ntitle: [unclosed\n---\nbody';
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) }, [BRANCH]: { [ENTRY_PATH]: bad } });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+
+    for (let i = 0; i < 2; i++) {
+      const result = (await routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' }))) as unknown as { status: number };
+      expect(result.status).toBe(503);
+    }
+    expect(gh.read(BRANCH, ENTRY_PATH)).toBe(bad);
+    expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+});

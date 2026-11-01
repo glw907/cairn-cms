@@ -104,7 +104,7 @@ describe('saveAction', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: false, errors: { title: 'Title is required' } })) });
     const result = (await routes.saveAction(
-      saveEvent('2026-05-x', { title: '', body: 'b' }),
+      saveEvent('2026-05-x', { title: '', body: 'b', new: '1' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/Title/);

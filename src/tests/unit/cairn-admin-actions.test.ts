@@ -697,7 +697,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
 
   it('a throwing save action on the edit view logs the concept, id, and editor, and returns fail(500) with the calm copy', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
-    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = (await admin.actions.save(event)) as { status?: number; data?: { error?: string } };

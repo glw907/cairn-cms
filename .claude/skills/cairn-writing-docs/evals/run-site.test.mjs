@@ -180,3 +180,53 @@ test('overlayPaths carries the skill folder before and after its rename, and nei
   ]);
   assert.deepEqual(got, ['.claude/skills/cairn-docs/SKILL.md', '.claude/skills/cairn-writing-docs/SKILL.md']);
 });
+
+test('every site case fails its recorded known-bad solution on the file checks alone', async () => {
+  const { loadEvals, runCheck, validateEvals } = await import('./run.mjs');
+  const { execFileSync } = await import('node:child_process');
+  const { pathToFileURL, fileURLToPath } = await import('node:url');
+  const here = fileURLToPath(new URL('.', import.meta.url));
+  const file = join(here, 'evals-site.json');
+  if (!existsSync(file)) return;
+  const data = loadEvals(file);
+  assert.deepEqual(validateEvals(data), []);
+  const FILE_CHECKS = new Set(['contains', 'absent', 'changed', 'unchanged', 'noNewFiles']);
+  for (const c of data.evals) {
+    const root = mkdtempSync(join(tmpdir(), 'evals-bad-'));
+    try {
+      const git = (...a) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...a], { cwd: root, encoding: 'utf8' });
+      git('init', '-q');
+      git('commit', '-q', '--allow-empty', '-m', 'base');
+      const mod = await import(pathToFileURL(join(here, c.knownBad)).href);
+      mod.default(root);
+      git('add', '-A');
+      const changed = git('diff', '--cached', '--name-status', 'HEAD').split('\n').filter(Boolean)
+        .map((l) => { const [status, ...p] = l.split('\t'); return { status: status[0], path: p[p.length - 1] }; });
+      const ctx = { root, changed, tools: [], reply: '', runGate: () => false };
+      const results = c.checks.filter((k) => FILE_CHECKS.has(k.type)).map((k) => runCheck(k, ctx));
+      assert.ok(results.some((r) => !r.ok), `${c.id}: the known-bad solution passes every file check`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('loadEvals merges one case per file from casesDir, and validateEvals holds a site case to its seam, bar, and known-bad', async () => {
+  const { loadEvals, validateEvals } = await import('./run.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'evals-load-'));
+  try {
+    mkdirSync(join(dir, 'cases'));
+    writeFileSync(join(dir, 'cases/b.json'), JSON.stringify({ id: 'b' }));
+    writeFileSync(join(dir, 'cases/a.json'), JSON.stringify({ id: 'a' }));
+    writeFileSync(join(dir, 'x.json'), JSON.stringify({ skill_name: 's', casesDir: 'cases', evals: [{ id: 'z' }] }));
+    assert.deepEqual(loadEvals(join(dir, 'x.json')).evals.map((c) => c.id), ['z', 'a', 'b']);
+    const bare = { id: 's', prompt: 'p', expectations: ['e'], suite: 'site', fixture: 'site', checks: [{ type: 'contains' }] };
+    const problems = validateEvals({ skill_name: 's', evals: [bare] }).join('\n');
+    assert.match(problems, /seam is missing/);
+    assert.match(problems, /bar must be 4 or 5/);
+    assert.match(problems, /knownBad is missing/);
+    assert.deepEqual(validateEvals({ skill_name: 's', evals: [{ ...bare, seam: 'x', bar: 5, knownBad: 'run.mjs' }] }), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

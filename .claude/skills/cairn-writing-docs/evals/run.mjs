@@ -111,6 +111,22 @@ export function parseArgs(argv) {
   return out;
 }
 
+/**
+ * Read a cases file. A `casesDir` names a folder, beside the file, of one-case JSON files that
+ * follow the file's own `evals`, in name order, so parallel authors never edit one file.
+ * @param {string} file
+ */
+export function loadEvals(file) {
+  const data = JSON.parse(readFileSync(file, 'utf8'));
+  if (data.casesDir) {
+    const dir = join(dirname(file), data.casesDir);
+    const extra = readdirSync(dir).filter((n) => n.endsWith('.json')).sort()
+      .map((n) => JSON.parse(readFileSync(join(dir, n), 'utf8')));
+    data.evals = [...(data.evals ?? []), ...extra];
+  }
+  return data;
+}
+
 const CHECK_TYPES = new Set([
   'contains', 'absent', 'changed', 'unchanged', 'noNewFiles', 'bash', 'agent', 'read', 'skillNotCalled',
   'npm', 'verdicts',
@@ -136,7 +152,12 @@ export function validateEvals(data) {
     if (c.fixture !== undefined && !FIXTURES.includes(c.fixture)) problems.push(`${id}: fixture must be one of ${FIXTURES.join(', ')}`);
     // A site or tree case takes its tree from the arm's ref, so only a pin fixture names a commit.
     if ((c.fixture ?? 'pin') === 'pin' && (typeof c.pin !== 'string' || !/^[0-9a-f]{7,40}$/.test(c.pin))) problems.push(`${id}: pin must be a commit sha`);
-    if (c.bar !== undefined && ![4, 5].includes(c.bar)) problems.push(`${id}: bar must be 4 or 5`);
+    if ((c.bar !== undefined || c.suite === 'site') && ![4, 5].includes(c.bar)) problems.push(`${id}: bar must be 4 or 5`);
+    if (c.suite === 'site') {
+      if (typeof c.seam !== 'string' || !c.seam) problems.push(`${id}: seam is missing`);
+      // The known-bad solution is the grader's negative control: run.test.mjs proves the checks fail it.
+      if (typeof c.knownBad !== 'string' || !existsSync(join(HERE, c.knownBad))) problems.push(`${id}: knownBad is missing`);
+    }
     if (c.setup !== undefined && (typeof c.setup !== 'string' || !existsSync(join(HERE, c.setup)))) {
       problems.push(`${id}: setup file ${c.setup} is missing`);
     }
@@ -1103,7 +1124,7 @@ async function pool(items, limit, fn) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dataFile = args.suite === 'site' ? 'evals-site.json' : 'evals.json';
-  const data = JSON.parse(readFileSync(join(HERE, dataFile), 'utf8'));
+  const data = loadEvals(join(HERE, dataFile));
   const problems = validateEvals(data);
   if (problems.length) throw new Error(`${dataFile} is invalid:\n${problems.join('\n')}`);
 

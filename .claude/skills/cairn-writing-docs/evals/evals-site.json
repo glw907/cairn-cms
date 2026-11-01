@@ -1,0 +1,9 @@
+{
+  "skill_name": "cairn-extending-a-site",
+  "expectSkills": {
+    "site": ["cairn-extend", "cairn-extending-a-site", "cairn-admin-screens", "cairn-building-admin-screens"],
+    "tree": []
+  },
+  "casesDir": "site-cases",
+  "evals": []
+}

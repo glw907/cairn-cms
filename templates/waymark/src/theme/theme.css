@@ -55,7 +55,7 @@
         `@plugin` blocks) is family geometry, not brand: change all three freely to fit your
         site's chosen roundness, from square to fully rounded.
 
-   About fourteen role values cover the brand-and-base headline: a new accent and
+   Twelve role values cover the brand-and-base headline: a new accent and
    a new paper-and-ink, the change most owners make. That set is `--color-primary`
    and `-content`, the three `--color-base-*` steps, and `--color-base-content`,
    light and dark. A FULL status rebrand is more, because each status carries both
@@ -63,7 +63,7 @@
    derived from its fill unless you hand-tune it, as Waymark does. Every prose
    element, the code highlighter, the chrome, and the components recolor from
    these tokens, because none of them hard-codes a colour; they all read them.
-   The CI contrast gate (`check:public-tokens`) proves the re-skinned theme still
+   A contrast check over these tokens proves the re-skinned theme still
    clears AA in both sRGB and P3, and its token-resolution check fails the build
    if a rule references a token no block defines.
 
@@ -123,7 +123,7 @@
   --color-neutral: oklch(27% 0.013 72);
   --color-neutral-content: oklch(97% 0.003 75);
   /* status fills (dark-enough for near-white content, except warning which takes dark ink). The
-     info and success lightnesses are pinned at the AA floor the dual-gamut gate (check:public-tokens)
+     info and success lightnesses are pinned at the AA floor a dual-gamut contrast check
      measures for their near-white -content: info L=55% holds 4.6:1, success L=54% holds 4.7:1, both
      in sRGB and P3. Hue and chroma are held, so the contrast-stable recolor recipe still applies. */
   --color-info: oklch(55% 0.1 235);

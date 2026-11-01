@@ -18,7 +18,7 @@ const repoRoot = path.resolve(packageDir, '../..');
 // the path-exclusion manifest can only drop files, never lines inside a kept package.json. These
 // are the exact names the bake removes; keeping them in one place lets the rot gate assert against
 // the same list it enforces.
-export const PRUNED_SCRIPTS = ['pretest:e2e', 'test:e2e', 'design:probe'];
+export const PRUNED_SCRIPTS = ['pretest:e2e', 'test:e2e', 'design:probe', 'check:cairn:rendered'];
 export const PRUNED_DEV_DEPENDENCIES = ['@playwright/test', '@axe-core/playwright'];
 
 // cairn-audit.config.json's `rendered.extraPages` names showcase-only fixture and content

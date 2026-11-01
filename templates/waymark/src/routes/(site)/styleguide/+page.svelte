@@ -10,8 +10,8 @@ sample per registry entry, from its `preview`, with the entries that declare non
 and the own-it components a page composes from.
 
 Token-backed throughout: every color reads a DaisyUI role utility or a `var(--color-*)`/`var(--cairn-*)`
-token, every type size reads a `--text-step-*` token, so the no-literals gate (`check:public-tokens`)
-stays green over this file. A site owner reads this page to learn what is available and how to adopt
+token, every type size reads a `--text-step-*` token, so a no-literals check over this file
+stays green. A site owner reads this page to learn what is available and how to adopt
 or extend it; nothing here is a literal a re-skin would miss.
 -->
 <script lang="ts">
@@ -102,7 +102,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     },
     {
       summary: 'How do I re-skin the theme?',
-      body: 'Edit the role tokens in theme.css. About fourteen values cover a full re-brand, the prose surface included.',
+      body: 'Edit the role tokens in theme.css. Twelve values cover a full re-brand, the prose surface included.',
     },
   ];
 

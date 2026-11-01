@@ -72,7 +72,7 @@ describe('the review agent frontmatter', () => {
 });
 
 describe('claude/snippets/* against their in-repo counterparts', () => {
-  it('check-cairn.json parse-equals the seven script entries in the showcase package.json', () => {
+  it('check-cairn.json parse-equals the six script entries in the showcase package.json', () => {
     const snippet = JSON.parse(readFileSync(join(CLAUDE_ROOT, 'snippets/check-cairn.json'), 'utf8'));
     const showcase = JSON.parse(readFileSync(resolve(ROOT, 'examples/showcase/package.json'), 'utf8'));
     const keys = [
@@ -82,7 +82,6 @@ describe('claude/snippets/* against their in-repo counterparts', () => {
       'predev',
       'dev:admin-css',
       'check:cairn',
-      'check:cairn:rendered',
     ];
     expect(Object.keys(snippet).sort()).toEqual(keys.slice().sort());
     for (const key of keys) {

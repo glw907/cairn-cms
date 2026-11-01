@@ -374,10 +374,10 @@ export function extractEventOrConditionCandidates(segments, areas) {
   return out;
 }
 
-/** Parse `docs/internal/api-surface.md` into a Map from subpath (e.g. `.`, `/sveltekit`) to the
+/** Parse `scripts/checks/api-surface.md` into a Map from subpath (e.g. `.`, `/sveltekit`) to the
  * set of names it exports. @param {string} root */
 export function parseApiSurface(root = ROOT) {
-  const text = readFileSync(join(root, 'docs/internal/api-surface.md'), 'utf8');
+  const text = readFileSync(join(root, 'scripts/checks/api-surface.md'), 'utf8');
   /** @type {Map<string, Set<string>>} */
   const bySubpath = new Map();
   let current = /** @type {string | null} */ (null);

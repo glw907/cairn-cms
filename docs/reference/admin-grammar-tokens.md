@@ -108,7 +108,7 @@ core color utilities compiled them. The fills are tuned for a badge or alert bac
 small text: `--color-warning` measures about 2.2:1 as text on `base-100`, well under the 4.5:1
 WCAG 1.4.3 floor. `--cairn-warning-ink` and `--color-positive-ink` are the already-locked,
 measured, readable-small-text counterparts (see "The accessibility text inks" in
-[the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md)). Write `cairn-text-warning`/`cairn-text-success`, never
+[the admin design system](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md)). Write `cairn-text-warning`/`cairn-text-success`, never
 `text-[var(--cairn-warning-ink)]` or the bare `text-warning`/`text-success`.
 
 The sheet's shared status-chip vocabulary, `.cairn-chip-quiet`/`.cairn-chip-warning`/

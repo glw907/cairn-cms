@@ -1,5 +1,16 @@
 # Grader prompt: the coherence read
 
+## Contents
+
+- [Inputs](#inputs)
+- [Reading discipline](#reading-discipline)
+- [The checklist](#the-checklist)
+- [Per-device verdicts](#per-device-verdicts)
+- [Overall verdict](#overall-verdict)
+- [Tells](#tells)
+- [Output shape](#output-shape)
+
+
 This is the coherence-read gate from the standard doc's done-gate, step 3: the
 compositional judgment no mechanical rule carries. A builder runs it against their
 captures before calling a derivation or a novel composition done. Execute this prompt

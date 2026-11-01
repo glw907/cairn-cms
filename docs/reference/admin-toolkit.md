@@ -711,7 +711,7 @@ filter row, and this line covers a screen with neither (a stats-prose summary, a
 never lives in this band, since `ListToolbar` owns it.
 
 **daisyUI assembly:** none. This component is typography and layout only, the eyebrow and
-page-heading recipes from [the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md).
+page-heading recipes from [the admin design system](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md).
 
 **Exact class inventory:** none (no daisyUI component class).
 
@@ -751,7 +751,7 @@ with no heading (`WelcomeView`, the none-capability landing view), passes `'h1'`
 page still has a real heading in its accessible tree.
 
 **daisyUI assembly:** none. Typography and layout only, the same empty-state recipe
-[the admin design system](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md) documents.
+[the admin design system](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md) documents.
 
 **Exact class inventory:** none (no daisyUI component class).
 

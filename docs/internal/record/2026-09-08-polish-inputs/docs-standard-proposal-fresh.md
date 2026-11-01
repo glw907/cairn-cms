@@ -12,7 +12,7 @@ four tracks, the reference, and the front door.
 
 Three instruments would carry the standard. A gate is a check that runs in CI and fails the build
 on a violation. The standard would add two gates to the several this repo already runs. The
-register is [`docs/internal/docs-register.md`](../../docs-register.md), the existing agent-facing
+register is [`docs/internal/docs-register.md`](../../../../.claude/skills/cairn-docs/references/docs-register.md), the existing agent-facing
 document governing voice and audience, which the standard would extend rather than replace. The
 corpus is a small set of human-written published pages saved in the repository for comparison.
 Every review grades a cairn page against one named entry in it.

@@ -17,7 +17,7 @@ import {
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
 const T2 = profileFor('skills/cairn-extend/SKILL.md')!;
-const T3 = profileFor('docs/internal/docs-register.md')!;
+const T3 = profileFor('.claude/skills/cairn-docs/references/docs-register.md')!;
 const TSDOC = profileFor('src/lib/admin-toolkit/format.ts')!;
 const CHANGELOG = profileFor('CHANGELOG.md')!;
 
@@ -53,7 +53,7 @@ describe('profileFor', () => {
       expect(profileFor(path)?.tier, path).toBe('T2');
     }
     for (const path of [
-      'docs/internal/docs-register.md',
+      '.claude/skills/cairn-docs/references/docs-register.md',
     ]) {
       expect(profileFor(path), path).toEqual({ tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' });
     }
@@ -196,7 +196,7 @@ describe('C3 process', () => {
   });
 
   it('lets an absolute GitHub link to a maintainer doc through', () => {
-    expect(hits('[x](https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md#motion)')).toEqual([]);
+    expect(hits('[x](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md#motion)')).toEqual([]);
     expect(hits('[roadmap](https://github.com/glw907/cairn-cms/blob/main/ROADMAP.md)')).toEqual([]);
   });
 

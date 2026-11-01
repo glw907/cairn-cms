@@ -80,7 +80,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
 {#snippet brand()}
   <div class="flex items-center gap-2">
     <CairnLogo class="h-8 w-8 text-primary" />
-    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
+    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in .claude/skills/cairn-following-admin-design/references/admin-design-system.md. -->
     <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
   </div>
 {/snippet}

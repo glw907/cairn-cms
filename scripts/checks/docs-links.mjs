@@ -23,7 +23,6 @@ import { ARM_DIRS, armOf, loadDeletionList, readArmStates } from './arm-state.mj
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CONTRIBUTING.md'];
 // Captured third-party pages keep their original links, so the link gate skips them.
-const EXEMPLARS_DIR = join('docs', 'internal', 'exemplars');
 // Planning records are write-once history, so their links are never repaired. Matched by path
 // from the repo root, never by directory name, so a published `research` folder would be scanned.
 const PLANNING_DIRS = ['specs', 'plans', 'research', 'archive'].map((name) => join('docs', name));
@@ -60,7 +59,6 @@ function walkIfPresent(root, dirName) {
 export function filesInScope(root = ROOT) {
   const docs = walkMarkdown(join(root, 'docs'), new Set(), []).filter((p) => {
     const rel = relative(root, p);
-    if (rel.startsWith(EXEMPLARS_DIR + sep)) return false;
     if (PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep))) return false;
     return !PLANNING_BRIEFS.includes(rel.split(sep).join('/'));
   });

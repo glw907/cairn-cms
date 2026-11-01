@@ -224,4 +224,4 @@ documents it, or `check:reference` fails the build.
   `examples/`, `docs/`, and the rest).
 - `docs/extend/architecture.md` ("Export map") for the export-subpath view a consuming site
   reads, as opposed to this page's contributor view of the same tree.
-- `docs/internal/code-idioms.md` for the standing idiom rules this map does not restate.
+- `.claude/skills/cairn-writing-engine-code/references/code-idioms.md` for the standing idiom rules this map does not restate.

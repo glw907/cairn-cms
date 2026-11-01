@@ -105,7 +105,7 @@ export const ADMIN_CSS_SAFELIST = [
   // of preserving the de facto public sheet once that prose left with the tone/dot retirement. The
   // blessing is now deliberate and covers every blessed badge class, not just these two: each
   // class is measured against the register set's floors on both packaged themes, the raw
-  // daisyUI alternative to `StatusChip` (docs/internal/admin-design-system.md names the
+  // daisyUI alternative to `StatusChip` (.claude/skills/cairn-following-admin-design/references/admin-design-system.md names the
   // when-to-use line). `badge-tier-legibility.test.ts` carries the measured numbers and is the one
   // place they're allowed to live; a comment repeating them here would just be a second copy to
   // fall out of date the next time daisyUI's recipe moves.

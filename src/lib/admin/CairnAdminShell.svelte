@@ -1079,7 +1079,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-box bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
-            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
+            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in .claude/skills/cairn-following-admin-design/references/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="cairn-chip-quiet rounded-selector px-1.5 py-px type-chip uppercase tracking-[0.12em]">CMS</span>
           </a>

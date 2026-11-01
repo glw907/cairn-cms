@@ -110,7 +110,7 @@ at request time. No live rebasing, which removes the hardest problem those teams
 ## Technical constraints and the architecture to design against
 
 - **Editor:** CodeMirror 6, Svelte 5 runes, the cairn admin shell. The admin design system (Warm Stone
-  tokens, the type faces, the recipes) is in `docs/internal/admin-design-system.md`. Reuse only shipped
+  tokens, the type faces, the recipes) is in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`. Reuse only shipped
   tokens. Honor the a11y bar (live regions, keyboard, focus, never hue-alone, native dialogs).
 - **Spellcheck:** a `@codemirror/lint` source backed by a WASM dictionary on a Web Worker, markdown-aware
   via the Lezer tree, with a correction popover (suggestions, add-to-dictionary, ignore) and a persistent

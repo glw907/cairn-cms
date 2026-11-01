@@ -1,5 +1,15 @@
 # What cairn is
 
+## Contents
+
+- [Purpose](#purpose)
+- [What cairn commits to (the opinions, as choices)](#what-cairn-commits-to-the-opinions-as-choices)
+- [The one boundary that governs everything](#the-one-boundary-that-governs-everything)
+- [Threat position (Geoff, 2026-09-30; the sign-in flow named, 2026-10-08)](#threat-position-geoff-2026-09-30-the-sign-in-flow-named-2026-10-08)
+- [The failure mode this resists](#the-failure-mode-this-resists)
+- [How the boundary is held](#how-the-boundary-is-held)
+
+
 > The public-facing content of this charter was absorbed by the why-cairn page (removed pending its rebuild) in
 > the 2026-07 docs rewrite; this file remains the internal scope charter.
 

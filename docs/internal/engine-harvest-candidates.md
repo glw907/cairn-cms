@@ -164,7 +164,7 @@ designed. The auth side is already served: `defineAccess`, `requireAccess`, and
 
 What the decision must say: which screens exist, what components they compose, and
 whether any component fails the mechanic-versus-domain test that
-`docs/internal/what-cairn-is-and-is-not.md` and the engine-level UI mechanics rule
+`.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md` and the engine-level UI mechanics rule
 already define.
 
 ### ASC season-rollover, and the guarded-operation pattern
@@ -242,7 +242,7 @@ the toolkit, which exists. Superficial.
   scheduler), and nothing in the pass map contradicts that.
 - **ASC `qbo-integration` and `mw-cutover`**: accounting sync and an operational
   cutover, entirely site domain.
-- **`docs/internal/extending-developer-lens.md`**: its baseline is stale in the
+- **`.claude/skills/cairn-judging-scope/references/extending-developer-lens.md`**: its baseline is stale in the
   expected direction. The three gaps it names (no admin-extension seam, no
   session-on-any-route path, an unenforced boundary) have all since shipped in some
   form (`CairnAdminShell` and the toolkit, `createAuthChannel` and `/auth-crypto`,

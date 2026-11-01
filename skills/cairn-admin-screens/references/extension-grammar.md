@@ -1,5 +1,13 @@
 # The extension grammar
 
+## Contents
+
+- [When you need this file](#when-you-need-this-file)
+- [The ladder](#the-ladder)
+- [Worked derivation: a destination-picker](#worked-derivation-a-destination-picker)
+- [The graduation feedback loop](#the-graduation-feedback-loop)
+
+
 Load this when a screen or component needs something the toolkit doesn't ship yet: no
 primitive covers it, no documented recipe covers it, and `cairn-audit norms` returns
 nothing for the shape you're building. This is the ladder that derives a new

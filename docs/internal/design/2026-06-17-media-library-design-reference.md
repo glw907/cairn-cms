@@ -110,7 +110,7 @@ is-this-safe-to-delete riding on bookkeeping the substrate already supplies.
 ## Principles the mockups must honor
 
 - Consistent with the admin design system (Warm Stone, the office/desk gold standard, the eyebrow/card
-  recipes, the command palette, the safe-delete alertdialog) in `docs/internal/admin-design-system.md`.
+  recipes, the command palette, the safe-delete alertdialog) in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - A peer screen of Posts and Pages, reached from the admin nav, reusing the 2b picker's row design.
 - Lean: a light surface, not a cluttered DAM. The headline is where-used and safe-delete.
 - Where-used is visible per asset and gates delete and replace.

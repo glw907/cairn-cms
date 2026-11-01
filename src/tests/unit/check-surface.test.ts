@@ -7,7 +7,7 @@ import { moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 import { diffSurface, findHomeViolations, renderExport } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(
-  fileURLToPath(new URL('../../../docs/internal/api-surface.md', import.meta.url)),
+  fileURLToPath(new URL('../../../scripts/checks/api-surface.md', import.meta.url)),
 );
 
 // Build a one-section snapshot string in the gate's serialized form: a banner, a subpath header, and

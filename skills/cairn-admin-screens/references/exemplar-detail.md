@@ -1,5 +1,17 @@
 # Exemplar: a detail screen
 
+## Contents
+
+- [Anatomy at a glance](#anatomy-at-a-glance)
+- [This screen renders as an office route, and screen-anatomy does flag it](#this-screen-renders-as-an-office-route-and-screen-anatomy-does-flag-it)
+- [The header: identity, status, and light verbs](#the-header-identity-status-and-light-verbs)
+- [The card: the shell recipe](#the-card-the-shell-recipe)
+- [The section: heading, one light verb, a list of rows](#the-section-heading-one-light-verb-a-list-of-rows)
+- [The dialog: one filled action, and the label register in practice](#the-dialog-one-filled-action-and-the-label-register-in-practice)
+- [The cancel-guests dialog: an inline label beside a checkbox](#the-cancel-guests-dialog-an-inline-label-beside-a-checkbox)
+- [What this exemplar doesn't cover](#what-this-exemplar-doesnt-cover)
+
+
 Load this when building or reviewing a detail (desk) screen: a single record's full
 picture, its sections of related data, and the dialogs that mutate it.
 

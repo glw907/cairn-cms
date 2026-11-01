@@ -240,37 +240,37 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
     role: 'button-primary',
     property: 'border-radius',
     values: [6],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-field)',
   },
   {
     role: 'button-ghost',
     property: 'border-radius',
     values: [6],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-field)',
   },
   {
     role: 'input-text',
     property: 'border-radius',
     values: [6],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-field)',
   },
   {
     role: 'select',
     property: 'border-radius',
     values: [6],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-field)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-field)',
   },
   {
     role: 'card',
     property: 'border-radius',
     values: [8],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (--radius-box)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (--radius-box)',
   },
   {
     role: 'card',
     property: 'border-width',
     values: [1],
-    reference: 'https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md (the card-shell hairline)',
+    reference: 'https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md (the card-shell hairline)',
   },
   {
     role: 'card',
@@ -302,7 +302,7 @@ export interface RoleRecipe {
 export const RECIPE_MODEL =
   'Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.';
 
-// Every Write string here is copied verbatim from docs/internal/admin-design-system.md or from the
+// Every Write string here is copied verbatim from .claude/skills/cairn-following-admin-design/references/admin-design-system.md or from the
 // /admin/theme-kit fixture route, never invented: norms.test.ts checks every token against
 // the committed admin sheet inventory or the fixture's source, so a hand-typed row cannot drift
 // from what actually compiles. The table lives here, read at print time the way findRatified reads

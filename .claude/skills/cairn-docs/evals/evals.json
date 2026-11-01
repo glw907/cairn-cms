@@ -36,7 +36,7 @@
         },
         {
           "type": "absent",
-          "path": "docs/internal/api-surface.md",
+          "path": "scripts/checks/api-surface.md",
           "regex": "ArrayField[^\\n]*itemLabel"
         },
         {
@@ -155,7 +155,7 @@
         },
         {
           "type": "changed",
-          "path": "docs/internal/api-surface.md"
+          "path": "scripts/checks/api-surface.md"
         },
         {
           "type": "bash",

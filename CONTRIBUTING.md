@@ -4,7 +4,7 @@ cairn is the embedded, git-backed CMS this repository publishes to npm as
 [`@glw907/cairn-cms`](https://www.npmjs.com/package/@glw907/cairn-cms). This guide orients you
 in the repository and describes what a change needs before it can land. For what cairn is and
 why it works the way it does, start with
-[what cairn is and is not](./docs/internal/what-cairn-is-and-is-not.md).
+[what cairn is and is not](./.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md).
 
 ## Set up and run the suite
 
@@ -27,7 +27,7 @@ Before opening an issue, check whether the idea belongs in the engine. cairn own
 content and the editor/admin frame, and little else: a site's own functionality, actors,
 auth, data, and domain logic belongs to the developer, served through a thin seam rather
 than built into cairn. Read
-[`docs/internal/what-cairn-is-and-is-not.md`](./docs/internal/what-cairn-is-and-is-not.md)
+[`.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md`](./.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md)
 before proposing anything that adds an abstraction, a subsystem, an actor, or new public
 surface. Settling this first is faster than writing code against a premise a review later
 rejects.
@@ -51,9 +51,21 @@ the page and what they already have.
 A step that assumes a terminal fails an editor page. A step that assumes reading source
 code fails an admin page. If a page's steps split across two readers, it is two pages, not
 one page trying to serve both; write each half in its track rather than switching register
-mid-page. `docs/internal/docs-register.md` carries the full track profiles, vocabulary
+mid-page. `.claude/skills/cairn-docs/references/docs-register.md` carries the full track profiles, vocabulary
 contract, and the counterpart question a reviewer grades a page against; read it before
 writing a page a reviewer will grade on register.
+
+## Working with Claude Code
+
+Open the clone in Claude Code and accept the folder's trust dialog; the repository's skills, agents,
+and rules load, and so does the `standards` plugin that supplies the review agents. The
+`cairn-running-passes` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
+risk classes.
+
+- Cloud sessions get only the skills and agents committed here, not the plugin.
+- The daisyUI Blueprint server is a per-developer license; the admin skills work without it.
+- Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.
+- `tellgrader`, the prose-tell checker the docs gate can run, is optional; the gate skips it when absent.
 
 ## Proposing a change
 
@@ -136,9 +148,9 @@ To pass the docs gate, make these changes together:
   because its reader is a non-technical writer. All four directories ship inside the npm
   package, so a docs edit is a product change, and a public-API change is not done until its
   reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
-  from its brief in `docs/internal/docs-register.md`, and the front door and `CHANGELOG.md` take
+  from its brief in `.claude/skills/cairn-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
   the developer brief. Admin UI strings follow the Voice section of
-  `docs/internal/admin-design-system.md`.
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.
@@ -146,7 +158,7 @@ To pass the docs gate, make these changes together:
   `Consumers must:` line when upgrading requires action. Releases are cut separately.
 - Work on the `/admin` interface (the admin components in `src/lib/admin/` or
   `cairn-admin.css`) follows the design system at
-  [`docs/internal/admin-design-system.md`](./docs/internal/admin-design-system.md); read it
+  [`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`](./.claude/skills/cairn-following-admin-design/references/admin-design-system.md); read it
   first.
 
 ## Repository map

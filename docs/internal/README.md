@@ -24,57 +24,27 @@ subdirectories, each of which keeps its own filing rule and its own index.
 
 ## Live
 
-- [`admin-design-system.md`](admin-design-system.md): the agent-facing design system for the
-  `/admin` surface. Read it before any admin UI work.
-- [`admin-smoke-test.md`](admin-smoke-test.md): the per-pass local smoke test for a site's
-  embedded `/admin`.
-- [`api-surface.md`](api-surface.md): generated; run `npm run check:surface -- --update` to
-  regenerate. The full public export surface.
-- [`cm-editing-surface-alignment.md`](cm-editing-surface-alignment.md): the design framing for
-  bringing the CodeMirror editing surface into the Warm Stone language, walled off from the
-  admin idiomatic re-expression sweep.
-- [`code-idioms.md`](code-idioms.md): the agent-facing idiom charter, one obvious way per
-  pattern; a standing pass dimension.
+The standards that agents follow moved into skills under `.claude/skills/`, each behind the path rule that loads it: the design systems to `cairn-following-admin-design` and `cairn-following-public-design`, the idiom charter and the gotchas to `cairn-writing-engine-code`, the scope charter to `cairn-judging-scope`, the docs register to `cairn-docs`, and the smoke test and gate tiers to `cairn-running-passes`. The generated export surface is `scripts/checks/api-surface.md`.
+
 - `credentials.md`: machine-local credential locations (the GitHub App id, installation id,
-  private key, and per-site D1 `AUTH_DB` bindings), moved out of `CLAUDE.md` to keep that file
-  inside its context budget. It is gitignored and exists only on the maintainer's workstation.
-- [`daisy-absorption-ritual.md`](daisy-absorption-ritual.md): the maintainer's routine check
-  against a daisyUI release renaming or dropping a class the admin's blessed set depends on. Run
-  it against every daisy release Dependabot opens a PR for.
-- [`daisyui-v5-hard-components.md`](daisyui-v5-hard-components.md): researched daisyUI v5
-  markup patterns for the hard admin components (timelines, detail two-panes, and the like).
+  private key, and per-site D1 `AUTH_DB` bindings). It is gitignored and exists only on the
+  maintainer's workstation.
 - [`docs-friction-log.md`](docs-friction-log.md): design friction surfaced while writing docs,
   triaged into ROADMAP and STATUS.
 - [`docs-maintenance.md`](docs-maintenance.md): the three layers, gates, pass rule, monthly
   drift routine, that keep the docs current.
-- [`docs-register.md`](docs-register.md): the register standard for published docs prose (the
-  base-guide map, the developer and editor drafting briefs, Names, Visuals, the page anatomies,
-  the track profiles, and the recorded deviations from the base guides). Read it before writing
-  or reviewing any published docs page.
-- [`durable-gotchas.md`](durable-gotchas.md): non-obvious operational traps (Cloudflare email's
-  two error vocabularies, the CI-canonical visual baselines, Vite 8 shipping TypeScript in dist
-  `.svelte`), moved out of `CLAUDE.md` to keep that file inside its context budget.
 - [`engine-harvest-candidates.md`](engine-harvest-candidates.md): engine harvest candidates
   evidenced from two consumer sites, an input to the pre-beta harvest triage rather than a
   decision of its own.
 - [`engine-rulings.md`](engine-rulings.md): the rulings ledger, one entry per ruled
   consultation or audit item with the evidence that would reopen it. Read before re-arguing
   a settled item; the charter, not the ledger, adjudicates.
-- [`extending-developer-lens.md`](extending-developer-lens.md): the persona, diagnostic
-  questions, and baseline for the lean extensibility redesign; subordinate to the charter.
-- [`pass-gate-tiers.md`](pass-gate-tiers.md): the per-task gate tiers `scripts/checks/gate-tier.mjs`
-  chooses from a diff, the trigger globs per tier, the five npm tiers' cumulative gate strings,
-  and the standalone `tool` tier for the Go module.
 - [`pre-beta-harvest.md`](pre-beta-harvest.md): the pre-beta harvest ledger, every engine and
   Waymark improvement surfaced by the rebuild and port efforts, with the status each entry
   carries toward the harvest pass.
-- [`public-design-system.md`](public-design-system.md): Waymark, cairn's public reading theme,
-  the public counterpart to the admin's Warm Stone.
 - [`src-lib-map.md`](src-lib-map.md): the contributor and agent map of `src/lib`, the
   public/internal split per directory, the admin request flow, and the rest of the tree's
   internal structure that `CONTRIBUTING.md`'s Repository map does not cover.
-- [`what-cairn-is-and-is-not.md`](what-cairn-is-and-is-not.md): the internal scope charter, the
-  fuller why behind CLAUDE.md's `## What cairn is`.
 
 ## This pass's active inputs
 

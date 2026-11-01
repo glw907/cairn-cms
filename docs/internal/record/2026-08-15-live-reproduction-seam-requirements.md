@@ -54,7 +54,7 @@ Admin: `invite-editors.md` (the roster, including the reader's-own-row disabled 
    regenerates them, and something (a gate or the release ritual) makes a stale reproduction
    visible rather than silent.
 7. **Alt and caption per the register.** The Visuals section of
-   [`docs-register.md`](../docs-register.md) governs reproductions too; whatever reference form
+   [`docs-register.md`](../../../.claude/skills/cairn-docs/references/docs-register.md) governs reproductions too; whatever reference form
    markdown uses must carry alt and caption, and `check:visuals` grows to cover it when the
    form exists.
 8. **The no-stub rule.** No shipped page references a reproduction that does not exist; the

@@ -1,5 +1,16 @@
 # The extending-developer lens (redesign inputs)
 
+## Contents
+
+- [What the charter already settles](#what-the-charter-already-settles)
+- [The persona](#the-persona)
+- [A concreteness check, not the scope](#a-concreteness-check-not-the-scope)
+- [Make the breaking changes in the pre-1.0 window](#make-the-breaking-changes-in-the-pre-10-window)
+- [The four diagnostic questions](#the-four-diagnostic-questions)
+- [Baseline (post-principle-adherence pass)](#baseline-post-principle-adherence-pass)
+- [How to build toward it now (without starting the redesign)](#how-to-build-toward-it-now-without-starting-the-redesign)
+
+
 Governed by the charter. Read it first: the `## What cairn is` block in `CLAUDE.md` and
 `what-cairn-is-and-is-not.md` (same directory). This doc is subordinate to the charter, not a
 co-equal standing dimension. It collects the persona, the diagnostic questions, and the baseline

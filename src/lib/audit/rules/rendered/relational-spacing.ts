@@ -1,5 +1,5 @@
 // cairn-audit's relational-spacing rule: the admin's gap-role scale
-// (`--cairn-gap-label/control/group/section`, 4/8/16/24px, `docs/internal/admin-design-system.md`'s
+// (`--cairn-gap-label/control/group/section`, 4/8/16/24px, `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s
 // grammar-tokens section) encodes a claim about HIERARCHY, not just about which literal a
 // declaration uses. A field's label sits closer to its control than one field sits to the next, and
 // one field sits closer to its neighbor than one section sits to the next; that ordering is what

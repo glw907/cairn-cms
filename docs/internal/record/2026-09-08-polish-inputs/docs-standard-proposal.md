@@ -26,7 +26,7 @@ tracks. Editors write in the admin and never see a terminal, while site admins r
 without writing code. Developers extend cairn, and the reference is where those last two look
 things up. Each track already has its own list of the words its reader is expected to know, kept in
 the register, which is the repository's own style document at
-[`docs-register.md`](../../docs-register.md).
+[`docs-register.md`](../../../../.claude/skills/cairn-docs/references/docs-register.md).
 
 The standard has four parts. The prose rules say how sentences and paragraphs must be
 written. They adopt the Federal Plain Language Guidelines, a published United States

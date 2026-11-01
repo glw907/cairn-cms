@@ -6,7 +6,7 @@ it can't reach.
 
 ## The machine layer
 
-The docs gate's component list is `scripts/checks/docs-gate.mjs` (tiers in `docs/internal/pass-gate-tiers.md`);
+The docs gate's component list is `scripts/checks/docs-gate.mjs` (tiers in `.claude/skills/cairn-running-passes/references/pass-gate-tiers.md`);
 it also runs `check:transcripts`, `check:visuals`, `check:tool-conditions`,
 `check:target-stack`, `check:editor-quotes`, and `check:vale-rules`, which this table does not describe. The table covers the
 older gates, and the one thing each catches:
@@ -23,7 +23,7 @@ older gates, and the one thing each catches:
 | `check:readiness` | Loads the built condition registry (`dist/diagnostics/conditions.js`); every condition needs a `docsAnchor`. While the admin arm holds no page, each live `docsAnchor` must be on `scripts/checks/shipped-anchors.json`, the append-only list of anchors a released binary prints. Once the arm holds any page, `docs/admin/is-it-working.md` must exist and every live and shipped anchor must name a real heading in it. Catches a condition added with no checklist section, and a checklist that got renamed or moved out from under the registry that points at it. |
 | `check:symbols` | Extracts every code-voice token (an inline span or fenced block) from the published tracks and the two front doors, classifies it into one of five kinds (a CLI flag, an environment variable, an imported export, a repository file path, or a log event/condition/doctor-check id), and resolves each against its real source of truth. Catches a hallucinated symbol, the class of error where a doc names something plausible-sounding that the code does not actually carry. |
 | `check:package` | Rebuilds the package, then runs `publint --strict` and `@arethetypeswrong/cli` against the packed tarball, followed by `check-package-files.mjs` (confirms the four published docs tracks land in the tarball and nothing outside them leaks in) and `check-skill-budget.mjs`. Catches an entry-point or type-resolution defect a consumer would hit on install, and a docs payload that drifted from what actually ships. |
-| `check:surface` | Renders the full declared shape of every export, callable and non-callable, from the built `.d.ts` and diffs it against the committed golden file `docs/internal/api-surface.md`. Catches a renamed or retyped field on an interface, type alias, or const that the two reference gates can't see, since they check names and callable signatures, not full shape. |
+| `check:surface` | Renders the full declared shape of every export, callable and non-callable, from the built `.d.ts` and diffs it against the committed golden file `scripts/checks/api-surface.md`. Catches a renamed or retyped field on an interface, type alias, or const that the two reference gates can't see, since they check names and callable signatures, not full shape. |
 | `check:consumers` | Runs the two real consumers of the package, `examples/showcase`'s `svelte-check` and `check:dev-package`'s `tsc` over `packages/cairn-cms-dev`, against the built package. Catches a public reshape that breaks a consumer silently, the gap a prior pass exposed before this gate existed. |
 | `check:vale` | Runs Vale at error tier only (`vale --minAlertLevel=error`) over `docs`, `README.md`, and `examples/showcase/README.md`. `docs/editors/` grades under the Microsoft style package, every other published track and the front doors under Google; `.vale.ini` scopes each package per directory, and `docs/internal/` and `docs/` carry no style package at all. Warnings and suggestions stay advisory and are not gated. Catches a style violation, not a factual one; Vale has no opinion on whether a claim is still true. |
 
@@ -64,7 +64,7 @@ required all four track directories and stopped with "SCOPE BROKEN" while `docs/
 were empty. Geoff approved a re-scope on 2026-09-30: it samples `docs/reference` and the existing
 `docs/extend` pages, and widens to all four tracks at stage 4's merge.
 
-The release sweep (`cairn-release`, step 3, capability releases only) is the second drift mechanism. At
+The release sweep (`cairn-releasing`, step 3, capability releases only) is the second drift mechanism. At
 each cut it finds new gaps in scaffold behavior and changelog-described behavior, the ground `check:options`
 cannot see, and files them as friction entries.
 

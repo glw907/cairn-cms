@@ -48,7 +48,7 @@ function checkManifest() {
 }
 
 /**
- * Compare the root package's version against the dev-package's version. The cairn-release skill has
+ * Compare the root package's version against the dev-package's version. The cairn-releasing skill has
  * no step that aligns the two, so a cut can publish the engine at a new version while the
  * dev-package manifest sits at the old one, undetected until someone reads the tarball.
  * @param {string} rootVersion the version from the root package.json

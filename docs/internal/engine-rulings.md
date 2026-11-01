@@ -3171,7 +3171,7 @@ when the remediation pass lands.
 - **Reopens on:** closed. Both halves are now executed.
 - **Shape:** Replace the 6px tone dot at StatusChip.svelte:106 as the color carrier (Geoff's 2026-08-24 owner probe ruled it illegible toolkit-wide) and complete the register set (warning-tint, outline) against cairn's own themes, re-measuring rather than copying ASC's tuning.
 - **Progress note (toolkit-seams pass, Task 2, 2026-08-26):** the dot/register half of this reshape is executed: the 6px tone dot is gone, `tone` retires, and `register` alone now carries color (`'quiet' | 'warning' | 'outline'`, second generation, docs/internal/probes/2026-08-26-chip-registers-v2). The badge-tier half named in the verdict (`badge badge-success` compiling to nothing) is NOT executed here; `badge-error`/`badge-success` do now compile again in the shipped sheet, but only as an incidental side effect of Task 2 blessing them in `admin-css-safelist.ts` to preserve the shipped sheet's de facto public API after the dot-era doc comment that had accidentally compiled them was removed, not because this reshape's badge-tier recipe was built. This entry stays open; a later pass closes it if it takes up the badge-tier half.
-- **Closed (conformance pass, Task 10, 2026-09-01):** the badge-tier half is executed, covering every safelisted `badge-*` class, not only `badge-error`/`badge-success`. The docket item this task's own remediation pass carried in first (4b's docket) described this entry's ALREADY-EXECUTED dot/register half, a staleness the pass caught and re-authored around rather than resurrecting the retired `tone`/dot API; `StatusChip.svelte`'s props, registers, and tuning are untouched by this task. The badge-tier recipe: `badge-error`, `badge-success`, and `badge-soft` each paint their own fill and their own base-content-derived ink (daisyUI 5.7.20's `badge-soft` recipe carries both even with no tone class set), each measured (canvas readback, the `status-chip-register-tuning.test.ts` method) against the register set's own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged admin themes, clearing it with no retune needed. `badge-outline` and `badge-dash` paint no fill of their own and inherit their ink and currentColor border from the row; both are measured against the row ground on the same text floor and against the unrelated >= 3:1 non-text floor (WCAG 1.4.11) on the border, clearing both with no retune. `badge-tier-legibility.test.ts` is the one canonical home for the measured numbers themselves; this entry states the floors they clear, not the numbers, so it never becomes a second copy to fall out of date. All five stay blessed, now as a deliberate, documented badge-tier recipe rather than an incidental safelist side effect. `docs/internal/admin-design-system.md` and `docs/reference/admin-toolkit.md` both carry the when-to-use line (a stock daisyUI-flavored surface reaches for a badge tone directly; anything in the chip register grammar reaches for `StatusChip`). `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32 under `chip-ground-collision`'s 1.5:1 floor; unlike the two false-positive classes that rule's own ledger entry names as open work, this one is a deliberate exemption rather than a defect: `badge-soft` is boundary-less by design, the same shape choice `badge-outline`/`badge-dash` make, and its label names the state in text (WCAG 1.4.1 Use of Color), so it never depends on the fill reading as distinct from the row. Both doc sites now carry the exemption and the WCAG 1.4.1 one-liner alongside the when-to-use line.
+- **Closed (conformance pass, Task 10, 2026-09-01):** the badge-tier half is executed, covering every safelisted `badge-*` class, not only `badge-error`/`badge-success`. The docket item this task's own remediation pass carried in first (4b's docket) described this entry's ALREADY-EXECUTED dot/register half, a staleness the pass caught and re-authored around rather than resurrecting the retired `tone`/dot API; `StatusChip.svelte`'s props, registers, and tuning are untouched by this task. The badge-tier recipe: `badge-error`, `badge-success`, and `badge-soft` each paint their own fill and their own base-content-derived ink (daisyUI 5.7.20's `badge-soft` recipe carries both even with no tone class set), each measured (canvas readback, the `status-chip-register-tuning.test.ts` method) against the register set's own >= 4.5:1 text floor (WCAG 1.4.3) on both packaged admin themes, clearing it with no retune needed. `badge-outline` and `badge-dash` paint no fill of their own and inherit their ink and currentColor border from the row; both are measured against the row ground on the same text floor and against the unrelated >= 3:1 non-text floor (WCAG 1.4.11) on the border, clearing both with no retune. `badge-tier-legibility.test.ts` is the one canonical home for the measured numbers themselves; this entry states the floors they clear, not the numbers, so it never becomes a second copy to fall out of date. All five stay blessed, now as a deliberate, documented badge-tier recipe rather than an incidental safelist side effect. `.claude/skills/cairn-following-admin-design/references/admin-design-system.md` and `docs/reference/admin-toolkit.md` both carry the when-to-use line (a stock daisyUI-flavored surface reaches for a badge tone directly; anything in the chip register grammar reaches for `StatusChip`). `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32 under `chip-ground-collision`'s 1.5:1 floor; unlike the two false-positive classes that rule's own ledger entry names as open work, this one is a deliberate exemption rather than a defect: `badge-soft` is boundary-less by design, the same shape choice `badge-outline`/`badge-dash` make, and its label names the state in text (WCAG 1.4.1 Use of Color), so it never depends on the fill reading as distinct from the row. Both doc sites now carry the exemption and the WCAG 1.4.1 one-liner alongside the when-to-use line.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 50.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
@@ -5625,7 +5625,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
     without needing a hand-maintained denylist). This is the model that proves `AdvisoryAction`: two
     hops deep (`EditData.advisories[].actions[]`), invisible to the renderer, which expands exactly
     one member level (`renderInterface` prints a nested INTERFACE reference as its bare name, never
-    recursing into ITS members), so `AdvisoryAction` never appears in `docs/internal/api-surface.md`
+    recursing into ITS members), so `AdvisoryAction` never appears in `scripts/checks/api-surface.md`
     text at all once its one-hop carrier `AdvisoryNotice` loses its own top-level row.
   - **The RENDERER model** (`deriveRendererLeaks`) works over `buildSurfaceModel()`'s already-
     rendered shape strings, comparing a name's OWN literal-string-union shape (only a shape this
@@ -5953,7 +5953,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
 
 - **Verdict:** accept. The charter already promises a developer can replace the admin auth,
   cairn then minting no session and reading an owner/editor identity "through a defined
-  hand-off" (`docs/internal/what-cairn-is-and-is-not.md`, `CLAUDE.md` "What cairn is"); no such
+  hand-off" (`.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md`, `CLAUDE.md` "What cairn is"); no such
   hand-off existed before this pass. The seam this pass ships fulfils that promise at its
   leanest shape: one option on `createAuthGuard`, `identity`, replacing exactly the
   session-resolution piece of the guard's five, publishing `locals.cairnIdentity` on every admin
@@ -5999,7 +5999,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   status region, at this pass's Task 6.
 - **Reopens on:** a third busy shape a future screen needs that neither native `disabled` plus a
   status region nor `aria-disabled` plus `cairn-btn-guarded` can express.
-- **Shape:** see `docs/internal/admin-design-system.md`, `## Component recipes`, the bullet "The
+- **Shape:** see `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, `## Component recipes`, the bullet "The
   busy idiom (wait versus refusal)".
 - **Record:** decision 7's promotion condition for the upload recipe's own
   replace-the-control-with-a-status-panel shape is narrowed here, from decision 7's own "a second
@@ -6009,7 +6009,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   is this plan's own declared amendment
   (`docs/plans/2026-09-08-polish-11b-i-pass.md`, the Reconciliation block's
   Corrections section), not decision 7's text.
-- **Verified:** `docs/internal/admin-design-system.md`'s busy section names both shapes with their
+- **Verified:** `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s busy section names both shapes with their
   conditions and reasons, and no code in this pass's diff.
 
 ## polish-formattimestamp-domain: formatTimestamp's accepted domain  (accept, 2026-09-08, polish-11b-ii)
@@ -6048,7 +6048,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `read-from-the-source-rule` (this file, above) makes a shape defect until argued otherwise: a
   fact with one true source, "the wrapper that owns horizontal scroll," had grown two. The
   replacement is not a gap; it is a named recipe already in the admin's own design system, the
-  floating-card composition (`card-shell card-shadow`, `docs/internal/admin-design-system.md`,
+  floating-card composition (`card-shell card-shadow`, `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`,
   "Component recipes") that a custom `/admin/` screen now composes directly: `PageHeader` for the
   header band, then an `overflow-hidden card-shell card-shadow` div with no `overflow-x-auto` of
   its own around `AdminTable`, whose own wrapper is the one scroll owner; `overflow-hidden`
@@ -6109,8 +6109,8 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `.btn`. `motion-property` and `motion-vocabulary` exempt DaisyUI's own component classes and
   Tailwind's `transition*` utilities on their class-join half, checked instead for the properties
   they animate; the eleven vendor disagreements are recorded in
-  `docs/internal/admin-design-system.md`'s Motion section rather than fixed.
-- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s Motion section rather than fixed.
+- **Record:** `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "The DaisyUI decision: eleven vendor
   disagreements"; `src/lib/audit/rules/static/motion-property.ts` and
   `src/lib/audit/rules/static/motion-vocabulary.ts`, both carrying the DaisyUI class-name
   exemption.
@@ -6145,9 +6145,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   `motion-hover-gate`, per the follow-ups this pass files to ROADMAP's "Borrowable patterns" tier.
 - **Shape:** no rule targeting `.tooltip` or `.menu` ships; `motion-hover-gate` governs
   cairn's own authored rules only and does not reach a vendor component. The two components are
-  recorded as vendor disagreements 6 and 7 in `docs/internal/admin-design-system.md`'s Motion
+  recorded as vendor disagreements 6 and 7 in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s Motion
   section.
-- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+- **Record:** `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "The DaisyUI decision: eleven vendor
   disagreements", items 6 and 7; `ROADMAP.md`, "Borrowable patterns".
 - **Verified:** no unlayered `@media (hover: hover)` guard on `.tooltip` or `.menu` appears in
   `custom-surface-budget.json`; its one `.menu` entry is the pre-existing focus-visible rule, and
@@ -6167,9 +6167,9 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   suppress the drawer's transition at the breakpoint flip as a side effect.
 - **Shape:** no rule targets `.drawer-side` to suppress its transition at `lg` or `xl`. The
   vendor transition runs at every breakpoint flip, dragged or scripted, recorded as vendor
-  disagreement 5 in `docs/internal/admin-design-system.md`'s Motion section, which states the
+  disagreement 5 in `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s Motion section, which states the
   shipped sheet does not honor the furniture rule at the flip as a named limitation.
-- **Record:** `docs/internal/admin-design-system.md`, "The DaisyUI decision: eleven vendor
+- **Record:** `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "The DaisyUI decision: eleven vendor
   disagreements", item 5, and its Limitations; `ROADMAP.md`, the resize stopper entry in the
   Later tier.
 - **Verified:** the two `.drawer-side` entries in `custom-surface-budget.json` are the
@@ -6232,7 +6232,7 @@ own text anticipated, a site's Tailwind scan boundary, not the render pipeline's
   authoring-time count; `stock-default-hazards`'s new advisory arm naming the retired class.
 - **Record:** `docs/specs/2026-09-12-extend-design.md`, "Batch actions on `AdminTable`
   is engine work riding along, not an atom" (the paragraph carrying ASC's evidence);
-  `docs/internal/admin-design-system.md`, the tooltip recipe.
+  `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, the tooltip recipe.
 - **Verified:** `src/tests/component/Tooltip.test.ts` (hover, `:focus-visible`, Escape, coarse
   pointer, `aria-describedby`); `stock-default-hazards`'s own fixture for the new arm.
 

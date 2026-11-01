@@ -1,5 +1,26 @@
 # Cairn admin design system (agent reference)
 
+## Contents
+
+- [The design charter (Geoff, 2026-07-15; grades every admin design decision)](#the-design-charter-geoff-2026-07-15-grades-every-admin-design-decision)
+- [Load-bearing rules (break these and the admin renders wrong)](#load-bearing-rules-break-these-and-the-admin-renders-wrong)
+- [The context model: office and desk](#the-context-model-office-and-desk)
+- [Tokens (Warm Stone)](#tokens-warm-stone)
+- [Type](#type)
+- [Grammar tokens](#grammar-tokens)
+- [Component recipes](#component-recipes)
+- [Chrome and spacing](#chrome-and-spacing)
+- [Vertical alignment mechanics](#vertical-alignment-mechanics)
+- [Icons](#icons)
+- [Voice](#voice)
+- [Adding a new admin surface](#adding-a-new-admin-surface)
+- [The developer-facing vocabulary (the versioned seam)](#the-developer-facing-vocabulary-the-versioned-seam)
+- [The starter template's design](#the-starter-templates-design)
+- [Rehearsing a DaisyUI or Tailwind upgrade](#rehearsing-a-daisyui-or-tailwind-upgrade)
+- [Motion](#motion)
+- [Dates never wrap (Geoff, 2026-07-06)](#dates-never-wrap-geoff-2026-07-06)
+
+
 The polish bar is the live admin components rendered on the showcase, not a static file: they are the
 most-recent version by construction and authored in the real DaisyUI/Tailwind utility classes, so a hand
 twin can never represent them faithfully (the old `2026-06-12-editor-shell-gold-standard.html` is a

@@ -33,7 +33,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 4. A public name or option also moves its reference page under `docs/reference/` and its row in
    `docs/internal/option-map.json`. The gate fails on both.
 5. Run `npm run check:surface -- --update` when the public surface changed, and commit
-   `docs/internal/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
+   `scripts/checks/api-surface.md`. Add the `CHANGELOG.md` entry under `## Unreleased`, and for a
    breaking change a `Consumers must:` line there and in `docs/extend/migration-notes.md`. The
    `cairn-pass` skill owns those rules.
 6. Run the checks in "Checks".
@@ -73,7 +73,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 
 - Geoff's edit in the review is final. Keep it.
 - A correction to wording goes through the `survey` skill, which logs it.
-- A change to cairn's voice is a PR to `docs/internal/docs-register.md`.
+- A change to cairn's voice is a PR to `.claude/skills/cairn-docs/references/docs-register.md`.
 - A change to a base standard (Google, Microsoft) is a PR to Survey.
 
 ## When the process misfires
@@ -84,7 +84,7 @@ not run), file a cairn `BACKLOG.md` item tagged `#docs-process` with the session
 
 ## Sources to route to, never copy
 
-- `docs/internal/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting
+- `.claude/skills/cairn-docs/references/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting
   brief for the page's track.
 - `~/.claude/docs/voice/technical-doc-web.md` for developer pages, and
   `~/.claude/docs/voice/editor.md` for editor pages.

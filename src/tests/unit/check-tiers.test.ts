@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { exportTiers } from '../../../scripts/checks/check-tiers.mjs';
-import { tierDisagreements } from '../../../scripts/checks/check-tier-docs.mjs';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -92,28 +91,5 @@ describe('exportTiers', () => {
     );
     expect(result.failures).toEqual([]);
     expect(result.entries).toEqual([expect.objectContaining({ name: 'Widget', tier: 'Extension' })]);
-  });
-});
-
-describe('tierDisagreements', () => {
-  const entries = [
-    { subpath: '.', name: 'a', tier: 'Extension' },
-    { subpath: '.', name: 'b', tier: 'Unstable' },
-    { subpath: '.', name: 'c', tier: 'Scaffold' },
-  ];
-
-  it('counts each statement that agrees with its tag and skips a name the page states nothing for', () => {
-    const stated: Record<string, string | null> = { a: 'Extension', b: 'Unstable', c: null };
-    const result = tierDisagreements(entries, (_subpath: string, name: string) => stated[name]);
-    expect(result).toEqual({ checked: 2, failures: [] });
-  });
-
-  it('fails a statement that disagrees with the tag, naming both tiers', () => {
-    const stated: Record<string, string | null> = { a: 'Unstable', b: 'Unstable', c: 'Scaffold' };
-    const result = tierDisagreements(entries, (_subpath: string, name: string) => stated[name]);
-    expect(result.failures).toHaveLength(1);
-    expect(result.failures[0]).toContain('a');
-    expect(result.failures[0]).toContain('Unstable');
-    expect(result.failures[0]).toContain('Extension');
   });
 });

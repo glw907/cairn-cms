@@ -51,6 +51,9 @@ both repackage `dist`, so never run them concurrently):
   comment gate, the custom-surface check, the package and dev-package checks, and `check:version`, so
   this list never needs re-copying when a check is added)
 - `npm test` (exit 0, not just a passing count)
+- `node scripts/build/build-guidance-hashes.mjs`, committed, before the release commit: it rebuilds
+  `guidance-hashes.json` from every earlier release tag, so `cairn-guidance install` can delete a
+  file the last release shipped and this one does not
 - after `npm version`, also bump `packages/cairn-cms-dev` to the same number (`npm version <x.y.z>
   --no-git-tag-version` in that directory), then run `npm run check:close` again: CI's `test` job fails
   the release commit when the two versions differ
@@ -131,9 +134,9 @@ The release body is the changelog window since the last published tag. When seve
 one publish (the common case, because passes hold and batch), the body summarizes each
 held section in the window and carries every `Consumers must:` line from the breaking ones. Compose it into
 a notes file rather than by hand at the `gh` prompt. Add the matching per-version entry to
-`docs/extend/upgrade-cairn.md` if the pass did not already.
+`MIGRATION-NOTES.md` if the pass did not already.
 
-A window touching an admin surface (`src/lib/components/*.svelte`, `cairn-admin.css`) also earns a
+A window touching an admin surface (`src/lib/admin/**`, `cairn-admin.css`) also earns a
 re-read of the reproduction stories and docs pages the change reaches: check every affected story's
 caption against what it now renders, and, on a page carrying a keyed callout list, that the list still
 matches. A reproduction pictures a live render, so an admin change can silently falsify the prose

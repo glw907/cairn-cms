@@ -14,7 +14,7 @@
     "src/lib/auth-channel/factory.ts:375 resolveCookieBase: the cookie name is required and a cairn_ prefix throws at construction",
     "src/lib/auth-channel/factory.ts:349 resolveSubject: the member's subject from the channel's session cookie, or null",
     "migrations-channel/0000_channel.sql: the packaged channel schema (cairn_channel_* tables)",
-    "docs/extend/add-a-second-sign-in-group.md, docs/reference/auth-channel.md"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-a-second-sign-in-group.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/auth-channel.md"
   ],
   "expectations": [
     "A createAuthChannel call in a server-only module wires memberIdFor as lookup, sendMemberCode as deliver, a canonicalizing normalize, and a challenge that verifies the Turnstile token.",
@@ -95,7 +95,7 @@
     {
       "n": 4,
       "text": "The channel's normalize puts a contact in one canonical form, such as trimmed and lowercased, before the lookup reads it.",
-      "source": "docs/reference/auth-channel.md Config obligations; src/lib/auth-channel/factory.ts normalize"
+      "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/auth-channel.md Config obligations; src/lib/auth-channel/factory.ts normalize"
     }
   ]
 }

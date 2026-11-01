@@ -20,7 +20,7 @@ The agent-facing idiom charter: one obvious way per pattern, each rule anchored 
 best existing file (imitate the exemplar; the rule is a summary of it). Derived from the
 2026-07-01 eleven-subsystem survey (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-code-polish-survey.md`)
 during the code polish pass. This is a standing pass dimension: a pass that changes an idiom
-updates this file, the same as a reference page. Comments and TSDoc are gate-enforced
+updates this file, the same as a doc comment. Comments and TSDoc are gate-enforced
 elsewhere (`check:comments`) and not restated here.
 
 ## Errors and results
@@ -89,9 +89,8 @@ elsewhere (`check:comments`) and not restated here.
   its job and the non-obvious rationale (exemplar: `src/lib/github/repo.ts`, which records
   why Trees-over-Contents). The stragglers (`pending.ts`, `fields.ts`, `env.ts`, two auth
   files) converge.
-- **M2.** Bins are thin shells (argv + I/O) delegating to a logic module (exemplar:
-  `src/lib/doctor/bin.ts`). Barrels exist only at public subpath entries and stay
-  re-export-only; `doctor/index.ts` moves its resident logic out to honor this.
+- **M2.** Bins are thin shells (argv + I/O) delegating to a logic module. Barrels exist only
+  at public subpath entries and stay re-export-only.
 - **M3.** Internal re-export shims left over from moves are retired by retargeting their
   importers (`content/permalink.ts`).
 - **M4.** Indentation is 2-space everywhere; the tab-indented `doctor/` tree and its test

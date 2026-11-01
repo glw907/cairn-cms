@@ -500,14 +500,12 @@ export function formatLeakViolations({ unrecorded, stale, unreasoned }) {
   return lines.join('\n');
 }
 
-// Exported so a sibling gate (reference-coverage.mjs's indexed-access-parenthetical clause)
-// reads the same registry file through the same parsing and error handling, rather than
-// re-implementing the load.
 /**
+ * Read and parse the leak registry.
  * @returns {RegistryEntry[] | null} null when the registry cannot be read or parsed (the
  *   diagnostic is already printed and `process.exitCode` set; the caller must stop)
  */
-export function loadRegistry() {
+function loadRegistry() {
   /** @type {string} */
   let raw;
   try {

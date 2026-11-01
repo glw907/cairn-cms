@@ -14,7 +14,7 @@
     "src/lib/audit/rules/static/list-role.ts:200 a markup rule that walks file.nodes for RegularElement nodes and reads their attributes; src/tests/unit/audit/rules/list-role.test.ts the test shape: parseComponent fixtures, a pass and a fail case, a suppression directive, and a clean run over the engine's own tree",
     "src/tests/unit/audit/run.test.ts:106 the registry membership test lists every static rule id",
     "scripts/checks/check-skill-budget.mjs:198,236 (run by check:package) compares the tier map in the admin-screens skill's SKILL.md (skills/cairn-admin-screens at the pre-agent-first tag, skills/cairn-building-admin-screens at this branch tip) against the live registries' ids and tiers, at both the pre-agent-first tag and this branch tip",
-    "docs/reference/cairn-audit.md:77 the static rules table, one row per rule"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md:77 the static rules table, one row per rule"
   ],
   "expectations": [
     "A new module under src/lib/audit/rules/static exports a StaticRule with id 'img-alt' and tier 'error', and staticRules() registers it.",

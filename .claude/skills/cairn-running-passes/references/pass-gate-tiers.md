@@ -77,7 +77,7 @@ matches it:
 | harness | `.claude/` |
 | showcase | `examples/showcase/`, `templates/`, `packages/create-cairn-site/` |
 | engine | `src/lib/`, `scripts/build/`, `packages/cairn-cms-dev/`, `migrations/`, `migrations-channel/`, `package.json`, `package-lock.json`, `svelte.config.js`, `tsconfig.json` |
-| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `skills/`, `claude/` |
+| export surface | `src/lib/**/index.ts`, every `src/lib` source behind a `package.json` `exports` entry, `package.json`, the surface and self-use allowlists, `scripts/checks/api-surface.md`, `schema/`, `skills/`, `claude/` |
 
 A pattern ending in `/` is a literal directory prefix, a pattern with no glob character is an exact
 path, and anything else is a glob. Dot paths (`.vale/`, `.vale.ini`, `.tellgrader.json`,
@@ -94,10 +94,9 @@ spell out:
   `check:audit-pack`, `check:consumers`, `check:public-skill`) list the export-surface bucket and
   no engine bucket, so an `index.ts` change (or a `package.json` export entry) selects them and
   another `src/lib` file does not. Only `check:public-skill` also lists the docs bucket, because
-  it reads `docs/reference/render.md`; `check:surface` reads the built types and its golden file
-  and no page, so a docs change does not select it. `check:reference`, `check:reference:signatures`, and
-  `check:options` keep the engine bucket beside export surface and docs: a public option or type
-  can change in a non-index file, and they must see it. A non-index change that alters the shape
+  it reads the `cairn-styling-public-pages` skill's stylesheet contract; `check:surface` reads the built types and its golden file and no page, so a docs change does not
+  select it. `check:options` keeps the engine bucket beside export surface and docs: a public option or type
+  can change in a non-index file, and it must see it. A non-index change that alters the shape
   of an export is left to CI for the six.
 - `check:vale-rules` (the Cairn rule cases `vale test` runs inside the docs gate) is a docs-bucket
   extra, so a `.vale/` or `.vale.ini` change runs it.
@@ -164,7 +163,7 @@ rerun trigger or a deletion forces it, or when the selection cannot be computed.
 `Memory peak` values were 2G, 2G, and 2G (systemd rounds to the nearest 0.1G), under the light lane's
 3G cap. That measurement ran without a cgroup limit, and it did not carry over: the same line, run
 through `CAIRN_GATE_LANE=light cairn-run-gate` over `origin/main..HEAD`, exited 1 with `JavaScript
-heap out of memory` in `check:reference`. Node sizes its default heap from the cgroup limit, about
+heap out of memory` in a dist-reading check that has since been removed. Node sizes its default heap from the cgroup limit, about
 1GB under the light cap, so a leg that peaks at 2G uncapped can still run out of heap there. Line 1
 therefore stays on the heavy lane. Prove a lane by a run under that lane's own cap, never by a peak
 measured outside it.
@@ -204,8 +203,7 @@ of that, and `full` adds the remaining CI-only checks plus the whole showcase e2
 The `docs` gate string is `scripts/checks/docs-gate.mjs` (`npm run check:docs-gate`), the one
 runner that carries every check that reads a doc arm's content: check:docs, check:vale,
 check:leaks, check:symbols, check:snippets, check:transcripts, check:visuals,
-check:arm-indexes, check:editor-quotes, check:readiness, check:tool-conditions,
-check:target-stack, check:reference, check:reference:signatures, and check:options. Every tier above `docs`
+check:editor-quotes, check:readiness, check:tool-conditions, and check:options. Every tier above `docs`
 carries it once, through the superset chain, so `full`'s own explicit checks list does not repeat
 check:snippets, check:transcripts, or check:symbols.
 

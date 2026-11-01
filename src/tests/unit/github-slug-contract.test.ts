@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { armOf, loadDeletionList, readArmStates } from '../../../scripts/checks/arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -12,11 +11,12 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
  *
  * `rehype-slug` computes each id with `github-slugger` under the hood, so this is meant to be
  * a tautology today. The point of the test is to keep it one: every case below is a real
- * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus
- * (one case is marked synthetic, below), and its expected id is a literal, not a value computed by
- * importing `github-slugger` at test time. The last test holds each case to its source page. A
- * source the harvest deleted keeps its heading as a literal stress case while its arm waits for
- * its rebuild, and must name a live page again once the arm is rebuilt. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
+ * heading from the published corpus, past or present, and its expected id is a literal, not a
+ * value computed by importing `github-slugger` at test time. The last test holds each case to its
+ * source page. A case marked `synthetic` keeps a heading shape no live page carries (the technical
+ * pages it came from left the package) as a literal stress case. A source under `docs/admin/` or
+ * `docs/editors/` is skipped while that directory holds no page, and must name a live page again
+ * once it does. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
  * test goes red without needing to know why GitHub's algorithm changed; the in-corpus anchors the
  * published docs carry (`#section-heading` links between pages) ride on this contract holding.
  *
@@ -33,49 +33,56 @@ describe('the GitHub-slug contract', () => {
       // A backticked path segment plus a slash inside the code span.
       markdown: '## Why `/healthz` lives at the site root',
       id: 'why-healthz-lives-at-the-site-root',
-      source: 'docs/reference/admin-routes.md',
+      source: 'retired docs/reference/admin-routes.md',
+      synthetic: true,
     },
     {
       // Parenthetical qualifier after the heading text.
       markdown: '## Per-route mounting (advanced)',
       id: 'per-route-mounting-advanced',
-      source: 'docs/reference/admin-routes.md',
+      source: 'retired docs/reference/admin-routes.md',
+      synthetic: true,
     },
     {
       // A single-quoted literal nested inside a backticked code span.
       markdown: "### Eager and `'visible'` mounting",
       id: 'eager-and-visible-mounting',
-      source: 'docs/reference/islands.md',
+      source: 'retired docs/reference/islands.md',
+      synthetic: true,
     },
     {
       // A slash-bearing subpath inside a code span, mid-sentence.
       markdown: '## The re-exported `/delivery/data` surface',
       id: 'the-re-exported-deliverydata-surface',
-      source: 'docs/reference/delivery.md',
+      source: 'retired docs/reference/delivery.md',
+      synthetic: true,
     },
     {
       // A backticked component name leading the heading, plus a parenthetical.
       markdown: '#### `MarkdownEditor` wiring props (Unstable API)',
       id: 'markdowneditor-wiring-props-unstable-api',
-      source: 'docs/reference/admin.md',
+      source: 'retired docs/reference/admin.md',
+      synthetic: true,
     },
     {
       // Two backticked terms in one heading, nested in a parenthetical.
       markdown: '#### `supportContact` (adapter `editor` member)',
       id: 'supportcontact-adapter-editor-member',
-      source: 'docs/reference/core.md',
+      source: 'retired docs/reference/core.md',
+      synthetic: true,
     },
     {
       // Mixed case prose with a parenthetical qualifier, no code spans.
       markdown: '## Single-mount admin (recommended)',
       id: 'single-mount-admin-recommended',
-      source: 'docs/reference/sveltekit.md',
+      source: 'retired docs/reference/sveltekit.md',
+      synthetic: true,
     },
     {
       // Nothing but digits and periods: every period drops and no separator replaces it.
       markdown: '## 0.94.0',
       id: '0940',
-      source: 'docs/extend/migration-notes.md',
+      source: 'MIGRATION-NOTES.md',
     },
     {
       // A digit and a colon mid-heading, plus a comma before the last word. No live page carries
@@ -122,16 +129,22 @@ describe('the GitHub-slug contract', () => {
     ]);
   });
 
-  it('pulls every case from its source page, or from a deleted page whose arm is not yet rebuilt', () => {
-    const deleted = new Set(loadDeletionList(ROOT).deleted);
-    const states = readArmStates(ROOT);
+  /** Whether a source sits in a docs directory that holds no page yet. */
+  const awaitingPages = (source: string) =>
+    ['docs/admin/', 'docs/editors/'].some((dir) => {
+      if (!source.startsWith(dir)) return false;
+      const abs = join(ROOT, dir);
+      return !existsSync(abs) || !readdirSync(abs, { recursive: true, encoding: 'utf8' }).some((n) => n.endsWith('.md'));
+    });
+
+  it('pulls every case from its source page, or from a docs directory that holds no page yet', () => {
     const sources = [
       ...cases.map(({ markdown, source, synthetic }) => ({ markdown, source, synthetic })),
       { markdown: '### You know it worked when', source: duplicateSource, synthetic: undefined },
     ];
     for (const { markdown, source, synthetic } of sources) {
       if (synthetic) continue;
-      if (deleted.has(source) && states[armOf(source) ?? ''] !== 'rebuilt') continue;
+      if (awaitingPages(source)) continue;
       expect(existsSync(join(ROOT, source)), `${source} does not exist; repoint the case at a live page or mark it synthetic`).toBe(true);
       const lines = readFileSync(join(ROOT, source), 'utf8').split('\n');
       expect(lines, `${source} no longer carries "${markdown}"; repoint the case at a live page`).toContain(markdown);

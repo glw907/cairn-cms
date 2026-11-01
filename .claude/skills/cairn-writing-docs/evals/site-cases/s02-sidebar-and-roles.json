@@ -14,7 +14,7 @@
     "src/lib/sveltekit/admin-nav.ts:482 hrefReachable: a site entry whose href has a rule is hidden from a role the rule refuses",
     "src/lib/sveltekit/admin-nav.ts:516 roleMatches: a section or entry roles list admits only the named roles, owner included, with no owner bypass",
     "src/lib/vite/internal.ts:310 a declared roles vocabulary rides site-facts.json, and a stale file fails the build until cairn-manifest rewrites it",
-    "docs/extend/arrange-the-admin-sidebar.md, docs/extend/restrict-admin-access.md"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/arrange-the-admin-sidebar.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/restrict-admin-access.md"
   ],
   "expectations": [
     "The adapter declares a treasurer role beside owner and editor.",

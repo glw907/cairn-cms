@@ -1,7 +1,7 @@
 // cairn-cms: the compile-only hand-mount fixture for the narrowed public `ContentRoutes`
 // (foundations B, Task 1). It pins two things about every member of the narrow public set: that the
-// member is PRESENT, and that it is ASSIGNABLE into the route slot `docs/reference/sveltekit.md`
-// teaches a site to assign it into. Each load goes into kit's own `ServerLoad`, which constrains
+// member is PRESENT, and that it is ASSIGNABLE into the route slot the docs teach a site to
+// assign it into. Each load goes into kit's own `ServerLoad`, which constrains
 // both the event parameter and the `OutputData` a load may return; each action goes into kit's own
 // `Actions` record. That is the whole claim. This file declares no generated `$app/types`, so
 // nothing here instantiates a route's real `RouteParams`, `ParentData`, or `RouteId`: it stands in
@@ -87,9 +87,8 @@ function typeOnlyNarrowActionsMount(routes: ContentRoutes): void {
 }
 void typeOnlyNarrowActionsMount;
 
-// The worked example the reference page carries verbatim (`docs/reference/sveltekit.md`, the
-// `[concept]/+page.server.ts` block): a concept list view mounted by hand off the public factory,
-// with `listDeleteAction` under the `delete` name that page teaches.
+// The `[concept]/+page.server.ts` worked example: a concept list view mounted by hand off the
+// public factory, with `listDeleteAction` under the `delete` name the docs teach.
 function typeOnlyReferenceExampleMounts(): void {
   const routes = createContentRoutes({ runtime: {} as CairnRuntime });
   routes.listLoad satisfies ServerLoad;

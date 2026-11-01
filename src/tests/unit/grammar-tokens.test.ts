@@ -300,26 +300,21 @@ describe('container role utilities (card-shell, card-shadow)', () => {
   });
 });
 
-// CONTRACT: the `@source inline(...)` safelist line in scripts/build/admin-css.input.css, and the two
-// hand-written prose counts that describe it (that file's own comment, and
-// docs/reference/admin-grammar-tokens.md), are all numbers a human bumps by hand whenever a role
-// utility is added. grammar-tokens.test.ts already guards the utility CLASSES themselves against
+// CONTRACT: the `@source inline(...)` safelist line in scripts/build/admin-css.input.css, and the
+// hand-written prose count that describes it (that file's own comment), are numbers a human bumps
+// by hand whenever a role utility is added. grammar-tokens.test.ts already guards the utility CLASSES themselves against
 // drift (the describe blocks above); this guards the COUNTS the friction log flagged (2026-07-28,
 // design infrastructure Pass 2, Task 11) as unguarded: a role added to GRAMMAR_TOKENS or the
-// container-role set now fails a test here instead of leaving a stale number in either file.
+// container-role set now fails a test here instead of leaving a stale number in the file.
 describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own prose', () => {
   const inputCssSource = readFileSync(
     new URL('../../../scripts/build/admin-css.input.css', import.meta.url),
     'utf8',
   );
-  const docsSource = readFileSync(
-    new URL('../../../docs/reference/admin-grammar-tokens.md', import.meta.url),
-    'utf8',
-  );
 
   // The two container roles (card-shell, card-shadow) name a surface's border/radius/fill, not a
   // --cairn-type-*/--cairn-gap-* property, so no token module lists them; two is the current,
-  // deliberate count (docs/reference/admin-grammar-tokens.md, "Container roles").
+  // deliberate count.
   const CONTAINER_ROLE_COUNT = 2;
 
   // Each --cairn-type-* role in GRAMMAR_TOKENS pairs a base token with a --leading token; stripping
@@ -356,7 +351,7 @@ describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own pro
     const tokenCount = match![1].trim().split(/\s+/).length;
     expect(
       tokenCount,
-      `expected the @source inline(...) safelist in scripts/build/admin-css.input.css to carry ${expectedCount} tokens (GRAMMAR_TOKENS' ${utilityCountFromGrammarTokens(GRAMMAR_TOKENS)} role utilities plus ${CONTAINER_ROLE_COUNT} container roles); scripts/build/admin-css.input.css and docs/reference/admin-grammar-tokens.md both state this count in prose and must move together`,
+      `expected the @source inline(...) safelist in scripts/build/admin-css.input.css to carry ${expectedCount} tokens (GRAMMAR_TOKENS' ${utilityCountFromGrammarTokens(GRAMMAR_TOKENS)} role utilities plus ${CONTAINER_ROLE_COUNT} container roles); scripts/build/admin-css.input.css states this count in prose and must move with it`,
     ).toBe(expectedCount);
   });
 
@@ -368,20 +363,7 @@ describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own pro
     const parsed = parseCount(match![1], 'scripts/build/admin-css.input.css');
     expect(
       parsed,
-      `scripts/build/admin-css.input.css states "${match![1]}" (${parsed}) grammar and container role utilities but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in scripts/build/admin-css.input.css and the matching count in docs/reference/admin-grammar-tokens.md`,
-    ).toBe(expectedCount);
-  });
-
-  it("matches docs/reference/admin-grammar-tokens.md's own prose count", () => {
-    const match = docsSource.match(/container roles, close this page's set at (\w+)\./);
-    expect(
-      match,
-      "expected the container-roles sentence in docs/reference/admin-grammar-tokens.md",
-    ).not.toBeNull();
-    const parsed = parseCount(match![1], 'docs/reference/admin-grammar-tokens.md');
-    expect(
-      parsed,
-      `docs/reference/admin-grammar-tokens.md states its full set closes at "${match![1]}" (${parsed}) but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in docs/reference/admin-grammar-tokens.md and the matching comment in scripts/build/admin-css.input.css`,
+      `scripts/build/admin-css.input.css states "${match![1]}" (${parsed}) grammar and container role utilities but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in scripts/build/admin-css.input.css`,
     ).toBe(expectedCount);
   });
 });

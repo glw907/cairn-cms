@@ -155,7 +155,7 @@ const SITE_VISUAL = 'site-visual.spec.ts';
  * The lane prefix on fast-lane line 1 (.claude/skills/cairn-running-passes/references/pass-gate-tiers.md, "The fast lane"). Empty
  * means the heavy lane, cairn-run-gate's default. Measured 2026-10-10 over c495ed11~1..8e2b7d29:
  * three `Memory peak` values of 2G, under the light lane's 3G cap, yet the leg failed there. Node
- * sizes its default heap from the cgroup limit, about 1GB under the light cap, and `check:reference`
+ * sizes its default heap from the cgroup limit, about 1GB under the light cap, and a dist-reading check
  * ran out of heap (`gate exit: 1`, `JavaScript heap out of memory`), so a peak measured outside the
  * cap does not prove the lane. A new lane changes this value and its pinned unit test together, and
  * is proven by a run under the lane's cap.

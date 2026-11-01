@@ -10,11 +10,14 @@ import { resolve, sep } from 'node:path';
 import { formatCheckReport, isStaleUnderStrict, runGuidanceCheck } from './check.js';
 import { installGuidance, readGuidanceSource } from './install.js';
 
-export const USAGE = `Usage: cairn-guidance <install|check> [--strict]
+export const USAGE = `Usage: cairn-guidance <install|check> [--strict] [--dry-run]
 
   install   Copy the package's skills, review agent, and CLAUDE.md fragment into
             .claude/, writing <dest>.orig beside anything an edit diverged from
-            and a MANIFEST of what was written. Never deletes.
+            and a MANIFEST of what was written. Deletes a file a previous install
+            wrote and this version no longer ships only when its hash matches a
+            version the package shipped; an edited file is kept and named on every run.
+  --dry-run With install, print what it would write, delete, and keep, and change nothing.
   check     Report whether the installed guidance tree, the CLAUDE.md import
             line, and the gate wiring match what the package expects.
   --strict  With check, exit 1 when the guidance tree is stale or missing.
@@ -32,27 +35,32 @@ of which fails the run except the tree freshness under --strict. An unknown comm
 export interface GuidanceArgs {
   command: 'install' | 'check';
   strict: boolean;
+  dryRun: boolean;
   help: boolean;
 }
 
 /** Parse `cairn-guidance`'s argv. Throws, with the usage line attached, on anything unexpected. */
 export function parseArgs(argv: string[]): GuidanceArgs {
   if (argv.includes('--help') || argv.includes('-h')) {
-    return { command: 'check', strict: false, help: true };
+    return { command: 'check', strict: false, dryRun: false, help: true };
   }
   const [command, ...rest] = argv;
   if (command !== 'install' && command !== 'check') {
     throw new Error(`cairn-guidance: unknown command '${command ?? ''}'\n\n${USAGE}`);
   }
   const strict = rest.includes('--strict');
-  const unknown = rest.filter((flag) => flag !== '--strict');
+  const dryRun = rest.includes('--dry-run');
+  const unknown = rest.filter((flag) => flag !== '--strict' && flag !== '--dry-run');
   if (unknown.length > 0) {
     throw new Error(`cairn-guidance: unknown flag '${unknown[0]}'\n\n${USAGE}`);
   }
   if (strict && command === 'install') {
     throw new Error(`cairn-guidance: --strict applies only to check\n\n${USAGE}`);
   }
-  return { command, strict, help: false };
+  if (dryRun && command === 'check') {
+    throw new Error(`cairn-guidance: --dry-run applies only to install\n\n${USAGE}`);
+  }
+  return { command, strict, dryRun, help: false };
 }
 
 async function main(): Promise<void> {
@@ -91,9 +99,10 @@ async function main(): Promise<void> {
   const source = await readGuidanceSource();
 
   if (args.command === 'install') {
-    const report = await installGuidance(cwd, source);
-    for (const path of report.written) console.log(`wrote ${path}`);
-    for (const path of report.origWritten) console.log(`wrote ${path}`);
+    const report = await installGuidance(cwd, source, { dryRun: args.dryRun });
+    const verb = args.dryRun ? 'would write' : 'wrote';
+    for (const path of report.written) console.log(`${verb} ${path}`);
+    for (const path of report.origWritten) console.log(`${verb} ${path}`);
     for (const path of report.origPresent) console.log(`left existing ${path}`);
     for (const path of report.sourceRefused) {
       console.error(`refused packaged entry ${path}: not a regular file`);
@@ -104,7 +113,27 @@ async function main(): Promise<void> {
     for (const { path, code } of report.writeErrors) {
       console.error(`write error ${path}: ${code}`);
     }
-    for (const path of report.removable) console.log(`removable (no longer shipped): ${path}`);
+    for (const path of report.removed) {
+      console.log(`${args.dryRun ? 'would remove' : 'removed'} (no longer shipped): ${path}`);
+    }
+    for (const path of report.origLeft) {
+      console.log(`left ${path}: the copy of an edit you made; read it, then delete it by hand`);
+    }
+    for (const dir of report.emptiedDirs) console.log(`removed empty directory ${dir}`);
+    for (const { path, reason } of report.kept) {
+      const why =
+        reason === 'edited'
+          ? 'edited since install'
+          : reason === 'unrecognized'
+            ? 'not a file this package ever shipped'
+            : 'a symlink, a directory, or behind a symlink';
+      console.log(`kept ${path}: ${why}; delete it by hand if you no longer need it`);
+    }
+    for (const dir of report.unmanaged) {
+      console.log(
+        `found ${dir}: an old skill with no .claude/cairn/MANIFEST to say this package wrote it; delete it by hand if you did not write it`
+      );
+    }
     console.log(
       '\nThe guidance tree belongs in your commit. .orig files are meant to be read and deleted, not ignored.'
     );

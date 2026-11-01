@@ -15,7 +15,7 @@
     "src/lib/sveltekit/content-routes-media-ingest.ts:105,138 the upload action refuses above maxUploadBytes (too_large) and a sniffed type outside allowedTypes (unsupported_type); a type check on upload leaves stored assets alone",
     "src/lib/admin/media-base-context.ts:5 DEFAULT_MEDIA_BASE '/media': the editor's live preview builds /media paths whatever publicBase says, so the /media route must stay",
     "src/lib/media-seed/assemble.ts:122 cairn-media-seed downloads <from>/media/<slug>.<hash>.<ext>, a path the kept /media route still serves",
-    "docs/extend/configure-media.md (Set the upload limits; Change the image URLs), docs/reference/core.md AssetConfig, docs/reference/media.md, docs/reference/cloudflare.md, docs/reference/cli-cairn-media-seed.md"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/configure-media.md (Set the upload limits; Change the image URLs), https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/core.md AssetConfig, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/media.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cloudflare.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cli-cairn-media-seed.md"
   ],
   "expectations": [
     "The adapter's media block sets maxUploadBytes to 8 MiB (8388608) and allowedTypes to image/jpeg, image/png, and image/webp, with no gif or avif.",
@@ -89,7 +89,7 @@
     {
       "n": 3,
       "text": "The reply says the /media route was kept on purpose, because the editor's live preview builds /media paths whatever publicBase says.",
-      "source": "src/lib/admin/media-base-context.ts:5; docs/extend/configure-media.md (Change the image URLs, step 3)"
+      "source": "src/lib/admin/media-base-context.ts:5; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/configure-media.md (Change the image URLs, step 3)"
     }
   ]
 }

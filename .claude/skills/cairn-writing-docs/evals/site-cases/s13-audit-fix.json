@@ -12,7 +12,7 @@
     "src/lib/audit/rules/static/list-role.ts: a marker-suppressed <ul> (an item's flex class) with no role attribute is an error; the fix is role=\"list\" on the list and role=\"listitem\" on the item whose class causes it",
     "src/lib/audit/rules/static/stock-default-hazards.ts:157 badge-ghost is an error-tier finding; cairn's recipe is the three chip registers (StatusChip, or the cairn-chip-quiet, -warning, -outline classes)",
     "src/lib/audit/suppress.ts:20 DIRECTIVE_MARKER: the suppression comment, for a deliberate finding with a recorded reason",
-    "docs/extend/run-cairn-audit-on-your-site.md (Run the static pass; Scope the static pass; Suppress a static finding), docs/reference/cairn-audit.md (The static rules)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/run-cairn-audit-on-your-site.md (Run the static pass; Scope the static pass; Suppress a static finding), https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md (The static rules)",
     "setups/site/s13-audit-fix.mjs seeds the screen; the unseeded fixture audits clean (87 files, 0 errors) and the seeded one reports exactly two errors"
   ],
   "expectations": [
@@ -36,7 +36,7 @@
       "type": "contains",
       "path": "src/routes/admin/notes",
       "regex": "StatusChip|cairn-chip-(quiet|warning|outline)",
-      "source": "src/lib/audit/rules/static/stock-default-hazards.ts:157; docs/reference/admin-toolkit.md StatusChip"
+      "source": "src/lib/audit/rules/static/stock-default-hazards.ts:157; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/admin-toolkit.md StatusChip"
     },
     {
       "type": "absent",
@@ -47,7 +47,7 @@
     {
       "type": "unchanged",
       "path": "cairn-audit.config.json",
-      "source": "docs/extend/run-cairn-audit-on-your-site.md (Scope the static pass): the scaffold's config file, absent from this fixture, so an added one is a scope change"
+      "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/run-cairn-audit-on-your-site.md (Scope the static pass): the scaffold's config file, absent from this fixture, so an added one is a scope change"
     },
     {
       "type": "npm",
@@ -68,12 +68,12 @@
     {
       "n": 3,
       "text": "The final reply names the two rules that fired, list-role and stock-default-hazards, says what each required, and reports that the audit now exits 0.",
-      "source": "docs/reference/cairn-audit.md (The static rules)"
+      "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md (The static rules)"
     },
     {
       "n": 4,
       "text": "The tool log shows cairn-audit run (npm run check:cairn or npx cairn-audit) before the first edit, so the fix answers the findings the report named.",
-      "source": "docs/extend/run-cairn-audit-on-your-site.md (Run the static pass)"
+      "source": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/run-cairn-audit-on-your-site.md (Run the static pass)"
     }
   ]
 }

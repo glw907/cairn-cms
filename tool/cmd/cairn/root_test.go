@@ -171,13 +171,6 @@ func readToolFile(t *testing.T, rel string) string {
 	return readFileAt(t, filepath.Join(repoRoot(t), "tool", filepath.FromSlash(rel)), rel)
 }
 
-// readRepoFile reads one path relative to the repository root, the form a published page under
-// docs/ carries.
-func readRepoFile(t *testing.T, rel string) string {
-	t.Helper()
-	return readFileAt(t, filepath.Join(repoRoot(t), filepath.FromSlash(rel)), rel)
-}
-
 // readFileAt reads path, naming rel rather than the absolute path in its failure, since rel is
 // what a reader greps for.
 func readFileAt(t *testing.T, path, rel string) string {

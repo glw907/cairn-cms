@@ -11,9 +11,9 @@
   "source": [
     "src/lib/public/cairn-public.css:32,54 (the engine's code-keyword and focus-ring roles read --color-primary, so a role token change reaches them and a literal in component CSS does not)",
     "src/lib/audit/rules/static/public-literals.ts (the public-literals rule flags a color literal outside a token)",
-    "docs/extend/theme-your-public-site.md#re-skin-waymark steps 1 and 2 (change --color-primary and the --color-base-* steps in both daisyUI blocks of src/theme/theme.css; leave --color-primary-content unchanged; the site's own theme.css recipe says only that it \"keeps its light/dark value\", so the check pins its lightness and chroma, the contrast-bearing parts, and accepts a hue rotated with the accent; the prose elements read the same tokens, so no edit to prose.css)",
-    "docs/reference/public-css.md#placement-of-a-per-scheme-value (a value set in one daisyUI block never reaches the other scheme)",
-    "docs/reference/public-css.md#ink-derivation (run the public-scope audit before calling a theme finished)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/theme-your-public-site.md#re-skin-waymark steps 1 and 2 (change --color-primary and the --color-base-* steps in both daisyUI blocks of src/theme/theme.css; leave --color-primary-content unchanged; the site's own theme.css recipe says only that it \"keeps its light/dark value\", so the check pins its lightness and chroma, the contrast-bearing parts, and accepts a hue rotated with the accent; the prose elements read the same tokens, so no edit to prose.css)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/public-css.md#placement-of-a-per-scheme-value (a value set in one daisyUI block never reaches the other scheme)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/public-css.md#ink-derivation (run the public-scope audit before calling a theme finished)",
     "src/theme/theme.css header, RE-SKIN RECIPE (the site's own statement of the same steps)",
     "Verified by applying a reference solution to the emitted site: npm run check and the three-rule public audit both pass."
   ],

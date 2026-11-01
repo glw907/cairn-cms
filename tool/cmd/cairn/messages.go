@@ -16,8 +16,8 @@
 // literal.
 //
 // This table is the program's strings, never the published docs. tool/README.md,
-// tool/docs/credentials.md, tool/docs/tripwire.md, and the reference pages under
-// docs/reference/ are documentation an operator reads outside the binary: they are not listed by
+// tool/docs/credentials.md, and tool/docs/tripwire.md are documentation an operator reads
+// outside the binary: they are not listed by
 // `copy-list`, and they are linted by the repository's Vale configuration instead. Do not
 // route a doc sentence through this table.
 //
@@ -67,19 +67,15 @@ const tmplVersion = "%s (%s), go%s, %s/%s"
 
 // The root command's Short, Long, and Example. The Long is the contract a program that
 // reached only `cairn --help` still needs: where the whole contract is, how to ask for a
-// machine-readable payload, what the process exit codes mean, and where each contract is
-// published. The three addresses are URLs rather than repository paths because `go install`
-// puts the binary on a machine that holds no cairn-cms checkout. New to this table.
+// machine-readable payload, and what the process exit codes mean. It names no address outside
+// the binary, since `go install` puts it on a machine that holds no cairn-cms checkout and
+// `cairn help agents` carries the whole contract. New to this table.
 const (
 	shortRoot = "Operate a cairn-cms production site"
 	longRoot  = "Operate a cairn-cms production site.\n\n" +
 		"Run `cairn help agents` for the contract a program reads.\n" +
 		"Pass --json to a reporting command for a machine-readable payload on stdout.\n" +
-		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n\n" +
-		"The published contracts:\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-exit-codes\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-json-output\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-doctor"
+		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN."
 	exampleRoot = "cairn health my-site-a1b2c3"
 )
 
@@ -258,12 +254,7 @@ It exits 3 for a usage error, a run whose only non-passing results are unknown,
 or a directory that is not a cairn site. Run cairn health after deploying for
 the https and email checks that need a live, adopted site.
 
-To check every site cairn knows, run: cairn health --json
-
-Every contract this page summarises is published in full:
-  https://cairn.pub/docs/reference/cli-cairn-exit-codes
-  https://cairn.pub/docs/reference/cli-cairn-json-output
-  https://cairn.pub/docs/reference/cli-cairn-doctor`
+To check every site cairn knows, run: cairn health --json`
 )
 
 // health.go's Short, Long, Example, and flag help. The Long's second paragraph repeats the
@@ -273,8 +264,7 @@ const (
 	longHealth = "Run the read-only health checks against one site, or every site when none is named.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
 		"Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.\n" +
-		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.\n" +
-		"The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output."
+		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract."
 	shortHealth            = "Run the read-only health checks against one site, or every site when none is named"
 	exampleHealth          = "cairn health my-site-a1b2c3 --json"
 	flagHealthJSONHelp     = "print the report as JSON"

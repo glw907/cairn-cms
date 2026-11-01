@@ -13,7 +13,7 @@
     "src/lib/sveltekit/cairn-admin.ts:61 createCairnAdmin's preview option, forwarded to the built-in mint action",
     "src/lib/sveltekit/content-routes-preview.ts:88 the built-in action builds the link from PUBLIC_ORIGIN through requireOrigin (src/lib/env.ts:43), never the request host",
     "examples/showcase src/routes/(site)/preview/[token]/+page.server.ts: the scaffold's preview route at /preview/<token>",
-    "docs/extend/share-a-draft-preview.md (Set the link's lifetime; Mint and revoke from your admin route)"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/share-a-draft-preview.md (Set the link's lifetime; Mint and revoke from your admin route)"
   ],
   "expectations": [
     "The new screen's action calls mintPreview with the posts concept, the entered id, and a PreviewTokenConfig whose ttlMs is 48 hours.",

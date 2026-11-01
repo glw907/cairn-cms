@@ -51,17 +51,17 @@ before a pass builds on it.
 
 ## Documentation is a pass dimension
 
-Every pass updates the docs for what it changed. A public-API change is not done until its reference
-page matches: `check:reference` fails on an undocumented export, `check:options` on a public option
-member with no doc comment, `check:tiers` on an export with no tier tag, and `check:package` on the entry points. The published docs are
-five tracks under `docs/`, one reader each: `admin/`, `editors/`, `extend/`, `claude-code/`, and
-`reference/` (one page per export subpath), plus `why-cairn.md` for an evaluator. A page serves one
-track or it is two pages.
+Every pass updates the docs for what it changed. A developer's contract is each export's doc comment,
+and a developer's job is taught by the packaged skills under `skills/`: `check:options` fails on a
+public option member with no doc comment, `check:tiers` on an export with no tier tag, and
+`check:package` on the entry points. The published docs are two tracks under `docs/`, one reader
+each: `admin/` and `editors/`, plus `why-cairn.md` for an evaluator. A page serves one track or it
+is two pages.
 
 - A pass that changes a public behavior edits the affected pages in the same PR, checked by
   `npm run check:docs-gate`. Load the `cairn-writing-docs` skill for that edit.
 - A deficiency found on a published page is fixed on the page in the same pass.
-- `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are maintained every pass.
+- `MIGRATION-NOTES.md` (upgrade steps and per-version notes) is maintained every pass.
 - A friction finding goes to `BACKLOG.md` through `/log-issue`, or is fixed in the pass that meets it.
   There is no friction log.
 - cairn.pub renders the doc arms from its installed engine version, so docs on `main` go public at
@@ -71,7 +71,7 @@ track or it is two pages.
 
 Read the structured logs before reaching for `console.log`. The engine emits a JSON record for every
 operationally meaningful event through one chokepoint, `src/lib/log/` (envelope `level`, `event`,
-`timestamp`, plus event fields). The table is `docs/reference/log-events.md`. A sign-in failure points
+`timestamp`, plus event fields). The table is the `cairn-extending-a-site` skill's `references/log-events.md`. A sign-in failure points
 at a send-failure or guard rejection (check `reason`); a save that does nothing points at a commit
 failure (`conflict` is a stale-edit collision, `error` the GitHub failure). On Cloudflare, Workers Logs
 is the query surface. Records carry an editor's email, never a token or session id; check a record
@@ -82,8 +82,8 @@ vocabulary, not a bare `console` call, and updates the table. `createLogger` is 
 
 - Code comments follow TSDoc, enforced by `npm run check:comments`: write the contract and the why,
   never the type the signature states. The em dash is banned in code comments. An exported symbol
-  keeps a one-line doc comment even when self-evident, since `check:reference` wants every export
-  documented.
+  keeps a one-line doc comment even when self-evident, since the doc comment is its published
+  contract.
 - Developer docs follow the Google Developer Documentation Style Guide, enforced by Vale over
   `docs/**/*.md`. `docs/editors/**` follows Microsoft's plainer voice. Draft each page from its brief in
   the `cairn-writing-docs` skill's `references/docs-register.md`, and use the sanctioned names in its "Names"

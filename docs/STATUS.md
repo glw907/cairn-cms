@@ -21,16 +21,18 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-Pass 3 of the agent-first plan (contract in TSDoc, rebuilt skills, and the measured A/B) is PR-ready
-as #168 on branch `agent-first-3`; after its packet the next action is pass 4 (rebuild the rest),
-which starts from the removal commit on `agent-first-3-preview` (a local ref, never merged). Passes
-1 and 2 are merged. The plan is
+The agent-first pattern has landed, once PR #169 (pass 4, stage A) merges: the technical pages and
+their gates are gone, `cairn-guidance install` removes what it no longer ships by hash, and the
+evaluator set (`README.md`, `docs/why-cairn.md`, `docs/architecture.md`) stands. Passes 1 to 3 are
+merged. The next action is stage B of pass 4, branch `agent-first-4b`: resume #159 and #160 with
+Geoff's page calls (the plan's task table has them), cut the `next` prerelease, run the two
+sittings and the Contribute and Extend checks, tear down, and prove the bars. The series resumes
+there; the docs finalization PRs #159 and #160 stay open and #161 is closed. The plan is
 `~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
 beside it, and `conductor-cairn-cms` runs it one pass at a time; its ledger is
-`~/.local/state/cairn-agent-first/ledger.md`. The `model-review.service` drop-in
-`agent-first-hold.conf` is applied. The docs finalization series stays on hold with PRs #159, #160,
-and #161 open; its state is `~/.local/state/cairn-docs-final/ledger.md`, and pass 4 owns the
-evaluator set that replaces old pass 5's front door. The release holds until the rebuild lands.
+`~/.local/state/cairn-agent-first/ledger.md`. Executor `cairn-cms-agent-first-4`, session
+`82fe4c13`. The `model-review.service` drop-in `agent-first-hold.conf` stays applied until task
+4.13. The release holds until pass 4 closes.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with
@@ -38,15 +40,14 @@ evaluator set that replaces old pass 5's front door. The release holds until the
   slices: content rules, admin and tidy, and small API. A pass's design makes its own fold.
 - Docs stage 2b is closed by series pass 1 (PR #157) and series pass 2 (PR #158). The engine friction
   the boundary test found rides the final engine batch as `BACKLOG.md` items; the 94 entries'
-  verdicts are at the `pre-agent-first` tag. The capture runbook is
-  `docs/plans/2026-10-30-capture-runbook.md`.
+  verdicts are at the `pre-agent-first` tag. The capture runbook is the plan file
+  `docs/plans/2026-10-30-capture-runbook.md`, removed at task 4.13.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
 - Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)
   is due for deletion at claude.ai/code/routines (an agent cannot); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
-  (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),
-  which widens at stage 4's merge.
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).

@@ -320,7 +320,7 @@ when the remediation pass lands.
   evidence (Geoff, 2026-08-30). The 2026-08-26 shrink-to-recipe shape is overturned:
   xcathletes-org now runs its member login on `createAuthChannel`
   (`xcathletes-org/src/lib/server/auth/channel.ts`, tests included, citing
-  `docs/extend/add-a-second-audience.md` Path B), so the 'no consumer anywhere has built against
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-a-second-audience.md` Path B), so the 'no consumer anywhere has built against
   it' premise no longer holds. Ground for keeping: adoption evidence plus the
   high-consequence-hand-roll argument (enumeration oracle, unbounded guessing, identity-keyed
   throttle), NOT any-site breadth; the leanness boundary is held by the opt-in subpath. The

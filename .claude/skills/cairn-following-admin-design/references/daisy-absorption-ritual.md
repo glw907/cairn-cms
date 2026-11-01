@@ -17,8 +17,7 @@ PR for (`.github/dependabot.yml`), not only a major.
    against the new daisy version.
 3. **Verify every blessed-set class still compiles.** The grep surface is two places:
    `src/lib/admin/admin-css-safelist.ts` (the classes deliberately compiled ahead of any
-   component referencing them) and each component's own **Exact class inventory** on [the
-   admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md) (`StatusChip`, `Pagination`,
+   component referencing them) and each toolkit component's own markup (`StatusChip`, `Pagination`,
    `AdminTable`, `ListToolbar`; `PageHeader` and `EmptyState` carry none). Between the two, every
    class the admin or the toolkit depends on is named somewhere greppable; confirm each one still
    appears in the rebuilt `dist/admin/cairn-admin.css`. A class that vanished is the blast

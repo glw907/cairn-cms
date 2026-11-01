@@ -13,7 +13,7 @@
     "src/lib/content/manifest.ts:432-462 (publishedAt is stamped on the first publish and carried through later saves)",
     "src/lib/delivery/data.ts:1-6 (the /delivery/data subpath imports no SvelteKit and no Svelte, so a plain Node script can load it)",
     "src/lib/sveltekit/publish-actions.ts:1-8 (publishActions is plain data, a templated link; no callback crosses the publish redirect, so the admin offers no hook that runs site code after a publish)",
-    "docs/extend/act-on-newly-published-entries.md#order-the-send-and-the-save and #start-from-a-stored-baseline (save the deployed manifest after the sends so a failed send repeats; a first run stores the baseline and sends nothing)"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/act-on-newly-published-entries.md#order-the-send-and-the-save and #start-from-a-stored-baseline (save the deployed manifest after the sends so a failed send repeats; a first run stores the baseline and sends nothing)"
   ],
   "expectations": [
     "A script under scripts/ reads src/content/.cairn/index.json and parses it with parseManifest from @glw907/cairn-cms/delivery/data.",

@@ -2,6 +2,24 @@
 
 ### Added
 
+- **`cairn-guidance install` removes what it no longer ships.** It deletes a file a previous install
+  wrote only when the file's hash matches a version the package shipped (the new
+  `guidance-hashes.json`, built from each release tag from `0.97.0` on), the `MANIFEST` lists it, and it
+  is a regular file under `.claude/skills` or `.claude/agents`. An edited file stays, is named in the
+  report, and stays in the `MANIFEST` so every later run names it again; the directories a removal
+  empties go too, and `.orig` files stay. An old skill directory with no `MANIFEST` is reported and
+  never deleted. `--dry-run` prints what a run would write, delete, and keep. The `MANIFEST` is
+  written by temp file and rename.
+
+  Consumers may: run `npx cairn-guidance install --dry-run` to preview a removal.
+
+- **An evaluator set: `README.md`, `docs/why-cairn.md`, and a new `docs/architecture.md`.** The
+  architecture page gives the shape of the system, the stability tiers, the security model, the
+  Claude Code guidance with the eval's result, and why cairn has no MCP server; `why-cairn.md` gains
+  what a site costs. `docs/README.md` leaves the package, and `docs/architecture.md` joins it.
+
+  Consumers may: read `docs/architecture.md` in the installed package before adopting.
+
 - **A stability tier on every export's doc comment.** Each public export now carries `@public` (the
   Extension tier), `@beta` (Unstable), or `@scaffold` (the wiring a scaffolded site copies), and the
   built declarations keep the tag. `check:tiers` fails an export with no tag or two, and
@@ -23,7 +41,7 @@
   per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
   skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
   migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
-  `CAIRN_LOG_EVENTS` gain the member, and the event table in `docs/reference/log-events.md` its row.
+  `CAIRN_LOG_EVENTS` gain the member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
 
@@ -40,7 +58,7 @@
   each frontmatter key on that concept's entries that the concept's schema does not declare.
   Validation drops such a key, so a value an author wrote there (a `robots: noindex` on a concept
   with no `robots` field) was lost without a word. `CairnLogEvent` and `CAIRN_LOG_EVENTS` gain the
-  member, and the event table in `docs/reference/log-events.md` its row.
+  member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.field_undeclared` to find the keys.
 
@@ -124,10 +142,9 @@
   included). The `cairn-audit` messages and the CLIs' `--help` text no longer print `docs/reference`
   paths, and `claude/CLAUDE.md` points at the skills.
 
-  Consumers must: run `npx cairn-guidance install` and delete the four old skill directories under
-  `.claude/skills/` by hand, since `install` lists an unlisted directory as removable and deletes
-  nothing; both name sets load until you do. Rewrite any project instruction of your own that names an
-  old skill.
+  Consumers must: run `npx cairn-guidance install`; it removes the four old skill directories when
+  their files are unedited, and names any it keeps for you to delete. Rewrite any project instruction
+  of your own that names an old skill.
 
 
 - **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where
@@ -554,16 +571,18 @@
   23 ids. Their heading anchors, `configure-the-tidy-api-key` and `probe-the-deployed-admin`, stay on
   the shipped list because released binaries print them.
 
-- The admin, editors, and extend narrative arms and the front-door pages (`docs/README.md` and
-  `docs/why-cairn.md`) are removed pending their rebuild. Every claim on them now lives in an
-  agent-facing record, and each arm returns as its own rebuild lands. `docs/reference/`
-  is unchanged, and `docs/extend/migration-notes.md`, `docs/extend/upgrade-cairn.md`, and
-  `docs/extend/choose-an-ai-posture.md` stay in place. A release cut before the rebuild ships the
-  reference arm and those three pages only. The shipped `cairn-extend` skill now points its
-  recipe table at the reference pages instead of the removed extend recipes.
+- **The developer docs tracks.** The extend, reference, and Claude Code tracks under `docs/` are
+  removed. Each export's doc comment carries its contract, and the packaged skills under `skills/`
+  teach each job. Upgrade steps and the per-version notes move to `MIGRATION-NOTES.md` at the package
+  root, and the `cairn` CLI's JSON schemas move to `schema/`, each `$id` unchanged. The `cairn`
+  CLI's help no longer links a docs page, and a released binary's links into the reference track
+  stop resolving. The admin and editors arms and `docs/README.md` are removed, and the arms return as their
+  rebuild lands; `docs/why-cairn.md` returns with the evaluator set under Added.
 
-  Consumers must: a site scaffolded with the `cairn-extend` skill re-runs
-  `npx cairn-guidance install`, so its copy of the skill drops the links to the removed pages.
+  Consumers must: read upgrade steps from `node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md`, read
+  a JSON schema from `node_modules/@glw907/cairn-cms/schema/` rather than the reference track,
+  and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
+  removed pages.
 
 ### Fixed
 

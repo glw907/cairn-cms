@@ -111,7 +111,7 @@ Point-in-time observations; verify against the code before acting on them.
 
 ## How to build toward it now (without starting the redesign)
 
-- Put new public surface on a real export subpath with a reference page; do not widen the unenforced
+- Put new public surface on a real export subpath with a doc comment on every export; do not widen the unenforced
   internal surface. The `./islands` subpath plus `hydrateIslands` is the right shape.
 - The islands client-mount-by-name pattern (parse props, clear the fallback, `mount()` a Svelte
   component over a boundary) is a stepping stone toward a dashboard-extension seam. Reuse the pattern

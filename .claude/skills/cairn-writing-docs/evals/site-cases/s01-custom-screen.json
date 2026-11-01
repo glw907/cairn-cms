@@ -15,7 +15,7 @@
     "src/lib/sveltekit/admin-action.ts:319 a handler that returns without ctx.audit throws UnauditedActionError in dev",
     "src/lib/sveltekit/guard.ts:269 the guard refuses an admin form POST with no valid csrf field; src/lib/admin/index.ts:17 exports CsrfField",
     "src/lib/content/types.ts:244 the adapter's access member carries the access map",
-    "docs/extend/add-a-custom-admin-screen.md, docs/reference/admin-toolkit.md"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-a-custom-admin-screen.md, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/admin-toolkit.md"
   ],
   "expectations": [
     "The screen is a route under src/routes/admin that renders in the admin shell and composes the admin toolkit's primitives.",

@@ -2,7 +2,6 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 import {
   checkPackageFiles,
   checkChannelMigrationPacked,
@@ -72,184 +71,118 @@ describe('checkChannelMigrationPacked', () => {
   });
 });
 
-// The published docs arms (reference, admin, editors, extend, claude-code) plus the two front doors must reach
-// the tarball, and the write-only-plan trees (internal, specs, plans, research, archive) and the
-// rolling STATUS.md
-// must not, so a future `files` edit cannot silently drop or leak either direction.
+// The version records, the schemas, the published docs directories, and the two front doors must
+// reach the tarball, and the write-only-plan trees (internal, plans) and the rolling STATUS.md must
+// not, so a future `files` edit cannot silently drop or leak either direction.
 describe('checkDocsPacked', () => {
-  const arms = [
-    'docs/README.md',
+  const packedPaths = [
+    'MIGRATION-NOTES.md',
+    'schema/cairn-doctor.schema.json',
+    'docs/architecture.md',
     'docs/why-cairn.md',
-    'docs/reference/README.md',
-    'docs/reference/render.md',
     'docs/admin/README.md',
     'docs/admin/create-your-site.md',
     'docs/editors/README.md',
-    'docs/editors/write-in-the-editor.md',
-    'docs/extend/README.md',
-    'docs/extend/build-a-site-by-hand.md',
-    'docs/claude-code/README.md',
-    'docs/claude-code/work-on-a-cairn-site-with-claude-code.md'
+    'docs/editors/write-in-the-editor.md'
   ];
 
-  // What requiredDocsPaths asks for when every arm and the front door are rebuilt.
+  // What requiredDocsPaths asks for when both docs directories and the front door hold pages.
   const required = [
-    'docs/reference/README.md',
+    'MIGRATION-NOTES.md',
+    'schema/cairn-doctor.schema.json',
     'docs/admin/README.md',
     'docs/editors/README.md',
-    'docs/extend/README.md',
-    'docs/claude-code/README.md',
-    'docs/README.md',
+    'docs/architecture.md',
     'docs/why-cairn.md'
   ];
+  const docsCount = packedPaths.filter((p) => p.startsWith('docs/')).length;
 
-  it('passes when the five arm indexes and both front doors are packed with no internal leak', () => {
-    expect(checkDocsPacked(['dist/index.js', ...arms], required)).toEqual({ ok: true, count: arms.length });
+  it('passes when the records, both indexes, and both front doors are packed with no internal leak', () => {
+    expect(checkDocsPacked(['dist/index.js', ...packedPaths], required)).toEqual({ ok: true, count: docsCount });
   });
 
-  it('fails naming a missing arm index', () => {
-    const missingReference = arms.filter((p) => p !== 'docs/reference/README.md');
-    const result = checkDocsPacked(missingReference, required);
+  it('fails naming the missing migration notes', () => {
+    const result = checkDocsPacked(packedPaths.filter((p) => p !== 'MIGRATION-NOTES.md'), required);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/reference/README.md');
+    expect(result.error).toContain('MIGRATION-NOTES.md');
   });
 
-  it('fails naming the missing why-cairn front door, which no arm prefix covers', () => {
-    const result = checkDocsPacked(arms.filter((p) => p !== 'docs/why-cairn.md'), required);
+  it('fails naming the missing why-cairn front door, which no directory prefix covers', () => {
+    const result = checkDocsPacked(packedPaths.filter((p) => p !== 'docs/why-cairn.md'), required);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/why-cairn.md');
   });
 
-  // Pass D retired the guides, tutorial, and explanation arms. A tarball still carrying one is a
+  // The technical pages left the package for the packaged skills. A tarball still carrying one is a
   // stale `files` entry, and the allowlist is what makes that a failure rather than a silent ship.
-  it('fails naming a path under a retired docs arm', () => {
-    const result = checkDocsPacked([...arms, 'docs/guides/deploy-to-cloudflare.md'], required);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/guides/deploy-to-cloudflare.md');
-  });
+  it.each(['docs/reference/README.md', 'docs/extend/upgrade-cairn.md', 'docs/claude-code/README.md', 'docs/guides/x.md'])(
+    'fails naming a path under a removed docs tree (%s)',
+    (path) => {
+      const result = checkDocsPacked([...packedPaths, path], required);
+      expect(result.ok).toBe(false);
+      if (result.ok) throw new Error('expected failure');
+      expect(result.error).toContain(path);
+    }
+  );
 
-  it('fails naming a leaked docs/internal path', () => {
-    const result = checkDocsPacked([...arms, 'docs/internal/some-plan.md'], required);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/internal/some-plan.md');
-  });
-
-  it('fails naming a leaked planning path', () => {
-    const result = checkDocsPacked([...arms, 'docs/plans/some-plan.md'], required);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/plans/some-plan.md');
-  });
-
-  it('fails naming a leaked docs/STATUS.md', () => {
-    const result = checkDocsPacked([...arms, 'docs/STATUS.md'], required);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/STATUS.md');
-  });
-
-  it('fails naming a hypothetical docs path outside the allowlist, unnamed by any prior denylist', () => {
-    const result = checkDocsPacked([...arms, 'docs/drafts/x.md'], required);
-    expect(result.ok).toBe(false);
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/drafts/x.md');
-  });
+  it.each(['docs/internal/some-plan.md', 'docs/plans/some-plan.md', 'docs/STATUS.md', 'docs/drafts/x.md'])(
+    'fails naming a leaked path outside the allowlist (%s)',
+    (path) => {
+      const result = checkDocsPacked([...packedPaths, path], required);
+      expect(result.ok).toBe(false);
+      if (result.ok) throw new Error('expected failure');
+      expect(result.error).toContain(path);
+    }
+  );
 });
 
-// The docs the tarball must carry follow each arm's state (arm-state.mjs): an arm index is required
-// only once its arm is rebuilt, the front door only once it is rebuilt, and every kept page always,
-// on disk or not, so the per-version records keep shipping while their arm waits for its rebuild
-// and a kept page deleted outright fails the gate.
-describe('requiredDocsPaths, in each arm state', () => {
-  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
+// The paths the tarball must carry follow the tree: the migration notes and every schema always, a
+// docs directory's index once it holds any page, and both front-door files once either exists.
+describe('requiredDocsPaths', () => {
   const roots: string[] = [];
   afterEach(() => {
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
   });
 
-  /** A temp repo root holding the deletion list, the reference index, and `paths`. */
+  /** A temp repo root holding two schemas and `paths`. */
   function tree(...paths: string[]): string {
     const root = mkdtempSync(join(tmpdir(), 'cairn-package-files-'));
     roots.push(root);
-    const files: Record<string, string> = {
-      [DELETION_LIST_PATH]: JSON.stringify({ deleted: ['docs/admin/is-it-working.md', 'docs/README.md', 'docs/why-cairn.md'], kept: KEPT }),
-      'docs/reference/README.md': '# Reference\n',
-    };
-    for (const path of paths) files[path] = '# Page\n';
-    for (const [path, content] of Object.entries(files)) {
+    for (const path of ['schema/b.schema.json', 'schema/a.schema.json', ...paths]) {
       mkdirSync(dirname(join(root, path)), { recursive: true });
-      writeFileSync(join(root, path), content);
+      writeFileSync(join(root, path), path.endsWith('.json') ? '{}\n' : '# Page\n');
     }
     return root;
   }
 
-  /** Every docs page in `paths` plus the reference index: what `npm pack` would carry. */
-  const packed = (...paths: string[]) => ['dist/index.js', 'docs/reference/README.md', ...paths];
+  const RECORDS = ['MIGRATION-NOTES.md', 'schema/a.schema.json', 'schema/b.schema.json'];
 
-  it('asks for the reference index and every kept page when every narrative arm and the front door are absent', () => {
-    expect(requiredDocsPaths(tree())).toEqual(['docs/reference/README.md', ...KEPT]);
-    expect(checkDocsPacked(packed(...KEPT), requiredDocsPaths(tree()))).toEqual({ ok: true, count: 4 });
+  it('asks for the migration notes and every schema, sorted, when no docs page exists', () => {
+    expect(requiredDocsPaths(tree())).toEqual(RECORDS);
   });
 
-  it('fails a kept page deleted from the tree outright, since the kept list names it', () => {
-    const root = tree(...KEPT.slice(1));
-    const result = checkDocsPacked(packed(...KEPT.slice(1)), requiredDocsPaths(root));
-    expect(result).toMatchObject({ ok: false });
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/extend/migration-notes.md');
-  });
-
-  it('passes the kept set alone with no extend index, and asks for every kept page', () => {
-    const root = tree(...KEPT);
-    expect(requiredDocsPaths(root)).toEqual(['docs/reference/README.md', ...KEPT]);
-    expect(checkDocsPacked(packed(...KEPT), requiredDocsPaths(root)).ok).toBe(true);
-  });
-
-  it('fails a kept page dropped from the tarball, since a kept-only arm still ships its records', () => {
-    const root = tree(...KEPT);
-    const result = checkDocsPacked(packed(...KEPT.slice(1)), requiredDocsPaths(root));
-    expect(result).toMatchObject({ ok: false });
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/extend/migration-notes.md');
-  });
-
-  it('fails the kept set plus one new page with no extend index', () => {
-    const root = tree(...KEPT, 'docs/extend/a-new-page.md');
-    const result = checkDocsPacked(packed(...KEPT, 'docs/extend/a-new-page.md'), requiredDocsPaths(root));
-    expect(result).toMatchObject({ ok: false });
-    if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('docs/extend/README.md');
-  });
-
-  it('passes the same tree once the extend index is there and packed', () => {
-    const pages = [...KEPT, 'docs/extend/a-new-page.md', 'docs/extend/README.md'];
-    expect(checkDocsPacked(packed(...pages), requiredDocsPaths(tree(...pages))).ok).toBe(true);
-  });
-
-  it('asks for the admin index once the admin arm regains a page', () => {
+  it('asks for the admin index once docs/admin holds a page', () => {
     const root = tree('docs/admin/is-it-working.md');
-    const result = checkDocsPacked(packed('docs/admin/is-it-working.md'), requiredDocsPaths(root));
+    const result = checkDocsPacked(['docs/admin/is-it-working.md', ...RECORDS], requiredDocsPaths(root));
     expect(result).toMatchObject({ ok: false });
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/admin/README.md');
   });
 
-  it('asks for the claude-code index once the claude-code arm holds a page', () => {
-    expect(requiredDocsPaths(tree('docs/claude-code/a-page.md'))).toEqual(['docs/reference/README.md', 'docs/claude-code/README.md', ...KEPT]);
+  it('asks for the editors index once docs/editors holds a nested page', () => {
+    expect(requiredDocsPaths(tree('docs/editors/deep/page.md'))).toEqual([...RECORDS, 'docs/editors/README.md']);
   });
 
-  it('asks for both front-door files once the front door holds either', () => {
-    expect(requiredDocsPaths(tree('docs/README.md'))).toEqual(['docs/reference/README.md', 'docs/README.md', 'docs/why-cairn.md', ...KEPT]);
+  it('asks for both front-door files once either exists', () => {
+    expect(requiredDocsPaths(tree('docs/architecture.md'))).toEqual([...RECORDS, 'docs/why-cairn.md', 'docs/architecture.md']);
   });
 
-  it('fails closed without the deletion list', () => {
-    const root = tree();
-    rmSync(join(root, DELETION_LIST_PATH));
-    expect(() => requiredDocsPaths(root)).toThrow(/deletion-list\.json does not exist/);
+  it('fails closed when schema/ holds no schema', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cairn-package-files-'));
+    roots.push(root);
+    expect(() => requiredDocsPaths(root)).toThrow(/schema\/ holds no \*\.schema\.json/);
   });
 });
 

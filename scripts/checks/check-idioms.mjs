@@ -134,7 +134,7 @@ export function findProcessExitLines(source) {
  * The self-identity spellings a `check-<name>.mjs` gate could plausibly use for itself: the full
  * filename stem, the npm-script form (`check:<name>`), and the bare name with the `check-`
  * prefix dropped. A stem that does not start with `check-` (a shared helper like
- * reference-coverage.mjs) has exactly one plausible spelling, itself.
+ * dts-exports.mjs) has exactly one plausible spelling, itself.
  * @param {string} stem the `.mjs` filename without its extension
  * @returns {string[]}
  */

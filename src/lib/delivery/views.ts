@@ -6,11 +6,14 @@
 import type { ConceptDescriptor } from '../content/types.js';
 import type { SiteResolver } from './site-resolver.js';
 import type { SitemapUrl } from './sitemap.js';
+import { readSeoFields } from './seo-fields.js';
 
 /**
  * Project the `routable` concepts into sitemap URLs, in each concept's order. `loc` is the
  *  origin-anchored permalink; `lastmod` is the entry's `updated` date when present, else its `date`.
- *  An embedded (non-routable) concept never appears.
+ *  An embedded (non-routable) concept never appears, and neither does an entry whose frontmatter
+ *  `robots` field carries `noindex` (read through `readSeoFields`, so only where the concept's
+ *  fieldset declares `robots`).
  *
  *  `extraRoutes` carries the site's bespoke, non-concept pages (an about page, a tag index) as
  *  root-relative paths; each becomes an origin-anchored `SitemapUrl` with no `lastmod`, ahead of
@@ -29,6 +32,8 @@ export function buildSitemapView(
     const index = site.concept(descriptor.id);
     if (!index) continue;
     for (const summary of index.all()) {
+      const entry = index.byId(summary.id);
+      if (entry && readSeoFields(entry.frontmatter).robots?.includes('noindex')) continue;
       const url: SitemapUrl = { loc: origin + summary.permalink };
       const lastmod = summary.updated ?? summary.date;
       if (lastmod) url.lastmod = lastmod;

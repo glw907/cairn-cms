@@ -19,7 +19,6 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "precheck": "npm run build:admin-css",
     "check:cairn": "npm run build:admin-css && cairn-audit",
-    "check:cairn:rendered": "cairn-audit --rendered",
     "format": "prettier --write --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",
     "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",
     "test:unit": "vitest run",

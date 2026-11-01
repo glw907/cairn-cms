@@ -90,3 +90,28 @@ describe('buildSitemapView', () => {
     ]);
   });
 });
+
+describe('buildSitemapView noindex', () => {
+  const seoDescriptors = normalizeConcepts({
+    pages: {
+      dir: 'pages',
+      routing: 'page',
+      fields: defineFieldset({
+        title: fields.text({ label: 'Title' }),
+        robots: fields.text({ label: 'Robots' }),
+      }),
+    },
+  });
+
+  it('leaves out an entry whose robots field carries noindex and keeps an indexed one', () => {
+    const resolver = createSiteResolver([
+      indexFor(seoDescriptors[0], {
+        '/src/content/pages/hidden.md': '---\ntitle: Hidden\nrobots: noindex\n---\n\nBody.',
+        '/src/content/pages/shown.md': '---\ntitle: Shown\n---\n\nBody.',
+      }),
+    ]);
+    const locs = buildSitemapView(resolver, seoDescriptors, ORIGIN).map((u) => u.loc);
+    expect(locs).toEqual(['https://example.com/shown']);
+  });
+});
+

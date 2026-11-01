@@ -34,6 +34,7 @@ waits in the Approval Queue; its decision lands in
 
 Executor session: `cairn-cms-media-publish`, id `b932f9fb`, branch `worktree-media-publish-run`,
 base `c85b1de0b`.
+The scaffold template pass (PR #171) has merged.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

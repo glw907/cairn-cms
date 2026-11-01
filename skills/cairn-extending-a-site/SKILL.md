@@ -1,69 +1,61 @@
 ---
 name: cairn-extending-a-site
-description: Build or change anything in a cairn site that touches /admin, a form action, logging, or one of the engine's seams. Load before writing a custom admin screen, a new login channel, a form action with more than two outcomes, or any code that imports from @glw907/cairn-cms. Routes to the matching seam and its shipped recipe rather than inventing a pattern from scratch.
+description: Build or change a cairn site's own code against the engine's seams. Load before adding cairn to an app, migrating content, adding a concept or field, writing a markdown component or island, building public routes, configuring media, previews, tidy, roles, a second sign-in group, Cloudflare Access, a post-deploy job, a custom admin action, or before debugging a cairn site or fixing a cairn-audit finding. Routes each job to a reference with the exact registration points.
 ---
 
-# cairn extend
+# Extending a cairn site
 
-## The DaisyUI question
+## First: whose job is it?
 
-Ask this before writing any admin markup, not after: does DaisyUI already ship this component,
-and if a home-grown one is the answer instead, is there a dated ruling in
-[the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) (the GitHub copy, which can run ahead of your installed version) recording the DaisyUI defect that forces it? A home-grown
-component the ledger does not explain is a finding to raise, not a pattern to copy.
-`references/daisyui-first.md` carries the current answer for every place cairn's admin
-already diverges from stock DaisyUI, and why.
+Before writing code, decide where the change belongs:
 
-Restyling the public site (a theme token, `prose.css`, a directive's rules, a public component) is
-`cairn-styling-public-pages`, not a row below.
+- **The site.** Cairn manages markdown content and the editor and admin frame, and little else. A
+  site's own functionality, actors, auth, data, and domain logic are site code built on a seam.
+  Most jobs land here; the router below names the seam.
+- **The engine.** Never patch `node_modules` or copy engine internals. If the documented seams do
+  not reach what the site needs, or you have worked around the engine twice, stop and load
+  `cairn-consulting-the-engine`, which writes the brief for the maintainers.
+- **Not this skill.** Admin screen markup and register: `cairn-building-admin-screens`. Public theme,
+  `prose.css`, directive styles, public components: `cairn-styling-public-pages`.
 
-## The router
+Before writing admin markup, ask whether DaisyUI already ships the component; a home-grown one needs a
+dated ruling in cairn's rulings ledger. `references/daisyui-first.md` lists where cairn's admin
+diverges from stock and why.
 
-Each row names a pattern, the atom that builds it, the seam it lives behind, and the reference
-page that documents it. This skill and its references cite two docs that live in the cairn-cms
-source repository, not in the installed package, so the links show the current `main` copy: [the engine rulings ledger](https://github.com/glw907/cairn-cms/blob/main/docs/internal/engine-rulings.md) and [the admin design system](https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md).
-The extend pages under `node_modules/@glw907/cairn-cms/docs/extend/` and the reference pages under
-`node_modules/@glw907/cairn-cms/docs/reference/` ship in the installed package.
-`examples/showcase`, whose routes back each recipe below and open with an `Archetype:`/`Atoms:`/
-`Recipe:` header naming the pattern and the engine calls it proves, lives in the
-[cairn-cms repository](https://github.com/glw907/cairn-cms) too.
+## Router
 
-| Building | Atom | Seam | Reference |
-|---|---|---|---|
-| A custom admin screen over your data | `createSectionAction` + `requireAccess` | `@glw907/cairn-cms/sveltekit`'s admin-scoped `locals.cairnEditor` | `node_modules/@glw907/cairn-cms/docs/reference/sveltekit.md`, with `node_modules/@glw907/cairn-cms/docs/extend/add-a-custom-admin-screen.md` |
-| A second sign-in group's own login channel | `createAuthChannel` (the exemplar's `memberChannel`) | `/auth-channel`'s factory, on its own D1 binding, never `AUTH_DB` | `node_modules/@glw907/cairn-cms/docs/reference/auth-channel.md`, with `node_modules/@glw907/cairn-cms/docs/extend/add-a-second-sign-in-group.md` |
+Read only the reference for the job at hand.
 
-**A custom admin screen over your data.** `createSectionAction<Env, Db>({ resolveDb })`
-builds a reusable per-section action wrapper that resolves a binding from the site's `Env`
-binding; it and `requireAccess` in the route's `load` share one fail-closed predicate, so a
-session the access map does not admit is refused on both the read and the write. A matched
-SvelteKit form action dispatches directly and never re-runs an ancestor `load`, so a page that
-looks gated is not a gated POST: wire both `createSectionAction` and `requireAccess`, never one
-alone.
+| Job | Reference |
+|---|---|
+| Add cairn to an existing SvelteKit app; dev backend; go to production | `references/adopt-cairn.md` |
+| Move old Jekyll, Hugo, or markdown posts in | `references/migrate-content.md` |
+| Add a concept or field, a cross-field rule, tags, ids, permalinks; delete, rename, link, include rules | `references/content-model.md` |
+| Write a markdown component or a hydrated island | `references/components-and-islands.md` |
+| Entry pages, head, feeds, sitemap, robots, archive, tags, menu | `references/public-routes.md` |
+| Share a draft preview link | `references/draft-preview.md` |
+| Media upload limits, image URLs, media route, srcset | `references/media.md` |
+| Mount the admin, gate a custom screen or action, roles and access map, refusal shape, audit table | `references/admin-access.md` |
+| A second audience: a role or an auth channel; rolling your own token flow | `references/second-sign-in-group.md` |
+| Replace magic links with Cloudflare Access | `references/cloudflare-access.md` |
+| Announce newly published posts after deploy | `references/newly-published.md` |
+| Turn on tidy; set the AI training posture | `references/tidy-and-ai-posture.md` |
+| Run `cairn-audit` and fix its findings | `references/audit.md` |
+| Diagnose a failure: logs first | `references/debug.md` |
+| Look up a log event, its level, fields, and reasons | `references/log-events.md` |
+| Check work before calling it done | `references/preflight.md` |
 
-**A second sign-in group's own login channel.** `createAuthChannel` builds request, confirm, and
-logout actions over a numeric code (8 digits by default, configurable to 10), each action taking
-the raw SvelteKit `RequestEvent` and switching on its outcome, never a boolean.
+## Habits that hold everywhere
 
-## Two habits that hold across both rows
+- Read the structured logs before editing code to fix a fault (`references/debug.md`).
+- Regenerate the manifest (`npx cairn-manifest`) after any content edit outside the admin, then
+  build. A build is the content check.
+- An action with more than two outcomes returns a discriminated `outcome`, never a boolean.
+- Site logging goes through `createLogger` from `@glw907/cairn-cms/log`, never a bare `console` call.
+- A setting that ships in the build (site config, adapter, `wrangler.jsonc`) takes effect only after
+  a deploy. Say so when you stop.
+- Never write a secret into the repo. Name the `npx wrangler secret put <NAME>` command for the
+  developer to run.
 
-- **Switch on `outcome`, never a boolean.** Every seam above returns a discriminated result
-  (`ChannelRequestOutcome`, `ChannelConfirmOutcome`, and the like) instead of a `success: boolean`
-  flag. A form action with more than two outcomes follows the same shape: name each branch, do
-  not collapse them into `ok`/`not ok`.
-- **Log through `createLogger`, never a bare `console` call.** The `/log` subpath exports the
-  same factory cairn's logger is built from: `area.subject.verb_phrase` event names,
-  redaction that walks three levels into a record's values, and a record that never throws out of
-  the call site. A site wiring its admin screen or channel gets the same structured,
-  safe-to-paste record the engine's events already are.
-
-## Before you call it done
-
-`references/preflight.md` is the checklist: the boundary question, what `cairn-guidance check`
-reports about a site's gate wiring, and when a second workaround is the signal to reach for
-`cairn-consulting-the-engine` instead of a third one.
-
-## Adding a new archetype
-
-Do not add a row to this table: `cairn-guidance install` overwrites this file on every upgrade.
-Record a new archetype in your own site's docs instead.
+`cairn-guidance install` overwrites this skill on upgrade; record a site's own patterns in its own
+docs, not here.

@@ -9,7 +9,8 @@ Cairn owns managing markdown content and the editor/admin frame, and little else
 site needs beyond that, its functionality, actors, auth, data, and domain logic, is the
 site's to build. Before adding a subsystem, an actor, or new surface, ask whether it is
 cairn's job or yours. If it reads like cairn's job, that is the signal to reach for
-`cairn-consulting-the-engine` instead of building it yourself: see step 4.
+`cairn-consulting-the-engine` instead of building it yourself or patching `node_modules`: see
+step 4.
 
 ## 2. The DaisyUI question, again
 
@@ -19,10 +20,9 @@ current answer for the cases cairn's admin has already worked through.
 
 ## 3. Name the seam
 
-A reviewer, human or agent, should be able to find the atom your code calls, the seam it comes
-from, and the reference page that documents the pattern without guessing. `../SKILL.md`'s router table names the atom, the seam, and the reference page for the patterns it covers today; a pattern the table does not yet name still
-deserves the same treatment in your own commit message or comment: name the atom, not just what
-it does.
+A reviewer, human or agent, should be able to find the atom your code calls and the seam it comes
+from without guessing. Name both in the commit message or a comment (`createSectionAction` from
+`/sveltekit`, not "a wrapper"), whether or not a reference in this skill covers the pattern.
 
 ## 4. Two workarounds is the consultation trigger
 

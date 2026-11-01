@@ -1,4 +1,4 @@
-// cairn-cms: filename-based content ids (spec §7.2). An entry's id is its markdown filename
+// cairn-cms: filename-based content ids. An entry's id is its markdown filename
 // without `.md`, so there is no slug codec. `slugify` derives a filename-safe stem from a
 // title for the create-entry form.
 

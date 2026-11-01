@@ -33,7 +33,7 @@ export interface CairnPlatformBindings {
   AUTH_DB: D1Database;
   /** Cloudflare Email Sending binding for the magic-link message. */
   EMAIL: EmailSender;
-  /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
+  /** Canonical origin for confirmation links, never read from a request header. */
   PUBLIC_ORIGIN: string;
   /** The GitHub App's private key, base64 of the PEM on one line, decoded with `atob()` before signing. */
   GITHUB_APP_PRIVATE_KEY_B64: string;

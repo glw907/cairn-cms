@@ -15,14 +15,14 @@ Owner and editor with magic-link sign-in are the zero-config defaults, not ceili
 
 Leanness is the point. "Out of scope" is often the correct answer. Before adding an abstraction, a
 subsystem, an actor, or new surface, load the `cairn-judging-scope` skill. Rulings already made live
-in `docs/internal/engine-rulings.md`; read the entry before re-arguing a settled item. Consuming sites
-send briefs to `docs/internal/consultations/`, and each needs a verdict before a pass builds on it.
+in `docs/internal/engine-rulings.md` (`grep '^## '` is its index); read the entry before re-arguing a
+settled item. Consuming sites send briefs to `docs/internal/consultations/`, and each needs a verdict
+before a pass builds on it.
 
 ## Working here
 
 - `docs/STATUS.md` holds the current state and the next action. `BACKLOG.md` holds open items,
-  `ROADMAP.md` what comes next. The functional spec,
-  `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, holds the locked decisions.
+  `ROADMAP.md` what comes next.
 - Cut a worktree off `main` for each pass so `main` stays releasable. The `cairn-running-passes` skill
   has the setup command, the risk classes, and the close checklist. After each task, run
   `npm run lane:fast -- --range <base>..HEAD`. CI on the pull request carries the whole suites.
@@ -62,8 +62,8 @@ track or it is two pages.
   `npm run check:docs-gate`. Load the `cairn-docs` skill for that edit.
 - A deficiency found on a published page is fixed on the page in the same pass.
 - `docs/extend/migration-notes.md` and `docs/extend/upgrade-cairn.md` are maintained every pass.
-- `docs/internal/docs-friction-log.md` is a staging area, never a backlog: each entry is fixed,
-  promoted to `ROADMAP.md`, or deleted.
+- A friction finding goes to `BACKLOG.md` through `/log-issue`, or is fixed in the pass that meets it.
+  There is no friction log.
 - cairn.pub renders the doc arms from its installed engine version, so docs on `main` go public at
   the next release and pin bump.
 

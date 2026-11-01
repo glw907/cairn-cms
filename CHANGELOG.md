@@ -5055,7 +5055,7 @@ removal, nothing this list needs to carry.
   the subpath until this window; `/cloudflare` carried it from its first publish in
   `0.94.0-rc.1`. A consumer migration found it at an end-to-end gate, after `svelte-check`,
   `vitest`, and `vite build` had all passed; see
-  [the defect filing](docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md). The fix
+  [the defect filing](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md). The fix
   adds a `worker` condition ahead of `browser` in both entries, pointing at the same module
   `default` does, so a Workers build resolves the real module while a browser build still hits the
   throwing stub. A packaging check now fails the build when a `browser`-conditioned export declares

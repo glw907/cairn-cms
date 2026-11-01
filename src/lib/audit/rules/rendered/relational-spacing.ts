@@ -4,7 +4,7 @@
 // declaration uses. A field's label sits closer to its control than one field sits to the next, and
 // one field sits closer to its neighbor than one section sits to the next; that ordering is what
 // makes the "spacing rhythm" the craft chapter names as invisible-feel actually visible. The static
-// `gap-scale` rule (spec 6.2) already proves a literal resolves to SOME named token; this rule
+// `gap-scale` rule already proves a literal resolves to SOME named token; this rule
 // proves the token chosen matches the RELATIONSHIP the markup renders, which a single declaration
 // can never see on its own.
 //

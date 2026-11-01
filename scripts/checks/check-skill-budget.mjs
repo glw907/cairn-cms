@@ -17,7 +17,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 
-/** The ratified ceiling for each skill's always-loaded core (spec section 7, Pass 3). */
+/** The ratified ceiling for each skill's always-loaded core. */
 export const SKILL_BUDGET_TOKENS = 3500;
 
 /** Characters per token, the rough estimator common tokenizer-size guidance uses for English prose. */

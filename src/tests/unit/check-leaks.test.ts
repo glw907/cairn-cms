@@ -200,6 +200,11 @@ describe('C3 process', () => {
     expect(hits('[roadmap](https://github.com/glw907/cairn-cms/blob/main/ROADMAP.md)')).toEqual([]);
   });
 
+  it('lets a pre-agent-first tag link to a removed record through', () => {
+    expect(hits('https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md')).toEqual([]);
+    expect(hits('see docs/internal/record/repro-story-audit.md')).not.toEqual([]);
+  });
+
   it('reports ratified prose as a warning, and skips it inside backticks', () => {
     expect(hits('the ratified recipe')).toEqual(['C3:warning']);
     expect(hits('the `ratified` provenance value')).toEqual([]);

@@ -1,6 +1,6 @@
 <!--
 @component
-The tidy review surface (spec 2.5, the approved rev.2 mockup). A native `<dialog>` opened with
+The tidy review surface. A native `<dialog>` opened with
 `showModal()`, so the focus trap, Escape, and inert background come from the platform. It shows the
 proposed copy-edit as a git-style diff, one hunk per change, ranked by safety: objective hunks
 (spelling, doubled word, whitespace, punctuation) read quiet and come pre-kept; judgment hunks (a

@@ -242,7 +242,7 @@ describe('the legacy CHANGELOG path map', () => {
   });
 });
 
-// The harvest deletes the old narrative pages while dated records keep linking to them. A dated
+// The harvest deletes the old narrative pages while the release record keeps linking to them. The
 // record is immutable, so its links into deletion-list paths are accepted permanently; the same
 // link anywhere else stays broken. A LEGACY_PATH_MAP value on the deletion list is accepted only
 // until its arm is rebuilt (arm-state.mjs), when the entry has to be repointed at a live page.
@@ -267,13 +267,9 @@ describe('deletion-list links', () => {
     return dir;
   }
 
-  it('accepts a dated record\'s link into a deleted page, anchor and all, from each dated tree', () => {
+  it('accepts the release record\'s link into a deleted page, anchor and all, and into a deleted arm\'s directory', () => {
     const root = fixtureRoot({
-      'CHANGELOG.md': '# Changelog\n\nsee [check](docs/admin/is-it-working.md#force-https-at-the-edge)\n',
-      'docs/internal/record/2026-09-01-x.md': 'see [tidy](../../extend/enable-tidy.md)\n',
-      'docs/internal/history/old.md': 'see [why](../../why-cairn.md)\n',
-      'docs/internal/feedback/note.md': 'see [check](../../admin/is-it-working.md)\n',
-      'docs/internal/record/2026-09-02-y.md': 'see [the editors arm](../../editors/)\n',
+      'CHANGELOG.md': '# Changelog\n\nsee [check](docs/admin/is-it-working.md#force-https-at-the-edge)\nsee [tidy](docs/extend/enable-tidy.md)\nsee [the editors arm](docs/editors/)\n',
     });
     expect(findBrokenLinks(root)).toEqual([]);
   });
@@ -283,20 +279,20 @@ describe('deletion-list links', () => {
     expect(findBrokenLinks(root)).toHaveLength(1);
   });
 
-  it('fails the same link written anywhere that is not a dated record', () => {
+  it('fails the same link written anywhere that is not the release record', () => {
     const root = fixtureRoot({ 'docs/reference/core.md': 'see [tidy](../extend/enable-tidy.md)\n' });
     expect(findBrokenLinks(root)).toEqual([
       { file: 'docs/reference/core.md', line: 1, dest: '../extend/enable-tidy.md', reason: 'target not found: ../extend/enable-tidy.md' },
     ]);
   });
 
-  it('fails a dated record\'s dead link to a path the deletion list does not name', () => {
-    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [gone](../../extend/never-existed.md)\n' });
+  it('fails a non-release file\'s dead link to a path the deletion list does not name', () => {
+    const root = fixtureRoot({ 'docs/internal/notes/x.md': 'see [gone](../../extend/never-existed.md)\n' });
     expect(findBrokenLinks(root)).toHaveLength(1);
   });
 
-  it('fails a dated record\'s link to a kept page that is gone, since only deleted pages are excused', () => {
-    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [notes](../../extend/migration-notes.md)\n' });
+  it('fails a non-release file\'s link to a kept page that is gone, since only deleted pages are excused', () => {
+    const root = fixtureRoot({ 'docs/internal/notes/x.md': 'see [notes](../../extend/migration-notes.md)\n' });
     expect(findBrokenLinks(root)).toHaveLength(1);
   });
 

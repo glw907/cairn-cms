@@ -155,7 +155,7 @@ const checklistFile = "is-it-working.md"
 // state; this Go copy must agree with it. The list is read fail-closed: a missing or malformed
 // list is an error, never an empty arm.
 func adminArmRebuilt(root string) (bool, error) {
-	data, err := os.ReadFile(filepath.Join(root, "docs", "internal", "record", "harvest", "deletion-list.json"))
+	data, err := os.ReadFile(filepath.Join(root, "scripts", "checks", "deletion-list.json"))
 	if err != nil {
 		return false, fmt.Errorf("read deletion list: %w", err)
 	}
@@ -373,7 +373,7 @@ func TestAdminArmRebuilt(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			root := t.TempDir()
 			if tt.list != "" {
-				writeTestFile(t, filepath.Join(root, "docs", "internal", "record", "harvest", "deletion-list.json"), tt.list)
+				writeTestFile(t, filepath.Join(root, "scripts", "checks", "deletion-list.json"), tt.list)
 			}
 			for _, page := range tt.pages {
 				writeTestFile(t, filepath.Join(root, filepath.FromSlash(page)), "# Page\n")

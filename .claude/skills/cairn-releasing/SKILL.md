@@ -80,9 +80,8 @@ re-check existing pages whose code changed.
   window alone spanned about 192 files). Independent verifiers confirm, correct, or refute each finding
   against source at `main`; a finder never verifies its own finding.
 - **Filing.** Fix a verified gap on the page it affects, through the `cairn-docs` skill, in a docs PR
-  reviewed as a `docs` review; the cut never waits on it. A gap with no page home becomes a friction
-  entry in `docs/internal/docs-friction-log.md`, never a new page. A code defect is a friction entry,
-  never a page fix.
+  reviewed as a `docs` review; the cut never waits on it. A gap with no page home becomes a
+  `BACKLOG.md` item, never a new page. A code defect is a `BACKLOG.md` item, never a page fix.
 - **Cap.** 1M tokens per cut, counted across every sweep subagent. At the cap, stop, report the modules
   left unswept, and carry them into the next window's record. Never extend the cap to finish.
 - **Yield record.** Put a "Doc-code sweep" paragraph in the release commit body per run, so git and the commit carry the yield: the tag the window started from, the verified

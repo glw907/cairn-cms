@@ -494,7 +494,7 @@ persistent "?" carries Markdown help).
   // the below-sm overflow pick, which is the only one a phone editor can reach.
   const offersSpellcheckToggle = $derived(spellcheckOverride === undefined);
 
-  // The personal-dictionary pending additions (spec 1.6), owned here and shared with MarkdownEditor's
+  // The personal-dictionary pending additions, owned here and shared with MarkdownEditor's
   // lint source: an add-to-dictionary choice records the lowercased word here (and clears the underline
   // at once), and this host commits the set through the dictionaryAdd action at save time. An add
   // that fails to commit stays here for the session and re-attempts on the next save, so the word is
@@ -672,7 +672,7 @@ persistent "?" carries Markdown help).
     editor?.format(kind);
   }
 
-  // The tidy request/review/undo flow (spec 2.1, 2.5), out of this shell (tidy-controller.svelte.ts):
+  // The tidy request/review/undo flow, out of this shell (tidy-controller.svelte.ts):
   // every read it needs is a getter, since `data` is replaced on a same-route entry hop and
   // `editor`'s $state.raw grant would lose reactivity if passed by value.
   const tidyController = createTidyController({
@@ -1518,7 +1518,7 @@ persistent "?" carries Markdown help).
 {#snippet desk()}
   <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
     {#if narrow}
-      <!-- The below-sm compact band (https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md):
+      <!-- The below-sm compact band (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-07-15-design-arc-log.md):
            the way back to the concept list, the document title as read-only truncating text (not
            the input, which lives with the manuscript), and one status pill. The pill folds the
            Hidden signal in as the eye-off glyph and carries the dirty dot beside it, so the rare
@@ -2097,7 +2097,7 @@ persistent "?" carries Markdown help).
             </button>
           </Tooltip>
           {#if tidyEnabled}
-            <!-- Tidy (spec 2.1): the single desk entry point for the light copy-edit. A labelled
+            <!-- Tidy: the single desk entry point for the light copy-edit. A labelled
                  accent-quiet action (something you invoke, not a format you toggle). Disabled in
                  Preview, while a review is open, and while a request is in flight. -->
             <Tooltip text="Tidy: a light copy-edit you review before accepting">
@@ -2644,7 +2644,7 @@ persistent "?" carries Markdown help).
 <MarkdownHelpDialog bind:this={helpDialog} />
 <ShortcutsDialog bind:this={shortcutsDialog} />
 
-<!-- The tidy review surface (spec 2.5). Mounted only while a review is open, keyed by the validated
+<!-- The tidy review surface. Mounted only while a review is open, keyed by the validated
      change set so a fresh review remounts. It drives the in-buffer decorations and the batched apply
      through tidyController.tidyApi; the host clears tidy mode on close. -->
 {#if tidyController.tidyReview && tidyController.tidyApi}

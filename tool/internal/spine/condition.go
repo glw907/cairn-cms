@@ -10,7 +10,7 @@ import "slices"
 type Condition string
 
 // ConditionNone is the Condition a verdict declares when no cairn-doctor condition id names it
-// (docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md's health table marks
+// (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-20-cairn-tool-spine-and-hud-design.md's health table marks
 // Deploy, Behind, Engine, the error count, and the credential check "new"). It is the only
 // Condition value with no dot in it.
 const ConditionNone Condition = ""

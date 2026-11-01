@@ -85,13 +85,13 @@ export interface SiteConfig {
   /** Named navigation menus, each a NavNode[] (normalized by readMenu). */
   menus?: Record<string, unknown>;
   /**
-   * The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
+   * The editor spellcheck settings. The dialect is declared once per site, so a British
    *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
    *  unset or unknown dialect resolves to it.
    */
   spellcheck?: { dialect?: string };
   /**
-   * The editor tidy (LLM copy-edit) settings. Opt-in at the site level (spec 2.8): tidy is a remote,
+   * The editor tidy (LLM copy-edit) settings. Opt-in at the site level: tidy is a remote,
    *  costly model call, so the whole block is optional and `enabled` defaults false. The model is a
    *  developer-tier fact; the `conventions` block is the editor-tier per-convention config that builds
    *  the prompt's CONVENTIONS section. The Anthropic API key is a Worker secret, never config.
@@ -121,9 +121,9 @@ export interface VocabularyEntry {
  * `tidy: { enabled: true }` and the defaults fill the rest.
  */
 export interface TidyConfig {
-  /** Master switch. Default false; tidy is opt-in (spec 2.8, decision 1). */
+  /** Master switch. Default false; tidy is opt-in. */
   enabled?: boolean;
-  /** The model id. Default `claude-sonnet-5`; the alternative is `claude-haiku-4-5` (spec 2.2). */
+  /** The model id. Default `claude-sonnet-5`; the alternative is `claude-haiku-4-5`. */
   model?: string;
   /** The per-convention toggles that build the prompt's CONVENTIONS section. */
   conventions?: Partial<TidyConventions>;
@@ -290,7 +290,7 @@ export class SiteConfigError extends CairnError {
   }
 }
 
-/** The top-level keys the engine reads from site.config.yaml (spec 1.2, Contract v2, tag management). */
+/** The top-level keys the engine reads from site.config.yaml. */
 const KNOWN_TOP_LEVEL_KEYS = new Set([
   'siteName',
   'description',

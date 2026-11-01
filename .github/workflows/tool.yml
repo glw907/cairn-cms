@@ -19,9 +19,10 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
-      - 'docs/internal/record/harvest/deletion-list.json'
+      - 'scripts/checks/deletion-list.json'
       - 'docs/reference/cli-cairn-exit-codes.md'
       - 'docs/reference/cli-cairn-json-output.md'
       - 'docs/reference/cli-cairn-doctor.md'
@@ -35,9 +36,10 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
-      - 'docs/internal/record/harvest/deletion-list.json'
+      - 'scripts/checks/deletion-list.json'
       - 'docs/reference/cli-cairn-exit-codes.md'
       - 'docs/reference/cli-cairn-json-output.md'
       - 'docs/reference/cli-cairn-doctor.md'

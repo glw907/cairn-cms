@@ -11,7 +11,7 @@ import { staticImportGraph } from './_static-import-graph.js';
 import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
 // The 25 ids the spec's story inventory freezes (cairn.pub
-// docs/specs/2026-08-15-live-reproduction-seam-design.md). Changing one is a spec edit,
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md). Changing one is a spec edit,
 // so this list is written out rather than derived from the manifest it checks.
 const IDS = [
   'auth/login',

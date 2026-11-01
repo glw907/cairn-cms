@@ -3,7 +3,7 @@
 // retire-verdicted OR ABSENT name (never exported from any subpath) still named inside a
 // surviving KEEP export's rendered public shape is a closure leak: a consumer can read the
 // value's SHAPE, through indexed access or an inline member, but cannot NAME the type it holds.
-// `docs/internal/record/2026-08-30-retires-move-record.md` is the brief this rider answers,
+// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md` is the brief this rider answers,
 // including its "the internals pass should re-decide the split" instruction (Step 3 below).
 //
 // TWO derivations feed the recorded set, because the two known proof cases live in different

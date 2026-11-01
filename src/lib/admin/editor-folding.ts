@@ -3,7 +3,7 @@
 // reaches this module through a dynamic import, so the static @codemirror imports here never enter
 // a server bundle (guarded by the editor-boundary test).
 //
-// The architecture (spec 2026-06-14): @codemirror/language's codeFolding plus foldEffect/
+// The architecture: @codemirror/language's codeFolding plus foldEffect/
 // unfoldEffect, never a custom fold store. Fold ranges come only from containerRanges, the pure
 // pairing helper beside fenceScan. The safety invariant lives in one transactionExtender that
 // appends unfold effects when a change or selection touches a folded range. The control is a custom
@@ -148,7 +148,7 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
     pill.textContent = `${prepared.lines} lines`;
   }
   // A folded row is only ever rendered while folded, so aria-expanded is always false here; the
-  // redundancy with the gutter chevron's aria-expanded is intended (spec 2026-06-30).
+  // redundancy with the gutter chevron's aria-expanded is intended.
   pill.setAttribute('aria-expanded', 'false');
   const ariaName = prepared.label ? `${prepared.label} section` : 'section';
   // The title rides the aria-label too (not just the visible text), so the chip carries the same

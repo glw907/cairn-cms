@@ -1,6 +1,6 @@
 // Owner-gated editor management. The editor table is the allowlist, so add and remove are
 // insert and delete. The anti-lockout rule is the last remaining owner: the system refuses to
-// drop below one owner (spec 7.1), enforced in the store by an atomic guarded write rather
+// drop below one owner, enforced in the store by an atomic guarded write rather
 // than a separate count, so concurrent removals cannot strand the allowlist at zero owners.
 import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';

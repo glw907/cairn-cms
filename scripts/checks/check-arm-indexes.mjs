@@ -17,11 +17,9 @@
 // exists, so an arm cannot pass this gate by losing its index.
 //
 // `docs/internal` is a sixth arm, contributor-zone rather than published, and walks non-recursively:
-// only its top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
-// record files under `docs/internal/record/` and other subdirectories (`design/`, `feedback/`,
-// `history/`, `probes/`) that keep their own filing rule and their own index, and a recursive walk
-// would wrongly demand this top-level README link every dated record by name, recreating the
-// sediment problem the filing rule exists to end.
+// only its top-level `.md` files are checked against `docs/internal/README.md`. Its subdirectories
+// (`consultations/`) keep their own index, and a recursive walk would wrongly demand this top-level
+// README link every file in them by name.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +30,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 // Each arm's directory and the index file that must link every page in it. `recursive` defaults to
 // true; an arm sets it false to check only its top-level `.md` files, skipping every
-// subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`, `probes/`). An
+// subdirectory (`docs/internal`'s `consultations/`). An
 // entry naming `state` is checked only while that arm-state arm is rebuilt; the rest always are.
 const ARMS = [
   { dir: 'docs/reference', index: 'docs/reference/README.md' },

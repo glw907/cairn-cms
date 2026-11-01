@@ -46,7 +46,7 @@ and `npm run lane:fast` replaces the lane they name.
 - [A local `check:vale` can differ from CI's pinned Vale](#a-local-checkvale-can-differ-from-cis-pinned-vale)
 - [Editing `tool/`, the Go CLI](#editing-tool-the-go-cli)
 - [Showcase chrome traps](#showcase-chrome-traps)
-- [A rename sweep and a tree deletion treat the record docs differently](#a-rename-sweep-and-a-tree-deletion-treat-the-record-docs-differently)
+- [A rename sweep edits the living docs only](#a-rename-sweep-edits-the-living-docs-only)
 - [`git commit -- <path>` commits unstaged hunks too](#git-commit----path-commits-unstaged-hunks-too)
 
 
@@ -66,7 +66,7 @@ the only discriminator.
 Onboarding is `wrangler email sending enable <domain>` with the zone's apex name (arbitrary
 recipients need Workers Paid); it writes DNS records including an apex DMARC at `p=reject`,
 which deleting the subdomain leaves behind. Full detail, measured propagation, and every
-captured body: `docs/internal/record/2026-08-11-t4b-email-spike.md`.
+captured body: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-spike.md`.
 
 ## Pointing a consumer at unreleased engine work
 
@@ -136,7 +136,7 @@ Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-pac
 `scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
 body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
 Do not remove the step or strip `lang="ts"`. Full post-mortem:
-[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](../../../../docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
+[`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## A components-layer rule cannot cancel a utility
 
@@ -162,7 +162,7 @@ The admin side has the same root. daisyUI 5 compiles its component rules into su
 `@layer utilities`, so an admin override in `@layer components` also loses to a daisyUI
 component rule (the `.btn-primary` lift never rendered). Today's fix is a pinned unlayered rule
 (the pinned-rule comments in `src/lib/admin/cairn-admin.css`); the theme identity spec
-(`docs/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-09-26-theme-identity-design.md`) introduces a named `cairn-idiom`
 sublayer pinned after daisyUI's (`@layer utilities.daisyui, utilities.cairn-idiom;`).
 
 ## The component project stalls under file parallelism
@@ -176,7 +176,7 @@ version, the gate's memory scope, orphaned headless shells, inotify, socket, fil
 limits, conntrack, and `localhost` resolving to `::1`. During a failing run the Vite server
 listens on `[::1]:<port>`, Node is idle, and the port shows paired CLOSE-WAIT and FIN-WAIT-2
 sockets. Root cause unknown; full record in
-`docs/plans/2026-09-21-doctor-pretask.md`.
+`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-21-doctor-pretask.md`.
 
 When a component run prints that line, do not retry the stock gate. Kill the run's scope, run
 `pkill -f 'chromium_headless_shel[l]'` (the bracket keeps the pattern from matching its own
@@ -220,7 +220,7 @@ Build a probe site the way `.github/workflows/create-site.yml` does: bake, pack 
 The engine reads its bindings and `waitUntil` from `cloudflare:workers` through one module,
 `src/lib/sveltekit/workers-env.ts`, and nothing reachable from a Node-context entry may import it
 (`src/tests/unit/workers-env-reach.test.ts` walks the packed `dist`). The spike record
-(`docs/research/2026-10-03-sveltekit-3-spike/record.md`) proved the following, against a
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-03-sveltekit-3-spike/record.md`) proved the following, against a
 packed engine installed into a fresh `sv create` project on Kit 3 and adapter-cloudflare 8.
 
 - The import resolves under `vite dev`, `vite build`, and `wrangler dev` with no `ssr.noExternal`, no
@@ -351,7 +351,7 @@ config change must still include `npm run check`, since `svelte-check` also type
 plain `.mjs` files: a `scripts/checks/*.mjs` that a unit test imports is checked under `checkJs`, so
 it needs JSDoc parameter types and typed empty arrays. The env prefix works inside a
 `cairn-run-gate` string. The measurement is in
-`docs/research/2026-10-08-pass-a-s1-reports.json`; a lane-level default is the lasting
+`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-08-pass-a-s1-reports.json`; a lane-level default is the lasting
 fix and belongs to the runner, not to this repo.
 
 ## Tailwind scans every file under the project, specs included
@@ -611,23 +611,16 @@ column. To break a styleguide demo out of its reading column, reuse `.cairn-plac
 writing a second full-bleed mechanism. Check either with a full-page capture at a narrow and a wide
 width, where the band's ground color should touch both viewport edges.
 
-## A rename sweep and a tree deletion treat the record docs differently
+## A rename sweep edits the living docs only
 
 A drift-hunt after a rename or a public-surface narrowing edits the living docs: `docs/reference/`,
-the guides, and the `engine-rulings.md` ledger. Point-in-time documents describe what was true when
-they were written, so a hit in `docs/internal/record/`, `docs/plans/`,
-`docs/internal/history/`, or a dated design or research brief is evidence to leave alone. A plan's
-rename table is the task's own source text. A grep hit is also not drift when the sentence never
-claims the name is public. `.claude/skills/cairn-running-passes/references/admin-smoke-test.md` names internal source paths and raw
-`?/actionName` forms on purpose, to point a curl recipe at the source. Ask of each hit whether the
+the guides, and the `engine-rulings.md` ledger. Point-in-time documents (the open plans under
+`docs/plans/`, a released `CHANGELOG.md` section) describe what was true when they were written, so a
+hit there is evidence to leave alone. A plan's rename table is the task's source text. A grep hit is
+also not drift when the sentence never claims the name is public.
+`.claude/skills/cairn-running-passes/references/admin-smoke-test.md` names internal source paths and
+raw `?/actionName` forms on purpose, to point a curl recipe at the source. Ask of each hit whether the
 sentence claims the name is reachable through the narrowed public surface.
-
-Deleting a script or tool tree is the exception, because a dead link is a mechanical defect.
-`docs/internal/record/*.md` files can hold real Markdown links into the deleted files, and
-`docs-links.mjs` reads them. Its allowance for dated records covers only paths on the committed
-deletion list. After a `git rm -r` of a directory a record cites, grep the record tree for the
-directory name and run `npm run check:docs`. Convert each broken `[`path`](../../../path)` to plain
-code plus a short factual clause that the path is gone, and leave the rest of the prose alone.
 
 ## `git commit -- <path>` commits unstaged hunks too
 

@@ -68,7 +68,7 @@ describe('ConceptList', () => {
         (el) => el.textContent?.trim() === text,
       );
     await expect.element(screen.getByText('New', { exact: true })).toBeInTheDocument();
-    // The second-generation register grammar (docs/internal/probes/2026-08-26-chip-registers-v2)
+    // The second-generation register grammar (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md)
     // fuses tone into the register and retires the status dot: the migration map sends
     // neutral/info/success to the quiet register, so New, Edited, and Published (none of them a
     // warning state) all take the toolkit's default quiet register, and the label TEXT alone
@@ -615,7 +615,7 @@ describe('ConceptList', () => {
 
     // The audit's finding 10 fix (a filled badge distinct from its own card) is superseded by the
     // toolkit's StatusChip: the second-generation quiet register tints the chip's own ground
-    // directly (docs/internal/probes/2026-08-26-chip-registers-v2), rather than carrying a
+    // directly (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md), rather than carrying a
     // separate dot glyph. StatusChip's own component and tuning suites cover the register/contrast
     // contract; this asserts only that ConceptList renders a real, painted fill rather than a
     // transparent one in dark mode.

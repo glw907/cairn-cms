@@ -6,8 +6,8 @@ import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet } from '../../lib/audit/sheet.js';
 import type { SheetDeclaration } from '../../lib/audit/sheet.js';
 
-// CONTRACT: the three ratified chip registers (second generation, docs/internal/probes/
-// 2026-08-26-chip-registers-v2) exist twice, once as cairn-admin.css's shared `.cairn-chip-quiet`/
+// CONTRACT: the three ratified chip registers (second generation, the probe
+// at https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md) exist twice, once as cairn-admin.css's shared `.cairn-chip-quiet`/
 // `.cairn-chip-warning`/`.cairn-chip-outline` classes (every OTHER admin surface that composes a
 // chip by hand: EditPage, CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) and
 // once as StatusChip's own scoped `.status-chip-quiet`/`.status-chip-warning`/`.status-chip-outline`

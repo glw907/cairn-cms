@@ -1,5 +1,5 @@
 // GET /healthz, a site-root route outside /admin. Signs a dummy JWT through the real App-signing
-// path so a broken PKCS#1-to-PKCS#8 conversion is caught early (spec §7.8). The payload is
+// path so a broken PKCS#1-to-PKCS#8 conversion is caught early. The payload is
 // pass/fail, a coarse detail, and the public key's fingerprint only; it never carries the key or a
 // token. With `?live=1` it also mints one installation token to prove GitHub accepts the key,
 // bounded per isolate so an anonymous caller cannot turn the route into a token-minting loop.

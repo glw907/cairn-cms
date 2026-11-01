@@ -12,7 +12,7 @@ import (
 )
 
 // cloudflareSPFInclude is the SPF mechanism Cloudflare's Email Sending onboarding writes,
-// captured live on an onboarded zone (docs/internal/record/2026-08-11-t4b-email-spike.md): a
+// captured live on an onboarded zone (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-spike.md): a
 // sending subdomain's SPF TXT record must include it for Cloudflare's mail servers to be an
 // authorized sender. Already lowercase, since every comparison against it lowercases its side too.
 const cloudflareSPFInclude = "include:_spf.mx.cloudflare.net"

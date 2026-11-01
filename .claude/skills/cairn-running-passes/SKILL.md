@@ -7,7 +7,7 @@ description: Runs a pass of work on the cairn-cms engine from a clone: worktree 
 
 The `standards:running-passes` skill holds the lifecycle (design, plan, execute, close). This skill fills in what is specific to this repository. Where the two disagree, this one wins.
 
-State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLOG.md` (open items), and `ROADMAP.md` (what comes next). A plan is deleted when its pass closes. Cross-repo specs and plans live with their initiative, not here.
+State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLOG.md` (open items), and `ROADMAP.md` (what comes next). A plan is deleted when its pass closes. Cross-repo specs and plans live with their initiative, not here, and a cairn-only plan lives on its pass branch. The planning record up to 2026-10-31 is at the `pre-agent-first` tag.
 
 ## Set up a worktree
 
@@ -44,8 +44,8 @@ The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, a
 - **Changelog and version records.** A behavior change updates `CHANGELOG.md` under `## Unreleased` and the per-version record (`docs/extend/migration-notes.md`, with `docs/extend/upgrade-cairn.md`). A breaking change carries one `Consumers must:` line per consumer action.
 - **Public surface.** An intended change runs `npm run check:surface -- --update` and commits `scripts/checks/api-surface.md`.
 - **Rulings.** A ruling on a consultation item updates `docs/internal/engine-rulings.md`.
-- **Friction log.** Triage `docs/internal/docs-friction-log.md`: each entry is fixed and deleted, promoted to `ROADMAP.md`, or deleted as overtaken, verified against the code first. A promotion to an engine change reads `engine-rulings.md` and runs the charter's premise test (`cairn-judging-scope`) first. File each new friction under "Open findings" as a `- **\`perspective\`.**` bullet naming the finder and date.
-- **Docs-stage close.** Run the engine-pass boundary test over the log's engine entries and the `ROADMAP.md` engine-friction entries, and state in `docs/STATUS.md` whether an engine pass is warranted before the next stage.
+- **Friction.** A finding goes to `BACKLOG.md` through `/log-issue`, with a `Placement` line, or is fixed in the pass that meets it. An engine change reads `engine-rulings.md` and runs the charter's premise test (`cairn-judging-scope`) first.
+- **Docs-stage close.** Run the engine-pass boundary test over the open engine friction (BACKLOG items tagged for the engine batch), and state in `docs/STATUS.md` whether an engine pass is warranted before the next stage (Geoff, 2026-10-07). The test: fix before the next stage any item whose fix would change what a written or outlined page tells the reader (a workaround, caveat, or step the page carries only because of the defect); fix promptly any item that blocks a page or a migration step; batch every other item into the final engine batch, tagging a batched item with the page that carries its caveat so that pass revises the page.
 - **No release.** A pass never bumps the version or publishes. It finalizes its `CHANGELOG.md` entry and stops. The `cairn-releasing` skill cuts a release when one is warranted. Never write cairn state into a site's STATUS.
 
 ## References

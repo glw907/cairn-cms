@@ -28,7 +28,7 @@ import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
 
 /**
- * The two-tier tidy settings load (spec 2.8). The developer tier is read-only: `enabled`,
+ * The two-tier tidy settings load. The developer tier is read-only: `enabled`,
  *  `keyConfigured`, and `model`/`modelLabel` are deploy-time facts the editor sees but cannot change.
  *  The editor tier is the resolved `conventions` block, written back through the save. The visibility
  *  gate is truthful: `enabled` is true only when `tidy.enabled` is set AND the API key is present, so
@@ -202,7 +202,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Load the two-tier tidy settings (spec 2.8). The developer tier (enabled, key, model) is
+   * Load the two-tier tidy settings. The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
    *  `enabled` flag is true only when `tidy.enabled` is set, the key is present, AND the key is not
    *  confirmed invalid, so the screen renders the convention list only then. No secret is returned: only

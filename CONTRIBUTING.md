@@ -174,11 +174,10 @@ To pass the docs gate, make these changes together:
 Each entry gives the rule for what belongs in a directory. Individual files move too often to
 list here, so when the map and the tree disagree, trust the tree and fix the map.
 
-- `src/lib/`: the shipped library. Public entry points are package subpaths, each with a
-  matching page in `docs/reference/`; a directory without a reference page is internal.
-  `npm run check:surface` gates the public surface. For the directory-by-directory public/internal
-  split, the admin request flow, and the rest of the tree's internal structure, see
-  [`docs/internal/src-lib-map.md`](docs/internal/src-lib-map.md).
+- `src/lib/`: the shipped library. A directory is public exactly when `package.json`'s `exports`
+  map points a subpath into it, and each public subpath has a page in `docs/reference/`. A
+  reference page is not proof of public: `audit` and `media-seed` have one and are
+  reachable only through a `bin`. `npm run check:surface` gates the public surface.
 - `src/tests/`: the vitest projects (`unit/`, `integration/`, `component/`) plus `fixtures/`.
   `lab/` holds engine apparatus that supports development and must never ship in the package.
 - `scripts/`: helpers shared by the three groups below sit at the root.
@@ -197,8 +196,8 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
   the npm package once each holds pages; the front door joins them when it is rebuilt. See
   "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing,
-  `specs/`, `plans/`, `research/`, and `archive/` hold the dated specs, plans, and reviews as
-  history, and `STATUS.md` is the rolling project status.
+  `plans/` holds the open plans until they land, and `STATUS.md` is the rolling project status. The
+  dated planning record is at the `pre-agent-first` tag.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.
 - `migrations/`: the D1 schema migrations for the auth store. They ship with the package.

@@ -492,6 +492,44 @@ test('admission: --yes --domain proceeds fully unattended, with no prompt ever c
   assert.equal(state.cloudflare.domain, 'unattended-domain.example');
 });
 
+// The origin the cutover writes is checked against the normalized form of itself, so a mixed-case
+// or Unicode name typed by the owner must reach the cutover already lowercased and punycoded.
+for (const [typed, normalized] of [
+  ['Mixed-Case.example', 'mixed-case.example'],
+  ['b\u00fccher.example', 'xn--bcher-kva.example'],
+]) {
+  test(`admission: --domain ${typed} is normalized before it is saved and reaches a cutover with a bare origin`, async (t) => {
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+    await setupCloudflare(t, { zoneStatus: 'active' });
+    await setupWrangler(t);
+    await seedLiveSite('site-normalized', dir);
+
+    const { runChapter2 } = await import('./chapter2.mjs');
+    const outcome = await runChapter2({
+      openBrowser: neverOpensBrowser,
+      siteId: 'site-normalized',
+      record: await loadSite('site-normalized'),
+      dir,
+      args: { yes: true, domain: typed },
+      log: () => {},
+      dryRun: false,
+      confirm: mustNotBeCalled('confirm'),
+      text: mustNotBeCalled('text'),
+      env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+      argv: [],
+      resolve: authoritativeResolve(normalized),
+      fetchImpl: alwaysMatchingFetch(),
+    });
+
+    assert.equal(outcome.outcome, 'paid-plan-declined');
+    const state = await loadSite('site-normalized');
+    assert.equal(state.cloudflare.domain, normalized);
+    const wrangler = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+    assert.ok(wrangler.includes(`https://${normalized}`), wrangler);
+  });
+}
+
 // The refusal this pins is the whole reason readCurrentRecords carries a confidence flag. A
 // recursive resolver can answer "no such record" from a cache that has not expired, so an
 // unattended run that auto-copied a low-confidence list would write a set quietly missing the

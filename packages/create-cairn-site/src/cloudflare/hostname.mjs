@@ -373,7 +373,7 @@ export async function cutOverHostname({
   const beforeRedeploy = await confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear });
   if (beforeRedeploy !== 'live') return { outcome: beforeRedeploy };
 
-  const domainOrigin = `https://${domain}`;
+  const domainOrigin = `https://${domain.toLowerCase()}`;
   try {
     // The forward write sits inside the try too: it writes two files, and a failure after the
     // first lands must restore the pair like any later failure. The origin in cairn.config.ts is

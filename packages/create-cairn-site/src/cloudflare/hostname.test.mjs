@@ -466,6 +466,25 @@ test('redeploy failure maps to cutover-deploy-failed and restores the workers.de
   assert.ok(!content.includes(`https://${record.cloudflare.domain}`));
 });
 
+test('a mixed-case domain on the record still cuts over to a lowercase bare origin', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir, domain: 'Carin-Test.org' });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  const result = await cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} });
+
+  assert.equal(result.outcome, 'live');
+  assert.ok((await readOrigin(dir)).includes('https://carin-test.org'));
+});
+
 test('the cutover builds under the new origin before its deploy', async (t) => {
   const { api } = await setupCloudflare(t);
   const dir = await setupDir(t);

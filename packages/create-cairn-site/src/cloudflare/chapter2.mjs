@@ -218,7 +218,7 @@ async function saveChapter2Token(siteId, token) {
  * off the name.
  * @param {typeof clackText} text the free-text prompt to ask through
  * @param {(line: string) => void} log receives the nudge printed after an empty submit
- * @returns {Promise<string>} the trimmed domain the admin entered
+ * @returns {Promise<string>} the normalized domain the admin entered
  */
 async function askForDomain(text, log) {
   for (;;) {
@@ -227,7 +227,26 @@ async function askForDomain(text, log) {
     });
     if (isCancel(answer)) exitOnCancel();
     const entered = (answer ?? '').trim();
-    if (entered) return entered;
+    if (entered) return normalizeDomain(entered);
+/**
+ * Reduce a typed domain to the form every later hop and the public origin use: lowercase, with a
+ * Unicode name punycoded, by way of the URL parser's host. Anything the parser refuses, or that
+ * carries more than a bare host (a port, path, or credentials), stays as typed so Cloudflare's own
+ * invalid-domain answer reports it.
+ * @param {string} raw the domain as typed or passed to `--domain`
+ * @returns {string} the normalized domain, or the trimmed input when it is not a bare host
+ */
+function normalizeDomain(raw) {
+  const trimmed = String(raw).trim();
+  try {
+    const url = new URL(`https://${trimmed}`);
+    const bare = url.host === url.hostname && url.pathname === '/' && !url.search && !url.hash && !url.username;
+    return bare && url.hostname ? url.hostname : trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
     log('Please enter a domain name.');
   }
 }
@@ -516,7 +535,7 @@ export async function runChapter2({
       }
       if (args.yes && args.domain) {
         consented = true;
-        domain = args.domain;
+        domain = normalizeDomain(args.domain);
         return;
       }
       const answer = await confirm({ message: 'Connect a domain you own to this site now? (Free.)' });
@@ -527,7 +546,7 @@ export async function runChapter2({
         return;
       }
       consented = true;
-      domain = args.domain || (await askForDomain(text, log));
+      domain = args.domain ? normalizeDomain(args.domain) : await askForDomain(text, log);
     });
     if (!dryRun && !consented) {
       return { outcome: 'admission-declined' };

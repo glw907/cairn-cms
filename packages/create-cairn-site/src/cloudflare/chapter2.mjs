@@ -463,12 +463,16 @@ export async function runChapter2({
     }
 
     // Saved before the token hop, so a crash after it resumes at `domain-live` under the normal
-    // rules. Leaving a Builds decline this way records it, since the step that held it is gone.
+    // rules. Leaving a Builds decline this way records it, since the step that held it is gone,
+    // unless a later `--connect` already consented: a chapter 3 token marker or a connection
+    // means the owner said yes to Builds after the decline, and that answer stands.
+    const buildsDeclineStands =
+      record.step === 'builds-connect-declined' &&
+      !record.cloudflare?.buildsTokenSavedAt &&
+      !record.cloudflare?.buildsConnectionUuid;
     await updateSite(siteId, {
       step: 'domain-live',
-      ...(record.step === 'builds-connect-declined'
-        ? { cloudflare: { buildsDeclinedAt: new Date().toISOString() } }
-        : {}),
+      ...(buildsDeclineStands ? { cloudflare: { buildsDeclinedAt: new Date().toISOString() } } : {}),
     });
     step = 'domain-live';
     emailAdmitted = true;

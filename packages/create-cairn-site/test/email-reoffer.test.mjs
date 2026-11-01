@@ -301,6 +301,31 @@ test('reoffer: a yes from builds-connect-declined writes the Builds decline mark
   assert.equal(state.step, 'email-onboarded');
 });
 
+for (const [label, marker] of [
+  ['a saved chapter 3 token', { buildsTokenSavedAt: '2026-10-31T00:00:00.000Z' }],
+  ['a Builds connection', { buildsConnectionUuid: 'connection-1' }],
+]) {
+  test(`reoffer: a yes from builds-connect-declined after a --connect that consented (${label}) writes no Builds decline`, async (t) => {
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+    const cloudflare = await setupCloudflare(t);
+    await setupWrangler(t);
+    await seedDeclined('reoffer-consent', dir, 'builds-connect-declined', {}, marker);
+    cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+    const { promise } = await run('reoffer-consent', dir, {
+      confirm: recordingConfirm(true, []),
+      promptSecretFn: async () => 'new-token',
+      fetchImpl: async () => new Response(null, { status: 200 }),
+    });
+    await promise;
+
+    const state = await loadSite('reoffer-consent');
+    assert.equal('buildsDeclinedAt' in state.cloudflare, false, 'a later consent outranks the earlier Builds decline');
+    assert.equal(state.step, 'email-onboarded');
+  });
+}
+
 test("reoffer: chapter 2's own token clears chapter 3's saved-token marker, so chapter 3 never adopts it", async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

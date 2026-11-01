@@ -30,3 +30,4 @@ dist/
 
 # machine-local credential locations: identifiers only, never committed
 docs/internal/credentials.md
+.mockups/

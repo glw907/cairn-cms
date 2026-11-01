@@ -1,7 +1,7 @@
 // cairn-cms: the retires pass, Task 2's compile-only proof for the 18 sanctioned NavIcon-class
 // leaks (r4-rederivation section 7, the F-1 hybrid ruling). Each block below types one value using
 // the exact replacement expression the move record
-// (docs/internal/record/2026-08-30-retires-move-record.md) prescribes for a name this task
+// (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md) prescribes for a name this task
 // retired, against the SOURCE declaration of its keep parent (the env-genericity.test.ts idiom:
 // relative `../../lib/...` imports, never the package's own subpaths). This proves the structural
 // form compiles; the shipped-subpath proof that a consumer installing the tarball sees the same

@@ -9,7 +9,7 @@
 //
 // A prior public-surface reshape broke `packages/cairn-cms-dev` silently until a manual showcase
 // `svelte-check` caught it (surface-pruning pass, Task 6; see
-// docs/plans/2026-07-01-surface-pruning-pass.md). `check:dev-package` closed the
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md). `check:dev-package` closed the
 // dev-package half of that gap; this script closes the showcase half and gives both consumers
 // one named entry point.
 //
@@ -21,7 +21,7 @@
 // main checkout (never locally installed inside examples/showcase) can instead surface a known,
 // unrelated dual vite/kit install collision: two physical copies of @sveltejs/kit/vite in the
 // type-resolution graph produce spurious node_modules-only duplicate-identifier errors (ROADMAP
-// "Small DX debt"; docs/plans/2026-06-04-cairn-dx-a-ergonomics.md). This script does
+// "Small DX debt"; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-06-04-cairn-dx-a-ergonomics.md). This script does
 // not attempt to distinguish that noise from a real showcase src/ error automatically; instead,
 // on a showcase failure it prints the raw svelte-check output plus this note and still exits
 // non-zero, so a worktree run fails LOUD with a concrete next step (`cd examples/showcase && npm

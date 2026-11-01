@@ -1,5 +1,5 @@
-// cairn-audit's screen-anatomy rule: the mechanical floor under the office screen shape spec 6.3
-// names, "One PageHeader with one h1; the primary action sits in the header slot; content sits in
+// cairn-audit's screen-anatomy rule: the mechanical floor under the office screen shape the admin
+// design system names, "One PageHeader with one h1; the primary action sits in the header slot; content sits in
 // the card region." Three checks, each tied to a markup fact the admin toolkit's recipes make
 // mechanically readable rather than a class-name guess:
 //
@@ -12,7 +12,7 @@
 //  3. Every ACCENT- or INK-filled, text-carrying action control inside `<main>` that sits outside
 //     BOTH the header and any `.card-shell` region is a buried primary action: the "old trailing
 //     foot row that duplicated" the header's New button, the exact defect `ConceptList`'s
-//     history names (`docs/internal/admin-design-system.md`, "Office list (the concept list view)",
+//     history names (`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "Office list (the concept list view)",
 //     2026-07-15). "Filled" is read the same way `one-filled-action` reads it, not as "any opaque
 //     background": each candidate's computed `background-color` is compared, via the shared
 //     canvas normalizer, against `--color-primary` and `--color-neutral` as THAT element inherits
@@ -33,14 +33,14 @@
 //     `role="radiogroup"` with `role="radio"` options, one option always accent-filled via
 //     `.btn-active`) firing on every office list, five false positives per theme. A radio option is
 //     a SELECTION control, not an action, and the toolbar sits outside the card by design
-//     (`docs/internal/admin-design-system.md`, "the toolbar belongs to the card below it"); ARIA
+//     (`.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, "the toolbar belongs to the card below it"); ARIA
 //     marks the distinction structurally, so reading it is not a guess. The same pass caught a
 //     genuine positive alongside both false-positive classes: `VocabularyAdmin`'s footer
 //     `<form>` renders its accent-filled "Save changes" outside both the header and any card-shell,
 //     a real, currently-shipped instance of the anatomy this rule polices.
 //
-// DESK ROUTES ARE EXEMPT (spec 6.3): an open document's topbar-and-manuscript shape carries no
-// PageHeader at all (docs/internal/admin-design-system.md, "The context model: office and desk").
+// DESK ROUTES ARE EXEMPT: an open document's topbar-and-manuscript shape carries no
+// PageHeader at all (.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "The context model: office and desk").
 // The exemption is read off the RENDER, never off the path, and that is the whole point. The first
 // cut used path depth, which `CairnAdminShell.svelte`'s comment names by name as the wrong
 // signal that already caused a shipped bug: "a developer's custom nav can route just as deep
@@ -135,7 +135,7 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
     if (el.parentElement?.closest('.card-shell')) continue;
     // A radio option is a SELECTION control (which filter is active, ListToolbar's segmented
     // publish-state and Hidden toggles), not an action, and the toolbar sits outside the card by
-    // design (docs/internal/admin-design-system.md, "the toolbar belongs to the card below it").
+    // design (.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "the toolbar belongs to the card below it").
     // ARIA marks this distinction structurally (`role="radio"` inside a `role="radiogroup"`), so
     // excluding it here is reading the accessibility tree rather than guessing at intent.
     if (el.getAttribute('role') === 'radio') continue;
@@ -163,7 +163,7 @@ function readScreenAnatomy(): ScreenAnatomySnapshot | null {
  * The office screen's mechanical anatomy floor: one PageHeader h1, the primary action in its
  * header slot, content in the card region. Advisory tier: a false positive here (a legitimate
  * screen this rule cannot special-case, such as a whole-concept empty state that deliberately
- * drops its card, `docs/internal/admin-design-system.md`'s "Empty state" section) is a
+ * drops its card, `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`'s "Empty state" section) is a
  * candidate for a human to triage via the rendered allowlist, never a build breaker; the mechanical
  * floor is a nudge toward the recipe, not a proof the recipe was violated.
  */
@@ -185,7 +185,7 @@ export const screenAnatomy: RenderedRule = {
         message:
           snapshot.h1Selectors.length === 0
             ? 'no <h1> renders on this office route; every office screen carries PageHeader\'s one ' +
-              'display-face heading (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The context model: office and desk").'
+              'display-face heading (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "The context model: office and desk").'
             : `${snapshot.h1Selectors.length} <h1> elements render on this route (expected exactly 1): ` +
               `${snapshot.h1Selectors.join(', ')}. PageHeader owns the page's one display-face heading.`,
       });
@@ -208,7 +208,7 @@ export const screenAnatomy: RenderedRule = {
         selector: 'main',
         message:
           'this office route renders no .card-shell region inside <main>; office content composes ' +
-          'inside a floating card (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Floating card: card-shell card-shadow").',
+          'inside a floating card (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Floating card: card-shell card-shadow").',
       });
     }
 

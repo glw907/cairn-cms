@@ -200,11 +200,11 @@ describe('readinessProblems', () => {
   });
 });
 
-// The admin arm's state (arm-state.mjs) picks the comparison. While the arm holds no page, the
-// checklist is gone, so every live docsAnchor is checked against the shipped list instead: a new
-// condition cannot ship a fragment no released binary and no checklist agree on. Once the arm holds
-// any page it is rebuilt, and the checklist must exist and carry every shipped anchor again, so a
-// renamed or split checklist fails rather than disarming the gate.
+// Whether docs/admin holds any page picks the comparison. While it holds none, the checklist is
+// gone, so every live docsAnchor is checked against the shipped list instead: a new condition
+// cannot ship a fragment no released binary and no checklist agree on. Once docs/admin holds any
+// page, the checklist must exist and carry every shipped anchor again, so a renamed or split
+// checklist fails rather than disarming the gate.
 describe('readinessProblemsForArm', () => {
   const live = [
     cond('email.sender-not-onboarded', 'is-it-working.md#onboard-the-sending-domain'),
@@ -212,15 +212,15 @@ describe('readinessProblemsForArm', () => {
   ];
   const fixture = (name: string) => loadShippedAnchors(join(SHIPPED_ANCHORS_FIXTURES, name), ROOT);
 
-  describe('list mode, with the admin arm absent', () => {
+  describe('list mode, with docs/admin holding no page', () => {
     it('passes when every live docsAnchor is on the shipped list', () => {
-      expect(readinessProblemsForArm(live, 'absent', null, fixture('valid.json'))).toEqual([]);
+      expect(readinessProblemsForArm(live, false, null, fixture('valid.json'))).toEqual([]);
     });
 
     it('fails a live docsAnchor missing from the shipped list, naming the condition', () => {
       const problems = readinessProblemsForArm(
         [...live, cond('config.hsts-off', 'is-it-working.md#turn-on-hsts')],
-        'absent',
+        false,
         null,
         fixture('valid.json'),
       );
@@ -232,7 +232,7 @@ describe('readinessProblemsForArm', () => {
     it('still fails a condition with no docsAnchor, or one naming another file', () => {
       const problems = readinessProblemsForArm(
         [cond('no.anchor'), cond('wrong.file', 'other.md#onboard-the-sending-domain')],
-        'absent',
+        false,
         null,
         fixture('valid.json'),
       );
@@ -240,22 +240,22 @@ describe('readinessProblemsForArm', () => {
     });
 
     it('fails an absent list', () => {
-      expect(readinessProblemsForArm(live, 'absent', null, fixture('does-not-exist.json'))).toEqual([
+      expect(readinessProblemsForArm(live, false, null, fixture('does-not-exist.json'))).toEqual([
         expect.stringContaining('does not exist'),
       ]);
     });
 
     it('fails an empty list', () => {
-      expect(readinessProblemsForArm(live, 'absent', null, fixture('empty.json'))).toEqual([
+      expect(readinessProblemsForArm(live, false, null, fixture('empty.json'))).toEqual([
         expect.stringContaining('carries no anchors'),
       ]);
     });
 
     it('fails a malformed list', () => {
-      expect(readinessProblemsForArm(live, 'absent', null, fixture('invalid-json.json'))).toEqual([
+      expect(readinessProblemsForArm(live, false, null, fixture('invalid-json.json'))).toEqual([
         expect.stringContaining('not valid JSON'),
       ]);
-      expect(readinessProblemsForArm(live, 'absent', null, fixture('not-object.json'))).toEqual([
+      expect(readinessProblemsForArm(live, false, null, fixture('not-object.json'))).toEqual([
         expect.stringContaining('anchors'),
       ]);
     });
@@ -263,13 +263,13 @@ describe('readinessProblemsForArm', () => {
     it('checks the committed list against the committed registry anchors it already holds', () => {
       const committed = loadShippedAnchors(join(ROOT, 'scripts/checks/shipped-anchors.json'), ROOT);
       const registry = committed.anchors.map((anchor, i) => cond(`condition.${i}`, anchor));
-      expect(readinessProblemsForArm(registry, 'absent', null, committed)).toEqual([]);
+      expect(readinessProblemsForArm(registry, false, null, committed)).toEqual([]);
     });
   });
 
-  describe('checklist mode, once the admin arm regains a page', () => {
+  describe('checklist mode, once docs/admin regains a page', () => {
     it('fails when the checklist page does not exist', () => {
-      const problems = readinessProblemsForArm(live, 'rebuilt', null, fixture('valid.json'));
+      const problems = readinessProblemsForArm(live, true, null, fixture('valid.json'));
       expect(problems).toEqual([expect.stringContaining('docs/admin/is-it-working.md does not exist')]);
     });
 
@@ -277,7 +277,7 @@ describe('readinessProblemsForArm', () => {
       const renamed = DOC.replace('Onboard the sending domain', 'Onboard the sender domain');
       const problems = readinessProblemsForArm(
         [cond('admin.csrf-rejected', 'is-it-working.md#admin-csrf-token-rejected')],
-        'rebuilt',
+        true,
         renamed,
         fixture('valid.json'),
       );
@@ -285,7 +285,7 @@ describe('readinessProblemsForArm', () => {
     });
 
     it('passes when the checklist carries every live and shipped anchor', () => {
-      expect(readinessProblemsForArm(live, 'rebuilt', DOC, fixture('valid.json'))).toEqual([]);
+      expect(readinessProblemsForArm(live, true, DOC, fixture('valid.json'))).toEqual([]);
     });
   });
 });

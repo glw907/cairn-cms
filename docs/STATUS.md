@@ -10,47 +10,44 @@ major), the harvest's page removal, draft docs stage 2a, the October dependency 
 cleanup, engine pass A (PR #108), the gate economy pass (PR #110), the lean pass process (PR #112),
 and engine pass B (PR #113). cairn.pub pins
 `0.94.0-rc.1`, its ceiling `0.98.0` until the one release below
-([handoff](internal/record/2026-09-22-cairn-pub-docs-handoff.md)).
+(`BACKLOG.md` #168 holds what cairn.pub is owed).
 
-**The sequence (Geoff, 2026-10-07).** Docs stages 2b to 5, then one release, then each site
-migrates (cairn.pub included, none before). Engine passes land on `main` and never release; each
-sits in its slot on `ROADMAP.md`'s boundary-test path.
+**The sequence (Geoff, 2026-10-31).** The agent-first pattern lands first, then the media and
+publish pass and the scaffold pass, then the held docs series (editors and admin arms), then the
+final engine batch, then one release, then each site migrates once. `BACKLOG.md` names each
+item's pass. Design:
+`~/Projects/initiatives/shared-standards/specs/2026-10-31-agent-first-pattern-design.md`. Engine
+passes land on `main` and never release.
 
 ## Immediate next action
 
-The docs finalization series runs under `conductor-cairn-cms`, started by a timer at 00:01 on
-2026-10-31: the 2b close, a small engine pass, the editors arm, the admin arm, and the front door.
-The plan is [docs/plans/2026-10-30-docs-finalization.md](plans/2026-10-30-docs-finalization.md), and
-the live state is `~/.local/state/cairn-docs-final/ledger.md`. To start it by hand:
-
-`claude --bg --model claude-opus-5-5 --effort medium --name conductor-cairn-cms "$(cat docs/plans/2026-10-30-docs-finalization-conductor-prompt.txt)"`
-
-The release holds until the docs are complete.
+The agent-first pattern has landed, once PR #169 (pass 4, stage A) merges: the technical pages and
+their gates are gone, `cairn-guidance install` removes what it no longer ships by hash, and the
+evaluator set (`README.md`, `docs/why-cairn.md`, `docs/architecture.md`) stands. Passes 1 to 3 are
+merged. The next action is stage B of pass 4, branch `agent-first-4b`: resume #159 and #160 with
+Geoff's page calls (the plan's task table has them), cut the `next` prerelease, run the two
+sittings and the Contribute and Extend checks, tear down, and prove the bars. The series resumes
+there; the docs finalization PRs #159 and #160 stay open and #161 is closed. The plan is
+`~/Projects/initiatives/shared-standards/plans/2026-10-31-agent-first-plan.md`, with its fold record
+beside it, and `conductor-cairn-cms` runs it one pass at a time; its ledger is
+`~/.local/state/cairn-agent-first/ledger.md`. Executor `cairn-cms-agent-first-4`, session
+`82fe4c13`. The `model-review.service` drop-in `agent-first-hold.conf` stays applied until task
+4.13. The release holds until pass 4 closes.
 
 ## Open decisions and watches
-- Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction
-  entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
-  (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine
-  batch (`docs/internal/record/2026-10-31-engine-friction-2b-close.md`).
-- Series pass 2 (PR #158) fixed the seven scoped entries, the sidebar figure's fixture, the doctor
-  PASS titles (with a recapture of the doctor fixture and a committed pty recorder), and retired the
-  tidy-key and login-probe conditions. Its boundary test over the remaining entries is the 2b close
-  verdict: the rest ride the final engine batch. The capture runbook is
-  `docs/plans/2026-10-30-capture-runbook.md`.
-- Series pass 3 rebuilt the editors arm: eight pages, 17 live figures, six figures cut after a render
-  read. Its boundary test over the three new engine entries (in the friction log's Engine section) finds
-  no engine pass warranted before the admin arm: they ride the final engine batch.
-- Series pass 4 rebuilt the admin arm: eight pages, three diagrams, and seven transcript blocks from the
-  `0.98.1-rc.1` capture, with the credentials and tripwire pages moved in from `tool/docs`. Its boundary
-  test over eleven new engine entries (the friction log's Engine section, from the capture and the editors'
-  rule finds) finds no engine pass warranted before the front door: they ride the final engine batch,
-  and the one `auth-data` entry (the spent-link refusal) stays batched.
+- The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with
+  a `Placement` line, and `## Won't do` holds Geoff's rulings. The final engine batch has three
+  slices: content rules, admin and tidy, and small API. A pass's design makes its own fold.
+- Docs stage 2b is closed by series pass 1 (PR #157) and series pass 2 (PR #158). The engine friction
+  the boundary test found rides the final engine batch as `BACKLOG.md` items; the 94 entries'
+  verdicts are at the `pre-agent-first` tag. The capture runbook is the plan file
+  `docs/plans/2026-10-30-capture-runbook.md`, removed at task 4.13.
 - The docs improvement loop is merged (PRs #149, #153, #154); the human gate design is approved and
   unbuilt, outside the series. The series' pass 2 takes the sidebar figure's fixture.
-- Routines: sveltejs/kit#17368 (`trig_01KPzLTU7rzLMQUp2y6bjZtm`, delete once the PR closes); held
+- Routines: sveltejs/kit#17368 merged on 2026-10-14, so its routine (`trig_01KPzLTU7rzLMQUp2y6bjZtm`)
+  is due for deletion at claude.ai/code/routines (an agent cannot); held
   majors (`trig_01UCoKqxRXVwAfMdnF913E4v`); remote functions reaching stable
-  (`trig_0193pPNoyxsTGeUhF1xx7woa`); the monthly drift sample (`trig_015UPQostYVisXuExTHTH2vu`),
-  which widens at stage 4's merge.
+  (`trig_0193pPNoyxsTGeUhF1xx7woa`).
 - Node 26 floor only if Active LTS; TypeScript 7 waits on `tsgo.yml`; `radius-scale` and the retired
   patch arms promote at the next version commit; the release runs `check:dev-package` and `npm pkg fix`
   (four `./` `bin` entries).

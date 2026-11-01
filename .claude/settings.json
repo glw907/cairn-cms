@@ -1,0 +1,23 @@
+{
+  "extraKnownMarketplaces": {
+    "glw907-standards": {
+      "source": { "source": "github", "repo": "glw907/standards" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "standards@glw907-standards": true
+  },
+  "worktree": { "baseRef": "head" },
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/checks/fast-lane.mjs*)",
+      "Bash(node scripts/checks/gate-tier.mjs *)",
+      "Bash(npm run lane:fast*)",
+      "Bash(npm run check*)",
+      "Bash(npm test*)",
+      "Bash(npm run test:*)",
+      "Bash(make -C tool check)"
+    ]
+  }
+}

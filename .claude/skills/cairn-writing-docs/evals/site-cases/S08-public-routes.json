@@ -1,0 +1,47 @@
+{
+  "id": "S08-public-routes",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "createSiteIndexes content index, rssResponse, the site's public route files and menu",
+  "bar": 4,
+  "prompt": "The Notes section in the admin already gives each note its own public page, but there is no list of notes and no feed. Add a public page at /notes that lists the published notes, newest first, and link it from the site's main menu. Add an RSS feed at /notes/feed.xml that carries each note's full text with absolute links. A note still marked as a draft must appear on neither. Finish when the site type-checks and builds.",
+  "setup": "setups/site/s08-public-routes.mjs",
+  "knownBad": "setups/site/s08-public-routes-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/delivery/content-index.ts:148-149 (all() leaves drafts out unless includeDrafts is set, and a dated concept's all() is newest first)",
+    "src/lib/delivery/feeds.ts:8-30 (FeedChannel siteUrl and feedUrl must be absolute; FeedItem contentHtml carries the full text)",
+    "src/lib/delivery/responses.ts:13 (rssResponse sets the RSS content type)",
+    "src/lib/delivery/public-routes.ts:221 (the entry pages for every concept already come from createPublicRoutes through the catch-all, so a new route owes only the list and the feed)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/build-the-public-routes.md#serve-the-feeds and #build-the-archive (index.all() as the source, origin-prefixed urls, prerender = true)",
+    "Verified by building a reference solution against the emitted site: the prerendered notes page and notes/feed.xml list the three published notes, newest first, with https://showcase.test links, and omit the draft."
+  ],
+  "expectations": [
+    "A route at /notes reads the site's notes index (the concept index createSiteIndexes builds), so drafts are left out and the order is newest first, and the route is prerendered.",
+    "A route at /notes/feed.xml returns rssResponse from @glw907/cairn-cms/delivery with an absolute siteUrl and feedUrl, and items whose url is the site origin plus the permalink.",
+    "Each feed item carries the note's rendered body as contentHtml, rendered through the adapter's render with links resolved to absolute URLs.",
+    "The main menu in src/theme/site.config.yaml links to /notes.",
+    "The entry pages are left to the existing catch-all route; no new per-note route is written.",
+    "The draft note appears in neither prerendered output.",
+    "npm run check and npm run build pass."
+  ],
+  "checks": [
+    { "type": "contains", "path": "src/routes", "regex": "notes[\\s\\S]*rssResponse|rssResponse[\\s\\S]*notes" },
+    { "type": "absent", "path": "src/routes", "regex": "import\\.meta\\.glob" },
+    { "type": "contains", "path": "src/theme/site.config.yaml", "regex": "url:\\s*/notes\\s*$" },
+    { "type": "unchanged", "path": "src/routes/(site)/[...path]" },
+    { "type": "unchanged", "path": "src/content/notes" },
+    { "type": "contains", "path": ".svelte-kit/output/prerendered/pages/notes.html", "text": "Creek crossing is low" },
+    { "type": "absent", "path": ".svelte-kit/output/prerendered/pages", "text": "Upper loop closure" },
+    { "type": "contains", "path": ".svelte-kit/output/prerendered/pages/notes/feed.xml", "text": "https://showcase.test/notes/first-snow" },
+    { "type": "contains", "path": ".svelte-kit/output/prerendered/pages/notes/feed.xml", "text": "Carry traction from here on" },
+    { "type": "npm", "script": "check" },
+    { "type": "npm", "script": "build" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The /notes list and the feed both take their entries from the site's notes content index (for example notes.all() from src/chassis/content.ts or site.concept('notes')), and neither route reads the markdown files or parses frontmatter itself." },
+    { "n": 2, "text": "The feed's channel siteUrl and feedUrl and each item's url are built from the site's origin (siteMeta.origin or equivalent), not written as relative paths." },
+    { "n": 3, "text": "The feed route and the list route each export prerender = true." },
+    { "n": 4, "text": "The session did not write a new route for individual note pages and did not change the shared entry route or PublicRoutesConfig to make the list or the feed work." }
+  ]
+}

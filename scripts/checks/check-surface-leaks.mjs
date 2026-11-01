@@ -3,7 +3,7 @@
 // retire-verdicted OR ABSENT name (never exported from any subpath) still named inside a
 // surviving KEEP export's rendered public shape is a closure leak: a consumer can read the
 // value's SHAPE, through indexed access or an inline member, but cannot NAME the type it holds.
-// `docs/internal/record/2026-08-30-retires-move-record.md` is the brief this rider answers,
+// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md` is the brief this rider answers,
 // including its "the internals pass should re-decide the split" instruction (Step 3 below).
 //
 // TWO derivations feed the recorded set, because the two known proof cases live in different
@@ -41,7 +41,7 @@ import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { walk } from '../walk-files.mjs';
 import { repoRoot } from '../repo-root.mjs';
-import { moduleExports } from './reference-coverage.mjs';
+import { moduleExports } from './dts-exports.mjs';
 import { buildSurfaceModel, surfaceSubpaths } from './check-surface.mjs';
 
 const ROOT = repoRoot(import.meta.url);
@@ -500,14 +500,12 @@ export function formatLeakViolations({ unrecorded, stale, unreasoned }) {
   return lines.join('\n');
 }
 
-// Exported so a sibling gate (reference-coverage.mjs's indexed-access-parenthetical clause)
-// reads the same registry file through the same parsing and error handling, rather than
-// re-implementing the load.
 /**
+ * Read and parse the leak registry.
  * @returns {RegistryEntry[] | null} null when the registry cannot be read or parsed (the
  *   diagnostic is already printed and `process.exitCode` set; the caller must stop)
  */
-export function loadRegistry() {
+function loadRegistry() {
   /** @type {string} */
   let raw;
   try {

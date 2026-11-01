@@ -1,7 +1,7 @@
 // cairn-cms: the AI training-crawler table `buildRobots` reads under `posture: 'decline'`. Every
 // record's `citation` is a first-party page from the operator itself, verified on 2026-08-05; the
 // evidence, including the compliance quote pulled from each page, is recorded in
-// docs/internal/2026-08-05-ai-crawler-token-verification.md. A token no first-party page documents
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-05-ai-crawler-token-verification.md. A token no first-party page documents
 // does not ship here, however widely it is repeated elsewhere, which is why Bytespider is absent:
 // ByteDance publishes no first-party documentation of that token at all.
 //

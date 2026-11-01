@@ -1,4 +1,4 @@
-// Task 9: the dictionaryAdd action (spec 1.6). The transport mirrors the media raw-body actions:
+// Task 9: the dictionaryAdd action. The transport mirrors the media raw-body actions:
 // a text/plain POST, the CSRF token in X-Cairn-CSRF validated by validateCsrfHeader (CSRF first, then
 // the session), and a JSON body { word } or { words }. The action reads the committed dictionary from
 // the default branch, merges the validated words in sorted order if absent (idempotent), and commits

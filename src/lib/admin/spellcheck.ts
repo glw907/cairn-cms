@@ -3,7 +3,7 @@
 // linter() wiring at the bottom is the only side that touches CodeMirror, loaded the lazy way
 // link-completion.ts loads it so CodeMirror never lands in a consumer's server bundle.
 //
-// The skip authority precedence (spec 1.4): the Lezer syntax tree is the single authority for
+// The skip authority precedence: the Lezer syntax tree is the single authority for
 // node-kind skips (code, links/URLs, HTML, emphasis/strong markers). The deterministic
 // frontmatterSpan helper covers the `---` region the grammar does not model, and the line-based
 // fenceTokens scan covers the directive machinery the grammar parses as plain paragraph text. A
@@ -377,8 +377,7 @@ export function createSpellWorker(): SpellWorker {
 }
 
 // The wasm and dictionary URLs are resolved module-relative with `import.meta.url`, the same
-// mechanism createSpellWorker uses for the worker. The spike (docs/internal/design/
-// 2026-06-20-editor-copyedit-spike-result.md) proved Vite's `?worker`/`?url` package-subpath imports
+// mechanism createSpellWorker uses for the worker. The spike (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-20-editor-copyedit-spike-result.md) proved Vite's `?worker`/`?url` package-subpath imports
 // from CONSUMER app code; the library's source cannot self-import by package name, so it uses the
 // portable `new URL('./asset', import.meta.url)` form Vite resolves inside dependencies too. The
 // showcase E2E proves the whole chain through the real consumer build; if resolution ever fails there,
@@ -432,7 +431,7 @@ export interface SpellcheckOptions {
    */
   pendingAdditions?: Set<string>;
   /**
-   * The committed personal-dictionary words (spec 1.6) the source seeds the Worker's personal layer
+   * The committed personal-dictionary words the source seeds the Worker's personal layer
    *  with, posted as one batch `addWord` right after `init`. The git-backed site dictionary is the
    *  durable layer; the editor reads it at load (EditData.siteDictionary) and hands it here, so a word
    *  another editor committed answers correct from the first lint. Empty by default (dialect-only).

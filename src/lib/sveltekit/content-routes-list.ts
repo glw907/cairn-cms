@@ -35,6 +35,7 @@ export interface EntrySummary {
  * The concept list route's load data. The list view reads the descriptor fields (`label`,
  *  `singular`, `dated`) to render its create affordances and reads `entries` to render the rows,
  *  without a second fetch back to the content index.
+ * @public
  */
 export interface ListData {
   conceptId: string;
@@ -44,7 +45,7 @@ export interface ListData {
    *  it to `label`.
    */
   singular: string;
-  /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
+  /** Posts carry a date in the new-entry form; pages do not (the concept's routing rule). */
   dated: boolean;
   /**
    * Whether this concept is routable (`concept.routing.routable`), for the create form: a

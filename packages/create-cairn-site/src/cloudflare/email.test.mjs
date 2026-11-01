@@ -5,7 +5,7 @@ import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { ensureSendingDomain, sendTestMessage, defaultFromAddress, PROPAGATION_WINDOW_MS } from './email.mjs';
 
 /**
- * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md, and
+ * The send refusal captured live 2026-08-12 (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-spike.md, and
  * api.test.mjs's copy): byte-identical whether the apex was never onboarded or is still
  * settling, which is exactly why this module's classification exists.
  */

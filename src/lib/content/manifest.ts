@@ -14,7 +14,10 @@ import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 import type { CairnAdapter, ConceptDescriptor } from './types.js';
 import type { MarkedFragmentResolve } from '../render/resolve-include.js';
 
-/** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
+/**
+ * One entry's projection: its identity, routing, draft flag, and outbound cairn: edges.
+ * @public
+ */
 export interface ManifestEntry {
   id: string;
   concept: string;
@@ -61,7 +64,10 @@ export interface ManifestEntry {
   publishedAt?: string;
 }
 
-/** The whole corpus as one committed file. `version` guards a future shape migration. */
+/**
+ * The whole corpus as one committed file. `version` guards a future shape migration.
+ * @public
+ */
 export interface Manifest {
   version: 1;
   entries: ManifestEntry[];
@@ -132,6 +138,7 @@ function compareEdge(a: ReferenceEdge, b: ReferenceEdge): number {
 /**
  * Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
  *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR.
+ * @public
  */
 export function formatManifest(manifest: Manifest): string {
   const entries = [...manifest.entries].sort(compareRef).map((e) => ({
@@ -161,6 +168,7 @@ export function formatManifest(manifest: Manifest): string {
  *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
  *  error. The build regenerates the manifest, so a real file is always canonical; this guards a
  *  hand-edited or truncated one.
+ * @public
  */
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
@@ -316,6 +324,7 @@ function predatesMediaRefs(committed: Manifest): boolean {
  *
  * Pass the site's adapter to get the nested-image rule: the pre-field allowance for `mediaRefs`
  *  (below) then holds only when no concept declares an image inside a container field.
+ * @public
  */
 export function verifyManifest(built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, 'content'>): void {
   const builtRaw = formatManifest(built);
@@ -410,6 +419,7 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
  *  reads as a content fix. References have no prerender backstop the way body links do, so this build
  *  gate is the only integrity authority; it runs inside the generated virtual-module source (where the
  *  built manifest is in scope), beside `verifyManifest`.
+ * @public
  */
 export function verifyReferences(manifest: Manifest): void {
   const present = new Set(manifest.entries.map(keyOf));
@@ -469,7 +479,10 @@ export function removeEntry(manifest: Manifest, concept: string, id: string): Ma
   return { version: 1, entries: manifest.entries.filter((e) => !(e.concept === concept && e.id === id)) };
 }
 
-/** One inbound linker: enough to name it and link to its edit page in the delete guard. */
+/**
+ * One inbound linker: enough to name it and link to its edit page in the delete guard.
+ * @beta
+ */
 export interface InboundLink {
   concept: string;
   id: string;

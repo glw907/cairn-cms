@@ -28,10 +28,12 @@ Typography and layout classes only, no daisyUI component class. The tokens here 
 recipe was lifted from. See the scan-scope note on `PageHeader` for why an older version of this
 comment framed that as a compile constraint: `src/lib/admin-toolkit` is inside the `@source` roots
 now, so a class used only here compiles.
+@public
 -->
 <script module lang="ts">
   /** The heading's element. Defaults to `'p'`, the original contract; pass `'h1'`/`'h2'`/`'h3'`
-   *  when this component is a screen's only content and needs a real heading in the a11y tree. */
+   *  when this component is a screen's only content and needs a real heading in the a11y tree.
+   *  @public */
   export type EmptyStateHeadingLevel = 'p' | 'h1' | 'h2' | 'h3';
 </script>
 

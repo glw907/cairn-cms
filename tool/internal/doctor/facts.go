@@ -7,7 +7,7 @@ import (
 
 // siteFactsRelPath is the committed engine-facts file every facts-dependent check reads,
 // resolved under Snapshot.Dir through the same containment readUnder enforces on every other
-// file. See docs/reference/site-facts.md for the contract it mirrors.
+// file. The engine's cairn-manifest writer is the contract it mirrors.
 const siteFactsRelPath = "src/content/.cairn/site-facts.json"
 
 // siteFactsSupportedVersion is the only site-facts.json version this reader accepts.
@@ -19,7 +19,7 @@ const siteFactsSupportedVersion = 1
 const factsAbsentDetail = "needs engine 0.97.0 or later, and one build"
 
 // siteFacts is the adapter-derived facts a site's committed site-facts.json carries, the three
-// values docs/reference/site-facts.md names. Each Has field distinguishes "declared as this
+// values the engine's writer emits. Each Has field distinguishes "declared as this
 // value" from "declared nothing", the same optional-field distinction the engine's writer
 // makes by omitting the key.
 type siteFacts struct {

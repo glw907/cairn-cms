@@ -8,13 +8,10 @@ import {
   findBrokenLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
-  legacyTarget,
-  legacyMapProblems,
 } from '../../../scripts/checks/docs-links.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { DELETION_LIST_PATH } from '../../../scripts/checks/arm-state.mjs';
 
 describe('headingAnchors', () => {
   it('slugs a heading GitHub-style and strips backticks and punctuation', () => {
@@ -81,8 +78,6 @@ describe('scope over skills/ and claude/', () => {
   function fixtureRoot() {
     const dir = mkdtempSync(join(tmpdir(), 'docs-links-scope-'));
     tmpDirs.push(dir);
-    mkdirSync(join(dir, dirname(DELETION_LIST_PATH)), { recursive: true });
-    writeFileSync(join(dir, DELETION_LIST_PATH), JSON.stringify({ deleted: [], kept: [] }));
     return dir;
   }
 
@@ -98,6 +93,17 @@ describe('scope over skills/ and claude/', () => {
     mkdirSync(join(root, 'claude'), { recursive: true });
     writeFileSync(join(root, 'claude', 'CLAUDE.md'), '# Fragment\n');
     expect(filesInScope(root)).toContain('claude/CLAUDE.md');
+  });
+
+  it('includes .claude/skills pages but skips captured exemplar pages', () => {
+    const root = fixtureRoot();
+    const refs = join(root, '.claude', 'skills', 'a-skill', 'references');
+    mkdirSync(refs, { recursive: true });
+    writeFileSync(join(refs, 'guide.md'), '# Guide\n');
+    writeFileSync(join(refs, 'exemplar-capture.md'), '# Capture\n');
+    const scope = filesInScope(root);
+    expect(scope).toContain('.claude/skills/a-skill/references/guide.md');
+    expect(scope).not.toContain('.claude/skills/a-skill/references/exemplar-capture.md');
   });
 
   it('omits claude/ from scope when the tree does not exist', () => {
@@ -144,111 +150,39 @@ describe('unreleasedParityMismatch', () => {
   it('fails when only the CHANGELOG carries an Unreleased heading', () => {
     const mismatch = unreleasedParityMismatch('## Unreleased\n', '## 0.91.0: a recipe\n');
     expect(mismatch).toMatch(/CHANGELOG\.md/);
-    expect(mismatch).toMatch(/migration-notes\.md/);
+    expect(mismatch).toMatch(/MIGRATION-NOTES\.md/);
   });
 
   it('fails when only the migration notes carry an Unreleased heading', () => {
     const mismatch = unreleasedParityMismatch('## 0.91.0\n', '## Unreleased: a recipe\n');
-    expect(mismatch).toMatch(/migration-notes\.md/);
+    expect(mismatch).toMatch(/MIGRATION-NOTES\.md/);
     expect(mismatch).toMatch(/CHANGELOG\.md/);
   });
 
   // The 0.91.0 cut shipped exactly the drift this gate now catches: CHANGELOG.md's window was
   // renamed and the paired page's was not. Read the real, current files, since the whole point of
   // this gate is proving today's tree is in sync, not a synthetic pair of strings.
-  it('agrees on the real, current CHANGELOG.md and docs/extend/migration-notes.md', () => {
+  it('agrees on the real, current CHANGELOG.md and MIGRATION-NOTES.md', () => {
     const root = resolve(__dirname, '../../..');
     const changelog = readFileSync(resolve(root, 'CHANGELOG.md'), 'utf8');
-    const migrationNotes = readFileSync(resolve(root, 'docs/extend/migration-notes.md'), 'utf8');
+    const migrationNotes = readFileSync(resolve(root, 'MIGRATION-NOTES.md'), 'utf8');
     expect(unreleasedParityMismatch(changelog, migrationNotes)).toBeNull();
   });
 });
 
-// Pass D deleted the guides, tutorial, and explanation arms. CHANGELOG.md is immutable, so its
-// historical links keep the old paths and the gate translates them; every other file's links stay
-// checked against the tree. These pin both halves, and the map's own anti-rot invariants.
-describe('the legacy CHANGELOG path map', () => {
-  const root = resolve(__dirname, '../../..');
-
-  it('resolves a retired path written in CHANGELOG.md', () => {
-    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md')).toBe(
-      'docs/extend/upgrade-cairn.md'
-    );
-  });
-
-  it('resolves the same path written with a leading ./ or carrying an anchor', () => {
-    expect(legacyTarget('CHANGELOG.md', './docs/guides/upgrade-cairn.md')).toBe(
-      'docs/extend/upgrade-cairn.md'
-    );
-    expect(legacyTarget('CHANGELOG.md', 'docs/guides/upgrade-cairn.md#precondition')).toBe(
-      'docs/extend/upgrade-cairn.md'
-    );
-  });
-
-  it('refuses the same retired path written in any other file', () => {
-    expect(legacyTarget('ROADMAP.md', 'docs/guides/add-an-island.md')).toBeNull();
-    expect(legacyTarget('docs/reference/core.md', 'docs/guides/add-an-island.md')).toBeNull();
-  });
-
-  it('leaves a live path alone', () => {
-    expect(legacyTarget('CHANGELOG.md', 'docs/reference/core.md')).toBeNull();
-  });
-
-  // The map is only as good as its own upkeep: a value pointing nowhere, a key whose page came
-  // back, or a key nothing cites all have to fail loudly rather than quietly excuse a link.
-  it('holds its three invariants against the real tree', () => {
-    expect(legacyMapProblems(root)).toEqual([]);
-  });
-
-  // The green assertion above cannot distinguish three working invariants from three that never
-  // run, so each one gets its own red proof against a two-entry map. These were proven by hand
-  // during the cutover and not banked, which is how a gate quietly stops gating.
-  it('fails a value that names a page which does not exist', () => {
-    const problems = legacyMapProblems(root, {
-      'docs/guides/add-an-island.md': 'docs/extend/no-such-page.md',
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toContain('docs/extend/no-such-page.md');
-    expect(problems[0]).toContain('no longer exists');
-  });
-
-  it('fails a key whose own page is back on disk', () => {
-    const problems = legacyMapProblems(root, {
-      'docs/reference/core.md': 'docs/extend/upgrade-cairn.md',
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toContain('docs/reference/core.md');
-    expect(problems[0]).toContain('exists again');
-  });
-
-  it('fails a key that no CHANGELOG link names', () => {
-    const problems = legacyMapProblems(root, {
-      'docs/guides/never-cited-anywhere.md': 'docs/extend/upgrade-cairn.md',
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toContain('never-cited-anywhere.md');
-    expect(problems[0]).toContain('no CHANGELOG.md link names');
-  });
-});
-
-// The harvest deletes the old narrative pages while dated records keep linking to them. A dated
-// record is immutable, so its links into deletion-list paths are accepted permanently; the same
-// link anywhere else stays broken. A LEGACY_PATH_MAP value on the deletion list is accepted only
-// until its arm is rebuilt (arm-state.mjs), when the entry has to be repointed at a live page.
-describe('deletion-list links', () => {
+// CHANGELOG.md is immutable, so its historical links keep the paths that were real when they
+// shipped: a link from it into a docs/ page that no longer exists stands. Every other file's links
+// stay checked against the tree, and the record's links to any other missing path still fail.
+describe('the release record\'s links into retired docs pages', () => {
   const tmpDirs: string[] = [];
   afterEach(() => {
     for (const dir of tmpDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
   });
 
-  const KEPT = ['docs/extend/migration-notes.md', 'docs/extend/upgrade-cairn.md', 'docs/extend/choose-an-ai-posture.md'];
-  const LIST = { deleted: ['docs/admin/is-it-working.md', 'docs/extend/enable-tidy.md', 'docs/why-cairn.md'], kept: KEPT };
-
-  function fixtureRoot(files: Record<string, string>, { list = true } = {}) {
-    const dir = mkdtempSync(join(tmpdir(), 'docs-links-harvest-'));
+  function fixtureRoot(files: Record<string, string>) {
+    const dir = mkdtempSync(join(tmpdir(), 'docs-links-record-'));
     tmpDirs.push(dir);
     const all: Record<string, string> = { 'CHANGELOG.md': '# Changelog\n', ...files };
-    if (list) all[DELETION_LIST_PATH] = JSON.stringify(LIST);
     for (const [path, content] of Object.entries(all)) {
       mkdirSync(dirname(join(dir, path)), { recursive: true });
       writeFileSync(join(dir, path), content);
@@ -256,70 +190,37 @@ describe('deletion-list links', () => {
     return dir;
   }
 
-  it('accepts a dated record\'s link into a deleted page, anchor and all, from each dated tree', () => {
+  it('accepts the release record\'s link into a retired docs page, anchor and all, and into a retired docs directory', () => {
     const root = fixtureRoot({
-      'CHANGELOG.md': '# Changelog\n\nsee [check](docs/admin/is-it-working.md#force-https-at-the-edge)\n',
-      'docs/internal/record/2026-09-01-x.md': 'see [tidy](../../extend/enable-tidy.md)\n',
-      'docs/internal/history/old.md': 'see [why](../../why-cairn.md)\n',
-      'docs/internal/feedback/note.md': 'see [check](../../admin/is-it-working.md)\n',
-      'docs/internal/record/2026-09-02-y.md': 'see [the editors arm](../../editors/)\n',
+      'CHANGELOG.md': '# Changelog\n\nsee [doctor](docs/reference/cli-cairn-doctor.md#the-checks)\nsee [tidy](./docs/guides/enable-tidy.md)\nsee [the extend arm](docs/extend/)\n',
     });
     expect(findBrokenLinks(root)).toEqual([]);
   });
 
-  it('fails a non-dated file\'s link to a deleted arm\'s directory', () => {
-    const root = fixtureRoot({ 'docs/reference/core.md': 'see [the editors arm](../editors/)\n' });
-    expect(findBrokenLinks(root)).toHaveLength(1);
-  });
-
-  it('fails the same link written anywhere that is not a dated record', () => {
-    const root = fixtureRoot({ 'docs/reference/core.md': 'see [tidy](../extend/enable-tidy.md)\n' });
+  it('still checks the anchor of a release-record link into a docs page that exists', () => {
+    const root = fixtureRoot({
+      'CHANGELOG.md': '# Changelog\n\nsee [x](docs/admin/x.md#gone)\n',
+      'docs/admin/x.md': '# X\n',
+    });
     expect(findBrokenLinks(root)).toEqual([
-      { file: 'docs/reference/core.md', line: 1, dest: '../extend/enable-tidy.md', reason: 'target not found: ../extend/enable-tidy.md' },
+      { file: 'CHANGELOG.md', line: 3, dest: 'docs/admin/x.md#gone', reason: 'no heading "#gone" in docs/admin/x.md' },
     ]);
   });
 
-  it('fails a dated record\'s dead link to a path the deletion list does not name', () => {
-    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [gone](../../extend/never-existed.md)\n' });
+  it('fails the release record\'s dead link outside docs/', () => {
+    const root = fixtureRoot({ 'CHANGELOG.md': '# Changelog\n\nsee [gone](./NOPE.md)\n' });
     expect(findBrokenLinks(root)).toHaveLength(1);
   });
 
-  it('fails a dated record\'s link to a kept page that is gone, since only deleted pages are excused', () => {
-    const root = fixtureRoot({ 'docs/internal/record/x.md': 'see [notes](../../extend/migration-notes.md)\n' });
+  it('fails the same retired-docs link written anywhere that is not the release record', () => {
+    const root = fixtureRoot({ 'MIGRATION-NOTES.md': 'see [tidy](docs/extend/enable-tidy.md)\n' });
+    expect(findBrokenLinks(root)).toEqual([
+      { file: 'MIGRATION-NOTES.md', line: 1, dest: 'docs/extend/enable-tidy.md', reason: 'target not found: docs/extend/enable-tidy.md' },
+    ]);
+  });
+
+  it('fails a docs page\'s dead link to a retired docs directory', () => {
+    const root = fixtureRoot({ 'docs/internal/notes/x.md': 'see [the extend arm](../../extend/)\n' });
     expect(findBrokenLinks(root)).toHaveLength(1);
-  });
-
-  it('fails closed without the deletion list', () => {
-    const root = fixtureRoot({}, { list: false });
-    expect(() => findBrokenLinks(root)).toThrow(/deletion-list\.json does not exist/);
-  });
-
-  describe('a LEGACY_PATH_MAP value on the deletion list', () => {
-    const changelog = '# Changelog\n\nsee [tidy](docs/guides/enable-tidy.md)\n';
-    const map = { 'docs/guides/enable-tidy.md': 'docs/extend/enable-tidy.md' };
-
-    it('is accepted while its arm holds only the kept set', () => {
-      const root = fixtureRoot({ 'CHANGELOG.md': changelog, ...Object.fromEntries(KEPT.map((p) => [p, '# Kept\n'])) });
-      expect(legacyMapProblems(root, map)).toEqual([]);
-    });
-
-    it('is accepted while its arm is absent', () => {
-      const root = fixtureRoot({ 'CHANGELOG.md': changelog });
-      expect(legacyMapProblems(root, map)).toEqual([]);
-    });
-
-    it('fails once its arm is rebuilt without the page, so the entry gets repointed', () => {
-      const root = fixtureRoot({ 'CHANGELOG.md': changelog, 'docs/extend/a-new-page.md': '# New\n' });
-      const problems = legacyMapProblems(root, map);
-      expect(problems).toHaveLength(1);
-      expect(problems[0]).toContain('docs/extend/enable-tidy.md');
-      expect(problems[0]).toContain('no longer exists');
-    });
-
-    it('still fails a missing value the deletion list does not name, in any arm state', () => {
-      const root = fixtureRoot({ 'CHANGELOG.md': changelog });
-      const problems = legacyMapProblems(root, { 'docs/guides/enable-tidy.md': 'docs/extend/no-such-page.md' });
-      expect(problems).toEqual([expect.stringContaining('docs/extend/no-such-page.md')]);
-    });
   });
 });

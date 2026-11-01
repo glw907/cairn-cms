@@ -42,6 +42,7 @@ export async function movePemToWorkerSecret({ siteId, dir, log, accountId }) {
   await updateSite(siteId, { github: { pem: undefined } });
   log(
     "The App's private key now lives only in your Worker's secret store, not on this machine. " +
-      'To replace it later, follow https://cairn.pub/docs/extend/rotate-the-github-app-key.'
+      "To replace it later, generate a new key in the App's settings, base64-encode it, and run " +
+      '`wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.'
   );
 }

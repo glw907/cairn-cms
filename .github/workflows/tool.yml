@@ -3,11 +3,9 @@ name: tool
 # The Go operator CLI's own gate: `make -C tool check` on three platforms. Scoped to `tool/**`
 # plus the cross-tree drift gates whose fixtures, types, schemas, or published pages a Go check
 # depends on, so a change elsewhere in the repo never triggers this workflow and a change to one
-# of those paths always does. The three contract pages and the schema directory are on the list
-# because Go tests read them: they publish the tool's own exit codes, payloads, and check ids,
-# and they live in the engine's reference arm so the npm tarball carries them. The shipped-anchor
-# list and the harvest deletion list are on it for the same reason: health's fix-anchor test reads
-# both to decide whether the admin checklist or the shipped list is what an anchor resolves on.
+# of those paths always does. The schema directory is on the list because Go tests validate the
+# golden payloads against it. The shipped-anchor list is on it for the same reason: health's
+# fix-anchor test reads it to decide what an anchor resolves on.
 
 on:
   push:
@@ -19,13 +17,10 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
-      - 'docs/internal/record/harvest/deletion-list.json'
-      - 'docs/reference/cli-cairn-exit-codes.md'
-      - 'docs/reference/cli-cairn-json-output.md'
-      - 'docs/reference/cli-cairn-doctor.md'
-      - 'docs/reference/schema/**'
+      - 'schema/**'
     tags: ['tool/v*']
   pull_request:
     paths:
@@ -35,13 +30,10 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
-      - 'docs/internal/record/harvest/deletion-list.json'
-      - 'docs/reference/cli-cairn-exit-codes.md'
-      - 'docs/reference/cli-cairn-json-output.md'
-      - 'docs/reference/cli-cairn-doctor.md'
-      - 'docs/reference/schema/**'
+      - 'schema/**'
   workflow_dispatch:
 
 defaults:

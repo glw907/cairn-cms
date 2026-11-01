@@ -1,7 +1,7 @@
 // cairn-cms: the containment contract a mounted reproduction story holds from first paint.
 //
 // Task B0 of the live-reproduction seam Pass 2, built against the ratified design at
-// docs/internal/record/2026-08-18-repro-containment-design.md. Containment is a property of the
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-18-repro-containment-design.md. Containment is a property of the
 // mounted render, not of the page that embeds it: `ReproContext` registers a capture-phase focus
 // firewall on `document` (M1), wraps all three of its host branches in an `inert`,
 // `display: contents` element carrying `data-cairn-picture` (M2), and stops five window-level event
@@ -499,7 +499,7 @@ describe('the containment teardown', () => {
 // through showModal() or through a programmatic .focus(), and cairn-admin.css paints a
 // :focus-visible ring on whatever ends up focused. Containment removes the ring, which flips these
 // seven from the keyboard face of the screen to the mouse face. The table in
-// docs/internal/record/repro-story-audit.md is the record; this is its falsifiable half.
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md is the record; this is its falsifiable half.
 //
 // `ringed` is what makes each row discriminate. `:focus-visible` matches nothing in a container
 // that rendered nothing at all, so the negative assertion alone passes just as well against a

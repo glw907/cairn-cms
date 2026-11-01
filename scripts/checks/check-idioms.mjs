@@ -13,8 +13,7 @@
 //      exact drift a 2026-09 sweep found in check-chassis-boundary.mjs.
 //   4. A planning path (`docs/specs/`, `docs/plans/`, `docs/research/`, `docs/archive/`) is
 //      banned in src/lib: those directories are planning-and-spec scaffolding the npm tarball
-//      never ships, so a comment pointing there sends a package consumer to a 404, not a citation. A bare functional-spec citation, e.g. `(spec 2.8)`,
-//      names a section of the shipped functional spec by number and is not this shape.
+//      never ships, so a comment pointing there sends a package consumer to a 404, not a citation.
 //   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Phase N`/`phase N`,
 //      `Pass A`/`pass A` (a single lettered pass), `Pass N`/`pass N`, `Plan N`/`plan N`,
 //      `batch N`, `Round N`/`round-N`, `design-arc D2`/`Design ratchet D3` (a design-decision-log
@@ -135,7 +134,7 @@ export function findProcessExitLines(source) {
  * The self-identity spellings a `check-<name>.mjs` gate could plausibly use for itself: the full
  * filename stem, the npm-script form (`check:<name>`), and the bare name with the `check-`
  * prefix dropped. A stem that does not start with `check-` (a shared helper like
- * reference-coverage.mjs) has exactly one plausible spelling, itself.
+ * dts-exports.mjs) has exactly one plausible spelling, itself.
  * @param {string} stem the `.mjs` filename without its extension
  * @returns {string[]}
  */
@@ -491,7 +490,7 @@ const VIOLATION_HEADINGS = [
   ['processReferences', 'pass-scoped process reference(s) in src/lib (keep the rationale, drop the session label)'],
   ['hostnames', 'unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention)'],
   ['asNever', 'unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>")'],
-  ['retiredFolder', 'tracked file(s) in the retired planning folder (move each to docs/specs, docs/plans, docs/research, or docs/archive)'],
+  ['retiredFolder', 'tracked file(s) in the retired planning folder (a plan lives in the initiative plans/ directory or on its pass branch)'],
 ];
 
 /**

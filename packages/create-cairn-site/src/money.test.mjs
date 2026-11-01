@@ -44,7 +44,7 @@ test('costPreamble names all four things: free to build, the domain cost, the pl
 
 test('costPreamble hedges the total with the certificate line item nobody has confirmed', () => {
   const text = costPreamble();
-  // The T4b research (docs/internal/record/2026-08-11-t4b-email-console-cost-research.md) left one
+  // The T4b research (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-console-cost-research.md) left one
   // number open: whether the certificate a Workers custom domain issues bills as an add-on. It said
   // of this exact figure that it would not put an inference in owner-facing money copy, so the
   // total may not stand here as if the question were closed.

@@ -111,9 +111,9 @@ Icinga, Sensu, and most alerting tools already read):
 | 2 | `CRITICAL` | A fault the operator is paged for. |
 | 3 | `UNKNOWN` | The run could not observe the site. |
 
-[The exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) states the
-precedence rule across many checks and many sites, what changes a code, and the timeout
-arithmetic you size a scheduler's cap against.
+`cairn help agents` states the precedence rule across many checks and many sites and what
+changes a code. [The tripwire runbook](docs/tripwire.md#--timeout-most-operators-pass-none)
+carries the timeout arithmetic you size a scheduler's cap against.
 
 ## Running it unattended
 

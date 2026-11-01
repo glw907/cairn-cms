@@ -4,11 +4,14 @@ The owner-gated editor management surface, built on the admin toolkit: a table o
 role-flip and remove actions, and an add-editor form. The acting owner's row disables its
 destructive controls; the last-owner anti-lockout rule itself is enforced server-side
 (editors-routes). Actions post to the named `?/editorSetRole`, `?/editorRemove`, and `?/editorAdd`
-actions, the names the single-mount dispatcher defines.
+actions, the names the single-mount dispatcher defines. `?/editorSetRole` rejects a posted role
+outside the declared vocabulary as a form validation error ("Choose a valid role"), and with the
+default owner/editor pair the role control is a toggle, with any other vocabulary a labeled select.
 
 The header band is `PageHeader`, mounted
 with no action slot: the add-editor form stays its row below the table, the screen's one
 form-semantic primary action. The role badge stays a plain daisy `badge` (by design): it names an identity, not a stateful standing, so `StatusChip` does not apply.
+@beta
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';

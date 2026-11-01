@@ -65,7 +65,7 @@ const PUBLIC_TIERS = ['T1', 'T2'];
 
 // A link into the engine repo's GitHub tree is the sanctioned way for a shipped page to point at
 // a maintainer doc, so the internal-path and ledger rules skip a path that follows it.
-const GITHUB_BLOB = 'github\\.com/glw907/cairn-cms/(?:blob|tree)/main/';
+const GITHUB_BLOB = 'github\\.com/glw907/cairn-cms/(?:blob|tree)/(?:main|pre-agent-first)/';
 
 /** @type {Rule[]} */
 const RULES = [
@@ -193,13 +193,16 @@ export function profileFor(relPath) {
     path === 'README.md' ||
     path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
+    path === 'docs/architecture.md' ||
+    path === 'guidance-hashes.json' ||
     path === 'examples/showcase/README.md' ||
-    /^docs\/(?:extend|reference|admin|editors|claude-code)\/.+\.md$/.test(path) ||
-    /^docs\/reference\/schema\/.+\.json$/.test(path)
+    path === 'MIGRATION-NOTES.md' ||
+    /^docs\/(?:admin|editors)\/.+\.md$/.test(path) ||
+    /^schema\/.+\.json$/.test(path)
   ) {
     return { tier: 'T1', classes: all, mode: 'whole' };
   }
-  if (path === 'docs/internal/docs-register.md') {
+  if (path === '.claude/skills/cairn-writing-docs/references/docs-register.md') {
     return { tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' };
   }
   if (path === 'CHANGELOG.md') return { tier: 'T2', classes: all, mode: 'changelog' };
@@ -473,14 +476,15 @@ export function scanText(text, profile, path = '') {
 export const SCAN_ROOTS = [
   'README.md',
   'CHANGELOG.md',
+  'MIGRATION-NOTES.md',
+  'schema',
+  'guidance-hashes.json',
   'docs/README.md',
   'docs/why-cairn.md',
-  'docs/extend',
-  'docs/claude-code',
-  'docs/reference',
+  'docs/architecture.md',
   'docs/admin',
   'docs/editors',
-  'docs/internal/docs-register.md',
+  '.claude/skills/cairn-writing-docs/references/docs-register.md',
   'skills',
   'claude',
   'migrations',

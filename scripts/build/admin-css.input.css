@@ -23,7 +23,7 @@
 /* The thirteen grammar and container role utilities are safelisted, not scanned. A Tailwind
    `@utility` is tree-shaken, so a role with no internal call site would never reach the shipped
    sheet: `type-title` and `gap-control` were both absent until this line went in. They are a
-   DOCUMENTED PUBLIC INTERFACE (docs/reference/admin-grammar-tokens.md), and a consumer's
+   DOCUMENTED PUBLIC INTERFACE (the packaged admin-screens skill names them), and a consumer's
    Tailwind build never sees the `@utility` definitions below, only this compiled sheet, so a role
    a consumer is told to write must ship whether or not cairn's screens happen to use it.
    grammar-tokens.test.ts asserts all thirteen against the plain build for that reason. */
@@ -44,7 +44,7 @@
    compiled here for any consumer's hand-authored admin markup still riding them. */
 @source inline("badge-ghost badge-warning badge-info badge-neutral gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
 /* SKILL-EXEMPLAR SAFELIST. The
-   cairn-admin-screens skill's reference docs teach class recipes cairn's tree never
+   cairn-building-admin-screens skill's reference docs teach class recipes cairn's tree never
    calls, so a Tailwind tree-shake drops them from the shipped sheet with no warning: a consumer
    who copies the recipe verbatim gets markup that silently renders unstyled, then cairn-audit's
    no-uncompiled-class rule convicts the very code that followed the docs. Each class here is
@@ -63,7 +63,7 @@
    rode it keeps resolving; it leaves only as a deliberate, changelog-carried act. */
 @source inline("footer-center");
 /* STATUS-TEXT SAFELIST (2026-08-27 admin sheet fixes). The two idioms below
-   (docs/reference/admin-grammar-tokens.md) are a documented public interface the same way the
+   are a documented public interface the same way the
    grammar and container roles are, so they have to ship whether or not cairn's tree happens
    to reference them yet: a `@utility` is tree-shaken to used candidates, and cairn's screens
    still read --cairn-warning-ink and --color-positive-ink through the pre-existing bracketed
@@ -157,7 +157,7 @@
    only 24 uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label
    would match about 14 sites and strand the other 52, and type-heading's display face is a
    dialog-header choice, not a property of 18px text. They belong to a documented component recipe
-   (docs/internal/admin-design-system.md), and color stays palette, not grammar, so it stays a
+   (.claude/skills/cairn-following-admin-design/references/admin-design-system.md), and color stays palette, not grammar, so it stays a
    separate text-muted/text-subtle class on the element. A component <style> block references
    var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not markup; markup uses only
    these named utilities. */

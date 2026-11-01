@@ -28,88 +28,28 @@ export const ALLOWLIST = new Set([
   'cli-flag:--types', // sv create's flag, not create-cairn-site's
   'cli-flag:--no-add-ons', // sv create's flag, not create-cairn-site's
   'cli-flag:--strict', // cairn-guidance check's flag, not create-cairn-site's
-  // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
-  // not a registered one. The admin, extend, and reference pages name GitHub's host in code font.
-  'log-event:github.com', // GitHub's hostname
 
   'cli-flag:--user', // systemctl's flag, in docs/admin/tripwire.md's systemd example
   'cli-flag:--now', // systemctl enable's flag, in docs/admin/tripwire.md's systemd example
   'env-var:XDG_CONFIG_HOME', // the XDG base-directory variable docs/admin/credentials.md names for the Linux registry path
 
-  // Illustrative binding and secret names a reader chooses for their site: real D1
-  // bindings, rate limiters, and GitHub Actions secrets a worked example names, never a cairn
-  // export or fixed convention, so the source tree never carries the literal string.
-  'env-var:AUDIT_DB', // docs/reference/sveltekit.md's worked audit-sink example binding name
-  'env-var:MY_RATE_LIMITER', // docs/reference/cloudflare.md's illustrative Rate Limiting binding
-  'env-var:SECTION_RATE_LIMIT', // docs/reference/sveltekit.md's illustrative SectionEnv binding
-  'env-var:TURNSTILE_SECRET', // docs/reference/auth-channel.md's illustrative Turnstile secret binding
-  'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
-  'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
-  'env-var:DATE_PREFIX', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
-  'env-var:PREFIX_LENGTH', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
-  'env-var:ID_SHAPE', // docs/extend/migrate-existing-content.md's migration-script constant, never an environment variable
-  'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // docs/extend/migration-notes.md, Node's error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
-
-  // The Go `cairn` CLI's credential environment variables, defined in
-  // tool/cmd/cairn/env.go, a separate module this gate's source-tree grep does not scan.
-  'env-var:CAIRN_CF_ACCOUNT_ID', // docs/reference/cli-cairn-json-output.md's authCheck section
-  'env-var:CAIRN_CF_READ_TOKEN', // docs/reference/cli-cairn-json-output.md's authCheck section
-  'env-var:CAIRN_GH_READ_TOKEN', // docs/reference/cli-cairn-json-output.md's authCheck section
-
-  // jose's SCREAMING_SNAKE_CASE error codes (the `code` property jose's error classes carry,
-  // never an environment variable), cited in docs/extend/replace-magic-links-with-cloudflare-access.md's
-  // `reasonFor` switch. cairn does not depend on jose, so no source tree carries these strings.
-  'env-var:ERR_JWT_EXPIRED',
-  'env-var:ERR_JWT_CLAIM_VALIDATION_FAILED',
-  'env-var:ERR_JWKS_NO_MATCHING_KEY',
-  'env-var:ERR_JWKS_MULTIPLE_MATCHING_KEYS',
-  'env-var:ERR_JWKS_TIMEOUT',
-  'env-var:ERR_JWKS_INVALID',
-  'env-var:ERR_JWS_SIGNATURE_VERIFICATION_FAILED',
-  'env-var:ERR_JWT_INVALID',
-  'env-var:ERR_JWS_INVALID',
-  'env-var:ERR_JOSE_ALG_NOT_ALLOWED',
-  'env-var:ERR_JOSE_GENERIC', // jose's generic fallback code, cited in the same reasonFor comment
+  // SCREAMING_SNAKE_CASE tokens that are not environment variables cairn reads, so the source
+  // tree never carries the literal string.
+  'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // MIGRATION-NOTES.md, Node's error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
 
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the
   // three: a nested property path on a config object, a data shape, or a variable, all real,
   // none a registered event, condition, or check.
-  'log-event:auth.branding', // docs/reference/sveltekit.md, CairnAdminOptions.auth.branding property path
-  'log-event:auth.send', // docs/reference/sveltekit.md, CairnAdminOptions.auth.send property path
-  'log-event:entry.frontmatter.image.src', // docs/reference/delivery.md, a manifest entry's field-access path
-  'log-event:preview.published.permalink', // docs/reference/sveltekit.md, a preview-state data field-access path
-  'log-event:admin.load', // docs/reference/admin-routes.md and sveltekit.md, the `admin.load` re-export property
-  'log-event:admin.actions', // docs/reference/admin-routes.md and sveltekit.md, the `admin.actions` re-export property
-  'log-event:editor.nav', // docs/reference/admin-routes.md, the adapter's `editor.nav` config field
-  'log-event:editor.preview', // docs/extend/share-a-draft-preview.md, the adapter's `editor.preview` config field (PreviewConfig)
-  'log-event:editor.email', // docs/reference/doctor.md, an `editor` table row's `email` column
-  'log-event:editor.role', // docs/reference/sveltekit.md, a variable's `.role` field access
-  'log-event:config.limits', // docs/reference/auth-channel.md, createAuthChannel's `config.limits` bag
-  'log-event:config.site', // docs/reference/delivery.md, the render config's `site` field
-  'log-event:config.branding', // docs/reference/sveltekit.md, an auth config's `branding` field
-  'log-event:config.send', // docs/reference/sveltekit.md, an auth config's `send` field
-  'log-event:entry.status', // docs/reference/admin.md, a ListData row's `status` field
-  'log-event:entry.title', // docs/reference/delivery-data.md, a manifest entry's `title` field
-  'log-event:entry.excerpt', // docs/reference/delivery-data.md, a manifest entry's `excerpt` field
-  'log-event:entry.permalink', // docs/reference/delivery-data.md, a manifest entry's `permalink` field
-  'log-event:entry.date', // docs/reference/delivery-data.md, a manifest entry's `date` field
-  'log-event:entry.frontmatter', // docs/reference/delivery-data.md, a manifest entry's `frontmatter` field
-  'log-event:preview.state', // docs/reference/sveltekit.md, PreviewData's `state` field
-  'log-event:preview.published', // docs/reference/sveltekit.md and public.md, PreviewData's `published` field
-  'log-event:tidy.enabled', // docs/reference/doctor.md, the site config's `tidy.enabled` field
-  'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
-  'log-event:tidy.conventions', // CHANGELOG.md and docs/extend/turn-on-tidy.md, the site config's `tidy.conventions` field
-  'log-event:tidy.model', // migration-notes.md, turn-on-tidy.md, log-events.md, and sveltekit.md, the site config's `tidy.model` field
-  'log-event:config.csrf-disable-missing', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
-  'log-event:auth.csrf-origin-mismatch', // docs/extend/migration-notes.md and docs/reference/cli-cairn-json-output.md, a retired condition id the tool v2 record must still name to say what changed
-  'log-event:auth.channel.delivery_inline', // docs/extend/migration-notes.md, the retired log event name a removal entry must still name to say what changed
-  'log-event:taxonomy.unmarked_field', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
-  'log-event:publish.address_collision', // docs/extend/migration-notes.md, the retired name a rename entry must still name to say what changed
-  'log-event:config.refine', // docs/reference/core.md, FieldsetConfig's `refine` field
-  'log-event:config.roles', // docs/reference/sveltekit.md, AuthGuardConfig's `roles` field
-  'log-event:config.access', // docs/reference/sveltekit.md, AuthGuardConfig's `access` field
-  'log-event:config.identity', // docs/reference/sveltekit.md, AuthGuardConfig's `identity` field
+  'log-event:auth.branding', // MIGRATION-NOTES.md, CairnAdminOptions.auth.branding property path
+  'log-event:auth.send', // MIGRATION-NOTES.md, CairnAdminOptions.auth.send property path
+  'log-event:editor.nav', // MIGRATION-NOTES.md, the adapter's `editor.nav` config field
+  'log-event:tidy.client', // MIGRATION-NOTES.md, ContentRoutesOptions' `tidy.client` field
+  'log-event:tidy.model', // MIGRATION-NOTES.md, the site config's `tidy.model` field
+  'log-event:config.csrf-disable-missing', // MIGRATION-NOTES.md, a retired condition id a removal entry must still name
+  'log-event:auth.csrf-origin-mismatch', // MIGRATION-NOTES.md, a retired condition id a removal entry must still name
+  'log-event:auth.channel.delivery_inline', // MIGRATION-NOTES.md, the retired log event name a removal entry must still name to say what changed
+  'log-event:publish.address_collision', // MIGRATION-NOTES.md, the retired name a rename entry must still name to say what changed
 
   // Site-relative illustrative file paths: the conventional layout a worked example shows for a
   // reader's site, never a path in cairn's own repo, so the filesystem check correctly
@@ -124,45 +64,19 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/cairn.server.ts', // a site's server-only adapter half, by convention
   'file-path:src/lib/cairn.access.ts', // a site's access-map module, by convention
   'file-path:src/lib/site.config.yaml', // a site's non-secret config file, by convention
-  // One of three spots `cairn doctor` looks for a site config, named in the doctor CLI's
-  // reference page; cairn doctor looks there by convention, so no repo
-  // carries the path and nothing can resolve it.
+  // One of three spots `cairn doctor` looks for a site config; cairn doctor looks there by
+  // convention, so no repo carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
-  // docs/extend/migration-notes.md's past-version record of the 0.68.0 release, citing the
-  // reference page's path as it was named then. The page is retired (docs/reference/doctor.md
-  // is gone; docs/reference/cli-cairn-doctor.md is its Go-tool successor); the citation stays
-  // unedited, since a release record is immutable and does not chase a later reorganization.
-  'file-path:docs/reference/doctor.md',
   'file-path:src/theme/site.config.yaml', // the scaffolded site's site-config file, the engine's default for editor.siteConfigPath (templates/waymark/src/theme/site.config.yaml)
-  'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
-  'file-path:src/theme/theme.css', // docs/extend/theme-your-public-site.md's convention path, the reader's re-skin file
-  'file-path:src/theme/site.css', // docs/extend/scaffolded-site-files.md's scaffolded site's page styles (templates/waymark/src/theme/site.css)
-  'file-path:src/access.ts', // docs/extend/scaffolded-site-files.md's scaffolded site's access map (templates/waymark/src/access.ts)
-  'file-path:src/chassis/tokens.css', // docs/reference/cairn-audit.md's default theme-root file, a site's chassis token file
+  'file-path:src/access.ts', // MIGRATION-NOTES.md's scaffolded site's access map (templates/waymark/src/access.ts)
   'file-path:src/content/.cairn/index.json', // a site's generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's generated media manifest, by convention
   'file-path:src/content/.cairn/site-facts.json', // a site's generated site-facts contract, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's spellcheck dictionary, by convention
   'file-path:.cairn/admin.css', // a scaffolded site's gitignored compiled admin sheet
-  'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
-  'file-path:src/lib/server/member-channel.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative auth-channel module
-  'file-path:src/lib/server/members.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative roster-lookup and code-delivery module
-  'file-path:src/lib/server/member-channel.test.ts', // docs/extend/add-a-second-sign-in-group.md's illustrative channel test
-  'file-path:scripts/announce-new-posts.ts', // docs/extend/act-on-newly-published-entries.md's illustrative post-deploy job, a file the reader creates
-  'file-path:scripts/check-announce.ts', // docs/extend/act-on-newly-published-entries.md's offline check of the job's diff, a file the reader creates
-  'file-path:migrations-members/0000_channel.sql', // a site's copy of the packaged channel migration, the directory docs/extend/add-a-second-sign-in-group.md creates (examples/showcase/migrations-members/ carries the same file)
-  'file-path:src/lib/content.ts', // docs/extend/add-cairn-to-a-sveltekit-app.md's illustrative content-index module, by convention
-  'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
-  'file-path:src/lib/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component on the tutorial's site, a file the reader creates
-  'file-path:src/lib/islands/registry.ts', // docs/extend/add-an-island.md's island registry module on the tutorial's site, a file the reader creates
-  'file-path:src/lib/markdown-components.ts', // docs/extend/write-a-markdown-component.md's component module on the tutorial's site, a file the reader creates
-  'file-path:scripts/migrate-content.mjs', // docs/extend/migrate-existing-content.md's migration script, a file the reader creates
-  'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
-  'file-path:node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's tree
-  'file-path:dist/components/cairn-admin.css', // docs/extend/migration-notes.md's per-version record of a pre-rename release, which must keep the path that was real when it shipped
+  'file-path:dist/components/cairn-admin.css', // MIGRATION-NOTES.md's per-version record of a pre-rename release, which must keep the path that was real when it shipped
   'file-path:src/admin.css', // a site's admin-stylesheet entry file, by convention
-  'file-path:@glw907/cairn-cms/admin-sources.css', // docs/reference/cairn-audit.md's real published subpath, cited by its import specifier rather than its installed dist path
-  'file-path:@glw907/cairn-cms/cairn-public.css', // docs/reference/public-css.md's real published subpath, cited by its import specifier rather than its installed dist path
+  'file-path:@glw907/cairn-cms/cairn-public.css', // MIGRATION-NOTES.md's real published subpath, cited by its import specifier rather than its installed dist path
   // Real paths in this repo's examples/showcase/ tree, cited without that prefix because the
   // prose describes the equivalent path in a reader's scaffolded site (the same convention
   // `src/theme/cairn.config.ts` above already carries).
@@ -171,17 +85,10 @@ export const ALLOWLIST = new Set([
   'file-path:src/routes/robots.txt', // examples/showcase/src/routes/robots.txt/+server.ts; the `+server.ts` filename splits the extractor's run at the `+`, leaving this bare directory-shaped remainder as its candidate
   // The literal `main` value from a Cloudflare `wrangler.jsonc`, a build output rather than a
   // tracked file.
-  'file-path:.svelte-kit/cloudflare/_worker.js', // docs/extend/add-cairn-to-a-sveltekit-app.md's wrangler.jsonc `main` field
-  'file-path:src/lib/access-identity.ts', // docs/extend/replace-magic-links-with-cloudflare-access.md's illustrative Access-verifier module, by convention
-  'file-path:admin/__data.json', // docs/extend/replace-magic-links-with-cloudflare-access.md, SvelteKit's data-only fetch path, never a file on disk
-  // docs/reference/guidance.md's destination paths inside a CONSUMER repo's .claude/ tree,
-  // never a path in this repo: cairn-guidance writes them, it does not ship them. `.claude` keeps
-  // its leading dot, so the tokens carry it.
-  'file-path:.claude/settings.json',
-  'file-path:@.claude/cairn/CLAUDE.md', // the literal import-line value quoted in guidance.md's prose
+  'file-path:.svelte-kit/cloudflare/_worker.js', // MIGRATION-NOTES.md's wrangler.jsonc `main` field
 
   // Real paths in a named production consumer site's repo, not this repo's tree.
-  // docs/extend/migration-notes.md's closing "upgrade order" subsection names them so a site
+  // MIGRATION-NOTES.md's closing "upgrade order" subsection names them so a site
   // owner can find the call sites the breaking window touches; the bracketed/parenthesized route
   // segments in the same subsection (`[...path]`, `(site)`, `[token]`) already split the
   // extractor's run and never form a whole candidate, so only these five need listing here.
@@ -191,8 +98,9 @@ export const ALLOWLIST = new Set([
   'file-path:src/admin-club/lib/announcements.ts', // aksailingclub-org's announcements module
   'file-path:src/tests/announce-list-order.test.ts', // aksailingclub-org's announcement-order test
 
-  // The Go `cairn` CLI's JSON golden fixture literal, quoted verbatim in
-  // docs/reference/cli-cairn-json-output.md's `logs` payload example. It predates this repo's
-  // `publish.failed` log-events.md vocabulary and is not a registered cairn-cms event.
-  'log-event:publish.commit.failed',
+  // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
+  // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
+  // to fix a GitHub App installation's repository access.
+  'log-event:github.com', // GitHub's hostname, cited in `github.com/settings/installations`
+
 ]);

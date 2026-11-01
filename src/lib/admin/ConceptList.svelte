@@ -7,6 +7,7 @@ natural measure: the title, the date, the publish-state chip, and a quiet delete
 row de-emphasizes and carries an eye-off Hidden tag inline beside the title. The header's New
 button is the one create affordance on a populated list (the empty state carries its CTA).
 Filtering, sorting, and paging run over the loaded entries in component state.
+@beta
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
@@ -428,8 +429,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 type-subtitle">{formatCivilDate(entry.date, { fallback: 'Not yet' })}</td>{/if}
             <td class="w-16 px-2 py-2 sm:w-28 sm:px-4">
               <!-- One chip family, expressed on the toolkit's second-generation StatusChip
-                   register grammar (https://github.com/glw907/cairn-cms/blob/main/docs/internal/probes/2026-08-26-chip-registers-v2.md;
-                   design arc: https://github.com/glw907/cairn-cms/blob/main/docs/internal/record/2026-07-15-design-arc-log.md):
+                   register grammar (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md;
+                   design arc: https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-07-15-design-arc-log.md):
                    New, Edited, and Published all take the quiet
                    register (the migration map's neutral/info -> quiet), leaving the label text
                    itself as the distinguishing signal; the register carries no chip-level

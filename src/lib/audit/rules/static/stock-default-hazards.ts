@@ -22,28 +22,28 @@ const BADGE_GHOST_MESSAGE =
   'warning (StatusChip\'s `register="warning"`, or the shared cairn-chip-warning class) for a ' +
   'state needing attention, and outline (StatusChip\'s `register="outline"`, or the shared ' +
   'cairn-chip-outline class) for a transient or reversible absence ' +
-  '(docs/reference/admin-toolkit.md, StatusChip\'s register rationale)';
+  '(the cairn-building-admin-screens skill, StatusChip\'s register rationale)';
 
 const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +
   'ignores Escape; cairn\'s recipe is a DaisyUI v5 popover dropdown (a `popover` attribute) or an ' +
   'explicit `class:dropdown-open` state toggle, neither of which this element carries ' +
-  '(https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Popover menu")';
+  '(https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Popover menu")';
 
 const DISABLED_MESSAGE =
   'a guarded button ("cairn-btn-guarded") carries a hardcoded native "disabled", which native ' +
   'disabled is never allowed to be outside the mid-submit busy case; cairn\'s guarded-button ' +
   'pattern uses aria-disabled so the control stays focusable and its reason reaches assistive ' +
-  'technology (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The desk band")';
+  'technology (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "The desk band")';
 
 const CARD_BORDER_MESSAGE =
   'a floating card (rounded-box, bg-base-100) carries a flat "border-base-300"; cairn\'s recipe is ' +
-  'var(--cairn-card-border), the theme-adaptive hairline (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, ' +
+  'var(--cairn-card-border), the theme-adaptive hairline (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, ' +
   '"Component recipes", "Floating card")';
 
 const GUARDED_RETIREMENT_MESSAGE =
   'class "cairn-btn-guarded" is retired; wrap the control in Tooltip for the reason text instead ' +
-  'of a native title attribute (docs/reference/admin-toolkit.md, Tooltip). The class itself ' +
+  'of a native title attribute (the cairn-building-admin-screens skill, Tooltip). The class itself ' +
   'stays compiled until a later release removes it';
 
 // The promotion version stated in every finding the three retired-patch arms below raise: the
@@ -60,7 +60,7 @@ const SHADOW_NONE_BASES = new Set(['shadow-none']);
 function inkOpenerMessage(offending: string): string {
   return (
     `class "${offending}" is the retired ink-opener patch; cairn's recipe is the class ` +
-    '"btn btn-neutral" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "The ink story"). ' +
+    '"btn btn-neutral" instead (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "The ink story"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
 }
@@ -68,14 +68,14 @@ function inkOpenerMessage(offending: string): string {
 function publishTintMessage(offending: string): string {
   return (
     `class "${offending}" is the retired Publish-tint patch; cairn's recipe is the class ` +
-    '"btn btn-soft btn-primary" instead (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Buttons"). ' +
+    '"btn btn-soft btn-primary" instead (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Buttons"). ' +
     `Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the finding to error`
   );
 }
 
 const SHADOW_NONE_MESSAGE =
   'class "shadow-none" on a "btn" cancels a stock shadow the theme\'s depth token already ' +
-  'zeroes (https://github.com/glw907/cairn-cms/blob/main/docs/internal/admin-design-system.md, "Component recipes"); there is nothing to add ' +
+  'zeroes (https://github.com/glw907/cairn-cms/blob/main/.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Component recipes"); there is nothing to add ' +
   `in its place. Reported at advisory tier until ${RETIRED_PATCH_PROMOTION_VERSION} promotes the ` +
   'finding to error';
 

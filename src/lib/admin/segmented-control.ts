@@ -11,7 +11,7 @@
  * weight rather than hue (the accent budget reserves color for act-on states), plus a 1px inset
  * hairline at a 55% `base-content` mix as a non-color, non-weight pressed cue: measured
  * 3.586:1 light and 4.959:1 dark against `base-100`, above the WCAG 1.4.11 3:1 non-text floor
- * (docs/internal/admin-design-system.md, "Tokens (Warm Stone)", the same mix already locked for
+ * (.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "Tokens (Warm Stone)", the same mix already locked for
  * the unchecked checkbox/radio edge and the unfocused input edge). A 20% mix measured 1.492:1
  * light and 1.773:1 dark, under the floor, which is why the ring is 55% and not 20%. The wash
  * beside it, `bg-base-content/[0.07]`, is deliberately not raised: it is a fill tone rather than

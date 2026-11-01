@@ -11,6 +11,7 @@
  *  client is the only dimension source and a Worker cannot re-derive them). This is the source
  *  record; `MediaLibraryEntry` (`library-entry.ts`) projects it for the picker and drops `sha256`
  *  and `originalFilename`, since neither is display-safe or picker-relevant.
+ * @public
  */
 export interface MediaEntry {
   /** The 16-hex content-hash prefix that names the bytes and keys this row in the manifest. */
@@ -39,7 +40,10 @@ export interface MediaEntry {
   createdAt: string;
 }
 
-/** The whole stored-asset record, keyed by the 16-hex content-hash prefix. */
+/**
+ * The whole stored-asset record, keyed by the 16-hex content-hash prefix.
+ * @public
+ */
 export type MediaManifest = Record<string, MediaEntry>;
 
 /**
@@ -61,6 +65,7 @@ export function parseMediaManifest(json: unknown): MediaManifest {
  * @param globResult - The eager glob result for the committed manifest, an empty object when the
  *  file is absent. The consumer passes
  *  `import.meta.glob('<path-to-media.json>', { eager: true, import: 'default' })`.
+ * @public
  */
 export function readCommittedManifest(globResult: Record<string, unknown>): MediaManifest {
   return parseMediaManifest(Object.values(globResult)[0]);

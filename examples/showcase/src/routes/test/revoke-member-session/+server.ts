@@ -1,6 +1,6 @@
 // Internal fixture endpoint: revokes the CALLER's resolved session, never a subject named in
 // the request body. This is a harness affordance for the e2e's revocation spec, not a pattern to
-// copy: a real site's roster-removal flow (docs/reference/auth-channel.md's `revokeSessions`)
+// copy: a real site's roster-removal flow (the channel's `revokeSessions`)
 // revokes an admin-chosen subject from an authenticated admin action, which is
 // a different caller entirely from the subject being revoked. A route that let ANY caller name an
 // arbitrary victim subject would violate the rule that no control keyed on the victim's

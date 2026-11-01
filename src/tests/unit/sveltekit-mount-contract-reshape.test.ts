@@ -3,7 +3,7 @@ import ts from 'typescript';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports, moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
+import { enumerateExports, moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/index.js';
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 import type { EmailSender } from '../../lib/email.js';

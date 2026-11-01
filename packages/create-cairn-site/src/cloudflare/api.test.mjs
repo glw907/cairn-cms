@@ -17,7 +17,7 @@ import {
 } from './api.mjs';
 
 /**
- * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md). The
+ * The send refusal captured live 2026-08-12 (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4b-email-spike.md). The
  * same body comes back for a domain that was never onboarded and for one whose records are still
  * settling, which is why the seam does not try to tell them apart.
  */

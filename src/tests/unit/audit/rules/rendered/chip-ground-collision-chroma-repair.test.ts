@@ -1,7 +1,7 @@
 // The chroma-aware repair (conformance pass, 2026-09-01) that closes the hue-driven half of the
 // docket entry filed out of design infrastructure Pass 3, corpus C: the formula had no chroma
 // term, so it produced a measured 60% false-positive rate (24 of 40) on the first real consumer
-// admin it ran against (docs/internal/record/2026-07-design-infrastructure-audit-calibration.md,
+// admin it ran against (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-07-design-infrastructure-audit-calibration.md,
 // section 12). The corpus named TWO false-positive mechanisms, not one: (a) hue-distinct chips the
 // luminance-only formula could not tell from a genuine camouflage, 14 of the 24, described as
 // "purple-tinted chips plainly visible to the eye", and (b) low-alpha pills in dark theme reading

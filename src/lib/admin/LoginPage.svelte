@@ -2,8 +2,9 @@
 @component
 The magic-link sign-in page. A plain form POST to the named `?/request` action (the engine's
 `requestAction`); no client SDK. The success message is identical whether or not the email is on
-the allowlist, so the page never leaks membership (spec §7.1). Under identity mode `data` carries
+the allowlist, so the page never leaks membership. Under identity mode `data` carries
 only the gate's `label`, and the page renders a hand-off paragraph with no form instead.
+@beta
 -->
 <script lang="ts">
   import './cairn-admin.css';
@@ -80,7 +81,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
 {#snippet brand()}
   <div class="flex items-center gap-2">
     <CairnLogo class="h-8 w-8 text-primary" />
-    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
+    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in .claude/skills/cairn-following-admin-design/references/admin-design-system.md. -->
     <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
   </div>
 {/snippet}
@@ -99,7 +100,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     {#if isIdentity(data)}
       <!-- The hand-off page: identity mode's gate is the sign-in surface, so this renders no
            form and mints nothing. data-cairn-identity is the marker the doctor's login probe
-           reads (docs/reference/doctor.md) to tell this page apart from the magic-link one. -->
+           reads (the cairn doctor login probe) to tell this page apart from the magic-link one. -->
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">
         Sign in through {data.identity.label}

@@ -27,6 +27,7 @@ The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated. The ledger below stays hand-rolled: it is an
 editable grid of rename inputs and guarded deletes, not a data table, so it does not adopt
 `AdminTable`; the "Your tags" count chip stays its section device, per the pass's adoption map.
+@beta
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -203,7 +204,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
         aria-invalid={addError ? 'true' : undefined}
       />
       <!-- Outline, not filled: the page's one accent fill is the footer's Save, the action that
-           actually persists the working list (one-filled-action, docs/internal/admin-design-system.md
+           actually persists the working list (one-filled-action, .claude/skills/cairn-following-admin-design/references/admin-design-system.md
            "the ink story"). Add stays the accent hue so it still reads as the card's primary
            control, just not a second competing fill. -->
       <button type="button" class="btn btn-outline btn-primary btn-sm flex-none" onclick={add}>

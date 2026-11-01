@@ -4,7 +4,7 @@ Editorial review, 2026-09-20. Read-only on every repo.
 
 > **Plan rulings that override this catalogue (2026-09-20, three-lens review of Pass B2).** This
 > document is binding on grammar and register. Where a row below disagrees with the ruled
-> vocabulary in `docs/plans/2026-09-14-cairn-tool-1-0-pass.md`, the plan wins and the
+> vocabulary in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-14-cairn-tool-1-0-pass.md`, the plan wins and the
 > row stands only as the editorial reasoning that produced it. Three rows are overridden today.
 > The command is `adopt`, never `add` (sections 2.9 and 3.8). The GitHub variable is
 > `CAIRN_GH_READ_TOKEN`, never `CAIRN_GH_TOKEN` (sections 3.6 and 3.8). A rate-limited run's
@@ -187,7 +187,7 @@ The external exemplars this standard imitates, with quotes and URLs, are in the 
 
 Two family documents narrow it, and they win on conflict:
 
-- `docs/internal/admin-design-system.md`, Voice: professional and restrained, never cute or
+- `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`, Voice: professional and restrained, never cute or
   chatty. This overrides Microsoft's warmth. Microsoft would write "Don't worry about losing your
   work"; cairn does not reassure an operator, it tells them the state.
 - `src/lib/diagnostics/conditions.ts` and the `cairn-doctor` transcript at
@@ -567,7 +567,7 @@ This is not stylistic. It is what makes 4.3 and 4.4 possible at all: a linter ca
 scattered across 40 files, and a human cannot read it.
 
 Two invariants a test can hold: every `spine.Condition` has exactly one fix line, and every fix
-line's condition exists (the shape `check:reference` and `check:readiness` already enforce on the
+line's condition exists (the shape `check:readiness` already enforces on the
 TypeScript side).
 
 ### 4.2 The error boundary

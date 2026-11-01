@@ -70,6 +70,7 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
 /**
  * The bag `createMediaRoute` takes, so the factory shares one shape with every other route
  *  factory and a later member has a home beside `runtime`.
+ * @scaffold
  */
 export interface MediaRouteConfig {
   /** The composed runtime; its `resolvedAssets` decides delivery, and a media-off site's handler always 404s. */
@@ -83,7 +84,15 @@ export interface MediaRouteConfig {
  * other route factory follows, validates the hash and extension before any R2 call, derives the
  * object key from the validated values only (never trusting the URL's fan-out), guards the
  * Cloudflare Images self-loop, and sets the security headers on every served response.
+ *
+ * Mount it as the `GET` of a `[...path]` route under the site's `publicBase` (`/media` by
+ * default); the rest parameter must be named `path`. Every served response carries
+ * `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`, a `default-src 'none'; sandbox`
+ * CSP, and a one-year immutable cache, the XSS control for bytes served outside `/admin`. It
+ * answers 304 and 206 for `If-None-Match` and `Range`, 503 when the bucket binding is missing, and
+ * an empty 404 for a media-off site or a bad path.
  * @param config - the config bag; `config.runtime` is the composed runtime.
+ * @scaffold
  */
 export function createMediaRoute(config: MediaRouteConfig): RequestHandler {
   const resolved = config.runtime.resolvedAssets;

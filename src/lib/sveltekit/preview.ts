@@ -1,5 +1,5 @@
 // cairn-cms: mintPreview, the public entry point for issuing a preview link, and loadPreview, the
-// public entry point for serving one (spec part 3, "Public preview for a non-editor"). mintPreview
+// public entry point for serving one to a reader who is not an editor. mintPreview
 // carries the engine's entry-scoped authorization itself, so every path to a minted token runs
 // the same check the mintPreview admin action (content-routes-preview.ts) runs, and a caller reaching
 // it from its workflow route owns nothing beyond signing the editor in. loadPreview is the
@@ -49,6 +49,7 @@ import { log } from '../log/index.js';
 /**
  * A site's preview-token configuration: how long a minted share link stays valid. Every field is
  * optional; an absent config resolves to the default TTL.
+ * @beta
  */
 export interface PreviewTokenConfig {
   /**
@@ -93,6 +94,7 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
  * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
  * branch, so there is nothing to share. A session the engine's access check refuses never
  * reaches any of these: it throws, the way every other engine content surface refuses.
+ * @beta
  */
 export type PreviewMintOutcome =
   | { outcome: 'minted'; token: string; expiresAt: number }
@@ -126,6 +128,7 @@ export type PreviewMintOutcome =
  * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
+ * @beta
  */
 export async function mintPreview(
   runtime: CairnRuntime,
@@ -171,6 +174,7 @@ export async function mintPreview(
  * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s
  * arms; a session the engine's access check refuses never reaches either, it throws, the way
  * every other engine content surface refuses.
+ * @beta
  */
 export type PreviewRevokeOutcome =
   | { outcome: 'revoked'; count: number }
@@ -194,6 +198,7 @@ export type PreviewRevokeOutcome =
  * and a site's workflow route both leave the identical record; never called on a refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
+ * @beta
  */
 export async function revokePreview(
   runtime: CairnRuntime,
@@ -217,6 +222,7 @@ export async function revokePreview(
  *  `createPublicRoutes`'s `entryLoad` returns) plus the preview metadata a site's banner reads. A
  *  compile-time assertion in the test suite proves this adds no key beyond `preview`, so a future
  *  `EntryData` field breaks this build rather than a consuming site's.
+ * @public
  */
 export interface PreviewData extends EntryData {
   preview: {
@@ -391,7 +397,14 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  row's expiry, the row's stored concept and id against the live runtime, and finally the branch
  *  read, whose miss is the branch-gone signal (there is no separate `branchHead` pre-check).
  *  Every refusal answers the identical `error(404, NOT_FOUND_MESSAGE)`; only the `preview.refused`
- *  log distinguishes why, and it never carries the token or any attacker-supplied string.
+ *  log distinguishes why, and it never carries the token or any attacker-supplied string. A
+ *  missing `AUTH_DB` binding answers `error(503)` instead, after the same log.
+ *
+ * Its first statement sets `x-robots-tag: noindex, nofollow`, `cache-control: private, no-store`,
+ *  `referrer-policy: no-referrer`, `x-content-type-options: nosniff`, and `x-frame-options: DENY`,
+ *  on every path including both refusal classes, since `/preview` sits outside the admin guard's
+ *  header layer. A gone branch renders the ended page (`preview.state: 'published'`) only when the
+ *  entry's file exists on the default branch; with nothing published it answers the uniform 404.
  *
  * No cookie is read or set, and `locals.cairnEditor`/`locals.cairnAccess` are never read: the
  *  token itself is the sole credential, an unauthenticated read on one entry, so this load carries
@@ -417,6 +430,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  import out of the `/sveltekit` barrel; outside a real SvelteKit build it answers `false`, which
  *  is correct here, since a `/preview/[token]` route carries a token in its path and is never
  *  prerendered.
+ * @scaffold
  */
 export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);

@@ -13,11 +13,12 @@ import type { EmailSender } from './email.js';
  * App's private-key secret. One shape serves every factory that needs platform bindings, rather
  * than a per-layer split (auth vs backend), since the split's only purpose, typing which routes
  * need what, is better served by reference-page prose than by a second declaration.
+ * @public
  */
 export interface CairnEnv {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
   AUTH_DB?: D1Database;
-  /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
+  /** Canonical origin for confirmation links, never read from a request header. */
   PUBLIC_ORIGIN?: string;
   /**
    * Dev-backend tripwire flag. The dev backend sets this in local development; if it is ever set
@@ -36,7 +37,7 @@ export interface CairnEnv {
  * Returns the site's public origin from configuration.
  *
  * The origin is always config-derived, never read from a request header, so a
- * forged Host header cannot redirect a magic link (spec 7.1, risk H3).
+ * forged Host header cannot redirect a magic link.
  * @throws CairnError (`config.public-origin-invalid`) when `PUBLIC_ORIGIN` is unset or
  * empty, fails to parse as a URL, or uses http on a non-local host.
  */

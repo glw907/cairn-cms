@@ -9,91 +9,188 @@ export type { ImageValue } from './types.js';
 
 /** Common to every field descriptor: the form label and the universal options. */
 interface FieldBase {
-  /** Form label. */
+  /** Form label. Required on every builder except `object`. */
   label: string;
-  /** One author-facing sentence shown under the field. */
+  /**
+   * One author-facing sentence shown under the field and tied to the input with `aria-describedby`.
+   *  Not a validation rule. A `date` field shows a built-in publish-clarity hint when `help` is unset,
+   *  so the date never reads as if it schedules publishing; setting `help` replaces that hint, and it
+   *  cannot be suppressed entirely.
+   */
   help?: string;
-  /** A required field fails validation when empty. */
+  /**
+   * Sets the HTML `required` attribute on the control (a closed `multiselect` signals it on the
+   *  group), makes the inferred key non-optional, and makes an empty value fail the save with
+   *  "<label> is required".
+   */
   required?: boolean;
-  /** Form-render-time initial value; a sentinel like "today" resolves at render. */
+  /**
+   * The initial value a new entry's create form opens with. Never applied to an existing or
+   *  hand-written file, and never overrides a value already in the frontmatter. A `date` field also
+   *  accepts `'today'`, which resolves to the request's UTC date as `YYYY-MM-DD`. An empty string or
+   *  `false` writes no key.
+   */
   default?: string | boolean;
 }
-/** A single-line text input. */
+/**
+ * A single-line text input.
+ * @public
+ */
 export interface TextField extends FieldBase {
   type: 'text';
-  min?: number; max?: number; length?: number;
-  /** A regular-expression source string the value must match. */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  min?: number;
+  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  max?: number;
+  /** The exact character count the trimmed value must hold. The first failing length rule reports. */
+  length?: number;
+  /**
+   * A regular-expression source string the value must match, tested unanchored and with no flags,
+   *  so it needs an explicit `^` and `$` to match the whole value (unlike the HTML `pattern`
+   *  attribute). Enforced at the save, never rendered as an input attribute. A malformed source
+   *  throws when `defineFieldset` runs.
+   */
   pattern?: string;
 }
-/** A multi-line text input. */
+/**
+ * A multi-line text input.
+ * @public
+ */
 export interface TextareaField extends FieldBase {
   type: 'textarea';
-  rows?: number; min?: number; max?: number; length?: number; pattern?: string;
+  /** The input's height in text rows. Defaults to 3. */
+  rows?: number;
+  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  min?: number;
+  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  max?: number;
+  /** The exact character count the trimmed value must hold. */
+  length?: number;
+  /** A regular-expression source string; same unanchored, flagless match and declaration-time throw as `TextField.pattern`. */
+  pattern?: string;
 }
-/** A numeric input. */
+/**
+ * A numeric input.
+ * @public
+ */
 export interface NumberField extends FieldBase {
   type: 'number';
-  min?: number; max?: number;
-  /** Constrain the value to whole numbers. */
+  /** The smallest value allowed, also rendered as the input's `min` attribute. */
+  min?: number;
+  /** The largest value allowed, also rendered as the input's `max` attribute. */
+  max?: number;
+  /** Constrain the value to whole numbers: a fraction fails the save, and the input gets `step="1"`. */
   integer?: boolean;
 }
-/** A single-choice input over a closed option list. */
+/**
+ * A single-choice input over a closed option list.
+ * @public
+ */
 export interface SelectField extends FieldBase {
   type: 'select';
-  /** The closed set of allowed values. */
+  /**
+   * The closed set of allowed values. The control carries a leading empty choice that stores no
+   *  value; a value outside the set fails the save.
+   */
   options: readonly string[];
 }
-/** A multiple-choice input. */
+/**
+ * A multiple-choice input.
+ * @public
+ */
 export interface MultiselectField extends FieldBase {
   type: 'multiselect';
-  /** The allowed values; omitted leaves the set open. */
+  /**
+   * The allowed values; omitted leaves the set open. When set, a value outside it fails the save,
+   *  including under `creatable`. Renders as checkboxes unless `creatable` is set.
+   */
   options?: readonly string[];
-  /** Allow the author to add values not in the list. */
+  /** Render an open comma-separated tag input instead of checkboxes. A value outside `options` still fails the save. */
   creatable?: boolean;
-  /** Placeholder text for the open/creatable comma-separated input (freetags parity). */
+  /**
+   * Placeholder text for the open comma-separated input. Defaults to "Separate values with commas"
+   *  when the field sets no `help`; a closed checkbox group has none.
+   */
   placeholder?: string;
-  /** Mark the field as a site-wide taxonomy whose values pool across entries. */
+  /**
+   * Mark the field as a site-wide taxonomy whose values pool across entries. At most one top-level
+   *  multiselect per concept may set it; a second, or one inside a container, throws at declaration.
+   *  Declare it open and creatable with no literal `options`: once the site configures a
+   *  `vocabulary`, the engine sources the options from it, rejects a save of a value that is
+   *  neither in the vocabulary nor already on the entry, and keeps an already-present orphan value.
+   */
   taxonomy?: boolean;
 }
-/** A URL input whose format the validator enforces. */
+/**
+ * A URL input. The validator accepts only an absolute `http://` or `https://` URL with no
+ * whitespace: a root-relative path or a `mailto:` value fails the save.
+ * @public
+ */
 export interface UrlField extends FieldBase {
   type: 'url';
 }
-/** An email-address input whose format the validator enforces. */
+/**
+ * An email-address input whose format the validator enforces.
+ * @public
+ */
 export interface EmailField extends FieldBase {
   type: 'email';
 }
-/** A calendar-date input. */
+/**
+ * A calendar-date input.
+ * @public
+ */
 export interface DateField extends FieldBase {
   type: 'date';
-  /** Earliest allowed date as YYYY-MM-DD. */
+  /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
   min?: string;
-  /** Latest allowed date as YYYY-MM-DD. */
+  /** Latest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
   max?: string;
 }
-/** A date-and-time input. */
+/**
+ * A date-and-time input. A quoted string is kept as written; a `Date` that YAML parsed from an
+ * unquoted ISO timestamp becomes a zoneless `YYYY-MM-DDTHH:mm` string read in UTC, dropping the
+ * seconds and the offset.
+ * @public
+ */
 export interface DatetimeField extends FieldBase {
   type: 'datetime';
-  /** Earliest allowed moment as an ISO string. */
+  /** Earliest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
   min?: string;
-  /** Latest allowed moment as an ISO string. */
+  /** Latest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
   max?: string;
 }
-/** A checkbox; absent means false. */
+/**
+ * A checkbox; absent means false.
+ * @public
+ */
 export interface BooleanField extends FieldBase {
   type: 'boolean';
 }
-/** A glyph chosen from the adapter's icon set; the stored value is the glyph's name. */
+/**
+ * A glyph chosen from the adapter's icon set; the stored value is the glyph's name. Renders a glyph
+ * picker when the adapter supplies an icon set and a plain text input when it does not.
+ * @public
+ */
 export interface IconField extends FieldBase {
   type: 'icon';
 }
-/** A hero image whose stored value is the nested ImageValue object. */
+/**
+ * A hero image whose stored value is the nested ImageValue object. A missing `alt` defaults to empty
+ * and never blocks a save; a `required` image with no picked source is the one error this type raises.
+ * @public
+ */
 export interface ImageField extends FieldBase {
   type: 'image';
   /** Whether this field feeds the social-card image. */
   seo?: boolean;
 }
-/** A group of leaf fields, stored as a nested object. Holds only leaves (no nested container). */
+/**
+ * A group of leaf fields, stored as a nested object. Holds only leaves, never another container, a
+ * `reference`, or an `seo` image; any of those throws when `defineFieldset` runs. All-empty optional
+ * leaves omit the key, and a required empty group fails the save.
+ * @public
+ */
 export interface ObjectField extends Omit<FieldBase, 'label'> {
   type: 'object';
   /**
@@ -104,21 +201,43 @@ export interface ObjectField extends Omit<FieldBase, 'label'> {
   /** The leaf fields this group holds, keyed by frontmatter sub-key. */
   fields: Record<string, FieldDescriptor>;
 }
-/** A single edge to one entry of a named concept, stored as that target's permanent id. */
+/**
+ * A single edge to one entry of a named concept, stored as that target's id. Not allowed
+ * inside an `object`. A value that is not a well-formed entry id fails the save.
+ * @public
+ */
 export interface ReferenceField extends FieldBase {
   type: 'reference';
-  /** The concept whose entries this field references. */
+  /**
+   * The concept whose entries this field references. A name that no concept declared under
+   *  `content` makes the engine throw when it composes the runtime, naming the concept, the field,
+   *  and the undeclared target.
+   */
   concept: string;
 }
-/** A repeatable field whose stored value is a list of its item's values. */
+/**
+ * A repeatable field whose stored value is a list of its item's values. An optional empty list omits
+ * its key and a required empty list fails the save. An `array` of `reference` items renders the
+ * reference picker and stores a list of ids; any other item renders the repeatable-row editor. The item may not itself be an `array`, and a
+ * flat `object` item may not hold a container.
+ * @public
+ */
 export interface ArrayField extends FieldBase {
   type: 'array';
   /** The descriptor each list element conforms to: a leaf, or a flat object of leaves. */
   item: FieldDescriptor;
-  /** A label for one row, shown beside the add and remove controls. */
+  /**
+   * The key of one sub-field of an `object` item, whose value the editor shows as a collapsed row's
+   *  summary. It names a key, not display text: a key that matches no sub-field, or a blank value,
+   *  falls back to the field's label and the row number, with no error. A leaf item ignores it and
+   *  summarizes each row by the row's value.
+   */
   itemLabel?: string;
 }
-/** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
+/**
+ * The plain-data descriptor union the form, validator, and inference all read. Grows per task.
+ * @public
+ */
 export type FieldDescriptor =
   | TextField
   | TextareaField
@@ -141,6 +260,7 @@ export type FieldDescriptor =
  * argument with a `const` type parameter and intersects it onto the descriptor, so the call-site
  * literals (`required: true`, a `select`/`multiselect` `options` union) survive into the descriptor
  * type for `Infer` to read. The runtime value is unchanged: still `{ type, ...o }`.
+ * @public
  */
 export const fields = {
   /** A single-line text field. */
@@ -171,7 +291,7 @@ export const fields = {
   object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, 'type' | 'fields'>>(
     o: { fields: F } & O,
   ): ObjectField & { fields: F } & O => ({ type: 'object', ...o }),
-  /** A single reference field storing one target entry's permanent id. */
+  /** A single reference field storing one target entry's id. */
   reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
   /**
    * A repeatable field over one item descriptor, preserving the item type for inference. The item is

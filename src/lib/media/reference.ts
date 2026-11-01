@@ -5,7 +5,10 @@
 // cosmetic display name. The bare `media:<hash>` form (no slug) is also valid. This module owns
 // the grammar; it mirrors the cairn: link codec in ../content/links.ts.
 
-/** A resolved reference to a media asset by its content-hash prefix, with an optional display slug. */
+/**
+ * A resolved reference to a media asset by its content-hash prefix, with an optional display slug.
+ * @public
+ */
 export interface MediaRef {
   slug: string | null;
   hash: string;
@@ -25,6 +28,7 @@ const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  * Parse a `media:<slug>.<hash>` href (or the bare `media:<hash>` form), or null for any other
  *  href or a malformed token. Splits on the last dot, so a slug that illegally contains a dot fails
  *  the slug grammar and returns null.
+ * @public
  */
 export function parseMediaToken(href: string): MediaRef | null {
   if (!href.startsWith('media:')) return null;
@@ -40,6 +44,7 @@ export function parseMediaToken(href: string): MediaRef | null {
 /**
  * Write the canonical media: token for a ref. The inverse of parseMediaToken, so a parse then
  *  write round trip is stable: `media:<slug>.<hash>` when the slug is present, else `media:<hash>`.
+ * @public
  */
 export function formatMediaToken(ref: MediaRef): string {
   return ref.slug === null ? `media:${ref.hash}` : `media:${ref.slug}.${ref.hash}`;

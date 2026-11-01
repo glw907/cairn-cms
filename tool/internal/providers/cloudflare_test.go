@@ -28,7 +28,7 @@ func (rt fixtureRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 // TestBuildsLatestDecodesBuildShape asserts BuildsLatest decodes a Workers Builds discovery
 // response into the id, status, outcome, commit SHA, and timestamp fields deployCheck reads,
-// matching the live shape docs/internal/record/2026-08-13-t5-task8-live-e2e.md captured.
+// matching the live shape https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-13-t5-task8-live-e2e.md captured.
 func TestBuildsLatestDecodesBuildShape(t *testing.T) {
 	body := []byte(`{"success":true,"result":[{"build_uuid":"e266a910","status":"stopped","build_outcome":"success","created_on":"2026-08-13T12:48:26Z","build_trigger_metadata":{"commit_hash":"6d670d5b"}}]}`)
 	rt := fixtureRoundTripper{status: http.StatusOK, body: body}

@@ -13,7 +13,7 @@ after the pass, matching `record/`'s convention; a later correction is a new doc
 durable outcomes live in the rulings ledger.
 
 This directory is prospective per-item consultation, asked before a pass builds;
-[`../feedback/`](../feedback/README.md) is retrospective DX measurement after a migration
+[`../feedback/`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/feedback/README.md) is retrospective DX measurement after a migration
 or incident.
 
 ## The item schema

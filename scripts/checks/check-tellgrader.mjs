@@ -23,15 +23,9 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-// Directories under docs/ that are not published pages, and the rolling ledgers and loose session
-// briefs beside them.
-const UNPUBLISHED_DIRS = new Set(["internal", "specs", "plans", "research", "archive"]);
-const UNPUBLISHED_FILES = new Set([
-  "docs/STATUS.md",
-  "docs/HISTORY.md",
-  "docs/2026-07-07-fresh-session-brief.md",
-  "docs/2026-08-18-tui-skills-setup-brief.md",
-]);
+// Directories under docs/ that are not published pages, and the rolling ledger beside them.
+const UNPUBLISHED_DIRS = new Set(["internal", "plans"]);
+const UNPUBLISHED_FILES = new Set(["docs/STATUS.md"]);
 
 /**
  * Every published Markdown page under docs/, as repo-relative paths in sorted order.

@@ -7,9 +7,9 @@ platform, copy it, and change the paths and the account name.
 
 Every example runs bare `cairn health --quiet`, one command that sweeps the whole registry. This
 page also shows the alternative, a per-site loop, and says when to reach for it instead.
-[The exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) is the full contract behind the four
-codes and the `--timeout` arithmetic these examples size against; this page assumes you have read
-it.
+`cairn help agents` is the full contract behind the four codes, and
+[`--timeout`: most operators pass none](#--timeout-most-operators-pass-none) carries the arithmetic
+these examples size against.
 
 ## Credentials: a scheduler starts with no shell profile
 
@@ -51,8 +51,8 @@ OnFailure=cairn-health-alert@%n.service
 Type=oneshot
 EnvironmentFile=%h/.config/cairn/tripwire.env
 ExecStart=%h/.local/bin/cairn health --quiet
-# 2400s sits above the default sweep's 1920s cap (exit-codes.md, "Timeouts, and sizing a
-# scheduler's cap"), with headroom. TimeoutStartSec, not RuntimeMaxSec, is the cap that actually
+# 2400s sits above the default sweep's 1920s cap (see "--timeout: most operators pass none"
+# below), with headroom. TimeoutStartSec, not RuntimeMaxSec, is the cap that actually
 # applies to a Type=oneshot service (systemd.service(5): RuntimeMaxSec has no effect on oneshot
 # units). A run systemd kills at TimeoutStartSec exits however SIGKILL leaves it, never one of
 # cairn's four codes, so the cap has to sit above --timeout: a routine that reads an
@@ -349,9 +349,7 @@ divided among the sites still to run and recomputed after each one settles, so a
 cannot eat the rest.
 
 An operator who passes `--timeout` explicitly replaces the whole-run budget with that value, and
-the same division applies inside it. Size it by the same arithmetic
-[the exit-code contract](https://cairn.pub/docs/reference/cli-cairn-exit-codes) states for your registry's size, not
-by guessing; a value sized for four sites left running against forty will starve most of them.
+the same division applies inside it. Size it by the same arithmetic for your registry's size, not by guessing; a value sized for four sites left running against forty will starve most of them.
 
 Past four sites the per-site share divides, so a large sweep can cut a site's budget well below
 the single-site default (a twelve-site registry gives each site 160 seconds, not 480). A site the

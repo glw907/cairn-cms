@@ -380,8 +380,7 @@ test('close releases the port', async (t) => {
 });
 
 // --- Email Sending routes ------------------------------------------------------------------
-// Every fixture below is pasted independently from the captured bodies in
-// docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
+// Every fixture below is pasted independently from the live-captured Email Sending bodies,
 // rather than imported from fake-cloudflare.mjs, so a drift in the implementation's copy (a
 // dropped field, a retyped value) fails this suite instead of passing silently.
 

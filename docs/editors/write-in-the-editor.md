@@ -146,8 +146,6 @@ When images in your text have no alt text, a notice under the header counts them
 
 Some images are decoration only. You can mark the lead image as **Decorative** in the Details panel. The editor remembers that choice, so the notice clears. An image in the text of an entry can't keep that mark. It stays in the notice after you save and reload, even if you chose **Decorative** when you added it.
 
-<a id="add-components-and-fragments"></a>
-
 ## Add blocks and fragments
 
 A block is a ready-made piece of content that your site defines, such as a two-column layout. In your text, a block sits between two lines that start with `:::`. If your site has blocks, the toolbar shows two more buttons. The following table describes them.

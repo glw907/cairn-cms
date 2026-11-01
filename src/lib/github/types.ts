@@ -10,14 +10,20 @@ export interface RepoRef {
   branch: string;
 }
 
-/** A markdown file in a concept directory. `id` is the filename without `.md`. */
+/**
+ * A markdown file in a concept directory. `id` is the filename without `.md`.
+ * @public
+ */
 export interface RepoFile {
   id: string;
   name: string;
   path: string;
 }
 
-/** A commit author: the signed-in editor (spec §7.4). The committer is left to the App. */
+/**
+ * A commit author: the signed-in editor. The committer is left to the App.
+ * @public
+ */
 export interface CommitAuthor {
   name: string;
   email: string;
@@ -28,6 +34,7 @@ export interface CommitAuthor {
  * commit sha, the exact value revert validates a target against; `author` and `date` render what
  * git recorded, which may not be a cairn editor (main's log also holds commits made outside
  * cairn).
+ * @public
  */
 export interface BackendCommit {
   /** The commit's full sha. */
@@ -51,6 +58,7 @@ export interface AppCredentials {
  * another editor or the site's CI. Thrown so the save fails safe (re-fetch and ask the
  * editor to reapply) instead of surfacing a raw 409. Defined and caught inside the package
  * so `instanceof` is reliable, unlike kit's `redirect`/`error` across the peer boundary.
+ * @public
  */
 export class CommitConflictError extends Error {
   constructor(public readonly path: string) {
@@ -69,6 +77,7 @@ export function isConflict(err: unknown): boolean {
  * repeated attempt racing itself. Thrown by both backends' createBranch so a caller catches the
  * collision as a refusal (fail(409, ...)) instead of a raw 500. Defined and caught inside the
  * package so `instanceof` is reliable, unlike kit's `redirect`/`error` across the peer boundary.
+ * @public
  */
 export class BranchExistsError extends Error {
   constructor(public readonly branch: string) {

@@ -1,0 +1,50 @@
+{
+  "id": "S09-component-with-island",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "defineComponent, the island registry and rendering.islands, hydrate",
+  "bar": 4,
+  "prompt": "Authors want a countdown block they can drop into a post: they give it a label and a date, and readers see how many days are left until then, counting down live in the browser. Readers with JavaScript off should still see the label and the date. A post already uses the block as :::countdown{label=\"Trail day\" date=\"2026-09-19\"} and shows it as plain text today. Make the block work and show up in the editor's block picker. Finish when the site type-checks and builds.",
+  "setup": "setups/site/s09-component-with-island.mjs",
+  "knownBad": "setups/site/s09-component-with-island-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/render/registry.ts:74 (hydrate?: boolean | 'visible' on ComponentDef; the engine wraps build() output in an island boundary)",
+    "src/lib/render/rehype-dispatch.ts:108-160 (a hydrate component's attributes serialize into data-cairn-props; build() output stays as the fallback)",
+    "src/lib/content/adapter.ts:11-25 (defineAdapter throws when a hydrate component has no rendering.islands entry, or an island has no hydrate component)",
+    "src/lib/islands/index.ts:70-90 (hydrateIslands tears down the previous pass, then mounts each island by its data-cairn-island name)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-an-island.md#register-the-island and #write-the-live-component (props are untrusted text; a scaffolded site adds a live component, a registry entry, and the hydrate declaration, and its root layout already hydrates)",
+    "Verified by building a reference solution against the emitted site: the prerendered post carries data-cairn-island=\"countdown\" with data-cairn-hydrate and the label and date in data-cairn-props."
+  ],
+  "expectations": [
+    "A countdown component is declared with defineComponent in src/theme/markdown-components.ts with label and date attributes, hydrate set to true or 'visible', and a build() that returns a static fallback readable without JavaScript.",
+    "The component is added to the exported components list so the picker lists it and the render recognizes the directive.",
+    "A live Svelte 5 component in src/theme/islands/ takes label and date as props, shows the days remaining, and updates while the page is open.",
+    "The live component is registered under the key countdown in src/theme/islands/registry.ts.",
+    "Props reach the markup only as text bindings.",
+    "The root layout, the root server load, and the adapter are left as they are, since a scaffolded site already hydrates islands.",
+    "The prerendered post carries an island boundary for countdown.",
+    "npm run check and npm run build pass."
+  ],
+  "checks": [
+    { "type": "contains", "path": "src/theme/markdown-components.ts", "regex": "name:\\s*['\"]countdown['\"]" },
+    { "type": "contains", "path": "src/theme/markdown-components.ts", "regex": "hydrate:\\s*(true|['\"]visible['\"])" },
+    { "type": "contains", "path": "src/theme/markdown-components.ts", "regex": "export const components\\s*=\\s*\\[[^\\]]*[cC]ountdown" },
+    { "type": "contains", "path": "src/theme/islands/registry.ts", "regex": "countdown['\"]?\\s*:" },
+    { "type": "contains", "path": "src/theme/islands", "regex": "\\$props\\(\\)" },
+    { "type": "absent", "path": "src/theme/islands", "regex": "\\{@html\\s" },
+    { "type": "absent", "path": "src/theme", "regex": "h\\(\\s*['\"]script['\"]" },
+    { "type": "unchanged", "path": "src/routes/+layout.svelte" },
+    { "type": "unchanged", "path": "src/routes/+layout.server.ts" },
+    { "type": "unchanged", "path": "src/theme/cairn.config.ts" },
+    { "type": "contains", "path": ".svelte-kit/output/prerendered/pages/posts/trail-day.html", "text": "data-cairn-island=\"countdown\"" },
+    { "type": "npm", "script": "check" },
+    { "type": "npm", "script": "build" }
+  ],
+  "judge": [
+    { "n": 1, "text": "The countdown's build() returns markup that shows the label and the date on its own, so a reader with JavaScript off still sees both; it does not depend on a script, an event handler attribute, or the live component to show them." },
+    { "n": 2, "text": "The live component uses the label and date props only in text bindings; neither is routed into {@html}, an href or src attribute, or an inline style." },
+    { "n": 3, "text": "The live component's timer or other recurring work is cleaned up when the component is destroyed (for example the $effect returns a function that clears the interval), since hydrateIslands unmounts the previous pass on every navigation." },
+    { "n": 4, "text": "The date arrives as a string and is parsed defensively: a missing or unparsable date produces a readable result and never throws." }
+  ]
+}

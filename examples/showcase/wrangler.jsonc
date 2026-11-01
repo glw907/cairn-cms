@@ -47,7 +47,7 @@
     // cairn-template:exclude-start
     ,
     {
-      // The showcase members fixture's D1 binding (docs/extend/add-a-second-sign-in-group.md).
+      // The showcase members fixture's D1 binding.
       // Its migrations_dir, never "migrations": sharing AUTH_DB's directory would apply
       // this channel's schema against the auth store and vice versa.
       "binding": "MEMBER_DB",

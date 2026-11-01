@@ -366,17 +366,10 @@ func TestNoMalformedInOperatorCopy(t *testing.T) {
 	}
 }
 
-// TestTheExitCodesPageNamesTheCutShortSiteAndTheCap covers half of criterion 25: the published
-// exit-codes page states the reason a cut-short site's unfinished checks carry
-// (spine.ReasonNotRun's wire value) and the cap the per-site share divides against, so the
-// prose cannot drift from the arithmetic. The page now sits outside this module, which is why
-// it is read from the repository root rather than beside the tool.
-func TestTheExitCodesPageNamesTheCutShortSiteAndTheCap(t *testing.T) {
-	assertNamesTheBudget(t, exitCodesPage, readRepoFile(t, exitCodesPage))
-}
-
-// TestTripwireNamesTheCutShortSiteAndTheCap covers the other half of criterion 25, over the
-// tool's operator runbook.
+// TestTripwireNamesTheCutShortSiteAndTheCap covers criterion 25 over the tool's operator runbook:
+// it states the reason a cut-short site's unfinished checks carry (spine.ReasonNotRun's wire
+// value) and the cap the per-site share divides against, so the prose cannot drift from the
+// arithmetic.
 func TestTripwireNamesTheCutShortSiteAndTheCap(t *testing.T) {
 	const rel = "docs/admin/tripwire.md"
 	assertNamesTheBudget(t, rel, readRepoFile(t, rel))
@@ -402,10 +395,7 @@ var readmeLinkLabelPattern = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 // descriptive text, never a bare documentation path, so a reader learns what a link leads to
 // before following it.
 //
-// It inspects a link into the tool's docs tree and a link to a published cairn.pub page
-// alike. The second form was added when the contract pages left tool/docs/reference: the one
-// README link that named a page there now names its published address, and a rule that stopped
-// at a "docs/" prefix would have stopped covering it.
+// It inspects a link into the tool's docs tree and a link to a published cairn.pub page alike.
 func TestReadmeLinksCarryDescriptiveText(t *testing.T) {
 	body := readToolFile(t, "README.md")
 	for _, m := range readmeLinkLabelPattern.FindAllStringSubmatch(body, -1) {

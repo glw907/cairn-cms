@@ -17,7 +17,7 @@
 
      Three markup choices below are part of the deliberate stock "before" state, not an oversight
      an acceptance round should "fix": `data-theme` sits on the styled wrapper div (`bg-base-200
-     p-8`) rather than a bare one, exactly the mistake `docs/internal/admin-design-system.md`
+     p-8`) rather than a bare one, exactly the mistake `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`
      warns against; the search input carries no associated name or label; and the trailing
      actions column's `<th>` is empty. A stock DaisyUI build reaches for all three by default, so
      the fixture keeps them as-is across every round. Carrying them forward unchanged is what

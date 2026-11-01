@@ -1,11 +1,7 @@
-// cairn-cms: the option-coverage gate. A committed map (docs/internal/option-map.json) gives every
-// public option path one row: a reference anchor (`docs/reference/<page>.md#<anchor>`), `exclude
-// <reason>`, or `pending <slug>` naming a published page that should document it. An anchor row must
-// resolve, and the section it names (the heading's text through the line before the next heading of the
-// same or higher level) must name the option's last path segment in inline code. The walker below
-// regenerates the paths from the built `dist` declarations through the TypeScript compiler API; the
-// gate compares the two and fails on drift, so an option added inside a public type can never ship
-// undocumented or without a reviewed exclusion.
+// cairn-cms: the option-documentation gate. Every public option member a developer can pass carries
+// a doc comment on its declaration, or a reasoned entry in EXCLUDED_PATHS below. The walker
+// regenerates the member paths from the built `dist` declarations through the TypeScript compiler
+// API, so an option added inside a public type can never ship without the comment that documents it.
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
@@ -40,16 +36,12 @@
 // Interface: `node scripts/checks/check-options.mjs`. Build `dist` first (`npm run check:options`
 // does, and so does the docs gate).
 import ts from 'typescript';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { moduleExports } from './reference-coverage.mjs';
+import { moduleExports } from './dts-exports.mjs';
 import { surfaceSubpaths } from './check-surface.mjs';
-import { blankCodeFences, headingAnchors } from './docs-links.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const MAP_PATH = join(ROOT, 'docs/internal/option-map.json');
-const DOCS_DIR = join(ROOT, 'docs');
 const DECL_ROOT = join(ROOT, 'dist');
 
 /** Exported functions whose parameters are option-bearing roots. */
@@ -105,7 +97,7 @@ function compareCodeUnits(a, b) {
 }
 
 /**
- * @typedef {{ key: string, exportName: string, subpath: string, file: string | null }} GeneratedPath
+ * @typedef {{ key: string, exportName: string, subpath: string, file: string | null, documented: boolean }} GeneratedPath
  * @typedef {{ subpath: string, dts: string }} SubpathEntry
  */
 
@@ -162,6 +154,20 @@ function keyOfDeclaration(decl) {
     node = node.parent;
   }
   return null;
+}
+
+/**
+ * Whether a declaration carries a doc comment with prose in it. A comment holding only tags (a bare
+ * `@deprecated`, say) documents nothing a developer can act on.
+ * @param {ts.Declaration} decl
+ * @returns {boolean}
+ */
+function hasDocComment(decl) {
+  return ts.getJSDocCommentsAndTags(decl).some((doc) => {
+    if (!ts.isJSDoc(doc)) return false;
+    const text = typeof doc.comment === 'string' ? doc.comment : ts.getTextOfJSDocComment(doc.comment);
+    return Boolean(text?.trim());
+  });
 }
 
 /**
@@ -253,6 +259,7 @@ function walkRoot(ctx, rootType, rootPath) {
       let file = null;
       /** @type {ts.Type} */
       let propType;
+      let documented = false;
       if (decl) {
         if (!isOwnDeclaration(decl, declRoot)) continue;
         const derived = keyOfDeclaration(decl);
@@ -260,12 +267,13 @@ function walkRoot(ctx, rootType, rootPath) {
         file = relative(declRoot, resolve(decl.getSourceFile().fileName));
         typeName = derived?.typeName ?? null;
         propType = checker.getTypeOfSymbolAtLocation(prop, decl);
+        documented = hasDocComment(decl);
       } else {
         key = `${path}.${prop.name}`;
         propType = checker.getTypeOfSymbol(prop);
       }
       if (typeName !== null && excluded.test(typeName)) continue;
-      if (!paths.has(key)) paths.set(key, { key, exportName: root.exportName, subpath: root.subpath, file });
+      if (!paths.has(key)) paths.set(key, { key, exportName: root.exportName, subpath: root.subpath, file, documented });
       walk(propType, key);
     }
     for (const info of checker.getIndexInfosOfType(type)) walk(info.type, path);
@@ -330,144 +338,54 @@ export function generateOptionPaths({
   };
 }
 
-/**
- * Read one map row: a reference anchor, `exclude <reason>`, or `pending <slug>`.
- * @param {string} value
- * @returns {{ kind: 'anchor', page: string, anchor: string } | { kind: 'exclude', reason: string } | { kind: 'pending', slug: string } | { kind: 'invalid' }}
- */
-export function parseMapRow(value) {
-  const anchor = /^(docs\/reference\/[\w-]+\.md)#(\S+)$/.exec(value);
-  if (anchor) return { kind: 'anchor', page: anchor[1], anchor: anchor[2] };
-  const exclude = /^exclude(?:\s+(.*))?$/s.exec(value);
-  if (exclude) return { kind: 'exclude', reason: (exclude[1] ?? '').trim() };
-  const pending = /^pending\s+(\S+)$/.exec(value);
-  if (pending) return { kind: 'pending', slug: pending[1] };
-  return { kind: 'invalid' };
-}
+const BUILDER_TAG = 'the fields.* builder sets this discriminant tag; a developer never writes it';
 
 /**
- * The text of the section a heading anchor names: the heading through the line before the next heading
- * of the same or higher level. The slug rule mirrors `headingAnchors`. Null when no heading carries
- * the anchor (an explicit `id` anchor, say).
- * @param {string} text
- * @param {string} anchor
- * @returns {string | null}
+ * An option path the walk reaches that needs no doc comment, each with the reason a developer never
+ * sets it. An entry is kept only while its member has no doc comment of its own.
+ * @type {Record<string, string>}
  */
-export function sectionText(text, anchor) {
-  const lines = blankCodeFences(text).split('\n');
-  /** @type {Map<string, number>} */
-  const seen = new Map();
-  /** @type {{ index: number, level: number, anchor: string }[]} */
-  const heads = [];
-  lines.forEach((line, index) => {
-    const head = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
-    if (!head) return;
-    const base = head[2].replace(/`/g, '').toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
-    const n = seen.get(base) ?? 0;
-    seen.set(base, n + 1);
-    heads.push({ index, level: head[1].length, anchor: n === 0 ? base : `${base}-${n}` });
-  });
-  const at = heads.findIndex((head) => head.anchor === anchor);
-  if (at === -1) return null;
-  const next = heads.slice(at + 1).find((head) => head.level <= heads[at].level);
-  return lines.slice(heads[at].index, next ? next.index : lines.length).join('\n');
-}
+export const EXCLUDED_PATHS = {
+  'ArrayField.type': BUILDER_TAG,
+  'BooleanField.type': BUILDER_TAG,
+  'DateField.type': BUILDER_TAG,
+  'DatetimeField.type': BUILDER_TAG,
+  'EmailField.type': BUILDER_TAG,
+  'IconField.type': BUILDER_TAG,
+  'ImageField.type': BUILDER_TAG,
+  'MultiselectField.type': BUILDER_TAG,
+  'NumberField.type': BUILDER_TAG,
+  'ObjectField.type': BUILDER_TAG,
+  'ReferenceField.type': BUILDER_TAG,
+  'SelectField.type': BUILDER_TAG,
+  'TextField.type': BUILDER_TAG,
+  'TextareaField.type': BUILDER_TAG,
+  'UrlField.type': BUILDER_TAG,
+  'SlotDef.help':
+    'declared on SlotDef but read by no engine surface: the insert form renders no slot help, so documenting it would promise a no-op',
+};
 
 /**
- * Whether some inline code span in the text names the identifier as a whole token.
- * @param {string} text
- * @param {string} name
- * @returns {boolean}
- */
-function namesInCode(text, name) {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\~]/g, '\\$&');
-  const token = new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`);
-  return [...text.matchAll(/``[^`]*``|`[^`]*`/g)].some((span) => token.test(span[0]));
-}
-
-/**
- * Compare the generated paths to the committed map and return every defect.
- * @param {{
- *   generated: GeneratedPath[],
- *   map: { pendingCount: number, rows: Record<string, string> },
- *   pages?: Set<string>,
- *   readDoc: (path: string) => string | null,
- * }} input
+ * Check every generated path for a doc comment, honoring the exclusions, and return every defect.
+ * @param {{ generated: GeneratedPath[], exclusions?: Record<string, string> }} input
  * @returns {string[]}
  */
-export function checkOptionMap({ generated, map, pages = new Set(), readDoc }) {
+export function checkOptionDocs({ generated, exclusions = EXCLUDED_PATHS }) {
   /** @type {string[]} */
   const failures = [];
   const generatedKeys = new Set(generated.map((entry) => entry.key));
   for (const entry of generated) {
-    if (!(entry.key in map.rows)) {
-      failures.push(
-        `${entry.key} (export ${entry.exportName}, subpath ${entry.subpath}) has no row in the option map. ` +
-          `Document it and map the path to its reference anchor, or add an "exclude <reason>" row whose reason the diff-reviewer accepts.`,
-      );
-    }
-  }
-  let pending = 0;
-  for (const [key, value] of Object.entries(map.rows)) {
-    if (!generatedKeys.has(key)) {
-      failures.push(`${key}: the map has a row for a path the walker no longer generates; remove the row.`);
-      continue;
-    }
-    const row = parseMapRow(value);
-    if (row.kind === 'invalid') {
-      failures.push(`${key}: the row "${value}" is not a reference anchor, "exclude <reason>", or "pending <slug>".`);
-    } else if (row.kind === 'anchor') {
-      const text = readDoc(row.page);
-      if (text === null) {
-        failures.push(`${key}: the row names ${row.page}, which is no page.`);
-      } else if (!headingAnchors(text).has(row.anchor)) {
-        failures.push(`${key}: ${row.page} has no heading "#${row.anchor}".`);
-      } else {
-        const section = sectionText(text, row.anchor);
-        const segment = key.split('.').pop() ?? key;
-        if (section === null) {
-          failures.push(`${key}: ${row.page}#${row.anchor} is not a heading, so it has no section to check.`);
-        } else if (!namesInCode(section, segment)) {
-          failures.push(`${key}: the section ${row.page}#${row.anchor} does not name \`${segment}\` in inline code.`);
-        }
-      }
-    } else if (row.kind === 'exclude') {
-      if (row.reason === '') failures.push(`${key}: an "exclude" row needs a reason.`);
-    } else {
-      pending += 1;
-      if (!pages.has(row.slug)) {
-        failures.push(`${key}: the pending slug "${row.slug}" names no published page (docs/<arm>/${row.slug}.md).`);
-      }
-    }
-  }
-  if (pending > map.pendingCount) {
+    if (entry.documented || entry.key in exclusions) continue;
     failures.push(
-      `the map has ${pending} pending rows, above the committed pendingCount of ${map.pendingCount}. ` +
-        `Pending only shrinks: document the option and anchor the row, or exclude it, instead of parking a new one.`,
+      `${entry.key} (export ${entry.exportName}, subpath ${entry.subpath}${entry.file ? `, ${entry.file}` : ''}) has no doc comment. ` +
+        'Document the member where it is declared, or add an EXCLUDED_PATHS entry whose reason says why a developer never sets it.',
     );
   }
-  return failures;
-}
-
-// docs/ directories that hold no published pages.
-const UNPUBLISHED_ARMS = new Set(['internal', 'specs', 'plans', 'research', 'archive']);
-
-/**
- * Every published page slug: a markdown file directly under a docs arm directory. An arm's
- * `README.md` is an index, never a page, so it is skipped.
- * @param {string} dir
- * @returns {Set<string>}
- */
-export function publishedPageSlugs(dir) {
-  /** @type {Set<string>} */
-  const slugs = new Set();
-  for (const arm of readdirSync(dir, { withFileTypes: true })) {
-    if (!arm.isDirectory() || UNPUBLISHED_ARMS.has(arm.name)) continue;
-    for (const name of readdirSync(join(dir, arm.name)).filter((file) => file.endsWith('.md') && file !== 'README.md')) {
-      slugs.add(name.slice(0, -'.md'.length));
-    }
+  for (const [key, reason] of Object.entries(exclusions)) {
+    if (!generatedKeys.has(key)) failures.push(`${key}: an exclusion for a path the walker no longer generates; remove it.`);
+    else if (!reason.trim()) failures.push(`${key}: an exclusion needs a reason.`);
   }
-  return slugs;
+  return failures;
 }
 
 function main() {
@@ -475,13 +393,9 @@ function main() {
     subpaths: surfaceSubpaths().map((entry) => ({ subpath: entry.subpath, dts: resolve(ROOT, entry.dts) })),
     declRoot: DECL_ROOT,
   });
-  const map = JSON.parse(readFileSync(MAP_PATH, 'utf8'));
-  /** @param {string} path */
-  const readDoc = (path) => (existsSync(join(ROOT, path)) ? readFileSync(join(ROOT, path), 'utf8') : null);
-  const failures = [
-    ...walkFailures,
-    ...checkOptionMap({ generated: paths, map, pages: publishedPageSlugs(DOCS_DIR), readDoc }),
-  ];
+  const failures = [...walkFailures, ...checkOptionDocs({ generated: paths })];
+  // A floor, so a walk that reaches no roots cannot print OK over nothing (263 paths at the time of writing).
+  if (paths.length < 100) failures.push(`only ${paths.length} option paths were walked; the roots found no declarations`);
   if (failures.length === 0) {
     console.log(`check:options: OK (${paths.length} option paths)`);
     return;

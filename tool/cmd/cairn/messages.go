@@ -16,8 +16,8 @@
 // literal.
 //
 // This table is the program's strings, never the published docs. tool/README.md,
-// docs/admin/credentials.md, docs/admin/tripwire.md, and the reference pages under
-// docs/reference/ are documentation an operator reads outside the binary: they are not listed by
+// tool/docs/credentials.md, and tool/docs/tripwire.md are documentation an operator reads
+// outside the binary: they are not listed by
 // `copy-list`, and they are linted by the repository's Vale configuration instead. Do not
 // route a doc sentence through this table.
 //
@@ -67,19 +67,15 @@ const tmplVersion = "%s (%s), go%s, %s/%s"
 
 // The root command's Short, Long, and Example. The Long is the contract a program that
 // reached only `cairn --help` still needs: where the whole contract is, how to ask for a
-// machine-readable payload, what the process exit codes mean, and where each contract is
-// published. The three addresses are URLs rather than repository paths because `go install`
-// puts the binary on a machine that holds no cairn-cms checkout. New to this table.
+// machine-readable payload, and what the process exit codes mean. It names no address outside
+// the binary, since `go install` puts it on a machine that holds no cairn-cms checkout and
+// `cairn help agents` carries the whole contract. New to this table.
 const (
 	shortRoot = "Operate a cairn-cms production site"
 	longRoot  = "Operate a cairn-cms production site.\n\n" +
 		"Run `cairn help agents` for the contract a program reads.\n" +
 		"Pass --json to a reporting command for a machine-readable payload on stdout.\n" +
-		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n\n" +
-		"The published contracts:\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-exit-codes\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-json-output\n" +
-		"  https://cairn.pub/docs/reference/cli-cairn-doctor"
+		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN."
 	exampleRoot = "cairn health my-site-a1b2c3"
 )
 
@@ -211,7 +207,8 @@ order: 3 does not beat 2. One site's failure is never masked by another site's
 unknown.
 
 A usage error exits 3 and writes nothing to stdout, so an empty stdout means the
-invocation was wrong, never that the site is healthy.
+invocation was wrong, never that the site is healthy. cairn sites list exits 0 or
+3 only.
 
 A check result is pass, fail, held, skip, or unknown. skip is a check that was
 not attempted, by configuration: a credential you have not set. unknown is a
@@ -227,6 +224,16 @@ stream that carries no summary line is UNKNOWN. Each schema is published at the
 $id it carries, under https://cairn.pub/schema/, and ships in the cairn-cms
 repository; every payload carries a schemaVersion that is incremented whenever a
 consumer has to re-read its schema.
+
+A payload carries schemaVersion, kind, verdict, and exitCode, except that a per-site
+line of the stream omits exitCode. kind is site, summary, sites, logs, adoptCandidates,
+authCheck, or doctor, and its schema is cairn-<name>.schema.json under the $id above. A check carries checkId, state, checkedAt, and tier
+(none, cloudflare, github, or both), and when it has them detail, code, condition,
+reason, fix, hold, fields, and observed. reason is always present on a skip or an
+unknown. fields are values cairn derived; observed maps each key to a value and the
+source it was copied from. hold carries until and expired, and a check reads held only
+until its hold expires. fix carries summary, actor, outward, and url, plus command for
+an operator's fix. actor is operator, developer, provider-console, or registrar.
 
 Run a fix only when its actor is operator, its outward is false, and it carries a
 command. Every other fix is for a person to read.
@@ -247,12 +254,7 @@ It exits 3 for a usage error, a run whose only non-passing results are unknown,
 or a directory that is not a cairn site. Run cairn health after deploying for
 the https and email checks that need a live, adopted site.
 
-To check every site cairn knows, run: cairn health --json
-
-Every contract this page summarises is published in full:
-  https://cairn.pub/docs/reference/cli-cairn-exit-codes
-  https://cairn.pub/docs/reference/cli-cairn-json-output
-  https://cairn.pub/docs/reference/cli-cairn-doctor`
+To check every site cairn knows, run: cairn health --json`
 )
 
 // health.go's Short, Long, Example, and flag help. The Long's second paragraph repeats the
@@ -262,8 +264,7 @@ const (
 	longHealth = "Run the read-only health checks against one site, or every site when none is named.\n\n" +
 		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
 		"Precedence is CRITICAL, then UNKNOWN, then WARNING, then OK, which is not numeric order.\n" +
-		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract.\n" +
-		"The payload contract is published at https://cairn.pub/docs/reference/cli-cairn-json-output."
+		"Pass --json for the machine-readable report; run `cairn help agents` for the whole contract."
 	shortHealth            = "Run the read-only health checks against one site, or every site when none is named"
 	exampleHealth          = "cairn health my-site-a1b2c3 --json"
 	flagHealthJSONHelp     = "print the report as JSON"
@@ -307,11 +308,25 @@ func healthTooManyArgsError() error {
 const (
 	shortDoctor = "Check a cairn-cms site's configuration, no credential or deploy needed"
 	longDoctor  = "Check a cairn-cms site's checked-in configuration, read straight off the directory. " +
-		"It covers bindings, CSRF wiring, the site config, and more. It needs no credential and no " +
-		"adopted site, and makes at most one network request, a GET of the declared origin's " +
-		"/robots.txt.\n\n" +
-		"The report is plain text, so --color, --theme, and --width do not change it.\n\n" +
-		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN.\n" +
+		"It needs no credential and no adopted site, and makes at most one network request, a " +
+		"credential-free GET of the declared origin's /robots.txt. <dir> is a filesystem path, " +
+		"never a registered site id, and defaults to the current directory.\n\n" +
+		"Checks run in this order, each with the severity its failure carries:\n" +
+		"  config.bindings blocker, config.media-bucket warning, config.observability warning,\n" +
+		"  config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,\n" +
+		"  config.no-referrer-blanket warning, admin.mount-shape (never fails),\n" +
+		"  config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.\n\n" +
+		"Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and\n" +
+		"WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.\n" +
+		"Under --json the states are pass, fail, skip, and unknown: INFO writes pass with a note, SKIP\n" +
+		"writes reason.not-run, UNCHECKED writes reason.not-observable, and a fail carries a fix with a\n" +
+		"summary and no actor. The payload carries dir (the resolved directory, never the argument as\n" +
+		"typed) and checkedAt, and no tier, hold, or severity.\n\n" +
+		"The report is plain text on stdout only, so --color, --theme, and --width are validated and\n" +
+		"then ignored. --json beats --quiet; --quiet writes nothing on a clean run.\n\n" +
+		"Exit codes: 0 OK, 1 WARNING, 2 CRITICAL, 3 UNKNOWN. Exit 3 also covers a usage error, a run\n" +
+		"whose only non-passing results are UNCHECKED, and a directory that is not a cairn-cms site\n" +
+		"(which still writes a payload carrying an empty checks array). Test for nonzero, not for 3.\n" +
 		"Run `cairn health` after deploying to reach the checks that need a live site."
 	exampleDoctor = "cairn doctor ./my-site"
 	// flagDoctorJSONHelp is cairn doctor's --json flag help, the same shape every other

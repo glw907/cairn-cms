@@ -15,6 +15,7 @@
       "src/tests/",
       ".github/",
       "eslint.config.js",
+      "tsdoc.json",
       "vitest.config.ts",
       "wrangler.test.jsonc"
     ],
@@ -38,8 +39,8 @@
       "scripts/checks/check-surface-reexports.json",
       "scripts/checks/check-self-use-allowlist.json",
       "scripts/checks/check-symbols-allowlist.mjs",
-      "docs/internal/api-surface.md",
-      "docs/internal/option-map.json",
+      "scripts/checks/api-surface.md",
+      "schema/",
       "skills/",
       "claude/"
     ]
@@ -55,9 +56,8 @@
     "check": ["engine", "scripts", "harness"],
     "check:package": ["exportSurface"],
     "check:audit-pack": ["exportSurface"],
-    "check:reference": ["exportSurface", "docs", "engine"],
-    "check:reference:signatures": ["exportSurface", "docs", "engine"],
     "check:options": ["exportSurface", "docs", "engine"],
+    "check:tiers": ["exportSurface", "engine"],
     "check:surface": ["exportSurface"],
     "check:consumers": ["exportSurface", "showcase"],
     "check:self-use": ["exportSurface", "showcase"],
@@ -70,8 +70,6 @@
     "check:tool-conditions": ["docs", "engine"],
     "check:docs": ["docs"],
     "check:rulings-format": ["docs"],
-    "check:target-stack": ["docs", "engine", "showcase"],
-    "check:arm-indexes": ["docs"],
     "check:editor-quotes": ["docs", "engine"],
     "check:leaks": ["docs", "engine", "showcase"],
     "check:visuals": ["docs", "engine"],

@@ -97,7 +97,7 @@ import {
  * rule cannot tell the two populations apart from computed style alone, so it applies the number to
  * every border and says which it is; the calibration singles out the form-control boundaries as the
  * criterion's core case
- * (`docs/internal/2026-07-design-infrastructure-audit-calibration.md`).
+ * (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-07-design-infrastructure-audit-calibration.md`).
  *
  * The bar this is NOT: 1.4.3 Contrast (Minimum)'s 4.5:1 text floor, which no rule in this engine
  * measures, and `chip-ground-collision`'s 1.5 "not camouflaged" tripwire, which is not a standard

@@ -29,7 +29,9 @@ import type { CairnEvent, HistoryData } from './types.js';
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
  *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
- *  is not a dep here.
+ *  is not a dep here. Neither are `roles` and `access`: they live on the adapter and reach the
+ *  admin through `runtime.roles` and `runtime.access`.
+ * @public
  */
 export interface CairnAdminConfig {
   /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
@@ -39,10 +41,13 @@ export interface CairnAdminConfig {
    *  `branding` is a partial override merged over the runtime's site name and sender, so
    *  `{ siteName }` alone keeps the runtime's `from` and `replyTo`. See `AuthRoutesConfig`.
    */
-  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & { branding?: Partial<AuthBranding> };
+  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & {
+    /** The branding members to override; each one omitted falls back to the runtime's value. */
+    branding?: Partial<AuthBranding>;
+  };
   /**
-   * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
-   *  to avoid a real network call.
+   * Forwarded to the content routes verbatim; a site that enables tidy passes a `TidyClient`
+   *  factory here to route tidy through its own gateway, and a test passes a stub.
    */
   tidy?: ContentRoutesConfig['tidy'];
   /**
@@ -68,6 +73,7 @@ export interface CairnAdminConfig {
  * One admin view's data, discriminated for the admin page component's switch. Every member
  * carries just its view's page data; the shared chrome (nav, user, theme, pending count)
  * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
+ * @public
  */
 export type AdminData =
   | { view: 'login'; page: LoginData }
@@ -287,7 +293,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       if (!nav) throw error(404, 'Not found');
       return nav.navSaveAction(contentEvent(event, {}));
     }),
-    // The tidy settings save (spec 2.8): the editor commits the per-convention block to the
+    // The tidy settings save: the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
     settingsSave: viewAction('settingsSave', ['settings'], (event) => content.settingsSaveAction(contentEvent(event, {}))),
@@ -298,7 +304,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // Preview (spec part 3, "Public preview for a non-editor"): mint returns the minted URL and
+    // Preview, a draft link for a reader who is not an editor: mint returns the minted URL and
     // expiry directly (no redirect), so the edit screen's share panel can show and copy it in
     // place; revoke deletes every outstanding link for the entry. Both gate on the edit view,
     // where the share affordance lives.
@@ -310,11 +316,11 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     // view, where the revert forms live; concept/id are synthesized the same way every other
     // per-entry action's are.
     revert: viewAction('revert', ['history'], (event, view) => content.revertAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
+    // The personal-dictionary add: the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>
       content.dictionaryAddAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
+    // Tidy: the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction('tidy', ['edit'], (event, view) =>
       content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
@@ -381,12 +387,36 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
  *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always
  *  ran; the narrowing withdraws the SUPPORTED seam, not the reachability.
+ *
+ *  Name this type rather than `ReturnType<typeof createCairnAdmin>`. `shellLoad` is the
+ *  `/admin/+layout.server.ts` load: a bare payload for the two public paths, and the authed
+ *  chrome with a streamed pending count otherwise, loaded once for the whole `/admin/**` subtree.
+ * @public
  */
 export interface CairnAdminRoutes {
+  /**
+   * The one per-view load: parses the pathname, 404s on an unrecognized path, returns bare page
+   *  data for `/admin/login` and `/admin/auth/confirm`, and the view's `page` data otherwise. The
+   *  `/admin` landing redirects a role with a declared `home` there, sends an owner or editor to
+   *  the first concept list it can reach, and gives a `none` role the `welcome` view. The nav view
+   *  404s unless the runtime has a `navMenu`.
+   */
   load: InternalCairnAdminRoutes['load'];
   // WATCH: check:tool-heuristics greps this exact member for the Go tool's admin.mount-shape
   // heuristic, which proves a site's admin layout calls .shellLoad.
   shellLoad: InternalCairnAdminRoutes['shellLoad'];
+  /**
+   * Every named admin action. Each parses the pathname as `load` does and throws a 404 when the
+   *  parsed view does not accept it: `request` on login; `confirm` on confirm; `logout` on any
+   *  view; `create` on a list; `save` on edit or nav (404 without a `navMenu`); `settingsSave` on
+   *  settings; `vocabularySave` on vocabulary; `upload`, `publish`, `discard`, `rename`,
+   *  `previewMint`, `previewRevoke`, `dictionaryAdd`, and `tidy` on edit; `delete` on edit or a
+   *  list (the id from the path, or from the form body on a list); `revert` on history;
+   *  `mediaUpload` on media; `publishAll` on every authed view, the index included; and
+   *  `editorAdd`, `editorRemove`, and `editorSetRole` on editors, each gated to owners. An
+   *  unexpected throw inside an action answers `fail(500, { error })` in place and logs
+   *  `admin.action.failed`; a redirect or an HTTP error passes through.
+   */
   actions: Pick<
     InternalCairnAdminRoutes['actions'],
     | 'request'
@@ -418,6 +448,7 @@ export interface CairnAdminRoutes {
  * Build the single-mount admin bundle a site's catch-all `/admin/[...path]` route exports: the
  *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
  *  return.
+ * @public
  */
 export function createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes {
   return createCairnAdminInternal(config);

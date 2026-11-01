@@ -8,7 +8,10 @@
 
 import { itemNoun, type ItemLabel } from './format.js';
 
-/** One option in a `ListToolbarFilter`'s vocabulary. */
+/**
+ * One option in a `ListToolbarFilter`'s vocabulary.
+ * @public
+ */
 export interface ListToolbarFilterOption {
   value: string;
   label: string;
@@ -23,12 +26,12 @@ export interface ListToolbarFilterOption {
 /**
  * One filter control. `promoted` (default `true`) chooses whether the control renders directly
  * in the toolbar band or behind the overflow disclosure; either way, a non-default `value`
- * produces an applied-filter pill and counts toward the count line's scope. `defaultValue`
- * (default `'all'`) is the value that means "no filter applied", the value the filter resets
- * to when its pill is removed.
+ * counts toward the count line's scope. `defaultValue` (default `'all'`) is the value that means
+ * "no filter applied", the value a `'menu'` facet's inline clear affordance resets the filter to.
+ * @public
  */
 export interface ListToolbarFilter {
-  /** Stable identity, used for Svelte keying and to find the filter a pill's remove targets. */
+  /** Stable identity, used for Svelte keying and to find the filter a facet's clear targets. */
   id: string;
   /**
    * The control's accessible name (e.g. "Standing"). Never rendered as visible chrome for a
@@ -40,8 +43,8 @@ export interface ListToolbarFilter {
   /** The filter's current value, one of `options`' values. */
   value: string;
   /**
-   * Called with the new value on every change, including a pill's remove control (which
-   * calls this with `defaultValue`).
+   * Called with the new value on every change, including a `'menu'` facet's inline clear
+   * control (which calls this with `defaultValue`).
    */
   onChange: (value: string) => void;
   /** The "no filter applied" value. Defaults to `'all'`. */
@@ -63,7 +66,10 @@ export interface ListToolbarFilter {
   display?: 'select' | 'segmented' | 'menu';
 }
 
-/** The toolbar's one primary action, always right-aligned. */
+/**
+ * The toolbar's one primary action, always right-aligned.
+ * @public
+ */
 export interface ListToolbarAction {
   label: string;
   onClick: () => void;

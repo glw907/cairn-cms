@@ -2,7 +2,10 @@
 // the template renders it inside <svelte:head>. It covers the universal, mechanical tags;
 // og:image art and richer JSON-LD types stay a template or plugin concern.
 
-/** Inputs for the head. All URLs are absolute (built from PUBLIC_ORIGIN). */
+/**
+ * Inputs for the head. All URLs are absolute (built from PUBLIC_ORIGIN).
+ * @public
+ */
 export interface SeoInput {
   title: string;
   description: string;
@@ -21,7 +24,10 @@ export interface SeoInput {
   author?: string;
 }
 
-/** Plain-data head: a title, meta tags, link tags, and one JSON-LD object. */
+/**
+ * Plain-data head: a title, meta tags, link tags, and one JSON-LD object.
+ * @public
+ */
 export interface SeoMeta {
   title: string;
   meta: { name?: string; property?: string; content: string }[];
@@ -29,7 +35,10 @@ export interface SeoMeta {
   jsonLd: Record<string, unknown>;
 }
 
-/** Build the head data for a page. */
+/**
+ * Build the head data for a page.
+ * @public
+ */
 export function buildSeoMeta(input: SeoInput): SeoMeta {
   const type = input.type ?? 'website';
   const meta: SeoMeta['meta'] = [

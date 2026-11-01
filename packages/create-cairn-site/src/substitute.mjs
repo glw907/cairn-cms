@@ -62,7 +62,7 @@ const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 const AI_POSTURE_COMMENT_BLOCK = [
   "  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the",
   "  // site's robots.txt route passes it to robotsResponse, and CairnAdapter.aiPosture",
-  '  // (docs/reference/core.md) documents both values; docs/extend/choose-an-ai-posture.md helps pick.',
+  '  // documents both values; the cairn-extending-a-site skill helps pick.',
   '  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate',
   "  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.",
 ].join('\n');
@@ -78,7 +78,7 @@ function aiPostureBlock(value) {
   return [
     "  // aiPosture states this site's stance toward AI training crawlers; the site's robots.txt",
     '  // route passes it to robotsResponse, and CairnAdapter.aiPosture',
-    '  // (docs/reference/core.md) documents both values; docs/extend/choose-an-ai-posture.md helps pick.',
+    '  // documents both values; the cairn-extending-a-site skill helps pick.',
     `  aiPosture: '${value}',`,
   ].join('\n');
 }

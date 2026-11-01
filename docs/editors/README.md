@@ -8,4 +8,4 @@ This help is for anyone who writes on a cairn site through the editor at `/admin
 4. [When something goes wrong](./when-something-goes-wrong.md) helps you recover when a sign-in, a save, or a publish doesn't work.
 5. [Add an image](./add-an-image.md) puts a picture in an entry and gives it a description.
 6. [Manage the media library](./manage-the-media-library.md) finds, updates, and deletes the pictures your site holds.
-7. [Manage your tag vocabulary](./manage-your-tag-vocabulary.md) keeps the list of tags tidy so entries share the same ones.
+7. [Manage your tags](./manage-your-tag-vocabulary.md) keeps the list of tags tidy so entries share the same ones.

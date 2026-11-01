@@ -50,7 +50,7 @@ is *still* driven by the table's real column widths (verified empirically: `widt
 un-tabled cell kept measuring the summary rows' narrower first-two-column width, not the table
 wrap's full width, at every viewport). A caller that wants the panel's internal grid to collapse
 at a narrow width needs the table itself to never need horizontal scroll in the first place -- see
-the `cairn-admin-screens` skill's list exemplar for the pattern (hiding lower-priority summary columns under a
+the `cairn-building-admin-screens` skill's list exemplar for the pattern (hiding lower-priority summary columns under a
 breakpoint so the whole row, panel included, fits the viewport with nothing to scroll).
 
 **Three visual fixes carried at graduation, adversarially verified against zebra stripes in both
@@ -72,6 +72,7 @@ themes:**
    `background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`.
    `base-200` was tried and refuted first -- it is the zebra stripe's color, so the drawer
    visually merged with a striped row instead of reading as recessed.
+@public
 -->
 <script lang="ts" generics="T">
   import type { Snippet } from 'svelte';

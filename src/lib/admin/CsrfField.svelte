@@ -7,6 +7,7 @@ omits this field fails the guard's token check, which is the intended fail-close
 The field mirrors its value into `defaultValue`, so the token survives a native form reset (the
 one `use:enhance` fires after a successful submit) without depending on a hidden input's
 reset-to-attribute-value semantics.
+@public
 -->
 <script lang="ts">
   import { getContext } from 'svelte';

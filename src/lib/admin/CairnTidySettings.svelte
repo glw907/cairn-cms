@@ -1,6 +1,6 @@
 <!--
 @component
-The two-tier tidy settings screen (spec 2.8). It follows the approved settings mockup
+The two-tier tidy settings screen. It follows the approved settings mockup
 (2026-06-20-editor-copyedit-settings-final-mockup.html).
 
 Two tiers with a truthful visibility gate:
@@ -34,6 +34,7 @@ re-express on `StatusChip` at a neutral tone (a Tidy pill never
 reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
 bespoke: a single-use control, not a repeated device.
+@beta
 -->
 <script lang="ts">
   import { untrack } from 'svelte';

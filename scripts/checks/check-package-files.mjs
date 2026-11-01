@@ -7,10 +7,9 @@
 // `browser` stub declares `worker` ahead of it, so a Cloudflare Workers build resolves the real
 // module.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, posix as posixPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FRONT_DOOR_PAGES, loadDeletionList, readArmStates } from './arm-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -64,56 +63,71 @@ export function checkChannelMigrationPacked(filePaths) {
   return { ok: true };
 }
 
-// The index each directory-backed arm must pack once it is rebuilt, keyed by arm-state arm name.
-// The reference index is packed always; the front door's two files are packed once it is rebuilt.
+// The per-version record a consumer reads to take an upgrade. It ships at the package root.
+const MIGRATION_NOTES_PATH = 'MIGRATION-NOTES.md';
+
+// The published JSON schemas the Go tool's `--json` payloads declare by `$id`, packed from schema/.
+const SCHEMA_DIR = 'schema';
+
+// The front door's two files: the evaluator's page and the architecture page.
+const FRONT_DOOR_PAGES = ['docs/why-cairn.md', 'docs/architecture.md'];
+
+// Each published docs directory and the index it must pack once it holds any page.
 const ARM_INDEX_PATHS = {
-  admin: 'docs/admin/README.md',
-  editors: 'docs/editors/README.md',
-  extend: 'docs/extend/README.md',
-  'claude-code': 'docs/claude-code/README.md'
+  'docs/admin': 'docs/admin/README.md',
+  'docs/editors': 'docs/editors/README.md'
 };
-const REFERENCE_INDEX_PATH = 'docs/reference/README.md';
 
 /**
- * The docs paths the tarball must carry, given the tree's arm states (arm-state.mjs): the reference
- * index always; an arm's index only once the arm is rebuilt, since an absent arm has no page to
- * index and extend's kept-only state holds just its per-version records; both front-door files once
- * the front door is rebuilt; and every page on the deletion list's `kept` list, whatever its arm's
- * state and whether or not it is on disk, so neither a `files` edit nor deleting a kept page outright
- * can drop the per-version records.
+ * Whether a directory under `root` holds any Markdown page, at any depth.
+ * @param {string} root
+ * @param {string} dir repo-relative
+ * @returns {boolean}
+ */
+function holdsPage(root, dir) {
+  const abs = resolve(root, dir);
+  if (!existsSync(abs)) return false;
+  return readdirSync(abs, { recursive: true, encoding: 'utf8' }).some((name) => name.endsWith('.md'));
+}
+
+/**
+ * The record and docs paths the tarball must carry, given the tree under `root`: the migration
+ * notes and every schema on disk always; a docs directory's index once it holds any page; and both
+ * front-door files once either exists. Throws when `schema/` holds no schema, since an empty
+ * directory cannot be told apart from a moved one.
  * @param {string} root the repo root
  * @returns {string[]}
  */
 export function requiredDocsPaths(root) {
-  const list = loadDeletionList(root);
-  const states = readArmStates(root);
-  const required = [REFERENCE_INDEX_PATH];
-  for (const [arm, index] of Object.entries(ARM_INDEX_PATHS)) {
-    if (states[arm] === 'rebuilt') required.push(index);
+  const schemaAbs = resolve(root, SCHEMA_DIR);
+  const schemas = existsSync(schemaAbs)
+    ? readdirSync(schemaAbs)
+        .filter((name) => name.endsWith('.schema.json'))
+        .sort()
+        .map((name) => `${SCHEMA_DIR}/${name}`)
+    : [];
+  if (schemas.length === 0) {
+    throw new Error(`check-package-files: ${SCHEMA_DIR}/ holds no *.schema.json; the published schemas live there`);
   }
-  if (states['front-door'] === 'rebuilt') required.push(...FRONT_DOOR_PAGES);
-  required.push(...list.kept);
+  const required = [MIGRATION_NOTES_PATH, ...schemas];
+  for (const [dir, index] of Object.entries(ARM_INDEX_PATHS)) {
+    if (holdsPage(root, dir)) required.push(index);
+  }
+  if (FRONT_DOOR_PAGES.some((page) => existsSync(resolve(root, page)))) required.push(...FRONT_DOOR_PAGES);
   return required;
 }
 
-// The published docs allowlist. A registry consumer's site build reads the published arms only,
+// The published docs allowlist. A registry consumer's site build reads the published docs only,
 // so any other docs/ path (the write-only planning trees, the rolling status file, or a future
 // tree nobody has named yet) fails by construction instead of by an ever-growing denylist.
-export const DOCS_ALLOWED_ARM_PREFIXES = [
-  'docs/reference/',
-  'docs/admin/',
-  'docs/editors/',
-  'docs/extend/',
-  'docs/claude-code/'
-];
+export const DOCS_ALLOWED_ARM_PREFIXES = ['docs/admin/', 'docs/editors/'];
 
-// The docs/ paths that ship as bare files rather than inside an allowed arm. Both are front doors:
-// the index every track routes from, and the evaluator's page it links first.
+// The docs/ paths that ship as bare files rather than inside an allowed directory.
 export const DOCS_ROOT_FILES = FRONT_DOOR_PAGES;
 
 /**
- * Check a packed file list for the required docs paths, present, and every docs/ path outside
- * the published allowlist, absent.
+ * Check a packed file list for the required record and docs paths, present, and every docs/ path
+ * outside the published allowlist, absent.
  * @param {string[]} filePaths the paths npm would include in the tarball
  * @param {string[]} required the docs paths that must be packed ({@link requiredDocsPaths})
  * @returns {{ ok: true, count: number } | { ok: false, error: string }}
@@ -124,7 +138,7 @@ export function checkDocsPacked(filePaths, required) {
   if (missing.length > 0) {
     return {
       ok: false,
-      error: `the packed tarball is missing ${missing.join(', ')}; add the docs arms to package.json "files" so a registry consumer's site build can read the published docs`
+      error: `the packed tarball is missing ${missing.join(', ')}; add each to package.json "files" so a registry consumer gets the version records, the schemas, and the published docs`
     };
   }
   const leaked = filePaths.filter(
@@ -144,7 +158,7 @@ export function checkDocsPacked(filePaths, required) {
 
 // The packaged skill's always-loaded core. Its presence in the tarball is the floor: without it,
 // `cairn-guidance install` would install nothing into a consumer's `.claude/skills/`.
-const SKILL_ENTRY_PATH = 'skills/cairn-admin-screens/SKILL.md';
+const SKILL_ENTRY_PATH = 'skills/cairn-building-admin-screens/SKILL.md';
 
 /**
  * Check a packed file list for the packaged skill's SKILL.md.
@@ -492,7 +506,7 @@ function main() {
   }
 
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), the channel migration packed in its own directory, ${docsResult.count} docs file(s), the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), the channel migration packed in its own directory, ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

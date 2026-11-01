@@ -100,7 +100,7 @@ If your site keeps a tag list, you can add only tags from that list to an entry.
 
 To fix it:
 
-1. Open the **Tags** screen in a new browser tab and add the tag to the list. [Manage your tag vocabulary](manage-your-tag-vocabulary.md) shows how.
+1. Open the **Tags** screen in a new browser tab and add the tag to the list. [Manage your tags](manage-your-tag-vocabulary.md) shows how.
 1. Select **Save changes** on the **Tags** screen.
 1. Return to the first tab, where your text is still in the editor, and select **Save** again.
 

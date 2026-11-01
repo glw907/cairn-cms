@@ -189,7 +189,7 @@ export type SectionAction<Env, Db> = <T>(
  *
  * The three 403 branches share one message (`opts.deniedMessage` overrides it) and both 500
  * branches share another, so a session learns no deployment or gating detail; the branch lives in
- * the audit `detail` and the log. Every 403 also logs `auth.access.refused`, the guard's event, and
+ * the audit `detail` and the log. Every one of those 403s also logs `auth.access.refused`, the guard's event, and
  * both 500s log `admin.action.misconfigured`. A denial's audit record carries no `entityId`.
  *
  * A SvelteKit remote function never dispatches through `Actions`, so this wrapper never runs for

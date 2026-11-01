@@ -180,7 +180,7 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
  *
  * Wire it in `hooks.server.ts`. A site that has a hook sequences the guard last, so the site
- * hook sees every request and the guard owns admin gating. A path outside `/admin` passes through
+ * hook sees every request and the guard owns admin gating. Past that first refusal, a path outside `/admin` passes through
  * untouched, so a public route's headers stay the site's.
  *
  * It refuses before any route's load or action runs, in this order:

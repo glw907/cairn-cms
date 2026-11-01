@@ -346,6 +346,36 @@ for (const [label, marker] of [
   });
 }
 
+test('reoffer: a parked Builds consent survives a no, and the later yes writes no Builds decline', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  await setupWrangler(t);
+  const marker = '2026-10-31T00:00:00.000Z';
+  await seedDeclined('reoffer-parked', dir, 'builds-connect-declined', {}, { buildsTokenSavedAt: marker });
+
+  const declined = await run('reoffer-parked', dir, {
+    confirm: recordingConfirm(false, []),
+    promptSecretFn: mustNotBeCalled('promptSecretFn'),
+  });
+  await declined.promise;
+  const afterNo = await loadSite('reoffer-parked');
+  assert.equal(afterNo.step, 'builds-connect-declined', 'a no changes nothing');
+  assert.equal(afterNo.cloudflare.buildsTokenSavedAt, marker, 'a no keeps the parked consent marker');
+  assert.equal('buildsDeclinedAt' in afterNo.cloudflare, false);
+
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+  const accepted = await run('reoffer-parked', dir, {
+    confirm: recordingConfirm(true, []),
+    promptSecretFn: async () => 'new-token',
+    fetchImpl: async () => new Response(null, { status: 200 }),
+  });
+  await accepted.promise;
+  const afterYes = await loadSite('reoffer-parked');
+  assert.equal('buildsDeclinedAt' in afterYes.cloudflare, false, 'the parked consent outranks a Builds decline');
+  assert.equal(afterYes.step, 'email-onboarded');
+});
+
 test("reoffer: chapter 2's own token clears chapter 3's saved-token marker, so chapter 3 never adopts it", async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

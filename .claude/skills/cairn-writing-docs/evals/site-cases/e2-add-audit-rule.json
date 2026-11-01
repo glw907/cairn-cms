@@ -13,7 +13,7 @@
     "src/lib/audit/markup.ts:1-7 the parsed substrate exists because a regex substrate misses single-quoted attributes and invents tokens from prose; :84 SourceNode carries type, name, startLine, and attributes; :36 ElementAttribute records an attribute by name, with value present only for a static string",
     "src/lib/audit/rules/static/list-role.ts:200 a markup rule that walks file.nodes for RegularElement nodes and reads their attributes; src/tests/unit/audit/rules/list-role.test.ts the test shape: parseComponent fixtures, a pass and a fail case, a suppression directive, and a clean run over the engine's own tree",
     "src/tests/unit/audit/run.test.ts:106 the registry membership test lists every static rule id",
-    "scripts/checks/check-skill-budget.mjs:198,236 (run by check:package) compares the tier map in skills/cairn-building-admin-screens/SKILL.md:25 against the live registries' ids and tiers, at both the pre-agent-first tag and this branch tip",
+    "scripts/checks/check-skill-budget.mjs:198,236 (run by check:package) compares the tier map in the admin-screens skill's SKILL.md (skills/cairn-admin-screens at the pre-agent-first tag, skills/cairn-building-admin-screens at this branch tip) against the live registries' ids and tiers, at both the pre-agent-first tag and this branch tip",
     "docs/reference/cairn-audit.md:77 the static rules table, one row per rule"
   ],
   "expectations": [
@@ -21,7 +21,7 @@
     "The check walks each parsed component's nodes for a RegularElement named img and reads its attributes, flagging one with no attribute named alt; alt=\"\" and alt={expr} both pass.",
     "Each finding carries the node's file, line, start, and end, and a message that names the fix (add alt text, or alt=\"\" for a decorative image) and why.",
     "A unit test under src/tests/unit/audit covers the missing, empty, and bound cases, and the registry membership test in run.test.ts lists the new id.",
-    "The tier map in skills/cairn-building-admin-screens/SKILL.md lists img-alt under the static error tier, the reference page's static-rules table gains a row, and CHANGELOG.md's ## Unreleased section gains an entry.",
+    "The tier map in the admin-screens skill's SKILL.md (the file check:package reads at this tree's ref) lists img-alt under the static error tier, the reference page's static-rules table gains a row, and CHANGELOG.md's ## Unreleased section gains an entry.",
     "The audit unit tests, check:package, check:comments, and the type check pass."
   ],
   "checks": [
@@ -33,7 +33,7 @@
     { "type": "npm", "script": "test:unit -- src/tests/unit/audit" },
     { "type": "npm", "script": "check:package", "source": "scripts/checks/check-skill-budget.mjs:236 checkTierMap" },
     { "type": "npm", "script": "check:comments" },
-    { "type": "npm", "script": "check" }
+    { "type": "npm", "script": "check --node-options=--max-old-space-size=2048", "source": "the type check needs dist, which check:package builds before it runs. The heap flag is there because Node sizes its default heap from the light lane's cgroup cap (about 1GB), where svelte-check intermittently runs out of heap (scripts/checks/gate-tier.mjs FAST_LINE_1_LANE)" }
   ],
   "judge": [
     {

@@ -30,7 +30,7 @@
     { "type": "npm", "script": "check:options" },
     { "type": "npm", "script": "check:surface" },
     { "type": "npm", "script": "check:comments" },
-    { "type": "npm", "script": "check" },
+    { "type": "npm", "script": "check --node-options=--max-old-space-size=2048", "source": "the type check needs dist, which check:options and check:surface build before it runs. The heap flag is there because Node sizes its default heap from the light lane's cgroup cap (about 1GB), where svelte-check intermittently runs out of heap (scripts/checks/gate-tier.mjs FAST_LINE_1_LANE)" },
     { "type": "npm", "script": "test:unit -- seo public-routes twitter", "source": "the whole unit project is red on this workstation (src/tests/unit/docs-review-browsers.test.ts needs a Playwright Firefox build that is not installed), so the check runs the unit files whose paths name the SEO head, the public routes, or the new tag" }
   ],
   "judge": [

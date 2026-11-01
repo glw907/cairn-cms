@@ -257,8 +257,8 @@ export function handoverText({ dir }) {
     "review agent, and the CLAUDE.md fragment your root CLAUDE.md imports. Run",
     '`npx cairn-guidance check` any time to see whether it is current.',
     '',
-    'This scaffold is local only. Putting the site on the internet needs a GitHub repository, a',
-    "Cloudflare account, and a domain you own, plus Cloudflare's Workers Paid plan from the day",
-    'you deploy it. Those steps arrive with the next release.',
+    'This scaffold is local so far. Next, this run creates a private GitHub repository for the',
+    "site and deploys it to Cloudflare, which needs a Cloudflare account and Cloudflare's Workers",
+    'Paid plan from the day you deploy it. A domain you own can come after.',
   ].join('\n');
 }

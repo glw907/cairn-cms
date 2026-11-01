@@ -122,6 +122,10 @@ test('installAndAuthorize: the callback path installs, exchanges the code, and r
   assert.equal(result.userToken, 'fake-user-token');
   assert.equal(result.installationId, 99);
   assert.ok(
+    logs.some((line) => line.includes('choose "All repositories"')),
+    'the install prompt must name the All repositories choice',
+  );
+  assert.ok(
     logs.every((line) => !/GitHub's own form/.test(line)),
     "the install trip's output must not carry the App trip's wrong-form warning",
   );

@@ -47,6 +47,17 @@ that repair, by recording `document.activeElement` before the frame loads and re
 One thing changes because containment holds: the seven stories that focused a control on open no
 longer paint the admin's `:focus-visible` ring, so each shows the mouse face of its screen rather
 than the keyboard one. https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md records which seven.
+
+One instance mounts exactly one story for its lifetime: the story's context, manifest entry, and
+shell payload resolve once, from the `story` it first mounted. A consumer that reuses one page
+component across a story change (a `/repro/[id]` route) must key the mount,
+`{#key story.id}<ReproContext {story} />{/key}`. The component throws if `story.id` changes in
+place, so a missing `{#key}` fails loudly instead of rendering a mismatched story. The media-base
+and CSRF context keys are reserved: it applies `story.context` first and then sets both, so a
+story's own entry under either key is shadowed.
+
+An embedding page's `sandbox` value must keep `allow-same-origin`: the focus release above reads
+`window.frameElement`, which a sandboxed frame without it cannot reach.
 @beta
 -->
 <script lang="ts">

@@ -40,8 +40,9 @@ export type SiteIndexes<A extends CairnAdapter> = {
  * frontmatter, for a caller that needs the indexes before every entry satisfies its schema; the
  * build then logs a `content.entry_invalid` warning for each invalid entry instead of failing.
  * @throws When a concept is named `site`, when a declared concept has no key in `globs` (pass `{}`
- *  for an intentionally empty one), when two entries resolve to one permalink, or, unless
- *  `validate` is `false`, when a non-draft entry fails its concept's validator.
+ * for an intentionally empty one), when two entries that are on `main`, non-draft, and routable
+ * resolve to one permalink, or, unless `validate` is `false`, when a non-draft entry fails its
+ * concept's validator.
  * @public
  */
 export function createSiteIndexes<const A extends CairnAdapter>(

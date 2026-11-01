@@ -74,7 +74,9 @@ export interface ReproStory {
    * in `onMount`, and `publish/pending-list` builds its trigger and dialog inside an `{#await}` with
    * no pending branch. A props-only story has nothing else to tell a capture to wait, so an early
    * frame would show the fallback rather than the face the page names. Absent when the story's
-   * contracted surface is in the server render.
+   * contracted surface is in the server render. Its `root` is the element `ReproContext` mounted
+   * the story into: query it, not `document`, since a dialog or fixed-position panel a story opens
+   * renders inside that element.
    */
   settle?: (root: HTMLElement) => Promise<void>;
   /**
@@ -114,6 +116,8 @@ const stories: ReproStory[] = [
 
 /**
  * Look up a registered story by id.
+ * A `repro` fence resolves its `story` key through this function, or through the node-safe
+ * `manifest` lookup in a gate that never needs the Svelte half.
  * @param id - a story id, matching a `manifest.ts` entry
  * @returns the matching story
  * @throws when no story is registered under `id`

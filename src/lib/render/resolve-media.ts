@@ -86,6 +86,13 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  *  channel's job, keyed off the asset's known width) so a fresh zone with Image Transformations
  *  disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns undefined when
  *  media is off or no entry carries the hash (the preview-miss backstop).
+ * @remarks
+ * Pass `normalizeAssets` the same object the adapter's `media` member receives, so the two
+ * normalizations agree. The resolved `<img>` also gains intrinsic `width` and `height` when the entry
+ * recorded them. With `transformations` on and a width known and wide enough for more than one rung
+ * of the fixed width ladder, it also gains a `srcset` and a `sizes` hint taken from the enclosing
+ * `:::figure` placement role (`center`, `wide`, `full`; any other case is `100vw`). An unknown
+ * dimension is left off, never guessed. A raw external image is untouched.
  * @public
  */
 export function createMediaResolver(

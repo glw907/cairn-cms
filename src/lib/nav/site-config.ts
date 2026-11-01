@@ -148,7 +148,8 @@ export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
 /**
  * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt
  * builder consumes. Every field carries a concrete value; `resolveTidyConventions` fills the defaults
- * from a partial config. The Fixes group is the objective fixes (default on, governed by the always-on
+ * from a partial config. The Settings screen validates a saved block against the same sets, and a
+ * value outside its set throws. The Fixes group is the objective fixes (default on, governed by the always-on
  * core); the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
  * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
  * @public
@@ -156,8 +157,8 @@ export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
 export interface TidyConventions {
   /**
    * The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
-   *  punctuation). Default on. The always-on core governs it; this toggle lets the screen turn the
-   *  group off.
+   *  punctuation). Default on. Only the Settings toggle reads it: the tidy prompt always applies the
+   *  objective fixes, so `false` does not stop them from running.
    */
   fixes: boolean;
   /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
@@ -336,6 +337,14 @@ const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
 
 /**
  * Parse the YAML site-config text into a typed object. Throws SiteConfigError on a malformed root.
+ * @remarks
+ * It enforces the boundary between `site.config.yaml` and `cairn.config.ts`: every top-level key
+ * must be one the engine reads from the YAML (`siteName`, `description`, `author`, `locale`,
+ * `menus`, `spellcheck`, `tidy`, `vocabulary`). A key that belongs on the adapter (`content`,
+ * `backend`, `email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as
+ * its home, and any other unrecognized key throws listing the known keys. It does not check
+ * `spellcheck.dialect`: the editor resolves any other or unset dialect to the one shipped
+ * dictionary, American English, with no error.
  * @public
  */
 export function parseSiteConfig(raw: string): SiteConfig {

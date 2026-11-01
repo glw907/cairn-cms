@@ -39,7 +39,11 @@ type CairnManifestPlugin = Plugin & { [CAIRN_OPTIONS]?: CairnManifestOptions };
 export interface CairnManifestOptions {
   /** The module exporting the `cairn` adapter and the parsed `siteConfig`, app-root-absolute. */
   configModule: string;
-  /** Per-concept content globs, keyed by concept id, app-root-absolute. */
+  /**
+   * Per-concept content globs, keyed by concept id, app-root-absolute. A concept with no entry here
+   *  gets no manifest rows, and the plugin neither throws nor warns, so give every concept a glob,
+   *  the reserved `fragments` concept included, the same one `createSiteIndexes` receives.
+   */
   content: Record<string, string>;
   /** The committed manifest path, app-root-absolute. Defaults to `/src/content/.cairn/index.json`. */
   manifestPath?: string;
@@ -269,6 +273,18 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * `VITE_CAIRN_E2E=1` (read from the process env and the working directory's `.env` files), `false`
  * otherwise, so a guarded dev-backend branch folds out of a deployed Worker. A `define` the site
  * already sets for the name wins.
+ *
+ * Beside the content manifest it verifies `site-facts.json` in `buildStart`, on every build. The
+ * file carries `version` (always `1`) and, omitted when the adapter declares none, `mediaBucketBinding`
+ * (`cairn.media.bucketBinding`), `roles` (`cairn.roles`) and `aiPosture` (`cairn.aiPosture`): the
+ * values the Go `cairn` tool cannot read, since only Node can evaluate the adapter through Vite. The
+ * backend owner and repo and the email `from` never appear in it. Three outcomes follow. A missing
+ * file is not drift: the build proceeds with one warning naming `npx cairn-manifest`, since no
+ * site's `build` script runs that command. A present file that no longer matches the adapter fails
+ * the build with the same fix. If the adapter throws while the facts are derived, the check is
+ * skipped with one warning naming the file and the message; the manifest verify just before it
+ * loads the same adapter, so an adapter that cannot load at all still fails the build there. Run
+ * `npx cairn-manifest` after editing the adapter's media, roles, or AI posture, and commit the result.
  * @public
  */
 export function cairnManifest(opts: CairnManifestOptions): Plugin {

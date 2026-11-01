@@ -53,6 +53,16 @@ const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
  * `ReproHeights` is the schema for the width rule: nothing here enumerates width names, so a story
  * that later declares a new pinned width needs no matching edit here, and a story that declares
  * only some widths refuses a fence pinned to one it cannot show.
+ * @remarks
+ * The body's keys are `story`, `alt`, and `caption` (all required), and `width` (optional).
+ * `story` is a registry id, `<group>/<name>`, with exactly one slash. `alt` is the embed's accessible
+ * name; its prefix and length register belong to the caller, through `options`. `caption` states what
+ * the render cannot show on its own. `width` is `narrow` (390px), `desktop` (860px), or `wide` (1280px);
+ * omitting it asks for the responsive `column` default, so naming `width: column` explicitly is
+ * refused as a second way to say the same thing. A story that cannot show its subject at some width
+ * declares no height for it, and a fence pinning that width is refused. A malformed body, a missing
+ * required key, an undeclared `width`, or an unknown `story` always yields an issue; an unknown key
+ * or a non-conforming `alt` only when `options` asks for those checks.
  * @param body - the fence's raw YAML body
  * @param manifest - the installed engine's story manifest
  * @param options - the caller's register, layered on top of the engine-owned rules

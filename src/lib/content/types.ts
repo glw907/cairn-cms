@@ -77,17 +77,38 @@ export type NamedField = FieldDescriptor & { name: string };
  * @public
  */
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
-  /** Repo-relative content directory, e.g. "src/content/posts". */
+  /**
+   * Repo-relative content directory, e.g. "src/content/posts": no leading or trailing slash. The
+   *  engine uses it verbatim and never validates it. Entries sit directly in it, never in subfolders.
+   *  An entry's id is its filename without `.md`, at `${dir}/${id}.md`; an id is lowercase ASCII
+   *  letters, digits, and single hyphens. A dated concept's filename also carries a leading date
+   *  prefix of the `datePrefix` granularity, which only the URL slug drops: the entry's date comes
+   *  from its `date` field.
+   */
   dir: string;
   /** Sidebar label; defaults from the concept id when omitted. */
   label?: string;
   /** The singular noun for the create affordances ("New post"); defaults to `label` when omitted. */
   singular?: string;
-  /** The concept's fieldset: the form projection, the generated validator, and the inferred type. */
+  /**
+   * The concept's fieldset: the form projection, the generated validator, and the inferred type. An
+   *  admin save writes the entry's frontmatter from the validator's output alone, so a key the
+   *  fieldset does not declare is dropped from the file at its first admin save. The engine reads
+   *  `title` (an entry without one falls back to its id), `date`, `updated`, `description`,
+   *  `draft`, and the head fields `image`, `robots`, and `author` by literal name, so a site that
+   *  wants one to survive declares it as a field. The validator also runs when the site builds its
+   *  content indexes: unless the site passes `validate: false`, a non-draft entry whose frontmatter
+   *  fails it fails the build.
+   */
   fields: S;
   /**
    * This concept's routing: the `'feed'` (dated and in feeds), `'page'` (a routable static page), or
-   *  `'embedded'` (not routable) shorthand. Omitted means `'page'`.
+   *  `'embedded'` (not routable) shorthand. Omitted means `'page'`. Every routable concept's entries
+   *  get a public page and a sitemap entry; a `'feed'` concept's permalink may also use the date
+   *  tokens, and its index sorts newest first (an undated concept's sorts by title). An `'embedded'`
+   *  concept has no public page and no sitemap entry, but keeps a directory, fields, and an admin list
+   *  and editor, which label its identifier **Name** and offer **Rename** rather than **Change URL**.
+   *  Which entries reach an RSS or JSON feed is the site's feed route's choice.
    */
   routing?: 'feed' | 'page' | 'embedded';
   /** The permalink pattern, root-relative, e.g. `/blog/:year/:slug`. Defaults by concept id. */
@@ -96,7 +117,8 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   datePrefix?: DatePrefix;
   /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
-   *  field without a per-entry detail read. Each key should also be declared in `fields`.
+   *  field without a per-entry detail read. Defaults to none. Compose throws when a key is not a
+   *  declared field.
    */
   summaryFields?: string[];
 }
@@ -157,9 +179,18 @@ export interface NavMenuConfig {
  * How the edit page's preview frame reproduces the live site's content styling. The admin
  * deliberately never loads the site's CSS (chrome isolation), so a design-accurate preview needs
  * the site to name its stylesheets for the preview frame; without this knob the preview renders
- * unstyled markup. The frame's srcdoc pins a white body background as a deliberately overridable
- * default, so a site whose ground is not white should state its body background in its
- * stylesheet.
+ * unstyled markup. The frame's srcdoc paints the body with the site's `--color-base-100`, falling
+ * back to white when no named stylesheet defines it, so a site whose stylesheet sets that variable
+ * needs no body rule of its own.
+ * @remarks
+ * Reference each named sheet only through a Vite `?url` import, linked from the site layout's
+ * `<svelte:head>`. A layout that also imports the same file statically folds it into the layout's CSS
+ * chunk, whose basename differs between the client and server builds, so the URL the server-rendered
+ * edit page hands the frame names a file the client build never serves. Even done right, the build
+ * ships two hashed copies of the sheet (the page links the client copy, the frame the server copy);
+ * that is by design. A `byConcept` override applies key by key over the top-level values: a missing
+ * override key keeps the top-level value and only a string replaces it. `editLoad` ships the
+ * already-resolved flat shape, so the map never reaches the client.
  * @public
  */
 export interface PreviewConfig {
@@ -209,7 +240,10 @@ export interface AssetConfig {
   bucketBinding: string;
   /** The delivery base path. Defaults to "/media". */
   publicBase?: string;
-  /** Whether the public URL carries the slug ("slug") or stays opaque ("opaque"). Defaults to "slug". */
+  /**
+   * Whether the public URL carries the slug (`/media/<slug>.<hash>.<ext>`) or stays opaque
+   *  (`/media/<aa>/<hash>.<ext>`). Defaults to "slug".
+   */
   urlForm?: 'slug' | 'opaque';
   /** The maximum accepted upload size in bytes. Defaults to 25 MB. */
   maxUploadBytes?: number;
@@ -220,6 +254,8 @@ export interface AssetConfig {
    *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
    *  it off, the media resolver serves the bare full-size delivery path and ignores any preset, so
    *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL.
+   *  It governs only the responsive `srcset` a rendered image gets beside its full-size `src`. Set it
+   *  `true` only after enabling Transformations on the zone.
    */
   transformations?: boolean;
 }
@@ -232,7 +268,9 @@ export interface AssetConfig {
  *  references the same way. `resolveFragment` resolves an `::include` directive's fragment id to its
  *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
  *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
- *  are absent for the standalone component-insert preview.
+ *  are absent for the standalone component-insert preview. The render must forward `resolveFragment`
+ *  beside `resolve` and `resolveMedia`: one that drops it publishes each `::include` as literal text
+ *  with no error.
  * @public
  */
 export type SiteRender = (input: {
@@ -348,11 +386,11 @@ export interface CairnAdapter {
  * @public
  */
 export interface RoutingRule {
-  /** Routable as a standalone URL. A future Fragments concept is embedded, not routable. */
+  /** Routable as a standalone URL: the entries get a public page and a sitemap entry. An embedded concept is not. */
   routable: boolean;
   /** Carries a date (posts). */
   dated: boolean;
-  /** Appears in feeds and the sitemap (posts). */
+  /** Set for the `'feed'` shorthand. The sitemap lists every routable concept whatever this says. */
   inFeeds: boolean;
 }
 

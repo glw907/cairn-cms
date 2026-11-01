@@ -35,6 +35,10 @@ export const FRAGMENT_RESOLVE = 'fragmentResolve';
  * Resolve a fragment id to its raw markdown body. `undefined` is a preview miss (the plugin
  *  replaces the include directive with a notice node); a resolver that throws is the build
  *  backstop, exactly like `LinkResolve` and `MediaResolve`.
+ * @remarks
+ * Resolution runs one pass deep, so a fragment cannot include another fragment (a save refuses
+ * it). An `::include` with no `fragment` attribute never reaches the resolver: it renders a notice
+ * and logs `include.missing` with `reason: 'empty_fragment'`, and the build does not fail on it.
  * @public
  */
 export type FragmentResolve = (id: string) => string | undefined;

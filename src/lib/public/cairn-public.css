@@ -49,7 +49,11 @@
    The audit's public scope checks that a value comes from a token, never which token.
 
    Renaming or removing a key or an emitted class is a disclosed contract change; adding a key with
-   a default is not breaking; changing a default's value is disclosed with a changelog line. */
+   a default is not breaking; changing a default's value is disclosed with a changelog line.
+
+   The sheet does not style `.cairn-place-center`, `.cairn-place-wide`, or `.cairn-place-full`,
+   the placement classes a `figure` directive carries: a placement is a layout decision, so a theme
+   styles every placement it wants to honor. */
 
 @layer theme {
   :root,

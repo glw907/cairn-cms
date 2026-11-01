@@ -53,6 +53,12 @@ export const BUILT_IN_PRESETS: Record<string, VariantSpec> = Object.freeze({
  * Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves
  *  media off and returns `{ enabled: false }` rather than throwing. A declared block must name its R2
  *  bucket and carry a known urlForm; each failure throws a cairn:-prefixed error.
+ * @remarks
+ * Hoist the media block once and pass the same object here and to the adapter's `media` member, so
+ * the binding name lives in one place. The engine itself normalizes the adapter's block once at
+ * compose time into `CairnRuntime.resolvedAssets`. The four built-in transform presets are the
+ * whole vocabulary: a site needing another size builds a URL against Cloudflare's
+ * `/cdn-cgi/image/<options>/<path>` format directly.
  * @public
  */
 export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig {

@@ -49,12 +49,23 @@ export interface RendererConfig {
    *  directive markers and the common benign tags) and returns the schema to use. Add to the
    *  allowlist for the benign HTML a site's content needs; start from the argument so the
    *  dangerous strip is preserved.
+   * @remarks
+   * Synchronous by design: it is called inline while the pipeline composes its sanitize floor, with
+   * no seam to await external data. The callback gets a fresh copy of the default schema per call, so mutating it never reaches
+   * another renderer. After it returns, the engine removes `script` from `tagNames` and unions the
+   * default `strip` list into the callback's own `strip`, so no `<script>` element and no body text of
+   * a default-`strip` element survives. That is the whole floor: attributes and URL protocols stay the
+   * callback's responsibility, and an unsafe one it admits is kept.
+   * @throws When the callback returns a schema with no `tagNames` array, since an absent allowlist
+   * admits every element. Set `unsafeDisableSanitize` to turn the floor off instead.
    */
   sanitizeSchema?: (defaults: Schema) => Schema;
   /**
    * Developer-only escape hatch: disable the sanitize floor entirely. This reintroduces the XSS
    *  vector the floor closes, so it is only for a site whose content is fully developer-controlled.
-   *  It is a code-level adapter decision, never an editor-facing setting.
+   *  It is a code-level adapter decision, never an editor-facing setting. It removes the sanitize
+   *  floor and the sink guard together. Defaults to `false`. To allow more HTML while keeping the
+   *  floor, extend the allowlist with `sanitizeSchema` instead.
    */
   unsafeDisableSanitize?: boolean;
   /**

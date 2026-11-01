@@ -62,6 +62,18 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * Declare a concept while preserving its fieldset type for typed reads, and validate its URL policy at
  * declaration so a bad permalink or datePrefix fails at module load rather than at a defaulted render.
  * Mirrors {@link defineAdapter}; the validation is the build-independent net for a concept with no entries.
+ * @remarks
+ * Defaults, resolved when the engine composes the runtime: `routing` is `'page'`; `permalink` is
+ * `/:slug` for a concept keyed `pages` and `/<concept-id>/:slug` for any other; `datePrefix` is
+ * `'day'`. A permalink that uses a date token (`:year`, `:month`, `:day`) needs a dated concept
+ * (`routing: 'feed'`) and a field named `date` of type `date`; both this function and the
+ * compose step throw on a missing or wrong-typed one and normalize it to `required: true`. An omitted
+ * `singular` falls back to `label` with no warning, so a plural label reads "New Posts" on the
+ * create affordances: declare `singular` on every concept. The concept key `fragments` is
+ * reserved for `::include` and must use `routing: 'embedded'`, or compose throws.
+ * @throws When `permalink` does not start with `/`, uses an unknown token, or uses a date token on
+ * an undated concept; when `datePrefix` is not `year`, `month`, or `day`; or when `routing` is
+ * unrecognized.
  * @public
  */
 export function defineConcept<const C extends ConceptConfig>(concept: C): C {

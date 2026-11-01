@@ -40,7 +40,11 @@ export type BehaviorTable = Record<string, FieldBehavior>;
  * @public
  */
 export interface FieldsetConfig {
-  /** A cross-field or body-dependent check: returns field-keyed error messages, or nothing to pass. */
+  /**
+   * A cross-field or body-dependent check: returns field-keyed error messages, or nothing to pass.
+   *  Synchronous by design: it runs inline in the save action's request path on every save, so a
+   *  check needing external data pre-fetches it and reads it inside the callback instead of awaiting.
+   */
   refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
   /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
   behavior?: BehaviorTable;
@@ -427,6 +431,17 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
+ * @remarks
+ * The validator reads a parsed value as well as a form string (a numeric `number`, a `Date` on a
+ * `datetime` field, a lone scalar on a `multiselect`), recurses one level into an `object` and an
+ * `array`, and on failure returns the flat `errors` map keyed by top-level field plus `issues` located
+ * by multi-segment path. `config.refine` runs only after every per-field rule passes. A leaf declared
+ * `required: true` is a required key in the inferred type.
+ * @throws When a `text` or `textarea` `pattern` is malformed, so it fails here and not on a later
+ * save; when containers nest deeper than one level, an `array` item is another `array`, a
+ * `reference` or an `seo` image sits inside a container, a field key contains a dot, more than one
+ * top-level image sets `seo` or more than one multiselect sets `taxonomy`, or `config.behavior`
+ * names an undeclared field.
  * @public
  */
 export function defineFieldset<const R extends Record<string, FieldDescriptor>>(

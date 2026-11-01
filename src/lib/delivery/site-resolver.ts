@@ -224,6 +224,11 @@ export function createLinkResolver(site: SiteResolver): LinkResolve {
  *  throws `cairn: fragment "<id>" not found`, and a site with no fragments concept throws
  *  `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`. The preview uses a
  *  manifest-backed resolver built from the edit screen's fragment targets instead.
+ * @remarks
+ * The render never builds this resolver: `createPublicRoutes` builds one per public entry page and
+ * hands it to the site's render, so a render path written outside `createPublicRoutes` builds it here.
+ * The unknown-id message is `cairn: fragment "<id>" not found`; with no fragments concept it is
+ * `cairn: ::include "<id>" needs a "fragments" concept, and this site declares none`.
  * @public
  */
 export function createFragmentResolver(site: SiteResolver): FragmentResolve {

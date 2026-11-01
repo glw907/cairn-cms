@@ -22,10 +22,17 @@ export interface SlotDef {
   label: string;
   /** How the slot's content is entered: `markdown`, `inline`, or `repeatable` (a list of items). */
   kind: SlotKind;
-  /** Whether the insert form requires a value for this slot. */
+  /**
+   * Whether the insert form requires a value for this slot (default `false`): it shows an asterisk
+   *  and keeps the insert action unavailable until the slot has content. The render never reads it,
+   *  so a hand-typed directive without the slot still renders.
+   */
   required?: boolean;
   help?: string;
-  /** For `kind: 'repeatable'`: the fields composing each list item (v1 uses the first field). */
+  /**
+   * For `kind: 'repeatable'`: the fields composing each list item. The insert form reads only the
+   *  first key. Each item is one string stored under that key, or under `text` when this is absent.
+   */
   itemFields?: Record<string, FieldDescriptor>;
   /**
    * For `kind: 'repeatable'`: derives a row's label from its item values and zero-based index.
@@ -65,12 +72,18 @@ export interface ComponentDef {
   label: string;
   /** Palette description. */
   description: string;
-  /** Markdown scaffold inserted at the cursor by the editor palette. */
+  /**
+   * Markdown scaffold the editor palette inserts at the cursor when the component declares no
+   *  `attributes` and no `slots`; with either, the insert form opens instead. Defaults to none.
+   */
   insertTemplate?: string;
   /**
    * Build the final hast element from the component context (attributes plus partitioned
    *  slots). The engine stamps the entrance ordinal (`data-rise`) on the top-level
-   *  result, so a build fn stays free of any motion concern.
+   *  result, so a build fn stays free of any motion concern. Synchronous by design: it returns an
+   *  `Element`, never a `Promise`, because it runs inline in the pipeline's synchronous hast
+   *  transform once per directive occurrence. A component needing data it lacks pre-fetches it
+   *  outside the pipeline and passes it through `attributes`.
    */
   build: (ctx: ComponentContext) => Element;
   /**
@@ -79,13 +92,23 @@ export interface ComponentDef {
    *  The engine wraps {@link ComponentDef.build}'s output in an island boundary, and the site registers
    *  the live Svelte component under the same name on `rendering.islands`. Absent leaves the directive a
    *  static, server-only component.
+   * @remarks
+   * The boundary is a `<div>` carrying `data-cairn-island` (the directive name), `data-cairn-props`
+   * (the declared attributes as JSON: a `number` field a JSON number, a `boolean` field a JSON boolean,
+   * every other field the author's literal string), and `data-cairn-hydrate="visible"` on a `'visible'`
+   * island only. Its one child is `build()`'s output, the no-JS fallback and the page's first paint, so
+   * make it show the live component's starting content at the same size or the mount shifts the layout.
+   * The editor preview frame is sandboxed, so the island runtime never mounts there and the preview
+   * shows the fallback.
    */
   hydrate?: boolean | 'visible';
   /**
    * Optional role-to-default-icon, e.g. `{ caution: 'warning' }`. Maps a free-string role to a
    *  glyph key in the site IconSet; choose a logically representative glyph and prefer glyphs
    *  distinct across roles so the picker stays scannable. Overrides the engine
-   *  {@link DEFAULT_ICON_BY_ROLE} fallback for the roles it names.
+   *  {@link DEFAULT_ICON_BY_ROLE} fallback for the roles it names. The built-in fallback covers
+   *  `note`, `tip`, `important`, `warning`, `caution`, `info`, and `danger`. Resolves nothing for a
+   *  component with no `icon` attribute.
    */
   defaultIconByRole?: Record<string, string>;
   /** One line on when to reach for this component; feeds the picker and the reference file. */
@@ -176,6 +199,8 @@ const RESERVED_DIRECTIVE_NAMES = new Set(['figure', 'include']);
 /**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
+ * @throws When a component is named `figure` or `include` (reserved for the engine's render step),
+ * or sets `defaultIconByRole` without declaring a `type: 'icon'` attribute.
  * @public
  */
 export function defineRegistry({ components }: {
@@ -271,6 +296,15 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
  * Declare a site component, building its attribute validator from the `fields.*` descriptors and
  *  validating the component at declaration. Mirrors {@link defineConcept}: a malformed attribute type
  *  or pattern fails at module load. The built `attributeSchema` is what {@link validateComponent} runs.
+ * @remarks
+ * A directive attribute is one flat string, so `attributes` may hold only the scalar leaves `text`,
+ * `textarea`, `number`, `select`, `url`, `email`, `date`, `datetime`, `boolean`, and `icon`. A
+ * cross-field attribute rule goes in the co-bundled `behavior` table, keyed by attribute name.
+ * A component with `attributes` or `slots` opens the insert form; one with neither is picked by its
+ * `insertTemplate`, and a component with neither a schema nor an `insertTemplate` does not appear
+ * in the picker.
+ * @throws When an attribute is an `object`, `array`, `multiselect`, `reference`, or `image`, or when
+ * an attribute `pattern` is malformed.
  * @public
  */
 export function defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset } {

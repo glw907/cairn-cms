@@ -26,6 +26,7 @@ export interface FeedItem {
   title: string;
   url: string;
   date?: string;
+  /** Emitted only as `date_modified` on a JSON Feed item; the RSS feed never carries it. */
   updated?: string;
   summary: string;
   contentHtml?: string;

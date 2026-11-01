@@ -164,6 +164,10 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
     );
     await openBrowser(loopback.url, log);
     log(
+      "Use this link, not GitHub's own form: an App made on GitHub's own \"New GitHub App\" " +
+        'page never reports back to this run.',
+    );
+    log(
       `Waiting for the browser step to finish creating ${appName}... keep the browser window ` +
         'open.\n' +
         `If GitHub says the name "${appName}" is already taken, press Ctrl+C and re-run with ` +

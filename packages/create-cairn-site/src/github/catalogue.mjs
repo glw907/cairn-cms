@@ -57,7 +57,8 @@ const ROWS = {
         'GitHub page saying the App name is already taken, that is the cause.\n' +
         `Next: re-run npx create-cairn-site --dir ${params.dir} (add --app-name <a-new-name> if ` +
         `the name was taken). If an App named ${params.appName} now exists at ` +
-        `${params.webBase}/settings/apps, delete it there first.`
+        `${params.webBase}/settings/apps, delete it there first. If no browser window reached ` +
+        'you, copy the link this run printed into the window you work in.'
       );
     }
   },

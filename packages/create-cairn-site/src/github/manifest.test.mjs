@@ -308,6 +308,33 @@ test('runManifestFlow: the pre-open log line covers opening the create-App page 
   assert.match(preOpen, /sign in to GitHub/i);
 });
 
+test('runManifestFlow: a line beside the link says to use it and not GitHub\'s own form', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const logs = [];
+  await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    openBrowser: async (url, log) => {
+      log(`Open this link if the browser did not open: ${url}`);
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+      }, 0);
+    },
+    log: (line) => logs.push(line),
+  });
+
+  const linkAt = logs.findIndex((line) => line.startsWith('Open this link'));
+  const warningAt = logs.findIndex((line) => /not GitHub's own form/.test(line));
+  assert.ok(warningAt > linkAt && linkAt >= 0, 'expected the warning right after the printed link');
+  assert.match(logs[warningAt], /never reports back/);
+});
+
 test('runManifestFlow: the served form\'s action carries a state nonce', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

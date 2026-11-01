@@ -113,10 +113,16 @@ async function printLiveInfo(siteId) {
       '',
       "What exists now: one Worker, one database, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
-      '',
-      `Connect your domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
-        'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
     );
+    // A saved domain means a run is already partway through connecting one (a park, an email
+    // step), and that run printed its own next step; offering to start over would contradict it.
+    if (!state.cloudflare.domain) {
+      lines.push(
+        '',
+        `Connect your domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
+          'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
+      );
+    }
   } else {
     lines.push('', 'Deploying it to the internet arrives with the next chapter.');
   }

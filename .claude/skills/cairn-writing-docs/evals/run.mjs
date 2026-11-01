@@ -12,7 +12,7 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import {
-  createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, rmdirSync,
+  appendFileSync, createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, rmdirSync,
   writeFileSync, statSync,
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -20,14 +20,17 @@ import { dirname, join, resolve } from 'node:path';
 import { rm } from 'node:fs/promises';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildSiteBase, copySite, readStripList } from './site-fixture.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const EVALS_DIR_REL = '.claude/skills/cairn-docs/evals/';
+const EVALS_DIR_REL = '.claude/skills/cairn-writing-docs/evals/';
 const DEFAULT_TRIALS = 3;
 const SESSION_CAP = 120;
 const CONCURRENCY = 4;
 const SESSION_TIMEOUT_MS = 40 * 60 * 1000;
 const STATE_ROOT = join(homedir(), '.local/state/cairn-docs-evals');
+/** Built site fixtures, on the fixtures' device so a trial can hard-link `node_modules` from them. */
+const SITE_CACHE = join(homedir(), '.cache/cairn-docs-evals/sites');
 /** Outside every repository, so no session walks up into a checkout's `CLAUDE.md` or `.claude/`. */
 const FIXTURE_ROOT = join(homedir(), '.cache/cairn-docs-evals/fixtures');
 
@@ -46,6 +49,9 @@ export const ALLOWED_TOOLS = [
   'Bash(git branch*)',
 ];
 
+/** What a site or tree fixture adds: it builds, tests, and runs the site, which a docs fixture never does. */
+export const BUILD_TOOLS = ['Bash(npm *)', 'Bash(npx *)', 'Bash(node *)', 'Bash(make *)', 'Bash(go *)', 'Bash(cd *)'];
+
 /** Denies win over the user's allow rules in `~/.claude/settings.json`. */
 export const DENIED_TOOLS = [
   'Bash(approval-queue *)', 'Bash(gh *)', 'Bash(git push*)', 'Bash(git -C * push*)', 'Bash(ssh *)', 'WebFetch', 'WebSearch',
@@ -56,6 +62,11 @@ export const DENIED_TOOLS = [
  * git read or shell filter is friction the session works around, as it would in a real session.
  */
 const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate )/;
+/** On a site or tree fixture every build command is needed, so a denied one is a fault too. */
+const NEEDED_BUILD_COMMAND = /^\s*(npm|npx|node|make|go|cd)\s/;
+
+/** The fixture kinds: a pinned commit with the arm's overlay, an emitted site, or the arm's whole tree. */
+const FIXTURES = ['pin', 'site', 'tree'];
 
 // ---------------------------------------------------------------------------------------------
 // Arguments and the cases file
@@ -66,7 +77,11 @@ const NEEDED_COMMAND = /^\s*(npm run check|node scripts\/checks\/|cairn-run-gate
  * @returns {{ refs: string[], suite: string, caseId: string | null, trials: number, max: boolean, keep: boolean }}
  */
 export function parseArgs(argv) {
-  const out = { refs: [], suite: 'all', caseId: null, trials: DEFAULT_TRIALS, max: false, keep: false, control: false };
+  const out = {
+    refs: [], suite: 'all', caseId: null, trials: DEFAULT_TRIALS, max: false, keep: false, control: false,
+    fixture: null, strip: null, treePluginDir: null, pluginDir: null, concurrency: CONCURRENCY,
+    baselineFirst: false, reuseBaseline: null, resume: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--suite') out.suite = argv[++i];
@@ -75,13 +90,24 @@ export function parseArgs(argv) {
     else if (a === '--max') out.max = true;
     else if (a === '--keep') out.keep = true;
     else if (a === '--control') out.control = true;
+    else if (a === '--fixture') out.fixture = argv[++i];
+    else if (a === '--strip') out.strip = argv[++i];
+    else if (a === '--tree-plugin-dir') out.treePluginDir = argv[++i];
+    else if (a === '--plugin-dir') out.pluginDir = argv[++i];
+    else if (a === '--concurrency') out.concurrency = Number(argv[++i]);
+    else if (a === '--baseline-first') out.baselineFirst = true;
+    else if (a === '--reuse-baseline') out.reuseBaseline = argv[++i];
+    else if (a === '--resume') out.resume = argv[++i];
     else if (a.startsWith('--')) throw new Error(`unknown flag ${a}`);
     else out.refs.push(a);
   }
   if (out.refs.length < 1 || out.refs.length > 2) throw new Error('give one or two refs');
   if (out.control && out.refs.length !== 2) throw new Error('--control takes two refs: the first is the control arm');
-  if (!['regression', 'capability', 'all'].includes(out.suite)) throw new Error(`bad --suite ${out.suite}`);
+  if ((out.baselineFirst || out.reuseBaseline) && out.refs.length !== 2) throw new Error('--baseline-first and --reuse-baseline take two refs: the first is the baseline');
+  if (!['regression', 'capability', 'site', 'all'].includes(out.suite)) throw new Error(`bad --suite ${out.suite}`);
+  if (out.fixture !== null && !FIXTURES.includes(out.fixture)) throw new Error(`bad --fixture ${out.fixture}`);
   if (!Number.isInteger(out.trials) || out.trials < 1) throw new Error('--trials takes a positive integer');
+  if (!Number.isInteger(out.concurrency) || out.concurrency < 1) throw new Error('--concurrency takes a positive integer');
   return out;
 }
 
@@ -106,8 +132,11 @@ export function validateEvals(data) {
     seen.add(c.id);
     if (typeof c.prompt !== 'string' || !c.prompt) problems.push(`${id}: prompt missing`);
     if (!Array.isArray(c.expectations) || c.expectations.length === 0) problems.push(`${id}: expectations missing`);
-    if (!['regression', 'capability'].includes(c.suite)) problems.push(`${id}: suite must be regression or capability`);
-    if (typeof c.pin !== 'string' || !/^[0-9a-f]{7,40}$/.test(c.pin)) problems.push(`${id}: pin must be a commit sha`);
+    if (!['regression', 'capability', 'site'].includes(c.suite)) problems.push(`${id}: suite must be regression, capability, or site`);
+    if (c.fixture !== undefined && !FIXTURES.includes(c.fixture)) problems.push(`${id}: fixture must be one of ${FIXTURES.join(', ')}`);
+    // A site or tree case takes its tree from the arm's ref, so only a pin fixture names a commit.
+    if ((c.fixture ?? 'pin') === 'pin' && (typeof c.pin !== 'string' || !/^[0-9a-f]{7,40}$/.test(c.pin))) problems.push(`${id}: pin must be a commit sha`);
+    if (c.bar !== undefined && ![4, 5].includes(c.bar)) problems.push(`${id}: bar must be 4 or 5`);
     if (c.setup !== undefined && (typeof c.setup !== 'string' || !existsSync(join(HERE, c.setup)))) {
       problems.push(`${id}: setup file ${c.setup} is missing`);
     }
@@ -135,23 +164,30 @@ export function renderPrompt(template, vars) {
 /**
  * The `claude -p` arguments for one case. A case that names an agent runs as that agent and keeps
  * the agent's own model, as in real use.
- * @param {{ readOnly?: boolean, agent?: string, maxTurns?: number }} c
+ * @param {{ readOnly?: boolean, agent?: string, maxTurns?: number, fixture?: string }} c
+ * @param {{ pluginDirs?: string[] }} [opts] plugin directories the session loads
  */
-export function claudeArgs(c) {
+export function claudeArgs(c, opts = {}) {
   const denied = [...DENIED_TOOLS, ...(c.readOnly ? ['Edit', 'Write', 'NotebookEdit'] : [])];
+  const built = c.fixture === 'site' || c.fixture === 'tree';
   const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits'];
   if (c.maxTurns) args.push('--max-turns', String(c.maxTurns));
   if (c.agent) args.push('--agent', c.agent);
   else args.push('--model', 'sonnet', '--effort', 'medium');
+  // A built fixture loads only the project's own settings, so no user skill or plugin reaches it.
+  if (built) args.push('--setting-sources', 'project');
+  for (const dir of opts.pluginDirs ?? []) args.push('--plugin-dir', dir);
   // The variadic tool flags would swallow a trailing prompt, so the prompt goes in on stdin.
-  args.push('--allowedTools', ALLOWED_TOOLS.join(','), '--disallowedTools', denied.join(','));
+  args.push('--allowedTools', [...ALLOWED_TOOLS, ...(built ? BUILD_TOOLS : [])].join(','), '--disallowedTools', denied.join(','));
   return args;
 }
 
 // ---------------------------------------------------------------------------------------------
 // The overlay
 
-const OVERLAY_DIR = '.claude/skills/cairn-docs/';
+const OVERLAY_DIR = '.claude/skills/cairn-writing-docs/';
+/** The skill's folder before pass 3 renamed it, so a fixture at an older pin loses it before an arm's overlay lands. */
+const LEGACY_OVERLAY_DIR = '.claude/skills/cairn-docs/';
 const OVERLAY_FILES = ['.claude/agents/docs-fact-checker.md', 'CLAUDE.md'];
 const OVERLAY_RULE = /^\.claude\/rules\/docs[^/]*\.md$/;
 
@@ -161,8 +197,8 @@ const OVERLAY_RULE = /^\.claude\/rules\/docs[^/]*\.md$/;
  */
 export function overlayPaths(names) {
   return names.filter((n) => {
-    if (n.startsWith(EVALS_DIR_REL)) return false;
-    return n.startsWith(OVERLAY_DIR) || OVERLAY_FILES.includes(n) || OVERLAY_RULE.test(n);
+    if (n.startsWith(EVALS_DIR_REL) || n.startsWith(`${LEGACY_OVERLAY_DIR}evals/`)) return false;
+    return n.startsWith(OVERLAY_DIR) || n.startsWith(LEGACY_OVERLAY_DIR) || OVERLAY_FILES.includes(n) || OVERLAY_RULE.test(n);
   });
 }
 
@@ -184,13 +220,13 @@ function removeFiles(root, paths) {
 }
 
 /**
- * Delete the skill's files from a fixture, leaving `evals/`, so the arm runs without `cairn-docs`.
+ * Delete the skill's files from a fixture, leaving `evals/`, so the arm runs without `cairn-writing-docs`.
  * `.claude/skills/` stays even when empty: a session in a linked worktree with no such directory
- * loads the main checkout's skills instead, and the control arm would see `cairn-docs`.
+ * loads the main checkout's skills instead, and the control arm would see `cairn-writing-docs`.
  * @param {string} root
  */
 export function deleteSkill(root) {
-  removeFiles(root, overlayFilesIn(root).filter((p) => p.startsWith(OVERLAY_DIR)));
+  removeFiles(root, overlayFilesIn(root).filter((p) => p.startsWith(OVERLAY_DIR) || p.startsWith(LEGACY_OVERLAY_DIR)));
   mkdirSync(join(root, '.claude/skills'), { recursive: true });
 }
 
@@ -313,11 +349,14 @@ export function summarizeStream(text) {
       }
     }
   }
+  const u = result?.usage;
   return {
-    init: init && { apiKeySource: init.apiKeySource, skills: init.skills ?? [], cwd: init.cwd },
+    init: init && { apiKeySource: init.apiKeySource, skills: init.skills ?? [], cwd: init.cwd, plugins: (init.plugins ?? []).map((p) => p.name) },
     result: result && {
       isError: Boolean(result.is_error), subtype: result.subtype,
       denials: result.permission_denials ?? [], reply: result.result ?? lastText,
+      durationMs: result.duration_ms ?? null,
+      usage: u ? { input: u.input_tokens ?? 0, cacheCreation: u.cache_creation_input_tokens ?? 0, output: u.output_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0 } : null,
     },
     tools,
     reply: result?.result ?? lastText,
@@ -337,30 +376,85 @@ export function sessionErrored(s) {
 
 /**
  * Why a control arm's session is a harness fault: the skill was listed at init, or a call to it
- * did not fail as an unknown skill. Null when the arm is truly without the skill.
+ * did not fail as an unknown skill. A call with no result was cut off, so it counts as neither.
+ * Null when the arm is truly without the skill.
  * @param {ReturnType<typeof summarizeStream>} s
+ * @param {string[]} [names] the skill names the control must lack
  * @returns {string | null}
  */
-export function controlFault(s) {
-  if (s.init?.skills.includes('cairn-docs')) return 'the control arm lists cairn-docs in its session skills';
-  const leaked = s.tools.find((t) => t.name === 'Skill' && /cairn-docs/.test(t.input.skill ?? '') && !/Unknown skill/.test(t.output));
-  return leaked ? `the control arm launched cairn-docs: ${leaked.output.replace(/\s+/g, ' ').slice(0, 120)}` : null;
+export function controlFault(s, names = ['cairn-writing-docs']) {
+  const listed = names.find((n) => s.init?.skills.includes(n));
+  if (listed) return `the control arm lists ${listed} in its session skills`;
+  const leaked = s.tools.find((t) => t.name === 'Skill' && names.some((n) => (t.input.skill ?? '').includes(n)) && t.output && !/Unknown skill/.test(t.output));
+  return leaked ? `the control arm launched ${leaked.input.skill}: ${leaked.output.replace(/\s+/g, ' ').slice(0, 120)}` : null;
 }
 
 /**
- * The denied commands that are harness faults: a gate or check command the process needs.
+ * What a finished session's stream says before any grading: null when it is gradable, otherwise
+ * the `{ status, detail }` of the error or fault. A control leak is read before an error, so a
+ * control session that errored after launching the skill still shows the leak (#93).
+ * @param {{ s: ReturnType<typeof summarizeStream>, control: boolean, skills: string[], timedOut: boolean, code?: number | null, signal?: string | null, plugins?: { standards?: number } }} a
+ * @returns {{ status: string, detail: string } | null}
+ */
+export function sessionVerdict({ s, control, skills, timedOut, code = null, signal = null, plugins }) {
+  if (control) {
+    const leak = controlFault(s, skills);
+    if (leak) return { status: 'fault', detail: leak };
+  }
+  if (timedOut || sessionErrored(s)) return { status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
+  if (!control && skills.length && !skills.some((n) => s.init?.skills.includes(n))) {
+    return { status: 'fault', detail: `none of ${skills.join(', ')} is among the session skills` };
+  }
+  if (plugins?.standards !== undefined) {
+    const n = (s.init?.plugins ?? []).filter((p) => p === 'standards').length;
+    if (n !== plugins.standards) return { status: 'fault', detail: `${n} standards plugin(s) loaded, expected ${plugins.standards}` };
+  }
+  return null;
+}
+
+/**
+ * The record for a trial that threw, keeping the end-of-session record the trial had written
+ * before the throw (#92).
+ * @param {{ caseDef: { id: string }, arm: { label: string }, trial: number }} job
+ * @param {Error & { record?: { end?: object, transcript?: string } }} e
+ */
+export function faultRecord(job, e) {
+  return {
+    caseId: job.caseDef.id, arm: job.arm.label, trial: job.trial, status: 'fault', detail: `runner: ${e.message}`,
+    transcript: e.record?.transcript ?? '', end: e.record?.end, checks: [], judge: [],
+  };
+}
+
+/**
+ * Whether a session stopped on the account's usage limit, which pauses the run for a resume.
+ * @param {ReturnType<typeof summarizeStream>} s
+ */
+export function isUsageLimit(s) {
+  return Boolean(s.result?.isError) && /usage limit|limit reached|rate.?limit|resets? (at )?\d/i.test(s.result.reply ?? '');
+}
+
+/** Tokens as the lean bar counts them: input plus cache creation plus output, with cache reads reported beside. */
+export function tokensOf(u) {
+  return u ? u.input + u.cacheCreation + u.output : 0;
+}
+
+/**
+ * The denied commands that are harness faults: a gate or check command the process needs, or on a
+ * site or tree fixture any build command.
  * @param {{ tool_name: string, tool_input?: { command?: string } }[]} denials
  * @param {{ id: string, name: string, input: any }[]} tools the session's calls, to see a denied command reissued
+ * @param {string} [fixture] the case's fixture kind
  * @returns {string[]}
  */
-export function deniedFaults(denials, tools = []) {
+export function deniedFaults(denials, tools = [], fixture = 'pin') {
   const faults = [];
   const deniedIds = new Set(denials.map((d) => d.tool_use_id));
   const lead = (c) => c.split(/[;&|]/)[0].trim();
+  const needed = fixture === 'pin' ? NEEDED_COMMAND : new RegExp(`${NEEDED_COMMAND.source}|${NEEDED_BUILD_COMMAND.source}`);
   for (const d of denials) {
     const cmd = d.tool_input?.command ?? '';
     if (d.tool_name !== 'Bash') continue;
-    if (!NEEDED_COMMAND.test(cmd)) continue;
+    if (!needed.test(cmd)) continue;
     // A compound command the permission check could not verify is denied whole. The session
     // reissuing its leading command and getting through leaves the process unharmed.
     const recovered = tools.some((t) => t.name === 'Bash' && !deniedIds.has(t.id) && lead(t.input.command ?? '') === lead(cmd));
@@ -562,6 +656,114 @@ export function renderTable(results, arms) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// The resume log, early stops, and medians
+
+/** The key a finished trial is skipped by on a resume. */
+export const trialKey = (caseId, arm, trial) => `${caseId}|${arm}|${trial}`;
+
+/** Append one finished trial to the run's JSONL log. */
+export function appendRow(file, row) {
+  appendFileSync(file, `${JSON.stringify(row)}\n`);
+}
+
+/**
+ * Read a run's JSONL log; a missing file is no rows, and a truncated last line is dropped.
+ * @param {string} file
+ * @returns {any[]}
+ */
+export function readRows(file) {
+  if (!existsSync(file)) return [];
+  const rows = [];
+  for (const line of readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    try { rows.push(JSON.parse(line)); } catch { /* a line cut off by a kill */ }
+  }
+  return rows;
+}
+
+/** The keys a resume skips: graded and fault rows are final, and an error row runs again. */
+export function finishedKeys(rows) {
+  return new Set(rows.filter((r) => r.status === 'graded' || r.status === 'fault').map((r) => trialKey(r.caseId, r.arm, r.trial)));
+}
+
+/**
+ * Why a job need not run, or null. A case counts when its baseline passes four of five, so a
+ * baseline that cannot reach that stops, and the treatment skips the case; the treatment arm stops
+ * at the failure that decides its bar (the case's `bar`, or four of five).
+ * @param {{ caseDef: { id: string, bar?: number }, arm: { label: string, role?: string }, trial: number }} job
+ * @param {{ caseId: string, arm: string, status: string, pass?: boolean }[]} rows
+ * @param {{ trials: number, earlyStop: boolean, baselineLabel?: string }} opts
+ * @returns {string | null}
+ */
+export function skipReason(job, rows, opts) {
+  if (!opts.earlyStop) return null;
+  const need = Math.ceil(0.8 * opts.trials);
+  const failures = (arm) => rows.filter((r) => r.caseId === job.caseDef.id && r.arm === arm && r.status === 'graded' && !r.pass).length;
+  const maxFail = opts.trials - need;
+  if (job.arm.role === 'baseline') {
+    return failures(job.arm.label) > maxFail ? 'baseline cannot count: it can no longer reach four of five' : null;
+  }
+  if (opts.baselineLabel && failures(opts.baselineLabel) > maxFail) return 'baseline did not pass four of five, so the case does not count';
+  const bar = job.caseDef.bar === 5 ? opts.trials : need;
+  return failures(job.arm.label) > opts.trials - bar ? `decided: the arm already missed the ${job.caseDef.bar === 5 ? 'five of five' : 'four of five'} bar` : null;
+}
+
+const median = (xs) => {
+  if (xs.length === 0) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+
+/**
+ * Tokens and wall time per case and arm: the median over passing trials, summed into a total, with
+ * the all-trial sums beside it (cache reads in their own column).
+ * @param {any[]} rows
+ * @param {string[]} arms
+ */
+export function medianTable(rows, arms) {
+  const out = ['| case | arm | median tokens | median seconds | all-trial tokens | all-trial seconds | cache reads |', '| --- | --- | --- | --- | --- | --- | --- |'];
+  const ids = [...new Set(rows.map((r) => r.caseId))];
+  for (const arm of arms) {
+    const tot = { tokens: 0, secs: 0, allTokens: 0, allSecs: 0, reads: 0 };
+    for (const id of ids) {
+      const graded = rows.filter((r) => r.caseId === id && r.arm === arm && r.status === 'graded' && r.usage);
+      if (graded.length === 0) continue;
+      const passing = graded.filter((r) => r.pass);
+      const mt = median(passing.map((r) => tokensOf(r.usage)));
+      const ms = median(passing.map((r) => (r.durationMs ?? 0) / 1000));
+      const allT = graded.reduce((n, r) => n + tokensOf(r.usage), 0);
+      const allS = graded.reduce((n, r) => n + (r.durationMs ?? 0) / 1000, 0);
+      const reads = graded.reduce((n, r) => n + r.usage.cacheRead, 0);
+      out.push(`| ${id} | ${arm} | ${Math.round(mt)} | ${Math.round(ms)} | ${Math.round(allT)} | ${Math.round(allS)} | ${reads} |`);
+      Object.assign(tot, { tokens: tot.tokens + mt, secs: tot.secs + ms, allTokens: tot.allTokens + allT, allSecs: tot.allSecs + allS, reads: tot.reads + reads });
+    }
+    out.push(`| total | ${arm} | ${Math.round(tot.tokens)} | ${Math.round(tot.secs)} | ${Math.round(tot.allTokens)} | ${Math.round(tot.allSecs)} | ${tot.reads} |`);
+  }
+  return out.join('\n');
+}
+
+/**
+ * Delete each listed path from an unpacked package, returning the ones that existed. A path that
+ * leaves the package folder is refused.
+ * @param {string} dir
+ * @param {string[]} paths package-relative paths
+ * @returns {string[]}
+ */
+export function stripPaths(dir, paths) {
+  const removed = [];
+  for (const p of paths) {
+    const abs = resolve(dir, p);
+    if (abs !== dir && !abs.startsWith(`${resolve(dir)}/`)) throw new Error(`${p} is outside the package`);
+    if (existsSync(abs)) {
+      rmSync(abs, { recursive: true, force: true });
+      removed.push(p);
+    }
+  }
+  return removed;
+}
+
+// ---------------------------------------------------------------------------------------------
 // Fixtures
 
 function mainCheckoutRoot(repo) {
@@ -601,19 +803,35 @@ async function commitAll(root, message) {
  */
 async function makeFixture({ repo, caseDef, pin, arm, name, modulesDir }) {
   const root = join(FIXTURE_ROOT, name);
-  await gitAsync(['worktree', 'add', '--detach', root, pin], repo);
-  liveFixtures.set(root, repo);
-  deleteOverlay(root);
-  await extractOverlay(repo, arm.ref, root);
-  if (arm.control) deleteSkill(root);
-  const base = await commitAll(root, 'fixture overlay');
+  const kind = caseDef.fixture ?? 'pin';
+  let base;
+  if (kind === 'site') {
+    // The arm's emitted site, copied; it is its own repository, so `git status` shows only the session's work.
+    await copySite(arm.site.dir, root);
+    liveFixtures.set(root, null);
+    await gitAsync(['init', '-q'], root);
+    base = await commitAll(root, 'fixture site');
+  } else if (kind === 'tree') {
+    // The arm's whole tree without the project settings, so the plugin arrives only through `--plugin-dir`.
+    await gitAsync(['worktree', 'add', '--detach', root, arm.sha], repo);
+    liveFixtures.set(root, repo);
+    rmSync(join(root, '.claude/settings.json'), { force: true });
+    base = await commitAll(root, 'fixture tree');
+  } else {
+    await gitAsync(['worktree', 'add', '--detach', root, pin], repo);
+    liveFixtures.set(root, repo);
+    deleteOverlay(root);
+    await extractOverlay(repo, arm.ref, root);
+    if (arm.control) deleteSkill(root);
+    base = await commitAll(root, 'fixture overlay');
+  }
   if (caseDef.setup) {
     const mod = await import(pathToFileURL(join(HERE, caseDef.setup)).href);
     mod.default(root);
     if ((await gitAsync(['status', '--porcelain'], root)).trim() === '') throw new Error(`setup ${caseDef.setup} changed nothing at ${pin}`);
   }
   const commit = await commitAll(root, 'fixture setup');
-  if (caseDef.install !== false) await exec('cp', ['-al', join(modulesDir, 'node_modules'), join(root, 'node_modules')]);
+  if (kind !== 'site' && caseDef.install !== false) await exec('cp', ['-al', join(modulesDir, 'node_modules'), join(root, 'node_modules')]);
   return { root, base, commit };
 }
 
@@ -640,14 +858,14 @@ const liveFixtures = new Map();
 /** Take a fixture out without blocking the event loop. */
 async function removeFixture(repo, root) {
   liveFixtures.delete(root);
-  await exec('git', ['worktree', 'remove', '--force', root], { cwd: repo }).catch(() => {});
+  if (repo) await exec('git', ['worktree', 'remove', '--force', root], { cwd: repo }).catch(() => {});
   await rm(root, { recursive: true, force: true });
 }
 
 /** The synchronous remover for before the pool starts and for the signal handler, which exits at once. */
 function removeFixtureSync(repo, root) {
   liveFixtures.delete(root);
-  spawnSync('git', ['worktree', 'remove', '--force', root], { cwd: repo });
+  if (repo) spawnSync('git', ['worktree', 'remove', '--force', root], { cwd: repo });
   rmSync(root, { recursive: true, force: true });
 }
 
@@ -808,7 +1026,7 @@ async function runTrial({ job, ctx, rerun = false }) {
   try {
     fixture = await makeFixture({
       repo: ctx.repo, caseDef, pin: caseDef.pinFull, arm,
-      name, modulesDir: ctx.modules.get(caseDef.pinFull),
+      name, modulesDir: ctx.modules.get(caseDef.fixture === 'tree' ? arm.sha : caseDef.pinFull),
     });
   } catch (e) {
     // makeFixture may have added the worktree before it threw; take it back out.
@@ -817,17 +1035,26 @@ async function runTrial({ job, ctx, rerun = false }) {
   }
   try {
     const prompt = renderPrompt(caseDef.prompt, { repo: fixture.root, base: fixture.base, commit: fixture.commit });
-    const { timedOut, code, signal, lastEvent, bytes } = await runSession({ cwd: fixture.root, args: claudeArgs(caseDef), prompt, file: transcript });
+    const kind = caseDef.fixture ?? 'pin';
+    // A tree case takes the standards plugin by directory, a site case from none; a pin case loads neither.
+    const pluginDirs = [ctx.pluginDir, kind === 'tree' ? ctx.treePluginDir : null].filter(Boolean);
+    const { timedOut, code, signal, lastEvent, bytes } = await runSession({ cwd: fixture.root, args: claudeArgs(caseDef, { pluginDirs }), prompt, file: transcript });
     record.end = endRecord({ code, signal, lastEvent, bytes, maxDelayNs: loopDelay.max });
     if (aborted) return { ...record, status: 'error', detail: `run aborted: ${aborted}` };
     const s = summarizeStream(readFileSync(transcript, 'utf8'));
-    if (timedOut || sessionErrored(s)) return { ...record, status: 'error', detail: timedOut ? 'timed out' : `${s.result?.subtype ?? 'no result'} (exit ${code}, signal ${signal})` };
-    const faults = deniedFaults(s.result.denials, s.tools);
+    if (isUsageLimit(s)) {
+      abortRun('usage limit');
+      return { ...record, status: 'error', detail: 'usage limit' };
+    }
+    record.usage = s.result?.usage ?? null;
+    record.durationMs = s.result?.durationMs ?? null;
     // The control arm removes the skill on purpose: there its presence is the fault.
-    if (arm.control) {
-      const leak = controlFault(s);
-      if (leak) return { ...record, status: 'fault', detail: leak };
-    } else if (!s.init?.skills.includes('cairn-docs')) return { ...record, status: 'fault', detail: 'cairn-docs missing from the session skills' };
+    const bad = sessionVerdict({
+      s, control: Boolean(arm.control), skills: ctx.skills[kind] ?? [], timedOut, code, signal,
+      plugins: kind === 'tree' && ctx.treePluginDir ? { standards: 1 } : kind === 'site' && !ctx.pluginDir ? { standards: 0 } : undefined,
+    });
+    if (bad) return { ...record, ...bad };
+    const faults = deniedFaults(s.result.denials, s.tools, kind);
     // A read-only case asks about work outside the repo, where a denied `ls` is the right outcome.
     if (!caseDef.readOnly && faults.length) return { ...record, status: 'fault', detail: `a needed command was denied: ${faults[0]}` };
 
@@ -837,7 +1064,7 @@ async function runTrial({ job, ctx, rerun = false }) {
     const diff = await gitAsync(['diff', '--cached', fixture.commit], fixture.root);
     writeFileSync(join(ctx.stateDir, `${stem}.diff`), diff);
 
-    const checks = [...caseDef.checks, ...(caseDef.readOnly ? [] : implicitDocsChecks(changed))];
+    const checks = [...caseDef.checks, ...(caseDef.readOnly || kind !== 'pin' ? [] : implicitDocsChecks(changed))];
     // The npm checks run first and asynchronously; runCheck then reads their results.
     const gates = new Map();
     for (const k of checks.filter((c) => c.type === 'npm')) gates.set(`npm run ${k.script}`, await runGate(fixture.root, `npm run ${k.script}`));
@@ -849,6 +1076,9 @@ async function runTrial({ job, ctx, rerun = false }) {
     }
     record.pass = record.checks.every((c) => c.ok) && caseDef.judge?.every((a) => record.judge.find((v) => v.n === a.n)?.verdict === 'pass') !== false;
     return record;
+  } catch (e) {
+    // The pool wrapper turns this into a fault row; the record keeps the session's end-of-session record (#92).
+    throw Object.assign(e, { record });
   } finally {
     if (!ctx.keep) await removeFixture(ctx.repo, fixture.root);
   }
@@ -872,13 +1102,16 @@ async function pool(items, limit, fn) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const data = JSON.parse(readFileSync(join(HERE, 'evals.json'), 'utf8'));
+  const dataFile = args.suite === 'site' ? 'evals-site.json' : 'evals.json';
+  const data = JSON.parse(readFileSync(join(HERE, dataFile), 'utf8'));
   const problems = validateEvals(data);
-  if (problems.length) throw new Error(`evals.json is invalid:\n${problems.join('\n')}`);
+  if (problems.length) throw new Error(`${dataFile} is invalid:\n${problems.join('\n')}`);
 
   const repo = git(['rev-parse', '--show-toplevel'], process.cwd()).trim();
   const mainRoot = mainCheckoutRoot(repo);
-  const cases = data.evals.filter((c) => (args.suite === 'all' || c.suite === args.suite) && (!args.caseId || c.id === args.caseId));
+  const kindOf = (c) => c.fixture ?? 'pin';
+  const cases = data.evals.filter((c) => (args.suite === 'all' || c.suite === args.suite)
+    && (!args.caseId || c.id === args.caseId) && (!args.fixture || kindOf(c) === args.fixture));
   if (cases.length === 0) throw new Error('no case matches');
   mkdirSync(FIXTURE_ROOT, { recursive: true });
   const conflicts = ancestorConflicts(FIXTURE_ROOT, homedir());
@@ -886,31 +1119,73 @@ async function main() {
   pruneFixtures(repo);
   const arms = args.refs.map((ref, i) => {
     const control = args.control && i === 0;
-    return { ref, control, label: control ? 'control' : ref.replace(/[^\w.-]/g, '_'), hash: `${overlayHash(repo, ref)}${control ? '-control' : ''}` };
+    const role = args.refs.length === 2 ? (i === 0 ? 'baseline' : 'treatment') : 'single';
+    return {
+      ref, control, role, label: control ? 'control' : ref.replace(/[^\w.-]/g, '_'),
+      sha: git(['rev-parse', `${ref}^{commit}`], repo).trim(), hash: `${overlayHash(repo, ref)}${control ? '-control' : ''}`,
+    };
   });
   const sessions = cases.length * arms.length * args.trials;
   if (sessions > SESSION_CAP && !args.max) throw new Error(`${sessions} case sessions is over the cap of ${SESSION_CAP}; pass --max to run anyway`);
 
-  const runId = newRunId();
-  const stateDir = makeRunDir(STATE_ROOT, runId);
-  for (const c of cases) c.pinFull = git(['rev-parse', c.pin], repo).trim();
+  const runId = args.resume ?? newRunId();
+  const stateDir = args.resume ? join(STATE_ROOT, runId) : makeRunDir(STATE_ROOT, runId);
+  if (args.resume && !existsSync(stateDir)) throw new Error(`no run ${runId} to resume`);
+  const rowsFile = join(stateDir, 'results.jsonl');
+  const rows = readRows(rowsFile);
+  if (args.reuseBaseline) {
+    // The smoke run's baseline trials stand as this run's, so the A/B does not repeat them.
+    const reused = readRows(join(STATE_ROOT, args.reuseBaseline, 'results.jsonl')).filter((r) => r.arm === arms[0].label && r.status === 'graded');
+    for (const r of reused) if (!rows.some((x) => trialKey(x.caseId, x.arm, x.trial) === trialKey(r.caseId, r.arm, r.trial))) {
+      const row = { ...r, reused: args.reuseBaseline };
+      appendRow(rowsFile, row);
+      rows.push(row);
+    }
+  }
+  const finished = finishedKeys(rows);
   const modules = new Map();
-  for (const c of cases.filter((c) => c.install !== false)) {
+  for (const c of cases.filter((c) => kindOf(c) === 'pin')) c.pinFull = git(['rev-parse', c.pin], repo).trim();
+  for (const c of cases.filter((c) => kindOf(c) === 'pin' && c.install !== false)) {
     if (!modules.has(c.pinFull)) modules.set(c.pinFull, prepareModules(repo, mainRoot, c.pinFull));
   }
+  // A site arm builds once: its tarballs, emitted template, install, and guidance, cached by ref and strip list.
+  const strip = args.strip ? readStripList(resolve(args.strip)) : [];
+  if (cases.some((c) => kindOf(c) === 'site')) {
+    for (const arm of arms) {
+      if (!modules.has(arm.sha)) modules.set(arm.sha, prepareModules(repo, mainRoot, arm.sha));
+      arm.site = await buildSiteBase({ treeDir: modules.get(arm.sha), sha: arm.sha, cacheRoot: SITE_CACHE, strip, stripPathsFn: stripPaths });
+      console.error(`site ${arm.label}: ${arm.site.dir}${arm.site.removed.length ? `, stripped ${arm.site.removed.join(', ')}` : ''}`);
+    }
+  }
+  if (cases.some((c) => kindOf(c) === 'tree')) {
+    for (const arm of arms) if (!modules.has(arm.sha)) modules.set(arm.sha, prepareModules(repo, mainRoot, arm.sha));
+  }
   const dotfiles = spawnSync('git', ['-C', join(homedir(), '.dotfiles'), 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
-  const ctx = { repo, runId, stateDir, modules, judgeCalls: 0, keep: args.keep };
+  const dirSha = (d) => (d ? git(['-C', d, 'rev-parse', '--short', 'HEAD'], repo).trim() : null);
+  const ctx = {
+    repo, runId, stateDir, modules, judgeCalls: 0, keep: args.keep,
+    pluginDir: args.pluginDir && resolve(args.pluginDir), treePluginDir: args.treePluginDir && resolve(args.treePluginDir),
+    skills: data.expectSkills ?? { pin: [data.skill_name] },
+  };
 
   const jobs = [];
-  for (const caseDef of cases) for (const arm of arms) for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial });
-  console.error(`run ${runId}: ${sessions} case sessions, state in ${stateDir}`);
+  const add = (caseDef, arm) => { for (let trial = 1; trial <= args.trials; trial++) jobs.push({ caseDef, arm, trial }); };
+  if (args.baselineFirst) for (const arm of arms) for (const caseDef of cases) add(caseDef, arm);
+  else for (const caseDef of cases) for (const arm of arms) add(caseDef, arm);
+  const todo = jobs.filter((j) => !finished.has(trialKey(j.caseDef.id, j.arm.label, j.trial)));
+  const stop = { trials: args.trials, earlyStop: args.baselineFirst, baselineLabel: arms.length === 2 ? arms[0].label : undefined };
+  console.error(`run ${runId}: ${sessions} case sessions (${todo.length} to run), state in ${stateDir}`);
   // Enabled here, after the synchronous setup, so a cold `npm ci` does not show as a pool stall.
   loopDelay.enable();
-  const results = await pool(jobs, CONCURRENCY, async (job) => {
+  const skipped = [];
+  await pool(todo, args.concurrency, async (job) => {
+    const why = skipReason(job, rows, stop);
+    if (why) {
+      skipped.push({ caseId: job.caseDef.id, arm: job.arm.label, trial: job.trial, status: 'skipped', detail: why });
+      return null;
+    }
     // An exception in one trial is that trial's fault, not the run's: the table keeps every other row.
-    const attempt = (rerun) => runTrial({ job, ctx, rerun }).catch((e) => ({
-      caseId: job.caseDef.id, arm: job.arm.label, trial: job.trial, status: 'fault', detail: `runner: ${e.message}`, transcript: '', checks: [], judge: [],
-    }));
+    const attempt = (rerun) => runTrial({ job, ctx, rerun }).catch((e) => faultRecord(job, e));
     let r = await attempt(false);
     // A headless session sometimes exits 0 with no result event; the standing answer reruns an
     // errored session once, and a second error is reported as an error.
@@ -919,23 +1194,37 @@ async function main() {
       r = { ...(await attempt(true)), lost: { transcript: r.transcript, ...r.end } };
     }
     console.error(`  ${r.caseId} ${r.arm} #${r.trial}: ${r.status}${r.status === 'graded' ? (r.pass ? ' pass' : ' FAIL') : ` (${r.detail})`}`);
+    // A trial an abort cut short is not a result; a resume runs it again.
+    if (!aborted) {
+      appendRow(rowsFile, r);
+      rows.push(r);
+    }
     return r;
   });
 
   if (aborted) {
-    console.error(`run aborted: ${aborted}`);
-    process.exitCode = 3;
+    console.error(aborted === 'usage limit'
+      ? `run paused on the usage limit: resume after the reset with --resume ${runId}`
+      : `run aborted: ${aborted}`);
+    process.exitCode = aborted === 'usage limit' ? 4 : 3;
     return;
   }
-  const table = renderTable(results, arms.map((a) => a.label));
+  // A resumed error row is superseded by the rerun, so the table keeps the last row of each trial.
+  const results = [...new Map(rows.map((r) => [trialKey(r.caseId, r.arm, r.trial), r])).values()];
+  const armLabels = arms.map((a) => a.label);
+  const table = renderTable(results, armLabels);
   const header = [
     `Run ${runId}: ${sessions} case sessions, ${ctx.judgeCalls} judge calls (not counted against the cap).`,
-    ...arms.map((a) => `Arm \`${a.label}\`: ref ${git(['rev-parse', '--short', a.ref], repo).trim()}, overlay ${a.hash}.`),
+    ...arms.map((a) => `Arm \`${a.label}\`: ref ${a.sha.slice(0, 9)}, overlay ${a.hash}.`),
+    ...(ctx.treePluginDir ? [`standards plugin at ${dirSha(ctx.treePluginDir)}.`] : []),
+    ...(strip.length ? [`Stripped from the engine tarball: ${strip.join(', ')}.`] : []),
+    ...(skipped.length ? [`${skipped.length} sessions skipped by the early-stop rules.`] : []),
     `main checkout ${git(['rev-parse', '--short', 'HEAD'], mainRoot).trim()}, ~/.dotfiles ${dotfiles}.`,
   ].join('\n');
-  writeFileSync(join(stateDir, 'results.json'), JSON.stringify({ runId, arms, results }, null, 2));
-  writeFileSync(join(stateDir, 'table.md'), `${header}\n\n${table}\n`);
-  console.log(`${header}\n\n${table}`);
+  const medians = medianTable(results, armLabels);
+  writeFileSync(join(stateDir, 'results.json'), JSON.stringify({ runId, arms: arms.map(({ site, ...a }) => a), results, skipped }, null, 2));
+  writeFileSync(join(stateDir, 'table.md'), `${header}\n\n${table}\n\n${medians}\n`);
+  console.log(`${header}\n\n${table}\n\n${medians}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

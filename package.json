@@ -89,7 +89,7 @@
     "test:integration": "vitest run --project integration",
     "test:component": "node scripts/test/contained.mjs vitest run --project component",
     "emit-template": "node scripts/build/emit-template.mjs",
-    "test:emit": "node --test scripts/build/emit-template.test.mjs .claude/skills/cairn-docs/evals/run.test.mjs",
+    "test:emit": "node --test scripts/build/emit-template.test.mjs .claude/skills/cairn-writing-docs/evals/run.test.mjs .claude/skills/cairn-writing-docs/evals/run-site.test.mjs",
     "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs",
     "emit:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs",
     "check:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs --check",

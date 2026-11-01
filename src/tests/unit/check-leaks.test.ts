@@ -17,7 +17,7 @@ import {
 
 const T1 = profileFor('docs/reference/sveltekit.md')!;
 const T2 = profileFor('skills/cairn-extend/SKILL.md')!;
-const T3 = profileFor('.claude/skills/cairn-docs/references/docs-register.md')!;
+const T3 = profileFor('.claude/skills/cairn-writing-docs/references/docs-register.md')!;
 const TSDOC = profileFor('src/lib/admin-toolkit/format.ts')!;
 const CHANGELOG = profileFor('CHANGELOG.md')!;
 
@@ -53,7 +53,7 @@ describe('profileFor', () => {
       expect(profileFor(path)?.tier, path).toBe('T2');
     }
     for (const path of [
-      '.claude/skills/cairn-docs/references/docs-register.md',
+      '.claude/skills/cairn-writing-docs/references/docs-register.md',
     ]) {
       expect(profileFor(path), path).toEqual({ tier: 'T3', classes: ['C1', 'C2', 'C4'], mode: 'whole' });
     }

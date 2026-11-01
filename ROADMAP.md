@@ -940,7 +940,7 @@ The original decision framing, for the record:
 - **cairn-pub adopts Vale and routes its own prose to the developer brief (style-guide sync ruling
   13, 2026-09-28).** cairn.pub's own prose, everything it serves outside the engine's shipped doc
   arms, takes the Google base, and the workstation `writing-voice` skill already routes it to the
-  developer brief in `.claude/skills/cairn-docs/references/docs-register.md`. No gate reads it: cairn-pub carries no Vale
+  developer brief in `.claude/skills/cairn-writing-docs/references/docs-register.md`. No gate reads it: cairn-pub carries no Vale
   config. The work is cairn-pub's: vendor the same Google package and `Cairn.*` styles this repo
   pins (Vale 3.23.0), point its repo guidance at the brief, and fix what the first run reports.
   Trigger: cairn-pub's next pass that edits its own prose, or its pin bump to the rebuilt arms.

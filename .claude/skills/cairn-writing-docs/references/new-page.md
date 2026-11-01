@@ -25,7 +25,7 @@ Run both questions before you write a sentence.
 
 ## 2. The track and the page type
 
-- The track follows the reader. `.claude/skills/cairn-docs/references/docs-register.md`, "The tracks", says who each track
+- The track follows the reader. `.claude/skills/cairn-writing-docs/references/docs-register.md`, "The tracks", says who each track
   is for. `docs/editors/` is for people writing in `/admin` with no terminal. `docs/extend/` is for
   a developer building on the seams. `docs/reference/` is one page per export subpath and is gated.
 - The page type follows the job: a task guide, a concept page, a reference entry, or a tutorial.
@@ -52,7 +52,7 @@ other pages.
 
 ## 5. Draft and check
 
-1. Draft in the voice of the track: `.claude/skills/cairn-docs/references/docs-register.md`, "Voice" and "Tells" in the
+1. Draft in the voice of the track: `.claude/skills/cairn-writing-docs/references/docs-register.md`, "Voice" and "Tells" in the
    brief for the track, then `~/.claude/docs/voice/technical-doc-web.md` for developer pages or
    `~/.claude/docs/voice/editor.md` for editor pages.
 2. Link the new page from its track's index and from the pages that hand a reader to it.

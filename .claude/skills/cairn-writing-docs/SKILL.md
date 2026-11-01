@@ -1,5 +1,5 @@
 ---
-name: cairn-docs
+name: cairn-writing-docs
 description: Changes cairn-cms documentation the docs-as-code way: pages under docs/ change in the same PR as the code, pass the docs gate and a fresh fact-check, and go to Geoff as a docs review. Use when code changes documented behavior (renaming, adding, or removing an export, option, type, or CLI flag, or changing a default, a return value, or an error), when a docs page is wrong or missing something, when writing, splitting, or restructuring a page, or when queueing or answering a docs review. Not for CHANGELOG entries, code comments, specs, plans, or site content.
 ---
 
@@ -71,7 +71,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
 
 - Geoff's edit in the review is final. Keep it.
 - A correction to wording goes through the `survey` skill, which logs it.
-- A change to cairn's voice is a PR to `.claude/skills/cairn-docs/references/docs-register.md`.
+- A change to cairn's voice is a PR to `.claude/skills/cairn-writing-docs/references/docs-register.md`.
 - A change to a base standard (Google, Microsoft) is a PR to Survey.
 
 ## When the process misfires
@@ -82,7 +82,7 @@ not run), file a cairn `BACKLOG.md` item tagged `#docs-process` with the session
 
 ## Sources to route to, never copy
 
-- `.claude/skills/cairn-docs/references/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting
+- `.claude/skills/cairn-writing-docs/references/docs-register.md`: "The tracks", "The page anatomies", "Names", and the drafting
   brief for the page's track.
 - `~/.claude/docs/voice/technical-doc-web.md` for developer pages, and
   `~/.claude/docs/voice/editor.md` for editor pages.

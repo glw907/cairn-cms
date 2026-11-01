@@ -40,7 +40,7 @@ The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, a
 ## Close checklist
 
 - **Live admin smoke** on `auth-data`, against a real Worker (`wrangler dev`) with a session minted by inserting a D1 row, then the magic-link round trip in headless Chromium, reading the link from wrangler's local `send_email` output. Follow `references/admin-smoke-test.md`.
-- **Documentation is a pass dimension.** Fix every doc the change touched, inbound references included. A change to documented behavior fixes its page in the same commit (the `cairn-docs` skill). Grep a removed or renamed symbol across `docs/` and `README.md` and repoint every hit.
+- **Documentation is a pass dimension.** Fix every doc the change touched, inbound references included. A change to documented behavior fixes its page in the same commit (the `cairn-writing-docs` skill). Grep a removed or renamed symbol across `docs/` and `README.md` and repoint every hit.
 - **Changelog and version records.** A behavior change updates `CHANGELOG.md` under `## Unreleased` and the per-version record (`docs/extend/migration-notes.md`, with `docs/extend/upgrade-cairn.md`). A breaking change carries one `Consumers must:` line per consumer action.
 - **Public surface.** An intended change runs `npm run check:surface -- --update` and commits `scripts/checks/api-surface.md`.
 - **Rulings.** A ruling on a consultation item updates `docs/internal/engine-rulings.md`.

@@ -23,9 +23,9 @@ function overlayRepo() {
   git(dir, 'init', '-q', '-b', 'main');
   git(dir, 'config', 'user.email', 't@t');
   git(dir, 'config', 'user.name', 't');
-  put('.claude/skills/cairn-docs/SKILL.md', 'old skill');
-  put('.claude/skills/cairn-docs/references/old.md', 'old ref');
-  put('.claude/skills/cairn-docs/evals/keep.json', 'keep');
+  put('.claude/skills/cairn-writing-docs/SKILL.md', 'old skill');
+  put('.claude/skills/cairn-writing-docs/references/old.md', 'old ref');
+  put('.claude/skills/cairn-writing-docs/evals/keep.json', 'keep');
   put('.claude/rules/docs.md', 'old rule');
   put('.claude/rules/other.md', 'unrelated');
   put('CLAUDE.md', 'old claude');
@@ -33,9 +33,9 @@ function overlayRepo() {
   git(dir, 'add', '-A');
   git(dir, 'commit', '-qm', 'old');
   git(dir, 'tag', 'old');
-  put('.claude/skills/cairn-docs/SKILL.md', 'new skill');
-  rmSync(join(dir, '.claude/skills/cairn-docs/references'), { recursive: true });
-  put('.claude/skills/cairn-docs/evals/new-eval-file.json', 'must not extract');
+  put('.claude/skills/cairn-writing-docs/SKILL.md', 'new skill');
+  rmSync(join(dir, '.claude/skills/cairn-writing-docs/references'), { recursive: true });
+  put('.claude/skills/cairn-writing-docs/evals/new-eval-file.json', 'must not extract');
   put('.claude/rules/docs-with-code.md', 'new rule');
   put('.claude/agents/docs-fact-checker.md', 'agent');
   put('CLAUDE.md', 'new claude');
@@ -47,12 +47,12 @@ function overlayRepo() {
 
 test('overlayPaths takes the skill, agent, docs rules, and CLAUDE.md, and never evals', () => {
   const names = [
-    '.claude/skills/cairn-docs/SKILL.md', '.claude/skills/cairn-docs/evals/run.mjs', '.claude/skills/other/SKILL.md',
+    '.claude/skills/cairn-writing-docs/SKILL.md', '.claude/skills/cairn-writing-docs/evals/run.mjs', '.claude/skills/other/SKILL.md',
     '.claude/agents/docs-fact-checker.md', '.claude/agents/other.md', '.claude/rules/docs.md',
     '.claude/rules/docs-with-code.md', '.claude/rules/evals-docs-process.md', 'CLAUDE.md', 'docs/CLAUDE.md',
   ];
   assert.deepEqual(overlayPaths(names), [
-    '.claude/skills/cairn-docs/SKILL.md', '.claude/agents/docs-fact-checker.md', '.claude/rules/docs.md',
+    '.claude/skills/cairn-writing-docs/SKILL.md', '.claude/agents/docs-fact-checker.md', '.claude/rules/docs.md',
     '.claude/rules/docs-with-code.md', 'CLAUDE.md',
   ]);
 });
@@ -64,19 +64,19 @@ test('delete-then-extract swaps the arm in, drops what the arm lacks, and leaves
     git(repo, 'worktree', 'add', '--detach', join(root, 'wt'), 'old');
     const wt = join(root, 'wt');
     deleteOverlay(wt);
-    assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/SKILL.md')), false);
-    assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/references')), false);
-    assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/evals/keep.json')), true);
+    assert.equal(existsSync(join(wt, '.claude/skills/cairn-writing-docs/SKILL.md')), false);
+    assert.equal(existsSync(join(wt, '.claude/skills/cairn-writing-docs/references')), false);
+    assert.equal(existsSync(join(wt, '.claude/skills/cairn-writing-docs/evals/keep.json')), true);
     assert.equal(existsSync(join(wt, '.claude/rules/other.md')), true);
     assert.equal(existsSync(join(wt, '.claude/rules/docs.md')), false, 'the overlay set is derived from the tree listing');
     assert.equal(existsSync(join(wt, 'CLAUDE.md')), false);
     const got = await extractOverlay(repo, 'new', wt);
-    assert.equal(readFileSync(join(wt, '.claude/skills/cairn-docs/SKILL.md'), 'utf8'), 'new skill');
+    assert.equal(readFileSync(join(wt, '.claude/skills/cairn-writing-docs/SKILL.md'), 'utf8'), 'new skill');
     assert.equal(readFileSync(join(wt, 'CLAUDE.md'), 'utf8'), 'new claude');
     assert.equal(readFileSync(join(wt, '.claude/rules/docs-with-code.md'), 'utf8'), 'new rule');
     assert.equal(existsSync(join(wt, '.claude/rules/docs.md')), true, 'docs.md exists in both arms');
-    assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/references')), false, 'the old arm file is gone');
-    assert.equal(existsSync(join(wt, '.claude/skills/cairn-docs/evals/new-eval-file.json')), false, 'evals/ is never extracted');
+    assert.equal(existsSync(join(wt, '.claude/skills/cairn-writing-docs/references')), false, 'the old arm file is gone');
+    assert.equal(existsSync(join(wt, '.claude/skills/cairn-writing-docs/evals/new-eval-file.json')), false, 'evals/ is never extracted');
     assert.ok(got.includes('.claude/agents/docs-fact-checker.md'));
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -95,8 +95,8 @@ test('overlayHash differs between arms with different overlays and ignores other
 });
 
 test('parseArgs reads refs and flags and rejects a bad shape', () => {
-  assert.deepEqual(parseArgs(['main', '--suite', 'regression', '--trials', '5', '--max']),
-    { refs: ['main'], suite: 'regression', caseId: null, trials: 5, max: true, keep: false, control: false });
+  const a = parseArgs(['main', '--suite', 'regression', '--trials', '5', '--max']);
+  assert.deepEqual([a.refs, a.suite, a.caseId, a.trials, a.max, a.keep, a.control], [['main'], 'regression', null, 5, true, false, false]);
   assert.equal(parseArgs(['a', 'a', '--control']).control, true);
   assert.deepEqual(parseArgs(['a', 'b', '--case', 'x']).refs, ['a', 'b']);
   assert.throws(() => parseArgs([]), /one or two refs/);
@@ -129,9 +129,9 @@ test('deleteSkill removes the skill but keeps evals/, the agent, and CLAUDE.md',
   const repo = overlayRepo();
   try {
     deleteSkill(repo);
-    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/SKILL.md')), false);
-    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/references')), false);
-    assert.equal(existsSync(join(repo, '.claude/skills/cairn-docs/evals/keep.json')), true);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-writing-docs/SKILL.md')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-writing-docs/references')), false);
+    assert.equal(existsSync(join(repo, '.claude/skills/cairn-writing-docs/evals/keep.json')), true);
     assert.equal(existsSync(join(repo, 'CLAUDE.md')), true);
   } finally {
     rmSync(repo, { recursive: true, force: true });
@@ -141,26 +141,26 @@ test('deleteSkill removes the skill but keeps evals/, the agent, and CLAUDE.md',
 test('deleteSkill keeps an empty .claude/skills/ when the skill was all the directory held', () => {
   const root = mkdtempSync(join(tmpdir(), 'evals-skillonly-'));
   try {
-    mkdirSync(join(root, '.claude/skills/cairn-docs/references'), { recursive: true });
-    writeFileSync(join(root, '.claude/skills/cairn-docs/SKILL.md'), 'skill');
-    writeFileSync(join(root, '.claude/skills/cairn-docs/references/a.md'), 'ref');
+    mkdirSync(join(root, '.claude/skills/cairn-writing-docs/references'), { recursive: true });
+    writeFileSync(join(root, '.claude/skills/cairn-writing-docs/SKILL.md'), 'skill');
+    writeFileSync(join(root, '.claude/skills/cairn-writing-docs/references/a.md'), 'ref');
     deleteSkill(root);
     assert.equal(existsSync(join(root, '.claude/skills')), true);
-    assert.equal(existsSync(join(root, '.claude/skills/cairn-docs')), false);
+    assert.equal(existsSync(join(root, '.claude/skills/cairn-writing-docs')), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('controlFault flags a listed or launched cairn-docs and accepts an unknown-skill result', () => {
+test('controlFault flags a listed or launched cairn-writing-docs and accepts an unknown-skill result', () => {
   const stream = (skills, output) => summarizeStream([
     { type: 'system', subtype: 'init', apiKeySource: 'none', skills, cwd: '/w' },
-    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Skill', input: { skill: 'cairn-docs' } }] } },
+    { type: 'assistant', message: { content: [{ type: 'tool_use', id: 'u1', name: 'Skill', input: { skill: 'cairn-writing-docs' } }] } },
     { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'u1', content: output }] } },
   ].map((e) => JSON.stringify(e)).join('\n'));
-  assert.match(controlFault(stream(['cairn-docs'], 'Unknown skill: cairn-docs')), /lists cairn-docs/);
-  assert.match(controlFault(stream([], 'Launching skill: cairn-docs')), /launched cairn-docs/);
-  assert.equal(controlFault(stream([], 'Unknown skill: cairn-docs')), null);
+  assert.match(controlFault(stream(['cairn-writing-docs'], 'Unknown skill: cairn-writing-docs')), /lists cairn-writing-docs/);
+  assert.match(controlFault(stream([], 'Launching skill: cairn-writing-docs')), /launched cairn-writing-docs/);
+  assert.equal(controlFault(stream([], 'Unknown skill: cairn-writing-docs')), null);
 });
 
 test('rates drops errors from the denominator, and pass^k needs every graded trial to pass', () => {
@@ -184,9 +184,9 @@ test('renderTable prints one row per case and arm, linking each failing transcri
 
 const STREAM = [
   { type: 'system', subtype: 'hook_started' },
-  { type: 'system', subtype: 'init', apiKeySource: 'none', skills: ['cairn-docs', 'x'], cwd: '/w' },
+  { type: 'system', subtype: 'init', apiKeySource: 'none', skills: ['cairn-writing-docs', 'x'], cwd: '/w' },
   { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Read', input: { file_path: '/w/src/lib/sveltekit/content-routes-tidy.ts' } }] } },
-  { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Skill', input: { skill: 'cairn-docs' } }] } },
+  { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Skill', input: { skill: 'cairn-writing-docs' } }] } },
   { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: '/w/docs/extend/a.md' } }] } },
   { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'npm run check:docs-gate' } }] } },
   { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Task', input: { subagent_type: 'docs-fact-checker' } }] } },
@@ -201,7 +201,7 @@ const STREAM = [
 test('summarizeStream reads init, tool calls (Task as Agent), reply, and survives a truncated line', () => {
   const s = summarizeStream(STREAM);
   assert.equal(s.init.apiKeySource, 'none');
-  assert.deepEqual(s.init.skills, ['cairn-docs', 'x']);
+  assert.deepEqual(s.init.skills, ['cairn-writing-docs', 'x']);
   assert.deepEqual(s.tools.map((t) => t.name), ['Read', 'Skill', 'Edit', 'Bash', 'Agent']);
   assert.equal(s.reply, 'done');
   assert.equal(sessionErrored(s), false);
@@ -326,7 +326,7 @@ test('runCheck: transcript checks read the tool calls', () => {
   const viaShell = [{ name: 'Bash', input: { command: 'sed -n 40,60p src/a/tidy.ts' } }, { name: 'Edit', input: { file_path: '/w/docs/a.md' } }];
   assert.equal(runCheck({ type: 'read', path: 'src/a/tidy.ts', beforeEdit: true }, { ...ctx, tools: viaShell }).ok, true);
   assert.equal(runCheck({ type: 'read', path: 'src/a/other.ts', beforeEdit: true }, { ...ctx, tools: viaShell }).ok, false);
-  assert.equal(runCheck({ type: 'skillNotCalled', name: 'cairn-docs' }, ctx).ok, false);
+  assert.equal(runCheck({ type: 'skillNotCalled', name: 'cairn-writing-docs' }, ctx).ok, false);
   assert.equal(runCheck({ type: 'skillNotCalled', name: 'other-skill' }, ctx).ok, true);
 });
 

@@ -1,7 +1,7 @@
 You are the unattended monthly docs improvement cycle for cairn-cms, named cairn-docs-cycle-<YYYY-MM>,
 running from the cairn-cms main checkout (/var/home/glw907/Projects/cairn-cms unless the launcher
 names another). Nobody watches this session, so finish every step below. The cycle finds where the
-docs process (the cairn-docs skill, the docs-fact-checker agent, the docs path rules, CLAUDE.md)
+docs process (the cairn-writing-docs skill, the docs-fact-checker agent, the docs path rules, CLAUDE.md)
 went wrong in real sessions, sends Geoff the failures as one triage list, and acts on his ruling.
 You never change the skill, the agent, or a rule outside the change rule in
 .claude/rules/evals-docs-process.md, and you never spend API credit: unset ANTHROPIC_API_KEY before
@@ -42,7 +42,7 @@ Steps, in order:
    whose action is "No qualifying session since <since>", proposed drop.
 
 2. Find the first failure in each session. Read the session for where the docs process first went
-   wrong, since a later error often follows from it. The process is the cairn-docs skill's steps:
+   wrong, since a later error often follows from it. The process is the cairn-writing-docs skill's steps:
    the skill loaded before the first docs edit, every page found by the behavior's words and not the
    name alone, history left alone, each false sentence fixed and nothing else touched, the docs gate
    run, docs-fact-checker dispatched in a fresh context, the review queued. A stale page left behind
@@ -51,16 +51,16 @@ Steps, in order:
    two pieces of evidence each. A session with no failure is not noted. Cite sessions by id, and
    never quote a private path, a secret, or a person.
 
-3. Check the guidance. Reread each source in .claude/skills/cairn-docs/evals/sources.md and note any
+3. Check the guidance. Reread each source in .claude/skills/cairn-writing-docs/evals/sources.md and note any
    change that bears on the skill. Write today's date into the "Last read" column of each source you
    read, and commit that edit with step 7's hand-over.
 
 4. Run both suites on main with the current default models: from the main checkout, start `node
-   .claude/skills/cairn-docs/evals/run.mjs main --suite all` as a background command and wait for it
+   .claude/skills/cairn-writing-docs/evals/run.mjs main --suite all` as a background command and wait for it
    to exit (it takes well over ten minutes). Read the transcript of every failing trial before you
    trust its row, and exclude errors and harness faults per the runner's table. Note the models
    (the session model, the judge model, and your own) and any difference from the newest entry in
-   .claude/skills/cairn-docs/evals/history.md: a model change is its own row. A capability case that
+   .claude/skills/cairn-writing-docs/evals/history.md: a model change is its own row. A capability case that
    passed every trial in the newest history entry and in this run graduates to regression, as a row.
    In a dry run, skip this step and say so in the triage file's lede.
 
@@ -102,7 +102,7 @@ Steps, in order:
    Merge each PR the decision approves, as that skill says, and record each verdict in its row's
    outcome.
 
-7. Write one history entry in .claude/skills/cairn-docs/evals/history.md in the entry format it
+7. Write one history entry in .claude/skills/cairn-writing-docs/evals/history.md in the entry format it
    holds: the month, the models, the sample size, both suites' scores, and each row with its call and
    outcome. Land it with the sources.md dates and any new case as a hand-over (pass-core "Ledgers"):
    a branch docs-cycle-<YYYY-MM> in a worktree off origin/main, the cairn fast lane through

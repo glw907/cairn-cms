@@ -54,7 +54,7 @@ the page and what they already have.
 A step that assumes a terminal fails an editor page. A step that assumes reading source
 code fails an admin page. If a page's steps split across two readers, it is two pages, not
 one page trying to serve both; write each half in its track rather than switching register
-mid-page. `.claude/skills/cairn-docs/references/docs-register.md` carries the full track profiles, vocabulary
+mid-page. `.claude/skills/cairn-writing-docs/references/docs-register.md` carries the full track profiles, vocabulary
 contract, and the counterpart question a reviewer grades a page against; read it before
 writing a page a reviewer will grade on register.
 
@@ -156,7 +156,7 @@ To pass the docs gate, make these changes together:
   because its reader is a non-technical writer. All four directories ship inside the npm
   package, so a docs edit is a product change, and a public-API change is not done until its
   reference page matches. `npm run check:reference` enforces the coverage. Each track is drafted
-  from its brief in `.claude/skills/cairn-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
+  from its brief in `.claude/skills/cairn-writing-docs/references/docs-register.md`, and the front door and `CHANGELOG.md` take
   the developer brief. Admin UI strings follow the Voice section of
   `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`.
 - Commit subjects are imperative, in the

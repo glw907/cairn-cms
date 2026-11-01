@@ -53,7 +53,7 @@ describe('the table', () => {
     ['scripts', 'eslint.config.js', 'eslint.config.js'],
     ['scripts', 'vitest.config.ts', 'vitest.config.ts'],
     ['scripts', 'wrangler.test.jsonc', 'wrangler.test.jsonc'],
-    ['harness', '.claude/', '.claude/skills/cairn-docs/evals/run.mjs'],
+    ['harness', '.claude/', '.claude/skills/cairn-writing-docs/evals/run.mjs'],
     ['showcase', 'examples/showcase/', 'examples/showcase/playwright.config.ts'],
     ['showcase', 'templates/', 'templates/waymark/package.json'],
     ['showcase', 'packages/create-cairn-site/', 'packages/create-cairn-site/package.json'],
@@ -118,7 +118,7 @@ describe('the table', () => {
 });
 
 describe('a harness diff', () => {
-  const HARNESS_PATH = '.claude/skills/cairn-docs/evals/run.mjs';
+  const HARNESS_PATH = '.claude/skills/cairn-writing-docs/evals/run.mjs';
 
   it('selects the type check and test:emit, and no other static check', () => {
     expect(labelsFor(HARNESS_PATH).sort()).toEqual(['check', 'test:emit']);
@@ -273,12 +273,12 @@ describe('the component leg', () => {
   });
 
   it('skips for a harness-only diff', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs']).mode).toBe('skip');
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs']).mode).toBe('skip');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'README.md']).mode).toBe('skip');
   });
 
   it('runs a harness path beside a src path through the ordinary rule', () => {
-    expect(plan(['.claude/skills/cairn-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
+    expect(plan(['.claude/skills/cairn-writing-docs/evals/run.mjs', 'src/lib/log/index.ts']).mode).toBe('select');
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {

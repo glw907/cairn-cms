@@ -1780,8 +1780,8 @@ The original decision framing, for the record:
   repo), document the two as the first commands to run when something is wrong, and have the
   scaffolder's agent brief (`claude/CLAUDE.md`, which names neither today) tell the AI assistant
   to reach for them before guessing.
-- **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
-  toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
+- **The public-repo hardening pass (the repo is already public; `main` protection and the history
+  scan are the open work).** A real pass, not a settings toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
   (machine paths, account and database identifiers, infrastructure detail — each gets a deliberate
   public/redact/archive ruling); fork-PR CI hardening (Actions permissions, `pull_request` vs

@@ -19,6 +19,7 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/deletion-list.json'
@@ -35,6 +36,7 @@ on:
       - 'packages/create-cairn-site/fixtures/**'
       - 'src/lib/diagnostics/conditions.ts'
       - 'src/lib/log/events.ts'
+      # arrives with the admin arm (docs series, PR #160); the anchors fixes.go prints resolve against it
       - 'docs/admin/is-it-working.md'
       - 'scripts/checks/shipped-anchors.json'
       - 'scripts/checks/deletion-list.json'

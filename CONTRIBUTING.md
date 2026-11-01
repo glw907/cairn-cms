@@ -196,8 +196,8 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
   the npm package once each holds pages; the front door joins them when it is rebuilt. See
   "Choosing a docs track" above for what belongs where. `internal/` is maintainer-facing,
-  `specs/`, `plans/`, `research/`, and `archive/` hold the dated specs, plans, and reviews as
-  history, and `STATUS.md` is the rolling project status.
+  `plans/` holds the open plans until they land, and `STATUS.md` is the rolling project status. The
+  dated planning record is at the `pre-agent-first` tag.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.
 - `migrations/`: the D1 schema migrations for the auth store. They ship with the package.

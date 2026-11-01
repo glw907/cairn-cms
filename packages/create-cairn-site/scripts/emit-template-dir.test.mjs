@@ -142,7 +142,7 @@ async function put(root, relativePath, content) {
 
 test('findTemplateViolations flags an internal path and a verdict citation under src', async (t) => {
   const root = await tempDir(t);
-  await put(root, 'src/theme/a.css', '/* see docs/notes/design.md */\n');
+  await put(root, 'src/theme/a.css', '/* see docs/internal/notes.md */\n');
   await put(root, 'src/theme/b.css', '/* Verdict 7 (motion): a cross-fade */\n');
   await put(root, 'src/theme/clean.css', '/* a public reason, docs at https://cairn.pub */\n');
 

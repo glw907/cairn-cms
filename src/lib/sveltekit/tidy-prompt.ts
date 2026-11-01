@@ -1,5 +1,5 @@
 // The tidy system prompt: a stable always-on core plus a CONVENTIONS section built from the enabled
-// toggles only. The core is fixed and never interpolated, so it caches well and protects
+// toggles only. The core is fixed and never interpolated, so it protects
 // voice the same way on every request. The CONVENTIONS section emits one rule line per enabled
 // convention and nothing for a disabled one; with nothing enabled it is omitted entirely, and tidy
 // does only the objective fixes. tidy NEVER harmonizes to the author and never guesses a style: an
@@ -7,13 +7,13 @@
 // so the never-harmonize clause lives in the core where no config can strip it.
 //
 // This module is pure (no Worker, no model call) so the prompt contract is unit-testable. The prompt
-// STRING is product content transcribed from the spec; it carries whatever the spec specifies.
+// STRING is product content; the tests pin its contract.
 import type { TidyConventions } from '../nav/site-config.js';
 
 export { defaultTidyConventions } from '../nav/site-config.js';
 export type { TidyConventions } from '../nav/site-config.js';
 
-// The stable always-on core, verbatim in intent from spec 2.3.1. Prepended to every request and
+// The stable always-on core. Prepended to every request and
 // never interpolated. The objective fixes (WHAT TO FIX) are governed here, not by a config toggle.
 const CORE = `You are a careful copy editor working inside a markdown CMS. You sit one notch above a proofreader and one notch below a line editor: fix what is wrong and leave what is a choice.
 
@@ -73,7 +73,7 @@ export function buildTidyPrompt(conventions: TidyConventions): string {
   return `${CORE}\n\n${section}`;
 }
 
-// One rule line per enabled convention, in the spec's order. A disabled (undefined or false) toggle
+// One rule line per enabled convention, in the order of the convention list. A disabled (undefined or false) toggle
 // contributes nothing. The Fixes group is not emitted here: the objective fixes live in the core, and
 // the group toggle is a screen control that does not strip the core.
 function conventionLines(c: TidyConventions): string[] {

@@ -7,7 +7,7 @@ description: Runs a pass of work on the cairn-cms engine from a clone: worktree 
 
 The `standards:running-passes` skill holds the lifecycle (design, plan, execute, close). This skill fills in what is specific to this repository. Where the two disagree, this one wins.
 
-State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLOG.md` (open items), and `ROADMAP.md` (what comes next). A plan is deleted when its pass closes. Cross-repo specs and plans live with their initiative, not here.
+State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLOG.md` (open items), and `ROADMAP.md` (what comes next). A plan is deleted when its pass closes. Cross-repo specs and plans live with their initiative, not here, and a cairn-only plan lives on its pass branch. The planning record up to 2026-10-31 is at the `pre-agent-first` tag.
 
 ## Set up a worktree
 

@@ -455,7 +455,8 @@ The original decision framing, for the record:
      the park message that just said the connection is in progress, and `chapter3.mjs:975` titles
      a step "Get a fresh Cloudflare API token" before `collectBuildsToken` has had the chance to
      revalidate a saved one, with no prompt and no browser trip. Both belong to this entry's root
-     rather than as unrelated copy bugs.
+     rather than as unrelated copy bugs. **Folded into #177 and done in the scaffold setup pass
+     (2026-11-01):** the hand-over, the park message, and the token step copy now say what the run does.
 
 - **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
   closing copy, filed off Pass D's Task 13 production gate (2026-08-14).**
@@ -469,7 +470,8 @@ The original decision framing, for the record:
   instruction. `chapter2.test.mjs:1830-1857`'s assertions
   (`/_dmarc\./`, `/reject/i`, `/newsletter/`) do not block a corrected string. Full evidence:
   https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md, claims-sweep rank 4 under
-  `docs/admin`.
+  `docs/admin`. **Folded into #184 and done in the scaffold setup pass (2026-11-01):** the closing copy
+  now tells the owner to authenticate each new service instead of adding it to the record.
 
 - **The media allow-list permits AVIF; no editor upload path can ever produce one, filed off Pass
   D's Task 13 production gate (2026-08-14).** `DEFAULT_ALLOWED_TYPES`
@@ -645,7 +647,10 @@ The original decision framing, for the record:
   existence or ownership probe. The consent copy does print the derived names, and frames reuse as
   reassurance ("deploying again later updates it") rather than warning that an existing resource
   belonging to a different site will be taken over. T3's review named this and proposed three
-  fixes; none landed. Account-safety, and it outlives the Node CLI.
+  fixes; none landed. Account-safety, and it outlives the Node CLI. **After the one release:** the
+  scaffold setup pass added a copy warning at the consent step (#177) and left the existence probe
+  here, so it lands once the real install has shown how a resume that crashed before its record saved
+  looks to the probe.
 
 ## Next
 
@@ -712,7 +717,8 @@ The original decision framing, for the record:
     `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
   - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
     `scripts/checks/check-leaks.mjs:473`; only `templates/waymark` is a template root), and its `src`
-    ships in the package's `files`. Trigger: before that package's first publish.
+    ships in the package's `files`. Trigger: before that package's first publish. **Done in the
+    scaffold setup pass (2026-11-01):** the check now scans the package.
   - `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt` still holds the maintainer's
     home path and a `glw907.workers.dev` URL (12 matches), lists the scaffold migrations as `0000` and
     `0003` with no `0001` (line 837), and ends the key step with "re-run this step" (line 942, where
@@ -1311,8 +1317,8 @@ The original decision framing, for the record:
   generated site so the filtered read still resolves locally. That same pass should also
   re-record every transcript fixture under `packages/create-cairn-site/test/fixtures/transcripts/`:
   the `01-*` fixtures still print "Node 22 or later" and `03-doctor-credentialed` predates the
-  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: the next
-  `create-cairn-site` pass.
+  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: after the one
+  release, since the design needs a live first deploy to see the order the secrets arrive in.
 
 - **`.toolkit-toolbar-select`'s and `.toolkit-toolbar-facet`'s edges fall under the WCAG 1.4.11
   3:1 non-text contrast floor** (shipped deferral, measured 2026-08-27, toolkit-seams pass;

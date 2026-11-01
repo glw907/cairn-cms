@@ -490,7 +490,7 @@ const VIOLATION_HEADINGS = [
   ['processReferences', 'pass-scoped process reference(s) in src/lib (keep the rationale, drop the session label)'],
   ['hostnames', 'unrecognized hostname literal(s) in src/lib (add a real public host to HOSTNAME_ALLOWED_HOSTS, or generalize a consumer-site mention)'],
   ['asNever', 'unescaped "as never" cast(s) in src/tests (use a typed fixture, or annotate a deliberate negative-path cast with "// idioms-allow: as-never  <reason>")'],
-  ['retiredFolder', 'tracked file(s) in the retired planning folder (a plan lives in its initiative's plans/ directory or on its pass branch)'],
+  ['retiredFolder', 'tracked file(s) in the retired planning folder (a plan lives in the initiative plans/ directory or on its pass branch)'],
 ];
 
 /**

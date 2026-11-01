@@ -21,8 +21,8 @@ send briefs to `docs/internal/consultations/`, and each needs a verdict before a
 ## Working here
 
 - `docs/STATUS.md` holds the current state and the next action. `BACKLOG.md` holds open items,
-  `ROADMAP.md` what comes next. The functional spec,
-  `docs/specs/2026-05-28-cairn-rebuild-functional-spec.md`, holds the locked decisions.
+  `ROADMAP.md` what comes next. Settled decisions are in `docs/internal/engine-rulings.md` and the
+  `cairn-judging-scope` skill.
 - Cut a worktree off `main` for each pass so `main` stays releasable. The `cairn-running-passes` skill
   has the setup command, the risk classes, and the close checklist. After each task, run
   `npm run lane:fast -- --range <base>..HEAD`. CI on the pull request carries the whole suites.

@@ -130,6 +130,23 @@ member login in the engine before it was caught and reverted. The tell was that 
 reviews all passed, each checking the design within the wrong premise. So the premise check, "is this
 cairn's job, and is it the leanest form?", runs before the correctness checks, on every spec.
 
+## Rebuild decisions that still bind
+
+The 2026-05-28 rebuild spec is gone (it lives at the `pre-agent-first` tag); three of its decisions
+are not derivable from the code and still hold.
+
+- **The engine is fat and the site is thin.** Anything security-critical or prone to fixes lives in
+  the engine, so a fix reaches every site on a version bump. Copied site code holds presentation
+  only: the component registry, icons, CSS, the adapter, and thin route shims.
+- **Classic `load` and form actions are the production path.** SvelteKit's remote functions stay out
+  while experimental; `ROADMAP.md` "Toward 1.0" decides at their stable release.
+- **Server code holds no module-level state.** Construct heavy objects inside the request handler,
+  never at module scope: Workers cap startup CPU at one second, and a module-level store leaks
+  between requests. Read `$app/state`, not `$app/stores`.
+- **No styled component library enters the package.** shadcn-svelte, Skeleton, and Flowbite each bring
+  a competing visual layer that fights the neutral admin theme. DaisyUI components are the default
+  for every admin surface (`cairn-following-admin-design`).
+
 ## How the boundary is held
 
 Machine-checkable boundaries live in gates, not prose (`check:reference`, `check:package`, the dev-fence

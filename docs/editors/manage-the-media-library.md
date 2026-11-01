@@ -117,7 +117,7 @@ Those keys work in grid view only. Escape clears the selection in either view.
 
 ## Delete images
 
-You can't undo a delete from the admin. The delete window says a developer can bring the image back later. If you delete something by mistake, ask your site owner. A developer can bring the image back.
+You can't undo a delete from the admin. If you delete something by mistake, ask your site owner. The delete window says a developer can bring the image back later.
 
 ### Delete several images
 

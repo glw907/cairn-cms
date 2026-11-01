@@ -1,6 +1,6 @@
-# Manage your tag vocabulary
+# Manage your tags
 
-Your tag vocabulary is the shared list of tags the whole site picks from. This page shows how to add a tag to the list, rename one, remove one that nothing uses, and bring in tags that entries already carry.
+Your tag list is the shared set of tags the whole site picks from. This page shows how to add a tag to the list, rename one, remove one that nothing uses, and bring in tags that entries already carry.
 
 You need to be signed in with a role that can use the **Tags** screen. Owners always can, and your site can limit the screen to certain roles. If **Tags** isn't in your sidebar, ask your site owner. This page doesn't cover putting a tag on an entry. You do that in the entry's **Details** panel, which [Write in the editor](write-in-the-editor.md) describes. If the editor refuses a tag, see [When something goes wrong](when-something-goes-wrong.md).
 

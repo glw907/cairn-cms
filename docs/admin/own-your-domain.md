@@ -77,12 +77,12 @@ The command confirms that your domain answers over HTTPS, switches the site's ad
 Sign-in email is what lets anyone other than you sign in, because everyone else gets in through a link sent to their address. You keep signing in as the owner through [`--sign-in`](./create-your-site.md#sign-in-again) either way.
 
 1. Finish [Connect your domain](#connect-your-domain), so the domain is live.
-2. Answer **Yes** to `Turn on email sign-in for your domain now?`
+2. Answer **Yes** to `Turn on email sign-in for your domain now?`. The prompt first states that onboarding writes a `p=reject` DMARC policy for the whole domain. The DMARC paragraph below explains what that means.
 3. Wait while the command onboards the domain for sending and sends a test message to your sign-in address.
 
 The command asks in the same run once the domain is live. If the run stopped to wait for the nameserver switch, run it again.
 
-Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner.
+Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the `--email` and `--yes` flags that turn sign-in email on unattended.
 
 A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 

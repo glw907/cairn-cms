@@ -26,7 +26,7 @@ Every case ends the same way: gate, fact-check, review (`references/review.md`).
    naming the symbol, and a search for the symbol alone misses it. When the search finds nothing,
    say so in your reply and show the command.
 2. Skip history: released `CHANGELOG.md` sections, `MIGRATION-NOTES.md` below
-   `## Unreleased`, and the open plans under `docs/plans/` say what was true at their date.
+   `## Unreleased`, and an open plan on its pass branch says what was true at its date.
 3. Edit each sentence the change makes false. Read the code before you write a claim, and keep the
    `file:line` that settles it for your reply. A rename repoints every hit, so a second `git grep` of
    the old name in `docs/` and `README.md` comes back empty.

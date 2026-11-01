@@ -514,13 +514,13 @@ describe('filesInScope', () => {
   });
 
   it('scans the admin and editors directories and the front doors once they hold pages', () => {
-    const root = tree(['docs/admin/is-it-working.md', 'docs/editors/a.md', 'docs/README.md', 'docs/internal/x.md']);
+    const root = tree(['docs/admin/is-it-working.md', 'docs/editors/a.md', 'docs/architecture.md', 'docs/internal/x.md']);
     try {
       expect(filesInScope(root)).toEqual([
         'MIGRATION-NOTES.md',
         'README.md',
-        'docs/README.md',
         'docs/admin/is-it-working.md',
+        'docs/architecture.md',
         'docs/editors/a.md',
       ]);
     } finally {

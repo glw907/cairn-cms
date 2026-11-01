@@ -13,6 +13,13 @@
 
   Consumers may: run `npx cairn-guidance install --dry-run` to preview a removal.
 
+- **An evaluator set: `README.md`, `docs/why-cairn.md`, and a new `docs/architecture.md`.** The
+  architecture page gives the shape of the system, the stability tiers, the security model, the
+  Claude Code guidance with the eval's result, and why cairn has no MCP server; `why-cairn.md` gains
+  what a site costs. `docs/README.md` leaves the package, and `docs/architecture.md` joins it.
+
+  Consumers may: read `docs/architecture.md` in the installed package before adopting.
+
 - **A stability tier on every export's doc comment.** Each public export now carries `@public` (the
   Extension tier), `@beta` (Unstable), or `@scaffold` (the wiring a scaffolded site copies), and the
   built declarations keep the tag. `check:tiers` fails an export with no tag or two, and

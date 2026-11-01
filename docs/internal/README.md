@@ -3,8 +3,7 @@
 Maintainer-facing documents. Nothing here is part of the adopter docs; the public arms live one
 level up.
 
-`check:arm-indexes` gates the top level only: every top-level `.md` file here must be linked from
-this index, or the gate fails naming it.
+Every top-level `.md` file here is listed below.
 
 - [`engine-rulings.md`](engine-rulings.md): the rulings ledger. `grep '^## '` is the index. A ruling
   stays only while a session could re-argue it and the code does not state it; everything dropped is

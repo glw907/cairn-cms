@@ -14,7 +14,7 @@
     "src/lib/content/fields.ts:145-180 (the field constructors: number, url, date, text)",
     "src/lib/delivery/site-indexes.ts:57 (createSiteIndexes throws for a concept with no glob)",
     "src/lib/content/manifest.ts:400 (a committed manifest that drifts from the corpus fails the build; regenerate with npx cairn-manifest)",
-    "docs/extend/define-an-adapter-and-schema.md#add-a-concept (the four registrations: adapter content map, content-module glob, plugin content option, regenerated manifest)"
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/define-an-adapter-and-schema.md#add-a-concept (the four registrations: adapter content map, content-module glob, plugin content option, regenerated manifest)"
   ],
   "expectations": [
     "The adapter's content map gains an events concept with dir src/content/events, a plural label, singular 'event', and a defineFieldset of title, date, endDate, location, capacity (number), and signupUrl (url).",

@@ -13,7 +13,7 @@
     "src/lib/delivery/feeds.ts:8-30 (FeedChannel siteUrl and feedUrl must be absolute; FeedItem contentHtml carries the full text)",
     "src/lib/delivery/responses.ts:13 (rssResponse sets the RSS content type)",
     "src/lib/delivery/public-routes.ts:221 (the entry pages for every concept already come from createPublicRoutes through the catch-all, so a new route owes only the list and the feed)",
-    "docs/extend/build-the-public-routes.md#serve-the-feeds and #build-the-archive (index.all() as the source, origin-prefixed urls, prerender = true)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/build-the-public-routes.md#serve-the-feeds and #build-the-archive (index.all() as the source, origin-prefixed urls, prerender = true)",
     "Verified by building a reference solution against the emitted site: the prerendered notes page and notes/feed.xml list the three published notes, newest first, with https://showcase.test links, and omit the draft."
   ],
   "expectations": [

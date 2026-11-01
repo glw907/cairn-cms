@@ -12,7 +12,7 @@
     "src/lib/delivery/seo.ts:5 SeoInput, :34 buildSeoMeta (the twitter:* meta tags live here)",
     "scripts/checks/check-options.mjs:1-40 every member reached from a create*/define* root's parameters needs a row in docs/internal/option-map.json (an anchor whose section names the member in inline code, or a reviewed exclude); :398 checkOptionMap. This holds on the pre-agent-first tag and on this branch tip",
     "scripts/checks/check-surface.mjs:1-12 the committed surface snapshot must match dist; regenerate with `npm run check:surface -- --update`. The snapshot moved from docs/internal/api-surface.md (tag) to scripts/checks/api-surface.md (tip)",
-    "docs/reference/README.md:13 every export carries a stability tier; PublicRoutesConfig is Extension API (docs/reference/delivery.md:121)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/README.md:13 every export carries a stability tier; PublicRoutesConfig is Extension API (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/delivery.md:121)",
     "CHANGELOG.md:1 the ## Unreleased section, entries with a Consumers may/must line (CLAUDE.md: a pass finalizes its CHANGELOG entry under ## Unreleased)"
   ],
   "expectations": [

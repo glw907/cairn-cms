@@ -13,7 +13,7 @@
     "src/lib/render/rehype-dispatch.ts:108-160 (a hydrate component's attributes serialize into data-cairn-props; build() output stays as the fallback)",
     "src/lib/content/adapter.ts:11-25 (defineAdapter throws when a hydrate component has no rendering.islands entry, or an island has no hydrate component)",
     "src/lib/islands/index.ts:70-90 (hydrateIslands tears down the previous pass, then mounts each island by its data-cairn-island name)",
-    "docs/extend/add-an-island.md#register-the-island and #write-the-live-component (props are untrusted text; a scaffolded site adds a live component, a registry entry, and the hydrate declaration, and its root layout already hydrates)",
+    "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-an-island.md#register-the-island and #write-the-live-component (props are untrusted text; a scaffolded site adds a live component, a registry entry, and the hydrate declaration, and its root layout already hydrates)",
     "Verified by building a reference solution against the emitted site: the prerendered post carries data-cairn-island=\"countdown\" with data-cairn-hydrate and the label and date in data-cairn-props."
   ],
   "expectations": [

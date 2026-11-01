@@ -255,7 +255,7 @@ The original decision framing, for the record:
 
 - **Stage 2b part 2: the items part 1 carried (PR #117 triage, Geoff, 2026-10-12).** Part 1's
   "Found, not done" table (the PR #117 triage) filed these as defers; Geoff submitted the triage unchanged. What stays names its trigger:
-  - One whole-tree gate run failed `check:reference` on `admin-toolkit.md` (28 stale exports) and
+  - One whole-tree gate run failed the reference coverage gate on `admin-toolkit.md` (28 stale exports) and
     passed on rerun; unexplained and not reproduced. Trigger: a second occurrence.
 
 - **Docs content carried from the 2b close (docs finalization pass 1, 2026-10-31).** The friction log's
@@ -668,7 +668,7 @@ The original decision framing, for the record:
   directive grammar do not change. The CHANGELOG entry carries a `Consumers must:` list, and
   `migration-notes.md` and `upgrade-cairn.md` record it. Until then the editor page paraphrases the
   tooltips, and the rename pass quotes the real strings, including "Fold this block". The editor
-  page keeps an `<a id="add-components-and-fragments">` anchor for `docs/reference/core.md:129`; the
+  page keeps an `<a id="add-components-and-fragments">` anchor for `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/core.md:129`; the
   rename repoints that link to `#add-blocks-and-fragments` and drops the anchor.
 
 - **Gate economy follow-ups (Geoff, 2026-10-08; audit and adversarial review of the per-task gate).**
@@ -707,7 +707,7 @@ The original decision framing, for the record:
   - No gate checks a `docs/internal/...` path cited in a comment under `src/lib`; the design-arc log
     moved to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/` and nothing flagged the stale citations in `EditorToolbar.svelte`
     and `EditPage.svelte`. A check that every cited path exists would catch the next move.
-  - The sample outputs in `docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
+  - The sample outputs in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md` (the `norms card` output near line 598 and
     the border-contrast exemption sample) are hand-copied from `src/lib/audit/norms.ts` and
     `src/lib/audit/border-contrast.ts`; nothing ties them, and they drifted once into a merge conflict.
   - `packages/create-cairn-site/` is not in `check:leaks`' scan roots (`SCAN_ROOTS`,
@@ -754,14 +754,14 @@ The original decision framing, for the record:
 - **Reference-arm corrections the extend rebuild surfaced (stage 2a's close, 2026-10-07).** Trigger:
   stage 2b, whose pages link these entries, or the engine pass's own docs step, whichever comes
   first. `createRenderer` omits `unsafeDisableSanitize` and lists its hast steps out of pipeline
-  order (`docs/reference/core.md:616`); the reference index calls the Extension API "the frozen
-  contract" (`docs/reference/README.md:21`, `scripts/checks/reference-coverage.mjs:70`) though it
+  order (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/core.md:616`); the reference index calls the Extension API "the frozen
+  contract" (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/README.md:21`, `scripts/checks/reference-coverage.mjs:70`) though it
   broke at `0.86.0` and `0.94.0`; `core.md:174-176` and two comments say the preview frame pins a
   white ground (it follows `base-100`); `public-css.md:67-71` names a different home for the
   `--cairn-cta-*` keys than Waymark uses; the admin motion tokens have no published home and
   `cairn-audit.md:91,241` link into `docs/internal/`; the motion rules read two scope keys
   (`src/lib/audit/run.ts:226`) and `frame-offset` counts per run while the reference says per screen
-  (`motion-property.ts:395-396`; fix `docs/reference/cairn-audit.md`); no entry lists the five selected-segment forms of
+  (`motion-property.ts:395-396`; fix `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md`); no entry lists the five selected-segment forms of
   a `btn` or the shell's fixed brand mark; `createSectionAction`'s entry omits the 429 copy and a thrown
   `redirect()`'s path; the `ExpandableRow` example heads its trigger column with a bare `<th></th>`
   (`admin-toolkit.md:840`); no page catalogues the five migrations (`auth-store.md`);
@@ -1099,9 +1099,9 @@ The original decision framing, for the record:
   `doctor-defer-workers-dev-exposure`.
 
 - **cairn-pub breaks twice at its next pin bump past the doctor retirement (doctor-retirement,
-  retire-2b, 2026-09-21).** Its hardcoded `/docs/reference/doctor` link
+  retire-2b, 2026-09-21).** Its hardcoded reference-doctor link
   (`src/routes/(site)/docs/+page.svelte:67` in that repo) 404s once the engine's own
-  `docs/reference/doctor.md` is gone, and its `docs/STATUS.md` scripts `cairn-doctor` in gate
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/doctor.md` is gone, and its `docs/STATUS.md` scripts `cairn-doctor` in gate
   prose that no longer runs. This pass never edits another repo; both need a fix in cairn-pub's
   own next pass, filed here since no engine record reaches that repo.
 
@@ -1472,7 +1472,7 @@ The original decision framing, for the record:
   `` `${selector}#${landmarks.indexOf(landmark)}` ``, which prints the sentinel `#-1` whenever the
   topmost open layer is itself a `nav`/`aside` landmark (`landmarks` is queried from the layer
   root's descendants only, so the layer's own root element is never in the list its own index is
-  read against). `form-font-parity` (already advisory, `docs/reference/cairn-audit.md`) walks
+  read against). `form-font-parity` (already advisory, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md`) walks
   only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
   page, so a page mounting more than one is only partly checked. Its explicit-face exemption net's
   three named gaps, variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
@@ -1516,7 +1516,7 @@ The original decision framing, for the record:
   neighbors, all the same warm-stone hue: quiet's 14%-tint mix over `--color-base-300` (e.g.
   daisyUI's `.table-zebra` row-hover) measures ~1.34/1.41, under the 1.5 floor the register
   otherwise clears everywhere else, documented rather than retuned in
-  `docs/reference/admin-toolkit.md` and `skills/cairn-building-admin-screens/SKILL.md` (design
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/admin-toolkit.md` and `skills/cairn-building-admin-screens/SKILL.md` (design
   infrastructure Pass 3, 2026-07-29 review triage);
   `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
   button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
@@ -1678,7 +1678,7 @@ The original decision framing, for the record:
   installed engine's non-optional `peerDependencies`, today `svelte`, `@sveltejs/kit`, and
   `@cloudflare/workers-types`. It is the only floor enforcement that reaches a real consumer site
   (CI only proves the engine's own repo), and it covers only those rows of the
-  supported-toolchain matrix's rows (the retired `docs/reference/supported-toolchain.md`). Extending it needs a
+  supported-toolchain matrix's rows (the retired `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/supported-toolchain.md`). Extending it needs a
   source for each additional floor: `typescript`'s 5.0 floor has no `peerDependencies` entry to
   read (it would need a hardcoded constant, since the engine's own devDependency range does not
   describe the consumer floor), and `vite`/`wrangler`/`@cloudflare/workers-types` carry no engine
@@ -1686,12 +1686,12 @@ The original decision framing, for the record:
   promises rather than inventing floors the matrix does not assert.
 
 - **Ambient-block drift gate (filed by C2, R2, 2026-08-02).** The `/ambient` reference page states
-  `docs/reference/ambient.md`'s whole `App.Locals` block by hand off `src/lib/ambient.ts`; R2's
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/ambient.md`'s whole `App.Locals` block by hand off `src/lib/ambient.ts`; R2's
   execution found the page had drifted already (`cairnAccess` was missing from it entirely). A
   gate that diffs the published block against the source declaration, failing on any field the two
 
   sides disagree on, closes the class the rewrite just fixed by hand.
-- **Log-events field and value parity gate (filed by C2, R6, 2026-08-02).** `docs/reference/log-events.md`
+- **Log-events field and value parity gate (filed by C2, R6, 2026-08-02).** `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/log-events.md`
   enumerates each event's fields and every literal value its `reason`/`scope` columns can carry in
   prose; R6's execution found two rows had drifted from their emit sites (`media.uploaded`'s
   documented `ext` field is never written, and `github.unreachable`'s documented `layout` scope
@@ -1717,7 +1717,7 @@ The original decision framing, for the record:
 
 - **Facade action-key vocabulary gate (filed by C2's close-out verification, 2026-08-03).** Nothing
   pins the `createCairnAdmin` `actions` record's key list. Two defects this pass fixed by hand share
-  that root: the action tables in `docs/reference/admin-routes.md` and `docs/reference/sveltekit.md`
+  that root: the action tables in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/admin-routes.md` and `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/sveltekit.md`
   had drifted to 12 and 11 rows against a 29-key record, and seven facade keys renamed in Task 5 with
   no test asserting the resulting wire names. A posted `?/` key is a runtime string with no
   compile-time check, so a stale one 404s at submit. A test
@@ -1977,7 +1977,7 @@ The original decision framing, for the record:
   Reload and try again.", written as though the editor's own entry moved, when on this design the
   ordinary cause is an unrelated entry being published; the copy should name that. And the
   deferral's condition, a future refinement if editors hit it, has no detector: `history_stale` is
-  not in the log event vocabulary (see `docs/reference/log-events.md`), so the trigger can only
+  not in the log event vocabulary (see `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/log-events.md`), so the trigger can only
   ever arrive as a verbal report today.
 
 - **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin (filed
@@ -2061,7 +2061,7 @@ The original decision framing, for the record:
   every daisyUI class except calendar, so the list in `src/lib/admin/admin-css-safelist.ts`
   no longer decides which daisyUI classes ship; its own header says it stays only as a grouped,
   explained vocabulary. Retire it, or reduce it to the non-daisyUI names it still documents, and
-  move the explanation to `docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
+  move the explanation to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/admin-toolkit.md`. Trigger: pass B's rename of
   `src/lib/components/` to `src/lib/admin/` (the file moves anyway), or the next pass that edits it.
 
 - **Five small simplifications the pre-cut dependency sweep found and filed, none taken (Task 1,
@@ -2079,9 +2079,9 @@ The original decision framing, for the record:
   `admin-design-system.md:369-374`) could become DaisyUI's `collapse`/`collapse-arrow`; cosmetic
   value only. **Trigger:** the next pass that touches any of the five named files.
 
-- **`docs/reference` has no dedicated page for the `./admin-sources.css` subpath export; it gets
-  one section inside `docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
-  `check:reference`'s coverage gate reads only `.d.ts`-typed exports, so a CSS-only subpath is not
+- **The reference track has no dedicated page for the `./admin-sources.css` subpath export; it gets
+  one section inside `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/cairn-audit.md` instead (extend-2 friction, 2026-09-20).**
+  The reference coverage gate read only `.d.ts`-typed exports, so a CSS-only subpath is not
   gated either way; grouping the admin-sources documentation with the audit config it feeds is a
   legitimate reading of the reference arm's page structure, not a known bug, but the docs rebuild
   is the point where the arm's page-per-subpath convention gets a deliberate read. Trigger: the
@@ -2157,7 +2157,7 @@ The original decision framing, for the record:
   showcase's footer nav to `site.config.yaml`'s `menus.footer` as a developer-edited yaml block
   rather than a second admin-editable menu, since no site has asked to edit a second menu from
   `/admin` yet. **Trigger:** a consuming site asking to edit a second menu in the admin UI.
-- **An engine-shipped Cloudflare Access verifier**, replacing the recipe the extend track carries in `docs/extend/replace-magic-links-with-cloudflare-access.md`
+- **An engine-shipped Cloudflare Access verifier**, replacing the recipe the extend track carries in `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/replace-magic-links-with-cloudflare-access.md`
   (`docs/internal/engine-rulings.md`'s `identity-seam-access-verifier` row, declined for now).
   **Trigger:** a second consumer hand-rolling this verifier, an engine-internal consumer of it,
   or an evidenced defect in a family site's own resolver.
@@ -2646,8 +2646,8 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   defect (Pass D mining sweep, 2026-08-14).** The gate auto-stubs any site-local import (a name
   imported from a path like `$lib/cairn.config.js`, one the gate cannot resolve) as untyped, so a
   call routed through such a stub typechecks trivially regardless of the real signature it's
-  supposed to match. This is exactly how two docs pages (`docs/extend/wire-the-delivery-surface.md`,
-  since deleted, and `docs/reference/delivery-data.md`, both fixed first) called the public `SiteRender` type with
+  supposed to match. This is exactly how two docs pages (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/wire-the-delivery-surface.md`,
+  since deleted, and `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/delivery-data.md`, both fixed first) called the public `SiteRender` type with
   two positional arguments instead of the one object argument `src/lib/content/types.ts:215`
   actually declares, and the gate never caught it because both call sites went through a
   `cairn.rendering.render` reached off a stubbed site-local import rather than the typed package

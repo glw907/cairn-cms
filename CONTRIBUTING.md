@@ -6,6 +6,15 @@ in the repository and describes what a change needs before it can land. For what
 why it works the way it does, start with
 [what cairn is and is not](./.claude/skills/cairn-judging-scope/references/what-cairn-is-and-is-not.md).
 
+## The path of a change
+
+1. Clone the repository and open it in Claude Code, accepting the folder's trust dialog.
+2. Install both trees once, with `npm ci` and `npm ci --prefix examples/showcase`, and install Vale and `gh`, since the fast lane runs the showcase's checks and `check:vale`.
+3. Make the change, then run the fast lane with `npm run lane:fast -- --range <base>..HEAD` after each commit. A larger task goes to the `cairn-implementer` agent in its own worktree.
+4. Before you open the pull request, dispatch the `standards:diff-reviewer` agent on the branch and fold its findings.
+5. Open a pull request against `main`. CI runs the whole suites and is the merge authority.
+6. Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.
+
 ## Set up and run the suite
 
 ```sh

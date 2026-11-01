@@ -30,6 +30,7 @@ components, and sits behind the same sign-in.
 cairn ships the editor, the admin frame, and the seams. The developer writes the rest, such as
 member signups, registration, or reservations. cairn models no content database and ships two roles,
 owner and editor, and its public output stays design-agnostic, since each site brings its own `render`.
+cairn has one fixed concept shape and is not an open-ended collection model.
 
 ## Content and storage
 

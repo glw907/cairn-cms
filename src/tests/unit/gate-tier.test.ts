@@ -39,7 +39,7 @@ describe('the table', () => {
   // One real path per pattern, so a pattern that matches nothing fails its own row. The dot
   // patterns are literal prefixes or exact paths.
   const rows: [bucket: string, pattern: string, path: string][] = [
-    ['docs', 'docs/', '.claude/skills/cairn-running-passes/references/pass-gate-tiers.md'],
+    ['docs', 'docs/', 'docs/internal/README.md'],
     ['docs', '*.md', 'README.md'],
     ['docs', '**/*.md', 'examples/showcase/README.md'],
     ['docs', '.vale/', '.vale/tests/vale.ini'],
@@ -905,7 +905,7 @@ describe('--protected', () => {
 // non-browser legs run concurrently, line 2 the related component tests, and CI carries the rest.
 describe('the fast lane', () => {
   const SRC_PATH = 'src/lib/log/index.ts';
-  const DOCS_PATH = '.claude/skills/cairn-running-passes/references/pass-gate-tiers.md';
+  const DOCS_PATH = 'docs/internal/README.md';
 
   it('prints one line for a docs-only diff: the docs gate and the static checks, no unit or component leg', () => {
     const { lines, notes } = decideFastGate([DOCS_PATH]);

@@ -13,7 +13,7 @@
 // table reads as plausible prose either way. The tier map is that skill's artifact, bound to
 // its registries, so no other packaged skill carries one.
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 
@@ -85,6 +85,79 @@ export function checkAllSkillBudgets(root) {
     ...checkSkillBudget(readFileSync(resolve(root, path), 'utf8')),
   }));
   return { ok: results.every((r) => r.ok), results };
+}
+
+/** The three trees that hold skills: the repo's own, the packaged set, and the scaffold's copy. */
+export const SKILL_TREES = ['.claude/skills', 'skills', 'templates/waymark/.claude/skills'];
+
+/** Skill subdirectories that hold data or tooling rather than references the form rules apply to. */
+const FORM_EXEMPT_DIRS = new Set(['evals', 'assets', 'scripts']);
+
+const CLAUDE_MD_LIMIT = 200;
+const SKILL_MD_LIMIT = 500;
+const CONTENTS_THRESHOLD = 100;
+
+/** Whether a long file opens with a contents list: the word, or a list of in-page links. */
+function opensWithContents(lines) {
+  return lines.slice(0, 25).some((line) => /contents/i.test(line) || /^\s*[-*]\s+\[.*\]\(#/.test(line));
+}
+
+/**
+ * Check the form rules for agent-facing files: `CLAUDE.md` under 200 lines, every `SKILL.md` at most
+ * 500 lines, references one level below their skill, and a reference over 100 lines opening with a
+ * contents list (Anthropic's skill authoring guidance).
+ * @param {string} root
+ * @returns {string[]} one problem per violation
+ */
+export function checkSkillForm(root) {
+  const problems = [];
+  const claudeMd = resolve(root, 'CLAUDE.md');
+  if (existsSync(claudeMd)) {
+    const count = readFileSync(claudeMd, 'utf8').split('\n').length - 1;
+    if (count >= CLAUDE_MD_LIMIT) problems.push(`CLAUDE.md has ${count} lines (limit: under ${CLAUDE_MD_LIMIT})`);
+  }
+  for (const tree of SKILL_TREES) {
+    const treeDir = resolve(root, tree);
+    if (!existsSync(treeDir)) continue;
+    for (const skill of readdirSync(treeDir, { withFileTypes: true })) {
+      if (!skill.isDirectory()) continue;
+      const skillDir = join(treeDir, skill.name);
+      const skillMd = join(skillDir, 'SKILL.md');
+      if (existsSync(skillMd)) {
+        const count = readFileSync(skillMd, 'utf8').split('\n').length - 1;
+        if (count > SKILL_MD_LIMIT) problems.push(`${tree}/${skill.name}/SKILL.md has ${count} lines (limit ${SKILL_MD_LIMIT})`);
+      }
+      for (const file of markdownFiles(skillDir, skillDir)) {
+        const rel = `${tree}/${skill.name}/${file.rel}`;
+        if (file.rel === 'SKILL.md') continue;
+        if (file.depth > 2 || (file.depth === 2 && !file.rel.startsWith('references/'))) {
+          if (!FORM_EXEMPT_DIRS.has(file.rel.split('/')[0])) {
+            problems.push(`${rel} sits more than one level below its skill`);
+          }
+          continue;
+        }
+        if (FORM_EXEMPT_DIRS.has(file.rel.split('/')[0])) continue;
+        const lines = readFileSync(file.abs, 'utf8').split('\n');
+        // A captured third-party page opens with its source and license comment and stays verbatim.
+        const captured = lines[0].startsWith('<!-- Source:');
+        if (!captured && lines.length - 1 > CONTENTS_THRESHOLD && !opensWithContents(lines)) {
+          problems.push(`${rel} has ${lines.length - 1} lines and does not open with a contents list`);
+        }
+      }
+    }
+  }
+  return problems;
+}
+
+/** Every markdown file under a skill directory, with its path from that directory and its depth. */
+function markdownFiles(dir, base) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const abs = join(dir, entry.name);
+    if (entry.isDirectory()) return markdownFiles(abs, base);
+    if (!entry.name.endsWith('.md')) return [];
+    const rel = abs.slice(base.length + 1);
+    return [{ abs, rel, depth: rel.split('/').length }];
+  });
 }
 
 /**
@@ -226,7 +299,9 @@ async function main() {
       console.error(`check-skill-budget: ${result.path}: ${result.error}`);
     }
   }
-  if (!ok) {
+  const formProblems = checkSkillForm(root);
+  for (const problem of formProblems) console.error(`check-skill-budget: ${problem}`);
+  if (!ok || formProblems.length > 0) {
     process.exitCode = 1;
     return;
   }

@@ -940,6 +940,17 @@ export function buildEnv(source, extra = {}) {
   return { ...env, CAIRN_GATE_LANE: 'light', CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1', CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', ...extra };
 }
 
+/**
+ * The login a `claude` process needs when the host has no credentials file, such as a container started
+ * with `CLAUDE_CODE_OAUTH_TOKEN`. Only the two `claude` spawns take it; a gate running a fixture's own
+ * scripts never sees it.
+ * @returns {Record<string, string>}
+ */
+export function loginEnv() {
+  const token = process.env.CLAUDE_CODE_OAUTH_TOKEN;
+  return token ? { CLAUDE_CODE_OAUTH_TOKEN: token } : {};
+}
+
 function sessionEnv(extra = {}) {
   // A headless `-p` run exits soon after the model launches a background subagent, before the
   // result returns (anthropics/claude-code#73453), so sessions run their subagents in the foreground.
@@ -955,7 +966,7 @@ function sessionEnv(extra = {}) {
 function runSession({ cwd, args, prompt, file }) {
   return new Promise((resolveRun) => {
     const out = createWriteStream(file);
-    const child = spawn('claude', args, { cwd, env: sessionEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn('claude', args, { cwd, env: sessionEnv(loginEnv()), stdio: ['pipe', 'pipe', 'pipe'] });
     children.add(child);
     let buf = '';
     let lastLine = '';
@@ -1017,7 +1028,7 @@ async function judgeTrial({ assertions, diff, reply, toolLog, file }) {
   ].join('\n');
   const cwd = mkdtempSync(join(tmpdir(), 'docs-eval-judge-'));
   const args = ['-p', '--model', 'opus', '--effort', 'medium', '--output-format', 'json', '--json-schema', JSON.stringify(JUDGE_SCHEMA), '--tools', ''];
-  const r = await run('claude', args, { cwd, env: sessionEnv(), input: prompt, timeout: 15 * 60 * 1000 });
+  const r = await run('claude', args, { cwd, env: sessionEnv(loginEnv()), input: prompt, timeout: 15 * 60 * 1000 });
   await rm(cwd, { recursive: true, force: true });
   writeFileSync(file, r.stdout ?? '');
   return parseJudgeOutput(r.stdout ?? '');

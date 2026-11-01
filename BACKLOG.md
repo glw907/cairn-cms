@@ -314,6 +314,10 @@
   `src/lib/admin/MediaBulkDeleteDialog.svelte:255` says "Every removal is one revertible commit you can undo", then says a developer reverts it. The single delete window and `docs/editors/manage-the-media-library.md` both say an editor cannot undo a delete. Drop "you can undo" from the string.
   Placement: Final engine batch, admin and tidy slice.
 
+- [ ] **#195** Publish `create-cairn-site` before the one release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `publish.yml` has no step for it, while `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`. The command does not work from a registry until the package is published. This is a prerequisite of the one release: the release cuts the engine and the dev package, bakes the template against them (`node scripts/bake-template.mjs --engine-spec '^<version>' --dev-spec '^<version>'`), and publishes the setup package from `npm pack --ignore-scripts`, since `prepack` would rebake with default specs.
+  Placement: The one release.
+
 ## Won't do
 
 - **#69** Loosen the register's task-guide item 5 for a feature with no log event: the conflict leaves with the extend arm; admin recovery pages are not log-event pages (Geoff, 2026-10-31)

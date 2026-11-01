@@ -26,6 +26,9 @@ before a pass builds on it.
 - Cut a worktree off `main` for each pass so `main` stays releasable. The `cairn-running-passes` skill
   has the setup command, the risk classes, and the close checklist. After each task, run
   `npm run lane:fast -- --range <base>..HEAD`. CI on the pull request carries the whole suites.
+- Every change reaches a pull request through agents: hand each task to `cairn-implementer`, which
+  works in its own worktree, and dispatch `standards:diff-reviewer` on the branch before you open the
+  pull request. Fold what the reviewer finds first.
 - The plugin `standards` supplies the review agents (`standards:diff-reviewer`,
   `standards:svelte-reviewer`, `standards:cloudflare-workers-reviewer`,
   `standards:web-auth-security-reviewer`, `standards:daisyui-a11y-reviewer`) and craft skills. Accept the

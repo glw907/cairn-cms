@@ -90,6 +90,12 @@ export async function buildSiteBase({ treeDir, sha, cacheRoot, strip, stripPaths
   writeFileSync(join(work, '.ready'), JSON.stringify({ removed }));
   rmSync(dir, { recursive: true, force: true });
   renameSync(work, dir);
+  // The `file:` specs name the tarballs under the build folder, which the rename just moved; point
+  // them at the final folder so a session's `npm install` still resolves them.
+  for (const f of ['package.json', 'package-lock.json']) {
+    const p = join(dir, 'site', f);
+    if (existsSync(p)) writeFileSync(p, readFileSync(p, 'utf8').split(work).join(dir));
+  }
   return { dir, removed };
 }
 

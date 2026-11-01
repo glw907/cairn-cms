@@ -69,6 +69,9 @@ export function exportTiers(subpaths) {
   return { entries, failures };
 }
 
+/** The smallest export count a real build reads (532 at the time of writing). */
+const MIN_EXPORTS = 100;
+
 /** The built declaration of every subpath that has one. */
 export function builtSubpaths() {
   return surfaceSubpaths().map((entry) => ({ subpath: entry.subpath, dts: resolve(ROOT, entry.dts) }));
@@ -76,6 +79,8 @@ export function builtSubpaths() {
 
 function main() {
   const { entries, failures } = exportTiers(builtSubpaths());
+  // A floor, so an empty `exports` map or a failed build cannot print OK over nothing.
+  if (entries.length < MIN_EXPORTS) failures.push(`only ${entries.length} exports were read; the package has well over ${MIN_EXPORTS}, so the walk found no declarations`);
   if (failures.length === 0) {
     /** @type {Record<string, number>} */
     const counts = {};

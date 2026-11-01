@@ -36,9 +36,11 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * those attributes, this function owns only the name.
  *
  * `secure` must reflect the scheme the browser itself sees. Behind upstream TLS termination
- * (a reverse proxy, a platform edge), `url.protocol` is not that scheme; derive `secure` from
- * the externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto`
- * header the platform sets.
+ * (a reverse proxy, a platform edge), `url.protocol` may not be that scheme. On Cloudflare Workers
+ * it already is the visitor's scheme. Elsewhere follow the engine's own CSRF rule: `secure` is true
+ * for an https request and otherwise comes from the scheme of `PUBLIC_ORIGIN`, never from a
+ * forwarded header, which a client can omit or forge to get a cookie that is neither Secure nor
+ * `__Host-` prefixed.
  *
  * `base` must not already carry a __Host- or __Secure- prefix (double-prefixing is a cookie
  * the browser silently rejects, not a runtime error, so this throws instead) or a character

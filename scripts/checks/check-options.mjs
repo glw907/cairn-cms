@@ -394,6 +394,8 @@ function main() {
     declRoot: DECL_ROOT,
   });
   const failures = [...walkFailures, ...checkOptionDocs({ generated: paths })];
+  // A floor, so a walk that reaches no roots cannot print OK over nothing (263 paths at the time of writing).
+  if (paths.length < 100) failures.push(`only ${paths.length} option paths were walked; the roots found no declarations`);
   if (failures.length === 0) {
     console.log(`check:options: OK (${paths.length} option paths)`);
     return;

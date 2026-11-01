@@ -80,8 +80,10 @@ with a rest parameter, or one serving several sections, passes the key explicitl
 `requireAccess(event, '/admin/money')` and `target: '/admin/money'` in every wrapper's options.
 `ownerOnly: true` adds owner capability on top of the map rule.
 
-A remote function under `/admin` bypasses both the wrappers and the guard's CSRF check; the site
-owns that verification.
+A SvelteKit remote function is served from `/_app/remote/...`, outside `/admin`, so the guard never
+sees it: no session check, no CSRF check, and nothing sets `locals.cairnEditor`, so `requireAccess`
+cannot work there either. The site writes its own authentication and CSRF check in every remote
+function, and puts none behind an `/admin`-scoped Cloudflare Access app.
 
 ## Restrict access by role
 

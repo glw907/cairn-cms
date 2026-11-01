@@ -72,6 +72,7 @@ function reasonFor(err: unknown): string | undefined {
   const { code, claim } = (err ?? {}) as { code?: string; claim?: string };
   if (code === 'ERR_JWT_EXPIRED') return 'expired';
   if (code === 'ERR_JWT_CLAIM_VALIDATION_FAILED') return claim === 'aud' ? 'audience' : claim === 'iss' ? 'issuer' : 'invalid';
+  if (code === 'ERR_JWKS_NO_MATCHING_KEY') return 'invalid';
   if (code?.startsWith('ERR_JWKS_')) return 'keys';
   if (code === 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED' || code === 'ERR_JWT_INVALID' || code === 'ERR_JWS_INVALID') return 'invalid';
   return undefined;
@@ -84,7 +85,7 @@ export const accessIdentity: IdentityResolver = {
     const token = event.request.headers.get('cf-access-jwt-assertion');
     if (!token) return { ok: false, reason: 'missing' };
     try {
-      const { payload } = await jwtVerify(token, JWKS, { issuer: teamDomain, audience: audTag });
+      const { payload } = await jwtVerify(token, JWKS, { issuer: teamDomain, audience: audTag, algorithms: ['RS256'] });
       if (payload.type !== 'app') return { ok: false, reason: 'invalid' };
       if (typeof payload.email !== 'string' || payload.email === '') return { ok: false, reason: 'no_email' };
       return { ok: true, email: payload.email };

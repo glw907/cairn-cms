@@ -47,7 +47,8 @@ export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 /**
  * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
  *
- * Synchronous and fire-and-forget: `ctx.audit` never reads or awaits the return value, and every
+ * Synchronous and fire-and-forget: `ctx.audit` never awaits the return value (it only attaches a
+ * rejection handler to a returned promise), and every
  * emit logs `admin.action.audited` before the sink runs, wired or not. The seam is fail-open at
  * the call site: a sink that throws, or returns a rejecting promise (an async function passes this
  * type through void-return bivariance), never fails the action; `ctx.audit` logs

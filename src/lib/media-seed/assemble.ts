@@ -11,7 +11,7 @@ export const USAGE = [
   '',
   '  --from    Required. The deployed site to download from; each manifest entry is fetched from',
   '            <base-url>/media/<slug>.<hash>.<ext>. A trailing slash is tolerated.',
-  '  --header  Repeatable; sent on every download. A later header of the same name wins.',
+  '  --header  Repeatable; sent on every download. A later header with the same name, spelled the same way, wins.',
   '  --bucket  The R2 bucket name to write into. Wins over the wrangler config; without it the',
   '            sole r2_buckets entry with a bucket_name is used.',
   '  --help    Print this message and exit 0, without requiring --from.',

@@ -146,6 +146,7 @@ async function run(siteId, dir, overrides) {
     log: (line) => logs.push(line),
     dryRun: false,
     isTTY: true,
+    stdinIsTTY: true,
     env: {},
     argv: [],
     text: mustNotBeCalled('text'),
@@ -244,6 +245,25 @@ test('reoffer: a run that cannot ask (no terminal, no --yes) declines without ca
   const state = await loadSite('reoffer-notty');
   assert.equal(state.step, 'builds-connect-declined', 'a decline keeps the Builds terminal step');
   assert.equal('apiToken' in state.cloudflare, false);
+});
+
+test('reoffer: a run whose stdin is not a terminal declines without calling confirm, even with a terminal stdout', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t);
+  await seedDeclined('reoffer-nostdin', dir, 'paid-plan-declined', {});
+
+  const { logs, promise } = await run('reoffer-nostdin', dir, {
+    isTTY: true,
+    stdinIsTTY: false,
+    confirm: mustNotBeCalled('confirm'),
+    promptSecretFn: mustNotBeCalled('promptSecretFn'),
+  });
+  const outcome = await promise;
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.ok(logs.some((line) => line.includes('this run cannot ask')), `got: ${logs.join('\n')}`);
+  assert.equal((await loadSite('reoffer-nostdin')).step, 'paid-plan-declined');
 });
 
 test('reoffer: a yes from paid-plan-declined reaches onboarding without redoing the zone or DNS, and saves the new token', async (t) => {

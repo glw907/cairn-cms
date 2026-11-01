@@ -300,6 +300,8 @@ const EMAIL_ADMISSION_DETAIL =
  *  token; defaults to `process.argv.slice(2)`
  * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
  *  whether the cutover may hold; defaults to `process.stdout.isTTY`
+ * @property {boolean} [stdinIsTTY] whether stdin is a terminal, read with `isTTY` to decide
+ *  whether the email re-offer can ask at all; defaults to `process.stdin.isTTY`
  * @property {typeof createWaitForClear} [createWaitForClearFn] builds the cutover's hold seam; a
  *  test seam defaulting to hold-loop.mjs's `createWaitForClear`
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
@@ -397,6 +399,7 @@ export async function runChapter2({
   env = process.env,
   argv = process.argv.slice(2),
   isTTY = Boolean(process.stdout.isTTY),
+  stdinIsTTY = Boolean(process.stdin.isTTY),
   createWaitForClearFn = createWaitForClear,
   createConsoleServerFn = createConsoleServer,
 }) {
@@ -443,9 +446,9 @@ export async function runChapter2({
     await deleteApiToken(siteId);
     record = withoutSavedToken(record);
 
-    // A run that cannot ask declines for the owner. confirm never settles on a closed stdin, so
-    // it is not called at all.
-    const cannotAsk = args.yes ? !args.email : !isTTY;
+    // A run that cannot ask declines for the owner. confirm reads stdin and draws on stdout, and
+    // never settles on a closed stdin, so it is called only when both are terminals.
+    const cannotAsk = args.yes ? !args.email : !(isTTY && stdinIsTTY);
     if (cannotAsk) {
       log(
         args.yes

@@ -82,7 +82,7 @@ Sign-in email is what lets anyone other than you sign in, because everyone else 
 
 The command asks in the same run once the domain is live. If the run stopped to wait for the nameserver switch, run it again.
 
-Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the `--email` and `--yes` flags that turn sign-in email on unattended.
+Your Workers Paid plan was confirmed at the deploy step, so this step doesn't ask about it again. If you answer no, nothing changes: the site keeps serving, and you keep signing in as the owner. A later run from a terminal asks again. A run that can't ask, such as `--yes` without `--email` or a script with no terminal, stays declined and prints the flags that turn sign-in email on unattended.
 
 A new domain has no sending history, so mail providers can take a while to trust it. If someone's first sign-in link doesn't arrive at once, this delay is the usual reason. It isn't a sign that anything is broken.
 

@@ -4,13 +4,13 @@
       "name": "AdvisoryAction",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisoryaction; the two-hop case the type checker's model exists to catch (invisible to the renderer, which expands one member level)."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisoryaction; the two-hop case the type checker's model exists to catch (invisible to the renderer, which expands one member level)."
     },
     {
       "name": "AdvisoryNotice",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
     },
     {
       "name": "Change",
@@ -22,7 +22,7 @@
       "name": "ConfirmData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-confirmdata."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-confirmdata."
     },
     {
       "name": "DatePrefix",
@@ -34,7 +34,7 @@
       "name": "DictionaryAddFailure",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `TidyFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here (engine-rulings.md, this rider's row): one standing-unverdicted class, no principled distinction separates the two groups."
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `TidyFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here (engine-rulings.md, this rider's row): one standing-unverdicted class, no principled distinction separates the two groups."
     },
     {
       "name": "DictionaryAddResult",
@@ -52,67 +52,67 @@
       "name": "EditorsData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-editorsdata."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-editorsdata."
     },
     {
       "name": "EngineScreenId",
       "subpath": ".",
       "model": "renderer",
-      "standing-unverdicted": "Never ledger-verdicted; one of the three names docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, api-surface.md:540 era anchor, but expanded inline inside root's NavLayoutEngineRef.screen). This rider is the owner section 1 says the leak is waiting for."
+      "standing-unverdicted": "Never ledger-verdicted; one of the three names https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, api-surface.md:540 era anchor, but expanded inline inside root's NavLayoutEngineRef.screen). This rider is the owner section 1 says the leak is waiting for."
     },
     {
       "name": "EntrySummary",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-entrysummary."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-entrysummary."
     },
     {
       "name": "FragmentTarget",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-fragmenttarget, whose close text states the accepted NavIcon-class leak directly."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-fragmenttarget, whose close text states the accepted NavIcon-class leak directly."
     },
     {
       "name": "GettingStarted",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-gettingstarted."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-gettingstarted."
     },
     {
       "name": "HistoryEntry",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-historyentry."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-historyentry."
     },
     {
       "name": "IdentityLoginData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "First surfaced by the identity-seam pass (docs/plans/2026-09-07-identity-seam-pass.md, Task 3), the hand-off half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
+      "standing-unverdicted": "First surfaced by the identity-seam pass (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-07-identity-seam-pass.md, Task 3), the hand-off half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
     },
     {
       "name": "LinkTarget",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-linktarget."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-linktarget."
     },
     {
       "name": "LoginData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-logindata."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-logindata."
     },
     {
       "name": "MagicLinkLoginData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "First surfaced by the identity-seam pass (docs/plans/2026-09-07-identity-seam-pass.md, Task 3), the magic-link half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
+      "standing-unverdicted": "First surfaced by the identity-seam pass (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-07-identity-seam-pass.md, Task 3), the magic-link half of LoginData's discriminated split. Never exported from any subpath, per the same one-hop precedent LoginData and ConfirmData already carry (docs/internal/engine-rulings.md#audit-sveltekit-logindata): reached only as Extract<AdminData, { view: 'login' }>['page']."
     },
     {
       "name": "MarkdownReferenceRow",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-markdownreferencerow."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-markdownreferencerow."
     },
     {
       "name": "MediaLibrary",
@@ -130,31 +130,31 @@
       "name": "MediaUsageInfo",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-mediausageinfo, whose close text states the accepted NavIcon-class leak directly."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-mediausageinfo, whose close text states the accepted NavIcon-class leak directly."
     },
     {
       "name": "NavConcept",
       "subpath": "/reproductions",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table names the /sveltekit carrier AdminShellData; the move record's row also names ReproStory as a transitive carrier, which this rider's derivation confirms via /reproductions) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table names the /sveltekit carrier AdminShellData; the move record's row also names ReproStory as a transitive carrier, which this rider's derivation confirms via /reproductions) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
     },
     {
       "name": "NavConcept",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navconcept."
     },
     {
       "name": "NavIcon",
       "subpath": ".",
       "model": "renderer",
-      "standing-unverdicted": "Never ledger-verdicted; one of the three names docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, expanded inline inside root's NavLayoutEntry.icon). This rider is the owner section 1 says the leak is waiting for."
+      "standing-unverdicted": "Never ledger-verdicted; one of the three names https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (exported by name on /sveltekit, expanded inline inside root's NavLayoutEntry.icon). This rider is the owner section 1 says the leak is waiting for."
     },
     {
       "name": "NavPageOption",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navpageoption."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-navpageoption."
     },
     {
       "name": "NavSaveFailure",
@@ -166,19 +166,19 @@
       "name": "PublishActionLink",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-publishactionlink."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-publishactionlink."
     },
     {
       "name": "ReproInstance",
       "subpath": "/reproductions",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table, addendum \"ReproInstance stays sanctioned\") and docs/internal/engine-rulings.md#audit-repro-reproinstance."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table, addendum \"ReproInstance stays sanctioned\") and docs/internal/engine-rulings.md#audit-repro-reproinstance."
     },
     {
       "name": "ResolvedPreview",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-resolvedpreview."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-resolvedpreview."
     },
     {
       "name": "SettingsSaveFailure",
@@ -190,31 +190,31 @@
       "name": "SlotKind",
       "subpath": ".",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; the one genuinely absent-everywhere member of the original three-name group docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (no subpath exports it under any name; SlotDef.kind expands it inline everywhere). This rider is the owner section 1 says the leak is waiting for."
+      "standing-unverdicted": "Never ledger-verdicted; the one genuinely absent-everywhere member of the original three-name group https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1 names as an unowned closure leak (no subpath exports it under any name; SlotDef.kind expands it inline everywhere). This rider is the owner section 1 says the leak is waiting for."
     },
     {
       "name": "SlotKind",
       "subpath": "/delivery",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery re-renders SlotDef through its own InferFieldset instantiation."
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery re-renders SlotDef through its own InferFieldset instantiation."
     },
     {
       "name": "SlotKind",
       "subpath": "/delivery/data",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery/data re-renders SlotDef through its own InferFieldset instantiation."
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /delivery/data re-renders SlotDef through its own InferFieldset instantiation."
     },
     {
       "name": "SlotKind",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (docs/internal/record/2026-08-30-r4-rederivation.md section 1): /sveltekit re-renders SlotDef through its own InferFieldset instantiation."
+      "standing-unverdicted": "Never ledger-verdicted; same as the '.' entry above (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 1): /sveltekit re-renders SlotDef through its own InferFieldset instantiation."
     },
     {
       "name": "StandardResult",
       "subpath": ".",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-retires-move-record.md's 'Two written exclusions' bullet names it, alongside RemoveIndex/ValueOf, as structurally identical in standing to DictionaryAddFailure/TidyFailure and hands this rider the decision. RULED here: folded into the same one standing-unverdicted class."
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md's 'Two written exclusions' bullet names it, alongside RemoveIndex/ValueOf, as structurally identical in standing to DictionaryAddFailure/TidyFailure and hands this rider the decision. RULED here: folded into the same one standing-unverdicted class."
     },
     {
       "name": "StandardResult",
@@ -238,13 +238,13 @@
       "name": "TidyFailure",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `DictionaryAddFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here: one standing-unverdicted class, no principled distinction separates the two groups."
+      "standing-unverdicted": "Never ledger-verdicted (no retire, no keep). https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md section 3(c) names it beside `DictionaryAddFailure` as un-verdicted standing leaks and hands this rider the decision whether to fold them with `RemoveIndex`/`ValueOf`/`StandardResult`. RULED here: one standing-unverdicted class, no principled distinction separates the two groups."
     },
     {
       "name": "TidyKeyProbeResult",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "sanctioned-by": "docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-tidykeyproberesult, whose close text states the accepted NavIcon-class leak directly."
+      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and docs/internal/engine-rulings.md#audit-sveltekit-tidykeyproberesult, whose close text states the accepted NavIcon-class leak directly."
     },
     {
       "name": "TidyResult",

@@ -15,7 +15,7 @@ test('the sidebar renders the declared navLayout: two named sections, the relabe
   const sections = sidebar.locator('details');
   await expect(sections).toHaveCount(2);
 
-  // Section order and each section's arranged, in-declaration-order links (spec §2, §7). Two
+  // Section order and each section's arranged, in-declaration-order links. Two
   // taxonomy rulings (design arc 2026-07-15) place doors by what an editor authors versus what
   // the site operates: Library joins Content (an editor's uploaded material), while Signups
   // sits in Site (inbound visitor data is operations, not manuscript). Fragments (the

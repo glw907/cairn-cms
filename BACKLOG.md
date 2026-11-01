@@ -246,6 +246,71 @@
 
 ## Low
 
+- [ ] **#167** Drop the reserved `kind?: 'code'` option from `AuthChannelConfig` `#improvement` `#cairn-cms` *(2026-10-31)*
+  `createAuthChannel` publishes a reserved extension point with exactly one legal value (`src/lib/auth-channel/factory.ts:280`), so a consumer can only ever write the default. The any-site audit's ruling was to drop it until a second authenticator exists; the rest of that ruling is executed. Removing it is a breaking change to the auth-channel surface, so it rides the final engine batch or the first post-1.0 major. Found by agent-first pass 2's ledger rebuild.
+  Placement: Final engine batch (small API).
+- [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)*
+  cairn.pub renders the doc arms from the installed engine, so the one release owes it five things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Serve `docs/reference/schema/*.schema.json` verbatim at `/schema/` as `application/schema+json`, with no rewrite of `$id` or `$ref`. Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired `docs/extend/*` path to its successor (the handoff's table lists 15; pass 4 retires more, so regenerate the table from the final page set). Add the three CLI reference pages (`cli-cairn-exit-codes`, `cli-cairn-json-output`, `cli-cairn-doctor`) to the reference nav. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. The `0.98.0` pin ceiling stays until that release.
+  Placement: After the release.
+- [ ] **#169** Reconcile `code-idioms.md` with the naming rulings `#bug` `#cairn-cms` *(2026-10-31)*
+  `.claude/skills/cairn-writing-engine-code/references/code-idioms.md` rule N1 (line 98) still lists `extract*` as a verb and rule E4 (line 41) still prescribes `*Failure` and `*Refusal` names, against the ledger's `convention-verb-rules` and `convention-failure-suffix`. `IdentityRefusal` (`scripts/checks/api-surface.md:511`) is a live exception to the suffix rule that no entry argues for. Make the idiom charter say what the rulings say, then rule on `IdentityRefusal`. Found by agent-first pass 2's final ledger read.
+  Placement: Agent-first pass 3.
+- [ ] **#170** Confirm a list row's delete, as the entry screen does `#improvement` `#cairn-cms` *(2026-10-31)*
+  The trash button on a list row submits `?/delete` at once, with no confirmation, unless other entries link to the entry (`src/lib/admin/ConceptList.svelte:446`), while the delete on the entry's screen confirms in `DeleteDialog.svelte`. `publish-and-history` tells editors to delete from the entry's screen. Found while fact-checking the editors arm, 2026-10-31.
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#171** Show a confirmation after the tag-vocabulary save `#bug` `#cairn-cms` *(2026-10-31)*
+  The tag-vocabulary save redirects to `/admin/vocabulary?saved=1` (`src/lib/sveltekit/content-routes-settings.ts:444`), but `VocabularyAdmin.svelte` never reads the flag, so the editor sees no confirmation after **Save changes**. Found while writing `manage-your-tag-vocabulary`, 2026-10-31.
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#172** Make the media delete-in-use dialog say what to type `#bug` `#cairn-cms` *(2026-10-31)*
+  The media delete-in-use dialog says "Type the name to delete it anyway" (`src/lib/admin/CairnMediaLibrary.svelte:1183`), while its field's placeholder and the typed check use the asset's address (`:1231`). The two disagree about what to type. Found writing `manage-the-media-library`, 2026-10-31.
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#173** Rename the live reproduction fixtures generically `#improvement` `#cairn-cms` *(2026-10-31)*
+  The live reproduction fixtures carry outdoor-club names (`trailhead-view`, `trail-guide`, `volunteer-spotlight`, `src/lib/reproductions/`), and the media and tags captions repeat them. Geoff ruled on 2026-10-31 to rename them generically in the final engine batch; the captions follow.
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#174** Make the setup App trip surface a failed browser open and a wrong-form start `#improvement` `#cairn-cms` *(2026-10-31)*
+  The setup run's App trip fails in two quiet ways. `xdg-open` fires detached and swallows its own failure (`packages/create-cairn-site/src/github/open.mjs:52`), so on a machine whose last-used browser profile is not the one the reader works in, no window reaches them; the capture's first run lost an attempt this way, and the cause (Chromium's last-used profile) is likely and unproven. A reader who goes to GitHub directly instead of the printed link gets a blank Homepage URL form, and the App made there never reports back. Nothing printed warns against it, and the only signal is `browser-step-abandoned` after the ten-minute wait (`github/loopback.mjs:84`). Fix candidates: print "use this link, not GitHub's own form" beside the link, and name a profile-free fallback. Found by the live capture (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+- [ ] **#175** Name the "All repositories" choice in the GitHub install prompt `#improvement` `#cairn-cms` *(2026-10-31)*
+  The install prompt says only "choose where to install it and approve" (`packages/create-cairn-site/src/github/install.mjs:235`), while a first run needs "All repositories" (the capture runbook, `docs/plans/2026-10-30-capture-runbook.md`, step 2.4; #97 holds the remedy-text half). Fix candidate: the prompt names the choice. Found by the admin arm (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+- [ ] **#176** Give a spent or expired sign-in link advice that fixes it `#bug` `#cairn-cms` *(2026-10-31)*
+  Re-clicking a spent sign-in link says "This browser has no pending sign-in. Request a new link below and open it in this browser." `confirmAction` gives every cookie-less refusal that message (`src/lib/sveltekit/auth-routes.ts:363`, `src/lib/admin/ConfirmPage.svelte:67`), so a used or expired link gets advice that does not fix it. This is an `auth-data` path, so the fix is batched and not made by a docs pass. The "four failure messages, one fix" item shares this cause. Found by the admin arm (pass 4, 2026-10-31).
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#177** Fix the setup output copy that misstates or reads oddly `#improvement` `#cairn-cms` *(2026-10-31)*
+  Setup output copy that misstates or reads oddly, all in `packages/create-cairn-site`:
+  - "Your site is live on GitHub:" labels a private repository (`bin.mjs:87`).
+  - The step title "Sign you in" reads oddly among the others (`src/cloudflare/chapter.mjs:267`).
+  - The default App name doubles the prefix for a site with "cairn" in its name, `cairn-cairn-docs-capture-2` (`src/github/chapter.mjs:161`).
+  - "A sign-in page just opened; click Sign in there." prints whether or not a page opened (`src/cloudflare/bootstrap.mjs:29`).
+  - A non-interactive `--sign-in` prints the literal placeholder `--dir <dir>` and says a page opened while it withholds the link (`src/github/open.mjs:69`).
+  - The scaffold step ends with "This scaffold is local only ... Those steps arrive with the next release" (`src/scaffold.mjs:260`), and the same run then continues to GitHub and Cloudflare.
+  - The cost preamble opens "Before you start, the honest cost picture." (`src/money.mjs:30`).
+  Found by the live capture (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+- [ ] **#178** Give the doctor's SKIP line its own title, as PASS has `#improvement` `#cairn-cms` *(2026-10-31)*
+  The doctor's SKIP line keeps a failure-phrased title: "Guard is missing the declared role vocabulary" (`src/lib/diagnostics/conditions.ts:172`) reports a skip because no custom roles are declared (`tool/internal/doctor/testdata/golden/all-clean.txt:10`, `04-doctor-report.txt`). The 2b-close engine pass fixed the PASS titles only. Fix candidate: give SKIP its own title, as PASS has.
+  Placement: Final engine batch.
+- [ ] **#179** Replace builder vocabulary in editor-facing copy `#improvement` `#cairn-cms` *(2026-10-31)*
+  Copy that leaks builder vocabulary on editor screens: "the build will flag" (`src/lib/admin/EditPage.svelte:1931`); "This file changed since you opened it" and three other wordings of one stale-head condition (`src/lib/sveltekit/content-routes-entry-write.ts:318`, `content-routes-entry-destructive.ts:186,401`, `content-routes-media-shared.ts:93,99`); "The site config changed ... Re-read the config" on the Tags screen (`content-routes-settings.ts:150`, `nav-routes.ts:166`); and the busy label "Minting..." (`ShareLinkPanel.svelte:194`). Found by the pass 3 rule finds, 2026-10-31.
+  Placement: Final engine batch, content rules.
+- [ ] **#180** Correct editor screens whose wording misstates what happens `#bug` `#cairn-cms` *(2026-10-31)*
+  The link warning says "unpublished pages ... will 404 until published" for a published page marked Hidden (`EditPage.svelte:1926`); the broken-link banner says "no longer exists" for a page never published (`EditPage.svelte:1832`); the **Shown** visibility filter applies no filter (`ConceptList.svelte:143`); choosing **Decorative** in the library stores nothing, so the image reads **Needs alt** again (`CairnMediaLibrary.svelte:419`); and a refused new entry closes the dialog and drops the typed values (`ConceptList.svelte:488`).
+  Placement: Final engine batch, admin and tidy.
+- [ ] **#181** Make the media library's strings agree `#improvement` `#cairn-cms` *(2026-10-31)*
+  Library strings disagree: the flash messages say "Asset" and "Orphans" where every other string says "image" (`CairnMediaLibrary.svelte:106`); the filter reads "No references found" while the tile chip still reads "Not referenced" (`:148`, `:773`); and the lead image chooser lists three types where the library accepts four, from a second constant (`MediaHeroField.svelte:608`).
+  Placement: Final engine batch, content rules.
+- [ ] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31)*
+  Four failure messages for one sign-in problem, with one fix, one of which omits "in this browser" (`LoginPage.svelte:150-170`, `ConfirmPage.svelte:67-75`, `src/lib/sveltekit/refusal-codes.ts:21`). Shares its cause with the spent-link item above.
+  Placement: Final engine batch, content rules.
+- [ ] **#183** Re-offer email sign-in on a re-entry after a decline `#bug` `#cairn-cms` *(2026-10-31)*
+  A declined sign-in email is never re-offered. `packages/create-cairn-site/README.md` ("Declining costs you nothing") and `bin.mjs:479` both promise a re-run asks again, but a re-entry at the `paid-plan-declined` step prints the decline and returns (`src/cloudflare/chapter2.mjs:342`), so an owner who said no has no way to turn it on. `docs/admin/own-your-domain.md` states what the code does today. Found by the fact check, 2026-10-31, from the code, not a live run. Fix candidate: a re-entry at that step asks the question again.
+  Placement: Scaffold pass.
+- [ ] **#184** Tell the owner what the DMARC `p=reject` record does before onboarding writes it `#improvement` `#cairn-cms` *(2026-10-31)*
+  Email onboarding writes `p=reject` on the whole domain's DMARC record (`src/cloudflare/chapter2.mjs:806`), which governs every sender and not only cairn's. The completion message warns only about services added later. Fix candidate: the domain prompt names the effect before it asks, and says whether an existing `_dmarc` record is replaced (unverified).
+  Placement: Scaffold pass.
+- [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)*
+  The recaptured `01-create-cairn-site.txt` still holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL. No page quotes the path lines, and the package's `files` does not ship `test/`. Fixing it needs a recapture with a neutral scratch path. Found by the pass 4 close review, 2026-10-31. Verification note: this tree's `01-create-cairn-site.txt` lacks both strings; the same strings sit in `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt:69-70,678,825,918,934`, so confirm which fixture the recapture changed before work starts.
+  Placement: Scaffold pass.
 - [ ] **#55** Treat empty `gate-tier --fast` stdout as failure in the fast lane `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)* *(swept 2026-10-31)*
   `decideFastGate` always yields a leg, so a guard inside `scripts/checks/gate-tier.mjs` can never fire. Make the caller (the cairn-pass fast lane) fail on empty stdout, which also catches the file being emptied.
   Placement: Agent-first pass 1.
@@ -267,8 +332,8 @@
   `src/lib/sveltekit/auth-routes.ts:355-359` says a cookie-less browser gets `no-pending-request` only after failing against a bound row, but `:360-363` redirects with it for any failed consume when no cookie is present. The reference text now matches the code; the comment does not. An `auth-data` path, so it waits for a pass that touches it. Found by the docs finalization pass 1 whole-branch review.
   Placement: Final engine batch.
 - [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-10-31)*
-  The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it. Design session prompt: `docs/plans/2026-10-25-icon-sizes-design-prompt.txt`.
-  Placement: After the release. Pass 2 of agent-first spares or inlines the design prompt this item names.
+  The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
+  Placement: After the release.
 
 ## Won't do
 

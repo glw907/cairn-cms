@@ -132,7 +132,7 @@ export interface EditData {
    */
   spellcheckDictionary: string;
   /**
-   * The committed personal-dictionary words for the site (spec 1.6): the durable, shared, reviewable
+   * The committed personal-dictionary words for the site: the durable, shared, reviewable
    *  layer the editor seeds the spellcheck Worker's personal set from, the way `mediaLibrary` is handed
    *  in. Read from the git-committed `dictionary.txt` at editor load; empty when the file is absent or
    *  unreadable (the editor degrades to dialect-only). The dialect dictionary and the session ignore
@@ -140,7 +140,7 @@ export interface EditData {
    */
   siteDictionary: string[];
   /**
-   * The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
+   * The editor-tier tidy facts the review surface needs: whether tidy is enabled, the model
    *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
    *  normalization's because-line and the local category inference). The API key never appears here, it
    *  is a Worker secret. `enabled` false hides the Tidy control, whether because the developer never
@@ -333,14 +333,14 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];
-    // A fragment's edit screen shows where it is used (spec §4) through the same inbound surface
+    // A fragment's edit screen shows where it is used through the same inbound surface
     // every other concept rides for the delete guard, so no new panel is needed: for the fragments
     // concept the "linkers" are the entries that include it, not link to it.
     let inbound: InboundLink[] = [];
     if (manifest !== null) {
       // A non-routable concept's entries (the Fragments concept) are excluded from linkTargets:
       // their permalink 404s, so the link picker and the preview's resolveLink must never offer
-      // one as a link target (spec §1's not-a-link-target backstop). A manifest row whose concept
+      // one as a link target. A manifest row whose concept
       // is no longer declared keeps today's lenient behavior (no descriptor to gate on).
       linkTargets = manifest.entries
         .filter((e) => findConcept(runtime.concepts, e.concept)?.routing.routable ?? true)

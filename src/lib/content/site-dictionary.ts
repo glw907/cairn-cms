@@ -1,4 +1,4 @@
-// cairn-cms: the git-committed per-site personal dictionary (spec 1.6). One word per line,
+// cairn-cms: the git-committed per-site personal dictionary. One word per line,
 // sorted, with comment lines (starting with #) and blank lines tolerated on read. This module is
 // pure: it parses the committed file text, inserts words in sorted order, and serializes the
 // canonical form. The insert is order-independent, so the action's commit-and-retry can re-merge

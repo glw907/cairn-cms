@@ -4,7 +4,7 @@ import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { composite, contrastRatio, relativeLuminance, type Rgba } from '../../lib/audit/color.js';
 import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';
 
-// CONTRACT (second-generation chip registers, docs/internal/probes/2026-08-26-chip-registers-v2):
+// CONTRACT (second-generation chip registers, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md):
 // every tinted fill (`quiet`, `warning`) holds a 1.16-1.47:1 contrast band against its own row
 // ground, tuned per admin theme and per ground (the plain row, base-100, and the zebra stripe,
 // base-200); the `outline` border holds the unrelated >= 3:1 non-text floor (WCAG 1.4.11); the

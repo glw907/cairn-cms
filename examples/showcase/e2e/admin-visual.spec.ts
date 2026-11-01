@@ -141,7 +141,7 @@ test('admin edit page — dark', async ({ page, context, baseURL }) => {
   });
 });
 
-// The desk rider's width matrix (spec §5): the edit page persists its sidebar at xl (1280px+) and
+// The desk rider's width matrix: the edit page persists its sidebar at xl (1280px+) and
 // recedes it behind the toggle through the lg-xl tablet band. 1440 sits above the persist
 // breakpoint (the sidebar is a visible fixed-position column); 768 sits below it (the sidebar is
 // gone, only the toggle remains), the same pair the family's responsive standard already reaches

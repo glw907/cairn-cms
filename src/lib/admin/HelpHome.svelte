@@ -343,7 +343,7 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
 <style>
   /* The Help home content column. The styles consume the Warm Stone tokens the CairnAdminShell theme
      root owns; this block never redefines :root or [data-theme]. Ported from the rev.2 polished
-     mockup (docs/internal/design/2026-06-23-help-shell-mockup-rev2-polished.html), adapted to the
+     mockup (kept at the `pre-agent-first` tag), adapted to the
      three co-equal eyebrow-plus-display sections and the derived getting-started state. */
 
   .sr-only {

@@ -30,7 +30,7 @@ the re-skin recipe.
 The live demo is `/styleguide`. The exhaustive oklch values live in `theme.css`, the single source. The
 design criteria and the settled-design appendix (the chosen faces, the values, the layouts, the
 carry-forwards) are in the design bar
-([`docs/specs/2026-06-25-cairn-b2-design-bar.md`](../../../../docs/specs/2026-06-25-cairn-b2-design-bar.md)),
+([`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md)),
 which predates the neutral default and records the earlier branded starting point that became the
 cairn theme.
 
@@ -44,7 +44,7 @@ Voice section of that document, and cairn.pub's own prose follows the developer 
 Waymark is the chassis every new site reskins, so it stays neutral: "not stock DaisyUI" means
 craft (type scale, spacing, restraint), never a cairn identity a site would have to strip out.
 A move that would brand Waymark, such as rotating its primary hue toward cairn's or adopting
-the admin's type pairing, is out. Record: `docs/internal/record/2026-09-13-blueprint-design-spike.md`.
+the admin's type pairing, is out. Record: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-13-blueprint-design-spike.md`.
 
 ## Load-bearing rules (break these and the theme renders wrong)
 
@@ -397,6 +397,6 @@ measure it, rather than trusting the read.
 - The theme and the re-skin recipe: `examples/showcase/src/theme/theme.css`. The reading surface:
   `examples/showcase/src/chassis/prose.css`. The chrome: `examples/showcase/src/theme/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
-  ([`2026-06-25-cairn-b2-design-bar.md`](../../../../docs/specs/2026-06-25-cairn-b2-design-bar.md)).
+  ([`2026-06-25-cairn-b2-design-bar.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-25-cairn-b2-design-bar.md)).
 - The gates: `scripts/checks/check-public-scope.mjs` (the audit's public-scope rules),
   `scripts/lab/reskin-fixture.mjs`, and the `design.yml` workflow. The engine highlighter: `src/lib/render/highlight.ts`.

@@ -41,7 +41,7 @@ lands.
 - Docs stage 2b is closed by series pass 1 (PR #157). Its boundary test checked the 94 engine friction
   entries and found an engine pass warranted before the editors arm: pass 2 takes seven of them
   (`docs/plans/2026-10-30-docs-finalization.md`, "Pass 2 scope"), and the rest ride the final engine
-  batch (`docs/internal/record/2026-10-31-engine-friction-2b-close.md`).
+  batch (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-10-31-engine-friction-2b-close.md`).
 - Series pass 2 (PR #158) fixed the seven scoped entries, the sidebar figure's fixture, the doctor
   PASS titles (with a recapture of the doctor fixture and a committed pty recorder), and retired the
   tidy-key and login-probe conditions. Its boundary test over the remaining entries is the 2b close

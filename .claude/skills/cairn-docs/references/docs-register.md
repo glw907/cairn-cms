@@ -19,12 +19,12 @@
 
 This document is the agent-facing standard for cairn's published documentation, its front door,
 and the other public surfaces the table in "The base guides" names. Geoff ratified it on
-2026-07-18 (spec: `docs/specs/2026-07-18-docs-register-standard-design.md`), and the
+2026-07-18 (spec: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-07-18-docs-register-standard-design.md`), and the
 specimen history lives in the front-page-voice memory. Pass D (2026-08-14) organized
 it around the four audience tracks the rebuild ships
-([`2026-08-14-pass-d-target-manifest.md`](../../../../docs/internal/record/2026-08-14-pass-d-target-manifest.md) names the
+([`2026-08-14-pass-d-target-manifest.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, since a number in this document rots). The
-style-guide sync (2026-09-28, spec: `docs/specs/2026-09-28-style-guide-sync-design.md`)
+style-guide sync (2026-09-28, spec: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-09-28-style-guide-sync-design.md`)
 set every surface on a published base guide, wrote one drafting brief per guide as a short
 supplement to it, and recorded every departure from a guide in one section.
 
@@ -269,7 +269,7 @@ A page's introduction is reasoned fresh for each page, from that page's readers,
 supplies the questions a drafter answers before writing one, never a template to fill. Every
 prompt in it rests on a published source linked beside it, except the two house rulings it marks
 as such. The sources were read on 2026-10-04, and the survey behind them is
-`docs/research/2026-10-04-docs-introductions-survey.md`.
+`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-04-docs-introductions-survey.md`.
 
 The first question is who arrives at the page and what they already know. Google's technical
 writing course says to "Begin by identifying your audience's role(s)" and measures what a
@@ -720,9 +720,9 @@ so a sentence-initial capital still raises the same finding.
 ## Visuals (every page that carries one)
 
 The visual layer's governing decisions live in the 2026-08-15 sitting record
-([`2026-08-15-docs-visual-layer-rulings.md`](../../../../docs/internal/record/2026-08-15-docs-visual-layer-rulings.md));
+([`2026-08-15-docs-visual-layer-rulings.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-15-docs-visual-layer-rulings.md));
 the per-track vocabulary and per-page contracts live in
-[`2026-08-15-docs-outlines-with-visuals.md`](../../../../docs/internal/record/2026-08-15-docs-outlines-with-visuals.md).
+[`2026-08-15-docs-outlines-with-visuals.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-15-docs-outlines-with-visuals.md).
 This section carries the rules a writer needs at the page, so the records stay records.
 
 - **A visual earns its place or is absent.** Google's threshold governs: an image appears only
@@ -852,7 +852,7 @@ type adds what its template asks of the opening, as the following anatomies stat
 
 Every published page belongs to exactly one track, every track serves exactly one profile,
 with the one exception the scripter-or-agent profile below carves out of the reference arm
-(the full track profiles: [`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md)),
+(the full track profiles: [`2026-08-14-audience-profiles.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-audience-profiles.md)),
 and a page review grades the page against its profile. The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that
@@ -991,7 +991,7 @@ documented complaint.
 ### The scripter-or-agent profile
 
 This overturns the 2026-08-14 ruling, above and in
-[`2026-08-14-audience-profiles.md`](../../../../docs/internal/record/2026-08-14-audience-profiles.md), that every track
+[`2026-08-14-audience-profiles.md`](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-audience-profiles.md), that every track
 serves exactly one profile and the reference arm has none (Geoff, 2026-09-21). Three pages
 carry this profile and no others do: `docs/reference/cli-cairn-exit-codes.md`,
 `docs/reference/cli-cairn-json-output.md`, and `docs/reference/cli-cairn-doctor.md`. No agent
@@ -1234,7 +1234,7 @@ date.
 - [Writing tips](https://learn.microsoft.com/en-us/style-guide/global-communications/writing-tips)
 
 The introduction section cites the following pages, read on 2026-10-04; the source survey is
-`docs/research/2026-10-04-docs-introductions-survey.md`.
+`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/research/2026-10-04-docs-introductions-survey.md`.
 
 - [Google Technical Writing One: Defining your audience](https://developers.google.com/tech-writing/one/audience)
 - [Google Technical Writing One: Documents](https://developers.google.com/tech-writing/one/documents)

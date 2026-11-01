@@ -15,7 +15,7 @@ import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
 
 /**
- * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
+ * The successful tidy outcome: the corrected markdown, the model that produced it, and the
  * token usage. The diff is computed on the client, so the server returns the plain text and
  * commits nothing. Retired from the public surface; the module-level export stays,
  * since `tidyAction`'s return type composes into `createContentRoutesInternal`
@@ -76,7 +76,7 @@ export function supportsEffort(model: string): boolean {
 /** Build the tidy action, closed over the shared content-routes context. */
 export function createTidyActions(ctx: ContentRoutesContext) {
   /**
-   * Tidy: a light LLM copy-edit of the author's markdown (spec 2.1). The first remote model call in
+   * Tidy: a light LLM copy-edit of the author's markdown. The first remote model call in
    *  the library, so this is the highest-blast-radius server action: untrusted content and the Anthropic
    *  API key. The transport mirrors the media raw-body actions (a `text/plain` POST carrying JSON
    *  `{ text, scope }`, the CSRF token in `X-Cairn-CSRF`, the response deserialized by the client), with

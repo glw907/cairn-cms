@@ -1,5 +1,5 @@
 // cairn-cms: the `/sveltekit` barrel is server logic a raw, non-Vite bundler may reach directly,
-// the aksailingclub-org 0.95.0 adoption finding (docs/internal/docs-friction-log.md). A site can
+// the aksailingclub-org 0.95.0 adoption finding (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/docs-friction-log.md). A site can
 // bundle a single barrel export (for example `createD1AuditSink`, wired into a Cloudflare Cron
 // handler outside SvelteKit's own build, per scripts/wire-scheduled-handler.mjs's own pattern)
 // with Wrangler's own plain esbuild pass, which has no SvelteKit Vite plugin to resolve a virtual

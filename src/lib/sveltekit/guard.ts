@@ -425,7 +425,7 @@ export function requireOwner(event: CairnEvent): Editor {
 
 /**
  * For the engine's content and admin-mutation surfaces: a signed-in owner or editor, or 403
- * for a none-capability session. The none contract (spec section 4): a none session still
+ * for a none-capability session. The none contract: a none session still
  * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
  * `CairnAdminShell` custom-route seam untouched; only the engine's content and roster loads
  * and actions call this and refuse it.

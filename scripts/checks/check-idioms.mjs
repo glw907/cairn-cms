@@ -13,8 +13,7 @@
 //      exact drift a 2026-09 sweep found in check-chassis-boundary.mjs.
 //   4. A planning path (`docs/specs/`, `docs/plans/`, `docs/research/`, `docs/archive/`) is
 //      banned in src/lib: those directories are planning-and-spec scaffolding the npm tarball
-//      never ships, so a comment pointing there sends a package consumer to a 404, not a citation. A bare functional-spec citation, e.g. `(spec 2.8)`,
-//      names a section of the shipped functional spec by number and is not this shape.
+//      never ships, so a comment pointing there sends a package consumer to a 404, not a citation.
 //   5. A pass-scoped process reference is banned in src/lib: `Task N`, `Phase N`/`phase N`,
 //      `Pass A`/`pass A` (a single lettered pass), `Pass N`/`pass N`, `Plan N`/`plan N`,
 //      `batch N`, `Round N`/`round-N`, `design-arc D2`/`Design ratchet D3` (a design-decision-log

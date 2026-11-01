@@ -76,7 +76,7 @@ describe('grammar tokens', () => {
     }
   });
 
-  // The Pass 2 ruling (spec section 13): body, title, and heading take the named Tailwind steps
+  // The Pass 2 ruling: body, title, and heading take the named Tailwind steps
   // they replace (text-sm's 20px, text-2xl's 32px, text-lg's 28px); subtitle, meta, label, and
   // chip are the dominant computed line-height measured at their live call sites.
   it('matches the ruled type-role leading scale', () => {

@@ -1,7 +1,7 @@
 // cairn-cms: the adapter contract a site implements, and the engine-internal descriptors
 // the contract normalizes into.
 //
-// The adapter is the single seam the engine consumes (spec §8). A site supplies a
+// The adapter is the single seam the engine consumes. A site supplies a
 // `CairnAdapter` at `src/lib/cairn.config.ts` declaring its backend repo, the content
 // concepts it enables, its magic-link sender, and a design-accurate `render`. The
 // engine never hard-codes a concept, directory, or field; it reads them here. Field
@@ -48,7 +48,7 @@ export interface ValidationIssue {
  * A validator's verdict. On success it carries the normalized frontmatter to commit; on failure it
  * carries field-keyed error messages (the empty key is a form-level error) and, additively, the
  * located `issues` with multi-segment paths so the form can route a nested-container error to the
- * right input. Invalid input bounces to the form and never reaches git (spec §7.4).
+ * right input. Invalid input bounces to the form and never reaches git.
  */
 export type ValidationResult =
   | { ok: true; data: Record<string, unknown> }
@@ -63,7 +63,7 @@ export type ValidationResult =
 export type NamedField = FieldDescriptor & { name: string };
 
 /**
- * Per-site configuration for one content concept (spec §8). One `fields` fieldset, built with
+ * Per-site configuration for one content concept. One `fields` fieldset, built with
  * `defineFieldset`, is the single source of truth for the editor form, the validator, and the
  * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
  * typed reads. A concept also declares its routing and URL policy here (`routing`, `permalink`,
@@ -221,7 +221,7 @@ export type SiteRender = (input: {
 
 /**
  * The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`, in six
- * subsystem groups (spec §8): the content concepts, the commit backend, the magic-link sender, the
+ * subsystem groups: the content concepts, the commit backend, the magic-link sender, the
  * render subsystem, the optional media stack, and the admin-experience knobs. The internal manifest
  * and dictionary paths are not here; `composeRuntime` defaults them by convention.
  */
@@ -317,7 +317,7 @@ export interface CairnAdapter {
 }
 
 /**
- * Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries;
+ * Concept-fixed routing for a normalized concept. Posts are dated feed entries;
  * pages are plain navigable structure. Not in adapter config.
  */
 export interface RoutingRule {

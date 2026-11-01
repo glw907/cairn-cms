@@ -110,7 +110,7 @@ export interface HelpData {
 
 /**
  * The welcome view's data: the calm, minimal screen a none-capability role with no declared `home`
- *  lands on at the admin root (spec section 4). Carries just enough for the greeting; the sign-out
+ *  lands on at the admin root. Carries just enough for the greeting; the sign-out
  *  control already lives in the shell chrome.
  */
 export interface WelcomeData {
@@ -308,9 +308,9 @@ export function createShellActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
+   * The role-aware admin-root landing. A role with a declared `home` is sent
    *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
-   *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
+   *  the default landing; a none-capability role gets the calm welcome view instead of a
    *  dead-end redirect. A direct GET here can carry a `?error=` (an attacker-crafted link, or a
    *  bookmark), so the relay only ever forwards a code {@link resolveRefusalCode} recognizes and
    *  drops anything else, keeping the bounded vocabulary intact through the redirect.

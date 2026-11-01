@@ -60,7 +60,7 @@ export const ADMIN_CSS_SAFELIST = [
   // region on several admin surfaces shares the token, coincidentally, with daisyUI's `status`
   // dot class), so it stays blessed here for one documented, audit-complete list even though the
   // dot itself is gone. The chip register second generation
-  // (https://github.com/glw907/cairn-cms/blob/main/docs/internal/probes/2026-08-26-chip-registers-v2.md)
+  // (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md)
   // retired StatusChip's `status`-dot rendering: the owner probe ruled the 6px dot illegible
   // toolkit-wide and fused its tone signal into the chip register instead, so every color and size variant this family used to bless, thirteen
   // entries, is removed here. CHANGELOG carries the removal. Naming a member class literally in

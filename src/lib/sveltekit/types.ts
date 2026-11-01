@@ -51,7 +51,7 @@ export interface CairnEvent {
   route: { id: string | null };
   cookies: CookieJar;
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
-  // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
+  //. A real SvelteKit RequestEvent always supplies it.
   setHeaders(headers: Record<string, string>): void;
   // The five members share the flat `cairn` prefix, so a grep for one name finds every engine
   // read in any repo with no namespace to peel back first.

@@ -25,9 +25,8 @@ The polish bar is the live admin components rendered on the showcase, not a stat
 most-recent version by construction and authored in the real DaisyUI/Tailwind utility classes, so a hand
 twin can never represent them faithfully (the old `2026-06-12-editor-shell-gold-standard.html` is a
 superseded historical record). When a judgment call here feels ambiguous, match the live components and
-the recipes below. The design README beside that file has the capture recipe for the bar and the rule for
-mockups (a new screen with no component yet gets a utility-class HTML mockup, built with
-`npm run design:mockup-css`, never hand-rolled token CSS). Read this before any work on the
+the recipes below. A new screen with no component yet gets a utility-class HTML mockup in the
+gitignored `.mockups/` folder, built with `npm run design:mockup-css`, never hand-rolled token CSS. Read this before any work on the
 `/admin` interface (`src/lib/admin/*.svelte` and
 `src/lib/admin/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
 written for an implementing agent, so it leads with the rules that are easy to break and not visible in
@@ -216,7 +215,7 @@ Three rules carry the model:
   `ms-0` on its `nav` to cancel daisyUI's `.breadcrumbs` inset margin without touching that padding.
 - **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
   sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
-  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route recedes the sidebar behind
+  for desk routes (the desk rider, 2026-07-14). A desk route recedes the sidebar behind
   the drawer toggle only through the `lg`-`xl` tablet band (1024-1279px) and persists it at `xl`
   and up. The evidence for the rider: every
   content-management comparable persists nav through editing (Payload, Sanity, Craft, Contentful,
@@ -535,7 +534,7 @@ alongside the component recipes above and below it.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
   own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
   category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar
-  actually reaches never earns back (`docs/specs/2026-07-14-admin-reorganization-design.md`,
+  actually reaches never earns back (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-07-14-admin-reorganization-design.md`,
   §1). A site that declares its own `navLayout` sections gets the collapsible-group recipe: a native
   `<details>` per group, its `open` computed one-way from a label-keyed `collapsed` Set seeded from
   `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash) and
@@ -616,7 +615,7 @@ alongside the component recipes above and below it.
   circle by shape (a status dot, never a padded text chip), which keeps `rounded-full` under the
   Corner system rule above.
 - **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
-  Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
+  Geoff's own ratification: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md`).** `StatusChip`
   and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
   `cairn-chip-outline` classes, composed with `badge`) render in one of three ratified registers,
   replacing the stock daisyUI ghost badge outright: its hardcoded background and border can match
@@ -644,7 +643,7 @@ alongside the component recipes above and below it.
   stand out beyond quiet is a `warning` chip. Every register pins `font-weight: 400`; since none of
   the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
   the same element, so a hand-composed chip carries no weight utility of its own. Values are
-  measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
+  measured, not invented (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md`); the full contract
   lives on [the admin-toolkit reference page](../../../../docs/reference/admin-toolkit.md#statuschip).
 - **Badge tier: every safelisted `badge-*` class, the raw daisyUI alternative to `StatusChip`
   (audit-admin-statuschip's badge-tier ruling, closed 2026-09-01).** `badge-error`, `badge-success`,
@@ -1297,8 +1296,8 @@ alongside the component recipes above and below it.
   keeps its fold gutter empty-until-hover). Do not move the chevron back into the text to "reclaim"
   the column; the in-text band was the version this replaced. The gutter rules live in the
   `EditorView.theme` in `MarkdownEditor.svelte`, with `.cm-gutters` neutralized to blend in. Design
-  detail and rationale: `docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
-  `docs/specs/2026-06-14-fold-gutter-design.md`.
+  detail and rationale: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
+  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-06-14-fold-gutter-design.md`.
 
 ## Vertical alignment mechanics
 
@@ -1440,9 +1439,9 @@ same bar.
 ## Adding a new admin surface
 
 Mock it first, in component-idiomatic utility classes. A surface worth designing gets an HTML mockup
-under `docs/internal/design/` authored in the same DaisyUI/Tailwind utility classes the component will
-carry (never hand-rolled token CSS), built and served with `npm run design:mockup-css` (the design
-README has the recipe). That keeps the screenshot honest to what ships and the Svelte port a
+under the gitignored `.mockups/` folder authored in the same DaisyUI/Tailwind utility classes the
+component will carry (never hand-rolled token CSS), built with `npm run design:mockup-css` and served
+from that folder. That keeps the screenshot honest to what ships and the Svelte port a
 transcription. Ground the mockup in the closest live component, since the live components are the bar.
 
 Then build the component: wrap it in a `data-theme` wrapper (or render it inside `CairnAdminShell`, which
@@ -1496,7 +1495,7 @@ engine may change between versions without a major bump. A screen should not bui
   without a reviewed allowlist change.
 
 The split is recorded token by token in the admin custom-surface ledger
-(`docs/internal/design/2026-06-29-custom-surface-ledger.md`), which classifies every custom property into
+(`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-29-custom-surface-ledger.md`), which classifies every custom property into
 Tier 1 (the theme), Tier 2 (the documented floor), and Tier 3 (the folded remainder, now at zero). The
 `check:custom-surface` gate holds the line: it caps the `@layer components` rules, pins the unlayered set
 by whole-selector equality, and keeps the retired-token budget at zero, so a new arbitrary
@@ -1508,7 +1507,7 @@ is what the three vertical-alignment recipe selectors did (16 to 19, 2026-08).
 
 The showcase (`examples/showcase`) is the starter template a scaffolded site copies. Its design is the
 site's own, not the admin's, so its tokens live with the site and a developer restyles them freely. The
-showcase custom-surface ledger (`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
+showcase custom-surface ledger (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
 records the tiers.
 
 - **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/theme/theme.css`

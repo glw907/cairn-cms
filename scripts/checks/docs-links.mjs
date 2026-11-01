@@ -13,8 +13,8 @@
 // inside fenced or inline code are ignored, since those are examples, not navigation.
 //
 // The harvest deletes the old narrative pages named on the committed deletion list (arm-state.mjs).
-// A dated record keeps the links it was written with, so its links into deletion-list paths are
-// accepted for good (DATED_RECORD_PREFIXES); the same link anywhere else is repaired or fails.
+// The release record keeps the links it was written with, so its links into deletion-list paths are
+// accepted for good (isDatedRecord); the same link anywhere else is repaired or fails.
 import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, relative, sep, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,8 +25,7 @@ const ROOT_DOCS = ['README.md', 'SECURITY.md', 'ROADMAP.md', 'CHANGELOG.md', 'CO
 // Captured third-party pages keep their original links, so the link gate skips them.
 // Planning records are write-once history, so their links are never repaired. Matched by path
 // from the repo root, never by directory name, so a published `research` folder would be scanned.
-const PLANNING_DIRS = ['specs', 'plans', 'research', 'archive'].map((name) => join('docs', name));
-const PLANNING_BRIEFS = ['docs/2026-07-07-fresh-session-brief.md', 'docs/2026-08-18-tui-skills-setup-brief.md'];
+const PLANNING_DIRS = ['plans'].map((name) => join('docs', name));
 
 // Recursively collect `.md` files under a directory, skipping a name list.
 /**
@@ -59,8 +58,7 @@ function walkIfPresent(root, dirName) {
 export function filesInScope(root = ROOT) {
   const docs = walkMarkdown(join(root, 'docs'), new Set(), []).filter((p) => {
     const rel = relative(root, p);
-    if (PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep))) return false;
-    return !PLANNING_BRIEFS.includes(rel.split(sep).join('/'));
+    return !PLANNING_DIRS.some((dir) => rel.startsWith(dir + sep));
   });
   const rootDocs = ROOT_DOCS.map((p) => join(root, p)).filter(existsSync);
   const skills = walkIfPresent(root, 'skills');
@@ -156,7 +154,7 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // every page into the admin, editors, and extend tracks. CHANGELOG.md carries 45 links to the 29
 // retired paths below, and every one would fail this gate for as long as the file exists. Each
 // entry names the page that inherited the old page's job, taken from the cutover's redirect
-// map (docs/internal/record/2026-08-14-pass-d-target-manifest.md, section 2).
+// map (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-14-pass-d-target-manifest.md, section 2).
 //
 // A translation table that quietly maps to nothing is how a gate stops gating, so this one is
 // checked rather than trusted: legacyMapProblems() holds three invariants on every run. A value
@@ -169,7 +167,7 @@ const LEGACY_HOST = 'CHANGELOG.md';
 // by a LEGACY_HOST link, so an entry nothing reaches gets removed rather than carried forever.
 //
 // A value under docs/extend/ that names a page the arm's rebuild has not written yet points at the
-// arm index, which exists. docs/internal/record/harvest/relink.json records the page that later
+// arm index, which exists. https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/harvest/relink.json records the page that later
 // takes each one over.
 //
 // Only the path half is translated. The anchor half is deliberately left unchecked for a mapped
@@ -307,11 +305,9 @@ export function unreleasedParityMismatch(changelogText, migrationNotesText) {
     : `${UNRELEASED_PARTNER} carries an "## Unreleased" heading but CHANGELOG.md does not; rename it to the version it shipped in, or reopen the CHANGELOG window`;
 }
 
-// Files whose links are dated evidence: the release record and the internal record, history, and
-// feedback trees. Each is read as it was written, so a link from one of them into a page the
-// harvest deleted, or to a deleted arm's directory, is accepted permanently rather than chased to a
-// later page.
-const DATED_RECORD_PREFIXES = ['docs/internal/record/', 'docs/internal/history/', 'docs/internal/feedback/'];
+// The release record is dated evidence. It is read as it was written, so a link from it into a page
+// the harvest deleted, or to a deleted arm's directory, is accepted permanently rather than chased
+// to a later page.
 
 /**
  * Whether a repo-relative link target is a page the harvest deleted, or the directory of an arm
@@ -328,7 +324,7 @@ function isDeletedTarget(target, deleted) {
  * @param {string} file
  */
 function isDatedRecord(file) {
-  return file === LEGACY_HOST || DATED_RECORD_PREFIXES.some((prefix) => file.startsWith(prefix));
+  return file === LEGACY_HOST;
 }
 
 /**

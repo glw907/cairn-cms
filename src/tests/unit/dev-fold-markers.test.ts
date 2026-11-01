@@ -1,6 +1,6 @@
 // cairn-cms: scripts/checks/dev-fold-markers.txt feeds `grep -F -f` in e2e.yml and scaffold.yml. Under
 // GNU grep, a blank line in a -f pattern file matches every line, which would turn the dev-fold
-// gate red on every run (spec docs/specs/2026-08-04-auth-channel-consumer-proof-design.md,
+// gate red on every run (spec https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-04-auth-channel-consumer-proof-design.md,
 // "Fold markers: two lists, two propositions"). A `#`-prefixed line would also grep literally
 // rather than act as a comment, since -F takes every line as a fixed string. This test keeps the
 // file honest.

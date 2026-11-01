@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { enumerateExports, moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 
 // The four names the surface-pruning pass demotes from the /sveltekit barrel (Task 2), verbatim
-// from `docs/plans/2026-07-01-surface-pruning-pass.md`.
+// from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`.
 const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesDeps'];
 
 // Six names this list once kept, retired from the /sveltekit barrel by the retires pass, Task 2:
 // sanctioned NavIcon-class closure leaks (the F-1 hybrid ruling, r4-rederivation section 7). Each
 // survives structurally inside a keep parent's rendered shape; the replacement expression per name
-// is `docs/internal/record/2026-08-30-retires-move-record.md`.
+// is `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md`.
 const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'AdvisoryAction', 'MediaUsageInfo', 'NavPageOption'];
 
 // The five core arm shapes ContentFormFailure's Partial<> intersection once carried, retired from
@@ -37,7 +37,7 @@ const RETIRED_TIER1 = ['MediaDeleteFailure', 'MediaUpdateFailure', 'MediaReplace
 const RETIRED_PLATFORM = ['PlatformContext'];
 
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
-// section (`docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
+// section (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
 const KEPT = [
   'createAuthGuard',

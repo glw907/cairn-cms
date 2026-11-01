@@ -1,4 +1,4 @@
-// The tidy apply primitives (spec 2.5). The author's original stays in the buffer until they
+// The tidy apply primitives. The author's original stays in the buffer until they
 // accept: tidy never overwrites the document and asks for an undo. A StateField holds the change set
 // and each change's disposition, and a decoration plugin shows the proposed edits IN PLACE over the
 // untouched source. An insertion renders as a mark/widget showing the new text in --color-positive-ink
@@ -174,7 +174,7 @@ const tidyField = StateField.define<TidyState>({
 });
 
 /**
- * The api the host drives over one editor view (spec 2.5). Mirrors imagePlaceholderApi: the host
+ * The api the host drives over one editor view. Mirrors imagePlaceholderApi: the host
  *  receives it as EditorApi.tidy through registerEditor, and the review surface calls it as the
  *  author works the list. Every accept lands as a CodeMirror transaction; reject and reject-all
  *  write no text.

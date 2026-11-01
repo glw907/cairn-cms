@@ -1,5 +1,5 @@
 // The tidy system prompt: a stable always-on core plus a CONVENTIONS section built from the enabled
-// toggles only (spec 2.3). The core is fixed and never interpolated, so it caches well and protects
+// toggles only. The core is fixed and never interpolated, so it caches well and protects
 // voice the same way on every request. The CONVENTIONS section emits one rule line per enabled
 // convention and nothing for a disabled one; with nothing enabled it is omitted entirely, and tidy
 // does only the objective fixes. tidy NEVER harmonizes to the author and never guesses a style: an

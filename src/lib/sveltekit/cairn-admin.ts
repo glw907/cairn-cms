@@ -287,7 +287,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
       if (!nav) throw error(404, 'Not found');
       return nav.navSaveAction(contentEvent(event, {}));
     }),
-    // The tidy settings save (spec 2.8): the editor commits the per-convention block to the
+    // The tidy settings save: the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
     settingsSave: viewAction('settingsSave', ['settings'], (event) => content.settingsSaveAction(contentEvent(event, {}))),
@@ -310,11 +310,11 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     // view, where the revert forms live; concept/id are synthesized the same way every other
     // per-entry action's are.
     revert: viewAction('revert', ['history'], (event, view) => content.revertAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
+    // The personal-dictionary add: the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>
       content.dictionaryAddAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
+    // Tidy: the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction('tidy', ['edit'], (event, view) =>
       content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),

@@ -6,7 +6,7 @@ import { validateTidy, TIDY_REJECTION_MESSAGE } from './tidy-validate.js';
 import type { Change } from './tidy-diff.js';
 import type { EditorApi } from './MarkdownEditor.svelte';
 
-// The client-side tidy deadline (spec 2.1): a slow call becomes a cancel/retry rather than a
+// The client-side tidy deadline: a slow call becomes a cancel/retry rather than a
 // hung review. Set above the action's 30s Worker deadline so the server's retryable fail lands
 // first when the model is merely slow; this catches a stalled connection past that.
 const TIDY_CLIENT_TIMEOUT_MS = 45_000;
@@ -32,7 +32,7 @@ export interface TidyControllerParams {
   /** The entry's id, for the tidy action's URL. */
   getId: () => string;
   /**
-   * The site's tidy config for this entry (spec 2.5): whether tidy is on and which model runs.
+   * The site's tidy config for this entry: whether tidy is on and which model runs.
    *  Undefined degrades to disabled, the same tolerance the shell's read carried.
    */
   getTidy: () => { enabled: boolean; model: string } | undefined;
@@ -41,7 +41,7 @@ export interface TidyControllerParams {
 }
 
 /**
- * Owns the tidy request/review/undo flow (spec 2.1, 2.5): running tidy over the document or the
+ * Owns the tidy request/review/undo flow: running tidy over the document or the
  * current selection, the working/no-op/message states the host's dialogs render, the open review's
  * data, and the session-level "Undo tidy" affordance. Every write reaches the buffer through
  * `EditorApi.tidy`/`undo`, read fresh off `getEditor()` at each call so a mid-flow revocation or
@@ -106,7 +106,7 @@ export function createTidyController(params: TidyControllerParams) {
   });
 
   /**
-   * Run tidy (spec 2.1) over the whole document or the current selection. The action receives only
+   * Run tidy over the whole document or the current selection. The action receives only
    *  the selected text plus a scope flag; the diff is computed against that text and the changes'
    *  ranges are offset back into the full document before they reach the apply seam. On success the
    *  result is validated as a proofread; a rejection shows the honest message and writes

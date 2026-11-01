@@ -1,5 +1,5 @@
 // cairn-cms: the story-mount harness Task A4 of
-// docs/plans/2026-08-15-live-reproduction-seam-plan.md builds. This file's structure
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-15-live-reproduction-seam-plan.md builds. This file's structure
 // is the contract tasks A5a through A6b extend: as each group's story module registers into
 // src/lib/reproductions/index.ts's `stories` array, the "universal story contract" block below
 // exercises it automatically with no further edits here, and the pending-inventory block only

@@ -98,7 +98,7 @@ test('at 1440, the persistent sidebar panel is not left compositor-promoted', as
   await expect.poll(() => panel.evaluate((el) => getComputedStyle(el).willChange)).toBe('auto');
 });
 
-// 3. The desk rider (spec §5): a desk route (the edit page) persists its sidebar one breakpoint
+// 3. The desk rider: a desk route (the edit page) persists its sidebar one breakpoint
 //    wider than an office route, at `xl` (1280px) instead of `lg` (1024px), receding behind the
 //    toggle through the `lg`-`xl` tablet band and staying an overlay below `lg` as before.
 

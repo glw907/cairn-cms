@@ -7,7 +7,7 @@
 //              records, until its rebuild);
 //   rebuilt    the arm holds any page outside the kept set, which restores the gate's full check.
 //
-// The kept set comes from docs/internal/record/harvest/deletion-list.json, the one committed list. The list is read fail-closed: a missing, unparseable, or
+// The kept set comes from scripts/checks/deletion-list.json, the one committed list. The list is read fail-closed: a missing, unparseable, or
 // misshapen list throws, so no gate can read a vanished list as an empty arm and pass. The trigger
 // is always the pages an arm holds, never whether its directory or its index exists: an arm index
 // is a page like any other, so a stage that adds one rebuilds its arm.
@@ -19,7 +19,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** The committed deletion list, repo-relative. */
-export const DELETION_LIST_PATH = 'docs/internal/record/harvest/deletion-list.json';
+export const DELETION_LIST_PATH = 'scripts/checks/deletion-list.json';
 
 /** Every arm this reader answers for, in report order. */
 export const ARM_NAMES = ['admin', 'editors', 'extend', 'claude-code', 'front-door'];

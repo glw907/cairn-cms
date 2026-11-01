@@ -16,7 +16,7 @@
 // scope (`preview-doc.ts`'s embedded iframe-srcdoc string, a `.ts` module rather than a `.svelte`
 // component or a named CSS file); the showcase theme's ratified 650ms carousel crossfade,
 // migrated to a co-located `cairn-audit-disable-next-line motion-band` directive at the site
-// (Spec 6.1's replacement for a budget-file entry); or the showcase theme's achromatic
+//; or the showcase theme's achromatic
 // `--color-base-*` ladder and `--cairn-shadow` color-mix blacks, resolved by naming `theme.css` in
 // `paletteFiles` below, the same declared-palette-site exclusion `cairn-admin.css` already carries
 // from `token-colors` (config.ts's `DEFAULT_PALETTE_CSS_FILES`).

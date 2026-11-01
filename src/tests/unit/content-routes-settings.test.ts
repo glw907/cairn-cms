@@ -1,4 +1,4 @@
-// Task 15: the two-tier tidy settings save action (spec 2.8). The save mirrors the nav editor's
+// Task 15: the two-tier tidy settings save action. The save mirrors the nav editor's
 // read-modify-commit exactly: validate the posted conventions, read the committed YAML, commit the
 // document edited with setTidy through commitFile, and bounce a stale-SHA conflict back as a reload
 // prompt. Only the conventions block is written, so the developer-tier enabled/model facts are never

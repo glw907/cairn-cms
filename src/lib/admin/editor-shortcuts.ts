@@ -1,6 +1,6 @@
 // The one keyboard-shortcut table, the single source the shortcuts sheet (ShortcutsDialog) and the
 // Markdown help dialog both render. Order and content follow the gold-standard mockup's screen 5
-// (docs/internal/design/2026-06-12-editor-shell-gold-standard.html), one change: Write / Preview
+// (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/design/2026-06-12-editor-shell-gold-standard.html), one change: Write / Preview
 // shows Ctrl Alt P, the binding actually wired in EditPage (Firefox reserves Ctrl Shift P for
 // private browsing at the browser level, below preventDefault), and the fold pair the editor wires
 // in editor-folding.ts joins the editor-structure rows. The keys read with literal "Ctrl" to match

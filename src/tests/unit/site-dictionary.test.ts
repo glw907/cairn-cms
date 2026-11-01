@@ -1,4 +1,4 @@
-// Task 9: the pure git-committed personal dictionary store (spec 1.6). One word per line, sorted,
+// Task 9: the pure git-committed personal dictionary store. One word per line, sorted,
 // comment and blank lines tolerated on read. The merge is case-insensitive, idempotent, and
 // order-independent, so the action's commit-and-retry re-merges at a moved head and reaches the same
 // sorted set. The action validates inbound words against isValidDictionaryWord before the merge, so a

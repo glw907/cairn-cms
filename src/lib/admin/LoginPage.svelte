@@ -2,7 +2,7 @@
 @component
 The magic-link sign-in page. A plain form POST to the named `?/request` action (the engine's
 `requestAction`); no client SDK. The success message is identical whether or not the email is on
-the allowlist, so the page never leaks membership (spec §7.1). Under identity mode `data` carries
+the allowlist, so the page never leaks membership. Under identity mode `data` carries
 only the gate's `label`, and the page renders a hand-off paragraph with no form instead.
 -->
 <script lang="ts">

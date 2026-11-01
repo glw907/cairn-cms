@@ -5,7 +5,7 @@
 // and so on) can strand the doc's quote with no gate noticing, since `check:prose` scans
 // components and `check:docs` scans links, and neither compares one against the other (the
 // conventions-pass close caught one only via an Opus diff-review; see
-// docs/internal/docs-friction-log.md's "contributor" finding).
+// https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/docs-friction-log.md's "contributor" finding).
 //
 // This gate extracts every bolded double-quoted sentence from the page and checks it is grounded
 // in at least one shipped string somewhere under `src/lib`. A shipped string is rarely a plain

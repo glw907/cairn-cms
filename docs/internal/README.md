@@ -1,110 +1,20 @@
 # Internal docs
 
-Maintainer-facing documents. Nothing here is part of the adopter docs; the public arms
-live one level up.
+Maintainer-facing documents. Nothing here is part of the adopter docs; the public arms live one
+level up.
 
-## The filing rule
+`check:arm-indexes` gates the top level only: every top-level `.md` file here must be linked from
+this index, or the gate fails naming it.
 
-A dated artifact (a filename carrying a `YYYY-MM` prefix) files to `record/`. A living
-standard stays top-level. The test: does a reader need this file to do current work, or only
-to understand what was decided once? A design system, a register standard, or a generated
-snapshot answers the first question and stays here. A spike write-up, a review round, or a
-point-in-time audit answers the second and moves to `record/`, even while a pass is actively
-reading it as an input; see "This pass's active inputs" below.
-
-`check:arm-indexes` gates the top level only: every top-level `.md` file here must be linked
-from this index, or the gate fails naming it. It does not walk into `record/` or the other
-subdirectories, each of which keeps its own filing rule and its own index.
-
-## Conventions
-
-- **Tests live under `src/tests/{unit,integration,component}/`.** The vitest config only globs those
-  three directories, so a co-located `src/lib/**/*.test.ts` is silently never run. When a plan names a
-  test path, point it inside `src/tests/`, not next to the source.
-
-## Live
-
-The standards that agents follow moved into skills under `.claude/skills/`, each behind the path rule that loads it: the design systems to `cairn-following-admin-design` and `cairn-following-public-design`, the idiom charter and the gotchas to `cairn-writing-engine-code`, the scope charter to `cairn-judging-scope`, the docs register to `cairn-docs`, and the smoke test and gate tiers to `cairn-running-passes`. The generated export surface is `scripts/checks/api-surface.md`.
-
-- `credentials.md`: machine-local credential locations (the GitHub App id, installation id,
-  private key, and per-site D1 `AUTH_DB` bindings). It is gitignored and exists only on the
+- [`engine-rulings.md`](engine-rulings.md): the rulings ledger. `grep '^## '` is the index. A ruling
+  stays only while a session could re-argue it and the code does not state it; everything dropped is
+  at the `pre-agent-first` tag.
+- `consultations/`: briefs from consuming sites, each needing a verdict before a pass builds on it.
+  Its [README](consultations/README.md) has the protocol.
+- `option-map.json`: the public-option map `check:options` reads (removed with the walker in pass 3).
+- `credentials.md`: machine-local credential locations. Gitignored; it exists only on the
   maintainer's workstation.
-- [`docs-friction-log.md`](docs-friction-log.md): design friction surfaced while writing docs,
-  triaged into ROADMAP and STATUS.
-- [`docs-maintenance.md`](docs-maintenance.md): the three layers, gates, pass rule, monthly
-  drift routine, that keep the docs current.
-- [`engine-harvest-candidates.md`](engine-harvest-candidates.md): engine harvest candidates
-  evidenced from two consumer sites, an input to the pre-beta harvest triage rather than a
-  decision of its own.
-- [`engine-rulings.md`](engine-rulings.md): the rulings ledger, one entry per ruled
-  consultation or audit item with the evidence that would reopen it. Read before re-arguing
-  a settled item; the charter, not the ledger, adjudicates.
-- [`pre-beta-harvest.md`](pre-beta-harvest.md): the pre-beta harvest ledger, every engine and
-  Waymark improvement surfaced by the rebuild and port efforts, with the status each entry
-  carries toward the harvest pass.
-- [`src-lib-map.md`](src-lib-map.md): the contributor and agent map of `src/lib`, the
-  public/internal split per directory, the admin request flow, and the rest of the tree's
-  internal structure that `CONTRIBUTING.md`'s Repository map does not cover.
 
-## This pass's active inputs
-
-Pass D (2026-08-14, the documentation rebuild) reads six documents as live work orders while
-Phase 2 writes the new tracks. Each carries a date prefix, so the filing rule above sends it to
-`record/` with everything else dated; a document does not earn a top-level exemption just
-because a pass is currently reading it.
-
-- [`record/2026-08-14-pass-d-target-manifest.md`](record/2026-08-14-pass-d-target-manifest.md):
-  the rebuild's planning document, the target page set, the deletion and redirect map, and the
-  cutover gate bill.
-- [`record/2026-08-14-docs-track-outlines.md`](record/2026-08-14-docs-track-outlines.md): the
-  per-track page list and order Phase 2 writes from.
-- [`record/2026-08-14-audience-profiles.md`](record/2026-08-14-audience-profiles.md): the
-  grading rubric for the four tracks, the vocabulary contract, arrival state, and success
-  criterion each page is reviewed against.
-- [`record/2026-08-14-docs-review-methodology.md`](record/2026-08-14-docs-review-methodology.md):
-  how Claude-written documentation gets reviewed by Claude before production, the gate sequence
-  and the findings pipeline.
-- [`record/2026-08-14-cms-docs-competitor-review.md`](record/2026-08-14-cms-docs-competitor-review.md):
-  the competitor documentation review that grounds Pass D's rules.
-- [`record/2026-08-unagented-setup-baseline.md`](record/2026-08-unagented-setup-baseline.md):
-  the setup docs walked cold from five vantages, the friction record and the Pass D work list it
-  fed.
-
-## record/
-
-The dated record: spikes, harvests, audits, review rounds, and other point-in-time documents,
-one file per artifact, never edited after the fact to describe a later state. Find something by
-date (the `YYYY-MM[-DD]` filename prefix orders it against the work it came out of) or by
-subject (the filename's own words after the date; `grep -l <subject>` across the directory beats
-browsing). This section deliberately does not enumerate every file here: an index that lists
-every record recreates the sediment problem the filing rule exists to end.
-
-## consultations/
-
-Pre-pass engine consultation briefs from consuming sites, one dated file per consulting
-pass, brief and verdicts together. Its own `consultations/README.md` carries the filing
-rule and the four-field item schema; the `engine-consult` skill is the canonical protocol.
-
-## design/
-
-Frozen per-screen design mockups and references for admin UI work. Its own `design/README.md`
-governs; do not duplicate its conventions here.
-
-## feedback/
-
-Developer-experience feedback from real site migrations and incidents, one dated file per
-pass: `YYYY-MM-DD-<site>-<topic>.md`. Its own `feedback/README.md` carries the fixed report
-shape every migration fills, so the four sites crossing one window stay comparable, and the
-rule that every finding leaves the report.
-
-## history/
-
-The archive: superseded documents kept for the record. They describe designs that were later
-changed or reverted; do not read them as current.
-
-- `plan.md`: the original rebuild plan.
-- `architecture.md`: the original architecture writeup.
-- `architecture-critique.md`: a self-critique of that architecture.
-- `forward-compat.md`: early forward-compatibility notes.
-- `creating-a-cairn-site.md`: the 0.10-era living draft the tutorial and guides superseded;
-  it still holds dated design decisions (the scaffold-copy ruling, the extension seam).
+Plans, specs, and research no longer live in the repository. A plan lives in its initiative's
+`plans/` directory or on its pass branch. The planning record up to 2026-10-31 is at the
+`pre-agent-first` tag (`https://github.com/glw907/cairn-cms/tree/pre-agent-first/docs`).

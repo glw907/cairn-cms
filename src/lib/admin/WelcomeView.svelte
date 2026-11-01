@@ -1,7 +1,7 @@
 <!--
 @component
 The welcome view: the calm, minimal signed-in screen a none-capability role with no declared
-`home` lands on at the admin root (spec section 4, the "none contract"). It renders inside
+`home` lands on at the admin root. It renders inside
 `CairnAdminShell` like any other view, so it carries no `data-theme` wrapper and imports no CSS; the
 name, the role, and the sign-out control already live in the shell's sidebar footer. This screen
 adds only what the shell does not already say: a greeting and one calm line naming the account's

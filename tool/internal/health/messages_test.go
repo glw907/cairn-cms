@@ -170,7 +170,7 @@ func allCatalogueStrings() []string {
 // cairnCommandsCredsGrammarAllows is the literal allow-list criterion 8 of this task calls for:
 // checked against the real cobra tree once Task 19a-i lands it, and by this list until then. The
 // two cairn commands this package's fix table names are "cairn auth set" and "cairn adopt",
-// which the ruled grammar (docs/plans/2026-09-14-cairn-tool-1-0-pass.md, Task
+// which the ruled grammar (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-09-14-cairn-tool-1-0-pass.md, Task
 // 19a-i's "Produces") gives as `auth set <name>` and `adopt`.
 var cairnCommandsCredsGrammarAllows = []string{"cairn auth set", "cairn adopt"}
 

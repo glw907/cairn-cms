@@ -1,4 +1,4 @@
-// cairn-cms: the objective-error layer (spec 1.7). Three deterministic mechanical checks over the
+// cairn-cms: the objective-error layer. Three deterministic mechanical checks over the
 // prose spans the spellcheck classifier already kept: doubled words, double spaces inside a line,
 // and stray repeated punctuation. No Worker, no dictionary, no `retext` pipeline (that stays out of
 // the client and remains the right tool for a future CI-side prose check). There is NO style or

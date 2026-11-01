@@ -1,6 +1,6 @@
 <!--
 @component
-The two-tier tidy settings screen (spec 2.8). It follows the approved settings mockup
+The two-tier tidy settings screen. It follows the approved settings mockup
 (2026-06-20-editor-copyedit-settings-final-mockup.html).
 
 Two tiers with a truthful visibility gate:

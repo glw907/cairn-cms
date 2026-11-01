@@ -1,6 +1,6 @@
 <!--
 @component
-The `MarkdownEditor` seam (spec §6, seam 5): a thin wrapper over CodeMirror 6 exposing a bindable
+The `MarkdownEditor` seam: a thin wrapper over CodeMirror 6 exposing a bindable
 value and, through the one `registerEditor` grant, the whole buffer-scoped `EditorApi`. CodeMirror is
 client-only, so it mounts after the component does through a dynamic import; until then a plain
 textarea carries the value so the form still submits, and the hidden field mirrors the value
@@ -67,7 +67,7 @@ Swapping the editor stays a one-file change.
     undo: () => void;
 
     // Subsystems: composed capability objects rather than plain callbacks.
-    /** The tidy apply api (spec 2.5): the review surface drives the in-buffer decorations and the
+    /** The tidy apply api: the review surface drives the in-buffer decorations and the
      *  accept/reject state machine through it. The author's original stays in the buffer until an
      *  accept writes; a reject or reject-all leaves it byte-identical. */
     tidy: import('./editor-tidy.js').TidyApi;
@@ -109,7 +109,7 @@ Swapping the editor stays a one-file change.
      *  source resolves it to a real asset URL and hands it to the spellcheck Worker's init. Defaults to
      *  US English. */
     spellcheckDictionary?: string;
-    /** The committed personal-dictionary words (spec 1.6), from EditData.siteDictionary. The lint
+    /** The committed personal-dictionary words, from EditData.siteDictionary. The lint
      *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
      *  committed answers correct from the first lint. Empty by default (dialect-only). */
     siteDictionary?: ReadonlyArray<string>;
@@ -696,7 +696,7 @@ Swapping the editor stays a one-file change.
           '--cairn-directive-rail-3': 'var(--cairn-focus-dim-rail-3, 32%)',
           '--cairn-directive-rail-active': 'var(--cairn-focus-dim-rail-active, 36%)',
         },
-        // Tidy review decorations (spec 2.5). The author's original stays in the buffer; a deletion run
+        // Tidy review decorations. The author's original stays in the buffer; a deletion run
         // strikes through in --cairn-error-ink (reserved for tidy deletions) and the proposed insertion
         // shows as decoration content in --color-positive-ink (the locked addition token). The two are
         // a locked pair: deletion red and insertion green never speak the same color, so the author sees

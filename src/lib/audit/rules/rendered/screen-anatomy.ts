@@ -39,7 +39,7 @@
 //     `<form>` renders its accent-filled "Save changes" outside both the header and any card-shell,
 //     a real, currently-shipped instance of the anatomy this rule polices.
 //
-// DESK ROUTES ARE EXEMPT (spec 6.3): an open document's topbar-and-manuscript shape carries no
+// DESK ROUTES ARE EXEMPT: an open document's topbar-and-manuscript shape carries no
 // PageHeader at all (.claude/skills/cairn-following-admin-design/references/admin-design-system.md, "The context model: office and desk").
 // The exemption is read off the RENDER, never off the path, and that is the whole point. The first
 // cut used path depth, which `CairnAdminShell.svelte`'s comment names by name as the wrong

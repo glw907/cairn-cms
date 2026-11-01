@@ -30,7 +30,7 @@ PR for (`.github/dependabot.yml`), not only a major.
 5. **Note any new daisy component worth adopting.** A daisy release sometimes ships a primitive
    the admin or the toolkit could use (the way `status`, `join`, and the placement modifiers
    entered the blessed set ahead of a shipped consumer). File a candidate into
-   `docs/internal/docs-friction-log.md` or `ROADMAP.md` rather than adopting it inline as part of
+   `BACKLOG.md` or `ROADMAP.md` rather than adopting it inline as part of
    the version bump; absorbing daisy and adopting a new primitive are two different changes and
    this ritual is scoped to the first.
 

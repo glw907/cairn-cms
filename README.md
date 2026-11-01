@@ -11,8 +11,7 @@ npx create-cairn-site
 - **Looking up a contract?** [The reference](./docs/reference/README.md) has one page per export
   subpath.
 - **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
-  change lands. [The `src/lib` map](https://github.com/glw907/cairn-cms/blob/main/docs/internal/src-lib-map.md) goes deeper into the library
-  tree itself.
+  change lands.
 
 ## What cairn is
 

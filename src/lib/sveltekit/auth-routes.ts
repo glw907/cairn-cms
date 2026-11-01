@@ -49,7 +49,12 @@ export interface AuthRoutesConfig {
    * reaching this check, so the first owner must be seeded out of band before `identity` is
    * enabled.
    */
-  bootstrapOwner?: { /** The owner's email address, compared trimmed and lowercased. */ email: string; /** The owner's display name on the seeded row. */ displayName: string };
+  bootstrapOwner?: {
+    /** The owner's email address, compared trimmed and lowercased. */
+    email: string;
+    /** The owner's display name on the seeded row. */
+    displayName: string;
+  };
 }
 
 /**

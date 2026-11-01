@@ -274,7 +274,10 @@ export interface AuthChannelConfig<Env> {
    */
   challenge: (event: CairnEvent, form: FormData) => Promise<boolean>;
   /** The session cookie's base name, through `buildCookieName`; also names the `_pending` nonce cookie. A `cairn_`-prefixed base is rejected (it would collide with the engine's admin cookies). */
-  cookie: { /** The session cookie's base name; a `cairn_`-prefixed base is rejected. */ name: string };
+  cookie: {
+    /** The session cookie's base name; a `cairn_`-prefixed base is rejected. */
+    name: string;
+  };
   /**
    * Consulted by `resolveSubject` on every resolution; false revokes on the next request.
    *

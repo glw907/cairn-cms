@@ -17,7 +17,14 @@ export type Capability = 'owner' | 'editor' | 'none';
  * `home`, the `/admin`-prefixed route the admin root sends that role to.
  * @public
  */
-export type RoleDeclaration = Capability | { /** The capability the role maps to. */ capability: Capability; /** The `/admin`-prefixed route the admin root sends this role to. */ home?: string };
+export type RoleDeclaration =
+  | Capability
+  | {
+      /** The capability the role maps to. */
+      capability: Capability;
+      /** The `/admin`-prefixed route the admin root sends this role to. */
+      home?: string;
+    };
 
 /**
  * A site's whole vocabulary: role name to declaration. `owner` is the one reserved name.

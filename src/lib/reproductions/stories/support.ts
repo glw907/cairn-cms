@@ -100,11 +100,10 @@ export const fixtureFields: NamedField[] = [
 /**
  * The entry body every `EditPage` story edits.
  *
- * It carries NO media image on purpose. The preview pane builds its resolver internally from
- * `data.mediaTargets` and takes `publicPath`'s hardcoded `/media` default, which no story can reach
- * past (the audit's "Out of fix 1's reach"), so an image here would ask the docs origin for the
- * production media bucket. The page contract for these rows is the screen and its tabs, never an
- * illustrated preview, so the omission costs the stories nothing.
+ * It carries NO media image on purpose. The preview pane resolves a reference under the media base
+ * `ReproContext` provides, and this fixture ships no asset behind it. The page contract for these
+ * rows is the screen and its tabs, never an illustrated preview, so the omission costs the stories
+ * nothing.
  */
 export const FIXTURE_BODY = [
   'The north ridge trailhead is twenty minutes off the highway, and the last mile of it is gravel.',

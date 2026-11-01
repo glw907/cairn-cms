@@ -11,6 +11,7 @@ import { publicPath } from '../media/naming.js';
 import { variantUrl } from '../media/transform-url.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
 import { log } from '../log/index.js';
+import { DEFAULT_MEDIA_BASE } from '../admin/media-base-context.js';
 import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
 
 /** The VFile data key the renderer sets the per-call media resolver under. */
@@ -148,17 +149,19 @@ export function createMediaResolver(
 /**
  * A resolver backed by the lean `mediaTargets` projection, for the admin preview. It mirrors
  *  manifestLinkResolver: a hash present in the projection builds the slug delivery path
- *  (`/media/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
+ *  (`<base>/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
  *  broken rather than throwing. Pure over the projection, with no manifest and no config, so the
- *  edit page reaches it with the data it actually has.
+ *  edit page reaches it with the data it actually has. The base defaults to the engine's
+ *  `/media`; the edit page passes the site's resolved base so the preview matches delivery.
  */
 export function manifestMediaResolver(
   targets: Record<string, { slug: string; ext: string; contentType: string }>,
+  base: string = DEFAULT_MEDIA_BASE,
 ): MediaResolve {
   return (ref: MediaRef): string | undefined => {
     const entry = targets[ref.hash];
     if (!entry) return undefined;
-    return publicPath(entry.slug, ref.hash, entry.ext, 'slug');
+    return publicPath(entry.slug, ref.hash, entry.ext, 'slug', base);
   };
 }
 

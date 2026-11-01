@@ -248,9 +248,9 @@ async function runChapter3AndReport({ siteId, dir, flags, log, dryRun }) {
  * already saw chapter 2's completion hop print the domain, the admin sign-in URL, and (for
  * `email-live`) the sending address, so this adds only what that hop did not already say, the
  * repo/App links and the doctor reminder, rather than repeating `printEmailLiveInfo` or
- * `printDeclinedInfo`'s whole block on top of it; a later resumed run at either of those steps
- * takes bin.mjs's dedicated terminal branch instead, which never reaches this function at all
- * (its dedicated blocks carry the domain and email lines this run's hop already printed).
+ * `printDeclinedInfo`'s whole block on top of it. A later resumed run at `email-live` takes
+ * bin.mjs's dedicated terminal branch and never reaches this function. A later resumed run at a
+ * decline does reach it, so chapter 2 can ask the email question again.
  * Shared by the `live`-branch reopening and the fresh/resumed chapter-1-to-2 handoff in
  * `runCloudflareAndReport`, so the two paths cannot diverge on what "continuing into chapter 2"
  * means.

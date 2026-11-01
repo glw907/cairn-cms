@@ -448,7 +448,8 @@ export async function runChapter2({
     await deleteApiToken(siteId);
     // `email-live` prints nothing here, since its completion hop already said everything once, on
     // the run that reached it; bin.mjs's closing print covers a later re-entry there. A decline
-    // that is not open (its onboarding is somehow done) is only acknowledged.
+    // that is not open (its onboarding is somehow done) cannot be asked again, so it prints the
+    // re-offered decline copy and stops.
     if (record.step === 'paid-plan-declined') {
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
@@ -765,9 +766,9 @@ export async function runChapter2({
     // --- Email admission: Workers Paid is already on (chapter 1's consent confirmed it
     // before the first deploy), so this asks only about turning on email sign-in itself. Only
     // asked while step has not yet reached email-onboarded; once onboarding has actually
-    // succeeded, this is never re-asked. A decline writes the terminal step directly (rather than
-    // going through TERMINAL_STEPS' short-circuit, which only fires on a LATER re-entry) and
-    // deletes the token at the point it happens, per the terminal-state token rule.
+    // succeeded, this is never re-asked. A decline writes the terminal step directly and deletes the
+    // token at the point it happens, per the terminal-state token rule. A later re-entry at that
+    // step is handled at the top of this function by the open-decline re-offer.
     if (!hasReached(step, 'email-onboarded') && !emailAdmitted) {
       const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
       const emailConsented = await askEmailAdmission();

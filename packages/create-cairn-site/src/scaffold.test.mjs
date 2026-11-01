@@ -473,7 +473,7 @@ test('the hand-over block prints the bare install/dev sequence and never mention
 test('the hand-over block names what this run does next and never defers it to a release', () => {
   const text = handoverText({ dir: 'alpine-club' });
   assert.ok(!text.includes('next release'), 'the run continues to GitHub and Cloudflare, so nothing waits for a release');
-  assert.match(text, /private GitHub repository/);
+  assert.match(text, /offers to create a private GitHub repository/);
   assert.match(text, /deploys it to Cloudflare/);
   assert.match(text, /Workers\s+Paid plan/);
 });

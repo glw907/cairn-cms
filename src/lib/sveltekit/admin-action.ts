@@ -46,6 +46,14 @@ export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
 /**
  * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
+ *
+ * Synchronous and fire-and-forget: `ctx.audit` never reads or awaits the return value, and every
+ * emit logs `admin.action.audited` before the sink runs, wired or not. The seam is fail-open at
+ * the call site: a sink that throws, or returns a rejecting promise (an async function passes this
+ * type through void-return bivariance), never fails the action; `ctx.audit` logs
+ * `audit.sink.call_failed` without the record's `detail`, and the handler's result returns as if
+ * the sink had succeeded. A SvelteKit `redirect()` or `error()` the sink throws synchronously is
+ * rethrown untouched rather than logged.
  * @public
  */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
@@ -93,7 +101,10 @@ export interface AdminActionOptions {
    * `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on top of
    * the map check rather than standing in for it. Omitted, `createAdminAction` authorizes nothing, its
    * behavior for every existing caller. Present, a refused session is audited through
-   * `ctx.audit` and then thrown as `error(403, ...)`.
+   * `ctx.audit` and then thrown as `error(403, ...)`, so a wired `cairnAuditSink` receives one
+   * denial record per refused request. Opt-in rather than the default because the zero-config
+   * guard attaches an empty map, which has no rule for any target: enforcing by default would
+   * refuse every action on a site that declares no map.
    */
   access?: {
     /** The access-map key the session is checked against, never a request pathname. */
@@ -179,7 +190,8 @@ function serializeThrownError(error: unknown): string {
  * 2. The double-submit CSRF token must verify, constant-time, checked the same way the guard
  *    checks it (`./guard.js`): a header witness that was sent at all decides outright, matching or
  *    not, and the cookie-against-`csrf`-form-field check runs only when no `X-Cairn-CSRF` header
- *    was sent. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
+ *    was sent, so a fetch-based action that sets the header and posts `FormData` with no `csrf`
+ *    field passes. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
  *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
@@ -218,6 +230,11 @@ function serializeThrownError(error: unknown): string {
  * `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
  * contract with no database binding stays on `createAdminAction` itself rather than reaching for
  * that door.
+ *
+ * Every refusal in steps 1 to 3 throws SvelteKit's `redirect()` or `error()`, so none needs a
+ * site `handleError` mapping; only the dev-only {@link UnauditedActionError} is not a kit shape.
+ * Without `deps.access` this wrapper authenticates but authorizes nothing: a `none`-capability
+ * session reaches the handler.
  *
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
  * {@link authorizeAdminTarget} rather than falling back to `canReach`'s permissive nav

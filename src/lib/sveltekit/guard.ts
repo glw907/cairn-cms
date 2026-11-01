@@ -179,6 +179,40 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
 /**
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
  *
+ * Wire it in `hooks.server.ts`. A site that has a hook sequences the guard last, so the site
+ * hook sees every request and the guard owns admin gating. A path outside `/admin` passes through
+ * untouched, so a public route's headers stay the site's.
+ *
+ * It refuses before any route's load or action runs, in this order:
+ *
+ * 1. `CAIRN_DEV_BACKEND` set on the Worker env: a plain-text 503 on every path, admin or not,
+ *    logged as `guard.refused` with `reason: 'dev_backend_in_prod'`, so a build that leaked its
+ *    dev fixture fails loud rather than serving it. Skipped while the build prerenders.
+ * 2. An admin request over http to a non-local host: a branded HTTPS help page (`reason: 'https'`).
+ * 3. No `AUTH_DB` binding: a branded bindings-missing page on every admin path, the two public
+ *    paths included (`reason: 'bindings'`).
+ * 4. An unsafe admin request with a form content type, or with no `Content-Type` at all, that
+ *    carries no valid double-submit token: a branded 403 (`reason: 'csrf'`). A sent `X-Cairn-CSRF`
+ *    header decides outright, matching or not; only with no header sent does the guard read the
+ *    `csrf` form field, from a body clone. A JSON POST is not screened here, so this check does not
+ *    cover a hand-rolled JSON endpoint under `/admin`; such an endpoint verifies the token itself.
+ *    SvelteKit's origin check refuses a form POST with a foreign `Origin` before any handle runs,
+ *    so the guard adds no separate Origin check.
+ * 5. Every admin path but `/admin/login` and `/admin/auth/confirm` needs a session: with no valid
+ *    session cookie it throws `redirect(303, '/admin/login')`. With `identity` set, the resolver
+ *    replaces the cookie, and a refusal, a throw, or an email with no roster row renders a branded
+ *    refusal page instead.
+ *
+ * A resolved session lands on `locals.cairnEditor` with its capability resolved once, and
+ * `locals.cairnAccess` gets `runtime.access`, or an empty map when the adapter declares none. A
+ * role absent from the vocabulary still authenticates, at `none` capability, and logs
+ * `auth.role.unknown`. Under identity mode `locals.cairnIdentity` is set on every admin path;
+ * otherwise a value an earlier handle wrote there is deleted. The resolved response then gets the
+ * admin security headers, `Strict-Transport-Security` included; the refusal pages and the login
+ * redirect carry no `Strict-Transport-Security`.
+ * @throws Error at construction when `identity.logoutUrl` is neither a safe root-relative path nor
+ *  an absolute `https:` URL.
+ * @remarks
  * Annotated `: Handle`, kit's type, under the interop carve-out
  * (`convention-interop-carve-out`): a host-ecosystem return type satisfies the engine's
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
@@ -416,6 +450,9 @@ export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
 /**
  * For a protected load/action: the session the guard already resolved, or a login redirect.
  *  Takes {@link CairnEvent}, so every engine load/action and a site's real event satisfy it.
+ *  Authentication only: it throws `redirect(303, '/admin/login')` only when no session was
+ *  resolved at all, so a `none`-capability session passes. Call {@link requireEditor},
+ *  {@link requireOwner}, or {@link requireAccess} to authorize.
  * @public
  */
 export function requireSession(event: CairnEvent): Editor {
@@ -426,6 +463,8 @@ export function requireSession(event: CairnEvent): Editor {
 
 /**
  * For the management surface: a signed-in owner, or 403 for anyone else.
+ *  Throws `error(403)` for any session whose capability is not owner, and the same login redirect
+ *  as {@link requireSession} when no session was resolved.
  * @public
  */
 export function requireOwner(event: CairnEvent): Editor {
@@ -498,6 +537,10 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * would silently make the deeper rule dead code (see `matchHrefKey`, `auth/access.ts`). A site
  * relying on such a route must declare `target` explicitly, the same warning
  * `SectionActionOptions.target` carries for its POST half.
+ *
+ * A `none`-capability session is admitted only when the matched rule names its role explicitly
+ * (see `canReach`). A route that wants the zero-config any-editor behavior calls
+ * {@link requireSession} or {@link requireEditor} instead of this helper.
  * @public
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {

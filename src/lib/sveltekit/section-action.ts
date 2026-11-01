@@ -48,11 +48,21 @@ export type { RateLimitLike };
 export interface SectionActionConfig<Env, Db> {
   /** Resolve the section's database binding off the Worker env; undefined or null fails the action closed (500). */
   resolveDb: (env: Env | undefined) => Db | undefined;
-  /** Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. */
+  /**
+   * Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. It runs
+   * after `createAdminAction`'s form read, so it never bounds the cost of parsing the request body.
+   * Configure it whenever a persisted audit sink (`createD1AuditSink`) is wired: every
+   * authorization refusal audits, so without a limit a refused caller can fill the audit table
+   * cheaply.
+   */
   rateLimit?: {
     /** Resolve the rate-limit binding off the Worker env; undefined lets the action through. */
     resolve: (env: Env | undefined) => RateLimitLike | undefined;
-    /** The limiter key for one call. */
+    /**
+     * The limiter key for one call. Include an actor-scoped, normalized part (the editor's email),
+     * never the request path alone. Actions that read the same binding and produce the same key
+     * draw on one shared budget, not a budget per action.
+     */
     key: (ctx: AdminActionContext) => string;
     /** The error a limited call answers with, in place of the default "Too many requests" message. */
     message?: string;
@@ -76,7 +86,9 @@ export interface SectionActionOptions {
    * On a parameterized route, `event.route.id` is the bracket form (`/admin/posts/[id]`), never
    * the concrete pathname a request carries; an access map keyed by concrete path stops matching.
    * The derived default drops route-group segments (`/admin/(app)/roster` reads as
-   * `/admin/roster`), so a map stays keyed by URL shape; a declared target is used verbatim.
+   * `/admin/roster`), so a map stays keyed by URL shape; a declared target is used verbatim. A
+   * null route id, which a matched form action never sees, falls back to a fixed constant no map
+   * key matches, never the pathname, so it refuses.
    */
   target?: string;
   /** Require owner capability on top of the map check, never instead of it. */
@@ -110,6 +122,7 @@ export interface SectionActionAudit {
 export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   /** Emit one audit record; `action`/`entity` default from the call site's `SectionActionOptions`. */
   audit: (record: SectionActionAudit) => void;
+  /** The binding `resolveDb` returned, checked non-null before the handler runs. */
   db: NonNullable<Db>;
 };
 
@@ -118,7 +131,8 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
 /**
  * What `createSectionAction` returns: the per-call-site wrapper, curried over the handler's
  *  success type `T` (declared as a generic function type rather than named per call site, since
- *  each `wrap(handler, opts)` call fixes a different `T`).
+ *  each `wrap(handler, opts)` call fixes a different `T`). Name this type rather than
+ *  `ReturnType<typeof createSectionAction>`.
  * @public
  */
 export type SectionAction<Env, Db> = <T>(
@@ -167,9 +181,24 @@ export type SectionAction<Env, Db> = <T>(
  *    `entity` from `opts` (a handler may still override either, for the confirmed two-row-touch
  *    case that mutates more than one entity in one call).
  *
+ * SvelteKit dispatches a matched form action directly, with no ancestor layout `load` run first,
+ * so a page's guard never runs before a POST to one of its actions: this wrapper is the POST's
+ * gate. The section's layout `load` must call `requireAccess` for the same target, so reads and
+ * writes gate on one fail-closed predicate, and the section's path needs an access-map rule, or
+ * every call refuses.
+ *
+ * The three 403 branches share one message (`opts.deniedMessage` overrides it) and both 500
+ * branches share another, so a session learns no deployment or gating detail; the branch lives in
+ * the audit `detail` and the log. Every 403 also logs `auth.access.refused`, the guard's event, and
+ * both 500s log `admin.action.misconfigured`. A denial's audit record carries no `entityId`.
+ *
+ * A SvelteKit remote function never dispatches through `Actions`, so this wrapper never runs for
+ * one, and the guard's CSRF and session checks cover only paths under `/admin`. A remote function
+ * a site adds owns its authorization and CSRF verification.
+ *
  * `Env` does not infer from `resolveDb`'s parameter alone; annotate it (as below) or pass
- * explicit type arguments, else it collapses to `{}` and every downstream binding read stops
- * typechecking usefully.
+ * explicit type arguments, else it infers as `unknown` and a binding read such as
+ * `env?.SECTION_DB` fails to typecheck.
  *
  * ```ts
  * // src/routes/admin/team/events/[id]/+page.server.ts

@@ -14,6 +14,9 @@ npm test          # vitest: the unit, integration, and component projects
 npm run check     # svelte-check
 ```
 
+The component tests drive Chromium. Run `npx playwright install chromium` once, and on Linux
+`npx playwright install-deps chromium` for its system libraries.
+
 `npm install` also builds the package, because `npm run package` runs as the `prepare` script.
 To see a change in a running admin, use the showcase: `npm install` in `examples/showcase`,
 then `npm run dev` there. The showcase consumes the library through a relative `file:../..`
@@ -62,10 +65,13 @@ and rules load, and so does the `standards` plugin that supplies the review agen
 `cairn-running-passes` skill covers worktree setup, the fast lane (`npm run lane:fast`), and the
 risk classes.
 
+- A new clone's first Claude Code session starts without the plugin. Start it once as
+  `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude`, which installs the plugin before the first turn.
 - Cloud sessions get only the skills and agents committed here, not the plugin.
 - The daisyUI Blueprint server is a per-developer license; the admin skills work without it.
 - Work that touches a real Cloudflare, GitHub, or npm account needs your own credentials.
 - `tellgrader`, the prose-tell checker the docs gate can run, is optional; the gate skips it when absent.
+- `gh`, the GitHub CLI, opens and watches a pull request; install it when you do either.
 
 ## Proposing a change
 

@@ -8,6 +8,7 @@
   "enabledPlugins": {
     "standards@glw907-standards": true
   },
+  "worktree": { "baseRef": "head" },
   "permissions": {
     "allow": [
       "Bash(node scripts/checks/fast-lane.mjs*)",

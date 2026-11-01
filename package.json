@@ -208,8 +208,8 @@
     "guidance-hashes.json",
     "CHANGELOG.md",
     "MIGRATION-NOTES.md",
-    "docs/README.md",
     "docs/why-cairn.md",
+    "docs/architecture.md",
     "docs/admin",
     "docs/editors"
   ],

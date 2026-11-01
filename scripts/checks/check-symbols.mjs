@@ -64,7 +64,7 @@ const SCOPE = [
   { path: 'docs/admin', optional: true },
   { path: 'docs/editors', optional: true },
   { path: 'docs/why-cairn.md', optional: true },
-  { path: 'docs/README.md', optional: true },
+  { path: 'docs/architecture.md', optional: true },
   { path: 'MIGRATION-NOTES.md' },
   { path: 'README.md' },
 ];

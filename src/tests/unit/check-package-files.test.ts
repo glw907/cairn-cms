@@ -78,7 +78,7 @@ describe('checkDocsPacked', () => {
   const packedPaths = [
     'MIGRATION-NOTES.md',
     'schema/cairn-doctor.schema.json',
-    'docs/README.md',
+    'docs/architecture.md',
     'docs/why-cairn.md',
     'docs/admin/README.md',
     'docs/admin/create-your-site.md',
@@ -92,7 +92,7 @@ describe('checkDocsPacked', () => {
     'schema/cairn-doctor.schema.json',
     'docs/admin/README.md',
     'docs/editors/README.md',
-    'docs/README.md',
+    'docs/architecture.md',
     'docs/why-cairn.md'
   ];
   const docsCount = packedPaths.filter((p) => p.startsWith('docs/')).length;
@@ -176,7 +176,7 @@ describe('requiredDocsPaths', () => {
   });
 
   it('asks for both front-door files once either exists', () => {
-    expect(requiredDocsPaths(tree('docs/README.md'))).toEqual([...RECORDS, 'docs/README.md', 'docs/why-cairn.md']);
+    expect(requiredDocsPaths(tree('docs/architecture.md'))).toEqual([...RECORDS, 'docs/why-cairn.md', 'docs/architecture.md']);
   });
 
   it('fails closed when schema/ holds no schema', () => {

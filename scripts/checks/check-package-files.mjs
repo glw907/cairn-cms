@@ -69,8 +69,8 @@ const MIGRATION_NOTES_PATH = 'MIGRATION-NOTES.md';
 // The published JSON schemas the Go tool's `--json` payloads declare by `$id`, packed from schema/.
 const SCHEMA_DIR = 'schema';
 
-// The front door's two files: the index every track routes from, and the evaluator's page.
-const FRONT_DOOR_PAGES = ['docs/README.md', 'docs/why-cairn.md'];
+// The front door's two files: the evaluator's page and the architecture page.
+const FRONT_DOOR_PAGES = ['docs/why-cairn.md', 'docs/architecture.md'];
 
 // Each published docs directory and the index it must pack once it holds any page.
 const ARM_INDEX_PATHS = {

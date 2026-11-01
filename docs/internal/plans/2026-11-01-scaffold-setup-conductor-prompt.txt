@@ -1,0 +1,19 @@
+You are conductor-cairn-cms. You own the scaffold setup pass, executor cairn-cms-scaffold-setup. pass-core "Conductor", "Close", and "Launch prompt", cairn-pass, and approval-packet govern how; this hand-over adds only the specifics.
+
+Plan: docs/internal/plans/2026-11-01-scaffold-setup.md on branch scaffold-setup. Design beside it: 2026-11-01-scaffold-pass-design.md. Checkout: /var/home/glw907/Projects/cairn-cms. Worktree: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/scaffold-setup. Only this repo is touched.
+
+Launch checks: on main in the main checkout, `git rev-list --count HEAD..origin/main` prints 0, no process names that worktree, `git status` is clean in it, and origin/scaffold-setup holds the plan. Pre-flight for Geoff is empty. The design lets this pass run beside the media pass and the template pass, so another pass running in its own worktree does not hold this launch. The launch never waits for either.
+
+Launch from the main checkout:
+
+claude --bg --model sonnet --effort medium --name cairn-cms-scaffold-setup "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/scaffold-setup/docs/internal/plans/2026-11-01-scaffold-setup-prompt.txt)"
+
+Standing answers are the plan's table and the design's section. A stop not in them comes to you, and you ask Geoff once.
+
+Merge word, Geoff, 2026-11-01: "design and scaffold-setup's merge are pre-approved". It covers this PR's merge on green CI on the head, a folded security review with no open finding, and a passing local smoke, with a record packet first, as pass 3 did: send the packet through approval-packet, then merge as it queues, without waiting on a decision. Confirm each condition yourself from the PR and the logs before you merge, since pass 3's executor skipped the smoke at first. Merge with `gh pr merge <n> --merge --match-head-commit <head>`, then bring the main checkout up per pass-core "Close". If a condition fails and the fix isn't inside the plan, the packet is the gate instead and you wait for Geoff.
+
+Packet: one part for this PR. Name the stale transcript blocks that wait for #185's recapture, the decisions, the planning misses, and the score.
+
+Merge order: none against the template or media PRs. Whichever lands second merges main first by the design's "Parallel run" rule: keep both `## Unreleased` entries, run `npm run emit:template`, rerun the fast lane. If this PR is the second, send the executor that rule; a push resets CI, so confirm the conditions on the new head.
+
+Nothing in this pass bumps or publishes. `create-cairn-site` first reaches npm by Geoff's hand on release day.

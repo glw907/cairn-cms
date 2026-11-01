@@ -186,9 +186,13 @@ jobs:
             exit 1
           fi
           if out=$(npm view "create-cairn-site@$VERSION" version 2>&1); then
-            if [ -n "$out" ]; then
+            if [ "$out" = "$VERSION" ]; then
               echo "create-cairn-site@$VERSION is already on the registry; skipping"
               exit 0
+            elif [ -n "$out" ]; then
+              printf '%s\n' "$out"
+              echo "::error::npm view create-cairn-site@$VERSION printed something other than $VERSION"
+              exit 1
             fi
           elif ! printf '%s\n' "$out" | grep -q 'code E404'; then
             printf '%s\n' "$out"
@@ -200,5 +204,6 @@ jobs:
           # same two commands create-site.yml proves on every pull request.
           node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
           TGZ="$PWD/$(npm pack --ignore-scripts --silent | tail -n1)"
+          [ -f "$TGZ" ] || { echo "::error::pack produced no tarball"; exit 1; }
           echo "publishing create-cairn-site@$VERSION to the '$TAG' dist-tag"
           npm publish "$TGZ" --access public --tag "$TAG" --provenance

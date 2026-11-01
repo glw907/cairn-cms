@@ -15,7 +15,7 @@ import type {
   MediaReplacePreviewPlan,
   MediaReplaceFailure,
 } from '../../lib/sveltekit/content-routes-media-metadata.js';
-import { formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
+import { formatManifest, manifestEntryFromFile, parseManifest, verifyManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { formatMediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -325,6 +325,52 @@ describe('mediaReplaceApply', () => {
     expect(manifest[NEW_HASH]).toBeDefined();
     expect(manifest[NEW_HASH].slug).toBe('new-photo');
     expect(manifest[OLD_HASH]).toBeDefined();
+  });
+
+  it("rebuilds each rewritten entry's manifest row in the same commit, keeping publishedAt, so verifyManifest passes", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const concept = runtime().concepts[0];
+    const path = 'src/content/posts/2026-05-one.md';
+    const seeded = manifestEntryFromFile(concept, { path, raw: bodyWith('old-photo', OLD_HASH, 'Entry One') });
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(OLD_HASH, 'old-photo')),
+        [MANIFEST_PATH]: contentManifest([{ ...seeded, publishedAt: '2026-05-02T00:00:00.000Z' }]),
+        [path]: bodyWith('old-photo', OLD_HASH, 'Entry One'),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutesInternal({ runtime: runtime() });
+    await expect(
+      routes.mediaReplaceAction(
+        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
+      ),
+    ).rejects.toMatchObject({ status: 303 });
+
+    const committedRaw = gh.read('main', MANIFEST_PATH)!;
+    const row = parseManifest(committedRaw).entries[0];
+    expect(row.mediaRefs).toEqual([NEW_HASH]);
+    expect(row.publishedAt).toBe('2026-05-02T00:00:00.000Z');
+    const built = { version: 1 as const, entries: [manifestEntryFromFile(concept, { path, raw: gh.read('main', path)! })] };
+    expect(() => verifyManifest(built, committedRaw)).not.toThrow();
+  });
+
+  it('commits only media.json when a replaced asset is referenced nowhere', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const unchanged = contentManifest([]);
+    const gh = new GithubDouble({
+      main: { [MEDIA_PATH]: mediaManifest(mediaEntry(OLD_HASH, 'old-photo')), [MANIFEST_PATH]: unchanged },
+    });
+    gh.install();
+    const routes = createContentRoutesInternal({ runtime: runtime() });
+    await expect(
+      routes.mediaReplaceAction(
+        applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
+      ),
+    ).rejects.toMatchObject({ status: 303 });
+    expect(commitCount(gh)).toBe(1);
+    expect(gh.read('main', MANIFEST_PATH)).toBe(unchanged);
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[NEW_HASH]).toBeDefined();
   });
 
   it('refuses without the typed slug (fail 409) and lands no commit', async () => {

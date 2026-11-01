@@ -64,5 +64,5 @@ export function runFastLane(range, { classify = classifyRange, run = runLeg } = 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const flag = process.argv.indexOf('--range');
   const range = flag === -1 ? 'origin/main..HEAD' : process.argv[flag + 1];
-  process.exit(runFastLane(range));
+  process.exitCode = runFastLane(range);
 }

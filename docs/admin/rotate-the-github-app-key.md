@@ -96,7 +96,7 @@ The site's `/healthz` page proves at once that the new key signs, and a publish 
 
    No record with `scope: 'shell'` after your admin visit means that the read used a token the new key made and GitHub accepted. An empty result proves this only with Workers Logs on, since without it nothing is recorded.
 
-The `commit.failed` and `publish.failed` events come only from saving and publishing, so neither is the query for a key that GitHub refuses.
+The `commit.failed` and `publish.failed` events come only from actions that commit, such as a save or a publish, so neither is the query for a key that GitHub refuses.
 
 ## Delete the old key
 
@@ -118,7 +118,7 @@ Once the cached tokens expire, a failed key ends each attempt to open or publish
 
    Check that the path names the new PEM file and that no `Out-File` step intervened under Windows PowerShell 5.1, and then push again.
 
-3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `Error: GitHub installation token failed: <status>`, GitHub refused the signed request.
+3. If `/healthz` reports `ok: true` but a `github.unreachable` record with `scope: 'shell'` carries `InstallationTokenError: GitHub installation token failed: <status>`, GitHub refused the signed request.
 
    The error page comes from that refusal. Roll back as [Roll back to the old key](#roll-back-to-the-old-key) describes, or generate a key as [Generate a third key](#generate-a-third-key) describes.
 

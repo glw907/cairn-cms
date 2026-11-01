@@ -135,7 +135,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 **`config.media-bucket-missing`, a warning.** The site is set up to store uploaded images, but `wrangler.jsonc` declares no matching `r2_buckets` binding, so uploads have nowhere to go. A site without an image library sees this check as a SKIP.
 
-**Ask a developer:** declare an `r2_buckets` binding whose name matches the site's media bucket setting, then redeploy. The [adopt-cairn guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/adopt-cairn.md) shows the shape.
+**Ask a developer:** declare an `r2_buckets` binding whose name matches the site's media bucket setting, then redeploy. The [media guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/media.md) shows the shape.
 
 ## Turn on observability
 
@@ -155,7 +155,7 @@ An earlier version of cairn refused a form outside the admin when its `Origin` h
 
 A PASS covers only those two files. It says nothing about a policy set in a module the files import, in a layout, or in a Cloudflare response-header rule outside the repository. A SKIP means the check found neither file, and it doesn't mean the site is safe.
 
-**Ask a developer:** serve `strict-origin-when-cross-origin` or `same-origin` as the site's default `Referrer-Policy`. Restrict `no-referrer` to routes protected by a double-submit token, as cairn's own `/admin` responses are.
+**Ask a developer:** serve `strict-origin-when-cross-origin` or `same-origin` as the site's default `Referrer-Policy`. Restrict `no-referrer` to routes protected by a double-submit token. cairn's own `/admin` responses send `strict-origin`.
 
 ## Set the public origin
 

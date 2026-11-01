@@ -16,7 +16,7 @@ Both tokens grant read access only. The next section lists the permissions each 
 
 ## Token scopes
 
-`cairn auth check` confirms these permissions against your two tokens. Every account-scoped permission needs only the credentials, and every zone-scoped or repository-scoped permission is checked against one registered site with `cairn auth check <site>`.
+`cairn auth check` confirms these permissions against your two tokens. Zone Settings, DNS, Email Sending, and GitHub's Contents are checked against one registered site with `cairn auth check <site>`, and the rest need only the credentials.
 
 ### Cloudflare
 
@@ -74,7 +74,7 @@ printf %s "$v" | cairn auth set CAIRN_GH_READ_TOKEN
 
 1. Run `cairn auth list`. It reports whether the environment, the keyring, or neither answers for each of the three names, and never prints a value.
 2. Run `cairn auth check` to confirm the account-scoped permissions.
-3. Run `cairn auth check <site>` with the name of a site you adopted, to confirm the zone permissions and the repository permissions. Without a site name, those rows report `skip`.
+3. Run `cairn auth check <site>` with the name of a site you adopted, to confirm Zone Settings, DNS, Email Sending, and Contents. Without a site name, those four rows report `skip`.
 
 A GitHub token over a public repository can't prove its Contents permission, because GitHub serves a public repository to anyone. A real confirmation needs a site whose repository is private. A private repository the token can't see answers not-found, not forbidden, so when you see `not-found` for a repository you expect the token to reach, check the token's repository list first.
 
@@ -87,4 +87,4 @@ A GitHub token over a public repository can't prove its Contents permission, bec
 
 A GitHub token expires when you said it would. `cairn` checks a Cloudflare token against Cloudflare's token verification endpoint.
 
-`cairn logs --since` reads at most 7 days of Workers Logs. A Cloudflare plan with a different retention window returns events up to that window, and the dashboard shows your own boundary.
+`cairn logs --since` reads at most 7 days of Workers Logs, even on a plan that keeps more, and a plan with a shorter retention window returns less. The dashboard shows your plan's boundary.

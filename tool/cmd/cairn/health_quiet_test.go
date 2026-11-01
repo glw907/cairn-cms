@@ -43,7 +43,7 @@ func failingChecks() []health.Check {
 }
 
 // TestQuietPrintsNothingOnAnOKRunOnEveryPath is the rule tool/CHANGELOG.md and
-// tool/docs/tripwire.md's wrappers already state: a green `cairn health --quiet` prints nothing,
+// docs/admin/tripwire.md's wrappers already state: a green `cairn health --quiet` prints nothing,
 // whatever shape the run takes. It used to hold on the fleet frame alone, which needs a terminal
 // and more than one site, so a bare `cairn health --quiet` under cron, systemd, launchd, or Task
 // Scheduler mailed a full body every green run. Every row here is a non-terminal stdout, which is

@@ -91,7 +91,7 @@ Fold: add to :46: "Paste the task block and every settled bullet naming its item
 
 ### 11. Minor, correctness: Task 3b acceptance 3 fails on a correct run (plan:141)
 
-The grep runs at Task 3b, while the plan still exists. It prints `docs/plans/2026-11-01-media-publish.md:135` and `:141`.
+The grep runs at Task 3b, while the plan still exists. It prints `docs/internal/plans/2026-11-01-media-publish.md:135` and `:141`.
 
 Fold: use `grep -rn --exclude-dir=plans 'presetUrl\|BUILT_IN_PRESETS' src skills docs`.
 

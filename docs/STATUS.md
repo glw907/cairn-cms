@@ -21,7 +21,7 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-The media and publish pass is running: `docs/plans/2026-11-01-media-publish.md`, executor
+The media and publish pass is running: `docs/internal/plans/2026-11-01-media-publish.md`, executor
 `cairn-cms-media-publish` from a worktree off `main`, `ordinary`, merging its own PR on Geoff's
 2026-11-01 approval. PR #170 merged at `c85b1de0b`, so the agent-first pattern is on `main`. Three bars
 read unmet by Geoff's choice (the install and editor sittings, and the docs review of the human pages),
@@ -31,6 +31,9 @@ each site's migration. The release needs `create-cairn-site` published first (`B
 Prerelease `0.98.1-rc.2` is on npm `next`; `latest` is `0.98.0`. The full backlog triage of 2026-11-01
 waits in the Approval Queue; its decision lands in
 `~/.local/state/cairn-agent-first/2026-11-01-backlog-triage.decision.json`.
+
+Executor session: `cairn-cms-media-publish`, id `b932f9fb`, branch `worktree-media-publish-run`,
+base `c85b1de0b`.
 
 ## Open decisions and watches
 - The engine backlog triage of 2026-10-31 landed: `BACKLOG.md` lists open items by pass, each with

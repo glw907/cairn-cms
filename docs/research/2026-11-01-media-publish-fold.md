@@ -1,6 +1,6 @@
 # Fold record: media and publish plan, mechanics review
 
-Fold of `2026-11-01-media-publish-review-mechanics.md` into `docs/plans/2026-11-01-media-publish.md`. Each finding was checked against source or a probe. The tree was restored after every probe.
+Fold of `2026-11-01-media-publish-review-mechanics.md` into `docs/internal/plans/2026-11-01-media-publish.md`. Each finding was checked against source or a probe. The tree was restored after every probe.
 
 Owner forks: none. Counts: 18 findings: 17 folded, 1 optional taken (18), 0 refused. Two folds differ from the review's text: 5 drops a clause, and 11 and 15 go further than the review did. Path 245, unchanged; task sum 365 to 380.
 

@@ -1,6 +1,6 @@
 # Media and publish pass: plan
 
-Design: `docs/plans/2026-11-01-media-publish-design.md`, approved by Geoff 2026-11-01. Initiative: none. Consultation: none open for this pass. Risk class: `ordinary`, no `live-account`. Base: `main` at `c85b1de0b` plus this plan branch. Facts below were read or probed at that commit.
+Design: `docs/internal/plans/2026-11-01-media-publish-design.md`, approved by Geoff 2026-11-01. Initiative: none. Consultation: none open for this pass. Risk class: `ordinary`, no `live-account`. Base: `main` at `c85b1de0b` plus this plan branch. Facts below were read or probed at that commit.
 
 Path estimate: **245 minutes** (design 200; ceiling 400). Task sum 380, which sets nothing. Expect about half the path, per the design's Estimate.
 
@@ -177,7 +177,7 @@ Three commits, in this order.
 1. Run the whole-branch `standards:diff-reviewer` against this plan and the design, telling it the class note above. Dispatch `standards:svelte-reviewer` for the action and `EditPage` changes. No `visual-verifier` run is owed unless a screen's layout changed, since only strings and an image base changed. State that in the PR.
 2. Fold one fix chain, quoting each finding verbatim. Run the fast lane again.
 3. Move the ten items to `## Done` with proof, and file anything found through `standards:log-issue`.
-4. Delete `docs/plans/2026-11-01-media-publish*` and `docs/research/2026-11-01-media-publish-*`. A plan goes when its pass closes.
+4. Delete `docs/internal/plans/2026-11-01-media-publish*` and `docs/research/2026-11-01-media-publish-*`. A plan goes when its pass closes.
 5. Update `docs/STATUS.md`.
 6. Run `npm run check:docs-gate`, commit, and push.
 7. Write the PR body: `## Brief`, what landed, `## Decisions`, `## Planning misses`, every retried test, the score with plan path 245 beside actual.

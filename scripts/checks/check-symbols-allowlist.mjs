@@ -29,6 +29,10 @@ export const ALLOWLIST = new Set([
   'cli-flag:--no-add-ons', // sv create's flag, not create-cairn-site's
   'cli-flag:--strict', // cairn-guidance check's flag, not create-cairn-site's
 
+  'cli-flag:--user', // systemctl's flag, in docs/admin/tripwire.md's systemd example
+  'cli-flag:--now', // systemctl enable's flag, in docs/admin/tripwire.md's systemd example
+  'env-var:XDG_CONFIG_HOME', // the XDG base-directory variable docs/admin/credentials.md names for the Linux registry path
+
   // SCREAMING_SNAKE_CASE tokens that are not environment variables cairn reads, so the source
   // tree never carries the literal string.
   'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // MIGRATION-NOTES.md, Node's error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable

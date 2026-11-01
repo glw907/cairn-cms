@@ -121,7 +121,7 @@ describe('renderTranscript: real fixture ground truths', () => {
   it('renders the 01-create-cairn-site.txt site-name prompt as one settled line, not a keystroke trail', () => {
     const raw = readFileSync(join(FIXTURES_DIR, '01-create-cairn-site.txt'), 'utf8');
     const lines = renderTranscript(raw).split('\n');
-    expect(lines).toContain('│  cairn-capture-scratch');
+    expect(lines).toContain('│  cairn-docs-capture-2');
     // A per-keystroke redraw that survived un-erased would leave partial trails like these.
     for (const partial of ['│  c', '│  ca', '│  cai', '│  cair']) {
       expect(lines).not.toContain(partial);
@@ -134,7 +134,7 @@ describe('renderTranscript: real fixture ground truths', () => {
     expect(lines).toHaveLength(14);
     expect(lines[0]).toBe('+ cairn doctor .');
     expect(lines[1]).toBe('PASS  Wrangler bindings are declared: EMAIL and AUTH_DB are declared');
-    expect(lines.at(-1)).toBe('8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked');
+    expect(lines.at(-1)).toBe('10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked');
   });
 });
 

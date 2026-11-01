@@ -308,11 +308,7 @@ code span (`` `Powered by Cairn` ``), which Vale skips, and that is the sanction
 a bare-quoted "Powered by Cairn". The rule's `\bCairn\b` also matches the prose word "Cairn"
 inside a slash path like "Cairn/x"; that is fine, because every real path in published prose
 already sits in a code span, so the rule never sees it as prose to begin with.
-The narrative arms (`docs/admin/`, `docs/editors/`) are empty until their stages
-rebuild them, so no old page awaits a naming sweep; each stage writes to this table from its first
-page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` sits outside
-`.vale.ini`'s scope for the same reason: its pages move under `docs/` in draft docs pass A, and
-the Names rule reaches them once they do.
+The narrative arms (`docs/admin/`, `docs/editors/`) were rebuilt stage by stage, and each stage wrote to this table from its first page. A new page, or a page already open for an unrelated edit, writes to this table now. `tool/docs/` still sits outside `.vale.ini`'s scope; the credentials and tripwire pages it once held now live in `docs/admin/`, where the Names rule reaches them.
 
 A further rule carries the admin-or-public split's own retired compounds, kept out of
 `Cairn.Names` since that rule is case-sensitive by necessity (matching the capital wordmark) and
@@ -409,6 +405,9 @@ opening, as the following anatomies state.
   4. A verification section, headed with a bare infinitive such as "Verify the served file",
      <!-- vale Google.Quotes = YES -->
      that names the observable result. Checks the reader runs in order form a numbered list.
+     One exception stands (Geoff, 2026-10-31): `admin/own-your-domain.md` keeps "You know it
+     worked when" on its three sections, because `github-slug-contract.test.ts` pins their
+     slugs, so the slug contract outranks the heading rule there. Each body is a full sentence.
   5. Failure paths that point at the track's recovery surface (`admin/setup-recovery.md` or
      `admin/troubleshooting.md`) rather than restating recovery
      prose inline. Ordered diagnostic checks form a numbered list here too.

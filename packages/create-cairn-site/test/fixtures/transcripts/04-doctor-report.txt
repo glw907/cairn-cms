@@ -4,11 +4,11 @@ PASS  Media bucket binding is declared: media bucket MEDIA_BUCKET is declared
 PASS  Workers Logs has a sink: observability.enabled is true
 PASS  Trusted origins keep SvelteKit's origin check: no csrf.trustedOrigins entries in vite.config.ts, so SvelteKit's default origin check covers every route (heuristic text read)
 PASS  Site config validates: parsed (per-concept URL policy lives on the adapter concepts, not checkable from the CLI)
-PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is http://localhost:4173 (wrangler vars)
+PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://cairn-docs-capture-2.glw907.workers.dev (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
-UNCHECKED  A framework dependency sits below the engine floor: doctor: refusing to read outside the directory: node_modules/@glw907/cairn-cms/package.json
+PASS  Framework dependencies meet the engine floor: @cloudflare/workers-types 5.20261031.1 and @sveltejs/kit 3.1.1 and svelte 5.57.3 satisfy the engine peer ranges
 SKIP  Guard is missing the declared role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
-UNCHECKED  The stated AI posture is not the served one: could not reach the resolved origin's /robots.txt
+PASS  The stated AI posture is the served one: no AI posture is stated (aiPosture is unset). https://cairn-docs-capture-2.glw907.workers.dev/robots.txt carries no AI-crawler directives, consistent with stating nothing.
 
-8 passed, 0 failed, 1 skipped, 0 info, 2 unchecked
+10 passed, 0 failed, 1 skipped, 0 info, 0 unchecked

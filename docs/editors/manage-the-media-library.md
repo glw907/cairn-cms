@@ -1,6 +1,6 @@
 # Manage the media library
 
-The media library holds every image on your site. This page covers browsing the library, adding images, editing an image's name and default alt text, replacing an image everywhere it appears, and deleting images. It also gives the file types and size limit for uploads.
+The media library holds every image on your site. This page covers browsing the library, adding images, editing an image's name and default alt text, replacing an image everywhere it appears, deleting images, and removing files that no image uses. It also gives the file types and size limit for uploads.
 
 You need to be signed in to the admin. You don't need a draft open, because everything here happens on the library screen. To put an image into the draft you're writing, see [Add an image](add-an-image.md).
 
@@ -73,6 +73,8 @@ The panel holds the following:
 
 To change the name, address, or default alt text, edit the field and select **Save**. **Changes saved.** confirms it.
 
+The library doesn't remember a **Decorative** choice. After you choose it, the image still shows **Needs alt** and stays in the **Needs alt** filter. The choice leaves the default alt text empty, which tells a screen reader to skip the image.
+
 The default alt text applies the next time someone places the image. Changing it doesn't change alt text already set on pages that use the image. To fill in the default on published pages where the image has no alt text, select **Push alt to placements**. The window it opens lets you choose whether to overwrite alt text that pages already have.
 
 ## Replace an image
@@ -144,6 +146,18 @@ caption: The window lists each entry that would break and keeps Delete anyway un
 ```
 
 After a delete, the library shows **Asset deleted.**
+
+## Remove files that no image uses
+
+The library's storage can hold files that no image in the library points to. The **Find orphaned files** button scans for them and for the opposite problem, an image whose file is missing.
+
+1. Select **Find orphaned files** near the top of the library. The scan can take a moment.
+1. Read the result. **Orphaned files** lists stored files that no image uses. **Broken references** lists images whose file is gone, and it offers no action. To fix one, upload the image again or remove it from the entries that use it.
+1. To remove orphaned files, select them, and then select **Purge** followed by the number.
+1. Type the number of files in the box, and select the **Purge** button in the window.
+1. Select **Done** when the summary appears.
+
+A purge is permanent. Unlike a delete, a developer can't bring the files back. If a file gained an image after the scan, the purge keeps it and the summary lists it.
 
 ## Where to go next
 

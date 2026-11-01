@@ -177,6 +177,17 @@ The **Publish site** button in the top bar publishes every entry that has unpubl
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, tell your site owner.
 <!-- vale Microsoft.Contractions = YES -->
 
+## A revert is refused
+
+The **Revert** button on an entry's history saves an older version as a draft, so a refusal means no draft was created. The history screen shows the reason in a message over the list:
+
+<!-- vale Microsoft.Contractions = NO -->
+<!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
+- **"[Name] has a draft in progress, last saved [date]. Publish or discard it before reverting."** Someone has unpublished changes on this entry. Open the entry, then publish or discard the draft, and revert again.
+- **"The history changed since this page loaded. Reload and try again."** Someone published while you had the history open. Reload the history and select **Revert** again.
+- **"That version is no longer in the recent list."** The version you picked has dropped out of the list the history shows. Reload the history and pick a version from the new list.
+<!-- vale Microsoft.Contractions = YES -->
+
 ## Where to go next
 
 For the steps behind a save or a publish, see [Write in the editor](write-in-the-editor.md) and [Publish an entry and review its history](publish-and-history.md). For an upload that was refused, see [Manage the media library](manage-the-media-library.md). For a refused tag, see [Manage your tag vocabulary](manage-your-tag-vocabulary.md).

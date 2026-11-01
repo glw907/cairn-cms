@@ -552,8 +552,8 @@ func TestTheSingleSiteBudgetFitsTheRequestArithmetic(t *testing.T) {
 // TestTheSweepCapIsThePublishedOne pins the two numbers the multi-site formula in the tripwire
 // runbook is written from, so the worked examples there stay arithmetic rather than assertion.
 func TestTheSweepCapIsThePublishedOne(t *testing.T) {
-	const rel = "docs/tripwire.md"
-	body := readToolFile(t, rel)
+	const rel = "docs/admin/tripwire.md"
+	body := readRepoFile(t, rel)
 
 	formula := "min(" + strconv.Itoa(int(defaultTimeout.Seconds())) + "s x sites, " +
 		strconv.Itoa(int(maxSweepTimeout.Seconds())) + "s)"

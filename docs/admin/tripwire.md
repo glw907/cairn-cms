@@ -1,4 +1,4 @@
-# Running the tripwire on a schedule
+# Run cairn on a schedule
 
 `cairn` adds no `tripwire` subcommand. The tripwire is `cairn health` itself, run on a schedule
 and wired to page someone on a non-zero exit. This page has a working example for each of three
@@ -19,7 +19,7 @@ variable you only export from a shell profile is invisible to a scheduled run ev
 works every time you type `cairn` yourself. Each example below gives the run its own credentials,
 by one of two routes: an environment file the scheduler reads directly, or the OS keyring
 `cairn auth set` writes to (`cairn` resolves the environment first, then the keyring, the same
-order documented in [`docs/credentials.md`](credentials.md)).
+order documented on the [credentials page](credentials.md)).
 
 ## systemd (Linux)
 
@@ -267,7 +267,7 @@ end time of a *repeating* schedule window (used with `/ri`), not a per-run cap. 
 that actually caps one run is the task definition's `ExecutionTimeLimit` setting, reachable from
 PowerShell's `ScheduledTasks` module without hand-authoring a full task-definition XML. Run this
 against the task the `schtasks` call above just created; it replaces that task's settings with
-the same trigger and action plus the 40-minute cap, matching the systemd example's 2400s
+the same trigger and action plus the 40-minute cap, matching the systemd example's
 `TimeoutStartSec`:
 
 ```powershell
@@ -300,8 +300,7 @@ script exits `UNKNOWN` rather than silently sweeping the wrong count. Prefer the
 for the loop only when a single combined verdict genuinely will not do, since it is one command
 and one exit code per site to route instead of one.
 
-The concurrent form of the sweep, where every site's checks run at once instead of one after
-another, is 2.0 work; 1.0's bare sweep runs each site in turn.
+The bare sweep runs each site in turn.
 
 ## `--quiet`: silent on green, always loud on anything else
 
@@ -317,26 +316,26 @@ invocation itself was wrong, not that the site is healthy. A routine that logs J
 `--json` and drop `--quiet` (the flag still parses, it simply never has anything left to
 suppress).
 
-Proved against the release-candidate binary, an adopted site with no real Cloudflare or GitHub
+The following output comes from an adopted site with no real Cloudflare or GitHub
 credentials configured (every credentialed check reports `skip`, and the plain `email` check runs
 for real over the network):
 
 ```
-$ cairn health ecxc-ski-a1b2c3 --quiet
-verdict: CRITICAL - ecxc.ski, 1 failing, 7 could not run, 1 passing
+$ cairn health my-site-a1b2c3 --quiet
+verdict: CRITICAL - example.org, 1 failing, 7 could not run, 1 passing
 checked: 2026-09-21 10:51-08:00, in 1.7s
 
 email: fail - no DKIM record found for the sending subdomain
 fix: Publish a DKIM TXT record for the sending subdomain's provider.
 fix actor: operator (changes the live site)
 
-verdict: CRITICAL - ecxc.ski, 1 failing, 7 could not run, 1 passing
+verdict: CRITICAL - example.org, 1 failing, 7 could not run, 1 passing
 exit: 2
 ```
 
 The complementary `OK` path, byte-empty stdout and stderr on a fully green run, needs real
-Cloudflare and GitHub credentials against a live site to prove directly; `TestQuietWritesNothingOnAnOKRun`
-in `cmd/cairn/health_test.go` proves the same rule with a synthetic passing report, and running
+Cloudflare and GitHub credentials against a live site to prove directly; the tool's test suite
+proves the same rule with a synthetic passing report, and running
 this exact invocation against your adopted sites once, before you trust the scheduled job, is
 worth doing before you rely on the silence.
 
@@ -407,15 +406,15 @@ cairn health --quiet --ack engine=2026-10-15
 For repeat use, `--ack-file` (default `acknowledgements.json` in the registry directory) holds
 the same entries as a small file instead of a flag on every invocation.
 
-Proved against the release-candidate binary, the same site as above with its one failing check
+The following output comes from the same site with its one failing check
 acknowledged, `CRITICAL` becomes `WARNING` and the exit code drops from 2 to 1:
 
 ```
-$ cairn health ecxc-ski-a1b2c3 --quiet --ack email=2099-01-01
-verdict: WARNING - ecxc.ski, 7 could not run, 1 held, 1 passing
+$ cairn health my-site-a1b2c3 --quiet --ack email=2099-01-01
+verdict: WARNING - example.org, 7 could not run, 1 held, 1 passing
 checked: 2026-09-21 10:52-08:00, in 980ms
 
-verdict: WARNING - ecxc.ski, 7 could not run, 1 held, 1 passing
+verdict: WARNING - example.org, 7 could not run, 1 held, 1 passing
 exit: 1
 ```
 
@@ -430,15 +429,6 @@ crawlers probing for WordPress, and counting them measures the crawlers rather t
 the count fills the fetch's page limit, the row reads `at least 1000 errors in 24h`, because the
 Workers Logs query publishes no total beyond the limit it was asked for.
 
-## Why this page, and not a ROADMAP line or a cloud agent
+## Run it where cairn is installed
 
-A scheduled unit like the ones above is the machine-detectable form of this watch: the timer
-fires whether or not anyone remembers it exists, which is the whole point of a tripwire. No
-`ROADMAP.md` line should duplicate it as a someday item; the mechanism above is the thing itself,
-not a plan to build it.
-
-A cloud routine through the workstation's `schedule` skill is not the answer either. That skill
-pings a cloud agent on a schedule, and a cloud agent reaches none of what this page's examples
-reach: no operator's environment variables, no OS keyring, no local site registry, and no
-installed `cairn` binary. It becomes a correct answer only once a hosted spine exists that a cloud
-routine could call instead of a local binary, which is 2.0 work, not 1.0's.
+The scheduler has to run on a computer that holds the `cairn` binary, the credentials, and the site registry. A hosted scheduler, such as a cloud agent that runs a prompt on a timer, reaches none of them. It has none of your environment variables, no OS keyring, no local registry, and no installed `cairn`. Use the systemd, launchd, or Task Scheduler example on a computer you keep running.

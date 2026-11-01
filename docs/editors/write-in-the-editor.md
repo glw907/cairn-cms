@@ -236,15 +236,15 @@ The **Details** button in the header, or Ctrl+., opens the Details panel. **Clos
 
 ```repro
 story: editor/details-panel
-alt: Reproduction of the Details panel open beside an entry, with boxes for date, tags, and lead picture, then Visibility and Address groups.
-caption: The Details panel opens beside the entry. Date, Tags, and Lead picture are this site's boxes, and Visibility, Address, and Share preview follow them.
+alt: Reproduction of the Details panel open beside an entry, with boxes for date, tags, and lead image, then Visibility and Address groups.
+caption: The Details panel opens beside the entry. Date, Tags, and the lead image are this site's boxes, and Visibility, Address, and Share preview follow them.
 ```
 
 The following table describes the panel's groups, from the settings you change most often to the ones you usually set once.
 
 | Group | What it holds |
 |---|---|
-| The boxes at the top | Settings your site defines, such as a date, tags, or the **Lead picture**. Your site decides which boxes appear. |
+| The boxes at the top | Settings your site defines, such as a date, tags, or the lead image. Your site decides which boxes appear. |
 | **Visibility** | The **Hidden** checkbox. A hidden entry stays off the site's lists and feeds, even after you publish it. |
 | **Address** | The entry's address and a **Change URL** button. Links from other entries update automatically. The button reads **Rename** for a type that has no public address. |
 | **Share preview** | **Share preview link** creates a private link that lets someone who isn't an editor read your saved draft before it's published. **Revoke all links** turns off every link for the entry. |

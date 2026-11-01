@@ -16,7 +16,7 @@
 // literal.
 //
 // This table is the program's strings, never the published docs. tool/README.md,
-// tool/docs/credentials.md, and tool/docs/tripwire.md are documentation an operator reads
+// docs/admin/credentials.md, and docs/admin/tripwire.md are documentation an operator reads
 // outside the binary: they are not listed by
 // `copy-list`, and they are linted by the repository's Vale configuration instead. Do not
 // route a doc sentence through this table.

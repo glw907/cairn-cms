@@ -115,8 +115,8 @@ function readUnconsumedList(fixturesRootAbs) {
   const nextHeadingIdx = rest.search(/\n## /);
   const section = nextHeadingIdx === -1 ? rest : rest.slice(0, nextHeadingIdx);
   // Only the name a list item OPENS with declares that fixture unconsumed; a `.txt` name
-  // mentioned later in the same bullet's prose (as `01c-resume.txt`'s does, describing what
-  // superseded it) is context, not its declaration.
+  // mentioned later in the same bullet's prose (a bullet that says which capture superseded it,
+  // say) is context, not its declaration.
   const names = new Set();
   for (const m of section.matchAll(/^-\s*`([\w.-]+\.txt)`/gm)) names.add(m[1]);
   return names;

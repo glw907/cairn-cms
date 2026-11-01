@@ -371,8 +371,8 @@ func TestNoMalformedInOperatorCopy(t *testing.T) {
 // value) and the cap the per-site share divides against, so the prose cannot drift from the
 // arithmetic.
 func TestTripwireNamesTheCutShortSiteAndTheCap(t *testing.T) {
-	const rel = "docs/tripwire.md"
-	assertNamesTheBudget(t, rel, readToolFile(t, rel))
+	const rel = "docs/admin/tripwire.md"
+	assertNamesTheBudget(t, rel, readRepoFile(t, rel))
 }
 
 // assertNamesTheBudget holds one document to both numbers the sweep's budget arithmetic rests

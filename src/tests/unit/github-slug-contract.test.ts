@@ -93,10 +93,12 @@ describe('the GitHub-slug contract', () => {
       synthetic: true,
     },
     {
-      // A trailing question mark, which drops without leaving a trailing hyphen.
+      // A trailing question mark, which drops without leaving a trailing hyphen. The register bans
+      // question headings, so no live page carries this shape and the case is synthetic.
       markdown: '# Is it working?',
       id: 'is-it-working',
-      source: 'docs/admin/is-it-working.md',
+      source: 'synthetic',
+      synthetic: true,
     },
   ];
 

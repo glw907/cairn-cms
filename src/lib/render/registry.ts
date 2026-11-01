@@ -13,11 +13,16 @@ type SlotKind = 'markdown' | 'inline' | 'repeatable';
 /**
  * One named content region of a component. The slots named `title` and `body` are special: `title`
  *  serializes to the directive `[label]` and `body` to the unmarked content (see the canonical grammar).
+ * @public
  */
 export interface SlotDef {
+  /** The slot's name, unique within the component; `title` and `body` are the special two. */
   name: string;
+  /** The label the insert form shows for the slot's input. */
   label: string;
+  /** How the slot's content is entered: `markdown`, `inline`, or `repeatable` (a list of items). */
   kind: SlotKind;
+  /** Whether the insert form requires a value for this slot. */
   required?: boolean;
   help?: string;
   /** For `kind: 'repeatable'`: the fields composing each list item (v1 uses the first field). */
@@ -34,6 +39,7 @@ export interface SlotDef {
  *  attributes and partitions its slots from the rendered hast, so `build` arranges hast and
  *  never walks the tree. `slot(name)` returns a slot's rendered children (title, body, or any
  *  named slot); `items(name)` returns a repeatable slot's items, one child list per item.
+ * @public
  */
 export interface ComponentContext {
   /** Declared attribute values, keyed by attribute key. Booleans are real booleans. */
@@ -48,7 +54,10 @@ export interface ComponentContext {
   node: Element;
 }
 
-/** A site component: how it inserts (editor) and how it renders (rehype). */
+/**
+ * A site component: how it inserts (editor) and how it renders (rehype).
+ * @public
+ */
 export interface ComponentDef {
   /** Directive name, e.g. 'card' (matches `:::card`). */
   name: string;
@@ -109,11 +118,17 @@ export interface ComponentDef {
    *  insert takes. Declaring `preview` is what opts the component into the two-pane configure layout.
    */
   preview?: {
+    /** The sample attribute values, keyed by attribute name. */
     attributes?: Record<string, string | boolean>;
+    /** The sample slot content, keyed by slot name; a repeatable slot takes one string per item. */
     slots?: Record<string, string | string[]>;
   };
 }
 
+/**
+ * A site's markdown components by name, as `defineRegistry` builds it.
+ * @public
+ */
 export interface ComponentRegistry {
   defs: ComponentDef[];
   names: string[];
@@ -161,8 +176,12 @@ const RESERVED_DIRECTIVE_NAMES = new Set(['figure', 'include']);
 /**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
+ * @public
  */
-export function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry {
+export function defineRegistry({ components }: {
+  /** The site's component definitions, each built with `defineComponent`. */
+  components: ComponentDef[];
+}): ComponentRegistry {
   for (const c of components) {
     if (RESERVED_DIRECTIVE_NAMES.has(c.name)) {
       throw new Error(
@@ -252,6 +271,7 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
  * Declare a site component, building its attribute validator from the `fields.*` descriptors and
  *  validating the component at declaration. Mirrors {@link defineConcept}: a malformed attribute type
  *  or pattern fails at module load. The built `attributeSchema` is what {@link validateComponent} runs.
+ * @public
  */
 export function defineComponent<const D extends ComponentDef>(def: D): D & { attributeSchema: Fieldset } {
   const attributes = def.attributes ?? {};

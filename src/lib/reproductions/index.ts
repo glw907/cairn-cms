@@ -34,6 +34,7 @@ type ReproInstance = Record<string, unknown>;
 /**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
  * to render it, which no node-safe module can carry.
+ * @beta
  */
 export interface ReproStory {
   /** The id a `repro` fence names, matching exactly one `manifest.ts` entry. */
@@ -116,6 +117,7 @@ const stories: ReproStory[] = [
  * @param id - a story id, matching a `manifest.ts` entry
  * @returns the matching story
  * @throws when no story is registered under `id`
+ * @beta
  */
 export function getStory(id: string): ReproStory {
   const story = stories.find((entry) => entry.id === id);

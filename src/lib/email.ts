@@ -15,6 +15,7 @@ export type { EmailAttachment, EmailRecipient };
  * site composing its message may set. `replyTo` takes a single address only, since the
  * platform rejects an array there (live-probed 2026-07-07 during a consumer-site migration),
  * unlike `cc`/`bcc`.
+ * @public
  */
 export interface MagicLinkMessage {
   to: string;
@@ -28,10 +29,16 @@ export interface MagicLinkMessage {
   attachments?: EmailAttachment[];
 }
 
-/** Per-site identity for the magic-link email, sourced from the adapter. */
+/**
+ * Per-site identity for the magic-link email, sourced from the adapter.
+ * @public
+ */
 export interface AuthBranding {
+  /** The site name the magic-link email's subject and body show. */
   siteName: string;
+  /** The address the magic-link email is sent from. */
   from: string;
+  /** The single address a reply to the magic-link email goes to. */
   replyTo?: string;
 }
 
@@ -41,6 +48,7 @@ export interface AuthBranding {
  * `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send`
  * (`@cloudflare/workers-types`), which resolves `Promise<EmailSendResult>`, satisfies this
  * structurally with no cast.
+ * @public
  */
 export interface EmailSender {
   send(message: MagicLinkMessage): Promise<unknown>;
@@ -50,6 +58,7 @@ export interface EmailSender {
  * The injected send. Production uses `cloudflareSend`; tests pass a sink. A thrown error's
  *  text reaches the structured log (scrubbed and truncated), so a custom sender must not embed
  *  the message body or the magic link in what it throws.
+ * @public
  */
 export type SendMagicLink = (env: CairnEnv, message: MagicLinkMessage) => Promise<void>;
 

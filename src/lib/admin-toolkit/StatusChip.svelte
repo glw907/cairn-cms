@@ -42,16 +42,21 @@ carries no floor of its own: a dense table column, ConceptList's publish-state c
 MediaLibrary's alt/usage cells, budgets its narrow-
 viewport width against the chip's real content, not a fixed reservation sized for a longer label
 the office's three-word vocabulary never needs).
+@public
 -->
 <script module lang="ts">
-  /** Two named sizes, matching AdminTable's density tier names rather than a bespoke scale. */
+  /**
+   * Two named sizes, matching AdminTable's density tier names rather than a bespoke scale.
+   * @public
+   */
   export type StatusChipSize = 'xs' | 'sm';
 
   /** The three documented chip registers (second generation): `quiet`, a token-derived tinted ground for a
    *  settled state that should recede; `warning`, the same tinted-ground shape off the warning tone, for a
    *  state that needs attention; and `outline`, a demoted hairline border with no fill, for a
    *  transient or reversible absence. The register alone carries both shape and color; there is
-   *  no separate tone axis and no chip-level danger tier. */
+   *  no separate tone axis and no chip-level danger tier.
+   *  @public */
   export type StatusChipRegister = 'quiet' | 'warning' | 'outline';
 </script>
 

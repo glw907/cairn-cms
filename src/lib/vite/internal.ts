@@ -34,6 +34,7 @@ type CairnManifestPlugin = Plugin & { [CAIRN_OPTIONS]?: CairnManifestOptions };
 /**
  * Options for {@link cairnManifest}. Paths are app-root-absolute (the form `import.meta.glob` wants),
  *  so they match the build's resolution.
+ * @public
  */
 export interface CairnManifestOptions {
   /** The module exporting the `cairn` adapter and the parsed `siteConfig`, app-root-absolute. */
@@ -259,6 +260,7 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * The cairnManifest plugin. It serves the verify and adapter-facts virtual modules to the app graph
  *  and evaluates them in buildStart, so a manifest or site-facts drift fails the build, or the dev
  *  server's start.
+ * @public
  */
 export function cairnManifest(opts: CairnManifestOptions): Plugin {
   let root = process.cwd();

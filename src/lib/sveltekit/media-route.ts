@@ -70,6 +70,7 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
 /**
  * The bag `createMediaRoute` takes, so the factory shares one shape with every other route
  *  factory and a later member has a home beside `runtime`.
+ * @scaffold
  */
 export interface MediaRouteConfig {
   /** The composed runtime; its `resolvedAssets` decides delivery, and a media-off site's handler always 404s. */
@@ -84,6 +85,7 @@ export interface MediaRouteConfig {
  * object key from the validated values only (never trusting the URL's fan-out), guards the
  * Cloudflare Images self-loop, and sets the security headers on every served response.
  * @param config - the config bag; `config.runtime` is the composed runtime.
+ * @scaffold
  */
 export function createMediaRoute(config: MediaRouteConfig): RequestHandler {
   const resolved = config.runtime.resolvedAssets;

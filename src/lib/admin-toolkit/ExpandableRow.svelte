@@ -72,6 +72,7 @@ themes:**
    `background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`.
    `base-200` was tried and refuted first -- it is the zebra stripe's color, so the drawer
    visually merged with a striped row instead of reading as recessed.
+@public
 -->
 <script lang="ts" generics="T">
   import type { Snippet } from 'svelte';

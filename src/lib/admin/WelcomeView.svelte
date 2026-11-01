@@ -8,6 +8,7 @@ adds only what the shell does not already say: a greeting and one calm line nami
 current standing, on the admin toolkit's `EmptyState`, the recipe this screen itself originated, with
 no action since there is nothing here to create. This screen renders no `PageHeader` of its own, so it
 passes `headingLevel="h1"`: the greeting is the page's only heading.
+@beta
 -->
 <script lang="ts">
   import type { WelcomeData } from '../sveltekit/content-routes.js';

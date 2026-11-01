@@ -29,6 +29,7 @@ is inside `scripts/build/admin-css.input.css`'s `@source` roots, so a utility cl
 still compiles into the shipped sheet. The `h1`'s even-line-rag balancing is a `text-wrap: balance`
 rule in the scoped `<style>` below, so a long title's line rags evenly rather than leaving a lone
 last word; it stays scoped CSS rather than a utility class, which ships the same way regardless.
+@public
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

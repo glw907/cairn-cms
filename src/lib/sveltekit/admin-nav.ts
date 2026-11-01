@@ -48,13 +48,22 @@ export const ADMIN_NAV_ICON_NAMES = [
   'wrench',
 ] as const;
 
-/** One of the bundled custom-nav icon names. */
+/**
+ * One of the bundled custom-nav icon names.
+ * @public
+ */
 export type NavIcon = (typeof ADMIN_NAV_ICON_NAMES)[number];
 
-/** A site's nav entry inside a navLayout tree: a labeled, iconed link to one of its `/admin/` routes. */
+/**
+ * A site's nav entry inside a navLayout tree: a labeled, iconed link to one of its `/admin/` routes.
+ * @public
+ */
 export interface NavLayoutEntry {
+  /** The link's text in the sidebar. */
   label: string;
+  /** One of the bundled nav icon names. */
   icon: NavIcon;
+  /** The link's target, a site route under `/admin/` that no built-in view claims. */
   href: string;
   /** Hides the link from a non-owner; cosmetic only, so the route must still gate server-side. */
   ownerOnly?: boolean;
@@ -62,7 +71,10 @@ export interface NavLayoutEntry {
   roles?: string[];
 }
 
-/** A validated site entry the shell renders: the icon name resolved, ownerOnly defaulted. */
+/**
+ * A validated site entry the shell renders: the icon name resolved, ownerOnly defaulted.
+ * @public
+ */
 export interface ResolvedNavEntry {
   label: string;
   iconName: NavIcon;
@@ -105,6 +117,7 @@ const ENGINE_SCREEN_IDS = ['media', 'vocabulary', 'nav', 'settings', 'editors', 
  *  in an editor while a dynamic concept id, not knowable at the type level, stays assignable; the
  *  engine validates a declared layout against a site's declared concepts and screens at
  *  construction.
+ * @public
  */
 export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
 
@@ -115,11 +128,16 @@ export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
  *  placement is never authorization); `icon` overrides the engine-owned glyph with one of the
  *  bundled allowlist names (the two dated concepts otherwise share one newspaper glyph), validated
  *  the same way a site entry's icon is.
+ * @public
  */
 export interface NavLayoutEngineRef {
+  /** The engine screen this node places: a concept id or one of the fixed utility screens. */
   screen: EngineScreenId;
+  /** Relabels the screen's sidebar link. */
   label?: string;
+  /** Removes the screen's sidebar link; the route stays live. */
   hidden?: boolean;
+  /** Overrides the screen's engine-owned glyph with one of the bundled nav icon names. */
   icon?: NavIcon;
 }
 
@@ -127,10 +145,14 @@ export interface NavLayoutEngineRef {
  * One named group inside a navLayout tree, holding a mix of site entries and engine references (no
  *  nesting; grouping stays exactly one level deep). `roles` gates every child at once, composing
  *  with the capability gates each child already carries.
+ * @public
  */
 export interface NavLayoutSection {
+  /** The group's heading in the sidebar. */
   label: string;
+  /** The group's site entries and engine references, in display order, one level deep. */
   children: (NavLayoutEntry | NavLayoutEngineRef)[];
+  /** Renders the group only when the signed-in editor's role is in this list; absent renders for every role. */
   roles?: string[];
   /**
    * Whether this group starts collapsed for a visitor with no persisted nav-collapse cookie;
@@ -141,7 +163,10 @@ export interface NavLayoutSection {
   collapsed?: boolean;
 }
 
-/** A site's whole declared sidebar: engine references, its entries, and sections, in declaration order. */
+/**
+ * A site's whole declared sidebar: engine references, its entries, and sections, in declaration order.
+ * @public
+ */
 export type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];
 
 /** True when a navLayout node is a section (carries `children`) rather than an entry or an engine reference. */
@@ -339,7 +364,10 @@ export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: 
 // directly. Runs fresh per request (the capability/role gates are per-editor), but the arrangement
 // itself is pure data shuffling, no I/O.
 
-/** One resolved engine door: the fixed screen id, its label (declared default or a site relabel), and its engine-owned href. */
+/**
+ * One resolved engine door: the fixed screen id, its label (declared default or a site relabel), and its engine-owned href.
+ * @public
+ */
 export interface ResolvedEngineNavEntry {
   screen: EngineScreenId;
   label: string;
@@ -357,10 +385,16 @@ export interface ResolvedEngineNavEntry {
   iconName?: NavIcon;
 }
 
-/** One resolved leaf in a navLayout tree: a site's entry, or one of the engine's screens. */
+/**
+ * One resolved leaf in a navLayout tree: a site's entry, or one of the engine's screens.
+ * @public
+ */
 export type ResolvedLayoutChild = ResolvedNavEntry | ResolvedEngineNavEntry;
 
-/** One resolved named group in a navLayout tree, its children already filtered and non-empty. */
+/**
+ * One resolved named group in a navLayout tree, its children already filtered and non-empty.
+ * @public
+ */
 export interface ResolvedLayoutSection {
   label: string;
   children: ResolvedLayoutChild[];
@@ -372,7 +406,10 @@ export interface ResolvedLayoutSection {
   collapsed?: boolean;
 }
 
-/** One resolved top-level navLayout node: a loose child, or a section of them. */
+/**
+ * One resolved top-level navLayout node: a loose child, or a section of them.
+ * @public
+ */
 export type ResolvedLayoutNode = ResolvedLayoutChild | ResolvedLayoutSection;
 
 /**
@@ -380,6 +417,7 @@ export type ResolvedLayoutNode = ResolvedLayoutChild | ResolvedLayoutSection;
  *  declaration order, plus the trailing `fallback` group of engine screens the tree never
  *  referenced (rendered in the shell's foot slot, engine order, empty when every screen was
  *  referenced).
+ * @public
  */
 export interface ResolvedNavLayout {
   items: ResolvedLayoutNode[];

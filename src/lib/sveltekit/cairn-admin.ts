@@ -30,6 +30,7 @@ import type { CairnEvent, HistoryData } from './types.js';
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
  *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
  *  is not a dep here.
+ * @public
  */
 export interface CairnAdminConfig {
   /** The composed runtime the admin bundle closes over: concepts, roles, the backend, and every other site-declared seam. */
@@ -39,7 +40,10 @@ export interface CairnAdminConfig {
    *  `branding` is a partial override merged over the runtime's site name and sender, so
    *  `{ siteName }` alone keeps the runtime's `from` and `replyTo`. See `AuthRoutesConfig`.
    */
-  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & { branding?: Partial<AuthBranding> };
+  auth?: Partial<Omit<AuthRoutesConfig, 'branding'>> & {
+    /** The branding members to override; each one omitted falls back to the runtime's value. */
+    branding?: Partial<AuthBranding>;
+  };
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
    *  to avoid a real network call.
@@ -68,6 +72,7 @@ export interface CairnAdminConfig {
  * One admin view's data, discriminated for the admin page component's switch. Every member
  * carries just its view's page data; the shared chrome (nav, user, theme, pending count)
  * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
+ * @public
  */
 export type AdminData =
   | { view: 'login'; page: LoginData }
@@ -381,6 +386,7 @@ type InternalCairnAdminRoutes = ReturnType<typeof createCairnAdminInternal>;
  *  still present at runtime, and a spread (`export const actions = { ...admin.actions }`) or a
  *  cast recovers the ten. Each of them still runs the session, CSRF, and view gates it always
  *  ran; the narrowing withdraws the SUPPORTED seam, not the reachability.
+ * @public
  */
 export interface CairnAdminRoutes {
   load: InternalCairnAdminRoutes['load'];
@@ -418,6 +424,7 @@ export interface CairnAdminRoutes {
  * Build the single-mount admin bundle a site's catch-all `/admin/[...path]` route exports: the
  *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
  *  return.
+ * @public
  */
 export function createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes {
   return createCairnAdminInternal(config);

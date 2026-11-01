@@ -74,6 +74,7 @@ type MediaResolveWithDetail = MediaResolve & {
  * Resolve a media reference to its delivery URL. `undefined` is a preview miss (the plugin marks
  *  the image broken); a resolver that throws is the build backstop (the error propagates out of
  *  render and fails the build), exactly like LinkResolve.
+ * @public
  */
 export type MediaResolve = (ref: MediaRef) => string | undefined;
 
@@ -85,6 +86,7 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  *  channel's job, keyed off the asset's known width) so a fresh zone with Image Transformations
  *  disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns undefined when
  *  media is off or no entry carries the hash (the preview-miss backstop).
+ * @public
  */
 export function createMediaResolver(
   manifest: MediaManifest,

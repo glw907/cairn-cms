@@ -47,6 +47,7 @@ that repair, by recording `document.activeElement` before the frame loads and re
 One thing changes because containment holds: the seven stories that focused a control on open no
 longer paint the admin's `:focus-visible` ring, so each shows the mouse face of its screen rather
 than the keyboard one. https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/repro-story-audit.md records which seven.
+@beta
 -->
 <script lang="ts">
   import { onDestroy, setContext, untrack } from 'svelte';

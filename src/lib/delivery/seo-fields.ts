@@ -7,6 +7,7 @@
  * The head fields a concept can carry in frontmatter. Each is optional and omitted when absent.
  *  `author` is article-scoped downstream: the head builder emits `article:author` only for a dated
  *  entry, so an `author` on an undated Page is read here but not rendered.
+ * @public
  */
 export interface SeoFields {
   description?: string;
@@ -23,6 +24,7 @@ const KEYS = ['description', 'image', 'robots', 'author'] as const;
  *  `robots: "  noindex  "` from reaching the head tag with surrounding whitespace. The field must be
  *  declared in the concept's schema to survive the validate-once read; an undeclared key is not on the
  *  normalized frontmatter.
+ * @public
  */
 export function readSeoFields(frontmatter: Record<string, unknown>): SeoFields {
   const fields: SeoFields = {};
@@ -39,6 +41,7 @@ export function readSeoFields(frontmatter: Record<string, unknown>): SeoFields {
  *  string returns undefined rather than throwing at build. The sites use a bare-domain origin, so a
  *  bare path also anchors to the origin root; against a sub-path origin it would resolve relative to
  *  that path, per the WHATWG URL rules.
+ * @public
  */
 export function resolveImageUrl(image: string, origin: string): string | undefined {
   try {

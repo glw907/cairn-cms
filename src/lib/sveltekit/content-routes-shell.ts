@@ -40,6 +40,7 @@ interface NavConcept {
  *  active path, the CSRF token, and the streamed pending entries, and streams the pending-publish
  *  set as a deferred promise so a custom route and the login page never block on a GitHub
  *  round-trip up front.
+ * @public
  */
 export type AdminShellData =
   | { public: true; siteName: string; theme: 'cairn-admin' | 'cairn-admin-dark' }
@@ -101,6 +102,7 @@ export type AdminShellData =
  *  component curates by group), and the support hand-off. `composeRuntime` defaults an unset
  *  adapter `supportContact` to cairn's hosted help, so this reaches the view unset only through a
  *  caller that bypasses that composition; an explicitly empty string renders no hand-off.
+ * @public
  */
 export interface HelpData {
   gettingStarted: GettingStarted;
@@ -112,6 +114,7 @@ export interface HelpData {
  * The welcome view's data: the calm, minimal screen a none-capability role with no declared `home`
  *  lands on at the admin root. Carries just enough for the greeting; the sign-out
  *  control already lives in the shell chrome.
+ * @public
  */
 export interface WelcomeData {
   displayName: string;

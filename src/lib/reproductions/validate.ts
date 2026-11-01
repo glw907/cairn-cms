@@ -15,6 +15,7 @@ import type { ReproManifestEntry } from './manifest.js';
  * omitting one skips the check it backs entirely: none of the three carries a baked-in default,
  * since a "Reproduction"-prefixed English alt, a 150-character ceiling, and a closed key set are
  * cairn.pub's register, not a rule the engine imposes on every consumer.
+ * @beta
  */
 export interface ValidateReproFenceOptions {
   /** When given, `alt` must match this pattern; omit to skip the alt-prefix check. */
@@ -55,6 +56,7 @@ const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
  * @param body - the fence's raw YAML body
  * @param manifest - the installed engine's story manifest
  * @param options - the caller's register, layered on top of the engine-owned rules
+ * @beta
  */
 export function validateReproFence(
   body: string,

@@ -20,21 +20,27 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
  * Function-valued behavior a field descriptor cannot carry as plain data, keyed by field name. A
  *  `validate` runs cross-field after per-field coercion.
  *  Resident in the app bundle, never in the `load` payload.
+ * @public
  */
 export interface FieldBehavior {
   /** A cross-field validator: returns an error string, or null when valid. `siblings` is the raw input record. */
   validate?(value: unknown, siblings: Record<string, unknown>): string | null;
 }
 
-/** The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. */
+/**
+ * The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset.
+ * @public
+ */
 export type BehaviorTable = Record<string, FieldBehavior>;
 
 /**
  * Options for `defineFieldset`. `refine` runs after the per-field coercion and constraints pass, for
  *  cross-field and body-dependent checks. It is validation-only: it returns field-keyed errors to
  *  merge, or nothing, and never transforms the data. Server-only, since it may carry closures.
+ * @public
  */
 export interface FieldsetConfig {
+  /** A cross-field or body-dependent check: returns field-keyed error messages, or nothing to pass. */
   refine?: (data: Record<string, unknown>, body: string) => Record<string, string> | undefined;
   /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
   behavior?: BehaviorTable;
@@ -43,6 +49,7 @@ export interface FieldsetConfig {
 /**
  * A concept's fieldset: the plain-data descriptors, the co-bundled behavior table, the server-derived
  *  validator, and the Standard Schema conformance property.
+ * @public
  */
 export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<string, FieldDescriptor>> {
   /** The declared descriptors as plain serializable data, for the editor form. */
@@ -104,7 +111,10 @@ type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>
   }
 >;
 
-/** Extract the inferred frontmatter type from a `Fieldset`. */
+/**
+ * Extract the inferred frontmatter type from a `Fieldset`.
+ * @public
+ */
 export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
 
 // Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
@@ -417,6 +427,7 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  * Build a fieldset from a key-to-descriptor record. The returned schema carries the descriptors, a
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
+ * @public
  */
 export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,

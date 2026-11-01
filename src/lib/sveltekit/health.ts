@@ -12,7 +12,10 @@ import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 import { env, waitUntil } from './workers-env.js';
 
-/** The `/healthz` payload. */
+/**
+ * The `/healthz` payload.
+ * @public
+ */
 export interface HealthData {
   /** The signing check's result, and the live token check's when the request asked for one. */
   ok: boolean;
@@ -186,6 +189,7 @@ function memoizedSigningSelfTest(appId: string, key: string): ReturnType<typeof 
  *
  * A throw from the check itself logs `health.failed` with the error's message and rethrows, so the
  * anonymous route can answer its fixed 503 detail while the operator still sees what broke.
+ * @scaffold
  */
 export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
   try {

@@ -19,6 +19,7 @@ empty. Search filters across the display name and the alt, case-insensitive.
 The media-type facet (Images, Documents) is a designed-in seam: it renders only once the library
 holds more than one distinct top-level content type, so the structure is present without dead UI
 while a site stores images only.
+@public
 -->
 <script module lang="ts">
   // The picker's library entry is the shared node-safe projection (../media/library-entry), not a
@@ -30,7 +31,8 @@ while a site stores images only.
   export type { MediaLibraryEntry };
 
   /** The picked asset the picker emits to its host: the library entry, its media: reference token,
-   *  and the manifest alt to prefill the placement. */
+   *  and the manifest alt to prefill the placement.
+   *  @public */
   export interface MediaSelection {
     /** The chosen library entry. */
     entry: MediaLibraryEntry;

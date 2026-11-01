@@ -27,6 +27,7 @@ The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated. The ledger below stays hand-rolled: it is an
 editable grid of rename inputs and guarded deletes, not a data table, so it does not adopt
 `AdminTable`; the "Your tags" count chip stays its section device, per the pass's adoption map.
+@beta
 -->
 <script lang="ts">
   import { untrack } from 'svelte';

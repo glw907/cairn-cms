@@ -35,6 +35,7 @@ export const FRAGMENT_RESOLVE = 'fragmentResolve';
  * Resolve a fragment id to its raw markdown body. `undefined` is a preview miss (the plugin
  *  replaces the include directive with a notice node); a resolver that throws is the build
  *  backstop, exactly like `LinkResolve` and `MediaResolve`.
+ * @public
  */
 export type FragmentResolve = (id: string) => string | undefined;
 

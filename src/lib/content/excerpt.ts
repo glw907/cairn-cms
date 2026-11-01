@@ -42,6 +42,7 @@ function toPlainText(md: string): string {
 /**
  * A plain-text excerpt. Returns a trimmed frontmatter `description` when present, else the
  * stripped body cut at a word boundary near `maxChars` (default 200) with an ellipsis.
+ * @public
  */
 export function buildExcerpt(body: string, opts: { description?: string; maxChars?: number } = {}): string {
   const description = opts.description?.trim();

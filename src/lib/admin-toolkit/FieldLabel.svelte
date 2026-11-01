@@ -28,6 +28,7 @@ A hint or an error line is the same question with a different answer. It is cont
 affordance, so it may sit inside the label, but the bottom-aligned row recipe above has one
 caveat: a field that renders a trailing line stops having its control as its bottom edge, and a
 row levelling on that edge then levels the wrong thing.
+@public
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

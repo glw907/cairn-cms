@@ -8,6 +8,7 @@ import type { Element } from 'hast';
  * A glyph name to SVG path-data map (the site owns the icon set). Each path is filled shape
  * data on a `0 0 256 256` box: renderGlyph renders it with fill=currentColor and no stroke, so a
  * stroke-only path (one whose `d` encloses no area) renders invisible.
+ * @public
  */
 export type IconSet = Record<string, string>;
 
@@ -16,6 +17,7 @@ export type IconSet = Record<string, string>;
  *  An unknown icon name yields the bare svg shell with no path child, so it never serializes
  *  a stray empty (or undefined) path. Callers always wrap the returned element, so the shell
  *  keeps them safe.
+ * @public
  */
 export function renderGlyph(name: string, icons: IconSet): Element {
   const d = icons[name];

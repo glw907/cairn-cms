@@ -20,7 +20,10 @@ import type { AccessRefusedReason } from '../log/events.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
 
-/** One audit-log record a mutating admin action must emit through `ctx.audit`. */
+/**
+ * One audit-log record a mutating admin action must emit through `ctx.audit`.
+ * @public
+ */
 export interface AdminActionAudit {
   /** The verb, imperative, lowercase: `"approve"`, `"rollover-season"`, `"update-event"`. */
   action: string;
@@ -37,13 +40,20 @@ export interface AdminActionAudit {
  * verified editor's email. A site may also call a sink directly to record its domain events,
  * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
  * not be a cairn editor.
+ * @public
  */
 export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
-/** A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
+/**
+ * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
+ * @public
+ */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 
-/** What a wrapped handler receives: the verified editor and a bound audit emitter. */
+/**
+ * What a wrapped handler receives: the verified editor and a bound audit emitter.
+ * @public
+ */
 export interface AdminActionContext {
   /** The verified editor; the only identity a wrapped action may act as. */
   editor: Editor;
@@ -60,6 +70,7 @@ export interface AdminActionContext {
  * SvelteKit's `redirect()` or `error()` instead, which carry their status to the browser
  * directly and need no `handleError` mapping; this class carries no production status and never
  * stood for one.
+ * @public
  */
 export class UnauditedActionError extends Error {
   constructor(
@@ -70,7 +81,10 @@ export class UnauditedActionError extends Error {
   }
 }
 
-/** Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path. */
+/**
+ * Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path.
+ * @public
+ */
 export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
@@ -81,7 +95,12 @@ export interface AdminActionOptions {
    * behavior for every existing caller. Present, a refused session is audited through
    * `ctx.audit` and then thrown as `error(403, ...)`.
    */
-  access?: { target: string; ownerOnly?: boolean };
+  access?: {
+    /** The access-map key the session is checked against, never a request pathname. */
+    target: string;
+    /** Also require the owner role, on top of the access-map check. */
+    ownerOnly?: boolean;
+  };
 }
 
 /**
@@ -203,6 +222,7 @@ function serializeThrownError(error: unknown): string {
  * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
  * {@link authorizeAdminTarget} rather than falling back to `canReach`'s permissive nav
  * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
+ * @public
  */
 export function createAdminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,

@@ -7,6 +7,7 @@ natural measure: the title, the date, the publish-state chip, and a quiet delete
 row de-emphasizes and carries an eye-off Hidden tag inline beside the title. The header's New
 button is the one create affordance on a populated list (the empty state carries its CTA).
 Filtering, sorting, and paging run over the loaded entries in component state.
+@beta
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';

@@ -12,6 +12,7 @@ preference reads. It hands descendant forms a CSRF-token getter through context,
 actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
 route. Failure mode: a public payload that carried chrome fields would still render bare (the
 discriminant, not the fields, gates the chrome).
+@public
 -->
 <script lang="ts">
   import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';

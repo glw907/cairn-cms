@@ -27,6 +27,7 @@ import type { PublishActionEntry } from '../sveltekit/publish-actions.js';
 /**
  * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
  *  optional caption.
+ * @public
  */
 export interface ImageValue {
   src: string;
@@ -36,7 +37,10 @@ export interface ImageValue {
   decorative?: boolean;
 }
 
-/** One validation failure located by a path: a top-level key, then a row index and/or a leaf sub-key. */
+/**
+ * One validation failure located by a path: a top-level key, then a row index and/or a leaf sub-key.
+ * @public
+ */
 export interface ValidationIssue {
   /** The path to the failing field, e.g. ['faq', 0, 'question'] or ['address', 'city'] or ['title']. */
   path: (string | number)[];
@@ -49,6 +53,7 @@ export interface ValidationIssue {
  * carries field-keyed error messages (the empty key is a form-level error) and, additively, the
  * located `issues` with multi-segment paths so the form can route a nested-container error to the
  * right input. Invalid input bounces to the form and never reaches git.
+ * @public
  */
 export type ValidationResult =
   | { ok: true; data: Record<string, unknown> }
@@ -59,6 +64,7 @@ export type ValidationResult =
  *  `ConceptDescriptor.fields` carries: `normalizeConcepts` derives it from a concept's `fieldset`
  *  record so every consumer (the editor form, the form decoder, the media extractor) iterates an
  *  array and reads `name` rather than the keyed record.
+ * @public
  */
 export type NamedField = FieldDescriptor & { name: string };
 
@@ -68,6 +74,7 @@ export type NamedField = FieldDescriptor & { name: string };
  * inferred frontmatter type. Generic over the fieldset so a concept's concrete type survives for
  * typed reads. A concept also declares its routing and URL policy here (`routing`, `permalink`,
  * `datePrefix`), resolved by `normalizeConcepts`.
+ * @public
  */
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** Repo-relative content directory, e.g. "src/content/posts". */
@@ -117,18 +124,25 @@ export interface ConceptUrlPolicy {
  * `ChatGPT-User`, and Perplexity that `Perplexity-User` "generally ignores" them, since a user
  * initiated the fetch, so a fully declining site can still be fetched live when someone asks an
  * assistant about it.
+ * @public
  */
 export type AiPosture = 'invite' | 'decline';
 
-/** Magic-link sender identity for Cloudflare Email Sending. */
+/**
+ * Magic-link sender identity for Cloudflare Email Sending.
+ * @public
+ */
 export interface SenderConfig {
+  /** The address the magic-link email is sent from. */
   from: string;
+  /** The single address a reply to the magic-link email goes to. */
   replyTo?: string;
 }
 
 /**
  * A menu in the site-config YAML (the file `editor.siteConfigPath` names) that this site's nav
  *  editor manages.
+ * @public
  */
 export interface NavMenuConfig {
   /** Key within the file's menus map, e.g. "primary". */
@@ -146,6 +160,7 @@ export interface NavMenuConfig {
  * unstyled markup. The frame's srcdoc pins a white body background as a deliberately overridable
  * default, so a site whose ground is not white should state its body background in its
  * stylesheet.
+ * @public
  */
 export interface PreviewConfig {
   /**
@@ -165,7 +180,15 @@ export interface PreviewConfig {
    *  preview resolves the override for its concept over the top-level values; stylesheets are
    *  always shared.
    */
-  byConcept?: Record<string, { bodyClass?: string; containerClass?: string }>;
+  byConcept?: Record<
+    string,
+    {
+      /** This concept's body class list, in place of the top-level `bodyClass`. */
+      bodyClass?: string;
+      /** This concept's content wrapper class list, in place of the top-level `containerClass`. */
+      containerClass?: string;
+    }
+  >;
 }
 
 /**
@@ -179,6 +202,7 @@ export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
  *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
  *  engine normalizes this into a `ResolvedAssetConfig`; the built-in thumb, inline, card, and hero
  *  presets are the whole preset vocabulary, since a site cannot declare one.
+ * @public
  */
 export interface AssetConfig {
   /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
@@ -209,6 +233,7 @@ export interface AssetConfig {
  *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
  *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
  *  are absent for the standalone component-insert preview.
+ * @public
  */
 export type SiteRender = (input: {
   body: string;
@@ -224,6 +249,7 @@ export type SiteRender = (input: {
  * subsystem groups: the content concepts, the commit backend, the magic-link sender, the
  * render subsystem, the optional media stack, and the admin-experience knobs. The internal manifest
  * and dictionary paths are not here; `composeRuntime` defaults them by convention.
+ * @public
  */
 export interface CairnAdapter {
   /** The site's concepts, keyed by id. Posts and pages are the documented defaults; a site may add more. */
@@ -319,6 +345,7 @@ export interface CairnAdapter {
 /**
  * Concept-fixed routing for a normalized concept. Posts are dated feed entries;
  * pages are plain navigable structure. Not in adapter config.
+ * @public
  */
 export interface RoutingRule {
   /** Routable as a standalone URL. A future Fragments concept is embedded, not routable. */
@@ -332,6 +359,7 @@ export interface RoutingRule {
 /**
  * The engine-internal, uniform view of one concept after normalization (seam 1). The admin
  * nav, the list views, and the editor all read this, never the raw config.
+ * @public
  */
 export interface ConceptDescriptor {
   /** Concept id, the key under `content`, e.g. "posts". */
@@ -370,6 +398,7 @@ export interface ConceptDescriptor {
 /**
  * The composed runtime the engine serves from. The single aggregation point (`composeRuntime`)
  * folds the adapter into this shape.
+ * @public
  */
 export interface CairnRuntime {
   siteName: string;

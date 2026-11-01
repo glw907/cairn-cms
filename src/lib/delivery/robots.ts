@@ -30,6 +30,7 @@ const CONTENT_SIGNAL = {
  * declining training. `'invite'` adds a `Content-Signal` line inviting training and no
  * `Disallow`, since there is no robots directive that invites a crawler. Neither direction is
  * enforcement: see `AiPosture` for the honesty constraint this builder holds to.
+ * @public
  */
 export function buildRobots(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): string {
   const lines = ['User-agent: *'];

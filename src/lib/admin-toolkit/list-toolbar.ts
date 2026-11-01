@@ -8,7 +8,10 @@
 
 import { itemNoun, type ItemLabel } from './format.js';
 
-/** One option in a `ListToolbarFilter`'s vocabulary. */
+/**
+ * One option in a `ListToolbarFilter`'s vocabulary.
+ * @public
+ */
 export interface ListToolbarFilterOption {
   value: string;
   label: string;
@@ -26,6 +29,7 @@ export interface ListToolbarFilterOption {
  * produces an applied-filter pill and counts toward the count line's scope. `defaultValue`
  * (default `'all'`) is the value that means "no filter applied", the value the filter resets
  * to when its pill is removed.
+ * @public
  */
 export interface ListToolbarFilter {
   /** Stable identity, used for Svelte keying and to find the filter a pill's remove targets. */
@@ -63,7 +67,10 @@ export interface ListToolbarFilter {
   display?: 'select' | 'segmented' | 'menu';
 }
 
-/** The toolbar's one primary action, always right-aligned. */
+/**
+ * The toolbar's one primary action, always right-aligned.
+ * @public
+ */
 export interface ListToolbarAction {
   label: string;
   onClick: () => void;

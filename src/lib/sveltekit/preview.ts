@@ -49,6 +49,7 @@ import { log } from '../log/index.js';
 /**
  * A site's preview-token configuration: how long a minted share link stays valid. Every field is
  * optional; an absent config resolves to the default TTL.
+ * @beta
  */
 export interface PreviewTokenConfig {
   /**
@@ -93,6 +94,7 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
  * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
  * branch, so there is nothing to share. A session the engine's access check refuses never
  * reaches any of these: it throws, the way every other engine content surface refuses.
+ * @beta
  */
 export type PreviewMintOutcome =
   | { outcome: 'minted'; token: string; expiresAt: number }
@@ -126,6 +128,7 @@ export type PreviewMintOutcome =
  * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
+ * @beta
  */
 export async function mintPreview(
   runtime: CairnRuntime,
@@ -171,6 +174,7 @@ export async function mintPreview(
  * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s
  * arms; a session the engine's access check refuses never reaches either, it throws, the way
  * every other engine content surface refuses.
+ * @beta
  */
 export type PreviewRevokeOutcome =
   | { outcome: 'revoked'; count: number }
@@ -194,6 +198,7 @@ export type PreviewRevokeOutcome =
  * and a site's workflow route both leave the identical record; never called on a refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
+ * @beta
  */
 export async function revokePreview(
   runtime: CairnRuntime,
@@ -217,6 +222,7 @@ export async function revokePreview(
  *  `createPublicRoutes`'s `entryLoad` returns) plus the preview metadata a site's banner reads. A
  *  compile-time assertion in the test suite proves this adds no key beyond `preview`, so a future
  *  `EntryData` field breaks this build rather than a consuming site's.
+ * @public
  */
 export interface PreviewData extends EntryData {
   preview: {
@@ -417,6 +423,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  import out of the `/sveltekit` barrel; outside a real SvelteKit build it answers `false`, which
  *  is correct here, since a `/preview/[token]` route carries a token in its path and is never
  *  prerendered.
+ * @scaffold
  */
 export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);

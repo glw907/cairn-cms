@@ -11,9 +11,12 @@ import type { ConceptDescriptor } from '../content/types.js';
  * One developer-declared publish-success next-step link. `href` is a template string: `{concept}`
  *  and `{id}` are substituted with the published entry's identity at resolve time, so a callback
  *  never needs to cross the publish redirect.
+ * @public
  */
 export interface PublishActionEntry {
+  /** The link's text on the publish-success notice. */
   label: string;
+  /** The link's target template; `{concept}` and `{id}` are replaced with the published entry's. */
   href: string;
   /** Restricts this link to the named concept ids; absent renders it after every concept's publish. */
   concepts?: string[];

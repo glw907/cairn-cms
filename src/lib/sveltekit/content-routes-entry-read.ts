@@ -48,7 +48,10 @@ export interface FragmentTarget {
   body: string;
 }
 
-/** The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`). */
+/**
+ * The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`).
+ * @public
+ */
 export interface EditData {
   conceptId: string;
   id: string;

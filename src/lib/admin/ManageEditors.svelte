@@ -9,6 +9,7 @@ actions, the names the single-mount dispatcher defines.
 The header band is `PageHeader`, mounted
 with no action slot: the add-editor form stays its row below the table, the screen's one
 form-semantic primary action. The role badge stays a plain daisy `badge` (by design): it names an identity, not a stateful standing, so `StatusChip` does not apply.
+@beta
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';

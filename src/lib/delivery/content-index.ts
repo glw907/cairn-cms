@@ -19,7 +19,10 @@ export interface RawFile {
   raw: string;
 }
 
-/** The cheap, plain-data view of one entry, for lists, feeds, and the sitemap. */
+/**
+ * The cheap, plain-data view of one entry, for lists, feeds, and the sitemap.
+ * @public
+ */
 export interface ContentSummary {
   /**
    * The descriptor id this entry belongs to, e.g. "posts". Lets a list or page branch per
@@ -54,20 +57,27 @@ export interface ContentSummary {
  * The detail view: a summary plus the frontmatter and the body to render. The frontmatter
  *  type defaults to `Record<string, unknown>`; a site's typed reads can infer it from the
  *  concept fields. Generic now so that change does not break this signature.
+ * @public
  */
 export interface ContentEntry<F = Record<string, unknown>> extends ContentSummary {
   frontmatter: F;
   body: string;
 }
 
-/** One entry's validation failure, recorded at build for the site aggregator's gate. */
+/**
+ * One entry's validation failure, recorded at build for the site aggregator's gate.
+ * @public
+ */
 export interface ContentProblem {
   id: string;
   draft: boolean;
   errors: Record<string, string>;
 }
 
-/** The per-concept query surface. */
+/**
+ * The per-concept query surface.
+ * @public
+ */
 export interface ContentIndex<F = Record<string, unknown>> {
   all(opts?: { includeDrafts?: boolean }): ContentSummary[];
   byId(id: string): ContentEntry<F> | undefined;

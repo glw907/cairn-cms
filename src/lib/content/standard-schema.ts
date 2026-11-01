@@ -2,7 +2,10 @@
 // fieldset validators. They live here, apart from either validator, so the v2 `defineFieldset`
 // keeps importing them once the v1 `schema.ts` is removed at the Contract v2 cutover.
 
-/** The validate input the cairn adapter takes: the raw frontmatter and the body. */
+/**
+ * The validate input the cairn adapter takes: the raw frontmatter and the body.
+ * @public
+ */
 export interface StandardInput {
   frontmatter: Record<string, unknown>;
   body: string;

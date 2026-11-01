@@ -41,6 +41,7 @@ function isAdminPath(pathname: string): boolean {
 /**
  * Configuration for `createAuthGuard`: the composed runtime, plus the guard's response and
  * identity options.
+ * @scaffold
  */
 export interface AuthGuardConfig {
   /**
@@ -84,6 +85,7 @@ export interface AuthGuardConfig {
  * A site's identity gate, replacing the guard's session-cookie resolution. `resolve` proves
  * who is making the request, or says why it could not; `logoutUrl` and `label` back the hand-off
  * page.
+ * @beta
  */
 export interface IdentityResolver {
   /** Prove who is making this request, or say why it could not be proven. */
@@ -98,7 +100,10 @@ export interface IdentityResolver {
   label?: string;
 }
 
-/** A request the site's identity gate has already authenticated. */
+/**
+ * A request the site's identity gate has already authenticated.
+ * @beta
+ */
 export interface ResolvedIdentity {
   ok: true;
   /** Normalized (trim, lowercase) by the guard before the roster lookup and the log record. */
@@ -111,7 +116,10 @@ export interface ResolvedIdentity {
   displayName?: string;
 }
 
-/** A request the site's identity gate could not authenticate. */
+/**
+ * A request the site's identity gate could not authenticate.
+ * @beta
+ */
 export interface IdentityRefusal {
   ok: false;
   /**
@@ -175,6 +183,7 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
  * (`convention-interop-carve-out`): a host-ecosystem return type satisfies the engine's
  * contract-first-returns rule on its own, since the host ecosystem's convention wins over
  * cairn's `*Routes` grammar on a `Handle`-shaped return.
+ * @scaffold
  */
 // WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
 // heuristic, which reads a site's createAuthGuard call for its argument shape.
@@ -407,6 +416,7 @@ export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
 /**
  * For a protected load/action: the session the guard already resolved, or a login redirect.
  *  Takes {@link CairnEvent}, so every engine load/action and a site's real event satisfy it.
+ * @public
  */
 export function requireSession(event: CairnEvent): Editor {
   const editor = event.locals.cairnEditor;
@@ -416,6 +426,7 @@ export function requireSession(event: CairnEvent): Editor {
 
 /**
  * For the management surface: a signed-in owner, or 403 for anyone else.
+ * @public
  */
 export function requireOwner(event: CairnEvent): Editor {
   const editor = requireSession(event);
@@ -429,6 +440,7 @@ export function requireOwner(event: CairnEvent): Editor {
  * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
  * `CairnAdminShell` custom-route seam untouched; only the engine's content and roster loads
  * and actions call this and refuse it.
+ * @public
  */
 export function requireEditor(event: CairnEvent): Editor {
   const editor = requireSession(event);
@@ -486,6 +498,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * would silently make the deeper rule dead code (see `matchHrefKey`, `auth/access.ts`). A site
  * relying on such a route must declare `target` explicitly, the same warning
  * `SectionActionOptions.target` carries for its POST half.
+ * @public
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);

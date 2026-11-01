@@ -14,6 +14,10 @@
 // input would have succeeded. `failed` names a fault the engine did not choose: an upstream call
 // errored, a resource was unavailable, or a runtime precondition broke regardless of what the
 // request asked for.
+/**
+ * Every event name the engine emits through its logger.
+ * @public
+ */
 export type CairnLogEvent =
   | 'auth.link.requested'
   | 'auth.link.refused'

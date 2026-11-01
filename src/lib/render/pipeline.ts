@@ -31,6 +31,7 @@ export type { DocHeading } from './collect-headings.js';
 /**
  * The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto
  * the VFile's data so the cairn: link, media:, and ::include steps read them at process time.
+ * @public
  */
 export type ResolveOptions = {
   resolve?: LinkResolve;
@@ -38,6 +39,10 @@ export type ResolveOptions = {
   resolveFragment?: FragmentResolve;
 };
 
+/**
+ * The render options `createRenderer` takes beside the component registry.
+ * @public
+ */
 export interface RendererConfig {
   /**
    * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
@@ -89,6 +94,7 @@ export interface RendererConfig {
  *  takes the same options and additionally returns the document's `headings`, collected from the
  *  final rehype tree (after `rehypeSlug` and any site `rehypePlugins` have run), in document
  *  order.
+ * @public
  */
 export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
@@ -183,5 +189,8 @@ export function createRenderer(
   };
 }
 
-/** What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`. */
+/**
+ * What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`.
+ * @public
+ */
 export type Renderer = ReturnType<typeof createRenderer>;

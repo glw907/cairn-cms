@@ -17,6 +17,7 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
     hand-off (email, URL, or a note), and an explicit empty value renders no hand-off, the self-serve
     state. This component only ever sees the string it is handed: a bare-unset `HelpData.supportContact`
     reaches it only from a custom caller that bypasses `composeRuntime`.
+@beta
 -->
 <script lang="ts">
   import type { MarkdownReferenceRow } from './markdown-reference.js';

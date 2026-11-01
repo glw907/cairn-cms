@@ -35,6 +35,7 @@ import { env } from './workers-env.js';
  *  the screen renders the convention list only then and the honest gate note otherwise. The key is a
  *  Worker secret, so `keyConfigured` is the presence of `ANTHROPIC_API_KEY` in the load's env, never
  *  the key itself; nothing here returns or logs the secret.
+ * @public
  */
 export interface SettingsData {
   /**
@@ -83,6 +84,7 @@ export interface SettingsData {
  * The vocabulary admin screen's data: the committed tag vocabulary, a per-value cross-branch usage
  *  count, and the in-use-but-unlisted seed set. The usage overlay is best-effort, so it degrades to
  *  an empty `usage`/`unlisted` while the committed `vocabulary` stays visible when a read fails.
+ * @public
  */
 export interface VocabularyData {
   /** The committed `{ value, label }` entries, in config order. */

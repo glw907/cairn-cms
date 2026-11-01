@@ -178,6 +178,7 @@ const tidyField = StateField.define<TidyState>({
  *  receives it as EditorApi.tidy through registerEditor, and the review surface calls it as the
  *  author works the list. Every accept lands as a CodeMirror transaction; reject and reject-all
  *  write no text.
+ * @public
  */
 export interface TidyApi {
   /**

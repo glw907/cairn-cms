@@ -28,6 +28,7 @@ import { env } from './workers-env.js';
  * The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later), so a
  *  short proofread does not reason at length. Sent only for a model with effort tiers
  *  (content-routes-tidy.ts's `supportsEffort`), never for one without.
+ * @beta
  */
 export type TidyEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
@@ -37,6 +38,7 @@ export type TidyEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
  *  field rename stops being a cairn break), and a test injects a fake implementing this shape
  *  directly, with no SDK-mimicking wire body to construct. The real factory
  *  ({@link lazyAnthropicClient}) adapts this contract onto the actual SDK client internally.
+ * @beta
  */
 export interface TidyClient {
   /**
@@ -188,6 +190,11 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
+/**
+ * The config `createContentRoutes` takes: the composed runtime and the injectable dependencies
+ * of its actions.
+ * @beta
+ */
 export interface ContentRoutesConfig {
   /** The composed runtime the routes close over: concepts, roles, the backend, and every other site-declared seam. */
   runtime: CairnRuntime;
@@ -253,6 +260,7 @@ export interface ContentRoutesConfig {
  * One pending-work badge a site's `attention` dep contributes for one nav entry. The engine drops
  *  an item whose `count` is non-positive, whose `href` matches no visible nav entry, or that
  *  duplicates an earlier item's `href`; a surviving item's `label` defaults to `'pending items'`.
+ * @public
  */
 export interface AttentionItem {
   /** The admin route whose nav entry carries the pill; also the click-through target. */

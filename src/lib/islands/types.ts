@@ -7,5 +7,6 @@ import type { Component } from 'svelte';
  * A site's island components, keyed by directive name. Each value is the live Svelte component
  *  {@link hydrateIslands} mounts over the matching `hydrate` directive's static fallback. The props a
  *  component receives are the directive's declared scalar attributes (see the island boundary contract).
+ * @public
  */
 export type IslandRegistry = Record<string, Component<Record<string, unknown>>>;

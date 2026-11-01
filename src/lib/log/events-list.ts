@@ -7,6 +7,7 @@ import type { CairnLogEvent } from './events.js';
 /**
  * Every CairnLogEvent member. Frozen, since the array is public and a push would corrupt the
  * vocabulary two gates parse by shape.
+ * @public
  */
 export const CAIRN_LOG_EVENTS = Object.freeze([
   'auth.link.requested',

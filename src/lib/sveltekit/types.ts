@@ -5,7 +5,10 @@ import type { AccessMap } from '../auth/access.js';
 import type { Backend } from '../github/backend.js';
 import type { AdminActionAuditSink } from './admin-action.js';
 
-/** The options `CookieJar.set` takes: standard cookie attributes, `path` required. */
+/**
+ * The options `CookieJar.set` takes: standard cookie attributes, `path` required.
+ * @public
+ */
 export interface CookieSetOptions {
   path: string;
   httpOnly?: boolean;
@@ -14,6 +17,10 @@ export interface CookieSetOptions {
   maxAge?: number;
 }
 
+/**
+ * The cookie store a factory reads and writes, the shape of SvelteKit's `event.cookies`.
+ * @public
+ */
 export interface CookieJar {
   get(name: string): string | undefined;
   set(name: string, value: string, opts: CookieSetOptions): void;
@@ -43,6 +50,7 @@ export interface CookieJar {
  * The event carries no Worker bindings. The engine reads them from the `env` the Workers
  * runtime exports, which the Cloudflare adapter provides, so a factory's config callbacks
  * (`resolveDb`, `deliver`, `lookup`) are where a site's `Env` type appears, never this event.
+ * @public
  */
 export interface CairnEvent {
   url: URL;
@@ -73,7 +81,10 @@ export interface CairnEvent {
   };
 }
 
-/** The `Handle` input `createAuthGuard` reads: a {@link CairnEvent} and the `resolve` that renders it. */
+/**
+ * The `Handle` input `createAuthGuard` reads: a {@link CairnEvent} and the `resolve` that renders it.
+ * @public
+ */
 export interface HandleInput {
   event: CairnEvent;
   resolve(event: CairnEvent): Promise<Response> | Response;
@@ -100,6 +111,7 @@ export interface HistoryEntry {
  * exists. The view's label stays "recent versions", never a completeness claim: a rename
  * restarts the commits API's path filter, so `entries` can be shorter than the entry's real
  * lifetime even when `truncated` is false.
+ * @public
  */
 export interface HistoryData {
   /** The most recent publishes, newest first, capped at the module's history-read bound. */
@@ -134,6 +146,7 @@ export interface HistoryData {
  * `ref-unknown` answers `fail(404, ...)`. There is no fourth, "reverted content is invalid"
  * outcome: schema drift in the old version warns on the edit screen after a successful revert, it
  * never refuses one.
+ * @beta
  */
 export type RevertOutcome =
   | {

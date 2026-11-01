@@ -13,6 +13,7 @@ import type { EmailSender } from './email.js';
  * App's private-key secret. One shape serves every factory that needs platform bindings, rather
  * than a per-layer split (auth vs backend), since the split's only purpose, typing which routes
  * need what, is better served by reference-page prose than by a second declaration.
+ * @public
  */
 export interface CairnEnv {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */

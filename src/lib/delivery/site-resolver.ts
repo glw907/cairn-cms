@@ -17,7 +17,10 @@ export interface ConceptIndex {
   index: ContentIndex;
 }
 
-/** The cross-concept query surface a catch-all route and the sitemap read. */
+/**
+ * The cross-concept query surface a catch-all route and the sitemap read.
+ * @public
+ */
 export interface SiteResolver {
   /** Resolve a request path (with or without a trailing slash) to its entry, or undefined. */
   byPermalink(path: string): ContentEntry | undefined;
@@ -138,6 +141,7 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
  *  It reuses the target entry's summary fields rather than re-deriving them, so a linked author
  *  card reads the same title and permalink the target's page does. `summary` is the target's
  *  excerpt when present.
+ * @public
  */
 export interface ResolvedReference {
   id: string;
@@ -169,6 +173,7 @@ function projectReference(edge: ReferenceEdge, target: ContentSummary): Resolved
  * build's `verifyReferences` gate already fails a true dangling edge, so an unresolved id at request
  * time is a mid-flight or draft target, not a hard error. Resolve per call, since the target entries
  * exist only after every per-concept index is unioned into the resolver.
+ * @public
  */
 export function resolveReferences(
   site: SiteResolver,
@@ -203,6 +208,7 @@ export function resolveReferences(
  *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks. A
  *  ref whose target concept is non-routable (a fragment) is treated as a miss too: a fragment is
  *  included, never linked, and its gated permalink would 404.
+ * @public
  */
 export function createLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
@@ -217,6 +223,7 @@ export function createLinkResolver(site: SiteResolver): LinkResolve {
  *  dangling `::include` fails the prerender the same way a dangling `cairn:` link does. An unknown id
  *  and a site with no fragments concept each get their own message. The preview uses a
  *  manifest-backed resolver built from the edit screen's fragment targets instead.
+ * @public
  */
 export function createFragmentResolver(site: SiteResolver): FragmentResolve {
   return (id) => {

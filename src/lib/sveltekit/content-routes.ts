@@ -137,6 +137,7 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  session, CSRF, and view gates it always ran, so nothing is exposed that was not exposed before.
  *  What the narrowing withdraws is the SUPPORTED seam, not the reachability, which is why the
  *  removal is a documented capability change rather than a security fix.
+ * @beta
  */
 export type ContentRoutes = Pick<
   InternalContentRoutes,
@@ -170,6 +171,7 @@ export type ContentRoutes = Pick<
 /**
  * Build the admin content routes a site mounts by hand, closed over `config.runtime`. The
  *  returned object is the internal one, presented through the narrow `ContentRoutes` view.
+ * @beta
  */
 export function createContentRoutes(config: ContentRoutesConfig): ContentRoutes {
   return createContentRoutesInternal(config);

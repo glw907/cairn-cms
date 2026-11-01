@@ -14,7 +14,10 @@ const MAX_TOKEN_LENGTH = 2048;
 // causes (a bot's response, or a token already consumed); anything else is worth a log line.
 const ROUTINE_ERROR_CODES = new Set(['invalid-input-response', 'timeout-or-duplicate']);
 
-/** Narrowing a caller may supply to a {@link verifyTurnstile} call. */
+/**
+ * Narrowing a caller may supply to a {@link verifyTurnstile} call.
+ * @public
+ */
 export interface VerifyTurnstileOptions {
   /**
    * The visitor's address, from `CF-Connecting-IP` and never a client-forwardable header (a
@@ -83,6 +86,7 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * result rule: every failure mode collapses to the one fail-closed answer a caller needs
  * (`false`), and a discriminated result naming each reason would tempt a caller into treating one
  * refusal as more admissible than another, which this function's contract forbids.
+ * @public
  */
 export async function verifyTurnstile(
   token: string,

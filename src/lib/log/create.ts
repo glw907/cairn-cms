@@ -22,6 +22,7 @@ export interface LogRecord {
  * (`tokenlength`) and `hasSession` (`hassession`) are not a match and pass through unchanged.
  * Frozen: a site adds its keys through `createLogger`'s `redactKeys` option, which unions with
  * this list rather than replacing it.
+ * @public
  */
 export const REDACTED_LOG_KEYS: readonly string[] = Object.freeze([
   'token',
@@ -152,8 +153,12 @@ export function buildRecord(
  * regardless of how many createLogger callers exist. `options.redactKeys` names a site's
  * additional field names, which union with `REDACTED_LOG_KEYS` and never replace it: a site cannot
  * narrow the engine's list by passing its own.
+ * @public
  */
-export function createLogger<Event extends string>(options?: { redactKeys?: readonly string[] }): {
+export function createLogger<Event extends string>(options?: {
+  /** A site's additional field names to redact, unioned with `REDACTED_LOG_KEYS`. */
+  redactKeys?: readonly string[];
+}): {
   info(event: Event, fields?: Record<string, unknown>): void;
   warn(event: Event, fields?: Record<string, unknown>): void;
   error(event: Event, fields?: Record<string, unknown>): void;

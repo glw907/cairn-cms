@@ -74,6 +74,7 @@ function observeIsland(node: Element, Comp: Component<Record<string, unknown>>):
  *  or a component that throws leaves the static fallback in place, so one bad island never breaks the page.
  *  Mount-and-replace clears the fallback, so an island whose fallback holds a focusable control should
  *  restore focus itself; the shipped fallbacks are non-interactive.
+ * @public
  */
 export function hydrateIslands(islands: IslandRegistry, root: ParentNode = document): void {
   teardown();

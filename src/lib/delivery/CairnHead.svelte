@@ -8,6 +8,7 @@ is left undefined, so an explicit title or title={false} still wins. markdownUrl
 adds a rel="alternate" type="text/markdown" link pointing at the entry's raw-markdown twin; a
 site that has not wired the twin route passes nothing and the link is omitted. It carries no
 CSS, so it pulls in no admin styles.
+@public
 -->
 <script lang="ts">
   import type { SeoMeta } from './seo.js';

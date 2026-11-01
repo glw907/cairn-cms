@@ -9,6 +9,7 @@
  * The structural slice of a Workers `RateLimit` binding {@link resolveRateLimit} calls; any
  * conforming limiter serves. Declared here so the engine has one structural limiter type;
  * `../sveltekit/section-action.js` imports and re-exports this same declaration.
+ * @public
  */
 export interface RateLimitLike {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -19,6 +20,7 @@ export interface RateLimitLike {
  * (`allowed`), one key is over budget (`limited`, naming which key), or the limiter call itself
  * threw (`failed`, carrying the thrown value). Degrade-to-open on `no-binding` or `failed` stays
  * the caller's decision; this type only names what happened.
+ * @public
  */
 export type RateLimitOutcome =
   | { outcome: 'allowed' }
@@ -42,6 +44,7 @@ export type RateLimitOutcome =
  * than a try/catch it must write itself. `limit()`'s resolved value is checked against its
  * declared shape rather than trusted outright, since `RateLimitLike` is structural and a
  * malformed response reads as `limited`, not as an accidental `allowed`.
+ * @public
  */
 export async function resolveRateLimit(
   binding: RateLimitLike | undefined,

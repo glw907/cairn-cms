@@ -89,6 +89,7 @@ function truncate(rawValue: unknown, max: number): string {
  *   `ExecutionContext.waitUntil`'s structural type matches this parameter, so passing the
  *   unbound method typechecks and then throws "Illegal invocation" in workerd, a failure this
  *   sink's try/catch absorbs but that still silently drops the insert.
+ * @public
  */
 export function createD1AuditSink(
   db: D1Database,

@@ -7,6 +7,7 @@ import { escapeXml } from './xml.js';
 /**
  * Feed channel metadata. `siteUrl` and `feedUrl` must be absolute URLs built from the site's
  *  origin; a relative URL here produces a feed that validates but that no reader can resolve.
+ * @public
  */
 export interface FeedChannel {
   title: string;
@@ -17,7 +18,10 @@ export interface FeedChannel {
   author?: { name: string; email?: string };
 }
 
-/** One feed entry. `contentHtml` carries the rendered body for a full-content feed. */
+/**
+ * One feed entry. `contentHtml` carries the rendered body for a full-content feed.
+ * @public
+ */
 export interface FeedItem {
   title: string;
   url: string;
@@ -53,7 +57,10 @@ function iso(date?: string): string | undefined {
   return parseFeedDate(date)?.toISOString();
 }
 
-/** Build an RSS 2.0 document. */
+/**
+ * Build an RSS 2.0 document.
+ * @public
+ */
 export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
   const entries = items
     .map((item) => {
@@ -103,6 +110,7 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
 /**
  * Build a JSON Feed 1.1 document as a JSON string. The caller wraps it in a `Response` with the
  *  `application/feed+json` content type; this function does no HTTP work of its own.
+ * @public
  */
 export function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string {
   return JSON.stringify(

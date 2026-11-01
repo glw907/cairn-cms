@@ -62,6 +62,7 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * Declare a concept while preserving its fieldset type for typed reads, and validate its URL policy at
  * declaration so a bad permalink or datePrefix fails at module load rather than at a defaulted render.
  * Mirrors {@link defineAdapter}; the validation is the build-independent net for a concept with no entries.
+ * @public
  */
 export function defineConcept<const C extends ConceptConfig>(concept: C): C {
   const id = concept.label ?? concept.dir;

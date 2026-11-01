@@ -55,6 +55,7 @@ A closed popover is not rendered at all, but an element referenced by `aria-desc
 contributes its text however it is hidden (the accessible-description computation traverses into a
 hidden referenced subtree by design), so the description resolves on a trigger this component's
 hover/focus mechanics never opened, matching how `aria-describedby` resolves everywhere else.
+@public
 -->
 <script module lang="ts">
   /** Whether this browser resolves CSS anchor positioning, tested once and cached at module scope

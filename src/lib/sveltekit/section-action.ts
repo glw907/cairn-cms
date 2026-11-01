@@ -41,19 +41,28 @@ import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 
 export type { RateLimitLike };
 
-/** Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know. */
+/**
+ * Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know.
+ * @public
+ */
 export interface SectionActionConfig<Env, Db> {
   /** Resolve the section's database binding off the Worker env; undefined or null fails the action closed (500). */
   resolveDb: (env: Env | undefined) => Db | undefined;
   /** Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. */
   rateLimit?: {
+    /** Resolve the rate-limit binding off the Worker env; undefined lets the action through. */
     resolve: (env: Env | undefined) => RateLimitLike | undefined;
+    /** The limiter key for one call. */
     key: (ctx: AdminActionContext) => string;
+    /** The error a limited call answers with, in place of the default "Too many requests" message. */
     message?: string;
   };
 }
 
-/** Per-call-site options for one wrapped handler: the audit verbs, reused verbatim for denials. */
+/**
+ * Per-call-site options for one wrapped handler: the audit verbs, reused verbatim for denials.
+ * @public
+ */
 export interface SectionActionOptions {
   /** The verb, imperative, lowercase: reused as the audit `action` on every denial too. */
   action: string;
@@ -81,6 +90,7 @@ export interface SectionActionOptions {
  * and `entity` default from the call site's `SectionActionOptions`, so the common call names
  * only what the options declaration does not already say; a handler touching more than one
  * entity (the confirmed two-row-touch case) still overrides either field.
+ * @public
  */
 export interface SectionActionAudit {
   /** Overrides `opts.action`; omit to reuse the call site's declared verb. */
@@ -93,7 +103,10 @@ export interface SectionActionAudit {
   detail?: string;
 }
 
-/** What a wrapped handler receives: createAdminAction's context, its defaulting `audit`, plus the resolved binding. */
+/**
+ * What a wrapped handler receives: createAdminAction's context, its defaulting `audit`, plus the resolved binding.
+ * @public
+ */
 export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   /** Emit one audit record; `action`/`entity` default from the call site's `SectionActionOptions`. */
   audit: (record: SectionActionAudit) => void;
@@ -106,6 +119,7 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  * What `createSectionAction` returns: the per-call-site wrapper, curried over the handler's
  *  success type `T` (declared as a generic function type rather than named per call site, since
  *  each `wrap(handler, opts)` call fixes a different `T`).
+ * @public
  */
 export type SectionAction<Env, Db> = <T>(
   handler: (args: {
@@ -175,6 +189,7 @@ export type SectionAction<Env, Db> = <T>(
  * Posture: fail-closed on every call, unconditionally, unlike `createAdminAction`'s opt-in `access`
  * option: a target the map has no rule for refuses through {@link authorizeAdminTarget}, never the
  * permissive reading `canReach` gives an engine screen's unmapped route.
+ * @public
  */
 export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
   return function wrap<T>(

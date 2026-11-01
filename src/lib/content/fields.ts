@@ -18,32 +18,64 @@ interface FieldBase {
   /** Form-render-time initial value; a sentinel like "today" resolves at render. */
   default?: string | boolean;
 }
-/** A single-line text input. */
+/**
+ * A single-line text input.
+ * @public
+ */
 export interface TextField extends FieldBase {
   type: 'text';
-  min?: number; max?: number; length?: number;
+  /** The fewest characters the trimmed value may hold. */
+  min?: number;
+  /** The most characters the trimmed value may hold. */
+  max?: number;
+  /** The exact character count the trimmed value must hold. */
+  length?: number;
   /** A regular-expression source string the value must match. */
   pattern?: string;
 }
-/** A multi-line text input. */
+/**
+ * A multi-line text input.
+ * @public
+ */
 export interface TextareaField extends FieldBase {
   type: 'textarea';
-  rows?: number; min?: number; max?: number; length?: number; pattern?: string;
+  /** The input's height in text rows. Defaults to 3. */
+  rows?: number;
+  /** The fewest characters the trimmed value may hold. */
+  min?: number;
+  /** The most characters the trimmed value may hold. */
+  max?: number;
+  /** The exact character count the trimmed value must hold. */
+  length?: number;
+  /** A regular-expression source string the value must match. */
+  pattern?: string;
 }
-/** A numeric input. */
+/**
+ * A numeric input.
+ * @public
+ */
 export interface NumberField extends FieldBase {
   type: 'number';
-  min?: number; max?: number;
+  /** The smallest value allowed, also rendered as the input's `min` attribute. */
+  min?: number;
+  /** The largest value allowed, also rendered as the input's `max` attribute. */
+  max?: number;
   /** Constrain the value to whole numbers. */
   integer?: boolean;
 }
-/** A single-choice input over a closed option list. */
+/**
+ * A single-choice input over a closed option list.
+ * @public
+ */
 export interface SelectField extends FieldBase {
   type: 'select';
   /** The closed set of allowed values. */
   options: readonly string[];
 }
-/** A multiple-choice input. */
+/**
+ * A multiple-choice input.
+ * @public
+ */
 export interface MultiselectField extends FieldBase {
   type: 'multiselect';
   /** The allowed values; omitted leaves the set open. */
@@ -55,15 +87,24 @@ export interface MultiselectField extends FieldBase {
   /** Mark the field as a site-wide taxonomy whose values pool across entries. */
   taxonomy?: boolean;
 }
-/** A URL input whose format the validator enforces. */
+/**
+ * A URL input whose format the validator enforces.
+ * @public
+ */
 export interface UrlField extends FieldBase {
   type: 'url';
 }
-/** An email-address input whose format the validator enforces. */
+/**
+ * An email-address input whose format the validator enforces.
+ * @public
+ */
 export interface EmailField extends FieldBase {
   type: 'email';
 }
-/** A calendar-date input. */
+/**
+ * A calendar-date input.
+ * @public
+ */
 export interface DateField extends FieldBase {
   type: 'date';
   /** Earliest allowed date as YYYY-MM-DD. */
@@ -71,7 +112,10 @@ export interface DateField extends FieldBase {
   /** Latest allowed date as YYYY-MM-DD. */
   max?: string;
 }
-/** A date-and-time input. */
+/**
+ * A date-and-time input.
+ * @public
+ */
 export interface DatetimeField extends FieldBase {
   type: 'datetime';
   /** Earliest allowed moment as an ISO string. */
@@ -79,21 +123,33 @@ export interface DatetimeField extends FieldBase {
   /** Latest allowed moment as an ISO string. */
   max?: string;
 }
-/** A checkbox; absent means false. */
+/**
+ * A checkbox; absent means false.
+ * @public
+ */
 export interface BooleanField extends FieldBase {
   type: 'boolean';
 }
-/** A glyph chosen from the adapter's icon set; the stored value is the glyph's name. */
+/**
+ * A glyph chosen from the adapter's icon set; the stored value is the glyph's name.
+ * @public
+ */
 export interface IconField extends FieldBase {
   type: 'icon';
 }
-/** A hero image whose stored value is the nested ImageValue object. */
+/**
+ * A hero image whose stored value is the nested ImageValue object.
+ * @public
+ */
 export interface ImageField extends FieldBase {
   type: 'image';
   /** Whether this field feeds the social-card image. */
   seo?: boolean;
 }
-/** A group of leaf fields, stored as a nested object. Holds only leaves (no nested container). */
+/**
+ * A group of leaf fields, stored as a nested object. Holds only leaves (no nested container).
+ * @public
+ */
 export interface ObjectField extends Omit<FieldBase, 'label'> {
   type: 'object';
   /**
@@ -104,13 +160,19 @@ export interface ObjectField extends Omit<FieldBase, 'label'> {
   /** The leaf fields this group holds, keyed by frontmatter sub-key. */
   fields: Record<string, FieldDescriptor>;
 }
-/** A single edge to one entry of a named concept, stored as that target's permanent id. */
+/**
+ * A single edge to one entry of a named concept, stored as that target's permanent id.
+ * @public
+ */
 export interface ReferenceField extends FieldBase {
   type: 'reference';
   /** The concept whose entries this field references. */
   concept: string;
 }
-/** A repeatable field whose stored value is a list of its item's values. */
+/**
+ * A repeatable field whose stored value is a list of its item's values.
+ * @public
+ */
 export interface ArrayField extends FieldBase {
   type: 'array';
   /** The descriptor each list element conforms to: a leaf, or a flat object of leaves. */
@@ -118,7 +180,10 @@ export interface ArrayField extends FieldBase {
   /** A label for one row, shown beside the add and remove controls. */
   itemLabel?: string;
 }
-/** The plain-data descriptor union the form, validator, and inference all read. Grows per task. */
+/**
+ * The plain-data descriptor union the form, validator, and inference all read. Grows per task.
+ * @public
+ */
 export type FieldDescriptor =
   | TextField
   | TextareaField
@@ -141,6 +206,7 @@ export type FieldDescriptor =
  * argument with a `const` type parameter and intersects it onto the descriptor, so the call-site
  * literals (`required: true`, a `select`/`multiselect` `options` union) survive into the descriptor
  * type for `Infer` to read. The runtime value is unchanged: still `{ type, ...o }`.
+ * @public
  */
 export const fields = {
   /** A single-line text field. */

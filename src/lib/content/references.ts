@@ -18,6 +18,7 @@ import {
  * One typed frontmatter edge from a content entry to a target entry: the `field` the edge was
  *  declared on, the target's `concept`, and the target's permanent `id`. The manifest records these
  *  per entry, the cross-branch index reverse-maps them, and the build verifies each one resolves.
+ * @public
  */
 export interface ReferenceEdge {
   /** The frontmatter key the edge was declared on. */

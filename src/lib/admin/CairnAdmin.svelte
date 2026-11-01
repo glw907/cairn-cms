@@ -5,6 +5,7 @@ component for every admin view, feeding it the discriminated `AdminData` from `c
 load. It is a pure switcher on `data.view`: every view renders bare, since the shared chrome now
 rides the `/admin/+layout.svelte` shell (CairnAdminShell), not this component. The edit view reads
 its `siteName` from the shell payload on `page.data.shell`. No styling or wrapper elements of its own.
+@public
 -->
 <script lang="ts">
   import { page } from '$app/state';

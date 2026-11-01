@@ -17,6 +17,7 @@ Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
 count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's
 persistent "?" carries Markdown help).
+@beta
 -->
 <script lang="ts">
   import { flushSync, tick, untrack, getContext } from 'svelte';

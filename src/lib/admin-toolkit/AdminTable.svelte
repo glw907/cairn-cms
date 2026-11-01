@@ -38,9 +38,13 @@ the same moment its text appears announces nothing. The optional `batchBar` snip
 that region while `ids` is non-empty, receiving the selected count and a `clear` callback that
 empties the selection through `selection.onchange` and returns focus to the header checkbox, so a
 caller's batch-action buttons never reach into the id set directly.
+@public
 -->
 <script module lang="ts">
-  /** The table's two named density tiers, matching `StatusChip`'s `xs`/`sm` size vocabulary. */
+  /**
+   * The table's two named density tiers, matching `StatusChip`'s `xs`/`sm` size vocabulary.
+   * @public
+   */
   export type AdminTableDensity = 'xs' | 'sm';
 </script>
 

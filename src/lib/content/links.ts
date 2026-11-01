@@ -9,7 +9,10 @@ import { visit } from 'unist-util-visit';
 import type { Link } from 'mdast';
 import { isValidId, splitConceptIdToken } from './ids.js';
 
-/** A resolved reference to a content entry by its concept and permanent id. */
+/**
+ * A resolved reference to a content entry by its concept and permanent id.
+ * @public
+ */
 export interface CairnRef {
   concept: string;
   id: string;
@@ -18,6 +21,7 @@ export interface CairnRef {
 /**
  * Resolve a reference to its live permalink. Returns undefined when the target is missing (the
  *  preview marks it); the build resolver throws instead, so a dangling token fails the build.
+ * @public
  */
 export type LinkResolve = (ref: CairnRef) => string | undefined;
 

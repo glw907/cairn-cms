@@ -54,7 +54,7 @@ targets are dropped, so guard absent keys.
 The head reads `description` always, and `image`, `robots`, `author` only when the fieldset declares
 them. The hero and social image come from the key `image` alone: declare
 `image: fields.image({ label: 'Hero image', seo: true })` (one `seo` image per concept). Set
-`defaultImage` to a file that exists (the scaffold's `/og/default.png` 404s until added). Setting
+`defaultImage` only to a file that exists; the scaffold leaves it unset. Setting
 `resolveMedia` turns hero resolution on.
 
 Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` with
@@ -67,10 +67,11 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
   `createLinkResolver(site)`), return `rssResponse(channel, items)` or `jsonFeedResponse`, and set
   `feeds` in the config so entry heads link them.
 - Sitemap: `sitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn, siteConfig), origin, extraRoutes)`
-  takes `lastmod` from `updated` then `date` and adds non-entry pages.
+  takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
 - Robots: `robotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
   `aiPosture` as `posture` (`references/tidy-and-ai-posture.md`).
-- `noindex` entries still appear in the sitemap and feeds; filter with `readSeoFields`.
+- `noindex` entries stay out of the sitemap but still appear in feeds; filter feed items with
+  `readSeoFields`.
 
 ## Archive, tag pages, other heads
 
@@ -79,7 +80,8 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
 - Tag page: `entries` from `posts.allTags()`, list with `posts.byTag(tag)`; requires the concept's
   `taxonomy: true` field. Add each tag path to the sitemap.
 - Home, archive, tag, and hand-built pages get no head unless the route returns
-  `buildSeoMeta({ title, description, canonicalUrl, siteName })` and renders `CairnHead`.
+  `buildSeoMeta({ title, description, canonicalUrl, siteName })` and renders `CairnHead`. The scaffold's
+  home (`(site)/+page.server.ts` and `+page.svelte`) is the worked example.
 
 ## Editable menu
 

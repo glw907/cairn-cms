@@ -120,7 +120,7 @@ reason. A directive with no reason, or one that silences nothing, is itself an u
 
 ## The rendered pass
 
-`cairn-audit --rendered` (`check:cairn:rendered`) drives Chromium over a running site in both themes.
+`cairn-audit --rendered` drives Chromium over a running site in both themes.
 
 1. `npm i -D playwright && npx playwright install chromium`; build and serve the site
    (`npm run preview`, port 4173 on the scaffold). Set `BASE_URL` if it serves elsewhere.

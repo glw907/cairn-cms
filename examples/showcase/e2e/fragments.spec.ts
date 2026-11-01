@@ -40,13 +40,13 @@ test.describe('fragments: reusable content included across entries', () => {
 
   test('the sitemap does not advertise a fragment URL', async ({ request }) => {
     // The gate has to cover enumeration, not just resolution. This sitemap is built from
-    // site.all(), the documented pattern a consumer copies, and the test above proves the same URL
+    // buildSitemapView, which projects only routable concepts, and the test above proves the same URL
     // 404s: listing it here would hand crawlers a known dead link. The routable gate once covered
     // byPermalink and entries() but not all(), and the leak reached the prerendered sitemap.
     const res = await request.get('/sitemap.xml');
     expect(res.status()).toBe(200);
     const xml = await res.text();
-    expect(xml).toContain('/about');
+    expect(xml).toContain('/the-trail-crew');
     expect(xml).not.toContain('/fragments/');
   });
 

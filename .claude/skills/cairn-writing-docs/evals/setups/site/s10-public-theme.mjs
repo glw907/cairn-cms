@@ -13,7 +13,9 @@ they are.
 | Brand green (links, buttons, focus rings) | oklch(45% 0.1 150) | oklch(74% 0.1 150) |
 | Page background | oklch(97.5% 0.012 100) | oklch(22% 0.01 150) |
 
-Body text, secondary colors, and the status colors stay as they are.
+The tinted bands and panels, and the rules between sections, should sit with the warmer page, not
+keep the old cool grey. Body text, the secondary and accent roles, and the status colors stay as
+they are.
 `;
 
 /** @param {string} root */

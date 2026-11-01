@@ -19,7 +19,7 @@
   ],
   "expectations": [
     "In src/theme/theme.css, both daisyUI theme blocks set --color-primary to the BRAND.md green for that scheme (oklch(45% 0.1 150) light, oklch(74% 0.1 150) dark).",
-    "Both blocks set --color-base-100 to the BRAND.md page background for that scheme, and the -200 and -300 steps follow it.",
+    "Both blocks set --color-base-100 to the BRAND.md page background for that scheme, and the -200 and -300 steps follow it (BRAND.md asks for the bands, panels, and rules to sit with the warmer page but names no values, so the session maps that to the base steps from the theme recipe).",
     "--color-primary-content keeps its lightness and chroma in both blocks (its hue may follow the new accent, which at that chroma changes neither the look nor the contrast); the body text color and the status fills stay as they were.",
     "No green literal is written into src/theme/site.css, the Svelte components, or the chassis files.",
     "The session runs the public-scope cairn-audit and it reports no errors.",

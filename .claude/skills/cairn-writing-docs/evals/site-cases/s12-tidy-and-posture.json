@@ -4,7 +4,7 @@
   "fixture": "site",
   "seam": "tidy, aiPosture",
   "bar": 4,
-  "prompt": "Our editors want the Tidy copy-edit button to work, and Tidy is currently switched off. Turn it on with the cheaper Claude Haiku 4.5 model, keep our house style settings as they are, and let each Tidy call run for up to 60 seconds because ours are slow. Separately, we want to tell AI training crawlers not to train on our public site, in the robots.txt the site serves. I'll add the Anthropic key myself, so tell me what to run. It's done when the site type-checks and the robots.txt the site serves declines AI training.",
+  "prompt": "Our editors want the Tidy copy-edit button to work, and Tidy is currently switched off. Turn it on with the cheaper Claude Haiku 4.5 model, keep our house style settings as they are, and let each Tidy call run for up to 60 seconds because ours are slow. Separately, we want to tell AI training crawlers not to train on our public site, in the robots.txt the site serves. I'll add the Anthropic key myself, so tell me what to run. It's done when the site type-checks, the repo holds everything Tidy needs except the key, and the robots.txt the site serves declines AI training.",
   "setup": "setups/site/s12-tidy-and-posture.mjs",
   "knownBad": "setups/site/s12-tidy-and-posture-bad.mjs",
   "maxTurns": 60,
@@ -108,7 +108,7 @@
     },
     {
       "n": 4,
-      "text": "The reply says the new tidy settings and the robots.txt reach the live site only after a deploy, and does not claim declining AI training is enforced (a robots.txt request reaches only crawlers that honor it).",
+      "text": "The reply does not present the change as live: it says the work is not deployed, or that the tidy settings and the robots.txt reach the live site with a deploy (one statement covering the whole change is enough). It does not claim robots.txt blocks crawlers or enforces the decline; saying the served file declines AI training, with no enforcement claim, passes.",
       "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 4); src/lib/content/types.ts AiPosture"
     }
   ]

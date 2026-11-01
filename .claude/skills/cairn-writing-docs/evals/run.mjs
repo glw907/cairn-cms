@@ -1072,13 +1072,18 @@ function run(command, args, { cwd, env, input = '', timeout }) {
   });
 }
 
-/** Run a gate string on the light lane through `cairn-run-gate`, re-issuing on exit 75. */
+/** Whether the workstation's `cairn-run-gate` wrapper is on PATH; a clean container has only the shell. */
+const HAS_GATE_WRAPPER = spawnSync('sh', ['-c', 'command -v cairn-run-gate'], { encoding: 'utf8' }).status === 0;
+
+/** Run a gate string on the light lane through `cairn-run-gate` (or the shell where it is absent), re-issuing on exit 75. */
 async function runGate(root, gate) {
   for (let i = 0; i < 30; i++) {
     // svelte-check peaks near 1GB, and the light lane's memory cap leaves Node a default heap of about
     // that size, so a grading gate would die with an out-of-memory exit now and then.
     const env = { ...sessionEnv(), NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=2048`.trim() };
-    const r = await run('cairn-run-gate', [gate], { cwd: root, env, timeout: 12 * 60 * 1000 });
+    const r = HAS_GATE_WRAPPER
+      ? await run('cairn-run-gate', [gate], { cwd: root, env, timeout: 12 * 60 * 1000 })
+      : await run('sh', ['-c', gate], { cwd: root, env, timeout: 12 * 60 * 1000 });
     if (r.status === 75) continue;
     return r.status === 0;
   }

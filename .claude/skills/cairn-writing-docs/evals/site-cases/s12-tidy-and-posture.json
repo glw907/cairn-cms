@@ -1,0 +1,115 @@
+{
+  "id": "S12-tidy-and-posture",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "tidy, aiPosture",
+  "bar": 4,
+  "prompt": "Our editors want the Tidy copy-edit button to work, and Tidy is currently switched off. Turn it on with the cheaper Claude Haiku 4.5 model, keep our house style settings as they are, and let each Tidy call run for up to 60 seconds because ours are slow. Separately, we want to tell AI training crawlers not to train on our public site, in the robots.txt the site serves. I'll add the Anthropic key myself, so tell me what to run. It's done when the site type-checks and the robots.txt the site serves declines AI training.",
+  "setup": "setups/site/s12-tidy-and-posture.mjs",
+  "knownBad": "setups/site/s12-tidy-and-posture-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/nav/site-config.ts:124 TidyConfig: enabled (default false), model (default claude-sonnet-5, DEFAULT_TIDY_MODEL at :133), conventions; the YAML carries no timeout key",
+    "src/lib/sveltekit/content-routes-context.ts:209 and :373 createCairnAdmin's tidy block sets timeoutMs; DEFAULT_TIDY_TIMEOUT_MS is 30_000 at :275",
+    "src/lib/content/types.ts:276 CairnAdapter.aiPosture; src/lib/delivery/responses.ts:40 robotsResponse passes posture to buildRobots unchanged",
+    "src/lib/delivery/robots.ts:34 buildRobots: an unset posture is byte-identical to no posture, 'decline' adds Content-Signal: ai-train=no and a Disallow group per training crawler",
+    "src/lib/env.ts: ANTHROPIC_API_KEY is read from the Worker env at call time, a secret, never a wrangler var",
+    "docs/extend/turn-on-tidy.md (Turn tidy on; Choose a model; Configure the tidy call's deadline and client), docs/extend/choose-an-ai-posture.md (Set the posture on the adapter; Pass the posture to the robots route)",
+    "setups/site/s12-tidy-and-posture.mjs sets enabled: false and removes the posture pass-through from the robots route, the shape docs/extend/choose-an-ai-posture.md calls a site scaffolded before the pass-through existed"
+  ],
+  "expectations": [
+    "src/theme/site.config.yaml has tidy.enabled true and tidy.model claude-haiku-4-5, and the conventions block (oxfordComma always, smartQuotes true) is intact.",
+    "src/chassis/cairn.server.ts passes timeoutMs: 60000 in the tidy block of createCairnAdmin and keeps the dev-gated client.",
+    "@anthropic-ai/sdk is declared as a dependency in package.json.",
+    "The adapter sets aiPosture: 'decline', and the robots route passes cairn.aiPosture to robotsResponse as posture, so the served file changes.",
+    "The key is not written into the repo; the reply tells the developer to run npx wrangler secret put ANTHROPIC_API_KEY."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src/theme/site.config.yaml",
+      "regex": "tidy:(?:\\n[ \\t]+.*)*?\\n[ \\t]+enabled:\\s*true",
+      "source": "src/lib/nav/site-config.ts:126"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme/site.config.yaml",
+      "regex": "model:\\s*['\"]?claude-haiku-4-5['\"]?\\s*$",
+      "source": "src/lib/nav/site-config.ts:128; docs/extend/turn-on-tidy.md (Choose a model)"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme/site.config.yaml",
+      "regex": "oxfordComma:\\s*always[\\s\\S]*smartQuotes:\\s*true|smartQuotes:\\s*true[\\s\\S]*oxfordComma:\\s*always",
+      "source": "src/lib/nav/site-config.ts:140 TidyConventions; the save on /admin/settings and the house style live in this block"
+    },
+    {
+      "type": "absent",
+      "path": "src/theme/site.config.yaml",
+      "regex": "timeoutMs|timeout",
+      "source": "src/lib/nav/site-config.ts:124: TidyConfig has no timeout key; timeoutMs belongs to createCairnAdmin"
+    },
+    {
+      "type": "contains",
+      "path": "src/chassis/cairn.server.ts",
+      "regex": "timeoutMs\\s*:\\s*(60_?000|60\\s*\\*\\s*1000)",
+      "source": "src/lib/sveltekit/content-routes-context.ts:209"
+    },
+    {
+      "type": "contains",
+      "path": "package.json",
+      "text": "@anthropic-ai/sdk",
+      "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 1): the optional peer the tidy call imports"
+    },
+    {
+      "type": "contains",
+      "path": "src/theme/cairn.config.ts",
+      "regex": "aiPosture\\s*:\\s*['\"`]decline['\"`]",
+      "source": "src/lib/content/types.ts:276; src/lib/delivery/robots.ts:36"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/robots.txt/+server.ts",
+      "regex": "\\bposture\\s*:",
+      "source": "src/lib/delivery/responses.ts:40 robotsResponse({ posture })"
+    },
+    {
+      "type": "absent",
+      "path": "wrangler.jsonc",
+      "text": "ANTHROPIC_API_KEY",
+      "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 3): the key is a Worker secret"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "regex": "sk-ant-",
+      "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 3)"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The 60-second deadline is the timeoutMs member of the tidy block passed to createCairnAdmin in the server module (src/chassis/cairn.server.ts), and the existing `client` entry of that block, with its dev gate, is still there.",
+      "source": "src/lib/sveltekit/content-routes-context.ts:209,373; docs/extend/turn-on-tidy.md (Configure the tidy call's deadline and client)"
+    },
+    {
+      "n": 2,
+      "text": "The robots route passes the adapter's aiPosture to robotsResponse as its posture option, so declaring aiPosture on the adapter changes the served robots.txt; the session noticed the route did not pass it before the change.",
+      "source": "src/lib/delivery/responses.ts:40; docs/extend/choose-an-ai-posture.md (Pass the posture to the robots route)"
+    },
+    {
+      "n": 3,
+      "text": "The reply tells the developer to bind the key with `npx wrangler secret put ANTHROPIC_API_KEY` (or the equivalent wrangler secret command), and the diff holds no key value, no .dev.vars with a real key, and no vars entry for it.",
+      "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 3)"
+    },
+    {
+      "n": 4,
+      "text": "The reply says the new tidy settings and the robots.txt reach the live site only after a deploy, and does not claim declining AI training is enforced (a robots.txt request reaches only crawlers that honor it).",
+      "source": "docs/extend/turn-on-tidy.md (Turn tidy on, step 4); src/lib/content/types.ts AiPosture"
+    }
+  ]
+}

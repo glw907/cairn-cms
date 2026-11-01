@@ -1,0 +1,79 @@
+{
+  "id": "S13-audit-fix",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "audit",
+  "bar": 4,
+  "prompt": "A teammate added a Notes screen to our admin, and now the site's design check (npm run check:cairn) fails on it. Fix the screen so the check passes and the Notes screen still lists the notes, with archived ones marked. It's done when that check exits 0 and the site type-checks.",
+  "setup": "setups/site/s13-audit-fix.mjs",
+  "knownBad": "setups/site/s13-audit-fix-bad.mjs",
+  "maxTurns": 60,
+  "source": [
+    "src/lib/audit/rules/static/list-role.ts: a marker-suppressed <ul> (an item's flex class) with no role attribute is an error; the fix is role=\"list\" on the list and role=\"listitem\" on the item whose class causes it",
+    "src/lib/audit/rules/static/stock-default-hazards.ts:157 badge-ghost is an error-tier finding; cairn's recipe is the three chip registers (StatusChip, or the cairn-chip-quiet, -warning, -outline classes)",
+    "src/lib/audit/suppress.ts:20 DIRECTIVE_MARKER: the suppression comment, for a deliberate finding with a recorded reason",
+    "docs/extend/run-cairn-audit-on-your-site.md (Run the static pass; Scope the static pass; Suppress a static finding), docs/reference/cairn-audit.md (The static rules)",
+    "setups/site/s13-audit-fix.mjs seeds the screen; the unseeded fixture audits clean (87 files, 0 errors) and the seeded one reports exactly two errors"
+  ],
+  "expectations": [
+    "The Notes list carries role=\"list\", and each flex item carries role=\"listitem\", so the list-role finding is gone.",
+    "The archived marker is one of cairn's chip registers (StatusChip, or the cairn-chip-quiet, cairn-chip-warning, or cairn-chip-outline class), not badge-ghost and not another stock daisyUI badge variant.",
+    "No cairn-audit-disable-next-line directive is added and no cairn-audit.config.json narrows a scope, because neither finding is deliberate.",
+    "npm run check:cairn exits 0 and npm run check passes."
+  ],
+  "checks": [
+    {
+      "type": "npm",
+      "script": "check:cairn"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin/notes",
+      "regex": "<ul[^>]*\\brole=\"list\"",
+      "source": "src/lib/audit/rules/static/list-role.ts"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin/notes",
+      "regex": "StatusChip|cairn-chip-(quiet|warning|outline)",
+      "source": "src/lib/audit/rules/static/stock-default-hazards.ts:157; docs/reference/admin-toolkit.md StatusChip"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "text": "cairn-audit-disable",
+      "source": "src/lib/audit/suppress.ts:20"
+    },
+    {
+      "type": "unchanged",
+      "path": "cairn-audit.config.json",
+      "source": "docs/extend/run-cairn-audit-on-your-site.md (Scope the static pass): the scaffold's config file, absent from this fixture, so an added one is a scope change"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The fix is in the Notes screen's own markup: role=\"list\" on the <ul>, role=\"listitem\" on each flex <li>, and a chip register in place of badge-ghost. The diff adds no suppression comment, no cairn-audit.config.json, and no edit under node_modules, to the admin stylesheet, or to the audit's rules.",
+      "source": "src/lib/audit/rules/static/list-role.ts; src/lib/audit/rules/static/stock-default-hazards.ts:157"
+    },
+    {
+      "n": 2,
+      "text": "The archived marker still shows the text 'Archived' for archived notes only, and the screen still renders every note's title, so the fix kept the screen's behavior.",
+      "source": "setups/site/s13-audit-fix.mjs"
+    },
+    {
+      "n": 3,
+      "text": "The final reply names the two rules that fired, list-role and stock-default-hazards, says what each required, and reports that the audit now exits 0.",
+      "source": "docs/reference/cairn-audit.md (The static rules)"
+    },
+    {
+      "n": 4,
+      "text": "The tool log shows cairn-audit run (npm run check:cairn or npx cairn-audit) before the first edit, so the fix answers the findings the report named.",
+      "source": "docs/extend/run-cairn-audit-on-your-site.md (Run the static pass)"
+    }
+  ]
+}

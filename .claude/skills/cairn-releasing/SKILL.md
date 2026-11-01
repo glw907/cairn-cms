@@ -51,6 +51,9 @@ both repackage `dist`, so never run them concurrently):
   comment gate, the custom-surface check, the package and dev-package checks, and `check:version`, so
   this list never needs re-copying when a check is added)
 - `npm test` (exit 0, not just a passing count)
+- `node scripts/build/build-guidance-hashes.mjs`, committed, before the release commit: it rebuilds
+  `guidance-hashes.json` from every earlier release tag, so `cairn-guidance install` can delete a
+  file the last release shipped and this one does not
 - after `npm version`, also bump `packages/cairn-cms-dev` to the same number (`npm version <x.y.z>
   --no-git-tag-version` in that directory), then run `npm run check:close` again: CI's `test` job fails
   the release commit when the two versions differ

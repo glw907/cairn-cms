@@ -2,6 +2,17 @@
 
 ### Added
 
+- **`cairn-guidance install` removes what it no longer ships.** It deletes a file a previous install
+  wrote only when the file's hash matches a version the package shipped (the new
+  `guidance-hashes.json`, built from each release tag from `0.97.0` on), the `MANIFEST` lists it, and it
+  is a regular file under `.claude/skills` or `.claude/agents`. An edited file stays, is named in the
+  report, and stays in the `MANIFEST` so every later run names it again; the directories a removal
+  empties go too, and `.orig` files stay. An old skill directory with no `MANIFEST` is reported and
+  never deleted. `--dry-run` prints what a run would write, delete, and keep. The `MANIFEST` is
+  written by temp file and rename.
+
+  Consumers may: run `npx cairn-guidance install --dry-run` to preview a removal.
+
 - **A stability tier on every export's doc comment.** Each public export now carries `@public` (the
   Extension tier), `@beta` (Unstable), or `@scaffold` (the wiring a scaffolded site copies), and the
   built declarations keep the tag. `check:tiers` fails an export with no tag or two, and
@@ -124,10 +135,9 @@
   included). The `cairn-audit` messages and the CLIs' `--help` text no longer print `docs/reference`
   paths, and `claude/CLAUDE.md` points at the skills.
 
-  Consumers must: run `npx cairn-guidance install` and delete the four old skill directories under
-  `.claude/skills/` by hand, since `install` lists an unlisted directory as removable and deletes
-  nothing; both name sets load until you do. Rewrite any project instruction of your own that names an
-  old skill.
+  Consumers must: run `npx cairn-guidance install`; it removes the four old skill directories when
+  their files are unedited, and names any it keeps for you to delete. Rewrite any project instruction
+  of your own that names an old skill.
 
 
 - **The shipped examples are generic.** The `cairn` tool's `--help` examples use `my-site` where

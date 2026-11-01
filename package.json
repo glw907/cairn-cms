@@ -205,6 +205,7 @@
     "schema",
     "skills",
     "claude",
+    "guidance-hashes.json",
     "CHANGELOG.md",
     "MIGRATION-NOTES.md",
     "docs/README.md",

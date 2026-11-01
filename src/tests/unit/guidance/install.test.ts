@@ -290,25 +290,23 @@ describe('installGuidance', () => {
     }
   });
 
-  it('never deletes a path a previous MANIFEST listed; a package that stops shipping it reports it removable', async () => {
+  it('keeps a retired path no release shipped, naming it, and leaves the file on disk', async () => {
     const dir = tmpDir('cairn-guidance-removable-');
     try {
       await installGuidance(dir, source());
       expect(existsSync(join(dir, '.claude/skills/foo/SKILL.md'))).toBe(true);
 
-      const shrunk = source({ skills: {} });
-      const second = await installGuidance(dir, shrunk);
+      const second = await installGuidance(dir, source({ skills: {} }));
 
-      expect(second.removable).toContain('.claude/skills/foo/SKILL.md');
-      expect(second.removable).toContain('.claude/skills/foo/references/README.md');
-      // Never deletes: the retired file is still on disk.
+      expect(second.removed).toEqual([]);
+      expect(second.kept).toContainEqual({ path: '.claude/skills/foo/SKILL.md', reason: 'unrecognized' });
       expect(existsSync(join(dir, '.claude/skills/foo/SKILL.md'))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('drops a previous MANIFEST line that is absolute or traverses out, printing neither as removable', async () => {
+  it('drops a previous MANIFEST line that is absolute or traverses out, keeping and removing neither', async () => {
     const dir = tmpDir('cairn-guidance-manifest-lines-');
     try {
       mkdirSync(join(dir, CAIRN_DIR), { recursive: true });
@@ -319,7 +317,8 @@ describe('installGuidance', () => {
 
       const report = await installGuidance(dir, source());
 
-      expect(report.removable).toEqual(['.claude/skills/retired/SKILL.md']);
+      expect(report.removed).toEqual([]);
+      expect(report.kept).toEqual([]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

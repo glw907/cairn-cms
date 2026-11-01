@@ -54,9 +54,10 @@ both repackage `dist`, so never run them concurrently):
 - `node scripts/build/build-guidance-hashes.mjs`, committed, before the release commit: it rebuilds
   `guidance-hashes.json` from every earlier release tag, so `cairn-guidance install` can delete a
   file the last release shipped and this one does not
-- after `npm version`, also bump `packages/cairn-cms-dev` to the same number (`npm version <x.y.z>
-  --no-git-tag-version` in that directory), then run `npm run check:close` again: CI's `test` job fails
-  the release commit when the two versions differ
+- after `npm version`, also bump `packages/cairn-cms-dev` and `packages/create-cairn-site` to the same
+  number (`npm version <x.y.z> --no-git-tag-version` in each directory), then run `npm run check:close`
+  again: CI's `test` job fails the release commit when the dev-package version differs, and the
+  `publish-create-site` job fails when the scaffold's differs
 - the consumer-build proof: a CI `e2e` run, or a from-scratch showcase build (`rm -rf
   examples/showcase/{node_modules,package-lock.json}` then a fresh install and `npm run build`). Local
   Playwright reuses a stale preview off CI, so do not trust a local "all green" alone.
@@ -168,14 +169,35 @@ their shared `<!-- release-size: minor -->` marker once, on whichever heading is
 
 **A consumer cannot reach a prerelease through its caret range.** A `^0.93.0` dependency does not resolve
 `0.94.0-rc.1`, by SemVer's own rule, so a site testing against a candidate pins the exact version
-(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and moves back to a caret when the stable lands. The workflow runs `npm install -g npm@latest` first because trusted publishing needs npm >= 11.5.1.
+(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and moves back to a caret when the stable lands. The workflow runs `npm install -g npm@11` first because trusted publishing needs npm >= 11.5.1 and npm 12 is broken for publishing (see the `WATCH` comment in `publish.yml`).
 Under trusted publishing the `--provenance` flag is unnecessary: provenance is automatic for this public repo.
+
+### The first `create-cairn-site` release (owner steps)
+
+`publish-create-site` skips with a notice while the package is absent from the registry, because npm
+cannot bind a trusted publisher to a package that does not exist. Publish no placeholder: npm's terms bar
+content that exists only to reserve a name. The owner does these once, in one terminal sitting on release
+day, since no session holds npm credentials or the account's 2FA:
+
+1. `npm login`, then `npm publish <tarball> --access public --tag next` on the release candidate's
+   real build, which the session bakes and packs.
+2. `npm trust github create-cairn-site --file publish.yml --repo glw907/cairn-cms --allow-publish`.
+   `--allow-publish` is needed because `publish.yml` runs `npm publish` directly.
+3. The session cuts the next candidate inside 2 days, since a new binding expires unless its first
+   publish completes in that time. That first OIDC publish proves the job, and the real install runs
+   from it.
+
+The package version must equal the root's at every cut: `publish-create-site` fails a mismatch rather
+than move `latest` to `0.0.0`. Once the package publishes, retire the template repository's pre-release
+notice in the same change: the opening of `packages/create-cairn-site/template-repo/README.md` and the
+`WATCH` comment on it.
 
 ## 7. Verify the publish
 
 ```bash
 gh run watch <run-id> --exit-status     # publish.yml must finish green
 npm view @glw907/cairn-cms version      # serves the new number on `latest`
+npm view create-cairn-site version      # serves the same number on `latest`
 ```
 
 Then run the audit's public scope over each consuming site you maintain and record the counts. In each
@@ -195,10 +217,10 @@ Then update `docs/STATUS.md` to the shipped state.
 
 If the publish job fails on authorization (an OIDC error rather than a code failure), the trusted-publisher
 config on npmjs.org is the suspect, not the code: the org/user, repository, workflow filename
-(`publish.yml`), and environment must match the running workflow exactly, and a trusted-publisher config
-created after 2026-05-20 must have at least one allowed action selected (older configs default to
-publish-allowed, so a long-standing one needs no change). Do not bump the version again to retry; fix the
-config and re-run the same release's workflow.
+(`publish.yml`), and environment must match the running workflow exactly. A new trusted-publisher
+configuration defaults to `npm stage publish`, so it needs publish chosen as its allowed action
+(`npm trust ... --allow-publish`); an older one defaults to publish-allowed and needs no change. Do not
+bump the version again to retry; fix the config and re-run the same release's workflow.
 
 ## 8. Hand-off
 

@@ -220,6 +220,12 @@ export function profileFor(relPath) {
   ) {
     return { tier: 'T2', classes: all, mode: 'whole' };
   }
+  if (
+    /^packages\/create-cairn-site\/(?:bin\.mjs|README\.md|src\/.+\.mjs)$/.test(path) &&
+    !path.endsWith('.test.mjs')
+  ) {
+    return { tier: 'T2', classes: all, mode: 'whole' };
+  }
   if (/^src\/lib\/.+\.(?:ts|svelte)$/.test(path)) {
     return { tier: 'T2', classes: ['C1', 'C2'], mode: 'tsdoc' };
   }
@@ -493,6 +499,9 @@ export const SCAN_ROOTS = [
   'examples/showcase/src/chassis',
   'src/lib',
   'tool/cmd/cairn/messages.go',
+  'packages/create-cairn-site/bin.mjs',
+  'packages/create-cairn-site/src',
+  'packages/create-cairn-site/README.md',
   ...TEMPLATE_ROOTS,
 ];
 

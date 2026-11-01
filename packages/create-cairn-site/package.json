@@ -4,12 +4,29 @@
   "description": "Create a cairn CMS site: scaffold a branded Waymark starter and run it locally.",
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=24" },
-  "bin": { "create-cairn-site": "./bin.mjs" },
-  "files": ["bin.mjs", "src", "template", "README.md"],
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glw907/cairn-cms.git",
+    "directory": "packages/create-cairn-site"
+  },
+  "bin": {
+    "create-cairn-site": "bin.mjs"
+  },
+  "files": [
+    "bin.mjs",
+    "src",
+    "!src/**/*.test.mjs",
+    "template",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test --import ./test/no-desktop.mjs \"src/*.test.mjs\" \"src/github/*.test.mjs\" \"src/cloudflare/*.test.mjs\" \"src/console/*.test.mjs\" \"scripts/*.test.mjs\" \"test/*.test.mjs\"",
     "prepack": "node scripts/bake-template.mjs --to template"
   },
-  "dependencies": { "@clack/prompts": "^1.8.1" }
+  "dependencies": {
+    "@clack/prompts": "^1.8.1"
+  }
 }

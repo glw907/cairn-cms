@@ -177,7 +177,7 @@ Three commits, in this order.
 1. Run the whole-branch `standards:diff-reviewer` against this plan and the design, telling it the class note above. Dispatch `standards:svelte-reviewer` for the action and `EditPage` changes. No `visual-verifier` run is owed unless a screen's layout changed, since only strings and an image base changed. State that in the PR.
 2. Fold one fix chain, quoting each finding verbatim. Run the fast lane again.
 3. Move the ten items to `## Done` with proof, and file anything found through `standards:log-issue`.
-4. Delete `docs/internal/plans/2026-11-01-media-publish*` and `docs/research/2026-11-01-media-publish-*`. A plan goes when its pass closes.
+4. Delete `docs/internal/plans/2026-11-01-media-publish*` and `docs/internal/research/2026-11-01-media-publish-*`. A plan goes when its pass closes.
 5. Update `docs/STATUS.md`.
 6. Run `npm run check:docs-gate`, commit, and push.
 7. Write the PR body: `## Brief`, what landed, `## Decisions`, `## Planning misses`, every retried test, the score with plan path 245 beside actual.

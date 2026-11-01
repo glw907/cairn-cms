@@ -77,6 +77,10 @@ test('openBrowser with secret:true keeps the token out of a non-interactive log'
       logs.some((line) => line.includes('--sign-in')),
       `expected a re-run hint naming --sign-in, got: ${JSON.stringify(logs)}`,
     );
+    assert.ok(
+      !logs.some((line) => line.includes('<dir>')),
+      `expected no literal <dir> placeholder, got: ${JSON.stringify(logs)}`,
+    );
   } finally {
     process.env.PATH = previousPath;
     process.stdout.isTTY = previousTTY;

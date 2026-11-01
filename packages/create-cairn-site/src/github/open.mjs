@@ -66,8 +66,8 @@ export async function openBrowser(url, log, { secret = false } = {}) {
     log(`Your site is at: ${new URL(url).origin}`);
     log(
       'The sign-in link carries a one-time token and is not printed to this non-interactive ' +
-        'output. Next: from an interactive terminal, re-run npx create-cairn-site --dir <dir> ' +
-        '--sign-in for a fresh link.',
+        'output. Next: from an interactive terminal, re-run the same npx create-cairn-site ' +
+        'command with --sign-in for a fresh link.',
     );
     return;
   }

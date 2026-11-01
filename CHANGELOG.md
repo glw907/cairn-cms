@@ -134,6 +134,14 @@
 
 ### Changed
 
+- **`buildSitemapView` skips `noindex` entries.** An entry whose `robots` field carries `noindex` no
+  longer appears in the sitemap, matching the markdown twin. The check applies only to a concept whose
+  fieldset declares `robots`. Feeds still list such entries. The scaffold's sitemap route now calls
+  `buildSitemapView`, so its `lastmod` comes from `updated`, and its home page returns a full head
+  through `buildSeoMeta`.
+- **A fresh scaffold ships honest.** It leaves `defaultImage` unset instead of pointing at a missing
+  file, drops the `check:cairn:rendered` script it could not run, throws a clear error when the
+  `posts` concept is absent instead of emitting an empty feed, and no longer carries stale comments.
 - **The four packaged skills have new names and rebuilt references.** `cairn-extend` is now
   `cairn-extending-a-site`, `cairn-public` is `cairn-styling-public-pages`, `cairn-admin-screens` is
   `cairn-building-admin-screens`, and `cairn-consult` is `cairn-consulting-the-engine`. Each

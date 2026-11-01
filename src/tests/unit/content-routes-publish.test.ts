@@ -368,11 +368,27 @@ describe('publishAction', () => {
 
     it('leaves a main tree the site resolver accepts (the duplicate never lands)', async () => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // A second routable concept holds /about-copy through its own file, so a publish that
+      // landed pages/about-copy.md would put two files on one address in main's tree.
       const rt = pagesRuntime();
-      const gh = new GithubDouble({ main: mainWith(live()), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      rt.concepts.push({
+        id: 'notes', label: 'Note', singular: 'Note', dir: 'src/content/notes',
+        routing: { routable: true, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day',
+        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),
+      });
+      const gh = new GithubDouble({
+        main: {
+          'src/content/notes/about-copy.md': '---\ntitle: Held\n---\nLive.',
+          [MANIFEST_PATH]: formatManifest({ version: 1, entries: [live({ id: 'about-copy', concept: 'notes', title: 'Held' })] }),
+        },
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+      });
       gh.install();
       const routes = createContentRoutes({ runtime: rt });
-      await routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' }));
+      // A publish that lands throws its success redirect; swallow it so the tree is checked either way.
+      await routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })).catch(() => undefined);
 
       const tree = gh.branches.get('main') ?? {};
       const conceptIndexes = rt.concepts.map((descriptor) => ({
@@ -935,6 +951,8 @@ describe('undeclared frontmatter keys through a save or publish', () => {
     const row = parseManifest(gh.read('main', MANIFEST_PATH) ?? '').entries.find((e) => e.id === '2026-05-01-hi');
     expect(row?.draft).toBe(true);
     expect(row?.publishedAt).toBeUndefined();
+    const list = await routes.listLoad(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' } }));
+    expect(list.entries.find((e) => e.id === '2026-05-01-hi')?.draft).toBe(true);
   });
 
   it('answers 503 with the body reseeded and commits nothing when the prior read throws', async () => {

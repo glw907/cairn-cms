@@ -20,9 +20,11 @@ Contents:
   (`references/content-model.md` has the glob shape). It returns one index per concept plus `site`.
   `all()` and `byTag()` omit drafts unless `{ includeDrafts: true }`; `allTags()` and `adjacent()`
   always do; `byId` returns drafts, so check `draft` there.
-- One origin string, no trailing slash, set to the deployed origin before a production build (the
-  scaffold ships `'https://showcase.test'`). The build writes it into canonicals, `og:url`, feeds,
-  and the sitemap. Set `PUBLIC_ORIGIN` in `wrangler.jsonc` to the same value.
+- One origin string, no trailing slash, set to the deployed origin before a production build. It is
+  the `publicOrigin` export in `src/theme/cairn.config.ts` (the scaffold ships
+  `'https://showcase.test'`), and the build writes it into canonicals, `og:url`, feeds, and the
+  sitemap. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same host.
+  Setup writes both values, then rebuilds. A hand change to the domain edits both, then rebuilds.
 - One exported `PublicRoutesConfig` (`site`, `render`, `origin`, `siteName`, `description`, plus
   `defaultImage`, `feeds`, `resolveMedia`, `assetsEnabled`) shared by every route.
 

@@ -140,7 +140,7 @@ test('Part B: the seeded hello post resolves its frontmatter hero, the template 
   await expect(hero.locator('figcaption')).toHaveText(SEED_HERO_CAPTION);
 
   // The head carries the resolved og:image as the ABSOLUTE URL (origin + the delivery path) and a
-  // twitter:image:alt carrying the hero alt. The origin is the showcase's ORIGIN constant.
+  // twitter:image:alt carrying the hero alt. The origin is the showcase's publicOrigin.
   const origin = 'https://showcase.test';
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',

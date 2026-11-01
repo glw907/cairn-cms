@@ -23,7 +23,8 @@ const MINIMAL_WRANGLER_JSONC = JSON.stringify(
  * writeEmailFrom targets, shaped exactly like the real template's placeholder so the pattern
  * match (and its re-parse) exercise the real production shape rather than a stand-in.
  */
-const MINIMAL_CAIRN_CONFIG_TS = "export default {\n  email: { from: 'cms@showcase.test' },\n};\n";
+const MINIMAL_CAIRN_CONFIG_TS =
+  "export const publicOrigin = 'https://showcase.test';\nexport default {\n  email: { from: 'cms@showcase.test' },\n};\n";
 
 const WORKERS_DEV_URL = 'https://cairn-domain-site.glw907.workers.dev';
 

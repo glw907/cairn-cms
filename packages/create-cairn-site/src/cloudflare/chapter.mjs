@@ -235,12 +235,15 @@ export async function runCloudflareChapter({
     await runStep(
       frame,
       'Deploy to workers.dev',
-      "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies the database's migrations, " +
-        'then deploys again so the running site carries its real origin.',
+      "Deploys the Worker, writes its URL as the site's origin, applies the database's " +
+        'migrations, rebuilds so the pages carry that origin, then deploys again.',
       async () => {
         const first = await deployWorker({ dir, log, accountId });
         await writePublicOrigin(dir, first.url);
         await applyMigrations({ dir, log, accountId });
+        // The origin in cairn.config.ts is baked into the prerendered pages, so only a rebuild
+        // carries it into the second deploy.
+        await buildSite({ dir, log });
         const second = await deployWorker({ dir, log, accountId });
         if (second.url !== first.url) {
           throw new Error(

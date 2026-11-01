@@ -508,17 +508,17 @@ const ROWS = {
     build(params) {
       if (params.detail) {
         return (
-          'Redeploying your site after pointing it at your domain did not finish. wrangler ' +
-          'reported:\n' +
+          'Rebuilding and redeploying your site after pointing it at your domain did not ' +
+          'finish. The build or wrangler reported:\n' +
           `${params.detail}\n` +
           "The tool already restored your site's address on disk back to its workers.dev one, " +
           'so your site is still working there and nothing is half-changed.\n' +
-          `Next: fix what wrangler reported above, then re-run npx create-cairn-site --dir ` +
+          `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +
           `${params.dir}.`
         );
       }
       return (
-        'Redeploying your site after pointing it at your domain did not finish.\n' +
+        'Rebuilding and redeploying your site after pointing it at your domain did not finish.\n' +
         "The tool already restored your site's address on disk back to its workers.dev one, " +
         'so your site is still working there and nothing is half-changed.\n' +
         `Next: re-run npx create-cairn-site --dir ${params.dir}.`

@@ -121,30 +121,55 @@ export async function nameWranglerResources(dir, slug) {
 
 const PUBLIC_ORIGIN_PATTERN = /"PUBLIC_ORIGIN":\s*"[^"]*"/;
 
+const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
+
 /**
- * Replace the value of the one known `PUBLIC_ORIGIN` var in wrangler.jsonc with the site's real
- * deploy origin. Matched by regex on the key, not an exact literal, since after a resumed run
- * the prior value may already be a workers.dev URL rather than the template's localhost
- * placeholder.
+ * Matches the `publicOrigin` export in cairn.config.ts, with the origin itself captured in
+ * group 2. Matched by the export's shape, not the template's placeholder literal, for the same
+ * reason `PUBLIC_ORIGIN_PATTERN` is: after a resumed run the value may already be a real origin.
+ */
+const PUBLIC_ORIGIN_EXPORT_PATTERN = /(export const publicOrigin\s*=\s*')([^']*)(')/;
+
+/**
+ * Write the site's real origin into both places it lives: wrangler.jsonc's `PUBLIC_ORIGIN` var,
+ * which the Worker reads at runtime, and cairn.config.ts's `publicOrigin` export, which the
+ * build bakes into the sitemap, feeds, and canonical links. The cairn.config.ts value reaches a
+ * deployed site only through a rebuild, so every caller rebuilds before its deploy. Both files
+ * are read and checked before either is written, so a file that has lost its target leaves the
+ * pair as it was instead of half-updated. Matched by pattern on the key, not an exact literal,
+ * since after a resumed run the prior value may already be a workers.dev URL.
  * @param {string} dir the scaffold root
- * @param {string} url the site's real origin (the deploy's workers.dev URL)
+ * @param {string} url the site's real origin (the deploy's workers.dev URL, or its own domain)
  * @returns {Promise<void>}
  */
 export async function writePublicOrigin(dir, url) {
-  const configPath = path.join(dir, WRANGLER_CONFIG_RELATIVE);
-  const content = await readFile(configPath, 'utf8');
-  if (!PUBLIC_ORIGIN_PATTERN.test(content)) {
+  const wranglerPath = path.join(dir, WRANGLER_CONFIG_RELATIVE);
+  const configPath = path.join(dir, CAIRN_CONFIG_RELATIVE);
+  const wrangler = await readFile(wranglerPath, 'utf8');
+  const config = await readFile(configPath, 'utf8');
+  if (!PUBLIC_ORIGIN_PATTERN.test(wrangler)) {
     throw new Error(
       `writePublicOrigin: expected to find a "PUBLIC_ORIGIN" entry in ${WRANGLER_CONFIG_RELATIVE}, but it is missing`,
     );
   }
+  if (!PUBLIC_ORIGIN_EXPORT_PATTERN.test(config)) {
+    throw new Error(
+      `writePublicOrigin: expected to find an "export const publicOrigin = '...'" entry in ${CAIRN_CONFIG_RELATIVE}, but it is missing`,
+    );
+  }
+  await writeFile(
+    wranglerPath,
+    wrangler.replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": ${JSON.stringify(url)}`),
+  );
+  // A replace function, so a `$` in the origin is never read as a capture-group reference.
   await writeFile(
     configPath,
-    content.replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": ${JSON.stringify(url)}`)
+    config.replace(
+      PUBLIC_ORIGIN_EXPORT_PATTERN,
+      (_whole, prefix, _current, suffix) => prefix + url + suffix,
+    ),
   );
 }
-
-const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 
 /**
  * Matches the adapter's `email: { from: '...' }` entry in cairn.config.ts, with the address

@@ -38,7 +38,7 @@ test('the rendered head advertises the twin, and the twin it points at exists', 
   const link = page.locator('link[rel="alternate"][type="text/markdown"]');
   await expect(link).toHaveAttribute('href', /\/posts\/hello\.md$/);
   const href = await link.getAttribute('href');
-  // canonicalUrl is anchored to the fixture's fake ORIGIN (https://showcase.test), not the preview
+  // canonicalUrl is anchored to the fixture's fake publicOrigin (https://showcase.test), not the preview
   // server's host, so fetch the twin by its path against the running server rather than the
   // absolute href.
   const res = await request.get(new URL(href!).pathname);

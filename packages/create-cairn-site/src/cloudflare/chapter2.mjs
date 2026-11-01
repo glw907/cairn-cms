@@ -592,7 +592,7 @@ export async function runChapter2({
         frame,
         'Connect your domain to your site',
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
-          "switches your site's address over and redeploys once.",
+          "switches your site's address over, rebuilds it, and redeploys once.",
         async () => {
           const waitForClear = composeCutoverWaitForClear({
             runArgs: args,
@@ -768,9 +768,7 @@ export async function runChapter2({
     }
 
     // --- Sender address, then one deploy. Both skip when the address is already correct, so a
-    // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
-    // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
-    // fresh build first.
+    // park-and-resume never buys a second deploy; the redeploy needs a fresh build first.
     let addressChanged = false;
     await runStep(
       frame,

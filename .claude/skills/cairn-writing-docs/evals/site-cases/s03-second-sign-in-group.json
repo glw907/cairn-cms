@@ -1,0 +1,101 @@
+{
+  "id": "S03-second-sign-in-group",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "createAuthChannel",
+  "bar": 5,
+  "prompt": "We want a members' area on the public site. Members sign in with a one-time code we email them. That sign-in is separate from the editors' admin sign-in, and a member must never get into the admin. Keep the members' sign-in data in its own database. The roster lookup is memberIdFor in src/lib/server/roster.ts and the mailer is sendMemberCode in src/lib/server/mailer.ts. We stop bots with Cloudflare Turnstile, and its secret will be TURNSTILE_SECRET. Add a login page and a members page that only a signed-in member can open, with a way to sign out. It's done when the site type-checks and the members page sends anyone without a member session to the login page.",
+  "setup": "setups/site/s03-second-sign-in-group.mjs",
+  "knownBad": "setups/site/s03-second-sign-in-group-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/auth-channel/factory.ts:233 resolveDb: the channel's own D1 binding, never AUTH_DB",
+    "src/lib/auth-channel/factory.ts:262 challenge: the bot challenge, required, a false or throwing answer fails closed",
+    "src/lib/auth-channel/factory.ts:375 resolveCookieBase: the cookie name is required and a cairn_ prefix throws at construction",
+    "src/lib/auth-channel/factory.ts:349 resolveSubject: the member's subject from the channel's session cookie, or null",
+    "migrations-channel/0000_channel.sql: the packaged channel schema (cairn_channel_* tables)",
+    "docs/extend/add-a-second-sign-in-group.md, docs/reference/auth-channel.md"
+  ],
+  "expectations": [
+    "A createAuthChannel call in a server-only module wires memberIdFor as lookup, sendMemberCode as deliver, a canonicalizing normalize, and a challenge that verifies the Turnstile token.",
+    "The channel's resolveDb returns a new D1 binding, bound in wrangler.jsonc with its own migrations_dir that holds the packaged channel migration, and the Worker Env names that binding.",
+    "The channel's cookie name is the site's own, never a cairn_ name.",
+    "A login route calls the channel's request and confirm actions, and the members route resolves the subject and redirects to the login page when none resolves, with a logout action."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src",
+      "text": "createAuthChannel",
+      "source": "src/lib/auth-channel/factory.ts:561"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "regex": "resolveDb\\s*:[^\\n,]*=>[^\\n,/]*\\bAUTH_DB\\b",
+      "source": "src/lib/auth-channel/factory.ts:233"
+    },
+    {
+      "type": "contains",
+      "path": "wrangler.jsonc",
+      "regex": "\"migrations_dir\"\\s*:\\s*\"(?!migrations\")[^\"]+\"",
+      "source": "src/lib/auth-channel/factory.ts:233; migrations-channel/0000_channel.sql"
+    },
+    {
+      "type": "absent",
+      "path": "migrations",
+      "regex": "cairn_channel_",
+      "source": "migrations-channel/0000_channel.sql"
+    },
+    {
+      "type": "absent",
+      "path": "src",
+      "regex": "cookie\\s*:\\s*\\{[^}]*name\\s*:\\s*['\"`]cairn_",
+      "source": "src/lib/auth-channel/factory.ts:375"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "verifyTurnstile|siteverify",
+      "source": "src/lib/auth-channel/factory.ts:262; src/lib/cloudflare/turnstile.ts:87 verifyTurnstile"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "resolveSubject\\(",
+      "source": "src/lib/auth-channel/factory.ts:349"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "\\.logout\\(",
+      "source": "src/lib/auth-channel/factory.ts:342"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The channel's resolveDb returns a D1 binding other than AUTH_DB, and wrangler.jsonc binds that database with a migrations_dir other than `migrations` that holds a copy of the packaged channel migration (its cairn_channel_* tables).",
+      "source": "src/lib/auth-channel/factory.ts:233"
+    },
+    {
+      "n": 2,
+      "text": "The channel's challenge verifies the posted Turnstile token against TURNSTILE_SECRET and never answers true without that verification.",
+      "source": "src/lib/auth-channel/factory.ts:262"
+    },
+    {
+      "n": 3,
+      "text": "The members page's load gets the member from the channel's resolveSubject and redirects to the login page when it returns null; nothing in the members area reads locals.cairnEditor or signs the member into the admin.",
+      "source": "src/lib/auth-channel/factory.ts:349"
+    },
+    {
+      "n": 4,
+      "text": "The channel's normalize puts a contact in one canonical form, such as trimmed and lowercased, before the lookup reads it.",
+      "source": "docs/reference/auth-channel.md Config obligations; src/lib/auth-channel/factory.ts normalize"
+    }
+  ]
+}

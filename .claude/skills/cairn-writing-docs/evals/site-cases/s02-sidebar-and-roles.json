@@ -1,0 +1,85 @@
+{
+  "id": "S02-sidebar-and-roles",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "navLayout, roles, locals.cairnEditor",
+  "bar": 5,
+  "prompt": "Our treasurer needs a Finance area in the admin: a sidebar section called Finance with one Reports screen, where a placeholder page is fine for now. Add a treasurer role for it. Only treasurers and owners should see the Finance section or be able to open the Reports screen. Regular editors must not see it, and if one types the address they must be turned away. It's done when the site type-checks and builds, and the screen is visible and reachable only by treasurers and owners.",
+  "knownBad": "setups/site/s02-sidebar-and-roles-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/content/types.ts:237 the adapter's roles member; src/lib/auth/roles.ts defineRoles requires owner and keeps unknown names at none",
+    "src/lib/auth/access.ts:171 canReach: owner reaches every target; a none-capability role reaches a route only when the matched rule names it",
+    "src/lib/sveltekit/guard.ts:490 requireAccess: fail-closed on a route with no rule",
+    "src/lib/sveltekit/admin-nav.ts:482 hrefReachable: a site entry whose href has a rule is hidden from a role the rule refuses",
+    "src/lib/sveltekit/admin-nav.ts:516 roleMatches: a section or entry roles list admits only the named roles, owner included, with no owner bypass",
+    "src/lib/vite/internal.ts:310 a declared roles vocabulary rides site-facts.json, and a stale file fails the build until cairn-manifest rewrites it",
+    "docs/extend/arrange-the-admin-sidebar.md, docs/extend/restrict-admin-access.md"
+  ],
+  "expectations": [
+    "The adapter declares a treasurer role beside owner and editor.",
+    "The adapter's navLayout carries a Finance section with a site entry linking the Reports route.",
+    "The access map carries a rule for the Reports route that names treasurer and leaves editor out, and the route's load calls requireAccess (or refuses every role but treasurer and owner itself).",
+    "Owners still see the section: any roles list on the section or entry names owner, or the access map alone hides it from editors.",
+    "site-facts.json is regenerated so the build accepts the new role vocabulary."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "['\"]?treasurer['\"]?\\s*:\\s*(['\"](editor|none)['\"]|\\{)",
+      "source": "src/lib/auth/roles.ts defineRoles"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "['\"]/admin/[\\w/-]+['\"]\\s*:\\s*\\[[^\\]]*['\"]treasurer['\"]",
+      "source": "src/lib/auth/access.ts:171; src/lib/sveltekit/admin-nav.ts:482"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "regex": "requireAccess\\(|\\.role\\s*(!==|===)\\s*['\"]treasurer['\"]",
+      "source": "src/lib/sveltekit/guard.ts:490"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "label\\s*:\\s*['\"]Finance['\"]",
+      "source": "src/lib/sveltekit/admin-nav.ts:134 NavLayoutSection"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "href\\s*:\\s*['\"]/admin/[\\w/-]+['\"](?!\\s*,\\s*expected)",
+      "source": "src/lib/sveltekit/admin-nav.ts:60 NavLayoutEntry (the lookahead skips src/theme/components/admin-link.test.ts)"
+    },
+    {
+      "type": "contains",
+      "path": "src/content/.cairn/site-facts.json",
+      "text": "treasurer",
+      "source": "src/lib/vite/internal.ts:310"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "A signed-in session whose role is editor is refused on the server at the Reports route: the access-map rule that governs the route names treasurer and does not name editor, and the route's load calls requireAccess, or the load itself refuses every role except treasurer and owner.",
+      "source": "src/lib/sveltekit/guard.ts:490; src/lib/auth/access.ts:171"
+    },
+    {
+      "n": 2,
+      "text": "Owners still see the Finance section: every roles list on the section or its entry names owner, or neither carries a roles list and the access map hides the entry from editors.",
+      "source": "src/lib/sveltekit/admin-nav.ts:516; src/lib/sveltekit/admin-nav.ts:482"
+    },
+    {
+      "n": 3,
+      "text": "The role vocabulary keeps owner (mapped to owner capability) and editor beside treasurer, so existing editors keep their access.",
+      "source": "src/lib/auth/roles.ts defineRoles"
+    }
+  ]
+}

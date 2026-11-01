@@ -1,0 +1,83 @@
+{
+  "id": "S05-draft-preview",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "mintPreview and the preview-link lifetime (PreviewTokenConfig)",
+  "bar": 5,
+  "prompt": "Board members review posts before they go live, but they have no admin accounts. Add an admin screen where an editor enters a post's id and gets a link to that post's unpublished draft, which a board member can open without signing in. A link should stop working 48 hours after it is made, and the links editors already make from the editor's share button should last the same 48 hours. It's done when the site type-checks and a link from the new screen opens the draft and stops working after 48 hours.",
+  "knownBad": "setups/site/s05-draft-preview-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/sveltekit/preview.ts:130 mintPreview(runtime, config, event, { concept, entryId }): authorizes the editor for the concept, then generates a fresh 256-bit token, stores only its hash, and returns it with expiresAt",
+    "src/lib/sveltekit/preview.ts:53 PreviewTokenConfig.ttlMs, validated between one minute and thirty days",
+    "src/lib/sveltekit/cairn-admin.ts:61 createCairnAdmin's preview option, forwarded to the built-in mint action",
+    "src/lib/sveltekit/content-routes-preview.ts:88 the built-in action builds the link from PUBLIC_ORIGIN through requireOrigin (src/lib/env.ts:43), never the request host",
+    "examples/showcase src/routes/(site)/preview/[token]/+page.server.ts: the scaffold's preview route at /preview/<token>",
+    "docs/extend/share-a-draft-preview.md (Set the link's lifetime; Mint and revoke from your admin route)"
+  ],
+  "expectations": [
+    "The new screen's action calls mintPreview with the posts concept, the entered id, and a PreviewTokenConfig whose ttlMs is 48 hours.",
+    "createCairnAdmin in src/chassis/cairn.server.ts receives preview with the same 48-hour ttlMs, so both mint paths share one lifetime.",
+    "On a minted outcome the action returns PUBLIC_ORIGIN + /preview/ + the token; any other outcome is reported, not turned into a link.",
+    "The screen never generates or stores a token itself."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "regex": "mintPreview\\(",
+      "source": "src/lib/sveltekit/preview.ts:130"
+    },
+    {
+      "type": "contains",
+      "path": "src/chassis/cairn.server.ts",
+      "regex": "\\bpreview\\b\\s*(:|,|\\})",
+      "source": "src/lib/sveltekit/cairn-admin.ts:61"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "ttlMs\\s*:",
+      "source": "src/lib/sveltekit/preview.ts:53 PreviewTokenConfig.ttlMs; the 48-hour value is judge assertion 1"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "text": "/preview/",
+      "source": "the scaffold's src/routes/(site)/preview/[token] route"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "text": "PUBLIC_ORIGIN",
+      "source": "src/lib/sveltekit/content-routes-preview.ts:88 requireOrigin; src/lib/env.ts:43"
+    },
+    {
+      "type": "absent",
+      "path": "src/routes/admin",
+      "regex": "randomUUID|getRandomValues|preview_tokens",
+      "source": "src/lib/sveltekit/preview.ts:155 the token is generated and hashed inside mintPreview"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The new screen's links come from mintPreview with a 48-hour ttlMs, and the createCairnAdmin call's preview option sets the same 48-hour ttlMs, so the screen's links and the editor's share-button links expire together.",
+      "source": "src/lib/sveltekit/preview.ts:53; src/lib/sveltekit/cairn-admin.ts:61"
+    },
+    {
+      "n": 2,
+      "text": "The link is PUBLIC_ORIGIN followed by /preview/ and the token mintPreview returned; it is never built from the request's host and its token is never derived from the post's id or concept.",
+      "source": "src/lib/sveltekit/content-routes-preview.ts:88; src/lib/sveltekit/preview.ts:155"
+    },
+    {
+      "n": 3,
+      "text": "An outcome other than minted is reported back to the editor without a link, and if the screen's load calls requireAccess, the adapter's access map holds a rule for the screen's route.",
+      "source": "src/lib/sveltekit/preview.ts:97; src/lib/sveltekit/guard.ts:490"
+    }
+  ]
+}

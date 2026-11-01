@@ -1,0 +1,91 @@
+{
+  "id": "S01-custom-screen",
+  "suite": "site",
+  "fixture": "site",
+  "seam": "Admin shell, createSectionAction, requireAccess, toolkit",
+  "bar": 5,
+  "prompt": "Our site keeps a list of items in its own D1 database, bound as APP_DB, with the items table in migrations-app/. Add an admin screen that lists the items and lets someone delete one. Editors and owners should both be able to see the list, but only an owner may delete an item. Make it look like the rest of the admin. It's done when the site type-checks, the screen opens only for signed-in owners and editors, and the server refuses a delete from an editor.",
+  "setup": "setups/site/s01-custom-screen.mjs",
+  "knownBad": "setups/site/s01-custom-screen-bad.mjs",
+  "maxTurns": 80,
+  "source": [
+    "src/lib/sveltekit/guard.ts:490 requireAccess: fail-closed, 403s every session (owner included) when the access map has no rule for the route",
+    "src/lib/auth/access.ts:171 canReach: owner capability reaches every target; an href target matches the deepest prefix key",
+    "src/lib/sveltekit/section-action.ts:179 createSectionAction: checks the access map on every call and refuses a non-owner when opts.ownerOnly is set",
+    "src/lib/sveltekit/admin-action.ts:319 a handler that returns without ctx.audit throws UnauditedActionError in dev",
+    "src/lib/sveltekit/guard.ts:269 the guard refuses an admin form POST with no valid csrf field; src/lib/admin/index.ts:17 exports CsrfField",
+    "src/lib/content/types.ts:244 the adapter's access member carries the access map",
+    "docs/extend/add-a-custom-admin-screen.md, docs/reference/admin-toolkit.md"
+  ],
+  "expectations": [
+    "The screen is a route under src/routes/admin that renders in the admin shell and composes the admin toolkit's primitives.",
+    "The load calls requireAccess before it reads APP_DB, and the adapter's access map carries a rule for the screen's route that admits editors (owners reach every ruled route).",
+    "The delete runs through a createSectionAction wrapper whose resolveDb returns APP_DB, with ownerOnly set, so an editor's delete is refused on the server.",
+    "The delete handler calls ctx.audit on its success path, and its form mounts a CsrfField."
+  ],
+  "checks": [
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "regex": "requireAccess\\(",
+      "source": "src/lib/sveltekit/guard.ts:490"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "text": "createSectionAction",
+      "source": "src/lib/sveltekit/section-action.ts:179"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "regex": "[Dd][Ee][Ll][Ee][Tt][Ee]\\s+[Ff][Rr][Oo][Mm]\\s+items",
+      "source": "the seeded migrations-app/0000_items.sql"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "regex": "ctx\\.audit\\(",
+      "source": "src/lib/sveltekit/admin-action.ts:319"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "text": "CsrfField",
+      "source": "src/lib/sveltekit/guard.ts:269"
+    },
+    {
+      "type": "contains",
+      "path": "src/routes/admin",
+      "source": "src/lib/admin-toolkit/index.ts (the scaffold's +error.svelte already imports EmptyState, so the check names the list primitives)",
+      "regex": "<(AdminTable|PageHeader|ExpandableRow)\\b"
+    },
+    {
+      "type": "contains",
+      "path": "src",
+      "regex": "['\"]/admin/[\\w/-]+['\"]\\s*:\\s*\\[[^\\]]*['\"]editor['\"]",
+      "source": "src/lib/auth/access.ts:199 hasAccessRule; src/lib/sveltekit/guard.ts:490"
+    },
+    {
+      "type": "npm",
+      "script": "check"
+    }
+  ],
+  "judge": [
+    {
+      "n": 1,
+      "text": "The delete action refuses a signed-in editor on the server, through `ownerOnly: true` on its createSectionAction options or an access-map rule for its own target that leaves editors out; hiding the delete button from editors does not count.",
+      "source": "src/lib/sveltekit/section-action.ts:295; src/lib/sveltekit/admin-action.ts:133"
+    },
+    {
+      "n": 2,
+      "text": "The screen's load calls requireAccess before it reads APP_DB, and the adapter's access map holds a rule for the screen's route that admits the editor role.",
+      "source": "src/lib/sveltekit/guard.ts:490"
+    },
+    {
+      "n": 3,
+      "text": "Every path on which the delete handler succeeds calls ctx.audit before it returns.",
+      "source": "src/lib/sveltekit/admin-action.ts:319"
+    }
+  ]
+}

@@ -228,6 +228,10 @@ async function askForDomain(text, log) {
     if (isCancel(answer)) exitOnCancel();
     const entered = (answer ?? '').trim();
     if (entered) return normalizeDomain(entered);
+    log('Please enter a domain name.');
+  }
+}
+
 /**
  * Reduce a typed domain to the form every later hop and the public origin use: lowercase, with a
  * Unicode name punycoded, by way of the URL parser's host. Anything the parser refuses, or that
@@ -244,10 +248,6 @@ function normalizeDomain(raw) {
     return bare && url.hostname ? url.hostname : trimmed;
   } catch {
     return trimmed;
-  }
-}
-
-    log('Please enter a domain name.');
   }
 }
 

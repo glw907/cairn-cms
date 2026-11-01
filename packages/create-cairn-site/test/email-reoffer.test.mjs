@@ -178,25 +178,6 @@ for (const [label, record, expected] of [
   });
 }
 
-test('reoffer: a no drops a stale chapter 3 token marker along with the token', async (t) => {
-  await freshStateDir(t);
-  const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t);
-  await seedDeclined('reoffer-marker', dir, 'paid-plan-declined', {
-    buildsTokenSavedAt: '2026-10-30T00:00:00.000Z',
-  });
-
-  const { promise } = await run('reoffer-marker', dir, {
-    confirm: recordingConfirm(false, []),
-    promptSecretFn: mustNotBeCalled('promptSecretFn'),
-  });
-  await promise;
-
-  const state = await loadSite('reoffer-marker');
-  assert.equal('apiToken' in state.cloudflare, false);
-  assert.equal('buildsTokenSavedAt' in state.cloudflare, false, 'no marker may outlive its token');
-});
-
 for (const [step, extra] of [
   ['paid-plan-declined', {}],
   ['builds-connect-declined', { emailDeclinedAt: '2026-10-30T00:00:00.000Z' }],

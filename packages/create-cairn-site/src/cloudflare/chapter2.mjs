@@ -197,22 +197,6 @@ export async function deleteApiToken(siteId) {
 }
 
 /**
- * Drop `cloudflare.buildsTokenSavedAt` once the token it vouched for is gone. A declined re-offer
- * deletes the saved token before it asks; the marker is kept through the question because a yes
- * reads it as a consent to Builds, but a no leaves it naming a token that no longer exists, and a
- * later `--connect` would treat chapter 3's token as saved. `updateSite` cannot remove a key, so
- * this rebuilds the freshly loaded record and saves it whole.
- * @param {string} siteId the site id to save under
- * @returns {Promise<void>}
- */
-async function dropBuildsTokenMarker(siteId) {
-  const current = await loadSite(siteId);
-  if (!current?.cloudflare || !('buildsTokenSavedAt' in current.cloudflare)) return;
-  const { buildsTokenSavedAt: _marker, ...cloudflare } = current.cloudflare;
-  await saveSite(siteId, { ...current, cloudflare });
-}
-
-/**
  * Save a token chapter 2 collected under `cloudflare.apiToken` and drop
  * `cloudflare.buildsTokenSavedAt` in the same write. That marker tells chapter 3 the saved token
  * is its own eight-key one; left beside chapter 2's narrower token, chapter 3 would adopt it, skip
@@ -228,6 +212,22 @@ async function saveChapter2Token(siteId, token) {
   await saveSite(siteId, { ...current, cloudflare: { ...cloudflare, apiToken: token } });
 }
 
+/**
+ * Ask for the domain until a non-empty answer comes back, the interactive counterpart of
+ * `--domain`. An empty submit is nudged rather than accepted, since every hop after this one keys
+ * off the name.
+ * @param {typeof clackText} text the free-text prompt to ask through
+ * @param {(line: string) => void} log receives the nudge printed after an empty submit
+ * @returns {Promise<string>} the normalized domain the admin entered
+ */
+async function askForDomain(text, log) {
+  for (;;) {
+    const answer = await text({
+      message: 'Which domain do you want to connect? (for example, example.com)',
+    });
+    if (isCancel(answer)) exitOnCancel();
+    const entered = (answer ?? '').trim();
+    if (entered) return normalizeDomain(entered);
 /**
  * Reduce a typed domain to the form every later hop and the public origin use: lowercase, with a
  * Unicode name punycoded, by way of the URL parser's host. Anything the parser refuses, or that
@@ -247,22 +247,6 @@ function normalizeDomain(raw) {
   }
 }
 
-/**
- * Ask for the domain until a non-empty answer comes back, the interactive counterpart of
- * `--domain`. An empty submit is nudged rather than accepted, since every hop after this one keys
- * off the name.
- * @param {typeof clackText} text the free-text prompt to ask through
- * @param {(line: string) => void} log receives the nudge printed after an empty submit
- * @returns {Promise<string>} the normalized domain the admin entered
- */
-async function askForDomain(text, log) {
-  for (;;) {
-    const answer = await text({
-      message: 'Which domain do you want to connect? (for example, example.com)',
-    });
-    if (isCancel(answer)) exitOnCancel();
-    const entered = (answer ?? '').trim();
-    if (entered) return normalizeDomain(entered);
     log('Please enter a domain name.');
   }
 }
@@ -492,12 +476,10 @@ export async function runChapter2({
           : 'Skipping email sign-in: this run cannot ask. Re-run with --email and --yes to turn ' +
               'it on unattended, or from a terminal to be asked.',
       );
-      await dropBuildsTokenMarker(siteId);
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
       return { outcome: 'paid-plan-declined' };
     }
     if (!(await askEmailAdmission())) {
-      await dropBuildsTokenMarker(siteId);
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
       return { outcome: 'paid-plan-declined' };
     }

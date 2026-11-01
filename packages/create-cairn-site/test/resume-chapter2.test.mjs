@@ -484,10 +484,10 @@ for (const [label, step, seed, idSuffix] of [
 // ready, and --start-over refuses at this step, so returning early left an owner who declined no
 // way to turn email on at all. If this test goes red, that trap is back.
 //
-// UPDATED FOR T4c: chapter 2's top-of-function short-circuit reaches its reoffered copy with
-// no network call at all (it never re-runs the actual admission), and its outcome,
-// `paid-plan-declined`, is one of chapter 2's TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
-// now falls straight through into chapter 3 in the same call (T4c's fall-through). This run
+// Chapter 2 meets the open decline at entry, and `--yes` with no `--email` declines again with the
+// reoffered copy and no network call. Its outcome, `paid-plan-declined`, is one of chapter 2's
+// TERMINAL_STEPS and the record carries no Builds field, so bin.mjs's continueIntoChapter2 falls
+// straight through into chapter 3 in the same call. This run
 // carries no saved Cloudflare token for chapter 3 to reuse, so it stops at chapter 3's token
 // hop and exits 1, the same deterministic stop this file's CHAPTER2_RESUMABLE_STEPS loop
 // already uses; the two assertions this test exists for (the resume line, the reoffered copy) both

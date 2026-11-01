@@ -244,7 +244,7 @@ function normalizeDomain(raw) {
   const trimmed = String(raw).trim();
   try {
     const url = new URL(`https://${trimmed}`);
-    const bare = url.host === url.hostname && url.pathname === '/' && !url.search && !url.hash && !url.username;
+    const bare = url.host === url.hostname && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password;
     return bare && url.hostname ? url.hostname : trimmed;
   } catch {
     return trimmed;

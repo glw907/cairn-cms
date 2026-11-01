@@ -530,6 +530,39 @@ for (const [typed, normalized] of [
   });
 }
 
+// A host with credentials is not a bare host, so it stays as typed (trimmed) for Cloudflare's own
+// invalid-domain answer rather than silently losing the credentials.
+for (const typed of ['user:pw@example.com', ':pw@example.com']) {
+  test(`admission: --domain ${typed} keeps its credentials as typed instead of normalizing to a bare host`, async (t) => {
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+    await setupCloudflare(t, { zoneStatus: 'active' });
+    await setupWrangler(t);
+    await seedLiveSite('site-creds', dir);
+
+    const { runChapter2 } = await import('./chapter2.mjs');
+    await runChapter2({
+      openBrowser: neverOpensBrowser,
+      siteId: 'site-creds',
+      record: await loadSite('site-creds'),
+      dir,
+      args: { yes: true, domain: ` ${typed} ` },
+      log: () => {},
+      dryRun: false,
+      confirm: mustNotBeCalled('confirm'),
+      text: mustNotBeCalled('text'),
+      env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+      argv: [],
+      resolve: authoritativeResolve(typed),
+      fetchImpl: alwaysMatchingFetch(),
+    }).catch(() => {});
+
+    const saved = await loadSite('site-creds');
+    assert.notEqual(saved.cloudflare.domain, 'example.com', 'the credentials are not silently dropped');
+    assert.equal(saved.cloudflare.domain, typed);
+  });
+}
+
 // The refusal this pins is the whole reason readCurrentRecords carries a confidence flag. A
 // recursive resolver can answer "no such record" from a cache that has not expired, so an
 // unattended run that auto-copied a low-confidence list would write a set quietly missing the

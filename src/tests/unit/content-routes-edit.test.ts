@@ -528,11 +528,48 @@ describe('editLoad address-collision advisory', () => {
     expect(data.advisories).toEqual([]);
   });
 
-  it('does not warn at edit-load for a collision that lives only on a sibling branch', async () => {
-    // The edit-load advisory checks the published corpus only. The edited post 2026-01-15-hello resolves
-    // to /posts/hello. A sibling cairn/* branch holds 2026-02-20-hello, which resolves to the same
-    // /posts/hello (the slug strips the YYYY-MM-DD- prefix), but it is absent from the manifest, so it is
-    // a branch-only collision. Edit-load stays silent; the publish-time re-check still detects it.
+  it('does not warn when the holder is a draft', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+        [MANIFEST_PATH]: formatManifest({
+          version: 1,
+          entries: [
+            { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] },
+            { id: 'welcome', concept: 'pages', title: 'Welcome', permalink: '/about', draft: true, links: [] },
+          ],
+        }),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes({ runtime: pagesRuntime() });
+    const data = await routes.editLoad(pagesEvent('about'));
+    expect(data.advisories).toEqual([]);
+  });
+
+  it('does not warn when this entry is itself a draft', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/pages/about.md': '---\ntitle: About\ndraft: true\n---\nWip.',
+        [MANIFEST_PATH]: formatManifest({
+          version: 1,
+          entries: [
+            { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: true, links: [] },
+            { id: 'welcome', concept: 'pages', title: 'Welcome', permalink: '/about', draft: false, links: [] },
+          ],
+        }),
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes({ runtime: pagesRuntime() });
+    const data = await routes.editLoad(pagesEvent('about'));
+    expect(data.advisories).toEqual([]);
+  });
+
+  it('does not warn for a collision that lives only on a sibling branch', async () => {
+    // The edited post 2026-01-15-hello resolves to /posts/hello. A sibling cairn/* branch holds
+    // 2026-02-20-hello, which resolves to the same /posts/hello (the slug strips the YYYY-MM-DD-
+    // prefix), but it is absent from the manifest, so it holds no live address and is no build fault.
     const manifest = formatManifest({
       version: 1,
       entries: [

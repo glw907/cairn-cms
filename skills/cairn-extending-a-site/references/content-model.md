@@ -178,10 +178,12 @@ branch holds an inbound reference (naming the blockers), or the reference index 
 Otherwise it rewrites each referencing entry's stored id and no other frontmatter byte. These
 refusals leave no log record; the editor's banner is the trace.
 
-Address collisions: the edit page shows a warn-only `address-collision` advisory when another
-published entry on `main` has the same permalink, and a publish rechecks `main` and every open
-`cairn/*` branch and logs `publish.address_collided` after it lands. Neither blocks, and both fail
-open. Two published routable entries on one permalink fail the build.
+Address collisions: two published routable entries on one permalink fail the build, so a publish
+onto an address a live entry holds is refused. The edit page shows an `address-collision` advisory
+under the same rule beforehand. A draft, a fragment, or another entry's pending branch holds no
+address. A single publish answers 409 with the edits kept on the branch and nothing on `main`; a
+batch publish commits nothing and redirects with `?error=address_collision`. Each refusal logs
+`publish.address_collided`. Change the address of one entry, then publish again.
 
 ## Resolve a failed check
 

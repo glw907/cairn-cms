@@ -5,6 +5,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { createContentIndex } from '../../lib/delivery/content-index.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { parseManifest, formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
@@ -281,46 +283,107 @@ describe('publishAction', () => {
     expect(record?.batch).toBe(false);
   });
 
-  it('logs publish.address_collided but still publishes when another entry holds the address', async () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    // A pages concept with an undated permalink, so the address is the entry's own path-derived
-    // permalink. Publishing pages/about-copy resolves to /about-copy; a different published entry
-    // "about" is manually pinned to that same /about-copy in the manifest, so the publish overrides it.
-    const rt = pagesRuntime();
-    const gh = new GithubDouble({
-      main: {
-        'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
-        [MANIFEST_PATH]: formatManifest({
-          version: 1,
-          entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [] }],
-        }),
-      },
-      'cairn/pages/about-copy': { 'src/content/pages/about-copy.md': '---\ntitle: About copy\n---\npending body' },
+  describe('a publish onto a held address', () => {
+    const live = (over: Partial<ManifestEntry> = {}): ManifestEntry => ({
+      id: 'about', concept: 'pages', title: 'About', permalink: '/about-copy', draft: false, links: [], ...over,
     });
-    gh.install();
-    const routes = createContentRoutes({ runtime: rt });
+    const mainWith = (...entries: ManifestEntry[]) => ({
+      'src/content/pages/about.md': '---\ntitle: About\n---\nLive.',
+      [MANIFEST_PATH]: formatManifest({ version: 1, entries }),
+    });
+    const COPY_BRANCH = 'cairn/pages/about-copy';
+    const COPY_MD = '---\ntitle: About copy\n---\npending body';
 
-    const location = await redirectedTo(
-      routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' })),
-    );
-    // The publish still commits: it redirects to the published page and the entry lands on main.
-    expect(location).toBe('/admin/pages/about-copy?published=1');
-    expect(gh.read('main', 'src/content/pages/about-copy.md')).toContain('about copy text');
-    const published = infoSpy.mock.calls
-      .map((c) => c[0] as { event?: string })
-      .find((r) => r.event === 'entry.published');
-    expect(published).toBeTruthy();
+    it('refuses with 409, logs heldBy fields, commits nothing to main, and keeps the branch', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({ main: mainWith(live()), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const mainBefore = gh.headSha('main');
 
-    // A publish.address_collided warning is emitted naming the displaced entry.
-    const collision = warnSpy.mock.calls
-      .map((c) => c[0] as { event?: string; editor?: string; address?: string; displacedConcept?: string; displacedId?: string })
-      .find((r) => r.event === 'publish.address_collided');
-    expect(collision).toBeTruthy();
-    expect(collision?.address).toBe('/about-copy');
-    expect(collision?.displacedConcept).toBe('pages');
-    expect(collision?.displacedId).toBe('about');
-    expect(collision?.editor).toBe('ed@t');
+      const result = (await routes.publishAction(
+        pagesActionEvent('about-copy', { title: 'About copy', body: 'typed text' }),
+      )) as unknown as { status: number; data: { error: string; body: string } };
+
+      expect(result.status).toBe(409);
+      expect(result.data.error).toContain('/about-copy');
+      expect(result.data.body).toBe('typed text');
+      expect(gh.headSha('main')).toBe(mainBefore);
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.read('main', 'src/content/pages/about-copy.md')).toBeNull();
+      // The branch keeps the posted edits.
+      expect(gh.read(COPY_BRANCH, 'src/content/pages/about-copy.md')).toContain('typed text');
+
+      const record = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string; editor?: string; address?: string; heldByConcept?: string; heldById?: string })
+        .find((r) => r.event === 'publish.address_collided');
+      expect(record).toMatchObject({ editor: 'ed@t', address: '/about-copy', heldByConcept: 'pages', heldById: 'about' });
+    });
+
+    it('publishes when the holder is a draft', async () => {
+      const gh = new GithubDouble({ main: mainWith(live({ draft: true })), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const location = await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })));
+      expect(location).toBe('/admin/pages/about-copy?published=1');
+    });
+
+    it('publishes when the holder is a fragment row, and a fragment publishes at a page permalink', async () => {
+      const rt = pagesRuntime();
+      rt.concepts.push({
+        id: 'snippets', label: 'Snippet', singular: 'Snippet', dir: 'src/content/snippets',
+        routing: { routable: false, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day',
+        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        schema: defineFieldset({}), summaryFields: [], validate: () => ({ ok: true as const, data: {} }),
+      });
+      const gh = new GithubDouble({
+        main: mainWith(
+          live({ id: 'about-copy', concept: 'snippets', permalink: '/about-copy' }),
+          live({ id: 'contact', permalink: '/contact' }),
+        ),
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+        'cairn/snippets/contact': { 'src/content/snippets/contact.md': '---\ntitle: Contact\n---\nFragment.' },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: rt });
+      expect(await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })))).toBe(
+        '/admin/pages/about-copy?published=1',
+      );
+      const snippetEvent = contentEvent({ url: 'https://t.example/admin/snippets/contact', params: { concept: 'snippets', id: 'contact' }, form: { title: 'Contact', body: 'b' } });
+      expect(await redirectedTo(routes.publishAction(snippetEvent))).toBe('/admin/snippets/contact?published=1');
+    });
+
+    it('publishes when only another entry\'s pending branch would take the address', async () => {
+      const gh = new GithubDouble({
+        main: mainWith(),
+        [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD },
+        'cairn/pages/other': { 'src/content/pages/other.md': '---\ntitle: Other\n---\nx' },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: pagesRuntime() });
+      const location = await redirectedTo(routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' })));
+      expect(location).toBe('/admin/pages/about-copy?published=1');
+    });
+
+    it('leaves a main tree the site resolver accepts (the duplicate never lands)', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const rt = pagesRuntime();
+      const gh = new GithubDouble({ main: mainWith(live()), [COPY_BRANCH]: { 'src/content/pages/about-copy.md': COPY_MD } });
+      gh.install();
+      const routes = createContentRoutes({ runtime: rt });
+      await routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'b' }));
+
+      const tree = gh.branches.get('main') ?? {};
+      const conceptIndexes = rt.concepts.map((descriptor) => ({
+        descriptor,
+        index: createContentIndex(
+          Object.entries(tree).filter(([path]) => path.startsWith(`${descriptor.dir}/`)).map(([path, raw]) => ({ path, raw })),
+          descriptor,
+        ),
+      }));
+      expect(() => createSiteResolver(conceptIndexes, { validate: false })).not.toThrow();
+    });
   });
 
   it('emits no publish.address_collided when the address is free', async () => {
@@ -548,6 +611,62 @@ describe('publishAllAction', () => {
 
     // The branch survives a failed commit, so the edits are not lost.
     expect(gh.branches.has(BRANCH)).toBe(true);
+  });
+
+  describe('an address collision in the batch', () => {
+    const PAGES_MD = (t: string) => `---\ntitle: ${t}\n---\nbody`;
+    const row = (id: string, permalink: string, draft = false): ManifestEntry => ({
+      id, concept: 'pages', title: id, permalink, draft, links: [],
+    });
+
+    it('redirects address_collision, commits nothing, and keeps every branch when a row meets a live holder', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [row('about', '/hi')] }) },
+        'cairn/pages/hi': { 'src/content/pages/hi.md': PAGES_MD('Hi') },
+        'cairn/pages/fresh': { 'src/content/pages/fresh.md': PAGES_MD('Fresh') },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: multiRuntime() });
+
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?error=address_collision');
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.branches.has('cairn/pages/hi')).toBe(true);
+      expect(gh.branches.has('cairn/pages/fresh')).toBe(true);
+    });
+
+    it('counts a duplicate between two rows of the batch, logging one record per colliding entry', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) },
+        'cairn/pages/hi': { 'src/content/pages/hi.md': PAGES_MD('Hi') },
+        'cairn/pages/hi-two': { 'src/content/pages/hi-two.md': PAGES_MD('Hi two') },
+      });
+      gh.install();
+      const rt = multiRuntime();
+      // Pin both pages to one address by overriding the permalink template.
+      rt.concepts[1] = { ...rt.concepts[1], permalink: '/same' };
+      const routes = createContentRoutes({ runtime: rt });
+
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?error=address_collision');
+      expect(mainRefPatches(gh)).toHaveLength(0);
+      expect(gh.branches.has('cairn/pages/hi')).toBe(true);
+      expect(gh.branches.has('cairn/pages/hi-two')).toBe(true);
+      const records = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string })
+        .filter((r) => r.event === 'publish.address_collided');
+      expect(records).toHaveLength(2);
+    });
+
+    it('does not count a duplicate on main that involves no batch row', async () => {
+      const gh = new GithubDouble({
+        main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [row('a', '/dup'), row('b', '/dup')] }) },
+        'cairn/pages/fresh': { 'src/content/pages/fresh.md': PAGES_MD('Fresh') },
+      });
+      gh.install();
+      const routes = createContentRoutes({ runtime: multiRuntime() });
+      expect(await redirectedTo(routes.publishAllAction(listActionEvent()))).toBe('/admin/posts?publishedAll=1');
+    });
   });
 
   it('publishes only the pending entries the access map admits, leaving the rest pending', async () => {

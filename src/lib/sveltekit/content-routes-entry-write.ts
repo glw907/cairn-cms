@@ -18,7 +18,7 @@ import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, enforceTaxonomy } from '../content/taxonomy-enforce.js';
 import { asDate, entryIdentity } from '../content/identity.js';
 import { permalinkUsesDateToken } from '../content/url-policy.js';
-import { buildAddressIndex, addressCollision, type AddressEntry } from '../content/advisories.js';
+import { heldAddress } from '../content/advisories.js';
 import { filenameFromId } from '../content/ids.js';
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
@@ -359,9 +359,9 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
    */
   async function publishAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
-    const held = await saveToBranch(event, editor, concept, id, true);
-    if (!('branchSha' in held)) return held;
-    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange, mainHead } = held;
+    const saved = await saveToBranch(event, editor, concept, id, true);
+    if (!('branchSha' in saved)) return saved;
+    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange, mainHead } = saved;
 
     // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
     // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
@@ -377,22 +377,29 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     ];
     if (mediaChange) changes.push(mediaChange);
 
-    // The cross-branch address-collision re-check: warn-and-allow, last-write-wins, never a gate.
-    // Resolve this entry's address the way editLoad does and look it up in the index built from
-    // the same manifest the publish carries. The read fails open: a thrown index build degrades to
-    // no event and the publish proceeds, so a transient GitHub error never blocks a publish.
-    let address = '';
-    let collision: AddressEntry | null = null;
-    try {
-      const { frontmatter } = parseMarkdown(markdown);
-      address = entryIdentity(concept, path, frontmatter).permalink;
-      const addressIndex = await buildAddressIndex(backend, runtime.concepts, manifest);
-      collision = addressCollision(addressIndex, { concept: concept.id, id }, address);
-    } catch (err) {
-      // Fail open, the same as editLoad: a thrown index build degrades to no event and the publish
-      // proceeds. Log it so a persistently failing advisory build is diagnosable, not invisible.
-      collision = null;
-      log.warn('github.unreachable', { scope: 'publish_advisories', error: String(err) });
+    // Refuse a publish onto an address a live entry already holds: the build's duplicate-permalink
+    // throw would otherwise red the deploy. The branch keeps the edits and main takes no commit.
+    // Reads the manifest this publish carries, no branch, so a pending edit elsewhere never counts.
+    const held = heldAddress(manifest, runtime.concepts, {
+      concept: concept.id,
+      id,
+      permalink: row.permalink,
+      draft: row.draft,
+    });
+    if (held) {
+      log.warn('publish.address_collided', {
+        editor: editor.email,
+        address: row.permalink,
+        heldByConcept: held.concept,
+        heldById: held.id,
+      });
+      return fail(
+        409,
+        saveRefusal(
+          `Another entry already uses the address ${row.permalink}. Your edits are saved. Change the address of one of the two, then publish again.`,
+          body,
+        ),
+      );
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email };
@@ -407,15 +414,6 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
         mainHead,
       );
       log.info('entry.published', { ...commitFields, batch: false });
-      // Only after the publish lands: a diagnostic that a live address now has a new owner.
-      if (collision) {
-        log.warn('publish.address_collided', {
-          editor: editor.email,
-          address,
-          displacedConcept: collision.concept,
-          displacedId: collision.id,
-        });
-      }
     } catch (err) {
       // The branch already holds the just-committed edits, so a conflict here loses nothing.
       return ctx.commitFailure(
@@ -511,6 +509,25 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     if (published.length === 0) {
       throw redirect(303, `${listPage}?error=nothing_to_publish`);
     }
+
+    // Refuse the whole batch when any published row lands on an address a live entry holds,
+    // including another row of this batch. Nothing commits and every branch stays. A duplicate on
+    // main that involves no batch row is not this batch's fault, so only published rows are checked.
+    let collided = false;
+    for (const entry of published) {
+      const row = manifestRow(next, entry.concept, entry.id);
+      if (!row) continue;
+      const held = heldAddress(next, runtime.concepts, row);
+      if (!held) continue;
+      collided = true;
+      log.warn('publish.address_collided', {
+        editor: editor.email,
+        address: row.permalink,
+        heldByConcept: held.concept,
+        heldById: held.id,
+      });
+    }
+    if (collided) throw redirect(303, `${listPage}?error=address_collision`);
     changes.push({ path: runtime.manifestPath, content: formatManifest(next) });
 
     const noun = published.length === 1 ? 'entry' : 'entries';

@@ -5,6 +5,7 @@ import type { EmailAttachment, EmailRecipient } from './auth/types.js';
 import type { CairnEnv } from './env.js';
 import { CairnError } from './diagnostics/index.js';
 import { escapeHtml } from './escape.js';
+import { log } from './log/index.js';
 
 export type { EmailAttachment, EmailRecipient };
 
@@ -59,19 +60,38 @@ export function buildMagicLinkMessage(input: {
 }): MagicLinkMessage {
   const { to, siteName, sender, link } = input;
   const subject = `Sign in to ${siteName}`;
-  const text = `Open this link to sign in to ${siteName}:\n\n${link}\n\nThe link expires in 10 minutes. If you did not request it, ignore this email.`;
-  // `link` is engine-built and url-safe; `siteName` is site config, so escape it for HTML.
+  const expiry = 'The link expires in 10 minutes.';
+  const ignore = 'If you didn’t request it, you can ignore this email.';
+  const text = `${siteName}\n\nSign in: ${link}\n\n${expiry}\n${ignore}`;
+  // Both `link` and `siteName` are escaped: the site name is site config, and the link lands in
+  // an attribute and in text. Mail clients strip <style> and remote assets, so the layout is
+  // inline styles on a one-cell table, in fixed hex values near the admin's Warm Stone neutrals.
   const name = escapeHtml(siteName);
-  const html = `<p>Open this link to sign in to ${name}:</p><p><a href="${link}">Sign in</a></p><p>The link expires in 10 minutes. If you did not request it, ignore this email.</p>`;
+  const href = escapeHtml(link);
+  const font = "font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif";
+  const html =
+    `<div style="background:#f6f3f0;padding:24px;${font};color:#3a3632">` +
+    `<div style="max-width:480px;margin:0 auto;background:#fcfaf8;border:1px solid #e1dcd7;border-radius:8px;padding:32px">` +
+    `<p style="margin:0 0 24px;font-size:18px;font-weight:600">${name}</p>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px"><tr>` +
+    `<td style="background:#6a45c9;border-radius:6px"><a href="${href}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none">Sign in</a></td>` +
+    `</tr></table>` +
+    `<p style="margin:0 0 24px;font-size:14px;word-break:break-all">${href}</p>` +
+    `<p style="margin:0 0 8px;font-size:14px">${expiry}</p>` +
+    `<p style="margin:0;font-size:14px;color:#6b645d">${ignore}</p>` +
+    `</div></div>`;
   return { to, from: sender.from, subject, html, text, replyTo: sender.replyTo };
 }
 
-/** The production send: Cloudflare Email Sending through the EMAIL binding. */
+/** The production send: Cloudflare Email Sending through the EMAIL binding. Logs `auth.link.sent` with the ID Cloudflare returned; a custom `send` logs for itself. */
 export const cloudflareSend: SendMagicLink = async (env, message) => {
   if (!env.EMAIL) {
     throw new CairnError('config.bindings-missing', { message: 'EMAIL binding is not configured' });
   }
-  await env.EMAIL.send(message);
+  const result = await env.EMAIL.send(message);
+  // The binding returns `unknown` here, and a test fake returns nothing, so read the id defensively.
+  const messageId = (result as { messageId?: string } | undefined)?.messageId;
+  log.info('auth.link.sent', { email: message.to, messageId });
 };
 
 /**

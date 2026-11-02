@@ -1,4 +1,4 @@
-import { describe, it, expect, expectTypeOf } from 'vitest';
+import { describe, it, expect, expectTypeOf, vi, afterEach } from 'vitest';
 import {
   buildMagicLinkMessage,
   cloudflareSend,
@@ -8,6 +8,7 @@ import {
 } from '../../lib/email.js';
 import type { CairnEnv } from '../../lib/env.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
+import { log } from '../../lib/log/index.js';
 
 describe('buildMagicLinkMessage', () => {
   it('addresses the editor and embeds the link in both parts', () => {
@@ -53,6 +54,64 @@ describe('buildMagicLinkMessage', () => {
       link: 'https://ecnordic.ski/admin/auth/confirm?token=abc',
     });
     expect(msg.replyTo).toBeUndefined();
+  });
+});
+
+describe('buildMagicLinkMessage layout', () => {
+  const link = 'https://x.dev/admin/auth/confirm?token=abc';
+  const build = (siteName = 'EC Nordic', l = link) =>
+    buildMagicLinkMessage({ to: 'ed@x.dev', siteName, sender: { from: 'n@x.dev' }, link: l });
+
+  it('lays out the name, a presentation-table button, the written link, the expiry, and the ignore line', () => {
+    const msg = build();
+    expect(msg.subject).toBe('Sign in to EC Nordic');
+    expect(msg.html).toContain('EC Nordic');
+    expect(msg.html).toMatch(/<table[^>]*role="presentation"/);
+    expect(msg.html).toMatch(/<a [^>]*href="[^"]*"[^>]*>Sign in<\/a>/);
+    expect(msg.html).toContain('The link expires in 10 minutes.');
+    expect(msg.html).toContain('If you didn’t request it, you can ignore this email.');
+    expect(msg.html.split(link)).toHaveLength(3);
+  });
+
+  it('carries no image, style element, or remote URL but the link', () => {
+    const { html } = build();
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<style');
+    expect(html.replaceAll(link, '')).not.toContain('http');
+  });
+
+  it('gives the text part the same sentences and the link', () => {
+    const { text } = build();
+    expect(text).toContain('EC Nordic');
+    expect(text).toContain(link);
+    expect(text).toContain('The link expires in 10 minutes.');
+    expect(text).toContain('If you didn’t request it, you can ignore this email.');
+  });
+
+  it('escapes the site name and the link in both HTML places', () => {
+    const { html } = build('<b>', 'https://x.dev/a?x="y"');
+    expect(html).not.toContain('<b>');
+    expect(html).toContain('&lt;b&gt;');
+    expect(html).not.toContain('"y"');
+    expect(html.split('x=&quot;y&quot;')).toHaveLength(3);
+  });
+});
+
+describe('cloudflareSend logging', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const msg = { to: 'ed@x.dev', from: 'n@x.dev', subject: 's', html: 'h', text: 't' };
+
+  it('logs auth.link.sent with the binding messageId and no token', async () => {
+    const info = vi.spyOn(log, 'info').mockImplementation(() => {});
+    await cloudflareSend({ EMAIL: { send: async () => ({ messageId: 'x' }) } }, msg);
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(info).toHaveBeenCalledWith('auth.link.sent', { email: 'ed@x.dev', messageId: 'x' });
+  });
+
+  it('logs no messageId when the binding returns nothing', async () => {
+    const info = vi.spyOn(log, 'info').mockImplementation(() => {});
+    await cloudflareSend({ EMAIL: { send: async () => undefined } }, msg);
+    expect(info).toHaveBeenCalledWith('auth.link.sent', { email: 'ed@x.dev', messageId: undefined });
   });
 });
 

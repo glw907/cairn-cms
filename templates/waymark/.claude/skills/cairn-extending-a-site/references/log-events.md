@@ -28,6 +28,7 @@ Contents:
 | `auth.token.minted` | info | `email`, `expiresAt` | Token issued for an allowlisted editor. |
 | `auth.token.rebound` | info | `email` | A cooldown-throttled request carried a different pending-login nonce, so the token now answers the newer browser. One is normal; a run for one address means something keeps requesting links. |
 | `auth.link.refused` | warn | `reason` (`no_pending_cookie`) | A confirm with no pending-login cookie failed to consume (token bound to another browser, expired, unknown, or used). |
+| `auth.link.sent` | info | `email`, `messageId` | The default Cloudflare sender handed the sign-in email to Cloudflare, which accepted it. `messageId` is the ID Cloudflare returned and is absent when the binding returns none. A custom `send` does not produce this record and logs for itself. |
 | `auth.link.send_failed` | error | `email`, `error`, `code`, `conditionId` | The sign-in email send rejected. |
 | `auth.token.confirmed` | info | `email` | Token consumed at `/admin/auth/confirm`. |
 | `auth.session.created` | info | `email` | Session row created after a confirm. |

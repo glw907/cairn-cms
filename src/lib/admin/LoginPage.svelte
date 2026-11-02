@@ -26,10 +26,10 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
     data:
       | { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' }
       | { identity: { label: string }; theme?: 'cairn-admin' | 'cairn-admin-dark' };
-    /** The action result. `sent` is true once a request was accepted; `outcome` discriminates the
-     * neutral, send-error, and throttled outcomes. `error` carries an unexpected action failure
-     * (viewAction's generic fail(500)), which has neither field. */
-    form: { sent?: boolean; outcome?: 'sent' | 'send-error' | 'throttled'; error?: string } | null;
+    /** The action result. `outcome` discriminates the sent, send-error, and throttled results.
+     * `error` carries an unexpected action failure (viewAction's generic fail(500)), which has
+     * no `outcome`. */
+    form: { outcome?: 'sent' | 'send-error' | 'throttled'; error?: string } | null;
   }
 
   let { data, form }: Props = $props();
@@ -108,7 +108,7 @@ only the gate's `label`, and the page renders a hand-off paragraph with no form 
       <p data-cairn-identity class="mt-2 text-center type-body">
         This site signs in through {data.identity.label}. <a href="/admin" class="link link-primary">Go to /admin</a>.
       </p>
-    {:else if (form?.outcome === 'sent' || form?.sent) && !dismissed}
+    {:else if form?.outcome === 'sent' && !dismissed}
       <!-- No role="status" here: the block mounts fresh on this branch switch, so a live region
            on it would never observe its first content (WCAG 4.1.3). The "Check your email"
            heading is what carries the announcement, the same way a fresh page's title does. -->

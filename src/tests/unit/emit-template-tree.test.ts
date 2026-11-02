@@ -1,6 +1,6 @@
 // cairn-cms: the emitter does not read comments, and scripts/build/emit-template.mjs copies the
-// showcase verbatim minus its .cairn-template.json exclusions, so an unguarded members fixture
-// would ship a code-readback OTP oracle into every scaffolded site (spec
+// showcase verbatim minus its .cairn-template.json exclusions, so an unguarded fixture route would
+// ship into every scaffolded site (spec
 // https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/specs/2026-08-04-auth-channel-consumer-proof-design.md, "The acceptance
 // test"). This walks a real emission of examples/showcase and proves the emitted tree carries
 // none of the fixture's forbidden tokens, that the marker-stripped wrangler.jsonc still parses
@@ -80,15 +80,6 @@ function parseJsonc(text: string): Record<string, unknown> {
   return JSON.parse(out.replace(/,(\s*[}\]])/g, '$1')) as Record<string, unknown>;
 }
 
-/**
- * The showcase's demo member roster contacts, read straight from channel.ts's literal rather
- * than imported, so this test never needs to resolve the members fixture's own module graph.
- */
-function rosterContacts(): string[] {
-  const src = readFileSync(resolve(SHOWCASE, 'src/members/channel.ts'), 'utf8');
-  return [...src.matchAll(/'([\w.-]+@showcase\.test)'/g)].map((match) => match[1]);
-}
-
 describe('the emitted template tree', () => {
   let emittedTo: string;
 
@@ -107,10 +98,8 @@ describe('the emitted template tree', () => {
     await rm(emittedTo, { recursive: true, force: true });
   });
 
-  it('carries none of the forbidden fixture tokens, editor@showcase.test exempted', async () => {
-    const contacts = rosterContacts().filter((contact) => contact !== 'editor@showcase.test');
-    expect(contacts.length).toBeGreaterThan(0);
-    const forbidden = ['MEMBER_DB', 'createAuthChannel', 'migrations-members', 'last-otp', 'cairn-template:', ...contacts];
+  it('carries none of the forbidden fixture tokens', async () => {
+    const forbidden = ['cairn-template:', 'probe-craft', 'error-fixture'];
     const hits: string[] = [];
     for (const filePath of walk(emittedTo, () => true)) {
       const content = await readFile(filePath, 'utf8').catch(() => null);

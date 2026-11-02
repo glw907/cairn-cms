@@ -11,9 +11,6 @@ export const ORIGINS = {
 /** The exact body SvelteKit's Origin check answers with. */
 export const KIT_CROSS_SITE_BODY = 'Cross-site POST form submissions are forbidden';
 
-/** A fragment of the auth channel's origin refusal, which a cairn-served 403 would carry. */
-export const FACTORY_ORIGIN_FRAGMENT = 'origin mismatch';
-
 /** Matches the referrer meta every cairn admin view emits, whatever its attribute spacing. */
 const CAIRN_REFERRER_META = /<meta\s+name="referrer"\s+content="strict-origin"\s*\/?>/g;
 

@@ -17,11 +17,11 @@ The admin is also where a developer adds the organization's screens. A route und
 The following are the kinds of things a developer builds on those seams:
 
 - A `staff` role that signs in by the same emailed link and lands on a screen made for it.
-- A members area with a separate login, built with `createAuthChannel`, outside `/admin`.
+- A members area with a separate login, built on `/auth-crypto`, outside `/admin`.
 - A screen that lists signups from a database the site provisions.
 - Screens for events, reservations, or rosters.
 
-Each of these is the developer's code. The engine ships two roles, owner and editor. A site declares any others and writes the code behind them. The engine also supplies the access map, the custom-route seam, and the second sign-in mechanism. The default magic-link sign-in can be replaced as well, as the `cairn-extending-a-site` skill's [Cloudflare Access reference](../skills/cairn-extending-a-site/references/cloudflare-access.md) describes.
+Each of these is the developer's code. The engine ships two roles, owner and editor. A site declares any others and writes the code behind them. The engine also supplies the access map, the custom-route seam, and the `/auth-crypto` primitives for a sign-in flow of your own. The default magic-link sign-in can be replaced as well, as the `cairn-extending-a-site` skill's [Cloudflare Access reference](../skills/cairn-extending-a-site/references/cloudflare-access.md) describes.
 
 ## The stack
 

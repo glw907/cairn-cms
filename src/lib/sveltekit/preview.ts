@@ -417,7 +417,7 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  `hashToken(token)`, a SHA-256 digest, and the attacker controls only the plaintext token, never
  *  the hash. Steering a chosen plaintext's digest to collide with a stored hash under a B-tree
  *  index scan would require a partial SHA-256 preimage, a problem timing a comparison does not
- *  make easier; `tokensMatch` (crypto.ts) is deliberately not used here.
+ *  make easier; `compareTokens` (crypto.ts) is deliberately not used here.
  *
  * The returned `seo` ({@link stripPreviewSeo}) never carries `canonical`, `og:url`, or
  *  `jsonLd.url`: a preview render must not self-canonicalize while it is `noindex`ed, and must not

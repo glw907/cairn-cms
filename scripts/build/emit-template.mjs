@@ -167,8 +167,8 @@ const WORKER_TYPES_FILE = 'worker-configuration.d.ts';
 /**
  * Regenerate an emitted tree's `worker-configuration.d.ts` from the tree's `wrangler.jsonc`,
  * when the source shipped one. The source's file describes the source's config, and the marker
- * strip removes bindings from the emitted config (the showcase's members fixture database), so a
- * copied file would name a binding the emitted site never binds. Runtime types stay out of the
+ * strip can remove bindings from the emitted config, so a copied file could name a binding the
+ * emitted site never binds. Runtime types stay out of the
  * file; the site takes them from `@cloudflare/workers-types`.
  * @param {string} tree the emitted tree's root, after the marker strip
  * @param {string[]} [extraArgs] further `wrangler types` arguments, such as an `--env-file` naming

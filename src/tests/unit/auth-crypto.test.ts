@@ -4,7 +4,7 @@ import {
   generateSessionId,
   hashToken,
   buildCookieName,
-  tokensMatch,
+  compareTokens,
   sessionCookieName,
   csrfCookieName,
 } from '../../lib/auth/crypto.js';
@@ -78,29 +78,29 @@ describe('buildCookieName', () => {
   });
 });
 
-describe('tokensMatch', () => {
+describe('compareTokens', () => {
   it('is true for equal tokens', () => {
-    expect(tokensMatch('abc123', 'abc123')).toBe(true);
+    expect(compareTokens('abc123', 'abc123')).toBe(true);
   });
 
   it('is deliberately false for two empty strings', () => {
-    expect(tokensMatch('', '')).toBe(false);
+    expect(compareTokens('', '')).toBe(false);
   });
 
   it('is false for a same-length mismatch', () => {
-    expect(tokensMatch('abc123', 'abc124')).toBe(false);
+    expect(compareTokens('abc123', 'abc124')).toBe(false);
   });
 
   it('is false for a different length', () => {
-    expect(tokensMatch('abc', 'abcd')).toBe(false);
+    expect(compareTokens('abc', 'abcd')).toBe(false);
   });
 
   it('compares a non-ASCII pair correctly by byte, not by code unit', () => {
     // é (U+00E9) and ë (U+00EB) both encode to 2 UTF-8 bytes, so this pair is the same total
     // byte length and must reach the byte-comparison loop, unlike a pair that differs in byte
     // length (which the length check alone would already reject).
-    expect(tokensMatch('tökén-é', 'tökén-é')).toBe(true);
-    expect(tokensMatch('tökén-é', 'tökén-ë')).toBe(false);
+    expect(compareTokens('tökén-é', 'tökén-é')).toBe(true);
+    expect(compareTokens('tökén-é', 'tökén-ë')).toBe(false);
   });
 
   it('calls a native crypto.subtle.timingSafeEqual when the runtime provides one', () => {
@@ -112,8 +112,8 @@ describe('tokensMatch', () => {
     });
     original.timingSafeEqual = stub;
     try {
-      expect(tokensMatch('abc123', 'abc123')).toBe(true);
-      expect(tokensMatch('abc123', 'abc124')).toBe(false);
+      expect(compareTokens('abc123', 'abc123')).toBe(true);
+      expect(compareTokens('abc123', 'abc124')).toBe(false);
       expect(stub).toHaveBeenCalledTimes(2);
     } finally {
       delete original.timingSafeEqual;

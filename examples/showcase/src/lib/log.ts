@@ -7,10 +7,7 @@ import { createLogger } from '@glw907/cairn-cms/log';
 /** The showcase's event vocabulary, disjoint from the engine's CairnLogEvent union. */
 // prettier-ignore
 export type SiteLogEvent =
-  // cairn-template:exclude-start
-  | 'admin.signups.misconfigured'
-  // cairn-template:exclude-end
-  | 'members.login.requested';
+  | 'admin.signups.misconfigured';
 
 /** The showcase's one logger instance, shared by every route that emits a structured record. */
 export const log = createLogger<SiteLogEvent>();

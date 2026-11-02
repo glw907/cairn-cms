@@ -16,7 +16,7 @@ export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
-export { defineRoles, resolveCapability, resolveOwnerLevelRoles } from './auth/roles.js';
+export { defineRoles, resolveCapability } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
 // The access map (admin access map and attention seams pass): one declaration, made on the adapter
 // and read from the runtime by the guard, the dev backend's handle, and the nav resolver, and one

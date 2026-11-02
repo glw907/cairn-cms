@@ -47,8 +47,8 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 
 ## Prerequisites (once per machine)
 
-- The local D1 exists with the auth schema. Running `wrangler dev` once applies the migration
-  in `migrations/`. Confirm the tables with:
+- The local D1 exists with the auth schema. On a consumer site, running `wrangler dev` once
+  applies the migration in `migrations/`. Confirm the tables with:
   ```bash
   npx wrangler d1 execute <db> --local --command "SELECT name FROM sqlite_master WHERE type='table';"
   ```
@@ -61,16 +61,31 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
     "INSERT INTO editor (email, display_name, role, created_at) \
      VALUES ('you@example.com', 'Dev Owner', 'owner', 0);"
   ```
+- **The showcase path.** The showcase does not apply its migration on `wrangler dev`. From the
+  repo root run `npm run package`, then from `examples/showcase` run a plain `npm run build`
+  (no `VITE_CAIRN_E2E`), apply the migration, and seed two editors: an `owner` for the minted
+  session and an `editor` for the magic-link request. A link request for an address with no
+  `editor` row sends nothing, so the round trip needs the second row. The session id for the
+  sole-owner mint is `smoke-owner`. `INSERT OR REPLACE` lets the seed run twice on one local D1.
+  ```bash
+  npm run build
+  npx wrangler d1 migrations apply AUTH_DB --local
+  npx wrangler d1 execute cairn-showcase-auth --local --command "INSERT OR REPLACE INTO editor (email, display_name, role, created_at) VALUES ('smoke-owner@example.com', 'Smoke Owner', 'owner', 0), ('smoke4@example.com', 'Smoke Editor', 'editor', 0);"
+  npx wrangler d1 execute cairn-showcase-auth --local --command "INSERT OR REPLACE INTO session (id, email, expires_at, created_at) VALUES ('smoke-owner', 'smoke-owner@example.com', 4070908800000, 0);"
+  npx wrangler dev --port 8787
+  ```
 - After changing the adapter's `roles`, rerun the content manifest with `npx cairn-manifest`.
   `site-facts.json` goes stale when the roles change, and the build then fails.
 
 ## The procedure
 
-1. **Start the Worker** in the site repo (a background shell, or pipe to `sleep infinity`):
+1. **Check the port, then start the Worker** in the site repo. Another session's worker on the
+   port would answer for this one, so first confirm nothing listens:
    ```bash
-   npx wrangler dev --port 8787      # use a distinct port per site if running both at once
+   ss -ltn 'sport = :8787'           # must print no listener; pick another port if it does
+   npx wrangler dev --port 8787      # a background shell, or pipe to `sleep infinity`
    ```
-   Wait for `Ready on http://localhost:8787`.
+   Wait until the new server's log says `Ready on http://localhost:8787`.
 
 2. **Mint a session row** for the seeded editor. Pick any `id` you can recognize later, and set
    `expires_at` well into the future. This example uses the year 2099 in epoch milliseconds:
@@ -119,11 +134,15 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    npx wrangler d1 execute <db> --local --command "DELETE FROM session WHERE id LIKE 'smoke%';"
    ```
    Stop the Worker. Every `wrangler d1 execute --local` spawns its own `workerd`, so after a
-   smoke run there can be many stray `workerd` processes; `pkill -f workerd` clears them.
+   smoke run there can be stray `workerd` processes. Stop only the PIDs this session started
+   (note each PID when you launch it, then `kill <pid>`); never match by name, since other
+   sessions' workers are also `workerd`.
 
 5. **The magic-link round trip is scriptable.** `wrangler dev` writes each sent message to
    `.wrangler/tmp/email/`, so a script can request a link, read it from the newest file there, and
-   post the confirm page in headless Chromium with Playwright. The token is stored hashed and
+   post the confirm page in headless Chromium with Playwright. A second context that follows a
+   spent link lands on `/admin/login?error=no-pending-request`; that is the correct refusal, so a
+   "not signed in" check must allow it. The token is stored hashed and
    cannot be replayed from the database, which is why the inserted session row is the no-email
    shortcut for the curl smoke itself. Record the results in the pass log. A real login in Firefox
    stays a user step only for a go-live check of a deployed site.

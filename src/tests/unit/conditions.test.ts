@@ -131,7 +131,7 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/"\*"/);
     expect(c.why).toMatch(/"null"/);
     expect(c.why).toMatch(/every route/);
-    expect(c.why).toMatch(/resolveSubject/);
+    expect(c.why).toMatch(/double-submit token/);
     expect(c.why).toMatch(/sibling subdomain/);
     expect(c.remediation).toMatch(/csrf\.trustedOrigins/);
     expect(c.docsAnchor).toBe('is-it-working.md#keep-sveltekits-origin-check-on');
@@ -186,7 +186,7 @@ describe('condition registry', () => {
     const c = condition('config.no-referrer-blanket');
     expect(c.severity).toBe('warning');
     expect(c.why).toMatch(/Origin: null/);
-    expect(c.why).toMatch(/createAuthChannel/);
+    expect(c.why).toMatch(/forms 403/);
     expect(c.why).toMatch(/%sveltekit\.head%/);
     expect(c.remediation).toMatch(/strict-origin-when-cross-origin/);
     expect(c.remediation).not.toMatch(/safe only/);

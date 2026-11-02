@@ -25,7 +25,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { RevertOutcome } from '../sveltekit/types.js';
-  import type { RequestOutcome } from '../sveltekit/auth-routes.js';
+  import type { LoginRequestOutcome } from '../sveltekit/auth-routes.js';
   import type { CairnAdapter } from '../content/types.js';
 
   interface Props {
@@ -40,7 +40,6 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
      *  `CairnHistory` below. */
     form?:
       | (ContentFormFailure & {
-          sent?: boolean;
           outcome?: 'sent' | 'send-error' | 'throttled' | RevertOutcome['outcome'];
           ok?: boolean;
           draftEditor?: string;
@@ -71,12 +70,12 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 </script>
 
 {#if data.view === 'login'}
-  <!-- Only requestAction's wrapped result (a RequestOutcome, or viewAction's generic
+  <!-- Only requestAction's wrapped result (a LoginRequestOutcome, or viewAction's generic
        { error } catch-all) ever posts to this view, so the broader merged form union narrows
        here: template narrowing on data.view does not reduce it for us. -->
   <LoginPage
     data={{ ...data.page, theme: publicTheme }}
-    form={form as { sent?: boolean; outcome?: RequestOutcome['outcome']; error?: string } | null}
+    form={form as { outcome?: LoginRequestOutcome['outcome']; error?: string } | null}
   />
 {:else if data.view === 'confirm'}
   <ConfirmPage data={{ ...data.page, theme: publicTheme }} {form} />

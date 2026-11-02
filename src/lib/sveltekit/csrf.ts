@@ -1,7 +1,7 @@
 // SvelteKit's Origin check runs on every route ahead of any handle; cairn adds the admin's
-// double-submit token on top. These helpers back the guard's token check, the auth channel's
-// Origin compare, and the loads that issue the token.
-import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
+// double-submit token on top. These helpers back the guard's token check and the loads that
+// issue the token.
+import { csrfCookieName, generateCsrfToken, compareTokens, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
 import { env } from './workers-env.js';
 import type { CairnEvent, CookieJar } from './types.js';
@@ -21,14 +21,14 @@ const FORM_CONTENT_TYPES = new Set([
 // this module and importing back would be circular; the shared module is a leaf that imports
 // nothing, so the cycle no longer exists.
 //
-// What this call site decides, which is not what the dev-backend tripwire's call decides:
+// What this call site decides, which is not what the guard's https help-page call decides:
 // under csrfSecure's monotonic rule the hostname is consulted only for a NON-https request, where
 // it chooses between the bare dev cookie and the PUBLIC_ORIGIN branch. On an https request the
 // hostname is never consulted at all, so it cannot weaken a cookie the browser is already
 // receiving over TLS. On a non-https request the client-supplied Host header does still select the
 // bare name over the PUBLIC_ORIGIN answer, but that is not attacker-reachable through a victim's
 // browser, which derives Host from the URL it is actually visiting. That is why this stays on
-// the bare hostname predicate rather than `isDeployedHost`.
+// the bare hostname predicate.
 
 /**
  * Decide the Secure bit for one request's cairn-owned cookies, the single source every writer and
@@ -87,11 +87,6 @@ export function isUnsafeFormRequest(request: Request): boolean {
   return FORM_CONTENT_TYPES.has(header.split(';', 1)[0].trim().toLowerCase());
 }
 
-/** The faithful framework check: the Origin header equals the request's origin. */
-export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boolean {
-  return event.request.headers.get('origin') === event.url.origin;
-}
-
 /**
  * Return the session's CSRF token, minting it when absent and re-anchoring its `Max-Age` on every
  * call while present. Lazy and stable: a second open admin tab reuses the same value, so its form
@@ -140,7 +135,7 @@ export interface CsrfVerdict {
 function verdictFromWitness(cookie: string | undefined, submitted: string | undefined): CsrfVerdict {
   if (!cookie) return { ok: false, detail: 'no-cookie' };
   if (submitted === undefined) return { ok: false, detail: 'no-witness' };
-  return tokensMatch(submitted, cookie) ? { ok: true } : { ok: false, detail: 'mismatch' };
+  return compareTokens(submitted, cookie) ? { ok: true } : { ok: false, detail: 'mismatch' };
 }
 
 /**

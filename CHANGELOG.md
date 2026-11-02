@@ -114,22 +114,6 @@
   the target, `shadowed` when a dynamic route segment hides the matched rule behind a deeper key, and
   `role` for every other refusal. The refusal itself is unchanged.
 
-- **`createAuthChannel`'s `resolveDb` takes the structural subset of D1 the channel store uses.** The
-  new `ChannelDatabaseLike`, `ChannelSessionLike`, and `ChannelStatementLike` types name it, and a
-  `D1Database` and the dev package's `createChannelDb()` result both satisfy it. `revokeSessions`
-  takes the same type.
-
-  Consumers may: pass `createChannelDb()`'s result to a channel's `resolveDb` with no cast.
-
-- **A site can pass `auth.branding` to `createCairnAdmin` as a partial.** The `branding` member is a
-  `Partial<AuthBranding>` merged over the runtime's `siteName`, `from`, and `replyTo`, so
-  `{ siteName }` alone keeps the adapter's sender.
-
-  Consumers must: if you passed a full `auth.branding` without `replyTo` to suppress the adapter's
-  reply-to, expect the runtime's `replyTo` to apply now, since an omitted or undefined member falls
-  back to the default and branding can't clear it. Remove `replyTo` from the adapter's `email` group,
-  or send through a custom `auth.send`, to send no reply-to.
-
 - **A thrown health check logs `health.failed`, and the scaffold's `/healthz` is never cached.**
   `loadHealth` logs the new `health.failed` event with the error's message before it rethrows, so a
   route's bare catch keeps the anonymous response's fixed detail without losing the cause. The
@@ -441,9 +425,7 @@
   for non-admin paths; it keeps the double-submit token on every unsafe `/admin` form POST. A form
   POST whose `Origin` is missing, `null`, or foreign now gets SvelteKit's plain 403, `Cross-site POST
   form submissions are forbidden`, before any `handle` hook runs, and no cairn event records it. The
-  diagnostic is the Workers Logs invocation record. `createAuthChannel` keeps its own origin
-  compare, so a member action still has its CSRF floor under `vite dev`, where SvelteKit skips its
-  check.
+  diagnostic is the Workers Logs invocation record.
 
   Consumers must: delete the `csrf` block entirely. Don't replace it with `trustedOrigins: ['*']`,
   which SvelteKit's removal message suggests: it turns off SvelteKit's Origin check on every route,
@@ -458,8 +440,8 @@
   `%sveltekit.head%` in `app.html` wins over cairn's. `/preview/[token]` keeps `no-referrer`.
 
   Consumers must: if your site sets `Referrer-Policy: no-referrer` site-wide, serve
-  `strict-origin-when-cross-origin` or `strict-origin` instead. Your own forms and
-  `createAuthChannel` forms otherwise fail SvelteKit's check.
+  `strict-origin-when-cross-origin` or `strict-origin` instead. Your own forms otherwise fail
+  SvelteKit's check.
 
   Consumers must: have an endpoint that receives a server-to-server POST with no `Content-Type`,
   such as a webhook, expect SvelteKit's 403, and have the sender set a content type such as JSON.
@@ -467,9 +449,8 @@
 
 - **The engine reads the Worker's bindings from `cloudflare:workers`, not `event.platform`.**
   Adapter 8 passes no `platform`, so `env` and `waitUntil` come from the module. One internal module
-  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard,
-  the auth channel, and the admin routes read `env` there; `waitUntil` is always
-  defined, so the auth channel's inline-await branch is gone. The dev flag `CAIRN_DEV_BACKEND` and
+  is the engine's only `cloudflare:workers` import, and no Node-context entry reaches it. The guard
+  and the admin routes read `env` there; `waitUntil` is always defined. The dev flag `CAIRN_DEV_BACKEND` and
   `PUBLIC_ORIGIN` are read from the Worker env alone, with no `process.env` fallback, and no engine
   code touches `env` or `withEnv` while a build prerenders. The dev backend layers its doubles with
   `withEnv`, so they reach engine and site reads alike. `CairnPlatformBindings` and
@@ -761,6 +742,18 @@
 
   Consumers must: nothing.
 
+- **`createAuthRoutes` takes `{ runtime, send }`, and `RequestOutcome` is `LoginRequestOutcome`.** The
+  factory's `runtime` is required and carries the site name and sender. The renamed outcome drops its
+  `sent` member, so branch on `outcome === 'sent'`, which the neutral answer for an unknown address
+  also returns. `tokensMatch` is renamed `compareTokens`.
+
+  Consumers must: pass `{ runtime }` to `createAuthRoutes`.
+
+  Consumers must: rename `RequestOutcome` to `LoginRequestOutcome` and handle the outcome with no
+  `sent` member.
+
+  Consumers must: rename `tokensMatch` to `compareTokens`.
+
 - **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
   engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
   string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
@@ -851,8 +844,7 @@
   `EditorRoutesConfig.roles`.** `runtime` carries both, so each factory's separate options are gone
   (see the `{ runtime }` entry under Changed).
 - **`PlatformContext`, `CairnEvent`'s `platform` member and `Env` parameter, and the
-  `auth.channel.delivery_inline` log event.** The auth channel hands delivery and its sweep to the
-  module's `waitUntil`, which is always defined, so no deployment takes the inline branch. A site that
+  `auth.channel.delivery_inline` log event.** The event retired with the auth channel. A site that
   matched on `auth.channel.delivery_inline` needs changing.
 - **The guard's non-admin Origin check, the `auth.csrf-origin-mismatch` condition, and
   `guard.refused`'s `origin` reason.** SvelteKit's own check refuses the request before the guard runs.
@@ -884,6 +876,69 @@
   Consumers must: replace `fields.email` with `fields.text` and a `pattern` for an address, and replace
   `fields.datetime` with `fields.date` plus a text field for the moment. Declare a directive attribute
   that was `email` or `datetime` as `text`.
+
+- **The auth channel's second store and the owner bootstrap.** `/auth-channel` with its `migrations-channel`
+  schema and `createChannelDb` are removed, as are `originMatches`, `isDeployedHost`, the 13
+  `auth.channel.*` log events, and `src/lib/log.ts` from the scaffold. `bootstrapOwner`,
+  `insertOwnerIfEmpty`, the `editor.bootstrapped` event, and the `/auth-store` subpath are removed too,
+  and `resolveOwnerLevelRoles` leaves the root barrel. `AuthBranding` is removed with `auth.branding`,
+  `CairnAdminConfig.auth` shrinks to `{ send? }`, and the magic-link email takes the site name and
+  sender from the runtime.
+
+  Consumers must: drop `/auth-channel` imports and delete `migrations-channel` from your migrations
+  setup; stop calling `createChannelDb`.
+
+  Consumers must: drop `/auth-store` imports; the subpath is gone.
+
+  Consumers must: if your site manages its roster outside `/admin/editors`, have your own SQL on
+  `AUTH_DB` do what `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, and `demoteOwnerIfNotLast`
+  did. Trim and lowercase the email before it matches or writes the `editor` table, since a shadow row
+  counts as an owner yet can never sign in. Count owners inside the one `DELETE`, as
+  `AND (role NOT IN (...) OR (SELECT COUNT(*) FROM editor WHERE role IN (...)) > 1)`, so a concurrent
+  write can't strand the roster. In an `UPDATE`, add `OR ? = 1`, bound to whether the new role has
+  owner capability, so the last owner can still move to another owner-level role. List every role with
+  owner capability, since a missed name miscounts the owners. Only when the `DELETE` changed a row,
+  which `meta.changes` reports, delete the person's rows from `session` and `magic_token` by `email`,
+  so a refused removal keeps its sessions. Then delete from `preview_tokens` by `editor` in a statement
+  of its own and ignore a "no such table" error: that table exists only after `0003_preview.sql`, and
+  one missing table fails a whole D1 batch.
+
+  Consumers must: stop importing `resolveOwnerLevelRoles` from the root barrel; no public subpath
+  carries it now, so derive owner-capability roles from your own role vocabulary.
+
+  Consumers must: delete the `auth.bootstrapOwner` option, which is now a type error, and seed the
+  owner row before you deploy if the `editor` table may be empty, since `bootstrapOwner` no longer
+  creates it on first request. `skills/cairn-extending-a-site/references/adopt-cairn.md`
+  carries the seed step; `create-cairn-site` seeds its own owner.
+
+  Consumers must: delete `auth.branding` from `createCairnAdmin` and stop importing `AuthBranding`. The
+  `siteName` and sender now come from the adapter's `email` group and the site config. A site that needs
+  a different name or from address changes the built message in a custom `auth.send`, which receives it.
+  That reaches the email only: the login and confirm pages now show the site config's name. To send no
+  reply address, remove `replyTo` from the adapter's `email` group or use a custom `auth.send`.
+
+  Consumers must: stop matching on the 13 `auth.channel.*` events and on `editor.bootstrapped`; they
+  left `CAIRN_LOG_EVENTS`.
+
+  Consumers must: delete `src/lib/log.ts` from a site scaffolded earlier if nothing else imports it.
+
+### Security
+
+- **The minted installation token is scoped to one repository and Contents write.** `installationToken`
+  now sends `repositories: [repo]` and `permissions: { contents: 'write' }`, so a token minted for one
+  site can no longer write to, administer, or change workflows on the account's other repositories.
+  That boundary holds for the token, not the key: the key itself can still mint whatever the App holds
+  on every repository the installation covers. A 422 from the mint reports as `token_request_refused`
+  in `/healthz?live=1`'s `githubAppToken` check.
+
+  Consumers must: grant the App Contents read and write, and set `repo` to the repository's current
+  name. A stale name followed GitHub's redirect before; it now reaches a validated body and the mint is
+  expected to be refused, which `/healthz?live=1` reports as a detail such as `token_request_refused`.
+
+- **The guard clears `locals.cairnEditor` on `/admin/login` and `/admin/auth/confirm`.** Those paths
+  resolve no session, so a value a handle set before the guard no longer reaches them.
+
+  Consumers must: nothing.
 
 ### Fixed
 
@@ -971,9 +1026,6 @@
   build that folded the dev backend in and deployed with `CAIRN_DEV_BACKEND` set served the
   owner-session bypass with no tripwire. With the flag set on the Worker env, a request to a
   non-local host now gets the guard's 503 and its `guard.refused` record.
-- **A `createAuthChannel` delivery cleanup that throws no longer escapes `waitUntil`.** When
-  `deliver` throws, the cleanup that deletes the pending row and refunds the send charge now logs
-  `auth.channel.send_cleanup_failed` if it fails in turn, instead of leaving an unobserved rejection.
 
 ### Documentation
 

@@ -5,9 +5,9 @@
 // Store-level invariant: every email argument is normalized here, trimmed and lowercased, before it
 // matches or writes a row. `editor.email` is the identity, a BINARY-collated TEXT PRIMARY KEY, so a
 // row written under one case is unreachable to a lookup under another. Normalizing at the store,
-// rather than trusting each caller, keeps that impossible: `/auth-store` is public surface, and a
-// consumer provisioning an editor from an address as a user typed it would otherwise write a shadow
-// row that can never sign in yet still counts toward the last-owner guards.
+// rather than trusting each caller, keeps that impossible: a caller provisioning an editor from an
+// address as a user typed it would otherwise write a shadow row that can never sign in yet still
+// counts toward the last-owner guards.
 import type { D1Database, D1PreparedStatement, D1Result } from '@cloudflare/workers-types';
 import { CairnError } from '../diagnostics/error.js';
 import type { Editor } from './types.js';
@@ -428,9 +428,8 @@ async function editorRowStillPresent(
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, there is no last-owner row to protect, so
  * the plain `DELETE` runs. `defineRoles` always resolves at least one owner-capability name, so
- * `[]` is unreachable through the engine's callers; it is reachable only from a site calling
- * this `/auth-store` export directly, which is exactly the caller that has taken the decision on
- * itself.
+ * `[]` is unreachable through the engine's callers; it is reachable only from a caller of this
+ * function directly, which is exactly the caller that has taken the decision on itself.
  *
  * The cascade is deliberately two statements, not one batch with the removal: the editor `DELETE`
  * has to commit and report its `changes` before the sweep runs, since the sweep is
@@ -531,30 +530,6 @@ export async function removeOwnerIfNotLast(
 }
 
 /**
- * Insert the owner row when the allowlist is empty, in one atomic statement
- * (`INSERT ... SELECT ... WHERE NOT EXISTS`), so two concurrent bootstrap requests race safely
- * to exactly one inserted row. Returns whether this call performed the insert; a non-empty
- * table writes nothing and returns false.
- */
-export async function insertOwnerIfEmpty(
-  db: D1Database,
-  email: string,
-  displayName: string,
-  now: number,
-): Promise<boolean> {
-  // Unrouted on purpose: it writes only 'owner', which every schema's CHECK admits.
-  const res = await db
-    .prepare(
-      `INSERT INTO editor (email, display_name, role, created_at)
-       SELECT ?, ?, 'owner', ?
-       WHERE NOT EXISTS (SELECT 1 FROM editor)`,
-    )
-    .bind(normalizeEmail(email), displayName, now)
-    .run();
-  return res.meta.changes === 1;
-}
-
-/**
  * Change an editor's role. The guard reads the new role on the next request.
  *
  * `ownerRoles` (the vocabulary's owner-capability name set, see `resolveOwnerLevelRoles`) is
@@ -570,8 +545,8 @@ export async function insertOwnerIfEmpty(
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, no change can demote a last owner, so the
  * plain `UPDATE` runs. `defineRoles` always resolves at least one owner-capability name, so `[]`
- * is unreachable through the engine's callers; it is reachable only from a site calling this
- * `/auth-store` export directly.
+ * is unreachable through the engine's callers; it is reachable only from a caller of this function
+ * directly.
  * @param db - The site's `AUTH_DB` binding.
  * @param email - Trimmed and lowercased before it matches.
  * @param role - The new role name, from the site's declared vocabulary.

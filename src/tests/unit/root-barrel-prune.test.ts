@@ -13,6 +13,7 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel
 // beside `formatManifest`, so it moves to the keep list below.
 const DEMOTED = [
+  'resolveOwnerLevelRoles',
   'StandardSchemaV1',
   'initialValues',
   'normalizeConcepts',

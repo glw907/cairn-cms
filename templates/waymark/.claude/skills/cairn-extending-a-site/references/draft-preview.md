@@ -57,7 +57,7 @@ record's `reason` is the diagnosis; see `references/log-events.md`.
 ## Mint from a custom screen
 
 `mintPreview(runtime, { ttlMs }, event, { concept, entryId })` and
-`revokePreview(runtime, event, { concept, entryId })` run the built-in checks (editor, concept,
-access map, id, then draft for a mint). Session or map refusals throw; an unknown concept, bad id, or
+`revokePreview(runtime, event, { concept, entryId })` run the built-in checks (editor, access
+map, concept, id, then draft for a mint). Session or map refusals throw; an unknown concept, bad id, or
 missing draft returns as `outcome`. On `outcome === 'minted'`, build the link as
 `${env.PUBLIC_ORIGIN}/preview/${result.token}` with `env` from `cloudflare:workers`.

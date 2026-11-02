@@ -14,7 +14,10 @@
 // the whole suites. Line 1 runs the non-browser legs and fails if any fails: the static checks the
 // diff's buckets select, the type check, the unit tests related to the diff, the docs gate when a
 // docs path changed, and the Go tool gate when `tool/**` changed. The legs that build or read dist
-// run in one chain; the rest run beside it. `--fast` ignores `--class` and `--paint`, which only
+// run one after another in one group that runs every leg and fails at the end, so a static red never
+// hides a unit red; the rest run beside it. A live npm path `vitest related` cannot see (outside the
+// table's unitSelectable list, or a src file that is not code) runs the whole unit project, and a
+// path in the table's toolInputs, which the Go tests read, adds the Go tool gate. `--fast` ignores `--class` and `--paint`, which only
 // shape the e2e leg the fast lane leaves to CI. Line 2 appears only when the diff reaches component tests; it runs the
 // related component tests alone and is always heavy (a browser). The fast lane runs no whole node
 // project and no e2e. Line 1 runs on the heavy lane (see FAST_LINE_1_LANE).
@@ -151,6 +154,7 @@ const E2E_GUARD = `export E2E_PORT=${E2E_PORT} && ! ss -Htln 'sport = :${E2E_POR
 const E2E_RUN = 'npm --prefix examples/showcase run test:e2e -- --retries=0';
 const E2E_VISUAL_INVERT = ' --grep-invert "site home|archive page 2"';
 const SITE_VISUAL = 'site-visual.spec.ts';
+const SLUG_CONTRACT_TEST = 'src/tests/unit/github-slug-contract.test.ts';
 
 /**
  * The lane prefix on fast-lane line 1 (.claude/skills/cairn-running-passes/references/pass-gate-tiers.md, "The fast lane"). Empty
@@ -185,6 +189,8 @@ const NODE_ONLY_TESTS = ['src/tests/unit/**', 'src/tests/integration/**', 'src/t
  * @typedef {object} GateTable
  * @property {Record<string, string[]>} buckets - Bucket name to its path patterns.
  * @property {string[]} noCheck - Paths no check and no test reads.
+ * @property {string[]} unitSelectable - Paths whose fast-lane unit tests are picked by `vitest related`; any other live npm path runs the whole unit project.
+ * @property {string[]} toolInputs - Paths outside `tool/` the Go tests read, so a change runs the Go tool gate.
  * @property {string[]} scriptsTestOnly - Script directories only tests and the comment lint read.
  * @property {Record<string, string[]>} checks - Check label to the buckets that select it.
  * @property {Record<string, string>} extraCommands - Checks outside check:close, by label.
@@ -229,6 +235,8 @@ function allPatterns(table) {
   return [
     ...Object.values(table.buckets).flat(),
     ...table.noCheck,
+    ...table.unitSelectable,
+    ...table.toolInputs,
     ...table.scriptsTestOnly,
     ...table.protected,
     ...table.e2e.floor.prefixes,
@@ -604,13 +612,14 @@ export function decideGate(paths, opts = {}) {
   if (e2e) legs.push(e2e);
 
   const gate = legs.join(' && ');
-  if (toolPaths.length === 0) {
+  const toolRunPaths = [...toolPaths, ...npmPaths.filter((path) => matchesAny(path, context.table.toolInputs))];
+  if (toolRunPaths.length === 0) {
     return { tier: 'targeted', reason: 'computed', decidingPaths: [], gate, notes };
   }
   return {
     tier: 'targeted+tool',
     reason: 'computed',
-    decidingPaths: toolPaths,
+    decidingPaths: toolRunPaths,
     gate: `${gate} && ${TIER_GATES.tool}`,
     notes,
   };
@@ -636,6 +645,17 @@ export function concurrently(commands) {
 }
 
 /**
+ * Join commands so they run one after another, every one of them, and the group fails at the end
+ * when any one failed. A red leg never hides a later leg's result.
+ * @param {string[]} commands - Commands that must not overlap.
+ * @returns {string} One shell command.
+ */
+export function sequentially(commands) {
+  if (commands.length === 1) return commands[0];
+  return `rc=0; ${commands.map((command) => `{ ${command}; } || rc=1`).join('; ')}; [ $rc = 0 ]`;
+}
+
+/**
  * Resolve a diff into the fast lane (spec Execution item 3): the non-browser legs as line 1 and
  * the related component tests as line 2, never a whole node project and never e2e.
  * @param {string[]} paths - Every changed path, deleted ones included.
@@ -648,7 +668,7 @@ export function concurrently(commands) {
 export function decideFastGate(paths, opts = {}) {
   const { deleted = [], selected = null, root = ROOT } = opts;
   if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
-  const toolPaths = paths.filter((path) => path.startsWith('tool/'));
+  let toolRun = paths.some((path) => path.startsWith('tool/'));
   const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
   /** @type {string[]} */
   const notes = [];
@@ -668,17 +688,28 @@ export function decideFastGate(paths, opts = {}) {
     const context = loadContext(root);
     const live = npmPaths.filter((path) => !isNoCheck(path, context));
     const goneSet = new Set(deleted);
-    const unitInputs = npmPaths.filter(
-      (path) => /^(?:src|scripts)\//.test(path) && !goneSet.has(path) && /\.(?:ts|js|mjs|svelte)$/.test(path),
+    if (npmPaths.some((path) => matchesAny(path, context.table.toolInputs))) toolRun = true;
+    const codeFile = /\.(?:ts|js|mjs|svelte)$/;
+    const unitInputs = npmPaths.filter((path) => /^src\//.test(path) && !goneSet.has(path) && codeFile.test(path));
+    // A live docs or migration-notes path is read at run time by the slug contract test, which no
+    // import graph links to it.
+    if (live.some((path) => path.startsWith('docs/') || path === 'MIGRATION-NOTES.md')) {
+      unitInputs.push(SLUG_CONTRACT_TEST);
+    }
+    const unselectable = live.find(
+      (path) => !matchesAny(path, context.table.unitSelectable) || (path.startsWith('src/') && !codeFile.test(path)),
     );
     if (deleted.some((path) => /^(?:src|scripts)\//.test(path))) {
       unit = 'npx vitest run --project unit';
       notes.push('unit tests: whole project (a src or scripts path was deleted or renamed away)');
+    } else if (unselectable !== undefined) {
+      unit = 'npx vitest run --project unit';
+      notes.push(`unit tests: whole project (${unselectable} is not a path vitest related can select from)`);
     } else if (unitInputs.length > 0) {
       unit = `npx vitest related --run --passWithNoTests --project unit ${unitInputs.map(shellQuote).join(' ')}`;
       notes.push(`unit tests: related to ${unitInputs.length} path(s)`);
     } else {
-      notes.push('unit tests: none (no src or scripts source path changed)');
+      notes.push('unit tests: none (no src source path changed)');
     }
 
     const checks = selectChecks(npmPaths, context);
@@ -711,10 +742,10 @@ export function decideFastGate(paths, opts = {}) {
       lines.push(COMPONENT_FULL);
     }
   }
-  if (toolPaths.length > 0) parallel.push(TOOL_GATE);
+  if (toolRun) parallel.push(TOOL_GATE);
 
   // The chain's close runner builds dist once itself, so line 1 carries no `npm run package`.
-  const body = concurrently([...(chain.length > 0 ? [chain.join(' && ')] : []), ...parallel]);
+  const body = concurrently([...(chain.length > 0 ? [sequentially(chain)] : []), ...parallel]);
   lines.unshift(FAST_LINE_1_LANE ? `${FAST_LINE_1_LANE} ${body}` : body);
   return { lines, notes };
 }

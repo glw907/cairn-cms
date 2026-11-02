@@ -7,6 +7,9 @@ description: >-
 # jobs at npm ci and playwright install for 6 hours on 2026-10-08 and 2026-10-09. 80 diagnostic
 # reruns never reproduced it, so the install is bounded and retried instead, and a stall leaves
 # evidence. Call it with a step-level `timeout-minutes: 22`, which covers both attempts.
+# The retry waits 60 seconds first, because apt failures here were exit 100 that passed on a rerun
+# once the mirror settled. Two attempts of 10 minutes plus the wait come to 21 minutes, under the
+# step's 22. Two `timeout -k 30s` kills reach the limit exactly, and the step fails either way.
 
 inputs:
   command:
@@ -41,5 +44,6 @@ runs:
         attempt || {
           echo "::warning::install attempt 1 failed or timed out; retrying: $INSTALL_CMD"
           if [ -n "$INSTALL_CLEAN" ]; then rm -rf "$INSTALL_CLEAN"; fi
+          sleep 60
           attempt
         }

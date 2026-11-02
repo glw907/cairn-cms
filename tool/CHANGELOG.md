@@ -100,6 +100,10 @@ every route. No `tool/v2.0.0` tag exists yet.
   set**, `localhost` and `127.0.0.1`, the hosts the engine's `requireOrigin` treats as local. The
   note no longer exempts the IPv6 loopback `::1`, so an `http://[::1]` entry now carries it.
 
+### Fixed
+
+- **The engine check reads a changelog `Consumers must:` line with a CRLF ending as its LF twin.** A `nothing.\r\n` body no longer reads as an action.
+
 ### Dependencies
 
 - **Every Go minor and patch moves.** `go.yaml.in/yaml/v3` is `v3.0.5`; the indirect modules

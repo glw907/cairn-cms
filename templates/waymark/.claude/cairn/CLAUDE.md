@@ -32,7 +32,7 @@ declaration in `node_modules/@glw907/cairn-cms/dist/`, and the installed skills 
 A scaffolded site's `package.json` carries `check:cairn` (the design-language audit against the
 static admin markup). Run `npx cairn-guidance check` to see whether your repo still has these wired
 up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date; `--strict` exits
-1 when the tree is stale.
+1 on any `FIX` line.
 
 ## The DaisyUI-first rule
 

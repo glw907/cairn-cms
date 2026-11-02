@@ -120,22 +120,23 @@ describe('summary fields', () => {
   ];
   const index = createContentIndex(files, withSummary);
 
-  it('copies the named frontmatter keys onto summary.fields', () => {
+  it('copies the named frontmatter keys onto summary.summaryFields', () => {
     const a = index.all().find((e) => e.id === '2026-01-01-a')!;
-    expect(a.fields.description).toBe('An authored summary.');
-    expect(a.fields.image).toBe('/og/a.png');
+    expect(a.summaryFields.description).toBe('An authored summary.');
+    expect(a.summaryFields.image).toBe('/og/a.png');
+    expect(a).not.toHaveProperty('fields');
   });
 
   it('omits a named key the entry does not carry', () => {
     const b = index.all().find((e) => e.id === '2026-02-01-b')!;
-    expect(b.fields.description).toBe('Only a description.');
-    expect('image' in b.fields).toBe(false);
+    expect(b.summaryFields.description).toBe('Only a description.');
+    expect('image' in b.summaryFields).toBe(false);
   });
 
-  it('yields an empty fields object when summaryFields is unset', () => {
+  it('yields an empty summaryFields object when summaryFields is unset', () => {
     const [plain] = normalizeConcepts({ pages: { dir: 'g', fields: { title: fields.text({ label: 'Title' }) } } });
     const plainIndex = createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout.' }], plain);
-    expect(plainIndex.all()[0].fields).toEqual({});
+    expect(plainIndex.all()[0].summaryFields).toEqual({});
   });
 });
 

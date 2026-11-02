@@ -9,6 +9,12 @@
   ],
   "reexports": [
     {
+      "name": "EntryRef",
+      "subpath": "/sveltekit",
+      "home": "/delivery/data",
+      "reason": "R4 closure: `EditData`, `ContentFormFailure` name it on this subpath."
+    },
+    {
       "name": "IslandRegistry",
       "subpath": ".",
       "home": "/islands",

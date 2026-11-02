@@ -14,7 +14,7 @@ import { asString, entryIdentity } from '../content/identity.js';
 import { heldAddress, type AdvisoryNotice } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId } from '../content/ids.js';
 import { pendingBranch } from '../content/pending.js';
-import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type EntryRef } from '../content/manifest.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
@@ -105,7 +105,7 @@ export interface EditData {
    */
   mediaLibrary: MediaLibrary;
   /** The entries that link to this one, for the delete guard. Empty when nothing links here. */
-  inboundLinks: InboundLink[];
+  inboundLinks: EntryRef[];
   /** True when the entry has a pending branch, so the body above came from that branch. */
   pending: boolean;
   /** True when the entry file exists on the default branch (the live site shows it). */
@@ -339,7 +339,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
     // A fragment's edit screen shows where it is used through the same inbound surface
     // every other concept rides for the delete guard, so no new panel is needed: for the fragments
     // concept the "linkers" are the entries that include it, not link to it.
-    let inbound: InboundLink[] = [];
+    let inbound: EntryRef[] = [];
     if (manifest !== null) {
       // A non-routable concept's entries (the Fragments concept) are excluded from linkTargets:
       // their permalink 404s, so the link picker and the preview's resolveLink must never offer

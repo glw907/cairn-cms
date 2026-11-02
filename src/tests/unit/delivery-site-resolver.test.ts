@@ -86,11 +86,12 @@ describe('buildSiteResolver', () => {
       concept: 'pages',
       title: 'Jane Doe',
       permalink: '/jane-doe',
-      summary: 'Author page.',
+      excerpt: 'Author page.',
     });
     expect(resolved.related).toEqual([
-      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', summary: 'A post body.' },
+      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', excerpt: 'A post body.' },
     ]);
+    expect(resolved.author).not.toHaveProperty('summary');
   });
 
   it('drops an unresolved reference id, leaving the array in target order', () => {
@@ -127,7 +128,7 @@ describe('buildSiteResolver', () => {
 
     expect(resolved.author).toBeUndefined();
     expect(resolved.related).toEqual([
-      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', summary: 'A post body.' },
+      { id: 'a-post', concept: 'posts', title: 'A Post', permalink: '/a-post', excerpt: 'A post body.' },
     ]);
   });
 

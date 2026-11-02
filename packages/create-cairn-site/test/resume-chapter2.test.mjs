@@ -317,6 +317,10 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
     `expected the shared App link, got: ${result.stdout}`,
   );
   assert.ok(
+    result.stdout.includes('https://github.com/settings/installations'),
+    `expected the line pointing at the App's installation settings, got: ${result.stdout}`,
+  );
+  assert.ok(
     result.stdout.includes('Run `cairn doctor` any time to check what is set up and what is still missing.'),
     `expected the shared doctor reminder, got: ${result.stdout}`,
   );

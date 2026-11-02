@@ -41,8 +41,13 @@ describe('CairnTidySettings: the saved status region', () => {
     const screen = await render(CairnTidySettings, {
       data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing', saved: true }),
     });
-    const status = screen.container.querySelector('[role="status"]');
-    expect(status?.textContent).toContain("Tidy settings saved. They apply after your site's next deploy.");
+    const saved = "Tidy settings saved. They apply after your site's next deploy.";
+    // The visible alert renders in the document; the region is filled after mount, a real mutation
+    // an assistive technology can voice (an alert present at parse is not announced).
+    expect(screen.container.querySelector('.alert-success')?.textContent).toContain(saved);
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain(saved);
+    expect(status.closest('.alert')).toBeNull();
   });
 });
 

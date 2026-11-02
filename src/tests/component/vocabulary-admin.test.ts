@@ -28,6 +28,23 @@ function postedVocabulary(container: Element): { value: string; label: string }[
   return JSON.parse(field.value);
 }
 
+describe('VocabularyAdmin: the saved confirmation', () => {
+  it('shows the alert and announces Tags saved. through a status region filled after mount', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: true }) });
+    expect(screen.container.querySelector('.alert-success')?.textContent).toContain('Tags saved.');
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain('Tags saved.');
+  });
+
+  it('keeps the region mounted and empty when nothing was saved', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: false }) });
+    expect(screen.container.querySelector('.alert-success')).toBeNull();
+    const status = screen.container.querySelector('[role="status"]');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toBe('');
+  });
+});
+
 describe('VocabularyAdmin', () => {
   it('renders its header through the admin toolkit, meta line carrying the lede', async () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through

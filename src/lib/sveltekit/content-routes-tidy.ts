@@ -32,10 +32,11 @@ export interface TidyResult {
  * key is missing, the optional `@anthropic-ai/sdk` peer is not installed, Anthropic rejects the key
  * outright (401/403, a non-retryable auth failure, distinct from the retryable model errors below),
  * or Anthropic rejects the request itself (400 `invalid_request_error`, typically an unsupported
- * `tidy.model` setting, also non-retryable), `fail(413)` for an over-long body or a reply that hit the output cap, `fail(502)` for a
- * deadline overrun, an abort, or a model error (rate limit, overload, 5xx, network; all retryable),
- * `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just the one-line summary; the
- * action commits nothing, so a refusal can never corrupt the entry.
+ * `tidy.model` setting, also non-retryable), `fail(413)` for an over-long body or a reply that hit
+ * the output cap, `fail(502)` for a deadline overrun, an abort, or a model error (rate limit,
+ * overload, 5xx, network; all retryable), `fail(422)` for a model refusal, `fail(400)` for a
+ * malformed body. Just the one-line summary; the action commits nothing, so a refusal can never
+ * corrupt the entry.
  */
 export interface TidyFailure {
   error: string;

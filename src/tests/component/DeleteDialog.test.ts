@@ -135,6 +135,28 @@ describe('DeleteDialog', () => {
     expect(text).not.toContain('postss');
   });
 
+  it('names the entry when given a title and omits the naming without one', async () => {
+    const named = await render(DeleteDialog, {
+      conceptId: 'posts', id: 'x', singular: 'Post', inboundLinks: [], pending: true, entryTitle: 'Snow report',
+    });
+    await named.getByRole('button', { name: /^delete$/i }).click();
+    const desc = named.container.querySelector('#cairn-delete-dialog-desc')!;
+    expect(desc.textContent).toBe('“Snow report” will be deleted. This cannot be undone. Unpublished edits to this entry are discarded too.');
+    const dialog = named.container.querySelector('dialog')!;
+    expect(dialog.getAttribute('aria-describedby')).toBe('cairn-delete-dialog-desc');
+
+    const plain = await open({ conceptId: 'posts', id: 'x', singular: 'Post', inboundLinks: [] });
+    expect(plain.container.querySelector('#cairn-delete-dialog-desc')?.textContent).toBe('This cannot be undone.');
+  });
+
+  it('describes the blocked view by its blocker sentence', async () => {
+    const screen = await open({
+      conceptId: 'pages', id: 'home', singular: 'Page',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+    });
+    expect(screen.container.querySelector('#cairn-delete-dialog-desc')?.textContent).toContain('1 entry links here');
+  });
+
   it('pluralizes the inclusion copy for more than one includer', async () => {
     const screen = await open({
       conceptId: 'fragments', id: 'welcome', singular: 'Fragment',

@@ -91,7 +91,7 @@
   `ConceptConfig.dir` is never validated, though every path the engine builds is the verbatim `${dir}/${id}.md`, so a leading or trailing slash, or entries in subfolders, fails at runtime away from the declaration rather than at `defineConcept`, which already validates the URL policy at module load. Fix: normalize or reject `dir` in `validateUrlPolicy`'s neighborhood at declaration (`src/lib/content/concepts.ts#normalizeConcepts`, `src/lib/content/cross-branch-index.ts#buildCrossBranchIndex.perBranch`; found while writing the content-model page, 2026-10-12).
   Sweep 2026-10-31: A three-line declaration throw fits `defineConcept`. Subfolders stay out, since a concept's shape is flat. `src/lib/content/concepts.ts:67-75`, `:190-206`.
   Placement: Final engine batch, content rules. Friction entry 14 (`extender`), boundary test class1 batched (budget, next in line), page content-model.
-- [ ] **#133** Fail the build on a cairn: href that survives render `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
+- [ ] **#133** Fail the build on a cairn: href that survives render `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   A `cairn:` token is live only as an inline markdown link in a body; in a raw HTML anchor or a reference-style link definition it survives as an inert literal `cairn:` href, and in a component attribute or frontmatter it is never rewritten, with no warning and no build failure in any of those places. An author who writes `[text][ref]` or `<a href="cairn:...">` ships a dead link the build gate was supposed to catch. Fix candidates: warn or fail the build on a `cairn:` href that survives rendering unresolved, or resolve reference-style definitions the same as inline links (`src/lib/render/resolve-links.ts#remarkResolveCairnLinks`, `src/lib/content/links.ts:52-64`; found while writing the link-content-with-references page, 2026-10-12).
   Sweep 2026-10-31: A dead public link passes every gate, and the delete guard and rename repoint miss these forms too. One post-render check covers all of them. `src/lib/render/resolve-links.ts:23`, `src/lib/content/links.ts:57`, `sanitize-schema.ts:56-58`.
   Placement: Final engine batch, content rules. Friction entry 51 (`extender`), boundary test class1 batched, page content-model.
@@ -151,7 +151,7 @@
   Placement: Final engine batch, content rules slice.
 - [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   The prior-read `catch` in `saveToBranch` (`content-routes-entry-write.ts:172`) answers 503 with no log record, so a persistent read failure is invisible; the event vocabulary needs a row with it. A fragment rename answers an unverifiable include read with 409 (`content-routes-entry-destructive.ts:197`) while delete answers 503. Fragment delete and rename also build two strict cross-branch indexes in a row, and one save now calls `branchHead` twice (`:169`, `:316`): one pass would halve the subrequests. Found by the close review.
-  Placement: Final engine batch, small API slice.
+  Placement: Pass 8.
 - [ ] **#201** Give `DEFAULT_MEDIA_BASE` one home `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `render/resolve-media.ts` imports `DEFAULT_MEDIA_BASE` from `../admin/media-base-context.js`, the first render-to-admin import, while `publicPath` in `media/naming.ts` defaults its base to `'/media'` separately. Move the constant under `media/` and import it from both layers. The file stays once `publicBase` leaves: `ReproContext.svelte` still sets the context key to `/repro-assets`. Found by the close review.
   Placement: Final engine batch, small API slice.
@@ -163,7 +163,7 @@
 - [ ] **#244** Trace a worktree cross-read in `sveltekit-mount-contract-reshape.test.ts` `#bug` `#cairn-cms` *(2026-11-01)*
   In one fast lane the test failed to load `dist/sveltekit/index.d.ts` from another worktree's path (`agent-a44abf19e72fe71b6`), then passed alone and on a full rerun. The cause is not traced; a shared cache across worktrees is the first thing to check. Found by pass 1a.
   Placement: Cleanup round.
-- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
   Placement: Cleanup round.
 - [ ] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -172,13 +172,13 @@
 - [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
   Placement: Cleanup round.
-- [ ] **#230** Replace the `EntryData` union with a type the renderer and the routes narrow `#improvement` `#cairn-cms` *(2026-11-01)*
-  `EntryData` stays a wide union the public routes cast around, which the wiring-core slice set aside. Found by the wiring-core pass (T7).
-  Placement: Pass 8.
+- [ ] **#230** Make `EntryData` a union discriminated on `concept` `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+  `EntryData` (`src/lib/delivery/public-routes.ts:64`) is an interface with `concept: string` and an untyped `entry: ContentEntry`, so typed frontmatter stops at the route and `ArticleView.svelte:75` casts around it. Type it from the site resolver, so narrowing on `concept` types `data.entry.frontmatter`. The wiring-core slice set it aside (T7).
+  Placement: Pass 3 (small API).
 - [ ] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)*
   Since `createSiteResolver`, no export on `/delivery/data` names `SiteConfig`, and none of the four sites imports it from that subpath, so the reason `scripts/checks/check-surface-reexports.json` gives for keeping it is unproved. `VocabularyEntry`, `TidyConfig`, and `TidyConventions` then have no other reason to sit there. Drop them from the subpath or record the reader that needs each. Found by the wiring-core pass (T7).
   Placement: Pass 3 (small API).
-- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#233** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -256,7 +256,7 @@
   Placement: The one release.
 
 - [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `scripts/checks/check-self-use-allowlist.json:86` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it (`examples/showcase/src/routes/sitemap.xml/+server.ts:17`), so the entry is removable. `findViolations` never flags a stale entry, so nothing forces the cleanup. The path is on the `runner` map, so the scaffold template pass left it.
+  `scripts/checks/check-self-use-allowlist.json:75` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it (`examples/showcase/src/routes/sitemap.xml/+server.ts:15`), so the entry is removable. `findViolations` never flags a stale entry, so nothing forces the cleanup. The path is on the `runner` map, so the scaffold template pass left it.
   Placement: Final engine batch.
 
 - [ ] **#196** Close the practices review's open findings on the packaged guidance `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*

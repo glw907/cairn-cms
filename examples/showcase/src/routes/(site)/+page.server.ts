@@ -28,5 +28,11 @@ export const load: PageServerLoad = () => {
     type: 'website',
     feeds: publicRoutesConfig.feeds,
   });
-  return { featured, archive, vocabulary: readVocabulary(siteConfig), seo };
+  return {
+    featured,
+    archive,
+    vocabulary: readVocabulary(siteConfig),
+    seo,
+    description: publicRoutesConfig.description,
+  };
 };

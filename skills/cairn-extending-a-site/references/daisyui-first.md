@@ -1,8 +1,8 @@
-# DaisyUI first
+# daisyUI first
 
-Cairn's admin skeleton is built in DaisyUI, and the default stance is to reach for a stock
-DaisyUI component before building one. Every place the engine's admin diverges from stock
-DaisyUI is a deliberate, documented exception, never inertia; this page states the current one
+Cairn's admin skeleton is built in daisyUI, and the default stance is to reach for a stock
+daisyUI component before building one. Every place the engine's admin diverges from stock
+daisyUI is a deliberate, documented exception, never inertia; this page states the current one
 for each, with the ruling that is the why. A home-grown component in a site's admin that
 this page cannot explain is a finding, not something to copy.
 
@@ -34,7 +34,7 @@ Put a custom admin component under `src/routes/admin` or `src/lib/admin`. Those 
 
 Native `title` no longer carries the engine's tooltip content on an action control:
 `Tooltip` in `/admin-toolkit` does, wrapping the trigger unchanged and adding the three
-behaviors DaisyUI's CSS-only `.tooltip` cannot supply, dismissible on Escape, hoverable (a
+behaviors daisyUI's CSS-only `.tooltip` cannot supply, dismissible on Escape, hoverable (a
 pointer can travel from the trigger into the bubble without losing it), and persistent (nothing
 hides it on a timer). Ruling: `tooltip-primitive`. `StatusChip` is the one exception left: its
 native `title` carries the register's legend beside an already-present `sr-only` copy, so it
@@ -42,7 +42,7 @@ stays. Ruling: `status-chip-title-legend`.
 
 ## Guarded buttons (`cairn-btn-guarded`)
 
-DaisyUI adds `pointer-events: none` to `.btn[aria-disabled="true"]`, which kills a tooltip on a
+daisyUI adds `pointer-events: none` to `.btn[aria-disabled="true"]`, which kills a tooltip on a
 control that must stay perceivable but refused (Publish with nothing to publish, a disabled
 Figure button). `cairn-btn-guarded` restores `pointer-events` and supplies the ghost button's
 resting fill. The class stays compiled and stays on every existing call site. Ruling:
@@ -50,13 +50,13 @@ resting fill. The class stays compiled and stays on every existing call site. Ru
 
 ## Toast
 
-DaisyUI's toast mounts and unmounts a fixed-position stack per message, which risks a screen
+daisyUI's toast mounts and unmounts a fixed-position stack per message, which risks a screen
 reader missing the announcement on unmount. Cairn keeps status regions always mounted and swaps
 their text in place instead. Ruling: `polish-busy-idiom`.
 
 ## Popover menus
 
-DaisyUI's `.dropdown` is focus-driven: it opens on focus passing through the trigger and ignores
+daisyUI's `.dropdown` is focus-driven: it opens on focus passing through the trigger and ignores
 Escape. Cairn's menus are built on the Popover API instead (`popovertarget`/`anchor-name`),
 reusing `dropdown menu` classes for styling only, never for the interaction. No ruling slug names
 the base decision on its own. Its motion
@@ -65,7 +65,7 @@ treatment specifically, `display` and `overlay` passing the motion allowlist und
 
 ## `StatusChip` versus raw badge classes
 
-Stock DaisyUI badges (`badge-error`, `badge-success`, `badge-soft`, `badge-outline`,
+Stock daisyUI badges (`badge-error`, `badge-success`, `badge-soft`, `badge-outline`,
 `badge-dash`) are safelisted and fine for a plain surface. `StatusChip` exists for the chip
 register grammar specifically, because a raw `badge-outline`/`badge-ghost` compiles to a
 background and border color that can match one of `AdminTable`'s zebra-stripe colors and
@@ -86,7 +86,7 @@ glyph, where the control shows one, is the screen's job. The
 ## Open opportunity, not yet built
 
 Cairn's documented nav-group recipe is a raw `<details>` element with a custom rotate-on-open
-chevron, functionally identical to DaisyUI's `collapse`/`collapse-arrow` (also
-`<details>`-backed). This is the one real "should already be DaisyUI" gap found so far: cosmetic
+chevron, functionally identical to daisyUI's `collapse`/`collapse-arrow` (also
+`<details>`-backed). This is the one real "should already be daisyUI" gap this page records: cosmetic
 value only, not yet adopted, and worth checking before adding a second hand-rolled collapsible
 group rather than reaching for the stock class.

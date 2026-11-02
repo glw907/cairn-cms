@@ -10,6 +10,7 @@ Contents:
 - [Render entries](#render-entries)
 - [Dev backend admin](#dev-backend-admin)
 - [Production](#production)
+- [Agent tooling](#agent-tooling)
 - [Report what is left](#report-what-is-left)
 
 ## Engine wiring
@@ -120,6 +121,44 @@ missing** (`config.bindings-missing`).
 
 Sign-in email: the site name and sender come from the runtime; a custom `auth.send`
 (`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown message.
+
+## Agent tooling
+
+A one-time setup on the developer's machine, beyond what the engine needs to run.
+
+**The Stop hook.** Add this to `.claude/settings.json` to run the audit whenever an agent session
+stops working on the site, so a drifted admin screen surfaces before the commit:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{let a=false;try{a=JSON.parse(d).stop_hook_active===true}catch{}if(a)process.exit(0);const r=require('child_process').spawnSync('npm',['run','check:cairn','--if-present'],{encoding:'utf8'});if(r.status===0)process.exit(0);process.stderr.write((r.stdout||'')+(r.stderr||'')+(r.error||''));process.exit(2)})\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+It runs on `Stop`, not `PostToolUse`: the audit earns a full run once a session settles on a
+result, not after every tool call. A failing audit exits 2 with its output on stderr, and Claude
+Code hands that to the agent as the reason to keep working. Exit 1 would be a non-blocking error
+the agent never sees. The `stop_hook_active` guard ends the loop on the continuation turn, so a
+finding the agent cannot fix does not block forever. The command reads its payload with `node`,
+which means it needs no `jq`.
+
+**daisyUI tooling.** Install the published daisyUI skill
+(`npx skills add saadeghi/daisyui --agent claude-code`) for the component reference. A free
+documentation MCP server is available at `https://gitmcp.io/saadeghi/daisyui`. Blueprint is the
+paid option, a rules enforcer and quality inspector for daisyUI markup:
+https://daisyui.com/blueprint/.
 
 ## Report what is left
 

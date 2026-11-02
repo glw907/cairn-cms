@@ -1,7 +1,7 @@
 # Checking a theme
 
 Contents: the command, what each rule requires, the scope, the import chain, config keys, what
-theme-contrast leaves unmeasured, resolving a finding, the rendered check.
+theme-contrast leaves unmeasured, resolving a finding.
 
 Run from the site's root before calling a theme finished:
 

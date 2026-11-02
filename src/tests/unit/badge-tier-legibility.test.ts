@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
-import { composite, contrastRatio, type Rgba } from '../../lib/audit/color.js';
-import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';
+import { composite, contrastRatio, resolveColors, type Rgba, type RenderedPage } from './_canvas-color.js';
 
 // CONTRACT (audit-admin-statuschip's badge-tier ruling, closing the ledger entry the
 // toolkit-seams pass left open): every admin-css-safelist badge entry gets a rendered legibility

@@ -105,9 +105,9 @@ describe('extractCairnLines', () => {
     expect(extractCairnLines(segments)).toEqual([]);
   });
 
-  it('does not read `npx cairn-audit --rendered` or `npm run cairn:manifest` as cairn lines', () => {
+  it('does not read `npx cairn-audit --rule list-role` or `npm run cairn:manifest` as cairn lines', () => {
     const segments = codeVoiceSegments(
-      ['```bash', 'npx cairn-audit --rendered', 'npm run cairn:manifest', '```'].join('\n'),
+      ['```bash', 'npx cairn-audit --rule list-role', 'npm run cairn:manifest', '```'].join('\n'),
     );
     expect(extractCairnLines(segments)).toEqual([]);
   });

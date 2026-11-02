@@ -18,7 +18,6 @@ export const ALLOWLIST = new Set([
   'cli-flag:--include-runtime', // wrangler types' flag, the same recorded command
   'cli-flag:--port', // wrangler dev's flag, shown after `npm run preview --`
   'cli-flag:--var', // wrangler dev's flag, shown after `npm run preview --`
-  'cli-flag:--rendered', // cairn-audit's flag, not create-cairn-site's
   'cli-flag:--rule', // cairn-audit's flag, not create-cairn-site's
   'cli-flag:--fail-on', // cairn-audit's flag, not create-cairn-site's
   'cli-flag:--from', // cairn-media-seed's flag, not create-cairn-site's
@@ -36,6 +35,7 @@ export const ALLOWLIST = new Set([
   // SCREAMING_SNAKE_CASE tokens that are not environment variables cairn reads, so the source
   // tree never carries the literal string.
   'env-var:ERR_UNSUPPORTED_ESM_URL_SCHEME', // MIGRATION-NOTES.md, Node's error code for `vite preview` serving adapter 8 output (sveltejs/kit#17271), never a cairn variable
+  'env-var:CAIRN_AUDIT_COOKIES', // MIGRATION-NOTES.md history; the reader was removed in 1b; R1's reset drops this line
 
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the

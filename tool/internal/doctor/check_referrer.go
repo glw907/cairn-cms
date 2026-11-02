@@ -169,10 +169,9 @@ func describeNoReferrerSources(hooksPath string, hooksFound, headersFileRead boo
 // configNoReferrerBlanket checks for the blanket no-referrer trap. Under a site-wide
 // Referrer-Policy: no-referrer, the Fetch spec strips the Origin header from a plain same-origin
 // top-level POST, so it arrives as Origin: null and SvelteKit's origin check refuses it, 403ing the
-// site's forms. cairn's admin documents pin their
-// referrer policy with a header and a meta tag, so the admin keeps working unless a site meta
-// placed after %sveltekit.head% overrides it; the trap is a site shipping the same policy as its
-// site-wide default.
+// site's forms. cairn's admin documents pin their referrer policy with a header and a meta tag, so
+// the admin keeps working unless a site meta placed after %sveltekit.head% overrides it; the trap
+// is a site shipping the same policy as its site-wide default.
 var configNoReferrerBlanket = Check{
 	ID:        "config.no-referrer-blanket",
 	PassTitle: "No site-wide Referrer-Policy: no-referrer",

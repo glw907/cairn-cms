@@ -121,6 +121,24 @@ describe('guard (scenario 6)', () => {
   });
 });
 
+describe('locals.cairnEditor on a public admin path', () => {
+  // A public path resolves no session, so a value here can only come from a handle sequenced before
+  // the guard, and no downstream reader may treat it as a resolved editor.
+  it.each(['/admin/login', '/admin/auth/confirm'])('clears a handle-set value on %s', async (pathname) => {
+    const ev = event(pathname);
+    ev.locals.cairnEditor = { email: 'forged@x.dev', displayName: 'F', role: 'owner', capability: 'owner' };
+    let seen: unknown = 'resolve never ran';
+    await handle({
+      event: ev,
+      resolve: async (e) => {
+        seen = e.locals.cairnEditor;
+        return OK;
+      },
+    });
+    expect(seen).toBeUndefined();
+  });
+});
+
 describe('capability resolution (a site-declared vocabulary)', () => {
   const ROLES = defineRoles({
     owner: 'owner',

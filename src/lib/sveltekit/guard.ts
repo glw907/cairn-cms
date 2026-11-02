@@ -247,8 +247,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
     // Worker serves through this handle, so the read waits for a real request.
     // This refusal is flag-set-alone, with no locality check, since the guard mounts only in a
     // production build (the dev branch replaces it entirely rather than running alongside it), so
-    // there is no legitimate live-flag case for this handler to admit
-    // (docs/internal/engine-rulings.md, `dev-backend-flag-refusal`).
+    // there is no legitimate live-flag case for this handler to admit.
     if (!(await isBuilding()) && isDevBackendFlagSet(env[CAIRN_DEV_BACKEND_FLAG])) {
       log.error('guard.refused', { reason: 'dev_backend_in_prod', path: pathname });
       return new Response(CAIRN_DEV_BACKEND_MESSAGE, { status: 503 });
@@ -416,6 +415,10 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       // locals.cairnAccess then only ever means a route outside every hook's coverage, since the
       // guard and the dev backend's handle both attach a map on every admin path they cover.
       event.locals.cairnAccess = access ?? {};
+    } else {
+      // A public admin path resolves no session, so a value here came from a handle sequenced before
+      // the guard. Nothing on these paths reads it, and clearing it keeps it from reading as resolved.
+      delete event.locals.cairnEditor;
     }
     const response = await resolve(event);
     applySecurityHeaders(response.headers, { includeSubDomains });

@@ -133,6 +133,7 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * replacement character, so two distinct strings that differ only in a lone surrogate encode to
  * the same bytes and compare equal; harmless for the CSPRNG tokens and hex hashes this function
  * is for, which is exactly why this precondition is stated rather than guarded against.
+ * @returns True when the two values are equal, false otherwise.
  * @public
  */
 export function compareTokens(a: string, b: string): boolean {

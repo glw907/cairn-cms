@@ -21,7 +21,7 @@ const FORM_CONTENT_TYPES = new Set([
 // this module and importing back would be circular; the shared module is a leaf that imports
 // nothing, so the cycle no longer exists.
 //
-// What this call site decides, which is not what the dev-backend tripwire's call decides:
+// What this call site decides, which is not what the guard's https help-page call decides:
 // under csrfSecure's monotonic rule the hostname is consulted only for a NON-https request, where
 // it chooses between the bare dev cookie and the PUBLIC_ORIGIN branch. On an https request the
 // hostname is never consulted at all, so it cannot weaken a cookie the browser is already

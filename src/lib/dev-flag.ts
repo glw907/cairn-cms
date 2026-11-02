@@ -1,14 +1,14 @@
-// cairn-cms: the CAIRN_DEV_BACKEND flag, its truthiness rule, and the local-host predicate its
-// refusal and the CSRF cookie decision read. Two sites read this module rather than hand-writing
-// a second copy: `sveltekit/guard.ts` (the admin guard, which mounts only in a production build
-// and refuses on the flag alone) and `sveltekit/csrf.ts` (which reads only the local-host
-// predicate). The refusal rule is in docs/internal/engine-rulings.md, `dev-backend-flag-refusal`.
+// cairn-cms: the CAIRN_DEV_BACKEND flag, its truthiness rule, and the local-host predicate the
+// https help page and the CSRF cookie decision read. Two sites read this module rather than
+// hand-writing a second copy: `sveltekit/guard.ts` (the admin guard, which mounts only in a
+// production build and refuses on the flag alone) and `sveltekit/csrf.ts` (which reads only the
+// local-host predicate).
 //
 // It sits at the lib root and imports nothing, so any module can read it without risking an
 // import cycle.
 export const CAIRN_DEV_BACKEND_FLAG = 'CAIRN_DEV_BACKEND';
 
-/** The shared refusal message every dev-backend-leak site throws or returns. */
+/** The refusal message the guard returns; the dev package's handle keeps a copy of it. */
 export const CAIRN_DEV_BACKEND_MESSAGE =
   'cairn: the dev backend flag is set in a deployed environment. Unset CAIRN_DEV_BACKEND.';
 

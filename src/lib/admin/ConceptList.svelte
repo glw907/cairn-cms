@@ -15,6 +15,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import { tick } from 'svelte';
+  import { enhance } from '$app/forms';
+  import { FAILURE_NOTICE, focusOnMount, refusalSubmit } from './refusal.js';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import {
@@ -215,8 +217,31 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
   // --- create form state, shown in a header-triggered dialog ---
   let createDialog = $state<HTMLDialogElement>();
-  // Pending from submit until the create navigation lands, so the button shows a calm working state.
+  // Pending from submit until the result lands, so the button shows a calm working state. A create
+  // that goes through navigates away, so the flag clears only on a refusal.
   let creating = $state(false);
+  // Whether the last result belongs to the create form. `ContentFormFailure` has no discriminator,
+  // so the create form's own callback sets this, and closing the dialog clears it.
+  let createRefused = $state(false);
+  // The notice for a create request that failed outright. A fresh object per failure keys the
+  // dialog's alert, so a repeat failure takes focus again.
+  let createNotice = $state<{ text: string } | null>(null);
+  // The `form` a closed dialog was showing, so the page banner does not take its refusal over.
+  let closedCreateForm = $state<ContentFormFailure | null>(null);
+  const submitCreate = refusalSubmit({
+    isPending: () => creating,
+    setPending: (pending) => (creating = pending),
+    onResult: (result) => {
+      createRefused = true;
+      createNotice = result.type === 'error' ? { text: FAILURE_NOTICE } : null;
+    },
+  });
+  const createError = $derived(createNotice?.text ?? form?.error ?? '');
+  function onCreateClose() {
+    if (createRefused) closedCreateForm = form;
+    createRefused = false;
+    createNotice = null;
+  }
   let title = $state('');
   let slug = $state('');
   let slugEdited = $state(false);
@@ -266,48 +291,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
   // The visible banner for the last submit: a blocked create's fail() leads, then the publish-all
   // survivor's relayed formError. Null while a delete refusal owns the screen, which renders its
-  // blockers panel below instead.
-  const submitError = $derived(deleteRefused ? null : (form?.error ?? data.formError));
-
-  // The one lifecycle error to announce (the visible alerts below keep their styling). A blocked
-  // delete leads, then a blocked create's fail() (form?.error), then the publish-all survivor's
-  // relayed formError, then a load error, since the refusal is the most recent and most actionable
-  // outcome of the last submit. The refusal announcement carries the blocker count, so a screen
-  // reader hears the magnitude (matching the visible banner) before navigating to the list.
-  const lifecycleError = $derived.by(() => {
-    if (!deleteRefused) return form?.error ?? data.formError ?? data.error ?? '';
-    const count = deleteRefused.inboundLinks.length;
-    const blocker =
-      deleteRefused.inboundKind === 'include'
-        ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
-        : `${count} ${count === 1 ? 'entry links' : 'entries link'} to it.`;
-    return `This ${refusedNoun} could not be deleted. ${blocker}`;
-  });
-
-  // The polite live region's text re-announces only when it changes, so a repeated identical error
-  // (a second submit failing the same way) would go silent. An invisible nonce flips on every fresh
-  // error so the region text always mutates and the screen reader speaks again. Seven admin screens
-  // (this one, CairnTidySettings, ManageEditors, NavTree, VocabularyAdmin, TidyReview, EditPage) each
-  // hand-roll this same few-line nonce idiom rather than share it; no accessibility helper module
-  // exists yet to hold it. The nonce is a zero-width space, never voiced, so the heard sentence is
-  // unchanged.
-  let announceNonce = $state(0);
-  function nonce(): string {
-    return announceNonce % 2 === 0 ? '' : '​';
-  }
-  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per submit,
-  // keying the re-announce to the submit rather than to a string change the live region would swallow.
-  // The guard reads a plain non-reactive `lastSubmit`, so the bump fires only when the submit identity
-  // changes, never on the re-render the bump itself causes; that is what keeps the effect from looping.
-  let lastSubmit: unknown;
-  $effect(() => {
-    const submit = form ?? data;
-    if (submit !== lastSubmit) {
-      lastSubmit = submit;
-      if (lifecycleError) announceNonce++;
-    }
-  });
-  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
+  // blockers panel below instead, and while a create refusal shows inside the dialog.
+  const submitError = $derived(
+    deleteRefused || createRefused
+      ? null
+      : ((form && form !== closedCreateForm ? form.error : undefined) ?? data.formError),
+  );
 </script>
 
 <!-- The office natural-measure rule (design arc 2026-07-15): a document list composes at 3xl
@@ -326,10 +315,6 @@ Filtering, sorting, and paging run over the loaded entries in component state.
      {#if}-gated role element inserted fresh is announced inconsistently, so the visible alert
      below keeps its styling without a role and the message is announced once. -->
 <div class="sr-only" aria-live="polite">{publishedAllMessage}</div>
-<!-- One persistent polite region announces the lifecycle errors, re-announcing a repeat through the
-     nonce. The visible alerts below keep their styling and drop the live `role` (a fresh-inserted
-     role element announces inconsistently and clobbers a repeat), so the message is announced once. -->
-<div class="sr-only" aria-live="polite">{liveError}</div>
 {#if publishedAllMessage}
   <div class="alert alert-success mb-4 type-body">{publishedAllMessage}</div>
 {/if}
@@ -342,8 +327,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
-       so the author sees why without re-opening a dialog. The polite region above announces it, so
-       the box itself carries no role or label (a bare div with an aria-label gets no accessible name).
+       so the author sees why without re-opening a dialog. The box carries no role or label (a bare
+       div with an aria-label gets no accessible name).
        `flex-col` was inert: daisyUI's `.alert` is `display: grid`, laying its three children out as
        grid columns (an icon-plus-message alert's intended shape). Below `sm`, `grid-flow-row`
        plus a single-column template stack the title, the body paragraph, and the link list instead
@@ -516,14 +501,21 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 {/if}
 </div>
 
-<dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
+<dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog} onclose={onCreateClose}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-create-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">New {createNoun}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
-    <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">
+    <form method="POST" action="?/create" use:enhance={submitCreate} class="flex flex-col gap-3">
       <CsrfField />
+      <!-- A refused create answers in place, so the dialog stays open and the refusal takes focus on
+           mount; the key remounts it for each fresh result. -->
+      {#key createNotice ?? form}
+        {#if createRefused && createError}
+          <div class="alert alert-error type-body" tabindex="-1" use:focusOnMount>{createError}</div>
+        {/if}
+      {/key}
       <label class="flex flex-col gap-label">
         <span class="type-body font-medium">Title</span>
         <input class="input w-full" name="title" bind:value={title} required />
@@ -546,7 +538,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       {/if}
       <div class="modal-action">
         <button type="button" class="btn btn-sm" onclick={() => createDialog?.close()}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-primary" disabled={creating}>
+        <button type="submit" class="btn btn-sm btn-primary" disabled={creating} aria-busy={creating}>
           {#if creating}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Creating…{:else}Create{/if}
         </button>
       </div>

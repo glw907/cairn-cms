@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page, userEvent } from 'vitest/browser';
 import ConceptList from '../../lib/admin/ConceptList.svelte';
+import { FAILURE_NOTICE } from '../../lib/admin/refusal.js';
+import { enhanceRuns, resetEnhance, settleEnhance } from './_app-forms.js';
 // The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
 // narrow/wide extremes suite below so its bounding-box measurements reflect production control
 // footprints, never the UA-default widths an unstyled render leaves (the EditPage pattern).
@@ -101,19 +103,6 @@ describe('ConceptList', () => {
     expect(alert?.getAttribute('role')).toBeNull();
   });
 
-  it('re-announces a repeated identical lifecycle error in a polite live region', async () => {
-    const screen = await render(ConceptList, { data: data({ formError: 'Save failed.' }) });
-    const region = () => screen.container.querySelectorAll('[aria-live="polite"]')[1];
-    // The polite region carries the error text (the visible alert keeps its styling without a role).
-    expect(region().textContent ?? '').toContain('Save failed.');
-    const first = region().textContent ?? '';
-    // A second submit fails the same way: a fresh data object with the identical error string. A live
-    // region re-announces only when its text mutates, so the region text must change across the repeat.
-    await screen.rerender({ data: data({ formError: 'Save failed.' }) });
-    expect(region().textContent ?? '').toContain('Save failed.');
-    expect(region().textContent).not.toBe(first);
-  });
-
   it('hides the publish-all flash when zero entries were published', async () => {
     // A racing second admin can land first, leaving this redirect with publishedAll=0.
     const screen = await render(ConceptList, { data: data({ publishedAll: 0 }) });
@@ -160,10 +149,72 @@ describe('ConceptList', () => {
 
   it('shows an inline error when listing failed', async () => {
     const screen = await render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
-    // The visible inline alert carries the error, and the polite live region also announces it, so
-    // scope the assertion to the visible alert to avoid matching both.
     const visible = screen.container.querySelector('.alert-warning');
     expect(visible?.textContent ?? '').toContain('Could not load this content type from GitHub.');
+  });
+
+  describe('a refused create', () => {
+    beforeEach(resetEnhance);
+
+    const REFUSAL = 'An entry with that address already exists.';
+    type Screen = Awaited<ReturnType<typeof render>>;
+
+    /** Open the create dialog, fill the title, and submit; returns the dialog and its submit button. */
+    async function submitCreate(screen: Screen) {
+      await screen.getByRole('button', { name: /new posts/i }).first().click();
+      const dialog = screen.container.querySelector<HTMLDialogElement>('dialog')!;
+      await screen.getByLabelText(/title/i).fill('My New Post');
+      const create = dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      create.click();
+      await expect.poll(() => enhanceRuns.length).toBe(1);
+      return { dialog, create };
+    }
+    const bannersOutside = (screen: Screen, dialog: HTMLElement) =>
+      [...screen.container.querySelectorAll('.alert-error')].filter((el) => !dialog.contains(el));
+
+    it('keeps the dialog open with its values, focuses the alert inside it, and leaves the banner out', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+      const { dialog, create } = await submitCreate(screen);
+      expect(create.disabled).toBe(true);
+      expect(create.getAttribute('aria-busy')).toBe('true');
+
+      settleEnhance({ type: 'failure', status: 409, data: { error: REFUSAL } });
+      await screen.rerender({ data: data({ entries: [] }), form: { error: REFUSAL } });
+      const alert = dialog.querySelector<HTMLElement>('.alert-error')!;
+      expect(alert.textContent).toContain(REFUSAL);
+      expect(alert.getAttribute('tabindex')).toBe('-1');
+      await expect.poll(() => document.activeElement).toBe(alert);
+      expect(dialog.open).toBe(true);
+      await expect.element(screen.getByLabelText(/title/i)).toHaveValue('My New Post');
+      await expect.poll(() => create.disabled).toBe(false);
+      expect(bannersOutside(screen, dialog)).toHaveLength(0);
+
+      // Closing hands the refusal nothing: no alert on reopening, and no banner takes it over.
+      dialog.close();
+      await expect.poll(() => dialog.querySelector('.alert-error')).toBeNull();
+      expect(bannersOutside(screen, dialog)).toHaveLength(0);
+      await screen.getByRole('button', { name: /new posts/i }).first().click();
+      expect(dialog.querySelector('.alert-error')).toBeNull();
+    });
+
+    it('shows the failure notice inside the dialog for an error result', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: null });
+      const { dialog, create } = await submitCreate(screen);
+      settleEnhance({ type: 'error', error: new Error('boom') });
+      await expect.poll(() => dialog.querySelector('.alert-error')?.textContent).toContain(FAILURE_NOTICE);
+      await expect.poll(() => document.activeElement).toBe(dialog.querySelector('.alert-error'));
+      expect(create.disabled).toBe(false);
+      expect(bannersOutside(screen, dialog)).toHaveLength(0);
+    });
+
+    it('keeps the banner, with no focus taken, for a refusal that is not a create', async () => {
+      const screen = await render(ConceptList, { data: data({ entries: [] }), form: { error: 'Publish all failed.' } });
+      const dialog = screen.container.querySelector<HTMLDialogElement>('dialog')!;
+      const banner = bannersOutside(screen, dialog)[0];
+      expect(banner.textContent).toContain('Publish all failed.');
+      expect(banner.hasAttribute('tabindex')).toBe(false);
+      expect(document.activeElement).not.toBe(banner);
+    });
   });
 
   it('opens a create dialog from the header New button and auto-derives the address', async () => {
@@ -382,10 +433,9 @@ describe('ConceptList', () => {
     // `singular` set apart from `label` ("Post" vs "Posts") makes a wrong plural-noun render
     // unambiguous: task 3's defect rendered "This posts could not be deleted."
     const screen = await render(ConceptList, { data: data({ singular: 'Post' }), form });
-    // The visible refusal banner names the blocker count and the linking entry. It no longer carries
-    // role="alert" (one polite live region announces the lifecycle errors now), so scope the assertion
-    // to the .alert-error banner element rather than the alert role, which also keeps it off the
-    // entry's own list row.
+    // The visible refusal banner names the blocker count and the linking entry. It carries no
+    // role="alert", so scope the assertion to the .alert-error banner element rather than the alert
+    // role, which also keeps it off the entry's own list row.
     const banner = screen.container.querySelector('.alert-error');
     expect(banner?.textContent ?? '').toContain('This post could not be deleted.');
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');

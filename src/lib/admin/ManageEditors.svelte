@@ -14,10 +14,12 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
 @beta
 -->
 <script lang="ts">
+  import { enhance } from '$app/forms';
   import CsrfField from './CsrfField.svelte';
   import type { Editor } from '../auth/types.js';
   import type { Capability } from '../auth/roles.js';
   import { PageHeader, AdminTable } from '../admin-toolkit/index.js';
+  import { FAILURE_NOTICE, focusOnMount, refusalSubmit, type SettledResult } from './refusal.js';
 
   interface Props {
     /** The editors load's data: the allowlist, the acting owner's email, and the site's declared
@@ -57,33 +59,40 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
     return entry.role === entry.capability ? entry.role : `${entry.role} (${entry.capability})`;
   }
 
-  // The one lifecycle error to announce: a rejected editorAdd/editorRemove/editorSetRole `fail()`.
-  // Every editor-management refusal now answers in place, so this load carries no `?error=` bounce.
-  const lifecycleError = $derived(form?.error ?? '');
+  // Raised from any form's submit until its result lands, so one in-flight request disables every
+  // control on the screen and a second click cannot send a second request.
+  let busy = $state(false);
+  // The notice for a request that failed outright (no refusal came back to show). A fresh object
+  // per failure keys the alert below, so a repeat failure takes focus again.
+  let notice = $state<{ text: string } | null>(null);
+  // A refusal the server sent back, or the notice for a request that failed outright.
+  const lifecycleError = $derived(notice?.text ?? form?.error ?? '');
+  // Every action answers `{ ok: true }` and none redirects, so a success refreshes in place.
+  const updated = $derived(form?.ok && !lifecycleError ? 'The editor list is updated.' : '');
 
-  // The polite live region's text re-announces only when it changes, so a repeated identical error
-  // (a second submit failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again; this is
-  // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
-  // fresh-inserted role element announces inconsistently and would clobber a repeat).
-  let announceNonce = $state(0);
-  function nonce(): string {
-    return announceNonce % 2 === 0 ? '' : '​';
+  function settle(result: SettledResult) {
+    notice = result.type === 'error' ? { text: FAILURE_NOTICE } : null;
   }
-  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
-  // submit or load, keyed to that identity rather than to a string change the live region would
-  // swallow.
-  let lastSubmit: unknown;
-  $effect(() => {
-    const submit = form ?? data;
-    if (submit !== lastSubmit) {
-      lastSubmit = submit;
-      if (lifecycleError) announceNonce++;
-    }
+  const base = {
+    isPending: () => busy,
+    setPending: (pending: boolean) => (busy = pending),
+    onResult: settle,
+    // This screen decides who can sign in, so a refusal rereads the list rather than trusting the
+    // copy on screen, which another owner may have changed.
+    refreshAllOnFailure: true,
+  };
+  const submitAdd = refusalSubmit(base);
+  const submitRemove = refusalSubmit(base);
+  // A refused role change returns a custom vocabulary's select to the row's role. The data does not
+  // change, so the refresh leaves the select where the editor moved it, and Kit resets a form on
+  // success only.
+  const submitRole = refusalSubmit({
+    ...base,
+    onResult: (result, formElement) => {
+      settle(result);
+      if (result.type === 'failure') formElement.reset();
+    },
   });
-  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
 <!-- The office natural-measure rule (design arc 2026-07-15, propagated from ConceptList): this
@@ -91,10 +100,16 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
 <div class="mx-auto w-full max-w-3xl">
 <PageHeader eyebrow="Settings" title="Editors" />
 
-<div class="sr-only" aria-live="polite">{liveError}</div>
-{#if lifecycleError}
-  <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
-{/if}
+<!-- A refusal answers in place, so it takes focus on mount; the key remounts it for each fresh
+     result. -->
+{#key notice ?? form}
+  {#if lifecycleError}
+    <div class="alert alert-error mb-4 type-body" tabindex="-1" use:focusOnMount>{lifecycleError}</div>
+  {/if}
+{/key}
+<div role="status">
+  {#if updated}<p class="mb-4 type-meta text-muted">{updated}</p>{/if}
+</div>
 
 <div class="mb-4 overflow-hidden card-shell card-shadow">
   <AdminTable density="sm" rowCount={data.editors.length}>
@@ -118,16 +133,16 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
           </td>
           <td class="flex justify-end gap-2">
             {#if isDefaultVocabulary}
-              <form method="POST" action="?/editorSetRole">
+              <form method="POST" action="?/editorSetRole" use:enhance={submitRole}>
                 <CsrfField />
                 <input type="hidden" name="email" value={editor.email} />
                 <input type="hidden" name="role" value={editor.role === 'owner' ? 'editor' : 'owner'} />
-                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf} aria-label={`Toggle role for ${editor.displayName}`}>
+                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy} aria-label={`Toggle role for ${editor.displayName}`}>
                   {editor.role === 'owner' ? 'Make editor' : 'Make owner'}
                 </button>
               </form>
             {:else}
-              <form method="POST" action="?/editorSetRole" class="flex items-center gap-1">
+              <form method="POST" action="?/editorSetRole" class="flex items-center gap-1" use:enhance={submitRole}>
                 <CsrfField />
                 <input type="hidden" name="email" value={editor.email} />
                 <select
@@ -140,13 +155,13 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
                     <option value={entry.role} selected={entry.role === editor.role}>{roleOptionLabel(entry)}</option>
                   {/each}
                 </select>
-                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf}>Change</button>
+                <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf || busy} aria-busy={busy}>Change</button>
               </form>
             {/if}
-            <form method="POST" action="?/editorRemove">
+            <form method="POST" action="?/editorRemove" use:enhance={submitRemove}>
               <CsrfField />
               <input type="hidden" name="email" value={editor.email} />
-              <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf} aria-label={`Remove ${editor.displayName}`}>
+              <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf || busy} aria-busy={busy} aria-label={`Remove ${editor.displayName}`}>
                 Remove
               </button>
             </form>
@@ -157,7 +172,7 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
   </AdminTable>
 </div>
 
-<form method="POST" action="?/editorAdd" class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/editorAdd" use:enhance={submitAdd} class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Name</span>
@@ -175,6 +190,6 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
       {/each}
     </select>
   </label>
-  <button type="submit" class="btn btn-primary">Add editor</button>
+  <button type="submit" class="btn btn-primary" disabled={busy} aria-busy={busy}>Add editor</button>
 </form>
 </div>

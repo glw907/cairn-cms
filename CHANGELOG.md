@@ -213,6 +213,17 @@
 
 ### Changed
 
+- **A refused settings form keeps what you typed.** Navigation, Tags, Tidy, the create dialog, and Editors
+  answer a refusal in place: the rows, tags, toggles, and typed values stay, and the refusal takes focus.
+  The create dialog stays open and shows the refusal inside it. A save that goes through still loads a
+  fresh page, and a request that fails outright shows `That did not go through. Your text is still here;
+  please try again.` Each Save button disables while its request runs, so a double click sends one request.
+  The Editors screen updates its table without a page load and reads `The editor list is updated.` The
+  settings conflict message now reads `Someone else changed these settings. Saving again replaces their
+  change. To see it, reload, which drops your edits.`, which matches the kept working copy.
+
+  Consumers must: match `Someone else changed these settings.` in any test that asserts the old settings conflict message.
+
 - **Navigation, Tags, and Help have designed zero states.** With no menu items or tags, the screens show
   the shared empty state, and Save appears once there is something to save. Adding the first menu item
   moves focus to its label field. The Help getting-started list uses `.start-steps` and `.start-step`, so

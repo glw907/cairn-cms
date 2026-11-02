@@ -114,7 +114,7 @@ The **Tags** screen appears only for people your site allows to change the list.
 
 ## A new entry is refused
 
-The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New post**. The dialog closes, and a message appears above the list.
+The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New post**. The dialog stays open with what you typed, and the message appears at the top of the dialog.
 
 Three messages cover date and address problems:
 
@@ -129,9 +129,10 @@ Two messages cover an address that's already taken:
 
 To try again after any of these refusals:
 
-1. Select the same button at the top of the list.
 1. Fix the field that the message names.
 1. Select **Create**.
+
+If you close the dialog, select the same button at the top of the list to open it again.
 
 ## An entry won't delete
 

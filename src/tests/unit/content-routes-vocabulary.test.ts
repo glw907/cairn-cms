@@ -318,6 +318,6 @@ describe('vocabularySaveAction', () => {
       saveEvent(posted),
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(409);
-    expect(result.data.error).toMatch(/changed since/i);
+    expect(result.data.error).toMatch(/someone else changed/i);
   });
 });

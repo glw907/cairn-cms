@@ -9,7 +9,7 @@
 // define directly. Exporting one shared `const devBackendEnabled` from here does NOT work:
 // SvelteKit's SSR build folds the constant inside this chunk but does not propagate the value into
 // the consuming chunk, which keeps its `if` and its import, so the whole dev backend rides into the
-// deployable Worker. The e2e and scaffold workflows grep `wrangler deploy --dry-run` output both
+// deployable Worker. The e2e and create-site workflows grep `wrangler deploy --dry-run` output both
 // ways to catch a regression.
 //
 // The runtime half is below. It reads an environment variable that no build can know, so it has

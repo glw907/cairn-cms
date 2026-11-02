@@ -121,11 +121,14 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   function asBool(key: string): boolean {
     return working.attributes[key] === true;
   }
-  // The ids a slot's control is described by: its error and its help, neither dropped when both
-  // show, or undefined when neither does.
-  function slotDescribedBy(slot: SlotDef): string | undefined {
-    const ids = [errors[slot.name] ? `err-${slot.name}` : '', slot.help ? `hint-${slot.name}` : ''].filter(Boolean);
+  // The ids a control is described by: its error and its help, neither dropped when both show, or
+  // undefined when neither does. Slots and attributes share the shape.
+  function describedBy(name: string, help: string | undefined): string | undefined {
+    const ids = [errors[name] ? `err-${name}` : '', help ? `hint-${name}` : ''].filter(Boolean);
     return ids.length ? ids.join(' ') : undefined;
+  }
+  function slotDescribedBy(slot: SlotDef): string | undefined {
+    return describedBy(slot.name, slot.help);
   }
 
   function slotString(name: string): string {
@@ -267,7 +270,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="checkbox checkbox-sm"
           type="checkbox"
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           checked={asBool(name)}
           onchange={(e) => (working.attributes[name] = e.currentTarget.checked)}
         />
@@ -280,7 +283,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="select"
           aria-required={field.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           value={asString(name)}
           onchange={(e) => {
             working.attributes[name] = e.currentTarget.value;
@@ -311,7 +314,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           type={inputType(field.type)}
           aria-required={field.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           value={asString(name)}
           oninput={(e) => {
             working.attributes[name] = e.currentTarget.value;
@@ -321,6 +324,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
+    {#if field.help}<p id={`hint-${name}`} class="type-body text-muted mt-1">{field.help}</p>{/if}
     {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error type-meta">{errors[name]}</span>{/if}
   {/each}
 

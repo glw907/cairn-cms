@@ -233,6 +233,41 @@ describe('ComponentForm submit label', () => {
 // never reach a real component attribute (checkComponentAttributes rejects them at defineBlock),
 // so those five bypass defineBlock to exercise the same generic fallback the type checker still
 // has to cover.
+describe('ComponentForm attribute help', () => {
+  const helped = defineBlock({
+    ...base, name: 'attrhelp', label: 'Attr help',
+    attributes: {
+      tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'], help: 'Sets the colour.' }),
+      pinned: fields.boolean({ label: 'Pinned', help: 'Keeps it at the top.' }),
+      site: fields.url({ label: 'Site', help: 'Full address.' }),
+      plain: fields.text({ label: 'Plain' }),
+    },
+  });
+
+  it('renders each attribute help after its control and describes the control by it', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const describedBy = (el: HTMLElement) => document.getElementById(el.getAttribute('aria-describedby')!)?.textContent?.trim();
+    expect(describedBy(screen.getByRole('combobox', { name: /tone/i }).element() as HTMLElement)).toBe('Sets the colour.');
+    expect(describedBy(screen.getByRole('checkbox', { name: /pinned/i }).element() as HTMLElement)).toBe('Keeps it at the top.');
+    expect(describedBy(screen.getByLabelText('Site').element() as HTMLElement)).toBe('Full address.');
+  });
+
+  it('lists the error and the hint together on an attribute', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const el = screen.getByRole('combobox', { name: /tone/i }).element() as HTMLSelectElement;
+    el.focus();
+    el.blur();
+    await expect.poll(() => el.getAttribute('aria-describedby')).toBe('err-tone hint-tone');
+  });
+
+  it('adds no hint element for an attribute without help', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const plain = screen.getByLabelText('Plain').element() as HTMLElement;
+    expect(plain.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.getElementById('hint-plain')).toBeNull();
+  });
+});
+
 describe('ComponentForm attribute-arm dispatch (characterization: every FieldDescriptor arm)', () => {
   it('renders the generic fallback input for text, number, url, and date, each with its matching HTML input type', async () => {
     const def = defineBlock({

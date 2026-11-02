@@ -709,6 +709,24 @@ describe('deriveTagUsage', () => {
 });
 
 describe('verifyReferences', () => {
+  const row = (id: string, links: { concept: string; id: string }[], draft = false) => ({
+    id,
+    concept: 'posts',
+    title: id,
+    permalink: `/${id}`,
+    draft,
+    links,
+  });
+
+  it('throws on a non-draft body link to a missing target, and passes a draft or a live target', () => {
+    const ghost = [{ concept: 'posts', id: 'ghost' }];
+    expect(() => verifyReferences({ version: 1, entries: [row('a', ghost)] })).toThrowError(
+      'content link is dangling: posts/a links to posts/ghost, which does not exist.',
+    );
+    expect(() => verifyReferences({ version: 1, entries: [row('a', ghost, true)] })).not.toThrow();
+    expect(() => verifyReferences({ version: 1, entries: [row('a', [{ concept: 'posts', id: 'b' }]), row('b', [])] })).not.toThrow();
+  });
+
   it('throws on a dangling edge, naming the source entry, the field, and the missing target', () => {
     const manifest = {
       version: 1 as const,

@@ -118,7 +118,7 @@ describe('the commit chain against the build gate', () => {
   it('leaves a committed tree the build accepts, with the undeclared key intact', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // The seeded main is what a previous build left: the manifest is built from the files.
-    const seeded = buildSiteManifest(adapter, { [FIRST_PATH]: FIRST_RAW, [SECOND_PATH]: SECOND_RAW });
+    const { manifest: seeded } = buildSiteManifest(adapter, { [FIRST_PATH]: FIRST_RAW, [SECOND_PATH]: SECOND_RAW });
     const gh = new GithubDouble({
       main: {
         [FIRST_PATH]: FIRST_RAW,
@@ -162,7 +162,7 @@ describe('the commit chain against the build gate', () => {
     expect.soft(posts[SECOND_PATH]).toContain('Second body, edited.');
 
     // What the build runs: build from the files, verify against the committed index, then references.
-    const built = buildSiteManifest(adapter, posts);
+    const { manifest: built } = buildSiteManifest(adapter, posts);
     expect(parseManifest(committedRaw).entries.map((e) => e.id).sort()).toEqual(['first', 'second']);
     expect(() => verifyManifest(built, committedRaw, adapter)).not.toThrow();
     expect(() => verifyReferences(built)).not.toThrow();

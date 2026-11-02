@@ -64,21 +64,22 @@ const SITE_FACTS_REL_PATH = DEFAULT_SITE_FACTS_PATH.replace(/^\//, '');
 function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): string {
   // In write mode the committed file may not exist yet, so do not import it.
   const committedImport = mode === 'verify' ? `import committed from ${JSON.stringify(DEFAULT_MANIFEST_PATH + '?raw')};` : '';
-  // In verify mode, run verifyReferences after verifyManifest, inside the generated source where the
-  // built manifest is in scope. References have no prerender backstop, so this build gate is their only
-  // integrity authority; it cannot move to the verifyManifestFromVite TS call site, where `built` does
-  // not exist (it lives only in this evaluated string).
+  // In verify mode, run verifyEntries and verifyReferences ahead of verifyManifest, inside the generated
+  // source where the build is in scope, so a content fault reads as itself, not as a stale manifest
+  // that regenerating would only hide. References have no prerender backstop, so this build gate is
+  // their only integrity authority; neither check can move to the verifyManifestFromVite TS call site,
+  // where `built` and `problems` do not exist (they live only in this evaluated string).
   const resultExpr =
     mode === 'write'
       ? 'formatManifest(built)'
-      : '(verifyManifest(built, committed, cairn), verifyReferences(built), "ok")';
+      : '(verifyEntries(problems), verifyReferences(built), verifyManifest(built, committed, cairn), "ok")';
   return `
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-import { formatManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
+import { formatManifest, verifyEntries, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
 import { cairn } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
 const files = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true });
-const built = buildSiteManifest(cairn, files);
+const { manifest: built, problems } = buildSiteManifest(cairn, files);
 export const result = ${resultExpr};
 `;
 }

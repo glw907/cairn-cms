@@ -98,8 +98,9 @@ For an undated concept, set `id` to `stem` and drop the date line and test. One 
 2. `npx cairn-manifest`. Its output must show no `content.entry_invalid` (an invalid entry gets no
    row; an invalid draft is tolerated by the build but missing from the admin list) and no
    `content.field_undeclared` naming a key you meant to keep.
-3. `npm run build`. It fails with `cairn: <n> invalid frontmatter field(s):` then
-   `<dir>/<id>: <field>: <message>` lines. Fix the script, delete the files the last run wrote (an
+3. `npm run build`. It fails first with `cairn: <n> invalid entries:` then
+   `<concept>/<id>: <field>: <message>` lines, and later with
+   `cairn: <n> invalid frontmatter field(s):` then `<dir>/<id>: <field>: <message>` lines. Fix the script, delete the files the last run wrote (an
    id change leaves the old file behind), and rerun from step 1.
 4. Open a migrated entry at its permalink: images load, no shortcode shows as text.
 

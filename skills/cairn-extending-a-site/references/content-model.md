@@ -203,7 +203,9 @@ and a `rename.address_collided` record.
 | `cairn: concept` ... no glob passed | Pass the glob in the content module |
 | `cairn: concept` error on permalink, date prefix, or routing at load | Fix the member named |
 | `cairn: concept` error about an `/admin` view or `site` | Rename the key in all three files |
-| `content manifest is stale` | `npx cairn-manifest`, commit |
+| `cairn: <n> invalid entries:` then `<concept>/<id>: <field>: <message>` | Fix each line: the field, the filename, or the `cairn:` link. A draft is exempt |
+| `content link is dangling` | Fix or remove the body link, or restore its target |
+| `content manifest is stale` | The content is valid and the manifest is behind: `npx cairn-manifest`, commit |
 | Manifest has no rows for the concept | Add it to `cairnManifest` `content`, fix the pattern, or fix invalid entries, then regenerate |
 | `cairn: <n> invalid frontmatter field(s):` | Fix the field or mark the entry `draft: true` |
 | Server error or build failure from `refine` | Make `refine` return a map instead of throwing |

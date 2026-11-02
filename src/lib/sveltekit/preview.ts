@@ -392,8 +392,9 @@ export async function loadPreview<S extends SiteResolver>(
   event.setHeaders(PREVIEW_HEADERS);
 
   // The one boundary cast: `composeEntryData` composes the untyped `EntryData`, and the conditional
-  // `EntryData<S>` cannot resolve while `S` is open. The entry came from a validated index under its
-  // own concept, the same argument `createPublicRoutes`'s `entryLoad` makes.
+  // `EntryData<S>` cannot resolve while `S` is open. The entry is validated against
+  // `runtime.concepts`, but `EntryData<S>` takes its type from `publicRoutes.site`, and nothing ties
+  // the two together. The cast assumes the runtime and the site resolver describe the same concepts.
   const withPreview = (data: EntryData, preview: PreviewData['preview']): PreviewData<S> =>
     ({ ...data, seo: stripPreviewSeo(data.seo), preview }) as unknown as PreviewData<S>;
 

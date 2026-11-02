@@ -19,30 +19,12 @@ release archive.
   [`reviews/iteration-2-brief.md`](reviews/iteration-2-brief.md), the conductor's consolidation
   that settled where they conflicted. They are the reasoning behind the plan's acceptance
   criteria, not criteria themselves; where a review and the plan disagree, the plan wins.
-- [`render-reference/`](render-reference/) is iteration 3 of the mockups, which is the design the
-  owner chose on 2026-09-20 and the acceptance reference the render package's goldens are reviewed
-  against.
+- [`render-reference/measurements.txt`](render-reference/measurements.txt) is the measured width
+  sweep, including the East Asian Width class of every glyph. `glyph.go`, `glyph_test.go`, and
+  `width.go` in the render package cite it.
 
 ## The render reference
 
-`render-reference/index.html` is the index: open it in a browser for every frame, each variant's
-tradeoff, and the measured width sweep. `measurements.txt` is that sweep's raw result, including
-the East Asian Width class of every glyph. `s8-plain.txt` is the plain non-terminal body.
-
-The `.ansi` files are the canonical text: all thirty-four of them, each one frame's exact bytes,
-escapes included, so a diff against a golden is meaningful. The `.png` files are the thirteen
-frames the plan cites, six of them real-terminal captures and the rest offscreen renders; the rest
-of the set stayed in the capture cache rather than in git, so the index shows a broken image for a
-frame whose `.png` is absent. The index's own iteration 2 comparison points at `../mockups-2/`,
-which is not in git either: read those two panels' captions rather than their images.
-
-**The Go sources carry a `.txt` suffix on purpose.** `make -C tool check` walks every `.go` file
-under `tool/` for build tags and lints every `.go` file's comments through Vale, and neither gate
-should grade a throwaway mockup. The suffix is the one mechanism that hides these files from the
-Go toolchain, the hygiene walk, and the comment linter at once. To run them, copy the directory
-somewhere outside the module and strip the suffix.
-
-The mockup is a mockup: its model types are flattened, its fixtures are invented, and nothing in
-it is the `render` package. What it fixes is the design. Four choices the owner made from these
-frames, and three known faults the render package corrects, are stated in the plan's Task 20a and
-Task 20b.
+Iteration 3 of the mockups, the design the owner chose on 2026-09-20, is gone from the tree. Its
+frames live at the `pre-agent-first` tag. The goldens in `tool/internal/render/testdata` are the
+acceptance record for the render package.

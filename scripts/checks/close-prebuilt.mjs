@@ -49,6 +49,7 @@ export const CLOSE_COMPONENTS = Object.freeze([
   'npm run check:tool-conditions',
   'npm run check:docs',
   'npm run check:rulings-format',
+  'npm run check:consumers-must',
   'npm run check:editor-quotes',
   'npm run check:leaks',
   'npm run check:visuals',

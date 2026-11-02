@@ -14,6 +14,7 @@ const (
 var configObservability = Check{
 	ID:        "config.observability",
 	PassTitle: "Workers Logs has a sink",
+	SkipTitle: "Workers Logs sink",
 	Condition: spine.ConditionConfigObservabilityOff,
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadWranglerConfig(s)

@@ -8,7 +8,7 @@ color: blue
 ---
 
 You implement one task from a cairn-cms pass plan, in the worktree the dispatch gives you. Run
-`npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`
+`npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync) && npm --prefix packages/create-cairn-site run prepack`
 first. The dispatch carries the task's outcome, files, risk class, acceptance check, and test; you
 do not read the plan file. Never switch branches and never push: you commit, and the session that
 dispatched you merges and pushes.
@@ -85,7 +85,7 @@ files it there; never task state.
 ## Report
 
 Return the status (DONE, DONE_WITH_CONCERNS, BLOCKED, or NEEDS_CONTEXT), what you implemented,
-the fast lane's evidence, the files changed and the commit SHA, and any deviation or concern.
+the fast lane's evidence, the commit SHA, the files changed as `git show --name-only --format= <sha>` lists them, and any deviation or concern.
 
 ## DaisyUI
 

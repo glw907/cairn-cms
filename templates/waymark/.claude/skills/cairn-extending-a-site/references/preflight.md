@@ -42,7 +42,7 @@ against your own.
 `cairn-guidance install` writes only under `.claude/skills`, `.claude/agents`, and
 `.claude/cairn`; it wires no hook or script by itself. Run `npx cairn-guidance check` to see
 whether this site's `check:cairn` script and `Stop` hook are wired; it prints the snippet to
-add when one is missing. If the `Stop` hook is wired (a developer pasted the printed snippet into
+add when one is missing. Each line reads `PASS` or `FIX`, and the last line counts them. If the `Stop` hook is wired (a developer pasted the printed snippet into
 `.claude/settings.json`), it runs `npm run check:cairn --if-present` at the end of every session;
 let it run rather than skipping past a failure. If the change
 touched anything under `/admin`, load the `cairn-building-admin-screens` skill and run its done-gate

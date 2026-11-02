@@ -1,7 +1,8 @@
 // cairn-guidance check: seven reports comparing a consumer's tree against what the installed
-// package expects, plus a recommendation block that never gates. Pure functions here take
-// already-resolved content (a `readFile` callback and a `GuidanceSource`) so every judgment is
-// unit-testable without touching a real filesystem; bin.ts wires the real reads.
+// package expects, each judged PASS or FIX, plus a recommendation block that never gates. Pure
+// functions here take already-resolved content (a `readFile` callback and a `GuidanceSource`) so
+// every judgment is unit-testable without touching a real filesystem; bin.ts wires the real reads.
+import { posix } from 'node:path';
 import {
   CAIRN_DIR,
   MANIFEST_DEST,
@@ -17,20 +18,9 @@ export type ReadFile = (relPath: string) => Promise<string | null>;
 /** The `@.claude/cairn/CLAUDE.md` import line the bake writes into a scaffolded site's CLAUDE.md. */
 export const IMPORT_LINE = '@.claude/cairn/CLAUDE.md';
 
-/** The directive that excludes `.claude/` from a Tailwind build's automatic source detection. */
-export const SOURCE_EXCLUSION_LINE = '@source not "./.claude";';
-
-/** The Tailwind import modifier that turns off automatic source detection, so `.claude/` is never scanned. */
-const SOURCE_NONE = 'source(none)';
-
-// The scaffold's admin stylesheet path first (packages/create-cairn-site/scripts/bake-template.mjs),
-// then one common alternative; `judgeSourceExclusion` reports unknown and names every path it
-// looked at, including these, when it identifies neither.
-const SOURCE_CSS_CANDIDATES = ['src/admin.css', 'src/theme/admin.css'];
-
-/** One reported line's verdict; `stale` and `missing` are what `--strict` can fail on. */
+/** One reported line's tree verdict; `stale` and `missing` are each a FIX. */
 export type TreeStatus = 'fresh' | 'stale' | 'missing';
-export type SourceExclusionStatus = 'excluded' | 'not-excluded' | 'unknown';
+export type SourceExclusionStatus = 'excluded' | 'not-excluded';
 
 /** Read the installed copy of every packaged destination, or null when none of them exist. */
 export async function readInstalledTree(
@@ -66,29 +56,55 @@ export function gitignoreExcludesClaude(gitignore: string): boolean {
     .some((line) => line === '.claude' || line === '.claude/' || line === '/.claude' || line === '/.claude/');
 }
 
+// A Tailwind entry: an import of `tailwindcss` or `tailwindcss/utilities[.css]` in either quote
+// form, with any modifiers (a `layer(...)`, a `source(...)`) before the semicolon.
+const ENTRY_IMPORT = /@import\s+(['"])tailwindcss(?:\/utilities(?:\.css)?)?\1([^;]*);/g;
+const SOURCE_NOT = /@source\s+not\s+(['"])(.*?)\1/g;
+
+function stripComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+
+function isEntry(css: string): boolean {
+  return [...css.matchAll(ENTRY_IMPORT)].some((m) => !(m[2] ?? '').includes('source(none)'));
+}
+
+/** True when a `@source not` in `css`, resolved against the stylesheet at `path`, names the root `.claude`. */
+function excludesClaude(path: string, css: string): boolean {
+  return [...css.matchAll(SOURCE_NOT)].some((m) => {
+    const resolved = posix.normalize(posix.join(posix.dirname(path), m[2] ?? '')).replace(/\/+$/, '');
+    return resolved === '.claude';
+  });
+}
+
+/** The `@source not` line that excludes the root `.claude/` from a stylesheet at `path`. */
+function exclusionLineFor(path: string): string {
+  const rel = posix.relative(posix.dirname(path), '.claude');
+  return `@source not "${rel.startsWith('..') ? rel : `./${rel}`}";`;
+}
+
 /**
- * Judge whether `.claude/` is excluded from the site's Tailwind build: a gitignored
- *  `.claude` passes outright (Tailwind's scanner skips it), a stylesheet whose Tailwind import
- *  uses `source(none)` passes as well, otherwise the candidate admin
- *  stylesheets are read in order and the first one that carries any `@source` directive at all
- *  decides the verdict; when neither signal is found the item reports unknown, naming every path
- *  it looked at.
+ * Judge whether `.claude/` is excluded from the site's Tailwind build. A gitignored `.claude`
+ * passes outright (Tailwind's scanner skips it), as does a site with no Tailwind entry. Otherwise
+ * some listed stylesheet must carry a `@source not` that resolves, against that file, to the root
+ * `.claude`; `@import` is not followed, so one file's exclusion counts for every entry. The
+ * failing verdict names the first entry and the exact line for it.
  */
 export async function judgeSourceExclusion(
-  readFile: ReadFile
-): Promise<{ status: SourceExclusionStatus; checked: string[] }> {
-  const checked = ['.gitignore'];
+  readFile: ReadFile,
+  cssPaths: string[]
+): Promise<{ status: SourceExclusionStatus; entry?: string; line?: string }> {
   const gitignore = await readFile('.gitignore');
-  if (gitignore !== null && gitignoreExcludesClaude(gitignore)) {
-    return { status: 'excluded', checked };
+  if (gitignore !== null && gitignoreExcludesClaude(gitignore)) return { status: 'excluded' };
+  const files: { path: string; css: string }[] = [];
+  for (const path of cssPaths) {
+    const text = await readFile(path);
+    if (text !== null) files.push({ path, css: stripComments(text) });
   }
-  for (const candidate of SOURCE_CSS_CANDIDATES) {
-    checked.push(candidate);
-    const content = await readFile(candidate);
-    if (content === null || !(content.includes('@source') || content.includes(SOURCE_NONE))) continue;
-    return { status: content.includes(SOURCE_EXCLUSION_LINE) || content.includes(SOURCE_NONE) ? 'excluded' : 'not-excluded', checked };
-  }
-  return { status: 'unknown', checked };
+  const entry = files.find((f) => isEntry(f.css));
+  if (entry === undefined) return { status: 'excluded' };
+  if (files.some((f) => excludesClaude(f.path, f.css))) return { status: 'excluded' };
+  return { status: 'not-excluded', entry: entry.path, line: exclusionLineFor(entry.path) };
 }
 
 /** True when `package.json`'s `scripts` carries a `check:cairn` entry. */
@@ -113,6 +129,8 @@ export async function findOrigFiles(readFile: ReadFile, destPaths: string[]): Pr
 
 /** One line of the printed report. */
 export interface ReportLine {
+  /** True for a PASS line, false for a FIX line. */
+  ok: boolean;
   detail: string;
 }
 
@@ -136,7 +154,8 @@ function withSnippet(detail: string, snippetKey: string, snippets: Record<string
 /** Run every judgment against a consumer's cwd (through `readFile`) for a resolved source. */
 export async function runGuidanceCheck(
   readFile: ReadFile,
-  packaged: GuidanceSource
+  packaged: GuidanceSource,
+  cssPaths: string[]
 ): Promise<GuidanceCheckReport> {
   const tree = flattenGuidanceTree(packaged);
   const destPaths = Object.keys(tree);
@@ -154,11 +173,12 @@ export async function runGuidanceCheck(
   const auditConfigPresent = (await readFile('cairn-audit.config.json')) !== null;
   const ciWorkflowPresent = (await readFile('.github/workflows/check.yml')) !== null;
 
-  const sourceExclusion = await judgeSourceExclusion(readFile);
+  const sourceExclusion = await judgeSourceExclusion(readFile, cssPaths);
   const origPaths = await findOrigFiles(readFile, destPaths);
 
   return {
     tree: {
+      ok: treeStatus === 'fresh',
       status: treeStatus,
       removable,
       detail:
@@ -169,48 +189,65 @@ export async function runGuidanceCheck(
             : `the guidance tree is stale; run npx cairn-guidance install to refresh it${removable.length > 0 ? ` (removable: ${removable.join(', ')})` : ''}`,
     },
     importLine: {
+      ok: importPresent,
       present: importPresent,
       detail: importPresent
         ? `CLAUDE.md imports ${IMPORT_LINE}`
         : `CLAUDE.md is missing the import line; add ${IMPORT_LINE}`,
     },
     checkCairnScript: {
+      ok: checkCairnPresent,
       present: checkCairnPresent,
       detail: checkCairnPresent
         ? 'package.json declares a check:cairn script'
         : withSnippet('package.json has no check:cairn script; see the snippet below', 'check-cairn.json', packaged.snippets),
     },
     auditConfig: {
+      ok: auditConfigPresent,
       present: auditConfigPresent,
       detail: auditConfigPresent
         ? 'cairn-audit.config.json is present'
         : withSnippet('cairn-audit.config.json is missing; see the snippet below', 'cairn-audit.config.json', packaged.snippets),
     },
     ciWorkflow: {
+      ok: ciWorkflowPresent,
       present: ciWorkflowPresent,
       detail: ciWorkflowPresent
         ? '.github/workflows/check.yml is present'
         : withSnippet('.github/workflows/check.yml is missing; see the snippet below', 'check.yml', packaged.snippets),
     },
     sourceExclusion: {
+      ok: sourceExclusion.status === 'excluded',
       status: sourceExclusion.status,
       detail:
         sourceExclusion.status === 'excluded'
           ? '.claude/ is excluded from the Tailwind build'
-          : sourceExclusion.status === 'not-excluded'
-            ? `.claude/ is not excluded from the Tailwind build; add ${SOURCE_EXCLUSION_LINE} (Tailwind 4.1 or later)`
-            : `could not identify the Tailwind entry; checked ${sourceExclusion.checked.join(', ')}; add ${SOURCE_EXCLUSION_LINE} to your Tailwind entry CSS once you find it (Tailwind 4.1 or later)`,
+          : `.claude/ is not excluded from the Tailwind build; add ${sourceExclusion.line} to ${sourceExclusion.entry} (Tailwind 4.1 or later)`,
     },
     orig: {
+      ok: origPaths.length === 0,
       paths: origPaths,
       detail: origPaths.length > 0 ? `.orig files present: ${origPaths.join(', ')}` : 'no .orig files present',
     },
   };
 }
 
-/** True when `--strict` should exit 1: the guidance tree is stale or missing. */
-export function isStaleUnderStrict(report: GuidanceCheckReport): boolean {
-  return report.tree.status !== 'fresh';
+/** The seven report lines in print order. */
+function reportLines(report: GuidanceCheckReport): ReportLine[] {
+  return [
+    report.tree,
+    report.importLine,
+    report.checkCairnScript,
+    report.auditConfig,
+    report.ciWorkflow,
+    report.sourceExclusion,
+    report.orig,
+  ];
+}
+
+/** True when `--strict` should exit 1: any line reports FIX. */
+export function hasFixes(report: GuidanceCheckReport): boolean {
+  return reportLines(report).some((line) => !line.ok);
 }
 
 /** The recommendation block, never counted against the seven reports above. */
@@ -223,18 +260,15 @@ export function formatRecommendations(): string {
   ].join('\n');
 }
 
-/** Render a full check run as plain text. */
+/** Render a full check run as plain text: PASS or FIX per line, the recommendations, then the count. */
 export function formatCheckReport(report: GuidanceCheckReport): string {
-  const lines = [
-    report.tree.detail,
-    report.importLine.detail,
-    report.checkCairnScript.detail,
-    report.auditConfig.detail,
-    report.ciWorkflow.detail,
-    report.sourceExclusion.detail,
-    report.orig.detail,
+  const all = reportLines(report);
+  const fixes = all.filter((line) => !line.ok).length;
+  return [
+    ...all.map((line) => `${line.ok ? 'PASS' : 'FIX '}  ${line.detail}`),
     '',
     formatRecommendations(),
-  ];
-  return lines.join('\n');
+    '',
+    `${all.length - fixes} passed, ${fixes} to fix`,
+  ].join('\n');
 }

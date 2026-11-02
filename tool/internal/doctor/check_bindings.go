@@ -27,6 +27,7 @@ const (
 var configBindings = Check{
 	ID:        "config.bindings",
 	PassTitle: "Wrangler bindings are declared",
+	SkipTitle: "Wrangler bindings",
 	Condition: spine.ConditionConfigBindingsMissing,
 	Run: func(s Snapshot) Result {
 		facts, found, err := ReadWranglerConfig(s)

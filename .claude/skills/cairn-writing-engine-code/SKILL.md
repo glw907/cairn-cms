@@ -1,9 +1,6 @@
 ---
 name: cairn-writing-engine-code
 description: Writes cairn engine code to its idiom charter and avoids its known operational traps. Use when adding or changing code under src/lib, when a pass writes tests, or when a Cloudflare email error, a visual baseline mismatch, a consumer engine pin, or a Vite parse error of dist Svelte files appears.
-paths:
-  - "src/lib/**"
-  - "src/tests/**"
 ---
 
 # Writing engine code

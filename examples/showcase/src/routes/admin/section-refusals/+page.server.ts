@@ -1,6 +1,6 @@
 // A fixture screen for the refusal copy createSectionAction returns: one action per refusal, each
 // built from its own factory so the refusal comes from the factory's config, not shared state.
-// The e2e dev handle replaces the real guard, so the `forged` action proves createAdminAction's
+// The e2e dev handle replaces the real guard, so the `forged` action proves createSectionAction's
 // own CSRF check, which the page deliberately never satisfies.
 import type { PageServerLoad, Actions } from './$types';
 import { createSectionAction, requireAccess } from '@glw907/cairn-cms/sveltekit';

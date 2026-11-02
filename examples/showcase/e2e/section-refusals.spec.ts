@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 // Each refusal createSectionAction can return, driven by a native form post to the fixture route
 // at /admin/section-refusals. The dev handle replaces the real guard, so `forged` proves
-// createAdminAction's own CSRF check, not the guard's (as custom-screen.spec.ts says of its route).
+// createSectionAction's own CSRF check, not the guard's (as custom-screen.spec.ts says of its route).
 // The live region is the one place a returned fail() renders; a thrown error never reaches it.
 
 test.beforeEach(async ({ page }) => {

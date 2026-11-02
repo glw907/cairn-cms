@@ -166,7 +166,7 @@ async function mintValidToken(concept = 'posts', entryId = ID, editor = 'ed@t'):
   return token;
 }
 
-/** Seed a token row directly, bypassing mintPreview's TTL floor, for an already-expired row. */
+/** Seed a token row directly, since mintPreview only writes a live row, for an already-expired row. */
 async function seedExpiredToken(concept = 'posts', entryId = ID): Promise<string> {
   const token = generateToken();
   const tokenHash = await hashToken(token);

@@ -1,6 +1,6 @@
 ---
 name: cairn-building-admin-screens
-description: Build, gate, arrange, or review a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, requireAccess, the adapter's access map or roles, editor.navLayout, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
+description: Build, gate, arrange, or review a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, requireAccess, the adapter's access map or roles, editor.navLayout, editor.publishActions, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
 ---
 
 # cairn admin screens
@@ -12,7 +12,7 @@ recipes, the orderings, and the traps between exports. Open the reference for th
 | Job | Open |
 |---|---|
 | Add a screen over your data or a tool with no data: gate, actions, audit, CSRF, dialog, row detail, fetch action | `references/custom-screen.md` |
-| Put a screen in the sidebar, add a role, hide a section by role, deny a route, `navFilter`, badges | `references/sidebar-and-access.md` |
+| Put a screen in the sidebar, add a role, hide a section by role, deny a route, `navFilter`, badges, next-step links after a publish | `references/sidebar-and-access.md` |
 | Wire or repair the `/admin` mount, the chrome-free root layout, hooks order, `/healthz` | `references/admin-mount.md` |
 | Fix a `cairn-audit` finding, configure the audit | `references/audit-rules.md` |
 | Lay out a list screen (table, toolbar, chips, expandable rows, pagination) | `references/exemplar-list.md` |

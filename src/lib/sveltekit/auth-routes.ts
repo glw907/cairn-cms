@@ -481,8 +481,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 
 /**
  * What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. The view
- * components post named actions, so a hand-mounted route registers each under the name its view
- * posts (`request`, `confirm`, `logout`); a `default` action never receives a named post.
+ * components post the named actions `request`, `confirm`, and `logout`; a `default` action never
+ * receives a named post.
  * @beta
  */
 export interface AuthRoutes {

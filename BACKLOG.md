@@ -27,6 +27,33 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#286** Add the `small-api` traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)*
+  `cairn-writing-engine-code`'s `references/durable-gotchas.md` lacks six traps this pass met. A barrel grep misses `CairnAdminConfig` member pins in `sveltekit-mount-contract-reshape.test.ts`. The dev handle imports the engine from `dist`, so a `src/lib` sink change needs `npm run package`. A skill edit fails `guidance/bin.test.ts` until `emit:template`. `packages/create-cairn-site/template` goes stale after a showcase comment change. `dist` of `packages/cairn-cms-dev` builds only through the root `package` script. A line-based dead-name grep misses a phrase wrapped across a comment line, which is how "Edit the component at / the cursor" survived T14's script. The plan's pre-flight kept this file out of reach. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#285** Run `unit-dist-spawn` in the fast lane when `src/lib/internal.ts` changes `#improvement` `#cairn-cms` *(2026-11-02)*
+  The fast lane's unit leg skips the `unit-dist-spawn` project, so a merge that added `verifyEntries` to `/internal` passed locally and failed CI at `delivery-dist-spawn.test.ts`, which pins that entry's names. Add the trigger to `scripts/checks/gate-tier.mjs`. Left alone, each `/internal` change costs a red CI run. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#284** Repoint the `cairn-writing-engine-code` idiom examples at public names `#improvement` `#cairn-cms` *(2026-11-02)*
+  `references/code-idioms.md:188` and the eval `e3-seam-bug-fix.json` still name functions `cleanup-hide-internals` hid, so an implementer copying them reaches for a name a site can't import. The plan's pre-flight allowed T15 only the dead-name table's hits, and these aren't on it. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#283** Finish the block wording in the engine's own messages `#improvement` `#cairn-cms` *(2026-11-02)*
+  T14's string list left `cairn: component ...` in `src/lib/render/registry.ts:220,225,298` and `src/lib/content/adapter.ts:16`, so a developer who wrote `defineBlock` reads an error about a component. A half-migrated `rendering: { blocks: registry }` throws a plain TypeError (`blocks is not iterable`) instead of a message naming the array form. It fails loudly, so it isn't a third refusal. `docs/editors/write-in-the-editor.md` also keeps the `<a id="add-components-and-fragments">` anchor, which nothing in the repo links to now. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#282** Make `loadPreview` generic so a shared template can narrow `EntryData` `#improvement` `#cairn-cms` *(2026-11-02)*
+  `loadPreview` returns the untyped `PreviewData`, so a template serving both the public and preview routes keeps the default prop type: `ArticleView.svelte` can't take `EntryData<typeof site>`, because the preview route fails to type-check. Make it generic at the cost of one boundary cast. Left alone, a site's shared view loses the narrowing #230 added. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#281** Walk a conditional type's arms in the leak derivation, and give `ConceptEntryData` a verdict `#improvement` `#cairn-cms` *(2026-11-02)*
+  `api-surface.md:178`'s `EntryData` row names the unexported `ConceptFrontmatter`, and `scripts/checks/check-surface-leaks.mjs` doesn't flag it, so the derivation appears to stop at a conditional. A leak behind a conditional then ships unrecorded. `ConceptEntryData` at `/sveltekit` is recorded `standing-unverdicted` in `check-surface-leaks.json`: decide whether to export it. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#280** Drop the tier tags from hidden functions `#improvement` `#cairn-cms` *(2026-11-02)*
+  `composeEntryData` (`src/lib/delivery/public-routes.ts:170`) and `AuthRoutes` (`src/lib/sveltekit/auth-routes.ts:486`) keep `@beta`, though no barrel exports the factories they belong to. `check:tiers` reads exports only, so a tag on a hidden name states a promise nobody holds. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#279** Decide whether `FormatTimestampOptions` and `EntryDataOverrides` stay public `#improvement` `#cairn-cms` *(2026-11-02)*
+  `cleanup-hide-internals` hid `formatTimestamp` and `composeEntryData`, so `api-surface.md:120,180` lists two option types no public function takes. Each is a name a site can import and can't use. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
+- [ ] **#278** Retire the `R4` exemption from `check-idioms` `#improvement` `#cairn-cms` *(2026-11-02)*
+  `scripts/checks/check-idioms.mjs:27,252` exempts `R4 re-export` and `R4 closure` by name for the canonical-home re-export pattern, which `cleanup-one-import-path` retired. No comment in `src/lib` uses the phrase now, so the exemption, its test at `check-idioms.test.ts:137`, and `fixtures/idioms/process-reference.ts` guard nothing and would pass a real round marker. Found by the `small-api` pass, PR #184.
+  Placement: Pass 8.
 - [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)*
   The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue, or let the row wrap. Found by the `admin-rest` baseline read.
   Placement: Cleanup round.
@@ -66,9 +93,6 @@
 - [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
   Placement: Cleanup round.
-- [ ] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01)*
-  The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
-  Placement: Pass 3.
 - [ ] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01)*
   The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
   Placement: Pass 7.
@@ -117,25 +141,6 @@
 - [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-11-01)*
   After the human arms land, check that every packaged skill and `claude/CLAUDE.md` route cites a finished target and every target is reachable (the agent-first pattern's pass 4). The `admin-design-system` link at `skills/cairn-extending-a-site/SKILL.md:24` is fixed in pass 1.
   Placement: Cleanup round.
-- [ ] **#103** Name editor.nav in the navLayout screen error `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  One feature, three names: the adapter turns the public menu editor on with `editor.nav` (type `NavMenuConfig`), `navLayout` references it as `screen: 'nav'`, and the startup error for a missing `editor.nav` says `navLayout: screen "nav" is referenced but no navMenu is configured`, naming neither the adapter key nor the type. The bare word `nav` also collides with `navLayout` and `navFilter`, which arrange the admin sidebar, not the public menu. Fix: name `editor.nav` in the error message (`src/lib/sveltekit/admin-nav.ts#validateNavLayout.checkEngineRef`; found while writing the arrange-the-admin-sidebar page, 2026-10-12).
-  Sweep 2026-11-01: The startup error names something the developer cannot find. One string, and it folds into ergonomics 16 in pass 3. `src/lib/sveltekit/admin-nav.ts:284`, `src/lib/content/types.ts:285`.
-  Placement: Final engine batch, admin and tidy. Friction entry 8 (`extender`), boundary test class3, page none.
-- [ ] **#98** Export serializeMarkdown from the root barrel `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  The root barrel exports `parseMarkdown` but not its inverse `serializeMarkdown`, so a migration script reads frontmatter with cairn's parser and must hand-write the `---` block it writes back. A hand-written block is where the YAML traps bite: an unquoted number or boolean reads as empty in a text-like field. The migrate-existing-content page has to teach quoting rules a one-line export would make moot. Fix candidate: export `serializeMarkdown` from the root barrel beside `parseMarkdown` (`src/lib/content/frontmatter.ts:387-399`, `src/lib/index.ts:54`; found while writing the migrate-existing-content page, 2026-10-12).
-  Sweep 2026-10-31: The reason `parseMarkdown` is exported applies equally to the write side. One additive line. `src/lib/content/frontmatter.ts:387`, `src/lib/index.ts:54`.
-  Placement: Final engine batch, small API. Friction entry 1 (`extender`), boundary test class1 batched (budget, next in line), page migrate-existing-content.
-- [ ] **#144** Correct the anchorRel comments to say it runs after component dispatch `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
-  `RendererConfig.anchorRel`'s doc comment says the forced `rel` is "applied last so it also covers component-built anchors", and the comment above it in `createRenderer` says "The anchor-rel hardening runs last", but the step runs before the sink guard, the table-scroll wrap, and the site's own `rehypePlugins`, so a `target="_blank"` anchor a site's `rehypePlugins` adds gets no `rel`. The write-a-markdown-component page has to state the step's real position against the type's own wording. Fix candidates: move `rehypeAnchorRel` after the site's `rehypePlugins`, or correct both comments to "after the component dispatch" (`src/lib/render/pipeline.ts#RendererConfig.anchorRel`, `src/lib/render/pipeline.ts:108-110,131-140`; found while writing the write-a-markdown-component page, 2026-10-12).
-  Sweep 2026-10-31: A site's own plugin is trusted code, so moving the step adds nothing, but the comments are false. `src/lib/render/pipeline.ts:56`, `:110`, order at `:131-140`.
-  Placement: Final engine batch, small API. Friction entry 67 (`extender`), boundary test class3, page none.
-- [ ] **#160** Correct the Shiki comments: it is out of the client graph, not the browser `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
-  The highlighter's module comment calls Shiki "SERVER/BUILD-ONLY" and says it runs "only inside the async pipeline, at render/prerender and in the Worker SSR", and says the pipeline "ships no client highlighter", but the edit page runs the site's `render` in the editor's browser and `rehypeCairnHighlight` has no browser guard, so previewing a body that holds a fenced block loads Shiki's async chunk in the admin's browser. Public pages ship no highlighter; the admin preview does. Fix candidates: correct the comment to say the dynamic import keeps Shiki out of the static client graph rather than out of the browser, or measure the chunk and decide whether the preview should highlight (`src/lib/render/highlight.ts:29-31,179,241-243`; found while writing the write-a-markdown-component page, 2026-10-12).
-  Sweep 2026-10-31: Both comments claim a browser boundary that does not exist. Shiki in the preview is what makes it match the public page. `src/lib/render/highlight.ts:29-31`, `pipeline.ts:127-128`.
-  Placement: Final engine batch, small API. Friction entry 87 (`extender`), boundary test class3, page none.
-- [ ] **#32** Remove `RoutingRule.inFeeds` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)* *(swept 2026-11-01)*
-  `src/lib/content/types.ts:398` declares it and `concepts.ts:34-36` writes it; nothing in `src/lib` reads it. Wiring it would contradict feed membership being the site's choice. Remove it with a `Consumers must:` line.
-  Placement: Final engine batch.
 
 - [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `saveToBranch` skips the prior-file read when the form posts `new=1` (`content-routes-entry-write.ts:152,166`), so an existing entry saved with that flag loses its undeclared keys, such as a hand-written `draft: true`. `EditPage.svelte:1970` sends it only for a new entry, so the normal flow is safe; a stale or hand-edited `?new=1` URL is the risk. Always read the prior file and keep `isNew` for the create-only checks. Found by the media and publish pass's close review.
@@ -143,9 +148,6 @@
 - [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   The prior-read `catch` in `saveToBranch` (`content-routes-entry-write.ts:172`) answers 503 with no log record, so a persistent read failure is invisible; the event vocabulary needs a row with it. A fragment rename answers an unverifiable include read with 409 (`content-routes-entry-destructive.ts:357`; `:331` answers the same for references) while delete answers 503. Fragment delete and rename also build two strict cross-branch indexes in a row, and one save now calls `branchHead` twice (`:169`, `:316`): one pass would halve the subrequests. Found by the close review.
   Placement: Pass 8.
-- [ ] **#201** Give `DEFAULT_MEDIA_BASE` one home `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `render/resolve-media.ts` imports `DEFAULT_MEDIA_BASE` from `../admin/media-base-context.js`, the first render-to-admin import, while `publicPath` in `media/naming.ts` defaults its base to `'/media'` separately. Move the constant under `media/` and import it from both layers. The file stays once `publicBase` leaves: `ReproContext.svelte` still sets the context key to `/repro-assets`. Found by the close review.
-  Placement: Final engine batch, small API slice.
 
 ## Low
 - [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -157,18 +159,9 @@
 - [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
   Placement: Cleanup round.
-- [ ] **#230** Make `EntryData` a union discriminated on `concept` `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `EntryData` (`src/lib/delivery/public-routes.ts:64`) is an interface with `concept: string` and an untyped `entry: ContentEntry`, so typed frontmatter stops at the route and `ArticleView.svelte:75` casts around it. Type it from the site resolver, so narrowing on `concept` types `data.entry.frontmatter`. The wiring-core slice set it aside (T7).
-  Placement: Pass 3 (small API).
-- [ ] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  Since `createSiteResolver`, no export on `/delivery/data` names `SiteConfig`, and none of the four sites imports it from that subpath, so the reason `scripts/checks/check-surface-reexports.json` gives for keeping it is unproved. `VocabularyEntry`, `TidyConfig`, and `TidyConventions` then have no other reason to sit there. Drop them from the subpath or record the reader that needs each. Found by the wiring-core pass (T7).
-  Placement: Pass 3 (small API).
 - [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#233** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
-  `scripts/checks/check-self-use-allowlist.json`'s reason for `ResolveOptions` cites `renderEntry(md, opts: ResolveOptions)`, a signature that no longer exists since `render` takes `RenderInput`. Found by the wiring-core pass (T7).
-  Placement: Pass 3.
 - [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
   `src/tests/unit/delivery-media-vite-barrel-prune.test.ts` still lists `variantUrl`, which no longer exists anywhere, so the list asserts nothing about it. Found by the wiring-core pass (T7).
   Placement: Pass 8.
@@ -200,9 +193,6 @@
 - [ ] **#191** Harden the eval harness's session sandbox further `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
   The read-only filters in `ALLOWED_TOOLS` still allow writes or execution through flags (`sed -n` with a `w` command, `git diff --output`, `git grep -O`, `sort -o`, `git difftool`), so `DENIED_TOOLS` is advisory and the fixture sandbox is the boundary. The judge prompt embeds the session's reply unescaped, which can skew a grade, and the hard-linked `node_modules` is shared across trials, so an in-place write under it reaches later trials. Pass 3 added an environment allowlist, project-only settings for every fixture, and wrangler denies.
   Placement: Final engine batch.
-- [ ] **#187** Rename `IdentityRefusal` to `IdentityFailure` `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  `convention-failure-suffix` retires `Refusal` as a type-name suffix, and `IdentityRefusal` (`src/lib/sveltekit/guard.ts:123`, `@beta`) is the one live straggler; no ledger entry argues an exception. Rename it, its `sveltekit` barrel export, and `scripts/checks/api-surface.md`, with a migration note. Ruled while closing #169 (agent-first pass 3).
-  Placement: Final engine batch (small API).
 - [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   cairn.pub renders the doc arms from the installed engine, so the one release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
   Placement: After the release.
@@ -265,6 +255,43 @@
 - **#116** Validate preview.ttlMs when the admin is constructed: `cleanup-custom-recipes` retired the preview lifetime option. (Geoff, 2026-11-01)
 
 ## Done
+- [x] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
+  Placement: Pass 3.
+- [x] **#233** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  `scripts/checks/check-self-use-allowlist.json`'s reason for `ResolveOptions` cites `renderEntry(md, opts: ResolveOptions)`, a signature that no longer exists since `render` takes `RenderInput`. Found by the wiring-core pass (T7).
+  Placement: Pass 3.
+- [x] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  Since `createSiteResolver`, no export on `/delivery/data` names `SiteConfig`, and none of the four sites imports it from that subpath, so the reason `scripts/checks/check-surface-reexports.json` gives for keeping it is unproved. `VocabularyEntry`, `TidyConfig`, and `TidyConventions` then have no other reason to sit there. Drop them from the subpath or record the reader that needs each. Found by the wiring-core pass (T7).
+  Placement: Pass 3 (small API).
+- [x] **#230** Make `EntryData` a union discriminated on `concept` `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  `EntryData` (`src/lib/delivery/public-routes.ts:64`) is an interface with `concept: string` and an untyped `entry: ContentEntry`, so typed frontmatter stops at the route and `ArticleView.svelte:75` casts around it. Type it from the site resolver, so narrowing on `concept` types `data.entry.frontmatter`. The wiring-core slice set it aside (T7).
+  Placement: Pass 3 (small API).
+- [x] **#201** Give `DEFAULT_MEDIA_BASE` one home `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  `render/resolve-media.ts` imports `DEFAULT_MEDIA_BASE` from `../admin/media-base-context.js`, the first render-to-admin import, while `publicPath` in `media/naming.ts` defaults its base to `'/media'` separately. Move the constant under `media/` and import it from both layers. The file stays once `publicBase` leaves: `ReproContext.svelte` still sets the context key to `/repro-assets`. Found by the close review.
+  Placement: Final engine batch, small API slice.
+- [x] **#187** Rename `IdentityRefusal` to `IdentityFailure` `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  `convention-failure-suffix` retires `Refusal` as a type-name suffix, and `IdentityRefusal` (`src/lib/sveltekit/guard.ts:123`, `@beta`) is the one live straggler; no ledger entry argues an exception. Rename it, its `sveltekit` barrel export, and `scripts/checks/api-surface.md`, with a migration note. Ruled while closing #169 (agent-first pass 3).
+  Placement: Final engine batch (small API).
+- [x] **#160** Correct the Shiki comments: it is out of the client graph, not the browser `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-10-31)*
+  The highlighter's module comment calls Shiki "SERVER/BUILD-ONLY" and says it runs "only inside the async pipeline, at render/prerender and in the Worker SSR", and says the pipeline "ships no client highlighter", but the edit page runs the site's `render` in the editor's browser and `rehypeCairnHighlight` has no browser guard, so previewing a body that holds a fenced block loads Shiki's async chunk in the admin's browser. Public pages ship no highlighter; the admin preview does. Fix candidates: correct the comment to say the dynamic import keeps Shiki out of the static client graph rather than out of the browser, or measure the chunk and decide whether the preview should highlight (`src/lib/render/highlight.ts:29-31,179,241-243`; found while writing the write-a-markdown-component page, 2026-10-12).
+  Sweep 2026-10-31: Both comments claim a browser boundary that does not exist. Shiki in the preview is what makes it match the public page. `src/lib/render/highlight.ts:29-31`, `pipeline.ts:127-128`.
+  Placement: Final engine batch, small API. Friction entry 87 (`extender`), boundary test class3, page none.
+- [x] **#144** Correct the anchorRel comments to say it runs after component dispatch `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-10-31)*
+  `RendererConfig.anchorRel`'s doc comment says the forced `rel` is "applied last so it also covers component-built anchors", and the comment above it in `createRenderer` says "The anchor-rel hardening runs last", but the step runs before the sink guard, the table-scroll wrap, and the site's own `rehypePlugins`, so a `target="_blank"` anchor a site's `rehypePlugins` adds gets no `rel`. The write-a-markdown-component page has to state the step's real position against the type's own wording. Fix candidates: move `rehypeAnchorRel` after the site's `rehypePlugins`, or correct both comments to "after the component dispatch" (`src/lib/render/pipeline.ts#RendererConfig.anchorRel`, `src/lib/render/pipeline.ts:108-110,131-140`; found while writing the write-a-markdown-component page, 2026-10-12).
+  Sweep 2026-10-31: A site's own plugin is trusted code, so moving the step adds nothing, but the comments are false. `src/lib/render/pipeline.ts:56`, `:110`, order at `:131-140`.
+  Placement: Final engine batch, small API. Friction entry 67 (`extender`), boundary test class3, page none.
+- [x] **#103** Name editor.nav in the navLayout screen error `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  One feature, three names: the adapter turns the public menu editor on with `editor.nav` (type `NavMenuConfig`), `navLayout` references it as `screen: 'nav'`, and the startup error for a missing `editor.nav` says `navLayout: screen "nav" is referenced but no navMenu is configured`, naming neither the adapter key nor the type. The bare word `nav` also collides with `navLayout` and `navFilter`, which arrange the admin sidebar, not the public menu. Fix: name `editor.nav` in the error message (`src/lib/sveltekit/admin-nav.ts#validateNavLayout.checkEngineRef`; found while writing the arrange-the-admin-sidebar page, 2026-10-12).
+  Sweep 2026-11-01: The startup error names something the developer cannot find. One string, and it folds into ergonomics 16 in pass 3. `src/lib/sveltekit/admin-nav.ts:284`, `src/lib/content/types.ts:285`.
+  Placement: Final engine batch, admin and tidy. Friction entry 8 (`extender`), boundary test class3, page none.
+- [x] **#98** Export serializeMarkdown from the root barrel `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  The root barrel exports `parseMarkdown` but not its inverse `serializeMarkdown`, so a migration script reads frontmatter with cairn's parser and must hand-write the `---` block it writes back. A hand-written block is where the YAML traps bite: an unquoted number or boolean reads as empty in a text-like field. The migrate-existing-content page has to teach quoting rules a one-line export would make moot. Fix candidate: export `serializeMarkdown` from the root barrel beside `parseMarkdown` (`src/lib/content/frontmatter.ts:387-399`, `src/lib/index.ts:54`; found while writing the migrate-existing-content page, 2026-10-12).
+  Sweep 2026-10-31: The reason `parseMarkdown` is exported applies equally to the write side. One additive line. `src/lib/content/frontmatter.ts:387`, `src/lib/index.ts:54`.
+  Placement: Final engine batch, small API. Friction entry 1 (`extender`), boundary test class1 batched (budget, next in line), page migrate-existing-content.
+- [x] **#32** Remove `RoutingRule.inFeeds` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22 → 2026-11-02)* *(swept 2026-11-01)*
+  `src/lib/content/types.ts:398` declares it and `concepts.ts:34-36` writes it; nothing in `src/lib` reads it. Wiring it would contradict feed membership being the site's choice. Remove it with a `Consumers must:` line.
+  Placement: Final engine batch.
 - [x] **#257** Check whether a bare `csrf` error reaches an editor's screen from media replace or the dictionary `#bug` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
   `content-routes-media-metadata.ts:249` and `content-routes-dictionary.ts:106` return `{ error: 'csrf' }`. `tidy-controller.svelte.ts:185` and `ShareLinkPanel.svelte:68` filter that value, but `MediaReplaceDialog.svelte` stores `failure.error` unfiltered (`:265`) and may render it. Read from source, not run: a stale form token on a replace could show the word `csrf` to an editor. Fix by filtering as the two components do, or by returning editor copy.
   Placement: Pass 5.

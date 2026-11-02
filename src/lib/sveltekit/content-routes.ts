@@ -149,8 +149,7 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  *  delete cascades to the pending branch after its commit lands. `historyLoad` lists at most the
  *  25 most recent publishes, and `revertAction` reaches only those. `dictionaryAddAction` and
  *  `tidyAction` are fetch actions on the upload transport and read the route's `concept` param,
- *  answering 404 on a route without one. A hand-mounted route registers each action under the name
- *  its view posts (`?/save`, `?/publish`, and the rest).
+ *  answering 404 on a route without one.
  */
 export type ContentRoutes = Pick<
   InternalContentRoutes,

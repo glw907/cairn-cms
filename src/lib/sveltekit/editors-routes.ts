@@ -57,8 +57,8 @@ export interface EditorRoutesConfig {
  * Build the owner-gated editor-management routes: list, add, remove, and role-change. Every load
  *  and action calls `requireOwner` first. The add and role-change actions check a posted role against the declared
  *  vocabulary and answers an unknown one with a `fail()` form error, never a silent coercion to
- *  `'editor'`; every refusal answers through `fail()`. A hand-mounted route registers the actions
- *  as `editorAdd`, `editorRemove`, and `editorSetRole`, the names the view posts.
+ *  `'editor'`; every refusal answers through `fail()`. The view posts the actions as `editorAdd`,
+ *  `editorRemove`, and `editorSetRole`.
  */
 export function createEditorRoutes(config: EditorRoutesConfig): EditorRoutes {
   const vocabulary: RolesDeclaration = config.runtime.roles ?? DEFAULT_ROLES;

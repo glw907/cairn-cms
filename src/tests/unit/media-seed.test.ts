@@ -301,9 +301,9 @@ describe('readR2Buckets', () => {
     ]);
   });
 
-  it('throws a clean message on an unparseable jsonc file', async () => {
+  it('names the next step when a jsonc file does not parse', async () => {
     await expect(readR2Buckets(readFileFrom({ 'wrangler.jsonc': '{ not json' }))).rejects.toThrow(
-      /did not parse/
+      /did not parse.*Fix the file and run it again\./s
     );
   });
 });

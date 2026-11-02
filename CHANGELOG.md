@@ -163,8 +163,11 @@
   configured, an unavailable preview, an unavailable section, a failed tidy, replace, or dictionary
   request, a malformed manifest entry, a missing Vite config, a failed media-seed download or
   `wrangler.jsonc` parse, an ambiguous permalink, a broken link target or fragment, an entry with no
-  valid date, and a media block with no bucket binding each end with what to do about it. Each message
-  keeps its original opening text, so a log search on the old phrase still finds it.
+  valid date, and a media block with no bucket binding each end with what to do about it. Most
+  messages keep their opening text, so a log search on the old phrase still finds them. Four are
+  replaced outright: the default-branch read failure, no content types configured, the unavailable
+  preview, and the media block's missing bucket binding. A test that pins one of them by exact text
+  needs the new text.
 
   Consumers must: nothing.
 

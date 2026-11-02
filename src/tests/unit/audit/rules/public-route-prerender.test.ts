@@ -28,6 +28,17 @@ describe('public-route-prerender', () => {
     expect(check(PAGE, layout)).toEqual([]);
   });
 
+  it('passes a page covered by a server layout two levels up', () => {
+    const page: SourceFile = { file: 'src/routes/(site)/blog/post/+page.svelte', source: '<h1>x</h1>\n' };
+    const layout: SourceFile = { file: 'src/routes/(site)/+layout.server.ts', source: 'export const prerender = true;\n' };
+    expect(check(page, layout)).toEqual([]);
+  });
+
+  it('does not count a declaration in a sibling directory', () => {
+    const sibling: SourceFile = { file: 'src/routes/(site)/other/+page.ts', source: 'export const prerender = true;\n' };
+    expect(check(PAGE, sibling)).toHaveLength(1);
+  });
+
   it('passes prerender = false, the developer choosing request-time rendering', () => {
     const decl: SourceFile = { file: 'src/routes/(site)/about/+page.server.ts', source: 'export const prerender = false;\n' };
     expect(check(PAGE, decl)).toEqual([]);

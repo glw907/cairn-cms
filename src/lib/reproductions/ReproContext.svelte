@@ -107,10 +107,9 @@ An embedding page's `sandbox` value must keep `allow-same-origin`: the focus rel
     /**
      * The path segment every fixture media URL mounts under, so a docs site deployed under a
      * SvelteKit `paths.base` composes URLs inside its namespace instead of the engine's fixed
-     * default. Threaded to both places a mounted story reaches its media base: the
-     * `MEDIA_BASE_CONTEXT_KEY` context every story reads directly, and the shell payload's
-     * `mediaBase` field, which feeds `CairnAdminShell`'s shadowing `setContext` for a `'shell'`
-     * story. Defaults to `'/repro-assets'`.
+     * default. Provided as the
+     * `MEDIA_BASE_CONTEXT_KEY` context every story reads, shell-hosted ones included. Defaults to
+     * `'/repro-assets'`.
      */
     mediaBase?: string;
   }
@@ -285,11 +284,6 @@ An embedding page's `sandbox` value must keep `allow-same-origin`: the focus rel
         csrf: fixtureCsrf,
         pendingEntries: Promise.resolve(null),
         attention: {},
-        // The same resolved value the setContext call above already hands every mounted story
-        // directly: CairnAdminShell now sets its MEDIA_BASE_CONTEXT_KEY from this field too
-        // (shadowing the one above for its descendants, the way its CSRF getter already does),
-        // so this keeps that shadow carrying the identical value rather than reverting to /media.
-        mediaBase: resolvedMediaBase,
         ...definedOnly(shellOverride),
       };
 

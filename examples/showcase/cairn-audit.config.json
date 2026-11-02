@@ -2,12 +2,5 @@
   "sheet": [
     "node_modules/@glw907/cairn-cms/dist/admin/cairn-admin.css",
     ".cairn/admin.css"
-  ],
-  "rendered": {
-    "extraPages": [
-      "/admin/theme-kit",
-      "/admin/posts/2026-06-hello",
-      "/admin/settings"
-    ]
-  }
+  ]
 }

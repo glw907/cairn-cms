@@ -45,7 +45,6 @@ function data(
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
     attention,
-    mediaBase: '/media',
   };
 }
 
@@ -115,7 +114,6 @@ function dataWithLayout(
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
     attention: overrides.attention ?? {},
-    mediaBase: '/media',
   };
 }
 

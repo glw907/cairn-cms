@@ -129,9 +129,8 @@ describe('list-role', () => {
   // marker-suppressed list carries role=list": the rule only sees marker suppression an
   // element's OWN classes cause, never a descendant-selector rule keyed on some ancestor's class
   // (daisyUI's `.menu :where(li)`, breadcrumbs' `> li`), so a list suppressed that way is outside
-  // what this run can catch and outside what this assertion proves. That gap is now covered by
-  // the rendered-mode counterpart (`rules/rendered/list-role.ts`), which reads each item's actual
-  // computed `display` in a live browser instead; the nine engine lists it found were fixed
+  // what this run can catch and outside what this assertion proves. The nine engine lists a browser's
+  // computed `display` once found there were fixed
   // in-tree (`role="list"` plus `role="listitem"` on their unroled items), which is what lets this
   // static half stay clean here too, on the same markup, through its narrower own-class lens. The
   // full registry runs (not just this rule alone), so a suppression directive naming some OTHER
@@ -211,10 +210,10 @@ describe('list-role', () => {
     expect(findings[0].message).not.toContain('@layer');
   });
 
-  // The item-level remedy, aligned with the rendered rule's own: when the cause is an item's own
-  // display change, the message also recommends role="listitem" on the affected items, grounded in
-  // the same HTML-AAM parent-relationship hedge the rendered rule carries.
-  it('recommends role="listitem" too when the cause is an item display change, matching the rendered rule', () => {
+  // The item-level remedy: when the cause is an item's own display change, the message also
+  // recommends role="listitem" on the affected items, grounded in the HTML-AAM
+  // parent-relationship hedge.
+  it('recommends role="listitem" too when the cause is an item display change', () => {
     const findings = check(component('<ul class="list"><li class="list-row">One</li></ul>\n'));
     expect(findings[0].message).toContain('role="listitem"');
     expect(findings[0].message).toContain("HTML-AAM's implicit li-to-listitem mapping");

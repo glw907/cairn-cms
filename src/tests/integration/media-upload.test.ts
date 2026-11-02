@@ -13,6 +13,7 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 import { withTestEnv } from '../helpers/with-test-env.js';
+import { MAX_UPLOAD_BYTES } from '../../lib/media/config.js';
 
 const bucket = env.MEDIA_BUCKET;
 
@@ -30,14 +31,9 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: {
+    media: {
       enabled: true,
       bucketBinding: 'MEDIA_BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 25 * 1024 * 1024,
-      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-      transformations: false,
     },
     ...overrides,
   } as CairnRuntime;
@@ -171,22 +167,19 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
   });
 
   it('rejects an oversize Content-Length with fail(413) before reading the body', async () => {
-    const routes = createContentRoutes({
-      runtime: runtime({
-        resolvedAssets: {
-          enabled: true,
-          bucketBinding: 'MEDIA_BUCKET',
-          publicBase: '/media',
-          urlForm: 'slug',
-          maxUploadBytes: 10,
-          allowedTypes: ['image/png'],
-          transformations: false,
-        },
-      }),
-    });
+    const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
-      uploadEvent({ bytes: PNG, contentLength: String(11) }),
+      uploadEvent({ bytes: PNG, contentLength: String(MAX_UPLOAD_BYTES + 1) }),
     )) as ActionResult;
+    expect(res.status).toBe(413);
+    expect(res.data?.error).toBe('too_large');
+  });
+
+  it('rejects a body over the cap with fail(413) even when Content-Length understates it', async () => {
+    const routes = createContentRoutes({ runtime: runtime() });
+    const big = new Uint8Array(MAX_UPLOAD_BYTES + 1);
+    big.set(PNG);
+    const res = (await routes.uploadAction(uploadEvent({ bytes: big, contentLength: '100' }))) as ActionResult;
     expect(res.status).toBe(413);
     expect(res.data?.error).toBe('too_large');
   });
@@ -226,7 +219,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     expect(res.data?.error).toBe('session_expired');
   });
 
-  it('rejects an SVG payload with fail(415) even when allowedTypes includes image/svg+xml', async () => {
+  it('rejects an SVG payload with fail(415) (SVG is denied ahead of the type list)', async () => {
     const routes = createContentRoutes({ runtime: runtime() });
     const res = (await routes.uploadAction(
       uploadEvent({ bytes: SVG, contentType: 'image/svg+xml', filename: 'logo.svg' }),

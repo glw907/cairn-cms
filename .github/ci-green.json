@@ -11,7 +11,6 @@
     ".github/workflows/tool.yml"
   ],
   "neverOnPullRequest": [
-    ".github/workflows/norms.yml",
     ".github/workflows/publish.yml",
     ".github/workflows/tsgo.yml"
   ],

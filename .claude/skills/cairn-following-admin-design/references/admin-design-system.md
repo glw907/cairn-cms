@@ -617,7 +617,7 @@ alongside the component recipes above and below it.
   `cairn-chip-outline` classes, composed with `badge`) render in one of three ratified registers,
   replacing the stock daisyUI ghost badge outright: its hardcoded background and border can match
   a row or card color and melt into it, and neither it nor an un-tuned `badge-outline` clears the
-  audit's own 3:1 border-contrast floor. The first generation (design infrastructure Pass 3) split
+  system's own 3:1 border-contrast floor. The first generation (design infrastructure Pass 3) split
   a `tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet`
   register (the shape); the owner probe measured the dot illegible toolkit-wide across three
   consumer screens and ratified fusing tone INTO the register instead, so `tone` and the dot both
@@ -633,9 +633,9 @@ alongside the component recipes above and below it.
   call site). Every tinted fill (`quiet`, `warning`) is tuned to a 1.16-1.47:1 contrast band
   against its own row ground (plain and zebra, both admin themes), and `warning`'s ink additionally
   clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root. The tinted
-  band's upper bound (1.47:1) sits under the audit's own 1.5:1 ground-collision floor, so every
+  band's upper bound (1.47:1) sits under the system's own 1.5:1 ground-collision floor, so every
   `quiet`/`warning` chip sits under that floor by design, on every row ground, not only a
-  `base-300`-derived one (`chip-ground-collision` stays advisory, so this is documented rather
+  `base-300`-derived one (that floor is advisory, so this is documented rather
   than retuned). There is no chip-level danger tier; a state that must
   stand out beyond quiet is a `warning` chip. Every register pins `font-weight: 400`; since none of
   the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
@@ -661,7 +661,7 @@ alongside the component recipes above and below it.
   canvas-readback method `status-chip-register-tuning.test.ts` measures the chip registers with)
   is the one canonical home for the measured numbers themselves.
   `badge-soft`'s own fill measures 1.185:1 against its row ground on both themes, roughly 0.32
-  under `chip-ground-collision`'s 1.5:1 floor, and the gap is a deliberate exemption, not an
+  under the system's 1.5:1 ground-collision floor, and the gap is a deliberate exemption, not an
   oversight: `badge-soft` is boundary-less by design, the same shape choice `badge-outline` and
   `badge-dash` make, and carries no claim that its fill alone reads as distinct from the row. Its
   label names the state in text (WCAG 1.4.1 Use of Color), so the badge never depends on a reader
@@ -877,8 +877,7 @@ alongside the component recipes above and below it.
   namespace boundary [the public stylesheet contract](../../../../skills/cairn-styling-public-pages/references/public-stylesheet-contract.md) documents; a rename
   would also touch the canvas-readback measurement suites that pin these exact names
   (`status-chip-register-tuning.test.ts`, `status-chip-register-parity.test.ts`,
-  `badge-tier-legibility.test.ts`) and the audit norms that read them
-  (`src/lib/audit/norms.ts`, `src/lib/audit/rules/rendered/screen-anatomy.ts`), a blast radius out
+  `badge-tier-legibility.test.ts`), a blast radius out
   of proportion to a naming-convention fix. Registered here instead: both names are known,
   intentional exceptions to the `toolkit-` prefix, scoped-safe, and not available for reuse
   elsewhere in the admin sheet. Separately, the eyebrow-label utility bundle (`type-label

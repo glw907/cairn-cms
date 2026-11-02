@@ -114,13 +114,13 @@
       "name": "ConceptConfig",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `ConceptDescriptor`, `SiteIndexes` name it on this subpath."
+      "reason": "R4 closure: `ConceptDescriptor`, `TypedSiteResolver` name it on this subpath."
     },
     {
       "name": "ConceptDescriptor",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `resolveReferences`, `siteDescriptors` name it on this subpath."
+      "reason": "R4 closure: `resolveReferences`, `buildSiteDescriptors` name it on this subpath."
     },
     {
       "name": "DateField",
@@ -133,18 +133,6 @@
       "subpath": "/delivery/data",
       "home": ".",
       "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor` name it on this subpath."
-    },
-    {
-      "name": "DatetimeField",
-      "subpath": "/delivery/data",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
-      "name": "EmailField",
-      "subpath": "/delivery/data",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "FieldBehavior",
@@ -186,7 +174,7 @@
       "name": "InferFieldset",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `SiteIndexes` names it on this subpath."
+      "reason": "R4 closure: `TypedSiteResolver` names it on this subpath."
     },
     {
       "name": "LinkResolve",
@@ -264,7 +252,7 @@
       "name": "SiteConfig",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `createSiteIndexes`, `siteDescriptors`, `buildSiteManifest` name it on this subpath."
+      "reason": "R4: kept for a site that types its parsed config from this subpath. No export here names it since `createSiteResolver` and `buildSiteManifest` dropped the config parameter."
     },
     {
       "name": "TextareaField",
@@ -315,10 +303,10 @@
       "reason": "R4 closure: `SiteConfig` names it on this subpath."
     },
     {
-      "name": "AssetConfig",
+      "name": "MediaConfig",
       "subpath": "/media",
       "home": ".",
-      "reason": "R4 closure: `normalizeAssets` names it on this subpath."
+      "reason": "R4 closure: `createMediaResolver` names it on this subpath."
     },
     {
       "name": "MediaResolve",
@@ -345,7 +333,7 @@
       "reason": "R4 closure: `FieldDescriptor` names it on this subpath."
     },
     {
-      "name": "AssetConfig",
+      "name": "MediaConfig",
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `CairnRuntime` names it on this subpath."
@@ -435,12 +423,6 @@
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
-      "name": "DatetimeField",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
       "name": "Editor",
       "subpath": "/sveltekit",
       "home": ".",
@@ -451,12 +433,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `MagicLinkMessage` names it on this subpath."
-    },
-    {
-      "name": "EmailField",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "EmailRecipient",

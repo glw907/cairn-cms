@@ -259,9 +259,8 @@ describe('ReproContext: the context and fixture obligations every story relies o
 
 // audit-repro-fixturemediabase (docs/internal/engine-rulings.md): a docs site deployed under a
 // SvelteKit `paths.base` cannot comply with a hardcoded media base, so `mediaBase` is now a prop a
-// mounting page passes, threaded to both places a mounted story reaches it: the context every
-// story reads directly, and, for a `'shell'` story, the shell payload CairnAdminShell's own
-// shadowing `setContext` reads from (ReproContext.svelte:277-280).
+// mounting page passes, provided as the context every
+// story reads, shell-hosted ones included.
 const shellProbeStory: ReproStory = {
   id: 'test/probe-shell-media-base',
   component: ProbeComponent as Component<Record<string, unknown>>,
@@ -277,20 +276,13 @@ describe('ReproContext: mediaBase prop, plain and shell-hosted', () => {
     await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
   });
 
-  it("prefers CairnAdminShell's own shadow over ReproContext's own context on a shell-hosted story", async () => {
-    // Falsifiable: the two contexts are forced to DIFFER (a real value from `shellData.mediaBase`
-    // against a different real value from the `mediaBase` prop). If CairnAdminShell ever stopped
-    // shadowing MEDIA_BASE_CONTEXT_KEY, the probe would read ReproContext's own '/docs/repro-assets'
-    // instead, and this assertion would catch it; asserting on two forced-equal values (the prior
-    // shape of this test) could not tell the two contexts apart.
-    const divergentShellStory: ReproStory = {
-      ...shellProbeStory,
-      shellData: { mediaBase: '/shell-only-media-base' },
-    };
+  it("a shell-hosted story reads ReproContext's media base", async () => {
+    // Falsifiable: the shell sets no media base of its own, so removing ReproContext's setContext
+    // leaves the probe reading the /media default instead of the prop.
     const screen = await render(ReproContext, {
-      props: { story: divergentShellStory, mediaBase: '/docs/repro-assets' },
+      props: { story: shellProbeStory, mediaBase: '/docs/repro-assets' },
     });
-    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/shell-only-media-base');
+    await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/docs/repro-assets');
   });
 
   it('composes every rendered fixture image URL from a custom mediaBase on a bare, posed story', async () => {

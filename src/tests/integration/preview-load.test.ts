@@ -12,9 +12,9 @@ import { insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { generateToken, hashToken } from '../../lib/auth/crypto.js';
 import { formatManifest } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { EntryData, PublicRoutesConfig } from '../../lib/delivery/public-routes.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import { serializeMediaManifest } from '../../lib/media/manifest.js';
 import { runtime as baseRuntime, postsConcept as basePostsConcept, contentEvent } from '../unit/_content-harness.js';
@@ -63,19 +63,20 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
 
 function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
   return {
-    site: createSiteResolver([]),
+    site: buildSiteResolver([]),
     // Resolves every `cairn:<concept>/<id>` token in the body against the injected resolver,
     // marking a miss rather than throwing, so the test proves loadPreview wired a non-throwing
     // resolver in without exercising the real markdown pipeline (covered elsewhere).
-    render: async ({ body, resolve }) =>
+    render: async ({ body, resolveLink }) =>
       body.replace(/cairn:([a-z0-9-]+)\/([a-z0-9-]+)/g, (_m, concept: string, id: string) => {
-        // loadPreview always substitutes a resolveLink override, so `resolve` is always defined here.
-        const url = resolve?.({ concept, id });
+        // loadPreview always substitutes a resolveLink override, so `resolveLink` is always defined here.
+        const url = resolveLink?.({ concept, id });
         return url ? `[link:${url}]` : '[broken]';
       }),
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
     ...overrides,
   };
 }
@@ -83,14 +84,14 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
 /** The real render pipeline, so a body `media:` token's resolution (or its broken marker) reflects
  *  what composeEntryData actually threads into `render`, not a hand-rolled stand-in. */
 function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
-  const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+  const { render } = createRenderer();
   return {
-    site: createSiteResolver([]),
-    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
+    site: buildSiteResolver([]),
+    render,
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
     ...overrides,
   };
 }
@@ -421,18 +422,13 @@ describe('loadPreview: the draft render', () => {
       main: { [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = (await loadPreview(runtime({ resolvedAssets }), publicConfig(), event)) as PreviewData;
+    const data = (await loadPreview(runtime({ media }), publicConfig(), event)) as PreviewData;
     expect(data.heroImage?.url).toBe(`/media/photo.${hash}.webp`);
   });
 
@@ -463,19 +459,14 @@ describe('loadPreview: the draft render', () => {
       main: { [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
     const data = (await loadPreview(
-      runtime({ resolvedAssets }),
+      runtime({ media }),
       mediaRenderPublicConfig(),
       event,
     )) as PreviewData;
@@ -537,18 +528,13 @@ describe('PreviewData: the type and runtime shape contract', () => {
       },
     });
     gh.install();
-    const resolvedAssets: ResolvedAssetConfig = {
+    const media: ResolvedMediaConfig = {
       enabled: true,
       bucketBinding: 'BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 1,
-      allowedTypes: [],
-      transformations: false,
     };
     const token = await mintValidToken();
     const { event } = loadEvent(token);
-    const data = await loadPreview(runtime({ resolvedAssets }), publicConfig(), event);
+    const data = await loadPreview(runtime({ media }), publicConfig(), event);
 
     // newer/older are unconditional keys on EntryData (always assigned, possibly undefined);
     // heroImage is the one truly optional (conditionally spread) key, populated above.

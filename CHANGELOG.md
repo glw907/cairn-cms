@@ -49,10 +49,9 @@
 
   Consumers may: read an export's doc comment in `node_modules/@glw907/cairn-cms/dist/` before a page.
 
-- **A `content.entry_invalid` log event.** `createSiteIndexes` with `validate: false` logs one warning
-  per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
-  skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
-  migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
+- **A `content.entry_invalid` log event.** `buildSiteManifest` logs one warning per entry it skips,
+  a draft included (`scope: 'manifest'`). It used to drop the entry with no signal, so a migrated
+  draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
   `CAIRN_LOG_EVENTS` gain the member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
@@ -174,6 +173,105 @@
 - **A rename onto a live entry's address is refused.** `renameAction` applies the check publish
   already used, across every concept, and answers 409 with nothing committed. The new
   `rename.address_collided` log event names the holder.
+
+- **`defineAdapter` keeps unset optional keys readable and checks two config keys at the type level.**
+  `(cairn as CairnAdapter).aiPosture` needs no cast when the adapter leaves it unset. A
+  `summaryFields` entry is keyed to its concept's fields, and a `navLayout` item's `screen` is one of
+  the engine's six ids or a `content` key, so a misspelled one fails the type check. A `navLayout`
+  built apart from `defineAdapter` and annotated `NavLayout` is refused, because its `screen` is wide.
+
+  Consumers must: declare `navLayout` inline on `defineAdapter` instead of in a separate constant
+  annotated `NavLayout`.
+
+  Consumers must: correct any `summaryFields` key that is not a field of its concept and any
+  `navLayout` `screen` that is neither an engine screen id nor a `content` key.
+
+  Consumers may: drop a cast around `cairn.aiPosture`.
+
+- **`createRenderer` takes one config bag and returns one `render`.** `createRenderer(registry,
+  options)` becomes `createRenderer({ components, resolveMedia, ... })`. `renderMarkdown(md, opts)`
+  becomes `render({ body: md, ...opts })`, and `renderDocument` takes the same input, now named
+  `RenderInput`. The returned `remarkPlugins` and `rehypePlugins` are gone, though the options stay.
+  `ResolveOptions` and `SiteRender` name the link resolver `resolveLink` where they named it `resolve`.
+
+  Consumers must: pass `createRenderer` one object with `components` and `resolveMedia` keys.
+
+  Consumers must: call `render({ body, ...opts })` where you called `renderMarkdown(md, opts)`, and
+  pass the same input to `renderDocument`.
+
+  Consumers must: stop reading `remarkPlugins` and `rehypePlugins` off the renderer.
+
+  Consumers must: rename `resolve` to `resolveLink` on any `ResolveOptions` or `SiteRender` you write.
+
+  Consumers must: write `render: renderer.render` in the adapter's `rendering` group.
+
+- **`AssetConfig` is `MediaConfig`, and it holds `bucketBinding` alone.** `publicBase`, `urlForm`,
+  `maxUploadBytes`, `allowedTypes`, and `transformations` are gone, with `srcset`, `sizes`, and
+  `transform-url.ts`. The upload cap is fixed at 25 MB and the types at the five web image types.
+  `createMediaResolver(media, manifest, { strict })` is the new argument order and normalizes inside.
+  `normalizeAssets` and `ResolvedAssetConfig` leave `/media`, `runtime.resolvedAssets` is
+  `runtime.media`, and `publicPath` loses its `urlForm` argument. `PublicRoutesConfig.resolveMedia`
+  is required as `MediaResolve | null`, `assetsEnabled` is gone, and `data.mediaBase` with it. The
+  `media.resolver_absent` log event is gone.
+
+  Consumers must: rename the `AssetConfig` type to `MediaConfig` and reduce the value to `{ bucketBinding }`.
+
+  Consumers must: delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and
+  `transformations` from the media config, and retire a media route mounted at a `publicBase` other
+  than `/media`, and any `srcset` or `sizes` use.
+
+  Consumers must: call `createMediaResolver(media, manifest, { strict })` in that order and drop any
+  `normalizeAssets` call, and drop any `ResolvedAssetConfig` import.
+
+  Consumers must: read `runtime.media` where you read `runtime.resolvedAssets`.
+
+  Consumers must: pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop
+  `assetsEnabled`.
+
+  Consumers must: stop reading `data.mediaBase` and drop the `urlForm` argument from any `publicPath` call.
+
+  Consumers must: stop querying logs for `media.resolver_absent`.
+
+- **`createSiteResolver(adapter, files)` replaces `createSiteIndexes`.** It takes the adapter and one
+  eager `?raw` glob of `/src/content/**/*.md`, buckets each file into the concept whose `dir` is its
+  parent, and always validates. `cairnManifest` takes `configModule` alone: `content`, `manifestPath`,
+  and `siteFactsPath` are gone. `SiteResolver<A>` is typed by the adapter, `site.entries()` is
+  `site.paths()`, and `SiteResolver.adjacent` is gone in favor of `site.concept(id).adjacent(entryId)`.
+  `buildSiteDescriptors` and `buildSiteManifest` lose their config argument. A file under no concept,
+  or a concept `dir` outside `src/content`, now throws. A concept may be named `site`.
+
+  Consumers must: replace `createSiteIndexes(adapter, config, globs, opts)` with
+  `createSiteResolver(adapter, files)` over one `/src/content/**/*.md` glob.
+
+  Consumers must: use the returned value as `site`, read each concept through `site.concept('posts')`
+  where you read `indexes.posts`, and drop any `SiteIndexes` or `SiteGlobs` import.
+
+  Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`, and move
+  a generated file at a custom path to `src/content/.cairn/`.
+
+  Consumers must: remove `validate: false` and fix the entries it hid.
+
+  Consumers must: call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.
+
+  Consumers must: drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.
+
+  Consumers must: move any concept `dir` outside `src/content` under it, and any markdown file under no concept's `dir`.
+
+- **`CairnAdmin` takes one `rendering` prop.** `rendering={cairn.rendering}` replaces `render`,
+  `registry`, and `icons`, so the renderer cannot be wired without the component registry that feeds
+  Insert block. `runtime.registry`, which nothing read, is gone.
+
+  Consumers must: pass `rendering={cairn.rendering}` to `CairnAdmin` and drop `render`, `registry`,
+  and `icons`.
+
+  Consumers must: stop reading `runtime.registry`.
+
+- **The `cairnManifest` plugin owns `ssr.noExternal`.** It adds `@glw907/cairn-cms` and
+  `@glw907/cairn-cms-dev` to the list in the main config and in the nested verify server, merged with
+  any list the site sets.
+
+  Consumers must: delete the `ssr.noExternal` line for the engine from `vite.config.ts`.
+
 - **`buildSitemapView` skips `noindex` entries.** An entry whose `robots` field carries `noindex` no
   longer appears in the sitemap, matching the markdown twin. The check applies only to a concept whose
   fieldset declares `robots`. Feeds still list such entries. The scaffold's sitemap route now calls
@@ -206,7 +304,8 @@
   chassis files no longer carry maintainer provenance comments. Two `cairn-audit` outputs change
   with it: a rule message now prints an absolute GitHub URL where it printed a path into the
   maintainer docs, and `norms card` prints new reference text for the `--cairn-card-border` row, a
-  noun phrase that opens "the card-shell hairline decision: ...".
+  noun phrase that opens "the card-shell hairline decision: ...". The `norms` query this entry
+  describes was removed later in the same release.
 
   Consumers must: nothing, unless a script matches on the old message or `norms` text.
 
@@ -230,7 +329,7 @@
   publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
   `dist/`.
 
-  Consumers must: add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine, so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node. Nothing else, unless a site imports a file from the package's `src/` directly.
+  The `cairnManifest` plugin adds the package to `ssr.noExternal` (see its entry above), so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node, and a site adds no line. A site that imports a file from the package's `src/` directly has more to change.
 
 - **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
   receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
@@ -662,7 +761,85 @@
 
   Consumers must: nothing.
 
+- **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
+  engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
+  string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
+  path produces a `Date` now, so a `Date` you pass by hand to `validate` or `'~standard'` reads as empty.
+  The block boundary is one rule for every reader: an empty block (`---` then `---`) and spaces after the
+  opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
+  frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
+  file. YAML 1.2 replaces the old dialect: `10:30` is the string `10:30` (it was 630), `0755` is 755 (it
+  was 493), `0o755` is 493 (it was a string), `1_000` is a string (it was 1000), `0b11` is a string
+  (it was 3), and a `<<` merge key no longer merges. A save writes single-quoted scalars (an unlimited
+  line width, so a scalar with no newline stays on one line; a string holding a newline writes as a
+  block scalar), so a bare date loses its quotes
+  and `references.ts` stops quoting a date-shaped id. A comparison over four sites' content found
+  no value that changed apart from dates read as text.
+
+  Consumers must: read a date value as text, in any key, not a `Date`, in your code
+  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
+  `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
+  block, or a `10:30`, `0755`, `0o755`, `1_000`, `0b11`, or `<<` value, and write what you mean. Expect a first admin save to
+  rewrite a hand-written block into the single-quoted form.
+
+- **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
+  or `2024-03-15T20:00:00Z` fails with `has a time of day. Write the date alone: 2024-03-15`, naming the
+  day as written. Before, a negative offset late in the day validated as the next day with no warning.
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with a
+  `content.entry_invalid` log record, and the build fails on it unless it is a draft. The edit route still
+  opens it by URL on the written day, and a save writes the date alone.
+
+  Consumers must: write the date alone in every `date` field, taking the day from the filename when it
+  carries one. Run the build once and fix each entry it names.
+
+- **A `boolean` field refuses a non-boolean, and `draft` is checked whether or not the concept declares
+  it.** `true` stores `true`. `false`, an empty value, and an absent key omit the value. Anything else,
+  such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
+  read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
+  declares no `draft` field runs the raw key through the same rule, and `draft` must be boolean whatever
+  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's
+  boolean attribute is unaffected, since it is already a real boolean. Jekyll's `published: false` is
+  still not read.
+
+  Consumers must: fix each `draft` and each value of a declared `boolean` field that is not `true`,
+  `false`, or empty, such as `featured: "true"` or `pinned: yes`; the build names the file, and such an
+  entry leaves the manifest and the admin's concept list with a `content.entry_invalid` log record, as in
+  the entry above. Map any other draft marker to `draft: true`. If you call `validate` by hand, pass a
+  real boolean or an empty value: a raw form string such as `'on'` is now refused where it used to read
+  as unset.
+
+- **`creatable` widens a multiselect's set.** A `multiselect` with `creatable: true` keeps a value
+  outside `options` on save, and its inferred type is `string[]` instead of the union of `options`. Before,
+  the tag input invited a new value that the save then refused. A taxonomy under a vocabulary stays
+  closed.
+
+  Consumers must: drop any code that narrowed a creatable field's value to the `options` union.
+
+- **An entry's form renders length and date bounds as input attributes.** `text` and `textarea` carry
+  `minlength` and `maxlength` (`length` sets both, otherwise `min` and `max`), and `date` carries `min`
+  and `max`, so the browser refuses what the save would. `pattern` stays out, and the component form
+  is unchanged. The costs: `maxlength` truncates a paste with no message, the browser counts untrimmed
+  text where the save counts trimmed text, a stored over-long value trips nothing until it is edited,
+  and a stored date outside `min` or `max` is invalid at once.
+
+  Consumers must: nothing.
+
 ### Removed
+
+- **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
+  section.** `cairn-audit` is static-only. The browser rules are gone (`border-contrast`,
+  `chip-ground-collision`, `container-inset-asymmetry`, `field-edge-alignment`, `focus-renders`,
+  `form-font-parity`, `interactive-contrast`, `list-role` (the browser rule; the static `list-role` stays), `motion-reduced-delay`, `norms-bands`,
+  `one-filled-action`, `panel-width`, `relational-spacing`, `screen-anatomy`, `touch-targets`,
+  `viewport-overflow`, `weight-budget`), as are `rendered.pages`,
+  `rendered.allowlist`, the norms manifest with its `norms:generate` and `norms:check` scripts, the
+  `CAIRN_AUDIT_COOKIES` variable, the showcase `check:cairn:rendered` script, and the `norms.yml`
+  workflow. The packaged skills no longer teach the rendered audit. An old `rendered` key in
+  `cairn-audit.config.json` is ignored, like any unknown key.
+
+  Consumers must: drop `cairn-audit --rendered`, `cairn-audit norms`, and any `check:cairn:rendered`
+  script from your scripts and CI; delete a `rendered` section from `cairn-audit.config.json`; remove
+  Playwright if the audit was its only use.
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
   label comes from `itemLabel` on the `array` field descriptor, which is unchanged.
@@ -699,6 +876,15 @@
   and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
   removed pages.
 
+- **`fields.datetime`, `fields.email`, `DatetimeField`, and `EmailField`.** The two kinds leave the
+  builders, the field types, the validator, the entry and directive forms, and the three barrels. A
+  `datetime` field's `min` and `max` never bound anything, and the engine never validated a moment
+  beyond reading it as text.
+
+  Consumers must: replace `fields.email` with `fields.text` and a `pattern` for an address, and replace
+  `fields.datetime` with `fields.date` plus a text field for the moment. Declare a directive attribute
+  that was `email` or `datetime` as `text`.
+
 ### Fixed
 
 - **A proofread cut off at the output cap fails honestly.** A `max_tokens` stop now answers 413 with
@@ -720,7 +906,7 @@
 - **A save or publish keeps every frontmatter key the fieldset does not declare.** A hand-written
   `draft: true` survives, so the entry stays hidden. A save reads the prior file once and fails closed
   with a 503 when that read or its parse fails. A bare YAML date such as `updated: 2026-01-01` is
-  written back as `2026-01-01T00:00:00.000Z`: the instant survives and the text changes. A malformed
+  written back as the text `2026-01-01`. A malformed
   file now throws on every parse, where it used to throw once per isolate and then read as empty.
 - **A publish onto an address a live entry holds is refused.** Single publish answers 409 and keeps
   the branch. Site-wide publish commits nothing, keeps every branch, and redirects with
@@ -740,14 +926,6 @@
   Consumers must: expect `buildNewlyPublished` to omit a renamed entry, and drop any workaround that
   filtered renames by key.
 
-- **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
-  base, so an image in the preview resolves under it instead of `/media`.
-- **`normalizeAssets` throws on an `allowedTypes` entry the upload path cannot store.** The error is
-  `cairn:`-prefixed and names the type. The sniffer's five types stay the only source.
-
-  Consumers must: remove any `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`,
-  `image/gif`, and `image/avif`, since the site now fails at startup on one.
-
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
   error. A site no longer needs its own try/catch around the function.
@@ -762,7 +940,7 @@
   instead of the unknown-id message, which sent the reader looking for a missing file.
 - **`slugify` strips accents before it removes other characters.** A title with `résumé` now derives
   `resume` where it derived `r-sum`. Ids already on disk are unchanged.
-- **The scaffold's media constant is typed `AssetConfig`.** The showcase and the `waymark` template
+- **The scaffold's media constant is typed `MediaConfig`.** The showcase and the `waymark` template
   annotate it, so the `configure-media` page's edits type-check as written.
 
 - **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses
@@ -872,7 +1050,7 @@
   (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
   (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif
   1.23.5), `mdast-util-directive` (`^3.1.1`), `shiki` (`^4.5.0`), and the `@types/hast`,
-  `gray-matter`, `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
+  `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
   `package.json` takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, `vite`
   `^8.3.3`, and `@cloudflare/workers-types` `^5.20261007.1`. The Workers test project moves to
   `@cloudflare/vitest-plugin` (the renamed `@cloudflare/vitest-pool-workers`, which is deprecated),
@@ -881,6 +1059,10 @@
 
   Consumers must: nothing. A site that regenerates `worker-configuration.d.ts` with Wrangler 4.148
   gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module declarations.
+
+- `gray-matter` and `js-yaml` leave the engine's dependencies, and `yaml` reads and writes frontmatter.
+
+  Consumers must: nothing. See the `parseMarkdown` entry under Changed.
 
 ## 0.98.0
 

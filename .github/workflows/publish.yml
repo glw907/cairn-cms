@@ -20,15 +20,7 @@ permissions:
   id-token: write # required for OIDC trusted publishing
 
 jobs:
-  # The norms manifest ships in the package, so a cut cannot ship a stale one. The check is defined
-  # once, in norms.yml, and called here so the publish still gates on it. Keeping it there rather
-  # than inline is what makes it rehearsable: norms.yml also carries `workflow_dispatch`, so the
-  # render can be proven on CI against any branch without this workflow attempting a real publish.
-  norms:
-    uses: ./.github/workflows/norms.yml
-
   publish:
-    needs: norms
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -43,7 +35,7 @@ jobs:
       # move back to npm@latest once a fixed 12.x publishes cleanly.
       - run: npm install -g npm@11
       # A committed, in-sync lockfile lets this job resolve the exact dependency tree every other
-      # workflow in the repo already installs with (test.yml, e2e.yml, norms.yml, design.yml,
+      # workflow in the repo already installs with (test.yml, e2e.yml, design.yml,
       # tsgo.yml, tool-conditions.yml), so the published build gets the same reproducibility
       # guarantee: an out-of-sync lockfile fails the install loudly instead of a floating resolve
       # silently drifting the published tarball's dependency tree from what CI proved.
@@ -94,7 +86,6 @@ jobs:
   # version in lockstep but can publish apart (that first cut published the dev backend
   # manually); re-running a release must not fail on the half that already landed.
   publish-dev:
-    needs: norms
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

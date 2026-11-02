@@ -33,14 +33,15 @@ describe('container round-trip', () => {
     expect(frontmatterFromForm(fields, form).faq).toEqual([{ featured: true }]);
   });
 
-  it('round-trips a date leaf inside a row, and reads a disk-authored Date (side B)', () => {
+  it('round-trips a date leaf inside a row, and reads a disk-authored date (side B)', () => {
     const form = new FormData();
     form.set('meta.note', 'hi'); form.set('meta.when', '2026-01-02');
     const fm = frontmatterFromForm(fields, form);
     const reloaded = parseMarkdown(serializeMarkdown(fm, 'body')).frontmatter;
     expect((formValues(fields, reloaded).meta as Record<string, unknown>).when).toBe('2026-01-02');
-    // side B: a parsed YAML Date inside a nested object must coerce, not String(Date) drift.
-    expect((formValues(fields, { meta: { when: new Date('2026-01-02T00:00:00Z') } }).meta as Record<string, unknown>).when).toBe('2026-01-02');
+    // side B: an unquoted date inside a nested object reads as the text it was written.
+    const disk = parseMarkdown('---\nmeta:\n  when: 2026-01-02\n---\nbody\n').frontmatter;
+    expect((formValues(fields, disk).meta as Record<string, unknown>).when).toBe('2026-01-02');
   });
 
   it('coerces a disk-authored lone-scalar nested multiselect to a one-element list (side B)', () => {

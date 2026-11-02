@@ -12,7 +12,7 @@ during navigation, so a screen reader follows the active row through the input's
 rather than a roving tabindex. Two separate aria-live regions report the results count and narrate
 the active row, so one announcement never clobbers the other.
 
-Each row carries a decorative thumbnail (the bare delivery path under transformations: false), the
+Each row carries a decorative thumbnail (the bare delivery path), the
 display name, and a needs-alt flag (a glyph plus a label, never hue alone) when the asset's alt is
 empty. Search filters across the display name and the alt, case-insensitive.
 
@@ -22,9 +22,8 @@ while a site stores images only.
 
 Mount it on an `/admin` route only, never a public page: the entries come from authed load data.
 It writes nothing and holds no selection; the caller owns what a pick does next. Rows list in the
-array's order, and the array is never mutated. Thumbnails compose under the delivery base the shell
-supplies through the media-base context, so inside `CairnAdminShell` they follow
-`assets.publicBase`, and with no provider they fall back to `/media`. Escape is left to bubble, so a
+array's order, and the array is never mutated. Thumbnails compose under the delivery base the media-base
+context supplies, and with no provider they fall back to `/media`. Escape is left to bubble, so a
 host dialog or popover keeps its own dismiss.
 @public
 -->
@@ -53,9 +52,7 @@ host dialog or popover keeps its own dismiss.
 <script lang="ts">
   import { getContext } from 'svelte';
   import { formatMediaToken } from '../media/reference.js';
-  // The bare delivery path under transformations: false (the same path the source chip uses).
-  // SEAM: when transformations are on, the row thumbnail could request a resized variant
-  // instead of the bare path; that is a later transformations-on refinement.
+  // The bare delivery path (the same path the source chip uses).
   import { publicPath } from '../media/naming.js';
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
@@ -68,9 +65,8 @@ host dialog or popover keeps its own dismiss.
 
   let { entries, onselect }: Props = $props();
 
-  // The delivery base the option thumbnails compose under. `CairnAdminShell` provides the site's
-  // resolved base to every authed descendant through this key; a bare mount outside it (the
-  // reproductions module, a test) resolves to the same /media default publicPath already carries.
+  // The delivery base the option thumbnails compose under. Only the reproductions module provides
+  // this key; every other mount resolves to the /media default publicPath already carries.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   // A stable id base so the listbox and each option carry unique ids the combobox can point at.
@@ -251,7 +247,7 @@ host dialog or popover keeps its own dismiss.
           onclick={() => select(entry)}
         >
           <img
-            src={publicPath(entry.slug, entry.hash, entry.ext, 'slug', mediaBase)}
+            src={publicPath(entry.slug, entry.hash, entry.ext, mediaBase)}
             alt=""
             aria-hidden="true"
             class="h-10 w-10 flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"

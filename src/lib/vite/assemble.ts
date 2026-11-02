@@ -6,7 +6,7 @@ export const USAGE = [
   'Usage: cairn-manifest [--help]',
   '',
   'Run from the project root. Reads the cairnManifest() plugin options from the Vite config, writes the',
-  'content manifest to its manifestPath (default /src/content/.cairn/index.json) and site-facts.json,',
+  'content manifest to /src/content/.cairn/index.json and site-facts.json to its sibling,',
   'and keeps each entry\'s publishedAt stamp. Exit codes: 0 written (or --help); 1 the write failed',
   '(message on stderr; no Vite config, or no cairnManifest() plugin in it); 2 an unrecognized argument.',
 ].join('\n');

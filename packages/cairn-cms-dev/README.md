@@ -34,12 +34,6 @@ if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
 export { handle };
 ```
 
-Add the package to `ssr.noExternal` in your `vite.config.ts`, beside the engine, so `vite dev` processes it. It ships built JavaScript that imports `cloudflare:workers`, a scheme Node's loader rejects:
-
-```ts
-ssr: { noExternal: ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'] },
-```
-
 Then start the dev server with the flag set:
 
 ```

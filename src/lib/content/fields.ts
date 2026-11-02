@@ -38,11 +38,11 @@ interface FieldBase {
  */
 export interface TextField extends FieldBase {
   type: 'text';
-  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
   max?: number;
-  /** The exact character count the trimmed value must hold. The first failing length rule reports. */
+  /** The exact character count the trimmed value must hold. The first failing length rule reports. An entry's form renders it as both `minlength` and `maxlength`. */
   length?: number;
   /**
    * A regular-expression source string the value must match, tested unanchored and with no flags,
@@ -60,11 +60,11 @@ export interface TextareaField extends FieldBase {
   type: 'textarea';
   /** The input's height in text rows. Defaults to 3. */
   rows?: number;
-  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
   max?: number;
-  /** The exact character count the trimmed value must hold. */
+  /** The exact character count the trimmed value must hold. An entry's form renders it as both `minlength` and `maxlength`. */
   length?: number;
   /** A regular-expression source string; same unanchored, flagless match and declaration-time throw as `TextField.pattern`. */
   pattern?: string;
@@ -101,11 +101,11 @@ export interface SelectField extends FieldBase {
 export interface MultiselectField extends FieldBase {
   type: 'multiselect';
   /**
-   * The allowed values; omitted leaves the set open. When set, a value outside it fails the save,
-   *  including under `creatable`. Renders as checkboxes unless `creatable` is set.
+   * The allowed values; omitted leaves the set open. When set, a value outside it fails the save
+   *  unless `creatable` is set. Renders as checkboxes unless `creatable` is set.
    */
   options?: readonly string[];
-  /** Render an open comma-separated tag input instead of checkboxes. A value outside `options` still fails the save. */
+  /** Render an open comma-separated tag input instead of checkboxes. A value outside `options` is kept, and the field's inferred type is `string[]`. */
   creatable?: boolean;
   /**
    * Placeholder text for the open comma-separated input. Defaults to "Separate values with commas"
@@ -130,34 +130,14 @@ export interface UrlField extends FieldBase {
   type: 'url';
 }
 /**
- * An email-address input whose format the validator enforces.
- * @public
- */
-export interface EmailField extends FieldBase {
-  type: 'email';
-}
-/**
  * A calendar-date input.
  * @public
  */
 export interface DateField extends FieldBase {
   type: 'date';
-  /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
+  /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, and an entry's form renders it as the input's `min`. */
   min?: string;
-  /** Latest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
-  max?: string;
-}
-/**
- * A date-and-time input. A quoted string is kept as written; a `Date` that YAML parsed from an
- * unquoted ISO timestamp becomes a zoneless `YYYY-MM-DDTHH:mm` string read in UTC, dropping the
- * seconds and the offset.
- * @public
- */
-export interface DatetimeField extends FieldBase {
-  type: 'datetime';
-  /** Earliest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
-  min?: string;
-  /** Latest allowed moment as an ISO string. Not yet enforced by the save or rendered on the input. */
+  /** Latest allowed date as YYYY-MM-DD. Enforced at the save, and an entry's form renders it as the input's `max`. */
   max?: string;
 }
 /**
@@ -245,9 +225,7 @@ export type FieldDescriptor =
   | SelectField
   | MultiselectField
   | UrlField
-  | EmailField
   | DateField
-  | DatetimeField
   | BooleanField
   | IconField
   | ImageField
@@ -275,12 +253,8 @@ export const fields = {
   multiselect: <const O extends Omit<MultiselectField, 'type'>>(o: O): MultiselectField & O => ({ type: 'multiselect', ...o }),
   /** A URL field. */
   url: <const O extends Omit<UrlField, 'type'>>(o: O): UrlField & O => ({ type: 'url', ...o }),
-  /** An email-address field. */
-  email: <const O extends Omit<EmailField, 'type'>>(o: O): EmailField & O => ({ type: 'email', ...o }),
   /** A calendar-date field. */
   date: <const O extends Omit<DateField, 'type'>>(o: O): DateField & O => ({ type: 'date', ...o }),
-  /** A date-and-time field. */
-  datetime: <const O extends Omit<DatetimeField, 'type'>>(o: O): DatetimeField & O => ({ type: 'datetime', ...o }),
   /** A boolean checkbox field. */
   boolean: <const O extends Omit<BooleanField, 'type'>>(o: O): BooleanField & O => ({ type: 'boolean', ...o }),
   /** An icon field whose value is a glyph name from the adapter's icon set. */

@@ -79,26 +79,18 @@ describe('r2Key', () => {
 
 describe('publicPath', () => {
   it('writes the slug form with a leading slash', () => {
-    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'slug')).toBe(
+    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp')).toBe(
       '/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp',
     );
   });
   it('writes the slug-null form', () => {
-    expect(publicPath(null, 'a1b2c3d4e5f6a7b8', 'webp', 'slug')).toBe(
+    expect(publicPath(null, 'a1b2c3d4e5f6a7b8', 'webp')).toBe(
       '/media/a1b2c3d4e5f6a7b8.webp',
     );
   });
-  it('writes the opaque form, ignoring the slug', () => {
-    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'opaque')).toBe(
-      '/media/a1/a1b2c3d4e5f6a7b8.webp',
-    );
-  });
-  it('uses a custom publicBase in both forms when given', () => {
-    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'slug', '/assets')).toBe(
+  it('uses a custom base when given', () => {
+    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', '/assets')).toBe(
       '/assets/blue-running-shoes.a1b2c3d4e5f6a7b8.webp',
-    );
-    expect(publicPath('blue-running-shoes', 'a1b2c3d4e5f6a7b8', 'webp', 'opaque', '/assets')).toBe(
-      '/assets/a1/a1b2c3d4e5f6a7b8.webp',
     );
   });
 });

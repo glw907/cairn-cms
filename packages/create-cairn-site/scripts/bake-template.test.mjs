@@ -220,7 +220,6 @@ test('pruneShowcaseOnlyPackageFields throws naming a missing expected script', (
       dev: 'vite dev',
       'test:e2e': 'playwright test',
       'design:probe': 'node scripts/design-probe.mjs',
-      'check:cairn:rendered': 'cairn-audit --rendered',
     },
     devDependencies: { '@playwright/test': '^1.60.0', '@axe-core/playwright': '^4.10.0' },
   };
@@ -235,7 +234,6 @@ test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDepende
       'pretest:e2e': 'npm --prefix ../.. run package',
       'test:e2e': 'playwright test',
       'design:probe': 'node scripts/design-probe.mjs',
-      'check:cairn:rendered': 'cairn-audit --rendered',
     },
     devDependencies: { '@playwright/test': '^1.60.0' },
   };

@@ -46,7 +46,7 @@ add when one is missing. If the `Stop` hook is wired (a developer pasted the pri
 `.claude/settings.json`), it runs `npm run check:cairn --if-present` at the end of every session;
 let it run rather than skipping past a failure. If the change
 touched anything under `/admin`, load the `cairn-building-admin-screens` skill and run its done-gate
-(the static and rendered `cairn-audit` passes) before calling the screen finished. If
+(the static `cairn-audit` pass) before calling the screen finished. If
 `.claude/agents/cairn-extension-reviewer.md` is installed, run it over the diff: it is read-only,
 asks whether a new component could have been a stock DaisyUI one and whether an action with more
 than two outcomes uses the `outcome` grammar, and returns accept, fix, or escalate.

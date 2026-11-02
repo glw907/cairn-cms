@@ -1,8 +1,8 @@
 <!--
 @component
 The single-mount admin page: CairnAdmin switches on data.view, so this one component renders
-every /admin view. The adapter's render, registry, and icons thread through for the editor's
-preview pane, insert palette, and guided form fields.
+every /admin view. The adapter's rendering block threads through for the editor's preview pane,
+insert palette, and guided form fields.
 -->
 <script lang="ts">
   import { CairnAdmin } from '@glw907/cairn-cms/admin';
@@ -20,10 +20,4 @@ preview pane, insert palette, and guided form fields.
   let { data, form }: Props = $props();
 </script>
 
-<CairnAdmin
-  {data}
-  {form}
-  render={cairn.rendering.render}
-  registry={cairn.rendering.components}
-  icons={cairn.rendering.icons}
-/>
+<CairnAdmin {data} {form} rendering={cairn.rendering} />

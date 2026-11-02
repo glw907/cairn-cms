@@ -40,7 +40,6 @@ var eventVocabulary = []string{
 	"media.delivery_failed",
 	"media.orphans_reconciled",
 	"media.resolve_missing",
-	"media.resolver_absent",
 	"include.missing",
 	"include.read_failed",
 	"media.deleted",

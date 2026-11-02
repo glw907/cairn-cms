@@ -30,7 +30,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
+    media: { enabled: false },
     tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} },
     ...overrides,
   } as CairnRuntime;

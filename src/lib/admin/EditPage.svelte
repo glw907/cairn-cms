@@ -332,9 +332,9 @@ island.
   // the same condition the button's aria-disabled reads.
   let publishButton = $state<HTMLButtonElement | null>(null);
 
-  // A required field hidden from the browser's validation report cannot take it: an invisible
+  // An invalid field hidden from the browser's validation report cannot take it: an invisible
   // control is unfocusable, so the browser cancels the save silently with no message. Two surfaces
-  // can hide a required field, so this capture-phase invalid listener reveals whichever holds the
+  // can hide an invalid field, so this capture-phase invalid listener reveals whichever holds the
   // invalid control before the report that follows fires. A field in the write pane needs Preview
   // flipped back to Write; a field in the details slide-over needs the panel opened. flushSync
   // forces the reveal inside the event, so the report lands on a now-visible control.
@@ -1372,8 +1372,8 @@ island.
       uploadedRecords.map((r) => [r.hash, { slug: r.slug, ext: r.ext, contentType: r.contentType }]),
     ),
   });
-  // The site's delivery base, provided by CairnAdminShell; a bare mount (a test, the reproductions
-  // module) falls back to the /media default, as MediaPicker does. The slug form matches the
+  // The delivery base; only the reproductions module provides it, and every other mount uses the
+  // /media default, as MediaPicker does. The slug form matches the
   // picker, since the delivery route reads hash and extension from the last path segment.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
   const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets, mediaBase));
@@ -1489,7 +1489,7 @@ island.
           body: md,
           concept: data.conceptId,
           frontmatter: data.frontmatter,
-          resolve,
+          resolveLink: resolve,
           resolveMedia: resolveMediaRef,
           resolveFragment: resolveFragmentRef,
         });
@@ -1526,6 +1526,11 @@ island.
   // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
   // adapters use that name); everything else is a Details field.
   const titleField = $derived(data.fields.find((f) => f.name === 'title'));
+  // The hoisted title input takes the same length bounds FieldInput renders: `length` sets both,
+  // otherwise `min` and `max`. Only the text and textarea kinds declare them.
+  const titleBounds = $derived(
+    titleField?.type === 'text' || titleField?.type === 'textarea' ? titleField : undefined,
+  );
   const draftField = $derived(data.fields.find((f) => f.type === 'boolean' && f.name === 'draft'));
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
@@ -1661,8 +1666,7 @@ island.
         </button>
       </Tooltip>
       <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-           display: flex, which strips the implicit list role in WebKit/VoiceOver (cairn-audit's
-           list-role rule, rendered mode). The two menu-divider <li> keep their role="separator"
+           display: flex, which strips the implicit list role in WebKit/VoiceOver. The two menu-divider <li> keep their role="separator"
            instead: that role is a deliberate, different reading, not a listitem. -->
       <ul
         bind:this={actionsMenu}
@@ -2001,6 +2005,8 @@ island.
           placeholder={titleField.label}
           aria-label={titleField.label}
           required={titleField.required}
+          minlength={titleBounds?.length ?? titleBounds?.min}
+          maxlength={titleBounds?.length ?? titleBounds?.max}
         />
       </div>
     {/if}

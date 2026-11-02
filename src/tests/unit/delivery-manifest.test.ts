@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
-import { createLinkResolver } from '../../lib/delivery/site-resolver.js';
-import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
+import { createLinkResolver, createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
-import type { SiteConfig } from '../../lib/nav/site-config.js';
 
 const adapter = defineAdapter({
   content: {
@@ -18,11 +16,10 @@ const adapter = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
 });
 
-const config: SiteConfig = { siteName: 'T' };
-
-const globs = {
-  posts: { '/src/content/posts/2026-01-04-guide.md': '---\ntitle: Guide\ndate: 2026-01-04\n---\n\n[about](cairn:pages/about)\n' },
-  pages: { '/src/content/pages/about.md': '---\ntitle: About\n---\n\nHi.\n' },
+const aboutPage = { '/src/content/pages/about.md': '---\ntitle: About\n---\n\nHi.\n' };
+const files = {
+  '/src/content/posts/2026-01-04-guide.md': '---\ntitle: Guide\ndate: 2026-01-04\n---\n\n[about](cairn:pages/about)\n',
+  ...aboutPage,
 };
 
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
@@ -38,7 +35,7 @@ const requiredTitleAdapter = defineAdapter({
 
 describe('buildSiteManifest', () => {
   it('builds one entry per file across concepts with edges', () => {
-    const manifest = buildSiteManifest(adapter, config, globs);
+    const manifest = buildSiteManifest(adapter, files);
     const keys = manifest.entries.map((e) => `${e.concept}/${e.id}`).sort();
     expect(keys).toEqual(['pages/about', 'posts/2026-01-04-guide']);
     const guide = manifest.entries.find((e) => e.id === '2026-01-04-guide');
@@ -47,19 +44,16 @@ describe('buildSiteManifest', () => {
   });
 
   it('carries a summary on each built entry', () => {
-    const manifest = buildSiteManifest(adapter, config, globs);
+    const manifest = buildSiteManifest(adapter, files);
     const about = manifest.entries.find((e) => e.id === 'about');
     // No description, so the summary is the body excerpt.
     expect(about?.summary).toBe('Hi.');
   });
 
   it('excludes a file whose frontmatter fails validation', () => {
-    const manifest = buildSiteManifest(requiredTitleAdapter, config, {
-      posts: {
-        'src/content/posts/2026-01-01-good.md': '---\ntitle: Good\ndate: 2026-01-01\n---\nbody',
-        'src/content/posts/2026-01-02-bad.md': '---\ntitle: ""\ndate: 2026-01-02\n---\nbody',
-      },
-      pages: {},
+    const manifest = buildSiteManifest(requiredTitleAdapter, {
+      'src/content/posts/2026-01-01-good.md': '---\ntitle: Good\ndate: 2026-01-01\n---\nbody',
+      'src/content/posts/2026-01-02-bad.md': '---\ntitle: ""\ndate: 2026-01-02\n---\nbody',
     });
     const ids = manifest.entries.map((e) => e.id);
     expect(ids).toContain('2026-01-01-good');
@@ -69,7 +63,7 @@ describe('buildSiteManifest', () => {
 
 describe('createLinkResolver', () => {
   it('resolves a known target and throws on a miss', () => {
-    const { site } = createSiteIndexes(adapter, config, globs);
+    const site = createSiteResolver(adapter, files);
     const resolve = createLinkResolver(site);
     expect(resolve({ concept: 'pages', id: 'about' })).toBe('/about');
     expect(() => resolve({ concept: 'posts', id: 'missing' })).toThrow(/cairn:posts\/missing/);
@@ -88,9 +82,9 @@ describe('createLinkResolver', () => {
       email: { from: 'a@b.c' },
       rendering: { render: ({ body }) => Promise.resolve(body) },
     });
-    const { site } = createSiteIndexes(fragmentsAdapter, config, {
-      pages: globs.pages,
-      fragments: { 'src/content/fragments/address.md': '---\ntitle: Address\n---\n\nBody.' },
+    const site = createSiteResolver(fragmentsAdapter, {
+      ...aboutPage,
+      '/src/content/fragments/address.md': '---\ntitle: Address\n---\n\nBody.',
     });
     const resolve = createLinkResolver(site);
     expect(() => resolve({ concept: 'fragments', id: 'address' })).toThrow(/cairn:fragments\/address/);
@@ -109,12 +103,10 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
 
   it('warns once for a concept whose entries carry a key its schema does not declare', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    buildSiteManifest(adapter, config, {
-      posts: globs.posts,
-      pages: {
-        '/src/content/pages/a.md': '---\ntitle: A\nrobots: noindex\n---\n\nA.\n',
-        '/src/content/pages/b.md': '---\ntitle: B\nrobots: noindex\n---\n\nB.\n',
-      },
+    buildSiteManifest(adapter, {
+      ...files,
+      '/src/content/pages/a.md': '---\ntitle: A\nrobots: noindex\n---\n\nA.\n',
+      '/src/content/pages/b.md': '---\ntitle: B\nrobots: noindex\n---\n\nB.\n',
     });
     const records = undeclaredWarnings(warn);
     expect(records).toHaveLength(1);
@@ -123,13 +115,11 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
 
   it('warns once per entry it skips as invalid, a draft included', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const manifest = buildSiteManifest(requiredTitleAdapter, config, {
-      posts: {
-        '/src/content/posts/2026-01-04-live.md': '---\ntitle: Live\ndate: 2026-01-04\n---\n\nOK.\n',
-        '/src/content/posts/2026-01-05-broken.md': '---\ntitle: ""\ndate: 2026-01-05\ndraft: true\n---\n\nNo title.\n',
-        '/src/content/posts/2026-01-06-broken-too.md': '---\ntitle: ""\ndate: 2026-01-06\n---\n\nNo title.\n',
-      },
-      pages: globs.pages,
+    const manifest = buildSiteManifest(requiredTitleAdapter, {
+      '/src/content/posts/2026-01-04-live.md': '---\ntitle: Live\ndate: 2026-01-04\n---\n\nOK.\n',
+      '/src/content/posts/2026-01-05-broken.md': '---\ntitle: ""\ndate: 2026-01-05\ndraft: true\n---\n\nNo title.\n',
+      '/src/content/posts/2026-01-06-broken-too.md': '---\ntitle: ""\ndate: 2026-01-06\n---\n\nNo title.\n',
+      ...aboutPage,
     });
     expect(manifest.entries.filter((e) => e.concept === 'posts').map((e) => e.id)).toEqual(['2026-01-04-live']);
     const records = warn.mock.calls
@@ -147,7 +137,7 @@ describe('buildSiteManifest undeclared frontmatter keys', () => {
 
   it('stays silent for a concept with no undeclared keys', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    buildSiteManifest(adapter, config, globs);
+    buildSiteManifest(adapter, files);
     expect(undeclaredWarnings(warn)).toEqual([]);
   });
 });

@@ -5,7 +5,7 @@ import { fillTitleWhenHydrated } from './editor-helpers.js';
 // build. The public half and the editor half exercise two separate content universes on purpose:
 //
 //   - The public assertions read the disk corpus under src/content/, which the [...path] route
-//     prerenders at build time (createSiteIndexes over import.meta.glob). The seeded fragment
+//     prerenders at build time (createSiteResolver over import.meta.glob). The seeded fragment
 //     (src/content/fragments/trail-safety-notice.md) is included from a post
 //     (2026-03-10-callout.md) and a page (about.md), and its manifest row was regenerated with
 //     `cairn:manifest` so the prerendered build and the committed manifest agree.

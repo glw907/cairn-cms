@@ -26,7 +26,7 @@ function data(theme: 'cairn-admin' | 'cairn-admin-dark' = 'cairn-admin') {
     theme,
     collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
-    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string; title: string }[] | null>,
     attention: {},
   };
 }

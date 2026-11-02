@@ -21,7 +21,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
-    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string; title: string }[] | null>,
     attention: {} as Record<string, { count: number; label: string }>,
   };
 }

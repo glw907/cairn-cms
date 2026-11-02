@@ -137,9 +137,9 @@ what moved, and an unexpected failure falls back to its bare message.
                   <button
                     type="submit"
                     class="btn btn-ghost btn-xs"
-                    aria-label={`Revert to the version from ${formatTimestamp(entry.date)} by ${entry.editor}`}
+                    aria-label={`Restore the version from ${formatTimestamp(entry.date)} by ${entry.editor} as a draft`}
                   >
-                    Revert
+                    Restore as draft
                   </button>
                 </form>
               </td>

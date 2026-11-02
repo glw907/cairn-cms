@@ -9,7 +9,7 @@ async function open(props: { conceptId: string; id: string; singular: string; sl
 describe('RenameDialog', () => {
   it('opens a dialog prefilled with the current slug and posts to ?/rename', async () => {
     const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
-    await screen.getByRole('button', { name: /change url/i }).click();
+    await screen.getByRole('button', { name: /change address/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
     const input = dialog.querySelector<HTMLInputElement>('input[name="slug"]')!;
@@ -21,14 +21,14 @@ describe('RenameDialog', () => {
   });
   it('seeds focus into the slug input when the dialog opens', async () => {
     const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
-    await screen.getByRole('button', { name: /change url/i }).click();
+    await screen.getByRole('button', { name: /change address/i }).click();
     const input = screen.container.querySelector<HTMLInputElement>('input[name="slug"]')!;
     await expect.poll(() => document.activeElement).toBe(input);
   });
 
   it('notes that links update automatically', async () => {
     const screen = await open({ conceptId: 'pages', id: 'home', singular: 'Page', slug: 'home' });
-    await screen.getByRole('button', { name: /change url/i }).click();
+    await screen.getByRole('button', { name: /change address/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toMatch(/links/i);
     expect(text).toMatch(/automatically|update/i);
@@ -56,9 +56,9 @@ describe('RenameDialog', () => {
     // provides (label "Posts", singular "Post"); the component must never lowercase a plural
     // itself.
     const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
-    await screen.getByRole('button', { name: /change url/i }).click();
+    await screen.getByRole('button', { name: /change address/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     const heading = dialog.querySelector('#cairn-rename-dialog-title')!;
-    expect(heading.textContent).toBe('Change this post URL');
+    expect(heading.textContent).toBe('Change this post address');
   });
 });

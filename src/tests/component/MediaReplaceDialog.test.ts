@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import MediaReplaceDialog from '../../lib/admin/MediaReplaceDialog.svelte';
 import * as ingest from '../../lib/admin/client-ingest.js';
+import { stringify as devalueStringify } from 'devalue';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 
 vi.mock('../../lib/admin/client-ingest.js', async () => {
@@ -107,5 +108,46 @@ describe('MediaReplaceDialog: the upload step working status region', () => {
     });
     vi.mocked(ingest.sendUpload).mockRejectedValue(new Error('network down'));
     await expect.poll(() => dialog.querySelector('[role="alert"]')).not.toBeNull();
+  });
+});
+
+describe('MediaReplaceDialog: a guard refusal on the preview', () => {
+  it('lands on the blocked step without ever showing the bare csrf code', async () => {
+    vi.mocked(ingest.ingestFile).mockResolvedValue({
+      blob: new Blob([PNG_BYTES], { type: 'image/png' }),
+      contentType: 'image/png',
+      width: 1,
+      height: 1,
+    });
+    const record = entry({ hash: 'fedcba9876543210', slug: 'meadow', displayName: 'Meadow' });
+    vi.mocked(ingest.sendUpload).mockResolvedValue(
+      new Response(JSON.stringify({ type: 'success', status: 200, data: devalueStringify({ record, reused: false }) })),
+    );
+    // The preview route refuses a stale token with the guard's diagnostic code.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            type: 'failure',
+            status: 403,
+            data: devalueStringify({ error: 'csrf', hash: '', usage: [], foundIn: 0 }),
+          }),
+        ),
+      ),
+    );
+    const screen = await mount();
+    const component = screen.component as unknown as { open: (asset: MediaLibraryEntry, origin?: HTMLElement | null) => void };
+    component.open(entry());
+    const dialog = screen.container.querySelector('[data-testid="cairn-replace-dialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+
+    const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([PNG_BYTES], 'meadow-v2.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/usage could not be fully verified/i);
+    expect(dialog.textContent ?? '').not.toMatch(/csrf/i);
   });
 });

@@ -860,7 +860,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
           display: 'segmented',
           options: [
             { value: 'all', label: 'All', count: 6 },
-            { value: 'draft', label: 'Pending edits', count: 2 },
+            { value: 'draft', label: 'Unpublished changes', count: 2 },
             { value: 'published', label: 'Published', count: 4 },
           ],
           value: 'all',

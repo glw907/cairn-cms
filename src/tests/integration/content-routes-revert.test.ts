@@ -419,7 +419,7 @@ describe('revertAction', () => {
     await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' })));
     const history = await routes.historyLoad(historyEvent(ID));
 
-    // Revert to the version that carries `description`, a builtin frontmatter key `manifestEntryFromFile`
+    // Restore the version that carries `description`, a builtin frontmatter key `manifestEntryFromFile`
     // and `summarize` both read directly rather than gating on a declared field: never "retired".
     const { location } = await expectRedirect(() =>
       routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! })),

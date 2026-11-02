@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
+import { formatManifest } from '../../lib/content/manifest.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 import { testEvent } from '../helpers/test-event.js';
@@ -216,7 +217,7 @@ describe('shellLoad', () => {
   });
 
   it('resolves pendingEntries to [] for a none-capability session and never calls the backend', async () => {
-    // A none-capability session sees no publish surface (the topbar's "Publish site (N)" action is
+    // A none-capability session sees no publish surface (the topbar's "Publish all (N)" action is
     // dead for it), so the count is not theirs to read: shellLoad must skip the backend listing
     // entirely rather than streaming a real pending count into that dead button. A backend whose
     // listBranches throws proves the skip: if shellLoad called it, the promise would degrade to
@@ -303,9 +304,67 @@ describe('shellLoad', () => {
     // pendingEntries is a streamed promise, resolved here for the assertion.
     expect(typeof shell.pendingEntries.then).toBe('function');
     expect(await shell.pendingEntries).toEqual([
-      { concept: 'pages', id: 'about' },
-      { concept: 'posts', id: '2026-05-hello' },
+      { concept: 'pages', id: 'about', title: 'about' },
+      { concept: 'posts', id: '2026-05-hello', title: '2026-05-hello' },
     ]);
+  });
+
+  it('titles a pending entry from the manifest, falls back to its id for a never-published one, and reads the manifest once', async () => {
+    const gh = new GithubDouble({
+      main: {
+        'src/content/.cairn/index.json': formatManifest({
+          version: 1,
+          entries: [
+            { concept: 'posts', id: '2026-05-hello', permalink: '/posts/hello', title: 'Hello, world', date: '2026-05-01', draft: false, links: [] },
+          ],
+        }),
+      },
+    });
+    gh.createBranch('cairn/posts/2026-05-hello', 'main');
+    gh.createBranch('cairn/pages/about', 'main'); // never published: no manifest row
+    gh.createBranch('cairn/posts/2026-05-other', 'main'); // never published, same concept
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([
+      { concept: 'pages', id: 'about', title: 'about' },
+      { concept: 'posts', id: '2026-05-hello', title: 'Hello, world' },
+      { concept: 'posts', id: '2026-05-other', title: '2026-05-other' },
+    ]);
+    expect(gh.calls.filter((c) => c.url.includes('index.json'))).toHaveLength(1);
+  });
+
+  it('keeps the pending rows with their ids when only the manifest read fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({ main: {} });
+    gh.createBranch('cairn/posts/2026-05-hello', 'main');
+    gh.install();
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('index.json')) return new Response('{"message":"boom"}', { status: 500 });
+      return double(input, init);
+    });
+    const routes = createContentRoutes({ runtime: runtime() });
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello', title: '2026-05-hello' }]);
+    const records = warnSpy.mock.calls
+      .map((c) => c[0] as { event?: string; scope?: string })
+      .filter((r) => r.event === 'github.unreachable');
+    expect(records).toHaveLength(1);
+    expect(records[0].scope).toBe('shell');
+  });
+
+  it('reads no manifest when nothing is pending', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes({ runtime: runtime() });
+    const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([]);
+    expect(gh.calls.filter((c) => c.url.includes('index.json'))).toHaveLength(0);
   });
 
   it('filters refs with an invalid id or an unconfigured concept out of pendingEntries', async () => {
@@ -317,7 +376,7 @@ describe('shellLoad', () => {
     const routes = createContentRoutes({ runtime: runtime() });
     const { shell } = await routes.shellLoad(event('/admin/posts', 'owner'));
     if (shell.public) throw new Error('expected authed shell');
-    expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
+    expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello', title: '2026-05-hello' }]);
   });
 
   it('degrades pendingEntries to null and logs github.unreachable when the token mint throws', async () => {
@@ -503,14 +562,14 @@ describe('shellLoad: the access map filters pendingEntries and concepts', () => 
     // list excludes its draft while keeping its own reachable concept's draft.
     const publisher = await routes.shellLoad(customRoleEvent('/admin/posts', 'publisher', 'editor'));
     if (publisher.shell.public) throw new Error('expected authed shell');
-    expect(await publisher.shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
+    expect(await publisher.shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello', title: '2026-05-hello' }]);
 
     // Owner capability bypasses the map entirely, so it still sees every pending draft.
     const owner = await routes.shellLoad(customRoleEvent('/admin/posts', 'owner', 'owner'));
     if (owner.shell.public) throw new Error('expected authed shell');
     expect(await owner.shell.pendingEntries).toEqual([
-      { concept: 'pages', id: 'about' },
-      { concept: 'posts', id: '2026-05-hello' },
+      { concept: 'pages', id: 'about', title: 'about' },
+      { concept: 'posts', id: '2026-05-hello', title: '2026-05-hello' },
     ]);
   });
 

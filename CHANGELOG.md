@@ -2,6 +2,17 @@
 
 ### Added
 
+- **The admin's words follow the ruled vocabulary.** An editor sees entry and entries where a screen said
+  page and pages. The topbar button reads **Publish all**, **Change URL** reads **Change address**,
+  **Pending edits** reads **Unpublished changes**, the history button reads **Restore as draft**, **Push alt
+  to placements** reads **Apply default alt to entries**, a hero reads lead image, and **Upload an image**
+  reads **Upload image**. The visibility filter's **Shown** reads **All**, and the **Published** filter now
+  counts an edited live entry. The Publish all confirmation lists titles, not ids, so
+  `AdminShellData.pendingEntries` rows gain a `title`. The library's default alt text is one box, not two
+  radios, so what you see saves. A guard's bare `csrf` code never reaches a Replace dialog's screen.
+
+  Consumers must: update any test that quotes a renamed label.
+
 - **`scripts/checks/api-surface.md` ships in the package.** The snapshot holds the exact signature of
   every export, and `cairn-extending-a-site` now routes a lookup to
   `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md`. `check:package` fails a tarball

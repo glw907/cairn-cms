@@ -34,9 +34,9 @@ test('the insert UI: choose an image, the placeholder resolves to a media: refer
   const popover = page.getByRole('dialog', { name: 'Insert image' });
   await expect(popover).toBeVisible();
 
-  // 2. Choose a file. "Upload an image" clicks the hidden file input; setInputFiles hands it the real
+  // 2. Choose a file. "Upload image" clicks the hidden file input; setInputFiles hands it the real
   //    PNG buffer. The capture card then appears with the name pre-filled from the real stem.
-  await popover.getByRole('button', { name: 'Upload an image' }).click();
+  await popover.getByRole('button', { name: 'Upload image' }).click();
   // Scope the file input to the popover: the hero field (3b) also renders a hidden file input in its
   // always-mounted dialog, so a page-wide `input[type="file"]` now matches two elements.
   await popover

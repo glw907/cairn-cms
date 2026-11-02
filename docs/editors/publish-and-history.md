@@ -45,7 +45,7 @@ Every entry has one status, and the status tells you what visitors see.
 | **Edited** | The entry is live, and you or another editor saved changes that aren't live yet. Visitors still see the published version. |
 | **Published** | The live version matches what the editor holds. The entry has no saved changes waiting. |
 
-On a list, the **Pending edits** filter shows every entry marked **New** or **Edited**.
+On a list, the **Unpublished changes** filter shows every entry marked **New** or **Edited**. The **Published** filter shows every entry that's live, so an **Edited** entry appears under both filters.
 
 ## Save a draft
 
@@ -91,13 +91,13 @@ If a publish doesn't finish, the editor keeps your edits and shows **Your edits 
 
 ## Publish several entries at once
 
-On a screen outside an open entry, such as a list, the **Publish site** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish site (2)**. It appears only when entries are waiting.
+On a screen outside an open entry, such as a list, the **Publish all** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish all (2)**. It appears only when entries are waiting.
 
 To publish everything that's waiting, follow these steps:
 
-1. On a list screen, select **Publish site**.
-2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its address under a heading for its content type. It includes every waiting entry you have access to, whoever saved it.
-3. Select **Publish site**. To back out, select **Cancel**.
+1. On a list screen, select **Publish all**.
+2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its title under a heading for its content type. It includes every waiting entry you have access to, whoever saved it.
+3. Select **Publish all**. To back out, select **Cancel**.
 
 The list then shows a message that reads **Published** followed by the number of entries.
 
@@ -116,7 +116,7 @@ To delete an entry, follow these steps:
 3. Read the warning that you can't undo the deletion. If the entry has unpublished edits, the warning adds that they go with it.
 4. Select the delete button, which repeats the title, for example **Delete this post**.
 
-If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal. So does a fragment that appears in another editor's unpublished edits. In that case, ask that editor to remove the include or discard those edits first. **Change URL** on a fragment follows the same rule for unpublished includes. The editor updates published includes to the new name.
+If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal. So does a fragment that appears in another editor's unpublished edits. In that case, ask that editor to remove the include or discard those edits first. **Change address** on a fragment follows the same rule for unpublished includes. The editor updates published includes to the new name.
 
 On a list, the trash button beside an entry opens the same window, with the same refusal when other entries link to it. The list's confirm also names the entry, for example **“Snow report” will be deleted.**
 
@@ -130,8 +130,8 @@ The **History** item is in the **More actions** menu on the editing screen. It a
 
 ```repro
 story: publish/history-list
-alt: Reproduction of the Recent versions list, with a Draft row on top followed by published versions that each carry a Revert button.
-caption: The Draft row names who saved the draft and when, and it has no Revert button because a draft isn't a published version. The newest published version carries the Current chip.
+alt: Reproduction of the Recent versions list, with a Draft row on top followed by published versions that each carry a Restore as draft button.
+caption: The Draft row names who saved the draft and when, and it has no Restore as draft button because a draft isn't a published version. The newest published version carries the Current chip.
 ```
 
 The following table describes the columns in the list.
@@ -142,14 +142,14 @@ The following table describes the columns in the list.
 | **Editor** | The person who saved the draft or published the version. |
 | **Date** | When the draft was last saved or the version was published. On a phone, the date sits under the editor's name. |
 
-The list shows up to the 25 most recent published versions. When more exist, the page says **Showing the most recent 25 versions.** The list also reaches back only to the last time the entry's address changed. If you used **Change URL** on the entry, versions published before that change don't appear.
+The list shows up to the 25 most recent published versions. When more exist, the page says **Showing the most recent 25 versions.** The list also reaches back only to the last time the entry's address changed. If you used **Change address** on the entry, versions published before that change don't appear.
 
 If the entry already has a saved draft, even one of yours, the editor refuses to revert and names the person who saved the draft and when. Publish or discard that draft first.
 
 To bring back an earlier version, follow these steps:
 
 1. In the **Recent versions** list, find the version you want.
-2. In its row, select **Revert**.
+2. In its row, select **Restore as draft**.
 3. Review the text on the editing screen. The editor has saved the old version as a draft, and your site still shows the current version.
 4. Select **Publish** to make the old version live, or select **Discard changes** to drop it.
 

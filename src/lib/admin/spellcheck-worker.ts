@@ -7,9 +7,8 @@
 // wasm and dictionary are NEVER bundled into this JS; they arrive as two `fetch` Responses whose URLs
 // the main thread passes in the `init` message, so they stay out-of-bundle fetched assets.
 //
-// spellchecker-wasm's browser entry is CommonJS and its class is not reachable as a typed named
-// export under NodeNext, so the surface is typed structurally and the dynamic import is cast, the
-// same pattern the carta editor uses.
+// The surface is typed structurally and the dynamic import is cast, so the worker names only the
+// two methods it drives and a change to the package's own typings cannot break this file.
 //
 // The Worker owns the MERGED SET, not just the dialect dictionary: a word is correct if the engine
 // (the loaded dialect dictionary) says so, OR it is in the personal dictionary, OR it is in the
@@ -262,11 +261,9 @@ export function boundDictionaryChunks(body: ReadableStream<Uint8Array>): Readabl
 /** Load the wasm engine from the two asset URLs in the init message; rejects when either fetch fails. */
 export async function createEngine(message: InitMessage): Promise<SpellEngine> {
   // The browser class accepts fetch Responses for both assets and streams the dictionary into wasm
-  // memory in chunks, so the 1.5MB corpus is never held as one JS string. Import the class module
-  // directly, not the package's `browser/index.js` UMD bundle: that bundle's UMD prelude references
-  // `window` as the global root, which is undefined in a Worker. The class module is plain CommonJS
-  // that Vite interops, so it loads off the main thread cleanly.
-  const mod = (await import('spellchecker-wasm/lib/browser/SpellcheckerWasm.js')) as unknown as {
+  // memory in chunks, so the 1.5MB corpus is never held as one JS string. Since 0.4.0 the package
+  // exposes one ESM entry that runs in a Worker, so the root specifier is the only import it allows.
+  const mod = (await import('spellchecker-wasm')) as unknown as {
     SpellcheckerWasm: new (handler: (items: SuggestedItem[]) => void) => SpellcheckerWasm;
   };
   const latest = { items: [] as SuggestedItem[] };

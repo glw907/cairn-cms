@@ -370,3 +370,26 @@ describe('fillAltForHash', () => {
     ]);
   });
 });
+
+describe('a leading BOM', () => {
+  const BOM = '﻿';
+  const md = `${BOM}---\nimage:\n  src: media:hero.aaaa1111aaaa1111\n  alt: ""\n---\n\nBody.\n`;
+
+  it('repoints the hero src and restores the BOM', () => {
+    const out = repointMediaRef(md, OLD, NEW_TOKEN);
+    expect(out.markdown).toBe(md.replace('media:hero.aaaa1111aaaa1111', NEW_TOKEN));
+    expect(out.placements).toHaveLength(1);
+  });
+
+  it('fills the hero alt and restores the BOM', () => {
+    const out = fillAltForHash(md, OLD, 'A summit', { overwrite: false });
+    expect(out.markdown.startsWith(`${BOM}---\n`)).toBe(true);
+    expect(out.markdown).toContain('A summit');
+    expect(out.placements[0].kind).toBe('hero');
+  });
+
+  it('returns byte-identical input for a non-matching hash in both', () => {
+    expect(repointMediaRef(md, 'ffff0000ffff0000', NEW_TOKEN).markdown).toBe(md);
+    expect(fillAltForHash(md, 'ffff0000ffff0000', 'x', { overwrite: false }).markdown).toBe(md);
+  });
+});

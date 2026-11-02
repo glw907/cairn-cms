@@ -186,6 +186,59 @@ describe('renameAction', () => {
     expect(Object.keys(result.data)).toEqual(['error']);
   });
 
+  describe('a held address in another concept', () => {
+    const holderRow = (draft: boolean) => ({
+      id: 'posts-new', concept: 'pages', title: 'Holder', permalink: '/posts/new', draft, links: [],
+    });
+    function setup(holderDraft: boolean, movedFrontmatter: string) {
+      const manifest = JSON.stringify({
+        version: 1,
+        entries: [
+          { id: '2026-05-01-hi', concept: 'posts', title: 'Hi', permalink: '/posts/hi', draft: false, links: [] },
+          holderRow(holderDraft),
+        ],
+      });
+      const files = new Map<string, string | null>([
+        ['src/content/posts/2026-05-01-new.md', null],
+        ['src/content/posts/2026-05-01-hi.md', `---\ntitle: Hi\n${movedFrontmatter}---\nbody`],
+        ['src/content/.cairn/index.json', manifest],
+      ]);
+      return renameFetch(files);
+    }
+    const committed = (calls: { url: string; init?: RequestInit }[]) =>
+      calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'));
+
+    it('refuses with no commit and logs the holder', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const calls = setup(false, '');
+      const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
+      const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new'))) as unknown as {
+        status: number; data: { error: string };
+      };
+      expect(result.status).toBe(409);
+      expect(result.data.error).toMatch(/already exists/i);
+      expect(committed(calls)).toBe(false);
+      const record = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string; address?: string; heldByConcept?: string; heldById?: string })
+        .find((r) => r.event === 'rename.address_collided');
+      expect(record).toMatchObject({ address: '/posts/new', heldByConcept: 'pages', heldById: 'posts-new' });
+    });
+
+    it('proceeds when the holder is a draft', async () => {
+      const calls = setup(true, '');
+      const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
+      await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
+      expect(committed(calls)).toBe(true);
+    });
+
+    it('proceeds when the renamed entry is a draft', async () => {
+      const calls = setup(false, 'draft: true\n');
+      const routes = createContentRoutes({ runtime: runtime(() => ({ ok: true, data: {} })) });
+      await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new')));
+      expect(committed(calls)).toBe(true);
+    });
+  });
+
   it('rejects a no-op slug with no commit', async () => {
     const files = new Map<string, string | null>([['src/content/.cairn/index.json', JSON.stringify({ version: 1, entries: [] })]]);
     const calls = renameFetch(files);

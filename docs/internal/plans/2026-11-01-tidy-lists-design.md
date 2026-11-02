@@ -22,8 +22,13 @@ comments tell the truth.
   pinned snapshot, including the dateless IDs used from the 4.6 generation on."
 - **#192 cap.** A `max_tokens` stop throws a private `TidyTruncatedError` from the default client, the
   way `TidySdkMissingError` already works, and the action answers `fail(413)` with the existing
-  too-long copy. No member joins the public `TidyClient` contract. A site's own gateway keeps its
-  current shape.
+  too-long copy. It also clears any unhealthy key mark, since the call reached Anthropic and the key
+  worked. No member joins the public `TidyClient` contract. A site's gateway keeps its current shape.
+- **#192 deadline.** A proofread may not fit the 30-second deadline. The planner's live probe on
+  2026-11-01 took Sonnet 5 past 30s at 12,935 characters, and Sonnet 5.5's rate extrapolates to roughly
+  38s at the 24,000-character cap. Sonnet 5.5 is the faster of the two, so this change improves the
+  problem and doesn't cause it. The deadline and the cap are out of scope: the proofread measures them,
+  the doc comments take the measurement, and an overrun gets a backlog item.
 - **#192 fallbacks.** The tidy request stays on `messages.create` and takes no `fallbacks` beta. A
   refusal already returns `fail(422)` with the text untouched, so a fallback adds a beta surface to
   answer a case that already fails safely.
@@ -60,7 +65,7 @@ network harness", which doesn't exist.
 CI's full suites on the head, including `tidy.spec.ts`, `preview.spec.ts`, and
 `public-preview-tokens.spec.ts`. A main-loop render read of `/admin/settings`, `/admin/posts` with the
 confirm open, and `/admin/vocabulary?saved=1` at 320 and 1440. A before-and-after proofread of five
-real entries, Sonnet 5 against Sonnet 5.5.
+real entries, Sonnet 5 against Sonnet 5.5, plus one input near 20,000 characters for latency.
 
 ## Risk class
 

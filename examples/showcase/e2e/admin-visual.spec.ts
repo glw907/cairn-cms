@@ -733,6 +733,9 @@ test.describe('empty first-run server', () => {
             .evaluateAll((els) => els.map((el) => getComputedStyle(el, '::after').content));
           expect(contents.length).toBeGreaterThan(0);
           for (const content of contents) expect(content).toBe('none');
+          // In the narrow column the lead holds one short line, never a 20rem-tall block.
+          const lead = await page.locator('.start-lead').boundingBox();
+          expect(lead!.height).toBeLessThan(80);
         }
         await expect(page).toHaveScreenshot(`admin-zero-${screen}-${width}.png`, {
           fullPage: true,

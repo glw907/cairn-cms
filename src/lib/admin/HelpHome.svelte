@@ -831,6 +831,10 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
     .start-top {
       flex-direction: column;
     }
+    /* In a column the row's 20rem flex-basis would set the lead's height, not its width. */
+    .start-lead {
+      flex: 0 0 auto;
+    }
     .prog {
       text-align: left;
       min-width: 0;

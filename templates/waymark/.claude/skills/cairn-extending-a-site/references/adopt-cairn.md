@@ -103,7 +103,7 @@ missing** (`config.bindings-missing`).
    npx wrangler d1 execute <auth-db> --remote --command "INSERT INTO editor (email, display_name, role, created_at) VALUES (lower(trim('you@example.com')), 'Your Name', 'owner', unixepoch() * 1000)"
    ```
 
-   Double any `'` in the name, and use `--local` in place of `--remote` for `wrangler dev`.
+   Double any `'` in the email or name, and use `--local` in place of `--remote` for `wrangler dev`.
 3. Email: `npx wrangler email sending enable <domain>`; `send_email: [{ name: "EMAIL" }]`; a custom
    domain route; `vars.PUBLIC_ORIGIN` (the https origin, also the content module's `origin`);
    `observability.enabled: true`; `email.from` on the domain.
@@ -116,7 +116,7 @@ missing** (`config.bindings-missing`).
 | **Wrangler bindings are missing** | Declare `AUTH_DB` and `EMAIL`, redeploy |
 | `config.public-origin-invalid` | Set `PUBLIC_ORIGIN` to the https origin |
 | No sign-in email, with an `auth.link.send_failed` record | Onboard the domain for Email Sending |
-| No sign-in email, with no `auth.link.send_failed` record | No `editor` row exists for that address: run `SELECT email FROM editor` and seed the owner |
+| No sign-in email, with no `auth.link.send_failed` record | Run `SELECT email FROM editor`: if the address is missing, seed the owner; if it is there, delivery can lag on a new sending domain, so wait and retry |
 | Store error naming `0004_login_nonce.sql` | Copy and apply it `--remote` |
 | Publish fails, `github.app-unreachable` | Check App permission, installation, and the key secret |
 

@@ -10,6 +10,13 @@
 
   Consumers must: nothing.
 
+- **The reproduction fixtures use a generic site.** The worked site is Field Notes, with a visitor guide,
+  a morning view, and an area map in place of the trailhead set, and the tag vocabulary reads How-To and
+  member-spotlight. The two image fixtures are renamed `morning-view` and `area-map`; their bytes and
+  hashes are unchanged.
+
+  Consumers must: nothing.
+
 - **The admin's words follow the ruled vocabulary.** An editor sees entry and entries where a screen said
   page and pages. The topbar button reads **Publish all**, **Change URL** reads **Change address**,
   **Pending edits** reads **Unpublished changes**, the history button reads **Restore as draft**, **Push alt

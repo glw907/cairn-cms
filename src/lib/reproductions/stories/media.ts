@@ -38,7 +38,7 @@ function assetBySlug(slug: string): MediaLibraryEntry {
   return asset;
 }
 
-const TRAILHEAD_VIEW = assetBySlug('trailhead-view');
+const MORNING_VIEW = assetBySlug('morning-view');
 const CABIN_PORCH = assetBySlug('cabin-porch');
 const TEAM_PHOTO = assetBySlug('team-photo');
 const LAKE_SUNRISE = assetBySlug('lake-sunrise');
@@ -127,9 +127,9 @@ const uploadForm: ReproStory = {
 
 /** The committed lead picture `media/lead-picture-dialog` opens to placement. */
 const leadPictureValue = {
-  src: formatMediaToken({ slug: TRAILHEAD_VIEW.slug, hash: TRAILHEAD_VIEW.hash }),
-  alt: TRAILHEAD_VIEW.alt,
-  caption: 'The trailhead parking area at sunrise.',
+  src: formatMediaToken({ slug: MORNING_VIEW.slug, hash: MORNING_VIEW.hash }),
+  alt: MORNING_VIEW.alt,
+  caption: 'The parking area at sunrise.',
   decorative: false,
 };
 
@@ -201,7 +201,7 @@ const bulkSelection: ReproStory = {
   host: 'shell',
   props: { data: libraryData(), form: null },
   pose: async (root) => {
-    for (const asset of [TRAILHEAD_VIEW, CABIN_PORCH, LAKE_SUNRISE]) {
+    for (const asset of [MORNING_VIEW, CABIN_PORCH, LAKE_SUNRISE]) {
       await clickWhenPresent(
         root,
         `input[type="checkbox"][aria-label="Select ${asset.displayName}"]`,

@@ -93,7 +93,7 @@ export const fixtureFields: NamedField[] = [
   { name: 'title', label: 'Title', type: 'text', required: true },
   { name: 'draft', label: 'Hidden', type: 'boolean' },
   { name: 'date', label: 'Date', type: 'date', required: true },
-  { name: 'tags', label: 'Tags', type: 'multiselect', taxonomy: true, options: ['trail-guide', 'gear', 'community-news'] },
+  { name: 'tags', label: 'Tags', type: 'multiselect', taxonomy: true, options: ['how-to', 'gear', 'community-news'] },
   { name: 'lead', label: 'Lead picture', type: 'image', seo: true },
 ];
 
@@ -106,7 +106,7 @@ export const fixtureFields: NamedField[] = [
  * nothing.
  */
 export const FIXTURE_BODY = [
-  'The north ridge trailhead is twenty minutes off the highway, and the last mile of it is gravel.',
+  'The east entrance is twenty minutes off the highway, and the last mile of it is gravel.',
   '',
   '## Before you go',
   '',
@@ -172,7 +172,7 @@ export function editPageProps(): Record<string, unknown> {
       title: ENTRY.title,
       date: ENTRY.date,
       draft: false,
-      tags: ['trail-guide'],
+      tags: ['how-to'],
     },
     body: FIXTURE_BODY,
     title: ENTRY.title,

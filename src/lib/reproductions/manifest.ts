@@ -317,11 +317,11 @@ export const manifest: ReproManifestEntry[] = [
  * @beta
  */
 export const fixtureMediaFiles: string[] = [
-  'trailhead-view.4dcfd814c4ebd018.png',
+  'morning-view.4dcfd814c4ebd018.png',
   'cabin-porch.53bf374ac4d3c1fc.png',
   'team-photo.25bb1ae176664419.png',
   'lake-sunrise.f0225d64bbac1d37.png',
-  'trail-map.59be2d4d416f67cf.png',
+  'area-map.59be2d4d416f67cf.png',
 ];
 
 // Re-exported from ./validate.ts so a consumer of the node-safe manifest subpath (this gate,

@@ -47,7 +47,7 @@ export const fixtureConcept: ConceptDescriptor = {
  * alike. One constant because a story and the shell around it render it in two different places, and
  * two literals drifting apart is visible on any reproduction wide enough to show both.
  */
-export const fixtureSiteName = 'Trailhead';
+export const fixtureSiteName = 'Field Notes';
 
 /**
  * The CSRF token every reproduction's forms carry: the value a story bakes into its `data.csrf`
@@ -102,8 +102,8 @@ const IN_USE_ENTRY: FixtureEntry = {
 export const fixtureEntries: FixtureEntry[] = [
   {
     concept: fixtureConcept.id,
-    id: '2026-06-02-trailhead-guide',
-    title: 'A Guide to the North Ridge Trailhead',
+    id: '2026-06-02-visitor-guide',
+    title: 'A Guide for First-Time Visitors',
     date: '2026-06-02',
     draft: false,
     status: 'published',
@@ -111,8 +111,8 @@ export const fixtureEntries: FixtureEntry[] = [
   },
   {
     concept: fixtureConcept.id,
-    id: '2026-06-10-welcome-to-trailhead',
-    title: 'Welcome to Trailhead',
+    id: '2026-06-10-welcome-to-field-notes',
+    title: 'Welcome to Field Notes',
     date: '2026-06-10',
     draft: false,
     status: 'published',
@@ -126,7 +126,7 @@ export const fixtureEntries: FixtureEntry[] = [
     date: '2026-06-24',
     draft: false,
     status: 'edited',
-    summary: "This month's trail conditions and volunteer calls.",
+    summary: "This month's news and open calls.",
     history: {
       entries: [
         { ref: '5ad9324471b6068be6320f6cad9528d7b314019d', editor: 'Robin Lake', date: '2026-05-20T14:32:00Z' },
@@ -142,7 +142,7 @@ export const fixtureEntries: FixtureEntry[] = [
 /**
  * The admin pathname `CairnAdminShell`'s `isDeskRoute` recognizes as a genuine open document:
  * exactly three segments, `admin`, then a concept id present in `data.concepts`
- * (`CairnAdminShell.svelte:431-434`). Composed from {@link fixtureConcept} and a real
+ * (`CairnAdminShell.svelte:536-539`). Composed from {@link fixtureConcept} and a real
  * {@link fixtureEntries} id rather than hand-typed, so it cannot drift from either. A shell story
  * that mounts `EditPage` (the entry screen and its posed variants, the header band) needs this
  * pathname or the shell silently renders office chrome instead: the sidebar breakpoint moves lg to
@@ -155,13 +155,13 @@ export const fixtureDeskPathname = `/admin/${fixtureConcept.id}/${fixtureEntries
  * `<slug>.<hash>.<ext>`, the same shape `publicPath`'s `'slug'` form composes), one of them
  * (`team-photo`) marked in use by {@link IN_USE_ENTRY} for `media/delete-in-use`.
  */
-const trailheadView: MediaLibraryEntry = {
+const morningView: MediaLibraryEntry = {
   hash: '4dcfd814c4ebd018',
-  slug: 'trailhead-view',
+  slug: 'morning-view',
   ext: 'png',
   contentType: 'image/png',
-  displayName: 'Trailhead View',
-  alt: 'A gravel trailhead parking area at the edge of a pine forest, morning light through the trees.',
+  displayName: 'Morning View',
+  alt: 'A gravel parking area at the edge of a pine forest, morning light through the trees.',
   width: 320,
   height: 200,
   bytes: 1607,
@@ -207,13 +207,13 @@ const lakeSunrise: MediaLibraryEntry = {
   createdAt: '2026-06-05T07:20:00Z',
 };
 
-const trailMap: MediaLibraryEntry = {
+const areaMap: MediaLibraryEntry = {
   hash: '59be2d4d416f67cf',
-  slug: 'trail-map',
+  slug: 'area-map',
   ext: 'png',
   contentType: 'image/png',
-  displayName: 'Trail Map',
-  alt: "A hand-drawn map of the three most-used trailheads.",
+  displayName: 'Area Map',
+  alt: "A hand-drawn map of the three most-used entrances.",
   width: 240,
   height: 150,
   bytes: 936,
@@ -239,7 +239,7 @@ const teamPhotoUsage: MediaUsageInfo = {
 
 /** The Media Library screen's fixture data: `CairnMediaLibrary`'s whole `data` prop. */
 export const fixtureMediaLibrary: MediaLibraryData = {
-  assets: [trailheadView, cabinPorch, teamPhoto, lakeSunrise, trailMap],
+  assets: [morningView, cabinPorch, teamPhoto, lakeSunrise, areaMap],
   usage: { [teamPhoto.hash]: teamPhotoUsage },
   error: null,
   flash: null,
@@ -251,12 +251,12 @@ export const fixtureMediaLibrary: MediaLibraryData = {
  */
 export const fixtureVocabulary: VocabularyData = {
   vocabulary: [
-    { value: 'trail-guide', label: 'Trail Guide' },
+    { value: 'how-to', label: 'How-To' },
     { value: 'gear', label: 'Gear' },
     { value: 'community-news', label: 'Community News' },
   ],
-  usage: { 'trail-guide': 2, gear: 0, 'community-news': 1 },
-  unlisted: [{ value: 'volunteer-spotlight', count: 3 }],
+  usage: { 'how-to': 2, gear: 0, 'community-news': 1 },
+  unlisted: [{ value: 'member-spotlight', count: 3 }],
   saved: false,
 };
 
@@ -330,7 +330,7 @@ export const fixtureCaptureFile: File = new File([bytesFromBase64(CAPTURE_IMAGE_
  * reword, the one non-objective hunk).
  */
 const TIDY_ORIGINAL = [
-  'Meet at the the trailhead kiosk by eight, and bring extra water for the climb.',
+  'Meet at the the front kiosk by eight, and bring extra water for the climb.',
   'The loop passes a shaded overlook before it reachs the ridge line.',
 ].join('\n');
 
@@ -341,7 +341,7 @@ const TIDY_ORIGINAL = [
  * doubled, or whitespace.
  */
 const TIDY_CORRECTED = [
-  'Meet at the trailhead kiosk by eight, and bring extra water for the climb.',
+  'Meet at the front kiosk by eight, and bring extra water for the climb.',
   'The loop passes a shaded overlook before it reaches the ridge line and circles back through the aspen grove.',
 ].join('\n');
 

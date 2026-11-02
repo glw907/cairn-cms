@@ -158,6 +158,14 @@
 
 ### Changed
 
+- **`createSectionAction` takes no `resolveDb` for an action with no binding.** With the key omitted
+  the handler runs with no `ctx.db`, and the new `PlainSectionAction` type names the wrapper it
+  returns. `createSectionAction({ resolveDb: () => env.APP_DB })` is the recipe and types `ctx.db`
+  with no type arguments. A present `resolveDb` that answers nothing still refuses with
+  `db_not_bound`, after every authorization check.
+
+  Consumers must: nothing.
+
 - **`/delivery` loads under plain Node, so `/delivery/data` is gone.** The route loaders resolve
   `@sveltejs/kit` with a dynamic import on their 404 paths, and `/delivery` carries every name
   `/delivery/data` did.
@@ -189,7 +197,7 @@
 
   Consumers must: read `runtime.email` in place of `runtime.sender`, and read `render`, `icons`, and `media` from the adapter in place of `runtime.render`, `runtime.icons`, and `runtime.assets`.
 
-- **`buildSitemap` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
+- **`sitemapResponse` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
   the error names the count: `cairn: the sitemap has <n> URLs, and a sitemap file may list 50,000.
   List fewer URLs in this route.` A site under the limit sees no change.
 
@@ -905,6 +913,16 @@
   Consumers must: nothing.
 
 ### Removed
+
+- **The public surface drops what a site never mounts or calls.** `/admin` now exports `CairnAdmin`,
+  `CairnAdminShell`, and `CsrfField`, since those are all a site mounts. `/delivery` drops the feed,
+  sitemap, and robots builders, which the response helpers cover, and `composeEntryData` and
+  `renderJsonLdScript`, which `createPublicRoutes` covers. The root drops the manifest format and
+  verify helpers and `resolveCapability`, `/admin-toolkit` drops `formatTimestamp`, and `/sveltekit`
+  drops `requireEditor` and `createAdminAction`. `createSectionAction` is now the one wrapper for a
+  custom admin action, and it checks the access map on every call.
+
+  Consumers must: stop importing `LoginPage`, `ConfirmPage`, `ConceptList`, `CairnMediaLibrary`, `CairnTidySettings`, `HelpHome`, `EditPage`, `CairnHistory`, `ManageEditors`, `MarkdownEditor`, `EditorApi`, `TidyApi`, `ImagePlaceholderApi`, `FormatKind`, `NavTree`, `DeleteDialog`, `RenameDialog`, `VocabularyAdmin`, `WelcomeView`, `buildRssFeed`, `buildJsonFeed`, `buildSitemap`, `buildRobots`, `formatManifest`, `verifyManifest`, `verifyReferences`, `composeEntryData`, `renderJsonLdScript`, `requireEditor`, `resolveCapability`, `formatTimestamp`, `createAdminAction`, and `AdminActionOptions`, replacing `createAdminAction` with `createSectionAction` with an access-map rule for its target, `requireEditor` with `requireAccess` with a rule naming `editor`, a feed, sitemap, or robots builder with its response helper, and `resolveCapability` with a literal capability.
 
 - **The rendered audit: `cairn-audit --rendered`, `cairn-audit norms`, and the `rendered` config
   section.** `cairn-audit` is static-only. The browser rules are gone (`border-contrast`,

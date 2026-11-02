@@ -99,9 +99,8 @@ describe('collectReachableNames (the type-checker model)', () => {
 // export (an interface, type alias, or enum with no value side) or a runtime value export (a
 // function, a const, or a Svelte component's `declare const X: Component<...>` default), read
 // off real TypeScript symbol flags rather than asserted in prose. Proven against real dist
-// declarations too, below: `dist/admin/index.d.ts` classifies its four plain-type exports
-// (TidyApi, ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its nineteen component
-// exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
+// declarations too, below: `dist/admin/index.d.ts` carries no plain-type exports and classifies
+// its three component exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
 // descending into a component's own Props/Events/Slots type graph.
 describe('isPlainTypeExport (the /admin mechanical split)', () => {
   const tmpFiles: string[] = [];
@@ -148,7 +147,7 @@ describe('isPlainTypeExport (the /admin mechanical split)', () => {
     }
   });
 
-  it('classifies the real dist/admin/index.d.ts barrel (4 plain-type, 18 component)', () => {
+  it('classifies the real dist/admin/index.d.ts barrel (0 plain-type, 3 component)', () => {
     // `npm ci`'s `prepare` hook and CI's own `npm run package` step both build `dist/` ahead of
     // `npm test`, so a real built barrel is available here without this suite building one itself.
     const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -162,8 +161,8 @@ describe('isPlainTypeExport (the /admin mechanical split)', () => {
     );
     const plainTypeNames = resolved.filter((sym) => isPlainTypeExport(sym)).map((sym) => sym.name);
     const componentNames = resolved.filter((sym) => !isPlainTypeExport(sym)).map((sym) => sym.name);
-    expect(plainTypeNames.sort()).toEqual(['EditorApi', 'FormatKind', 'ImagePlaceholderApi', 'TidyApi']);
-    expect(componentNames).toHaveLength(18);
+    expect(plainTypeNames).toEqual([]);
+    expect(componentNames).toHaveLength(3);
   });
 });
 

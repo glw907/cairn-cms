@@ -23,6 +23,11 @@ test('an unbound section answers the unavailable copy', async ({ page }) => {
   );
 });
 
+test('a section with no resolveDb runs its handler rather than refusing', async ({ page }) => {
+  await page.getByRole('button', { name: 'Omitted' }).click();
+  await expect(region(page)).toHaveText('Allowed.');
+});
+
 test('an unmapped target answers the shared denial copy', async ({ page }) => {
   await page.getByRole('button', { name: 'Unmapped' }).click();
   await expect(region(page)).toHaveText('You do not have access to this action.');

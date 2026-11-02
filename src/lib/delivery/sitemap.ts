@@ -17,7 +17,6 @@ export interface SitemapUrl {
 /**
  * Build a sitemap XML document from a list of URLs.
  * @throws If the list holds more than 50,000 URLs, the most a single sitemap file may list.
- * @public
  */
 export function buildSitemap(urls: SitemapUrl[]): string {
   if (urls.length > MAX_SITEMAP_URLS) {

@@ -10,8 +10,9 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
 // `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
 // retires pass, batch 1a: unexported from this barrel; stays exported from
-// `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel
-// beside `formatManifest`, so it moves to the keep list below.
+// `content/standard-schema.ts`), minus `parseManifest`, whose canonical home is now this barrel, so
+// it moves to the keep list below. The last four names are internals: `/internal` carries the
+// manifest helpers, and `resolveCapability` stays a module-level export.
 const DEMOTED = [
   'resolveOwnerLevelRoles',
   'StandardSchemaV1',
@@ -67,7 +68,10 @@ const DEMOTED = [
   'ComponentValidation',
   'ComponentInsert',
   'ReferenceOptions',
-  'ResolvedReference',
+  'ResolvedReference',  'resolveCapability',
+  'formatManifest',
+  'verifyManifest',
+  'verifyReferences',
 ];
 
 // C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
@@ -130,10 +134,7 @@ const KEPT = [
   'serializeMarkdown',
   'readMenu',
   'readVocabulary',
-  'formatManifest',
   'parseManifest',
-  'verifyManifest',
-  'verifyReferences',
   'CommitConflictError',
   'SiteConfigError',
   'Editor',

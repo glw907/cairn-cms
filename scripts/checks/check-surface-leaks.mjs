@@ -255,12 +255,10 @@ export function deriveTypeCheckerLeaks(model, universe) {
     if (!existsSync(dtsPath)) continue;
     const { checker, symbols } = moduleExports(dtsPath);
     if (symbols.length === 0) continue;
-    // `/admin` mixes runtime Svelte component exports (MarkdownEditor, EditPage, ...) with a
-    // handful of plain type exports riding the same barrel (TidyApi, ImagePlaceholderApi,
-    // FormatKind, EditorApi). The split is read mechanically off the dist declarations via
-    // `isPlainTypeExport`, not asserted in prose: only the plain-type exports feed the walk below,
-    // so a genuine leak reachable only through one of them (as `Change`, buried inside `TidyApi`,
-    // in fact is; see the registry entry) is caught the same way it would be on any other subpath.
+    // `/admin` exports runtime Svelte components, and a plain type added beside them rides the same
+    // barrel. The split is read mechanically off the dist declarations via `isPlainTypeExport`, not
+    // asserted in prose: only plain-type exports feed the walk below, so a genuine leak reachable
+    // only through one of them is caught the same way it would be on any other subpath.
     //
     // A component's declared type is a generic reference to its Props/Events/Slots parameters,
     // and walking those would reach every prop's type, including a component's internal

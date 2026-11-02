@@ -23,7 +23,7 @@
 // contract, so a mis-keyed write cannot silently fall through to the production provider. A
 // production request never sets it.
 //
-// `cairnAuditSink` is the site-supplied persistence seam `createAdminAction` forwards audit records
+// `cairnAuditSink` is the site-supplied persistence seam `createSectionAction` forwards audit records
 // through. A site assigns it in its hooks handle; typing it here means that assignment
 // typechecks without the site hand-writing a `declare global` block for an engine-read field.
 //
@@ -60,9 +60,9 @@ declare global {
       cairnEditor?: Editor | null;
       /** The per-request content store the dev-backend handle injects, resolved ahead of the real provider (`locals.cairnBackend ?? runtime.backend.connect(env)`); a production request leaves it unset. */
       cairnBackend?: Backend;
-      /** The site's persistence seam for `createAdminAction`'s audit records, assigned in a hooks handle. Left unassigned, every `ctx.audit` emit still logs `admin.action.audited`. */
+      /** The site's persistence seam for `createSectionAction`'s audit records, assigned in a hooks handle. Left unassigned, every `ctx.audit` emit still logs `admin.action.audited`. */
       cairnAuditSink?: AdminActionAuditSink;
-      /** The site's declared access map, attached by `createAuthGuard` beside `cairnEditor`; the engine never puts it in a page payload. A zero-config guard attaches an empty map, which admits nothing, so a `createAdminAction` that opts into `access` refuses until the site declares a rule for its target; one with no `access` option never reads the field. */
+      /** The site's declared access map, attached by `createAuthGuard` beside `cairnEditor`; the engine never puts it in a page payload. A zero-config guard attaches an empty map, which admits nothing, so a `createSectionAction` action refuses until the site declares a rule for its target. */
       cairnAccess?: AccessMap;
       /** The identity-gate snapshot from `createAuthGuard`'s `identity` option, set on every `/admin/**` path under identity mode, the public login and confirm paths included. The guard is its only writer, publishing the value validated once at construction; absent under the magic-link default. */
       cairnIdentity?: { label: string; logoutUrl: string };

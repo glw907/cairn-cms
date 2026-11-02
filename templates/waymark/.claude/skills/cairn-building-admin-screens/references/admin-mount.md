@@ -155,8 +155,9 @@ freezes a permanent `ok: false` taken when the GitHub App key is absent.
 ## Per-route mounting
 
 `createAuthRoutes`, `createContentRoutes`, `createEditorRoutes`, and `createNavRoutes` stay
-public for a site that must interpose on one surface. The site then owns its route tree and
-tracks the action vocabulary across releases. The media library is the exception: its nine
+public for a site that must interpose on one surface. The site then owns its route tree, tracks
+the action vocabulary across releases, and renders the screen itself, since `/admin` exports only
+`CairnAdmin`, `CairnAdminShell`, and `CsrfField`. The media library is the exception: its nine
 janitorial actions (`mediaDelete`, `mediaUpdate`, the replace, alt, bulk delete, and orphan
 actions) exist only on `createCairnAdmin`'s runtime object and are absent from
 the declared `CairnAdminRoutes` type. `export const actions = admin.actions` still wires them;

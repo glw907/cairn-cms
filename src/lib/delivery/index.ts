@@ -55,23 +55,19 @@ export type {
 } from './site-resolver.js';
 export { buildSiteDescriptors } from './site-descriptors.js';
 export { buildExcerpt } from '../content/excerpt.js';
-export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
-export { buildSitemap } from './sitemap.js';
 export type { SitemapUrl } from './sitemap.js';
 export { buildSitemapView } from './views.js';
-export { buildRobots } from './robots.js';
 export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
-export { renderJsonLdScript } from './json-ld.js';
 export { buildSiteManifest, buildNewlyPublished } from './manifest.js';
 // `buildNewlyPublished`'s `before`/`after` pair is the shape `parseManifest` produces.
 export { parseManifest } from '../content/manifest.js';
 export type { Manifest, ManifestEntry } from '../content/manifest.js';
-export { createPublicRoutes, composeEntryData } from './public-routes.js';
+export { createPublicRoutes } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';
 // `PublicRoutesConfig.render` names `SiteRender`, and its `resolveMedia` names `MediaResolve` and
 // that type's `MediaRef` parameter.

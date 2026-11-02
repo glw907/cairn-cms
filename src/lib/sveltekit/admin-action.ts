@@ -36,8 +36,8 @@ export interface AdminActionAudit {
 }
 
 /**
- * What a site's audit sink receives. `createAdminAction` and `createSectionAction` set `actor` to the
- * verified editor's email. A site may also call a sink directly to record its domain events,
+ * What a site's audit sink receives. `createSectionAction` sets `actor` to the verified editor's
+ * email. A site may also call a sink directly to record its domain events,
  * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
  * not be a cairn editor.
  * @public
@@ -45,7 +45,7 @@ export interface AdminActionAudit {
 export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
 /**
- * A site-supplied sink for `createAdminAction`'s audit records, wired through `event.locals.cairnAuditSink`.
+ * A site-supplied sink for `createSectionAction`'s audit records, wired through `event.locals.cairnAuditSink`.
  *
  * Synchronous and fire-and-forget: `ctx.audit` never awaits the return value (it only attaches a
  * rejection handler to a returned promise), and every
@@ -66,17 +66,16 @@ export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 export interface AdminActionContext {
   /** The verified editor; the only identity a wrapped action may act as. */
   editor: Editor;
-  /** Emit one audit record. A mutating action that emits zero is a defect; see `createAdminAction`. */
+  /** Emit one audit record. A mutating action that emits zero is a defect; see `createSectionAction`. */
   audit: (record: AdminActionAudit) => void;
 }
 
 /**
- * Thrown by `createAdminAction` for exactly one meaning: a handler that returned normally (not
+ * Thrown by a wrapped admin action for exactly one meaning: a handler that returned normally (not
  * `fail()`) having emitted zero `ctx.audit` records, thrown only when running under `esm-env`'s
- * `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal: in
- * production the same condition logs `admin.action.unaudited` instead (see `createAdminAction`).
- * `createAdminAction`'s authorization refusals, a missing editor session or a CSRF mismatch, throw
- * SvelteKit's `redirect()` or `error()` instead, which carry their status to the browser
+ * `DEV`. It is a build-time author signal, not a production refusal: in production the same
+ * condition logs `admin.action.unaudited` instead. A missing editor session or a CSRF mismatch
+ * throws SvelteKit's `redirect()` or `error()` instead, which carry their status to the browser
  * directly and need no `handleError` mapping; this class carries no production status and never
  * stood for one.
  * @public
@@ -91,31 +90,6 @@ export class UnauditedActionError extends Error {
 }
 
 /**
- * Injectable dependencies for `createAdminAction`, so a test can drive both branches of the unaudited path.
- * @public
- */
-export interface AdminActionOptions {
-  /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
-  isDev?: boolean;
-  /**
-   * Opt in to the access-map authorization `createSectionAction` performs, checked against
-   * `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on top of
-   * the map check rather than standing in for it. Omitted, `createAdminAction` authorizes nothing, its
-   * behavior for every existing caller. Present, a refused session is audited through
-   * `ctx.audit` and then thrown as `error(403, ...)`, so a wired `cairnAuditSink` receives one
-   * denial record per refused request. Opt-in rather than the default because the zero-config
-   * guard attaches an empty map, which has no rule for any target: enforcing by default would
-   * refuse every action on a site that declares no map.
-   */
-  access?: {
-    /** The access-map key the session is checked against, never a request pathname. */
-    target: string;
-    /** Also require the owner role, on top of the access-map check. */
-    ownerOnly?: boolean;
-  };
-}
-
-/**
  * What {@link authorizeAdminTarget} answers: admitted, or which of the three gates refused. The
  * caller owns the refusal channel, so the grammar names only the finding.
  */
@@ -126,8 +100,7 @@ export type AdminTargetAuthorization =
   | { outcome: 'not-owner' };
 
 /**
- * The audit `detail` each refusal records, one string per refusing gate. Shared so `createAdminAction`
- * and `createSectionAction` record a denial identically, whatever channel each refuses through.
+ * The audit `detail` each refusal records, one string per refusing gate.
  */
 export const ADMIN_DENIAL_DETAIL: Record<Exclude<AdminTargetAuthorization['outcome'], 'allowed'>, string> = {
   'no-rule': 'rejected: no access rule',
@@ -144,14 +117,14 @@ export function refusalReason(authorization: Exclude<AdminTargetAuthorization, {
 }
 
 /**
- * Decide whether `editor` may act on `target`, the one authorization sequence both admin action
- * wrappers run. All three checks, in this order: `hasAccessRule` never collapses into `canReach`,
+ * Decide whether `editor` may act on `target`, the authorization sequence `createSectionAction`
+ * runs. All three checks, in this order: `hasAccessRule` never collapses into `canReach`,
  * whose permissive reading of an unmapped target is nav semantics rather than an authorization
  * floor a POST can rely on, and `ownerOnly` stacks on the map check rather than replacing it. An
  * absent map (the guard never ran on this route) has no rule for any target, so it refuses.
  *
- * Internal to the engine, and deliberately not exported from `/sveltekit`: the two wrappers are
- * the supported surface, and a site reaching for the predicate directly wants
+ * Internal to the engine, and deliberately not exported from `/sveltekit`: the wrapper is the
+ * supported surface, and a site reaching for the predicate directly wants
  * [`requireAccess`](./guard.js) instead, which owns its refusal channel.
  */
 export function authorizeAdminTarget(
@@ -195,11 +168,7 @@ function serializeThrownError(error: unknown): string {
  *    field passes. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
  *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's
  *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
- * 3. With `deps.access` set, and only then, the site's access map must admit the session for the
- *    declared target (see {@link authorizeAdminTarget}); a refusal audits through `ctx.audit`,
- *    logs `auth.access.refused`, and throws `error(403, ...)`. Omitted, this step does not run at
- *    all, which is the behavior every caller had before the option existed.
- * 4. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
+ * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
  *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
  *    in dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
  *    production (an unaudited state change is a defect here, but should not 500 a live site). A
@@ -208,45 +177,22 @@ function serializeThrownError(error: unknown): string {
  *    to emit a spurious record on every validation reject. The exemption assumes the handler
  *    rejects BEFORE mutating; a handler that mutates and then returns `fail()` must still emit,
  *    since nothing rolls its writes back and the wrapper cannot see them.
- * 5. `event.request.formData()` is read exactly once, here, and handed to the handler, so the
+ * 4. `event.request.formData()` is read exactly once, here, and handed to the handler, so the
  *    handler never re-reads an already-consumed body.
  *
- * ```ts
- * // src/routes/admin/team/events/[id]/+page.server.ts
- * export const actions = {
- *   approve: createAdminAction(async ({ form, ctx }) => {
- *     const id = String(form.get('id'));
- *     await db.signups.approve(id);
- *     ctx.audit({ action: 'approve', entity: 'signup', entityId: id });
- *     return { ok: true };
- *   }),
- * };
- * ```
- *
- * `createAdminAction` itself is not generic over `Env`: its event carries no bindings, and a
+ * Internal to the engine: `createSectionAction` (`./section-action.js`) composes onto this wrapper
+ * and adds the access-map authorization, and a site reaches it only through that factory. This
+ * wrapper alone authenticates but authorizes nothing: a `none`-capability session reaches the
+ * handler. `createAdminAction` is not generic over `Env`: its event carries no bindings, and a
  * compile-only fixture (`src/tests/unit/env-genericity.test.ts`) proves the returned function
- * assigns clean into a route's generated `Actions`. A handler that reads a site binding imports
- * the Workers runtime's `env` itself. A site whose action needs a database binding resolved
- * reaches for `createSectionAction` (`./section-action.js`), whose `resolveDb` takes the site's
- * `Env`; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
- * contract with no database binding stays on `createAdminAction` itself rather than reaching for
- * that door.
+ * assigns clean into a route's generated `Actions`.
  *
- * Every refusal in steps 1 to 3 throws SvelteKit's `redirect()` or `error()`, so none needs a
+ * Every refusal in steps 1 and 2 throws SvelteKit's `redirect()` or `error()`, so none needs a
  * site `handleError` mapping; only the dev-only {@link UnauditedActionError} is not a kit shape.
- * Without `deps.access` this wrapper authenticates but authorizes nothing: a `none`-capability
- * session reaches the handler.
- *
- * Posture: fail-closed once `deps.access` opts in. An unmapped target then refuses through
- * {@link authorizeAdminTarget} rather than falling back to `canReach`'s permissive nav
- * reading, since a site-authored POST needs an authorization floor it can rely on absolutely.
- * @public
  */
 export function createAdminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
-  deps: AdminActionOptions = {},
 ): (event: CairnEvent) => Promise<T> {
-  const dev = deps.isDev ?? DEV;
   return async (event: CairnEvent): Promise<T> => {
     const editor = event.locals.cairnEditor;
     if (!editor) {
@@ -327,34 +273,13 @@ export function createAdminAction<T>(
       },
     };
 
-    // Opt-in authorization, after the CSRF gate and before the handler. Absent `deps.access`,
-    // nothing runs here, which is every existing caller's behavior: the zero-config guard
-    // attaches an EMPTY access map rather than none, and an empty map has no rule for any target,
-    // so enforcing by default would 403 every consumer of the documented DB-less default instead
-    // of hardening anything. A refusal audits first, through the same sink a site already reads,
-    // and then throws error(403): authorization refusals are createAdminAction's channel, so the
-    // wrapper's return type stays the handler's T.
-    if (deps.access) {
-      const authorization = authorizeAdminTarget(event.locals.cairnAccess, editor, deps.access);
-      if (authorization.outcome !== 'allowed') {
-        ctx.audit({ action: 'deny', entity: 'admin-action', detail: ADMIN_DENIAL_DETAIL[authorization.outcome] });
-        log.warn('auth.access.refused', {
-          email: editor.email,
-          role: editor.role,
-          target: deps.access.target,
-          reason: refusalReason(authorization),
-        });
-        throw error(403, DENIED_MESSAGE);
-      }
-    }
-
     const result = await handler({ event, form, ctx });
     // `isActionFailure` is SvelteKit's runtime-safe check for a `fail()` result (an
     // `instanceof` test against its internal `ActionFailure` class, re-exported as a type guard
     // precisely so callers never need to know that class's shape); a rejected request mutated
     // nothing, so it is exempt from the unaudited check below.
     if (emitted === 0 && !isActionFailure(result)) {
-      if (dev) throw new UnauditedActionError(500, `unaudited admin action (${event.url.pathname})`);
+      if (DEV) throw new UnauditedActionError(500, `unaudited admin action (${event.url.pathname})`);
       log.error('admin.action.unaudited', { path: event.url.pathname, editor: editor.email });
     }
     return result;

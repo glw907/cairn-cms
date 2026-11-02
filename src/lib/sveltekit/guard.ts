@@ -452,8 +452,8 @@ export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
  * For a protected load/action: the session the guard already resolved, or a login redirect.
  *  Takes {@link CairnEvent}, so every engine load/action and a site's real event satisfy it.
  *  Authentication only: it throws `redirect(303, '/admin/login')` only when no session was
- *  resolved at all, so a `none`-capability session passes. Call {@link requireEditor},
- *  {@link requireOwner}, or {@link requireAccess} to authorize.
+ *  resolved at all, so a `none`-capability session passes. Call {@link requireOwner} or
+ *  {@link requireAccess} to authorize.
  * @public
  */
 export function requireSession(event: CairnEvent): Editor {
@@ -480,7 +480,6 @@ export function requireOwner(event: CairnEvent): Editor {
  * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
  * `CairnAdminShell` custom-route seam untouched; only the engine's content and roster loads
  * and actions call this and refuse it.
- * @public
  */
 export function requireEditor(event: CairnEvent): Editor {
   const editor = requireSession(event);
@@ -541,7 +540,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  *
  * A `none`-capability session is admitted only when the matched rule names its role explicitly
  * (see `canReach`). A route that wants the zero-config any-editor behavior calls
- * {@link requireSession} or {@link requireEditor} instead of this helper.
+ * {@link requireSession} instead of this helper.
  * @public
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {

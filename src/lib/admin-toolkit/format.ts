@@ -101,7 +101,6 @@ function toCanonicalIso(input: string): string {
  * which is what keeps that guarantee rather than falling back to implementation-defined
  * `Date.parse` behavior. `timeZone` governs only the RENDERED zone. A nullish `input` reads
  * `options.fallback`.
- * @public
  */
 export function formatTimestamp(input: string | null | undefined, options: FormatTimestampOptions = {}): string {
   const { timeZone = 'UTC', locale = 'en-US', fallback = '' } = options;

@@ -16,7 +16,6 @@
 // for a native `title` attribute (no keyboard or touch reach of its own).
 export {
   formatCivilDate,
-  formatTimestamp,
   type FormatCivilDateOptions,
   type FormatTimestampOptions,
   type ItemLabel,

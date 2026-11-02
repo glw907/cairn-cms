@@ -120,10 +120,10 @@ These never carry document content or an API key.
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `admin.action.session_absent` | warn | `path` | A `createAdminAction` route found no editor and redirected to login. Behind the guard this means the route sits outside `/admin/**` or a hook cleared the editor. |
+| `admin.action.session_absent` | warn | `path` | A `createSectionAction` route found no editor and redirected to login. Behind the guard this means the route sits outside `/admin/**` or a hook cleared the editor. |
 | `admin.action.csrf_refused` | warn | `path`, `editor`, `detail`, `witness` | The wrapper's CSRF check failed (same values as `guard.refused`). First trace under `devBackendHandle`, which runs no CSRF check. Mount `CsrfField` in the form. |
 | `admin.action.misconfigured` | error | `path`, `reason` | `createSectionAction` answered `fail(500)`. `db_not_bound`: `resolveDb` returned null or undefined. `access_map_not_attached`: a non-engine hook set `locals.cairnEditor` without `locals.cairnAccess`. |
-| `admin.action.unaudited` | error | `editor`, `path` | A `createAdminAction` handler returned without `ctx.audit` (production; dev throws). |
+| `admin.action.unaudited` | error | `editor`, `path` | A `createSectionAction` handler returned without `ctx.audit` (production; dev throws). |
 | `admin.action.audited` | info | `actor`, `action`, `entity`, `entityId`, `detail` | `ctx.audit` was called. |
 | `admin.action.failed` | error | `action`, `concept`, `id`, `editor`, `error`, `conditionId` | An engine action threw unexpectedly. `conditionId: auth.store-roles-unmigrated` means `AUTH_DB` lacks `0001_roles.sql`. |
 | `admin.action.rate_limit_absent` | warn | `path`, `action`, `entity` | Rate limit configured but its binding resolved to nothing; degrades to open. |

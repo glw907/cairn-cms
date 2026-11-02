@@ -1,9 +1,9 @@
 // One declaration on the adapter, read by every reader. A fixture adapter declares a custom role
 // and an access map, composeRuntime folds them onto the runtime, and every reader that needs the
 // roles or the map takes that runtime: the guard attaches `runtime.access` and resolves
-// capability from `runtime.roles`; the editors routes list the same vocabulary; the three
-// `locals` readers (`requireAccess`, `createSectionAction`, `createAdminAction`), the nav
-// resolver, and `requireEngineAccess` then refuse or admit against that one map.
+// capability from `runtime.roles`; the editors routes list the same vocabulary; the two
+// `locals` readers (`requireAccess`, `createSectionAction`), the nav resolver, and
+// `requireEngineAccess` then refuse or admit against that one map.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { isActionFailure } from '@sveltejs/kit';
@@ -11,7 +11,6 @@ import { makeCookies, expectHttpError } from './_auth-harness.js';
 import { createAuthGuard, requireAccess, requireEngineAccess } from '../../lib/sveltekit/guard.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { createSectionAction } from '../../lib/sveltekit/section-action.js';
-import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { resolveNavLayout } from '../../lib/sveltekit/admin-nav.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
@@ -95,10 +94,8 @@ const sectionAction = createSectionAction<{ AUTH_DB?: unknown }, unknown>({ reso
   action: 'probe',
   entity: 'x',
 });
-const adminAction = createAdminAction(audited, { access: { target: '/admin/x' } });
-const adminActionY = createAdminAction(audited, { access: { target: '/admin/y' } });
 
-describe('one map, five readers', () => {
+describe('one map, four readers', () => {
   it('attaches runtime.access to locals.cairnAccess by identity', async () => {
     const ev = await guardedEvent('owner', '/admin/x');
     expect(ev.locals.cairnAccess).toBe(runtime.access);
@@ -140,29 +137,25 @@ describe('one map, five readers', () => {
       expect(flat).toContain('/admin/y');
     });
 
-    it('on /admin/x through requireAccess, createSectionAction, and createAdminAction', async () => {
+    it('on /admin/x through requireAccess and createSectionAction', async () => {
       const ev = await guardedEvent('steward', '/admin/x');
       expect(await expectHttpError(async () => requireAccess(ev))).toEqual({ status: 403 });
       const refused = await sectionAction(await guardedEvent('steward', '/admin/x', true));
       expect(isActionFailure(refused) && refused.status).toBe(403);
-      const adminPost = await guardedEvent('steward', '/admin/x', true);
-      expect(await expectHttpError(() => adminAction(adminPost))).toEqual({ status: 403 });
     });
   });
 
   describe('admits', () => {
-    it('an owner on /admin/x through all three readers', async () => {
+    it('an owner on /admin/x through both readers', async () => {
       const ev = await guardedEvent('owner', '/admin/x');
       expect(requireAccess(ev).email).toBe('owner@x.dev');
       expect(await sectionAction(await guardedEvent('owner', '/admin/x', true))).toEqual({ ok: true });
-      expect(await adminAction(await guardedEvent('owner', '/admin/x', true))).toEqual({ ok: true });
     });
 
-    it('a steward on /admin/y through requireAccess, createSectionAction, and createAdminAction', async () => {
+    it('a steward on /admin/y through requireAccess and createSectionAction', async () => {
       const ev = await guardedEvent('steward', '/admin/y');
       expect(requireAccess(ev).email).toBe('steward@x.dev');
       expect(await sectionAction(await guardedEvent('steward', '/admin/y', true))).toEqual({ ok: true });
-      expect(await adminActionY(await guardedEvent('steward', '/admin/y', true))).toEqual({ ok: true });
     });
   });
 });

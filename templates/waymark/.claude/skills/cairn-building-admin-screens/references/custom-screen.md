@@ -5,7 +5,7 @@
 - [Build it](#build-it)
 - [The server file](#the-server-file)
 - [The page](#the-page)
-- [Choose the wrapper](#choose-the-wrapper)
+- [An action with no binding](#an-action-with-no-binding)
 - [Wire the audit sink](#wire-the-audit-sink)
 - [A dialog form](#a-dialog-form)
 - [Row detail on demand](#row-detail-on-demand)
@@ -46,8 +46,6 @@ A route nested under the screen inherits the sign-in guard but not the screen's
 ## The server file
 
 The load resolves its binding itself, since `createSectionAction` wraps actions only.
-`createSectionAction` does not infer `Env` from an unannotated `resolveDb` parameter: annotate
-it `Env | undefined` or pass the type arguments, or a binding read fails to typecheck.
 
 <!-- snippet-check-skip: imports cloudflare:workers, which only a site's Worker types declare; the actions half below compiles -->
 ```ts
@@ -71,18 +69,11 @@ export const load: PageServerLoad = async (event) => {
 ```ts
 // src/routes/admin/items/+page.server.ts, the actions
 import type { Actions } from './$types';
+import { env } from 'cloudflare:workers';
 import { fail } from '@sveltejs/kit';
-import type { D1Database } from '@cloudflare/workers-types';
 import { createSectionAction } from '@glw907/cairn-cms/sveltekit';
 
-// A site that runs `wrangler types` uses its generated Env instead of this one.
-interface Env {
-  APP_DB?: D1Database;
-}
-
-const sectionAction = createSectionAction<Env, D1Database>({
-  resolveDb: (workerEnv: Env | undefined) => workerEnv?.APP_DB,
-});
+const sectionAction = createSectionAction({ resolveDb: () => env.APP_DB });
 
 export const actions: Actions = {
   remove: sectionAction(
@@ -100,7 +91,8 @@ export const actions: Actions = {
 
 `ctx.audit` takes `action` and `entity` from the options unless the call passes them. A
 wrapper refusal returns `fail(403, { error })` (500 for a missing binding), one message that
-names no gate, so the page reads `form.error` for it.
+names no gate, so the page reads `form.error` for it. The action needs an access-map rule for its
+target: an empty map refuses everyone, owner included.
 
 ## The page
 
@@ -147,19 +139,14 @@ names no gate, so the page reads `form.error` for it.
 A destructive verb usually opens a confirm dialog; `references/exemplar-list.md` shows the shared
 confirm.
 
-## Choose the wrapper
+## An action with no binding
 
-| | `createSectionAction` | `createAdminAction` |
-|---|---|---|
-| Use when | the action writes through a binding (`resolveDb`) | the action has no binding: sends mail, calls a service |
-| Access map check | every call, fail-closed | only with the `access: { target, ownerOnly? }` option |
-| Refusal | `fail(403)`, `deniedMessage` overrides the copy | throws `error(403)` |
+An action that sends mail or calls a service has no database to resolve, so it omits the key:
+`createSectionAction({})`. Its handler gets no `ctx.db`, and every other check still runs, the
+access-map rule included.
 
-Without `access`, `createAdminAction` authenticates and checks CSRF but authorizes nothing: a
-`none`-capability session reaches the handler. Both wrappers audit a map refusal and log
-`auth.access.refused`; a session or CSRF refusal leaves no audit record. A screen using
-`createSectionAction` never calls `createAdminAction` itself. Set `rateLimit` on
-`createSectionAction` once a persisted sink is wired, since every refusal writes a row.
+A map refusal audits and logs `auth.access.refused`; a session or CSRF refusal leaves no audit
+record. Set `rateLimit` once a persisted sink is wired, since every refusal writes a row.
 
 ## Wire the audit sink
 
@@ -170,7 +157,7 @@ none, and the dev backend never does.
    of the D1 database the sink writes to, and apply it with `npx wrangler d1 migrations apply`.
 2. In `src/hooks.server.ts`, add a handle that sets the sink, and compose it before the guard in
    the production branch: `handle = sequence(wireAuditSink, createAuthGuard({ runtime }))`. The
-   guard runs last and never reads the sink; `createAdminAction` does, when the action runs.
+   guard runs last and never reads the sink; `createSectionAction` does, when the action runs.
    A handle ahead of the guard must call `resolve` on every path: one that returns early skips the
    guard for that request, the dev-backend refusal included. It also runs before the guard's CSRF and
    session checks, so it can't trust the request or treat it as signed in.
@@ -296,4 +283,4 @@ The dev backend signs in an owner on every request and wires no sink.
 | No `audit_log` row | Dev backend, no sink handle, or a failed insert | Use preview; check the handle; query `audit.sink.write_failed` |
 | A section action returns 500, log `admin.action.misconfigured` | `resolveDb` returned nothing, or no handle attached the access map | Bind the database; serve the route under `/admin` |
 | Shell does not fill the viewport; dev console names a width cap | The root layout wraps `/admin` in site chrome | `references/admin-mount.md` |
-| A binding read fails to typecheck against `{}` or `unknown` | `Env` not inferred | Annotate `resolveDb`'s parameter |
+| A binding read fails to typecheck against `{}` or `unknown` | `resolveDb` read its unannotated parameter | Read `env` from `cloudflare:workers` |

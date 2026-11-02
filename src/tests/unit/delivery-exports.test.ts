@@ -7,13 +7,16 @@ describe('delivery exports', () => {
     for (const name of [
       'createSiteResolver',
       'buildExcerpt',
-      'buildRssFeed',
-      'buildJsonFeed',
-      'buildSitemap',
-      'buildRobots',
       'buildSeoMeta',
     ]) {
       expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
+    }
+  });
+
+  it('keeps the feed, sitemap, and robots builders behind the response helpers', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
+    for (const name of ['buildRssFeed', 'buildJsonFeed', 'buildSitemap', 'buildRobots']) {
+      expect(name in barrel).toBe(false);
     }
   });
 

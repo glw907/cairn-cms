@@ -1,6 +1,6 @@
 ---
 name: cairn-building-admin-screens
-description: Build, gate, arrange, or review a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, createAdminAction, requireAccess, the adapter's access map or roles, editor.navLayout, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
+description: Build, gate, arrange, or review a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, requireAccess, the adapter's access map or roles, editor.navLayout, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
 ---
 
 # cairn admin screens

@@ -138,7 +138,6 @@ function compareEdge(a: ReferenceEdge, b: ReferenceEdge): number {
 /**
  * Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
  *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR.
- * @public
  */
 export function formatManifest(manifest: Manifest): string {
   const entries = [...manifest.entries].sort(compareRef).map((e) => ({
@@ -327,7 +326,6 @@ function predatesMediaRefs(committed: Manifest): boolean {
  *
  * Pass the site's adapter to get the nested-image rule: the pre-field allowance for `mediaRefs`
  *  (below) then holds only when no concept declares an image inside a container field.
- * @public
  */
 export function verifyManifest(built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, 'content'>): void {
   const builtRaw = formatManifest(built);
@@ -422,7 +420,6 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
  *  reads as a content fix. References have no prerender backstop the way body links do, so this build
  *  gate is the only integrity authority; it runs inside the generated virtual-module source (where the
  *  built manifest is in scope), beside `verifyManifest`.
- * @public
  */
 export function verifyReferences(manifest: Manifest): void {
   const present = new Set(manifest.entries.map(keyOf));

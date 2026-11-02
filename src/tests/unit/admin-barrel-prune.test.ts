@@ -4,32 +4,37 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 
-// The four names the surface-pruning pass demotes from the /admin barrel (Task 3), verbatim
-// from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md` and the audit verdicts doc's
-// `## ./components` section (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
-const DEMOTED = ['ComponentInsertDialog', 'ComponentForm', 'IconPicker', 'LinkPicker'];
-
-// The keep list for the /admin subpath: the twelve KEEP-verdict page-level components plus
-// DeleteDialog/RenameDialog (also KEEP) plus MarkdownEditor, which the audit RESHAPEs (a narrower
-// prop contract, a later task) but keeps exported. Fifteen names in total, the current barrel's
-// nineteen minus the four demotions above.
-const KEPT = [
-  'CairnAdmin',
-  'CairnAdminShell',
+// Names the /admin barrel no longer resolves: the four the surface-pruning pass demoted, then the
+// views, their composed parts, and the editor's types, which the engine keeps internally behind
+// `CairnAdmin`.
+const DEMOTED = [
+  'ComponentInsertDialog',
+  'ComponentForm',
+  'IconPicker',
+  'LinkPicker',
   'LoginPage',
   'ConfirmPage',
-  'CsrfField',
   'ConceptList',
   'CairnMediaLibrary',
   'CairnTidySettings',
   'HelpHome',
   'EditPage',
+  'CairnHistory',
   'ManageEditors',
-  'NavTree',
   'MarkdownEditor',
+  'EditorApi',
+  'TidyApi',
+  'ImagePlaceholderApi',
+  'FormatKind',
+  'NavTree',
   'DeleteDialog',
   'RenameDialog',
+  'VocabularyAdmin',
+  'WelcomeView',
 ];
+
+// The whole /admin subpath: the facade, the shell a custom screen renders inside, and the CSRF field.
+const KEPT = ['CairnAdmin', 'CairnAdminShell', 'CsrfField'];
 
 const DTS = resolve(
   fileURLToPath(new URL('../../../dist/admin/index.d.ts', import.meta.url)),
@@ -57,10 +62,8 @@ describe('admin barrel prune', () => {
     expect(stillPresent).toEqual([]);
   });
 
-  it('still resolves every keep-list name from the /admin subpath', () => {
-    const names = new Set(enumerateExports(DTS));
-    const missing = KEPT.filter((name) => !names.has(name));
-    expect(missing).toEqual([]);
+  it('holds exactly the keep list on the /admin subpath', () => {
+    expect([...enumerateExports(DTS)].sort()).toEqual([...KEPT].sort());
   });
 
   it('the packaged exports map carries none of the spellcheck subpath keys', () => {

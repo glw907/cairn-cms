@@ -3,7 +3,8 @@
 // `load`, so a section's POST cannot lean on its page's authorization check.
 // `createSectionAction` composes onto `createAdminAction` (editor identity, CSRF, the single form
 // read, the audit contract) and adds only what the engine cannot know: the site's DB-binding
-// resolver and an optional rate limit. It deliberately does no schema validation and no domain
+// resolver and an optional rate limit. Both are declared, not required: a section with no binding
+// omits `resolveDb` and its handler sees no `ctx.db`. It deliberately does no schema validation and no domain
 // work; those stay the handler's job.
 //
 // The check order below runs every authorization check before the binding-resolution failure
@@ -46,11 +47,15 @@ export type { RateLimitLike };
  * @public
  */
 export interface SectionActionConfig<Env, Db> {
-  /** Resolve the section's database binding off the Worker env; undefined or null fails the action closed (500). */
+  /**
+   * Resolve the section's database binding; undefined or null fails the action closed (500). Read
+   * the binding from `cloudflare:workers` (`() => env.APP_DB`), or take the Worker env this
+   * resolver is passed. Omit the key for an action with no binding.
+   */
   resolveDb: (env: Env | undefined) => Db | undefined;
   /**
    * Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. It runs
-   * after `createAdminAction`'s form read, so it never bounds the cost of parsing the request body.
+   * after the wrapper's form read, so it never bounds the cost of parsing the request body.
    * Configure it whenever a persisted audit sink (`createD1AuditSink`) is wired: every
    * authorization refusal audits, so without a limit a refused caller can fill the audit table
    * cheaply.
@@ -116,7 +121,7 @@ export interface SectionActionAudit {
 }
 
 /**
- * What a wrapped handler receives: createAdminAction's context, its defaulting `audit`, plus the resolved binding.
+ * What a wrapped handler receives: the verified editor, a defaulting `audit`, and the resolved binding.
  * @public
  */
 export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
@@ -145,11 +150,25 @@ export type SectionAction<Env, Db> = <T>(
 ) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>;
 
 /**
+ * What `createSectionAction` returns for a section with no `resolveDb`: the same per-call-site
+ *  wrapper as {@link SectionAction}, whose handler's `ctx` has no `db` member.
+ * @public
+ */
+export type PlainSectionAction = <T>(
+  handler: (args: {
+    event: CairnEvent;
+    form: FormData;
+    ctx: Omit<SectionActionContext<unknown>, 'db'>;
+  }) => Promise<T>,
+  opts: SectionActionOptions,
+) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>;
+
+/**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
  * site and produces a SvelteKit action, checked in order, fail-closed throughout:
  *
- * 1. `createAdminAction` composes underneath: editor resolution, CSRF, the single form read, the audit
- *    contract. A missing-editor session redirects to `/admin/login`; a CSRF mismatch throws
+ * 1. The shared admin wrapper composes underneath: editor resolution, CSRF, the single form read,
+ *    the audit contract. A missing-editor session redirects to `/admin/login`; a CSRF mismatch throws
  *    SvelteKit's `error(403, ...)`. Both propagate untouched, and both need no site
  *    `handleError` mapping: they are SvelteKit's framework-native refusal channels.
  * 2. Rate limit, when configured: an unresolved binding, or a `key()`/`limit()` call that throws,
@@ -158,7 +177,7 @@ export type SectionAction<Env, Db> = <T>(
  *    `[[ratelimits]]` block or a transient binding error is observable, not a silent bypass or a
  *    500 the hand-rolled code never produced. A `key()`/`limit()` call that throws SvelteKit's
  *    `redirect()`/`error()` is the one exception: those propagate untouched rather than degrading,
- *    the same rethrow `createAdminAction`'s audit-sink guard applies. A present binding over its
+ *    the same rethrow the audit-sink guard applies. A present binding over its
  *    limit logs `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this
  *    branch: a limiter denial is back-pressure, not a domain-state change.
  * 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
@@ -169,14 +188,15 @@ export type SectionAction<Env, Db> = <T>(
  *    is identical for every session.
  * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
- *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`), the one
- *    sequence `createAdminAction`'s opt-in `access` option also runs; only the refusal channel differs.
+ *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`).
  * 5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
  *    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
- * 6. `resolveDb` returning null or undefined audits `'rejected: database not bound'`, logs
- *    `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not a
- *    denial. This runs last, after authorization, so a session the access map refuses learns
- *    nothing about whether the section's binding is deployed.
+ * 6. With the `resolveDb` key present, `resolveDb` returning null or undefined audits
+ *    `'rejected: database not bound'`, logs `admin.action.misconfigured`, and returns `fail(500)`: a
+ *    deployment misconfiguration, not a denial. This runs last, after authorization, so a session
+ *    the access map refuses learns nothing about whether the section's binding is deployed. With
+ *    the key omitted this step does not run: the section has no binding to resolve, and `ctx` has
+ *    no `db` member.
  * 7. The handler runs once with `ctx: { ...ctx, db }`, `ctx.audit` seeded to default `action` and
  *    `entity` from `opts` (a handler may still override either, for the confirmed two-row-touch
  *    case that mutates more than one entity in one call).
@@ -184,8 +204,8 @@ export type SectionAction<Env, Db> = <T>(
  * SvelteKit dispatches a matched form action directly, with no ancestor layout `load` run first,
  * so a page's guard never runs before a POST to one of its actions: this wrapper is the POST's
  * gate. The section's layout `load` must call `requireAccess` for the same target, so reads and
- * writes gate on one fail-closed predicate, and the section's path needs an access-map rule, or
- * every call refuses.
+ * writes gate on one fail-closed predicate. The action needs an access-map rule for its target: an
+ * empty map refuses everyone, owner included.
  *
  * The three 403 branches share one message (`opts.deniedMessage` overrides it) and both 500
  * branches share another, so a session learns no deployment or gating detail; the branch lives in
@@ -196,15 +216,14 @@ export type SectionAction<Env, Db> = <T>(
  * one, and the guard's CSRF and session checks cover only paths under `/admin`. A remote function
  * a site adds owns its authorization and CSRF verification.
  *
- * `Env` does not infer from `resolveDb`'s parameter alone; annotate it (as below) or pass
- * explicit type arguments, else it infers as `unknown` and a binding read such as
- * `env?.SECTION_DB` fails to typecheck.
+ * Read a binding from `cloudflare:workers`, as below, and the resolver needs no type argument. An
+ * action with no binding calls `createSectionAction({})`, and its `ctx` has no `db` member.
  *
  * ```ts
  * // src/routes/admin/team/events/[id]/+page.server.ts
- * const sectionAction = createSectionAction<Env, D1Database>({
- *   resolveDb: (env: Env | undefined) => env?.SECTION_DB,
- * });
+ * import { env } from 'cloudflare:workers';
+ *
+ * const sectionAction = createSectionAction({ resolveDb: () => env.SECTION_DB });
  * export const actions = {
  *   approve: sectionAction(async ({ form, ctx }) => {
  *     const id = String(form.get('id'));
@@ -215,17 +234,26 @@ export type SectionAction<Env, Db> = <T>(
  * };
  * ```
  *
- * Posture: fail-closed on every call, unconditionally, unlike `createAdminAction`'s opt-in `access`
- * option: a target the map has no rule for refuses through {@link authorizeAdminTarget}, never the
- * permissive reading `canReach` gives an engine screen's unmapped route.
+ * Posture: fail-closed on every call, unconditionally: a target the map has no rule for refuses
+ * through {@link authorizeAdminTarget}, never the permissive reading `canReach` gives an engine
+ * screen's unmapped route.
  * @public
  */
-export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
+export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db>;
+export function createSectionAction<Env = unknown>(
+  config: Omit<SectionActionConfig<Env, unknown>, 'resolveDb'> & {
+    /** Left out on a section with no binding; a present undefined value refuses (500). */
+    resolveDb?: undefined;
+  },
+): PlainSectionAction;
+export function createSectionAction<Env, Db>(
+  config: Omit<SectionActionConfig<Env, Db>, 'resolveDb'> & Partial<Pick<SectionActionConfig<Env, Db>, 'resolveDb'>>,
+): SectionAction<Env, Db> | PlainSectionAction {
   return function wrap<T>(
     handler: (args: {
       event: CairnEvent;
       form: FormData;
-      ctx: SectionActionContext<Db>;
+      ctx: Omit<SectionActionContext<unknown>, 'db'> & { db?: NonNullable<Db> };
     }) => Promise<T>,
     opts: SectionActionOptions,
   ): (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>> {
@@ -332,26 +360,29 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
 
-      // All three checks, in order, through the shared sequence createAdminAction's opt-in access
-      // option also runs (authorizeAdminTarget, ./admin-action.js). This wrapper keeps its
-      // refusal channel: each refusing outcome audits and returns fail(403), where createAdminAction
-      // audits and throws.
+      // All three checks, in order, through the shared sequence (authorizeAdminTarget,
+      // ./admin-action.js). Each refusing outcome audits and returns fail(403).
       const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
       if (authorization.outcome !== 'allowed') {
         return deny(ADMIN_DENIAL_DETAIL[authorization.outcome], refusalReason(authorization));
       }
 
+      // A section declared with no resolveDb has no binding to resolve, so ctx carries no db key.
+      // The key's presence decides this, never its value: a present undefined still refuses below.
+      const plainCtx = { ...ctx, audit: sectionAudit };
+      if (!('resolveDb' in config)) return handler({ event, form, ctx: plainCtx });
+
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal
       // audits as a denial, never a config fault.
-      const db = config.resolveDb(siteEnv<Env>());
+      const db = config.resolveDb?.(siteEnv<Env>());
       if (db == null) return misconfigured('rejected: database not bound', 'db_not_bound');
 
       // db excludes null and undefined by the check above; NonNullable<Db> also strips a null a
       // caller's explicit Db argument might otherwise admit, so the check order above is what
       // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
-      return handler({ event, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
+      return handler({ event, form, ctx: { ...plainCtx, db: resolvedDb } });
     });
   };
 }

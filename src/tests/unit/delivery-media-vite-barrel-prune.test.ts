@@ -7,7 +7,8 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // The seven names the surface-pruning pass demotes from the /delivery barrel
 // (Task 4), verbatim from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus
 // `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
-// than demoted; `buildSitemapView` is frozen and unaffected.
+// than demoted; `buildSitemapView` is frozen and unaffected. The last six are builders and renderers
+// the engine keeps behind the response helpers and `createPublicRoutes`.
 const DELIVERY_DEMOTED = [
   'buildSiteResolver',
   'ConceptIndex',
@@ -17,6 +18,12 @@ const DELIVERY_DEMOTED = [
   'wordCount',
   'permalink',
   'feedView',
+  'buildRssFeed',
+  'buildJsonFeed',
+  'buildSitemap',
+  'buildRobots',
+  'renderJsonLdScript',
+  'composeEntryData',
 ];
 
 // The /delivery keep list, from the audit verdicts doc's delivery section, minus the seven
@@ -30,14 +37,10 @@ const DATA_KEPT = [
   'ContentEntry',
   'ContentProblem',
   'ContentIndex',
-  'buildRssFeed',
-  'buildJsonFeed',
   'FeedChannel',
   'FeedItem',
-  'buildSitemap',
   'SitemapUrl',
   'buildSitemapView',
-  'buildRobots',
   'rssResponse',
   'jsonFeedResponse',
   'sitemapResponse',
@@ -48,7 +51,6 @@ const DATA_KEPT = [
   'resolveImageUrl',
   'readSeoFields',
   'SeoFields',
-  'renderJsonLdScript',
   'buildSiteDescriptors',
   'buildSiteManifest',
   'createLinkResolver',

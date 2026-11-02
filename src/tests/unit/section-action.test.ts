@@ -267,6 +267,50 @@ describe('createSectionAction: database not bound', () => {
   });
 });
 
+describe('createSectionAction: the resolveDb key', () => {
+  it('runs the handler with no ctx.db and no db_not_bound refusal when the key is omitted', async () => {
+    const sink = vi.fn();
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const seen: Record<string, unknown>[] = [];
+    const action = createSectionAction({})(
+      async ({ ctx }) => {
+        seen.push(ctx);
+        ctx.audit({});
+        return { ok: true } as const;
+      },
+      { action: 'send', entity: 'mail' },
+    );
+    expect(await action(readyEvent({ auditSink: sink }))).toEqual({ ok: true });
+    expect(seen).toHaveLength(1);
+    expect('db' in seen[0]).toBe(false);
+    expect(auditsOf(sink)).toEqual([expect.objectContaining({ action: 'send', entity: 'mail', actor: staff.email })]);
+    expect(errorSpy).not.toHaveBeenCalledWith('admin.action.misconfigured', expect.anything());
+  });
+
+  it('still authorizes an omitted-key action: an empty map refuses the owner', async () => {
+    const handler = vi.fn(async () => ({ ok: true }));
+    const action = createSectionAction({})(handler, { action: 'send', entity: 'mail' });
+    const result = await action(readyEvent({ editor: owner, cairnAccess: {} }));
+    expect(isActionFailure(result) && result.status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('refuses with db_not_bound when the key is present and undefined', async () => {
+    const sink = vi.fn();
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const handler = vi.fn(async () => ({ ok: true }));
+    const action = createSectionAction({ resolveDb: undefined })(handler, { action: 'send', entity: 'mail' });
+    const result = await action(readyEvent({ auditSink: sink }));
+    expect(isActionFailure(result) && result.status).toBe(500);
+    expect(handler).not.toHaveBeenCalled();
+    expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: database not bound' })]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      'admin.action.misconfigured',
+      expect.objectContaining({ reason: 'db_not_bound' }),
+    );
+  });
+});
+
 describe('createSectionAction: access map not attached', () => {
   it('returns 500, audited, handler never called', async () => {
     const sink = vi.fn();

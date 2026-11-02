@@ -20,7 +20,8 @@ what moved, and an unexpected failure falls back to its bare message.
 <script lang="ts">
   import type { HistoryData, RevertOutcome } from '../sveltekit/types.js';
   import CsrfField from './CsrfField.svelte';
-  import { PageHeader, AdminTable, StatusChip, EmptyState, formatTimestamp } from '../admin-toolkit/index.js';
+  import { PageHeader, AdminTable, StatusChip, EmptyState } from '../admin-toolkit/index.js';
+  import { formatTimestamp } from '../admin-toolkit/format.js';
 
   interface Props {
     /** The history load's data: the bounded publish list, the open draft (if any), the

@@ -15,6 +15,7 @@ const opts = { action: 'probe', entity: 'refusal' };
 
 const bound = createSectionAction<Env, object>({ resolveDb: () => stubDb });
 const unbound = createSectionAction<Env, object>({ resolveDb: () => undefined });
+const omitted = createSectionAction({});
 const limited = createSectionAction<Env, object>({
   resolveDb: () => stubDb,
   rateLimit: {
@@ -31,6 +32,11 @@ export const actions: Actions = {
     return { ok: true };
   }, opts),
   unbound: unbound(ok, opts),
+  // The resolveDb key is absent, so this section has no binding to refuse over.
+  omitted: omitted(async ({ ctx }) => {
+    ctx.audit({ detail: 'no binding' });
+    return { ok: true };
+  }, opts),
   // Outside the route on purpose: hasAccessRule matches by prefix, so a path under
   // /admin/section-refusals would inherit this route's rule.
   unmapped: bound(ok, { ...opts, target: '/admin/no-such-rule' }),

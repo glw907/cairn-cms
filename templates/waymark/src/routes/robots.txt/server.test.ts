@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildRobots } from '@glw907/cairn-cms/delivery';
+import { robotsResponse } from '@glw907/cairn-cms/delivery';
 
 // #chassis/content.js and #theme/cairn.config.js both pull in the full adapter, including a
 // Svelte island component this standalone vitest config has no Svelte plugin to parse; mocking
@@ -18,7 +18,10 @@ describe('robots.txt route', () => {
     const { GET } = await import('./+server.js');
     const body = await (await GET({} as Parameters<typeof GET>[0])).text();
     expect(body).toBe(
-      buildRobots({ sitemapUrl: SITE_ORIGIN + '/sitemap.xml', disallow: ['/admin'] }),
+      await robotsResponse({
+        sitemapUrl: SITE_ORIGIN + '/sitemap.xml',
+        disallow: ['/admin'],
+      }).text(),
     );
   });
 
@@ -28,11 +31,11 @@ describe('robots.txt route', () => {
     const { GET } = await import('./+server.js');
     const body = await (await GET({} as Parameters<typeof GET>[0])).text();
     expect(body).toBe(
-      buildRobots({
+      await robotsResponse({
         sitemapUrl: SITE_ORIGIN + '/sitemap.xml',
         disallow: ['/admin'],
         posture: 'decline',
-      }),
+      }).text(),
     );
   });
 });

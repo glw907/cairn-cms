@@ -60,7 +60,7 @@ generated types are not proof the binding exists.
 `locals.cairnAccess = runtime.access ?? {}`. `createAuthGuard` and `devBackendHandle` always attach
 it, so put the route behind the guard or attach the map in that hook.
 
-**`admin.action.unaudited`.** A `createAdminAction` handler returned without calling `ctx.audit` on
+**`admin.action.unaudited`.** A `createSectionAction` handler returned without calling `ctx.audit` on
 a success path. Call it before every non-`fail()` return.
 
 **`audit.sink.call_failed`** is the site's own sink throwing; `audit.sink.write_failed` is the

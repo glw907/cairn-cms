@@ -7,7 +7,6 @@ export {
   createAuthGuard,
   requireSession,
   requireOwner,
-  requireEditor,
   requireAccess,
   type AuthGuardConfig,
   type IdentityResolver,
@@ -71,19 +70,18 @@ export type {
 } from './admin-nav.js';
 export type { PublishActionEntry } from './publish-actions.js';
 export {
-  createAdminAction,
   UnauditedActionError,
   type AdminActionAudit,
   type AdminActionAuditRecord,
   type AdminActionAuditSink,
   type AdminActionContext,
-  type AdminActionOptions,
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
 // `RateLimitLike`'s canonical home is `/cloudflare`; a recorded R4 re-export here because
 // `SectionActionConfig`'s budget field names it.
 export {
   createSectionAction,
+  type PlainSectionAction,
   type RateLimitLike,
   type SectionAction,
   type SectionActionConfig,

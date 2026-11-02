@@ -5,15 +5,15 @@
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
-// roots in the current `dist`, by subpath (26 pairs, 26 distinct exports):
+// roots in the current `dist`, by subpath (25 pairs, 25 distinct exports):
 //   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
 //                   defineConcept, defineFieldset, defineRegistry, defineRoles
 //   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
 //   /log            createLogger
 //   /media          createMediaResolver
-//   /sveltekit      createAdminAction, createAuthGuard, createAuthRoutes, createCairnAdmin,
-//                   createContentRoutes, createD1AuditSink, createEditorRoutes, createMediaRoute,
-//                   createNavRoutes, createSectionAction
+//   /sveltekit      createAuthGuard, createAuthRoutes, createCairnAdmin, createContentRoutes,
+//                   createD1AuditSink, createEditorRoutes, createMediaRoute, createNavRoutes,
+//                   createSectionAction
 //   /vite           cairnManifest (an extra, since the Vite plugin's name is outside the pattern)
 // `mintPreview` is left out: its config type, `PreviewTokenConfig`, is already reached through
 // `createContentRoutes`, and its other parameters (the composed runtime and the request event) are

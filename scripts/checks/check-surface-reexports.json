@@ -65,7 +65,7 @@
       "name": "AiPosture",
       "subpath": "/delivery",
       "home": ".",
-      "reason": "R4 closure: `buildRobots`, `robotsResponse` name it on this subpath."
+      "reason": "R4 closure: `robotsResponse` names it on this subpath."
     },
     {
       "name": "ArrayField",
@@ -341,7 +341,7 @@
       "name": "CairnEnv",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `requireSession`, `requireOwner`, `requireEditor` name it on this subpath."
+      "reason": "R4 closure: `requireSession`, `requireOwner` name it on this subpath."
     },
     {
       "name": "CairnRef",
@@ -395,7 +395,7 @@
       "name": "Editor",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `requireSession`, `requireOwner`, `requireEditor` name it on this subpath."
+      "reason": "R4 closure: `requireSession`, `requireOwner` name it on this subpath."
     },
     {
       "name": "EmailAttachment",

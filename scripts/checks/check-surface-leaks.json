@@ -13,12 +13,6 @@
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-advisorynotice."
     },
     {
-      "name": "Change",
-      "subpath": "/admin",
-      "model": "type-checker",
-      "standing-unverdicted": "First surfaced by this rider's derivation (Task 9, internals-C, 2026-09-04), once its /admin clause started walking the barrel's plain type exports mechanically instead of skipping the subpath outright. `Change` (src/lib/admin/tidy-diff.ts:36) is never exported from any subpath and is reachable through TidyApi.enter's `changes: Change[]` parameter, one hop past the already-named `TidyApi`."
-    },
-    {
       "name": "ConfirmData",
       "subpath": "/sveltekit",
       "model": "type-checker",

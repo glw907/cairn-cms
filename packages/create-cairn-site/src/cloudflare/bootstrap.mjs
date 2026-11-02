@@ -96,7 +96,8 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now(), acc
 
   // The owner insert fires only when the allowlist is empty (WHERE NOT EXISTS), and the token
   // insert fires only for an address the editor table already carries (WHERE EXISTS), whether
-  // it was already there or the insert above just added it. An address that is neither the sole owner-to-be nor an existing editor gets nothing.
+  // it was already there or the insert above just added it. An address that is neither the
+  // sole owner-to-be nor an existing editor gets nothing.
   const sql =
     `INSERT INTO editor (email, display_name, role, created_at)\n` +
     `  SELECT '${escapedEmail}', '${escapedDisplayName}', 'owner', ${now}\n` +

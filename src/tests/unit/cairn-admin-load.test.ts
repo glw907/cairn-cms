@@ -127,11 +127,11 @@ describe('public views', () => {
   });
 
   it('serves the runtime siteName on the login page', async () => {
-    const admin = createCairnAdmin({ runtime: { ...runtime(), siteName: 'Overridden Site' } });
+    const admin = createCairnAdmin({ runtime: { ...runtime(), siteName: 'Example Site' } });
     const data = await admin.load(adminEvent('/admin/login', { editor: null }));
     expect(data.view).toBe('login');
     if (data.view !== 'login') throw new Error('narrowing');
-    expect((data.page as MagicLinkLoginData).siteName).toBe('Overridden Site');
+    expect((data.page as MagicLinkLoginData).siteName).toBe('Example Site');
   });
 
   it('serves the confirm page with the token and sets Referrer-Policy', async () => {

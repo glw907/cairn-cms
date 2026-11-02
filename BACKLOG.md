@@ -3,103 +3,103 @@
 > Project issue tracker. Managed by `/log-issue`.
 
 ## High
-- [ ] **#259** Decide whether the browser upload takes AVIF `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#259** Decide whether the browser upload takes AVIF `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `ALLOWED_TYPES` (`src/lib/media/config.ts:18`) and the server's sniff accept `image/avif`, but `ingestFile` (`src/lib/admin/client-ingest.ts:291-328`) passes JPEG, PNG, WebP, GIF, and HEIC only and throws `decode-unsupported` on AVIF. So all four upload paths refuse a type the store takes, and `cairn-media-seed` still reaches it. Either add `image/avif` to the web-native passthrough, or say in the skill's `media.md` that AVIF is seed-only. Found by the `content-rest` fact-check, which caught the plan's AVIF wording on the formats line.
   Placement: Cleanup round.
-- [ ] **#260** Stop a stale `dist` hiding a red test in the fast lane `#improvement` `#cairn-cms` *(2026-11-01)*
-  `delivery-media-vite-barrel-prune.test.ts` reads `dist/**/*.d.ts`. In `content-rest` an implementer ran the whole unit project on the `dist` from before its rename and the suite passed, so CI found the miss on `b6477b0d0`. In T5 the same trap ran the other way: `vite-bin.test.ts` failed on a stale `dist/vite/bin.js` until a rebuild. Build `dist` once when the lane's range changes `src/lib`, or make each `dist` reader fail when `dist` is older than `src/lib`. Related to #258.
+- [ ] **#260** Stop a stale `dist` hiding a red test in the fast lane `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
+  `delivery-media-vite-barrel-prune.test.ts` reads `dist/**/*.d.ts`. In `content-rest` an implementer ran the whole unit project on the `dist` from before its rename and the suite passed, so CI found the miss on `b6477b0d0`. In T5 the same trap ran the other way: `vite-bin.test.ts` failed on a stale `dist/vite/bin.js` until a rebuild. Warn once at the unit project's start when `dist` is older than `src/lib`. Building `dist` in the lane would cost every leg, and a throw would stop a run that reads no `dist`. Related to #258.
   Placement: Cleanup round.
-- [ ] **#261** Keep a publish stamp when a dev start drops an invalid entry's row `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#261** Keep a publish stamp when a dev start drops an invalid entry's row `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `applyManifest` (`src/lib/vite/internal.ts`) writes the regenerated manifest, and `carryPublishStamps` carries a stamp only onto a row the rebuild produces. A validator failure drops the row, so a `vite dev` start over a published entry that's invalid writes `index.json` without its `publishedAt`. Fixed and regenerated, its row returns unstamped and `stampFirstPublish` leaves it unstamped for good, so the first-publish date is lost and the entry never reads as new. Published while the row is missing, it takes a fresh stamp and reads as a first publish. The diff shows it and git restores it, but `vite dev` now writes unasked. `cairn-manifest` does the same, and it runs on request and exits 1. Keeping the committed row would put an invalid entry back in the admin list, so the better fix is a stamp map that outlives the row, or no write under dev while a row would drop. Found by the `content-rest` close review.
   Placement: Cleanup round.
-- [ ] **#262** Stop nesting the media tile's checkbox inside `role="option"` `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#262** Stop nesting the media tile's checkbox inside `role="option"` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `CairnMediaLibrary.svelte` puts an interactive checkbox inside a tile with `role="option"`, and an ARIA `option` has presentational children, so assistive tech can flatten the checkbox's role and state (WCAG 4.1.2). The tile already sets `aria-selected`, so drop the nested checkbox or move it outside the option. Found by the `content-rest` close review, and not caused by that pass.
   Placement: Cleanup round.
-- [ ] **#263** Show one saved notice when a save carries a reference warning `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#263** Show one saved notice when a save carries a reference warning `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `flash` in `EditPage.svelte` yields to `draftWarning` alone, so a save with a reference warning shows both the `Saved.` strip and the `Saved. Note:` banner. Add `&& !referenceWarning`. `politeMessage` has the matching gap: it returns the draft notice first, so a save with both flags shows the reference banner and never announces it. Found by the `content-rest` close review, and not caused by that pass.
   Placement: Cleanup round.
-- [ ] **#264** Walk attributes when `scanBody` reads raw HTML `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#264** Walk attributes when `scanBody` reads raw HTML `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `HTML_CAIRN_HREF` in `src/lib/content/body-scan.ts` reads a tag as one string, and a node probe confirmed two misses. `<a title="a>b" href="cairn:posts/one">` matches nothing, so a dead link ships. `<a title="see href=cairn:x">` matches, so a harmless attribute value fails the build. Both are rare. Parse each tag's attributes in place of the single regex. Found by the `content-rest` close review.
   Placement: Cleanup round.
 
-- [ ] **#203** Tell an owner to narrow the App's installation after the first run `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#203** Tell an owner to narrow the App's installation after the first run `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 1a scoped the minted token to the one repository and `contents: write` (`src/lib/github/signing.ts`), but the install prompt and the `installation-not-covering-repo` remedy still steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), and a leaked App key can still mint unscoped tokens for every repository the installation covers. Add a closing-block line telling the owner to narrow the installation to the one repository after the first run (`docs/admin/create-your-site.md:88` already says to).
   Placement: Cleanup round.
 
 ## Medium
-- [ ] **#289** Keep the admin's accessible names honest in a disabled or Preview state `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#289** Keep the admin's accessible names honest in a disabled or Preview state `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   The close accessibility review left four items that predate the pass. `EditPage.svelte:939-946` uses the disabled reason as the control's name, so "Switch to Write to edit this block" reads as an action on an `aria-disabled` control; a stable "Edit block" with the reason in the tooltip gives voice users one phrase. `EditPage.svelte:945` tells a Preview user to place a cursor Preview hides. `ComponentInsertDialog.svelte:428-430` reads "12 blocks match" with an empty query and "0 blocks match" beside a visible "No blocks match". `editor-highlight.ts:57,66` puts "Edit the text between these lines" on a one-line leaf directive. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#288** Say that a preview link follows the entry, not the draft it was minted on `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#288** Say that a preview link follows the entry, not the draft it was minted on `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `src/lib/sveltekit/preview.ts:441,446` derives the branch from the row alone, and a publish keeps the row, so a reviewer's old link shows any later draft of that entry until it expires, up to seven days. An editor can share more than they meant to. Tell editors in `docs/editors/`, or bind the row to the branch head at mint. Behavior predates the pass. Found by the `small-api` pass's security review, PR #184.
   Placement: Pass 8.
-- [ ] **#287** Find out whether a Cloudflare zone HSTS setting survives the admin's header `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#287** Find out whether a Cloudflare zone HSTS setting survives the admin's header `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   Every guarded admin response sets `Strict-Transport-Security: max-age=63072000` (`guard.ts:413`, `admin-response.ts:40`). Under RFC 6797 section 8.1 a browser replaces its cached policy, so on an embedded admin that shares the site's host an `includeSubDomains` pin may drop on each admin visit. The code can't show whether the edge's setting overrides a Worker-set header. Test a deployed site, then state the result in `skills/` and the migration notes, or let the zone own the header. Found by the `small-api` pass's close reviews, PR #184.
   Placement: Pass 8.
-- [ ] **#286** Add the `small-api` traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#286** Add the `small-api` traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `cairn-writing-engine-code`'s `references/durable-gotchas.md` lacks six traps this pass met. A barrel grep misses `CairnAdminConfig` member pins in `sveltekit-mount-contract-reshape.test.ts`. The dev handle imports the engine from `dist`, so a `src/lib` sink change needs `npm run package`. A skill edit fails `guidance/bin.test.ts` until `emit:template`. `packages/create-cairn-site/template` goes stale after a showcase comment change. `dist` of `packages/cairn-cms-dev` builds only through the root `package` script. A line-based dead-name grep misses a phrase wrapped across a comment line, which is how "Edit the component at / the cursor" survived T14's script. The plan's pre-flight kept this file out of reach. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#285** Run `unit-dist-spawn` in the fast lane when `src/lib/internal.ts` changes `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#285** Run `unit-dist-spawn` in the fast lane when `src/lib/internal.ts` changes `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   The fast lane's unit leg skips the `unit-dist-spawn` project, so a merge that added `verifyEntries` to `/internal` passed locally and failed CI at `delivery-dist-spawn.test.ts`, which pins that entry's names. Add the trigger to `scripts/checks/gate-tier.mjs`. Left alone, each `/internal` change costs a red CI run. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#284** Repoint the `cairn-writing-engine-code` idiom examples at public names `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#284** Repoint the `cairn-writing-engine-code` idiom examples at public names `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `references/code-idioms.md:188` and the eval `e3-seam-bug-fix.json` still name functions `cleanup-hide-internals` hid, so an implementer copying them reaches for a name a site can't import. The plan's pre-flight allowed T15 only the dead-name table's hits, and these aren't on it. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#283** Finish the block wording in the engine's own messages `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#283** Finish the block wording in the engine's own messages `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   T14's string list left `cairn: component ...` in `src/lib/render/registry.ts:220,225,298` and `src/lib/content/adapter.ts:16`, so a developer who wrote `defineBlock` reads an error about a component. A half-migrated `rendering: { blocks: registry }` throws a plain TypeError (`blocks is not iterable`) instead of a message naming the array form. It fails loudly, so it isn't a third refusal. `docs/editors/write-in-the-editor.md` also keeps the `<a id="add-components-and-fragments">` anchor, which nothing in the repo links to now. The showcase's `/styleguide` copy still says "Directive components" and "A component added to the registry" (`+page.svelte:257-260`), a change that regenerates its baselines, and `MarkdownEditor.svelte:136` passes a `ComponentAtCaret` to `reportComponentAtCaret`. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#282** Make `loadPreview` generic so a shared template can narrow `EntryData` `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#282** Make `loadPreview` generic so a shared template can narrow `EntryData` `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `loadPreview` returns the untyped `PreviewData`, so a template serving both the public and preview routes keeps the default prop type: `ArticleView.svelte` can't take `EntryData<typeof site>`, because the preview route fails to type-check. Make it generic at the cost of one boundary cast. Left alone, a site's shared view loses the narrowing #230 added. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#281** Walk a conditional type's arms in the leak derivation, and give `ConceptEntryData` a verdict `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#281** Walk a conditional type's arms in the leak derivation, and give `ConceptEntryData` a verdict `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `api-surface.md:178`'s `EntryData` row names the unexported `ConceptFrontmatter`, and `scripts/checks/check-surface-leaks.mjs` doesn't flag it, so the derivation appears to stop at a conditional. A leak behind a conditional then ships unrecorded. `ConceptEntryData` at `/sveltekit` is recorded `standing-unverdicted` in `check-surface-leaks.json`: decide whether to export it. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#280** Drop the tier tags from hidden functions `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#280** Drop the tier tags from hidden functions `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `composeEntryData` (`src/lib/delivery/public-routes.ts:170`) and `AuthRoutes` (`src/lib/sveltekit/auth-routes.ts:486`) keep `@beta`, though no barrel exports the factories they belong to. `check:tiers` reads exports only, so a tag on a hidden name states a promise nobody holds. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#279** Decide whether `FormatTimestampOptions` and `EntryDataOverrides` stay public `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#279** Decide whether `FormatTimestampOptions` and `EntryDataOverrides` stay public `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `cleanup-hide-internals` hid `formatTimestamp` and `composeEntryData`, so `api-surface.md:120,180` lists two option types no public function takes. Each is a name a site can import and can't use. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#278** Retire the `R4` exemption from `check-idioms` `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#278** Retire the `R4` exemption from `check-idioms` `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `scripts/checks/check-idioms.mjs:27,252` exempts `R4 re-export` and `R4 closure` by name for the canonical-home re-export pattern, which `cleanup-one-import-path` retired. No comment in `src/lib` uses the phrase now, so the exemption, its test at `check-idioms.test.ts:137`, and `fixtures/idioms/process-reference.ts` guard nothing and would pass a real round marker. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue, or let the row wrap. Found by the `admin-rest` baseline read.
   Placement: Cleanup round.
-- [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   Each row in a repeatable field shows a list marker in the left gutter, because `RepeatableField.svelte:211`'s `<ul>` sets no `list-none`. The marker eats width in a narrow Details pane and reads as a stray dot. Found by the `admin-rest` render read, on code that pass didn't change.
   Placement: Cleanup round.
-- [ ] **#268** Stop a double submit on the Discard and Rename forms `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#268** Stop a double submit on the Discard and Rename forms `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `admin-rest` guarded the delete confirm (#214), but the Discard form (`EditPage.svelte:2786`) and the Rename form (`RenameDialog.svelte:81`) have no in-flight guard, so a double click sends a second POST that races the first. If left, the editor can see a refusal for a change that worked. Use `DeleteDialog`'s `deleting` shape. Found by T4.
   Placement: Cleanup round.
-- [ ] **#269** Render a block attribute's help text `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#269** Render a block attribute's help text `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   An `attributes` entry is a `FieldDescriptor` (`src/lib/render/registry.ts:118`), and its `help` never reaches the insert form: `ComponentForm.svelte` renders `slot.help` only, so a developer who writes it sees nothing and an editor gets no hint. Share T7's slot hint shape. Found by T7.
   Placement: Cleanup round.
-- [ ] **#270** Stop reading `createAuthGuard({ roles })` as wired `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#270** Stop reading `createAuthGuard({ roles })` as wired `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `wiringWordPattern` (`tool/internal/doctor/check_roles.go:61`) accepts a bare `roles`, so `cairn doctor` passes `auth.role-wiring` on a call the engine refuses at startup with a `TypeError`. The site fails at boot with a green report. Match `runtime` alone and update the pass detail. Found by T6, which the plan held to a rewording.
   Placement: Cleanup round.
-- [ ] **#271** Refuse a prototype-named target in `canReach` `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#271** Refuse a prototype-named target in `canReach` `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `access[target]` at `src/lib/auth/access.ts:198-199` returns an inherited value for `constructor` or `__proto__`, and `.includes` throws `TypeError: admitted.includes is not a function`. It fails closed with a 500 and a stack in the logs. `admin-rest` moved `requireEngineAccess` ahead of the concept lookup, so a hand-mounted preview route now reaches this, as hand-mounted tidy and dictionary routes already did. The standard mount validates the concept first. Read the map as `hasAccessRule` does (`Object.hasOwn`), with a test. The path is `auth-data`, so it's its own change. Found by the close security read.
   Placement: Cleanup round, as an `auth-data` change.
-- [ ] **#272** Add `guard.ts` and `preview.ts` to the `auth-data` map `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#272** Add `guard.ts` and `preview.ts` to the `auth-data` map `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `.claude/skills/cairn-running-passes/SKILL.md:30` leaves out `src/lib/sveltekit/guard.ts` (`requireAccess`, `requireEngineAccess`) and `src/lib/sveltekit/preview.ts`, which mints bearer tokens. `admin-rest` reordered access checks in both, and they reached a security reader only because the plan asked. Found by the close security read.
   Placement: Cleanup round.
-- [ ] **#273** Add this pass's traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#273** Add this pass's traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `cairn-writing-engine-code`'s `references/durable-gotchas.md` lacks four traps `admin-rest` met. Tightening a shared failure type can break a `viewAction` delegate: the inferred union reduces to the supertype or fails d.ts emit, and only `npm run package` or `check:surface` shows it. `lane:fast --range` fails on an empty range before a commit. `emit-tool-conditions.mjs` reads `dist/`. A renamed label trips the editor-quote gate. Each one cost a task a rerun.
   Placement: Cleanup round.
-- [ ] **#274** Recapture the `cairn doctor` report transcript `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#274** Recapture the `cairn doctor` report transcript `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `04-doctor-report.txt` predates the `config.migrations` check, so the published report shows no such line, and `check:transcripts` passes anyway. Recapture from a real site. Found by T6.
-  Placement: Cleanup round.
-- [ ] **#265** Make the fast lane see run-time file reads from a `src/` code edit `#improvement` `#cairn-cms` *(2026-11-02)*
+  Placement: The release's real install, with #185.
+- [ ] **#265** Make the fast lane see run-time file reads from a `src/` code edit `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `vitest related` follows the import graph, and 38 unit test files read non-test `src/` files at run time, so an edit to such a file selects none of them. CI carries them. Fix candidates: a map from `src/` path to reader test, built by grep, or run the unit project whole for a `src/` edit that a reader names. Found by `tool-fixes` T1.
   Placement: Cleanup round.
-- [ ] **#266** Stop `componentPlan` running the whole component project when nothing reaches `src/` `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#266** Stop `componentPlan` running the whole component project when nothing reaches `src/` `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `gate-tier.mjs:480` returns `mode: 'full'` when no path reaches `src/`, so `lane:fast` starts the longest local browser leg on a range of only scripts, workflows, or docs. Found by `tool-fixes` T1.
   Placement: Cleanup round.
-- [ ] **#267** Run the npm checks that read `tool/testdata/` when a diff touches only `tool/` `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#267** Run the npm checks that read `tool/testdata/` when a diff touches only `tool/` `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `check-symbols.mjs:412` and `:430` read `tool/testdata/flags.json`, and a tool-only diff has no `npmPaths`, so the check does not run. It is #241 in reverse. Found by `tool-fixes` T1.
   Placement: Cleanup round.
-- [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
   Placement: Cleanup round.
 - [ ] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -108,13 +108,13 @@
 - [ ] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01)*
   The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
   Placement: Pass 7.
-- [ ] **#277** Decide whether `createNavRoutes` stays public `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#277** Decide whether `createNavRoutes` stays public `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   The other per-route factories left the barrels, but `createNavRoutes` stayed public and outside that ruling, and no site mounts it. Decide whether to hide it the same way.
   Placement: Pass 8.
-- [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
-  Placement: Cleanup round.
-- [ ] **#248** Rate limit the sign-in endpoints by client address `#improvement` `#cairn-cms` *(2026-11-01)*
+  Placement: The release's real install, with #245's proof.
+- [ ] **#248** Rate limit the sign-in endpoints by client address `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pre-existing. The engine's request and confirm endpoints have no per-address limit, and `throttled` is a membership oracle (`src/lib/sveltekit/auth-routes.ts:177-252`, `:206`, a posture its comment calls deliberate): posting one address twice within 60 seconds returns `throttled` for an editor and `sent` for anyone else. An attacker can send one email per minute per editor indefinitely, and each new issue deletes the editor's live link (`issueToken`, `src/lib/auth/store.ts:107`). Add an optional `RateLimitLike` binding on request and confirm, keyed on client address. That limit doesn't close the `throttled` oracle, since the probe is two requests, so whether the oracle stays accepted is a separate decision for that pass. Found by the pass 1a security read.
   Placement: Pass 7, sign-in messages.
 - [ ] **#245** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -124,65 +124,62 @@
   `admin-rest` shows a field's bounds under the control, marks it with `validator`, and keeps Details closed over a focused title. A server refusal still shows `.alert-error` with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. Whether to trim or warn is a product question.
   Placement: Pass 7.
 
-- [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Nothing in the concept's field declaration refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
   Placement: Cleanup round.
 
-- [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+- [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
-  Placement: Cleanup round.
-- [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
-  The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
+  Placement: After the release. It needs `ANTHROPIC_API_KEY` in a session's environment.
+- [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
+  The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `e2e` workflow has one shard, so no retry's shard carries a signal. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
   Placement: Cleanup round.
   `tool-fixes` T5 added `openCreateDialog` (`examples/showcase/e2e/editor-helpers.ts`), which re-clicks until the dialog opens, swapped it into all 14 sites, and logs `[create-dialog-trace] attempt=<n> handler=<bool> opened=<bool>`. Six `e2e` runs on that code (cf0ba888a x3, fb1b263a7, 024f96bc7, fbf5da68a) logged 120 clicks: 118 `attempt=1 handler=true opened=true` and 2 `handler=false opened=true` (a click that raced hydration and still opened). No `opened=false`, no `cairn-create-dialog-title` failure. The pre-hydration cause is not proven: the base rate was 7 of 13 runs, so the helper may have masked it or the cause may not have fired. The trace stays in the helper. Open work: more runs, or read the log lines in a run that fails. The conductor refused a third `workflow_dispatch` (auto mode), so the sample stopped at six. The `admin-visual` command palette (dark, 768 and 2560) and `golden-path` retries repeated across heads and remain uninvestigated. On the `small-api` pass, PR #184, the palette retried on 7 of 15 heads, at every width and in both themes, and `container-fields.spec.ts` retried on 5, mostly "an answer edited then collapsed still saves". Every retry was in e2e shard 1.
 - [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
   Placement: After the release.
 
-- [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-01)*
+- [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-02)*
   The regression and capability cases in `.claude/skills/cairn-writing-docs/evals/evals.json` that edited a technical docs page left with those tracks. Once PR #159 merges and `docs/editors/` holds pages, write the equivalent cases against editor pages so the chain is graded on the track it still covers.
   Placement: Cleanup round.
 
-- [ ] **#207** Re-cut the Evaluate bar and grade it blind `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+- [ ] **#207** Re-cut the Evaluate bar and grade it blind `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   The close packet of pass 4 (approved, 2026-11-01) ruled "Re-cut it". State each item's core claim, grade `e2e/out/evaluate/trial-*.jsonl` blind, record the result, and remove the rubric sentence.
   Placement: Cleanup round.
 
-- [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-11-01)*
+- [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-11-02)*
   After the human arms land, check that every packaged skill and `claude/CLAUDE.md` route cites a finished target and every target is reachable (the agent-first pattern's pass 4). The `admin-design-system` link at `skills/cairn-extending-a-site/SKILL.md:24` is fixed in pass 1.
   Placement: Cleanup round.
 
-- [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `saveToBranch` skips the prior-file read when the form posts `new=1` (`content-routes-entry-write.ts:152,166`), so an existing entry saved with that flag loses its undeclared keys, such as a hand-written `draft: true`. `EditPage.svelte:1970` sends it only for a new entry, so the normal flow is safe; a stale or hand-edited `?new=1` URL is the risk. Always read the prior file and keep `isNew` for the create-only checks. Found by the media and publish pass's close review.
   Placement: Cleanup round.
-- [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The prior-read `catch` in `saveToBranch` (`content-routes-entry-write.ts:172`) answers 503 with no log record, so a persistent read failure is invisible; the event vocabulary needs a row with it. A fragment rename answers an unverifiable include read with 409 (`content-routes-entry-destructive.ts:357`; `:331` answers the same for references) while delete answers 503. Fragment delete and rename also build two strict cross-branch indexes in a row, and one save now calls `branchHead` twice (`:169`, `:316`): one pass would halve the subrequests. Found by the close review.
   Placement: Pass 8.
 
 ## Low
-- [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Session ids are stored raw in D1 (`src/lib/auth/store.ts:241`), an earlier session row isn't deleted on re-login (`src/lib/sveltekit/auth-routes.ts:359-360`), `confirmLoad` embeds the raw token in the HTML (`auth-routes.ts:288`), and the CSP is only `frame-ancestors`, with no `script-src`. A stolen database or an injected script reaches a live session or link. Found by the pass 1a security read.
   Placement: Cleanup round.
-- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
   Placement: Cleanup round.
-- [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
   Placement: Cleanup round.
-- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `src/tests/unit/delivery-media-vite-barrel-prune.test.ts` still lists `variantUrl`, which no longer exists anywhere, so the list asserts nothing about it. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `src/tests/unit/skill-references-compile.test.ts` lacks `npm` in `CLI_INVOCATION_PREFIXES`, so a prose span such as `npm run check` in a skill reference fails CI. Add the prefix. Its selection half closed in `tool-fixes`: a `skills/` path is outside `unitSelectable`, so the unit leg runs whole. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
-  A fresh worktree has an empty `packages/create-cairn-site/template`, so six workspace tests fail until `npm run prepack -w packages/create-cairn-site` runs, and the setup command in the skill does not say so. Found by the wiring-core pass (T7).
-  Placement: Pass 8.
-- [ ] **#249** Have `check:symbols` flag a removed name in `## Unreleased` prose `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#249** Have `check:symbols` flag a removed name in `## Unreleased` prose `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 1a removed `/auth-channel` and `auth.branding`, and `check:symbols` stayed green while `CHANGELOG.md` and `MIGRATION-NOTES.md` still taught both as live under `## Unreleased`. Only the whole-branch review caught them, over two rounds, since the second round's lines named "the auth channel" in plain words. Fail a name the surface diff removed when an unreleased entry states it outside a removal note. Found by pass 1a.
-  Placement: `tool-gates` slice.
+  Placement: After the release.
 - [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
   `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.
@@ -196,12 +193,12 @@
   Placement: After the release.
 
 
-- [ ] **#190** Require draft-preview links to be minted from a POST action `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#190** Require draft-preview links to be minted from a POST action `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   `draft-preview.md` and the S05 judge never say that minting changes state and so belongs in a form action, not a `load`. The ordering half closed in `admin-rest`, which left one known limit: an unmapped nonexistent id still answers `unknown-concept`, since `canReach` admits an unmapped target (`src/lib/auth/access.ts:198-199`).
   Placement: Cleanup round (skill reference and judge text).
-- [ ] **#191** Harden the eval harness's session sandbox further `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#191** Harden the eval harness's session sandbox further `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   The read-only filters in `ALLOWED_TOOLS` still allow writes or execution through flags (`sed -n` with a `w` command, `git diff --output`, `git grep -O`, `sort -o`, `git difftool`), so `DENIED_TOOLS` is advisory and the fixture sandbox is the boundary. The judge prompt embeds the session's reply unescaped, which can skew a grade, and the hard-linked `node_modules` is shared across trials, so an in-place write under it reaches later trials. Pass 3 added an environment allowlist, project-only settings for every fixture, and wrangler denies.
-  Placement: Final engine batch.
+  Placement: Cleanup round.
 - [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   cairn.pub renders the doc arms from the installed engine, so the one release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
   Placement: After the release.
@@ -224,11 +221,11 @@
   `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`, so the command does not work from a registry until the package is published. The manifest, tarball contents, leak scan, and the `publish-create-site` job in `publish.yml` have landed; the job has never run. What remains is the release act: publish the first version by hand, set up npm trusted publishing for the package, watch the first OIDC run of `publish-create-site`, and run the real install.
   Placement: The one release.
 
-- [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `scripts/checks/check-self-use-allowlist.json:75` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it (`examples/showcase/src/routes/sitemap.xml/+server.ts:15`), so the entry is removable. `findViolations` never flags a stale entry, so nothing forces the cleanup. The path is on the `runner` map, so the scaffold template pass left it.
   Placement: Final engine batch.
 
-- [ ] **#196** Close the practices review's open findings on the packaged guidance `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#196** Close the practices review's open findings on the packaged guidance `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 4's fresh review against Anthropic's skills, best-practices, and plugin rules found no blocker and two majors left open. (1) `cairn-extending-a-site` and `cairn-building-admin-screens` both claim roles, the access map, the `/admin` mount, and audit findings in their descriptions and routers, so two references answer one job (S7). Give each job one owner. (2) `claude/CLAUDE.md:45-76` imports a one-time Stop-hook snippet and DaisyUI install commands into every site's memory (B1); move them to `skills/cairn-extending-a-site/references/adopt-cairn.md`. The Stop hook it recommends exits 1 on a finding, which Claude Code treats as non-blocking, so Claude never sees it (B5): wrap it to exit 2 with a `stop_hook_active` guard. Minors: packaged skill descriptions use the imperative, not the third person (S3); `radius-scale`'s "promoted to error at 0.99.0" and one release-sweep line are time-bound (S4); `cairn-extension-reviewer` has no way to receive a diff with only `Read, Grep, Glob` (P2); the packaged skills' H1s do not match their names, and "daisyUI" is cased two ways (S5); `CLAUDE.md` and two path rules repeat what the skills they load already say (B1). The second prompt audit adds a contradiction: `skills/cairn-extending-a-site/SKILL.md:21` asks for a dated ruling in cairn's rulings ledger, which a site cannot write, while `claude/agents/cairn-extension-reviewer.md:21-23` accepts a comment or commit message.
   Placement: Cleanup round.
 
@@ -264,6 +261,10 @@
 - **#116** Validate preview.ttlMs when the admin is constructed: `cleanup-custom-recipes` retired the preview lifetime option. (Geoff, 2026-11-01)
 
 ## Done
+- [x] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  A fresh worktree has an empty `packages/create-cairn-site/template`, so six workspace tests fail until `npm run prepack -w packages/create-cairn-site` runs, and the setup command in the skill does not say so. Found by the wiring-core pass (T7).
+  Done: `.claude/skills/cairn-running-passes/SKILL.md:17,20` carries the `prepack` step. Closed by the cleanup scoped sweep.
+  Placement: Pass 8.
 - [x] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
   The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
   Placement: Pass 3.

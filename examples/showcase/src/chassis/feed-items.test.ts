@@ -5,13 +5,7 @@ import { feedItemsFrom } from './feed-items.js';
 
 const ORIGIN = 'https://feed.test';
 
-const { renderMarkdown } = createRenderer();
-const render: CairnAdapter['rendering']['render'] = ({
-  body,
-  resolve,
-  resolveMedia,
-  resolveFragment,
-}) => renderMarkdown(body, { resolve, resolveMedia, resolveFragment });
+const render: CairnAdapter['rendering']['render'] = createRenderer().render;
 
 /** A one-post site whose body includes a fragment and a media image. */
 function stubSite(): SiteResolver {

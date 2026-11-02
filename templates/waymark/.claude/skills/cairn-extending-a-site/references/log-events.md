@@ -52,7 +52,7 @@ Contents:
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |
-| `content.entry_invalid` | warn | `scope`, `concept`, `id` (index) or `path` (manifest), `draft`, `errors` | `scope: index`: `createSiteIndexes` ran with `validate: false` and dropped the entry. `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
+| `content.entry_invalid` | warn | `scope`, `concept`, `path`, `draft`, `errors` | `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
 
 ## Config
 
@@ -81,11 +81,10 @@ Contents:
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
 | `media.uploaded` | info | `editor`, `hash`, `bytes`, `contentType`, `reused` | Bytes stored to R2 or matched. The manifest row lands later with the save or Library commit. |
-| `media.upload_failed` | warn | `editor`, `reason` | `media_disabled`, `length_required`, `too_large` (over `maxUploadBytes`), `csrf`, `session_expired`, `access_denied`, `unsupported_type` (sniffed type not allowed or markup), `binding_missing`, `hash_collision`. |
+| `media.upload_failed` | warn | `editor`, `reason` | `media_disabled`, `length_required`, `too_large` (over the 25 MB cap), `csrf`, `session_expired`, `access_denied`, `unsupported_type` (sniffed type not allowed or markup), `binding_missing`, `hash_collision`. |
 | `media.delivery_failed` | warn | `reason` (`binding_missing`), `binding` | The serve route has no bucket bound. |
 | `media.orphans_reconciled` | info | `orphaned`, `missing` | Reconcile read finished. |
 | `media.resolve_missing` | warn | `hash` | A `media:` reference has no manifest row; renders as a broken image. |
-| `media.resolver_absent` | warn | none | A public route factory built with `assetsEnabled` and no `resolveMedia`. Once at construction. |
 | `media.deleted` | info | `editor`, `hash` | Bytes and row removed. |
 | `media.delete_refused` | warn | `editor`, `hash`, `foundIn` | Asset still referenced. |
 | `media.replaced` | info | `editor`, `oldHash`, `newHash`, `affected` | Replace-in-place rewrote referencing entries. |

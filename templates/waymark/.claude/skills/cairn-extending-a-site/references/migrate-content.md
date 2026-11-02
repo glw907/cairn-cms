@@ -101,9 +101,7 @@ For an undated concept, set `id` to `stem` and drop the date line and test. One 
 3. `npm run build`. It fails with `cairn: <n> invalid frontmatter field(s):` then
    `<dir>/<id>: <field>: <message>` lines. Fix the script, delete the files the last run wrote (an
    id change leaves the old file behind), and rerun from step 1.
-4. Never pass `{ validate: false }` to `createSiteIndexes` to get a green build: invalid entries
-   still drop from the site, only with a warning instead of a failure.
-5. Open a migrated entry at its permalink: images load, no shortcode shows as text.
+4. Open a migrated entry at its permalink: images load, no shortcode shows as text.
 
 | Symptom | Cause |
 |---|---|
@@ -112,5 +110,5 @@ For an undated concept, set `id` to `stem` and drop the date line and test. One 
 | `date: ... must be a valid date (YYYY-MM-DD)` | Not a real date (an unquoted `2024-13-45` rolls over silently instead) |
 | Required text field listed though the old file had it | Value was not a string, or sat under an unmapped key |
 | Permalink resolves to two entries | Two dated files with one slug under an undated permalink |
-| Entry missing, build passes | Invalid draft, or `validate: false` still set |
+| Entry missing, build passes | Invalid draft |
 | Shortcode prints as text | Not rewritten to a container directive |

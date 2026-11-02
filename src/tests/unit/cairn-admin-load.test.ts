@@ -26,7 +26,7 @@ function runtime(): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
+    media: { enabled: false },
     vocabulary: [],
   };
 }

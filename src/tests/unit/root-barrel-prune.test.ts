@@ -151,7 +151,7 @@ const KEPT = [
   'SenderConfig',
   'NavMenuConfig',
   'PreviewConfig',
-  'AssetConfig',
+  'MediaConfig',
   'ConceptDescriptor',
   'CairnRuntime',
   'SiteRender',

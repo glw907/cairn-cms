@@ -90,7 +90,6 @@ off. The save rewrites only `tidy.conventions`, so a comment inside that block i
    ```ts
    // src/routes/robots.txt/+server.ts
    import { robotsResponse } from '@glw907/cairn-cms/delivery';
-   import type { CairnAdapter } from '@glw907/cairn-cms';
    import { siteMeta } from '#chassis/content.js';
    import { cairn } from '#theme/cairn.config.js';
 
@@ -100,8 +99,7 @@ off. The save rewrites only `tidy.conventions`, so a comment inside that block i
      return robotsResponse({
        sitemapUrl: siteMeta.origin + '/sitemap.xml',
        disallow: ['/admin'],
-       // defineAdapter infers the exact literal, so read the optional member through CairnAdapter.
-       posture: (cairn as CairnAdapter).aiPosture,
+       posture: cairn.aiPosture,
      });
    }
    ```

@@ -39,14 +39,9 @@ function runtime(): CairnRuntime {
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: MEDIA_PATH,
     vocabulary: [],
-    resolvedAssets: {
+    media: {
       enabled: true,
       bucketBinding: 'MEDIA_BUCKET',
-      publicBase: '/media',
-      urlForm: 'slug',
-      maxUploadBytes: 25 * 1024 * 1024,
-      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
-      transformations: false,
     },
   } as CairnRuntime;
 }

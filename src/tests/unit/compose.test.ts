@@ -115,19 +115,17 @@ describe('composeRuntime spellcheckDictionary', () => {
   });
 });
 
-describe('composeRuntime resolvedAssets', () => {
+describe('composeRuntime media', () => {
   it('resolves to disabled media when the adapter declares no assets', () => {
     const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });
-    expect(runtime.resolvedAssets).toEqual({ enabled: false });
+    expect(runtime.media).toEqual({ enabled: false });
   });
   it('resolves a declared media block into a filled config', () => {
     const withMedia: CairnAdapter = { ...adapter(), media: { bucketBinding: 'MEDIA_BUCKET' } };
     const runtime = composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig });
-    expect(runtime.resolvedAssets.enabled).toBe(true);
-    if (!runtime.resolvedAssets.enabled) throw new Error('expected enabled');
-    expect(runtime.resolvedAssets.bucketBinding).toBe('MEDIA_BUCKET');
-    expect(runtime.resolvedAssets.publicBase).toBe('/media');
-    expect(runtime.resolvedAssets.transformations).toBe(false);
+    expect(runtime.media.enabled).toBe(true);
+    if (!runtime.media.enabled) throw new Error('expected enabled');
+    expect(runtime.media.bucketBinding).toBe('MEDIA_BUCKET');
   });
 });
 

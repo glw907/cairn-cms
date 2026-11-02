@@ -6,8 +6,7 @@ import MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
 import MarkdownEditor from '../../lib/admin/MarkdownEditor.svelte';
 import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/admin/media-base-context.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
-import type { AdminShellData, MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
-import CairnAdminShellMediaHarness from './_CairnAdminShellMediaHarness.svelte';
+import type { MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
 
 // The base a mounting context injects. It is the reproductions module's own fixture base, the first
 // caller of this seam, so the assertions below read like the real injection rather than a stub.
@@ -97,38 +96,7 @@ describe('the media public base is injectable through context', () => {
   });
 });
 
-// A resolved AdminShellData authed payload whose mediaBase is not the /media default, the shape
-// shellLoad produces from a site's own assets.publicBase. nav is left empty: this proves only that
-// the shell composes the media-base context, not anything about the nav chrome it renders.
-const NON_DEFAULT_BASE = '/site-assets';
-
-function shellData(): AdminShellData {
-  return {
-    public: false,
-    siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role: 'owner', capability: 'owner' },
-    concepts: [{ id: 'posts', label: 'Posts' }],
-    nav: { items: [], fallback: [] },
-    pathname: '/admin/posts',
-    theme: 'cairn-admin',
-    collapsedNav: [],
-    csrf: 'test-csrf',
-    pendingEntries: Promise.resolve(null),
-    attention: {},
-    mediaBase: NON_DEFAULT_BASE,
-  };
-}
-
-describe('the real admin shell composes the media-base context from its resolved shell data', () => {
-  it('renders a descendant media surface under the shell-resolved base, not the /media default', async () => {
-    const screen = await render(CairnAdminShellMediaHarness, { data: shellData(), library: LIBRARY });
-    const paths = thumbPaths(screen.container);
-    expect(paths.length).toBeGreaterThan(0);
-    expect(paths[0]).toBe(`${NON_DEFAULT_BASE}/first-light.${HASH}.webp`);
-  });
-});
-
-describe('the media public base defaults to /media with no provider (a bare mount outside CairnAdminShell)', () => {
+describe('the media public base defaults to /media with no provider (a bare mount with no provider)', () => {
   it('keeps MediaPicker option thumbnails under /media', async () => {
     const screen = await render(MediaPicker, {
       entries: Object.values(LIBRARY),

@@ -1,16 +1,15 @@
 # Configure media
 
-Every media option lives in the adapter's `media` block (`AssetConfig`, `src/theme/cairn.config.ts`
-on a scaffold), named by its R2 binding (`bucketBinding: 'MEDIA_BUCKET'`). Content names an image by
-a `media:` reference; the resolver builds the URL from the asset's manifest row
-(`src/content/.cairn/media.json`), so no option below needs a content edit. A URL typed into raw HTML
-is not a reference and follows no option.
+The one media setting is the R2 binding on the adapter's `media` block (`MediaConfig`,
+`src/theme/cairn.config.ts` on a scaffold): `bucketBinding: 'MEDIA_BUCKET'`. Content names an image
+by a `media:` reference; the resolver builds the URL from the asset's manifest row
+(`src/content/.cairn/media.json`), so no content edit follows a change here. A URL typed into raw
+HTML is not a reference and resolves to nothing.
 
 Contents:
 
 - [Upload limits](#upload-limits)
 - [Image URLs](#image-urls)
-- [Responsive images](#responsive-images)
 - [Fail the build on a missing asset](#fail-the-build-on-a-missing-asset)
 - [What the Library counts as a use](#what-the-library-counts-as-a-use)
 - [Upload from a custom screen](#upload-from-a-custom-screen)
@@ -18,78 +17,50 @@ Contents:
 
 ## Upload limits
 
-- `allowedTypes` narrows the five stored types (`image/jpeg`, `image/png`, `image/gif`,
-  `image/webp`, `image/avif`); it cannot widen them, and a type outside them throws a `cairn:` error
-  at startup. The type is sniffed from the bytes. HEIC,
-  unknown bytes, SVG, HTML, XML, and anything starting with `<` are always refused.
-- `maxUploadBytes` defaults to 25 MB. Cloudflare's plan body cap also applies and answers a plain 413.
-- Both apply to new uploads only. Narrowing `allowedTypes` leaves stored assets and their manifest
-  rows serving; never delete a row or an asset because its type is no longer allowed.
+The limits are fixed. An upload is capped at 25 MB (Cloudflare's plan body cap also applies and
+answers a plain 413). Five types are stored: `image/jpeg`, `image/png`, `image/gif`, `image/webp`,
+and `image/avif`. The type is sniffed from the bytes. HEIC, unknown bytes, SVG, HTML, XML, and
+anything starting with `<` are always refused.
 
 ```ts
-import type { AssetConfig } from '@glw907/cairn-cms';
+import type { MediaConfig } from '@glw907/cairn-cms';
 
-const media: AssetConfig = {
-  bucketBinding: 'MEDIA_BUCKET',
-  allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-  maxUploadBytes: 8 * 1024 * 1024,
-  publicBase: '/images',
-  urlForm: 'opaque',
-};
+const media: MediaConfig = { bucketBinding: 'MEDIA_BUCKET' };
 ```
 
 Refusals log `media.upload_failed` with `too_large` or `unsupported_type`.
 
 ## Image URLs
 
-| Option | Value | URL |
-|---|---|---|
-| `publicBase` | default `/media` | the path every image URL starts with |
-| `urlForm: 'slug'` | default | `<publicBase>/<slug>.<hash>.<ext>` (or `<hash>.<ext>` with no slug) |
-| `urlForm: 'opaque'` | no file name | `<publicBase>/<first two hash chars>/<hash>.<ext>` |
+Every image URL is `/media/<slug>.<hash>.<ext>` (or `/media/<hash>.<ext>` with no slug), served by
+one route at `src/routes/media/[...path]/+server.ts` that exports `createMediaRoute`. The catch-all
+param must be named `path`: the handler reads `event.params.path` and takes the hash and extension
+from its last segment. Another name, or no route, makes every image 404.
 
-Any other `urlForm` throws `cairn: media urlForm must be "slug" or "opaque", got "<value>"`.
+```ts
+// src/routes/media/[...path]/+server.ts
+import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '#chassis/cairn.server.js';
 
-Moving the base takes a route at the new base. `publicBase` moves the URLs, not the route:
+export const GET = createMediaRoute({ runtime });
+```
 
-1. Set `publicBase` (and `urlForm`) in the `media` block.
-2. Add `src/routes/<base>/[...path]/+server.ts` (for example `src/routes/images/[...path]/+server.ts`)
-   that exports `createMediaRoute`. The catch-all param must be named `path`: the handler reads
-   `event.params.path` and takes the hash and extension from its last segment. Another name, or no
-   route, makes every image 404.
-
-   ```ts
-   // src/routes/images/[...path]/+server.ts
-   import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
-   import { runtime } from '#chassis/cairn.server.js';
-
-   export const GET = createMediaRoute({ runtime });
-   ```
-
-3. Keep `src/routes/media/[...path]/+server.ts` only if the site runs `cairn-media-seed`, which
-   downloads `/media/<slug>.<hash>.<ext>`. Say in your reply that it was kept on purpose.
-
-## Responsive images
-
-`transformations: true` reports that Cloudflare Image Transformations is on for the zone (a Worker
-cannot turn it on; enable it in the dashboard first). An image whose row records a width of at least
-800 pixels then gets a `srcset` of `/cdn-cgi/image/` URLs, with `sizes` from its `:::figure`
-placement (`100vw` otherwise). There are no named presets; a theme that needs another size builds
-the `/cdn-cgi/image/<options>/<path>` URL itself.
+A rendered `<img>` for a managed image carries `width` and `height` when the manifest row recorded
+them, and no `srcset`. A theme that wants another size builds the `/cdn-cgi/image/<options>/<path>`
+URL itself.
 
 ## Fail the build on a missing asset
 
 By default a `media:` reference with no manifest row logs `media.resolve_missing` and renders
 `src="#"` with class `cairn-broken-media`, and the build passes. To fail a prerendered build instead,
 pass `{ strict: true }` as the third argument to `createMediaResolver`, where the adapter module
-defines it (on a scaffold `publicMediaResolver` feeds both `render` and the public routes'
-`resolveMedia`, so one change covers both). A miss with media on throws a `cairn:`-prefixed error;
+defines it (on a scaffold `resolveMedia` feeds both `render` and the public routes, so one change covers both). A miss with media on throws a `cairn:`-prefixed error;
 media off stays silent, and the resolver keeps its `imageDetail`. Previews keep marking misses
 broken, since they pass their own resolver.
 
-<!-- snippet-check-skip: continues the scaffold's adapter module, which declares mediaManifest and resolvedAssets -->
+<!-- snippet-check-skip: continues the scaffold's adapter module, which declares media and mediaManifest -->
 ```ts
-export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets, { strict: true });
+export const resolveMedia = createMediaResolver(media, mediaManifest, { strict: true });
 ```
 
 On a request-time page the throw becomes a 500.
@@ -108,7 +79,7 @@ POST the raw bytes to `/admin/media?/mediaUpload` (the action exists only on tha
 `fetch` with `redirect: 'manual'`, `Content-Type: text/plain` (SvelteKit admits only form types; the
 action sniffs the bytes), `X-Cairn-CSRF` set to the admin layout data's `csrf` read at upload time.
 Optional headers: `X-Cairn-Filename`, `X-Cairn-Alt` (160 chars), `X-Cairn-Display-Name` (all
-URI-encoded), `X-Cairn-Width`, `X-Cairn-Height` (send them, or the asset gets no `srcset`). Parse the
+URI-encoded), `X-Cairn-Width`, `X-Cairn-Height` (send them, or the rendered image carries no `width` and `height`). Parse the
 response with `deserialize` from `$app/forms`: success `data` holds `reference` and `record`; a
 failure's `data.error` is `length_required`, `too_large`, or `unsupported_type`. The action stores
 bytes but commits no row: the asset resolves as missing until an entry save posts the `record` in
@@ -122,10 +93,10 @@ a custom screen reaches it with no cast.
 
 ## Hand-built wiring
 
-A site with no media needs three pieces: an `r2_buckets` binding plus the `media` block; a resolver
-from `createMediaResolver(manifest, normalizeAssets(media))` passed to `createPublicRoutes` as
-`resolveMedia` (without it hero images vanish and `media.resolver_absent` logs when `assetsEnabled`
-is set); and a `createMediaRoute` handler at `<publicBase>/[...path]`.
+A site with media needs three pieces: an `r2_buckets` binding plus the `media` block; a resolver
+from `createMediaResolver(media, manifest)` passed to `createPublicRoutes` as `resolveMedia` (`null`
+for a site with no media, which derives no hero image); and a `createMediaRoute` handler
+at `/media/[...path]`.
 
 The serve route answers with `X-Content-Type-Options: nosniff`, `Content-Disposition: inline`,
 `Content-Security-Policy: default-src 'none'; sandbox`, and a one-year immutable `Cache-Control`.

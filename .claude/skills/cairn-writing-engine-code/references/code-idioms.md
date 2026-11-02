@@ -29,7 +29,7 @@ elsewhere (`check:comments`) and not restated here.
   a plain `Error` whose message starts `cairn: ` and reads `<subject> <verdict>`, naming the
   offending value. Exemplar: `src/lib/content/concepts.ts` (`resolveRouting`,
   `validateUrlPolicy`). Module-name prefixes (`permalink:`, `content manifest:`,
-  `createSiteIndexes:`, `r2Key:`, `site resolver:`) and prefixless messages converge to this.
+  `createSiteResolver:`, `r2Key:`, `site resolver:`) and prefixless messages converge to this.
 - **E2. Errors that map to a doctor condition** are `CairnError(conditionId, ...)`. Exemplar:
   `src/lib/env.ts` (`requireOrigin`/`requireDb`/`requireBucket`). A config-error subclass that
   wants its own name (`SiteConfigError`) extends `CairnError` instead of hand-mirroring it;

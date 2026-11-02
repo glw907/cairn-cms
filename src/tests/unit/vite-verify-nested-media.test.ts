@@ -17,8 +17,6 @@ export default {
   plugins: [
     cairnManifest({
       configModule: '/src/lib/cairn.config.ts',
-      content: { posts: '/src/content/posts/*.md' },
-      manifestPath: '/src/content/.cairn/index.json',
     }),
   ],
 };
@@ -50,8 +48,6 @@ const HERO_POST = '---\ntitle: Hello\nhero:\n  src: media:a.00112233445566aa\n  
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
 };
 
 const made: string[] = [];

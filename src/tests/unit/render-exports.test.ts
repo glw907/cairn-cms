@@ -50,7 +50,7 @@ describe('engine entry render surface', () => {
   });
 
   it('the root createRenderer composes a working pipeline', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-    expect(await renderMarkdown('# Hi')).toContain('<h1');
+    const { render } = createRenderer();
+    expect(await render({ body: '# Hi' })).toContain('<h1');
   });
 });

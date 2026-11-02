@@ -8,6 +8,9 @@
   Placement: Pass 1a.
 
 ## Medium
+- [ ] **#210** Refuse a failed spellcheck asset fetch `#bug` `#cairn-cms` *(2026-11-01)*
+  `createEngine` at `src/lib/admin/spellcheck-worker.ts:276` never checks `.ok`, so a 404 dictionary loads the error page as the corpus and the worker reports `ready` with an engine that knows almost no words. Found by the #174 review; it predates that PR.
+  Placement: Pass 5.
 - [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
   The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
   Placement: Cleanup round.

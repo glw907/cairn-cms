@@ -12,15 +12,15 @@
   Placement: Pass 1a.
 
 ## Medium
-- [ ] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `FieldInput.svelte` renders `minlength`, `maxlength`, `min`, and `max`, but no hint states a bound, so an editor learns it by hitting it, and `aria-describedby` is unset when `help` is. A native bubble is the only report: it fades, and nothing marks the control afterward. A server refusal shows `.alert-error` (`EditPage.svelte:1832`) with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. `ComponentForm.svelte:306` already has the `aria-invalid` shape, and DaisyUI's `validator` and `validator-hint` are unused here. Two controls invalid at once open the details aside over a focused title at 320 and 390 wide (`EditPage.svelte:341`). Found by the field-values close review (#176), WCAG 3.3.1, 3.3.2, and 4.1.3.
   Placement: Pass 5.
 
-- [ ] **#239** Refuse contradictory bounds at `defineFieldset` `#bug` `#cairn-cms` *(2026-11-01)*
-  Nothing refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
+- [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+  Nothing in the concept's field declaration refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
   Placement: Cleanup round.
 
-- [ ] **#216** Return focus after the entry screen's Discard window closes `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#216** Return focus after the entry screen's Discard window closes `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   The **Discard changes** item at `src/lib/admin/EditPage.svelte:1705` calls `showModal()` from inside the More actions popover, which is hidden by the time the window closes, so a keyboard user's focus lands on nothing (WCAG 2.4.3). PR #177 fixed the same shape on Delete by passing the More actions button as the origin, and a close review's Chromium probe of that order showed the bare restore does nothing. This item is inferred from that probe and hasn't been run against the Discard window itself. Use `resolveDialogOrigin` and `refocusDialogOrigin` from `dialog-origin.ts` on it.
   Placement: Pass 5.
 - [ ] **#215** Announce the navigation save after hydration `#bug` `#cairn-cms` *(2026-11-01)*
@@ -29,7 +29,7 @@
 - [ ] **#214** Stop a double submit on the delete confirm `#bug` `#cairn-cms` *(2026-11-01)*
   The submit in `src/lib/admin/DeleteDialog.svelte` stays live while `deleteEntry` makes several GitHub calls, so a double click sends two POSTs and the second can land on an entry that's already gone. The old row form had the same gap. Fix candidate: disable the button from the form's `onsubmit`, as the create dialog does with `creating`. Found by PR #177's review.
   Placement: Pass 5.
-- [ ] **#241** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#241** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `TestEventVocabularyMatchesEngine` (`tool/internal/logs/events_test.go`) compares `tool/internal/logs/events.go` with `src/lib/log/events.ts`, but `scripts/checks/gate-tier.mjs` selects `make -C tool check` only when `tool/**` changed. A diff that adds an engine log event clears the fast lane and goes red on three CI runners. Fix candidate: select the tool gate on `src/lib/log/events*.ts`. Found by PR #177.
   Placement: Cleanup round.
 - [ ] **#242** Keep the tidy Style conventions copy readable at 320 `#bug` `#cairn-cms` *(2026-11-01)*
@@ -53,7 +53,7 @@
 - [ ] **#209** Queue a seed `addWord` posted before the spellcheck worker is ready `#bug` `#cairn-cms` *(2026-11-01)*
   A seed `addWord` sent before `ready` reaches `!handler` in the worker and is dropped, which contradicts the comment at `src/lib/admin/spellcheck.ts:658`. Read from the code, not reproduced.
   Placement: Pass 5.
-- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
   Placement: After the release.
 
@@ -80,15 +80,11 @@
   A `cairn:` token is live only as an inline markdown link in a body; in a raw HTML anchor or a reference-style link definition it survives as an inert literal `cairn:` href, and in a component attribute or frontmatter it is never rewritten, with no warning and no build failure in any of those places. An author who writes `[text][ref]` or `<a href="cairn:...">` ships a dead link the build gate was supposed to catch. Fix candidates: warn or fail the build on a `cairn:` href that survives rendering unresolved, or resolve reference-style definitions the same as inline links (`src/lib/render/resolve-links.ts#remarkResolveCairnLinks`, `src/lib/content/links.ts:52-64`; found while writing the link-content-with-references page, 2026-10-12).
   Sweep 2026-10-31: A dead public link passes every gate, and the delete guard and rename repoint miss these forms too. One post-render check covers all of them. `src/lib/render/resolve-links.ts:23`, `src/lib/content/links.ts:57`, `sanitize-schema.ts:56-58`.
   Placement: Final engine batch, content rules. Friction entry 51 (`extender`), boundary test class1 batched, page content-model.
-- [ ] **#134** Throw in buildSiteManifest on a concept with no glob `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
-  Turning on fragments takes three hand-kept wiring points that fail three different ways: a `fragments` glob missing from `createSiteIndexes` throws at build, the same glob missing from the `cairnManifest` plugin's `content` option degrades to an empty file set with no throw, and a `rendering.render` that does not forward `resolveFragment` publishes every `::include` as literal text with no error. A page has to warn about the two silent ones by hand. Fix candidates: have `buildSiteManifest` throw on a declared concept with no glob, as `createSiteIndexes` does, and warn when an include directive survives render unresolved (`src/lib/delivery/site-indexes.ts:54-58`, `src/lib/delivery/manifest.ts:23`, `src/lib/render/resolve-include.ts:132`; found while writing the reuse-content-across-entries page, 2026-10-12).
-  Sweep 2026-10-31: A one-line parity throw with `createSiteIndexes`. A separate warning is not worth it. `src/lib/delivery/site-indexes.ts:54`, `manifest.ts:23`.
-  Placement: Final engine batch, content rules. Friction entry 52 (`extender`), boundary test class1 batched (budget, next in line), page content-model.
 - [ ] **#164** Fail the manifest build on a filename stem that is not a valid id `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   Two seams disagree on what an id is. The content index serves a page for any filename stem, while a `cairn:` link and the rename and delete guards treat a stem outside `ID_RE` as no entry, so a migrated `My_Trip.md` publishes a page no `cairn:` link can target and no guard protects, with no warning at build. Fix candidate: warn or fail in the manifest build on a stem that fails `isValidId` (`src/lib/content/ids.ts:6-10`, `src/lib/delivery/content-index.ts#createContentIndex`, `src/lib/content/links.ts#parseCairnToken`, `src/lib/sveltekit/content-routes-entry-destructive.ts#createEntryDestructiveActions`; found while writing the migrate-existing-content page, 2026-10-12).
   Sweep 2026-10-31: One seam publishes what the guards cannot see, and the admin edit route refuses that id too. Breaking. `src/lib/delivery/content-index.ts:105`, `src/lib/content/links.ts:28`, `src/lib/sveltekit/admin-dispatch.ts:87`. Unverified: whether the list screen shows such a row.
   Placement: Final engine batch, content rules. Friction entry 91 (`extender`), boundary test class3, page none.
-- [ ] **#103** Name editor.nav in the navLayout screen error `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
+- [ ] **#103** Name editor.nav in the navLayout screen error `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   One feature, three names: the adapter turns the public menu editor on with `editor.nav` (type `NavMenuConfig`), `navLayout` references it as `screen: 'nav'`, and the startup error for a missing `editor.nav` says `navLayout: screen "nav" is referenced but no navMenu is configured`, naming neither the adapter key nor the type. The bare word `nav` also collides with `navLayout` and `navFilter`, which arrange the admin sidebar, not the public menu. Fix: name `editor.nav` in the error message (`src/lib/sveltekit/admin-nav.ts#validateNavLayout.checkEngineRef`; found while writing the arrange-the-admin-sidebar page, 2026-10-12).
   Sweep 2026-10-31: The startup error names something the developer cannot find. One string. `src/lib/sveltekit/admin-nav.ts:220`, `src/lib/content/types.ts:285`.
   Placement: Final engine batch, admin and tidy. Friction entry 8 (`extender`), boundary test class3, page none.
@@ -102,8 +98,8 @@
   Sweep 2026-10-31: A config typo reaches an editor as an uncaught error when it could fail at startup. `src/lib/sveltekit/preview.ts:77,144`, `cairn-admin.ts:118`.
   Placement: Final engine batch, admin and tidy. Friction entry 27 (`extender`), boundary test class3, page none.
 - [ ] **#136** Log refused entry deletes and renames `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  An entry delete or rename refused for an inbound reference leaves no log record, while a media delete refused for the same reason logs `media.delete_refused` with the referencing count. `content-routes-entry-destructive.ts` logs only `entry.discarded` and `commit.succeeded`, so the editor's banner is the only trace of a 409 or a fail-closed 503, and a developer has no event to filter on in Workers Logs. Fix candidate: log an `entry.delete_refused` and an `entry.rename_refused` with the reason and the blocker count, and add their rows to `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/reference/log-events.md` (`src/lib/sveltekit/content-routes-entry-destructive.ts:127-157,272-295`; found while writing the link-content-with-references page, 2026-10-12).
-  Sweep 2026-10-31: The repo's rule gives a diagnosable path an event, and a refusal leaves no trace today. `content-routes-entry-destructive.ts:166,183,398`; compare `media.delete_refused` at `content-routes-media-delete.ts:181`.
+  An entry delete or rename refused for an inbound reference leaves no log record, while a media delete refused for the same reason logs `media.delete_refused` with the referencing count. `content-routes-entry-destructive.ts` logs only `entry.discarded` and `commit.succeeded`, so the editor's banner is the only trace of a 409 or a fail-closed 503, and a developer has no event to filter on in Workers Logs. Fix candidate: log an `entry.delete_refused` and an `entry.rename_refused` with the reason and the blocker count, and add their rows to ``skills/cairn-extending-a-site/references/log-events.md` (`src/lib/sveltekit/content-routes-entry-destructive.ts:127-157,272-295`; found while writing the link-content-with-references page, 2026-10-12).
+  Sweep 2026-10-31: The repo's rule gives a diagnosable path an event, and a refusal leaves no trace today. `content-routes-entry-destructive.ts:134-201,291-361`; compare `media.delete_refused` at `content-routes-media-delete.ts:181`.
   Placement: Final engine batch, admin and tidy. Friction entry 55 (`extender`), boundary test class1 batched (budget, first after the cut), page debug-your-site.
 - [ ] **#143** Render a slot's help text in the insert form `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   `SlotDef.help` is read by no engine surface, so a slot's help text never renders (`src/lib/render/registry.ts:352`, `src/lib/admin/ComponentForm.svelte`), while the concept-field `help` of the same name does, through `FieldInput`. Render it under the slot's control, or drop it from the type. `itemFields` and `required` are documented honestly now (`registry.ts:346-357`).
@@ -124,7 +120,7 @@
 - [ ] **#86** Stop the CI Playwright installs failing on apt `#bug` `#cairn-cms` *(2026-10-26)* *(swept 2026-11-01)*
   `playwright install --with-deps chromium` in `e2e.yml:76`, `design.yml:62`, and `test.yml:47` runs apt through `bounded-install`, whose retry (`action.yml:41-45`) comes at once. It exited 100 four times on 2026-10-26, failing `25fb80fa3`, `c8a1eeb09`, `f17bb8aed`, and PR #147, and each rerun passed. In run 40365078288 only the two `norms` jobs failed, and pass 1b removes those, but the same step stays in the three workflows above. Fix: retry with a backoff, or cache the browser and its system deps.
   Placement: Cleanup round.
-- [ ] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25)* *(swept 2026-10-31)*
+- [ ] **#75** `cairn-guidance check` misjudges the `.claude/` Tailwind exclusion and advises a line that excludes the wrong directory `#bug` `#cairn-cms` *(2026-10-25)* *(swept 2026-11-01)*
   `judgeSourceExclusion` (`src/lib/guidance/check.ts:76-91`) reads only `src/admin.css` and `src/theme/admin.css` and counts as excluded only the literal `SOURCE_EXCLUSION_LINE`, `@source not "./.claude";` (`:21`). Tailwind resolves an `@source` path against the stylesheet that carries it, so in `src/admin.css` that line excludes `src/.claude`, not the project root's `.claude/`; a correct `@source not "../.claude";` reads as not excluded, and the advice at `:201` makes a site add the wrong line. It also never reads the public stylesheet (the scaffold's exclusion is `templates/waymark/src/chassis/tokens.css:55`, `../../.claude`). Fix: resolve each `@source not` path against its file and compare to the root `.claude`, and read the site's Tailwind entries, with tests. Found by the Claude Code page's recheck, 2026-10-25.
   Placement: Final engine batch.
 - [ ] **#32** Remove `RoutingRule.inFeeds` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)* *(swept 2026-11-01)*
@@ -136,7 +132,7 @@
 
 - [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `saveToBranch` skips the prior-file read when the form posts `new=1` (`content-routes-entry-write.ts:152,166`), so an existing entry saved with that flag loses its undeclared keys, such as a hand-written `draft: true`. `EditPage.svelte:1962` sends it only for a new entry, so the normal flow is safe; a stale or hand-edited `?new=1` URL is the risk. Always read the prior file and keep `isNew` for the create-only checks. Found by the media and publish pass's close review.
-  Placement: Final engine batch, content rules slice.
+  Placement: Cleanup round.
 - [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   The prior-read `catch` in `saveToBranch` (`content-routes-entry-write.ts:172`) answers 503 with no log record, so a persistent read failure is invisible; the event vocabulary needs a row with it. A fragment rename answers an unverifiable include read with 409 (`content-routes-entry-destructive.ts:197`) while delete answers 503. Fragment delete and rename also build two strict cross-branch indexes in a row, and one save now calls `branchHead` twice (`:169`, `:316`): one pass would halve the subrequests. Found by the close review.
   Placement: Final engine batch, small API slice.
@@ -154,10 +150,10 @@
 - [ ] **#230** Replace the `EntryData` union with a type the renderer and the routes narrow `#improvement` `#cairn-cms` *(2026-11-01)*
   `EntryData` stays a wide union the public routes cast around, which the wiring-core slice set aside. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   Since `createSiteResolver`, no export on `/delivery/data` names `SiteConfig`, and none of the four sites imports it from that subpath, so the reason `scripts/checks/check-surface-reexports.json` gives for keeping it is unproved. `VocabularyEntry`, `TidyConfig`, and `TidyConventions` then have no other reason to sit there. Drop them from the subpath or record the reader that needs each. Found by the wiring-core pass (T7).
   Placement: Pass 3 (small API).
-- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#233** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -166,7 +162,7 @@
 - [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
   `src/tests/unit/delivery-media-vite-barrel-prune.test.ts` still lists `variantUrl`, which no longer exists anywhere, so the list asserts nothing about it. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
   `src/tests/unit/skill-references-compile.test.ts` lacks `npm` in `CLI_INVOCATION_PREFIXES`, so a prose span such as `npm run check` in a skill reference fails CI. `gate-tier.mjs`'s fast lane selects that test for no `skills/` edit, so the failure reaches CI first. Add the prefix, and select the test in the fast lane for a `skills/` change. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -219,7 +215,7 @@
   The link warning says "unpublished pages ... will 404 until published" for a published page marked Hidden (`EditPage.svelte:1926`); the broken-link banner says "no longer exists" for a page never published (`EditPage.svelte:1832`); the **Shown** visibility filter applies no filter (`ConceptList.svelte:143`); choosing **Decorative** in the library stores nothing, so the image reads **Needs alt** again (`CairnMediaLibrary.svelte:419`); and a refused new entry closes the dialog and drops the typed values (`ConceptList.svelte:488`).
   Placement: Final engine batch, admin and tidy.
 - [ ] **#181** Make the media library's strings agree `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  Library strings disagree: the flash messages say "Asset" and "Orphans" where every other string says "image" (`CairnMediaLibrary.svelte:106`); the filter reads "No references found" while the tile chip still reads "Not referenced" (`:149`, `:774`); and the lead image chooser names PNG, JPEG, WebP, and HEIC (`MediaHeroField.svelte:608`) while the upload path also stores GIF and AVIF (`media/sniff.ts`). Align the line with the stored set; `allowedTypes` leaves in the wiring pass.
+  Library strings disagree: the flash messages say "Asset" and "Orphans" (`CairnMediaLibrary.svelte:107-113`); the filter reads "No references found" while the tile chip still reads "Not referenced" (`:149`, `:773`); and the lead image chooser names PNG, JPEG, WebP, and HEIC (`MediaHeroField.svelte:607`, `MediaReplaceDialog.svelte:448`) while the upload path also stores GIF and AVIF (`media/sniff.ts`). Align the line with the stored set.
   Placement: Final engine batch, content rules.
 - [ ] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   One sign-in problem reads as several messages, with one fix, and some omit "in this browser" (`src/lib/admin/LoginPage.svelte:166,170`, `src/lib/admin/ConfirmPage.svelte:70,75`, `src/lib/sveltekit/refusal-codes.ts:21`). It includes the spent or expired link: re-clicking one says "This browser has no pending sign-in. Request a new link below and open it in this browser." because `confirmAction` gives every cookie-less refusal that message, deliberately (`src/lib/sveltekit/auth-routes.ts:378-383`, comment at `:372-377`). Requesting a new link in this browser does fix a spent link, so the work is one wording that names the cause and the fix for each case. An `auth-data` path, so batched and not made by a docs pass. Found by the admin arm (pass 4, 2026-10-31).
@@ -230,7 +226,7 @@
 - [ ] **#96** Fix the comment above the no-pending-request redirect `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-31)* *(swept 2026-10-31)*
   `src/lib/sveltekit/auth-routes.ts:355-359` says a cookie-less browser gets `no-pending-request` only after failing against a bound row, but `:360-363` redirects with it for any failed consume when no cookie is present. The reference text now matches the code; the comment does not. An `auth-data` path, so it waits for a pass that touches it. Found by the docs finalization pass 1 whole-branch review.
   Placement: Final engine batch.
-- [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-10-31)*
+- [ ] **#64** Put the admin's icons on one size scale and Lucide glyphs `#improvement` `#cairn-cms` *(2026-10-25)* *(swept 2026-11-01)*
   The admin draws 192 Lucide icons at 11 sizes (`size-3` to `h-8 w-8`), and about a dozen hand-drawn inline SVGs (in `MediaFigureControl`, `MediaHeroField`, `ReferenceField`, `EditorToolbar`) carry their own strokes from 1.75 to 3, out of reach of the 1.75px rule (`admin-design-system.md:394`). Survey v1.4.0's "Icons" section (14, 16, 20, 24px by context) is a reference, not a dependency. Stroke weight stays a site choice (Geoff, 2026-10-25): the engine keeps 1.75px, and a Survey site's `.lucide` rule overrides it.
   Placement: After the release.
 
@@ -281,6 +277,11 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#134** Throw in buildSiteManifest on a concept with no glob `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  Turning on fragments takes three hand-kept wiring points that fail three different ways: a `fragments` glob missing from `createSiteIndexes` throws at build, the same glob missing from the `cairnManifest` plugin's `content` option degrades to an empty file set with no throw, and a `rendering.render` that does not forward `resolveFragment` publishes every `::include` as literal text with no error. A page has to warn about the two silent ones by hand. Fix candidates: have `buildSiteManifest` throw on a declared concept with no glob, as `createSiteIndexes` does, and warn when an include directive survives render unresolved (`src/lib/delivery/site-indexes.ts:54-58`, `src/lib/delivery/manifest.ts:23`, `src/lib/render/resolve-include.ts:132`; found while writing the reuse-content-across-entries page, 2026-10-12).
+  Sweep 2026-10-31: A one-line parity throw with `createSiteIndexes`. A separate warning is not worth it. `src/lib/delivery/site-indexes.ts:54`, `manifest.ts:23`.
+  Placement: Final engine batch, content rules. Friction entry 52 (`extender`), boundary test class1 batched (budget, next in line), page content-model.
+  Done: ddcd3bcdc removed `createSiteIndexes` and the plugin's `content` option. One glob at `vite/internal.ts:80` and a shared `bucketConceptFiles` leave no second wiring point.
 - [x] **#145** Remove the Fixes toggle and `fixes` key from tidy conventions `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
   `TidyConventions.fixes` is a config switch that switches nothing: the objective fixes live in the prompt's always-on core and `conventionLines` never reads `fixes`, so `tidy.conventions.fixes: false` in the YAML, or the Settings screen's Fixes toggle, only changes that screen's "Tidy will fix" summary while every tidy call still fixes spelling, grammar, and the rest. turn-on-tidy has to list `fixes` among the conventions with a caveat that it does not stop the fixes. Fix candidates: drop `fixes` from `TidyConventions` and the screen, or have the prompt honor it (`src/lib/sveltekit/tidy-prompt.ts:16-17,76-78`, `src/lib/admin/CairnTidySettings.svelte:247,286-291`; found while writing the turn-on-tidy page, 2026-10-12).
   Sweep 2026-10-31: Worse than filed: editors get an On/Off control that says Off while tidy keeps fixing. Breaking, since a public type member goes. `src/lib/admin/CairnTidySettings.svelte:434-469`, `src/lib/sveltekit/tidy-prompt.ts:75-78`, `src/lib/nav/site-config.ts:148`.

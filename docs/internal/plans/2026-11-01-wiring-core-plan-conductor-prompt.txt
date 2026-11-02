@@ -1,0 +1,27 @@
+Conductor hand-over for `cairn-cms-9b`: cairn-cms slice `wiring-core` (pass 2 of the run sheet minus shape 8, class `ordinary` plus `runner`).
+
+Plan: docs/internal/plans/2026-11-01-wiring-core-plan.md on branch `wiring-core`, pushed to glw907/cairn-cms. Path 460 minutes against a design estimate of about 390 and a ceiling of 780. No cut. Absolute copy of each file, in the planner's worktree:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/wiring-core/docs/internal/plans/
+
+Pre-launch checks (run sheet "Sequence and launch"):
+
+- In the main checkout /var/home/glw907/Projects/cairn-cms: on `main`, `git fetch`, and `git rev-list --count HEAD..origin/main` prints 0.
+- `pgrep -f .claude/worktrees/wiring-core-run` is empty and `git status` is clean, with no warm uncommitted code.
+- No open brief in docs/internal/consultations/.
+- The plan's pre-flight has no step for Geoff, and it adds no item outside the sheet. Auto-mode writes it names: `.claude/skills/cairn-writing-engine-code/references/code-idioms.md`, five edits and two deletes under `.claude/skills/cairn-writing-docs/evals/`, and generated `templates/waymark/.claude/skills/**`. It edits no `CLAUDE.md` and no `.claude/rules/`.
+
+Executor launch, from the main checkout:
+
+cd /var/home/glw907/Projects/cairn-cms && claude --bg --model claude-opus-5-5 --effort high --name cairn-cms-wiring-core "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/wiring-core/docs/internal/plans/2026-11-01-wiring-core-executor-prompt.txt)"
+
+Prompt file: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/wiring-core/docs/internal/plans/2026-11-01-wiring-core-executor-prompt.txt
+
+The executor names `cairn-cms-9b` as its one instruction source. It works in a worktree it enters as `wiring-core-run`, fast-forwarded from `origin/wiring-core`, and it ends at PR-ready. It merges `main` only when you tell it to. It never bumps or publishes, and it finalizes its `## Unreleased` entries.
+
+Merge order: yours, across the slices. Shared hunks with 1a are distant: `src/lib/sveltekit/index.ts` (:140 here, :21 and :110 there), `src/lib/sveltekit/preview.ts` (:359 and :364 here, :420 there), `src/lib/log/events.ts` (:56 here, :92 there), and `scripts/checks/check-surface-reexports.json`. With `tidy-lists`: `content-routes-entry-read.ts` (:306 here, :503 there). If another slice merged first, tell the executor to merge `origin/main`, keep both `## Unreleased` entries, run `npm run emit:template` and `npm run check:surface -- --update`, and rerun the fast lane. If 1a's `auth-removal` moved the bake's literal, the executor stops and tells you.
+
+Merge conditions, under Geoff's merge word in the sheet's Brief: green CI on the head and a folded whole-branch review with no open finding, record packet first. No task takes `auth-data`, because `TEMPLATE_GITHUB_APP_LITERAL`'s line does not move: confirm `git diff d71e4401e..HEAD -- packages/create-cairn-site/src` is empty on the head. If it isn't, the security read and live smoke apply. Confirm both conditions yourself, then queue one record packet in the background and merge once the queue accepts it. The word covers the PR only, never a publish.
+
+The packet's Background carries: `media-base-context.ts` stays because `ReproContext.svelte:245` sets it and Geoff kept the reproductions, so only the production half goes; `SiteResolver.adjacent` goes because an id is unique only inside a concept, and `composeEntryData` reads the concept's index; `cairnManifest`'s `content` option goes entirely because no site reads outside `src/content`, and a `dir` outside it is refused; `ResolvedMediaConfig` is a recorded leak until shape 8 removes the runtime member; eval `s11-media-config` retires because its seam is gone; the `EntryData` stretch is set aside; #201 stays open for pass 3; shape 8 waits for 1a. Add whatever the PR's `## Decisions` lists beyond these.
+
+After the merge: pull the checkout per `pass-core`, delete the branches `wiring-core` and `wiring-core-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

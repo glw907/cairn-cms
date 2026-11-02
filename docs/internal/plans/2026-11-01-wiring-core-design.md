@@ -51,6 +51,9 @@ These fall inside the approved scope. The PR's `## Decisions` repeats them.
   cost: T4 times the build and narrows the glob only on a real one.
 - **`SiteResolver<A>` is a conditional alias over two interfaces.** A single generic interface fails
   variance. See the probe below.
+- **`ResolvedMediaConfig` leaves the barrels and stays a recorded leak.** `CairnRuntime.media` still names
+  it on `.` and `/sveltekit`, so `check-surface-leaks.json` records it as standing until shape 8 removes
+  the member.
 - **`runtime.assets` stays, retyped `MediaConfig`.** It has no reader, but its removal is shape 8. The
   same holds for `runtime.render` and `runtime.icons`.
 - **Eval `s11-media-config` retires.** Its seam is `publicBase`, `urlForm`, `allowedTypes`, and
@@ -79,8 +82,29 @@ A throwaway `tsc` run at `d71e4401e`, against the real `ConceptConfig`, `defineC
 - `screen` keys check through `adapter: A & { editor?: { navLayout?: readonly Node<ScreenFor<A>>[] } }`,
   nested `children` included.
 
-The `**` glob's cost and the `noExternal` merge order stay unproved, and each has the sheet's standing
-answer in the plan.
+The `noExternal` merge is proved. A plugin's `config` result goes through `conf = mergeConfig(conf, res);`
+(`node_modules/vite/dist/node/chunks/node.js:38121`, Vite 8.3.3), and `mergeConfigRecursively` at `:2883-2895`
+keeps `true` and concatenates arrays:
+
+```js
+} else if (((key === "noExternal" || key === "external") && (rootPath === "ssr" || rootPath === "resolve") || key === "allowedHosts" && rootPath === "server") && (existing === true || value === true)) {
+	merged[key] = true;
+	continue;
+}
+...
+if (Array.isArray(existing) || Array.isArray(value)) {
+	merged[key] = [...arraify(existing), ...arraify(value)];
+	continue;
+}
+```
+
+A `resolveConfig` probe through a `config` hook confirmed it. A site's unset value, a list, a regex, and `true`
+each land in both `ssr.noExternal` and `environments.ssr.resolve.noExternal` with the site's value kept.
+
+Two things stay unproved, and each has the sheet's standing answer in the plan. The `**` glob's cost is read
+at T4. Dropping the lines in a real install is proved only by `create-site`, since a linked-dependency showcase
+cannot show the failure: `node.js:7168` reads `if (!configuredAsExternal && !isInNodeModules(resolved.id)) return
+false;`, so a `file:../..` engine that resolves outside `node_modules` is never externalized.
 
 ## Out of scope
 
@@ -91,7 +115,8 @@ pass 4's. #134, which pass 4 drops; this slice removes its mechanism. The `Entry
 
 CI's `e2e` on the PR head: the showcase builds through the new wiring, an `::include` renders through
 the default `render`, a `media:` image resolves, and the template bake still carries
-`TEMPLATE_GITHUB_APP_LITERAL`.
+`TEMPLATE_GITHUB_APP_LITERAL`. CI's `create-site` on the head after T5 and T6 proves a packed install builds
+and reaches `/admin` under `npm run dev` with no `noExternal` line.
 
 ## Risk class
 

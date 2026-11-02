@@ -619,7 +619,7 @@ const THEMES = [
   { theme: 'light', cookie: 'cairn-admin' },
   { theme: 'dark', cookie: 'cairn-admin-dark' },
 ] as const;
-for (const { screen, path, heading, open } of EIGHT_SCREENS) {
+for (const { screen, path, heading, mask, open } of EIGHT_SCREENS) {
   for (const { theme, cookie } of THEMES) {
     for (const width of [320, 2560]) {
       const image = `admin-${screen}-${theme}-${width}.png`;
@@ -630,6 +630,10 @@ for (const { screen, path, heading, open } of EIGHT_SCREENS) {
         await page.goto(path);
         await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
         await open?.(page);
+        await expect(page).toHaveScreenshot(image, {
+          fullPage: true,
+          ...(mask ? { mask: [page.locator(mask)] } : {}),
+        });
       });
     }
   }
@@ -701,8 +705,7 @@ test.describe('empty first-run server', () => {
   });
 
   // The zero state of each screen at the narrowest and widest bar, light. Each test asserts the
-  // zero-state text first so a broken harness cannot record a populated screen. The screenshot
-  // calls are not here yet: a missing baseline fails with no retry, so they land with the baselines.
+  // zero-state text first so a broken harness cannot record a populated screen.
   const ZERO_SCREENS = [
     { screen: 'posts', path: '/admin/posts', text: 'No posts yet' },
     { screen: 'tags', path: '/admin/vocabulary', text: 'No tags yet' },
@@ -731,6 +734,9 @@ test.describe('empty first-run server', () => {
           expect(contents.length).toBeGreaterThan(0);
           for (const content of contents) expect(content).toBe('none');
         }
+        await expect(page).toHaveScreenshot(`admin-zero-${screen}-${width}.png`, {
+          fullPage: true,
+        });
       });
     }
   }

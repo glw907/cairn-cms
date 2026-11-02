@@ -25,7 +25,7 @@ recipes, the orderings, and the traps between exports. Open the reference for th
 
 ## Tier map
 
-`cairn-audit` (`npx cairn-audit`) runs twenty-one rules: seventeen error tier and four advisory.
+`cairn-audit` (`npx cairn-audit`) runs twenty-two rules: seventeen error tier and five advisory.
 Each rule's trigger and fix is in `references/audit-rules.md`.
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
@@ -36,7 +36,8 @@ Each rule's trigger and fix is in `references/audit-rules.md`.
 
 **Static, advisory tier:** `radius-scale` (promoted to error at 0.99.0), and three rules that
 read the site's public files and stay advisory for a consumer: `public-literals`,
-`theme-conformance`, `theme-contrast`.
+`theme-conformance`, `theme-contrast`. A fifth, `public-route-prerender`, flags a public
+route page that no prerender export reaches.
 
 ## Write this, get this
 

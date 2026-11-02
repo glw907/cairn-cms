@@ -119,7 +119,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     try {
       payload = JSON.parse(await event.request.text());
     } catch {
-      return fail(400, { error: 'Could not read the dictionary request.' } satisfies DictionaryAddFailure);
+      return fail(400, { error: 'Could not read the dictionary request. Reload the page and try again.' } satisfies DictionaryAddFailure);
     }
 
     // Collect the candidate words from `word` and/or `words`, keep only the strings, validate each

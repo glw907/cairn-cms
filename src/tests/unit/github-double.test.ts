@@ -61,6 +61,27 @@ describe('GithubDouble', () => {
     expect(gh.read('cairn/posts/a', 'a.md')).toBe('newer');
   });
 
+  it('rejects a ref PATCH whose commit parent is not the branch head, and runs the hook once', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'A' } });
+    gh.install();
+    const api = 'https://api.github.com/repos/o/r/git';
+    const post = (p: string, b: unknown) => fetch(`${api}/${p}`, { method: 'POST', body: JSON.stringify(b) });
+    const tree = (await (await post('trees', { base_tree: 'x', tree: [{ path: 'b.md', content: 'B' }] })).json()) as { sha: string };
+    const commit = (await (await post('commits', { tree: tree.sha, parents: [gh.headSha('main')], message: 'm' })).json()) as { sha: string };
+    let ran = 0;
+    gh.beforeNextRefPatch(() => {
+      ran++;
+      gh.commit('main', 'c.md', 'C');
+    });
+    const patch = () => fetch(`${api}/refs/heads/main`, { method: 'PATCH', body: JSON.stringify({ sha: commit.sha }) });
+    const res = await patch();
+    expect(res.status).toBe(422);
+    expect(await res.text()).toBe('{"message":"Update is not a fast forward"}');
+    expect(gh.read('main', 'b.md')).toBeNull();
+    await patch();
+    expect(ran).toBe(1);
+  });
+
   it('creates, lists, and deletes refs through the raw API routes', async () => {
     const gh = new GithubDouble({ main: { 'x.md': 'x' } });
     gh.install();

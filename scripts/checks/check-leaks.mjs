@@ -195,6 +195,7 @@ export function profileFor(relPath) {
     path === 'docs/why-cairn.md' ||
     path === 'docs/architecture.md' ||
     path === 'guidance-hashes.json' ||
+    path === 'scripts/checks/api-surface.md' ||
     path === 'examples/showcase/README.md' ||
     path === 'MIGRATION-NOTES.md' ||
     /^docs\/(?:admin|editors)\/.+\.md$/.test(path) ||
@@ -485,6 +486,7 @@ export const SCAN_ROOTS = [
   'MIGRATION-NOTES.md',
   'schema',
   'guidance-hashes.json',
+  'scripts/checks/api-surface.md',
   'docs/README.md',
   'docs/why-cairn.md',
   'docs/architecture.md',

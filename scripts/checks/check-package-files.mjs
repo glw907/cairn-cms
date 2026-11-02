@@ -378,6 +378,25 @@ export function checkNoToolPathPacked(filePaths) {
   return { ok: true };
 }
 
+// The generated export-signature snapshot. A consumer's agent reads it from node_modules to get the
+// exact signature of every export, so a tarball without it leaves the skill's pointer dangling.
+const API_SURFACE_PATH = 'scripts/checks/api-surface.md';
+
+/**
+ * Check a packed file list for the export-signature snapshot.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkApiSurfacePacked(filePaths) {
+  if (!filePaths.includes(API_SURFACE_PATH)) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${API_SURFACE_PATH}; add it to package.json "files" so a consumer can read the exact signature of every export`
+    };
+  }
+  return { ok: true };
+}
+
 /**
  * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
  * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
@@ -460,8 +479,15 @@ function main() {
     return;
   }
 
+  const apiSurfaceResult = checkApiSurfacePacked(files);
+  if (!apiSurfaceResult.ok) {
+    console.error(`check-package-files: ${apiSurfaceResult.error}`);
+    process.exitCode = 1;
+    return;
+  }
+
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, the API surface snapshot packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

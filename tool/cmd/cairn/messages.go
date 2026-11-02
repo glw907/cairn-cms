@@ -315,7 +315,7 @@ const (
 		"  config.bindings blocker, config.media-bucket warning, config.observability warning,\n" +
 		"  config.csrf-trusted-origins warning, config.site-config blocker, config.public-origin blocker,\n" +
 		"  config.no-referrer-blanket warning, admin.mount-shape (never fails),\n" +
-		"  config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.\n\n" +
+		"  config.migrations warning, config.dependency-floors blocker, auth.role-wiring warning, ai.posture-effective warning.\n\n" +
 		"Each check settles to PASS, FAIL, SKIP, INFO, or UNCHECKED. FAIL is CRITICAL for a blocker and\n" +
 		"WARNING for a warning; UNCHECKED is UNKNOWN (the input could not be observed); the rest are OK.\n" +
 		"Under --json the states are pass, fail, skip, and unknown: INFO writes pass with a note, SKIP\n" +
@@ -345,7 +345,7 @@ func doctorTooManyArgsError() error {
 
 // tmplNotACairnSite is cairn doctor's one-line report when dir carries neither a wrangler
 // config nor a package.json declaring @glw907/cairn-cms: the predicate that stops a directory
-// that is not a cairn site at all from failing every one of the eleven checks in turn, which
+// that is not a cairn site at all from failing every one of the twelve checks in turn, which
 // would say nothing useful about it. Printed on stdout, not through translated: the run
 // completed and observed something, it did not refuse to start.
 const tmplNotACairnSite = "%s does not look like a cairn-cms site: no wrangler.jsonc, wrangler.toml, or @glw907/cairn-cms dependency in package.json"

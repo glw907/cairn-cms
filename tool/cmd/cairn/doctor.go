@@ -82,7 +82,7 @@ func runDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, args []
 // --json wins over --quiet, because under --json the payload is the output and an empty stdout
 // is what a wrong invocation looks like. --quiet writes nothing at all on an OK run.
 //
-// Nothing reaches stderr on either path, whatever --verbose says: this command runs eleven
+// Nothing reaches stderr on either path, whatever --verbose says: this command runs twelve
 // checks off the disk with no progress worth streaming.
 func writeDoctor(cmd *cobra.Command, d deps, rf *rootFlags, f doctorFlags, snap doctor.Snapshot, checked []doctor.CheckedResult, verdict spine.Verdict) error {
 	if f.asJSON {

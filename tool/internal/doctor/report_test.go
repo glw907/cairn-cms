@@ -32,13 +32,17 @@ const cleanWranglerJSONC = `{
 // skip rather than a pass needing more fixture).
 func cleanSiteFiles() map[string]string {
 	return map[string]string{
-		"wrangler.jsonc":                              cleanWranglerJSONC,
-		"vite.config.ts":                              viteConfigNoCsrf,
-		"src/hooks.server.ts":                         "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
-		"src/theme/site.config.yaml":                  "siteName: Test Site\n",
-		"src/routes/admin/+layout.svelte":             "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
-		"src/content/.cairn/site-facts.json":          `{"version":1}`,
-		"node_modules/@glw907/cairn-cms/package.json": enginePackageJSONFixture,
+		"wrangler.jsonc":                                                 cleanWranglerJSONC,
+		"vite.config.ts":                                                 viteConfigNoCsrf,
+		"src/hooks.server.ts":                                            "import { createAuthGuard } from '@glw907/cairn-cms';\nexport const handle = createAuthGuard();\n",
+		"src/theme/site.config.yaml":                                     "siteName: Test Site\n",
+		"src/routes/admin/+layout.svelte":                                "<!-- CairnAdminShell --><script>runtime.shellLoad()</script>",
+		"src/content/.cairn/site-facts.json":                             `{"version":1}`,
+		"node_modules/@glw907/cairn-cms/migrations/0000_auth.sql":        "-- auth\n",
+		"node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql": "-- nonce\n",
+		"migrations/0000_auth.sql":                                       "-- auth\n",
+		"migrations/0004_login_nonce.sql":                                "-- nonce\n",
+		"node_modules/@glw907/cairn-cms/package.json":                    enginePackageJSONFixture,
 		"package-lock.json": npmLockFixture(map[string]string{
 			"svelte":        "5.56.10",
 			"@sveltejs/kit": "3.0.0",

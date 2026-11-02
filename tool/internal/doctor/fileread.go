@@ -46,6 +46,36 @@ func readUnder(dir, relPath string) (body []byte, ok bool, err error) {
 	return b, true, nil
 }
 
+// listUnder lists the entry names of the directory at relPath inside dir, under the containment
+// readUnder applies. ok is false when the directory does not exist; err is non-nil for a
+// containment refusal or any other read failure.
+func listUnder(dir, relPath string) (names []string, ok bool, err error) {
+	candidate := filepath.Join(dir, relPath)
+	if !contains(dir, candidate) {
+		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+
+	resolved, err := realpathNearestAncestor(candidate)
+	if err != nil {
+		return nil, false, err
+	}
+	if !contains(dir, resolved) {
+		return nil, false, fmt.Errorf("doctor: refusing to read outside the directory: %s", relPath)
+	}
+
+	entries, err := os.ReadDir(candidate)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names, true, nil
+}
+
 // contains reports whether candidate is boundary itself or lives under it. It uses filepath.Rel
 // rather than strings.HasPrefix, since HasPrefix wrongly contains a sibling: boundary /a/b would
 // contain candidate /a/bc.

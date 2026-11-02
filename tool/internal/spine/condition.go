@@ -23,6 +23,7 @@ const (
 	ConditionEmailSendFailed                  Condition = "email.send-failed"
 	ConditionConfigBindingsMissing            Condition = "config.bindings-missing"
 	ConditionConfigMediaBucketMissing         Condition = "config.media-bucket-missing"
+	ConditionConfigMigrationsMissing          Condition = "config.migrations-missing"
 	ConditionConfigObservabilityOff           Condition = "config.observability-off"
 	ConditionConfigCSRFTrustedOriginsWildcard Condition = "config.csrf-trusted-origins-wildcard"
 	ConditionConfigPublicOriginInvalid        Condition = "config.public-origin-invalid"
@@ -50,6 +51,7 @@ var conditions = []Condition{
 	ConditionEmailSendFailed,
 	ConditionConfigBindingsMissing,
 	ConditionConfigMediaBucketMissing,
+	ConditionConfigMigrationsMissing,
 	ConditionConfigObservabilityOff,
 	ConditionConfigCSRFTrustedOriginsWildcard,
 	ConditionConfigPublicOriginInvalid,

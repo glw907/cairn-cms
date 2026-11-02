@@ -6,8 +6,9 @@ PASS  Site config validates: parsed (per-concept URL policy lives on the adapter
 PASS  PUBLIC_ORIGIN is set and valid: PUBLIC_ORIGIN is https://example.com (wrangler vars)
 PASS  No site-wide Referrer-Policy: no-referrer: no site-wide Referrer-Policy: no-referrer found (read src/hooks.server.ts; static/_headers not found, heuristic text read)
 PASS  Custom /admin mount is complete: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+PASS  Auth store migrations are copied: migrations holds every required package migration; the files were copied, not proved applied
 PASS  Framework dependencies meet the engine floor: @sveltejs/kit 3.0.0 and svelte 5.56.10 satisfy the engine peer ranges
 SKIP  Guard role vocabulary: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
 UNCHECKED  The stated AI posture is not the served one: could not reach the resolved origin's /robots.txt
 
-8 passed, 0 failed, 2 skipped, 0 info, 1 unchecked
+9 passed, 0 failed, 2 skipped, 0 info, 1 unchecked

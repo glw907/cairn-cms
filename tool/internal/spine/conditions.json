@@ -54,8 +54,8 @@
     "id": "auth.role-wiring-missing",
     "severity": "warning",
     "title": "Guard is missing the declared role vocabulary",
-    "why": "The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { runtime } (or { roles } on an older engine), so the running guard falls back to the implicit owner/editor pair. Every editor whose role is outside that pair resolves to none capability: they authenticate but the guard refuses every content and admin-mutation route. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.",
-    "remediation": "Pass the declared vocabulary to the guard in src/hooks.server.ts: createAuthGuard({ runtime }) on this engine, which reads the roles from the runtime, or createAuthGuard({ roles }) on an older engine, importing the roles the adapter declares with defineRoles.",
+    "why": "The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { runtime }. The guard reads the site's roles from the runtime, and this engine raises a TypeError on a missing runtime, so the guard cannot read the roles and the site fails at startup. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.",
+    "remediation": "Pass the runtime to the guard in src/hooks.server.ts: createAuthGuard({ runtime }), which reads the declared roles from the runtime composeRuntime returned.",
     "docsAnchor": "is-it-working.md#provision-the-auth-store",
     "logEvent": "auth.role.unknown"
   },
@@ -123,6 +123,14 @@
     "why": "The adapter declares a media bucket binding, but wrangler declares no matching r2_buckets binding, so uploaded media has no bucket to write to. A site with no media assets configured never raises this.",
     "remediation": "Declare an r2_buckets binding in wrangler.jsonc (or wrangler.toml) matching the name the adapter configures as its bucketBinding, then re-deploy.",
     "docsAnchor": "is-it-working.md#declare-the-media-bucket-binding"
+  },
+  {
+    "id": "config.migrations-missing",
+    "severity": "warning",
+    "title": "Package migrations are not copied into the site",
+    "why": "The site's migrations directory lacks a migration the installed package ships and the auth store needs, so wrangler never applies it. A missing 0004_login_nonce.sql, for one, fails every sign-in. This check reads file names only: a file that is present was copied, which does not prove wrangler applied it.",
+    "remediation": "Copy each listed file from the package's migrations folder into the site's migrations directory and run `wrangler d1 migrations apply <auth-db> --remote`.",
+    "docsAnchor": "is-it-working.md#provision-the-auth-store"
   },
   {
     "id": "config.no-referrer-blanket",

@@ -173,7 +173,7 @@ jobs:
             version="$(git describe --tags --match 'tool/v*' --always | sed 's|^tool/v||')"
           fi
           commit="$(git rev-parse --short HEAD)"
-          module="github.com/glw907/cairn-cms/tool"
+          module="github.com/glw907/cairn-cms/tool/v2"
           # Matching the Makefile's build target exactly, so a release binary reports the same
           # version a local `make -C tool build` would.
           ldflags="-X '${module}/internal/version.Version=${version}' -X '${module}/internal/version.Commit=${commit}'"

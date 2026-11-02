@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // TestVerdictCodesAndWords asserts the four verdicts carry the monitoring-plugin exit codes and

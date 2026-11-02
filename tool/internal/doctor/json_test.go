@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // jsonGoldenPath is the committed payload, which lives with the other six under

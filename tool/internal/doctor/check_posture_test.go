@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // snapshotForPosture builds a Snapshot carrying factsJSON at site-facts.json (when non-empty)

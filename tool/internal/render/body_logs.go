@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/logs"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 )
 
 // The log body's column budget. The date and the zone are stated once, on the section rule,

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // token is a sentinel long enough to be matched, shaped like the bearer tokens cairn reads.

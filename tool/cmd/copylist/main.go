@@ -23,9 +23,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/doctor"
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // errNonLiteralConstValue is cairnCatalogue's named error for a package-level const whose value

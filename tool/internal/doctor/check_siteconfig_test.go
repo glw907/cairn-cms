@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestConfigSiteConfig proves config.site-config's status arms over Task 4's parser

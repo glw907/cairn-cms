@@ -1,6 +1,6 @@
 package health
 
-import "github.com/glw907/cairn-cms/tool/internal/providers"
+import "github.com/glw907/cairn-cms/tool/v2/internal/providers"
 
 // Clients carries the provider clients a Run sweep injects into every Check, plus which
 // credentials actually resolved and where each one came from. A Check never builds its

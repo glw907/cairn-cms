@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // cairnPackageName is the npm package name the Engine check compares a site's dependency

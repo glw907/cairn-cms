@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/version"
+	"github.com/glw907/cairn-cms/tool/v2/internal/version"
 )
 
 // githubHost is the only host a GitHub client will ever send a request to. There is no base-URL

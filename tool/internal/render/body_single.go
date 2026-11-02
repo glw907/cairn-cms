@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // The single-site column budget. A glyph never sets a column: it sits in a measured field, so a

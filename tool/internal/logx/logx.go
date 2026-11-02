@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // redacted is what a matched credential is replaced with, the same placeholder

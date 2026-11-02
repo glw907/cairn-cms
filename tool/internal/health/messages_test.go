@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // maxCheckBodyLiteral is the longest string literal a check_*.go file may carry outside a

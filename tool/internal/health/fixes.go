@@ -1,8 +1,8 @@
 package health
 
 import (
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // Actor names whose job a Fix's action is. It is a closed set: a renderer or an automated agent

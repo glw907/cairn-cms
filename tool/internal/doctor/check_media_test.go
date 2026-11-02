@@ -3,7 +3,7 @@ package doctor
 import (
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestConfigMediaBucket is table-driven over the four reachable statuses: skip (no binding

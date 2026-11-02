@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // statusInput builds the input a status line is read from, with one token found and one missing.

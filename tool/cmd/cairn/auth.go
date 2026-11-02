@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/glw907/cairn-cms/tool/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

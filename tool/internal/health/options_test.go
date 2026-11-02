@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 )
 
 func TestOptionsValidate(t *testing.T) {

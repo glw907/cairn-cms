@@ -3,7 +3,7 @@ package doctor
 import (
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestEveryCheckDeclaresAPassTitle asserts a PASS line never falls back to the registry title,

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/logs"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logs"
 	"github.com/spf13/cobra"
 )
 

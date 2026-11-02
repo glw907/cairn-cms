@@ -3,7 +3,7 @@ package health
 import (
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // Report is the read-side result of one health sweep against a site: every check's settled

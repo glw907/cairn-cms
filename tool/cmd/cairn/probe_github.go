@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // githubProbe returns the call cairn auth check runs to confirm one GitHub permission label,

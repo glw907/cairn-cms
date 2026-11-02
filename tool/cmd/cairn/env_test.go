@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
 )
 
 // fakeProvider stands in for a keyring in loadEnv tests, so precedence is

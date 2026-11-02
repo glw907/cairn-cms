@@ -6,6 +6,14 @@ This is a major release: it removes three ids that `docs/reference/cli-cairn-jso
 (at the `pre-agent-first` tag) published, and it ships at `v2.0.0` with the engine cut that moves SvelteKit's origin check onto
 every route. No `tool/v2.0.0` tag exists yet.
 
+### Changed
+
+- **The module path is now `github.com/glw907/cairn-cms/tool/v2`.** Go requires a major-version
+  suffix from version 2, and a `-X` link flag naming a stale path ships an unstamped binary with
+  no error. Install with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest`.
+
+  Consumers must: replace the old `.../tool/cmd/cairn` install path with `.../tool/v2/cmd/cairn`.
+
 ### Added
 
 - **The `config.migrations` check** reports an `AUTH_DB` migrations directory that lacks a migration

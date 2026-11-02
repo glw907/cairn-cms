@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

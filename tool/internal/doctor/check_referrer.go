@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // headersBlock is one block of a Cloudflare _headers file: an un-indented path line and its

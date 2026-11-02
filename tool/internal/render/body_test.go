@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/render/fixtures"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render/fixtures"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // input builds one RenderInput over a fixture, with the clock every fixture is built against.

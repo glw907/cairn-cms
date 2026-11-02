@@ -209,7 +209,8 @@
   `ComponentDef`, `ComponentRegistry`, and `ComponentContext` are `BlockDef`, `BlockRegistry`, and
   `BlockContext`; and `defineRegistry` takes `blocks`. `rendering.blocks` and `createRenderer`'s `blocks`
   are plain arrays of block definitions, and the engine builds the registry, so a site no longer calls
-  `defineRegistry` to wire either. `BlockDef` drops `attributeSchema`, which the new `RegisteredBlock`
+  `defineRegistry` to wire either. `defineAdapter` builds it too, so a reserved block name, or a
+  `defaultIconByRole` block with no icon attribute, fails at load. `BlockDef` drops `attributeSchema`, which the new `RegisteredBlock`
   type that `defineBlock` returns carries. Scaffolds move `src/theme/markdown-components.ts` to
   `src/theme/markdown-blocks.ts`, and its `components` export is `blocks`. The admin's strings follow: the
   insert dialog reads "Insert a block", "Search blocks", and "Back to blocks", the Edit-block control reads
@@ -1283,7 +1284,7 @@
   the site's own `rehypePlugins`, so an anchor a site plugin adds gets no `rel`. `CairnAdapter.editor` drops
   `siteConfigPath`, and the site config is always `src/theme/site.config.yaml`. `PreviewConfig` drops
   `bodyClass`, top level and per concept. `AuthGuardConfig` drops `includeSubDomains`, so the admin's
-  `Strict-Transport-Security` header is `max-age=63072000` alone and subdomain pinning belongs at the zone.
+  `Strict-Transport-Security` header is `max-age=63072000` alone, and the engine pins no subdomains.
   `FormatCivilDateOptions` drops `intlOptions`; the Media Library's date still reads month and day.
 
   Consumers must: delete `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `bodyClass`, and `includeSubDomains` from your config, and move a site config that lived elsewhere to `src/theme/site.config.yaml`.

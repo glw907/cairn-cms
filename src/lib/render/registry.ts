@@ -204,8 +204,8 @@ const RESERVED_DIRECTIVE_NAMES = new Set(['figure', 'include']);
 /**
  * Build a registry from a site's block definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
- * `createRenderer` and the admin call it on the `blocks` array they receive, so a site reaches for
- * it only to read a registry of its own.
+ * `createRenderer`, `defineAdapter`, and the admin call it on the `blocks` array they receive, so a
+ * site reaches for it only to read a registry of its own.
  * @throws When a block is named `figure` or `include` (reserved for the engine's render step),
  * or sets `defaultIconByRole` without declaring a `type: 'icon'` attribute.
  * @public

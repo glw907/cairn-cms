@@ -54,6 +54,12 @@ describe('defineAdapter island consistency', () => {
     expect(() => defineAdapter(adapterWith(baseRendering(blocks)))).not.toThrow();
   });
 
+  it('accepts a rendering with no blocks key, and a frozen blocks array', () => {
+    const render = async ({ body }: { body: string }) => body;
+    expect(() => defineAdapter(adapterWith({ render }))).not.toThrow();
+    expect(() => defineAdapter(adapterWith({ render, blocks: Object.freeze([]) }))).not.toThrow();
+  });
+
   it('refuses a stale components key under rendering, naming blocks', () => {
     const registry = defineRegistry({ blocks: [] });
     const stale = { render: async ({ body }: { body: string }) => body, components: registry };

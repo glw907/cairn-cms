@@ -111,7 +111,7 @@ Swapping the editor stays a one-file change.
     spellcheckDictionary?: string;
     /** The committed personal-dictionary words, from EditData.siteDictionary. The lint
      *  source seeds the spellcheck Worker's personal layer with these at init, so a word another editor
-     *  committed answers correct from the first lint. Empty by default (dialect-only). */
+     *  committed answers correct from the first lint. Empty by default (base dictionary only). */
     siteDictionary?: ReadonlyArray<string>;
   }
 
@@ -169,7 +169,7 @@ Swapping the editor stays a one-file change.
     /** The site's block registry. The fold pill and the gutter fold control resolve a folded
      *  block's directive name through it, so a block reads its human `label` (falling back to the
      *  raw directive name for an engine-native directive like `include`, or one the registry does
-     *  not carry); the pill's tooltip also carries the matched component's `use` line, when it has
+     *  not carry); the pill's tooltip also carries the matched block's `use` line, when it has
      *  one. Absent, both fall back to the raw directive name with no tooltip, today's behavior. */
     registry?: BlockRegistry;
   }

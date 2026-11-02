@@ -432,7 +432,7 @@ export interface SpellcheckOptions {
    * The committed personal-dictionary words the source seeds the Worker's personal layer
    *  with, posted as one batch `addWord` right after `init`. The git-backed site dictionary is the
    *  durable layer; the editor reads it at load (EditData.siteDictionary) and hands it here, so a word
-   *  another editor committed answers correct from the first lint. Empty by default (dialect-only).
+   *  another editor committed answers correct from the first lint. Empty by default (base dictionary only).
    */
   siteWords?: ReadonlyArray<string>;
   /**
@@ -568,8 +568,8 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const siteWords = options.siteWords ?? [];
   const arbiter = arbitrateChecked();
   // The wasm and dictionary URLs the Worker fetches, resolved module-relative unless the caller
-  // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename is the
-  // one; the wasm filename is fixed.
+  // overrides them (a test injecting a fake Worker passes canned URLs). The dictionary filename
+  // defaults to US English; the wasm filename is fixed.
   const assetUrls = options.assetUrls ?? {
     wasmUrl: resolveWasmUrl(),
     dictionaryUrl: resolveDictionaryUrl(options.dictionaryFile ?? 'dictionary-en-us.txt'),

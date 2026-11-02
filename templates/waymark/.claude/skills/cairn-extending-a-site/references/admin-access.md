@@ -12,7 +12,7 @@ For the screen's markup and register, load `cairn-building-admin-screens`.
 
 ## Mount the admin
 
-The single mount is one catch-all and one layout. `createCairnAdmin({ runtime, auth, tidy, preview })`
+The single mount is one catch-all and one layout. `createCairnAdmin({ runtime, auth, tidy })`
 returns `load`, `actions`, and `shellLoad`.
 
 ```ts

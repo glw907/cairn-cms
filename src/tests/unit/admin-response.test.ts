@@ -44,9 +44,9 @@ describe('admin-response helpers', () => {
   });
 
   // RFC 6797 section 8.1 makes a received STS header REPLACE the cached policy, so a rejection page
-  // sending max-age alone would unpin the subdomains a zone-level pin set for the guarded
-  // responses. The CSRF rejection is reachable by any cross-site POST with no session, so
-  // that would be a repeatable downgrade any page on the web could trigger. Omitting writes nothing.
+  // sending max-age alone would unpin the subdomains a browser's cached policy covers. The CSRF
+  // rejection is reachable by any cross-site POST with no session, so that would be a repeatable
+  // downgrade any page on the web could trigger. Omitting writes nothing.
   it('sends no Strict-Transport-Security on a rejection page, so it cannot downgrade a pinned policy', () => {
     const res = brandedAdminPage(403, '<!doctype html><p>denied</p>');
     expect(res.headers.get('Strict-Transport-Security')).toBeNull();

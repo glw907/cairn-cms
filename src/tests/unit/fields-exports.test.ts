@@ -17,9 +17,7 @@ import type {
   SelectField,
   MultiselectField,
   UrlField,
-  EmailField,
   DateField,
-  DatetimeField,
   BooleanField,
   ImageField,
 } from '../../lib/content/fields.js';
@@ -61,14 +59,17 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf<SelectField>().toMatchTypeOf<{ type: 'select' }>();
     expectTypeOf<MultiselectField>().toMatchTypeOf<{ type: 'multiselect' }>();
     expectTypeOf<UrlField>().toMatchTypeOf<{ type: 'url' }>();
-    expectTypeOf<EmailField>().toMatchTypeOf<{ type: 'email' }>();
     expectTypeOf<DateField>().toMatchTypeOf<{ type: 'date' }>();
-    expectTypeOf<DatetimeField>().toMatchTypeOf<{ type: 'datetime' }>();
     expectTypeOf<BooleanField>().toMatchTypeOf<{ type: 'boolean' }>();
     expectTypeOf<ImageField>().toMatchTypeOf<{ type: 'image' }>();
     expectTypeOf<NamedField>().toMatchTypeOf<{ name: string }>();
     expectTypeOf<ImageValue>().toMatchTypeOf<{ src: string }>();
     expectTypeOf<StandardInput>().toMatchTypeOf<{ body: string }>();
+  });
+
+  it('has no email or datetime builder', () => {
+    expect(Object.keys(cairn.fields)).not.toContain('email');
+    expect(Object.keys(cairn.fields)).not.toContain('datetime');
   });
 
   it('no longer exports the retired v1 surface', () => {

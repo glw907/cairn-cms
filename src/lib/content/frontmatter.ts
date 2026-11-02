@@ -51,7 +51,7 @@ function decodeField(name: string, field: FieldDescriptor, form: FormData): unkn
       }
       return Object.keys(obj).length > 0 ? obj : undefined;
     }
-    // text, textarea, number-as-string, url, email, date, datetime, icon: a trimmed non-empty
+    // text, textarea, number-as-string, url, date, icon: a trimmed non-empty
     // string. reference and array are declaration-time forbidden as an object leaf or array item
     // (fieldset.ts's checkContainerNesting), so a real fieldset never routes either arm here, but
     // that guard is structural, not type-level; this arm's trimmed-string reading is what they get
@@ -62,9 +62,7 @@ function decodeField(name: string, field: FieldDescriptor, form: FormData): unkn
     case 'number':
     case 'select':
     case 'url':
-    case 'email':
     case 'date':
-    case 'datetime':
     case 'icon':
     case 'reference':
     case 'array': {
@@ -167,7 +165,7 @@ export function frontmatterFromForm(
         if (obj !== undefined) data[field.name] = obj;
         break;
       }
-      // text, textarea, number, select, url, email, date, datetime, icon: every top-level type
+      // text, textarea, number, select, url, date, icon: every top-level type
       // with no dedicated case reads as a plain scalar. FormData.get returns null for an absent
       // field; normalize to an empty string so a caller reading a text value never gets null.
       case 'text':
@@ -175,9 +173,7 @@ export function frontmatterFromForm(
       case 'number':
       case 'select':
       case 'url':
-      case 'email':
       case 'date':
-      case 'datetime':
       case 'icon':
         data[field.name] = form.get(field.name) ?? '';
         break;
@@ -209,30 +205,6 @@ export function dateInputValue(value: unknown): string {
   }
   if (typeof value === 'string') {
     const match = value.match(/^\d{4}-\d{2}-\d{2}/);
-    return match ? match[0] : '';
-  }
-  return '';
-}
-
-/**
- * Coerce a frontmatter datetime value to the naive-local, minute-precision `YYYY-MM-DDTHH:mm` an
- * `<input type="datetime-local">` wants. A datetime is round-tripped as TEXT, so a stored value is
- * already this string; the `Date` branch is the fallback for a value gray-matter parsed into a JS
- * `Date` from an unquoted full-ISO scalar. UTC getters read the value back as it was written,
- * avoiding a local-timezone shift.
- */
-export function datetimeInputValue(value: unknown): string {
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return '';
-    const yyyy = value.getUTCFullYear().toString().padStart(4, '0');
-    const mm = (value.getUTCMonth() + 1).toString().padStart(2, '0');
-    const dd = value.getUTCDate().toString().padStart(2, '0');
-    const hh = value.getUTCHours().toString().padStart(2, '0');
-    const min = value.getUTCMinutes().toString().padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-  }
-  if (typeof value === 'string') {
-    const match = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
     return match ? match[0] : '';
   }
   return '';
@@ -316,11 +288,6 @@ export function formValues(
       case 'date':
         out[field.name] = dateInputValue(value);
         break;
-      // A datetime round-trips as text; a value gray-matter parsed into a Date reformats to the
-      // naive-local minute-precision string the datetime-local input wants.
-      case 'datetime':
-        out[field.name] = datetimeInputValue(value);
-        break;
       case 'boolean':
         out[field.name] = value === true;
         break;
@@ -359,14 +326,13 @@ export function formValues(
         }
         break;
       }
-      // text, textarea, number, select, url, email, icon: a plain string input. A nullish value
+      // text, textarea, number, select, url, icon: a plain string input. A nullish value
       // reads as empty, anything else stringifies (a string passes through unchanged).
       case 'text':
       case 'textarea':
       case 'number':
       case 'select':
       case 'url':
-      case 'email':
       case 'icon':
         out[field.name] = value == null ? '' : String(value);
         break;

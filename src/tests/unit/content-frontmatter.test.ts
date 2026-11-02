@@ -4,7 +4,6 @@ import {
   frontmatterFromForm,
   formValues,
   dateInputValue,
-  datetimeInputValue,
   isCalendarDate,
   serializeMarkdown,
   parseMarkdown,
@@ -168,14 +167,13 @@ describe('frontmatterFromForm', () => {
 });
 
 // `frontmatterFromForm`'s top-level default arm absorbs every type without its own case: text,
-// textarea, number, select, url, email, date, datetime, icon. text/textarea/date are already
-// characterized above; this pins the remaining five, which read as a plain, possibly-empty string.
+// textarea, number, select, url, date, icon. text/textarea/date are already
+// characterized above; this pins the remaining four, which read as a plain, possibly-empty string.
 describe('frontmatterFromForm default-arm absorption (top level)', () => {
   const fields: NamedField[] = [
     { type: 'number', name: 'count', label: 'Count' },
     { type: 'select', name: 'status', label: 'Status', options: ['a', 'b'] },
     { type: 'url', name: 'site', label: 'Site' },
-    { type: 'email', name: 'contact', label: 'Contact' },
     { type: 'icon', name: 'glyph', label: 'Glyph' },
   ];
 
@@ -184,14 +182,12 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
     form.set('count', '5');
     form.set('status', 'a');
     form.set('site', 'https://example.com');
-    form.set('contact', 'a@b.c');
     form.set('glyph', 'leaf');
 
     expect(frontmatterFromForm(fields, form)).toEqual({
       count: '5',
       status: 'a',
       site: 'https://example.com',
-      contact: 'a@b.c',
       glyph: 'leaf',
     });
   });
@@ -201,7 +197,6 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
       count: '',
       status: '',
       site: '',
-      contact: '',
       glyph: '',
     });
   });
@@ -221,7 +216,7 @@ describe('frontmatterFromForm default-arm absorption (top level)', () => {
 
 // `decodeField` (the nested-use sibling: object leaves, array rows) shares the same default arm,
 // but its own explicit cases are boolean/multiselect/image/object, so text/textarea/date land here
-// too, alongside number/select/url/email/datetime/icon and (structurally, though the
+// too, alongside number/select/url/icon and (structurally, though the
 // declaration-time checkContainerNesting guard never lets a real fieldset reach this with either)
 // reference/array.
 describe('decodeField default-arm absorption (nested; every arm not explicitly cased)', () => {
@@ -235,9 +230,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       count: { type: 'number', label: 'Count' },
       status: { type: 'select', label: 'Status', options: ['a', 'b'] },
       site: { type: 'url', label: 'Site' },
-      contact: { type: 'email', label: 'Contact' },
       when: { type: 'date', label: 'When' },
-      scheduled: { type: 'datetime', label: 'Scheduled' },
       glyph: { type: 'icon', label: 'Glyph' },
       author: { type: 'reference', concept: 'pages', label: 'Author' },
       extra: { type: 'array', item: { type: 'text', label: 'Extra' }, label: 'Extra' },
@@ -251,9 +244,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
     form.set('meta.count', '5');
     form.set('meta.status', 'a');
     form.set('meta.site', 'https://example.com');
-    form.set('meta.contact', 'a@b.c');
     form.set('meta.when', '2026-01-05');
-    form.set('meta.scheduled', '2026-01-05T09:00');
     form.set('meta.glyph', 'leaf');
     form.set('meta.author', 'jane-doe');
     form.set('meta.extra', 'x');
@@ -264,9 +255,7 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
       count: '5',
       status: 'a',
       site: 'https://example.com',
-      contact: 'a@b.c',
       when: '2026-01-05',
-      scheduled: '2026-01-05T09:00',
       glyph: 'leaf',
       author: 'jane-doe',
       extra: 'x',
@@ -351,23 +340,6 @@ describe('serialize and parse', () => {
     expect(parsed.frontmatter).toEqual(data);
     expect((parsed.frontmatter.image as { caption?: string }).caption).toBeUndefined();
   });
-
-  it('round-trips a datetime value as a naive-local string through the full save-load cycle', () => {
-    // A datetime is stored as TEXT, so the YYYY-MM-DDTHH:mm string must survive
-    // frontmatterFromForm -> serializeMarkdown -> parseMarkdown -> formValues without
-    // re-parsing into a JS Date and going blank.
-    const fields: NamedField[] = [{ type: 'datetime', name: 'when', label: 'When' }];
-    const form = new FormData();
-    form.set('when', '2026-06-26T14:30');
-
-    const decoded = frontmatterFromForm(fields, form);
-    expect(decoded.when).toBe('2026-06-26T14:30');
-
-    const out = serializeMarkdown(decoded, '');
-    const parsed = parseMarkdown(out);
-    // The stored value reads back to the same naive-local string the input wants, never blank.
-    expect(datetimeInputValue(parsed.frontmatter.when)).toBe('2026-06-26T14:30');
-  });
 });
 
 describe('formValues', () => {
@@ -375,7 +347,6 @@ describe('formValues', () => {
     const fields: NamedField[] = [
       { type: 'text', name: 'title', label: 'Title' },
       { type: 'date', name: 'date', label: 'Date' },
-      { type: 'datetime', name: 'when', label: 'When' },
       { type: 'boolean', name: 'draft', label: 'Draft' },
       { type: 'multiselect', name: 'tags', label: 'Tags' },
       { type: 'image', name: 'image', label: 'Hero' },
@@ -383,7 +354,6 @@ describe('formValues', () => {
     const frontmatter = {
       title: 'First Snow',
       date: new Date('2026-01-05T00:00:00.000Z'),
-      when: new Date('2026-06-26T14:30:00.000Z'),
       draft: true,
       tags: ['training', 'racing'],
       image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
@@ -392,7 +362,6 @@ describe('formValues', () => {
     expect(formValues(fields, frontmatter)).toEqual({
       title: 'First Snow',
       date: '2026-01-05',
-      when: '2026-06-26T14:30',
       draft: true,
       tags: ['training', 'racing'],
       image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },
@@ -415,19 +384,5 @@ describe('formValues', () => {
     const mystery: NamedField = { type: 'mystery', name: 'x', label: 'X' } as unknown as NamedField;
     expect(formValues([mystery], { x: 42 })).toEqual({ x: '42' });
     expect(formValues([mystery], {})).toEqual({ x: '' });
-  });
-});
-
-describe('datetimeInputValue', () => {
-  it('passes a naive-local YYYY-MM-DDTHH:mm string through', () => {
-    expect(datetimeInputValue('2026-06-26T14:30')).toBe('2026-06-26T14:30');
-  });
-  it('formats a Date with UTC getters, no timezone shift', () => {
-    expect(datetimeInputValue(new Date('2026-06-26T14:30:00.000Z'))).toBe('2026-06-26T14:30');
-  });
-  it('returns empty for a missing or invalid value', () => {
-    expect(datetimeInputValue(undefined)).toBe('');
-    expect(datetimeInputValue(new Date('nonsense'))).toBe('');
-    expect(datetimeInputValue('not a datetime')).toBe('');
   });
 });

@@ -151,17 +151,13 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     if (multiselectFieldset) updateMultiselectValidity();
   });
 
-  // The HTML input type for a plain single-line text input arm (url, email, datetime, and the text
-  // fallback). datetime maps to the datetime-local control; everything else carries no type attribute
-  // so the browser defaults to a text input.
-  function inputType(fieldType: string): 'url' | 'email' | 'datetime-local' | undefined {
+  // The HTML input type for a plain single-line text input arm (url and the text fallback). url maps
+  // to the url control; everything else carries no type attribute so the browser defaults to a
+  // text input.
+  function inputType(fieldType: string): 'url' | undefined {
     switch (fieldType) {
       case 'url':
         return 'url';
-      case 'email':
-        return 'email';
-      case 'datetime':
-        return 'datetime-local';
       default:
         return undefined;
     }
@@ -177,7 +173,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
    *  chain's final `{:else}` stays a runtime fallback (an icon field with no `icons` prop reaches
    *  it too, since that branch's extra `&& icons` guard narrows no type away), so the compiler
    *  cannot prove the chain exhaustive from the template alone; this function lists every
-   *  `FieldDescriptor` arm as its case so a sixteenth arm fails `npm run check` here, before it
+   *  `FieldDescriptor` arm as its case so a fourteenth arm fails `npm run check` here, before it
    *  silently renders through the generic fallback. Never called: the compile-time check is its
    *  only purpose. Deliberately unused; keep it despite looking like dead code.
    */
@@ -196,8 +192,6 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       case 'icon':
       case 'text':
       case 'url':
-      case 'email':
-      case 'datetime':
         return;
       default:
         kind satisfies never;
@@ -369,7 +363,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     {/if}
   </div>
 {:else}
-  <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
+  <!-- The plain single-line text input arm: url and the text fallback. They share
        one shape and differ only in the input type inputType() resolves. -->
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>

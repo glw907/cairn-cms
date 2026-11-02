@@ -135,18 +135,6 @@
       "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor` name it on this subpath."
     },
     {
-      "name": "DatetimeField",
-      "subpath": "/delivery/data",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
-      "name": "EmailField",
-      "subpath": "/delivery/data",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
       "name": "FieldBehavior",
       "subpath": "/delivery/data",
       "home": ".",
@@ -435,12 +423,6 @@
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
-      "name": "DatetimeField",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
-    },
-    {
       "name": "Editor",
       "subpath": "/sveltekit",
       "home": ".",
@@ -451,12 +433,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `MagicLinkMessage` names it on this subpath."
-    },
-    {
-      "name": "EmailField",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "EmailRecipient",

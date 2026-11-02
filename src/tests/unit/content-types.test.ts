@@ -9,10 +9,8 @@ function widgetFor(field: NamedField): string {
     case 'text':
     case 'textarea':
     case 'date':
-    case 'datetime':
     case 'number':
     case 'url':
-    case 'email':
     case 'icon':
       return 'input';
     case 'select':

@@ -13,11 +13,29 @@ import { parseCairnToken } from './links.js';
 /** An html comment, closed or running to the end of the node. */
 const HTML_COMMENT = /<!--[\s\S]*?(?:-->|$)/g;
 
+/** An opening tag's start: `<` and a letter, then the name. */
+const TAG_START = /<[a-z][^\s/>]*/gi;
+
+/** One attribute, whole: a name, then an optional double-quoted, single-quoted, or bare value. */
+const ATTRIBUTE = /[\s/]*([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/y;
+
 /**
- * A cairn: href or src inside a tag. `[^>]*` crosses newlines on purpose, since a tag can span lines,
- *  and stops at `>`, so text between tags never matches.
+ * Each cairn: value of an `href` or `src` attribute in the raw html. A tag is walked one attribute at
+ * a time with its quoted values consumed whole, so a `>` or `href=` inside another value neither ends
+ * the tag nor counts as an attribute. A tag can span lines.
  */
-const HTML_CAIRN_HREF = /<[a-z][^>]*[\s"'](?:href|src)\s*=\s*["']?(cairn:[^"'\s>]*)/gi;
+function htmlCairnHrefs(html: string): string[] {
+  const found: string[] = [];
+  for (const tag of html.matchAll(TAG_START)) {
+    ATTRIBUTE.lastIndex = tag.index + tag[0].length;
+    for (let attr = ATTRIBUTE.exec(html); attr; attr = ATTRIBUTE.exec(html)) {
+      const value = attr[2] ?? attr[3] ?? attr[4];
+      const name = attr[1].toLowerCase();
+      if ((name === 'href' || name === 'src') && value?.startsWith('cairn:')) found.push(value);
+    }
+  }
+  return found;
+}
 
 /** What one entry body holds beyond the manifest's link graph. */
 export interface BodyScan {
@@ -39,7 +57,7 @@ export function scanBody(body: string): BodyScan {
       if (node.url.startsWith('cairn:')) deadHrefs.push(node.url);
     } else if (node.type === 'html') {
       const html = node.value.replace(HTML_COMMENT, '');
-      for (const match of html.matchAll(HTML_CAIRN_HREF)) deadHrefs.push(match[1]);
+      deadHrefs.push(...htmlCairnHrefs(html));
     } else if (node.type === 'containerDirective' || node.type === 'leafDirective' || node.type === 'textDirective') {
       if (node.type !== 'textDirective') directives.add(node.name);
       for (const value of Object.values(node.attributes ?? {})) {

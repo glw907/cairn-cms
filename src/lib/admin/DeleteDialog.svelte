@@ -59,6 +59,9 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
   const entryNoun = $derived(single ? 'entry' : 'entries');
 
   let deleteOrigin: HTMLElement | null = null;
+  // Set when the confirm submits so a double click sends one POST. open() and a bfcache restore
+  // (pageshow) clear it, so a back navigation does not leave the button dead.
+  let deleting = $state(false);
 
   /**
    * Open the confirm. Exported so a `trigger={false}` host can drive the dialog itself. Pass the
@@ -67,12 +70,15 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
    */
   export function open(origin?: HTMLElement | null) {
     deleteOrigin = resolveDialogOrigin(origin);
+    deleting = false;
     dialog?.showModal();
   }
   function close() {
     dialog?.close();
   }
 </script>
+
+<svelte:window onpageshow={() => (deleting = false)} />
 
 {#if trigger}
   <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={(e) => open(e.currentTarget)}>
@@ -121,12 +127,17 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
       </div>
     {:else}
       <p id="cairn-delete-dialog-desc" class="mb-3 type-body">{#if entryTitle}“{entryTitle}” will be deleted.{' '}{/if}This cannot be undone.{#if pending}{' '}Unpublished edits to this entry are discarded too.{/if}</p>
-      <form method="POST" action="?/delete" class="flex justify-end gap-2" onsubmit={() => onsubmitting?.()}>
+      <form method="POST" action="?/delete" class="flex justify-end gap-2" onsubmit={() => {
+        deleting = true;
+        onsubmitting?.();
+      }}>
         <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />
         <input type="hidden" name="id" value={id} />
         <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-error">Delete this {noun}</button>
+        <button type="submit" class="btn btn-sm btn-error" disabled={deleting}>
+          {#if deleting}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Deleting…{:else}Delete this {noun}{/if}
+        </button>
       </form>
     {/if}
   </div>

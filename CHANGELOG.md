@@ -1038,6 +1038,15 @@
 
 ### Fixed
 
+- **Five small client fixes.** The site dictionary now reaches the spellcheck Worker before its first
+  check (the Worker held back an `addWord` that arrived before the engine was ready, #209). A failed
+  spellcheck asset fetch reports `error` instead of loading a 404 page as a dictionary (#210). A double
+  click on the delete confirm sends one POST (#214). `NavTree` announces "Navigation saved." after a
+  full document load, through an always-mounted status region filled after mount (#215). The Style
+  conventions heading and its links stack below `sm` so the copy reads at 320 (#242).
+
+  Consumers must: nothing.
+
 - **A save keeps every collapsed repeatable row.** `RepeatableField` unmounted a collapsed row's
   controls, so a save that never expanded the row dropped it from the entry. The body now stays
   mounted and is hidden, so each row's values reach the form, and a required control in a collapsed

@@ -20,6 +20,7 @@ import {
   pathBuckets,
   protectedVerdict,
   selectChecks,
+  sequentially,
   tableProblems,
 } from '../../../scripts/checks/gate-tier.mjs';
 import { CLOSE_COMPONENTS, PACKAGE_PREFIX, closeSteps, selectSteps } from '../../../scripts/checks/close-prebuilt.mjs';
@@ -904,11 +905,13 @@ describe('the fast lane', () => {
   const SRC_PATH = 'src/lib/log/index.ts';
   const DOCS_PATH = 'docs/internal/README.md';
 
-  it('prints one line for a docs-only diff: the docs gate and the static checks, no unit or component leg', () => {
+  it('prints one line for a docs-only diff: the docs gate, the static checks, and the slug contract test only', () => {
     const { lines, notes } = decideFastGate([DOCS_PATH]);
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain('npm run check:docs-gate');
-    expect(lines[0]).not.toContain('vitest');
+    expect(lines[0]).toContain('vitest related');
+    expect(lines[0]).toContain('src/tests/unit/github-slug-contract.test.ts');
+    expect(lines[0]).not.toContain('npx vitest run');
     expect(lines[0]).not.toContain('test:component');
     expect(notes.join('\n')).toMatch(/component tests skipped/);
   });
@@ -947,7 +950,65 @@ describe('the fast lane', () => {
     const marks = ['npm run check:close -- ', 'npm run check:docs-gate', 'npx vitest related'].map((m) => line1.indexOf(m));
     expect(marks.every((at) => at >= 0)).toBe(true);
     expect([...marks].sort((a, b) => a - b)).toEqual(marks);
-    expect(line1.slice(marks[0], marks[2])).toContain(' && ');
+    // No backgrounded group between the first and last leg: they share the one serial group.
+    expect(line1.slice(marks[0], marks[2])).not.toContain('& pids=');
+  });
+
+  it('runs every leg of the serial group and fails at the end', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cairn-seq-'));
+    try {
+      const mark = join(dir, 'ran');
+      const bash = (command: string) => spawnSync('bash', ['-c', command], { encoding: 'utf8' }).status;
+      expect(bash(sequentially(['false', `touch ${mark}`]))).not.toBe(0);
+      expect(existsSync(mark)).toBe(true);
+      expect(bash(sequentially(['true', 'true']))).toBe(0);
+      expect(sequentially(['echo a'])).toBe('echo a');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps vitest related for a src code path and runs the whole unit project for a path it cannot see', () => {
+    const [src] = decideFastGate([SRC_PATH], { selected: [] }).lines;
+    expect(src).toContain('vitest related');
+    expect(src).not.toContain('npx vitest run');
+    for (const path of [
+      'src/lib/admin/cairn-admin.css',
+      'package.json',
+      'scripts/checks/gate-table.json',
+      'examples/showcase/e2e/a.spec.ts',
+      '.claude/skills/cairn-running-passes/SKILL.md',
+      'CLAUDE.md',
+      '.github/workflows/test.yml',
+      'skills/cairn-extending-a-site/SKILL.md',
+    ]) {
+      expect(decideFastGate([path], { selected: [] }).lines[0], path).toContain('npx vitest run --project unit');
+    }
+  });
+
+  it('reruns the slug contract for docs and migration notes, and no unit test for the changelog', () => {
+    for (const path of [DOCS_PATH, 'MIGRATION-NOTES.md']) {
+      const [line1] = decideFastGate([path], { selected: [] }).lines;
+      expect(line1, path).toContain('vitest related --run --passWithNoTests --project unit src/tests/unit/github-slug-contract.test.ts');
+      expect(line1, path).not.toContain('npx vitest run');
+    }
+    expect(decideFastGate(['CHANGELOG.md'], { selected: [] }).lines[0]).not.toContain('vitest');
+  });
+
+  it('adds the Go tool gate for a path the Go tests read outside tool/, and for no other', () => {
+    for (const path of ['src/lib/log/events.ts', 'docs/admin/tripwire.md', 'scripts/checks/shipped-anchors.json']) {
+      expect(decideFastGate([path], { selected: [] }).lines[0], path).toContain('make -C tool check');
+    }
+    for (const path of [SRC_PATH, 'docs/editors/index.md']) {
+      expect(decideFastGate([path], { selected: [] }).lines[0], path).not.toContain('make -C tool check');
+    }
+    expect(decideGate(['src/lib/log/events.ts'], { selected: [] }).tier).toBe('targeted+tool');
+  });
+
+  it('lists only paths that exist on disk in the table keys and the slug test', () => {
+    for (const path of [...table.toolInputs, ...table.unitSelectable, 'src/tests/unit/github-slug-contract.test.ts']) {
+      expect(existsSync(resolve(process.cwd(), path)), path).toBe(true);
+    }
   });
 
   it('runs the type check once, in the dist chain after the close runner, never beside a rebuild', () => {
@@ -956,8 +1017,11 @@ describe('the fast lane', () => {
       expect(line1.match(/npm run check(?![:\w-])/g), path).toHaveLength(1);
       const subset = line1.match(/npm run check:close -- ([^&;]+)/)?.[1].trim().split(' ') ?? [];
       expect(subset, path).not.toContain('check');
-      // The type check follows the close runner inside one `&&` chain, so the rebuild has finished.
-      expect(line1, path).toMatch(/npm run check:close -- [^;]+ && npm run check(?: &&|;)/);
+      // The type check follows the close runner in the same serial group, so the rebuild has finished.
+      const at = line1.indexOf('npm run check:close -- ');
+      const typeCheck = line1.search(/npm run check(?![:\w-])/);
+      expect(typeCheck, path).toBeGreaterThan(at);
+      expect(line1.slice(at, typeCheck), path).not.toContain('& pids=');
     }
   });
 

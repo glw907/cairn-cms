@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers.js';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // The preview surfaces read the site's theme tokens, in every scheme Waymark ships. Two surfaces:
 //
@@ -136,9 +136,7 @@ test.describe('preview surfaces read the theme tokens', () => {
     const title = 'Preview tokens';
 
     await page.goto('/admin/posts');
-    await page.locator('header').getByRole('button', { name: 'New post' }).click();
-    const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-    await expect(createDialog).toBeVisible();
+    const createDialog = await openCreateDialog(page);
     await createDialog.locator('input[name="title"]').fill(title);
     await createDialog.locator('input[name="slug"]').fill(slug);
     await createDialog.getByRole('button', { name: 'Create' }).click();

@@ -75,10 +75,9 @@ jobs:
       - run: npm run test:emit
       # Two of the create-cairn-site tests read the baked `template/`, which is gitignored and
       # produced by `prepack`. Bake it first, or those two fail on a clean checkout while passing
-      # on any machine that has run the CLI. The engine's own version stands in for both specs,
-      # the same substitution create-site.yml makes and for the same reason: the bake refuses a
-      # `file:` spec and a 0.0.0 version, so `prepack`'s default path is unrunnable until
-      # @glw907/cairn-cms-dev publishes.
+      # on any machine that has run the CLI. The step names the engine's version for both specs,
+      # as create-site.yml does. The bake's defaults (`prepack`) take caret specs from each
+      # package's own version, which match the engine's while the packages share a version.
       - name: Bake the create-cairn-site template
         working-directory: packages/create-cairn-site
         run: |

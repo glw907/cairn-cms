@@ -30,9 +30,10 @@ var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 
 // consumersMustLine matches one grammar line of a changelog section: "Consumers must: " at the
 // start of a line, optionally indented two spaces (a list item's continuation), followed by a
-// body. Group 1 is the body. The same pattern drives scripts/checks/check-consumers-must.mjs, and
+// body. Group 1 is the body, without a line's trailing carriage return.
+// scripts/checks/check-consumers-must.mjs reads a line the same way, and
 // scripts/checks/fixtures/consumers-must/cases.json pins both readers to it.
-var consumersMustLine = regexp.MustCompile(`(?m)^(?:  )?Consumers must: (\S.*)$`)
+var consumersMustLine = regexp.MustCompile(`(?m)^(?:  )?Consumers must: (\S.*?)\r?$`)
 
 // FieldEngineInstalledVersion names the installed engine version on the engine check's Outcome.
 // A renderer reads it by key: the version also appears inside the check's prose Detail, and

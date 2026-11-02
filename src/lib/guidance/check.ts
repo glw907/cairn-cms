@@ -65,8 +65,27 @@ function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
-function isEntry(css: string): boolean {
-  return [...css.matchAll(ENTRY_IMPORT)].some((m) => !(m[2] ?? '').includes('source(none)'));
+const SOURCE_BASE = /source\(\s*(['"])(.*?)\1\s*\)/;
+
+/**
+ * True when `source("<base>")` in the stylesheet at `path` leaves the scan root at the repo root
+ * or an ancestor, so `.claude` stays inside the scan. Tailwind 4.3.3's `compile` on `src/app.css`
+ * with `source("../src")` returns `root` as `{ base: '<repo>/src', pattern: '../src' }`: the
+ * stylesheet's directory and the raw value, so the base resolves against the stylesheet. Only `.`
+ * or repeated `..` segments reach the root or above.
+ */
+function sourceBaseCoversRoot(path: string, base: string): boolean {
+  const resolved = posix.normalize(posix.join(posix.dirname(path), base)).replace(/\/+$/, '');
+  return resolved === '.' || /^(\.\.(\/|$))+$/.test(resolved);
+}
+
+function isEntry(path: string, css: string): boolean {
+  return [...css.matchAll(ENTRY_IMPORT)].some((m) => {
+    const mods = m[2] ?? '';
+    if (mods.includes('source(none)')) return false;
+    const base = mods.match(SOURCE_BASE)?.[2];
+    return base === undefined || sourceBaseCoversRoot(path, base);
+  });
 }
 
 /** True when a `@source not` in `css`, resolved against the stylesheet at `path`, names the root `.claude`. */
@@ -85,7 +104,9 @@ function exclusionLineFor(path: string): string {
 
 /**
  * Judge whether `.claude/` is excluded from the site's Tailwind build. A gitignored `.claude`
- * passes outright (Tailwind's scanner skips it), as does a site with no Tailwind entry. Otherwise
+ * passes outright (Tailwind's scanner skips it), as does a site with no Tailwind entry. An import
+ * is no entry when its `source(none)` or a `source("<base>")` that resolves, against that
+ * stylesheet, below the repo root puts `.claude` outside the scan. Otherwise
  * some listed stylesheet must carry a `@source not` that resolves, against that file, to the root
  * `.claude`; `@import` is not followed, so one file's exclusion counts for every entry. The
  * failing verdict names the first entry and the exact line for it.
@@ -101,7 +122,7 @@ export async function judgeSourceExclusion(
     const text = await readFile(path);
     if (text !== null) files.push({ path, css: stripComments(text) });
   }
-  const entry = files.find((f) => isEntry(f.css));
+  const entry = files.find((f) => isEntry(f.path, f.css));
   if (entry === undefined) return { status: 'excluded' };
   if (files.some((f) => excludesClaude(f.path, f.css))) return { status: 'excluded' };
   return { status: 'not-excluded', entry: entry.path, line: exclusionLineFor(entry.path) };

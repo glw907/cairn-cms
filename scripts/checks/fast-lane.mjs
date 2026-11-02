@@ -1,5 +1,7 @@
 // cairn-cms: the committed fast lane. It runs the legs `gate-tier.mjs --fast` prints for a range,
-// in order, and fails on the first leg that fails. Anyone with a clone can run it; a maintainer's
+// in order. A line runs all its legs and fails at its end if any failed; a red line stops the lines
+// after it. Anyone with a clone can run it (an edit to a path the Go tests read also needs Go and
+// Vale installed); a maintainer's
 // lane-aware wrapper runs the same legs and adds shared locks, which this script does not need.
 //
 // Interface: `node scripts/checks/fast-lane.mjs [--range <base>..HEAD]`, defaulting to
@@ -54,7 +56,7 @@ function runLeg(line) {
  *
  * @param {string} range A git range, such as `origin/main..HEAD`.
  * @param {{ classify?: typeof classifyRange, run?: typeof runLeg }} [deps] Test seams.
- * @returns {number} Zero when every leg passed, otherwise the first failing exit code or 1.
+ * @returns {number} Zero when every line passed, otherwise the first failing line's exit code or 1.
  */
 export function runFastLane(range, { classify = classifyRange, run = runLeg } = {}) {
   const plan = fastLaneLines(classify(range));

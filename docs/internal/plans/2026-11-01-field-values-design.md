@@ -17,7 +17,8 @@ there aren't linear dependencies."). This note records only what the code and a 
 - **#163:** a `boolean` field refuses a non-boolean, and `draft: "true"` fails the build whether or not
   the concept declares `draft`.
 - **#101:** `creatable` widens a multiselect's `options` at save, and the inferred type follows.
-- **#100:** `text`, `textarea`, and `date` bounds render as input attributes. `pattern` stays out.
+- **#100:** `text`, `textarea`, and `date` bounds render as input attributes on an entry's form.
+  `pattern` stays out, and `ComponentForm`, which sits in no submit form, stays as it is.
 
 One end-to-end check: a fixture site with `date: 2024-03-15 20:00:00 -08:00` on one entry and
 `draft: "true"` on another, in a concept that declares no `draft` field, makes `createSiteResolver`
@@ -42,6 +43,7 @@ session. T2 reruns the same comparison through the real wrapper.
 | Same record, `yaml` with `customTags: ['timestamp']` or `version: '1.1'` | 420 |
 | Body identical to `gray-matter`'s, through `splitFrontmatter` | 450 of 450, showcase content included |
 | `yaml.stringify` reparses to the same record | 119 of 119 |
+| Body after the wrapper's round trip | Same, apart from the one trailing newline a file lacked |
 | `draft` values | 9 `false`, none non-boolean; no `published` key |
 
 ## What the code settled
@@ -73,9 +75,9 @@ These are reversible calls inside the approved scope. Each goes under the PR's `
    an unclosed block, which it read as frontmatter to the end of the file and which now reads as no
    frontmatter.
 5. **YAML 1.2 core replaces `js-yaml` 3's dialect.** `10:30` was 630 and is now the string `10:30`,
-   `0755` was 493 and is now 755, `1_000` and `0b11` stay strings, and `<<` merge keys stop merging. Each
-   reads closer to what an author wrote, and none is in any corpus file. The test would stop the swap
-   if one were.
+   `0755` was 493 and is now 755, `0o755` was a string and is now 493, `1_000` and `0b11` stay strings, and
+   `<<` merge keys stop merging. Each reads closer to what an author wrote, and none is in any corpus
+   file. The test would stop the swap if one were.
 6. **`draft` is checked at the concept, beside the fieldset.** The scaffold declares no `draft` field
    (`#163`'s sweep note and `content-model.md`), so a `boolean` arm alone leaves `draft: "true"`
    published. `content-index.ts:128` and `manifest.ts:116` read the raw key. The concept's `validate`
@@ -91,7 +93,6 @@ These are reversible calls inside the approved scope. Each goes under the PR's `
    `check-surface-reexports.json:138,144,438,456`). The prompt said `ordinary`. The conductor merges
    either way, and a `runner` pass adds a record packet first. This changes who is told, not what is
    built.
-
 9. **Two tag-era keeps fall with E7, and `options` loses its display under `creatable`.** `slim.md`
    says no ruling names either kind, but `check-self-use-allowlist.json:26,31` cites the tag keeps
    `audit-adapter-datetimefield` and `audit-adapter-emailfield`. Neither is in the live ledger, so

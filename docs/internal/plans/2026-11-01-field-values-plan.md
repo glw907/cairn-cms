@@ -5,7 +5,8 @@ under `scripts/checks/`, design note call 8). Initiative: `shared-standards`. Ba
 note: `docs/internal/plans/2026-11-01-field-values-design.md`. Sources: `design-audit/run-sheet.md`
 "Pass 4" and "Run rules", `design-audit/design.md` "4. Content rules", ledger.md "## Rulings".
 
-Path: 225 minutes against a design estimate of 170 and a ceiling of 340. No cut is needed.
+Path: 200 minutes (T1 40, T2 45, T3 40, the pair at T4's 30, T6 15, T7 30), against a design estimate
+of 170 and a ceiling of 340. No cut is needed.
 
 ## Pre-flight
 
@@ -46,9 +47,13 @@ close.
 The sheet's standing answers apply to every task. These are this pass's.
 
 - **Plan over 340:** cut E12 first, which is T2 and T3. E7, #100, #101, #162, and #163 may not be cut.
-- **T2's test finds a difference other than a date read:** stay on `gray-matter`. Restore
-  `src/lib/content/frontmatter.ts`, skip T3, list the file and key under `## Decisions`, keep the backlog
-  line "the dependency sweep carries E12", and go on to T4 with its Date arm.
+- **T2's test finds a difference other than a date read:** stay on `gray-matter`. Commit nothing of the
+  swap: restore `frontmatter.ts`, `frontmatter-region.ts`, and `content-frontmatter.test.ts`, and drop the
+  site test. Skip T3, list the file and key under `## Decisions`, file E12 for the dependency sweep through
+  `standards:log-issue`, and go on to T4 with its Date arm. A difference in a file no concept reads (a
+  repo note under a site's `docs/`, say) is listed in the PR and doesn't stop E12.
+- **Both parsers throw on a site file:** the same outcome, so count and report it. One side throwing is
+  a difference. A file another session changed during the walk gets one rerun.
 - **T2's test finds a date difference:** that's the expected case, 42 of 420 files at planning. The
   wrapper keeps the text as written, which is the sheet's fix in the wrapper, as #162's root. A date
   value with a time of day is listed in the PR, because T4 refuses it at the next rebuild. Nothing
@@ -98,7 +103,8 @@ their template copies through `npm run emit:template`, and the tests below. Load
   the `case 'email'` arm, and `case 'datetime':` from the shared `case 'datetime': case 'icon':` arm.
   Reword the comments that say `datetime` at `:125`, `:307-309`, `:325-326`, and the `@remarks`
   sentence "(a numeric `number`, a `Date` on a `datetime` field, a lone scalar on a `multiselect`)" to
-  name `a `Date` on a `date` field`. T3 rewords it again.
+  name `a `Date` on a `date` field`, and `:263-264`'s "a Date on a date or datetime field" likewise. T3
+  rewords them again.
 - `frontmatter.ts`: remove `datetimeInputValue`, the `case 'datetime':` arm of `formValues`, and the
   `case 'email':` and `case 'datetime':` labels in `decodeField`, `frontmatterFromForm`, and `formValues`.
   Fix the three comment lists that name them (`:54`, `:170`, `:362`).
@@ -121,9 +127,8 @@ their template copies through `npm run emit:template`, and the tests below. Load
   `migrate-content.md:33-34` loses "A `datetime` field needs the timestamp as a quoted string with its
   offset."
 
-**Acceptance:** `npm run check` passes. `git grep -nE "fields\.(datetime|email)|DatetimeField|EmailField|datetimeInputValue|case 'datetime'|case 'email'" -- src/lib scripts/checks skills`
-prints only `api-surface.md` lines the update removes, so nothing after `npm run check:surface -- --update`.
-`npm run check:options`, `check:self-use`, and `check:surface` pass. `fields-exports.test.ts` asserts
+**Acceptance:** `npm run check` passes. `git grep -nE "fields\.(datetime|email)" -- skills` prints
+nothing, since no build reads the skills. `npm run check:options`, `check:self-use`, and `check:surface` pass. `fields-exports.test.ts` asserts
 `email` and `datetime` are not keys of `fields`, which fails against today's `fields.ts`.
 
 **Test:** the edited suites, with the component project.
@@ -147,8 +152,8 @@ The wrapper:
   unclosed `---\ntitle: a\n` don't.
 - `parseMarkdown`: replace `const parsed = matter(source, {});` and its comment. Strip one leading BOM
   (`﻿`, as `references.ts` names it), call `splitFrontmatter`, take the text between the fences,
-  parse it with `yaml`'s `parse` (core schema, no options), and treat a null result as `{}`. A file
-  with no block returns `{ frontmatter: {}, body }` with the BOM-stripped body. A parse failure still
+  parse it with `yaml`'s `parse` (core schema, no options), and treat a null result as `{}`. A scalar or
+  list block returns as parsed, which matches `gray-matter`. A file with no block returns `{ frontmatter: {}, body }` with the BOM-stripped body. A parse failure still
   throws, on every read, because `#106` needs it and `yaml` has no cache.
 - `serializeMarkdown`: replace `return matter.stringify(body, frontmatter);`. Write `yaml`'s
   `stringify(frontmatter, { singleQuote: true, lineWidth: 0 })` between `---` fences, followed by the body
@@ -156,17 +161,22 @@ The wrapper:
   `gray-matter/lib/stringify.js`'s `if (matter !== '{}')` and `newline()`.
 - Update the file header and the two doc comments that name `gray-matter` here. T3 removes the import.
 
-The test, `describe.skipIf` on any of the four roots being absent, so CI skips it and T2 and T3 run it
+The test has one function, `compareFile(source)`, returning its differences, and two parts. The first
+part always runs: `compareFile` on `---\na: 10:30\n---\n` reports a non-date difference, and on
+`---\na: 2024-01-01\n---\n` reports a date difference alone. That proves the test can stop the swap. The
+second part is `describe.skipIf` on any of the four roots being absent, so CI skips it and T2 runs it
 locally:
 
 - Walk every `.md` under each root, skipping `node_modules`, `.git`, `.svelte-kit`, `.claude`, `build`,
   `dist`, and `.wrangler`. Assert each root yields at least one file with frontmatter, so a moved
   checkout can't pass by reading nothing. Planning counted 93, 39, 275, and 13 files.
-- For each file, compare `parseMarkdown(src)` against `matter(src, {})`: the body exactly, and the whole
-  record deeply, undeclared keys included. A `Date` on the `gray-matter` side and a string on the other
-  counts as a date difference. Every other mismatch is a failure, reported with file and key.
-- For each file, assert `parseMarkdown(serializeMarkdown(frontmatter, body))` returns the same record
-  and body, so an undeclared key survives a save.
+- For each file, `compareFile` compares `parseMarkdown(src)` against `matter(src, {})`: the body exactly,
+  and the whole record deeply, undeclared keys included. A `Date` on the `gray-matter` side and a string
+  on the other counts as a date difference. Every other mismatch is a failure, reported with file and key.
+- For each file, assert `parseMarkdown(serializeMarkdown(frontmatter, body))` returns the same record,
+  so an undeclared key survives a save, and the same body apart from the one trailing newline
+  `serializeMarkdown` adds. Planning found one file with no trailing newline, and that newline is the
+  only allowed body difference.
 - Print the counts: files, with frontmatter, date differences, and any date with a time of day.
 
 Permanent cases in `content-frontmatter.test.ts`, each failing against today's wrapper or pinning a
@@ -177,8 +187,7 @@ a BOM is stripped; CRLF fences work; a comment-only block is `{}`; malformed YAM
 in a row.
 
 **Acceptance:** the site test passes locally with non-zero counts on all four roots, and its printed
-counts go in the PR body. Rerun it with one site file copied to a temporary root and changed to
-`a: 10:30`: it must fail, which proves a non-date difference stops the swap. Discard that copy.
+counts go in the PR body. The always-on `10:30` case passes, so a non-date difference is known to fail.
 
 **Test:** `npx vitest run src/tests/unit/e12-site-roundtrip.test.ts src/tests/unit/content-frontmatter.test.ts`,
 then the fast lane. Other suites may pin single-quoted output or `Date` reads: change each and list it.
@@ -189,10 +198,10 @@ then the fast lane. Other suites may pin single-quoted output or `Date` reads: c
 `Date`.
 
 **Files:** `src/lib/content/media-rewrite.ts`, `references.ts`, `frontmatter.ts`, `frontmatter-region.ts`,
-`fieldset.ts`, `identity.ts`, `fields.ts`, `package.json`, `package-lock.json`,
+`fieldset.ts`, `identity.ts`, `package.json`, `package-lock.json`,
 `examples/showcase/package-lock.json`, `skills/cairn-extending-a-site/references/{content-model,migrate-content}.md`,
 `src/tests/unit/dist-sveltekit-app-import-boundary.test.ts`, `examples/showcase/e2e/media-hero.spec.ts`, and
-each test that pins a removed behavior.
+the tests below.
 
 - `media-rewrite.ts`: `const data = matter(markdown).data as Record<string, unknown>;` at `:225` and `:494`
   become `parseMarkdown(markdown).frontmatter`. Remove the import. Reword the comments at `:8`, `:191`,
@@ -207,7 +216,8 @@ each test that pins a removed behavior.
   parses an unquoted YAML date into a JS Date", `referenceIdFromValue`'s "A Date (a YAML-parsed unquoted
   date-shaped id)", `asDate`'s "An unquoted YAML date parses as a JS Date", the `formValues` comment "a
   YAML-parsed Date becomes its UTC-sliced id, never String(Date) timezone garbage", `coerceToText`'s
-  header, and `validateField`'s "a Date on a date or datetime field". The `@remarks` of `defineFieldset`
+  header, `validateField`'s "a Date on a date field", `fieldset.ts:186-187`'s "a Date element to its id",
+  and `frontmatter.ts:348-349`'s "UTC-sliced". The `@remarks` of `defineFieldset`
   drops the `Date` example.
 - `frontmatter-region.ts:3-4`: the comment names `gray-matter`, reword it.
 - Run `npm uninstall gray-matter`, then `npm install --package-lock-only --prefix examples/showcase`.
@@ -216,6 +226,10 @@ each test that pins a removed behavior.
 - `dist-sveltekit-app-import-boundary.test.ts:43` and `media-hero.spec.ts:104` name `gray-matter` in a
   comment: reword. `frontmatter-reference-roundtrip.test.ts:50,64` and `references.test.ts:118` name
   `js-yaml`: reword, and change what they pin.
+- `content-frontmatter.test.ts:2` imports `matter` and fails outright after the uninstall, so rewrite its
+  uses, with the comments at `:336` and `:349`. `content-media-rewrite.test.ts:332` names it in a comment.
+  The `Date` pins at `content-frontmatter.test.ts:286,298`, `content-identity.test.ts:59-61,84`,
+  `fieldset-validate.test.ts:208`, and `references.test.ts:172` change or leave with their arm.
 - Add one test that a `serializeMarkdown` output with an unquoted `src: media:<hash>` still repoints
   through `repointMediaRef` and `fillAltForHash`, since the write form changed from quoted to plain.
 - Skills: in `content-model.md`, delete "A bare YAML date in an undeclared key is rewritten as a full ISO
@@ -225,9 +239,9 @@ each test that pins a removed behavior.
   loses its `Date` arm, and "Text-type fields read a number, date, or boolean as empty" loses `date`.
   T4 owns the "Dates." and "Drafts." bullets.
 
-**Acceptance:** `git grep -nE "gray-matter|js-yaml|instanceof Date" -- src/lib package.json skills examples/showcase/e2e`
-prints nothing. `npm ls gray-matter js-yaml` prints `(empty)` at the root, unless another dependency
-still pulls `js-yaml`, which the PR then names. `npm ci --prefix examples/showcase` passes on the
+**Acceptance:** `git grep -nE "gray-matter|js-yaml|instanceof Date" -- src package.json skills examples/showcase/e2e`
+prints nothing. `npm ls gray-matter js-yaml` prints `(empty)`: read the text, because it exits 1 on an
+absent package. `npm ci --prefix examples/showcase` passes on the
 updated lockfile. `npm run package` and `npm run check:package` pass. The new media test fails if
 `findSrcLinesInRange` can't anchor an unquoted token.
 
@@ -251,8 +265,10 @@ tests.
   `${label} has a time of day. Write the date alone: ${day}`, where `day` is the leading `YYYY-MM-DD` as
   written. `siteProblems` already prefixes `${descriptor.dir}/${problem.id}: ${field}: `, and
   `buildSiteManifest` logs `content.entry_invalid` with `path`, so the file is named on both routes.
-  `dateInputValue`'s string slice stays, so the admin opens the entry on the written day and a save
-  writes the date alone.
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with that one
+  log line, and the build fails on it unless it's a draft. The edit route still opens it by URL, on the
+  written day through `dateInputValue`'s string slice, and a save writes the date alone. The
+  `Consumers must:` line says all of that.
 - **If T2 set E12 aside:** the `Date` arm stays. `coerceToText` then hands the validator a sliced day,
   so the check runs on the raw `value`: a `Date` that isn't UTC midnight returns the same message with
   its UTC day. Update the acceptance's day to `2024-03-16` and say so in `## Decisions`.
@@ -264,9 +280,10 @@ tests.
 - #163, undeclared `draft`, at `concepts.ts:231`, `validate: (frontmatter, body) => fs.validate(frontmatter, body, id),`:
   when the fieldset declares no `draft`, run the raw `draft` through a module-level
   `defineFieldset({ draft: fields.boolean({ label: 'Draft' }) })` after a passing `fs.validate`, and return
-  its failure. `concepts.ts` imports `Fieldset` and `FieldDescriptor` as types today, with a layering
-  note at `:23`: check that a value import of `defineFieldset` and `fields` doesn't cycle. `fieldset.ts`
-  imports only `frontmatter`, `field-rules`, `ids`, and `log`. Update `ConceptConfig`'s doc comment on
+  its failure. `concepts.ts` imports `Fieldset` and `FieldDescriptor` as types today, and a value import
+  can't cycle: the review found no file in `fieldset.ts`'s or `fields.ts`'s import closure that imports
+  `concepts.js`. The admin save validates form-decoded keys only, so an undeclared `draft` can't refuse a
+  save. Update `ConceptConfig`'s doc comment on
   `draft` in `types.ts:98` only if it states the old read.
 - Skills: `migrate-content.md`'s "Dates." bullet becomes: a `date` field takes `YYYY-MM-DD`, and a value
   with a time of day fails the build, naming the file and the day as written, so write the date alone,
@@ -288,25 +305,31 @@ day and the second publishes. `draft: true`, `draft: false`, and an empty `draft
 
 ### T5. Render bounds as input attributes, #100 (25 min, ordinary)
 
-**Outcome:** the browser refuses what the save would refuse, for length and date bounds.
+**Outcome:** on the entry form, the browser refuses what the save would refuse, for length and date
+bounds. `ComponentForm` stays as it is: it sits in no submit form, so `minlength` and `min` would refuse
+nothing, and `buildComponentInsert` stays its gate.
 
-**Files:** `src/lib/admin/FieldInput.svelte`, `src/lib/admin/ComponentForm.svelte`,
-`src/lib/content/fields.ts`, `src/tests/component/field-input.test.ts`, `ComponentForm.test.ts`. Load
+**Files:** `src/lib/admin/FieldInput.svelte`, `src/lib/content/fields.ts`,
+`src/tests/component/field-input.test.ts`, `edit-page-v2-fields.test.ts`. Load
 `cairn-following-admin-design` first.
 
 - `FieldInput.svelte`, textarea arm at `:218`: add `minlength` and `maxlength`. `length` sets both, and
   otherwise `min` and `max` set them. Date arm at `:264`: add `min={field.min}` and `max={field.max}`.
 - The fallback arm at `:376` serves `text`, `url`, `icon` with no icon set: add the length attributes only
   when `field.type === 'text'`, by the same rule. `pattern` stays out, because the browser anchors it.
-- `ComponentForm.svelte`, the fallback `<input>`: the same, for a `text`, `textarea`, or `date` attribute.
 - `fields.ts`: rewrite the doc comments that say "Enforced at the save, never rendered as an input
   attribute" on `TextField.min`, `max`, `TextareaField.min`, `max`, and "Enforced at the save, never
-  rendered on the input" on `DateField.min`, `max`. `TextField.pattern` keeps its sentence. `length`'s
-  comment gains the attribute.
+  rendered on the input" on `DateField.min`, `max`, to say an entry's form renders them. `TextField.pattern`
+  keeps its sentence. `length`'s comment gains the attribute.
+- Record under `## Decisions`, as the accepted cost of #100: `maxlength` truncates a paste with no message,
+  where the save used to say why; the browser counts untrimmed text and the save counts trimmed text; a
+  stored over-long value trips nothing until edited, so the save banner stays the net; and a stored date
+  outside `min` or `max` is invalid at once, which `onFormInvalid` (`EditPage.svelte:341`) reveals.
 
 **Acceptance:** a component test mounts each of `text` with `max`, `text` with `length`, `textarea` with
 `min`, and `date` with `min` and `max`, and reads the attribute off the control, and a `url` field
-carries no `maxlength`. Each fails against today's markup.
+carries no `maxlength`. Each fails against today's markup. On a mounted edit form, a date below `min`
+makes `form.checkValidity()` false and fires `invalid`, which proves the outcome and not only the markup.
 
 **Test:** the fast lane with the component project.
 
@@ -340,29 +363,30 @@ unchanged.
 **Outcome:** the PR is ready for `cairn-cms-9b`.
 
 - **Docs search,** per `.claude/rules/docs-with-code.md`. Run
-  `grep -rnE "fields\.(email|datetime)|time of day|valid date|must be true|creatable|maxlength|unquoted" docs/admin docs/editors skills`,
+  `grep -rnEi "fields\.(email|datetime)|time of day|valid date|must be true|creatable|maxlength|unquoted|parseMarkdown|frontmatter.*(date|draft|quot)|draft: |yaml.*(date|quot)|comma-separated|tag input" docs/admin docs/editors skills`,
   read every hit, and show the command and its result in the PR. At planning, no page under `docs/admin` or
   `docs/editors` teaches a changed behavior. If that holds, no docs page changes and `docs-fact-checker`
   has nothing to read. If a hit needs an edit, load `cairn-writing-docs`, and the fact-check runs.
 - **`CHANGELOG.md`** under `## Unreleased`, in its existing `Consumers must:` style: one entry for E7,
   naming `fields.text` with a `pattern` for an address and `fields.date` plus a text field for a moment;
-  one for E12, naming `parseMarkdown`'s text dates, the YAML 1.2 readings, the ended language tag, the
-  unclosed block, and the changed write form; one each for #162, #163, #101, and #100. `MIGRATION-NOTES.md`
+  one for E12, naming `parseMarkdown`'s text dates, a hand-passed `Date` reading as empty, the YAML 1.2
+  readings, the ended language tag, the unclosed block, and the changed write form; one each for #162, #163, #101, and #100. `MIGRATION-NOTES.md`
   gains the matching per-version lines.
 - **`BACKLOG.md`:** move #100, #101, #162, and #163 to `## Done` with their proof, and #118 and #99 with
   `done: fields.datetime removed (E7)`. In #98, cut "and an unquoted timestamp parses to a `Date`" and
   `matter.stringify`, since neither is true after T3.
 - **Surface and template:** `npm run check:surface -- --update`, `npm run emit:template`, and commit both.
 - **Review:** whole-branch `standards:diff-reviewer` against this plan and the design note, then
-  `standards:svelte-reviewer` for `FieldInput.svelte` and `ComponentForm.svelte`, and
+  `standards:svelte-reviewer` for `FieldInput.svelte` and `ComponentForm.svelte`'s removed arms, and
   `standards:daisyui-a11y-reviewer` for their markup. Fold every `fix`, rerun the fast lane, push, and
   confirm green CI on the head.
 - **PR body,** per `pass-core` "Close": `## Brief`, what landed, T2's counts, the docs search,
   `## Decisions` with the design note's ten calls, `## Planning misses`, the retried tests, and the
   score.
-- Delete the plan, the design note, and the prompts last. Mark the PR ready and report to `cairn-cms-9b`.
+- Delete the plan, the design note, the review, the fold record, and the prompts last. Push, confirm
+  green CI on that head, then mark the PR ready and report to `cairn-cms-9b`.
 
-**Acceptance:** CI is green on the head, the review has no open finding, `## Unreleased` is final, and
+**Acceptance:** CI is green on the final head, the review has no open finding, `## Unreleased` is final, and
 `docs/internal/plans/` holds no `2026-11-01-field-values-*` file.
 
 ## Later

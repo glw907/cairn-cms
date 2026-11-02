@@ -15,7 +15,7 @@ Swapping the editor stays a one-file change.
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
-  interface ComponentAtCaret {
+  interface BlockAtCaret {
     name: string | null;
     markdown: string;
     from: number;
@@ -133,7 +133,7 @@ Swapping the editor stays a one-file change.
     fragmentTitles?: import('./editor-include.js').FragmentTitles;
     /** Reports the directive container at the caret (or null when outside any container) whenever
      *  the reported value changes; the host resolves it against the registry to offer Edit-block. */
-    onBlockAtCaret?: (info: ComponentAtCaret | null) => void;
+    onBlockAtCaret?: (info: BlockAtCaret | null) => void;
     /** Reports the media image at the caret (or null when the caret is not on one) whenever the
      *  reported value changes; the host opens the figure control over it to wrap, edit, or unwrap a
      *  `:::figure`. The figure transforms write source through `EditorApi.replaceRange`. */
@@ -912,7 +912,7 @@ Swapping the editor stays a one-file change.
             // A doc edit can change the block's span and a caret move can change which block the
             // caret sits in, so the reporter runs on either; the dedupe below absorbs the no-ops.
             if (onBlockAtCaret && (update.docChanged || update.selectionSet))
-              reportComponentAtCaret(update.state);
+              reportBlockAtCaret(update.state);
             // The media-image reporter rides the same two triggers: a caret move lands on or off an
             // image, an edit shifts the figure's span. The dedupe absorbs the keystroke no-ops.
             if (onMediaImageAtCaret && (update.docChanged || update.selectionSet))
@@ -971,7 +971,7 @@ Swapping the editor stays a one-file change.
     });
     // Report the caret's starting container once the editor exists, so a caret that mounts inside
     // a block is known without waiting for the first move.
-    if (onBlockAtCaret) reportComponentAtCaret(view.state);
+    if (onBlockAtCaret) reportBlockAtCaret(view.state);
     if (onMediaImageAtCaret) reportMediaImageAtCaret(view.state);
     mounted = true;
   });
@@ -1057,18 +1057,18 @@ Swapping the editor stays a one-file change.
   // four unchanged, so it does not refire; an edit inside the block changes the markdown even when
   // it keeps the same length (an equal-length replacement leaves from and to unchanged), so the
   // markdown must be part of the equality or such an edit would keep a stale report.
-  let lastCaretReport: ComponentAtCaret | null = null;
+  let lastCaretReport: BlockAtCaret | null = null;
 
   // Compute the directive container at the caret from a CodeMirror state and report it through
   // onBlockAtCaret, deduped so a caret move within the same block does not refire. fenceScan
   // lines are 0-based; doc.line(n) is 1-based, so the line range maps with a +1 on each bound.
-  function reportComponentAtCaret(state: import('@codemirror/state').EditorState) {
+  function reportBlockAtCaret(state: import('@codemirror/state').EditorState) {
     const doc = state.doc;
     const lines: string[] = [];
     for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
     const caretLine = doc.lineAt(state.selection.main.head).number - 1;
     const range = caretContainerRange(fenceScan(lines), caretLine);
-    let next: ComponentAtCaret | null = null;
+    let next: BlockAtCaret | null = null;
     if (range) {
       const fromPos = doc.line(range.fromLine + 1).from;
       const toPos = doc.line(range.toLine + 1).to;

@@ -448,7 +448,7 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/admin/media');
     await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
-    await page.getByRole('checkbox').first().check();
+    await page.getByRole('option').first().locator('input[type="checkbox"]').check();
     await expect(page.getByRole('region', { name: 'Selection actions' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-media-selected-light-${width}.png`, {
       fullPage: true,
@@ -463,7 +463,7 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/admin/media');
     await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
-    await page.getByRole('checkbox').first().check();
+    await page.getByRole('option').first().locator('input[type="checkbox"]').check();
     await expect(page.getByRole('region', { name: 'Selection actions' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-media-selected-dark-${width}.png`, {
       fullPage: true,

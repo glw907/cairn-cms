@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
+  ingestFile,
   detectHeic,
   gifDimensions,
   proposedNameFor,
@@ -161,6 +162,27 @@ describe('budgetForDimensions', () => {
 
   it('returns a within-budget source unchanged', () => {
     expect(budgetForDimensions(1600, 1200)).toEqual({ width: 1600, height: 1200 });
+  });
+});
+
+describe('ingestFile: AVIF passthrough', () => {
+  /** A minimal AVIF: the `ftyp` box with the `avif` major brand. */
+  const avifBytes = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66, 0, 0, 0, 0]);
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('passes an AVIF file through with the decoded dimensions', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => ({ width: 640, height: 480, close: () => {} })));
+    const file = new File([avifBytes], 'photo.avif', { type: 'image/avif' });
+    const out = await ingestFile(file);
+    expect(out).toMatchObject({ contentType: 'image/avif', width: 640, height: 480 });
+    expect(out.blob).toBe(file);
+  });
+
+  it('reports decode-unsupported when the browser cannot decode the AVIF', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn(async () => { throw new Error('unsupported'); }));
+    const file = new File([avifBytes], 'photo.avif', { type: 'image/avif' });
+    await expect(ingestFile(file)).rejects.toMatchObject({ kind: 'decode-unsupported' });
   });
 });
 

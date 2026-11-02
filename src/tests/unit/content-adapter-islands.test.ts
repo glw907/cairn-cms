@@ -32,7 +32,7 @@ function adapterWith(rendering: CairnAdapter['rendering']): CairnAdapter {
 describe('defineAdapter island consistency', () => {
   it('throws when a hydrate component has no island entry', () => {
     const blocks = [{ name: 'poll', label: '', description: '', hydrate: true, build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }) }] satisfies BlockDef[];
-    expect(() => defineAdapter(adapterWith(baseRendering(blocks)))).toThrow(/poll/);
+    expect(() => defineAdapter(adapterWith(baseRendering(blocks)))).toThrow(/block 'poll' declares hydrate/);
   });
 
   it('refuses a reserved block name at boot, for a site that hand-writes render', () => {

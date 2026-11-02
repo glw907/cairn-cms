@@ -14,7 +14,7 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
   const hydrated = new Set((rendering.blocks ?? []).filter((d) => d.hydrate).map((d) => d.name));
   for (const name of hydrated) {
     if (!(name in islands)) {
-      throw new Error(`cairn: component '${name}' declares hydrate but rendering.islands has no entry for it.`);
+      throw new Error(`cairn: block '${name}' declares hydrate but rendering.islands has no entry for it.`);
     }
   }
   for (const name of Object.keys(islands)) {

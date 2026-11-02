@@ -250,15 +250,15 @@ or extend it; nothing here is a literal a re-skin would miss.
     </div>
   </section>
 
-  <!-- 3b. The directive components. One sample per registry entry, from its `preview`, rendered by
+  <!-- 3b. The blocks. One sample per registry entry, from its `preview`, rendered by
        the load through the adapter `render`. An entry that declares no `preview` is named below the
-       samples instead, so a new component is never silently absent. -->
+       samples instead, so a new block is never silently absent. -->
   <section class="sg-section" aria-labelledby="sg-directives">
-    <h2 id="sg-directives" class="sg-h2">Directive components</h2>
+    <h2 id="sg-directives" class="sg-h2">Blocks</h2>
     <p class="sg-note">
-      One sample for each component this site registers, taken from the component's
-      <code>preview</code> and run through the same <code>render</code> as the sample above. A component
-      added to the registry appears here with no edit to this page.
+      One sample for each block this site registers, taken from the block's
+      <code>preview</code> and run through the same <code>render</code> as the sample above. A block added
+      to the registry appears here with no edit to this page.
     </p>
     {#each data.blocks as sample (sample.name)}
       <!-- A sample is a separate section, labeled by the h3, so the heading level a sample's

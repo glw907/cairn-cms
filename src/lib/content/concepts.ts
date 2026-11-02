@@ -235,8 +235,9 @@ export function normalizeConcepts(
       // standalone object a site may share across concepts, so it cannot supply one itself.
       validate: (frontmatter, body) => {
         const result = fs.validate(frontmatter, body, id);
-        // An undeclared draft is still read by the engine as a flag, so a non-boolean one is refused.
-        if (!result.ok || 'draft' in fs.fields) return result;
+        // The engine reads `draft` as a flag whatever kind the concept declares it as (or none), so a
+        // non-boolean one is refused unless a declared boolean field already checked it.
+        if (!result.ok || fs.fields.draft?.type === 'boolean') return result;
         const draft = DRAFT_FLAG.validate(frontmatter, body, id);
         return draft.ok ? result : draft;
       },

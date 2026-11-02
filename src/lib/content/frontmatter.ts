@@ -347,8 +347,9 @@ export function formValues(
 
 /**
  * Reassemble a markdown file from frontmatter and body for committing. A single-quoted scalar keeps a
- * significant string's committed shape (`author: '123'`), and an unlimited line width keeps every
- * scalar on the one line the byte-preserving rewriters read. An empty record writes the body alone.
+ * significant string's committed shape (`author: '123'`), and an unlimited line width keeps a scalar
+ * with no newline on the one line the byte-preserving rewriters read (a string holding a newline
+ * writes as a block scalar). An empty record writes the body alone.
  */
 export function serializeMarkdown(frontmatter: object, body: string): string {
   const yaml = stringify(frontmatter, { singleQuote: true, lineWidth: 0 });

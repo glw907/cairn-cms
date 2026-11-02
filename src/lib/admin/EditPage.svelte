@@ -332,9 +332,9 @@ island.
   // the same condition the button's aria-disabled reads.
   let publishButton = $state<HTMLButtonElement | null>(null);
 
-  // A required field hidden from the browser's validation report cannot take it: an invisible
+  // An invalid field hidden from the browser's validation report cannot take it: an invisible
   // control is unfocusable, so the browser cancels the save silently with no message. Two surfaces
-  // can hide a required field, so this capture-phase invalid listener reveals whichever holds the
+  // can hide an invalid field, so this capture-phase invalid listener reveals whichever holds the
   // invalid control before the report that follows fires. A field in the write pane needs Preview
   // flipped back to Write; a field in the details slide-over needs the panel opened. flushSync
   // forces the reveal inside the event, so the report lands on a now-visible control.
@@ -1523,6 +1523,11 @@ island.
   // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
   // adapters use that name); everything else is a Details field.
   const titleField = $derived(data.fields.find((f) => f.name === 'title'));
+  // The hoisted title input takes the same length bounds FieldInput renders: `length` sets both,
+  // otherwise `min` and `max`. Only the text and textarea kinds declare them.
+  const titleBounds = $derived(
+    titleField?.type === 'text' || titleField?.type === 'textarea' ? titleField : undefined,
+  );
   const draftField = $derived(data.fields.find((f) => f.type === 'boolean' && f.name === 'draft'));
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
@@ -1997,6 +2002,8 @@ island.
           placeholder={titleField.label}
           aria-label={titleField.label}
           required={titleField.required}
+          minlength={titleBounds?.length ?? titleBounds?.min}
+          maxlength={titleBounds?.length ?? titleBounds?.max}
         />
       </div>
     {/if}

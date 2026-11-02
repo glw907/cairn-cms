@@ -323,6 +323,33 @@ describe('FieldInput renders length and date bounds as input attributes', () => 
     expect(el.hasAttribute('maxlength')).toBe(false);
   });
 
+  it('sets minlength from a text field min', async () => {
+    const el = await control({ type: 'text', name: 'f', label: 'F', min: 2 }, 'input[name="f"]');
+    expect(el.getAttribute('minlength')).toBe('2');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+  });
+
+  it('sets maxlength from a textarea max', async () => {
+    const el = await control({ type: 'textarea', name: 'g', label: 'G', max: 9 }, 'textarea[name="g"]');
+    expect(el.getAttribute('maxlength')).toBe('9');
+    expect(el.hasAttribute('minlength')).toBe(false);
+  });
+
+  it('sets both lengths from a textarea length', async () => {
+    const el = await control({ type: 'textarea', name: 'h', label: 'H', length: 5 }, 'textarea[name="h"]');
+    expect(el.getAttribute('minlength')).toBe('5');
+    expect(el.getAttribute('maxlength')).toBe('5');
+  });
+
+  it('lets length win over min and max', async () => {
+    const t = await control({ type: 'textarea', name: 'i', label: 'I', length: 5, min: 2, max: 9 }, 'textarea[name="i"]');
+    expect(t.getAttribute('minlength')).toBe('5');
+    expect(t.getAttribute('maxlength')).toBe('5');
+    const i = await control({ type: 'text', name: 'j', label: 'J', length: 5, min: 2, max: 9 }, 'input[name="j"]');
+    expect(i.getAttribute('minlength')).toBe('5');
+    expect(i.getAttribute('maxlength')).toBe('5');
+  });
+
   it('sets min and max on a date input', async () => {
     const el = await control({ type: 'date', name: 'd', label: 'D', min: '2026-01-01', max: '2026-12-31' }, 'input[name="d"]');
     expect(el.getAttribute('min')).toBe('2026-01-01');

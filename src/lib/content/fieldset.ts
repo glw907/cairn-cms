@@ -13,7 +13,6 @@ import { log } from '../log/index.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
-/** Accept a single address conservatively: exactly one at-sign and a dotted domain, nothing more. */
 
 /**
  * Function-valued behavior a field descriptor cannot carry as plain data, keyed by field name. A

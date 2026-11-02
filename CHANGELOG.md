@@ -642,15 +642,17 @@
   opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
   frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
   file. YAML 1.2 replaces the old dialect: `10:30` is the string `10:30` (it was 630), `0755` is 755 (it
-  was 493), `0o755` is 493 (it was a string), and a `<<` merge key no longer merges. A save writes
-  single-quoted scalars on one line each (an unlimited line width), so a bare date loses its quotes
+  was 493), `0o755` is 493 (it was a string), `1_000` is a string (it was 1000), `0b11` is a string
+  (it was 3), and a `<<` merge key no longer merges. A save writes single-quoted scalars (an unlimited
+  line width, so a scalar with no newline stays on one line; a string holding a newline writes as a
+  block scalar), so a bare date loses its quotes
   and `references.ts` stops quoting a date-shaped id. A comparison over four sites' content found
   no value that changed apart from dates read as text.
 
-  Consumers must: read a `date` or any other frontmatter value as text, not a `Date`, in your code
+  Consumers must: read a date value as text, in any key, not a `Date`, in your code
   and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
   `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
-  block, or a `10:30`, `0755`, or `<<` value, and write what you mean. Expect a first admin save to
+  block, or a `10:30`, `0755`, `0o755`, `1_000`, `0b11`, or `<<` value, and write what you mean. Expect a first admin save to
   rewrite a hand-written block into the single-quoted form.
 
 - **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
@@ -667,11 +669,16 @@
   it.** `true` stores `true`. `false`, an empty value, and an absent key omit the value. Anything else,
   such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
   read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
-  declares no `draft` field runs the raw key through the same rule. A directive's boolean attribute is
+  declares no `draft` field runs the raw key through the same rule, and `draft` must be boolean whatever
+  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's boolean attribute is
   unaffected, since it is already a real boolean. Jekyll's `published: false` is still not read.
 
-  Consumers must: fix each `draft` that is not `true`, `false`, or empty; the build names the file.
-  Map any other draft marker to `draft: true`.
+  Consumers must: fix each `draft` and each value of a declared `boolean` field that is not `true`,
+  `false`, or empty, such as `featured: "true"` or `pinned: yes`; the build names the file, and such an
+  entry leaves the manifest and the admin's concept list with one `content.entry_invalid` log line, as in
+  the entry above. Map any other draft marker to `draft: true`. If you call `validate` by hand, pass a
+  real boolean or an empty value: a raw form string such as `'on'` is now refused where it used to read
+  as unset.
 
 - **`creatable` widens a multiselect's set.** A `multiselect` with `creatable: true` keeps a value
   outside `options` on save, and its inferred type is `string[]` instead of the union of `options`. Before,

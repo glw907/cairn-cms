@@ -363,11 +363,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     {/if}
   </div>
 {:else}
-  <!-- The plain single-line text input arm: url and the text fallback. They share
-       one shape and differ only in the input type inputType() resolves. -->
+  <!-- The plain single-line text input arm: url, text, and an icon field with no icon set. They
+       differ in the input type, and only text carries length bounds. -->
+  {@const bounds = field.type === 'text' ? field : undefined}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>
-    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={field.type === 'text' ? (field.length ?? field.min) : undefined} maxlength={field.type === 'text' ? (field.length ?? field.max) : undefined} />
+    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={bounds?.length ?? bounds?.min} maxlength={bounds?.length ?? bounds?.max} />
     {#if field.help}
       {@render fieldHint(hintBase, field.help)}
     {/if}

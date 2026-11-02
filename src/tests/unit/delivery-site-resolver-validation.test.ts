@@ -96,4 +96,17 @@ describe('createSiteResolver validation', () => {
     expect(index.problems()).toHaveLength(1);
     expect(Object.keys(index.problems()[0].errors)).toEqual(['draft']);
   });
+
+  it('refuses a non-boolean draft on a concept that declares draft as text', () => {
+    const d = normalizeConcepts({
+      posts: {
+        dir: 'src/content/posts',
+        routing: 'feed',
+        fields: defineFieldset({ draft: fields.text({ label: 'Draft' }) }),
+      },
+    })[0];
+    const index = createContentIndex(fromGlob({ '/src/content/posts/2024-03-16-q.md': '---\ndraft: "true"\n---\nB.' }), d);
+    expect(index.problems()).toHaveLength(1);
+    expect(Object.keys(index.problems()[0].errors)).toEqual(['draft']);
+  });
 });

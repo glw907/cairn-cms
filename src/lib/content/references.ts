@@ -99,9 +99,8 @@ function commentStart(value: string): number {
  * colon-anchored `frontmatterKeyRange` (so `author` never matches `authored-by:`), and within each
  * line only the value side, an inline `# comment` left intact, is scanned. The token boundary is
  * `(?<![a-z0-9-])`/`(?![a-z0-9-])` rather than `\b`, since ids contain hyphens, so a substring id is
- * not matched. A `newId` that would not reparse as a YAML string (`true`, `123`, a date-shaped
- * `2026-01-02`) is written single-quoted, otherwise a raw substitution reparses as a boolean, number,
- * or Date and `coerceToText`/`extractReferenceEdges` silently drop the edge. When the matched `oldId`
+ * not matched. A `newId` that would not reparse as a YAML string (`true`, `123`) is written
+ * single-quoted, otherwise a raw substitution reparses as a boolean or number and `coerceToText`/`extractReferenceEdges` silently drop the edge. When the matched `oldId`
  * is itself wrapped in an existing quote pair (the form serializeMarkdown commits a significant id in,
  * `author: '123'`), the splice extends over both quote bytes so the self-quoting replacement does not
  * nest a second pair into invalid `''true''`. A leading BOM, every

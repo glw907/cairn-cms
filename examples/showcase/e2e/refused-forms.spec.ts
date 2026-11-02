@@ -223,7 +223,8 @@ test('Nav: a double click on Save sends one POST', async ({ page }) => {
   );
   let posts = 0;
   page.on('request', (request) => {
-    if (request.method() === 'POST' && isAction(new URL(request.url()), '/admin/nav', 'save')) posts++;
+    if (request.method() === 'POST' && isAction(new URL(request.url()), '/admin/nav', 'save'))
+      posts++;
   });
 
   await page.getByRole('button', { name: 'Save navigation' }).dblclick();

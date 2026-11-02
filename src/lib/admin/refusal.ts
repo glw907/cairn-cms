@@ -1,6 +1,6 @@
 // cairn-cms: the shared parts of an admin form that answers a refusal in place. Internal to the
 // admin screens; a plain module, so the pending flag stays a `$state` the screen owns.
-import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+import type { ActionResult, SubmitFunction } from '$app/forms';
 
 /** What an admin form says when the request itself failed: a thrown fetch, an action that threw, or a non-JSON answer. */
 export const FAILURE_NOTICE = 'That did not go through. Your text is still here; please try again.';

@@ -260,7 +260,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
     const screen = await render(ManageEditors, props([owner], null));
     // The row arrives after mount, so its options are created on the client.
     await screen.rerender(props([owner, webmaster], null));
-    const select = screen.container.querySelector<HTMLSelectElement>('select[aria-label="Change role for Web Master"]')!;
+    const select = screen.container.querySelector('select[aria-label="Change role for Web Master"]') as unknown as HTMLSelectElement;
     expect(select.value).toBe('webmaster');
     select.value = 'staff';
     select.closest('form')!.requestSubmit();

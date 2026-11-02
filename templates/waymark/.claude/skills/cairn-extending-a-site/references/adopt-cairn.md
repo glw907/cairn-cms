@@ -34,8 +34,8 @@ Contents:
    and `siteConfig = parseSiteConfig(siteYaml)` (imported with `?raw`). Declare a field for every
    frontmatter key the content keeps (`references/content-model.md`). `backend` takes
    `createGithubApp({ owner, repo, branch, appId, installationId })`; until production these are
-   placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` forwards to
-   `createRenderer(defineRegistry({ components: [] })).renderMarkdown(body, { resolve, resolveMedia, resolveFragment })`.
+   placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` is
+   `createRenderer({ components }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
 3. `src/lib/content.ts`: one literal eager `?raw` glob per concept into `createSiteIndexes`, with
    validation left on; export `site` and an `origin` constant.
 4. `vite.config.ts`: `cairnManifest({ configModule: '/src/lib/cairn.config.ts', content: { posts: '/src/content/posts/*.md' } })`

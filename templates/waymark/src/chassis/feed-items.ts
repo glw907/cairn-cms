@@ -49,7 +49,7 @@ export async function feedItemsFrom({
       summary: p.excerpt,
       contentHtml: await render({
         body: posts.byId(p.id)!.body,
-        resolve,
+        resolveLink: resolve,
         resolveMedia: resolveAbsoluteMedia,
         resolveFragment,
       }),

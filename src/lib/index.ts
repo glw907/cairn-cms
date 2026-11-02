@@ -107,10 +107,9 @@ export type { IconSet } from './render/glyph.js';
 // not public: createRenderer is the one public render pipeline, so the safe plugin ordering is
 // the only public path.
 export { createRenderer } from './render/pipeline.js';
-// `createRenderer`'s returned `renderMarkdown`/`renderDocument` name `ResolveOptions` in their
-// `opts` parameter.
-export type { RendererConfig, Renderer, DocHeading, ResolveOptions } from './render/pipeline.js';
-// The `::include` fragment resolver type: `renderMarkdown`'s `resolveFragment` option and
+// `Renderer`'s `render`/`renderDocument` name `RenderInput`, which spreads `ResolveOptions`.
+export type { RendererConfig, Renderer, RenderInput, DocHeading, ResolveOptions } from './render/pipeline.js';
+// The `::include` fragment resolver type: `RenderInput.resolveFragment` and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';
 // `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their `resolveMedia` option;

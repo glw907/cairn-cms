@@ -99,15 +99,15 @@ const DOC = [
 
 describe('render pipeline characterization', () => {
   it('produces byte-identical HTML for a representative directive document', async () => {
-    const { renderMarkdown } = createRenderer(registry);
-    const html = await renderMarkdown(DOC);
+    const { render } = createRenderer({ components: registry });
+    const html = await render({ body: DOC });
     expect(html).toMatchSnapshot();
   });
 
   it('is stable across renders (no per-run nondeterminism)', async () => {
-    const { renderMarkdown } = createRenderer(registry);
-    const a = await renderMarkdown(DOC);
-    const b = await renderMarkdown(DOC);
+    const { render } = createRenderer({ components: registry });
+    const a = await render({ body: DOC });
+    const b = await render({ body: DOC });
     expect(a).toBe(b);
   });
 });

@@ -19,7 +19,7 @@ Contents:
 On a scaffold, components live in `src/theme/markdown-components.ts` and the adapter builds the
 registry from its exported `components` list. Adding one takes two edits there: the
 `defineComponent` call and an entry in `components`. A hand-built site passes
-`defineRegistry({ components })` to `createRenderer`, sets `rendering.components`, and passes
+`defineRegistry({ components })` to `createRenderer` as `components`, sets `rendering.components`, and passes
 `registry={cairn.rendering.components}` to `CairnAdmin` (no registry, no **Insert block** button).
 
 - `name`, `label`, `description`, `build` are required. `figure` and `include` are reserved.

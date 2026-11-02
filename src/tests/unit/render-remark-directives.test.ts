@@ -92,7 +92,7 @@ describe('icon attribute round-trip', () => {
         }),
       ],
     });
-    await createRenderer(iconReg).renderMarkdown(':::badge{icon=flag}\nbody\n:::');
+    await createRenderer({ components: iconReg }).render({ body: ':::badge{icon=flag}\nbody\n:::' });
     expect(seen[0]).toBe('flag');
   });
 });

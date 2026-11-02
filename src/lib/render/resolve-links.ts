@@ -1,6 +1,6 @@
 // cairn-cms: the cairn: link resolver, an mdast step in the render pipeline (content-graph design).
 // It runs before remark-rehype, so the rewritten href passes through the sanitize floor exactly as
-// any other anchor. The per-call resolver is read off the VFile (set by renderMarkdown), so the
+// any other anchor. The per-call resolver is read off the VFile (set by render), so the
 // processor is still built once. A miss either marks the link broken (preview) or throws (build),
 // decided by the injected resolver.
 import { visit } from 'unist-util-visit';

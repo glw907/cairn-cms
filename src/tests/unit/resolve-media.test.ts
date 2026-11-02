@@ -43,43 +43,37 @@ const noDimsManifest: MediaManifest = {
   },
 };
 
-const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+const { render } = createRenderer();
 
 describe('cairn media resolution', () => {
   it('rewrites a media token to the canonical delivery path', async () => {
     const resolveMedia = createMediaResolver(manifest, resolved);
-    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
     expect(html).not.toContain('media:');
   });
   it('resolves the bare-hash form to the canonical slug from the manifest entry', async () => {
     const resolveMedia = createMediaResolver(manifest, resolved);
-    const html = await renderMarkdown('![shoes](media:a1b2c3d4e5f6a7b8)', { resolveMedia });
+    const html = await render({ body: '![shoes](media:a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
   });
   it('serves the bare full-size path when transformations are off', async () => {
     // The default resolved config has transformations: false, so a fresh zone without Image
     // Transformations serves the full-size delivery path rather than a dead /cdn-cgi/image URL.
     const resolveMedia = createMediaResolver(manifest, resolved);
-    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
     expect(html).not.toContain('/cdn-cgi/image');
   });
   it('marks an unknown hash with the broken-media class and does not throw', async () => {
     const resolveMedia = createMediaResolver({}, resolved);
-    const html = await renderMarkdown('![gone](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![gone](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('cairn-broken-media');
     expect(html).toContain('title="Missing media asset"');
   });
   it('leaves a non-media image src untouched', async () => {
     const resolveMedia = createMediaResolver(manifest, resolved);
-    const html = await renderMarkdown('![ext](https://example.com/y.png)', { resolveMedia });
+    const html = await render({ body: '![ext](https://example.com/y.png)', resolveMedia });
     expect(html).toContain('src="https://example.com/y.png"');
   });
   it('leaves a media token inert when no resolver is provided', async () => {
@@ -88,16 +82,14 @@ describe('cairn media resolution', () => {
     // admits media on no protocol allowlist), so the inert image carries neither a path nor the
     // broken-media marker. This is the asymmetry with the cairn: link case, whose href survives the
     // floor because the schema admits the cairn href scheme.
-    const html = await renderMarkdown('![x](media:blue-running-shoes.a1b2c3d4e5f6a7b8)');
+    const html = await render({ body: '![x](media:blue-running-shoes.a1b2c3d4e5f6a7b8)' });
     expect(html).not.toContain('/media/');
     expect(html).not.toContain('cairn-broken-media');
   });
   it('threads a custom publicBase from the resolved config into the delivery path', async () => {
     const customBase = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/assets' });
     const resolveMedia = createMediaResolver(manifest, customBase);
-    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('src="/assets/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
   });
 });
@@ -105,9 +97,7 @@ describe('cairn media resolution', () => {
 describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
   it('managed media with known dimensions, transformations off: emits width/height only', async () => {
     const resolveMedia = createMediaResolver(manifest, resolved);
-    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('width="1600"');
     expect(html).toContain('height="1200"');
     expect(html).not.toContain('srcset=');
@@ -117,9 +107,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
   it('managed media with known dimensions, transformations on: emits width/height and a width-ladder srcset', async () => {
     const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
     const resolveMedia = createMediaResolver(manifest, transformsOn);
-    const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
-      resolveMedia,
-    });
+    const html = await render({ body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', resolveMedia });
     expect(html).toContain('width="1600"');
     expect(html).toContain('height="1200"');
     expect(html).toContain(
@@ -135,7 +123,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
   it('managed media with no recorded dimensions: emits neither width/height nor srcset, even with transformations on', async () => {
     const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
     const resolveMedia = createMediaResolver(noDimsManifest, transformsOn);
-    const html = await renderMarkdown('![scan](media:unknown-size.b2c3d4e5f6a7b8a1)', { resolveMedia });
+    const html = await render({ body: '![scan](media:unknown-size.b2c3d4e5f6a7b8a1)', resolveMedia });
     expect(html).toContain('src="/media/unknown-size.b2c3d4e5f6a7b8a1.png"');
     expect(html).not.toContain('width=');
     expect(html).not.toContain('height=');
@@ -145,7 +133,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
 
   it('raw external URL: gains no width/height/srcset (the engine cannot derive variants for it)', async () => {
     const resolveMedia = createMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true }));
-    const html = await renderMarkdown('![ext](https://example.com/y.png)', { resolveMedia });
+    const html = await render({ body: '![ext](https://example.com/y.png)', resolveMedia });
     expect(html).toBe('<p><img src="https://example.com/y.png" alt="ext"></p>');
   });
 });

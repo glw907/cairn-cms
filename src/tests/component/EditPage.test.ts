@@ -381,10 +381,10 @@ describe('EditPage', () => {
   });
 
   it('the floored render pipeline strips a dangerous payload in the preview', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({ body: 'safe text\n\n<img src=x onerror="alert(1)">' }),
-      render: ({ body }: Parameters<SiteRender>[0]) => renderMarkdown(body),
+      render: ({ body }: Parameters<SiteRender>[0]) => renderMd({ body }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -393,13 +393,13 @@ describe('EditPage', () => {
   });
 
   it('resolves cairn links in the preview, marking a missing target broken', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: '[about](cairn:pages/about) and [gone](cairn:pages/gone)',
         linkTargets: [{ concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false }],
       }),
-      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: Parameters<SiteRender>[0]) => renderMd({ body, resolveLink, resolveMedia }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -408,7 +408,7 @@ describe('EditPage', () => {
   });
 
   it('resolves a media reference in the preview to its delivery path', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)',
@@ -416,9 +416,9 @@ describe('EditPage', () => {
           a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
         },
       }),
-      // The stub threads resolveMedia into the real renderMarkdown, so the assertion exercises the
+      // The stub threads resolveMedia into the real render, so the assertion exercises the
       // live resolve path the way EditPage wires it.
-      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: Parameters<SiteRender>[0]) => renderMd({ body, resolveLink, resolveMedia }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -428,7 +428,7 @@ describe('EditPage', () => {
   });
 
   it('resolves a preview media reference under the shell-provided media base', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: '![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)',
@@ -436,7 +436,7 @@ describe('EditPage', () => {
           a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
         },
       }),
-      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: Parameters<SiteRender>[0]) => renderMd({ body, resolveLink, resolveMedia }),
     };
     const screen = await render(EditPage, {
       props,
@@ -450,13 +450,13 @@ describe('EditPage', () => {
   });
 
   it('resolves an ::include directive in the preview from fragmentTargets', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: 'Before.\n\n::include{fragment="welcome"}',
         fragmentTargets: [{ id: 'welcome', title: 'Welcome', body: 'Included fragment content.' }],
       }),
-      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMd({ body, resolveFragment }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -464,13 +464,13 @@ describe('EditPage', () => {
   });
 
   it('marks a spliced include with the preview-only boundary cue, naming the fragment title', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: 'Before.\n\n::include{fragment="welcome"}',
         fragmentTargets: [{ id: 'welcome', title: 'Welcome banner', body: 'Included fragment content.' }],
       }),
-      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMd({ body, resolveFragment }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -481,13 +481,13 @@ describe('EditPage', () => {
   });
 
   it("falls back to the fragment id in the boundary cue's eyebrow when no title resolves", async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: '::include{fragment="welcome"}',
         fragmentTargets: [{ id: 'welcome', title: '', body: 'Included fragment content.' }],
       }),
-      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMd({ body, resolveFragment }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -496,13 +496,13 @@ describe('EditPage', () => {
   });
 
   it('shows the missing-fragment notice in the preview for a dangling include', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({
         body: '::include{fragment="gone"}',
         fragmentTargets: [],
       }),
-      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMd({ body, resolveFragment }),
     };
     const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -550,10 +550,10 @@ describe('EditPage', () => {
         }),
     } as unknown as Response);
 
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render: renderMd } = createRenderer();
     const props = {
       ...postProps({ body: '', mediaTargets: {} }),
-      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: Parameters<SiteRender>[0]) => renderMd({ body, resolveLink, resolveMedia }),
     };
     const screen = await render(EditPage, props);
 

@@ -24,6 +24,6 @@ describe('resolvePermalink', () => {
     expect(() => resolvePermalink(desc('/:year/:slug'), { id: 'x', slug: 'x' })).toThrow();
   });
   it('throws on an unknown token', () => {
-    expect(() => resolvePermalink(desc('/:nope'), { id: 'x', slug: 'x' })).toThrow();
+    expect(() => resolvePermalink(desc('/:nope'), { id: 'x', slug: 'x' })).toThrow(/:slug, :year, :month, :day/);
   });
 });

@@ -35,6 +35,7 @@ export class NavValidationError extends CairnError {
   constructor(message: string) {
     super('config.site-config-invalid', { message });
     this.name = 'NavValidationError';
+    this.message = message;
   }
 }
 
@@ -224,6 +225,7 @@ export class TidyConventionsError extends CairnError {
   constructor(message: string) {
     super('config.site-config-invalid', { message });
     this.name = 'TidyConventionsError';
+    this.message = message;
   }
 }
 
@@ -298,6 +300,7 @@ export class SiteConfigError extends CairnError {
   constructor(message: string) {
     super('config.site-config-invalid', { message });
     this.name = 'SiteConfigError';
+    this.message = message;
   }
 }
 

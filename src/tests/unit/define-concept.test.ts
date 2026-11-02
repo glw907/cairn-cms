@@ -22,7 +22,7 @@ describe('defineConcept', () => {
     expect(() => defineConcept({ ...base, datePrefix: 'week' as never })).toThrow(/year, month, day/); // idioms-allow: as-never  feeds the runtime guard an out-of-range datePrefix
   });
   it('throws on an unknown permalink token', () => {
-    expect(() => defineConcept({ ...base, permalink: '/:category/:slug' })).toThrow('unknown token ":category"');
+    expect(() => defineConcept({ ...base, permalink: '/:category/:slug' })).toThrow('unknown token ":category"; use one of :slug, :year, :month, :day');
   });
   it("accepts the reference sites' valid dated policies", () => {
     expect(() =>

@@ -449,7 +449,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   checkTaxonomyMarker(record);
   checkContainerNesting(record);
   for (const key of Object.keys(config.behavior ?? {})) {
-    if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field.`);
+    if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field; declared fields: ${Object.keys(record).join(", ")}.`);
   }
   // Compile each text/textarea pattern once at construction, so a malformed pattern fails loudly here
   // (mirroring v1's compilePatterns) rather than on every save. Keyed by the structural path

@@ -17,6 +17,7 @@ describe('validateNavLayout: construction throws', () => {
   it('rejects an unknown screen id', () => {
     const layout: NavLayout = [{ screen: 'bogus' }];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/unknown screen "bogus"/);
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/use one of .*media.*help/);
   });
 
   it('rejects a duplicate engine reference, a hidden one counted the same as a visible one', () => {
@@ -26,7 +27,7 @@ describe('validateNavLayout: construction throws', () => {
 
   it('rejects "nav" referenced with no navMenu configured', () => {
     const layout: NavLayout = [{ screen: 'nav' }];
-    expect(() => validateNavLayout(layout, ctx({ navMenuConfigured: false }))).toThrow(/navMenu/);
+    expect(() => validateNavLayout(layout, ctx({ navMenuConfigured: false }))).toThrow(/navMenu.*editor\.nav.*NavMenuConfig/);
   });
 
   it('accepts "nav" once a navMenu is configured', () => {

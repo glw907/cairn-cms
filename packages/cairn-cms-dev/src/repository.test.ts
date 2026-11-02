@@ -37,6 +37,7 @@ beforeEach(() => {
     writeFileSync(join(root, path), content);
   }
   vi.spyOn(process, 'cwd').mockReturnValue(root);
+  vi.stubGlobal('navigator', { userAgent: 'Node.js' });
 });
 
 afterEach(() => {

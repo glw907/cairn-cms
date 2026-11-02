@@ -162,7 +162,7 @@ function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean,
     for (const match of pattern.matchAll(/:(\w+)/g)) {
       const token = match[1];
       if (!KNOWN_TOKENS.has(token)) {
-        throw new Error(`cairn: concept "${id}" permalink "${pattern}" uses unknown token ":${token}"`);
+        throw new Error(`cairn: concept "${id}" permalink "${pattern}" uses unknown token ":${token}"; use one of :slug, :year, :month, :day`);
       }
       if (DATE_TOKENS.has(token) && !dated) {
         throw new Error(
@@ -208,7 +208,7 @@ export function normalizeConcepts(
     const undeclared = summaryFields.find((key) => !declared.has(key));
     if (undeclared !== undefined) {
       throw new Error(
-        `cairn: concept "${id}" summaryFields key "${undeclared}" is not a declared field`,
+        `cairn: concept "${id}" summaryFields key "${undeclared}" is not a declared field; declared fields: ${[...declared].join(", ")}`,
       );
     }
     // A reference (or array of reference) field names the concept it targets. Validate that concept at

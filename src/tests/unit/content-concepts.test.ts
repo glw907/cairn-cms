@@ -235,7 +235,7 @@ describe('normalizeConcepts URL policy', () => {
           summaryFields: ['description'],
         },
       }),
-    ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field');
+    ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field; declared fields: title');
   });
 
   it('accepts a summaryFields key that names a declared field, guarding the Set-of-keys derivation', () => {

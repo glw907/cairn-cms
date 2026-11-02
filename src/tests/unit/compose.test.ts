@@ -88,7 +88,7 @@ describe('composeRuntime: an access rule naming an undeclared role', () => {
       const runtime = compose();
       expect(typeof createAuthGuard({ runtime })).toBe('function');
       expect(() => createContentRoutes({ runtime })).not.toThrow();
-      const handle: Handle = devBackendHandle({ runtime });
+      const handle: Handle = devBackendHandle({ runtime, content: 'fixtures' });
       const event = { url: new URL('http://localhost/admin/staff'), locals: {} as Record<string, unknown> };
       await handle({ event: event as unknown as Parameters<Handle>[0]['event'], resolve: async () => new Response('ok') });
       expect(event.locals.cairnAccess).toBe(access);

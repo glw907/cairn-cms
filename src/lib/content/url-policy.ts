@@ -49,6 +49,6 @@ export function resolvePermalink(
       if (token === 'month') return pad(Number(parts.month));
       return pad(Number(parts.day));
     }
-    throw new Error(`cairn: permalink pattern "${descriptor.permalink}" uses unknown token :${token}`);
+    throw new Error(`cairn: permalink pattern "${descriptor.permalink}" uses unknown token :${token}; use one of :slug, :year, :month, :day`);
   });
 }

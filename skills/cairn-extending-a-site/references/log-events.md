@@ -4,6 +4,11 @@ Every engine record is one JSON line: the envelope `level`, `event`, `timestamp`
 below. An event name is a stable contract (a rename is a breaking change), so key queries and alerts
 on it. No record carries a sign-in token, a session id, or a link's contents. Records carry an
 editor's email; `audit.sink.write_failed`'s `actor` is whatever identity the caller passed.
+
+Outside Workers (`vite dev`, a Node script) a record prints as one JSON line, so a value `JSON.stringify`
+cannot carry prints as it does there: an `Error` or `Headers` value as `{}`, a `BigInt` as the
+`fields: '<unserializable>'` fallback record. A key below the redaction cap (three levels) prints in
+full. On Workers a record stays an object, which Workers Logs indexes by field.
 `references/debug.md` is the procedure that reads this table.
 
 Contents:

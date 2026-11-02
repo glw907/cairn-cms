@@ -278,10 +278,10 @@ export function validateNavLayout(
 
   function checkEngineRef(ref: NavLayoutEngineRef): void {
     if (!knownScreens.has(ref.screen)) {
-      throw new Error(`navLayout: unknown screen "${ref.screen}"`);
+      throw new Error(`navLayout: unknown screen "${ref.screen}"; use one of ${[...knownScreens].join(", ")}`);
     }
     if (ref.screen === 'nav' && !ctx.navMenuConfigured) {
-      throw new Error('navLayout: screen "nav" is referenced but no navMenu is configured');
+      throw new Error('navLayout: screen "nav" is referenced but no navMenu is configured; set editor.nav (a NavMenuConfig) on the adapter, or drop the "nav" screen from navLayout');
     }
     if (seenScreens.has(ref.screen)) {
       throw new Error(`navLayout: screen "${ref.screen}" is referenced more than once`);

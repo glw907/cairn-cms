@@ -192,6 +192,13 @@ describe('SiteConfigError', () => {
   });
 });
 
+describe('editor-facing validation errors', () => {
+  it('keep the message exactly as thrown, without the registry remediation', () => {
+    expect(new NavValidationError('too deep').message).toBe('too deep');
+    expect(new SiteConfigError('bad').conditionId).toBe('config.site-config-invalid');
+  });
+});
+
 describe('readMenu', () => {
   it('returns the named menu validated', () => {
     const config = parseSiteConfig('siteName: S\nmenus:\n  primary:\n    - label: Home\n      url: /\n');

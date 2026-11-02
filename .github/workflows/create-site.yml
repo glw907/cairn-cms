@@ -24,7 +24,8 @@ permissions:
 jobs:
   create-site:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Thirty minutes: the job also runs the two dev-fold steps folded in from the retired scaffold workflow.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

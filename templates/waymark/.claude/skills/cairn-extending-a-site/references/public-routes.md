@@ -44,7 +44,7 @@ export const entries: EntryGenerator = () => routes.entries();
 export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 ```
 
-The page renders `CairnHead` (`@glw907/cairn-cms/delivery/head`) with `seo={data.seo}`, then
+The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`, then
 `{@html data.html}`. `titleTemplate` applies only when `title` is undefined.
 
 To show reference fields, return `references` from the same load:

@@ -4,7 +4,7 @@
 // `SiteResolver.byPermalink`, folding in the rendered html, seo, and hero this layer derives, or
 // throws a 404 on a miss. `entries` enumerates the prerender paths. The resolver is built in site
 // code from globs, so it stays in the prerender graph and out of the runtime Worker.
-import { error } from '@sveltejs/kit';
+// `@sveltejs/kit` loads only on a 404 path, so `/delivery` imports under plain Node with no kit.
 import type { ContentSummary, ContentEntry } from './content-index.js';
 import type { SiteResolver } from './site-resolver.js';
 import { buildSeoMeta } from './seo.js';
@@ -222,7 +222,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   /** One entry by request path, rendered through the site renderer, or a 404. */
   async function entryLoad(event: { url: URL }): Promise<EntryData> {
     const entry = site.byPermalink(event.url.pathname);
-    if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
+    if (!entry) throw (await import('@sveltejs/kit')).error(404, `Not found: ${event.url.pathname}`);
     return composeEntryData(config, entry);
   }
 
@@ -265,7 +265,9 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
   async function markdownLoad(event: { url: URL }): Promise<{ body: string }> {
     const path = event.url.pathname.replace(/\.md$/, '');
     const entry = site.byPermalink(path);
-    if (!entry || isNoindex(entry.frontmatter)) throw error(404, `Not found: ${event.url.pathname}`);
+    if (!entry || isNoindex(entry.frontmatter)) {
+      throw (await import('@sveltejs/kit')).error(404, `Not found: ${event.url.pathname}`);
+    }
     return { body: entry.body };
   }
 

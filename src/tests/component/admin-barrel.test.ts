@@ -22,7 +22,7 @@ describe('admin barrel', () => {
 });
 
 describe('public barrel', () => {
-  it('exports exactly PreviewBanner', () => {
-    expect(Object.keys(pub)).toEqual(['PreviewBanner']);
+  it('exports exactly CairnHead and PreviewBanner', () => {
+    expect(Object.keys(pub).sort()).toEqual(['CairnHead', 'PreviewBanner']);
   });
 });

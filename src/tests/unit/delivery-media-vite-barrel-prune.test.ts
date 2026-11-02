@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 
-// The seven names the surface-pruning pass demotes from the /delivery and /delivery/data barrels
+// The seven names the surface-pruning pass demotes from the /delivery barrel
 // (Task 4), verbatim from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus
 // `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
 // than demoted; `buildSitemapView` is frozen and unaffected.
@@ -19,8 +19,8 @@ const DELIVERY_DEMOTED = [
   'feedView',
 ];
 
-// The /delivery/data keep list, from the audit verdicts doc's
-// `## ./delivery + ./delivery/head + ./delivery/data` section, minus the seven demotions above.
+// The /delivery keep list, from the audit verdicts doc's delivery section, minus the seven
+// demotions above.
 const DATA_KEPT = [
   'createSiteResolver',
   'SiteResolver',
@@ -56,8 +56,7 @@ const DATA_KEPT = [
   'ResolvedReference',
 ];
 
-// The names /delivery adds on top of the re-exported /delivery/data surface (the route-loader
-// factory and its types), unaffected by this task.
+// The route-loader factory and its types, also on /delivery.
 const DELIVERY_ONLY_KEPT = ['createPublicRoutes', 'PublicRoutesConfig', 'EntryData'];
 
 // The names the pass demotes from the /media barrel, from the plan's Task 4, later additions, and
@@ -108,14 +107,14 @@ const VITE_DEMOTED = [
 
 const VITE_KEPT = ['cairnManifest', 'CairnManifestOptions'];
 
-const DELIVERY_DATA_DTS = resolve(
-  fileURLToPath(new URL('../../../dist/delivery/data.d.ts', import.meta.url)),
-);
 const DELIVERY_DTS = resolve(
   fileURLToPath(new URL('../../../dist/delivery/index.d.ts', import.meta.url)),
 );
 const MEDIA_DTS = resolve(
   fileURLToPath(new URL('../../../dist/media/index.d.ts', import.meta.url)),
+);
+const PUBLIC_DTS = resolve(
+  fileURLToPath(new URL('../../../dist/public/index.d.ts', import.meta.url)),
 );
 const VITE_DTS = resolve(
   fileURLToPath(new URL('../../../dist/vite/index.d.ts', import.meta.url)),
@@ -123,18 +122,9 @@ const VITE_DTS = resolve(
 
 describe('delivery barrel prune', () => {
   it('resolves the packaged dist output', () => {
-    expect(existsSync(DELIVERY_DATA_DTS), 'missing dist/delivery/data.d.ts; run "npm run package" first').toBe(
-      true,
-    );
     expect(existsSync(DELIVERY_DTS), 'missing dist/delivery/index.d.ts; run "npm run package" first').toBe(
       true,
     );
-  });
-
-  it('no longer resolves the demoted names from /delivery/data', () => {
-    const names = new Set(enumerateExports(DELIVERY_DATA_DTS));
-    const stillPresent = DELIVERY_DEMOTED.filter((name) => names.has(name));
-    expect(stillPresent).toEqual([]);
   });
 
   it('no longer resolves the demoted names from /delivery', () => {
@@ -143,16 +133,15 @@ describe('delivery barrel prune', () => {
     expect(stillPresent).toEqual([]);
   });
 
-  it('still resolves every keep-list name from /delivery/data', () => {
-    const names = new Set(enumerateExports(DELIVERY_DATA_DTS));
-    const missing = DATA_KEPT.filter((name) => !names.has(name));
-    expect(missing).toEqual([]);
-  });
-
-  it('still resolves every keep-list name from /delivery, including its own additions', () => {
+  it('still resolves every keep-list name from /delivery, including the route loaders', () => {
     const names = new Set(enumerateExports(DELIVERY_DTS));
     const missing = [...DATA_KEPT, ...DELIVERY_ONLY_KEPT].filter((name) => !names.has(name));
     expect(missing).toEqual([]);
+  });
+
+  it('resolves CairnHead from /public and not from /delivery', () => {
+    expect(enumerateExports(PUBLIC_DTS)).toContain('CairnHead');
+    expect(enumerateExports(DELIVERY_DTS)).not.toContain('CairnHead');
   });
 });
 

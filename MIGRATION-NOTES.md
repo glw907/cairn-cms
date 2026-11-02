@@ -196,6 +196,9 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Import from `/delivery` in place of `/delivery/data`.** The subpath is gone, and `/delivery` now loads under plain Node, so a script can use it directly.
+- **Import `CairnHead` from `/public`.** `/delivery/head` is gone.
+- **Import `ComponentContext` from `@glw907/cairn-cms`.** `/render` is gone, and `/sveltekit` no longer carries the type.
 - **Rename `IdentityRefusal` to `IdentityFailure`.** The type is the refusal arm of `IdentityResolver.resolve`'s return, so change it in any resolver you write. Nothing else changed.
 - **Read `runtime.email` in place of `runtime.sender`, and read the renderer, icons, and media from the adapter.** `CairnRuntime` no longer carries `render`, `icons`, or `assets`. Read `adapter.rendering.render`, `adapter.rendering.icons`, and `adapter.media`, or `runtime.media` for the resolved config. A hand-built runtime in a test drops those keys and renames `sender` to `email`.
 - **Expect `X-Robots-Tag: noindex, nofollow` on every admin response, and `Secure` on the shell's two cookies over HTTPS.** Nothing to change. A test that compares an admin response's full header set gains the one header.

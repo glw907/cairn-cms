@@ -5,11 +5,10 @@
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
-// roots in the current `dist`, by subpath (29 pairs, 26 distinct exports):
+// roots in the current `dist`, by subpath (26 pairs, 26 distinct exports):
 //   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
 //                   defineConcept, defineFieldset, defineRegistry, defineRoles
 //   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
-//   /delivery/data  createFragmentResolver, createLinkResolver, createSiteResolver
 //   /log            createLogger
 //   /media          createMediaResolver
 //   /sveltekit      createAdminAction, createAuthGuard, createAuthRoutes, createCairnAdmin,

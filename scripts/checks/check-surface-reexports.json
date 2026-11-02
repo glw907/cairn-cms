@@ -1,12 +1,5 @@
 {
   "rule": "Every exported name has exactly one canonical home, the subpath whose barrel declares it. A name published from a second subpath is a recorded R4 re-export, not a second home: it is listed here with its home and the signature on that subpath that requires it. check:surface fails any duplicate this file does not record, any entry the surface has outlived, and any entry whose `home` is not the subpath the surface leaves declaring the name. Foundations B re-derives the /sveltekit closure and re-evaluates every entry below.",
-  "layeredBarrels": [
-    {
-      "wider": "/delivery",
-      "narrower": "/delivery/data",
-      "reason": "A dependency-axis pair over one source tree, not two barrels: /delivery is /delivery/data plus the SvelteKit route loaders, and its `export *` is the documented superset. The pair is ONE canonical home, the narrower barrel declaring; A /delivery duplicate of a name /delivery/data does not export still fails."
-    }
-  ],
   "reexports": [
     {
       "name": "IslandRegistry",
@@ -70,223 +63,223 @@
     },
     {
       "name": "AiPosture",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `buildRobots`, `robotsResponse` name it on this subpath."
     },
     {
       "name": "ArrayField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor` names it on this subpath."
     },
     {
       "name": "BehaviorTable",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `Fieldset` names it on this subpath."
     },
     {
       "name": "BooleanField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "CairnRef",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `LinkResolve`, `ManifestEntry` name it on this subpath."
     },
     {
       "name": "ConceptConfig",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor`, `TypedSiteResolver` name it on this subpath."
     },
     {
       "name": "ConceptDescriptor",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `resolveReferences`, `buildSiteDescriptors` name it on this subpath."
     },
     {
       "name": "DateField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "DatePrefix",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor` name it on this subpath."
     },
     {
       "name": "FieldBehavior",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `Fieldset`, `BehaviorTable` name it on this subpath."
     },
     {
       "name": "FieldDescriptor",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor`, `NamedField`, `ObjectField` name it on this subpath."
     },
     {
       "name": "Fieldset",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor`, `InferFieldset` name it on this subpath."
     },
     {
       "name": "FragmentResolve",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `buildFragmentResolver` names it on this subpath."
     },
     {
       "name": "IconField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "ImageField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "InferFieldset",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `TypedSiteResolver` names it on this subpath."
     },
     {
       "name": "LinkResolve",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `buildLinkResolver` names it on this subpath."
     },
     {
       "name": "Manifest",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `buildSiteManifest`, `buildNewlyPublished`, `parseManifest` name it on this subpath."
     },
     {
       "name": "ManifestEntry",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
     },
     {
       "name": "MultiselectField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "NamedField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor` names it on this subpath."
     },
     {
       "name": "NumberField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "ObjectField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "parseManifest",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "A re-export from the stated canonical home, not a second home: `parseManifest`'s home moves to `.` beside `formatManifest`, its codec partner, and stays importable here so `buildNewlyPublished`'s `before`/`after` pair has a validator on the same subpath that consumes it."
     },
     {
       "name": "ReferenceEdge",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ManifestEntry` names it on this subpath."
     },
     {
       "name": "ReferenceField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "RoutingRule",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor` names it on this subpath."
     },
     {
       "name": "SelectField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "SiteConfig",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4: kept for a site that types its parsed config from this subpath. No export here names it since `createSiteResolver` and `buildSiteManifest` dropped the config parameter."
     },
     {
       "name": "TextareaField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "TextField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "TidyConfig",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `SiteConfig` names it on this subpath."
     },
     {
       "name": "TidyConventions",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `TidyConfig` names it on this subpath."
     },
     {
       "name": "UrlField",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
     },
     {
       "name": "ValidationIssue",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ValidationResult` names it on this subpath."
     },
     {
       "name": "ValidationResult",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `ConceptDescriptor`, `Fieldset` name it on this subpath."
     },
     {
       "name": "VocabularyEntry",
-      "subpath": "/delivery/data",
+      "subpath": "/delivery",
       "home": ".",
       "reason": "R4 closure: `SiteConfig` names it on this subpath."
     },
@@ -301,12 +294,6 @@
       "subpath": "/media",
       "home": ".",
       "reason": "R4 closure: `buildMediaResolver` names it on this subpath."
-    },
-    {
-      "name": "ComponentContext",
-      "subpath": "/render",
-      "home": ".",
-      "reason": "R4 closure: a site's `build(ctx)` on this subpath types its parameter with it."
     },
     {
       "name": "AccessMap",
@@ -379,12 +366,6 @@
       "subpath": "/sveltekit",
       "home": ".",
       "reason": "R4 closure: `Backend` names it on this subpath."
-    },
-    {
-      "name": "ComponentContext",
-      "subpath": "/sveltekit",
-      "home": ".",
-      "reason": "R4 closure: `ComponentDef` names it on this subpath."
     },
     {
       "name": "ComponentDef",

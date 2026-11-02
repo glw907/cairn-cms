@@ -214,7 +214,7 @@ describe('static check selection', () => {
   });
 
   it('treats a package.json exports target that is not an index.ts as the export surface too', () => {
-    expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:surface');
+    expect(labelsFor('src/lib/reproductions/manifest.ts')).toContain('check:surface');
     expect(labelsFor('src/lib/content/types.ts')).not.toContain('check:surface');
   });
 

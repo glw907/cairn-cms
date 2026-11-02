@@ -23,14 +23,16 @@ const REEXPORTS = 'scripts/checks/check-surface-reexports.json';
 
 // The exported subpaths the gate snapshots, drawn directly from package.json `exports`: every entry
 // whose value carries a `types` field. The raw asset entries (`.txt`, `package.json`) have no
-// `types` field and fall out. A re-exported name (for example `/delivery/data`'s re-export of
-// `/delivery`'s names) is listed under each subpath, because it IS real surface there.
+// `types` field and fall out. `./internal` is the engine's own entry, with no tier and no semver
+// promise, so it falls out too. A re-exported name is listed under each subpath, because it IS real
+// surface there.
 /** @returns {{ subpath: string, dts: string }[]} */
 export function surfaceSubpaths() {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
   /** @type {{ subpath: string, dts: string }[]} */
   const out = [];
   for (const [key, value] of Object.entries(pkg.exports)) {
+    if (key === './internal') continue;
     if (value && typeof value === 'object' && typeof value.types === 'string') {
       // The package.json key is `.` or `./sveltekit`; the snapshot subpath drops the leading dot so
       // `.` and `/sveltekit` read the way the import specifier's tail does.
@@ -318,9 +320,7 @@ export function formatDrift(drift) {
 // shrinks as foundations B narrows `/sveltekit` rather than silently outliving the surface. A
 // MISFILED record is an entry whose `home` is not the one subpath left declaring the name, which
 // covers both a wrong home string and a name whose every publication is recorded, leaving nothing to
-// be the home. A layered pair (`/delivery` over `/delivery/data`) is one home, so the wider barrel's
-// copy of a name the narrower one exports needs no per-name entry; a copy of a name the narrower one
-// does NOT export still fails. Pure over the model and the record so the unit test drives all three.
+// be the home. Pure over the model and the record so the unit test drives all three.
 /**
  * @param {Record<string, Record<string, string>>} model
  * @param {ReexportRecord} record
@@ -333,11 +333,8 @@ export function findHomeViolations(model, record) {
     for (const name of Object.keys(exports)) (subpathsOf[name] ??= []).push(subpath);
   }
   const recorded = new Set((record.reexports ?? []).map((r) => `${r.name}\0${r.subpath}`));
-  const layered = record.layeredBarrels ?? [];
   /** @param {string} name @param {string} subpath */
-  const isRecorded = (name, subpath) =>
-    recorded.has(`${name}\0${subpath}`) ||
-    layered.some((p) => p.wider === subpath && name in (model[p.narrower] ?? {}));
+  const isRecorded = (name, subpath) => recorded.has(`${name}\0${subpath}`);
   // A name's OPEN subpaths: the publications the record does not cover. Exactly one is the home the
   // rule expects; more than one is a duplicate nobody has argued; zero leaves no subpath declaring
   // the name. The duplicate and misfiled findings below both read this, so it is reckoned once.
@@ -406,7 +403,6 @@ export function formatHomeViolations(result) {
  * The recorded R4 re-export set: the canonical-home rule's exception list.
  * @typedef {object} ReexportRecord
  * @property {{ name: string, subpath: string, home: string, reason: string }[]} [reexports] one entry per non-home publication
- * @property {{ wider: string, narrower: string, reason: string }[]} [layeredBarrels] dependency-axis pairs that share one home
  */
 
 /**

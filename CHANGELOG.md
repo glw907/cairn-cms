@@ -158,6 +158,26 @@
 
 ### Changed
 
+- **`/delivery` loads under plain Node, so `/delivery/data` is gone.** The route loaders resolve
+  `@sveltejs/kit` with a dynamic import on their 404 paths, and `/delivery` carries every name
+  `/delivery/data` did.
+
+  Consumers must: change each `@glw907/cairn-cms/delivery/data` import to `@glw907/cairn-cms/delivery`.
+
+- **`CairnHead` moves to `/public`, beside `PreviewBanner`.** `/delivery/head` is gone.
+
+  Consumers must: change each `@glw907/cairn-cms/delivery/head` import to `@glw907/cairn-cms/public`.
+
+- **`/render` is gone, and `ComponentContext` is a root type.** `/render` carried that one type, and
+  `/sveltekit` no longer re-exports it.
+
+  Consumers must: import `ComponentContext` from `@glw907/cairn-cms`, not `@glw907/cairn-cms/render` or `@glw907/cairn-cms/sveltekit`.
+
+- **A new `./internal` export backs the `cairnManifest` plugin's generated module.** The entry is the
+  engine's own, with no tier, no surface snapshot, and no semver promise. A site never imports it.
+
+  Consumers must: nothing.
+
 - **`IdentityRefusal` is now `IdentityFailure`.** The identity seam's refusal arm follows the
   `*Failure` suffix the other failure types use. Only the name changes.
 

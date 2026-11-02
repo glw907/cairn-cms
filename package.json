@@ -119,25 +119,14 @@
       "types": "./dist/islands/index.d.ts",
       "default": "./dist/islands/index.js"
     },
-    "./render": {
-      "types": "./dist/render/authoring.d.ts",
-      "svelte": "./dist/render/authoring.js",
-      "default": "./dist/render/authoring.js"
-    },
     "./delivery": {
       "types": "./dist/delivery/index.d.ts",
       "svelte": "./dist/delivery/index.js",
       "default": "./dist/delivery/index.js"
     },
-    "./delivery/head": {
-      "types": "./dist/delivery/head.d.ts",
-      "svelte": "./dist/delivery/head.js",
-      "default": "./dist/delivery/head.js"
-    },
-    "./delivery/data": {
-      "types": "./dist/delivery/data.d.ts",
-      "svelte": "./dist/delivery/data.js",
-      "default": "./dist/delivery/data.js"
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
     },
     "./media": {
       "types": "./dist/media/index.d.ts",

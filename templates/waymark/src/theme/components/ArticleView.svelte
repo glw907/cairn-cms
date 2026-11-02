@@ -19,7 +19,7 @@ no other rendering: the fidelity claim (a minted preview and its eventual public
 identically) depends on everything else staying byte-for-byte the same. -->
 <script lang="ts">
   import type { EntryData, ResolvedReference } from '@glw907/cairn-cms/delivery';
-  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
+  import { CairnHead } from '@glw907/cairn-cms/public';
   import { formatDate } from '#chassis/date.js';
 
   interface Props {

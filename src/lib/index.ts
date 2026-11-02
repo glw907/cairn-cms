@@ -44,8 +44,8 @@ export type {
   // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these.
   RoutingRule,
   // `CairnAdapter.aiPosture` names this, so it reaches root the way every other adapter member
-  // type does. `/delivery` and `/delivery/data` export it too, since that is where `buildRobots`
-  // and `robotsResponse` read it.
+  // type does. `/delivery` exports it too, since that is where `buildRobots` and `robotsResponse`
+  // read it.
   AiPosture,
 } from './content/types.js';
 export { defineConcept } from './content/concepts.js';
@@ -100,10 +100,8 @@ export { previewMarkdown } from './render/component-grammar.js';
 export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
 export { renderGlyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
-// The component-authoring context type (ComponentContext) lives on both the root barrel and the
-// @glw907/cairn-cms/render subpath, which is otherwise type-only. rehypeDispatch is deliberately
-// not public: createRenderer is the one public render pipeline, so the safe plugin ordering is
-// the only public path.
+// rehypeDispatch is deliberately not public: createRenderer is the one public render pipeline, so
+// the safe plugin ordering is the only public path.
 export { createRenderer } from './render/pipeline.js';
 // `Renderer`'s `render`/`renderDocument` name `RenderInput`, which spreads `ResolveOptions`.
 export type { RendererConfig, Renderer, RenderInput, DocHeading, ResolveOptions } from './render/pipeline.js';

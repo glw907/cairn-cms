@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
-import { diffSurface, findHomeViolations, renderExport } from '../../../scripts/checks/check-surface.mjs';
+import { diffSurface, findHomeViolations, renderExport, surfaceSubpaths } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(
   fileURLToPath(new URL('../../../scripts/checks/api-surface.md', import.meta.url)),
@@ -183,6 +183,14 @@ describe('renderExport (index signatures)', () => {
   });
 });
 
+describe('surfaceSubpaths', () => {
+  it('leaves the internal entry out of the snapshot', () => {
+    const subpaths = surfaceSubpaths().map((entry) => entry.subpath);
+    expect(subpaths).toContain('/delivery');
+    expect(subpaths).not.toContain('/internal');
+  });
+});
+
 // The canonical-home rule (ratified foundations A). A name published from two subpaths is a
 // duplicate unless the second publication is recorded with its home and the signature that requires
 // it; the record is `scripts/checks/check-surface-reexports.json`. These drive the pure core with a
@@ -190,12 +198,11 @@ describe('renderExport (index signatures)', () => {
 describe('findHomeViolations', () => {
   const record = {
     reexports: [{ name: 'NavLayout', subpath: '.', home: '/sveltekit', reason: 'CairnAdapter names it.' }],
-    layeredBarrels: [{ wider: '/delivery', narrower: '/delivery/data', reason: 'One home.' }],
   };
 
   it('passes a name published from one subpath only', () => {
     const model = { '.': { fields: '{ text: F }' }, '/sveltekit': { requireOwner: '(e) => E' } };
-    expect(findHomeViolations(model, { reexports: [], layeredBarrels: [] })).toEqual({
+    expect(findHomeViolations(model, { reexports: [] })).toEqual({
       unrecorded: [],
       stale: [],
       misfiled: [],
@@ -222,22 +229,6 @@ describe('findHomeViolations', () => {
     };
     expect(findHomeViolations(model, record).unrecorded).toEqual([
       { name: 'NavLayout', subpaths: ['/media', '/sveltekit'] },
-    ]);
-  });
-
-  it('treats a layered pair as one home, and still fails a wider-only duplicate', () => {
-    const shared = {
-      '/delivery': { buildRssFeed: '(c) => string' },
-      '/delivery/data': { buildRssFeed: '(c) => string' },
-    };
-    expect(findHomeViolations(shared, record).unrecorded).toEqual([]);
-    const widerOnly = {
-      '.': { glyph: '(n) => E' },
-      '/delivery': { glyph: '(n) => E' },
-      '/delivery/data': {},
-    };
-    expect(findHomeViolations(widerOnly, record).unrecorded).toEqual([
-      { name: 'glyph', subpaths: ['.', '/delivery'] },
     ]);
   });
 

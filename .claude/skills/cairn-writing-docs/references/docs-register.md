@@ -286,9 +286,8 @@ project, and "custom admin screen" stays the name for a whole admin route.
 | **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-styling-public-pages`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, `src/routes`, or `src/lib/components`, as a `defineComponent` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-styling-public-pages`'s custom recipe. |
 
 **The barrel rule.** `@glw907/cairn-cms/admin` exports only admin components.
-`@glw907/cairn-cms/public` exports every built-in public component that renders styled markup;
-`CairnHead` stays at `./delivery/head`, since it renders no markup of its own, only document-head
-tags. `@glw907/cairn-cms/admin-toolkit` keeps its name.
+`@glw907/cairn-cms/public` exports every built-in public component, `CairnHead` included.
+`@glw907/cairn-cms/admin-toolkit` keeps its name.
 
 **The precedent this expresses by font instead of case.** Git's contributor guide draws the
 same line by sense, not by regex: "Use 'git' (all lowercase) when talking about commands ...

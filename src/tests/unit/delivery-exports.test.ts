@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import * as root from '../../lib/index.js';
 
 describe('delivery exports', () => {
-  it('exposes the delivery builders from the data subpath', async () => {
-    const data = await import('../../lib/delivery/data.js');
+  it('exposes the delivery builders from the delivery entry', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
     for (const name of [
       'createSiteResolver',
       'buildExcerpt',
@@ -13,7 +13,7 @@ describe('delivery exports', () => {
       'buildRobots',
       'buildSeoMeta',
     ]) {
-      expect(typeof (data as Record<string, unknown>)[name]).toBe('function');
+      expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });
 
@@ -26,10 +26,10 @@ describe('delivery exports', () => {
     expect(typeof barrel.createPublicRoutes).toBe('function');
   });
 
-  it('exposes the response helpers from the data subpath', async () => {
-    const data = await import('../../lib/delivery/data.js');
+  it('exposes the response helpers from the delivery entry', async () => {
+    const barrel = await import('../../lib/delivery/index.js');
     for (const name of ['rssResponse', 'jsonFeedResponse', 'sitemapResponse', 'robotsResponse']) {
-      expect(typeof (data as Record<string, unknown>)[name]).toBe('function');
+      expect(typeof (barrel as Record<string, unknown>)[name]).toBe('function');
     }
   });
 

@@ -1,12 +1,12 @@
 // cairn-cms: rot-proof cairn-media-seed's bucket resolution against the EMITTED dist, the same
-// gap delivery-data-dist-spawn.test.ts closes for /delivery/data. media-seed.test.ts's own
+// gap delivery-dist-spawn.test.ts closes for /delivery. media-seed.test.ts's own
 // "packaged bin" describe block already spawns dist/media-seed/bin.js for the flag-parsing and
 // no-config paths; this file adds the one path those specs do not cover, resolving a real
 // r2_buckets entry from a fixture site's wrangler.jsonc, under plain Node outside the vitest
 // transform, so a packaging regression in the bin's own import of the copied wrangler-config
 // module surfaces as a non-zero spawn. It needs dist/media-seed/bin.js, so it skips (via
 // skipIf) when the package has not been built, the same precedent as
-// delivery-data-dist-spawn.test.ts.
+// doctor-bin.test.ts.
 import { describe, it, expect } from 'vitest';
 import { existsSync, mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';

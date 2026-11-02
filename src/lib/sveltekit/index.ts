@@ -166,7 +166,7 @@ export type { InboundLink } from '../content/manifest.js';
 export type { NavNode, VocabularyEntry, TidyConventions, TidyConfig } from '../nav/site-config.js';
 export type { RepoFile, CommitAuthor } from '../github/types.js';
 export type { FileChange } from '../github/repo.js';
-export type { ComponentRegistry, ComponentDef, ComponentContext, SlotDef } from '../render/registry.js';
+export type { ComponentRegistry, ComponentDef, SlotDef } from '../render/registry.js';
 export type { IconSet } from '../render/glyph.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { LinkResolve } from '../content/links.js';

@@ -85,7 +85,7 @@ function reach(pkg: Pkg, entry: string): Set<string> {
   return seen;
 }
 
-const NODE_CONTEXT_KEYS = ['.', './admin', './public', './vite', './cloudflare', './auth-crypto', './log'];
+const NODE_CONTEXT_KEYS = ['.', './admin', './public', './vite', './cloudflare', './auth-crypto', './log', './internal'];
 
 describe('workers-env stays out of every Node-context entry', () => {
   if (!existsSync(WORKERS_ENV)) {

@@ -8,8 +8,8 @@ a hook, a route, or the engine.
 ## The rule
 
 The first publish that takes an entry live stamps its manifest row with `publishedAt`; later saves
-keep the stamp. `buildNewlyPublished(before, after)` (from `@glw907/cairn-cms/delivery/data`, which
-imports no SvelteKit or Svelte, so plain Node loads it) returns each `after` entry that is not a
+keep the stamp. `buildNewlyPublished(before, after)` (from `@glw907/cairn-cms/delivery`, which
+loads no SvelteKit or Svelte on import, so plain Node loads it) returns each `after` entry that is not a
 draft, carries `publishedAt`, and whose `publishedAt` value appears on no `before` entry. It spans
 every concept and sends nothing. Decide newness with it, never with dates, git history, or mtimes.
 
@@ -34,7 +34,7 @@ every concept and sends nothing. Decide newness with it, never with dates, git h
 // scripts/announce-new-posts.ts (Node 24 runs .ts directly)
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { buildNewlyPublished, parseManifest, type ManifestEntry } from '@glw907/cairn-cms/delivery/data';
+import { buildNewlyPublished, parseManifest, type ManifestEntry } from '@glw907/cairn-cms/delivery';
 
 declare function announcePost(entry: ManifestEntry): Promise<void>; // your send
 

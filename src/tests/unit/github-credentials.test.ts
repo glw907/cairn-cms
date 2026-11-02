@@ -5,12 +5,13 @@ import { CairnError } from '../../lib/diagnostics/index.js';
 const backend = {
   appId: '3847496',
   installationId: '135372268',
+  repo: 'site',
 };
 
 describe('appCredentials', () => {
   it('assembles AppCredentials from the App identity and the key secret', () => {
     const creds = appCredentials(backend, { GITHUB_APP_PRIVATE_KEY_B64: 'a2V5' });
-    expect(creds).toEqual({ appId: '3847496', installationId: '135372268', privateKeyB64: 'a2V5' });
+    expect(creds).toEqual({ appId: '3847496', installationId: '135372268', repo: 'site', privateKeyB64: 'a2V5' });
   });
 
   it('throws a named error when the key secret is unset', () => {

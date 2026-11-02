@@ -89,6 +89,8 @@ contact not on the roster, `lookup_failed` a throwing lookup, `send_failed` a th
 keeping that store separate from the engine's stay site-owned. A flow built on them follows this
 discipline:
 
+- Give the store its own D1 binding with its own `migrations_dir`, never `AUTH_DB`'s. A shared
+  `migrations_dir` applies each schema to the other database on first migrate.
 - Store only `hashToken`'s digest for a token or session lookup, never the raw value.
 - Consume a one-time token in one atomic statement with the expiry in the same `WHERE`, so two
   concurrent requests cannot both consume it. The engine's pattern:
@@ -105,8 +107,30 @@ discipline:
 - Send tokens in a POST body, never a URL (logs, history, `Referer`).
 - Set `Referrer-Policy: strict-origin` on the landing page (the engine's own pages use it; `same-origin` would send the token-bearing landing URL as `Referer` on every same-origin request). The engine's security headers cover only
   `/admin`; a second group's routes set their own.
-- Use `generateToken` with `tokensMatch` for double-submit CSRF on the group's forms.
+- Use `generateToken` with `tokensMatch` for double-submit CSRF on the group's forms, and name the
+  CSRF cookie through `buildCookieName` so it takes `__Host-` too.
 - Rate limit by email and by IP.
+- Normalize the contact the same way on every path: request, confirm, lookup, and removal. For an
+  email, trim and lowercase.
+- Verify a human with `verifyTurnstile` from `/cloudflare`, passing `hostname`, `action`, and `ip`.
+  Without the first two, a token solved on another widget with the same sitekey replays against this
+  form.
+- Answer an unknown contact with one response, byte-identical to a sent one in its body and its
+  `Set-Cookie`. A cookie set only for a known contact is a one-request allowlist oracle, so set any
+  pending cookie before the lookup branches.
+- Give a short code a ten-minute expiry and an attempt cap. The engine's channel allows 5 attempts.
+- Mint a fresh session id with `generateToken` at login, never one the visitor presented, which
+  would allow session fixation.
+- Set the session cookie HttpOnly, Secure, SameSite=Lax, with a `Max-Age`, and with a `__Host-` name on
+  HTTPS through `buildCookieName`. Start the name with anything but `cairn_`, which the engine's
+  cookies use. `buildCookieName` doesn't check this for you.
+- Set `prerender = false` on login and member routes. A prerendered member page ships to everyone.
+- On logout, delete the server-side row, not only the cookie. A deleted cookie leaves a captured
+  session valid until it expires.
+- End a removed person's sessions at removal by deleting their rows.
+- Never set `locals.cairnEditor`. `requireSession` trusts the value, and the guard writes it only on
+  guarded admin paths, so a value a site handle sets survives on every other path. Keep the group's
+  session in a `locals` key of its own.
 
 ## Server-only subpaths
 

@@ -117,7 +117,7 @@ export type AccessRefusedReason = 'no_rule' | 'shadowed' | 'role';
 /**
  * The `reason` a `github.unreachable` record with `scope: 'health'` carries, and the `detail` the
  * live token check reports: `'key_refused'` for a 401 (GitHub rejected the signed App JWT),
- * `'installation_not_found'` for a 404, `'installation_suspended'` for a 403, and `'unreachable'`
+ * `'installation_not_found'` for a 404, `'installation_suspended'` for a 403, `'token_request_refused'` for a 422 (GitHub refused the mint's request, not the key), and `'unreachable'`
  * for any other status, a network failure, or a timeout.
  */
-export type GithubTokenCheckReason = 'key_refused' | 'installation_not_found' | 'installation_suspended' | 'unreachable';
+export type GithubTokenCheckReason = 'key_refused' | 'installation_not_found' | 'installation_suspended' | 'token_request_refused' | 'unreachable';

@@ -188,7 +188,7 @@
     "severity": "blocker",
     "title": "GitHub App is unreachable",
     "why": "The App key fails to parse, the App fails to authenticate, the installation token fails to mint, or the repository refuses a read, so saves and publishes cannot commit.",
-    "remediation": "Check the GITHUB_APP_PRIVATE_KEY_B64 secret and the adapter's appId and installationId against the App settings, and confirm the App is installed on the repository.",
+    "remediation": "Confirm the App's installation covers the repository, the App holds Contents read and write, and the adapter's repo matches the repository's current name. Then check the GITHUB_APP_PRIVATE_KEY_B64 secret and the adapter's appId and installationId against the App settings.",
     "docsAnchor": "is-it-working.md#install-the-github-app",
     "logEvent": "github.unreachable"
   }

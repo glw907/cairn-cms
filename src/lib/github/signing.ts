@@ -91,7 +91,12 @@ export async function installationToken(creds: AppCredentials, signal?: AbortSig
       Authorization: `Bearer ${jwt}`,
       'User-Agent': 'cairn-cms',
       'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
     },
+    // Contents write alone covers every engine route: each is a contents route on GitHub's
+    // permissions page (trees, commits, refs, contents), and the engine never commits under
+    // .github/workflows, since each tree builds on its parent's tree from the save's own changes.
+    body: JSON.stringify({ repositories: [creds.repo], permissions: { contents: 'write' } }),
     signal,
   });
   if (!res.ok) throw new InstallationTokenError(res.status);
@@ -105,7 +110,7 @@ interface CachedToken {
 
 /**
  * Build an installation-token cache. A module-global instance memoizes the minted token per
- * installation for most of its one-hour life, so a warm Worker isolate reuses it across requests
+ * installation and repository for most of its one-hour life, so a warm Worker isolate reuses it across requests
  * instead of re-signing and re-calling GitHub on every list and commit. A cold isolate re-mints,
  * which is always safe. This mirrors the default of `@octokit/auth-app`, which caches installation
  * tokens in memory and returns them until expiry. The TTL stays under GitHub's documented one-hour
@@ -129,10 +134,11 @@ export function createInstallationTokenCache(
 ): (creds: AppCredentials) => Promise<string> {
   const cache = new Map<string, CachedToken>();
   return async function get(creds: AppCredentials): Promise<string> {
-    const hit = cache.get(creds.installationId);
+    const key = `${creds.installationId}/${creds.repo}`;
+    const hit = cache.get(key);
     if (hit && hit.expiresAt > now()) return hit.token;
     const token = await mint(creds);
-    cache.set(creds.installationId, { token, expiresAt: now() + ttlMs });
+    cache.set(key, { token, expiresAt: now() + ttlMs });
     return token;
   };
 }

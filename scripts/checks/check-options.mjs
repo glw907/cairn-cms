@@ -5,14 +5,14 @@
 //
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
-// roots in the current `dist`, by subpath (21 pairs, 21 distinct exports):
+// roots in the current `dist`, by subpath (20 pairs, 20 distinct exports):
 //   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineBlock,
 //                   defineConcept, defineRegistry, defineRoles
 //   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
 //   /log            createLogger
 //   /media          createMediaResolver
 //   /sveltekit      createAuthGuard, createCairnAdmin, createD1AuditSink, createMediaRoute,
-//                   createNavRoutes, createSectionAction
+//                   createSectionAction
 //   /vite           cairnManifest (an extra, since the Vite plugin's name is outside the pattern)
 // The walk reads each root's parameter types only, never
 // its return type, since a return is a runtime output the developer receives, not an option the

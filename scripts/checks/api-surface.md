@@ -117,7 +117,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FieldLabel`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string }
-- `FormatTimestampOptions`: { timeZone?: string; locale?: string; fallback?: string }
 - `ItemLabel`: { one: string; many: string }
 - `ListToolbar`: Component<Props, {}, "">
 - `ListToolbarAction`: { label: string; onClick: () => void }
@@ -177,7 +176,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createPublicRoutes`: <S extends SiteResolver>(config: PublicRoutesConfig<S>) => PublicRoutes<S>
 - `createSiteResolver`: <const A extends CairnAdapter>(adapter: A, files: Record<string, string>) => SiteResolver<A>
 - `EntryData`: S extends TypedSiteResolver<infer A extends CairnAdapter> ? { [K in keyof A["content"] & string]: ConceptEntryData<K, ConceptFrontmatter<A, K>> }[keyof A["content"] & string] : ConceptEntryData<string, Record<string, unknown>>
-- `EntryDataOverrides`: { resolveLink?: LinkResolve; resolveFragment?: FragmentResolve; resolveMedia?: MediaResolve }
 - `EntryRef`: { concept: string; id: string; title: string; permalink: string; excerpt?: string }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
@@ -262,7 +260,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createCairnAdmin`: (config: CairnAdminConfig) => CairnAdminRoutes
 - `createD1AuditSink`: (db: D1Database, waitUntil: ((promise: Promise<unknown>) => void) | undefined) => AdminActionAuditSink
 - `createMediaRoute`: (config: MediaRouteConfig) => RequestHandler
-- `createNavRoutes`: (config: NavRoutesConfig) => NavRoutes
 - `createSectionAction`: { <Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db>; <Env = unknown>(config: Omit<SectionActionConfig<Env, unknown>, "resolveDb"> & { resolveDb?: undefined }): PlainSectionAction }
 - `EditData`: { conceptId: string; id: string; label: string; singular: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; flash: "published" | "saved" | "renamed" | "discarded" | null; slug: string; linkTargets: LinkTarget[]; fragmentTargets: FragmentTarget[] | null; routable: boolean; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: EntryRef[]; pending: boolean; published: boolean; publishActions: PublishActionLink[]; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
 - `EngineScreenId`: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {})
@@ -284,8 +281,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavLayoutEngineRef`: { screen: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {}); label?: string; hidden?: boolean; icon?: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench" }
 - `NavLayoutEntry`: { label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean; roles?: string[] }
 - `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: string[]; collapsed?: boolean }
-- `NavRoutes`: { navLoad: (event: CairnEvent) => Promise<NavData>; navSaveAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>> }
-- `NavRoutesConfig`: { runtime: CairnRuntime }
 - `NO_PENDING_REQUEST_ERROR`: "no-pending-request"
 - `PlainSectionAction`: <T>(handler: (args: { event: CairnEvent; form: FormData; ctx: Omit<SectionActionContext<unknown>, "db"> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent) => Promise<T | ActionFailure<{ error: string }>>
 - `PreviewData`: ConceptEntryData<string, Record<string, unknown>> & { preview: { state: "draft" | "published"; expiresAt: string; published: { permalink: string } | null } }

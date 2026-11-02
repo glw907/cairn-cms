@@ -37,7 +37,6 @@ export type {
   TidyClient,
   TidyEffort,
 } from './content-routes.js';
-export { createNavRoutes, type NavRoutes, type NavRoutesConfig } from './nav-routes.js';
 export type { NavData } from './nav-routes.js';
 export type {
   NavIcon,

@@ -9,7 +9,7 @@
   "knownBad": "setups/site/s12-tidy-and-posture-bad.mjs",
   "maxTurns": 60,
   "source": [
-    "src/lib/nav/site-config.ts:124 TidyConfig: enabled (default false), model (default claude-sonnet-5, DEFAULT_TIDY_MODEL at :133), conventions; the YAML carries no timeout key",
+    "src/lib/nav/site-config.ts:136 TidyConfig: enabled (default false), model (default claude-sonnet-5-5, DEFAULT_TIDY_MODEL at :146), conventions; the YAML carries no timeout key",
     "src/lib/sveltekit/content-routes-context.ts:209 and :373 createCairnAdmin's tidy block sets timeoutMs; DEFAULT_TIDY_TIMEOUT_MS is 30_000 at :275",
     "src/lib/content/types.ts:276 CairnAdapter.aiPosture; src/lib/delivery/responses.ts:40 robotsResponse passes posture to buildRobots unchanged",
     "src/lib/delivery/robots.ts:34 buildRobots: an unset posture is byte-identical to no posture, 'decline' adds Content-Signal: ai-train=no and a Disallow group per training crawler",

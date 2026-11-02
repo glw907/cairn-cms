@@ -1,0 +1,33 @@
+Conductor hand-over: cairn-cms slice `tidy-lists`, class `ordinary`, cut forward from pass 5: #145, #147, #150, #192, #170, #171, #194, #58, #197, #41.
+
+Plan: docs/internal/plans/2026-11-01-tidy-lists-plan.md on branch `tidy-lists`, pushed to glw907/cairn-cms. Path 180 minutes against a design estimate of about 140 and a ceiling of 280; no cut needed. Absolute copy of each file, in the planner's worktree:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/tidy-lists/docs/internal/plans/
+
+Pre-launch checks (run sheet "Sequence and launch"):
+
+- In the main checkout /var/home/glw907/Projects/cairn-cms: on `main`, `git fetch`, and `git rev-list --count HEAD..origin/main` prints 0.
+- `pgrep -f .claude/worktrees/tidy-lists-run` is empty and `git status` is clean, with no warm uncommitted code.
+- No open brief in docs/internal/consultations/.
+- The plan's pre-flight has no step for Geoff, and it adds no item outside the sheet. The executor's auto-mode writes are the worktree edits, including `templates/waymark/.claude/skills/**` through `npm run emit:template`. The one `.claude/skills` source edit (`evals/site-cases/s12-tidy-and-posture.json:12`) is already on the branch, made by the planner. T2's proofread reads the literal key line in `~/.local/secrets` as data, and sibling site repos by path, in the executing session; the planner exercised the key read twice and made live calls. A refusal is a stop on STATUS, for you to rule. Don't run it on the executor's behalf.
+- The executor runs Opus at high because #145 changes public types. Pair tasks stay Sonnet.
+
+Executor launch, from the main checkout:
+
+cd /var/home/glw907/Projects/cairn-cms && claude --bg --model claude-opus-5-5 --effort high --name cairn-cms-tidy-lists "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/tidy-lists/docs/internal/plans/2026-11-01-tidy-lists-executor-prompt.txt)"
+
+Prompt file: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/tidy-lists/docs/internal/plans/2026-11-01-tidy-lists-executor-prompt.txt
+
+The executor names `cairn-cms-9b` as its one instruction source. It works in a worktree it enters as `tidy-lists-run`, fast-forwarded from `origin/tidy-lists`, opens a draft PR after the T1/T4 merge, and ends at PR-ready. It merges `main` only when told.
+
+Merge conditions, under Geoff's merge word in the sheet's Brief: green CI on the head and a folded whole-branch review with no open finding, record packet first. The conductor merges, in the ledger's order: 1b, 1a, wiring-core, field-values, tidy-lists. Confirm both conditions yourself, then queue one record packet in the background and merge once the queue accepts it: `gh pr merge <n> --merge --match-head-commit <head>`. Lists go in the packet's Background. If the queue is down, write the packet to the state dir, notify Geoff, and merge. Before the merge, tell the executor to do the sheet's second-PR step: merge `main`, keep both `## Unreleased` entries, run `npm run emit:template` and `npm run check:surface -- --update`, and rerun the fast lane.
+
+Overlaps for that step: 1b's T7 edits a comment at `src/lib/admin/ConceptList.svelte:225`, distant from T4's `:443-454`. wiring-core owns `content-routes-entry-read.ts:306`, distant from T3's `:503`. `src/lib/log/events.ts`, `events-list.ts`, and `log-events.md` may be touched by a sibling, so a both-sides keep is the likely resolution there.
+
+The packet's Background carries:
+
+- #145 breaks `TidyConventions`: the `Consumers must:` line.
+- #192 pins `claude-sonnet-5-5`. No floating Sonnet alias exists, so the sheet's second branch applied, and the screen's advice names `claude-haiku-5-5`. A `max_tokens` stop now fails with the too-long copy through a private error, so `TidyClient` doesn't change. The `fallbacks` beta was weighed and declined.
+- A deadline finding for Geoff's eye: one live run on 12,935 characters took 40s on Sonnet 5 and 21s on Sonnet 5.5 at effort low, against a 30s deadline and a 24,000-character cap. #192 improves this and doesn't cause it. The deadline and cap stay out of the slice. The executor measures it on real entries and files an item if the numbers hold.
+- The proofread table, and every entry in the PR's `## Decisions` and `## Planning misses`.
+
+After the merge: pull the checkout per `pass-core`, delete the branches `tidy-lists` and `tidy-lists-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

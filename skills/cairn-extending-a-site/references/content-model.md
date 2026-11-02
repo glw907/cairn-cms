@@ -67,7 +67,9 @@ survives every save and publish; a declared field the form leaves empty is remov
 `select`, `multiselect`, `image`, `reference`, `object`, `array`. `number` is the whole-number field
 for a capacity or count; `url` for a link. A `boolean` takes `true` or `false` (an empty value reads
 as unset), and any other value, such as the string `'true'`, is refused. A text-type field reads a non-string value (an unquoted
-number or boolean) as empty.
+number or boolean) as empty. A `multiselect` with `options` refuses a value outside them; add
+`creatable: true` and it keeps one, renders as an open tag input, and infers as `string[]` instead of
+the option union.
 
 ## Cross-field rules
 

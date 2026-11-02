@@ -91,6 +91,17 @@ describe('fieldset multiselect lone scalar', () => {
   });
 });
 
+describe('fieldset multiselect creatable', () => {
+  const closed = defineFieldset({ topics: fields.multiselect({ label: 'T', options: ['a'] }) });
+  const open = defineFieldset({ topics: fields.multiselect({ label: 'T', options: ['a'], creatable: true }) });
+  it('keeps a value outside options when creatable', () => {
+    expect(open.validate({ topics: ['new'] }, '')).toEqual({ ok: true, data: { topics: ['new'] } });
+  });
+  it('still refuses an unknown value when not creatable', () => {
+    expect(closed.validate({ topics: ['new'] }, '').ok).toBe(false);
+  });
+});
+
 // The image-object normalization matrix, ported from the v1 validate suite (the v2 coerceImage is
 // the same logic): a well-formed object normalizes, a missing alt defaults to empty, a blank caption
 // drops, the decorative flag carries only when an explicit true, and a malformed value drops the key.

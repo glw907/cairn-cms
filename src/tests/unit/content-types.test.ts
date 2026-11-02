@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import type { NamedField } from '../../lib/content/types.js';
+import { fields } from '../../lib/content/fields.js';
+import { defineFieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 import { testAdapter, postFields } from './_content-fixture.js';
 
 // A switch over the discriminant; if the union is wrong this fails to type-check under
@@ -38,5 +40,14 @@ describe('adapter contract types', () => {
 
   it('narrows each field type to its widget', () => {
     expect(postFields.map(widgetFor)).toEqual(['input', 'input', 'input', 'multiselect:2', 'checkbox']);
+  });
+});
+
+describe('multiselect creatable inference', () => {
+  it('infers string[] when creatable and the option union when not', () => {
+    const open = defineFieldset({ t: fields.multiselect({ label: 'T', options: ['a', 'b'], creatable: true }) });
+    const closed = defineFieldset({ t: fields.multiselect({ label: 'T', options: ['a', 'b'] }) });
+    expectTypeOf<InferFieldset<typeof open>>().toEqualTypeOf<{ t?: string[] }>();
+    expectTypeOf<InferFieldset<typeof closed>>().toEqualTypeOf<{ t?: ('a' | 'b')[] }>();
   });
 });

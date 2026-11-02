@@ -101,11 +101,11 @@ export interface SelectField extends FieldBase {
 export interface MultiselectField extends FieldBase {
   type: 'multiselect';
   /**
-   * The allowed values; omitted leaves the set open. When set, a value outside it fails the save,
-   *  including under `creatable`. Renders as checkboxes unless `creatable` is set.
+   * The allowed values; omitted leaves the set open. When set, a value outside it fails the save
+   *  unless `creatable` is set. Renders as checkboxes unless `creatable` is set.
    */
   options?: readonly string[];
-  /** Render an open comma-separated tag input instead of checkboxes. A value outside `options` still fails the save. */
+  /** Render an open comma-separated tag input instead of checkboxes. A value outside `options` is kept, and the field's inferred type is `string[]`. */
   creatable?: boolean;
   /**
    * Placeholder text for the open comma-separated input. Defaults to "Separate values with commas"

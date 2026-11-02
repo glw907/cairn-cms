@@ -73,8 +73,8 @@ export interface Fieldset<R extends Record<string, FieldDescriptor> = Record<str
 /**
  * Map one field descriptor to the TS type of its normalized value. number is number, boolean is
  *  boolean, image is the nested ImageValue object; a select with a literal option list is that
- *  option union, a multiselect with one is that union array (else string[]); everything else is a
- *  string.
+ *  option union, a multiselect with one is that union array (string[] when open or creatable);
+ *  everything else is a string.
  */
 type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
   ? number
@@ -88,7 +88,9 @@ type ValueOf<D extends FieldDescriptor> = D extends { type: 'number' }
         ? ValueOf<I>[]
         : D extends { type: 'select'; options: readonly (infer O extends string)[] }
           ? O
-          : D extends { type: 'multiselect'; options: readonly (infer O extends string)[] }
+          : D extends { type: 'multiselect'; creatable: true }
+            ? string[]
+            : D extends { type: 'multiselect'; options: readonly (infer O extends string)[] }
             ? O[]
             : D extends { type: 'multiselect' }
               ? string[]
@@ -145,9 +147,9 @@ function structuralKey(path: (string | number)[]): string {
 // "not provided" and is read BEFORE type coercion, uniformly: a required field returns an issue, an
 // optional field drops (no value, no issue). Only a non-empty value is coerced. boolean is the
 // exception: true stores true; false, absent, null, and '' omit the value; anything else is an issue.
-// number relies on the empty-first drop so
-// an empty optional number never becomes Number('') === 0. A container (object, array) recurses one
-// level, appending the leaf key or element index to `path` for each nested issue.
+// number relies on the empty-first drop so an empty optional number never becomes Number('') === 0.
+// A container (object, array) recurses one level, appending the leaf key or element index to `path`
+// for each nested issue.
 function validateField(
   path: (string | number)[],
   field: FieldDescriptor,
@@ -214,11 +216,12 @@ function validateField(
     return { issues: [{ path, message: `${label} must be true or false` }] };
   }
 
-  // multiselect: a string array; drop empties, reject an unknown value when options is closed. An empty
-  // list omits the value (a required empty errors); the array path is the one non-string coercion. A
-  // lone non-empty scalar (a single tag a YAML scalar carries) coerces to a single-element list, rather
-  // than dropping to [] and reading as "required" while present. An empty string or a
-  // non-string-non-array stays the empty list.
+  // multiselect: a string array; drop empties, reject an unknown value when options is closed and the
+  // field is not creatable (creatable widens the set, so options only suggest). An empty list omits the
+  // value (a required empty errors); the array path is the one non-string coercion. A lone non-empty
+  // scalar (a single tag a YAML scalar carries) coerces to a single-element list, rather than dropping
+  // to [] and reading as "required" while present. An empty string or a non-string-non-array stays the
+  // empty list.
   if (field.type === 'multiselect') {
     let raw: string[];
     if (Array.isArray(value)) raw = value.map(String);
@@ -229,7 +232,7 @@ function validateField(
       return { issues: [{ path, message: `${label} is required` }] };
     }
     const { options } = field;
-    if (options) {
+    if (options && !field.creatable) {
       const unknown = list.find((v) => !options.includes(v));
       if (unknown !== undefined) {
         return { issues: [{ path, message: `${label} contains an unknown value: ${unknown}` }] };

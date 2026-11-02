@@ -65,7 +65,8 @@ survives every save and publish; a declared field the form leaves empty is remov
 
 `fields.text`, `textarea`, `number`, `url`, `date` (`YYYY-MM-DD`), `boolean`,
 `select`, `multiselect`, `image`, `reference`, `object`, `array`. `number` is the whole-number field
-for a capacity or count; `url` for a link. A text-type field reads a non-string value (an unquoted
+for a capacity or count; `url` for a link. A `boolean` takes `true` or `false` (an empty value reads
+as unset), and any other value, such as the string `'true'`, is refused. A text-type field reads a non-string value (an unquoted
 number or boolean) as empty.
 
 ## Cross-field rules

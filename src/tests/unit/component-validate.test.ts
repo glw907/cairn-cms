@@ -181,3 +181,15 @@ describe('validateComponent attribute vocabulary', () => {
     expect(r).toEqual({ ok: true });
   });
 });
+
+describe('validateComponent boolean attribute', () => {
+  const toggle = defineComponent({
+    ...base, name: 'toggle', label: 'Toggle',
+    attributes: { open: fields.boolean({ label: 'Open' }) },
+    slots: [{ name: 'body', label: 'Body', kind: 'markdown', required: true }],
+  });
+  it('still validates a bare boolean attribute and an absent one', async () => {
+    await expect(validateComponent(':::toggle{open}\nx\n:::', toggle)).resolves.toEqual({ ok: true });
+    await expect(validateComponent(':::toggle\nx\n:::', toggle)).resolves.toEqual({ ok: true });
+  });
+});

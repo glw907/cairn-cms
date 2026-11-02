@@ -271,3 +271,22 @@ describe('validateField default arm (an out-of-union descriptor, cast through un
     expect(mysteryFieldset.validate({}, '')).toEqual({ ok: true, data: {} });
   });
 });
+
+describe('fieldset date time of day and boolean strictness', () => {
+  const fs = defineFieldset({ d: fields.date({ label: 'D' }), b: fields.boolean({ label: 'B' }) });
+  it('refuses a time of day, naming the day as written', () => {
+    for (const d of ['2024-03-15 20:00:00 -08:00', '2024-03-15T20:00:00Z']) {
+      const r = fs.validate({ d }, '');
+      expect(r.ok ? [] : (r.issues ?? []).map((i) => i.message)).toEqual(['D has a time of day. Write the date alone: 2024-03-15']);
+    }
+    expect(fs.validate({ d: '2024-13-45' }, '').ok).toBe(false);
+  });
+  it('stores true, omits the empty readings, and refuses anything else', () => {
+    expect(fs.validate({ b: true }, '')).toEqual({ ok: true, data: { b: true } });
+    for (const b of [false, undefined, null, '']) expect(fs.validate({ b }, '')).toEqual({ ok: true, data: {} });
+    for (const b of ['true', 'yes', 1, 0]) {
+      const r = fs.validate({ b }, '');
+      expect(r.ok ? [] : (r.issues ?? []).map((i) => i.message)).toEqual(['B must be true or false']);
+    }
+  });
+});

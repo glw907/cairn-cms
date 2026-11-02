@@ -3,9 +3,14 @@
 // routing, fields, validator) the admin reads. A new concept attaches by adding one key under
 // `content` and declaring its routing and URL policy, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
+import { defineFieldset } from './fieldset.js';
 import type { Fieldset } from './fieldset.js';
+import { fields as fieldKinds } from './fields.js';
 import type { FieldDescriptor } from './fields.js';
 import { permalinkUsesDateToken } from './url-policy.js';
+
+// Checks the raw draft flag of a concept whose fieldset declares none; see the validate wrapper below.
+const DRAFT_FLAG = defineFieldset({ draft: fieldKinds.boolean({ label: 'Draft' }) });
 
 /** Re-attach each fieldset record key to its descriptor as `name`, the normalized `NamedField[]`. */
 function namedFields(schema: Fieldset): NamedField[] {
@@ -228,7 +233,13 @@ export function normalizeConcepts(
       summaryFields,
       // The concept id is the owner label a field-behavior diagnostic needs; a fieldset is a
       // standalone object a site may share across concepts, so it cannot supply one itself.
-      validate: (frontmatter, body) => fs.validate(frontmatter, body, id),
+      validate: (frontmatter, body) => {
+        const result = fs.validate(frontmatter, body, id);
+        // An undeclared draft is still read by the engine as a flag, so a non-boolean one is refused.
+        if (!result.ok || 'draft' in fs.fields) return result;
+        const draft = DRAFT_FLAG.validate(frontmatter, body, id);
+        return draft.ok ? result : draft;
+      },
     });
   }
   return descriptors;

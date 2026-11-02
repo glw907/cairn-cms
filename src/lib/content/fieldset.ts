@@ -144,7 +144,8 @@ function structuralKey(path: (string | number)[]): string {
 // Validate one descriptor against its raw value and return its outcome. Empty or absent is
 // "not provided" and is read BEFORE type coercion, uniformly: a required field returns an issue, an
 // optional field drops (no value, no issue). Only a non-empty value is coerced. boolean is the
-// exception: true stores true, anything else omits the value. number relies on the empty-first drop so
+// exception: true stores true; false, absent, null, and '' omit the value; anything else is an issue.
+// number relies on the empty-first drop so
 // an empty optional number never becomes Number('') === 0. A container (object, array) recurses one
 // level, appending the leaf key or element index to `path` for each nested issue.
 function validateField(
@@ -204,9 +205,13 @@ function validateField(
     return { value: out, issues };
   }
 
-  // boolean: presence is the value; an unchecked or absent box omits the value (no draft: false noise).
+  // boolean: true stores true; false, absent, null, and '' omit the value (no draft: false noise, and
+  // empty reads as absent). Any other value, such as the string "true", is refused rather than read as
+  // unset, so a mistyped marker cannot publish a draft.
   if (field.type === 'boolean') {
-    return value === true ? { value: true, issues: [] } : { issues: [] };
+    if (value === true) return { value: true, issues: [] };
+    if (value === false || value === undefined || value === null || value === '') return { issues: [] };
+    return { issues: [{ path, message: `${label} must be true or false` }] };
   }
 
   // multiselect: a string array; drop empties, reject an unknown value when options is closed. An empty
@@ -284,6 +289,10 @@ function validateField(
       return { value: text, issues: [] };
     }
     case 'date': {
+      const timed = /^(\d{4}-\d{2}-\d{2})[T ]/.exec(text);
+      if (timed && isCalendarDate(timed[1])) {
+        return { issues: [{ path, message: `${label} has a time of day. Write the date alone: ${timed[1]}` }] };
+      }
       if (!isCalendarDate(text)) return { issues: [{ path, message: `${label} must be a valid date (YYYY-MM-DD)` }] };
       const boundsError = dateBoundsError(text, field, label);
       if (boundsError != null) return { issues: [{ path, message: boundsError }] };

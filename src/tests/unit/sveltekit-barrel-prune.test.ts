@@ -57,6 +57,7 @@ const HIDDEN_HAND_MOUNT = [
   'revokePreview',
   'buildNewlyPublished',
   'parseManifest',
+  'createNavRoutes',
 ];
 
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
@@ -78,7 +79,6 @@ const KEPT = [
   'MediaLibraryData',
   'ContentRoutesConfig',
   'ContentFormFailure',
-  'createNavRoutes',
   'NavData',
   'NavIcon',
   'ResolvedNavEntry',

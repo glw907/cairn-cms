@@ -1189,6 +1189,15 @@
 
   Consumers must: nothing. See the `parseMarkdown` entry under Changed.
 
+### Fixed
+
+- **`cairn-guidance check` no longer counts a narrowed Tailwind import as an entry, and both `Consumers must:` readers agree on a line.** An
+  import with `source("<base>")` pointing below the repo root, resolved against its stylesheet, leaves `.claude` outside the scan, so the
+  check stops asking for an `@source not` there. The changelog gate and the tool's engine check now read a CRLF line as its LF
+  twin and take a body led by a no-break space as a body.
+
+  Consumers must: nothing.
+
 ## 0.98.0
 
 <!-- release-size: minor -->

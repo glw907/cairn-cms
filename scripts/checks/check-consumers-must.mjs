@@ -13,8 +13,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const CHANGELOG_PATH = 'CHANGELOG.md';
 const BASELINE_PATH = 'scripts/checks/consumers-must-baseline.json';
 
-/** The shared line shape: bare lead at column 0 or two spaces, then a non-blank body. */
-export const LINE = /^(?:  )?Consumers must: (\S.*)$/;
+/**
+ * The shared line shape: bare lead at column 0 or two spaces, then a non-blank body. The body's
+ * first class spells RE2's `\S` (`[^\t\n\f\r ]`), which JS's `\S` is not (it also excludes a
+ * no-break space), and the `s` flag lets `.` take U+2028 as Go's does. Apply it to a line with its
+ * trailing `\r` already removed.
+ */
+export const LINE = /^(?:  )?Consumers must: ([^\t\n\f\r ].*)$/s;
 const CODE_SPAN = /`[^`]*`/g;
 
 const isBlank = (/** @type {string | undefined} */ s) => s === undefined || s.trim() === '';
@@ -26,8 +31,8 @@ const isBlank = (/** @type {string | undefined} */ s) => s === undefined || s.tr
  * @returns {boolean}
  */
 export function isActionable(text) {
-  for (const line of text.split('\n')) {
-    const m = line.match(LINE);
+  for (const raw of text.split('\n')) {
+    const m = raw.replace(/\r$/, '').match(LINE);
     if (m && m[1] !== 'nothing.') return true;
   }
   return false;

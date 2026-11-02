@@ -634,6 +634,61 @@
 
   Consumers must: nothing.
 
+- **`parseMarkdown` and `serializeMarkdown` run on `yaml`, and `gray-matter` and `js-yaml` leave the
+  engine.** The core schema keeps a date as the text it was written, so `date: 2024-03-15` reads as the
+  string `2024-03-15` and an unquoted timestamp keeps its offset instead of becoming a `Date`. No code
+  path produces a `Date` now, so a `Date` you pass by hand to `validate` or `'~standard'` reads as empty.
+  The block boundary is one rule for every reader: an empty block (`---` then `---`) and spaces after the
+  opening fence are accepted, a language tag after the fence (`---yaml`, `---js`) is no longer read as
+  frontmatter, and an unclosed block reads as no frontmatter where it used to read to the end of the
+  file. YAML 1.2 replaces the old dialect: `10:30` is the string `10:30` (it was 630), `0755` is 755 (it
+  was 493), `0o755` is 493 (it was a string), and a `<<` merge key no longer merges. A save writes
+  single-quoted scalars on one line each (an unlimited line width), so a bare date loses its quotes
+  and `references.ts` stops quoting a date-shaped id. A comparison over four sites' content found
+  no value that changed apart from dates read as text.
+
+  Consumers must: read a `date` or any other frontmatter value as text, not a `Date`, in your code
+  and in a migration script that calls `parseMarkdown`. Stop passing a `Date` to `validate` or
+  `'~standard'`; pass the `YYYY-MM-DD` string. Check a content file for a `---yaml` fence, an unclosed
+  block, or a `10:30`, `0755`, or `<<` value, and write what you mean. Expect a first admin save to
+  rewrite a hand-written block into the single-quoted form.
+
+- **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
+  or `2024-03-15T20:00:00Z` fails with `has a time of day. Write the date alone: 2024-03-15`, naming the
+  day as written. Before, a negative offset late in the day validated as the next day with no warning.
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with one
+  `content.entry_invalid` log line, and the build fails on it unless it is a draft. The edit route still
+  opens it by URL on the written day, and a save writes the date alone.
+
+  Consumers must: write the date alone in every `date` field, taking the day from the filename when it
+  carries one. Run the build once and fix each entry it names.
+
+- **A `boolean` field refuses a non-boolean, and `draft` is checked whether or not the concept declares
+  it.** `true` stores `true`. `false`, an empty value, and an absent key omit the value. Anything else,
+  such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
+  read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
+  declares no `draft` field runs the raw key through the same rule. A directive's boolean attribute is
+  unaffected, since it is already a real boolean. Jekyll's `published: false` is still not read.
+
+  Consumers must: fix each `draft` that is not `true`, `false`, or empty; the build names the file.
+  Map any other draft marker to `draft: true`.
+
+- **`creatable` widens a multiselect's set.** A `multiselect` with `creatable: true` keeps a value
+  outside `options` on save, and its inferred type is `string[]` instead of the union of `options`. Before,
+  the tag input invited a new value that the save then refused. A taxonomy under a vocabulary stays
+  closed.
+
+  Consumers must: drop any code that narrowed a creatable field's value to the `options` union.
+
+- **An entry's form renders length and date bounds as input attributes.** `text` and `textarea` carry
+  `minlength` and `maxlength` (`length` sets both, otherwise `min` and `max`), and `date` carries `min`
+  and `max`, so the browser refuses what the save would. `pattern` stays out, and the component form
+  is unchanged. The costs: `maxlength` truncates a paste with no message, the browser counts untrimmed
+  text where the save counts trimmed text, a stored over-long value trips nothing until it is edited,
+  and a stored date outside `min` or `max` is invalid at once.
+
+  Consumers must: nothing.
+
 ### Removed
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's
@@ -671,6 +726,15 @@
   and re-run `npx cairn-guidance install` so a site's copy of the skills drops the links to the
   removed pages.
 
+- **`fields.datetime`, `fields.email`, `DatetimeField`, and `EmailField`.** The two kinds leave the
+  builders, the field types, the validator, the entry and directive forms, and the three barrels. A
+  `datetime` field's `min` and `max` never bound anything, and the engine never validated a moment
+  beyond reading it as text.
+
+  Consumers must: replace `fields.email` with `fields.text` and a `pattern` for an address, and replace
+  `fields.datetime` with `fields.date` plus a text field for the moment. Declare a directive attribute
+  that was `email` or `datetime` as `text`.
+
 ### Fixed
 
 - **Spellcheck no longer dies silently on some page loads.** A large dictionary read could trap the
@@ -682,7 +746,7 @@
 - **A save or publish keeps every frontmatter key the fieldset does not declare.** A hand-written
   `draft: true` survives, so the entry stays hidden. A save reads the prior file once and fails closed
   with a 503 when that read or its parse fails. A bare YAML date such as `updated: 2026-01-01` is
-  written back as `2026-01-01T00:00:00.000Z`: the instant survives and the text changes. A malformed
+  written back as the text `2026-01-01`. A malformed
   file now throws on every parse, where it used to throw once per isolate and then read as empty.
 - **A publish onto an address a live entry holds is refused.** Single publish answers 409 and keeps
   the branch. Site-wide publish commits nothing, keeps every branch, and redirects with
@@ -843,6 +907,10 @@
 
   Consumers must: nothing. A site that regenerates `worker-configuration.d.ts` with Wrangler 4.148
   gains ambient `*.txt`, `*.html`, `*.sql`, `*.bin`, and `*.wasm` module declarations.
+
+- `gray-matter` and `js-yaml` leave the engine's dependencies, and `yaml` reads and writes frontmatter.
+
+  Consumers must: nothing. See the `parseMarkdown` entry under Changed.
 
 ## 0.98.0
 

@@ -1,5 +1,5 @@
 // The chassis's component-grammar wiring: a theme supplies its icon set (the concrete glyph
-// data) and its defineComponent() list; this module wires either into the engine's render
+// data) and its defineBlock() list; this module wires either into the engine's render
 // helpers with no theme-specific knowledge. A theme reads makeIconRenderer, never
 // renderGlyph directly, so re-skinning the icon SET (swapping the glyph data passed in) never
 // touches a component's build() function. It also holds the prose-typography seam: a
@@ -13,7 +13,7 @@ import type { PluggableList } from 'unified';
 /**
  * Wires a theme's icon set into the engine's glyph-rendering helper, returning a function that
  * looks up one glyph by name and renders it as an inline icon span, with an optional semantic
- * role attribute. A theme's defineComponent() build() functions call the returned function; this
+ * role attribute. A theme's defineBlock() build() functions call the returned function; this
  * module never sees which names a theme declares.
  */
 export function makeIconRenderer(icons: IconSet): (name: string, role?: string) => Element {
@@ -44,7 +44,7 @@ export function headRow(title: ElementContent[], icon?: Element, level: number =
  * so inline code, fenced code blocks, and link URLs (held as node attributes, never as text) are
  * structurally exempt, and already-curly input passes through unchanged (it only rewrites
  * straight ASCII marks). A theme wires it once through
- * `createRenderer({ components, remarkPlugins: proseTypography })`; both the public render and the
+ * `createRenderer({ blocks, remarkPlugins: proseTypography })`; both the public render and the
  * editor's live preview read the one `render` that composes, so both inherit it.
  */
 export const proseTypography: PluggableList = [[remarkSmartypants, { dashes: 'oldschool' }]];

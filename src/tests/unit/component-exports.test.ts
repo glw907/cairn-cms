@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import * as cairn from '../../lib/index.js';
 
 describe('component grammar exports', () => {
-  it('exposes defineComponent from the root barrel', () => {
-    expect(typeof cairn.defineComponent).toBe('function');
+  it('exposes defineBlock from the root barrel', () => {
+    expect(typeof cairn.defineBlock).toBe('function');
   });
 
   it('omits the component-grammar and insert helpers from the root barrel but keeps them reachable from their modules', async () => {

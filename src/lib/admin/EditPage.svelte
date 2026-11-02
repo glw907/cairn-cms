@@ -74,7 +74,7 @@ island.
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
   import { segmentTintClass } from './segmented-control.js';
-  import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
+  import type { BlockRegistry, BlockDef } from '../render/registry.js';
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
@@ -99,7 +99,7 @@ island.
     /** The edit load's data, plus the site name for the heading. */
     data: EditData & { siteName: string };
     /** The site's component registry, for the insert palette. */
-    registry?: ComponentRegistry;
+    registry?: BlockRegistry;
     /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
     render?: SiteRender;
     /** The site's icon set, for the guided form's icon fields. */
@@ -870,7 +870,7 @@ island.
   // A def is actionable for guided edit when it has a schema (the same notion the insert catalog
   // lists by): a template-only def has no form to re-open into. Reuses the dialog's exported
   // hasSchema so the two surfaces can never drift on what counts as editable.
-  function editableDef(name: string | null): ComponentDef | undefined {
+  function editableDef(name: string | null): BlockDef | undefined {
     if (!name) return undefined;
     const def = registry?.get(name);
     if (!def) return undefined;
@@ -881,7 +881,7 @@ island.
   // caret; null otherwise. The def, range, and markdown are captured from one caretComponent
   // snapshot, so editBlock() never mixes a newer markdown with an older range. The Edit-block
   // control enables only when this is set.
-  let editable = $state<{ def: ComponentDef; range: { from: number; to: number }; markdown: string } | null>(null);
+  let editable = $state<{ def: BlockDef; range: { from: number; to: number }; markdown: string } | null>(null);
   // Why edit is unavailable, distinguishing "not on a component" from "on an unsafe one" so the
   // disabled tooltip is honest. 'none' covers both no-caret-component and an unknown/template-only
   // one (no guided form either way); 'unsafe' is a known component the safety gate refused.
@@ -931,7 +931,7 @@ island.
   // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
   // names the action; every disabled reason is honest about why, including when Preview hides the
   // Write surface. The Write pane stays mounted under Preview, so editable survives the tab switch;
-  // without the insertDisabled branch below, the label would keep claiming "Edit the component at
+  // without the insertDisabled branch below, the label would keep claiming "Edit the block at
   // the cursor" over a click Preview has made inert (a mouse user's tooltip and a screen reader's
   // announcement both read that promise). editReason, driven purely by the caret, is unaffected by
   // Preview: an unsafe block stays unsafe, and switching to Write would not change that, so its
@@ -939,11 +939,11 @@ island.
   const editBlockLabel = $derived(
     editable
       ? insertDisabled
-        ? 'Switch to Write to edit this component'
-        : 'Edit the component at the cursor'
+        ? 'Switch to Write to edit this block'
+        : 'Edit the block at the cursor'
       : editReason === 'unsafe'
         ? 'This block can’t be edited in the form. Edit it as markdown.'
-        : 'Place the cursor in a component to edit it',
+        : 'Place the cursor in an editable block to edit it',
   );
   // Whether the Edit-block control is unavailable: either Preview hides the Write surface, or the
   // caret is not on a safe, schema-bearing component. The control stays focusable and announced in
@@ -1202,7 +1202,7 @@ island.
       // before it fires).
       editor = null;
       // caretComponent/mediaAtCaret do NOT reliably re-report themselves on the new editor: they
-      // change only when MarkdownEditor's onComponentAtCaret/onMediaImageAtCaret callbacks fire,
+      // change only when MarkdownEditor's onBlockAtCaret/onMediaImageAtCaret callbacks fire,
       // and those fire only when the caret's component/image identity actually differs from the
       // last reported one, which starts at null per instance. An incoming entry whose caret lands
       // on plain text (no component, no image) never fires either callback, so without this reset
@@ -1231,7 +1231,7 @@ island.
   // caret-derived, either re-reporting itself independently of the caret (a diagnostics count, a
   // per-field needs-alt flag) or never entry-scoped to begin with (a viewport-width match, a
   // preview device pick, a menu's open flag, an announcer nonce). caretComponent, mediaAtCaret,
-  // editable, and editReason are NOT in this group: MarkdownEditor's onComponentAtCaret/
+  // editable, and editReason are NOT in this group: MarkdownEditor's onBlockAtCaret/
   // onMediaImageAtCaret callbacks fire only when the caret's reported identity changes from the
   // last one seen, so an incoming entry whose caret lands off any component or image never fires
   // either callback and the outgoing entry's value would otherwise survive; they are reset
@@ -2223,7 +2223,7 @@ island.
           name="body"
           surface={prefs.surface}
           registerEditor={bindEditorGrant()}
-          onComponentAtCaret={(info) => (caretComponent = info)}
+          onBlockAtCaret={(info) => (caretComponent = info)}
           onMediaImageAtCaret={(info) => (mediaAtCaret = info)}
           tidyMode={tidyController.tidyMode || busy}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}

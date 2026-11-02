@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ComponentRegistry } from '@glw907/cairn-cms';
+import type { BlockDef } from '@glw907/cairn-cms';
 
 // `#theme/cairn.config.js` pulls in the full adapter, including a Svelte island this standalone
 // vitest config cannot parse. The mock keeps the adapter's two members the load reads: the
-// registry and a `render` that returns its input, so the test sees exactly the markdown the load
+// blocks and a `render` that returns its input, so the test sees exactly the markdown the load
 // hands to the renderer.
 const mockCairn = vi.hoisted(() => ({
   cairn: {
     rendering: {
-      components: undefined as ComponentRegistry | undefined,
+      blocks: undefined as BlockDef[] | undefined,
       render: async ({ body }: { body: string }) => `<rendered>${body}</rendered>`,
     },
   },
@@ -17,24 +17,21 @@ vi.mock('#theme/cairn.config.js', () => mockCairn);
 
 const build = () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] });
 
-async function loadWith(
-  defs: Parameters<typeof import('@glw907/cairn-cms').defineRegistry>[0]['components'],
-) {
-  const { defineRegistry } = await import('@glw907/cairn-cms');
-  mockCairn.cairn.rendering.components = defineRegistry({ components: defs });
+async function loadWith(defs: BlockDef[]) {
+  mockCairn.cairn.rendering.blocks = defs;
   vi.resetModules();
   const { load } = await import('./+page.server.js');
   return (await load({} as Parameters<typeof load>[0])) as {
     proseHtml: string;
-    components: { name: string; label: string; html: string }[];
+    blocks: { name: string; label: string; html: string }[];
     withoutPreview: string[];
   };
 }
 
 describe('styleguide load', () => {
   it('renders a sample for a registry entry the route has never heard of', async () => {
-    const { defineComponent, fields } = await import('@glw907/cairn-cms');
-    const throwaway = defineComponent({
+    const { defineBlock, fields } = await import('@glw907/cairn-cms');
+    const throwaway = defineBlock({
       name: 'throwaway-note',
       label: 'Throwaway note',
       description: 'd',
@@ -46,7 +43,7 @@ describe('styleguide load', () => {
 
     const data = await loadWith([throwaway]);
 
-    expect(data.components).toEqual([
+    expect(data.blocks).toEqual([
       {
         name: 'throwaway-note',
         label: 'Throwaway note',
@@ -57,12 +54,12 @@ describe('styleguide load', () => {
   });
 
   it('lists an entry with no preview by name and renders no sample for it', async () => {
-    const { defineComponent } = await import('@glw907/cairn-cms');
-    const bare = defineComponent({ name: 'bare', label: 'Bare', description: 'd', build });
+    const { defineBlock } = await import('@glw907/cairn-cms');
+    const bare = defineBlock({ name: 'bare', label: 'Bare', description: 'd', build });
 
     const data = await loadWith([bare]);
 
-    expect(data.components).toEqual([]);
+    expect(data.blocks).toEqual([]);
     expect(data.withoutPreview).toEqual(['bare']);
   });
 

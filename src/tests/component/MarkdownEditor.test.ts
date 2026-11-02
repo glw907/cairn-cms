@@ -5,7 +5,7 @@ import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.s
 import MarkdownEditorRekeyHarness from './_MarkdownEditorRekeyHarness.svelte';
 import { cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineRegistry, type BlockDef } from '../../lib/render/registry.js';
 
 // A controllable gate on the spellcheck module, the LAST of MarkdownEditor's own chained dynamic
 // imports before its onMount calls registerEditor (the same seam EditPage.test.ts gates). Defaults
@@ -574,7 +574,7 @@ describe('MarkdownEditor', () => {
     const doc = [':::gallery', 'inside', ':::', '::hr'].join('\n');
     const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
-    const expected = 'Layout marker. Edit the text between these lines and leave this line as it is.';
+    const expected = 'Block marker. Edit the text between these lines and leave this line as it is.';
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-fence')?.getAttribute('title')).toBe(expected);
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')?.getAttribute('title')).toBe(expected);
   });
@@ -1206,14 +1206,14 @@ describe('MarkdownEditor', () => {
 
   it('labels the fold pill and the gutter control with the registry component label', async () => {
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'panel',
           label: 'Info Panel',
           description: 'A panel.',
           use: 'Use to set supporting details apart from the main flow.',
           build: (n: unknown) => n,
-        } as unknown as ComponentDef,
+        } as unknown as BlockDef,
       ],
     });
     const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
@@ -1232,8 +1232,8 @@ describe('MarkdownEditor', () => {
 
   it('falls back to the raw directive name in the pill when the registry has no matching entry', async () => {
     const registry = defineRegistry({
-      components: [
-        { name: 'callout', label: 'Callout', description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      blocks: [
+        { name: 'callout', label: 'Callout', description: 'x', build: (n: unknown) => n } as unknown as BlockDef,
       ],
     });
     const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
@@ -1250,8 +1250,8 @@ describe('MarkdownEditor', () => {
     // A container with a registry label but no {title="..."} attribute keeps today's plain pill
     // text; the title segment is additive, never assumed.
     const registry = defineRegistry({
-      components: [
-        { name: 'panel', label: 'Info Panel', description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      blocks: [
+        { name: 'panel', label: 'Info Panel', description: 'x', build: (n: unknown) => n } as unknown as BlockDef,
       ],
     });
     const doc = ['intro', ':::panel', 'body one', ':::'].join('\n');
@@ -1267,8 +1267,8 @@ describe('MarkdownEditor', () => {
   it('truncates a long registry label with a span the title and the hidden-line count sit outside of', async () => {
     const longLabel = 'A Genuinely Very Long Component Label';
     const registry = defineRegistry({
-      components: [
-        { name: 'panel', label: longLabel, description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      blocks: [
+        { name: 'panel', label: longLabel, description: 'x', build: (n: unknown) => n } as unknown as BlockDef,
       ],
     });
     const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry, foldOnMount: true });
@@ -1415,7 +1415,7 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      onComponentAtCaret: (info) => {
+      onBlockAtCaret: (info) => {
         reports.push(info);
       },
     });
@@ -1456,7 +1456,7 @@ describe('MarkdownEditor', () => {
     const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
-      onComponentAtCaret: (info) => {
+      onBlockAtCaret: (info) => {
         reports.push(info);
       },
       registerEditor: (a: EditorApi | null) => {

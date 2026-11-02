@@ -9,9 +9,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `BackendCommit`: { ref: string; author: { name: string; email: string }; date: string }
 - `BackendProvider`: { kind: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
+- `BlockContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
+- `BlockDef`: { name: string; label: string; description: string; insertTemplate?: string; build: (ctx: BlockContext) => Element; hydrate?: boolean | "visible"; defaultIconByRole?: Record<string, string>; use?: string; attributes?: Record<string, FieldDescriptor>; behavior?: BehaviorTable; slots?: SlotDef[]; icon?: string; group?: string; hidden?: boolean; preview?: { attributes?: Record<string, string | boolean>; slots?: Record<string, string | string[]> } }
+- `BlockRegistry`: { defs: BlockDef[]; names: string[]; get: (name: string) => BlockDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: boolean }
 - `BranchExistsError`: typeof BranchExistsError
-- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Record<string, FieldDescriptor>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: MediaConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
+- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Record<string, FieldDescriptor>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; blocks?: readonly BlockDef[]; icons?: IconSet; islands?: IslandRegistry }; media?: MediaConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; supportContact?: string; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; media: { enabled: false } | { enabled: true; bucketBinding: string }; navMenu?: NavMenuConfig; siteConfigPath: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
@@ -19,9 +22,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Capability`: "owner" | "editor" | "none"
 - `CommitAuthor`: { name: string; email: string }
 - `CommitConflictError`: typeof CommitConflictError
-- `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; attr: (key: string) => string | undefined; node: Element }
-- `ComponentDef`: { name: string; label: string; description: string; insertTemplate?: string; build: (ctx: ComponentContext) => Element; hydrate?: boolean | "visible"; defaultIconByRole?: Record<string, string>; use?: string; attributes?: Record<string, FieldDescriptor>; behavior?: BehaviorTable; attributeSchema?: Fieldset<Record<string, FieldDescriptor>>; slots?: SlotDef[]; icon?: string; group?: string; hidden?: boolean; preview?: { attributes?: Record<string, string | boolean>; slots?: Record<string, string | string[]> } }
-- `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef | undefined; defaultIcon: (name: string, role?: string) => string | undefined; iconField: (name: string) => string | undefined }
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: R; refine?: ((data: Record<string, unknown>, body: string) => Record<string, string> | undefined); behavior?: BehaviorTable; routing?: "dated" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
@@ -32,9 +32,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `DatePrefix`: "year" | "month" | "day"
 - `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A) => A
 - `defineAdapter`: <const A extends CairnAdapter>(adapter: A & { editor?: { navLayout?: KeyedNavLayout<keyof A["content"] & string> } }) => A & Omit<CairnAdapter, keyof A>
-- `defineComponent`: <const D extends ComponentDef>(def: D) => D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
+- `defineBlock`: <const D extends BlockDef>(def: D) => RegisteredBlock<D>
 - `defineConcept`: <const C extends ConceptConfig>(concept: C & { summaryFields?: readonly (keyof C["fields"] & string)[] }) => C
-- `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
+- `defineRegistry`: ({ blocks }: { blocks: readonly BlockDef[] }) => BlockRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
 - `DocHeading`: { id: string; text: string; depth: number }
 - `Editor`: { email: string; displayName: string; role: string; capability: "owner" | "editor" | "none" }
@@ -69,13 +69,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; containerClass?: string; byConcept?: Record<string, { containerClass?: string }> }
-- `previewMarkdown`: (def: ComponentDef) => string | undefined
+- `previewMarkdown`: (def: BlockDef) => string | undefined
 - `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string }
+- `RegisteredBlock`: D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
 - `Renderer`: { render: (input: RenderInput) => Promise<string>; renderDocument: (input: RenderInput) => Promise<{ html: string; headings: DocHeading[] }> }
-- `RendererConfig`: { components?: ComponentRegistry; resolveMedia?: MediaResolve; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
+- `RendererConfig`: { blocks?: readonly BlockDef[]; resolveMedia?: MediaResolve; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
 - `renderGlyph`: (name: string, icons: IconSet) => Element
 - `RenderInput`: ResolveOptions & { body: string; concept?: string; frontmatter?: Record<string, unknown> }
 - `RepoFile`: { id: string; name: string; path: string }

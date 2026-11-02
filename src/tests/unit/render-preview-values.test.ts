@@ -1,22 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
-  defineComponent,
+  defineBlock,
   emptyValues,
   previewValues,
-  type ComponentDef,
+  type BlockDef,
 } from '../../lib/render/registry.js';
 import { fields, type TextField } from '../../lib/content/fields.js';
 
-const stub = (): ComponentDef['build'] => () => ({
+const stub = (): BlockDef['build'] => () => ({
   type: 'element',
   tagName: 'div',
   properties: {},
   children: [],
 });
 
-describe('ComponentDef picker fields', () => {
+describe('BlockDef picker fields', () => {
   it('accepts the new optional fields and a structured preview sample', () => {
-    const def: ComponentDef = {
+    const def: BlockDef = {
       name: 'callout',
       label: 'Callout',
       description: 'A highlighted note',
@@ -36,7 +36,7 @@ describe('ComponentDef picker fields', () => {
   });
 
   it('leaves the new fields undefined when omitted', () => {
-    const def: ComponentDef = {
+    const def: BlockDef = {
       name: 'plain',
       label: 'Plain',
       description: '',
@@ -49,7 +49,7 @@ describe('ComponentDef picker fields', () => {
   });
 
   it('accepts a pattern string and a behavior validator on an attribute field', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'link',
       label: 'Link',
       description: '',
@@ -62,7 +62,7 @@ describe('ComponentDef picker fields', () => {
   });
 
   it('accepts itemLabel on a repeatable slot', () => {
-    const def: ComponentDef = {
+    const def: BlockDef = {
       name: 'list',
       label: 'List',
       description: '',
@@ -83,7 +83,7 @@ describe('ComponentDef picker fields', () => {
 
 describe('previewValues', () => {
   it('returns emptyValues output when the def declares no preview', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'plain',
       label: 'Plain',
       description: '',
@@ -95,7 +95,7 @@ describe('previewValues', () => {
   });
 
   it('overlays the declared preview attributes and slots over the seeded base', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'callout',
       label: 'Callout',
       description: '',
@@ -123,7 +123,7 @@ describe('previewValues', () => {
   });
 
   it('carries a repeatable slot value through from preview.slots', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'steps',
       label: 'Steps',
       description: '',
@@ -137,7 +137,7 @@ describe('previewValues', () => {
   });
 
   it('does not mutate the emptyValues base', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'callout',
       label: 'Callout',
       description: '',

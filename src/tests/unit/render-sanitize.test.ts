@@ -75,7 +75,7 @@ describe('render sanitize floor', () => {
 
   it('preserves the directive markers so a registered component still renders', async () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'box',
           label: '',
@@ -89,7 +89,7 @@ describe('render sanitize floor', () => {
         },
       ],
     });
-    const html = await createRenderer({ components: reg }).render({ body: ':::box\ncontent\n:::' });
+    const html = await createRenderer({ blocks: reg.defs }).render({ body: ':::box\ncontent\n:::' });
     expect(html).toContain('class="box"');
     expect(html).toContain('content');
   });
@@ -124,7 +124,7 @@ describe('render sink guard (post-dispatch)', () => {
   // constant on* handler and inline style, the exact residual the guard closes.
   const sinkRegistry = () =>
     defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'sink',
           label: '',
@@ -152,7 +152,7 @@ describe('render sink guard (post-dispatch)', () => {
     });
 
   it('neutralizes a javascript: url a build routes from an attribute value', async () => {
-    const html = await createRenderer({ components: sinkRegistry() }).render({ body: ':::sink{url="javascript:alert(1)" img="javascript:alert(2)"}\nbody\n:::' });
+    const html = await createRenderer({ blocks: sinkRegistry().defs }).render({ body: ':::sink{url="javascript:alert(1)" img="javascript:alert(2)"}\nbody\n:::' });
     expect(html).not.toContain('javascript:');
     expect(html.toLowerCase()).not.toContain('onclick');
     expect(html).not.toContain('style=');
@@ -160,7 +160,7 @@ describe('render sink guard (post-dispatch)', () => {
   });
 
   it('keeps a safe url a build routes from an attribute value', async () => {
-    const html = await createRenderer({ components: sinkRegistry() }).render({ body: ':::sink{url="https://ok.test/x" img="https://ok.test/i.png"}\nbody\n:::' });
+    const html = await createRenderer({ blocks: sinkRegistry().defs }).render({ body: ':::sink{url="https://ok.test/x" img="https://ok.test/i.png"}\nbody\n:::' });
     expect(html).toContain('href="https://ok.test/x"');
     expect(html).toContain('src="https://ok.test/i.png"');
   });

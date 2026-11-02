@@ -22,7 +22,7 @@ function isVisible(bubble: HTMLElement): boolean {
 
 describe('Tooltip', () => {
   it('shows the bubble on hover', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
     expect(isVisible(bubble)).toBe(false);
@@ -37,7 +37,7 @@ describe('Tooltip', () => {
   });
 
   it('shows the bubble on :focus-visible', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
     expect(isVisible(bubble)).toBe(false);
@@ -51,7 +51,7 @@ describe('Tooltip', () => {
   });
 
   it('hides on Escape and keeps focus on the trigger', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
 
@@ -64,14 +64,14 @@ describe('Tooltip', () => {
   });
 
   it('points the trigger\'s aria-describedby at the rendered bubble text', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
 
     const describedBy = button.getAttribute('aria-describedby');
     expect(describedBy).not.toBeNull();
     expect(bubble.id).toBe(describedBy);
-    expect(bubble.textContent?.trim()).toBe('Insert a component');
+    expect(bubble.textContent?.trim()).toBe('Insert a block');
   });
 
   it('anchors the shown bubble above and horizontally overlapping its own trigger', async () => {
@@ -174,7 +174,7 @@ describe('Tooltip', () => {
   });
 
   it('shows on a coarse-pointer tap and hides on the next tap outside', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
     expect(isVisible(bubble)).toBe(false);
@@ -196,7 +196,7 @@ describe('Tooltip', () => {
   it('stays open while the pointer travels from the trigger into the bubble', async () => {
     // WCAG 1.4.13's hoverable bullet: a pointer moving from the trigger into the bubble lands on
     // the bubble well inside the hide grace, so it never dismisses.
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
     // Room above the trigger, which otherwise sits flush against the viewport's top edge where the
@@ -216,7 +216,7 @@ describe('Tooltip', () => {
     // exactly this mouseleave with nothing underneath to catch it. Dispatched directly rather than
     // through userEvent, which has no way to pause a real pointer mid-move without a hoverable
     // element under it to land on.
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const wrapper = screen.container.querySelector('.cairn-tooltip')!;
     const bubble = bubbleOf(screen.container);
@@ -237,7 +237,7 @@ describe('Tooltip', () => {
   });
 
   it('hides once the hide grace elapses with no re-entry', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const wrapper = screen.container.querySelector('.cairn-tooltip')!;
     const bubble = bubbleOf(screen.container);
@@ -253,7 +253,7 @@ describe('Tooltip', () => {
   it('hides on Escape with focus elsewhere, without moving focus', async () => {
     // The Escape listener is on the document, not the wrapper: a hover-shown bubble leaves focus
     // wherever it already was, so a wrapper-scoped listener never sees the key press.
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
     const elsewhere = document.createElement('button');
@@ -284,10 +284,10 @@ describe('Tooltip', () => {
     const named = createRawSnippet(() => ({
       render: () => '<button type="button" aria-label="Insert block"><span aria-hidden="true">+</span></button>',
     }));
-    const screen = await render(Tooltip, { text: 'Insert a component at the cursor', children: named });
+    const screen = await render(Tooltip, { text: 'Insert a block at the cursor', children: named });
     const button = screen.container.querySelector('button')!;
     expect(button.getAttribute('aria-describedby')).toBe(bubbleOf(screen.container).id);
-    await expect.element(button).toHaveAccessibleDescription('Insert a component at the cursor');
+    await expect.element(button).toHaveAccessibleDescription('Insert a block at the cursor');
   });
 
   it('hides once the trigger reports its own menu open through aria-expanded', async () => {
@@ -310,7 +310,7 @@ describe('Tooltip', () => {
   });
 
   it('hides when an enabled trigger is activated, and stays for an aria-disabled one', async () => {
-    const screen = await render(Tooltip, { text: 'Insert a component', children: trigger });
+    const screen = await render(Tooltip, { text: 'Insert a block', children: trigger });
     const button = screen.container.querySelector('button')!;
     const bubble = bubbleOf(screen.container);
 
@@ -323,7 +323,7 @@ describe('Tooltip', () => {
       render: () => '<button type="button" aria-disabled="true">Edit block</button>',
     }));
     const guardedScreen = await render(Tooltip, {
-      text: 'Place the cursor in a component to edit it',
+      text: 'Place the cursor in an editable block to edit it',
       children: guarded,
     });
     const guardedButton = guardedScreen.container.querySelector('button')!;

@@ -171,12 +171,12 @@ Edit the text inside a block, and leave the `:::` lines alone. A figure is a blo
 When you open an entry, the editor collapses each block to a pill, which makes the surrounding text easier to read.
 
 ```repro
-story: editor/collapsed-layout-block
+story: editor/collapsed-block
 alt: Reproduction of an entry with a collapsed block shown as a pill between two paragraphs, with a fold control in the margin.
 caption: The pill names the block, shows its title in quotation marks, and counts the lines it holds.
 ```
 
-Selecting a collapsed block's pill opens it. The arrow in the margin does the same, and its tooltip reads **Unfold this section** or **Fold this section**. Ctrl+Shift+[ folds the block at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed block or edit it, the block opens again.
+Selecting a collapsed block's pill opens it. The arrow in the margin does the same, and its tooltip reads **Unfold this block** or **Fold this block**. Ctrl+Shift+[ folds the block at the cursor, and Ctrl+Shift+] opens it. If you move the cursor into a collapsed block or edit it, the block opens again.
 
 ## Check spelling and style
 

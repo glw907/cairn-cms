@@ -6,7 +6,7 @@ import { defaultSchema, type Schema } from 'hast-util-sanitize';
 import type { Root, Element } from 'hast';
 import { visit } from 'unist-util-visit';
 import { toString } from 'hast-util-to-string';
-import { dataAttrProp, type ComponentRegistry } from './registry.js';
+import { dataAttrProp, type BlockRegistry } from './registry.js';
 
 // The fixed directive markers the stamp writes and the dispatch reads. They are inert data
 // attributes, never a script vector, and must survive the floor so the dispatch still runs.
@@ -21,7 +21,7 @@ const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
  * on anchors are admitted. figure/figcaption join the base so the engine's placed figure survives
  * the floor on every site.
  */
-export function buildSanitizeSchema(registry: ComponentRegistry): Schema {
+export function buildSanitizeSchema(registry: BlockRegistry): Schema {
   const attrMarkers = registry.defs.flatMap((d) => Object.keys(d.attributes ?? {}).map((key) => dataAttrProp(key)));
   const markers = [...FIXED_MARKERS, ...attrMarkers];
   const attributes = defaultSchema.attributes ?? {};

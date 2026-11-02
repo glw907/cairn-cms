@@ -4,7 +4,7 @@ import { userEvent } from 'vitest/browser';
 import MarkdownEditor, { type EditorApi } from '../../lib/admin/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './_fake-spell-worker.js';
 import { cairnLinkCompletionSource } from '../../lib/admin/link-completion.js';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineRegistry, type BlockDef } from '../../lib/render/registry.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('editor accessible name', () => {
@@ -94,21 +94,21 @@ describe('a folded container unfolds on an in-place directive rename, revealing 
     // prove a later refold resolves preparePlaceholder fresh against the CURRENT text, not a
     // carried-over identity from before the rename.
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'note',
           label: 'Callout',
           description: 'x',
           use: 'Use for a supporting aside.',
           build: (n: unknown) => n,
-        } as unknown as ComponentDef,
+        } as unknown as BlockDef,
         {
           name: 'warning',
           label: 'Callout',
           description: 'x',
           use: 'Use for a safety-critical caution.',
           build: (n: unknown) => n,
-        } as unknown as ComponentDef,
+        } as unknown as BlockDef,
       ],
     });
     const doc = ':::note\nbody line one\nbody line two\n:::\n';

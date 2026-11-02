@@ -11,14 +11,14 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { previewValues, type ComponentDef, type ComponentValues, type SlotDef } from '../render/registry.js';
+  import { previewValues, type BlockDef, type ComponentValues, type SlotDef } from '../render/registry.js';
   import { buildComponentInsert } from '../render/component-insert.js';
   import type { IconSet } from '../render/glyph.js';
   import type { FieldDescriptor } from '../content/fields.js';
   import IconPicker from './IconPicker.svelte';
 
   interface Props {
-    def: ComponentDef;
+    def: BlockDef;
     icons?: IconSet;
     /** Called with the serialized markdown when the form validates. */
     onInsert: (markdown: string) => void;
@@ -156,7 +156,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
    *  away), so the compiler cannot prove the chain exhaustive from the template alone; this
    *  function lists every `FieldDescriptor` arm as its case so a fourteenth arm fails
    *  `npm run check` here. multiselect, image, object, reference, and array never reach a real
-   *  component attribute (`checkComponentAttributes` rejects them at `defineComponent`), but `def.attributes`
+   *  component attribute (`checkComponentAttributes` rejects them at `defineBlock`), but `def.attributes`
    *  is still typed over the full union, so this proof covers them too. Never called: the
    *  compile-time check is its only purpose. Deliberately unused; keep it despite looking like
    *  dead code.

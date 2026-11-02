@@ -260,7 +260,7 @@ or extend it; nothing here is a literal a re-skin would miss.
       <code>preview</code> and run through the same <code>render</code> as the sample above. A component
       added to the registry appears here with no edit to this page.
     </p>
-    {#each data.components as sample (sample.name)}
+    {#each data.blocks as sample (sample.name)}
       <!-- A sample is a separate section, labeled by the h3, so the heading level a sample's
            markdown uses never breaks the page outline. -->
       <section aria-labelledby="sg-directive-{sample.name}">

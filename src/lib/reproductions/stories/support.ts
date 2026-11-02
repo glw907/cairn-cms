@@ -4,7 +4,7 @@
 // what `editPageProps()` returns, and a fixture stays in its story module until a second
 // module needs that same one.
 import type { NamedField, SiteRender } from '../../content/types.js';
-import { defineRegistry, type ComponentRegistry } from '../../render/registry.js';
+import { defineRegistry, type BlockRegistry } from '../../render/registry.js';
 import type { EditData } from '../../sveltekit/content-routes-entry-read.js';
 import type { ListData } from '../../sveltekit/content-routes-list.js';
 import { fixtureConcept, fixtureEntries, fixtureSiteName, fixtureTidyReview } from '../fixtures.js';
@@ -75,9 +75,9 @@ export async function settleEditingSurface(root: HTMLElement): Promise<void> {
   await waitFor(root, '#cairn-pane-write .cm-content', 'the editing surface');
 }
 
-/** The one sample component the fold pill and the insert palette resolve their labels through. */
-export const fixtureRegistry: ComponentRegistry = defineRegistry({
-  components: [
+/** The one sample block the fold pill and the insert palette resolve their labels through. */
+export const fixtureRegistry: BlockRegistry = defineRegistry({
+  blocks: [
     {
       name: 'two-up',
       label: 'Two-up layout',

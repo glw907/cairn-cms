@@ -54,7 +54,7 @@ export function cairnHighlightStyle(): HighlightStyle {
 
 // The machinery lines explain themselves on hover, so an editor who has never seen ::: syntax
 // learns what the line is without leaving the page.
-const MACHINERY_HINT = 'Layout marker. Edit the text between these lines and leave this line as it is.';
+const MACHINERY_HINT = 'Block marker. Edit the text between these lines and leave this line as it is.';
 
 // Nesting deeper than three steps shares the third visual step; the depth model itself is unbounded.
 const DEPTH_STEPS = [1, 2, 3];

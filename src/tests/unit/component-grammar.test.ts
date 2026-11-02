@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { serializeComponent, parseComponent, componentRoundTripSafety } from '../../lib/render/component-grammar.js';
-import { defineComponent, type ComponentDef } from '../../lib/render/registry.js';
+import { defineBlock, type BlockDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
 
-const card = defineComponent({
+const card = defineBlock({
   ...base, name: 'card', label: 'Card',
   attributes: { icon: fields.icon({ label: 'Icon' }) },
   slots: [
@@ -110,7 +110,7 @@ describe('serializeComponent escaping', () => {
   });
 });
 
-const cta = defineComponent({
+const cta = defineBlock({
   ...base, name: 'cta', label: 'CTA',
   attributes: { icon: fields.icon({ label: 'Icon' }) },
   slots: [
@@ -135,20 +135,20 @@ describe('serializeComponent nested slots', () => {
   });
 
   it('omits an empty repeatable slot but still nests when another slot is present', () => {
-    const passage: ComponentDef = {
+    const passage: BlockDef = {
       ...base, name: 'passage', label: 'Passage',
       slots: [
         { name: 'body', label: 'Body', kind: 'markdown' },
         { name: 'aside', label: 'Aside', kind: 'markdown' },
       ],
-    } as ComponentDef;
+    } as BlockDef;
     const md = serializeComponent(passage, { attributes: {}, slots: { body: 'Main.', aside: 'Note.' } });
     expect(md).toBe('::::passage\nMain.\n\n:::aside\nNote.\n:::\n::::');
   });
 });
 
 describe('parseComponent round-trips serializeComponent', () => {
-  const cases: { def: ComponentDef; values: Parameters<typeof serializeComponent>[1] }[] = [
+  const cases: { def: BlockDef; values: Parameters<typeof serializeComponent>[1] }[] = [
     { def: card, values: { attributes: { icon: 'snowflake' }, slots: { title: 'Lessons', body: 'All season.' } } },
     { def: card, values: { attributes: { icon: '' }, slots: { title: '', body: 'Body only.' } } },
     { def: cta, values: { attributes: { icon: 'snowflake' }, slots: { title: 'Book', body: 'Soon.', actions: ['One', 'Two'] } } },

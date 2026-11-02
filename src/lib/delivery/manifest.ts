@@ -13,12 +13,12 @@ import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
 import type { ManifestProblem, SiteManifestBuild } from '../content/manifest.js';
 import type { CairnAdapter } from '../content/types.js';
 
-/** Every block directive name a body can hold on this site: components, their slots, and the engine's two. */
+/** Every block directive name a body can hold on this site: its blocks, their slots, and the engine's two. */
 function knownDirectives(adapter: CairnAdapter): Set<string> {
-  const registry = adapter.rendering.components;
+  const blocks = adapter.rendering.blocks ?? [];
   return new Set([
-    ...(registry?.names ?? []),
-    ...(registry?.defs ?? []).flatMap((def) => (def.slots ?? []).map((slot) => slot.name)),
+    ...blocks.map((def) => def.name),
+    ...blocks.flatMap((def) => (def.slots ?? []).map((slot) => slot.name)),
     'include',
     'figure',
   ]);

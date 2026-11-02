@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { previewMarkdown } from '../../lib/index.js';
-import { defineComponent } from '../../lib/render/registry.js';
+import { defineBlock } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
 const base = {
@@ -11,7 +11,7 @@ const base = {
 
 describe('previewMarkdown', () => {
   it('serializes a component preview sample as directive markdown', () => {
-    const callout = defineComponent({
+    const callout = defineBlock({
       ...base,
       name: 'callout',
       label: 'Callout',
@@ -26,12 +26,12 @@ describe('previewMarkdown', () => {
   });
 
   it('returns undefined when the component declares no preview', () => {
-    const plain = defineComponent({ ...base, name: 'plain', label: 'Plain' });
+    const plain = defineBlock({ ...base, name: 'plain', label: 'Plain' });
     expect(previewMarkdown(plain)).toBeUndefined();
   });
 
   it('serializes nested slots with the four-colon fence', () => {
-    const steps = defineComponent({
+    const steps = defineBlock({
       ...base,
       name: 'steps',
       label: 'Steps',

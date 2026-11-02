@@ -84,10 +84,10 @@ export type { CairnRef, LinkResolve } from './content/links.js';
 // `Manifest.entries` names `ManifestEntry`.
 export type { Manifest, ManifestEntry } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.
-export { defineRegistry, defineComponent } from './render/registry.js';
+export { defineRegistry, defineBlock } from './render/registry.js';
 export { previewMarkdown } from './render/component-grammar.js';
-// `ComponentDef.build`'s parameter and `.slots` name these.
-export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
+// `BlockDef.build`'s parameter and `.slots` name these.
+export type { BlockDef, BlockRegistry, BlockContext, RegisteredBlock, SlotDef } from './render/registry.js';
 export { renderGlyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
 // rehypeDispatch is deliberately not public: createRenderer is the one public render pipeline, so

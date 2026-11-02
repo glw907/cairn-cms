@@ -21,7 +21,7 @@ import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-media.js';
 import { remarkResolveIncludes, FRAGMENT_RESOLVE, type FragmentResolve } from './resolve-include.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
-import { defineRegistry, type ComponentRegistry } from './registry.js';
+import { defineRegistry, type BlockDef } from './registry.js';
 import { rehypeCollectHeadings, DOC_HEADINGS, type DocHeading } from './collect-headings.js';
 import type { LinkResolve } from '../content/links.js';
 
@@ -81,10 +81,10 @@ export interface Renderer {
  */
 export interface RendererConfig {
   /**
-   * The site's component registry, from `defineRegistry`. Absent, the renderer knows no
-   *  components and renders plain markdown.
+   * The site's blocks, each from `defineBlock`; the engine builds the registry from them. Absent,
+   *  the renderer knows no blocks and renders plain markdown.
    */
-  components?: ComponentRegistry;
+  blocks?: readonly BlockDef[];
   /**
    * The default `media:` resolver, used when an input carries no `resolveMedia` of its own. An
    *  input's own resolver always wins.
@@ -117,11 +117,19 @@ export interface RendererConfig {
  * Compose a site's render pipeline from its config: directive syntax to stamped markers to
  *  registry-built hast. Returns a `Renderer` whose `render` and `renderDocument` take one
  *  `RenderInput`, so `render: renderer.render` forwards every resolver.
+ * @throws When `config` holds a `components` key, or is a registry (it holds `defs`). A site's build
+ * is `vite build`, which does not type-check, so either would otherwise publish a site with no blocks.
  * @public
  */
 export function createRenderer(config: RendererConfig = {}): Renderer {
+  if ('components' in config) {
+    throw new Error('cairn: createRenderer has no `components` key. Pass your block definitions as `blocks`, an array.');
+  }
+  if ('defs' in config) {
+    throw new Error('cairn: createRenderer takes an options object, not a registry. Pass your block definitions as `blocks`, an array.');
+  }
   const options = config;
-  const registry = config.components ?? defineRegistry({ components: [] });
+  const registry = defineRegistry({ blocks: config.blocks ?? [] });
   const remarkPlugins: PluggableList = [
     remarkDirective,
     // Must run before remarkDirectiveStamp, which unconditionally restores every leaf/text

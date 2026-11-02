@@ -205,6 +205,39 @@
 
 ### Changed
 
+- **The `:::` content unit is a block in the API and the admin.** `defineComponent` is `defineBlock`;
+  `ComponentDef`, `ComponentRegistry`, and `ComponentContext` are `BlockDef`, `BlockRegistry`, and
+  `BlockContext`; and `defineRegistry` takes `blocks`. `rendering.blocks` and `createRenderer`'s `blocks`
+  are plain arrays of block definitions, and the engine builds the registry, so a site no longer calls
+  `defineRegistry` to wire either. `BlockDef` drops `attributeSchema`, which the new `RegisteredBlock`
+  type that `defineBlock` returns carries. Scaffolds move `src/theme/markdown-components.ts` to
+  `src/theme/markdown-blocks.ts`, and its `components` export is `blocks`. The admin's strings follow: the
+  insert dialog reads "Insert a block", "Search blocks", and "Back to blocks", the Edit-block control reads
+  "Edit the block at the cursor" or "Place the cursor in an editable block to edit it", and the fold
+  control reads "Fold this block" or "Unfold this block". Stored entries and the directive grammar don't
+  change, so no content moves. A stale key refuses at load: `createRenderer` throws on a `components` key
+  or a registry passed as its config, and `defineAdapter` throws on a `components` key under `rendering`.
+
+  Consumers must: rename `defineComponent` to `defineBlock`.
+
+  Consumers must: rename `ComponentDef` to `BlockDef`.
+
+  Consumers must: rename `ComponentRegistry` to `BlockRegistry`.
+
+  Consumers must: rename `ComponentContext` to `BlockContext`.
+
+  Consumers must: change `createRenderer({ components: registry })` to `createRenderer({ blocks })`, passing the array, and `createRenderer(registry, options)` from an older pin to `createRenderer({ blocks, ...options })`.
+
+  Consumers must: change `rendering: { components: registry }` to `rendering: { blocks }`, passing the array, and read `rendering.blocks` as an array, not through `.defs`, `.names`, or `.get`.
+
+  Consumers must: change `defineRegistry({ components })` to `defineRegistry({ blocks })` where you keep a registry of your own, and drop the call where it only fed `createRenderer` and `rendering`.
+
+  Consumers must: rename `src/theme/markdown-components.ts` to `src/theme/markdown-blocks.ts` and its `components` export to `blocks`, if your site came from the scaffold.
+
+  Consumers must: read `attributeSchema` through `RegisteredBlock`, not `BlockDef`.
+
+  Consumers must: update any test that finds an admin control by its old label, such as `Insert a component`, `Search components`, `Back to components`, or `Fold this section`.
+
 - **`EntryData` is typed from the site resolver.** `EntryData<S>` is a union over the adapter's concepts,
   so narrowing on `data.concept` types `data.entry.frontmatter` from that concept's fields.
   `PublicRoutesConfig<S>`, `PublicRoutes<S>`, and `createPublicRoutes` carry the resolver type, and with
@@ -286,10 +319,10 @@
 
   Consumers must: change each `@glw907/cairn-cms/delivery/head` import to `@glw907/cairn-cms/public`.
 
-- **`/render` is gone, and `ComponentContext` is a root type.** `/render` carried that one type, and
+- **`/render` is gone, and `BlockContext` is a root type.** `/render` carried that one type, and
   `/sveltekit` no longer re-exports it.
 
-  Consumers must: import `ComponentContext` from `@glw907/cairn-cms`, not `@glw907/cairn-cms/render` or `@glw907/cairn-cms/sveltekit`.
+  Consumers must: import `BlockContext` from `@glw907/cairn-cms`, not `@glw907/cairn-cms/render` or `@glw907/cairn-cms/sveltekit`.
 
 - **A new `./internal` export backs the `cairnManifest` plugin's generated module.** The entry is the
   engine's own, with no tier, no surface snapshot, and no semver promise. A site never imports it.
@@ -378,12 +411,12 @@
   Consumers may: drop a cast around `cairn.aiPosture`.
 
 - **`createRenderer` takes one config bag and returns one `render`.** `createRenderer(registry,
-  options)` becomes `createRenderer({ components, resolveMedia, ... })`. `renderMarkdown(md, opts)`
+  options)` becomes `createRenderer({ blocks, resolveMedia, ... })`. `renderMarkdown(md, opts)`
   becomes `render({ body: md, ...opts })`, and `renderDocument` takes the same input, now named
   `RenderInput`. The returned `remarkPlugins` and `rehypePlugins` are gone, though the options stay.
   `ResolveOptions` and `SiteRender` name the link resolver `resolveLink` where they named it `resolve`.
 
-  Consumers must: pass `createRenderer` one object with `components` and `resolveMedia` keys.
+  Consumers must: pass `createRenderer` one object with `blocks` and `resolveMedia` keys.
 
   Consumers must: call `render({ body, ...opts })` where you called `renderMarkdown(md, opts)`, and
   pass the same input to `renderDocument`.

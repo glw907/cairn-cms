@@ -447,7 +447,7 @@ class FoldMarker extends GutterMarker {
   toDOM(view: EditorView) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    const title = this.folded ? 'Unfold this section' : 'Fold this section';
+    const title = this.folded ? 'Unfold this block' : 'Fold this block';
     btn.className =
       'cm-cairn-fold-btn' +
       (this.folded ? ' cm-cairn-fold-folded' : '') +

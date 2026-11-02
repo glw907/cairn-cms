@@ -1,7 +1,7 @@
 <!--
 @component
 The Markdown cheat sheet, opened from the edit page's editor footer. A one-screen table pairs
-each piece of syntax with what it makes, and a closing note explains the ::: layout blocks.
+each piece of syntax with what it makes, and a closing note explains the ::: blocks.
 Built on a native <dialog> with a backdrop form that closes it; the host drives it through the exported
 open(), so the component renders no trigger of its own.
 -->
@@ -42,7 +42,7 @@ open(), so the component renders no trigger of its own.
     <h3 class="mt-4 mb-2 type-body font-semibold">Keyboard shortcuts</h3>
     <ShortcutsGrid />
     <p class="mt-3 type-body">
-      Lines starting with <code>:::</code> are layout blocks. Edit the text inside them and leave
+      Lines starting with <code>:::</code> are blocks. Edit the text inside them and leave
       the <code>:::</code> lines alone.
     </p>
   </div>

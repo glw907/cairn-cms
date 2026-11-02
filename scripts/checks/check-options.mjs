@@ -6,7 +6,7 @@
 // The roots the walk starts from, by name: every exported function named `define*` or `create*`, plus
 // the extras in ROOT_EXTRAS. A new export matching the pattern joins the walk automatically. The
 // roots in the current `dist`, by subpath (21 pairs, 21 distinct exports):
-//   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
+//   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineBlock,
 //                   defineConcept, defineRegistry, defineRoles
 //   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
 //   /log            createLogger

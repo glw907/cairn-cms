@@ -167,7 +167,7 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: false,
   },
   {
-    id: 'editor/collapsed-layout-block',
+    id: 'editor/collapsed-block',
     heights: { column: 320 },
     markerKeys: [],
     pose: false,

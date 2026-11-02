@@ -32,7 +32,7 @@ Contents:
    frontmatter key the content keeps (`references/content-model.md`). `backend` takes
    `createGithubApp({ owner, repo, branch, appId, installationId })`; until production these are
    placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` is
-   `createRenderer({ components }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
+   `createRenderer({ blocks }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
 3. `src/lib/content.ts`: one literal eager `?raw` glob in the absolute form `/src/content/**/*.md`
    into `createSiteResolver(cairn, files)`; export `site` and an `origin` constant. A relative
    glob's `../content/...` keys are refused.

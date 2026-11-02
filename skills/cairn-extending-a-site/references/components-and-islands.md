@@ -16,11 +16,11 @@ Contents:
 
 ## Declare and register
 
-On a scaffold, components live in `src/theme/markdown-components.ts` and the adapter builds the
-registry from its exported `components` list. Adding one takes two edits there: the
-`defineComponent` call and an entry in `components`. A hand-built site passes
-`defineRegistry({ components })` to `createRenderer` as `components`, sets `rendering.components`, and passes
-`rendering={cairn.rendering}` to `CairnAdmin` (no `components` in it, no **Insert block** button).
+On a scaffold, blocks live in `src/theme/markdown-blocks.ts` and the adapter reads its exported
+`blocks` list. Adding one takes two edits there: the `defineBlock` call and an entry in `blocks`.
+A hand-built site passes the same array to `createRenderer({ blocks })` and `rendering.blocks`, and
+passes `rendering={cairn.rendering}` to `CairnAdmin` (no `blocks` in it, no **Insert block** button).
+The engine builds the registry from the array.
 
 - `name`, `label`, `description`, `build` are required. `figure` and `include` are reserved.
 - `attributes` map to single-value field types only (`text`, `textarea`, `number`, `select`, `url`,
@@ -39,11 +39,11 @@ fails the whole render: the preview shows `The preview could not render this con
 page fails its build or answers 500. Handle every value an author can type.
 
 ```ts
-// src/theme/markdown-components.ts
-import { defineComponent, fields } from '@glw907/cairn-cms';
+// src/theme/markdown-blocks.ts
+import { defineBlock, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
-export const countdown = defineComponent({
+export const countdown = defineBlock({
   name: 'countdown',
   label: 'Countdown',
   description: 'Days left until a date, counting down live.',
@@ -61,7 +61,7 @@ export const countdown = defineComponent({
   },
 });
 
-export const components = [countdown];
+export const blocks = [countdown];
 ```
 
 `ctx.attr(key)` returns the string or `undefined`; `ctx.attributes` carries typed values;
@@ -163,11 +163,11 @@ visible island).
 | Symptom | Cause |
 |---|---|
 | Error naming the component at load | Bad attribute type, reserved name, `defaultIconByRole` without an `icon` attribute, or the hydrate/islands pairing |
-| No **Insert block** button | `CairnAdmin` gets no `rendering`, or `rendering` has no `components`, or no listable component |
+| No **Insert block** button | `CairnAdmin` gets no `rendering`, or `rendering` has no `blocks`, or no listable block |
 | Missing from the picker | No attribute, slot, or `insertTemplate`, or `hidden` |
 | `The preview could not render this content.` | `build` threw on an unexpected value |
 | Directive prints as text | Leaf or text form; use `:::name` |
-| Content renders without markup | Not in the registry `createRenderer` received, or a name mismatch |
+| Content renders without markup | Not in the `blocks` array `createRenderer` received, or a name mismatch |
 | No boundary in the HTML | `hydrate` unset |
 | Boundary, fallback stays, runtime never loads | `hasIslands` false or no `afterNavigate` call |
 | Runtime loads, fallback stays, console silent | Not scrolled to (visible), or a registry key mismatch |

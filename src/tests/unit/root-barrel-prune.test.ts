@@ -94,7 +94,7 @@ const C2_REMOVED = ['Role', 'AuthEnv', 'BackendEnv'];
 
 // C2 breaking window (2026-08-02, R4, Task 9): the export-rule sweep reverses the 2026-07-01
 // pruning verdict for these 22 names. Each is genuinely named in a root-public signature
-// (`ConceptConfig.datePrefix`, `ComponentDef.slots`, `Fieldset.behavior`, `Manifest.entries`,
+// (`ConceptConfig.datePrefix`, `BlockDef.slots`, `Fieldset.behavior`, `Manifest.entries`,
 // `ManifestEntry.references`, `ConceptDescriptor.routing`, and `FieldDescriptor`'s own union
 // arms), so the new doctrine, every type named in a public signature is exported from a subpath
 // the consumer already imports, outranks the July minimalism call for exactly this set. Moved
@@ -130,7 +130,7 @@ const KEPT = [
   'composeRuntime',
   'createRenderer',
   'defineRegistry',
-  'defineComponent',
+  'defineBlock',
   'fields',
   'createGithubApp',
   'parseSiteConfig',
@@ -167,8 +167,8 @@ const KEPT = [
   'CairnRef',
   'LinkResolve',
   'Manifest',
-  'ComponentDef',
-  'ComponentRegistry',
+  'BlockDef',
+  'BlockRegistry',
   'IconSet',
   'RendererConfig',
   'RepoFile',

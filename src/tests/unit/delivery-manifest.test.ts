@@ -3,7 +3,7 @@ import { createGithubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
 import { createLinkResolver, createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { verifyEntries } from '../../lib/content/manifest.js';
 import { fields } from '../../lib/content/fields.js';
 
@@ -233,9 +233,7 @@ describe('buildSiteManifest directive check', () => {
     email: { from: 'a@b.c' },
     rendering: {
       render: ({ body }) => Promise.resolve(body),
-      components: defineRegistry({
-        components: [defineComponent({ name: 'callout', label: 'Callout', description: 'd', build: (ctx) => ctx.node, slots: [{ name: 'item', label: 'Item', kind: 'markdown' }] })],
-      }),
+      blocks: [defineBlock({ name: 'callout', label: 'Callout', description: 'd', build: (ctx) => ctx.node, slots: [{ name: 'item', label: 'Item', kind: 'markdown' }] })],
     },
   });
 

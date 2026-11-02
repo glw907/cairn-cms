@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
 import type { Element, ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { defineRegistry, type ComponentContext } from '../../lib/render/registry.js';
+import { defineRegistry, type BlockContext } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import { renderGlyph } from '../../lib/render/glyph.js';
 import { isElement, strProp, type MakeIcon } from '../../lib/render/rehype-dispatch.js';
@@ -47,7 +47,7 @@ const makeIcon: MakeIcon = (name, role) => fixtureIconSpan(renderGlyph(name, ICO
 // Local fixture helper: pull the <h2> out as the head's title and build the .cairn-head row with
 // an optional icon read from the declared attribute path. Mirrors what a real site build does
 // with the fixture headRow above.
-function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; rest: ElementContent[] } {
+function fixtureHead(ctx: BlockContext, icon: MakeIcon): { head: Element; rest: ElementContent[] } {
   const children = ctx.node.children as ElementContent[];
   const i = children.findIndex((c) => isElement(c) && c.tagName === 'h2');
   const h2 = children[i] as Element;
@@ -59,7 +59,7 @@ function fixtureHead(ctx: ComponentContext, icon: MakeIcon): { head: Element; re
 }
 
 const registry = defineRegistry({
-  components: [
+  blocks: [
     {
       name: 'card',
       label: 'Card',
@@ -107,13 +107,13 @@ const DOC = [
 
 describe('render pipeline characterization', () => {
   it('produces byte-identical HTML for a representative directive document', async () => {
-    const { render } = createRenderer({ components: registry });
+    const { render } = createRenderer({ blocks: registry.defs });
     const html = await render({ body: DOC });
     expect(html).toMatchSnapshot();
   });
 
   it('is stable across renders (no per-run nondeterminism)', async () => {
-    const { render } = createRenderer({ components: registry });
+    const { render } = createRenderer({ blocks: registry.defs });
     const a = await render({ body: DOC });
     const b = await render({ body: DOC });
     expect(a).toBe(b);

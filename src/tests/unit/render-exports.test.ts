@@ -28,12 +28,12 @@ describe('engine entry render surface', () => {
     }
   });
 
-  it('publishes no render subpath; ComponentContext is a root type', () => {
+  it('publishes no render subpath; BlockContext is a root type', () => {
     const { exports } = JSON.parse(readFileSync('package.json', 'utf8')) as { exports: Record<string, unknown> };
     expect('./render' in exports).toBe(false);
   });
 
-  it('omits strAttr from the root entry; the reader moved onto ComponentContext.attr', () => {
+  it('omits strAttr from the root entry; the reader moved onto BlockContext.attr', () => {
     expect('strAttr' in engine).toBe(false);
   });
 

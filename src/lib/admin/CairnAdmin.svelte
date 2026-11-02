@@ -27,6 +27,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import type { RevertOutcome } from '../sveltekit/types.js';
   import type { LoginRequestOutcome } from '../sveltekit/auth-routes.js';
   import type { CairnAdapter } from '../content/types.js';
+  import { defineRegistry } from '../render/registry.js';
 
   interface Props {
     /** The discriminated view data from `createCairnAdmin`'s load. */
@@ -45,7 +46,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
       | null;
     /**
      * The adapter's rendering block (`cairn.rendering`), for the edit view: `render` drives the
-     *  preview pane, `components` the insert palette, and `icons` the guided form fields. One prop
+     *  preview pane, `blocks` the insert palette, and `icons` the guided form fields. One prop
      *  carries all three, so the palette cannot be dropped while the preview stays wired.
      */
     rendering?: CairnAdapter['rendering'];
@@ -56,6 +57,9 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   }
 
   let { data, form = null, rendering, previewMint }: Props = $props();
+
+  // The edit view reads a registry; the adapter carries the plain block list.
+  const registry = $derived(rendering?.blocks ? defineRegistry({ blocks: rendering.blocks }) : undefined);
 
   // The SSR-resolved admin theme the auth views (login, confirm) render under. It rides the shell
   // payload (page.data.shell), a public member on every auth route: the theme cookie carries no
@@ -88,7 +92,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   <EditPage
     data={{ ...data.page, siteName: (page.data.shell as AdminShellData & { public: false }).siteName }}
     render={rendering?.render}
-    registry={rendering?.components}
+    {registry}
     icons={rendering?.icons}
     form={form as ContentFormFailure | null}
     {previewMint}

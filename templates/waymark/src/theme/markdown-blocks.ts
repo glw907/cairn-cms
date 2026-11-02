@@ -1,9 +1,9 @@
-// The theme's registered markdown components: the nine `defineComponent` declarations the
+// The theme's registered markdown blocks: the nine `defineBlock` declarations the
 // adapter's registry lists, plus the two private helpers (`makeIcon`, `parseVideoUrl`) they share.
 // Kept apart from `cairn.config.ts`, so the adapter file stays the concepts, backend, and
 // navLayout, not the component grammar. Not named `components.ts`: that specifier would collide
 // with the `#theme/components` directory six other files already import through.
-import { defineComponent, fields } from '@glw907/cairn-cms';
+import { defineBlock, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { isBannerExpired } from './islands/banner-expiry.js';
@@ -38,7 +38,7 @@ function parseVideoUrl(raw: string): { platform: string } {
   );
 }
 
-export const callout = defineComponent({
+export const callout = defineBlock({
   name: 'callout',
   label: 'Callout',
   description: 'A highlighted note with an optional icon.',
@@ -80,7 +80,7 @@ export const callout = defineComponent({
   ],
 });
 
-export const alert = defineComponent({
+export const alert = defineBlock({
   name: 'alert',
   label: 'Alert',
   description: 'A bordered note whose icon defaults from its role.',
@@ -128,7 +128,7 @@ export const alert = defineComponent({
 // picker only offers declared names), so it fails loud at render, the same build-backstop posture
 // resolveMedia and resolveLinks use for a broken reference: preview catches the throw and shows the
 // failed state (EditPage's preview effect), a public build lets it propagate and fails the build.
-export const icon = defineComponent({
+export const icon = defineBlock({
   name: 'icon',
   label: 'Icon',
   description: 'A single glyph from the site icon set, for a note that wants a small marker.',
@@ -159,7 +159,7 @@ export const icon = defineComponent({
 // engine cost, so it is the only facade this component offers. The thumbnail is a generic play glyph,
 // not the platform's real thumbnail image: hot-linking the real one would itself be the third-party
 // request the facade exists to avoid.
-export const video = defineComponent({
+export const video = defineBlock({
   name: 'video',
   label: 'Video',
   description:
@@ -205,7 +205,7 @@ export const video = defineComponent({
 // hook this site's writing guide already documents (see the-reading-surface.md), so the component and
 // the raw-HTML tip render identically. The quote is a required inline slot (a pull quote is one line,
 // not a paragraph); attribution is optional, since most pulled lines are the author's words.
-export const pullQuote = defineComponent({
+export const pullQuote = defineBlock({
   name: 'pull-quote',
   label: 'Pull quote',
   description: 'One striking sentence, pulled out of the flow and set large.',
@@ -234,7 +234,7 @@ export const pullQuote = defineComponent({
 // the styleguide already demonstrates (`.sg-cta`) is a bigger design call, left to a site owner; this
 // component stays a label-plus-link so a post can point at one next step without pre-empting that
 // question. `variant` is a closed two-value choice for the same reason.
-export const cta = defineComponent({
+export const cta = defineBlock({
   name: 'cta',
   label: 'Call to action',
   description:
@@ -267,7 +267,7 @@ export const cta = defineComponent({
 // button. It carries the same label-plus-link shape but drops the primary/secondary variant
 // choice (a micro-cta is always the same restrained chip) and adds an optional note line for a
 // short gloss on where the link goes.
-export const microCta = defineComponent({
+export const microCta = defineBlock({
   name: 'micro-cta',
   label: 'Micro CTA',
   description: 'A compact pointer link, for further reading at the end of a section.',
@@ -303,7 +303,7 @@ export const microCta = defineComponent({
 // closed question is still fully readable by a screen reader and keyboard, it is simply collapsed. The
 // question is an attribute (one line, no inline formatting need) rather than a slot, unlike the
 // callout/alert title, which is a heading and so takes the inline-markdown slot treatment.
-export const faq = defineComponent({
+export const faq = defineBlock({
   name: 'faq',
   label: 'FAQ question',
   description: 'One question and its answer, on a native disclosure widget.',
@@ -337,7 +337,7 @@ export const faq = defineComponent({
 // low-stakes aside, and hiding it is always the safe failure. The fallback is class-driven (no inline
 // style, since rehypeSinkGuard strips it) and states the same message the live component shows, so the
 // swap on mount never shifts the layout.
-export const banner = defineComponent({
+export const banner = defineBlock({
   name: 'banner',
   label: 'Announcement banner',
   description: 'A time-boxed announcement that removes itself once its expiry date passes.',
@@ -377,4 +377,4 @@ export const banner = defineComponent({
   },
 });
 
-export const components = [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner];
+export const blocks = [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner];

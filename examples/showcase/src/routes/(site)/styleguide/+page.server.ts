@@ -83,7 +83,7 @@ The horizontal rule above is a plain hairline.
 `;
 
 /** One registered component's rendered sample. */
-interface ComponentSample {
+interface BlockSample {
   name: string;
   label: string;
   html: string;
@@ -99,7 +99,7 @@ export const load: PageServerLoad = async () => {
   //
   // WATCH: each sample renders in a separate `render` call, so rehype-slug ids are not de-duplicated
   // across samples; two samples that carry the same heading text would emit the same id.
-  const defs = cairn.rendering.components?.defs ?? [];
+  const defs = cairn.rendering.blocks ?? [];
   const withoutPreview: string[] = [];
   const pending: { name: string; label: string; markdown: string }[] = [];
   for (const def of defs) {
@@ -107,7 +107,7 @@ export const load: PageServerLoad = async () => {
     if (markdown === undefined) withoutPreview.push(def.name);
     else pending.push({ name: def.name, label: def.label, markdown });
   }
-  const components: ComponentSample[] = await Promise.all(
+  const blocks: BlockSample[] = await Promise.all(
     pending.map(async ({ name, label, markdown }) => ({
       name,
       label,
@@ -115,5 +115,5 @@ export const load: PageServerLoad = async () => {
     })),
   );
 
-  return { proseHtml: await render(SAMPLE), components, withoutPreview };
+  return { proseHtml: await render(SAMPLE), blocks, withoutPreview };
 };

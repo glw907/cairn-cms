@@ -7,7 +7,7 @@
 // engine never hard-codes a concept, directory, or field; it reads them here. Field
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
-import type { ComponentRegistry } from '../render/registry.js';
+import type { BlockDef } from '../render/registry.js';
 import type { RenderInput } from '../render/pipeline.js';
 import type { IconSet } from '../render/glyph.js';
 import type { IslandRegistry } from '../islands/types.js';
@@ -295,14 +295,14 @@ export interface CairnAdapter {
      *  preview a manifest one. `resolveMedia` resolves media: references the same way.
      */
     render: SiteRender;
-    /** Directive component registry; the renderer and the insert palette derive from it (seam 3). */
-    components?: ComponentRegistry;
+    /** The site's blocks, each from `defineBlock`; the insert palette and the manifest derive from them (seam 3). */
+    blocks?: readonly BlockDef[];
     /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
     icons?: IconSet;
     /**
      * The live Svelte components for hydrated directives, keyed by directive name.
-     *  Every component whose {@link ComponentDef.hydrate} is set needs an entry here, and every entry
-     *  needs a matching `hydrate` component; `defineAdapter` checks both. The engine reads this
+     *  Every block whose {@link BlockDef.hydrate} is set needs an entry here, and every entry
+     *  needs a matching `hydrate` block; `defineAdapter` checks both. The engine reads this
      *  registry for that check only: the site's root layout owns the gate that imports the island
      *  client runtime and the map it passes to `hydrateIslands`, and a name missing from that map
      *  mounts nothing, with no error.

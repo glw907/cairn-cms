@@ -6,7 +6,7 @@ inserts directly; a component with neither is not listed. Built on a native <dia
 trapping and Escape, following the dropdown's a11y conventions used elsewhere in the admin.
 -->
 <script module lang="ts">
-  import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
+  import type { BlockRegistry, BlockDef } from '../render/registry.js';
 
   /** Past this many actionable components, the catalog grows a search input. Below it search is
    *  noise over a list short enough to scan. */
@@ -15,14 +15,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   /** Whether a def carries a schema (any attribute or slot), so it opens the guided form rather
    *  than inserting a bare template. Exported so a host deciding on its guided-edit affordance
    *  (the edit page's Edit-block control) reads the same notion the dialog lists and chooses by. */
-  export function hasSchema(def: ComponentDef): boolean {
+  export function hasSchema(def: BlockDef): boolean {
     return Object.keys(def.attributes ?? {}).length > 0 || (def.slots?.length ?? 0) > 0;
   }
   /** The registry's pickable components. A def is actionable when a schema opens the guided form or
    *  a template inserts directly; a def with neither is not listed. A `hidden` def is then dropped,
    *  so the hidden filter applies after the actionable one. Exported so a host rendering its
    *  trigger (the edit page's toolbar) can hide it under the same condition the dialog uses. */
-  export function insertableDefs(registry?: ComponentRegistry): ComponentDef[] {
+  export function insertableDefs(registry?: BlockRegistry): BlockDef[] {
     return (registry?.defs ?? []).filter(
       (def) => (hasSchema(def) || Boolean(def.insertTemplate)) && !def.hidden,
     );
@@ -32,15 +32,15 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
    *  Groups appear in first-declared order, and rows keep declaration order within each group. */
   interface CatalogGroup {
     heading: string;
-    defs: ComponentDef[];
+    defs: BlockDef[];
   }
 
   /** Partition the defs into groups by `def.group`, preserving declaration order of both the
    *  groups (first time a group name is seen) and the rows within a group. A def with no `group`
    *  collects into one default group with no heading, placed where the first such def is declared. */
-  function groupDefs(defs: ComponentDef[]): CatalogGroup[] {
+  function groupDefs(defs: BlockDef[]): CatalogGroup[] {
     const order: string[] = [];
-    const byHeading = new Map<string, ComponentDef[]>();
+    const byHeading = new Map<string, BlockDef[]>();
     for (const def of defs) {
       const heading = def.group ?? '';
       if (!byHeading.has(heading)) {
@@ -65,7 +65,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 
   interface Props {
     /** The site's component registry. */
-    registry?: ComponentRegistry;
+    registry?: BlockRegistry;
     /** Insert markdown at the editor cursor. */
     insert: (text: string) => void;
     /** Replace the placed component's source span with new markdown. Edit mode routes submit here
@@ -91,7 +91,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
-  let picked = $state<ComponentDef | null>(null);
+  let picked = $state<BlockDef | null>(null);
   let query = $state('');
   let searchInput = $state<HTMLInputElement | null>(null);
 
@@ -219,7 +219,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
    *  the parsed values, stores the source range for Update, and shows the configure step straight
    *  away. Exported so the host (the edit page's Edit-block control) drives it. */
   export function editComponent(
-    def: ComponentDef,
+    def: BlockDef,
     values: ComponentValues,
     range: { from: number; to: number },
   ) {
@@ -243,7 +243,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     picked = null;
     resetPreview();
   }
-  function choose(def: ComponentDef) {
+  function choose(def: BlockDef) {
     if (hasSchema(def)) {
       resetPreview();
       picked = def;
@@ -312,7 +312,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
 
 <!-- The guided form, identical in either layout: the two-pane case wraps it in the left column, the
      single-column case renders it bare. One snippet keeps the prop wiring in one place. -->
-{#snippet configureForm(def: ComponentDef)}
+{#snippet configureForm(def: BlockDef)}
   <ComponentForm {def} {icons} onInsert={onSubmit} initial={editValues ?? undefined} submitLabel={editing ? 'Update' : 'Insert'} bind:values={formValues} bind:incomplete={formIncomplete} />
 {/snippet}
 
@@ -329,11 +329,11 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     <div class="modal-box flex max-h-[85vh] flex-col overflow-hidden {twoPane ? 'max-w-3xl' : ''}">
       <!-- The shared header: at the configure step it carries the Back control and the
            "Insert > group" eyebrow breadcrumb above the component label; while browsing it is the
-           plain "Insert a component" title. It holds (flex-none) while the body scrolls, per the
+           plain "Insert a block" title. It holds (flex-none) while the body scrolls, per the
            design system's dialog-sizing recipe. -->
       <div class="mb-3 flex flex-none items-center gap-3">
         {#if picked && !editing}
-          <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Back to components" onclick={back}>
+          <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Back to blocks" onclick={back}>
             <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
           </button>
         {/if}
@@ -342,7 +342,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <div class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
             <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">{picked.label}</h2>
           {:else}
-            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Insert a component</h2>
+            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Insert a block</h2>
           {/if}
         </div>
         <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={close}>✕</button>
@@ -401,7 +401,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   </div>
                 {:else}
                   <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
-                    <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
+                    <iframe sandbox="" title="Block preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
                   </div>
                 {/if}
               </div>
@@ -418,22 +418,22 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <input
               type="search"
               class="w-full border-0 bg-transparent p-0 type-body outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
-              placeholder="Search components"
-              aria-label="Search components"
+              placeholder="Search blocks"
+              aria-label="Search blocks"
               bind:value={query}
               bind:this={searchInput}
               onkeydown={onSearchKeydown}
             />
           </div>
           <p class="sr-only" role="status" aria-live="polite">
-            {filtered.length} {filtered.length === 1 ? 'component' : 'components'} match
+            {filtered.length} {filtered.length === 1 ? 'block' : 'blocks'} match
           </p>
         {/if}
 
         {#if filtered.length === 0}
-          <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
+          <!-- The query matched nothing. The blocks exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-            <p class="type-body text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
+            <p class="type-body text-muted">No blocks match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
             <button type="button" class="type-meta font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}

@@ -182,9 +182,9 @@ describe('ComponentInsertDialog search', () => {
     expect(status().textContent?.trim()).toBe('');
     await screen.getByRole('searchbox').fill('Comp 3');
     await expect.poll(() => status().textContent?.trim()).toBe('1 block matches');
-    // A zero-result query is announced by the visible no-match state, not the count.
+    // A zero-result query is announced too, so a screen-reader user hears the dead end.
     await screen.getByRole('searchbox').fill('zzzznope');
-    await expect.poll(() => status().textContent?.trim()).toBe('');
+    await expect.poll(() => status().textContent?.trim()).toBe('No blocks match');
   });
 
   it('shows a no-match state when nothing matches', async () => {
@@ -192,7 +192,7 @@ describe('ComponentInsertDialog search', () => {
     await screen.getByRole('button', { name: /insert block/i }).click();
     await screen.getByRole('searchbox').fill('zzzznope');
     expect(document.querySelectorAll('[data-testid="cairn-pk-row"]').length).toBe(0);
-    await expect.element(screen.getByText(/no blocks match/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/no blocks match “zzzznope”/i)).toBeInTheDocument();
   });
 });
 

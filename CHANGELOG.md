@@ -157,9 +157,9 @@
 
 - **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
   or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
-  `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so the
-  sailing club's `src/theme/theme.css` layout passes and the advised line is computed from the entry's
-  depth. Each of the seven lines starts `PASS` or `FIX`, the last line counts them, and `--strict`
+  `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so an
+  exclusion kept in a different stylesheet than the import passes and the advised line is computed from
+  the entry's depth. Each of the seven lines starts `PASS` or `FIX`, the last line counts them, and `--strict`
   exits 1 on any `FIX`. The `unknown` exclusion state is gone: with no entry, nothing scans `.claude/`.
 
   Consumers must: fix every FIX line before running cairn-guidance check --strict in CI.

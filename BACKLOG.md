@@ -153,25 +153,25 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
-- [ ] **#211** Replace the `EntryData` union with a type the renderer and the routes narrow `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#230** Replace the `EntryData` union with a type the renderer and the routes narrow `#improvement` `#cairn-cms` *(2026-11-01)*
   `EntryData` stays a wide union the public routes cast around, which the wiring-core slice set aside. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#212** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#231** Settle `SiteConfig` on `/delivery/data` and the types that sit beside it `#improvement` `#cairn-cms` *(2026-11-01)*
   Since `createSiteResolver`, no export on `/delivery/data` names `SiteConfig`, and none of the four sites imports it from that subpath, so the reason `scripts/checks/check-surface-reexports.json` gives for keeping it is unproved. `VocabularyEntry`, `TidyConfig`, and `TidyConventions` then have no other reason to sit there. Drop them from the subpath or record the reader that needs each. Found by the wiring-core pass (T7).
   Placement: Pass 3 (small API).
-- [ ] **#213** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#214** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#233** Correct the `ResolveOptions` reason in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
   `scripts/checks/check-self-use-allowlist.json`'s reason for `ResolveOptions` cites `renderEntry(md, opts: ResolveOptions)`, a signature that no longer exists since `render` takes `RenderInput`. Found by the wiring-core pass (T7).
   Placement: Pass 3.
-- [ ] **#215** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
   `src/tests/unit/delivery-media-vite-barrel-prune.test.ts` still lists `variantUrl`, which no longer exists anywhere, so the list asserts nothing about it. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#216** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)*
   `src/tests/unit/skill-references-compile.test.ts` lacks `npm` in `CLI_INVOCATION_PREFIXES`, so a prose span such as `npm run check` in a skill reference fails CI. `gate-tier.mjs`'s fast lane selects that test for no `skills/` edit, so the failure reaches CI first. Add the prefix, and select the test in the fast lane for a `skills/` change. Found by the wiring-core pass (T7).
   Placement: Pass 8.
-- [ ] **#217** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
   A fresh worktree has an empty `packages/create-cairn-site/template`, so six workspace tests fail until `npm run prepack -w packages/create-cairn-site` runs, and the setup command in the skill does not say so. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*

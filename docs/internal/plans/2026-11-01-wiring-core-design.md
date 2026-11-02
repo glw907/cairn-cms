@@ -64,6 +64,39 @@ These fall inside the approved scope. The PR's `## Decisions` repeats them.
 - **#201 is not folded.** The sweep offered it as dissolved, but the file stays, and the prompt keeps
   items outside the slice in their home pass.
 
+These were made during execution. The PR's `## Decisions` repeats them.
+
+- **`KeyedNavLayout` stays out of the barrels.** A site never writes the name, so it is a recorded
+  `standing-unverdicted` leak at `.`, not a re-export with a self-use row.
+- **A `navLayout` value annotated `NavLayout` is refused.** Its `screen` is wide, and accepting it would
+  make the key check refuse nothing. `sidebar-and-access.md` now declares the layout inline, and the
+  break has a `Consumers must:` line. That page and eval setup `s12` fell outside T1's file list.
+- **`RenderInput` is a new public export,** because `Renderer` and `SiteRender` both name it.
+- **`normalizeMedia` drops its `@public` tag and `ResolvedMediaConfig` keeps it,** because
+  `CairnRuntime.media` still names the type. Five `.svelte` comments that said the shell provides the
+  media base were reworded too, past the plan's list, because they had turned false.
+- **The interfaces are `UntypedSiteResolver` and `TypedSiteResolver`.** "Untyped" says what the default
+  arm lacks.
+- **`bucketConceptFiles` lives in `site-descriptors.ts` and returns `{ descriptor, files }[]`.** Two
+  concepts sharing a `dir` both get the file, as they did under separate globs.
+- **A `dir` equal to `src/content` is accepted,** because the glob reads it. The refusal's message adds
+  the declared dirs after the plan's text.
+- **`site` leaves `content-model.md`'s refused ids,** since only the deleted throw refused it.
+- **A preview whose permalink changed now gets neighbors.** `byPath` gave it none, and a test pins this.
+- **`SiteConfig` stays on `/delivery/data` with nothing naming it.** No site imports it from there, so
+  its kept reason is unproved. #231 carries it to pass 3.
+- **The `**` glob stays.** The showcase build read 39.5 s before and 37.3 s after, both in `git archive`
+  exports under the worktree, a warm and a first run. Those exports build slower than the worktree, so
+  the two are compared only with each other.
+- **`cairnVirtualOnly` stays unexported.** The test's fake `vite` calls its `config()`.
+- **`s11-media-config.mjs` went too.** The plan named the case and the bad setup, and the good setup was
+  left seeding a case that no longer exists.
+- **Three `## Unreleased` entries were rewritten.** The `cairn-cms-dev` `noExternal` step, the
+  `content.entry_invalid` entry, and the scaffold media entry had each turned false.
+- **The filed items are #230 to #236.** Parallel branches had taken #211 to #217.
+- **T1's CI fix skipped its fast lane.** It changed one prose word and the failing test passed locally,
+  so CI carried it while the heavy lane was queued.
+
 ## Probed
 
 A throwaway `tsc` run at `d71e4401e`, against the real `ConceptConfig`, `defineConcept`, and

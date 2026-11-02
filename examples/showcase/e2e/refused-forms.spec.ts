@@ -250,7 +250,8 @@ test('Editors: add, role change, and remove update the table with no document lo
   await expect(addForm.getByLabel('Name')).toHaveValue('');
 
   await row.getByRole('button', { name: /^Toggle role / }).click();
-  await expect(row.locator('.badge')).toHaveText('owner');
+  // The name cell repeats the role below `sm`, so the Role column's badge is the last one.
+  await expect(row.locator('.badge').last()).toHaveText('owner');
 
   await row.getByRole('button', { name: /^Remove / }).click();
   await expect(row).toHaveCount(0);

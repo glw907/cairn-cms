@@ -101,6 +101,11 @@ export interface DevBackendConfig {
  */
 export function devBackendHandle(config: DevBackendConfig): Handle {
   const content = config.content ?? 'repository';
+  if (content !== 'repository' && content !== 'fixtures' && content !== 'empty') {
+    throw new Error(
+      `cairn-cms-dev: unknown content mode ${JSON.stringify(content)}. Use 'repository' | 'fixtures' | 'empty'.`,
+    );
+  }
   if (content === 'repository' && underWorkerd()) {
     throw new Error(
       "cairn-cms-dev: the dev backend's default content mode reads the working tree, which workerd cannot. " +

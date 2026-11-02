@@ -695,14 +695,18 @@ export function seedPreviewTwin(): void {
   heads.set('main', nextSha());
 }
 
+let emptySeeded = false;
+
 /**
  * Reduce the in-memory repo to an empty site: drop the seeded post and write a `site.config.yaml`
  * holding only `siteName`, so every concept lists nothing while the screens that 404 without a
  * site config (the vocabulary and nav editors) still load. Run it instead of the fixture seeds.
  */
 export function seedEmptySite(): void {
+  if (emptySeeded) return;
   const main = branches.get('main');
   if (!main) return;
+  emptySeeded = true;
   main.delete(SEED_POST);
   main.set(SEED_SITE_CONFIG_PATH, 'siteName: Cairn Showcase (empty)\n');
   heads.set('main', nextSha());

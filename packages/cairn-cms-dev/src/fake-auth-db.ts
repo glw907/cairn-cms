@@ -95,6 +95,9 @@ export function createFakeAuthDb(): FakeAuthDb {
     // The fake db grants nothing on its own; the owner identity is minted by devBackendHandle's
     // locals.cairnEditor write, not by this null session lookup.
     if (sql.includes('FROM session s JOIN editor e')) return none;
+    // WATCH: createSession (the expired-session sweep, the prior-row delete, the insert) is not
+    // modeled here. Dev never reaches confirm, so no caller needs it; a future dev-confirm path
+    // will fail with "unhandled SQL" until these statements are added.
 
     // findEditor
     if (sql.includes('SELECT email, display_name, role FROM editor WHERE email = ?')) {

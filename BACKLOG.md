@@ -11,6 +11,9 @@
 - [ ] **#210** Refuse a failed spellcheck asset fetch `#bug` `#cairn-cms` *(2026-11-01)*
   `createEngine` at `src/lib/admin/spellcheck-worker.ts:276` never checks `.ok`, so a 404 dictionary loads the error page as the corpus and the worker reports `ready` with an engine that knows almost no words. Found by the #174 review; it predates that PR.
   Placement: Pass 5.
+- [ ] **#213** Stop a path-gated skill reading as unknown to an implementer `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  `cairn-following-admin-design` declares `paths:`, so it does not exist for a session until it touches a matching file. Four `cairn-implementer` runs on 2026-11-01 called it before touching one and got `Unknown skill`, and each recovered by reading an admin file and retrying. `.claude/rules/admin.md` and a dispatch both say to load it first, which is the order that fails. An agent that gave up would edit the admin with no design system loaded. Check the other path-gated skills too, then either drop `paths:` from the skills a dispatch names, or have the dispatch name the file to read first.
+  Placement: Cleanup round.
 - [ ] **#212** Trace the `EditorToolbar` tab sizing flake `#bug` `#cairn-cms` *(2026-11-01)*
   `EditorToolbar > Write/Preview tab sizing (design ratchet D3 item 6) > keeps each tab its own width across the selected/unselected swap` was retried in 10 of 23 CI runs on 2026-11-01, across the agent-first slices, which makes it the most frequent retry in the suite. Each retry costs a rerun. Not investigated.
   Placement: Cleanup round.

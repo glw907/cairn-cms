@@ -388,6 +388,56 @@ function checkTaxonomyMarker(record: Record<string, FieldDescriptor>): void {
   }
 }
 
+// A bound no value can satisfy is a site config error, so fail loudly at declaration (the mirror of
+// the seo and taxonomy rules): min above max, a length that sits outside min or max, or a date bound
+// that is not a real calendar date. A container is checked one level deep, like the other guards.
+function isCalendarDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === value;
+}
+
+function checkLeafBounds(field: FieldDescriptor, where: string): void {
+  if (field.type === 'text' || field.type === 'textarea') {
+    const { min, max, length } = field;
+    if (min != null && max != null && min > max) throw new Error(`cairn: ${where} sets min ${min} above max ${max}.`);
+    if (length != null && ((min != null && length < min) || (max != null && length > max))) {
+      throw new Error(`cairn: ${where} sets length ${length}, which conflicts with its min or max.`);
+    }
+  } else if (field.type === 'number') {
+    if (field.min != null && field.max != null && field.min > field.max) {
+      throw new Error(`cairn: ${where} sets min ${field.min} above max ${field.max}.`);
+    }
+  } else if (field.type === 'date') {
+    for (const bound of ['min', 'max'] as const) {
+      const value = field[bound];
+      if (value != null && !isCalendarDate(value)) {
+        throw new Error(`cairn: ${where} sets ${bound} "${value}", which is not a calendar date in YYYY-MM-DD form.`);
+      }
+    }
+    if (field.min != null && field.max != null && field.min > field.max) {
+      throw new Error(`cairn: ${where} sets min ${field.min} after max ${field.max}.`);
+    }
+  }
+}
+
+function checkBounds(record: Record<string, FieldDescriptor>): void {
+  for (const [key, field] of Object.entries(record)) {
+    checkLeafBounds(field, `the field "${key}"`);
+    if (field.type === 'object') {
+      for (const [leafKey, leaf] of Object.entries(field.fields)) checkLeafBounds(leaf, `the field "${key}.${leafKey}"`);
+    } else if (field.type === 'array') {
+      const item = field.item;
+      if (item.type === 'object') {
+        for (const [leafKey, leaf] of Object.entries(item.fields)) checkLeafBounds(leaf, `the field "${key}.${leafKey}"`);
+      } else {
+        checkLeafBounds(item, `the array field "${key}" item`);
+      }
+    }
+  }
+}
+
 // A leaf is any non-container descriptor. A container (object, array) may hold leaves one level deep only.
 function isLeaf(field: FieldDescriptor): boolean {
   return field.type !== 'object' && field.type !== 'array';
@@ -439,7 +489,8 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  * save; when containers nest deeper than one level, an `array` item is another `array`, a
  * `reference` or an `seo` image sits inside a container, a field key contains a dot, more than one
  * top-level image sets `seo` or more than one multiselect sets `taxonomy`, or `config.behavior`
- * names an undeclared field.
+ * names an undeclared field, or a bound is contradictory (`min` above `max`, a `length` outside
+ * them, or a date bound that is not a calendar date).
  */
 export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   record: R,
@@ -448,6 +499,7 @@ export function defineFieldset<const R extends Record<string, FieldDescriptor>>(
   checkSeoImageFields(record);
   checkTaxonomyMarker(record);
   checkContainerNesting(record);
+  checkBounds(record);
   for (const key of Object.keys(config.behavior ?? {})) {
     if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field; declared fields: ${Object.keys(record).join(", ")}.`);
   }

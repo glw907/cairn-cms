@@ -120,7 +120,7 @@ If other entries link to the one you're deleting, the window refuses the delete 
 
 On a list, the trash button beside an entry opens the same window, with the same refusal when other entries link to it. The list's window also names the entry, for example **“Snow report” will be deleted.**
 
-Selecting outside the window doesn't close it. Select **Cancel** or the close button, or press Esc, and focus returns to the button you started from.
+Selecting outside the window doesn't close it. To close it, select **Cancel** or the close button, or press Esc.
 
 ## Review and restore earlier versions
 

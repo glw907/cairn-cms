@@ -113,7 +113,7 @@ export const cairn = defineAdapter({
 });
 ```
 
-- Declare the layout inline on `defineAdapter`. `npm run check` then refuses a `screen` that is
+- Declare the layout inline on `defineAdapter`. The type check then refuses a `screen` that is
   neither a `content` key nor an engine screen. A separate value annotated `NavLayout` has a wide
   `screen`, so the adapter refuses it.
 - Listing a screen is the only way a custom route gets a link. The route renders with or without

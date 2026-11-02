@@ -13,10 +13,10 @@
   Placement: Pass 5.
 - [ ] **#213** Stop a path-gated skill reading as unknown to an implementer `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
   `cairn-following-admin-design` declares `paths:`, so it does not exist for a session until it touches a matching file. Four `cairn-implementer` runs on 2026-11-01 called it before touching one and got `Unknown skill`, and each recovered by reading an admin file and retrying. `.claude/rules/admin.md` and a dispatch both say to load it first, which is the order that fails. An agent that gave up would edit the admin with no design system loaded. Check the other path-gated skills too, then either drop `paths:` from the skills a dispatch names, or have the dispatch name the file to read first.
-  Placement: Cleanup round.
+  Placement: `tool-gates` slice.
 - [ ] **#212** Trace the `EditorToolbar` tab sizing flake `#bug` `#cairn-cms` *(2026-11-01)*
   `EditorToolbar > Write/Preview tab sizing (design ratchet D3 item 6) > keeps each tab its own width across the selected/unselected swap` was retried in 10 of 23 CI runs on 2026-11-01, across the agent-first slices, which makes it the most frequent retry in the suite. Each retry costs a rerun. Not investigated.
-  Placement: Cleanup round.
+  Placement: `tool-gates` slice.
 - [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
   The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
   Placement: Cleanup round.

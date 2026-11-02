@@ -191,7 +191,7 @@ theme reaches for one of these instead of hand-rolling a card or two-column layo
 scratch. Three are real site uses: the styleguide masthead is `.cairn-hero`, the home page's
 `.index` is `.cairn-section`, and the root error page's message block is
 `.cairn-band`. `.cairn-card` and `.cairn-sidebar-layout` have no real site use in this theme
-(the members pages are template-excluded fixtures, the home lead is not a card, and `related`
+(the home lead is not a card, and `related`
 renders as a block in the reading flow rather than a sidebar-shaped region), so they are
 demonstrated on the styleguide's Composition section instead, a demonstration rather than a
 composition claim; adopting either elsewhere is a theme's choice, never a requirement. Each

@@ -28,7 +28,7 @@
 // Two arms feed the "has callers" verdict: in-engine call sites (src/lib, outside the declaring
 // module) and showcase call sites (examples/showcase/src, the whole tree, since the showcase
 // never declares an engine export). AUTH-PATH EXPORTS ARE THE EXCEPTION: an export declared
-// under `src/lib/auth*` (auth, auth-channel, auth-crypto, auth-store) or one of
+// under `src/lib/auth*` (auth, auth-crypto) or one of
 // `src/lib/sveltekit/{guard,csrf,admin-action,section-action}.ts` never counts a showcase call
 // site as discharging it. A security seam must not be dischargeable by minting a demonstrative
 // auth call in the copy-paste exemplar four production sites learn from; only an in-engine call
@@ -48,7 +48,7 @@ const ROOT = repoRoot(import.meta.url);
 const ALLOWLIST_PATH = resolve(ROOT, 'scripts/checks/check-self-use-allowlist.json');
 
 // The auth/security paths the showcase remedy is refused for, relative to ROOT. A directory
-// prefix (`src/lib/auth` matches `auth`, `auth-channel`, `auth-crypto`, `auth-store`, every
+// prefix (`src/lib/auth` matches `auth`, `auth-crypto`, every
 // sibling starting with "auth") or an exact file.
 const AUTH_ONLY_DIR_PREFIX = 'src/lib/auth';
 const AUTH_ONLY_FILES = new Set(

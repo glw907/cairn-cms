@@ -1,17 +1,11 @@
 // cairn-cms: the CAIRN_DEV_BACKEND flag, its truthiness rule, and the local-host predicate its
-// refusals and the CSRF cookie decision all read. Three sites read this module rather than
-// hand-writing a second copy: `sveltekit/guard.ts` (the admin guard, which mounts only in a
-// production build and refuses on the flag alone), `auth-channel/factory.ts` (one factory
-// instance serves both dev and prod, so it additionally requires a deployed request before
-// refusing), and `sveltekit/csrf.ts` (which reads only the local-host predicate). A divergent
-// second wording would violate the read-from-the-source rule; the two flag refusals diverge on
-// WITNESS, never on message, and each states why where it fires (the rule:
-// refuse when the flag is set AND the request is deployed; docs/internal/engine-rulings.md,
-// `dev-backend-flag-refusal`).
+// refusal and the CSRF cookie decision read. Two sites read this module rather than hand-writing
+// a second copy: `sveltekit/guard.ts` (the admin guard, which mounts only in a production build
+// and refuses on the flag alone) and `sveltekit/csrf.ts` (which reads only the local-host
+// predicate). The refusal rule is in docs/internal/engine-rulings.md, `dev-backend-flag-refusal`.
 //
-// It sits at the lib root rather than under `auth-channel/`, where it started, because its
-// consumers now span `sveltekit/` and `auth-channel/`. It imports nothing, so any module can read
-// it without risking an import cycle.
+// It sits at the lib root and imports nothing, so any module can read it without risking an
+// import cycle.
 export const CAIRN_DEV_BACKEND_FLAG = 'CAIRN_DEV_BACKEND';
 
 /** The shared refusal message every dev-backend-leak site throws or returns. */
@@ -20,7 +14,7 @@ export const CAIRN_DEV_BACKEND_MESSAGE =
 
 /**
  * Decide whether one raw env read has the dev-backend flag live, the single truthiness rule every
- * read site shares so a value that trips the guard cannot slip past the channel factory.
+ * read site shares.
  *
  * `'1'` is the documented shell form (`CAIRN_DEV_BACKEND=1 npm run dev`) and `true` is the boolean
  * a wrangler var can carry. Nothing else counts: `'true'`, `'yes'`, and `'0'` are all unset here,
@@ -34,9 +28,8 @@ export function isDevBackendFlagSet(raw: unknown): boolean {
 /**
  * Decide whether a hostname names a local development host (`wrangler dev`, a local preview
  * server, a `.localhost` alias). Each caller supplies its framing for what the answer means:
- * a deployment witness, a cookie-name choice, or a help-page trigger. The hostname alone is
- * client-controlled off Cloudflare, so a caller that needs a trustworthy deployment verdict reads
- * {@link isDeployedHost} instead of calling this on `event.url.hostname` directly.
+ * a cookie-name choice or a help-page trigger. The hostname alone is client-controlled off
+ * Cloudflare, so it is never a trustworthy deployment verdict.
  */
 export function isLocalHost(hostname: string): boolean {
   return (
@@ -55,40 +48,11 @@ export function isLocalHost(hostname: string): boolean {
  * here, so the answer never depends on the shell the runtime was started from. An empty string
  * counts as absent, since a var set to `''` configures nothing.
  *
- * Both consumers, {@link isDeployedHost} and `csrfSecure` (`sveltekit/csrf.ts`), read through this
- * one function, so the deployment witness and the cookie-name decision resolve the same origin.
+ * `csrfSecure` (`sveltekit/csrf.ts`) reads through this one function, so the cookie-name decision
+ * resolves the origin one way.
  */
 export function readPublicOrigin(env: unknown): string | undefined {
   const bindings = typeof env === 'object' && env !== null ? (env as Record<string, unknown>) : undefined;
   const value = bindings?.PUBLIC_ORIGIN;
   return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-/**
- * Decide whether this request is being served by a deployed runtime rather than local
- * development, the witness a dev-backend refusal pairs with the flag itself.
- *
- * The request URL derives from the client `Host` header everywhere except Cloudflare, so a caller
- * who asked `isLocalHost(url.hostname)` alone could be talked out of refusing by a forged
- * `Host: localhost`. The site's configured `PUBLIC_ORIGIN` is not client-controlled, so it is
- * consulted first: a `PUBLIC_ORIGIN` naming a non-local host settles the question outright,
- * whatever the request claims about itself. The rule is monotonic toward refusing. A configuration
- * can force a deployed verdict but can never talk one down, so a `PUBLIC_ORIGIN` that names a
- * local host (or is absent, or does not parse) leaves the request's hostname to decide, the
- * behavior a site with no `PUBLIC_ORIGIN` at all keeps.
- *
- * The residual is honest and documented (docs/architecture.md, "The dev-backend flag's
- * two refusals"): a deployment that sets no `PUBLIC_ORIGIN` still rests on the Host-derived
- * fallback.
- */
-export function isDeployedHost(url: URL, env: unknown): boolean {
-  const origin = readPublicOrigin(env);
-  if (origin !== undefined) {
-    try {
-      if (!isLocalHost(new URL(origin).hostname)) return true;
-    } catch {
-      // An unparseable PUBLIC_ORIGIN decides nothing; the request's hostname answers below.
-    }
-  }
-  return !isLocalHost(url.hostname);
 }

@@ -8,7 +8,7 @@ import { nameWranglerResources, writePublicOrigin, workerNameFor, writeEmailFrom
 
 /**
  * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's file
- * (examples/showcase/wrangler.jsonc) with the `cairn-template:exclude` block (the MEMBER_DB
+ * (examples/showcase/wrangler.jsonc) with the `cairn-template:exclude` block (the APP_DB
  * entry) removed, exactly as `scripts/build/emit-template.mjs`'s marker strip leaves it. Pinning
  * this verbatim, rather than a trimmed-down stand-in, is what makes a showcase drift surface here
  * instead of only on a real bake.

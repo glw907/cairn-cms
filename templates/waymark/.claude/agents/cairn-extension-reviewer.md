@@ -16,7 +16,7 @@ verdict.
   change that reaches for a seam the engine does not offer, instead of building the missing piece
   as site code, is a finding.
 - Does the change use the engine's primitives (`requireAccess`, `createSectionAction`,
-  `createAuthChannel`, `createLogger`, `CairnAdminShell`, `navLayout`, and the admin toolkit's
+  `createLogger`, `CairnAdminShell`, `navLayout`, and the admin toolkit's
   field and formatter set) rather than a hand-rolled version of the same thing?
 - For every new component, could a stock DaisyUI component or template cover it? A home-grown
   component is a finding unless a comment or commit message in the diff names the DaisyUI defect

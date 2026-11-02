@@ -30,7 +30,6 @@ cairn owns markdown content and the editor and admin frame. Everything else a si
 - The `identity` option on the auth guard replaces magic links with an outside gate, such as Cloudflare Access.
 - A route file under `src/routes/admin/` renders inside the admin shell behind the same guard, and `navLayout` lists it in the sidebar. The guard sets `locals.cairnEditor` to the signed-in editor on admin routes only. The admin toolkit, built with DaisyUI and Tailwind, supplies the components.
 - `media` configures the media store.
-- An auth channel signs in a second sign-in group outside `/admin`.
 
 ## Stability tiers
 
@@ -54,7 +53,7 @@ This section is where the security model is documented. The design assumes the l
 - **Secrets.** The GitHub App's private key is a Worker secret. It signs a JWT that GitHub exchanges for a short-lived installation token, which the Worker caches in memory and never logs. The App's Contents permission is write access to the whole installed repository, so the site's repository should hold only the site.
 - **Logs.** The engine's structured logs carry an editor's email and never a token, a session id, or a link.
 
-Replacing sign-in or adding a second sign-in group moves some of these defenses to the site. The doc comments on `createAuthChannel`, `createAuthGuard`, and the render exports carry each surface's security contract.
+Replacing sign-in or adding a second sign-in group moves some of these defenses to the site. The doc comments on `createAuthGuard` and the render exports carry each surface's security contract.
 
 ## Claude Code guidance
 

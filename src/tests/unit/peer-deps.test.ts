@@ -38,8 +38,7 @@ describe('package dependency contract', () => {
   it('floors @cloudflare/workers-types at ^5, the installed major', () => {
     // cairn's own shipped .d.ts files (env.d.ts, sveltekit/audit-sink.d.ts,
     // sveltekit/platform-bindings.d.ts, sveltekit/preview.d.ts, auth/store.d.ts,
-    // auth/preview-store.d.ts, auth-channel/store.d.ts, auth-channel/factory.d.ts,
-    // media/store.d.ts) import named types directly from this package, so a consumer who
+    // auth/preview-store.d.ts, media/store.d.ts) import named types directly from this package, so a consumer who
     // generates bindings with `wrangler types` and skips this install loses every cairn-typed
     // D1Database/R2Bucket/RateLimit signature to an unresolvable-import `any` under
     // skipLibCheck, with no red TS2307 to notice it by.

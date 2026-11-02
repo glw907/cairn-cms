@@ -34,35 +34,6 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
-// The auth-channel factory's schema, packed from its own directory. A SIBLING of migrations/,
-// never a member of it: migrations/ is AUTH_DB's `migrations_dir`, and a shared directory applies
-// each database's schema to the other the first time either is migrated. Both halves are asserted,
-// since the file's absence leaves a channel consumer with no schema to apply and its presence under
-// migrations/ is the cross-apply defect.
-const CHANNEL_MIGRATION_PATH = 'migrations-channel/0000_channel.sql';
-
-/**
- * Check a packed file list for the channel migration, in its own directory.
- * @param {string[]} filePaths the paths npm would include in the tarball
- * @returns {{ ok: true } | { ok: false, error: string }}
- */
-export function checkChannelMigrationPacked(filePaths) {
-  if (!filePaths.includes(CHANNEL_MIGRATION_PATH)) {
-    return {
-      ok: false,
-      error: `the packed tarball is missing ${CHANNEL_MIGRATION_PATH}; add "migrations-channel" to package.json "files" so a registry consumer can provision an auth channel's database`,
-    };
-  }
-  const misplaced = filePaths.filter((p) => /^migrations\/.*channel.*\.sql$/.test(p));
-  if (misplaced.length > 0) {
-    return {
-      ok: false,
-      error: `the packed tarball carries the channel schema under migrations/ (${misplaced.join(', ')}); migrations/ is AUTH_DB's migrations_dir, and sharing it applies the channel schema to the auth store`,
-    };
-  }
-  return { ok: true };
-}
-
 // The per-version record a consumer reads to take an upgrade. It ships at the package root.
 const MIGRATION_NOTES_PATH = 'MIGRATION-NOTES.md';
 
@@ -449,13 +420,6 @@ function main() {
   const migrationsResult = checkPackageFiles(files);
   if (!migrationsResult.ok) {
     console.error(`check-package-files: ${migrationsResult.error}`);
-    process.exitCode = 1;
-    return;
-  }
-
-  const channelResult = checkChannelMigrationPacked(files);
-  if (!channelResult.ok) {
-    console.error(`check-package-files: ${channelResult.error}`);
     process.exitCode = 1;
     return;
   }

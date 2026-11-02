@@ -3,11 +3,9 @@
 // breaking change. The packaged skill's log-events table is kept in step with this union.
 //
 // The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
-// state adjective names a detected condition. The subject segment may itself be dotted, so a
-// four-segment name is grammar-conforming as long as it still reads area, subject, verb phrase:
-// `auth.channel.session.created` conforms as written, area `auth`, subject `channel.session`,
-// verb phrase `created`, rather than standing as a four-segment outlier. Every `reason`/`scope`
-// value a record carries is snake_case.
+// state adjective names a detected condition. `audit.sink.write_failed` conforms as written, area
+// `audit`, subject `sink`, verb phrase `write_failed`. Every `reason`/`scope` value a record
+// carries is snake_case.
 //
 // Two verbs cover every refusal-shaped event. `refused` names a decision the engine made on
 // policy: the request or the state violates a rule the engine chose to enforce, and a different
@@ -88,23 +86,7 @@ export type CairnLogEvent =
   | 'admin.action.misconfigured'
   | 'audit.sink.call_failed'
   | 'turnstile.verify_failed'
-  | 'audit.sink.write_failed'
-  // The auth-channel factory (createAuthChannel), eleven events, plus
-  // auth.channel.salt_unavailable, the salt-fault diagnostic, and
-  // auth.channel.send_cleanup_failed, the delivery-cleanup fault.
-  | 'auth.channel.requested'
-  | 'auth.channel.send_failed'
-  | 'auth.channel.send_cleanup_failed'
-  | 'auth.channel.confirmed'
-  | 'auth.channel.locked'
-  | 'auth.channel.escalated'
-  | 'auth.channel.ceiling_exceeded'
-  | 'auth.channel.session.created'
-  | 'auth.channel.session.destroyed'
-  | 'auth.channel.salt_unavailable'
-  | 'auth.channel.rate_limited'
-  | 'auth.channel.rate_limit_absent'
-  | 'auth.channel.rate_limit_failed';
+  | 'audit.sink.write_failed';
 
 /**
  * The `reason` an `auth.access.refused` record carries: `'no_rule'` when the map has no rule for

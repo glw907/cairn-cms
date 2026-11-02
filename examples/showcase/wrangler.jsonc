@@ -23,7 +23,7 @@
   // so `wrangler dev` sends real mail; the dev backend fakes it locally.
   "send_email": [{ "name": "EMAIL" }],
   // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens). Each
-  // database gets a separate migrations_dir: a channel database sharing the default migrations/
+  // database gets a separate migrations_dir: a second database sharing the default migrations/
   // directory with AUTH_DB would cross-apply schemas neither side expects.
   "d1_databases": [
     {
@@ -42,18 +42,6 @@
       "database_name": "cairn-showcase-app",
       "database_id": "00000000-0000-0000-0000-000000000001",
       "migrations_dir": "migrations-app"
-    }
-    // cairn-template:exclude-end
-    // cairn-template:exclude-start
-    ,
-    {
-      // The showcase members fixture's D1 binding.
-      // Its migrations_dir, never "migrations": sharing AUTH_DB's directory would apply
-      // this channel's schema against the auth store and vice versa.
-      "binding": "MEMBER_DB",
-      "database_name": "cairn-showcase-members",
-      "database_id": "00000000-0000-0000-0000-000000000002",
-      "migrations_dir": "migrations-members"
     }
     // cairn-template:exclude-end
   ],

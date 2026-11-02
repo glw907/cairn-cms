@@ -4,7 +4,6 @@ interface __BaseEnv_Env {
 	MEDIA_BUCKET: R2Bucket;
 	AUTH_DB: D1Database;
 	APP_DB: D1Database;
-	MEMBER_DB: D1Database;
 	EMAIL: SendEmail;
 	ASSETS: Fetcher;
 	PUBLIC_ORIGIN: "http://localhost:4173";

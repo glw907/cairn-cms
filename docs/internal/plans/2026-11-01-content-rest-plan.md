@@ -1,7 +1,7 @@
 # Content rest: task plan
 
 The rest of pass 4, slug `content-rest`, class `ordinary` plus `runner` (`scripts/checks` data in T1, T3,
-T4, and T7). Initiative: `shared-standards`. Base: `6762c2db3`. Design note:
+T4, and T7). Initiative: `shared-standards`. Base: `4edb7f9e8` (`origin/main` at `f89fe83be`, PR #178 merged). Design note:
 `docs/internal/plans/2026-11-01-content-rest-design.md`. Sources: `design-audit/run-sheet.md` "Pass 4" and
 "Run rules", `design-audit/design.md` "4. Content rules", `shape.md` 4, 15, 16, 17, `ergonomics.md` 4, 5, 6,
 `slim.md` W2, ledger.md "## Rulings".
@@ -30,11 +30,11 @@ Every task was read for owner steps and auto-mode gaps.
 - **Reads outside the worktree:** none needed. The planner's probes read the four site checkouts.
 - **Live accounts, credentials, `wrangler d1 --local`, stopping a test process:** not needed by any task.
 - **A workflow dispatch:** T7 may run `gh workflow run e2e.yml --ref <branch> -f update_snapshots=true`, the
-  sheet's standing answer for an intended visual change. The conductor's pre-launch check covers this write.
+  sheet's standing answer for an intended visual change. A refusal goes to `cairn-cms-9b` as a stop.
 
 ## Backlog sweep
 
-Scoped sweep at `6762c2db3`, by a fresh read-only agent. The verdicts landed on this branch in the plan's
+Scoped sweep at `6762c2db3`, before PR #178 merged, by a fresh read-only agent. The verdicts landed on this branch in the plan's
 commit, stamped 2026-11-01. No item from outside the slice folds, so the scope stands. 29 of 71 open items
 have no stamp from the last 90 days, which passes the 15 line, and the sheet already places the full sweep
 at pass 8's close.
@@ -93,9 +93,7 @@ The sheet's standing answers apply to every task. These are this pass's.
 - **Merge chores:** `templates/waymark`, `scripts/checks/api-surface.md`, and `CHANGELOG.md` are rerun at
   each merge. Keep them current on the branch. A conflicting PR fires no `pull_request` CI, so a `ci-green`
   exit 2 (missing) means check the PR for a conflict and report to `cairn-cms-9b`. Merge `origin/main` on
-  `cairn-cms-9b`'s word only. PR #178 (1a) touches distant hunks of
-  `src/lib/index.ts`, `src/lib/sveltekit/index.ts`, `log-events.md`, `check-options.mjs:8-11`, and
-  `api-surface.md`. PR #180 (`tool-gates`) touches `CHANGELOG.md`, `BACKLOG.md`, and `CONTRIBUTING.md`.
+  `cairn-cms-9b`'s word only. PR #178 (1a) is already in this branch. PR #180 (`tool-gates`) touches `CHANGELOG.md`, `BACKLOG.md`, and `CONTRIBUTING.md`.
 - **A new BACKLOG item** takes the next free number on `main` at merge.
 - **Gates:** every leg goes through `cairn-run-gate`, per `cairn-pass` "Gate" and "Fast lane". After each
   task, `node scripts/checks/gate-tier.mjs --fast --range <base>..HEAD` prints the legs. A `.svelte` change
@@ -159,9 +157,8 @@ union, and `@ts-expect-error` on a `summaryFields` key no field declares.
 - `index.ts`: remove `export type { StandardInput } from './content/standard-schema.js';`,
   `export { defineFieldset } from './content/fieldset.js';`, and `FieldsetConfig,` from the type block, and
   reword the comment `` // `FieldsetConfig.behavior` and `Fieldset.behavior` name these. ``
-- `check-options.mjs`: `defineConcept, defineFieldset, defineRegistry, defineRoles` loses the name. PR #178
-  edits that comment too, so a merge keeps both.
-- `check-self-use-allowlist.json`: remove the `FieldsetConfig` row at `:35`.
+- `check-options.mjs`: `defineConcept, defineFieldset, defineRegistry, defineRoles` loses the name.
+- `check-self-use-allowlist.json`: remove the `FieldsetConfig` row at `:27`.
 - Showcase: `defineFieldset,` at `:10` leaves, and `fields: defineFieldset({` at `:81`, `:133`, and `:149`
   unwrap. Run `npm run emit:template`.
 - `content-model.md`: rewrite the example at `:98-114` and the two hook bullets at `:85-91` so `refine` and
@@ -335,7 +332,7 @@ template through `npm run emit:template`, and the tests.
 - `data.ts`: export `SiteManifestBuild`, and `ManifestProblem` beside it as a recorded R4 re-export, with one
   `check-surface-reexports.json` row: `ManifestProblem`, subpath `/delivery/data`, home `.`, reason
   "R4 closure: `SiteManifestBuild` names it on this subpath."
-- Log: add `'content.directive_unknown'` to `events.ts:38`'s union and `events-list.ts:30`'s list, and a
+- Log: add `'content.directive_unknown'` to `events.ts:37`'s union and `events-list.ts:31`'s list, and a
   `log-events.md` row after `content.entry_invalid`. Add `"content.directive_unknown",` after
   `"content.entry_invalid",` in `tool/internal/logs/events.go`, loading `standards:go-conventions` first.
   `TestEventVocabularyMatchesEngine` compares the two sets, and the fast lane doesn't select the tool gate

@@ -157,6 +157,7 @@ const KEPT = [
   'NavMenuConfig',
   'PreviewConfig',
   'MediaConfig',
+  'MediaResolve',
   'ConceptDescriptor',
   'CairnRuntime',
   'SiteRender',

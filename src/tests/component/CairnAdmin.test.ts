@@ -9,6 +9,8 @@ import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
+import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { fields } from '../../lib/content/fields.js';
 import { page } from './_app-state.js';
 
 // The authed shell payload the edit view reads its siteName from (page.data.shell). CairnAdmin no
@@ -193,6 +195,20 @@ describe('CairnAdmin', () => {
     expect(chromeNav(screen)).toBeNull();
     await expect.element(screen.getByRole('toolbar')).toBeInTheDocument();
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
+  });
+
+  it('threads rendering.components to the edit view so Insert block shows', async () => {
+    page.data = { shell: shell() };
+    const callout = defineComponent({
+      build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }),
+      name: 'callout', label: 'Callout', description: 'A note.', use: 'Call out an idea.',
+      attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
+      slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
+    });
+    const components = defineRegistry({ components: [callout] });
+    const rendering = { render: async () => '', components };
+    const screen = await render(CairnAdmin, { data: editData(), rendering });
+    await expect.element(screen.getByRole('button', { name: /insert block/i })).toBeInTheDocument();
   });
 
   it('renders the editors view bare', async () => {

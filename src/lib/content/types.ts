@@ -459,7 +459,6 @@ export interface CairnRuntime {
    *  otherwise the filled config the upload, storage, delivery, and resolver paths read.
    */
   media: import('../media/config.js').ResolvedMediaConfig;
-  registry?: ComponentRegistry;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;

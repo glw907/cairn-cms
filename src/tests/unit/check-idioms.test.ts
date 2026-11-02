@@ -134,11 +134,14 @@ describe('findProcessReferenceLines', () => {
     expect(findProcessReferenceLines('// see spec 2.8 for the contract\n')).toEqual([]);
   });
 
-  it('passes the ruled round-marker exceptions: R2, C0, R4 re-export/closure', () => {
+  it('passes the ruled round-marker exceptions: R2 and C0', () => {
     expect(findProcessReferenceLines('// the media R2 bucket binding\n')).toEqual([]);
     expect(findProcessReferenceLines('// strip C0 control characters\n')).toEqual([]);
-    expect(findProcessReferenceLines('// a recorded R4 re-export names it\n')).toEqual([]);
-    expect(findProcessReferenceLines('// documented as an R4 closure over the field\n')).toEqual([]);
+  });
+
+  it('flags R4 re-export and R4 closure as round markers', () => {
+    expect(findProcessReferenceLines('// a recorded R4 re-export names it\n')).toEqual([1]);
+    expect(findProcessReferenceLines('// documented as an R4 closure over the field\n')).toEqual([1]);
   });
 
   it('flags Phase N, lettered and numbered Pass, Plan N, batch N, and round-N', () => {
@@ -171,7 +174,7 @@ describe('findProcessReferenceLines', () => {
 
   it('matches the fixture file’s real hits and passes its exempt and negative lines', () => {
     const source = readFileSync(resolve(FIXTURES, 'process-reference.ts'), 'utf8');
-    expect(findProcessReferenceLines(source)).toEqual([2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14]);
+    expect(findProcessReferenceLines(source)).toEqual([2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13]);
   });
 });
 

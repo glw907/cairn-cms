@@ -56,7 +56,6 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     supportContact: adapter.editor?.supportContact ?? DEFAULT_SUPPORT_CONTACT,
     render: adapter.rendering.render,
     manifestPath: CONTENT_MANIFEST_PATH,
-    registry: adapter.rendering.components,
     icons: adapter.rendering.icons,
     navMenu: adapter.editor?.nav,
     siteConfigPath: adapter.editor?.siteConfigPath ?? DEFAULT_SITE_CONFIG_PATH,

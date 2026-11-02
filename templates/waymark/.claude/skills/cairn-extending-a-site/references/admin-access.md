@@ -35,7 +35,7 @@ export const actions = admin.actions;
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} />
+<CairnAdmin {data} {form} rendering={cairn.rendering} />
 ```
 
 `src/routes/admin/+layout.server.ts` exports `admin.shellLoad` as `load`, and its `+layout.svelte`

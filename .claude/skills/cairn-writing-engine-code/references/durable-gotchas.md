@@ -19,7 +19,6 @@ and `npm run lane:fast` replaces the lane they name.
 - [`cloudflare:workers` in the engine](#cloudflareworkers-in-the-engine)
 - [Any `env` read while prerendering fails the build](#any-env-read-while-prerendering-fails-the-build)
 - [`vite preview` cannot serve adapter 8 output](#vite-preview-cannot-serve-adapter-8-output)
-- [`node:sqlite` throws under workerd](#nodesqlite-throws-under-workerd)
 - [Kit 3 emits server sourcemaps by default](#kit-3-emits-server-sourcemaps-by-default)
 - [A plugin must never start and close a nested Vite server under `vite dev`](#a-plugin-must-never-start-and-close-a-nested-vite-server-under-vite-dev)
 - [An installed engine needs vitest's `server.deps.inline`](#an-installed-engine-needs-vitests-serverdepsinline)
@@ -252,14 +251,6 @@ to that command. The flag never goes in `wrangler.jsonc` `vars` (it would ship),
 (it reaches `vite preview`'s Node process, never workerd), or in a `.dev.vars` file left behind (a
 lingering one turns every later default-build serve into the guard's 503).
 
-## `node:sqlite` throws under workerd
-
-In workerd at the showcase's flags, `await import('node:sqlite')` resolves, but `new
-DatabaseSync(':memory:')` throws `Illegal constructor`. A check for "the module is absent" therefore
-passes and the failure arrives at the first call. `createChannelDb` in `@glw907/cairn-cms-dev` is
-Node only: it serves a vitest run or `vite dev` on Node, never a Worker, and the showcase's former
-`membersDevHandle` called it, so it would have thrown this error under `wrangler dev`.
-
 ## Kit 3 emits server sourcemaps by default
 
 A grep over a build for a dev-only identifier must skip `*.map`: Kit 3 writes a `.map` beside each
@@ -486,8 +477,8 @@ call in the exemplar that sites copy. Run `npm run check:self-use` after adding 
 
 ## Adding or removing an export touches more than the barrel
 
-`src/lib/auth/store.ts` is not the `/auth-store` entry point. `src/lib/auth-store/index.ts` is, and
-it re-exports a hand-picked few, so a new function in `store.ts` publishes nothing and costs no
+`src/lib/auth/crypto.ts` is not the `/auth-crypto` entry point. `src/lib/auth-crypto/index.ts` is, and
+it re-exports a hand-picked few, so a new function in `crypto.ts` publishes nothing and costs no
 reference entry. Most `src/lib/<area>/` directories split the declaring file from the subpath entry
 point this way. Check the barrel before assuming an `export` is public.
 
@@ -536,7 +527,7 @@ so the arm must exist before a CHANGELOG line can mention the event.
 
 `packages/cairn-cms-dev/src/fake-auth-db.ts` dispatches on the store's exact SQL strings, matched as
 normalized substrings, and throws with the SQL in the message on any statement it does not
-recognize. Rewording a statement in `src/lib/auth/store.ts` or `src/lib/auth-channel/store.ts`, or
+recognize. Rewording a statement in `src/lib/auth/store.ts`, or
 adding a column to a `RETURNING` clause (as `deleteSession` does for `expires_at`), breaks the dev
 backend until the handler's match string and the mirrored literal in its own test file change with
 it. That test file sits in the root `unit` project, so plain `npm test` runs it.

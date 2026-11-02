@@ -12,6 +12,20 @@ describe('initialValues and composition', () => {
       .toEqual({ status: 'draft', date: '2026-06-25' });
   });
 
+  it('carries a number default, including 0, and a list default through', () => {
+    const fs = defineFieldset({
+      five: fields.number({ label: 'N', default: 5 }),
+      zero: fields.number({ label: 'Z', default: 0 }),
+      tags: fields.multiselect({ label: 'T', options: ['a', 'b'], default: ['a'] }),
+    });
+    expect(initialValues(fs)).toEqual({ five: 5, zero: 0, tags: ['a'] });
+  });
+
+  it('writes no key for an empty list default', () => {
+    const fs = defineFieldset({ tags: fields.multiselect({ label: 'T', options: ['a'], default: [] }) });
+    expect(initialValues(fs)).toEqual({});
+  });
+
   it('composes a shared base field set by spreading', () => {
     const base = { title: fields.text({ label: 'Title', required: true }) };
     const fs = defineFieldset({ ...base, body: fields.textarea({ label: 'Body' }) });

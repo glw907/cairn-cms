@@ -64,7 +64,7 @@ const SHAPES: Shape[] = [
   },
   {
     name: 'array(image)',
-    descriptor: concept({ gallery: fields.array(img('Image'), { label: 'Gallery' }) }),
+    descriptor: concept({ gallery: fields.array({ item: img('Image'), label: 'Gallery' }) }),
     markdown:
       `---\ntitle: T\ngallery:\n  - src: media:a.${HASH}\n    alt: one\n  - src: media:o.${OTHER}\n    alt: two\n` +
       `  - src: media:a.${HASH}\n    alt: three\n---\nBody.\n`,
@@ -76,10 +76,7 @@ const SHAPES: Shape[] = [
   {
     name: 'array(object({ image }))',
     descriptor: concept({
-      items: fields.array(
-        fields.object({ fields: { image: img('Image'), caption: fields.text({ label: 'Caption' }) } }),
-        { label: 'Items' },
-      ),
+      items: fields.array({ item: fields.object({ fields: { image: img('Image'), caption: fields.text({ label: 'Caption' }) } }), label: 'Items' }),
     }),
     markdown:
       `---\ntitle: T\nitems:\n  - image:\n      src: media:a.${HASH}\n      alt: one\n    caption: first\n` +
@@ -139,7 +136,7 @@ describe.each(SHAPES)('nested image shape: $name', (shape) => {
 });
 
 describe('extractMediaRefs over nested shapes', () => {
-  const gallery = concept({ gallery: fields.array(img('Image')) });
+  const gallery = concept({ gallery: fields.array({ item: img('Image'), label: 'Items' }) });
 
   it('keeps first-occurrence order across rows', () => {
     const fm = { gallery: [{ src: `media:a.${OTHER}` }, { src: `media:b.${HASH}` }, { src: `media:c.${OTHER}` }] };

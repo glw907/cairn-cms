@@ -57,7 +57,7 @@ describe('buildSiteResolver', () => {
         datePrefix: 'day',
         fields: {
           author: fields.reference({ concept: 'pages', label: 'Author' }),
-          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
+          related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }),
         },
       },
       pages: { dir: 'g', fields: {} },
@@ -102,7 +102,7 @@ describe('buildSiteResolver', () => {
         datePrefix: 'day',
         fields: {
           author: fields.reference({ concept: 'pages', label: 'Author' }),
-          related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related' }),
+          related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }),
         },
       },
       pages: { dir: 'g', fields: {} },

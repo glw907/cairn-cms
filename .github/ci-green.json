@@ -3,7 +3,6 @@
     ".github/workflows/create-site.yml",
     ".github/workflows/design.yml",
     ".github/workflows/e2e.yml",
-    ".github/workflows/scaffold.yml",
     ".github/workflows/test.yml"
   ],
   "judgedWhenPresent": [

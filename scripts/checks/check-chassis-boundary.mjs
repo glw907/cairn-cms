@@ -1,20 +1,19 @@
 // cairn-cms: the chassis no-reach-ins gate (chassis-restructure Task 2, generalized at the
-// theme-ports-1-3 harvest). A theme file (anything under an examples/*/src that is not itself
+// theme-ports-1-3 harvest). A theme file (anything under examples/showcase/src that is not itself
 // inside its src/chassis) may reach chassis machinery only through one of the seams the
 // canonical src/chassis/README.md (examples/showcase) documents in its "What lives here" table:
 // the #chassis subpath import in a .ts/.svelte import, or a relative @import in a .css file (CSS
 // imports stay relative). This script parses that table for the canonical seam list once, then walks
-// EVERY examples/*/src that carries its chassis/ copy (each site's verbatim copy, per the
-// "one chassis, N themes" ontology), failing on any import that resolves into that theme's
-// chassis/ but names a file the canonical table does not list, the same way a reach past a
-// package's public exports would fail. A theme that drops a chassis file entirely (documented in
+// the showcase's own src, failing on any import that resolves into its chassis/ but names a file
+// the canonical table does not list, the same way a reach past a package's public exports would
+// fail. A theme that drops a chassis file entirely (documented in
 // its chassis/README.md) is unaffected: dropping a file only matters if something still
 // imports it, which this gate would already catch as a broken import, not a boundary violation.
 // It says nothing about WHICH symbols a seam exports; svelte-check already fails an import of a
 // name a module does not export.
 //
 // Wired as `npm run check:chassis-boundary`.
-import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
@@ -23,20 +22,6 @@ const ROOT = repoRoot(import.meta.url);
 const EXAMPLES_DIR = resolve(ROOT, 'examples');
 const CANONICAL_SRC = resolve(EXAMPLES_DIR, 'showcase/src');
 const CANONICAL_README = resolve(CANONICAL_SRC, 'chassis/README.md');
-
-/**
- * Every `examples/<name>/src` directory that carries its `chassis/` subdirectory: the
- * canonical showcase copy plus every theme port's verbatim copy.
- * @returns {string[]}
- */
-export function findChassisRoots() {
-  const roots = [];
-  for (const name of readdirSync(EXAMPLES_DIR)) {
-    const src = resolve(EXAMPLES_DIR, name, 'src');
-    if (existsSync(resolve(src, 'chassis'))) roots.push(src);
-  }
-  return roots;
-}
 
 // Matches a static import's source, a dynamic import(), or a CSS @import, whichever a given file uses.
 const IMPORT_SPEC =
@@ -135,7 +120,7 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  const roots = findChassisRoots();
+  const roots = [CANONICAL_SRC];
   const violations = roots.flatMap((src) => findReachIns(src, resolve(src, 'chassis'), seams));
   if (violations.length === 0) {
     console.log(`chassis-boundary: PASS (${seams.size} documented seams, ${roots.length} chassis roots, no reach-ins)`);

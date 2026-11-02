@@ -18,6 +18,18 @@ const WORKFLOW_COMMANDS = [...runCommands('test.yml'), ...runCommands('design.ym
 const DOCS_GATE_LABELS = new Set(buildSteps({ page: null }).map((step) => step.label));
 
 /**
+ * Whether CI runs a component's script as direct `node` calls after its one shared build: the
+ * script is `npm run package && node ...`, and every `node` call in it is a workflow step.
+ * @param component - One entry of the exported component list.
+ */
+function runsAsDirectNodeCalls(component: string): boolean {
+  const body = PACKAGE_JSON.scripts[component.replace(/^npm run /, '')];
+  if (!body?.startsWith('npm run package && ')) return false;
+  const calls = body.slice('npm run package && '.length).split(' && ');
+  return calls.every((call) => call.startsWith('node ') && WORKFLOW_COMMANDS.includes(call));
+}
+
+/**
  * Whether CI runs a component: as its own workflow step, or as a check inside the docs gate when
  * a workflow step runs the docs gate.
  * @param component - One entry of the exported component list.
@@ -25,6 +37,7 @@ const DOCS_GATE_LABELS = new Set(buildSteps({ page: null }).map((step) => step.l
  */
 function runsOnCi(component: string, label: string): boolean {
   if (WORKFLOW_COMMANDS.includes(component)) return true;
+  if (runsAsDirectNodeCalls(component)) return true;
   return WORKFLOW_COMMANDS.includes('npm run check:docs-gate') && DOCS_GATE_LABELS.has(label);
 }
 

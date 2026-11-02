@@ -2,9 +2,7 @@
 // A class string in the markup proves nothing about where the ink lands, which is the whole reason
 // the 2026-08 inventory had to render the admin to find these three rows at all.
 //
-// The measurement follows the same four rules the inventory's own module
-// (src/tests/lab/vertical-metrics.ts) is built on, restated here because that module imports the
-// audit's Node-side file reader and so cannot load in this browser project:
+// The measurement follows these four rules:
 //   1. An icon beside a text block pairs with that block's FIRST LINE, never the block.
 //   2. Type metrics resolve from the element that renders the line, never its container.
 //   3. Measure INK, not element boxes: SVG geometry through the screen CTM, text geometry from a

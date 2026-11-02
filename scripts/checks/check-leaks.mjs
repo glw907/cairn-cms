@@ -11,7 +11,7 @@
 // Three tiers decide what is scanned and for which classes:
 //
 //   T1  published docs: README.md, docs/{extend,reference,admin,editors,claude-code}, docs/why-cairn.md,
-//       docs/README.md, examples/showcase/README.md. C1 to C4.
+//       examples/showcase/README.md. C1 to C4.
 //   T2  shipped files: skills, claude, the showcase chassis, the reproductions, the CLI's messages,
 //       the scaffold and waymark templates (minus seed content, LICENSE, and the synced `.claude/`
 //       copies), and CHANGELOG.md. Whole files get C1 to C4. In src/lib only the doc comments
@@ -191,7 +191,6 @@ export function profileFor(relPath) {
   const all = ['C1', 'C2', 'C3', 'C4'];
   if (
     path === 'README.md' ||
-    path === 'docs/README.md' ||
     path === 'docs/why-cairn.md' ||
     path === 'docs/architecture.md' ||
     path === 'guidance-hashes.json' ||
@@ -487,7 +486,6 @@ export const SCAN_ROOTS = [
   'schema',
   'guidance-hashes.json',
   'scripts/checks/api-surface.md',
-  'docs/README.md',
   'docs/why-cairn.md',
   'docs/architecture.md',
   'docs/admin',

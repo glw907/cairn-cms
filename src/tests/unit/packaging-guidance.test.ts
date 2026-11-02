@@ -90,10 +90,7 @@ describe('claude/snippets/* against their in-repo counterparts', () => {
   });
 
   it('cairn-audit.config.json carries the same sheet paths the showcase copy declares', () => {
-    // Only `sheet` is universal boilerplate a new site should copy verbatim. The showcase's own
-    // copy also carries `rendered.extraPages`, wiring its own fixture routes (/admin/theme-kit
-    // and friends) into its rendered audit; a new site has none of those routes, so the snippet
-    // must not recommend them.
+    // `sheet` is the only key the audit config takes, so the snippet carries it and nothing else.
     const snippet = JSON.parse(readFileSync(join(CLAUDE_ROOT, 'snippets/cairn-audit.config.json'), 'utf8'));
     const source = JSON.parse(readFileSync(resolve(ROOT, 'examples/showcase/cairn-audit.config.json'), 'utf8'));
     expect(snippet.sheet).toEqual(source.sheet);

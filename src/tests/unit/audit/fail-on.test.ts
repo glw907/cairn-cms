@@ -41,8 +41,8 @@ describe('exitCodeFor', () => {
 
 describe('parseArgs --fail-on', () => {
   it('reads advisory and error', () => {
-    expect(parseArgs(['--fail-on', 'advisory'])).toEqual({ command: 'audit', rendered: false, failOn: 'advisory' });
-    expect(parseArgs(['--fail-on', 'error'])).toEqual({ command: 'audit', rendered: false, failOn: 'error' });
+    expect(parseArgs(['--fail-on', 'advisory'])).toEqual({ failOn: 'advisory' });
+    expect(parseArgs(['--fail-on', 'error'])).toEqual({ failOn: 'error' });
   });
 
   it('leaves failOn unset on a bare call', () => {
@@ -55,6 +55,6 @@ describe('parseArgs --fail-on', () => {
 
   it('treats a missing value as a usage error', () => {
     expect(() => parseArgs(['--fail-on'])).toThrow(/--fail-on needs a value/);
-    expect(() => parseArgs(['--fail-on', '--rendered'])).toThrow(/--fail-on needs a value/);
+    expect(() => parseArgs(['--fail-on', '--config'])).toThrow(/--fail-on needs a value/);
   });
 });

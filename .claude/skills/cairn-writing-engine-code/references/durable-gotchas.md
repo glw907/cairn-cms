@@ -189,9 +189,8 @@ That is the same project set as `npm test`, about 90 seconds for the component p
 stock `npm test` passes after a reboot, delete this entry and the STATUS watch.
 
 Contention looks similar. When two gates ran at once (2026-09-08, before the machine-wide gate
-lock), a full `npm test` failed on exactly one unrelated file per run:
-`src/tests/unit/audit/rendered.test.ts` (its BASE_URL contract on port 4173) or
-a test hitting the default 60-second timeout. Both reproduced green
+lock), a full `npm test` failed on exactly one unrelated file per run, a test
+hitting the default 60-second timeout. It reproduced green
 alone with `npx vitest run <file>`. Rerun a lone failing file by itself before calling it a
 regression.
 
@@ -199,10 +198,7 @@ Another worktree's gate on the same machine causes the same kind of failure. A f
 then fails a different unrelated file on each run: a polled DOM wait in the component project, a
 `Test timed out` on a real-corpus scan, or `Browser connection was closed while running tests`.
 Check `ps aux | grep -E 'vitest|npm test'` for a process rooted in another worktree path, wait for
-it to exit, and rerun. A preview server on port 4173 from another worktree is a quieter version of
-this: `src/tests/unit/audit/rendered.test.ts` asserts that nothing answers on the default
-`http://localhost:4173`, so a live server there fails it on an untouched `HEAD` too
-(`ss -ltnp | grep 4173` confirms). Only a failure that survives a contention-free rerun is yours.
+it to exit, and rerun. Only a failure that survives a contention-free rerun is yours.
 
 ## A probe site from `emit:template` sees no shipped guidance
 

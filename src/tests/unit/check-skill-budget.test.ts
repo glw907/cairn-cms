@@ -15,7 +15,6 @@ import {
   SKILL_BUDGET_TOKENS
 } from '../../../scripts/checks/check-skill-budget.mjs';
 import { staticRules } from '../../lib/audit/rules/static/index.js';
-import { renderedRules } from '../../lib/audit/rules/rendered/index.js';
 
 // spec section 7: the packaged skill's always-loaded core carries "a hard token budget in the low
 // thousands." The plan ratifies the number as 3,500. This is the counting check: a pure function
@@ -136,10 +135,7 @@ describe('distRulesAvailable', () => {
 });
 
 function actualTierMap() {
-  return [
-    ...staticRules().map((rule) => ({ id: rule.id, mode: 'static' as const, tier: rule.tier })),
-    ...renderedRules().map((rule) => ({ id: rule.id, mode: 'rendered' as const, tier: rule.tier })),
-  ];
+  return staticRules().map((rule) => ({ id: rule.id, mode: 'static' as const, tier: rule.tier }));
 }
 
 describe('parseTierMap', () => {
@@ -147,8 +143,6 @@ describe('parseTierMap', () => {
     const text = readFileSync(resolve(ROOT, 'skills/cairn-building-admin-screens/SKILL.md'), 'utf8');
     const entries = parseTierMap(text);
     expect(entries).toContainEqual({ id: 'no-uncompiled-class', mode: 'static', tier: 'error' });
-    expect(entries).toContainEqual({ id: 'one-filled-action', mode: 'rendered', tier: 'error' });
-    expect(entries).toContainEqual({ id: 'screen-anatomy', mode: 'rendered', tier: 'advisory' });
   });
 
   it('throws when a labeled tier-map section is missing, rather than reporting zero rules', () => {
@@ -173,12 +167,12 @@ describe('checkTierMap', () => {
 
   it('fails naming a rule the doc claims at the wrong tier', () => {
     const documented = actualTierMap().map((e) =>
-      e.id === 'chip-ground-collision' ? { ...e, tier: 'error' as const } : e
+      e.id === 'radius-scale' ? { ...e, tier: 'error' as const } : e
     );
     const result = checkTierMap(documented, actualTierMap());
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
-    expect(result.error).toContain('"chip-ground-collision" as error tier');
+    expect(result.error).toContain('"radius-scale" as error tier');
     expect(result.error).toContain('registry has it at advisory tier');
   });
 

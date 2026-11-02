@@ -2,11 +2,11 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // The proof spec: every contrast row cairn's theme identity work commits to, measured against
 // the G1 fixture in a real browser rather than asserted from a design comment. Each pair is
-// painted onto a throwaway canvas and read back as sRGB, mirroring cairn-audit's color
-// normalizer (src/lib/audit/rendered/page-surface.ts's resolveColorsInPage): a computed color
+// painted onto a throwaway canvas and read back as sRGB, a technique that
+// normalizes colors the browser serializes in any notation: a computed color
 // property can serialize as `color-mix(...)`/`oklch(...)` rather than `rgb()`, which no
-// hand-rolled parser reads reliably, and this file, under examples/showcase, has no access to the
-// engine's internal audit module to import it from. A translucent color composites onto its named ground
+// hand-rolled parser reads reliably, and this file, under examples/showcase, has no access to an
+// engine-internal helper to import for it. A translucent color composites onto its named ground
 // before the WCAG ratio is measured; an already-opaque color composites onto itself, a no-op.
 
 type Theme = 'cairn-admin' | 'cairn-admin-dark';
@@ -44,7 +44,7 @@ async function gotoThemed(
 /**
  * Paints each raw CSS color string over opaque white and over opaque black on a 1x1 canvas, and
  * recovers the sRGB bytes plus alpha from the difference between the two reads: the same
- * technique cairn-audit's rendered rules use to normalize a color the browser itself serializes
+ * technique that normalizes a color the browser itself serializes
  * in whatever functional notation it chooses. A string the browser refuses to paint resolves to
  * null, reported rather than treated as a pass.
  */

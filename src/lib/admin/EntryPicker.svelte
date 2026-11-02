@@ -139,8 +139,7 @@ dialog's a11y conventions.
       {#each groups as group (group.concept)}
         <h3 class="mt-2 mb-1 type-label font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>
         <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-             display: flex, which strips the implicit list role in WebKit/VoiceOver
-             (cairn-audit's list-role rule, rendered mode). -->
+             display: flex, which strips the implicit list role in WebKit/VoiceOver. -->
         <ul class="menu w-full" role="list">
           {#each group.items as target (`${target.concept}/${target.id}`)}
             <li class:disabled={isSelected(target)} role="listitem">

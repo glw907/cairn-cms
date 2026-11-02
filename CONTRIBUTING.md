@@ -187,8 +187,7 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `scripts/checks/`: the gate scripts the `check:*` npm targets run.
 - `scripts/build/`: the build steps behind `npm run package` and the design-system builds.
 - `scripts/lab/`: development apparatus outside the `check:*` set, most of it run by hand
-  against a live server. Two exceptions run in CI: `test:reskin` from `design.yml` and
-  `norms:check` from `norms.yml`.
+  against a live server. One exception runs in CI: `test:reskin` from `design.yml`.
 - `examples/showcase/`: a complete consumer site and the library's proving ground. The e2e
   and visual suites run against it.
 - `examples/cairn-theme/`: the optional identity layer for

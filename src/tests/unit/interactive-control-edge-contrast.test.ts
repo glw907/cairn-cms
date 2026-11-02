@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
-import { composite, contrastRatio, type Rgba } from '../../lib/audit/color.js';
-import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';
+import { composite, contrastRatio, resolveColors, type Rgba, type RenderedPage } from './_canvas-color.js';
 
 // CONTRACT (Task 6, admin sheet fixes, 2026-08-27; extended 2026-08-27 fix round): daisyUI's
 // `.checkbox`/`.radio` base rules border an unchecked control at a 20% `--color-base-content` mix

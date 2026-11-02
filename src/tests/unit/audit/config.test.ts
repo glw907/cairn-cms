@@ -9,7 +9,6 @@ import {
   DEFAULT_PUBLIC_EXCLUDE,
   DEFAULT_PUBLIC_SCOPE,
   DEFAULT_PUBLIC_STYLESHEETS,
-  DEFAULT_RENDERED_PAGES,
   DEFAULT_SHEET_CANDIDATES,
   DEFAULT_STATIC_SCOPE,
   DEFAULT_THEME_ROOTS,
@@ -57,13 +56,6 @@ describe('DEFAULT_PALETTE_CSS_FILES', () => {
   });
 });
 
-describe('DEFAULT_RENDERED_PAGES', () => {
-  it('carries the core admin routes rendered mode visits absent a configured page list', () => {
-    expect(DEFAULT_RENDERED_PAGES).toContain('/admin/posts');
-    expect(DEFAULT_RENDERED_PAGES).toContain('/admin/login');
-  });
-});
-
 describe('resolveConfig', () => {
   const sheetHere = (path: string) => path === DEFAULT_SHEET_CANDIDATES[0];
 
@@ -74,8 +66,6 @@ describe('resolveConfig', () => {
     expect(config.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
     expect(config.staticCssFiles).toEqual([]);
     expect(config.paletteCssFiles).toEqual(DEFAULT_PALETTE_CSS_FILES);
-    expect(config.renderedPages).toEqual(DEFAULT_RENDERED_PAGES);
-    expect(config.renderedAllowlist).toEqual([]);
   });
 
   it('takes a declared palette site list from the config file, replacing the default', () => {
@@ -97,25 +87,19 @@ describe('resolveConfig', () => {
     expect(config.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
   });
 
-  it('takes the scan scope, the sheet, and the rendered inputs from the config file', () => {
+  it('takes the scan scope and the sheet from the config file, and ignores a leftover rendered key', () => {
     const config = resolveConfig(
       '/site',
       {
         static: { scope: ['src/routes/office'] },
         sheet: 'build/admin.css',
-        rendered: {
-          pages: ['/admin', '/admin/posts'],
-          allowlist: [{ page: '/admin', selector: '.legacy', reason: 'ships in the next pass' }],
-        },
+        rendered: { pages: ['/admin'] },
       },
       sheetHere
     );
     expect(config.staticScope).toEqual(['src/routes/office']);
     expect(config.sheetPaths).toEqual(['build/admin.css']);
-    expect(config.renderedPages).toEqual(['/admin', '/admin/posts']);
-    expect(config.renderedAllowlist).toEqual([
-      { page: '/admin', selector: '.legacy', reason: 'ships in the next pass' },
-    ]);
+    expect(config).not.toHaveProperty('renderedPages');
   });
 
   // The ledger's ruled shape: `sheet` is a list of compiled-class sources, exactly as
@@ -144,39 +128,6 @@ describe('resolveConfig', () => {
     expect(() => resolveConfig('/site', { static: { scope: 'src' } }, sheetHere)).toThrow(
       /static\.scope/
     );
-  });
-
-  // rank-32(a): rendered.extraPages appends rather than replaces, so naming a site's own screen
-  // does not silently drop the six core routes it no longer has to restate by hand.
-  it('appends rendered.extraPages to the default page list', () => {
-    const config = resolveConfig('/site', { rendered: { extraPages: ['/admin/my-screen'] } }, sheetHere);
-    expect(config.renderedPages).toEqual([...DEFAULT_RENDERED_PAGES, '/admin/my-screen']);
-  });
-
-  it('appends rendered.extraPages to an explicit rendered.pages, not just the default', () => {
-    const config = resolveConfig(
-      '/site',
-      { rendered: { pages: ['/admin/posts'], extraPages: ['/admin/my-screen'] } },
-      sheetHere
-    );
-    expect(config.renderedPages).toEqual(['/admin/posts', '/admin/my-screen']);
-  });
-
-  it('rejects an allowlist entry missing its reason', () => {
-    const raw = { rendered: { allowlist: [{ page: '/admin', selector: '.legacy' }] } };
-    expect(() => resolveConfig('/site', raw, sheetHere)).toThrow(/reason/);
-  });
-
-  // Naming the rule is how suppressing an ADVISORY finding stays non-gating when its selector
-  // later churns: the staleness finding is then raised at that rule's own tier.
-  it('carries an allowlist entry\'s optional rule id, and rejects a non-string one', () => {
-    const raw = {
-      rendered: { allowlist: [{ page: '/admin', selector: '.legacy', reason: 'held', rule: 'border-contrast' }] },
-    };
-    expect(resolveConfig('/site', raw, sheetHere).renderedAllowlist[0].rule).toBe('border-contrast');
-
-    const bad = { rendered: { allowlist: [{ page: '/admin', selector: '.legacy', reason: 'held', rule: 7 }] } };
-    expect(() => resolveConfig('/site', bad, sheetHere)).toThrow(/rule/);
   });
 });
 
@@ -336,19 +287,11 @@ describe('the public scope', () => {
 
 describe('parseArgs', () => {
   it('reads a bare invocation as the static audit', () => {
-    expect(parseArgs([])).toEqual({ command: 'audit', rendered: false });
-  });
-
-  it('reads --rendered', () => {
-    expect(parseArgs(['--rendered'])).toEqual({ command: 'audit', rendered: true });
+    expect(parseArgs([])).toEqual({});
   });
 
   it('reads --config with its path', () => {
-    expect(parseArgs(['--config', 'audit.json'])).toEqual({
-      command: 'audit',
-      rendered: false,
-      config: 'audit.json',
-    });
+    expect(parseArgs(['--config', 'audit.json'])).toEqual({ config: 'audit.json' });
   });
 
   it('rejects an unknown flag with a usage line', () => {
@@ -359,43 +302,27 @@ describe('parseArgs', () => {
     expect(() => parseArgs(['--config'])).toThrow(/--config/);
   });
 
-  it('reads the norms subcommand and its term', () => {
-    expect(parseArgs(['norms', '.btn.btn-primary'])).toEqual({
-      command: 'norms',
-      term: '.btn.btn-primary',
-      rendered: false,
-    });
-  });
-
-  // A flag standing where the term belongs is a typo, not a term. Accepting it would run a query
-  // for the literal string `--rendered` and report that no role matches it.
-  it('rejects the norms subcommand with no term', () => {
-    expect(() => parseArgs(['norms'])).toThrow(/norms needs a selector or role/);
-    expect(() => parseArgs(['norms', '--rendered'])).toThrow(/norms needs a selector or role/);
+  it('rejects the removed --rendered flag and norms subcommand as unknown arguments', () => {
+    expect(() => parseArgs(['--rendered'])).toThrow(/unknown argument --rendered/);
+    expect(() => parseArgs(['norms', 'x'])).toThrow(/unknown argument norms/);
   });
 
   it('reads --help as a flag rather than rejecting it', () => {
-    expect(parseArgs(['--help'])).toEqual({ command: 'audit', rendered: false, help: true });
+    expect(parseArgs(['--help'])).toEqual({ help: true });
   });
 
   it('reads a single --rule', () => {
-    expect(parseArgs(['--rendered', '--rule', 'motion-reduced-delay'])).toEqual({
-      command: 'audit',
-      rendered: true,
-      rule: ['motion-reduced-delay'],
-    });
+    expect(parseArgs(['--rule', 'motion-reduced-delay'])).toEqual({ rule: ['motion-reduced-delay'] });
   });
 
   it('reads --rule repeated, in the order given', () => {
-    expect(parseArgs(['--rendered', '--rule', 'viewport-overflow', '--rule', 'panel-width'])).toEqual({
-      command: 'audit',
-      rendered: true,
+    expect(parseArgs(['--rule', 'viewport-overflow', '--rule', 'panel-width'])).toEqual({
       rule: ['viewport-overflow', 'panel-width'],
     });
   });
 
   it('rejects --rule without a value', () => {
-    expect(() => parseArgs(['--rendered', '--rule'])).toThrow(/--rule/);
+    expect(() => parseArgs(['--rule'])).toThrow(/--rule/);
   });
 });
 

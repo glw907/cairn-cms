@@ -222,8 +222,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // flex layout and a hover affordance on top of this.
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
   // `relative` plus the `before:` hit-area pair expand the button's EFFECTIVE tap region past its
-  // 16px-tall painted box, an outward `::before` inset (touch-targets' sanctioned
-  // technique) rather than inflating the type-label font size to reach the 24px floor, and a
+  // 16px-tall painted box, an outward `::before` inset
+  // rather than inflating the type-label font size to reach the 24px floor, and a
   // negative z-index keeps the expanded plate from painting over the button's text and hover
   // color. There is deliberately no explicit before-content utility here: Tailwind's `before:`
   // variant already emits `content: var(--tw-content)` on every `before:`-prefixed utility, and

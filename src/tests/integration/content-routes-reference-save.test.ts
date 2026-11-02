@@ -31,7 +31,7 @@ function runtime(): CairnRuntime {
     concepts: [
       {
         id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
-        routing: { routable: true, dated: false, inFeeds: true },
+        routing: { routable: true, dated: false },
         permalink: '/posts/:slug',
         datePrefix: 'day',
         fields: [
@@ -44,7 +44,7 @@ function runtime(): CairnRuntime {
       },
       {
         id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
@@ -54,8 +54,7 @@ function runtime(): CairnRuntime {
       },
     ],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },

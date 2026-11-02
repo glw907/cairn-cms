@@ -8,7 +8,7 @@ import { fields } from '../../lib/content/fields.js';
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
-    routing: 'feed',
+    routing: 'dated',
     permalink: '/:year/:month/:day/:slug',
     fields: {
       title: fields.text({ label: 'Title', required: true }),

@@ -12,7 +12,7 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
-const rt = runtime({ siteName: 'Test', sender: { from: 'noreply@test.dev' } });
+const rt = runtime({ siteName: 'Test', email: { from: 'noreply@test.dev' } });
 
 function routesWithSink() {
   const sent: MagicLinkMessage[] = [];

@@ -3,10 +3,10 @@ import { resolveRouting } from '../../lib/content/concepts.js';
 
 describe('resolveRouting', () => {
   it('expands the named shorthands to the exact rules and defaults to page', () => {
-    expect(resolveRouting('feed', 'posts')).toEqual({ routable: true, dated: true, inFeeds: true });
-    expect(resolveRouting('page', 'posts')).toEqual({ routable: true, dated: false, inFeeds: false });
-    expect(resolveRouting('embedded', 'posts')).toEqual({ routable: false, dated: false, inFeeds: false });
-    expect(resolveRouting(undefined, 'posts')).toEqual({ routable: true, dated: false, inFeeds: false });
+    expect(resolveRouting('dated', 'posts')).toEqual({ routable: true, dated: true });
+    expect(resolveRouting('page', 'posts')).toEqual({ routable: true, dated: false });
+    expect(resolveRouting('embedded', 'posts')).toEqual({ routable: false, dated: false });
+    expect(resolveRouting(undefined, 'posts')).toEqual({ routable: true, dated: false });
   });
 
   // Surface-pruning Task 5: RoutingRule left ConceptConfig.routing's public type, so resolveRouting
@@ -14,9 +14,20 @@ describe('resolveRouting', () => {
   // The runtime guard added alongside also throws if a cast forces an object through.
   it('rejects an explicit rule at compile time, and throws if a cast forces it through at runtime', () => {
     expect(() => {
-      // @ts-expect-error routing accepts only the 'feed' | 'page' | 'embedded' shorthand now
-      resolveRouting({ routable: true, dated: true, inFeeds: false }, 'posts');
-    }).toThrow('cairn: concept "posts" routing "[object Object]" must be one of feed, page, embedded');
+      // @ts-expect-error routing accepts only the 'dated' | 'page' | 'embedded' shorthand now
+      resolveRouting({ routable: true, dated: true }, 'posts');
+    }).toThrow('cairn: concept "posts" routing "[object Object]" must be one of dated, page, embedded');
+  });
+
+  it('rejects the retired feed value at runtime and at compile time', () => {
+    expect(() => resolveRouting('feed' as never, 'posts')).toThrow( // idioms-allow: as-never  feeds the runtime guard the retired routing value
+      'must be one of dated, page, embedded',
+    );
+    const stale = 'feed' as const;
+    expect(() => {
+      // @ts-expect-error 'feed' was renamed to 'dated'
+      resolveRouting(stale, 'posts');
+    }).toThrow('must be one of dated, page, embedded');
   });
 
   // Defense in depth: an untyped caller (or a value that survived a cast) can still hand
@@ -24,7 +35,7 @@ describe('resolveRouting', () => {
   // parseSiteConfig's unknown-key check does, rather than silently falling through.
   it('throws on a defined-but-unrecognized routing value, naming the concept and the valid shorthands', () => {
     expect(() => resolveRouting('feeds' as never, 'posts')).toThrow( // idioms-allow: as-never  feeds the runtime guard a defined-but-unrecognized routing value
-      'cairn: concept "posts" routing "feeds" must be one of feed, page, embedded',
+      'cairn: concept "posts" routing "feeds" must be one of dated, page, embedded',
     );
   });
 });

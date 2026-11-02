@@ -10,8 +10,9 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
 // `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` and
 // `StandardInput` (Standard Schema conformance is gone) and `defineFieldset` and `FieldsetConfig`
-// (a concept declares a plain field record), minus `parseManifest`, whose canonical home is now this barrel
-// beside `formatManifest`, so it moves to the keep list below.
+// (a concept declares a plain field record). The last seven names are internals: `/internal` carries
+// the manifest helpers, `resolveCapability` stays a module-level export, `parseManifest` left every
+// barrel, and `ManifestProblem` lives on `/delivery`.
 const DEMOTED = [
   'resolveOwnerLevelRoles',
   'StandardSchemaV1',
@@ -23,7 +24,6 @@ const DEMOTED = [
   'findConcept',
   'frontmatterFromForm',
   'dateInputValue',
-  'serializeMarkdown',
   'isValidId',
   'idFromFilename',
   'filenameFromId',
@@ -46,7 +46,6 @@ const DEMOTED = [
   'parseComponent',
   'validateComponent',
   'buildComponentInsert',
-  'generateComponentReference',
   'remarkDirectiveStamp',
   'requireOrigin',
   'buildMagicLinkMessage',
@@ -72,6 +71,13 @@ const DEMOTED = [
   'ComponentInsert',
   'ReferenceOptions',
   'ResolvedReference',
+  'resolveCapability',
+  'formatManifest',
+  'verifyManifest',
+  'verifyReferences',
+  'verifyEntries',
+  'parseManifest',
+  'ManifestProblem',
 ];
 
 // C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
@@ -88,7 +94,7 @@ const C2_REMOVED = ['Role', 'AuthEnv', 'BackendEnv'];
 
 // C2 breaking window (2026-08-02, R4, Task 9): the export-rule sweep reverses the 2026-07-01
 // pruning verdict for these 22 names. Each is genuinely named in a root-public signature
-// (`ConceptConfig.datePrefix`, `ComponentDef.slots`, `Fieldset.behavior`, `Manifest.entries`,
+// (`ConceptConfig.datePrefix`, `BlockDef.slots`, `Fieldset.behavior`, `Manifest.entries`,
 // `ManifestEntry.references`, `ConceptDescriptor.routing`, and `FieldDescriptor`'s own union
 // arms), so the new doctrine, every type named in a public signature is exported from a subpath
 // the consumer already imports, outranks the July minimalism call for exactly this set. Moved
@@ -124,19 +130,15 @@ const KEPT = [
   'composeRuntime',
   'createRenderer',
   'defineRegistry',
-  'defineComponent',
+  'defineBlock',
   'fields',
   'createGithubApp',
   'parseSiteConfig',
   'renderGlyph',
   'parseMarkdown',
+  'serializeMarkdown',
   'readMenu',
   'readVocabulary',
-  'formatManifest',
-  'parseManifest',
-  'verifyEntries',
-  'verifyManifest',
-  'verifyReferences',
   'CommitConflictError',
   'SiteConfigError',
   'Editor',
@@ -154,6 +156,7 @@ const KEPT = [
   'NavMenuConfig',
   'PreviewConfig',
   'MediaConfig',
+  'MediaResolve',
   'ConceptDescriptor',
   'CairnRuntime',
   'SiteRender',
@@ -164,8 +167,8 @@ const KEPT = [
   'CairnRef',
   'LinkResolve',
   'Manifest',
-  'ComponentDef',
-  'ComponentRegistry',
+  'BlockDef',
+  'BlockRegistry',
   'IconSet',
   'RendererConfig',
   'RepoFile',

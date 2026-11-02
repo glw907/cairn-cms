@@ -10,7 +10,7 @@ import { buildSitemap } from '../../lib/delivery/sitemap.js';
 const [news] = normalizeConcepts({
   news: {
     dir: 'src/content/news',
-    routing: 'feed',
+    routing: 'dated',
     permalink: '/news/:year/:month/:slug',
     fields: { date: fields.date({ label: 'Date' }) },
   },

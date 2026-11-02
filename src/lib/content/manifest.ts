@@ -167,7 +167,6 @@ function compareEdge(a: ReferenceEdge, b: ReferenceEdge): number {
 /**
  * Serialize canonically: entries sorted by concept then id, links sorted and deduped, a fixed key
  *  order, two-space pretty, and a trailing newline, so the committed file diffs cleanly in a PR.
- * @public
  */
 export function formatManifest(manifest: Manifest): string {
   const entries = [...manifest.entries].sort(compareRef).map((e) => ({
@@ -200,7 +199,6 @@ const REGEN = " The manifest is generated: run npx cairn-manifest, and don't edi
  *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
  *  error. The build regenerates the manifest, so a real file is always canonical; this guards a
  *  hand-edited or truncated one.
- * @public
  */
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
@@ -356,7 +354,6 @@ function predatesMediaRefs(committed: Manifest): boolean {
  *
  * Pass the site's adapter to get the nested-image rule: the pre-field allowance for `mediaRefs`
  *  (below) then holds only when no concept declares an image inside a container field.
- * @public
  */
 export function verifyManifest(built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, 'content'>): void {
   const builtRaw = formatManifest(built);
@@ -448,7 +445,6 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
  * Throw if any non-draft entry has a problem, naming each error on its own line so a build failure
  *  reads as a content fix. A draft passes because the prerender never renders one. It runs ahead of
  *  `verifyManifest`, since a manifest regenerated over an invalid entry only hides the invalid entry.
- * @public
  */
 export function verifyEntries(problems: ManifestProblem[]): void {
   const live = problems.filter((p) => !p.draft);
@@ -468,7 +464,6 @@ export function verifyEntries(problems: ManifestProblem[]): void {
  *  A body link is checked here so it fails ahead of the stale verdict. A draft's link is exempt
  *  because the prerender never renders one. This gate runs inside the generated virtual-module
  *  source, where the built manifest is in scope, ahead of `verifyManifest`.
- * @public
  */
 export function verifyReferences(manifest: Manifest): void {
   const present = new Set(manifest.entries.map(keyOf));
@@ -606,27 +601,6 @@ export function inboundReferences(manifest: Manifest, concept: string, id: strin
     }
   }
   return out;
-}
-
-/** One entry that carries a tag value: enough to name it and link to its edit page in the delete gate. */
-export interface TagUsageRow {
-  concept: string;
-  id: string;
-  title: string;
-  permalink: string;
-}
-
-/**
- * Every published entry whose taxonomy tags include the value, keyed on the bare value (a tag is
- *  corpus-global, unlike a reference whose key is a concept/id pair, since a value means the same
- *  thing in every concept). The cross-branch `buildTagUsageIndex` unions this main read with the open
- *  branches; this pure reader is the published arm and the delete gate's manifest-only query. Pure
- *  over the manifest, so the request-time delete path and a unit test call it the same way.
- */
-export function deriveTagUsage(manifest: Manifest, value: string): TagUsageRow[] {
-  return manifest.entries
-    .filter((e) => e.tags?.includes(value))
-    .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
 }
 
 /**

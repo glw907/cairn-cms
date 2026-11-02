@@ -6,7 +6,7 @@
      cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
   import type { PageData } from './$types';
-  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
+  import { CairnHead } from '@glw907/cairn-cms/public';
   import { formatDate } from '#chassis/date.js';
   import EntryRow from '#theme/components/EntryRow.svelte';
 

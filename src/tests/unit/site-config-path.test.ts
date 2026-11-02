@@ -1,7 +1,6 @@
-// The site-config path is declared once, by `editor.siteConfigPath`, and the nav editor, Settings,
-// and the tag vocabulary all read and commit the file it names. An adapter that declares no path
-// gets the scaffold's own, which a committed twin keeps equal to the file the scaffold bakes and the
-// Go doctor embeds.
+// The site-config path is fixed at the scaffold's own, which a committed twin keeps equal to the file
+// the scaffold bakes and the Go doctor embeds. The nav editor, Settings, and the tag vocabulary all
+// read and commit it, and the adapter has no knob to move it.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -14,7 +13,6 @@ import { testAdapter, testSiteConfig } from './_content-fixture.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
-const ELSEWHERE = 'config/elsewhere.yaml';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -23,7 +21,7 @@ function composed(editor?: CairnAdapter['editor']) {
   return composeRuntime({ adapter: { ...testAdapter, editor }, siteConfig: testSiteConfig });
 }
 
-describe('editor.siteConfigPath', () => {
+describe('the site-config path', () => {
   it('defaults to the path the scaffold bakes and the doctor embeds', () => {
     const canonical = JSON.parse(
       readFileSync(resolve(import.meta.dirname, '../../../packages/create-cairn-site/src/site-config-path.json'), 'utf8'),
@@ -32,8 +30,12 @@ describe('editor.siteConfigPath', () => {
     expect(composed().siteConfigPath).toBe(canonical.path);
   });
 
-  it('takes the adapter path when one is set', () => {
-    expect(composed({ siteConfigPath: ELSEWHERE }).siteConfigPath).toBe(ELSEWHERE);
+  it('no longer lets the adapter name another path', () => {
+    const editor: CairnAdapter['editor'] = {
+      // @ts-expect-error the path is fixed; editor has no siteConfigPath
+      siteConfigPath: 'config/elsewhere.yaml',
+    };
+    expect(composed(editor).siteConfigPath).toBe(DEFAULT_SITE_CONFIG_PATH);
   });
 
   it('no longer lets the nav menu carry its own path', () => {
@@ -70,7 +72,7 @@ function seed(path: string) {
 }
 
 describe('the screens that read the site config', () => {
-  it('Settings and Tags save to the default path for an adapter with no editor.nav', async () => {
+  it('Settings and Tags save to the fixed path for an adapter with no editor.nav', async () => {
     const gh = seed(DEFAULT_SITE_CONFIG_PATH);
     const { content } = routesFor();
     await expectRedirect(() =>
@@ -89,37 +91,5 @@ describe('the screens that read the site config', () => {
     const committed = gh.read('main', DEFAULT_SITE_CONFIG_PATH)!;
     expect(committed).toContain('smartQuotes: true');
     expect(committed).toContain('value: svelte');
-  });
-
-  it('Settings, Tags, and the nav editor all route to editor.siteConfigPath when it names another file', async () => {
-    const gh = seed(ELSEWHERE);
-    const { content, nav } = routesFor({
-      siteConfigPath: ELSEWHERE,
-      nav: { menuName: 'primary', label: 'Navigation' },
-    });
-    await expectRedirect(() =>
-      content.settingsSaveAction(
-        contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: JSON.stringify({ smartQuotes: true }) } }),
-      ),
-    );
-    await expectRedirect(() =>
-      content.vocabularySaveAction(
-        contentEvent({
-          url: 'https://t.example/admin/vocabulary',
-          form: { vocabulary: JSON.stringify([{ value: 'svelte', label: 'Svelte' }]) },
-        }),
-      ),
-    );
-    await expectRedirect(() =>
-      nav.navSaveAction(
-        contentEvent({ url: 'https://t.example/admin/nav', form: { tree: JSON.stringify([{ label: 'Home', url: '/' }]) } }),
-      ),
-    );
-    const committed = gh.read('main', ELSEWHERE)!;
-    expect(committed).toContain('smartQuotes: true');
-    expect(committed).toContain('value: svelte');
-    expect(committed).toContain('label: Home');
-    // Nothing was written to the default path, which holds no file in this seed.
-    expect(gh.read('main', DEFAULT_SITE_CONFIG_PATH)).toBeNull();
   });
 });

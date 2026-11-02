@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCivilDate, formatTimestamp, itemNoun } from '../../lib/admin-toolkit/format.js';
+import { formatCivilDate, formatShortMonthDay, formatTimestamp, itemNoun } from '../../lib/admin-toolkit/format.js';
 
 describe('formatCivilDate', () => {
   it('reads the empty string for a null date with no fallback', () => {
@@ -26,8 +26,10 @@ describe('formatCivilDate', () => {
     expect(formatCivilDate('2026-11-01')).toBe('Nov 1, 2026');
   });
 
-  it('honors a caller-supplied Intl options passthrough', () => {
-    expect(formatCivilDate('2026-06-14', { intlOptions: { year: 'numeric', month: 'long' } })).toBe('June 2026');
+  it('renders the Media Library short date as a month and day with no year', () => {
+    expect(formatShortMonthDay('2026-06-14')).toBe('Jun 14');
+    expect(formatShortMonthDay('2026-06-14 09:30:00')).toBe('Jun 14');
+    expect(formatShortMonthDay(null, { fallback: 'none' })).toBe('none');
   });
 });
 

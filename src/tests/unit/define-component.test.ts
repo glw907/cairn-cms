@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { defineComponent } from '../../lib/render/registry.js';
+import { defineBlock } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import type { Element } from 'hast';
 
 const build = (): Element => ({ type: 'element', tagName: 'div', properties: {}, children: [] });
 
-describe('defineComponent', () => {
+describe('defineBlock', () => {
   it('builds an attributeSchema and returns the def', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'callout', label: 'Callout', description: '', build,
       attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip'] }) },
     });
@@ -15,13 +15,13 @@ describe('defineComponent', () => {
     expect(def.attributeSchema.validate({ tone: 'note' }, '').ok).toBe(true);
   });
   it('rejects a non-scalar attribute type at declaration', () => {
-    expect(() => defineComponent({
+    expect(() => defineBlock({
       name: 'bad', label: 'Bad', description: '', build,
       attributes: { hero: fields.image({ label: 'Hero' }) },
     })).toThrow(/single-value scalar/);
   });
   it('routes a per-attribute behavior.validate through the schema', () => {
-    const def = defineComponent({
+    const def = defineBlock({
       name: 'range', label: 'Range', description: '', build,
       attributes: { min: fields.number({ label: 'Min' }), max: fields.number({ label: 'Max' }) },
       behavior: { max: { validate: (v, s) => (Number(v) < Number(s.min) ? 'Max below min.' : null) } },

@@ -2,7 +2,7 @@
 
 Two paths exist, and both read contract tokens instead of literals.
 
-- **A site's component.** A `defineComponent` declaration builds the markup, and the rules go in `prose.css` or in the component's scoped `<style>` block.
+- **A site's component.** A `defineBlock` declaration builds the markup, and the rules go in `prose.css` or in the component's scoped `<style>` block.
 - **A built-in component.** This path belongs to the engine. The markup lives in `src/lib/public/`, styled by Tailwind utilities that compile through the sheet's `@source` line, or by a scoped `<style>` block that reads contract tokens. A rule enters `cairn-public.css` only when it styles an engine-emitted class and carries no design choice. A built-in component carries no literal and no daisyUI component class.
 
 ## Token mapping

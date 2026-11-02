@@ -205,7 +205,7 @@ function memoizedSigningSelfTest(appId: string, key: string): ReturnType<typeof 
  * publishing. Mount the route outside `/admin`, so the guard does not gate it.
  * @scaffold
  */
-export async function loadHealth(event: CairnEvent, runtime: CairnRuntime): Promise<HealthData> {
+export async function loadHealth(event: CairnEvent, { runtime }: { runtime: CairnRuntime }): Promise<HealthData> {
   try {
     return await runHealthChecks(event, runtime);
   } catch (err) {

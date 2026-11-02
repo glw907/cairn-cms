@@ -264,7 +264,7 @@ cannot: which sense of "the package" or "the tool" is meant.
 | Other npm bins | `cairn-audit`, `cairn-guidance`, `cairn-doctor`, always by name | |
 | The editing surface | the admin; `/admin` for the path | |
 | The editing surface, on the editor track | the editor names the product and the person; the admin appears only where a screen string or a developer cross-reference needs it | Geoff, 2026-10-31. In the developer tracks "the admin" is the surface, and in `docs/editors/` "the editor" names the product and the person who uses it, so the editor track's vocabulary and this table agree. |
-| The `:::` content unit | block, in every track; the figure and an unregistered `:::` container are blocks too | Geoff, 2026-10-31. Retires "component" and "layout block" for this unit; "component" in the Svelte sense stays. "Fragment" keeps the include, and "code block" keeps the Markdown sense. The API names (`defineComponent`, `ComponentDef`, `rendering.components`) stay until the final engine batch renames them. Developer pages quote them and gloss the unit as a block until then. |
+| The `:::` content unit | block, in every track; the figure and an unregistered `:::` container are blocks too | Geoff, 2026-10-31. Retires "component" and "layout block" for this unit; "component" in the Svelte sense stays. "Fragment" keeps the include, and "code block" keeps the Markdown sense. The API says block too (`defineBlock`, `BlockDef`, `rendering.blocks`). |
 | Who a stuck editor contacts | your site owner; "developer" only where code is involved | Geoff, 2026-10-31. A screen string that says "site developer" is quoted exactly. |
 | The docs | the docs for the content; cairn.pub for the rendered site; the shipped docs for the copy in the tarball | |
 | The consumer's site | your site, or a cairn site | |
@@ -283,12 +283,11 @@ project, and "custom admin screen" stays the name for a whole admin route.
 | | Built-in (cairn ships it) | Custom (a site writes it) |
 |---|---|---|
 | **Admin component** | Lives in `src/lib/admin/`, exported at `@glw907/cairn-cms/admin`, beside `cairn-admin.css`. Rulebook: `.claude/skills/cairn-following-admin-design/references/admin-design-system.md`. Audit scope: the admin static scope. Guidance: the admin design system and `cairn-implementer`. | Lives under the site's `src/routes/admin` or `src/lib/admin/`, built on `@glw907/cairn-cms/admin-toolkit`. Rulebook: the ratified norms, DaisyUI-first. Audit scope: the admin static scope. Guidance: `cairn-building-admin-screens`, `cairn-extending-a-site`'s `daisyui-first.md`, and `cairn-extension-reviewer`. |
-| **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-styling-public-pages`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, `src/routes`, or `src/lib/components`, as a `defineComponent` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-styling-public-pages`'s custom recipe. |
+| **Public component** | Lives in `src/lib/public/`, exported at `@glw907/cairn-cms/public`, styled by `cairn-public.css`. Rulebook: the public theme contract, with no literal and no daisyUI component class. Audit scope: the public scope, rooted at the engine's `src/lib/public/` by the showcase config. Guidance: `cairn-styling-public-pages`'s built-in recipe and the `cairn-implementer` line. | Lives under the site's `src/chassis`, `src/theme`, `src/routes`, or `src/lib/components`, as a `defineBlock` plus rules in `prose.css` or a component `<style>`. Rulebook: the public theme contract. Audit scope: the public scope's default roots. Guidance: `cairn-styling-public-pages`'s custom recipe. |
 
 **The barrel rule.** `@glw907/cairn-cms/admin` exports only admin components.
-`@glw907/cairn-cms/public` exports every built-in public component that renders styled markup;
-`CairnHead` stays at `./delivery/head`, since it renders no markup of its own, only document-head
-tags. `@glw907/cairn-cms/admin-toolkit` keeps its name.
+`@glw907/cairn-cms/public` exports every built-in public component, `CairnHead` included.
+`@glw907/cairn-cms/admin-toolkit` keeps its name.
 
 **The precedent this expresses by font instead of case.** Git's contributor guide draws the
 same line by sense, not by regex: "Use 'git' (all lowercase) when talking about commands ...

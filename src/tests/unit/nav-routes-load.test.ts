@@ -11,7 +11,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
       postsConcept(),
       {
         id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
-        routing: { routable: true, dated: false, inFeeds: false },
+        routing: { routable: true, dated: false },
         permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },

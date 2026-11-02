@@ -37,7 +37,7 @@ export interface CairnAdminConfig {
   runtime: CairnRuntime;
   /**
    * The magic-link auth seam: `send` replaces the default Cloudflare Email sender. The email's
-   *  site name and sender come from the runtime. See `AuthRoutesConfig`.
+   *  site name and email sender config come from the runtime. See `AuthRoutesConfig`.
    */
   auth?: Pick<AuthRoutesConfig, 'send'>;
   /**
@@ -57,11 +57,6 @@ export interface CairnAdminConfig {
    *  `ContentRoutesConfig['attention']`.
    */
   attention?: ContentRoutesConfig['attention'];
-  /**
-   * Forwarded to the content routes verbatim: the preview-link lifetime `mintPreview` mints
-   *  against. See `ContentRoutesConfig['preview']`.
-   */
-  preview?: ContentRoutesConfig['preview'];
 }
 
 /**
@@ -108,7 +103,6 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     tidy: config.tidy,
     navFilter: config.navFilter,
     attention: config.attention,
-    preview: config.preview,
   });
   const editors = createEditorRoutes({ runtime });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
@@ -438,8 +432,13 @@ export interface CairnAdminRoutes {
  * Build the single-mount admin bundle a site's catch-all `/admin/[...path]` route exports: the
  *  narrow, declared {@link CairnAdminRoutes} view over {@link createCairnAdminInternal}'s wide
  *  return.
+ * @throws When `config` holds a `preview` key. The option set a preview link's lifetime, and
+ *  ignoring it would hand a site that shortened that lifetime longer-lived links with no error.
  * @public
  */
 export function createCairnAdmin(config: CairnAdminConfig): CairnAdminRoutes {
+  if ('preview' in config) {
+    throw new Error('cairn: createCairnAdmin has no `preview` key. A preview link has a fixed lifetime, so remove it.');
+  }
   return createCairnAdminInternal(config);
 }

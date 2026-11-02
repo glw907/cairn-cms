@@ -119,11 +119,23 @@ function redactObject(
   return { ...redacted };
 }
 
-const sinkByLevel: Record<LogLevel, (record: LogRecord) => void> = {
-  info: (record) => console.log(record),
-  warn: (record) => console.warn(record),
-  error: (record) => console.error(record),
+// Workers Logs indexes an object's fields, so a record stays an object there. Elsewhere a console
+// prints an object in the runtime inspect format, so the record goes out as one JSON line a log
+// reader can parse. Checked per emit, so a test or a late-bound global is honored.
+function underWorkers(): boolean {
+  return typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
+}
+
+const consoleByLevel: Record<LogLevel, (line: unknown) => void> = {
+  info: (line) => console.log(line),
+  warn: (line) => console.warn(line),
+  error: (line) => console.error(line),
 };
+
+// Serializing throws on a BigInt, so a caller inside emit's try falls back before anything prints.
+function writeRecord(level: LogLevel, record: LogRecord): void {
+  consoleByLevel[level](underWorkers() ? record : JSON.stringify(record));
+}
 
 /**
  * Builds one log record from a level, an event name, and its fields, redacting against the given
@@ -163,7 +175,9 @@ export function buildRecord(
  * convert `request.headers` with `Object.fromEntries` before logging it. Redaction matches a key,
  * never a value, so scrub a token out of a `url` or an error message at the call site. A getter that
  * throws while the fields are read yields a fallback record with `fields: '<unserializable>'`
- * instead of throwing out of the call.
+ * instead of throwing out of the call. Outside Workers a record prints as one `JSON.stringify` line,
+ * so an `Error` or `Headers` value prints as `{}`, a `BigInt` takes the `<unserializable>` fallback,
+ * and a key below the redaction cap prints in full; on Workers the record stays an object.
  * @public
  */
 export function createLogger<Event extends string>(options?: {
@@ -184,9 +198,9 @@ export function createLogger<Event extends string>(options?: {
   // place of the fields a `redactObject` walk could not finish reading.
   function emit(level: LogLevel, event: Event, fields: Record<string, unknown> = {}): void {
     try {
-      sinkByLevel[level](buildRecord(level, event, fields, redactedKeys));
+      writeRecord(level, buildRecord(level, event, fields, redactedKeys));
     } catch {
-      sinkByLevel[level]({ level, event, timestamp: new Date().toISOString(), fields: '<unserializable>' });
+      writeRecord(level, { level, event, timestamp: new Date().toISOString(), fields: '<unserializable>' });
     }
   }
   return {

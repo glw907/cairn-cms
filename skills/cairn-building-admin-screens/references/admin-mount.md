@@ -6,7 +6,7 @@
 - [The root layout must be chrome-free](#the-root-layout-must-be-chrome-free)
 - [Hooks, types, and CSRF](#hooks-types-and-csrf)
 - [/healthz](#healthz)
-- [Per-route mounting](#per-route-mounting)
+- [Media library actions](#media-library-actions)
 
 A scaffolded site already ships this shape; copy it into a hand-built site, or compare against
 it when the admin misbehaves. The engine serves every built-in view through one `load` and one
@@ -144,7 +144,7 @@ import { runtime } from '#chassis/cairn.server.js';
 
 export const prerender = false;
 export const GET: RequestHandler = async (event) => {
-  const report = await loadHealth(event, runtime);
+  const report = await loadHealth(event, { runtime });
   return Response.json(report, { status: report.ok ? 200 : 503 });
 };
 ```
@@ -152,12 +152,10 @@ export const GET: RequestHandler = async (event) => {
 `prerender = false` is required on a site that prerenders by default: without it the build
 freezes a permanent `ok: false` taken when the GitHub App key is absent.
 
-## Per-route mounting
+## Media library actions
 
-`createAuthRoutes`, `createContentRoutes`, `createEditorRoutes`, and `createNavRoutes` stay
-public for a site that must interpose on one surface. The site then owns its route tree and
-tracks the action vocabulary across releases. The media library is the exception: its nine
-janitorial actions (`mediaDelete`, `mediaUpdate`, the replace, alt, bulk delete, and orphan
+`createCairnAdmin` is the one mount for the auth, content, and editor routes. The media library's
+nine janitorial actions (`mediaDelete`, `mediaUpdate`, the replace, alt, bulk delete, and orphan
 actions) exist only on `createCairnAdmin`'s runtime object and are absent from
 the declared `CairnAdminRoutes` type. `export const actions = admin.actions` still wires them;
 `mediaLibraryUpload` is typed on `CairnAdminRoutes`; code that needs the rest typed spreads `{ ...admin.actions }` or casts.

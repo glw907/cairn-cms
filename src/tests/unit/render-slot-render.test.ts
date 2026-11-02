@@ -3,10 +3,10 @@ import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { serializeComponent } from '../../lib/render/component-grammar.js';
-import { defineComponent, defineRegistry } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
-const callout = defineComponent({
+const callout = defineBlock({
   name: 'callout',
   label: 'Callout',
   description: 'd',
@@ -25,7 +25,7 @@ const callout = defineComponent({
       h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
     ]),
 });
-const registry = defineRegistry({ components: [callout] });
+const registry = defineRegistry({ blocks: [callout] });
 
 describe('slot render path', () => {
   it('renders title, body, and repeatable items from the serialized component', async () => {
@@ -33,7 +33,7 @@ describe('slot render path', () => {
       attributes: { tone: 'warning' },
       slots: { title: 'Heads up', body: 'Be careful here.', points: ['First', 'Second'] },
     });
-    const { render } = createRenderer({ components: registry });
+    const { render } = createRenderer({ blocks: registry.defs });
     const html = await render({ body: md });
     expect(html).toContain('class="callout callout-warning"');
     expect(html).toContain('class="callout-title">Heads up');

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineRegistry, type BlockDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
-const card: ComponentDef = {
+const card: BlockDef = {
   name: 'card',
   label: 'Card',
   description: 'A bordered card',
@@ -14,17 +14,17 @@ const card: ComponentDef = {
 
 describe('defineRegistry', () => {
   it('looks a component up by name', () => {
-    const reg = defineRegistry({ components: [card] });
+    const reg = defineRegistry({ blocks: [card] });
     expect(reg.get('card')).toBe(card);
     expect(reg.get('missing')).toBeUndefined();
   });
 
   it('lists the declared names', () => {
-    expect(defineRegistry({ components: [card] }).names).toEqual(['card']);
+    expect(defineRegistry({ blocks: [card] }).names).toEqual(['card']);
   });
 
   it('resolves a role default icon, and undefined without a matching role', () => {
-    const reg = defineRegistry({ components: [card] });
+    const reg = defineRegistry({ blocks: [card] });
     expect(reg.defaultIcon('card', 'caution')).toBe('warning');
     expect(reg.defaultIcon('card')).toBeUndefined();
     expect(reg.defaultIcon('missing', 'caution')).toBeUndefined();
@@ -34,7 +34,7 @@ describe('defineRegistry', () => {
 describe('defaultIcon engine fallback', () => {
   it('falls back to the engine default for a known role when the def sets no defaultIconByRole', () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'admonition',
           label: '',
@@ -49,7 +49,7 @@ describe('defaultIcon engine fallback', () => {
 
   it("lets a def's own defaultIconByRole override the engine default for the same role", () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'admonition',
           label: '',
@@ -65,7 +65,7 @@ describe('defaultIcon engine fallback', () => {
 
   it('returns undefined for an unknown role even with an icon field', () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'admonition',
           label: '',
@@ -80,7 +80,7 @@ describe('defaultIcon engine fallback', () => {
 
   it('returns undefined for a known role when the def has no icon field', () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'plain',
           label: '',
@@ -97,7 +97,7 @@ describe('defaultIcon engine fallback', () => {
 describe('registry.iconField', () => {
   it('returns the first declared icon field name (first-wins)', () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'a',
           label: '',
@@ -114,7 +114,7 @@ describe('registry.iconField', () => {
   });
   it('returns undefined when no attribute is an icon field', () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'b',
           label: '',
@@ -132,7 +132,7 @@ describe('defineRegistry icon guard', () => {
   it('throws when a component sets defaultIconByRole but declares no icon attribute', () => {
     expect(() =>
       defineRegistry({
-        components: [
+        blocks: [
           {
             name: 'c',
             label: '',
@@ -148,7 +148,7 @@ describe('defineRegistry icon guard', () => {
   it('rejects a component that takes the reserved "figure" name', () => {
     const build = () =>
       defineRegistry({
-        components: [
+        blocks: [
           {
             name: 'figure',
             label: 'x',
@@ -168,7 +168,7 @@ describe('defineRegistry icon guard', () => {
   it('rejects a component that takes the reserved "include" name', () => {
     const build = () =>
       defineRegistry({
-        components: [
+        blocks: [
           {
             name: 'include',
             label: 'x',
@@ -188,7 +188,7 @@ describe('defineRegistry icon guard', () => {
   it('accepts a component that declares both defaultIconByRole and an icon attribute', () => {
     expect(() =>
       defineRegistry({
-        components: [
+        blocks: [
           {
             name: 'd',
             label: '',

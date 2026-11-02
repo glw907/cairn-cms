@@ -9,7 +9,7 @@ import type { PublicRoutesConfig } from '@glw907/cairn-cms/delivery';
 import { site, siteMeta } from './content.js';
 import { cairn, resolveMedia } from '#theme/cairn.config.js';
 
-export const publicRoutesConfig: PublicRoutesConfig = {
+export const publicRoutesConfig: PublicRoutesConfig<typeof site> = {
   site,
   render: cairn.rendering.render,
   origin: siteMeta.origin,

@@ -11,7 +11,7 @@
   "source": [
     "src/lib/nav/site-config.ts:136 TidyConfig: enabled (default false), model (default claude-sonnet-5-5, DEFAULT_TIDY_MODEL at :146), conventions; the YAML carries no timeout key",
     "src/lib/sveltekit/content-routes-context.ts:209 and :373 createCairnAdmin's tidy block sets timeoutMs; DEFAULT_TIDY_TIMEOUT_MS is 30_000 at :275",
-    "src/lib/content/types.ts:276 CairnAdapter.aiPosture; src/lib/delivery/responses.ts:40 robotsResponse passes posture to buildRobots unchanged",
+    "src/lib/content/types.ts:276 CairnAdapter.aiPosture; src/lib/delivery/responses.ts:40 buildRobotsResponse passes posture to buildRobots unchanged",
     "src/lib/delivery/robots.ts:34 buildRobots: an unset posture is byte-identical to no posture, 'decline' adds Content-Signal: ai-train=no and a Disallow group per training crawler",
     "src/lib/env.ts: ANTHROPIC_API_KEY is read from the Worker env at call time, a secret, never a wrangler var",
     "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/turn-on-tidy.md (Turn tidy on; Choose a model; Configure the tidy call's deadline and client), https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/choose-an-ai-posture.md (Set the posture on the adapter; Pass the posture to the robots route)",
@@ -21,7 +21,7 @@
     "src/theme/site.config.yaml has tidy.enabled true and tidy.model claude-haiku-4-5, and the conventions block (oxfordComma always, smartQuotes true) is intact.",
     "src/chassis/cairn.server.ts passes timeoutMs: 60000 in the tidy block of createCairnAdmin and keeps the dev-gated client.",
     "@anthropic-ai/sdk is declared as a dependency in package.json.",
-    "The adapter sets aiPosture: 'decline', and the robots route passes cairn.aiPosture to robotsResponse as posture, so the served file changes.",
+    "The adapter sets aiPosture: 'decline', and the robots route passes cairn.aiPosture to buildRobotsResponse as posture, so the served file changes.",
     "The key is not written into the repo; the reply tells the developer to run npx wrangler secret put ANTHROPIC_API_KEY."
   ],
   "checks": [
@@ -71,7 +71,7 @@
       "type": "contains",
       "path": "src/routes/robots.txt/+server.ts",
       "regex": "\\bposture\\s*:",
-      "source": "src/lib/delivery/responses.ts:40 robotsResponse({ posture })"
+      "source": "src/lib/delivery/responses.ts:40 buildRobotsResponse({ posture })"
     },
     {
       "type": "absent",
@@ -98,7 +98,7 @@
     },
     {
       "n": 2,
-      "text": "The robots route passes the adapter's aiPosture to robotsResponse as its posture option, so declaring aiPosture on the adapter changes the served robots.txt; the session noticed the route did not pass it before the change.",
+      "text": "The robots route passes the adapter's aiPosture to buildRobotsResponse as its posture option, so declaring aiPosture on the adapter changes the served robots.txt; the session noticed the route did not pass it before the change.",
       "source": "src/lib/delivery/responses.ts:40; https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/choose-an-ai-posture.md (Pass the posture to the robots route)"
     },
     {

@@ -1,8 +1,7 @@
-// cairn-cms: mintPreview, the public entry point for issuing a preview link, and loadPreview, the
+// cairn-cms: mintPreview, the engine's one path to issuing a preview link, and loadPreview, the
 // public entry point for serving one to a reader who is not an editor. mintPreview
-// carries the engine's entry-scoped authorization itself, so every path to a minted token runs
-// the same check the mintPreview admin action (content-routes-preview.ts) runs, and a caller reaching
-// it from its workflow route owns nothing beyond signing the editor in. loadPreview is the
+// carries the engine's entry-scoped authorization itself, so the mint admin action
+// (content-routes-preview.ts) owns nothing beyond naming the target. loadPreview is the
 // mint's counterpart: it needs no authorization at all, since the token itself is the credential,
 // and it never reads locals.cairnEditor or locals.cairnAccess.
 import { error } from '@sveltejs/kit';
@@ -46,47 +45,8 @@ import type { CairnEvent } from './types.js';
 import type { CairnRuntime, ConceptDescriptor } from '../content/types.js';
 import { log } from '../log/index.js';
 
-/**
- * A site's preview-token configuration: how long a minted share link stays valid. Every field is
- * optional; an absent config resolves to the default TTL.
- * @beta
- */
-export interface PreviewTokenConfig {
-  /**
-   * The minted link's lifetime in milliseconds. Defaults to seven days. Must be finite, positive,
-   * and between one minute and thirty days inclusive; `mintPreview` throws an actionable,
-   * `PreviewTokenConfig:`-prefixed error otherwise.
-   */
-  ttlMs?: number;
-}
-
 /** The default preview-link lifetime: seven days, long enough to survive a weekend review. */
 const DEFAULT_PREVIEW_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** The shortest allowed TTL: one minute. */
-const MIN_PREVIEW_TTL_MS = 60 * 1000;
-
-/** The longest allowed TTL: thirty days. */
-const MAX_PREVIEW_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-/**
- * Resolve a `PreviewTokenConfig` to its effective TTL, validating it the same fail-fast,
- * descriptively-prefixed way `defineRoles` (`src/lib/auth/roles.ts`) validates a site's declared
- * role vocabulary: a misconfigured value throws here, before any token is generated or written,
- * rather than surfacing later as a silently-wrong expiry.
- */
-function resolveTtlMs(config: PreviewTokenConfig): number {
-  const ttlMs = config.ttlMs ?? DEFAULT_PREVIEW_TTL_MS;
-  if (!Number.isFinite(ttlMs) || ttlMs <= 0) {
-    throw new Error(`PreviewTokenConfig: ttlMs must be a finite, positive number, got ${ttlMs}`);
-  }
-  if (ttlMs < MIN_PREVIEW_TTL_MS || ttlMs > MAX_PREVIEW_TTL_MS) {
-    throw new Error(
-      `PreviewTokenConfig: ttlMs must be between one minute and thirty days, got ${ttlMs}`,
-    );
-  }
-  return ttlMs;
-}
 
 /**
  * What {@link mintPreview} returns: the minted link's plaintext token and expiry, or the one
@@ -94,7 +54,6 @@ function resolveTtlMs(config: PreviewTokenConfig): number {
  * declare, `invalid-id` an entry id outside the slug rule, and `no-draft` an entry with no pending
  * branch, so there is nothing to share. A session the engine's access check refuses never
  * reaches any of these: it throws, the way every other engine content surface refuses.
- * @beta
  */
 export type PreviewMintOutcome =
   | { outcome: 'minted'; token: string; expiresAt: number }
@@ -116,24 +75,19 @@ export type PreviewMintOutcome =
  * only then the draft check. Access runs before the lookup so a role denied a key gets the refusal
  * whether or not the key names a concept. A refusal therefore never reports whether an entry or
  * its draft exists to a session that was not allowed to ask. The `target` is the argument's, never
- * the route's: this reads no route param, so a site's workflow route (an editorial queue emailing
- * a reviewer on submit) mints from anywhere the guard has run.
+ * the route's: this reads no route param.
  *
  * The editor is the guard-resolved session's and cannot be supplied by the caller. The stored
  * `editor` column is that session's `email`, already normalized by the `editor`-table select, so
  * the editor-removal revocation cascade (`DELETE FROM preview_tokens WHERE editor = ?`,
  * `auth/store.ts`) always matches the rows a departing editor minted.
  *
- * Logs `preview.token.minted` on success, so the engine's route and a site's workflow
- * route both leave the identical record; never called on a refusal.
- * @throws Error prefixed `PreviewTokenConfig:` when `config.ttlMs` is invalid.
+ * Logs `preview.token.minted` on success; never called on a refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
- * @beta
  */
 export async function mintPreview(
   runtime: CairnRuntime,
-  config: PreviewTokenConfig,
   event: CairnEvent,
   target: { concept: string; entryId: string },
 ): Promise<PreviewMintOutcome> {
@@ -143,9 +97,8 @@ export async function mintPreview(
   if (!concept) return { outcome: 'unknown-concept' };
   if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
 
-  // Both config faults answer before any network read: a misconfigured TTL and a missing AUTH_DB
-  // are site setup, not entry state, so neither waits on GitHub.
-  const ttlMs = resolveTtlMs(config);
+  // A missing AUTH_DB answers before any network read: it is site setup, not entry state, so it
+  // does not wait on GitHub.
   const db = requireDb(env);
 
   // A preview shares a draft; without one there is nothing to share. Reached through the same
@@ -158,7 +111,7 @@ export async function mintPreview(
 
   const token = generateToken();
   const tokenHash = await hashToken(token);
-  const expiresAt = Date.now() + ttlMs;
+  const expiresAt = Date.now() + DEFAULT_PREVIEW_TTL_MS;
   await insertPreviewToken(db, {
     concept: concept.id,
     entryId: target.entryId,
@@ -175,7 +128,6 @@ export async function mintPreview(
  * could not clear. `unknown-concept` and `invalid-id` mirror {@link PreviewMintOutcome}'s
  * arms; a session the engine's access check refuses never reaches either, it throws, the way
  * every other engine content surface refuses.
- * @beta
  */
 export type PreviewRevokeOutcome =
   | { outcome: 'revoked'; count: number }
@@ -192,14 +144,13 @@ export type PreviewRevokeOutcome =
  * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
  * guard-resolved session), `requireEngineAccess` against `runtime.access` for the target's
  * concept key, the concept lookup, then the id shape rule. A refusal therefore never reaches the
- * delete, and the `target` is the argument's, never the route's, so a site's workflow route
- * revokes from anywhere the guard has run, the same way `mintPreview` mints from anywhere.
+ * delete, and the `target` is the argument's, never the route's, the same way `mintPreview` takes
+ * it.
  *
- * Logs `preview.token.revoked` on success, from inside this function, so the engine's route
- * and a site's workflow route both leave the identical record; never called on a refusal.
+ * Logs `preview.token.revoked` on success, from inside this function; never called on a
+ * refusal.
  * @throws HttpError 403 when the session is a `none` capability or the site's access map denies it
  *  the concept, and Redirect 303 to the login page when there is no session at all.
- * @beta
  */
 export async function revokePreview(
   runtime: CairnRuntime,
@@ -225,7 +176,7 @@ export async function revokePreview(
  *  `EntryData` field breaks this build rather than a consuming site's.
  * @public
  */
-export interface PreviewData extends EntryData {
+export type PreviewData = EntryData & {
   preview: {
     /** `'draft'` while the shared branch is still open; `'published'` once it is gone. */
     state: 'draft' | 'published';
@@ -238,7 +189,7 @@ export interface PreviewData extends EntryData {
      */
     published: { permalink: string } | null;
   };
-}
+};
 
 /** A 256-bit `generateToken` value, base64url with no padding: exactly 43 characters. */
 const TOKEN_SHAPE_RE = /^[A-Za-z0-9_-]{43}$/;
@@ -390,8 +341,8 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
 /**
  * Serve a public preview link: verify the token, then render the shared draft (or, once the
  *  branch is gone, the ended page) through the site's public composition, so a preview and a
- *  published page can never structurally drift. `config` is the site's `PublicRoutesConfig`,
- *  the literal object it hands `createPublicRoutes`.
+ *  published page can never structurally drift. `publicRoutes` is the site's
+ *  `PublicRoutesConfig`, the literal object it hands `createPublicRoutes`.
  *
  * The verification chain runs strictly in this order, cheapest first: the token's shape (a 404
  *  with no D1 read or log for spray traffic), the `AUTH_DB` binding, the row lookup by hash, the
@@ -433,7 +384,10 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  prerendered.
  * @scaffold
  */
-export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
+export async function loadPreview(
+  event: CairnEvent,
+  { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig },
+): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
   if (await isBuilding()) {
@@ -500,7 +454,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
     if (!publishedEntry) rejectPreview('branch_gone', { concept: concept.id, id: row.entryId });
 
     const resolvers = await buildPreviewResolvers(runtime, backend, manifest, concept, row.entryId, null);
-    const data = await composeEntryData(config, publishedEntry, resolvers);
+    const data = await composeEntryData(publicRoutes, publishedEntry, resolvers);
     return {
       ...data,
       seo: stripPreviewSeo(data.seo),
@@ -518,7 +472,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
   const draftRow = manifestEntryFromFile(concept, { path, raw: draftRaw });
   const upsertedManifest = upsertEntry(manifest, draftRow);
   const resolvers = await buildPreviewResolvers(runtime, backend, upsertedManifest, concept, row.entryId, branch);
-  const data = await composeEntryData(config, draftEntry, resolvers);
+  const data = await composeEntryData(publicRoutes, draftEntry, resolvers);
   return {
     ...data,
     seo: stripPreviewSeo(data.seo),

@@ -28,7 +28,7 @@ function runtime(): CairnRuntime {
     related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Related post' }), label: 'Related' }) });
   const posts: ConceptDescriptor = {
     id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
-    routing: { routable: true, dated: false, inFeeds: true },
+    routing: { routable: true, dated: false },
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [
@@ -42,7 +42,7 @@ function runtime(): CairnRuntime {
   };
   const pages: ConceptDescriptor = {
     id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
-    routing: { routable: true, dated: false, inFeeds: false },
+    routing: { routable: true, dated: false },
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
@@ -55,8 +55,7 @@ function runtime(): CairnRuntime {
     siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [posts, pages],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },

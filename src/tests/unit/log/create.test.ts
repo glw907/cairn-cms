@@ -223,4 +223,33 @@ describe('createLogger', () => {
     expect(typeof sample).toBe('string');
     expect(CAIRN_LOG_EVENTS.length).toBeGreaterThan(0);
   });
+
+  it('prints one parseable JSON string outside Workers', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Node.js' });
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    createLogger<TestEvent>().info('widget.created', { id: '1', err: new Error('boom') });
+    expect(spy).toHaveBeenCalledTimes(1);
+    const line = spy.mock.calls[0][0];
+    expect(typeof line).toBe('string');
+    const parsed = JSON.parse(line as string);
+    expect(parsed.event).toBe('widget.created');
+    expect(parsed.id).toBe('1');
+    expect(parsed.err).toEqual({});
+  });
+
+  it('falls back to the unserializable record outside Workers when a field is a BigInt', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Node.js' });
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    createLogger<TestEvent>().info('widget.created', { n: 1n });
+    expect(JSON.parse(spy.mock.calls[0][0] as string).fields).toBe('<unserializable>');
+  });
+
+  it('keeps the record an object on Workers', () => {
+    vi.stubGlobal('navigator', { userAgent: 'Cloudflare-Workers' });
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    createLogger<TestEvent>().info('widget.created', { id: '1' });
+    const record = spy.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof record).toBe('object');
+    expect(record.id).toBe('1');
+  });
 });

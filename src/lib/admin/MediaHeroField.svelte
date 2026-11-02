@@ -49,8 +49,8 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   import { deserialize } from '$app/forms';
   import { uploadOutcome, type UploadEnvelope } from './media-upload-outcome.js';
   import { parseMediaToken } from '../media/reference.js';
-  import { publicPath } from '../media/naming.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { DEFAULT_MEDIA_BASE, publicPath } from '../media/naming.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
   import type { MediaEntry } from '../media/manifest.js';
 
   interface Props {

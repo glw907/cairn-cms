@@ -4,7 +4,6 @@ import {
   containerRanges,
   directiveLineKind,
   directiveOpenerName,
-  fenceDepths,
   fenceScan,
   fenceTokens,
   figureRoleAtLine,
@@ -90,33 +89,35 @@ describe('directiveOpenerName', () => {
   });
 });
 
-describe('fenceDepths', () => {
+const depthsOf = (lines: string[]) => fenceScan(lines).depths;
+
+describe('fenceScan depths', () => {
   it('pairs the nested fixture by stack order, openers and closers sharing a depth', () => {
-    expect(fenceDepths(NESTED_FIXTURE)).toEqual([1, 2, 2, 2, 1, 2, 2, 2, 1]);
+    expect(depthsOf(NESTED_FIXTURE)).toEqual([1, 2, 2, 2, 1, 2, 2, 2, 1]);
   });
   it('marks lines outside any container as null', () => {
-    expect(fenceDepths(['plain prose', ':::aside', 'inside', ':::', 'after'])).toEqual([null, 1, 1, 1, null]);
+    expect(depthsOf(['plain prose', ':::aside', 'inside', ':::', 'after'])).toEqual([null, 1, 1, 1, null]);
   });
   it('pairs by recency, not by colon count', () => {
-    expect(fenceDepths([':::outer', '::::inner', '::::', 'body', ':::'])).toEqual([1, 2, 2, 1, 1]);
+    expect(depthsOf([':::outer', '::::inner', '::::', 'body', ':::'])).toEqual([1, 2, 2, 1, 1]);
   });
   it('tolerates author errors without going below zero or throwing', () => {
-    expect(fenceDepths([':::'])).toEqual([1]);
-    expect(fenceDepths([':::aside', ':::', ':::', 'after'])).toEqual([1, 1, 1, null]);
+    expect(depthsOf([':::'])).toEqual([1]);
+    expect(depthsOf([':::aside', ':::', ':::', 'after'])).toEqual([1, 1, 1, null]);
   });
   it('ignores directive fences inside code blocks, so a documented example opens nothing', () => {
-    expect(fenceDepths(['```', ':::note', '```', 'after'])).toEqual([null, null, null, null]);
-    expect(fenceDepths(['~~~md', ':::note', '~~~', 'after'])).toEqual([null, null, null, null]);
+    expect(depthsOf(['```', ':::note', '```', 'after'])).toEqual([null, null, null, null]);
+    expect(depthsOf(['~~~md', ':::note', '~~~', 'after'])).toEqual([null, null, null, null]);
   });
   it('keeps the surrounding container depth across a code block and pairs the real closer', () => {
-    expect(fenceDepths([':::aside', '```', ':::', '```', 'inside', ':::', 'after'])).toEqual([
+    expect(depthsOf([':::aside', '```', ':::', '```', 'inside', ':::', 'after'])).toEqual([
       1, 1, 1, 1, 1, 1, null,
     ]);
   });
   it('only the marker that opened a code block closes it', () => {
     // The tildes inside the backtick block are literal text; without marker tracking they would
     // end the block and let the directive example open a phantom container to end of document.
-    expect(fenceDepths(['```', '~~~', ':::note', '~~~', '```', 'after'])).toEqual([
+    expect(depthsOf(['```', '~~~', ':::note', '~~~', '```', 'after'])).toEqual([
       null, null, null, null, null, null,
     ]);
   });

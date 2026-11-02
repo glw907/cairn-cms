@@ -10,6 +10,7 @@
   const probes = [
     { name: 'allowed', label: 'Allowed', csrf: true },
     { name: 'unbound', label: 'Unbound', csrf: true },
+    { name: 'omitted', label: 'Omitted', csrf: true },
     { name: 'unmapped', label: 'Unmapped', csrf: true },
     { name: 'limited', label: 'Limited', csrf: true },
     { name: 'forged', label: 'Forged', csrf: false },

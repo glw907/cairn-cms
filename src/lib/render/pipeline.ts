@@ -11,7 +11,6 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import rehypeSanitize from 'rehype-sanitize';
-import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard, rehypeTaskListA11y } from './sanitize-schema.js';
 import { rehypeCairnHighlight } from './highlight.js';
@@ -22,7 +21,7 @@ import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-media.js';
 import { remarkResolveIncludes, FRAGMENT_RESOLVE, type FragmentResolve } from './resolve-include.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
-import { defineRegistry, type ComponentRegistry } from './registry.js';
+import { defineRegistry, type BlockDef } from './registry.js';
 import { rehypeCollectHeadings, DOC_HEADINGS, type DocHeading } from './collect-headings.js';
 import type { LinkResolve } from '../content/links.js';
 
@@ -82,45 +81,15 @@ export interface Renderer {
  */
 export interface RendererConfig {
   /**
-   * The site's component registry, from `defineRegistry`. Absent, the renderer knows no
-   *  components and renders plain markdown.
+   * The site's blocks, each from `defineBlock`; the engine builds the registry from them. Absent,
+   *  the renderer knows no blocks and renders plain markdown.
    */
-  components?: ComponentRegistry;
+  blocks?: readonly BlockDef[];
   /**
    * The default `media:` resolver, used when an input carries no `resolveMedia` of its own. An
    *  input's own resolver always wins.
    */
   resolveMedia?: MediaResolve;
-  /**
-   * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
-   *  directive markers and the common benign tags) and returns the schema to use. Add to the
-   *  allowlist for the benign HTML a site's content needs; start from the argument so the
-   *  dangerous strip is preserved.
-   * @remarks
-   * Synchronous by design: it is called inline while the pipeline composes its sanitize floor, with
-   * no seam to await external data. The callback gets a fresh copy of the default schema per call, so mutating it never reaches
-   * another renderer. After it returns, the engine removes `script` from `tagNames` and unions the
-   * default `strip` list into the callback's own `strip`, so no `<script>` element and no body text of
-   * a default-`strip` element survives. That is the whole floor: attributes and URL protocols stay the
-   * callback's responsibility, and an unsafe one it admits is kept.
-   * @throws When the callback returns a schema with no `tagNames` array, since an absent allowlist
-   * admits every element. Set `unsafeDisableSanitize` to turn the floor off instead.
-   */
-  sanitizeSchema?: (defaults: Schema) => Schema;
-  /**
-   * Developer-only escape hatch: disable the sanitize floor entirely. This reintroduces the XSS
-   *  vector the floor closes, so it is only for a site whose content is fully developer-controlled.
-   *  It is a code-level adapter decision, never an editor-facing setting. It removes the sanitize
-   *  floor and the sink guard together. Defaults to `false`. To allow more HTML while keeping the
-   *  floor, extend the allowlist with `sanitizeSchema` instead.
-   */
-  unsafeDisableSanitize?: boolean;
-  /**
-   * The `rel` value forced on every `target="_blank"` anchor, applied last so it also covers
-   *  component-built anchors. Defaults to `'noopener noreferrer'`. Set a different string to change
-   *  it, or `false` to disable the injection (a site that owns its anchor hardening).
-   */
-  anchorRel?: string | false;
   /**
    * Wrap every rendered table in a scrollable, labeled region (WCAG 1.3.1): the table stays a real
    *  `<table>` (so it keeps its role in the accessibility tree) inside a `role="region"`,
@@ -137,7 +106,7 @@ export interface RendererConfig {
   remarkPlugins?: PluggableList;
   /**
    * Additional rehype plugins, run after cairn's rehype steps (dispatch, the sanitize floor,
-   *  heading slugs, highlighting, anchor hardening, the sink guard, the default table-scroll wrap)
+   *  heading slugs, highlighting, the anchor `rel`, the sink guard, the default table-scroll wrap)
    *  and before stringification. A site's post-render transform composes here over the hast
    *  tree instead of re-parsing the rendered HTML string.
    */
@@ -148,11 +117,19 @@ export interface RendererConfig {
  * Compose a site's render pipeline from its config: directive syntax to stamped markers to
  *  registry-built hast. Returns a `Renderer` whose `render` and `renderDocument` take one
  *  `RenderInput`, so `render: renderer.render` forwards every resolver.
+ * @throws When `config` holds a `components` key, or is a registry (it holds `defs`). A site's build
+ * is `vite build`, which does not type-check, so either would otherwise publish a site with no blocks.
  * @public
  */
 export function createRenderer(config: RendererConfig = {}): Renderer {
+  if ('components' in config) {
+    throw new Error('cairn: createRenderer has no `components` key. Pass your block definitions as `blocks`, an array.');
+  }
+  if ('defs' in config) {
+    throw new Error('cairn: createRenderer takes an options object, not a registry. Pass your block definitions as `blocks`, an array.');
+  }
   const options = config;
-  const registry = config.components ?? defineRegistry({ components: [] });
+  const registry = defineRegistry({ blocks: config.blocks ?? [] });
   const remarkPlugins: PluggableList = [
     remarkDirective,
     // Must run before remarkDirectiveStamp, which unconditionally restores every leaf/text
@@ -166,31 +143,27 @@ export function createRenderer(config: RendererConfig = {}): Renderer {
   ];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and
   // before the dispatch (so the site's trusted build() output and its inline SVG icons are never
-  // sanitized). The anchor-rel hardening runs last so it also covers component-built anchors.
-  const floor: PluggableList = options.unsafeDisableSanitize
-    ? []
-    : [[rehypeSanitize, buildSanitizeSchema(registry, options.sanitizeSchema)]];
-  const rel = options.anchorRel ?? 'noopener noreferrer';
+  // sanitized). The anchor-rel step runs after the dispatch, so it covers component-built anchors,
+  // and before the site's own rehype plugins.
   const rehypePlugins: PluggableList = [
     rehypeRaw,
-    ...floor,
+    [rehypeSanitize, buildSanitizeSchema(registry)],
     [rehypeDispatch, registry],
     rehypeSlug,
     // Name each GFM task-list checkbox from its item text. It runs after the sanitize floor (which
-    // does not allow aria-label) so the added attribute survives, and is content-not-sink, so it is
-    // not gated by unsafeDisableSanitize.
+    // does not allow aria-label) so the added attribute survives, and is content, not a sink.
     rehypeTaskListA11y,
-    // Build-time syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
+    // Syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
     // style), so it is class-driven like the rest of the pipeline and needs no special placement
     // relative to the sanitize floor or the sink guard: the token classes survive the floor because
     // `className` is already allowed on `*`. It runs unconditionally (a code fence is content, not a
-    // sink) and ships no client highlighter (Shiki is build-only behind a dynamic import).
+    // sink) and adds nothing to the static client graph (Shiki sits behind a dynamic import).
     rehypeCairnHighlight,
+    rehypeAnchorRel,
+    // The sink guard runs over the fully-built tree, so it neutralizes a sink a component
+    // build() emitted after the floor.
+    rehypeSinkGuard,
   ];
-  if (rel !== false) rehypePlugins.push([rehypeAnchorRel, rel]);
-  // The sink guard runs last, over the fully-built tree, so it neutralizes a sink a component
-  // build() emitted after the floor. Gated by the same switch as the floor.
-  if (!options.unsafeDisableSanitize) rehypePlugins.push(rehypeSinkGuard);
   // The default table-scroll wrap runs over the fully sanitized, dispatched tree, so it wraps a
   // component's table output the same as an author's markdown table. Opts out with
   // `tableScroll: false`.

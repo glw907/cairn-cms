@@ -49,7 +49,7 @@ Neither shape is the better one in general. The right choice depends on whether 
 
 Markdown is plain text, so git's diff, blame, and review work on content the way they work on code. A file stays readable without cairn, in any editor or on GitHub. Each file's frontmatter holds its structured fields, typed by its concept's declaration.
 
-A site's render pipeline with no blocks registered still renders plain markdown, GitHub-flavored tables, `cairn:` links between entries, and `media:` image references. Beyond that, a site declares its blocks with `defineComponent`, so the block vocabulary differs from one cairn site to the next. The blocks, the `cairn:` link targets, and the `media:` scheme are pre-1.0 surface, and other markdown tools do not understand them.
+A site's render pipeline with no blocks registered still renders plain markdown, GitHub-flavored tables, `cairn:` links between entries, and `media:` image references. Beyond that, a site declares its blocks with `defineBlock`, so the block vocabulary differs from one cairn site to the next. The blocks, the `cairn:` link targets, and the `media:` scheme are pre-1.0 surface, and other markdown tools do not understand them.
 
 Moving existing content in is a project. No importer ships with cairn, and the skill's [migration reference](../skills/cairn-extending-a-site/references/migrate-content.md) walks through the conversion script a developer writes.
 

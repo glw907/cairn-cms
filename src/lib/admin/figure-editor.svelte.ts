@@ -7,7 +7,7 @@ import type { EditorApi } from './MarkdownEditor.svelte';
 /**
  * The host-supplied reads `createFigureEditor` needs. Every value is a getter, never a captured
  * snapshot: `caretComponent`/`mediaAtCaret` are written by the shell from `MarkdownEditor`'s
- * `onComponentAtCaret`/`onMediaImageAtCaret` callbacks and stay shell-owned; the shell resets both
+ * `onBlockAtCaret`/`onMediaImageAtCaret` callbacks and stay shell-owned; the shell resets both
  * to null in its entry-key `RESET_BLOCK` (rather than this module owning a reset for them),
  * since those callbacks fire only when the caret's reported identity changes from the last one
  * seen and an incoming entry whose caret lands off any component or image never fires either one.

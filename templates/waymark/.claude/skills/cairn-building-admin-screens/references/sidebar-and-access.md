@@ -153,6 +153,21 @@ Pass both to `createCairnAdmin` in `src/chassis/cairn.server.ts`.
   visible children's counts, and puts the count in the link's accessible name; the badge span
   itself is `aria-hidden`.
 
+## Next-step links after a publish
+
+`editor.publishActions` adds plain links to the publish-success moment, one `{ label, href }` each.
+The engine substitutes `{id}` and `{concept}` in `href`, and `concepts` limits where a link shows.
+The links follow a single publish from the edit page, never Publish all. A blank field, a repeated
+label, or an unknown concept throws at server start and fails the build.
+
+The admin has no publish callback, webhook, or hook that runs site code after a publish. Link to a
+screen of your own when a publish needs a next step.
+
+<!-- snippet-check-skip: one member of the adapter's editor group inside defineAdapter -->
+```ts
+publishActions: [{ label: 'Announce', href: '/admin/announce?post={id}', concepts: ['posts'] }],
+```
+
 ## Errors and verification
 
 A server start that throws `navLayout:` names the value at fault (except a blank section

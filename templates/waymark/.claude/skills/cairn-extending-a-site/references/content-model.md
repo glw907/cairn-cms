@@ -120,7 +120,7 @@ export const events = defineConcept({
 ## Address, dates, ids
 
 - `routing` defaults to `'page'`; `permalink` to `/<id>/:slug` (`/:slug` for `pages`). Tokens are
-  `:slug`, `:year`, `:month`, `:day`. A date token needs `routing: 'feed'` and makes a `date` field
+  `:slug`, `:year`, `:month`, `:day`. A date token needs `routing: 'dated'` and makes a `date` field
   required. Invalid values throw when the adapter module loads.
 - `datePrefix` (`'year'`, `'month'`, `'day'`, default `'day'`) sets how much of the create-dialog
   date prefixes a feed entry's id; the slug drops that prefix. The entry's date comes from its

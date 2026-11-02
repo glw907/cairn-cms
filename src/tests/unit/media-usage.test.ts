@@ -23,7 +23,7 @@ function postsConcept(): ConceptDescriptor {
     label: 'Posts',
     singular: 'Posts',
     dir: 'src/content/posts',
-    routing: { routable: true, dated: true, inFeeds: true },
+    routing: { routable: true, dated: true },
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [

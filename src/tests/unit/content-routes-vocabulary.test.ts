@@ -23,7 +23,7 @@ const POSTS: ConceptDescriptor = {
   label: 'Posts',
   singular: 'Posts',
   dir: 'src/content/posts',
-  routing: { routable: true, dated: false, inFeeds: true },
+  routing: { routable: true, dated: false },
   permalink: '/posts/:slug',
   datePrefix: 'day',
   fields: [

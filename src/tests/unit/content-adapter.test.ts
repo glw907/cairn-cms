@@ -9,7 +9,7 @@ const adapter = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      routing: 'feed',
+      routing: 'dated',
       fields: {
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),

@@ -23,7 +23,7 @@ function fragmentsConcept(): ConceptDescriptor {
     label: 'Fragments',
     singular: 'Fragment',
     dir: 'src/content/fragments',
-    routing: { routable: false, dated: false, inFeeds: false },
+    routing: { routable: false, dated: false },
     permalink: '/fragments/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],

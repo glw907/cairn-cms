@@ -140,7 +140,7 @@ const insertControls = createRawSnippet(() => ({
     // and with no caret in a component the control is unavailable, guarded the same way as the
     // figure control below.
     guardedButton(
-      'Place the cursor in a component to edit it',
+      'Place the cursor in an editable block to edit it',
       '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
         '<path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
       1,
@@ -195,8 +195,8 @@ const inertTidyApi: TidyApi = {
   exit: () => {},
 };
 
-/** The entry the fold pill collapses: prose, one layout block, prose. */
-const LAYOUT_BLOCK_BODY = [
+/** The entry the fold pill collapses: prose, one block, prose. */
+const COLLAPSED_BLOCK_BODY = [
   'The bench above the second switchback is the first place the valley opens up.',
   '',
   ':::two-up{title="Trail and map"}',
@@ -311,13 +311,13 @@ const tidyReview: ReproStory = {
   },
 };
 
-/** A layout block collapsed to its pill, with the gutter control (`editor/collapsed-layout-block`). */
+/** A block collapsed to its pill, with the gutter control (`editor/collapsed-block`). */
 const collapsedLayoutBlock: ReproStory = {
-  id: 'editor/collapsed-layout-block',
+  id: 'editor/collapsed-block',
   component: MarkdownEditor as unknown as Component<Record<string, unknown>>,
   host: 'bare',
   props: {
-    value: LAYOUT_BLOCK_BODY,
+    value: COLLAPSED_BLOCK_BODY,
     name: 'body',
     registry: fixtureRegistry,
     foldOnMount: true,

@@ -11,6 +11,17 @@ describe('createRenderer', () => {
     expect(await render({ body: '# Hi\n\nText' })).toContain('<h1');
   });
 
+  it('refuses a stale components key, naming blocks', () => {
+    const registry = defineRegistry({ blocks: [] });
+    const stale = { components: registry };
+    expect(() => createRenderer(stale as never)).toThrow(/`blocks`/); // idioms-allow: as-never  a stale shape the refusal exists to catch
+  });
+
+  it('refuses a registry passed as the config, naming blocks', () => {
+    const registry = defineRegistry({ blocks: [] });
+    expect(() => createRenderer(registry as never)).toThrow(/`blocks`/); // idioms-allow: as-never  a stale shape the refusal exists to catch
+  });
+
   it('renders plain markdown with no registry argument', async () => {
     const { render } = createRenderer();
     const html = await render({ body: '# Hello\n\nA paragraph.' });
@@ -21,7 +32,7 @@ describe('createRenderer', () => {
 
   it('renders a registered component and stamps the data-rise ordinal', async () => {
     const reg = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'box',
           label: '',
@@ -36,7 +47,7 @@ describe('createRenderer', () => {
         },
       ],
     });
-    const { render } = createRenderer({ components: reg });
+    const { render } = createRenderer({ blocks: reg.defs });
     const html = await render({ body: ':::box\ncontent\n:::' });
     expect(html).toContain('class="box"');
     expect(html).toContain('data-rise="0"');
@@ -58,7 +69,7 @@ describe('createRenderer', () => {
 
   it('emits an island boundary for an empty-body attribute-only hydrate directive', async () => {
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'converter',
           label: '',
@@ -69,7 +80,7 @@ describe('createRenderer', () => {
         },
       ],
     });
-    const { render } = createRenderer({ components: registry });
+    const { render } = createRenderer({ blocks: registry.defs });
     const html = await render({ body: ':::converter{from="mi" rate="1.609"}\n:::' });
     expect(html).toContain('data-cairn-island="converter"');
     expect(html).toContain('class="fallback"');

@@ -33,7 +33,7 @@ export const fixtureConcept: ConceptDescriptor = {
   label: 'Posts',
   singular: 'Post',
   dir: 'src/content/posts',
-  routing: { routable: true, dated: true, inFeeds: true },
+  routing: { routable: true, dated: true },
   permalink: '/posts/:slug',
   datePrefix: 'day',
   fields: [],

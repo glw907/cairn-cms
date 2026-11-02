@@ -265,6 +265,14 @@ describe('CairnMediaLibrary list density', () => {
     expect(screen.container.textContent ?? '').toMatch(/no references found/i);
   });
 
+  it('shows the Added date as a month and day with no year', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() });
+    await screen.getByRole('button', { name: /list view/i }).click();
+    const dates = [...screen.container.querySelectorAll('tbody td.tabular-nums')].map((td) => td.textContent?.trim());
+    expect(dates).toContain('Mar 4');
+    expect(dates.join(' ')).not.toMatch(/2026/);
+  });
+
   it('sorts by Added when the header button toggles', async () => {
     const screen = await render(CairnMediaLibrary, { data: fixture() });
     await screen.getByRole('button', { name: /list view/i }).click();

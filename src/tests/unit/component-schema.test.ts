@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { emptyValues, type ComponentDef } from '../../lib/render/registry.js';
+import { emptyValues, type BlockDef } from '../../lib/render/registry.js';
 import { fields, type FieldDescriptor } from '../../lib/content/fields.js';
 
-const cta: ComponentDef = {
+const cta: BlockDef = {
   name: 'cta',
   label: 'Call to action',
   description: 'A highlighted action block.',
@@ -28,12 +28,12 @@ describe('emptyValues', () => {
   });
 
   it('seeds a number default as its string form', () => {
-    const def: ComponentDef = { ...cta, attributes: { cols: fields.number({ label: 'Cols', default: 5 }) }, slots: [] };
+    const def: BlockDef = { ...cta, attributes: { cols: fields.number({ label: 'Cols', default: 5 }) }, slots: [] };
     expect(emptyValues(def).attributes).toEqual({ cols: '5' });
   });
 
   it('returns empty maps for a component with no attributes or slots', () => {
-    const bare: ComponentDef = { name: 'rule', label: 'Rule', description: 'A divider.', use: 'Separate sections.', build: (ctx) => ctx.node };
+    const bare: BlockDef = { name: 'rule', label: 'Rule', description: 'A divider.', use: 'Separate sections.', build: (ctx) => ctx.node };
     expect(emptyValues(bare)).toEqual({ attributes: {}, slots: {} });
   });
 });

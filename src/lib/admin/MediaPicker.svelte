@@ -53,8 +53,8 @@ host dialog or popover keeps its own dismiss.
   import { getContext } from 'svelte';
   import { formatMediaToken } from '../media/reference.js';
   // The bare delivery path (the same path the source chip uses).
-  import { publicPath } from '../media/naming.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { DEFAULT_MEDIA_BASE, publicPath } from '../media/naming.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
 
   interface Props {
     /** The committed media library projection, in the order the rows should list. */

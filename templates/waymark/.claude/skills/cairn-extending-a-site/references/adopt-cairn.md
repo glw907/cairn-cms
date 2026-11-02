@@ -25,15 +25,14 @@ Contents:
 
 ## Site config, adapter, content
 
-1. `src/lib/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
-   Set the adapter's `editor.siteConfigPath` to this path; it defaults to the scaffold's
-   `src/theme/site.config.yaml`.
+1. `src/theme/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
+   The nav editor, Settings, and the tag vocabulary read and write that fixed path.
 2. `src/lib/cairn.config.ts` exports `cairn = defineAdapter({ content, backend, email, rendering, editor })`
    and `siteConfig = parseSiteConfig(siteYaml)` (imported with `?raw`). Declare a field for every
    frontmatter key the content keeps (`references/content-model.md`). `backend` takes
    `createGithubApp({ owner, repo, branch, appId, installationId })`; until production these are
    placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` is
-   `createRenderer({ components }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
+   `createRenderer({ blocks }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
 3. `src/lib/content.ts`: one literal eager `?raw` glob in the absolute form `/src/content/**/*.md`
    into `createSiteResolver(cairn, files)`; export `site` and an `origin` constant. A relative
    glob's `../content/...` keys are refused.

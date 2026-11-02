@@ -24,7 +24,7 @@ function postsConcept(): ConceptDescriptor {
     label: 'Posts',
     singular: 'Posts',
     dir: 'src/content/posts',
-    routing: { routable: true, dated: false, inFeeds: true },
+    routing: { routable: true, dated: false },
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [
@@ -50,7 +50,7 @@ function pagesConcept(): ConceptDescriptor {
     label: 'Pages',
     singular: 'Pages',
     dir: 'src/content/pages',
-    routing: { routable: true, dated: false, inFeeds: false },
+    routing: { routable: true, dated: false },
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],

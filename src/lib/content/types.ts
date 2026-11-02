@@ -7,7 +7,7 @@
 // engine never hard-codes a concept, directory, or field; it reads them here. Field
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
-import type { ComponentRegistry } from '../render/registry.js';
+import type { BlockDef } from '../render/registry.js';
 import type { RenderInput } from '../render/pipeline.js';
 import type { IconSet } from '../render/glyph.js';
 import type { IslandRegistry } from '../islands/types.js';
@@ -112,15 +112,15 @@ export interface ConceptConfig<R extends Record<string, FieldDescriptor> = Recor
   /** Function-valued per-field behavior, keyed by field name. Each key must name a declared field. */
   behavior?: BehaviorTable;
   /**
-   * This concept's routing: the `'feed'` (dated and in feeds), `'page'` (a routable static page), or
+   * This concept's routing: the `'dated'` (a routable page with a date), `'page'` (a routable static page), or
    *  `'embedded'` (not routable) shorthand. Omitted means `'page'`. Every routable concept's entries
-   *  get a public page and a sitemap entry; a `'feed'` concept's permalink may also use the date
+   *  get a public page and a sitemap entry; a `'dated'` concept's permalink may also use the date
    *  tokens, and its index sorts newest first (an undated concept's sorts by title). An `'embedded'`
    *  concept has no public page and no sitemap entry, but keeps a directory, fields, and an admin list
    *  and editor, which label its identifier **Name** and offer **Rename** rather than **Change address**.
    *  Which entries reach an RSS or JSON feed is the site's feed route's choice.
    */
-  routing?: 'feed' | 'page' | 'embedded';
+  routing?: 'dated' | 'page' | 'embedded';
   /** The permalink pattern, root-relative, e.g. `/blog/:year/:slug`. Defaults by concept id. */
   permalink?: string;
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
@@ -145,7 +145,7 @@ export interface ConceptUrlPolicy {
 }
 
 /**
- * A site's stated stance toward AI training crawlers, read by `buildRobots`/`robotsResponse`
+ * A site's stated stance toward AI training crawlers, read by `buildRobots`/`buildRobotsResponse`
  * (`/delivery`). `'decline'` emits `Disallow: /` for every token in the engine's crawler table
  * plus `Content-Signal: ai-train=no`; `'invite'` emits an affirmative `Content-Signal` and no
  * `Disallow`. Unset (the default on every site today) emits neither: the engine states no
@@ -172,7 +172,7 @@ export interface SenderConfig {
 }
 
 /**
- * A menu in the site-config YAML (the file `editor.siteConfigPath` names) that this site's nav
+ * A menu in the site-config YAML (the scaffold's `src/theme/site.config.yaml`) that this site's nav
  *  editor manages.
  * @public
  */
@@ -209,23 +209,18 @@ export interface PreviewConfig {
    *  preview document. A Vite `?url` import of the site's CSS resolves the hashed asset URL.
    */
   stylesheets: string[];
-  /** Class list applied to the preview document's body, for theme or typography roots. */
-  bodyClass?: string;
   /**
    * Class list for a wrapper element around the rendered content, reproducing the site's
    *  content container (a prose or measure class). Omitted renders the content bare.
    */
   containerClass?: string;
   /**
-   * Per-concept overrides of bodyClass and containerClass, keyed by concept id. An entry's
-   *  preview resolves the override for its concept over the top-level values; stylesheets are
-   *  always shared.
+   * Per-concept overrides of containerClass, keyed by concept id. An entry's preview resolves
+   *  the override for its concept over the top-level value; stylesheets are always shared.
    */
   byConcept?: Record<
     string,
     {
-      /** This concept's body class list, in place of the top-level `bodyClass`. */
-      bodyClass?: string;
       /** This concept's content wrapper class list, in place of the top-level `containerClass`. */
       containerClass?: string;
     }
@@ -300,14 +295,14 @@ export interface CairnAdapter {
      *  preview a manifest one. `resolveMedia` resolves media: references the same way.
      */
     render: SiteRender;
-    /** Directive component registry; the renderer and the insert palette derive from it (seam 3). */
-    components?: ComponentRegistry;
+    /** The site's blocks, each from `defineBlock`; the insert palette and the manifest derive from them (seam 3). */
+    blocks?: readonly BlockDef[];
     /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
     icons?: IconSet;
     /**
      * The live Svelte components for hydrated directives, keyed by directive name.
-     *  Every component whose {@link ComponentDef.hydrate} is set needs an entry here, and every entry
-     *  needs a matching `hydrate` component; `defineAdapter` checks both. The engine reads this
+     *  Every block whose {@link BlockDef.hydrate} is set needs an entry here, and every entry
+     *  needs a matching `hydrate` block; `defineAdapter` checks both. The engine reads this
      *  registry for that check only: the site's root layout owns the gate that imports the island
      *  client runtime and the map it passes to `hydrateIslands`, and a name missing from that map
      *  mounts nothing, with no error.
@@ -331,12 +326,6 @@ export interface CairnAdapter {
     preview?: PreviewConfig;
     /** Which menu in the site-config YAML the nav editor manages. */
     nav?: NavMenuConfig;
-    /**
-     * The repo-relative path of the committed site-config YAML, which the nav editor, Settings,
-     *  and the tag vocabulary all read and write. Unset, it defaults to the scaffold's
-     *  `src/theme/site.config.yaml`.
-     */
-    siteConfigPath?: string;
     /**
      * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
      *  or a name and instruction). Unset, `composeRuntime` defaults it to cairn's hosted help
@@ -369,7 +358,7 @@ export interface CairnAdapter {
 }
 
 /**
- * Concept-fixed routing for a normalized concept. Posts are dated feed entries;
+ * Concept-fixed routing for a normalized concept. Posts are dated entries;
  * pages are plain navigable structure. Not in adapter config.
  * @public
  */
@@ -378,8 +367,6 @@ export interface RoutingRule {
   routable: boolean;
   /** Carries a date (posts). */
   dated: boolean;
-  /** Set for the `'feed'` shorthand. The sitemap lists every routable concept whatever this says. */
-  inFeeds: boolean;
 }
 
 /**
@@ -442,15 +429,10 @@ export interface CairnRuntime {
   access?: AccessMap;
   /** The commit backend provider, carried through from the adapter by `composeRuntime`. */
   backend: BackendProvider;
-  sender: SenderConfig;
+  /** The sender config passed through from the adapter; the magic-link email reads it. */
+  email: SenderConfig;
   /** The support contact passed through from the adapter; the in-admin help reads it. Optional. */
   supportContact?: string;
-  /**
-   * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  The build passes a site-resolver-backed `resolveLink`/`resolveMedia` pair, the preview manifest-backed
-   *  ones.
-   */
-  render: SiteRender;
   manifestPath: string;
   /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
   mediaManifestPath: string;
@@ -468,12 +450,10 @@ export interface CairnRuntime {
    *  otherwise `{ enabled: true, bucketBinding }` for the upload, storage, delivery, and resolver paths.
    */
   media: import('../media/config.js').ResolvedMediaConfig;
-  /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
-  icons?: IconSet;
   navMenu?: NavMenuConfig;
   /**
    * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
-   *  write, resolved once at compose from `editor.siteConfigPath`.
+   *  write, fixed at compose to the scaffold's `src/theme/site.config.yaml`.
    */
   siteConfigPath: string;
   /**
@@ -490,10 +470,9 @@ export interface CairnRuntime {
   publishActions?: PublishActionEntry[];
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
-  assets?: MediaConfig;
   /**
-   * The editor's spellcheck dictionary file, resolved once at compose from the site config's
-   *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the
+   * The editor's spellcheck dictionary file, set once at compose to the US English dictionary,
+   *  the one that ships. The edit load threads it onto EditData and the
    *  editor resolves it to a real asset URL on the main thread, so the Worker receives the URL and
    *  never reads config. Just the filename, e.g. "dictionary-en-us.txt". Optional on the runtime so a
    *  hand-built runtime need not set it; composeRuntime always fills it, and the edit load defaults a

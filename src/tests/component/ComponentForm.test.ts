@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ComponentForm from '../../lib/admin/ComponentForm.svelte';
-import { defineComponent, type ComponentDef } from '../../lib/render/registry.js';
+import { defineBlock, type BlockDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
-const callout = defineComponent({
+const callout = defineBlock({
   ...base, name: 'callout', label: 'Callout',
   attributes: {
     tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }),
@@ -41,13 +41,13 @@ describe('ComponentForm fields', () => {
   });
 });
 
-const grid: ComponentDef = {
+const grid: BlockDef = {
   ...base, name: 'grid', label: 'Grid',
   slots: [
     { name: 'title', label: 'Title', kind: 'inline' },
     { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
   ],
-} as ComponentDef;
+} as BlockDef;
 
 describe('ComponentForm repeatable slot', () => {
   it('adds and removes items in a repeatable slot', async () => {
@@ -144,15 +144,15 @@ describe('ComponentForm required-field marking and Insert gating', () => {
   });
 });
 
-const requiredSlots: ComponentDef = {
+const requiredSlots: BlockDef = {
   ...base, name: 'feature', label: 'Feature',
   slots: [
     { name: 'headline', label: 'Headline', kind: 'inline', required: true },
     { name: 'summary', label: 'Summary', kind: 'markdown', required: true },
   ],
-} as ComponentDef;
+} as BlockDef;
 
-const repeatable: ComponentDef = {
+const repeatable: BlockDef = {
   ...base, name: 'list', label: 'List',
   slots: [
     {
@@ -161,7 +161,7 @@ const repeatable: ComponentDef = {
       itemLabel: (item) => (typeof item.text === 'string' ? item.text.slice(0, 12) : ''),
     },
   ],
-} as ComponentDef;
+} as BlockDef;
 
 describe('ComponentForm itemLabel', () => {
   it('labels a repeatable row from itemLabel and falls back to the index when it is empty', async () => {
@@ -176,7 +176,7 @@ describe('ComponentForm itemLabel', () => {
   });
 });
 
-const previewCallout = defineComponent({
+const previewCallout = defineBlock({
   ...base, name: 'callout', label: 'Callout',
   preview: { attributes: { tone: 'note' }, slots: { title: 'Sample title', body: 'Sample body' } },
   attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'] }) },
@@ -230,12 +230,12 @@ describe('ComponentForm submit label', () => {
 
 // Characterization of every FieldDescriptor arm this dispatcher branches on. select and boolean
 // are covered above; this fills in the rest, one arm each. multiselect/image/object/reference/array
-// never reach a real component attribute (checkComponentAttributes rejects them at defineComponent),
-// so those five bypass defineComponent to exercise the same generic fallback the type checker still
+// never reach a real component attribute (checkComponentAttributes rejects them at defineBlock),
+// so those five bypass defineBlock to exercise the same generic fallback the type checker still
 // has to cover.
 describe('ComponentForm attribute-arm dispatch (characterization: every FieldDescriptor arm)', () => {
   it('renders the generic fallback input for text, number, url, and date, each with its matching HTML input type', async () => {
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'kinds', label: 'Kinds',
       attributes: {
         title: fields.text({ label: 'Title' }),
@@ -253,7 +253,7 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
   });
 
   it('renders the icon picker radiogroup when an icon set is supplied, and the generic fallback text input otherwise', async () => {
-    const def = defineComponent({
+    const def = defineBlock({
       ...base, name: 'glyph', label: 'Glyph',
       attributes: { glyph: fields.icon({ label: 'Glyph' }) },
     });
@@ -267,7 +267,7 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
   });
 
   it('renders the generic fallback text input for a multiselect, image, object, reference, or array attribute, since a component attribute is never one of those in practice', async () => {
-    const def: ComponentDef = {
+    const def: BlockDef = {
       ...base, name: 'unusual', label: 'Unusual',
       attributes: {
         tags: fields.multiselect({ label: 'Tags' }),
@@ -285,7 +285,7 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
 });
 
 describe('ComponentForm slot help', () => {
-  const helped = defineComponent({
+  const helped = defineBlock({
     ...base, name: 'helped', label: 'Helped',
     slots: [
       { name: 'title', label: 'Title', kind: 'inline', required: true, help: 'Keep it short.' },

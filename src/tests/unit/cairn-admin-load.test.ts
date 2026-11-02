@@ -18,12 +18,11 @@ function runtime(): CairnRuntime {
     siteName: 'Test Site',
     siteConfigPath: 'src/lib/site.config.yaml',
     concepts: [
-      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
-      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
+      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
+      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: defineFieldset({}), summaryFields: [], validate: ok },
     ],
     backend: createGithubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+    email: { from: 'cms@test' },
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     media: { enabled: false },
@@ -98,6 +97,11 @@ function fakeHistoryBackend(): Backend {
 afterEach(() => vi.restoreAllMocks());
 
 describe('createCairnAdmin load dispatch', () => {
+  it('refuses a stale preview key, which would otherwise lengthen a link with no error', () => {
+    const stale = { runtime: runtime(), preview: { ttlMs: 3_600_000 } };
+    expect(() => createCairnAdmin(stale)).toThrow(/no `preview` key/);
+  });
+
   it('throws 404 for a path the parser does not recognize', async () => {
     const admin = createCairnAdmin({ runtime: runtime(), ...deps });
     await expect(admin.load(adminEvent('/admin/bogus'))).rejects.toMatchObject({ status: 404 });

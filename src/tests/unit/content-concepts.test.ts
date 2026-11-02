@@ -25,12 +25,10 @@ describe('normalizeConcepts', () => {
     expect(descriptors.find((c) => c.id === 'posts')?.routing).toEqual({
       routable: true,
       dated: true,
-      inFeeds: true,
     });
     expect(descriptors.find((c) => c.id === 'pages')?.routing).toEqual({
       routable: true,
       dated: false,
-      inFeeds: false,
     });
   });
 
@@ -39,7 +37,7 @@ describe('normalizeConcepts', () => {
     const delivery = buildSiteDescriptors(testAdapter);
     const fromRuntime = runtime.concepts.find((c) => c.id === 'posts')?.routing;
     const fromDelivery = delivery.find((c) => c.id === 'posts')?.routing;
-    expect(fromRuntime).toEqual({ routable: true, dated: true, inFeeds: true });
+    expect(fromRuntime).toEqual({ routable: true, dated: true });
     expect(fromDelivery).toEqual(fromRuntime);
   });
 
@@ -80,7 +78,7 @@ describe('normalizeConcepts', () => {
   // (Task 3), never served as a public page, so any routing shorthand other than 'embedded'
   // (including the 'page' default) is a construction-time mistake, not a valid site.
   it.each([
-    ['feed', { routing: 'feed' as const }],
+    ['dated', { routing: 'dated' as const }],
     ['page', { routing: 'page' as const }],
     ['omitted', {}],
   ])('throws when the fragments key declares routing %s instead of embedded', (_label, extra) => {
@@ -103,8 +101,8 @@ describe('normalizeConcepts', () => {
   it('rejects an object-form routing value on ConceptConfig at compile time', () => {
     const objectRouting: ConceptConfig = {
       dir: 'src/content/fragments',
-      // @ts-expect-error routing accepts only the 'feed' | 'page' | 'embedded' shorthand now
-      routing: { routable: false, dated: false, inFeeds: false },
+      // @ts-expect-error routing accepts only the 'dated' | 'page' | 'embedded' shorthand now
+      routing: { routable: false, dated: false },
       fields: { title: fields.text({ label: 'Title' }) },
     };
     expect(objectRouting.dir).toBe('src/content/fragments');
@@ -127,7 +125,7 @@ describe('normalizeConcepts URL policy', () => {
     const [posts] = normalizeConcepts({
       posts: {
         ...cfg,
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
         fields: { date: fields.date({ label: 'Date' }) },
@@ -142,7 +140,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          routing: 'feed',
+          routing: 'dated',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
           fields: { title: fields.text({ label: 'Title' }) },
@@ -158,7 +156,7 @@ describe('normalizeConcepts URL policy', () => {
       normalizeConcepts({
         posts: {
           dir: 'p',
-          routing: 'feed',
+          routing: 'dated',
           permalink: '/:year/:month/:slug',
           datePrefix: 'month',
           fields: { title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) },
@@ -173,7 +171,7 @@ describe('normalizeConcepts URL policy', () => {
     const [posts] = normalizeConcepts({
       posts: {
         dir: 'p',
-        routing: 'feed',
+        routing: 'dated',
         permalink: '/:year/:month/:slug',
         datePrefix: 'month',
         fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
@@ -189,7 +187,7 @@ describe('normalizeConcepts URL policy', () => {
     const [posts] = normalizeConcepts({
       posts: {
         dir: 'p',
-        routing: 'feed', // dated, default permalink /posts/:slug carries no date token
+        routing: 'dated', // dated, default permalink /posts/:slug carries no date token
         fields: { title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) },
       },
     });
@@ -235,7 +233,7 @@ describe('normalizeConcepts URL policy', () => {
           summaryFields: ['description'],
         },
       }),
-    ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field');
+    ).toThrow('cairn: concept "posts" summaryFields key "description" is not a declared field; declared fields: title');
   });
 
   it('accepts a summaryFields key that names a declared field, guarding the Set-of-keys derivation', () => {

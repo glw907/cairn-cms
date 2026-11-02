@@ -44,8 +44,16 @@ export const entries: EntryGenerator = () => routes.entries();
 export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 ```
 
-The page renders `CairnHead` (`@glw907/cairn-cms/delivery/head`) with `seo={data.seo}`, then
+The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`, then
 `{@html data.html}`. `titleTemplate` applies only when `title` is undefined.
+
+`entryLoad` returns `EntryData<typeof site>`, a union over the adapter's concepts, so narrowing on
+`data.concept` types `data.entry.frontmatter` from that concept's fields: inside
+`if (data.concept === 'posts')`, `data.entry.frontmatter.image` is the posts field's value.
+
+A `PublicRoutesConfig` with no type argument gives the untyped `EntryData`, where `concept` is a
+string and the frontmatter a record. Every typed value assigns to it, and `loadPreview` returns that
+untyped form, so a template shared with the preview route takes `EntryData` as its prop type.
 
 To show reference fields, return `references` from the same load:
 `resolveReferences(site, descriptor, data.entry.frontmatter)` with the descriptor from
@@ -60,17 +68,17 @@ them. The hero and social image come from the key `image` alone: declare
 `resolveMedia` other than `null` turns hero resolution on.
 
 Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` with
-`routes.markdownEntries()` and `markdownResponse({ body })` from `routes.markdownLoad({ url })`, and
+`routes.markdownEntries()` and `buildMarkdownResponse({ body })` from `routes.markdownLoad({ url })`, and
 `markdownUrl` on `CairnHead`. `noindex` entries get no twin.
 
 ## Feeds, sitemap, robots
 
 - Feeds: map `posts.all()` to `FeedItem`s (render bodies with an origin-prefixing link resolver from
-  `createLinkResolver(site)`), return `rssResponse(channel, items)` or `jsonFeedResponse`, and set
+  `createLinkResolver(site)`), return `buildRssResponse(channel, items)` or `buildJsonFeedResponse`, and set
   `feeds` in the config so entry heads link them.
-- Sitemap: `sitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
+- Sitemap: `buildSitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
   takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
-- Robots: `robotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
+- Robots: `buildRobotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
   `aiPosture` as `posture` (`references/tidy-and-ai-posture.md`).
 - `noindex` entries stay out of the sitemap but still appear in feeds; filter feed items with
   `readSeoFields`.

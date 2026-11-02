@@ -8,11 +8,11 @@ import remarkDirective from 'remark-directive';
 import remarkStringify from 'remark-stringify';
 import type { Root, RootContent } from 'mdast';
 import { previewValues } from './registry.js';
-import type { ComponentDef, ComponentValues, SlotDef } from './registry.js';
+import type { BlockDef, ComponentValues, SlotDef } from './registry.js';
 
 const COLON = ':';
 
-function attrBlock(def: ComponentDef, values: ComponentValues): string {
+function attrBlock(def: BlockDef, values: ComponentValues): string {
   const parts: string[] = [];
   for (const [name, field] of Object.entries(def.attributes ?? {})) {
     const v = values.attributes[name];
@@ -30,11 +30,11 @@ function attrBlock(def: ComponentDef, values: ComponentValues): string {
   return parts.length ? `{${parts.join(' ')}}` : '';
 }
 
-function slotByName(def: ComponentDef, name: string): SlotDef | undefined {
+function slotByName(def: BlockDef, name: string): SlotDef | undefined {
   return (def.slots ?? []).find((s) => s.name === name);
 }
 
-function nestedSlots(def: ComponentDef): SlotDef[] {
+function nestedSlots(def: BlockDef): SlotDef[] {
   return (def.slots ?? []).filter((s) => s.name !== 'title' && s.name !== 'body');
 }
 
@@ -42,7 +42,7 @@ function nestedSlots(def: ComponentDef): SlotDef[] {
  * Render a parsed component node back to its `:::name[label]{key="value"}` directive source, the
  * inverse of {@link parseComponent}.
  */
-export function serializeComponent(def: ComponentDef, values: ComponentValues): string {
+export function serializeComponent(def: BlockDef, values: ComponentValues): string {
   const fence = COLON.repeat(nestedSlots(def).length > 0 ? 4 : 3);
 
   const title = slotByName(def, 'title') ? (values.slots.title as string) ?? '' : '';
@@ -77,7 +77,7 @@ export function serializeComponent(def: ComponentDef, values: ComponentValues): 
  * render one sample per component.
  * @public
  */
-export function previewMarkdown(def: ComponentDef): string | undefined {
+export function previewMarkdown(def: BlockDef): string | undefined {
   if (!def.preview) return undefined;
   return serializeComponent(def, previewValues(def));
 }
@@ -107,7 +107,7 @@ function childrenToText(children: RootContent[]): string {
 // Parse the markdown and find the component's opening container directive. The single seam both
 // parseComponent and parseRawAttributeKeys (and the combined validator helper) build on, so one
 // parse derives both the form values and the raw attribute keys.
-function findComponentRoot(markdown: string, def: ComponentDef): (RootContent & DirectiveNode) | undefined {
+function findComponentRoot(markdown: string, def: BlockDef): (RootContent & DirectiveNode) | undefined {
   const tree = unified().use(remarkParse).use(remarkDirective).parse(markdown) as Root;
   return tree.children.find(
     (c): c is RootContent & DirectiveNode => isContainer(c) && (c as DirectiveNode).name === def.name,
@@ -116,7 +116,7 @@ function findComponentRoot(markdown: string, def: ComponentDef): (RootContent & 
 
 // Build guided-form values from an already-found component root. Returns the empty base when the
 // root is absent.
-function valuesFromRoot(root: (RootContent & DirectiveNode) | undefined, def: ComponentDef): ComponentValues {
+function valuesFromRoot(root: (RootContent & DirectiveNode) | undefined, def: BlockDef): ComponentValues {
   const values = emptyComponentValues(def);
   if (!root) return values;
 
@@ -161,7 +161,7 @@ function rawKeysFromRoot(root: (RootContent & DirectiveNode) | undefined): strin
  *  {@link serializeComponent}. The grammar is reversible, so the editor can round-trip a
  *  saved directive through the form.
  */
-export async function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues> {
+export async function parseComponent(markdown: string, def: BlockDef): Promise<ComponentValues> {
   return valuesFromRoot(findComponentRoot(markdown, def), def);
 }
 
@@ -169,7 +169,7 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
  * The raw attribute keys present on the component's opening directive, read from the parsed tree
  *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys.
  */
-function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
+function parseRawAttributeKeys(markdown: string, def: BlockDef): string[] {
   return rawKeysFromRoot(findComponentRoot(markdown, def));
 }
 
@@ -194,7 +194,7 @@ export type RoundTripSafety =
  *     nested slot. Such a child would otherwise fold into the body slot and move on re-serialize.
  *  4. `not-idempotent`: `parse -> serialize -> parse` does not recover the same values.
  */
-export async function componentRoundTripSafety(markdown: string, def: ComponentDef): Promise<RoundTripSafety> {
+export async function componentRoundTripSafety(markdown: string, def: BlockDef): Promise<RoundTripSafety> {
   const root = findComponentRoot(markdown, def);
   if (!root) return { safe: false, reason: 'not-a-component' };
 
@@ -226,7 +226,7 @@ export async function componentRoundTripSafety(markdown: string, def: ComponentD
  */
 export async function parseComponentWithRawKeys(
   markdown: string,
-  def: ComponentDef,
+  def: BlockDef,
 ): Promise<{ values: ComponentValues; rawKeys: string[] }> {
   const root = findComponentRoot(markdown, def);
   return { values: valuesFromRoot(root, def), rawKeys: rawKeysFromRoot(root) };
@@ -235,7 +235,7 @@ export async function parseComponentWithRawKeys(
 // A bare parse base: empty strings, false, and empty lists, with no attribute defaults applied. The
 // `emptyValues` helper in registry.ts seeds form defaults instead, so it is deliberately not reused
 // here; the parse must overwrite only the fields actually present in the markdown.
-function emptyComponentValues(def: ComponentDef): ComponentValues {
+function emptyComponentValues(def: BlockDef): ComponentValues {
   const attributes: Record<string, string | boolean> = {};
   for (const [name, field] of Object.entries(def.attributes ?? {})) attributes[name] = field.type === 'boolean' ? false : '';
   const slots: Record<string, string | string[]> = {};

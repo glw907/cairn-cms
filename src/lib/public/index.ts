@@ -1,7 +1,8 @@
 // cairn-cms: the public `/public` barrel. Its membership rule: every built-in public component
-// that renders styled markup lives here, never on `/admin` (the admin's view tier) and never
-// on `/sveltekit` or another data-only subpath (a type or a loader belongs there instead).
-// `CairnHead` stays at `./delivery/head`, since it renders no markup of its own, only document-head
-// tags. `PreviewBanner` is the one component this barrel carries today: a design-agnostic notice
-// for the public preview route (`loadPreview`, `/sveltekit`), not part of the admin UI.
+// lives here, never on `/admin` (the admin's view tier) and never on `/sveltekit` or another
+// data-only subpath (a type or a loader belongs there instead). `PreviewBanner` is a
+// design-agnostic notice for the public preview route (`loadPreview`, `/sveltekit`), not part of
+// the admin UI. `CairnHead` renders a page's document-head tags and no markup of its own; it lives
+// here so `/delivery` loads under plain Node.
 export { default as PreviewBanner } from './PreviewBanner.svelte';
+export { default as CairnHead } from '../delivery/CairnHead.svelte';

@@ -1,46 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from '../../lib/delivery/responses.js';
+import { buildRssResponse, buildJsonFeedResponse, buildSitemapResponse, buildRobotsResponse, buildMarkdownResponse } from '../../lib/delivery/responses.js';
 
 const channel = { title: 'T', description: 'D', siteUrl: 'https://x.test', feedUrl: 'https://x.test/feed.xml' };
 const items = [{ title: 'Post', url: 'https://x.test/p', date: '2026-05-14', summary: 'S' }];
 
 describe('delivery response helpers', () => {
-  it('rssResponse is RSS with the right content type', async () => {
-    const res = rssResponse(channel, items);
+  it('buildRssResponse is RSS with the right content type', async () => {
+    const res = buildRssResponse(channel, items);
     expect(res.headers.get('Content-Type')).toBe('application/rss+xml; charset=utf-8');
     expect(await res.text()).toContain('<rss');
   });
 
-  it('jsonFeedResponse is JSON Feed with the right content type', async () => {
-    const res = jsonFeedResponse(channel, items);
+  it('buildJsonFeedResponse is JSON Feed with the right content type', async () => {
+    const res = buildJsonFeedResponse(channel, items);
     expect(res.headers.get('Content-Type')).toBe('application/feed+json; charset=utf-8');
     expect(JSON.parse(await res.text()).items).toHaveLength(1);
   });
 
-  it('sitemapResponse is XML with the urlset', async () => {
-    const res = sitemapResponse([{ loc: 'https://x.test/' }]);
+  it('buildSitemapResponse is XML with the urlset', async () => {
+    const res = buildSitemapResponse([{ loc: 'https://x.test/' }]);
     expect(res.headers.get('Content-Type')).toBe('application/xml; charset=utf-8');
     expect(await res.text()).toContain('<urlset');
   });
 
-  it('robotsResponse is text with the sitemap and disallow', async () => {
-    const res = robotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', disallow: ['/admin'] });
+  it('buildRobotsResponse is text with the sitemap and disallow', async () => {
+    const res = buildRobotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', disallow: ['/admin'] });
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
     const body = await res.text();
     expect(body).toContain('Sitemap:');
     expect(body).toContain('Disallow: /admin');
   });
 
-  it('robotsResponse passes posture through with the content type unchanged', async () => {
-    const res = robotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', posture: 'decline' });
+  it('buildRobotsResponse passes posture through with the content type unchanged', async () => {
+    const res = buildRobotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', posture: 'decline' });
     expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
     const body = await res.text();
     expect(body).toContain('Content-Signal: ai-train=no');
     expect(body).toContain('User-agent: GPTBot');
   });
 
-  it('markdownResponse is raw markdown with the text/markdown content type', async () => {
-    const res = markdownResponse({ body: '# Heading\n\nSome **bold** text.' });
+  it('buildMarkdownResponse is raw markdown with the text/markdown content type', async () => {
+    const res = buildMarkdownResponse({ body: '# Heading\n\nSome **bold** text.' });
     expect(res.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
     const body = await res.text();
     expect(body).toBe('# Heading\n\nSome **bold** text.');

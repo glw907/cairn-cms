@@ -26,9 +26,10 @@
 //
 // Default text carries no token class and inherits the code block's foreground (--cairn-code-ink).
 //
-// SERVER/BUILD-ONLY: Shiki is loaded through a dynamic import so it stays out of the static client
-// graph (a separate async chunk). The highlighter runs only inside the async pipeline, at
-// render/prerender and in the Worker SSR. The highlighter is created once and its promise cached.
+// Shiki is loaded through a dynamic import so it stays out of the static client graph (a separate
+// async chunk). The highlighter runs inside the async pipeline: at render/prerender, in the Worker
+// SSR, and in the browser when the editor's preview calls the `render` prop EditPage takes. The
+// highlighter is created once and its promise cached.
 import type { Root, Element } from 'hast';
 import { toString } from 'hast-util-to-string';
 import type { Highlighter, ThemeRegistrationRaw, ShikiTransformer } from 'shiki';

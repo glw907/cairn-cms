@@ -60,9 +60,11 @@ describe('the signups screen actions', () => {
 describe('the signups screen load, a missing APP_DB binding', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('emits admin.signups.misconfigured through the site logger rather than a direct console.error call', async () => {
+    vi.stubGlobal('navigator', { userAgent: 'Cloudflare-Workers' });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const event = {
       route: { id: '/admin/signups' },

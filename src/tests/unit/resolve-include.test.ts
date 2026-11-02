@@ -27,7 +27,7 @@ describe('include fragment resolution', () => {
 
   it('(b) proves splice-before-stamp: a fragment body with a registered directive, a cairn: link, and a media: token all resolve downstream', async () => {
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'box',
           label: '',
@@ -41,7 +41,7 @@ describe('include fragment resolution', () => {
         },
       ],
     });
-    const { render } = createRenderer({ components: registry });
+    const { render } = createRenderer({ blocks: registry.defs });
     const resolveFragment: FragmentResolve = (id) =>
       id === 'facts'
         ? ':::box\nSee [about](cairn:pages/about) and ![alt](media:0123456789abcdef).\n:::'

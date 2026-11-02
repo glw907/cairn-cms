@@ -4,6 +4,11 @@ Every engine record is one JSON line: the envelope `level`, `event`, `timestamp`
 below. An event name is a stable contract (a rename is a breaking change), so key queries and alerts
 on it. No record carries a sign-in token, a session id, or a link's contents. Records carry an
 editor's email; `audit.sink.write_failed`'s `actor` is whatever identity the caller passed.
+
+Outside Workers (`vite dev`, a Node script) a record prints as one JSON line, so a value `JSON.stringify`
+cannot carry prints as it does there: an `Error` or `Headers` value as `{}`, a `BigInt` as the
+`fields: '<unserializable>'` fallback record. A key below the redaction cap (three levels) prints in
+full. On Workers a record stays an object, which Workers Logs indexes by field.
 `references/debug.md` is the procedure that reads this table.
 
 Contents:
@@ -69,7 +74,7 @@ Contents:
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `preview.token.minted` | info | `concept`, `id`, `editor`, `expiresAt` | A link was minted (built-in action or `mintPreview`). Never the token. |
+| `preview.token.minted` | info | `concept`, `id`, `editor`, `expiresAt` | A link was minted. Never the token. |
 | `preview.token.revoked` | info | `concept`, `id`, `editor`, `count` | All links for an entry were revoked. |
 | `preview.cleanup_failed` | warn | `concept`, `id`, `error` | Best-effort link clear after delete, discard, or rename hit a D1 error. A missing binding or table is silent. |
 | `preview.refused` | warn | `reason`; `concept`, `id` on `row_invalid`, `draft_invalid`, `branch_gone`; `binding` on `bindings_missing` | Checked in order: `bindings_missing` (no `AUTH_DB`, answers 503), `table_missing` (apply `0003_preview.sql`), `unknown` (no row: revoked, deleted, renamed, never-published discard), `expired`, `row_invalid` (stored concept or id no longer valid), `draft_invalid` (draft fails validation), `branch_gone` (branch and published file both gone). Every other answer is an identical 404. |
@@ -124,10 +129,10 @@ These never carry document content or an API key.
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `admin.action.session_absent` | warn | `path` | A `createAdminAction` route found no editor and redirected to login. Behind the guard this means the route sits outside `/admin/**` or a hook cleared the editor. |
+| `admin.action.session_absent` | warn | `path` | A `createSectionAction` route found no editor and redirected to login. Behind the guard this means the route sits outside `/admin/**` or a hook cleared the editor. |
 | `admin.action.csrf_refused` | warn | `path`, `editor`, `detail`, `witness` | The wrapper's CSRF check failed (same values as `guard.refused`). First trace under `devBackendHandle`, which runs no CSRF check. Mount `CsrfField` in the form. |
 | `admin.action.misconfigured` | error | `path`, `reason` | `createSectionAction` answered `fail(500)`. `db_not_bound`: `resolveDb` returned null or undefined. `access_map_not_attached`: a non-engine hook set `locals.cairnEditor` without `locals.cairnAccess`. |
-| `admin.action.unaudited` | error | `editor`, `path` | A `createAdminAction` handler returned without `ctx.audit` (production; dev throws). |
+| `admin.action.unaudited` | error | `editor`, `path` | A `createSectionAction` handler returned without `ctx.audit` (production; dev throws). |
 | `admin.action.audited` | info | `actor`, `action`, `entity`, `entityId`, `detail` | `ctx.audit` was called. |
 | `admin.action.failed` | error | `action`, `concept`, `id`, `editor`, `error`, `conditionId` | An engine action threw unexpectedly. `conditionId: auth.store-roles-unmigrated` means `AUTH_DB` lacks `0001_roles.sql`. |
 | `admin.action.rate_limit_absent` | warn | `path`, `action`, `entity` | Rate limit configured but its binding resolved to nothing; degrades to open. |

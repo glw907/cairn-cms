@@ -8,11 +8,11 @@ import { join } from 'node:path';
 export default function setup(root) {
   mkdirSync(join(root, 'src/theme'), { recursive: true });
   writeFileSync(
-    join(root, 'src/theme/markdown-components.ts'),
-    `import { defineComponent, fields } from '@glw907/cairn-cms';
+    join(root, 'src/theme/markdown-blocks.ts'),
+    `import { defineBlock, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 
-export const countdown = defineComponent({
+export const countdown = defineBlock({
   name: 'countdown',
   label: 'Countdown',
   description: 'Days remaining until a date.',
@@ -29,7 +29,7 @@ export const countdown = defineComponent({
     ]),
 });
 
-export const components = [countdown];
+export const blocks = [countdown];
 `,
   );
 }

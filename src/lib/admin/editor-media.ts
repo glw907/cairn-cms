@@ -23,7 +23,7 @@ import {
 import { RangeSetBuilder, type Extension, type Range } from '@codemirror/state';
 import { parseMediaToken } from '../media/reference.js';
 import { publicPath } from '../media/naming.js';
-import { DEFAULT_MEDIA_BASE } from './media-base-context.js';
+import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
 import { fenceScan, figureRoleAtLine } from './markdown-directives.js';
 // The decoration reads MediaLibrary/MediaLibraryEntry (the shared node-safe projection) for the
 // thumbnail path, the display name, and the alt-empty test.

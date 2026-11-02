@@ -444,7 +444,7 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   await expect(dialog.locator('h2#cairn-insert-dialog-title')).toHaveText('Callout');
   await expect(dialog.locator('[data-testid="cairn-pk-preview"]')).toBeVisible();
   const previewFrame = page.frameLocator(
-    '[data-testid="cairn-pk-preview"] iframe[title="Component preview"]',
+    '[data-testid="cairn-pk-preview"] iframe[title="Block preview"]',
   );
   // The preview seeds from the sample, so the rendered frame carries the sample title through the
   // site's render() path.
@@ -507,14 +507,14 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   // its disabled label and is disabled.
   await editor.locator('.cm-line', { hasText: 'A plain prose line.' }).click();
   await expect(
-    page.getByRole('button', { name: 'Place the cursor in a component to edit it' }),
+    page.getByRole('button', { name: 'Place the cursor in an editable block to edit it' }),
   ).toBeDisabled();
 
   // Put the text cursor inside the callout block by clicking its opener line.
   await editor.locator('.cm-line', { hasText: '::::callout[A worked example]' }).click();
 
   // The caret-on-component gate flips the control to enabled, with the active-state label.
-  const editEnabled = page.getByRole('button', { name: 'Edit the component at the cursor' });
+  const editEnabled = page.getByRole('button', { name: 'Edit the block at the cursor' });
   await expect(editEnabled).toBeEnabled({ timeout: 5000 });
 
   // Activate Edit block: the dialog opens straight into the configure step in edit mode. The header

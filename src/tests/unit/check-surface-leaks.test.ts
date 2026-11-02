@@ -8,9 +8,8 @@ import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
 import {
   collectReachableNames,
   collectDeclaredTypeNames,
-  extractLiteralUnionSet,
-  shapeContainsLiteralUnion,
-  deriveRendererLeaks,
+  deriveLeaks,
+  selectLeakedNames,
   findLeakViolations,
   formatLeakViolations,
   isPlainTypeExport,
@@ -99,9 +98,8 @@ describe('collectReachableNames (the type-checker model)', () => {
 // export (an interface, type alias, or enum with no value side) or a runtime value export (a
 // function, a const, or a Svelte component's `declare const X: Component<...>` default), read
 // off real TypeScript symbol flags rather than asserted in prose. Proven against real dist
-// declarations too, below: `dist/admin/index.d.ts` classifies its four plain-type exports
-// (TidyApi, ImagePlaceholderApi, FormatKind, EditorApi) as `true` and its nineteen component
-// exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
+// declarations too, below: `dist/admin/index.d.ts` carries no plain-type exports and classifies
+// its three component exports as `false`, which is what lets `deriveTypeCheckerLeaks` walk the former without ever
 // descending into a component's own Props/Events/Slots type graph.
 describe('isPlainTypeExport (the /admin mechanical split)', () => {
   const tmpFiles: string[] = [];
@@ -148,7 +146,7 @@ describe('isPlainTypeExport (the /admin mechanical split)', () => {
     }
   });
 
-  it('classifies the real dist/admin/index.d.ts barrel (4 plain-type, 18 component)', () => {
+  it('classifies the real dist/admin/index.d.ts barrel (0 plain-type, 3 component)', () => {
     // `npm ci`'s `prepare` hook and CI's own `npm run package` step both build `dist/` ahead of
     // `npm test`, so a real built barrel is available here without this suite building one itself.
     const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -162,8 +160,8 @@ describe('isPlainTypeExport (the /admin mechanical split)', () => {
     );
     const plainTypeNames = resolved.filter((sym) => isPlainTypeExport(sym)).map((sym) => sym.name);
     const componentNames = resolved.filter((sym) => !isPlainTypeExport(sym)).map((sym) => sym.name);
-    expect(plainTypeNames.sort()).toEqual(['EditorApi', 'FormatKind', 'ImagePlaceholderApi', 'TidyApi']);
-    expect(componentNames).toHaveLength(18);
+    expect(plainTypeNames).toEqual([]);
+    expect(componentNames).toHaveLength(3);
   });
 });
 
@@ -183,43 +181,30 @@ describe('collectDeclaredTypeNames (the known type universe)', () => {
   });
 });
 
-describe('extractLiteralUnionSet', () => {
-  it('extracts a pure string-literal union, canonically sorted', () => {
-    expect(extractLiteralUnionSet('"b" | "a" | "c"')).toEqual(['a', 'b', 'c']);
+// The cross-subpath half of the leak gate: a reachable name exported from any subpath is nameable,
+// so the gate follows a type across subpaths and a name the barrels drop from everywhere still fails.
+describe('selectLeakedNames', () => {
+  const universe = new Set(['MediaResolve', 'SlotKind']);
+
+  it('does not count a type exported only from root as a leak on another subpath', () => {
+    const model = { '.': { MediaResolve: '(ref) => R' }, '/delivery': { SiteResolver: '{ }' } };
+    expect(selectLeakedNames(['MediaResolve'], universe, model)).toEqual([]);
   });
 
-  it('tolerates the open-string escape hatch', () => {
-    expect(extractLiteralUnionSet('"a" | "b" | (string & {})')).toEqual(['a', 'b']);
+  it('counts a type exported from no subpath as a leak', () => {
+    const model = { '.': { MediaResolve: '(ref) => R' } };
+    expect(selectLeakedNames(['SlotKind'], universe, model)).toEqual(['SlotKind']);
   });
 
-  it('returns null for a non-literal member', () => {
-    expect(extractLiteralUnionSet('"a" | string')).toBeNull();
-  });
-
-  it('returns null for an object shape', () => {
-    expect(extractLiteralUnionSet('{ a: string }')).toBeNull();
-  });
-});
-
-describe('shapeContainsLiteralUnion', () => {
-  it('matches a member nested inside an object shape, regardless of member order', () => {
-    const shape =
-      '{ label: string; icon: "image" | "anchor" | "banknote"; href: string }';
-    expect(shapeContainsLiteralUnion(shape, ['anchor', 'banknote', 'image'])).toBe(true);
-  });
-
-  it('does not match when the set differs', () => {
-    const shape = '{ icon: "image" | "anchor" }';
-    expect(shapeContainsLiteralUnion(shape, ['anchor', 'banknote', 'image'])).toBe(false);
+  it('skips a reachable name outside our own declared types', () => {
+    expect(selectLeakedNames(['Promise'], universe, {})).toEqual([]);
   });
 });
 
-// The renderer model's per-subpath clause: proven against the real `NavIcon` shape (reordered, as
-// TypeScript's own dts-bundling artifact reorders it across subpaths), plus `SlotKind` as the
-// absent-everywhere control the renderer model structurally cannot attempt (no subpath exports it,
-// so there is no canonical shape to compare against).
-describe('deriveRendererLeaks (the renderer model, the per-subpath clause)', () => {
-  it('finds NavIcon expanded inline on root while named on /sveltekit', () => {
+// A literal union expanded inline on one subpath and named on another is legal: the one-path rule
+// covers where the name imports from.
+describe('deriveLeaks', () => {
+  it('holds no renderer-model entry for a union inlined across subpaths', () => {
     const model = {
       '.': {
         NavLayoutEntry:
@@ -229,44 +214,10 @@ describe('deriveRendererLeaks (the renderer model, the per-subpath clause)', () 
         NavIcon: '"anchor" | "banknote" | "image"',
       },
     };
-    const leaks = deriveRendererLeaks(model);
-    expect(leaks).toEqual([
-      { name: 'NavIcon', subpath: '.', model: 'renderer', foundIn: 'NavLayoutEntry' },
-    ]);
-  });
-
-  it('finds EngineScreenId the same way, tolerating the open-string escape hatch', () => {
-    const model = {
-      '.': {
-        NavLayoutEngineRef: '{ screen: "help" | "settings" | (string & {}) }',
-      },
-      '/sveltekit': {
-        EngineScreenId: '"settings" | "help" | (string & {})',
-      },
-    };
-    const leaks = deriveRendererLeaks(model);
-    expect(leaks).toEqual([
-      { name: 'EngineScreenId', subpath: '.', model: 'renderer', foundIn: 'NavLayoutEngineRef' },
-    ]);
-  });
-
-  it('does not attempt a name absent from every subpath (the SlotKind control)', () => {
-    const model = {
-      '.': { SlotDef: '{ kind: "inline" | "markdown" | "repeatable" }' },
-      '/sveltekit': { SlotDef: '{ kind: "markdown" | "inline" | "repeatable" }' },
-    };
-    // Neither subpath exports `SlotKind` by name, so the renderer model has no home shape to read
-    // a comparison set from; it structurally cannot find this leak (the type-checker model does).
-    expect(deriveRendererLeaks(model)).toEqual([]);
-  });
-
-  it('does not flag a name exported from every subpath that names it', () => {
-    const model = {
-      '.': { Shared: '"a" | "b"' },
-      '/sveltekit': { Shared: '"a" | "b"' },
-    };
-    expect(deriveRendererLeaks(model)).toEqual([]);
-  });
+    const leaks = deriveLeaks(model);
+    expect(leaks.filter((leak) => leak.model === 'renderer')).toEqual([]);
+    expect(leaks.some((leak) => leak.name === 'NavIcon' && leak.subpath === '.')).toBe(false);
+  }, 60_000);
 });
 
 // The failing-first proof: an unrecorded leak the derivation finds must fail the gate.
@@ -322,7 +273,7 @@ describe('findLeakViolations / formatLeakViolations (the failing-first proof)', 
   });
 
   it('fails a registry entry the derivation no longer produces (a resolved leak left stale)', () => {
-    const stale = { name: 'Resolved', subpath: '.', model: 'renderer', 'sanctioned-by': 'x' };
+    const stale = { name: 'Resolved', subpath: '.', model: 'type-checker', 'sanctioned-by': 'x' };
     const result = findLeakViolations([], [stale]);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected a failure');

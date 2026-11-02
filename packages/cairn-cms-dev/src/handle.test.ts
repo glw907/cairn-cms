@@ -1,4 +1,4 @@
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { env, withEnv } from 'cloudflare:workers';
 import { devBackendHandle } from './handle.js';
@@ -11,6 +11,10 @@ import { __setBuilding } from '../../../src/tests/_app-env.js';
 // sets event.locals.cairnBackend per request, and layers its binding doubles over the Worker env
 // with withEnv. The unit project resolves `cloudflare:workers` to a settable fake, reset before
 // every test, so each test reads the env the route itself would see from inside `resolve`.
+
+beforeEach(() => {
+  vi.stubGlobal('navigator', { userAgent: 'Node.js' });
+});
 
 afterEach(() => {
   __setBuilding(false);
@@ -208,7 +212,7 @@ test('with the dev flag set on a non-local host, the handle refuses with a 503 a
       expect(res.status).toBe(503);
       expect(event.locals.cairnEditor).toBeUndefined();
     }
-    const records = errorSpy.mock.calls.map((c) => c[0] as { event?: string; reason?: string });
+    const records = errorSpy.mock.calls.map((c) => JSON.parse(c[0] as string) as { event?: string; reason?: string });
     expect(records.some((r) => r.event === 'guard.refused' && r.reason === 'dev_backend_in_prod')).toBe(true);
   } finally {
     errorSpy.mockRestore();

@@ -56,7 +56,7 @@ import EditPage from './_EditPageDesk.svelte';
 import type { NamedField, SiteRender } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
-import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
+import { defineBlock, defineRegistry, type BlockDef } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
 import { editorShortcuts } from '../../lib/admin/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
@@ -380,7 +380,7 @@ describe('EditPage', () => {
     const props = {
       ...postProps({
         body: 'Styled body',
-        preview: { stylesheets: ['/assets/site.css'], bodyClass: 'site-body', containerClass: 'prose' },
+        preview: { stylesheets: ['/assets/site.css'], containerClass: 'prose' },
       }),
       render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`),
     };
@@ -389,7 +389,7 @@ describe('EditPage', () => {
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Styled body</p>');
     const doc = previewSrcdoc(screen);
     expect(doc).toContain('<link rel="stylesheet" href="/assets/site.css">');
-    expect(doc).toContain('<body class="site-body">');
+    expect(doc).toContain('<body>');
     expect(doc).toContain('<div class="prose">');
   });
 
@@ -1253,14 +1253,14 @@ describe('EditPage', () => {
 
   it('moves the link and component-insert triggers into the toolbar', async () => {
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'rule',
           label: 'Rule',
           description: 'A divider.',
           insertTemplate: ':::rule\n:::',
           build: (n: unknown) => n,
-        } as unknown as ComponentDef,
+        } as unknown as BlockDef,
       ],
     });
     const screen = await render(EditPage, { ...postProps(), registry });
@@ -2334,7 +2334,7 @@ describe('EditPage', () => {
     expect(text).toContain('[[page-name]]');
     expect(text).toContain('~~text~~');
     expect(text).toContain('- [ ] item');
-    expect(text).toContain('layout blocks');
+    expect(text).toContain('blocks');
   });
 
   it('opens the shortcuts sheet on Ctrl+/ and lists every binding', async () => {
@@ -2439,14 +2439,14 @@ describe('EditPage', () => {
 
   it('mounts the toolbar dialogs outside the edit form so no form nests', async () => {
     const registry = defineRegistry({
-      components: [
+      blocks: [
         {
           name: 'rule',
           label: 'Rule',
           description: 'A divider.',
           insertTemplate: ':::rule\n:::',
           build: (n: unknown) => n,
-        } as unknown as ComponentDef,
+        } as unknown as BlockDef,
       ],
     });
     const props = { ...postProps({ pending: true }), registry };
@@ -2733,7 +2733,7 @@ describe('EditPage', () => {
 
   it('resets mediaAtCaret on an entry hop so the Figure control does not keep pointing at the old entry', async () => {
     // Diff-review finding on Task 12: caretComponent/mediaAtCaret are shell-owned state written
-    // straight from MarkdownEditor's onComponentAtCaret/onMediaImageAtCaret callbacks, which fire
+    // straight from MarkdownEditor's onBlockAtCaret/onMediaImageAtCaret callbacks, which fire
     // only when the reported identity CHANGES from the last one seen (starting at null per
     // instance). Entry B's caret below never lands on any component or image, so neither callback
     // fires for entry B, and without an explicit reset the Figure control would keep showing
@@ -3111,7 +3111,7 @@ describe('EditPage', () => {
     // A schema-bearing callout: an inline title slot and a required tone select. With no nested
     // slot the grammar uses a three-colon fence. The blocks below are round-trip safe (tone is a
     // declared key) or unsafe (a bogus undeclared attribute key).
-    const callout = defineComponent({
+    const callout = defineBlock({
       build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }),
       name: 'callout',
       label: 'Callout',
@@ -3119,7 +3119,7 @@ describe('EditPage', () => {
       attributes: { tone: fields.select({ label: 'Tone', required: true, options: ['note'] }) },
       slots: [{ name: 'title', label: 'Title', kind: 'inline', required: true }],
     });
-    const calloutRegistry = defineRegistry({ components: [callout] });
+    const calloutRegistry = defineRegistry({ blocks: [callout] });
 
     const SAFE_BLOCK = [':::callout[Heads up]{tone="note"}', ':::'].join('\n');
     const UNSAFE_BLOCK = [':::callout[Heads up]{tone="note" bogus="x"}', ':::'].join('\n');
@@ -3134,7 +3134,7 @@ describe('EditPage', () => {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
       // one whose aria-label speaks to editing (the label varies by state, so match the verb).
       return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
+        'button[aria-label*="Edit the block"], button[aria-label*="cursor in an editable block"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
       );
     }
 
@@ -3163,8 +3163,8 @@ describe('EditPage', () => {
       // an assistive-technology user can read why it is unavailable.
       expect(control.getAttribute('aria-disabled')).toBe('true');
       expect(control.disabled).toBe(false);
-      expect(control.getAttribute('aria-label')).toBe('Place the cursor in a component to edit it');
-      expect(tooltipText(control)).toBe('Place the cursor in a component to edit it');
+      expect(control.getAttribute('aria-label')).toBe('Place the cursor in an editable block to edit it');
+      expect(tooltipText(control)).toBe('Place the cursor in an editable block to edit it');
     });
 
     it('keeps the unavailable Edit block focusable and announced through aria-disabled', async () => {
@@ -3185,7 +3185,7 @@ describe('EditPage', () => {
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
-      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the component at the cursor');
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the block at the cursor');
     });
 
     it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
@@ -3195,14 +3195,14 @@ describe('EditPage', () => {
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
       // The Write pane stays mounted under Preview (so CodeMirror keeps caret and undo history),
       // which means editable survives the tab switch too. The control must not go on claiming
-      // "Edit the component at the cursor" once Preview has made the click inert; that promise is
+      // "Edit the block at the cursor" once Preview has made the click inert; that promise is
       // what a mouse user's tooltip and a screen reader's announcement both read.
       await screen.getByRole('tab', { name: 'Preview' }).click();
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
       const control = editControl(screen)!;
-      expect(control.getAttribute('aria-label')).not.toBe('Edit the component at the cursor');
-      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this component');
-      expect(tooltipText(control)).toBe('Switch to Write to edit this component');
+      expect(control.getAttribute('aria-label')).not.toBe('Edit the block at the cursor');
+      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this block');
+      expect(tooltipText(control)).toBe('Switch to Write to edit this block');
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {

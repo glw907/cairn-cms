@@ -3,7 +3,7 @@
 import type { CairnAdapter, CairnRuntime } from './types.js';
 import { normalizeConcepts } from './concepts.js';
 import { normalizeMedia } from '../media/config.js';
-import { dictionaryFileForDialect, readVocabulary, type SiteConfig } from '../nav/site-config.js';
+import { DEFAULT_DICTIONARY_FILE, readVocabulary, type SiteConfig } from '../nav/site-config.js';
 import { validateAccessRoles } from '../auth/access.js';
 
 // The internal artifact paths the adapter does not carry. They share the `.cairn/` content root the
@@ -25,7 +25,7 @@ const DEFAULT_SUPPORT_CONTACT = 'https://cairn.pub/help';
 
 /**
  * The input to {@link composeRuntime}. `siteConfig` is required: it is the canonical home for the
- *  site name, the spellcheck dialect, and the tidy block, so they can never be silently dropped.
+ *  site name and the tidy block, so they can never be silently dropped.
  * @public
  */
 export interface ComposeInput {
@@ -52,24 +52,19 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     roles: adapter.roles,
     access: adapter.access,
     backend: adapter.backend,
-    sender: adapter.email,
+    email: adapter.email,
     supportContact: adapter.editor?.supportContact ?? DEFAULT_SUPPORT_CONTACT,
-    render: adapter.rendering.render,
     manifestPath: CONTENT_MANIFEST_PATH,
-    icons: adapter.rendering.icons,
     navMenu: adapter.editor?.nav,
-    siteConfigPath: adapter.editor?.siteConfigPath ?? DEFAULT_SITE_CONFIG_PATH,
+    siteConfigPath: DEFAULT_SITE_CONFIG_PATH,
     navLayout: adapter.editor?.navLayout,
     publishActions: adapter.editor?.publishActions,
     preview: adapter.editor?.preview,
-    assets: adapter.media,
     media: normalizeMedia(adapter.media),
     mediaManifestPath: MEDIA_MANIFEST_PATH,
     dictionaryPath: DICTIONARY_PATH,
-    // The spellcheck dictionary is resolved once here from the site config's dialect (default US),
-    // so the runtime and the editor never re-derive it. The site config is the one home for the
-    // dialect; the editor resolves this filename to a real asset URL on the main thread.
-    spellcheckDictionary: dictionaryFileForDialect(siteConfig.spellcheck?.dialect),
+    // The editor resolves this filename to a real asset URL on the main thread.
+    spellcheckDictionary: DEFAULT_DICTIONARY_FILE,
     // The tidy block passes through from the site config; the tidy action reads enabled/model at call
     // time and builds its prompt from conventions. Absent means tidy is off.
     tidy: siteConfig.tidy,

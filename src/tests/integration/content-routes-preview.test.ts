@@ -8,12 +8,13 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { mintPreview, revokePreview } from '../../lib/sveltekit/preview.js';
+import { loadPreview, mintPreview, revokePreview } from '../../lib/sveltekit/preview.js';
 import { findPreviewToken, insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { hashToken } from '../../lib/auth/crypto.js';
 import { formatManifest } from '../../lib/content/manifest.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import {
   runtime as baseRuntime,
   postsConcept,
@@ -134,10 +135,10 @@ describe('mintPreview', () => {
     return gh;
   }
 
-  it('mints for an authorized editor with a pending draft, defaulting to a seven-day TTL', async () => {
+  it('mints for an authorized editor with a pending draft, for seven days', async () => {
     ghWithDraft().install();
     const before = Date.now();
-    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), mintEvent(), TARGET);
     expect(result.outcome).toBe('minted');
     if (result.outcome !== 'minted') return;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -151,32 +152,19 @@ describe('mintPreview', () => {
     });
   });
 
-  it('honors a configured ttlMs', async () => {
+  it('fixes the lifetime at exactly seven days from the mint', async () => {
     ghWithDraft().install();
-    const before = Date.now();
-    const result = await mintPreview(runtime(), { ttlMs: 60_000 }, mintEvent(), TARGET);
+    const now = 1_800_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const result = await mintPreview(runtime(), mintEvent(), TARGET);
     if (result.outcome !== 'minted') throw new Error(`expected a mint, got ${result.outcome}`);
-    expect(result.expiresAt).toBeGreaterThanOrEqual(before + 60_000);
-    expect(result.expiresAt).toBeLessThan(before + 60_000 + 5_000);
-  });
-
-  it.each([
-    ['non-finite', Number.POSITIVE_INFINITY],
-    ['zero', 0],
-    ['negative', -1],
-    ['under one minute', 30_000],
-    ['over thirty days', 31 * 24 * 60 * 60 * 1000],
-  ])('rejects a %s ttlMs with a PreviewTokenConfig-prefixed error', async (_label, ttlMs) => {
-    ghWithDraft().install();
-    await expect(mintPreview(runtime(), { ttlMs }, mintEvent(), TARGET)).rejects.toThrow(
-      /^PreviewTokenConfig:/,
-    );
+    expect(result.expiresAt).toBe(now + 7 * 24 * 60 * 60 * 1000);
   });
 
   it('stores the resolved session editor as the attribution, so the removal cascade always matches', async () => {
     ghWithDraft().install();
-    const first = await mintPreview(runtime(), {}, mintEvent({ email: 'alice@t' }), TARGET);
-    const second = await mintPreview(runtime(), {}, mintEvent({ email: 'bob@t' }), TARGET);
+    const first = await mintPreview(runtime(), mintEvent({ email: 'alice@t' }), TARGET);
+    const second = await mintPreview(runtime(), mintEvent({ email: 'bob@t' }), TARGET);
     if (first.outcome !== 'minted' || second.outcome !== 'minted') throw new Error('expected two mints');
     expect((await findPreviewToken(db, await hashToken(first.token)))?.editor).toBe('alice@t');
     expect((await findPreviewToken(db, await hashToken(second.token)))?.editor).toBe('bob@t');
@@ -184,16 +172,16 @@ describe('mintPreview', () => {
 
   it('refuses no-draft when the entry carries no pending branch', async () => {
     new GithubDouble({ main: { [MANIFEST_PATH]: formatManifest({ version: 1, entries: [] }) } }).install();
-    const result = await mintPreview(runtime(), {}, mintEvent(), TARGET);
+    const result = await mintPreview(runtime(), mintEvent(), TARGET);
     expect(result).toEqual({ outcome: 'no-draft' });
   });
 
   it('refuses an undeclared concept, and a malformed entry id, without minting', async () => {
     ghWithDraft().install();
-    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
+    expect(await mintPreview(runtime(), mintEvent(), { concept: 'ghosts', entryId: ID })).toEqual({
       outcome: 'unknown-concept',
     });
-    expect(await mintPreview(runtime(), {}, mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
+    expect(await mintPreview(runtime(), mintEvent(), { concept: 'posts', entryId: '../etc' })).toEqual({
       outcome: 'invalid-id',
     });
   });
@@ -203,11 +191,11 @@ describe('mintPreview', () => {
     const ghostTarget = { concept: 'ghosts', entryId: ID };
     const deniedGhost = defineAccess(ROLES, { ghosts: ['publisher'] });
     const refusal = await expectHttpError(() =>
-      mintPreview(runtime({ access: deniedGhost }), {}, mintEvent({ role: 'other-editor' }), ghostTarget),
+      mintPreview(runtime({ access: deniedGhost }), mintEvent({ role: 'other-editor' }), ghostTarget),
     );
     expect(refusal.status).toBe(403);
     // Known behavior: an unmapped nonexistent id carries no rule, so access admits and the lookup answers.
-    expect(await mintPreview(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), ghostTarget)).toEqual({
+    expect(await mintPreview(runtime({ access: DENY_POSTS }), mintEvent({ role: 'other-editor' }), ghostTarget)).toEqual({
       outcome: 'unknown-concept',
     });
   });
@@ -215,7 +203,7 @@ describe('mintPreview', () => {
   it('refuses a none-capability session the same way the engine’s own actions do', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      mintPreview(runtime(), {}, mintEvent({ role: 'reader', capability: 'none' }), TARGET),
+      mintPreview(runtime(), mintEvent({ role: 'reader', capability: 'none' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -223,7 +211,7 @@ describe('mintPreview', () => {
   it('refuses an editor the access map denies', async () => {
     ghWithDraft().install();
     const refusal = await expectHttpError(() =>
-      mintPreview(runtime({ access: DENY_POSTS }), {}, mintEvent({ role: 'other-editor' }), TARGET),
+      mintPreview(runtime({ access: DENY_POSTS }), mintEvent({ role: 'other-editor' }), TARGET),
     );
     expect(refusal.status).toBe(403);
   });
@@ -241,7 +229,6 @@ describe('mintPreview', () => {
         await expectHttpError(() =>
           mintPreview(
             denied,
-            {},
             mintEvent({ role: 'other-editor', eventBackend: recordingBackend(reads, head) }),
             TARGET,
           ),
@@ -383,6 +370,48 @@ describe('previewMintAction', () => {
       entryId: ID,
       editor: 'ed@t',
       expiresAt: result.expiresAt,
+    });
+  });
+
+  it('mints a link that loadPreview renders for a reader with no session', async () => {
+    const gh = ghWithManifest();
+    gh.createBranch(BRANCH, 'main');
+    gh.commit(BRANCH, ENTRY_PATH, '---\ntitle: Shared draft\n---\nDraft body.');
+    gh.install();
+    const rt = runtime({
+      concepts: [
+        postsConcept({
+          fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+          validate: (fm) => ({ ok: true, data: fm }),
+        }),
+      ],
+    });
+    const minted = (await createContentRoutes({ runtime: rt }).previewMintAction(actionEvent(ID))) as unknown as {
+      url: string;
+      expiresAt: number;
+    };
+    const token = minted.url.slice(`${ORIGIN}/preview/`.length);
+    const event = {
+      ...contentEvent({ url: minted.url, params: { token }, route: '/preview/[token]' }),
+      setHeaders: () => {},
+    };
+    const data = await loadPreview(event, {
+      runtime: rt,
+      publicRoutes: {
+        site: buildSiteResolver([]),
+        render: async ({ body }) => `<p>${body}</p>`,
+        origin: ORIGIN,
+        siteName: 'Test',
+        description: 'Test description.',
+        resolveMedia: null,
+      },
+    });
+    expect(data.entry.id).toBe(ID);
+    expect(data.html).toContain('Draft body.');
+    expect(data.preview).toEqual({
+      state: 'draft',
+      expiresAt: new Date(minted.expiresAt).toISOString(),
+      published: null,
     });
   });
 

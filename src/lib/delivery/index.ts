@@ -1,23 +1,35 @@
-// cairn-cms: the public delivery entry (@glw907/cairn-cms/delivery). The node-safe data surface
-// (re-exported from ./delivery/data) plus the SvelteKit catch-all route loaders. The head component
-// lives at ./delivery/head. Importing this pulls @sveltejs/kit through the route loaders, so a
-// plain-Node tool imports from ./delivery/data instead. Anything proposed here must be a
-// SvelteKit-route-facing reader (a loader, a response helper) or already live on /delivery/data; a
-// pure projection with no kit dependency belongs on /delivery/data alone, and the .svelte head
-// component stays split onto /delivery/head so neither pulls Svelte into a plain-Node build.
-// The layered half of the dependency-axis split: `/delivery` is `/delivery/data` plus the route
-// loaders, so the two subpaths are ONE canonical home under the canonical-home rule (foundations
-// A), never two. `/delivery/data` is the declaring barrel of the pair; this `export *` is the
-// recorded R4 re-export of its whole surface, so a route file reaches a projection and a loader
-// through one import.
-export * from './data.js';
-export { createPublicRoutes, composeEntryData } from './public-routes.js';
+// cairn-cms: the public delivery entry (@glw907/cairn-cms/delivery). The corpus projections and
+// response helpers a site or a plain-Node tool reads, plus the SvelteKit catch-all route loaders.
+// Nothing here loads `@sveltejs/kit` or a `.svelte` module on import, so a plain-Node script imports
+// this barrel directly; `delivery-dist-spawn.test.ts` proves that against the packaged output. The
+// route loaders reach kit through a dynamic import on their 404 paths, and `CairnHead` lives on
+// `/public`.
+export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
+// The content-model types these signatures name import from the root barrel. `CairnAdapter` stays
+// there too: its body reaches `roles`, `access`, and `backend`, which name auth and github types this
+// backend-free barrel may not import (`delivery-entry-boundary.test.ts` enforces that).
+export {
+  createSiteResolver,
+  createLinkResolver,
+  createFragmentResolver,
+  resolveReferences,
+} from './site-resolver.js';
+export type {
+  SiteResolver,
+  TypedSiteResolver,
+  UntypedSiteResolver,
+} from './site-resolver.js';
+export { buildSiteDescriptors } from './site-descriptors.js';
+export { buildExcerpt } from '../content/excerpt.js';
+export type { FeedChannel, FeedItem } from './feeds.js';
+export type { SitemapUrl } from './sitemap.js';
+export { buildSitemapView } from './views.js';
+export { buildSeoMeta } from './seo.js';
+export type { SeoInput, SeoMeta } from './seo.js';
+export { readSeoFields, resolveImageUrl } from './seo-fields.js';
+export type { SeoFields } from './seo-fields.js';
+export { buildRssResponse, buildJsonFeedResponse, buildSitemapResponse, buildRobotsResponse, buildMarkdownResponse } from './responses.js';
+export { buildSiteManifest } from './manifest.js';
+export type { EntryRef, SiteManifestBuild, ManifestProblem } from '../content/manifest.js';
+export { createPublicRoutes } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';
-// R4 closure over this barrel's signatures, and the one place the pair diverges:
-// `PublicRoutesConfig.render` names `SiteRender` (canonical home `.`), and its `resolveMedia`
-// names `MediaResolve` (canonical home `.`) and that type's `MediaRef` parameter (canonical
-// home `/media`). Nothing `/delivery/data` publishes names any of the three, so the narrower
-// barrel of the pair no longer carries them and this one re-exports them directly.
-export type { SiteRender } from '../content/types.js';
-export type { MediaResolve } from '../render/resolve-media.js';
-export type { MediaRef } from '../media/reference.js';

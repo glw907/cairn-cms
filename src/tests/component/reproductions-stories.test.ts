@@ -524,7 +524,7 @@ describe('editor/toolbar', () => {
     );
     expect(insertNames).toEqual([
       'Insert block',
-      'Place the cursor in a component to edit it',
+      'Place the cursor in an editable block to edit it',
       'Web link (Ctrl+K)',
       'Link to page',
       'Insert image',
@@ -624,12 +624,12 @@ describe('editor/tidy-review', () => {
   });
 });
 
-describe('editor/collapsed-layout-block', () => {
+describe('editor/collapsed-block', () => {
   it(
     'renders the block collapsed to its labelled pill, with the gutter control beside it',
     async () => {
       const workers = countWorkers();
-      const screen = await mountPosed(getStory('editor/collapsed-layout-block'));
+      const screen = await mountPosed(getStory('editor/collapsed-block'));
 
       const pill = screen.container.querySelector('.cm-cairn-fold-pill');
       expect(pill).not.toBeNull();

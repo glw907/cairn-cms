@@ -60,7 +60,6 @@ function iso(date?: string): string | undefined {
 
 /**
  * Build an RSS 2.0 document.
- * @public
  */
 export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
   const entries = items
@@ -111,7 +110,6 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
 /**
  * Build a JSON Feed 1.1 document as a JSON string. The caller wraps it in a `Response` with the
  *  `application/feed+json` content type; this function does no HTTP work of its own.
- * @public
  */
 export function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string {
   return JSON.stringify(

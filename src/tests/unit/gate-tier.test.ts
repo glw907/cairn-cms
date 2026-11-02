@@ -69,7 +69,6 @@ describe('the table', () => {
     ['exportSurface', 'src/lib/**/index.ts', 'src/lib/log/index.ts'],
     ['exportSurface', 'package.json', 'package.json'],
     ['exportSurface', 'scripts/checks/check-surface-leaks.json', 'scripts/checks/check-surface-leaks.json'],
-    ['exportSurface', 'scripts/checks/check-surface-reexports.json', 'scripts/checks/check-surface-reexports.json'],
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
     ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],
@@ -215,7 +214,7 @@ describe('static check selection', () => {
   });
 
   it('treats a package.json exports target that is not an index.ts as the export surface too', () => {
-    expect(labelsFor('src/lib/render/authoring.ts')).toContain('check:surface');
+    expect(labelsFor('src/lib/reproductions/manifest.ts')).toContain('check:surface');
     expect(labelsFor('src/lib/content/types.ts')).not.toContain('check:surface');
   });
 

@@ -11,7 +11,7 @@ import type { MediaResolve } from '../../lib/render/resolve-media.js';
 const [posts] = normalizeConcepts({
   posts: {
     dir: 'p',
-    routing: 'feed',
+    routing: 'dated',
     permalink: '/:year/:month/:day/:slug',
     datePrefix: 'day',
     fields: { date: fields.date({ label: 'Date' }), tags: fields.multiselect({ label: 'Tags', taxonomy: true }) },

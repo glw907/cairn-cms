@@ -21,7 +21,7 @@ describe('fieldset behavior.validate', () => {
     expect(fs.validate({ min: 1, max: 9 }, '').ok).toBe(true);
   });
   it('rejects a behavior key that names no field', () => {
-    expect(() => defineFieldset({ a: fields.text({ label: 'A' }) }, { behavior: { b: { validate: () => null } } })).toThrow(/not a declared field/);
+    expect(() => defineFieldset({ a: fields.text({ label: 'A' }) }, { behavior: { b: { validate: () => null } } })).toThrow(/not a declared field; declared fields: a\./);
   });
 
   it('treats a field as valid and logs, rather than throwing, when its behavior.validate throws', () => {

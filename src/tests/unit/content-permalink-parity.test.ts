@@ -8,7 +8,7 @@ describe('permalink parity: content index and manifest agree', () => {
   const [descriptor] = normalizeConcepts({
     posts: {
       dir: 'p',
-      routing: 'feed',
+      routing: 'dated',
       permalink: '/posts/:slug',
       datePrefix: 'day',
       fields: { title: fields.text({ label: 'Title' }) },

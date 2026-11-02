@@ -8,10 +8,7 @@ const resolveMedia = manifestMediaResolver({
   a1b2c3d4e5f6a7b8: { slug: 'blue-running-shoes', ext: 'webp', contentType: 'image/webp' },
 });
 
-// figure/figcaption join the base sanitize schema in Task 2; until then the floor would lift the
-// unknown tags. Task 1 owns the remark step's structure, so it renders with the floor off to verify
-// that shape. The sanitize survival is Task 2's contract.
-const { render } = createRenderer({ unsafeDisableSanitize: true });
+const { render } = createRenderer();
 
 const token = 'media:blue-running-shoes.a1b2c3d4e5f6a7b8';
 const deliveryPath = '/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp';

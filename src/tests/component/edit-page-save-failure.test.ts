@@ -413,3 +413,68 @@ describe('EditPage failed submit', () => {
     expect(saveButton(screen).textContent).not.toContain('Saving');
   });
 });
+
+describe('EditPage refusal points at its field', () => {
+  beforeEach(() => resetEnhance());
+
+  const fields: NamedField[] = [
+    { type: 'text', name: 'title', label: 'Title', required: true },
+    { type: 'text', name: 'author', label: 'Author' },
+  ];
+
+  /** Mount with the refusal already on `form`, as the kit would hold it once applyAction ran. */
+  function mountRefused(field: string, message = 'Author must be at most 3 characters') {
+    return render(EditPage, {
+      ...props({ fields, frontmatter: { title: 'Hello', author: 'toolong' } }),
+      form: { error: message, field },
+    });
+  }
+
+  const banner = (screen: Screen) => screen.container.querySelector<HTMLElement>('.alert-error')!;
+
+  it('opens a closed Details panel, focuses the refused control, and clears the mark on input', async () => {
+    const screen = await mountRefused('author');
+    const aside = screen.container.querySelector('aside')!;
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    await submitSave(screen);
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field: 'author' } });
+
+    const author = screen.container.querySelector<HTMLInputElement>('input[name="author"]')!;
+    await expect.poll(() => document.activeElement === author).toBe(true);
+    expect(aside.hasAttribute('hidden')).toBe(false);
+    expect(author.getAttribute('aria-invalid')).toBe('true');
+    expect(author.value).toBe('toolong');
+    expect(document.activeElement).not.toBe(banner(screen));
+
+    author.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(author.hasAttribute('aria-invalid')).toBe(false);
+  });
+
+  it('flips Preview back to Write for a refused title', async () => {
+    const screen = await mountRefused('title', 'Title must be at most 3 characters');
+    await makeDirty(screen);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).not.toBeNull();
+    saveButton(screen).click();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Title must be at most 3 characters', field: 'title' } });
+
+    const title = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+    await expect.poll(() => document.activeElement === title).toBe(true);
+    expect(screen.container.querySelector('#cairn-pane-preview')).toBeNull();
+    expect(title.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  for (const [what, field] of [
+    ['a nested key', 'faq'],
+    ['a hidden input', 'body'],
+  ] as const) {
+    it(`focuses the banner when the field is ${what}`, async () => {
+      const screen = await mountRefused(field);
+      await submitSave(screen);
+      settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field } });
+      await expect.poll(() => document.activeElement === banner(screen)).toBe(true);
+      expect(banner(screen).getAttribute('tabindex')).toBe('-1');
+    });
+  }
+});

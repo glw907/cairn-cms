@@ -64,6 +64,8 @@ interface SaveFailure {
   brokenLinks: string[];
   /** The author's edited markdown, so the editor reseeds with the unsaved work. */
   body: string;
+  /** The key of the field a validation error refused, so the editor can point at its control. */
+  field?: string;
 }
 
 /**
@@ -119,8 +121,8 @@ interface SaveHold {
  *  empty on every refusal but the link guard's, which builds its payload with the tokens it
  *  found.
  */
-function saveRefusal(message: string, body: string): SaveFailure {
-  return { error: message, brokenLinks: [], body };
+function saveRefusal(message: string, body: string, field?: string): SaveFailure {
+  return field === undefined ? { error: message, brokenLinks: [], body } : { error: message, brokenLinks: [], body, field };
 }
 
 /**
@@ -194,7 +196,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     const result = concept.validate(decoded, body);
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
-      return fail(400, saveRefusal(message, body));
+      return fail(400, saveRefusal(message, body, Object.keys(result.errors)[0]));
     }
 
     // A fragment can never include another fragment (the engine resolves an include only one

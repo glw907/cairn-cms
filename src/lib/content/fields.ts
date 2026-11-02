@@ -41,11 +41,11 @@ interface WithDefault<T> {
  */
 export interface TextField extends FieldBase, WithDefault<string> {
   type: 'text';
-  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form warns while typing without cutting a paste. */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form warns while typing without cutting a paste. */
   max?: number;
-  /** The exact character count the trimmed value must hold. The first failing length rule reports. An entry's form renders it as both `minlength` and `maxlength`. */
+  /** The exact character count the trimmed value must hold. The first failing length rule reports. An entry's form warns while typing without cutting a paste. */
   length?: number;
   /**
    * A regular-expression source string the value must match, tested unanchored and with no flags,
@@ -63,11 +63,11 @@ export interface TextareaField extends FieldBase, WithDefault<string> {
   type: 'textarea';
   /** The input's height in text rows. Defaults to 3. */
   rows?: number;
-  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form warns while typing without cutting a paste. */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form warns while typing without cutting a paste. */
   max?: number;
-  /** The exact character count the trimmed value must hold. An entry's form renders it as both `minlength` and `maxlength`. */
+  /** The exact character count the trimmed value must hold. An entry's form warns while typing without cutting a paste. */
   length?: number;
   /** A regular-expression source string; same unanchored, flagless match and declaration-time throw as `TextField.pattern`. */
   pattern?: string;

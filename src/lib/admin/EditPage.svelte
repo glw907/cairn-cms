@@ -94,6 +94,7 @@ island.
   import { createFigureEditor } from './figure-editor.svelte.js';
   import ShareLinkPanel from './ShareLinkPanel.svelte';
   import { FAILURE_NOTICE } from './refusal.js';
+  import { warnLength } from './FieldInput.svelte';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -245,6 +246,8 @@ island.
         if (!failure?.error && !failure?.brokenLinks?.length) failureNotice = FAILURE_NOTICE;
         // Applies the failure's data as `form` without running a load.
         await applyAction(result);
+        await tick();
+        if (failure?.field) pointAtRefusedField(failure.field);
         return;
       }
       // An error result (a thrown fetch, an action that threw, a non-JSON answer) or a redirect away
@@ -351,6 +354,34 @@ island.
     }
     if (mode === 'write') return;
     flushSync(() => (mode = 'write'));
+  }
+
+  // The error banner, which takes focus when a refusal names a field that has no single visible control.
+  let errorBanner = $state<HTMLElement | null>(null);
+
+  // Points the author at the field the server refused. The control is looked up on the form by
+  // name, so no name needs escaping; it counts only when the name resolves to exactly one
+  // non-hidden control. It is revealed the way onFormInvalid reveals one, marked invalid until the
+  // next input, and focused. With no such control (a hero's hidden inputs, a media field, a
+  // checkbox group, a nested key) the banner takes focus instead.
+  function pointAtRefusedField(field: string) {
+    const found = editForm?.elements.namedItem(field);
+    const control =
+      found instanceof HTMLInputElement || found instanceof HTMLTextAreaElement || found instanceof HTMLSelectElement
+        ? found
+        : null;
+    if (!control || control.type === 'hidden') {
+      errorBanner?.focus();
+      return;
+    }
+    if (control.closest('aside')) {
+      if (!detailsOpen) flushSync(() => (detailsOpen = true));
+    } else if (mode !== 'write') {
+      flushSync(() => (mode = 'write'));
+    }
+    control.setAttribute('aria-invalid', 'true');
+    control.addEventListener('input', () => control.removeAttribute('aria-invalid'), { once: true });
+    control.focus();
   }
 
   // The SvelteKit half of the leave guard. Registered at component init (beforeNavigate wraps
@@ -1241,7 +1272,7 @@ island.
   // actionsTrigger, deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, detailsPanel,
   // heroNeedsAlt, actionsOpen, narrow, device, assertiveNonce,
-  // diagnosticsCounts, chipMounted
+  // diagnosticsCounts, chipMounted, errorBanner
 
   // Reads one post-save redirect flag off the search string as a display list. page.url is
   // reactive kit state, so a client-side navigation that swaps the search string re-derives every
@@ -1849,7 +1880,7 @@ island.
     {/if}
   </div>
 {:else if formError}
-  <div class="alert alert-error mb-4 type-body">{formError}</div>
+  <div bind:this={errorBanner} tabindex="-1" class="alert alert-error mb-4 type-body">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
@@ -2021,8 +2052,7 @@ island.
           placeholder={titleField.label}
           aria-label={titleField.label}
           required={titleField.required}
-          minlength={titleBounds?.length ?? titleBounds?.min}
-          maxlength={titleBounds?.length ?? titleBounds?.max}
+          oninput={titleBounds ? (e) => warnLength(e.currentTarget, titleBounds, titleBounds.label) : undefined}
         />
       </div>
     {/if}

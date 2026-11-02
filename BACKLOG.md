@@ -8,6 +8,12 @@
   Placement: Pass 1a.
 
 ## Medium
+- [ ] **#215** Announce the navigation save after hydration `#bug` `#cairn-cms` *(2026-11-01)*
+  `src/lib/admin/NavTree.svelte:137` holds **Navigation saved.** in a `role="status"` region, but the save is a full document load, so the text arrives server-rendered, nothing mutates, and a screen reader hears nothing (WCAG 4.1.3). Its comment claims a later save announces. PR #177 fixed the same shape on the Tags and Tidy screens by filling the region after mount; copy that here. Found by that PR's review.
+  Placement: Pass 5.
+- [ ] **#214** Stop a double submit on the delete confirm `#bug` `#cairn-cms` *(2026-11-01)*
+  The submit in `src/lib/admin/DeleteDialog.svelte` stays live while `deleteEntry` makes several GitHub calls, so a double click sends two POSTs and the second can land on an entry that's already gone. The old row form had the same gap. Fix candidate: disable the button from the form's `onsubmit`, as the create dialog does with `creating`. Found by PR #177's review.
+  Placement: Pass 5.
 - [ ] **#213** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01)*
   `TestEventVocabularyMatchesEngine` (`tool/internal/logs/events_test.go`) compares `tool/internal/logs/events.go` with `src/lib/log/events.ts`, but `scripts/checks/gate-tier.mjs` selects `make -C tool check` only when `tool/**` changed. A diff that adds an engine log event clears the fast lane and goes red on three CI runners. Fix candidate: select the tool gate on `src/lib/log/events*.ts`. Found by PR #177.
   Placement: Cleanup round.
@@ -15,7 +21,7 @@
   The Style conventions header in `src/lib/admin/CairnTidySettings.svelte` is a flex row of a `min-w-0 flex-1` text column beside a `flex-none` group of Turn all on, Turn all off, and Reset links. At 320 the links take the width, so the paragraph wraps at about one word per line in both themes. It predates PR #177, whose render read found it. Fix candidate: stack the row below `sm`.
   Placement: Pass 5.
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
-  `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
+  `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: Cleanup round.
 - [ ] **#210** Refuse a failed spellcheck asset fetch `#bug` `#cairn-cms` *(2026-11-01)*
   `createEngine` at `src/lib/admin/spellcheck-worker.ts:276` never checks `.ok`, so a 404 dictionary loads the error page as the corpus and the worker reports `ready` with an engine that knows almost no words. Found by the #174 review; it predates that PR.

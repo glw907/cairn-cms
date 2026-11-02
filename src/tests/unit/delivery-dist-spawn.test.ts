@@ -77,8 +77,8 @@ describe('packaged /delivery and /internal under plain Node (run npm run package
     expect(out.stdout).toContain('DELIVERY_OK');
   });
 
-  it('imports /internal with all eight names', () => {
-    const script = `const i = await import(${JSON.stringify(pathToFileURL(INTERNAL).href)}); console.log(JSON.stringify({ keys: Object.keys(i).sort(), regexes: [i.HASH_RE, i.R2_EXT_RE].every((r) => r instanceof RegExp), functions: [i.buildSiteManifest, i.formatManifest, i.verifyManifest, i.verifyReferences, i.parseMediaManifest, i.r2Key].every((f) => typeof f === 'function') }));`;
+  it('imports /internal with all nine names', () => {
+    const script = `const i = await import(${JSON.stringify(pathToFileURL(INTERNAL).href)}); console.log(JSON.stringify({ keys: Object.keys(i).sort(), regexes: [i.HASH_RE, i.R2_EXT_RE].every((r) => r instanceof RegExp), functions: [i.buildSiteManifest, i.formatManifest, i.verifyEntries, i.verifyManifest, i.verifyReferences, i.parseMediaManifest, i.r2Key].every((f) => typeof f === 'function') }));`;
     const out = spawnNode(script);
     expect(out.stderr).toBe('');
     expect(out.status).toBe(0);
@@ -90,6 +90,7 @@ describe('packaged /delivery and /internal under plain Node (run npm run package
         'formatManifest',
         'parseMediaManifest',
         'r2Key',
+        'verifyEntries',
         'verifyManifest',
         'verifyReferences',
       ],

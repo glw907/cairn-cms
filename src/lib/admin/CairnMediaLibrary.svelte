@@ -741,8 +741,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
-            <!-- The selection checkbox, top-left: a real native checkbox in a soft chip so it reads on
-                 any thumbnail. Clicking it toggles the selection only; it never opens the slide-over.
+            <!-- The selection checkbox, top-left: a native checkbox in a soft chip so it reads on
+                 any thumbnail. It is a pointer target only (aria-hidden, out of the tab order): a
+                 listbox owns options, so the option's aria-selected and Space carry the state for
+                 keyboards and assistive tech. Clicking it toggles the selection only; it never opens
+                 the slide-over.
                  The wrapper is one step larger than daisyUI v5's default 24px `.checkbox` (h-7/w-7,
                  not h-6/w-6): at h-6 the checkbox exactly fills the plate and its ring has no
                  room to paint, leaving no visible contrast plate at all. -->
@@ -752,6 +755,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 class="checkbox"
                 checked={picked}
                 aria-label="Select {asset.displayName}"
+                aria-hidden="true"
+                tabindex="-1"
                 onclick={(e) => e.stopPropagation()}
                 onchange={() => toggleSelect(asset.hash)}
               />

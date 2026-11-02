@@ -1635,6 +1635,10 @@ describe('CairnMediaLibrary multi-select', () => {
     const box = opt.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     expect(box).toBeTruthy();
     expect(box.getAttribute('aria-label') ?? '').toMatch(/^select /i);
+    // The option owns the selected state, so the checkbox inside it is a pointer target only:
+    // out of the tab order and the accessibility tree (a listbox's option has no checkbox child).
+    expect(box.getAttribute('aria-hidden')).toBe('true');
+    expect(box.getAttribute('tabindex')).toBe('-1');
 
     box.click();
     await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('true');

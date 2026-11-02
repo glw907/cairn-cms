@@ -604,7 +604,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
           </span>
           <span class="type-body font-medium text-base-content">Drop an image, or upload</span>
-          <span class="type-meta">PNG, JPEG, WebP, GIF, AVIF, or HEIC. We convert HEIC for you.</span>
+          <span class="type-meta">PNG, JPEG, WebP, GIF, or HEIC. We convert HEIC for you.</span>
           <button type="button" class="btn btn-primary btn-sm mt-1" onclick={() => fileInput?.click()}>Choose a file</button>
           <input
             bind:this={fileInput}

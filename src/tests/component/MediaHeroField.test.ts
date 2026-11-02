@@ -5,7 +5,6 @@ import { tick } from 'svelte';
 import type { ComponentProps } from 'svelte';
 import MediaHeroField from '../../lib/admin/MediaHeroField.svelte';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
-import { ALLOWED_TYPES } from '../../lib/media/config.js';
 // The compiled sheet carries the utility layer (focus-visible ring/outline utilities) and the
 // admin's own :focus-visible rule the dropzone focus test below measures against; the plain
 // component render carries neither.
@@ -72,15 +71,12 @@ function hiddenValues(container: HTMLElement) {
 }
 
 describe('MediaHeroField formats line', () => {
-  it('names every type the engine stores', async () => {
+  it('names what ingestFile takes, GIF included and AVIF left out', async () => {
     const screen = await mount();
     const line = Array.from(screen.container.querySelectorAll('span.type-meta')).find((el) =>
       /HEIC/.test(el.textContent ?? ''),
     );
-    expect(line).toBeDefined();
-    for (const type of ALLOWED_TYPES) {
-      expect(line!.textContent!.toUpperCase()).toContain(type.replace('image/', '').toUpperCase());
-    }
+    expect(line?.textContent).toContain('PNG, JPEG, WebP, GIF, or HEIC.');
   });
 });
 

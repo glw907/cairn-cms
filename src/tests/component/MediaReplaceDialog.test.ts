@@ -7,7 +7,6 @@ import { render } from 'vitest-browser-svelte';
 import MediaReplaceDialog from '../../lib/admin/MediaReplaceDialog.svelte';
 import * as ingest from '../../lib/admin/client-ingest.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
-import { ALLOWED_TYPES } from '../../lib/media/config.js';
 
 vi.mock('../../lib/admin/client-ingest.js', async () => {
   const actual = await vi.importActual<typeof import('../../lib/admin/client-ingest.js')>(
@@ -63,16 +62,13 @@ afterEach(() => {
 });
 
 describe('MediaReplaceDialog: the formats line', () => {
-  it('names every type the engine stores', async () => {
+  it('names what ingestFile takes, GIF included and AVIF left out', async () => {
     const screen = await mount();
     const component = screen.component as unknown as { open: (asset: MediaLibraryEntry, origin?: HTMLElement | null) => void };
     component.open(entry());
     const dialog = screen.container.querySelector('[data-testid="cairn-replace-dialog"]') as HTMLDialogElement;
     await expect.poll(() => dialog.open).toBe(true);
-    const text = dialog.textContent ?? '';
-    for (const type of ALLOWED_TYPES) {
-      expect(text.toUpperCase()).toContain(type.replace('image/', '').toUpperCase());
-    }
+    expect(dialog.textContent).toContain('PNG, JPEG, WebP, GIF, or HEIC.');
   });
 });
 

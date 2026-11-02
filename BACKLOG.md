@@ -8,6 +8,12 @@
   Placement: Pass 1a.
 
 ## Medium
+- [ ] **#213** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01)*
+  `TestEventVocabularyMatchesEngine` (`tool/internal/logs/events_test.go`) compares `tool/internal/logs/events.go` with `src/lib/log/events.ts`, but `scripts/checks/gate-tier.mjs` selects `make -C tool check` only when `tool/**` changed. A diff that adds an engine log event clears the fast lane and goes red on three CI runners. Fix candidate: select the tool gate on `src/lib/log/events*.ts`. Found by PR #177.
+  Placement: Cleanup round.
+- [ ] **#212** Keep the tidy Style conventions copy readable at 320 `#bug` `#cairn-cms` *(2026-11-01)*
+  The Style conventions header in `src/lib/admin/CairnTidySettings.svelte` is a flex row of a `min-w-0 flex-1` text column beside a `flex-none` group of Turn all on, Turn all off, and Reset links. At 320 the links take the width, so the paragraph wraps at about one word per line in both themes. It predates PR #177, whose render read found it. Fix candidate: stack the row below `sm`.
+  Placement: Pass 5.
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: Cleanup round.

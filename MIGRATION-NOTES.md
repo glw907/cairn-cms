@@ -198,7 +198,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 - **Remove `fixes` from any `TidyConventions` you build in code.** The key is gone, because tidy always makes the objective fixes. A `fixes:` key in `site.config.yaml` is ignored, so delete it when convenient. If it was the only key under `conventions:`, delete the empty key too.
 - **Expect tidy to run on `claude-sonnet-5-5` when `tidy.model` is unset.** Set `tidy.model: claude-sonnet-5` to stay on the old model. A site that passes its own `tidy.client` handles a reply cut off at the output cap itself; the default client answers it with the too-long message.
-- **Expect no Tidy button on a site with no `ANTHROPIC_API_KEY`.** A draft that shows no button on a site with `tidy.enabled: true` points at the key. `/admin/settings` shows the same state.
+- **Expect no Tidy button on a site with no `ANTHROPIC_API_KEY`.** A draft that shows no button on a site that turned Tidy on points at the key. `/admin/settings` shows the same state.
 - **Expect a rename onto a live entry's address to be refused.** Move one of the two entries first. A log query reads `rename.address_collided`, with the fields `publish.address_collided` carries.
 - **Add `saved` to any `VocabularyData` you build by hand.** It's a boolean, and a test fixture that omits it no longer type-checks.
 - **Expect an admin save to keep keys your fieldset does not declare.** A key dropped from a fieldset now stays in old files, so remove it from the file by hand when you mean to delete it. A bare YAML date such as `updated: 2026-01-01` is written back as `2026-01-01T00:00:00.000Z`. A save also fails closed with a 503 when the prior file cannot be read or parsed.

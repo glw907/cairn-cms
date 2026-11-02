@@ -2,7 +2,7 @@
 @component
 The Markdown cheat sheet, opened from the edit page's editor footer. A one-screen table pairs
 each piece of syntax with what it makes, and a closing note explains the ::: layout blocks.
-Built on a native <dialog>, the DeleteDialog recipe; the host drives it through the exported
+Built on a native <dialog> with a backdrop form that closes it; the host drives it through the exported
 open(), so the component renders no trigger of its own.
 -->
 <script lang="ts">

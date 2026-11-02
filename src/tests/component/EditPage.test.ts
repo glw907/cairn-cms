@@ -1933,6 +1933,21 @@ describe('EditPage', () => {
     await expect.poll(() => menu.matches(':popover-open')).toBe(false);
   });
 
+  it('returns focus to More actions when the delete confirm closes', async () => {
+    const screen = await render(EditPage, postProps());
+    const trigger = screen.getByRole('button', { name: 'More actions' });
+    await trigger.click();
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-delete-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => dialog.open).toBe(false);
+    const el = trigger.element() as HTMLElement;
+    await expect.poll(() => document.activeElement === el).toBe(true);
+  });
+
   it('drives the header overflow as a popover with aria-expanded and Escape', async () => {
     const screen = await render(EditPage, postProps());
     const trigger = screen.getByRole('button', { name: 'More actions' });

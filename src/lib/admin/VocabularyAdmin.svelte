@@ -155,11 +155,13 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   });
   const liveError = $derived(lifecycleError ? `${lifecycleError}${errorNonce()}` : '');
 
-  // The saved message for the sr-only status region, set after mount so it is a mutation.
-  let savedAnnouncement = $state('');
+  // The saved message for the sr-only status region. It fills only after mount, so it is a mutation
+  // an assistive technology voices, and it clears when a same-route navigation drops the flag.
+  let mounted = $state(false);
   onMount(() => {
-    if (data.saved) savedAnnouncement = 'Tags saved.';
+    mounted = true;
   });
+  const savedAnnouncement = $derived(mounted && data.saved ? 'Tags saved.' : '');
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">

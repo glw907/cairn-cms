@@ -47,7 +47,15 @@ describe('CairnTidySettings: the saved status region', () => {
     expect(screen.container.querySelector('.alert-success')?.textContent).toContain(saved);
     const status = screen.container.querySelector('[role="status"]')!;
     await expect.poll(() => status.textContent).toContain(saved);
-    expect(status.closest('.alert')).toBeNull();
+    expect(status.querySelector('.alert')).toBeNull();
+  });
+
+  it('empties the region when a same-route navigation drops the saved flag', async () => {
+    const screen = await render(CairnTidySettings, { data: data({ saved: true }) });
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain('saved');
+    await screen.rerender({ data: data({ saved: false }) });
+    await expect.poll(() => status.textContent).toBe('');
   });
 });
 

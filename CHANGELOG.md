@@ -161,8 +161,8 @@
 
 - **A list row's delete confirms.** The trash button opens the window the entry screen uses, so no
   delete posts without it, and a refused delete names its blockers in that same window. The window
-  now names the entry, returns focus to the button that opened it, and no longer closes on a click
-  outside it, on the entry screen too. `DeleteDialog` gains an optional `entryTitle` prop, and
+  returns focus to the button that opened it and no longer closes on a click outside it, on the
+  entry screen too. On the list it also names the entry. `DeleteDialog` gains an optional `entryTitle` prop, and
   `open()` takes an optional origin element.
 - **The edit screen hides Tidy when no key is bound.** A site with `tidy.enabled: true` and no
   `ANTHROPIC_API_KEY` no longer offers a button that can only refuse.

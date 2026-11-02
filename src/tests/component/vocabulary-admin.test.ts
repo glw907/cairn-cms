@@ -34,6 +34,15 @@ describe('VocabularyAdmin: the saved confirmation', () => {
     expect(screen.container.querySelector('.alert-success')?.textContent).toContain('Tags saved.');
     const status = screen.container.querySelector('[role="status"]')!;
     await expect.poll(() => status.textContent).toContain('Tags saved.');
+    expect(status.querySelector('.alert')).toBeNull();
+  });
+
+  it('empties the region when a same-route navigation drops the saved flag', async () => {
+    const screen = await render(VocabularyAdmin, { data: data({ saved: true }) });
+    const status = screen.container.querySelector('[role="status"]')!;
+    await expect.poll(() => status.textContent).toContain('Tags saved.');
+    await screen.rerender({ data: data({ saved: false }) });
+    await expect.poll(() => status.textContent).toBe('');
   });
 
   it('keeps the region mounted and empty when nothing was saved', async () => {

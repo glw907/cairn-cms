@@ -61,7 +61,7 @@
 // decision stays with the caller.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { posix, resolve } from 'node:path';
+import { posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from '../repo-root.mjs';
 import { COMPONENT_RERUN_TRIGGERS } from '../test/component-rerun-triggers.mjs';
@@ -155,6 +155,9 @@ const E2E_RUN = 'npm --prefix examples/showcase run test:e2e -- --retries=0';
 const E2E_VISUAL_INVERT = ' --grep-invert "site home|archive page 2"';
 const SITE_VISUAL = 'site-visual.spec.ts';
 const SLUG_CONTRACT_TEST = 'src/tests/unit/github-slug-contract.test.ts';
+const TOOL_FLAGS_FIXTURE = 'tool/testdata/flags.json';
+const INTERNAL_ENTRY = 'src/lib/internal.ts';
+const DIST_SPAWN = 'npx vitest run --project unit-dist-spawn';
 
 /**
  * The lane prefix on fast-lane line 1 (.claude/skills/cairn-running-passes/references/pass-gate-tiers.md, "The fast lane"). Empty
@@ -430,6 +433,39 @@ export function selectChecks(paths, context) {
 }
 
 /**
+ * Whether a path belongs to the Go tool alone. `tool/testdata/flags.json` is also read by the npm
+ * check `check:symbols`, so it counts as an npm path too.
+ * @param {string} path - A repo-relative path.
+ * @returns {boolean} True for a path only the Go gate sizes.
+ */
+function isToolPath(path) {
+  return path.startsWith('tool/') && path !== TOOL_FLAGS_FIXTURE;
+}
+
+/**
+ * The unit tests whose text names a changed `src/` path. A test that reads a source file at run
+ * time has no import edge to it, so `vitest related` misses it; a test that walks the tree names
+ * no path and stays with CI.
+ * @param {string[]} paths - Changed repo-relative paths.
+ * @param {string} root - The repo root.
+ * @returns {string[]} Sorted repo-relative unit test files.
+ */
+function unitTestsNaming(paths, root) {
+  const named = paths.filter((path) => path.startsWith('src/'));
+  if (named.length === 0) return [];
+  const dir = resolve(root, 'src/tests/unit');
+  if (!existsSync(dir)) return [];
+  const found = new Set();
+  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.test.ts')) continue;
+    const file = resolve(entry.parentPath, entry.name);
+    const text = readFileSync(file, 'utf8');
+    if (named.some((path) => text.includes(path))) found.add(relative(root, file).split('\\').join('/'));
+  }
+  return [...found].sort();
+}
+
+/**
  * A word as one shell argument: bare when it holds only safe characters, single-quoted otherwise.
  * @param {string} word - The text to pass.
  * @returns {string} The shell-safe form.
@@ -485,7 +521,7 @@ export function componentPlan(paths, deleted, context) {
   const reach = paths.filter(
     (path) => path.startsWith('src/') && !matchesAny(path, NODE_ONLY_TESTS) && !goneSet.has(path),
   );
-  if (reach.length === 0) return { mode: 'full', reason: 'nothing under src/ to select from', reach: [] };
+  if (reach.length === 0) return { mode: 'skip', reason: 'nothing under src/ to select from', reach: [] };
   return { mode: 'select', reason: 'related selection', reach };
 }
 
@@ -576,8 +612,8 @@ export function decideGate(paths, opts = {}) {
   }
 
   if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
-  const toolPaths = paths.filter((path) => path.startsWith('tool/'));
-  const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+  const toolPaths = paths.filter((path) => isToolPath(path));
+  const npmPaths = paths.filter((path) => !isToolPath(path));
   if (npmPaths.length === 0) {
     return { tier: 'tool', reason: 'computed', decidingPaths: toolPaths, gate: TIER_GATES.tool, notes: [] };
   }
@@ -669,7 +705,7 @@ export function decideFastGate(paths, opts = {}) {
   const { deleted = [], selected = null, root = ROOT } = opts;
   if (paths.length === 0) throw new Error('gate-tier: no changed paths to size a gate from');
   let toolRun = paths.some((path) => path.startsWith('tool/'));
-  const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+  const npmPaths = paths.filter((path) => !isToolPath(path));
   /** @type {string[]} */
   const notes = [];
   // Legs that read or rebuild dist (the close runner and the docs gate build it, the unit tests and
@@ -695,6 +731,9 @@ export function decideFastGate(paths, opts = {}) {
     // import graph links to it.
     if (live.some((path) => path.startsWith('docs/') || path === 'MIGRATION-NOTES.md')) {
       unitInputs.push(SLUG_CONTRACT_TEST);
+    }
+    for (const test of unitTestsNaming(unitInputs, root)) {
+      if (!unitInputs.includes(test)) unitInputs.push(test);
     }
     const unselectable = live.find(
       (path) => !matchesAny(path, context.table.unitSelectable) || (path.startsWith('src/') && !codeFile.test(path)),
@@ -727,6 +766,8 @@ export function decideFastGate(paths, opts = {}) {
     }
     if (live.some((path) => pathBuckets(path, context).has('docs'))) chain.push(DOCS_GATE);
     if (unit) chain.push(unit);
+    // The dist-spawn project execs the built `dist/internal.js`; the unit project excludes it.
+    if (npmPaths.includes(INTERNAL_ENTRY) && !goneSet.has(INTERNAL_ENTRY)) chain.push(DIST_SPAWN);
 
     const plan = componentPlan(npmPaths, deleted, context);
     if (plan.mode === 'skip') {
@@ -928,7 +969,7 @@ async function main() {
 
   if (fast) {
     try {
-      const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+      const npmPaths = paths.filter((path) => !isToolPath(path));
       const plan = npmPaths.length > 0 ? componentPlan(npmPaths, deleted, loadContext()) : null;
       const selected = plan?.mode === 'select' ? await selectComponentTests(plan.reach) : null;
       const decision = decideFastGate(paths, { deleted, selected });
@@ -944,7 +985,7 @@ async function main() {
   try {
     let selected = null;
     if (!pin) {
-      const npmPaths = paths.filter((path) => !path.startsWith('tool/'));
+      const npmPaths = paths.filter((path) => !isToolPath(path));
       const plan = npmPaths.length > 0 ? componentPlan(npmPaths, deleted, loadContext()) : null;
       if (plan?.mode === 'select') selected = await selectComponentTests(plan.reach);
     }

@@ -3,7 +3,8 @@
 Fold of the three reviews of `2026-11-02-p2-p4-plan.md` and `-design.md` at `925d9ca0c`. The revision
 sits in those two files, uncommitted.
 
-**Counts:** 78 findings. 72 folded, 6 refused, 0 owner forks.
+**Counts:** 78 findings. 71 folded, 7 refused, 0 owner forks. m12 moved to refused after the
+verification read. That read's own 12 findings are counted in their own section below.
 
 ## Read first
 
@@ -65,7 +66,7 @@ module the design already had.
 | m9 overlap table omissions | Folded: two rows. |
 | m10 reviewer's condition | Folded with C29: it runs. |
 | m11 docs gate after the fold | Folded in T12 step 4. |
-| m12 `fieldset.ts:128` | Folded. Optional, but a quoted line must be current, and it costs one digit. It is `:127`. |
+| m12 `fieldset.ts:128` | Refused in effect: the verification read showed `:128` was right, and the fold's `:127` is reverted (V10). |
 | m13 zero-state copy, focus | Folded. Optional, but the hint is today's behavior (`VocabularyAdmin.svelte:260-262`), so dropping it is an unrequested regression. Costs one clause. |
 | m14 T9 fix allowance | Refused. Optional, and headroom covers it. |
 | O1 images read twice | Folded with C27 and D19: T10's read counts, T12 reads what changed. |
@@ -139,6 +140,27 @@ module the design already had.
   The run branch touches `admin-access.md`, `log/create.ts`, and `editors-routes.ts` among this pass's
   neighbors. T6 doesn't edit `editors-routes.ts`.
 - BACKLOG: every new item goes past the highest number on `main`, so past #277.
+
+## Verification read
+
+From `2026-11-02-p2-p4-fold-verification.md`: 3 major, 9 minor, 0 blockers. 11 folded, 1 refused, 0 owed.
+Each was verified against the source first. **No design change, no new Pre-flight item, and the path
+stays 580**, because these fixes fit inside the task estimates already carried.
+
+| Finding | Disposition |
+| --- | --- |
+| V1 T1 nests a marker pair (major) | Folded in T1. Verified at `emit-template.mjs:45`: two pairs, and the call changes in place. |
+| V2 `refusal.ts` can't hold a read flag (major) | Folded by the finding's second option, narrowed: plain `refusal.ts`, a getter and setter for one `$state` flag on each screen. Per-row state and a `SvelteSet` are not needed: one ManageEditors flag disables all its forms, `EditPage`'s `busy` pattern (`EditPage.svelte:272-274`). |
+| V3 `scroll-padding` doesn't move a partly visible option (major) | Folded in T8, S2, and the design. Reproduced: focus alone left `scrollLeft` 0 and the right edge at 327; adding `scrollIntoView` gave 61 and 266. No change to the 20 minutes. |
+| V4 cue test passes today | Folded in T8. |
+| V5 e2e line quoting | Folded: rule stated, and the three `--grep` values use single quotes. |
+| V6 T9 grep hits `route.fulfill` | Folded in T9. |
+| V7 T1 review, busy row | Folded. Verified in `pass-core`: `auth-data` task review, no `defer`. |
+| V8 D6 had no select assert | Folded in T6 with a `ManageEditors.test.ts` case. The role form alone resets, since a reset on the Add form would clear what D6 keeps. The open question is answered: Svelte's `set_selected` writes the attribute (`bindings/select.js:14-16`), and a probe restored a client-created option carrying the attribute (`b`) but not one set by property (`a`). |
+| V9 T7's wrong `form`, ungated banner | Folded, more simply than proposed: `editForm`, and one step in `onEditSubmit`'s `failure` branch focuses the control or the banner, so the banner uses no action and nothing races. Acceptance fails if the banner holds focus in the named-control case. T7 no longer needs `refusal.ts`; T6 stays first because both edit `EditPage.svelte`. |
+| V10 two wrong line numbers | Folded: `fieldset.ts:128`, `fake-github.ts:45`, and m12's row. |
+| V11 T11's line doesn't branch on S1 | Folded: "under either warn reading". |
+| V12 T2 focus has no criterion | Refused. Optional, no cost saving, and the a11y reviewer reads T2 at close. |
 
 ## Owed
 

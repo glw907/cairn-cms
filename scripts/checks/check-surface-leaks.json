@@ -14,9 +14,21 @@
     },
     {
       "name": "ConceptEntryData",
+      "subpath": "/delivery",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#cleanup-hide-internals (`ConceptEntryData`: the arm `EntryData` is built from, reached through `EntryData`'s conditional. A site names the whole shape as `EntryData` or `EntryData<typeof site>` and one arm through `Extract` on `concept`, so the arm's own name stays unexported.)"
+    },
+    {
+      "name": "ConceptEntryData",
       "subpath": "/sveltekit",
       "model": "type-checker",
-      "standing-unverdicted": "The arm `EntryData` is built from, reached through `PreviewData`. A site names the whole shape as `EntryData` or `EntryData<typeof site>` and one arm through `Extract` on `concept`, so the arm's own name is not public surface."
+      "sanctioned-by": "docs/internal/engine-rulings.md#cleanup-hide-internals (`ConceptEntryData`: the arm `EntryData` is built from, reached through `PreviewData`. A site names the whole shape as `EntryData` or `EntryData<typeof site>` and one arm through `Extract` on `concept`, so the arm's own name stays unexported.)"
+    },
+    {
+      "name": "ConceptFrontmatter",
+      "subpath": "/delivery",
+      "model": "type-checker",
+      "sanctioned-by": "docs/internal/engine-rulings.md#cleanup-hide-internals (`ConceptFrontmatter` is the helper alias that types one arm's frontmatter inside `EntryData`; a site reads a field through the arm, never the alias, so it stays unexported.)"
     },
     {
       "name": "ConfirmData",

@@ -9,7 +9,7 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
 // than demoted; `buildSitemapView` is frozen and unaffected.
 const DELIVERY_DEMOTED = [
-  'createSiteResolver',
+  'buildSiteResolver',
   'ConceptIndex',
   'createContentIndex',
   'RawFile',
@@ -22,10 +22,10 @@ const DELIVERY_DEMOTED = [
 // The /delivery/data keep list, from the audit verdicts doc's
 // `## ./delivery + ./delivery/head + ./delivery/data` section, minus the seven demotions above.
 const DATA_KEPT = [
-  'createSiteIndexes',
-  'SiteGlobs',
-  'SiteIndexes',
+  'createSiteResolver',
   'SiteResolver',
+  'TypedSiteResolver',
+  'UntypedSiteResolver',
   'ContentSummary',
   'ContentEntry',
   'ContentProblem',
@@ -60,7 +60,7 @@ const DATA_KEPT = [
 // factory and its types), unaffected by this task.
 const DELIVERY_ONLY_KEPT = ['createPublicRoutes', 'PublicRoutesConfig', 'EntryData'];
 
-// The thirteen names the pass demotes from the /media barrel, verbatim from the plan's Task 4 and
+// The names the pass demotes from the /media barrel, from the plan's Task 4, later additions, and
 // the audit verdicts doc's `## ./media` section.
 const MEDIA_DEMOTED = [
   'parseMediaManifest',
@@ -76,14 +76,15 @@ const MEDIA_DEMOTED = [
   'publicPath',
   'variantUrl',
   'manifestMediaResolver',
+  'normalizeMedia',
+  'ResolvedMediaConfig',
 ];
 
 // The /media keep list, from the audit verdicts doc, minus the thirteen demotions above.
 // `VariantSpec` retired outright by the conformance pass (Task 14, ruling 4): the `variants` field
 // it typed had no reachable runtime consumer, so it no longer publishes anywhere.
 const MEDIA_KEPT = [
-  'normalizeAssets',
-  'ResolvedAssetConfig',
+  'MediaConfig',
   'readCommittedManifest',
   'MediaEntry',
   'MediaManifest',

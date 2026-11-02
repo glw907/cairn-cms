@@ -16,12 +16,12 @@ const WHITESPACE = new Set([0x09, 0x0a, 0x0d, 0x20]);
 
 /**
  * The single byte `<` (0x3C). A payload whose first non-whitespace byte is `<` is markup (SVG, HTML,
- *  XML) and is denied regardless of its declared type or any site `allowedTypes`.
+ *  XML) and is denied regardless of its declared type, ahead of the type list.
  */
 const LT = 0x3c;
 
 /**
- * Declared content types denied at the engine level, independent of any site `allowedTypes`. SVG and
+ * Declared content types denied at the engine level, ahead of the type list. SVG and
  *  the markup types carry active content (script, foreignObject), so they never ingest as media.
  */
 const DENIED_TYPES = new Set(['image/svg+xml', 'image/svg', 'text/html', 'application/xml']);
@@ -112,7 +112,7 @@ export function extForMediaType(type: string): string | null {
  * The engine-level upload deny predicate. Returns true (reject) when the upload is markup a site can
  * never override: a declared type of image/svg+xml, image/svg, text/html, or application/xml, OR a
  * payload whose first non-whitespace byte is `<` (an 0x3C after skipping leading ASCII whitespace).
- * This runs ahead of and independent of any site `allowedTypes`, since SVG and HTML carry active
+ * This runs ahead of the type list, since SVG and HTML carry active
  * content. The byte check catches a markup payload sent under a permitted declared type.
  */
 export function isDeniedUpload(bytes: Uint8Array, declaredType?: string): boolean {

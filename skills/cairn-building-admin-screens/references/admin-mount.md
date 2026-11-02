@@ -45,13 +45,7 @@ export const actions = admin.actions;
   let { data, form }: { data: AdminData; form: ActionData } = $props();
 </script>
 
-<CairnAdmin
-  {data}
-  {form}
-  render={cairn.rendering.render}
-  registry={cairn.rendering.components}
-  icons={cairn.rendering.icons}
-/>
+<CairnAdmin {data} {form} rendering={cairn.rendering} />
 ```
 
 ```ts

@@ -28,7 +28,6 @@ a screen reader announces it once.
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import { provideTopbar, type TopbarHolder } from './topbar-context.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
@@ -77,14 +76,6 @@ a screen reader announces it once.
   // correct even if the token ever rotates mid-session. A public payload has no token, so the getter
   // yields the empty string (no descendant form renders on the bare login/confirm pages anyway).
   setContext(CSRF_CONTEXT_KEY, () => (data.public ? '' : data.csrf));
-
-  // Hand every descendant media surface (MediaPicker, CairnMediaLibrary, MediaHeroField, the editor's
-  // media chips) the site's resolved delivery base, so a non-default `assets.publicBase` reaches
-  // their thumbnails instead of each reader's /media fallback. A public payload carries no
-  // resolved base (it renders no media surface, the login/confirm pages), so the context still
-  // carries the shared default rather than leaving the key unset. Context application runs once, at
-  // creation, so the one-time read is untracked the same way the theme seed below reads data.theme.
-  setContext(MEDIA_BASE_CONTEXT_KEY, untrack(() => (data.public ? DEFAULT_MEDIA_BASE : data.mediaBase)));
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's pages.
@@ -843,7 +834,7 @@ a screen reader announces it once.
             <nav aria-label="Breadcrumb" class="breadcrumbs ms-0 min-w-0 max-w-full p-0 type-body">
               <!-- role="list"/"listitem": the .breadcrumbs > ul > li descendant selector renders
                    every crumb at display: flex, which strips the implicit list role in
-                   WebKit/VoiceOver (cairn-audit's list-role rule, rendered mode). -->
+                   WebKit/VoiceOver. -->
               <ul class="min-w-0" role="list">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
                   <li class="min-w-0" role="listitem">
@@ -975,8 +966,7 @@ a screen reader announces it once.
                order, since the combobox pattern moves the active option through
                aria-activedescendant rather than real DOM focus, while the href/onclick still fires
                normally on a real click. daisyUI's .menu :where(li) renders every item at
-               display: flex, which strips the implicit listitem role in WebKit/VoiceOver
-               (cairn-audit's list-role rule, rendered mode); role="presentation" is explicit either
+               display: flex, which strips the implicit listitem role in WebKit/VoiceOver; role="presentation" is explicit either
                way. -->
           <ul
             bind:this={paletteList}
@@ -1097,8 +1087,7 @@ a screen reader announces it once.
 
         {#snippet navItemList(items: NavItem[], extraClass: string = '')}
           <!-- role="list"/"listitem": daisyUI's .menu :where(li) renders every item at
-               display: flex, which strips the implicit list role in WebKit/VoiceOver
-               (cairn-audit's list-role rule, rendered mode). -->
+               display: flex, which strips the implicit list role in WebKit/VoiceOver. -->
           <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`} role="list">
             {#each items as item, i (i)}
               {@const att = attentionFor(item.href)}

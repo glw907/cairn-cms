@@ -1,9 +1,9 @@
 // The shipped guidance carries one recipe table in three files, and one exemplar of the kit quotes
 // the /admin/theme-kit fixture route. This test reads the source copies under `skills/` and
-// `claude/` (never the template's baked copies, which check:template binds to them) and holds four
-// things together: the one-sentence model and the table rows in every copy against
-// RECIPE_MODEL and ROLE_RECIPES, each `svelte` fence of the exemplar against the fixture route,
-// and exactly one recipe row per ratified role.
+// `claude/` (never the template's baked copies, which check:template binds to them) and holds three
+// things together: the one-sentence model and the table rows in every copy against the RECIPE_MODEL
+// and ROLE_RECIPES data below, each `svelte` fence of the exemplar against the fixture route, and
+// every Write token against the admin sheet inventory or the fixture source.
 //
 // It collects every mismatch before it fails, so a change that breaks two copies reports both. It
 // also refuses to pass on nothing: a copy without the `Write this, get this` heading, with an
@@ -13,7 +13,86 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
-import { RATIFIED_NORMS, RECIPE_MODEL, ROLE_RECIPES } from '../../lib/audit/norms.js';
+
+/** One recipe row the guidance prints: the classes to write and what they give. */
+interface RoleRecipe {
+  write: string;
+  look: string;
+}
+
+/**
+ * The one-sentence model every shipped guidance copy quotes verbatim: a screen writes the plain
+ * class, and the theme layer, never the markup, carries the ratified look.
+ */
+const RECIPE_MODEL =
+  'Write the plain daisyUI or cairn role class a screen needs; the theme layer, not the markup, carries the ratified look.';
+
+// Every Write string here is copied verbatim from .claude/skills/cairn-following-admin-design/references/admin-design-system.md or from the
+// /admin/theme-kit fixture route, never invented: the attestation test below checks every token
+// against the committed admin sheet inventory or the fixture's source, so a hand-typed row cannot
+// drift from what actually compiles.
+const ROLE_RECIPES: readonly RoleRecipe[] = [
+  {
+    write: 'type-title font-[550] font-[family-name:var(--font-display)]',
+    look: 'the page heading, 24px at weight 550, no bold, in the display face.',
+  },
+  {
+    write: 'type-label font-semibold uppercase tracking-[0.08em] text-muted',
+    look: 'an eyebrow: quiet, uppercase, tracked out.',
+  },
+  {
+    write: 'font-medium text-subtle',
+    look: 'a resting sidebar item; CairnAdminShell renders the nav itself, no screen writes one directly.',
+  },
+  {
+    write: 'btn btn-primary',
+    look: 'the one accent-filled commit action on a surface.',
+  },
+  {
+    write: 'btn btn-ghost',
+    look: 'a quiet button for chrome actions, toolbar controls, and row affordances.',
+  },
+  {
+    write: 'input',
+    look: 'a single-line text field.',
+  },
+  {
+    write: 'select',
+    look: 'a native select control.',
+  },
+  {
+    write: 'card-shell card-shadow',
+    look: 'a floating card surface: the box radius, a hairline edge, and elevation.',
+  },
+  {
+    write: 'btn',
+    look: 'the plain button: a hairline edge, no fill accent.',
+  },
+  {
+    write: 'btn btn-neutral',
+    look: 'the ink opener: a solid neutral fill, the first commit-adjacent step up from plain.',
+  },
+  {
+    write: 'btn btn-soft btn-primary',
+    look: 'the soft primary: a tinted act-on state, softer than the solid commit.',
+  },
+  {
+    write: 'join-item btn btn-active',
+    look: 'the selected segment in a join or segmented control: a neutral wash plus a state hairline.',
+  },
+  {
+    write: 'rounded-selector',
+    look: 'the corner for a chip, tag, count, or other small inline marker.',
+  },
+  {
+    write: 'rounded-field',
+    look: 'the corner for a control, button-like element, or small thumbnail.',
+  },
+  {
+    write: 'rounded-box',
+    look: 'the corner for a panel, card, tile, popover, sheet, or the brand tile.',
+  },
+];
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -148,21 +227,6 @@ function checkExemplar(file: string, text: string, fixture: string): string[] {
   return problems;
 }
 
-/** Checks that each ratified role has exactly one recipe row. */
-function checkRoleRows(
-  roles: readonly string[],
-  recipes: readonly { role?: string }[]
-): string[] {
-  const problems: string[] = [];
-  for (const role of roles) {
-    const count = recipes.filter((recipe) => recipe.role === role).length;
-    if (count !== 1) {
-      problems.push(`ROLE_RECIPES: ratified role ${role} has ${count} recipe rows, expected exactly one`);
-    }
-  }
-  return problems;
-}
-
 describe('guidance recipe sync', () => {
   const expectedRows = ROLE_RECIPES.map(rowFor);
 
@@ -176,11 +240,27 @@ describe('guidance recipe sync', () => {
     expect(problems, problems.join('\n')).toEqual([]);
   });
 
-  it('has exactly one recipe row for every ratified role', () => {
-    const roles = [...new Set(RATIFIED_NORMS.map((norm) => norm.role))];
-    expect(roles.length).toBeGreaterThan(0);
-    const problems = checkRoleRows(roles, ROLE_RECIPES);
-    expect(problems, problems.join('\n')).toEqual([]);
+  // The typo check: a hand-typed class in a Write string can drift from what the sheet actually
+  // compiles or the fixture actually renders. Every token has to be attested by one of the two
+  // sources a recipe row is allowed to come from, so a misspelled class fails here rather than
+  // shipping silently into the guidance the table feeds.
+  it('attests every Write token against the admin sheet inventory or the theme-kit fixture source', () => {
+    const inventory = new Set(
+      readFileSync(new URL('./fixtures/admin-sheet-inventory.txt', import.meta.url), 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    );
+    const fixtureSource = read(FIXTURE);
+    for (const recipe of ROLE_RECIPES) {
+      for (const token of recipe.write.split(/\s+/)) {
+        const attested = inventory.has(token) || fixtureSource.includes(token);
+        expect(
+          attested,
+          `"${token}" in the Write string "${recipe.write}" is not in the admin sheet inventory or the theme-kit fixture`
+        ).toBe(true);
+      }
+    }
   });
 });
 
@@ -239,12 +319,5 @@ describe('guidance recipe sync checks refuse to go vacuous', () => {
     const fixture = '<button class="btn" data-testid="x">Go</button\n><!-- note -->\n<input class="a" data-testid="y" />';
     const fence = '<button class="btn">Go</button>\n<input class="a"/>';
     expect(normalizeMarkup(fixture)).toBe(normalizeMarkup(fence));
-  });
-
-  it('fails a role with no recipe row and a role with two', () => {
-    const problems = checkRoleRows(['a', 'b'], [{ role: 'b' }, { role: 'b' }]);
-    expect(problems).toHaveLength(2);
-    expect(problems[0]).toContain('role a has 0');
-    expect(problems[1]).toContain('role b has 2');
   });
 });

@@ -1,6 +1,5 @@
 // Setup for S07-new-concept: two event files already sit on disk, with no concept to read them.
-// The session declares the concept, wires its content glob and manifest pattern, and regenerates
-// the committed manifest.
+// The session declares the concept and regenerates the committed manifest.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 

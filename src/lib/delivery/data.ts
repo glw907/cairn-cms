@@ -7,14 +7,14 @@
 export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
 // Canonical home for everything below this line is the root barrel `.`; each name is a recorded R4
 // re-export here, not a second home (canonical-home rule, foundations A). `buildSiteManifest`,
-// `createSiteIndexes`, and `SiteIndexes`/`SiteGlobs` all name the content-model types their generic
-// bounds derive from, so a site importing only this subpath can still name what it holds.
+// `createSiteResolver`, and `TypedSiteResolver` name the content-model types their generic bounds
+// derive from, so a site importing only this subpath can still name what it holds.
 // `CairnAdapter` itself is the one deliberate exception: its structural body reaches
 // `roles`/`access`/`backend`, which in turn name auth/github-shaped types this backend-free
 // barrel may not import (this file's charter above, enforced by
 // `delivery-entry-boundary.test.ts`), and a call site names `A` by inference from its
 // adapter argument in practice, never by writing `CairnAdapter` out. That cut is why the
-// adapter-only members (`AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
+// adapter-only members (`MediaConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
 // `SiteRender`, the component and nav-layout types) are NOT re-exported here: nothing this subpath
 // publishes names them, so they resolve from their canonical homes instead.
 export type {
@@ -48,10 +48,18 @@ export type { CairnRef, LinkResolve } from '../content/links.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { ReferenceEdge } from '../content/references.js';
 export type { SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from '../nav/site-config.js';
-export { createLinkResolver, createFragmentResolver, resolveReferences } from './site-resolver.js';
-export type { SiteResolver, ResolvedReference } from './site-resolver.js';
-export { createSiteIndexes } from './site-indexes.js';
-export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
+export {
+  createSiteResolver,
+  createLinkResolver,
+  createFragmentResolver,
+  resolveReferences,
+} from './site-resolver.js';
+export type {
+  SiteResolver,
+  TypedSiteResolver,
+  UntypedSiteResolver,
+  ResolvedReference,
+} from './site-resolver.js';
 export { buildSiteDescriptors } from './site-descriptors.js';
 export { buildExcerpt } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';

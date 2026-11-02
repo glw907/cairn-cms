@@ -18,20 +18,15 @@ import { formatManifest } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
 
-const MEDIA_ON: ResolvedAssetConfig = {
+const MEDIA_ON: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/jpeg'],
-  transformations: false,
 };
 
 function runtime(): CairnRuntime {
@@ -39,7 +34,7 @@ function runtime(): CairnRuntime {
     concepts: [postsConcept({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true }], validate: () => ({ ok: true as const, data: { title: 'Hi' } }) })],
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
-    resolvedAssets: MEDIA_ON,
+    media: MEDIA_ON,
   });
 }
 

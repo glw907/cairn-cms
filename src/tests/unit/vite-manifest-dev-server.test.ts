@@ -17,9 +17,6 @@ const WORKTREE = process.cwd();
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
-  siteFactsPath: '/src/content/.cairn/site-facts.json',
 };
 
 /** The global the fake `vite` package bumps on every createServer call. */
@@ -27,6 +24,9 @@ const COUNTER = '__cairnNestedViteServers';
 
 /** The global the fake `vite` package appends each nested server's flattened plugin names to. */
 const NAMES = '__cairnNestedViteServerPlugins';
+
+/** The global the fake `vite` package appends each nested server's virtual-only plugin `config()` result to. */
+const CONFIGS = '__cairnNestedViteServerConfigs';
 
 /** The plugin adapter-cloudflare adds through SvelteKit, which starts the platform proxy. */
 const ADAPTER_WORKERS = 'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module';
@@ -53,7 +53,10 @@ export function isRunnableDevEnvironment(env) {
 }
 export async function createServer(config) {
   globalThis.${COUNTER} = (globalThis.${COUNTER} ?? 0) + 1;
-  (globalThis.${NAMES} ??= []).push((await flat(config.plugins)).filter(Boolean).map((p) => p.name));
+  const plugins = (await flat(config.plugins)).filter(Boolean);
+  (globalThis.${NAMES} ??= []).push(plugins.map((p) => p.name));
+  const virtualOnly = plugins.find((p) => p.name === 'cairn-manifest-virtual');
+  (globalThis.${CONFIGS} ??= []).push(await virtualOnly?.config?.({}, { command: 'serve', mode: 'development' }));
   return {
     environments: { ssr: { runner: { import: async () => ({ result: '{}' }) } } },
     close: async () => {},
@@ -87,10 +90,12 @@ afterAll(() => {
 beforeEach(() => {
   (globalThis as Record<string, unknown>)[COUNTER] = 0;
   (globalThis as Record<string, unknown>)[NAMES] = [];
+  (globalThis as Record<string, unknown>)[CONFIGS] = [];
 });
 
 const nestedServers = (): unknown => (globalThis as Record<string, unknown>)[COUNTER];
 const nestedPluginNames = (): string[][] => (globalThis as Record<string, unknown>)[NAMES] as string[][];
+const nestedConfigs = (): unknown[] => (globalThis as Record<string, unknown>)[CONFIGS] as unknown[];
 
 /**
  * A stand-in for the running dev server. With `runnable`, its SSR environment carries a module
@@ -230,5 +235,33 @@ describe('cairnManifest under vite build', () => {
       expect(names).not.toContain('cairn-manifest');
       expect(names).toContain('vite-plugin-sveltekit-setup');
     }
+  });
+});
+
+describe('cairnManifest ssr.noExternal', () => {
+  const NO_EXTERNAL = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
+  type ConfigHook = (
+    c: object,
+    env: { command: string; mode: string },
+  ) => Promise<Record<string, unknown> | undefined>;
+  const configOf = (c: object): Promise<Record<string, unknown> | undefined> =>
+    (cairnManifest(OPTS).config as ConfigHook)(c, { command: 'serve', mode: 'development' });
+
+  it('returns both engine packages beside the dev-build define', async () => {
+    const result = await configOf({});
+
+    expect(result).toMatchObject({ ssr: { noExternal: NO_EXTERNAL }, define: { __CAIRN_DEV_BUILD__: 'true' } });
+  });
+
+  it('keeps a site-set define as the winner and still returns the packages', async () => {
+    const result = await configOf({ define: { __CAIRN_DEV_BUILD__: 'false' } });
+
+    expect(result).toEqual({ ssr: { noExternal: NO_EXTERNAL } });
+  });
+
+  it('hands the packages to each nested verify server through the virtual-only plugin', async () => {
+    await buildStart(resolvedPlugin(tempSite(), 'build'), fakeContext());
+
+    expect(nestedConfigs()).toEqual([{ ssr: { noExternal: NO_EXTERNAL } }, { ssr: { noExternal: NO_EXTERNAL } }]);
   });
 });

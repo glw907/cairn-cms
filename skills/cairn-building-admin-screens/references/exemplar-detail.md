@@ -25,9 +25,9 @@ verbs.
 
 The shell treats a route as a desk only when it has three segments and the second names a
 content concept. `/admin/signups/<id>` does not, so it renders as an office screen and
-`screen-anatomy` expects one `h1` and a `card-shell` region. Write cards as
+takes one `h1` and a `card-shell` region. Write cards as
 `card-shell card-shadow p-6`, never a hand-assembled `rounded-box border ... shadow-[...]`
-literal; the literal is not the class the rule looks for, and it drifts.
+literal; the literal drifts from the class.
 
 The page underneath keeps zero fills. Each open dialog is its own surface with exactly one fill.
 
@@ -117,6 +117,6 @@ Handle all four `enhance` result types (`custom-screen.md`).
 
 ## Checkbox rows
 
-A `checkbox-sm` renders 20px, under `touch-targets`' 24px floor. The control's activating label
+A `checkbox-sm` renders 20px, under the 24px touch-target floor. The control's activating label
 counts toward its target, so wrap the checkbox in a padded `<label>` (never a `::before` that a
 truncating ancestor clips) until the row measures at least 24px.

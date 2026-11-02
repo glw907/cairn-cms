@@ -1,8 +1,7 @@
 // Known-bad for `S15-adopt-and-migrate`: cairn is wired, but the old files are copied in as they
-// are and the build is made to pass instead of the entries made valid. The concept declares no
-// draft or tags field, the Jekyll `layout` key and the off-shape filename come along, the winter
-// post keeps the timestamp's UTC day, `validate: false` silences the failing entries, and no
-// manifest is committed.
+// are instead of being made valid. The concept declares no draft or tags field, the Jekyll
+// `layout` key and the off-shape filename come along, the winter post keeps the timestamp's UTC
+// day, and no manifest is committed.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -32,12 +31,12 @@ export const cairn = defineAdapter({
   },
 });
 `,
-  'src/lib/content.ts': `import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+  'src/lib/content.ts': `import { createSiteResolver } from '@glw907/cairn-cms/delivery';
 import { cairn } from './cairn.config.js';
 
-const posts = import.meta.glob('/src/content/posts/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const files = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
-export const site = createSiteIndexes(cairn, {}, { posts }, { validate: false }).site;
+export const site = createSiteResolver(cairn, files);
 `,
   'src/content/posts/2024-03-12-Winter_Gear Guide.md': `---
 layout: post

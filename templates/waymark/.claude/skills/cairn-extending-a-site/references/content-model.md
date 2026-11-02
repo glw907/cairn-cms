@@ -2,7 +2,7 @@
 
 Contents:
 
-- [Add a concept: four registrations](#add-a-concept-four-registrations)
+- [Add a concept](#add-a-concept)
 - [Fields](#fields)
 - [Cross-field rules](#cross-field-rules)
 - [Address, dates, ids](#address-dates-ids)
@@ -12,48 +12,55 @@ Contents:
 - [Integrity guards](#integrity-guards)
 - [Resolve a failed check](#resolve-a-failed-check)
 
-## Add a concept: four registrations
+## Add a concept
 
-A concept needs all four. The third is silent when missing: the build passes and the concept just
-gets no manifest rows, so its entries never list in the admin.
+A concept is its adapter entry, plus a manifest run when its directory already holds files.
 
 1. **Adapter** (`src/theme/cairn.config.ts`): a `defineConcept` under `content`, keyed by the concept
    id, with `dir` and `fields`. Set `singular`: it falls back to `label`, so an omitted singular
-   reads **New Events**.
-2. **Content module** (`src/chassis/content.ts`): a literal glob passed to `createSiteIndexes` under
-   the same id. Vite resolves only a literal pattern at the call site, so the engine cannot glob for
-   you. A declared concept with no glob throws at build.
-
-   <!-- snippet-check-skip: continues the scaffold's content module, which declares the other globs and imports -->
-   ```ts
-   const eventsRaw = import.meta.glob('/src/content/events/*.md', {
-     query: '?raw',
-     import: 'default',
-     eager: true,
-   }) as Record<string, string>;
-
-   const indexes = createSiteIndexes(cairn, siteConfig, {
-     posts: postsRaw,
-     pages: pagesRaw,
-     fragments: fragmentsRaw,
-     events: eventsRaw,
-   });
-   ```
-
-   A lazy glob or one without `import: 'default'` throws `expected input to be a string or buffer`.
-3. **Vite config** (`vite.config.ts`): the same id and pattern in `cairnManifest({ content: { ... } })`,
-   for example `events: '/src/content/events/*.md'`. `cairn-manifest` reads this option, so a concept
-   left out here gets no rows and raises no error.
-4. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script
+   reads **New Events**. `dir` sits under `src/content`, and each entry sits directly in it.
+2. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script
    `cairn:manifest`) and commit `src/content/.cairn/index.json`. Never hand-write manifest rows. An
    entry that fails validation is skipped (logs `content.entry_invalid` `scope: manifest`).
+
+The content module's one glob and the `cairnManifest` plugin both read `/src/content/**/*.md`, so
+neither takes an edit. The content module holds the glob in the absolute form, since Vite resolves
+only a literal pattern at the call site and a relative glob's `../content/...` keys are refused:
+
+<!-- snippet-check-skip: continues the scaffold's content module, which imports createSiteResolver and cairn -->
+```ts
+const files = import.meta.glob<string>('/src/content/**/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+export const site = createSiteResolver(cairn, files);
+export const events = site.concept('events');
+```
+
+A lazy glob or one without `import: 'default'` throws `expected input to be a string or buffer`.
+A concept with no files is an empty index. `site.concept('events')` is typed from the concept's
+fieldset, refuses an undeclared id, and is never undefined.
+
+A file that no concept owns fails the build, naming the path and the declared dirs:
+
+```text
+cairn: content file "<path>" sits under no concept's dir
+```
+
+A `dir` outside `src/content` fails the same way:
+
+```text
+cairn: concept "<id>" dir "<dir>" is outside src/content
+```
 
 Write the schema to fit existing files; do not edit seeded content to fit the schema. Then run
 `npm run check` and `npm run build`. A scaffold's `navLayout` lists the new concept in a trailing
 group until placed.
 
-Ids the engine refuses: `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, `settings`,
-`site`. A `fragments` concept must set `routing: 'embedded'`.
+Ids the engine refuses: `login`, `auth`, `editors`, `help`, `media`, `vocabulary`, `nav`, and
+`settings`. A `fragments` concept must set `routing: 'embedded'`.
 
 ## Fields
 
@@ -133,7 +140,8 @@ export const events = defineConcept({
   throws). There is no fallback to a field named `tags` (logs `content.field_unmarked`). Once the
   site config's `vocabulary` holds items, a save adds only vocabulary values (lowercase hyphenated);
   existing outside tags stay as orphans.
-- `summaryFields` copies named keys onto `ContentSummary.fields`; an undeclared key throws.
+- `summaryFields` copies named keys onto `ContentSummary.fields`; an undeclared key fails
+  `npm run check`, and compose throws on one that reaches it from an untyped caller.
 - `itemLabel` on an `array` of objects names the sub-field that labels a collapsed row.
 
 ## The manifest

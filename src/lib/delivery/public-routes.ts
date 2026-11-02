@@ -16,14 +16,13 @@ import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve, MarkedFragmentResolve } from '../render/resolve-include.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
-import { log } from '../log/index.js';
 
 /**
  * Injected dependencies for the public loaders.
  * @public
  */
 export interface PublicRoutesConfig {
-  /** The site resolver `createSiteIndexes` returns, which the loaders look each path up in. */
+  /** The site resolver `createSiteResolver` returns, which the loaders look each path up in. */
   site: SiteResolver;
   /** The site's render function, applied to each entry's body. */
   render: SiteRender;
@@ -50,19 +49,12 @@ export interface PublicRoutesConfig {
    */
   defaultImage?: string;
   /**
-   * Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
-   *  committed `media.json` exactly as it builds the body resolver (`createMediaResolver`). When absent,
-   *  media is off and no `heroImage` projection is derived.
+   * Resolve a frontmatter `media:` hero reference to its delivery path, and the `media:` references
+   *  in the body. Pass the site's one `resolveMedia` from `createMediaResolver`. `null` means the
+   *  site has no media: no `heroImage` projection is derived, and body images fall to the
+   *  renderer's own default.
    */
-  resolveMedia?: MediaResolve;
-  /**
-   * Whether the site configured media on, read from `runtime.resolvedAssets.enabled`. It exists only
-   *  to diagnose a forgotten wire-point: media on but no `resolveMedia` reached this factory, which
-   *  builds no hero image and leaves body images with no source unless the site's `render` has a resolver.
-   *  When true and `resolveMedia` is absent, the factory emits `media.resolver_absent` once, at construction.
-   *  It does not change resolution; `resolveMedia` alone still gates the hero projection.
-   */
-  assetsEnabled?: boolean;
+  resolveMedia: MediaResolve | null;
 }
 
 /**
@@ -162,8 +154,11 @@ export async function composeEntryData(
   overrides?: EntryDataOverrides,
 ): Promise<EntryData> {
   const { site, render, origin, siteName, description, feeds, defaultImage } = config;
-  const resolveMedia = overrides?.resolveMedia ?? config.resolveMedia;
-  const { newer, older } = site.adjacent(entry);
+  const resolveMedia = overrides?.resolveMedia ?? config.resolveMedia ?? undefined;
+  // A non-routable concept's entry (a fragment) has no public neighbors to link.
+  const { newer, older } = site.routable(entry.concept)
+    ? (site.concept(entry.concept)?.adjacent(entry.id) ?? {})
+    : {};
   const canonicalUrl = origin + entry.permalink;
   const fields = readSeoFields(entry.frontmatter);
   const heroImage = deriveHeroImage(entry.frontmatter, resolveMedia, origin);
@@ -205,7 +200,7 @@ export async function composeEntryData(
       body: entry.body,
       concept: entry.concept,
       frontmatter: entry.frontmatter,
-      resolve: overrides?.resolveLink ?? createLinkResolver(site),
+      resolveLink: overrides?.resolveLink ?? createLinkResolver(site),
       resolveFragment,
       resolveMedia,
     }),
@@ -222,16 +217,7 @@ export async function composeEntryData(
  * @scaffold
  */
 export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
-  const { site, resolveMedia, assetsEnabled } = config;
-
-  // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
-  // every public hero and body `media:` token renders bare (a consuming site's 0.57.0 finding). The condition
-  // is a property of the wiring, not of any one load, so it is checked once here at construction
-  // rather than per entryLoad or per image, which keeps the warning loud-once and out of the
-  // prerender hot path. Resolution is unchanged; resolveMedia alone still gates the hero projection.
-  if (assetsEnabled && !resolveMedia) {
-    log.warn('media.resolver_absent');
-  }
+  const { site } = config;
 
   /** One entry by request path, rendered through the site renderer, or a 404. */
   async function entryLoad(event: { url: URL }): Promise<EntryData> {
@@ -242,7 +228,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */
   function entries(): { path: string }[] {
-    return site.entries();
+    return site.paths();
   }
 
   /** Whether an entry's frontmatter `robots` field asks search engines not to index it. */

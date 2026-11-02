@@ -137,7 +137,7 @@ export type {
   ConceptDescriptor,
   SenderConfig,
   NavMenuConfig,
-  AssetConfig,
+  MediaConfig,
   PreviewConfig,
   RoutingRule,
   ValidationResult,

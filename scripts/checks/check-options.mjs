@@ -9,8 +9,8 @@
 //   .               createGithubApp, createRenderer, defineAccess, defineAdapter, defineComponent,
 //                   defineConcept, defineFieldset, defineRegistry, defineRoles
 //   /auth-channel   createAuthChannel
-//   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteIndexes
-//   /delivery/data  createFragmentResolver, createLinkResolver, createSiteIndexes
+//   /delivery       createFragmentResolver, createLinkResolver, createPublicRoutes, createSiteResolver
+//   /delivery/data  createFragmentResolver, createLinkResolver, createSiteResolver
 //   /log            createLogger
 //   /media          createMediaResolver
 //   /sveltekit      createAdminAction, createAuthGuard, createAuthRoutes, createCairnAdmin,
@@ -54,10 +54,10 @@ export const ROOT_EXTRAS = ['cairnManifest'];
  * A declaring type the walk excludes: data passed to a page, descriptors, registries, and engine
  * component props by suffix, plus the runtime objects and vendored protocol types a root's
  * parameters reach but a developer never writes (the composed runtime, the site resolver, the
- * resolved asset config, a media manifest row, Standard Schema and its input shape).
+ * resolved media config, a media manifest row, Standard Schema and its input shape).
  */
 export const EXCLUDED_TYPE =
-  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|ResolvedAssetConfig|MediaEntry|StandardSchemaV1|StandardInput)$/;
+  /(Data|Descriptor|Registry|Props)$|^(CairnRuntime|SiteResolver|UntypedSiteResolver|TypedSiteResolver|ResolvedMediaConfig|MediaEntry|StandardSchemaV1|StandardInput)$/;
 
 const LEAF_FLAGS =
   ts.TypeFlags.Any |

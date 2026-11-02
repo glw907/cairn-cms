@@ -37,7 +37,7 @@ nearest field.
   literals `grid gap-x-6 gap-y-4 sm:grid-cols-2`; `gap-group` there would set both axes to 1rem.
 - A free-text block below a field grid takes section-scale separation as a `border-t` plus its
   own padding, so the boundary reads inside one card.
-- `relational-spacing` checks the rendered gaps; this table says which relationship a row is.
+- This table says which relationship a row is.
 
 ## The composition-width rule
 

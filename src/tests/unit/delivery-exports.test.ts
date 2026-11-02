@@ -5,7 +5,7 @@ describe('delivery exports', () => {
   it('exposes the delivery builders from the data subpath', async () => {
     const data = await import('../../lib/delivery/data.js');
     for (const name of [
-      'createSiteIndexes',
+      'createSiteResolver',
       'buildExcerpt',
       'buildRssFeed',
       'buildJsonFeed',

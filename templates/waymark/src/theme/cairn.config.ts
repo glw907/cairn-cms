@@ -12,13 +12,9 @@ import {
   defineAdapter,
   defineConcept,
   createGithubApp,
-  type AssetConfig,
+  type MediaConfig,
 } from '@glw907/cairn-cms';
-import {
-  normalizeAssets,
-  createMediaResolver,
-  readCommittedManifest,
-} from '@glw907/cairn-cms/media';
+import { createMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import { siteIslands } from './islands/registry.js';
 import { proseTypography } from '#chassis/render.js';
 import { icons } from './icons.js';
@@ -41,8 +37,7 @@ const registry = defineRegistry({ components });
 // The real render path: parse markdown through the engine so registered components render. The
 // chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
 // wiring it here, at the one createRenderer call, means both the public render and the editor's
-// live preview inherit it, since both read the renderMarkdown this composes.
-const { renderMarkdown } = createRenderer(registry, { remarkPlugins: proseTypography });
+// live preview inherit it, since both read the render this composes.
 
 // The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
 // Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather
@@ -52,21 +47,22 @@ const mediaManifest = readCommittedManifest(
   import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
 );
 
-// The media R2 binding, hoisted once and fed to both normalizeAssets below and the adapter's
+// The media R2 binding, hoisted once and fed to both createMediaResolver below and the adapter's
 // media: member, so the binding name lives in exactly one place rather than two literals that
 // could drift apart.
-const media: AssetConfig = { bucketBinding: 'MEDIA_BUCKET' };
+const media: MediaConfig = { bucketBinding: 'MEDIA_BUCKET' };
 
-// The default public media resolver, backing the public build over the committed manifest. The
-// preview path injects its resolveMedia from the edit page's mediaTargets; this default keeps a
-// published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
-// public route can inject the same resolver for the frontmatter hero, one source of truth.
-const resolvedAssets = normalizeAssets(media);
-export const publicMediaResolver = createMediaResolver(mediaManifest, resolvedAssets);
+// The site's one media resolver, backing the public build over the committed manifest. The preview
+// path injects its resolveMedia from the edit page's mediaTargets; this default keeps a published
+// `media:` reference from throwing when no per-call resolver is supplied. Exported so the public
+// route can inject the same resolver for the frontmatter hero, one source of truth.
+export const resolveMedia = createMediaResolver(media, mediaManifest);
 
-// Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
-// `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.
-export const mediaEnabled = resolvedAssets.enabled;
+const renderer = createRenderer({
+  components: registry,
+  remarkPlugins: proseTypography,
+  resolveMedia,
+});
 
 export const cairn = defineAdapter({
   content: {
@@ -159,7 +155,7 @@ export const cairn = defineAdapter({
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
   email: { from: 'cms@showcase.test' },
-  // The media R2 binding (hoisted above so this and normalizeAssets share one literal). The fake
+  // The media R2 binding (hoisted above so this and createMediaResolver share one literal). The fake
   // R2 double rides the Worker env in dev; a real site binds it in wrangler.jsonc and mounts the
   // /media delivery route.
   media,
@@ -171,16 +167,11 @@ export const cairn = defineAdapter({
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup; the
     // engine's pipeline already wraps every table in a scrollable, labeled region by default
-    // (RendererConfig.tableScroll). The default media resolver backs the public build; the
-    // preview path injects its resolveMedia. resolveFragment forwards the same way: the build
+    // (RendererConfig.tableScroll). The renderer's resolveMedia default backs the public build; the
+    // preview path injects its own per call. renderer.render forwards resolveFragment too: the build
     // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
-    // one (EditPage), and this site's render never needs to vary fragment resolution itself.
-    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
-      renderMarkdown(body, {
-        resolve,
-        resolveMedia: resolveMedia ?? publicMediaResolver,
-        resolveFragment,
-      }),
+    // one (EditPage).
+    render: renderer.render,
     components: registry,
     icons,
     islands: siteIslands,

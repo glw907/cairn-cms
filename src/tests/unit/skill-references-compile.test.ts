@@ -86,7 +86,7 @@ const CONSUMER_DEFINED_CLASSES = new Set([
 ]);
 
 // An inline span whose first word is the audit CLI's own binary name is a command example
-// (`` `npx cairn-audit` ``, `` `cairn-audit norms destination` ``), never a class list; every
+// (`` `npx cairn-audit` ``, `` `cairn-audit --rule list-role` ``), never a class list; every
 // word in both is otherwise class-shaped and would false-positive without this exclusion.
 const CLI_INVOCATION_PREFIXES = new Set(['npx', 'cairn-audit']);
 

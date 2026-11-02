@@ -24,8 +24,6 @@ export default {
   plugins: [
     cairnManifest({
       configModule: '/src/lib/cairn.config.ts',
-      content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
-      manifestPath: '/src/content/.cairn/index.json',
     }),
   ],
 };
@@ -72,8 +70,6 @@ afterAll(() => {
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
 };
 
 // Seed the committed manifest from the corpus itself, so verifyManifest (which runs FIRST in the

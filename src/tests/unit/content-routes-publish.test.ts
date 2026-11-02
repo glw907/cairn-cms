@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { parseManifest, formatManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
@@ -398,7 +398,7 @@ describe('publishAction', () => {
           descriptor,
         ),
       }));
-      expect(() => createSiteResolver(conceptIndexes, { validate: false })).not.toThrow();
+      expect(() => buildSiteResolver(conceptIndexes)).not.toThrow();
     });
   });
 

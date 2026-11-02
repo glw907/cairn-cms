@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -41,7 +41,7 @@ const pageIndex = createContentIndex(
   fromGlob({ '/src/content/pages/about.md': '---\ntitle: About\n---\n\nAbout body.' }),
   pages,
 );
-const site = createSiteResolver([
+const site = buildSiteResolver([
   { descriptor: posts, index },
   { descriptor: pages, index: pageIndex },
 ]);
@@ -52,6 +52,7 @@ const routes = createPublicRoutes({
   origin: 'https://x.test',
   siteName: 'X Site',
   description: 'Site default description.',
+  resolveMedia: null,
 });
 
 describe('createPublicRoutes markdownEntries', () => {

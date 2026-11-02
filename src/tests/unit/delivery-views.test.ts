@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildSitemapView } from '../../lib/delivery/views.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { ConceptIndex } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
@@ -52,7 +52,7 @@ function site() {
       '/src/content/fragments/snippet.md': '---\ntitle: Snippet\n---\n\nFragment body.',
     }),
   ];
-  return createSiteResolver(concepts);
+  return buildSiteResolver(concepts);
 }
 
 describe('buildSitemapView', () => {
@@ -104,7 +104,7 @@ describe('buildSitemapView noindex', () => {
   });
 
   it('leaves out an entry whose robots field carries noindex and keeps an indexed one', () => {
-    const resolver = createSiteResolver([
+    const resolver = buildSiteResolver([
       indexFor(seoDescriptors[0], {
         '/src/content/pages/hidden.md': '---\ntitle: Hidden\nrobots: noindex\n---\n\nBody.',
         '/src/content/pages/shown.md': '---\ntitle: Shown\n---\n\nBody.',

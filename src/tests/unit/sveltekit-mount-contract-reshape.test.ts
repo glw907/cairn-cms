@@ -36,14 +36,14 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     expect(existsSync(MEDIA_DTS), 'missing dist/media/index.d.ts; run "npm run package" first').toBe(true);
   });
 
-  it('ResolvedAssetConfig no longer resolves from /sveltekit but stays on /media', () => {
+  it('ResolvedMediaConfig resolves from neither /sveltekit nor /media', () => {
     const sveltekitNames = new Set(enumerateExports(SVELTEKIT_DTS));
     const mediaNames = new Set(enumerateExports(MEDIA_DTS));
-    expect(sveltekitNames.has('ResolvedAssetConfig')).toBe(false);
-    expect(mediaNames.has('ResolvedAssetConfig')).toBe(true);
+    expect(sveltekitNames.has('ResolvedMediaConfig')).toBe(false);
+    expect(mediaNames.has('ResolvedMediaConfig')).toBe(false);
   });
 
-  it('createMediaRoute takes a MediaRouteConfig bag, not a bare ResolvedAssetConfig', () => {
+  it('createMediaRoute takes a MediaRouteConfig bag, not a bare ResolvedMediaConfig', () => {
     const { checker, symbols } = moduleExports(SVELTEKIT_DTS);
     const symbol = symbols.find((s) => s.name === 'createMediaRoute');
     expect(symbol, 'createMediaRoute must be exported').toBeDefined();

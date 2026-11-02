@@ -14,7 +14,7 @@ import type { RequestHandler } from '@sveltejs/kit';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import { createGithubApp } from '../../lib/index.js';
 import { r2Key } from '../../lib/media/naming.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 
@@ -24,18 +24,13 @@ const KEY = r2Key(HASH, EXT);
 const SLUG_PATH = `smoke.${HASH}.${EXT}`;
 const BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
-const resolvedOn: ResolvedAssetConfig = {
+const resolvedOn: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/png'],
-  transformations: false,
 };
 
-/** A minimal composed runtime; createMediaRoute reads only `resolvedAssets` off it. */
-function runtime(resolvedAssets: ResolvedAssetConfig): CairnRuntime {
+/** A minimal composed runtime; createMediaRoute reads only `media` off it. */
+function runtime(media: ResolvedMediaConfig): CairnRuntime {
   return {
     siteName: 'T',
     siteConfigPath: 'src/lib/site.config.yaml',
@@ -45,7 +40,7 @@ function runtime(resolvedAssets: ResolvedAssetConfig): CairnRuntime {
     render: ({ body }) => Promise.resolve(body),
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets,
+    media,
     vocabulary: [],
   };
 }

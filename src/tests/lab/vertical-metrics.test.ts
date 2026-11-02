@@ -28,9 +28,9 @@ import {
   type MemberKind,
   type PairClass,
   type RawPair,
+  type RenderedPage,
   type VerticalCalibrationFixture,
 } from './vertical-metrics.js';
-import type { RenderedPage } from '../../lib/audit/rendered.js';
 
 let browser: Browser;
 

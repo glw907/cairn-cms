@@ -19,6 +19,12 @@ it. Engine passes land on `main` and never release.
 
 ## Immediate next action
 
+**Stop on the `cleanup` plan (pass 8), for `cairn-cms-9b`.** Does the plan answer to its calibrated path of
+839, or must it recut to the 840 ceiling at reader sizes, where it reads 1,173? The sheet's cuts reach only
+1,160. Recommended: accept 839, with the pace trigger, since ten recent passes ran at 0.58 of plan path. The
+ceiling is Geoff's, and the executor launches on either answer, not before. Evidence and both options:
+`docs/internal/plans/2026-11-02-cleanup-plan.md` "S1, the one stop".
+
 The `small-api` slice (pass 3 plus pass 2's shape 8) is PR-ready in PR #184, from session
 `cairn-cms-small-api`, and merges last of its group. The conductor acting for this run is session
 `cairn-cms-9b`, and its planners report to it. The remaining passes follow in order, each planned

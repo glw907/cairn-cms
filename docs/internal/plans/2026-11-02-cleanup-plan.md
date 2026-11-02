@@ -64,7 +64,11 @@ it's not in this plan. The PR's `## Tooling` lists it for the conductor.
 
 The launch prompt says: "A plan still over its ceiling after its cuts, or a finding that changes the design,
 stops: write one question to your branch's docs/STATUS.md and report to the conductor." This is that stop.
-The launch waits on the answer.
+
+The ceiling is Geoff's: "ceilings twice each estimate and 2,900 actual minutes" (`ledger.md:96`), and "A plan
+over its ceiling takes its pass's cuts in order, and stops only if still over" (`run-sheet.md:221`). So the
+answer comes from `cairn-cms-9b`, who carries it to Geoff or to a ledger ruling. Option (b) sets aside items the
+sheet doesn't list, so it needs that same word. The executor launches on either answer, not before.
 
 **S1. Does the plan answer to the calibrated path or to reader sizes?** At the two readers' sizes the path is
 1,173 after the folds, over the 840 ceiling. The sheet's three cuts save 13 on that path, to 1,160: R8's shard
@@ -73,9 +77,10 @@ factor changes the ceiling's unit, and a planner can't rule that alone.
 
 - **(a) Accept the calibrated path, 839, as the plan's estimate against the 840 ceiling. Recommended.** Ten
   recent passes ran at 0.35 to 0.74 of plan path, 0.58 weighted (actual 1,639 against 2,840, from their PR
-  scores). Each task estimate here is the reader's size at 0.7, the upper end of that range, so the clock
-  stop at twice an estimate sits at 1.4 of the reader's size. No cut is taken: the folds land at 839. The pace
-  trigger under "Set-aside order" holds it during the run.
+  scores). Each task estimate here is the reader's size at about 0.7 (839 of 1,173 is 0.715), the upper end of
+  that range, so the clock stop at twice an estimate sits near 1.4 of the reader's size. No cut is taken: the
+  folds land at 839. The pace trigger under "Set-aside order" holds it during the run, and at 839 it fires on
+  any net overrun past one minute, from T1 and T2's close.
 - **(b) Recut to 840 at reader sizes.** The whole Set-aside order leaves, in order, and saves 116 of path, to
   1,057, because most of it sits in a pair's shorter task. Reaching 840 then takes these too, which no May-not
   protects: all of T1 and T2 (-126, to 931); #199, #200, #259, and #262, the rest of T6 (-37, to 894); and
@@ -136,9 +141,16 @@ page a site doesn't need. **Recommended:** exclude, and repoint `checking-a-them
 
 ## Pre-flight
 
-**Nothing for Geoff.** Every task was read for owner steps. No sign-in, secret, dialog, or new permission
-rule is needed. The stable-release rule (`Bash(gh release create v* --target main *)`) is in
+**Nothing for Geoff beyond S1.** Every task was read for owner steps. No sign-in, secret, dialog, or new
+permission rule is needed. The stable-release rule (`Bash(gh release create v* --target main *)`) is in
 `settings.json`; pass 9 reads it, and no task here uses it. The smoke runs on local `wrangler dev`.
+
+**A known refusal, with its answer.** The worktree guard refused T12's deny probe during planning, and #250
+records the same guard in every `cairn-implementer` dispatch. So the session, not an implementer, runs both
+T12's probe and the eval suite. The probe gets one plain attempt. If it's refused, the probe stops there: no retry
+through any wrapper, `run.mjs` included. #191's deny half is set aside, the refusal goes in `## Tooling`, and
+the rest of #191 stays. The suite is the command the rule names, run once as written as a background Bash
+task, and it never serves as the deny probe. If the suite is refused, that's a stop: set #191, then #188, aside.
 
 **Auto-mode items, named anyway.** `autoMode.allow` covers these under the sheet since workstation#192. A
 refusal on any is a stop, never a thing to route around.
@@ -206,6 +218,7 @@ The sheet's apply. These add what this pass can foresee.
 | `p2-p4` isn't merged at launch | Hold the launch. |
 | A `main` merge at any point | Keep both `## Unreleased` entries, `npm run emit:template`, `npm run check:surface -- --update`, rerun the fast lane, grep `examples/showcase/e2e` for every string this pass changed. |
 | A `BACKLOG.md` conflict at T0 | Keep `p2-p4`'s closures and this branch's stamps and placements, and take numbers past the highest on `main`. |
+| A `docs/STATUS.md` conflict at T0 | Take `main`'s side. S1's question is answered by launch, and T17 rewrites STATUS. |
 | A `toHaveScreenshot` failure on an image the task listed as intended, before T16 | Not a red. Any other failure on that head is. |
 | A conflict in `templates/waymark/**`, `guidance-hashes.json`, or `scripts/checks/api-surface.md` while merging a pair or `main` | Take either side and rerun `npm run emit:template` or `npm run check:surface -- --update`. It's generated. |
 | A conflict in `events.ts`, `events-list.ts`, `events.go`, or `log-events.md` while merging a pair | Keep both lines. |
@@ -218,9 +231,9 @@ The sheet's apply. These add what this pass can foresee.
 | New work found | `/standards:log-issue`, list it. It takes a number past the highest on `main` at merge, and the PR names placeholders. |
 | A new product or taste question | Write it to STATUS and wait for `cairn-cms-9b`. Never `notify-send`. |
 | A heavy gate lane is busy | Wait through `cairn-run-gate`. `RUN_GATE_IF_BUSY=defer` only on ordinary tasks, never T5. |
-| A compound shell line is refused | Run the command plainly from the worktree, or use Read and Write. Note it for `## Tooling`. |
+| A compound shell line is refused for its shape | Split it into its plain commands from the worktree, or use Read and Write. Note it for `## Tooling`. This row never covers `claude -p`, or a command refused once in plain form. |
 | The smoke's known `no-pending-request` FAIL | Counts as a pass with a note, per the sheet. Anything else that fails is a stop. |
-| A refusal of any kind other than the shell guard | A stop. Never get the refused effect another way. |
+| Any other refusal, the shell guard's included | A stop. Never get the refused effect another way. T12's probe and suite take the answer in Pre-flight. |
 
 **Set-aside order.** The sheet's cuts come first, then the items no May-not protects, cheapest loss first.
 Trigger: at each pair's close, spent plus remaining plan past 840 sets aside the next not-yet-started item,
@@ -781,8 +794,8 @@ absent at click, and no failure on the idle run. Anything else is not proven. Th
 Outcome, proven: one helper in `editor-helpers.ts` waits for the handler the read in step 1 names and then
 clicks, used at the palette tests, `container-fields.spec.ts:174`, and `media-library.spec.ts:137`. It replaces no
 assertion and adds no re-click. The scratch spec through the helper at 20x opens 50 of 50. If `openCreateDialog`'s
-re-click is then unnecessary, leave it for #208's next read. The drop-once-recorded comment comes out, and #208
-closes.
+re-click is then unnecessary, leave it for #208's next read. The drop-once-recorded comment comes out, T11 writes
+the evidence on #208, and T17 closes it.
 
 Outcome, not proven: the palette tests go through a helper in the `openCreateDialog` shape that logs
 `[palette-trace]`, `container-fields.spec.ts:174` takes `openCreateDialog`, and #208 stays open and records what
@@ -792,10 +805,6 @@ the throttled run showed. Not a stop, per the sheet's retried-test answer.
 and T18 reports the palette count over this PR's heads against 7 of 15; on the unproven arm that count is labeled
 "masked by re-click". **Test:** the e2e line on `admin-visual.spec.ts --grep 'command palette'`,
 `container-fields.spec.ts`, and `media-library.spec.ts`.
-
-**Acceptance:** #208 states the cause or the throttled result, with figures. Once fixed, the PR lists each
-head's retries, and T18 reports the palette count over this PR's heads. **Test:** the e2e line on
-`admin-visual.spec.ts --grep 'command palette'` and `container-fields.spec.ts`.
 
 #### T12. Eval cases and the sandbox (69)
 
@@ -817,21 +826,23 @@ Current source:
 Outcome:
 
 - #188: one regression and one capability case against an editor page.
-- #191: add these to `DENIED_TOOLS`: `Bash(sed *)`, with `Bash(sed -n *)` out of `ALLOWED_TOOLS`;
-  `Bash(git diff *--output*)`, `Bash(git -C * diff *--output*)`; `Bash(git grep *-O*)`,
-  `Bash(git grep *--open-files-in-pager*)`; `Bash(sort *-o*)`; `Bash(git difftool*)`, `Bash(git -C * difftool*)`.
-  `sed` is denied whole because a glob can't tell a `w` command from a `w` in a path. A session keeps `Read`,
-  `head`, and `tail`, and a denied filter isn't a fault under `NEEDED_COMMAND`. A denied compound is denied whole,
-  and `deniedFaults` (`run.mjs:478-499`) counts a session that reissues the leading command as recovered. Fence
-  the reply in the judge prompt. `cp -a` replaces `cp -al` at `:874`, since a `chmod` on a hard link changes the
-  shared inode.
-- Probe: one real `claude -p` session under these rules tries each form plus a plain `sort`, `git diff --stat`,
-  and `git grep`, and `permission_denials` lists every denied form and no plain one. The plan's fold couldn't
-  run this probe (the worktree guard refused it), so this is its first run. A pattern that fails its probe is
-  fixed before the suite starts. `run.test.mjs` pins the list only.
+- #191's deny half, its own commit so it can be set aside: add these to `DENIED_TOOLS`: `Bash(sed *)`, with
+  `Bash(sed -n *)` out of `ALLOWED_TOOLS`; `*--output*` under `git diff`, `git show`, and `git log`, each also in
+  its `git -C *` form; `*-O*` and `*--open-files-in-pager*` under `git grep` and `git -C * grep`; `Bash(sort *-*o*)`;
+  `Bash(git difftool*)`, `Bash(git -C * difftool*)`. `sed` is denied whole because a glob can't tell a `w` command
+  from a `w` in a path, and `sort`'s pattern over-matches for the clustered `-uo`. A session keeps `Read`, `head`,
+  and `tail`, and a denied filter isn't a fault under `NEEDED_COMMAND`. A denied compound is denied whole, and
+  `deniedFaults` (`run.mjs:478-499`) counts a session that reissues the leading command as recovered.
+- #191's rest: fence the reply in the judge prompt. `cp -a` replaces `cp -al` at `:874`, since a `chmod` on a hard
+  link changes the shared inode.
+- Probe, run by the session after T12 merges, one plain attempt: one `claude -p` session under these rules tries
+  each form plus a plain `sort a.txt`, `git diff --stat`, and `git grep`, and `permission_denials` lists every
+  denied form and no plain one. A pattern that fails its probe is fixed before the suite starts. A refused probe
+  takes Pre-flight's answer: the deny commit is reverted, #191 stays open with that remainder, and the judge fence,
+  `cp -a`, and #188 still land. `run.test.mjs` pins the list only.
 
-Then start `node .claude/skills/cairn-writing-docs/evals/run.mjs main <branch>` as a background Bash task. It
-adds no path. Measured: the last two 60-trial runs took a median of 18 and 19 seconds per near-miss trial, 2
+Then the session, not the implementer, starts `node .claude/skills/cairn-writing-docs/evals/run.mjs main <branch>`
+once, as a background Bash task. It adds no path. Measured: the last two 60-trial runs took a median of 18 and 19 seconds per near-miss trial, 2
 minutes at worst, and an `E1`-shaped trial took a median of 220 seconds, so 72 sessions at four in flight is
 about 20 minutes plus judging. An `Agent` call in a session stays in that session's process. Exit 4 is the usage
 limit: rerun with `--resume <runId>` after the reset, and it's never a set-aside.
@@ -843,9 +854,10 @@ capability case graded on the branch arm; and every failing trial's transcript r
 the new harness, `main <branch>` can't measure #191, so it compares each regression case's pass rate against the
 last recorded run, `20261101-191925-cb19`.
 
-**Acceptance:** `run.test.mjs` pins the deny list, the probe's denials are recorded, and the judge prompt fences
-a reply holding a fake instruction. The table meets the bar above. A real drop that survives the rerun, or a
-broken run, sets #191, then #188, aside, reverting those commits, and that's read before T17. **Test:** `node
+**Acceptance:** `run.test.mjs` pins the deny list, the probe's denials are recorded or its refusal is, and the
+judge prompt fences a reply holding a fake instruction. The table meets the bar above. A real drop that survives
+the rerun, a broken run, or a refused suite sets #191, then #188, aside, reverting those commits, and that's read
+before T17. **Test:** `node
 --test` on `run.test.mjs`.
 
 #### T13. The measures (75, background)
@@ -968,7 +980,8 @@ Outcome:
   `docs/internal/plans/2026-11-02-cleanup-claims.md` before any trial text is extracted. The commit is the proof of
   order, and T18's glob deletes the file. This task's brief quotes only state read `:264-267`, the item list, and
   `~/.local/state/cairn-agent-first/brief-map.md`, with no line from state read 7's "Grade blind needs", and the
-  implementer opens no `next-pass-design.md`, `packet-pass-4-close.md`, ledger, PR #170, or trial answer.
+  implementer opens no `next-pass-design.md`, `packet-pass-4-close.md`, ledger, PR #170, trial answer, this plan,
+  or the state read outside `:264-267`.
 - The rubric sentence: delete `docs/architecture.md:48`'s first sentence. The grade reads `04c6036ac`, so the
   deletion can't affect it.
 
@@ -1000,7 +1013,8 @@ wait, after the claims commit:
 3. Dispatch one fresh Opus medium agent, with the claims, the labeled texts, and the tool lists inline, and that
    directory as the only place it reads. It returns met or unmet per item per trial, with the quote and the source
    page. Its brief quotes nothing from state read 7 or this plan, since `docs/internal/plans/` holds both.
-4. Read the agent's tool calls afterward and record that none left that directory.
+4. Read the agent's tool calls afterward and record that none left that directory. A read outside it voids that
+   grade: one fresh agent reruns it, and a second breach records #207 as ungraded.
 5. Over `tool_use` inputs only, since `CONTRIBUTING.md:204` names the tag and whole-transcript hits are false:
    confirm no fetch of a `pre-agent-first` URL, and report every read outside the allowed pages. Those are reported,
    not failing.

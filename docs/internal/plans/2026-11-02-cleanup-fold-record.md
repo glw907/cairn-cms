@@ -3,8 +3,14 @@
 Fold of the three reviews into `2026-11-02-cleanup-plan.md` and `2026-11-02-cleanup-design.md`, at `154a1ff28`.
 Every finding was checked against source or a published page before it folded. Verified corrections are noted.
 
-**Final path:** 839 calibrated, 1,173 at reader sizes. No cut taken. **Counts:** 81 findings: 79 folded, 2
-refused, 0 owner forks. Two folded findings had one part refused, named below.
+**Final path:** 839 calibrated, 1,173 at reader sizes. No cut taken. **Counts:** 81 findings: 78 folded, 2
+refused, 1 owner fork, open. Two folded findings had one part refused, named below. The verification read's
+findings are under "Verification".
+
+**"Ruling N"** in this record means the planner's numbered rulings in its fold brief, not Geoff's. Those cited:
+1, S1 becomes one question; 3, the pace trigger; 4, #211 moves with no route to a key; 5, ergonomics 20 is the
+worked case only; 6, an unmet #207 grade is recorded, and the session runs it; 7, T5's #248 shape; 10, T12's bar
+reading and T17's order; 13, T5 stays Opus medium and T6 reports its event.
 
 ## Path
 
@@ -54,7 +60,7 @@ hooks reference.
 | 2 | Folded | T5 step 4, ruling 7 |
 | 3 | Folded | T5 step 3 |
 | 4 | Folded | T17 acceptance: `api-surface.md` is absent at `v0.98.0`, confirmed. Proxy is `## Removed` and `Consumers must:` at the pre-reset SHA, `createNavRoutes` seeded |
-| 5 | Folded | S1, ruling 1 |
+| 5 | Owner fork, open | S1 carries it. See "Owner forks" |
 | 6 | Folded | Set-aside order, ruling 3 |
 | 7 | Folded | S1: about 2,770 |
 | 8 | Folded | T12's rule reading, ruling 10 |
@@ -144,12 +150,45 @@ hooks reference.
 
 ## Owner forks
 
-None.
+**Open: may a plan be calibrated against its ceiling?** Mechanics 5 and verification finding 2. S1 carries the
+question, and `cairn-cms-9b` takes it to Geoff or a ledger ruling. Yes is S1's option (a), and it's recommended. No
+is option (b), which needs the same word, since it sets aside items the sheet doesn't list. The executor launches on
+either answer, not before.
 
 ## Refusals
 
 - The T12 permission probe: one `claude -p` session against the proposed denies, in a scratch repo. The worktree guard
-  refused the command as written, and it was left. T12 runs that probe first, and the plan says so. Deny-rule behavior
+  refused the command as written, and it was left. The plan's answer is in Pre-flight and T12. Deny-rule behavior
   here rests on the permissions page.
 - One read-only `grep` over a saved fetch was refused for backticks in its pattern. The guard's message asks for the
   plain command, and that ran.
+- In the verification fold, one `grep` over the plan was refused for its shape. It wasn't rerun; the plan was read
+  with Read instead, which any edit needs.
+
+## Verification
+
+Findings of `2026-11-02-cleanup-fold-verification.md`, at `7a6408643`. The planner's rulings for this round are
+quoted in the entries they decide.
+
+| # | Disposition | Where |
+| --- | --- | --- |
+| 1 | Folded | T12, Pre-flight's known refusal, both standing rows. The session runs the probe and the suite, once each. A refused probe sets #191's deny half aside; a refused suite is a stop |
+| 2 | Owner fork, open | S1 quotes `ledger.md:96` and `run-sheet.md:221`. Its 0.715 and pace-trigger evidence are in option (a) |
+| 3 | Folded | T11's stale block deleted |
+| 4 | Folded | T12's list: `git -C` grep forms, `--output` under `git show` and `git log`, `sort *-*o*` |
+| 5 | Refused | `optional` |
+| 6 | Folded | T15: the implementer opens neither this plan nor the state read outside `:264-267` |
+| 7 | Folded | T16 step 4 |
+| 8 | Folded | T11 writes the evidence, T17 closes |
+| 9 | Folded in part | S6 and S7 are in the design note, and "ruling N" is defined above. Owed, by the planner: the STATUS question and the push |
+| 10 | Refused | `optional` |
+
+**Owed:**
+
+- The STATUS question and the push of `worktree-cleanup`, from finding 9.
+- T12's probe, unrun until the executor's session.
+
+**Closed by the planner:** the credential scan the verification read left open. That read's grep was refused because
+its pattern named the password CLI. The planner searched the sweep, the state read, and `BACKLOG.md` by key name and
+store name, not by that CLI's name. The sweep and state read have no hit, and `BACKLOG.md`'s two hits describe tidy's
+behavior. The search reached no store and ran no secret tool.

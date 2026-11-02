@@ -38,11 +38,14 @@ tests the pre-hydration cause directly rather than sampling for it.
 The first is the pass's one stop, and it holds the launch. The rest are recommended readings in the plan's
 section of that name: each is reversible, the plan is written to it, and the conductor may overrule any.
 
-1. Stop: does the plan answer to the calibrated path or to reader sizes (S1)?
+1. Stop: does the plan answer to the calibrated path or to reader sizes (S1)? The ceiling is Geoff's, so the
+   answer comes through `cairn-cms-9b`.
 2. #248: reuse `throttled`, keep the oracle, add the binding to the request action only (S2).
 3. #247: hash ids and delete the prior row, accept the other two (S3).
 4. #246 waits on #245's proof at the real install (S4).
 5. #211 moves after the release (S5).
+6. The `tool/v2` module path lands here, the one item outside the sheet's scope, because pass 9's step 17 needs it (S6).
+7. `/styleguide` leaves dev as well as production, by an exclude (S7).
 
 ## Out of scope
 

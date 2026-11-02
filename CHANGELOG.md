@@ -221,7 +221,9 @@
 - **A refused settings form keeps what you typed.** Navigation, Tags, Tidy, the create dialog, and Editors
   answer a refusal in place: the rows, tags, toggles, and typed values stay, and the refusal takes focus.
   The create dialog stays open and shows the refusal inside it. The hidden `aria-live` region these
-  screens used is gone, since the focus move announces the refusal. A save that goes through still loads a
+  screens used is gone, since the focus move announces the refusal. The list screens keep one polite
+  region for a refused delete, a publish-all bounce, and a load error, since none of those takes a
+  focus move. A save that goes through still loads a
   fresh page, and a request that fails outright shows `That did not go through. Your text is still here;
   please try again.` Each Save button disables while its request runs, so a double click sends one request.
   The Editors screen updates its table without a page load and reads `The editor list is updated.` The
@@ -239,7 +241,7 @@
 
 - **A refused save points at its field.** `ContentFormFailure` gains `field?: string`, the name of the
   first field the server refused. The edit page moves focus to that control, opening Details or leaving
-  Preview first, and marks it `aria-invalid` until the next input. A refusal with no single visible
+  Preview first, and marks it `aria-invalid` and described by the error banner until the next input. A refusal with no single visible
   control moves focus to the error banner.
 
   Consumers must: nothing.
@@ -251,9 +253,10 @@
   Consumers must: nothing.
 
 - **The editors table fits at 320 and the publish filter shows a scroll cue.** Below the `sm`
-  breakpoint the table stacks Email and Role under the name and keeps the actions in view. The segmented
-  filter fades its clipped edge, and arrow, Home, and End keys scroll the selected option clear of the
-  fade.
+  breakpoint the table stacks Email and Role under the name, with screen-reader labels, and keeps the
+  actions in view. The segmented filter fades its clipped edge, and arrow, Home, and End keys scroll the
+  selected option clear of the fade. The media detail panel's image preview keeps its height instead of
+  collapsing to a line.
 
   Consumers must: nothing.
 

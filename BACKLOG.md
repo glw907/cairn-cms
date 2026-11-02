@@ -27,6 +27,9 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#298** Say where a create refusal goes when its dialog closed mid-request `#bug` `#cairn-cms` *(2026-11-02)*
+  A refusal that arrives after the editor pressed Esc or Cancel now shows in the list's page banner, but that banner has no focus move and sits outside the list's polite region, so a screen reader announces it nowhere. An `error` result that lands after the close shows nothing at all, because it never reaches `form`. Block closing while the request runs, or route both to the polite region (`ConceptList.svelte`). Found by the `p2-p4` fold.
+  Placement: Pass 8.
 - [ ] **#297** Close the small focus and announcement gaps the `p2-p4` reviews left `#improvement` `#cairn-cms` *(2026-11-02)*
   Removing the last row on Navigation or Tags drops focus to `<body>`, and `EmptyState` could take it (`NavTree.svelte` `removeRow`, `VocabularyAdmin.svelte` `remove`). A successful Editors row action drops focus to `<body>` too, since `update()` runs `applyAction` (`ManageEditors.svelte`). `warnLength` runs on `input` only, so a stored value already out of bounds, or one an accepted Tidy suggestion wrote, gets no message until it is edited (`FieldInput.svelte`, `EditPage.svelte`). The title input is not a `.validator`, so a refused title shows only focus. A pending Save shows a dimmed button with no "Saving…" text, and `aria-busy` on a button is not announced. The Tags empty state keeps `min-h-[56vh]`, which pushes the seed section and the Save footer below the fold. Found by the `p2-p4` close reviews.
   Placement: Pass 8.

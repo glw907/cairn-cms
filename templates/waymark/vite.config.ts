@@ -37,8 +37,8 @@ export default defineConfig({
         // /archive/[page]'s own `entries` export (archive.ts's paginateArchive) enumerates the real
         // page numbers 2..N from the content index at build time. On a small or early-stage corpus
         // this legitimately returns zero entries: the whole corpus fits on page one, so no page 2
-        // exists yet. This showcase's corpus now crosses that boundary and produces /archive/2,
-        // but a smaller site's still returns none, and SvelteKit's crawl-completeness check has no
+        // exists yet. A site with enough entries to paginate produces /archive/2 and beyond, but a
+        // smaller site's returns none, and SvelteKit's crawl-completeness check has no
         // way to tell "correctly empty" from "misconfigured entries", so it fails the whole build
         // on that route alone. Scope the exception to that one route by id; any other unseen
         // prerenderable route still fails the build, same as the default.
@@ -50,9 +50,4 @@ export default defineConfig({
     }),
     cairnManifest({ configModule: '/src/theme/cairn.config.ts' }),
   ],
-  // The showcase consumes the engine through a file:../.. dist symlink. dedupe keeps Vite from
-  // resolving a second @sveltejs/kit instance (which breaks the engine's `instanceof Redirect`
-  // check), and fs.allow lets the dev server read the engine's dist client assets one level up.
-  resolve: { dedupe: ['@sveltejs/kit'] },
-  server: { fs: { allow: ['..', '../..'] } },
 });

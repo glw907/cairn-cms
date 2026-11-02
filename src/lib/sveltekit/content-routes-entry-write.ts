@@ -151,7 +151,6 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
-    const isNew = form.get('new') === '1';
 
     const backend = ctx.resolveBackend(event);
 
@@ -162,18 +161,18 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
 
     // The entry's prior file, read once branch-first like editLoad: the pending branch when its head
     //  is non-null, else the default branch. It feeds the tag vocabulary's orphan union and the
-    //  undeclared-key merge below. A create has none. A failed read or parse fails closed, since
-    //  proceeding on "no prior keys" would silently delete every key the fieldset does not declare.
+    //  undeclared-key merge below. The server decides whether the entry exists, never the form's
+    //  `new` flag, so a create reads null and carries no prior keys. A failed read or parse fails
+    //  closed, since proceeding on "no prior keys" would silently delete every key the fieldset does
+    //  not declare.
     let priorData: Record<string, unknown> = {};
-    if (!isNew) {
-      try {
-        const branch = pendingBranch(concept.id, id);
-        const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
-        const priorRaw = await backend.readFile(path, priorBranch);
-        if (priorRaw !== null) priorData = parseMarkdown(priorRaw).frontmatter;
-      } catch {
-        return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
-      }
+    try {
+      const branch = pendingBranch(concept.id, id);
+      const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
+      const priorRaw = await backend.readFile(path, priorBranch);
+      if (priorRaw !== null) priorData = parseMarkdown(priorRaw).frontmatter;
+    } catch {
+      return fail(503, saveRefusal("Couldn't read the current version of this entry. Try saving again.", body));
     }
 
     // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this

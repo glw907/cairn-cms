@@ -1,8 +1,8 @@
-// cairn-cms: the CAIRN_DEV_BACKEND flag, its truthiness rule, and the local-host predicate the
-// https help page and the CSRF cookie decision read. Two sites read this module rather than
-// hand-writing a second copy: `sveltekit/guard.ts` (the admin guard, which mounts only in a
-// production build and refuses on the flag alone) and `sveltekit/csrf.ts` (which reads only the
-// local-host predicate).
+// cairn-cms: the CAIRN_DEV_BACKEND flag, its truthiness rule, the local-host predicate the https
+// help page and the CSRF cookie decision read, and the dev-only text of an unmapped-target refusal.
+// `sveltekit/guard.ts` reads the flag, and refuses on it alone, because the guard mounts only in a
+// production build. `sveltekit/csrf.ts` reads the local-host predicate. `sveltekit/section-action.ts`
+// shares the refusal text with the guard.
 //
 // It sits at the lib root and imports nothing, so any module can read it without risking an
 // import cycle.
@@ -55,4 +55,15 @@ export function readPublicOrigin(env: unknown): string | undefined {
   const bindings = typeof env === 'object' && env !== null ? (env as Record<string, unknown>) : undefined;
   const value = bindings?.PUBLIC_ORIGIN;
   return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Name the fix for a missing access rule, but only on a local dev-backend request. The signal is
+ * `event.locals.cairnBackend`, which only the dev handle sets and a production request leaves
+ * unset, so a deployed site's 403 never says which targets the access map lacks. Returns null for
+ * any other reason or when the backend is unset, and the caller keeps its generic refusal.
+ */
+export function localNoRuleMessage(reason: string, target: string, cairnBackend: unknown): string | null {
+  if (reason !== 'no_rule' || !cairnBackend) return null;
+  return `No access rule for ${target}. Add it to the adapter's access map.`;
 }

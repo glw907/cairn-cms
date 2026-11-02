@@ -11,7 +11,7 @@ title the menu's declared label; the sortable-list card below stays untouched.
 @beta
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import { SortableList, sortItems } from '@rodrigodagostino/svelte-sortable-list';
   import type { SortableList as SortableListNS } from '@rodrigodagostino/svelte-sortable-list';
@@ -30,6 +30,15 @@ title the menu's declared label; the sortable-list card below stays untouched.
   }
 
   let { data, form = null }: Props = $props();
+
+  // The saved message for the sr-only status region. A save redirects into a full document load, so
+  // the visible alert is present at parse and not announced; the region fills only after mount, a
+  // mutation an assistive technology voices.
+  let mounted = $state(false);
+  onMount(() => {
+    mounted = true;
+  });
+  const savedAnnouncement = $derived(mounted && data.saved ? 'Navigation saved.' : '');
 
   // A flat, ordered working model is simpler to reorder than a recursive one: each row carries an
   // explicit depth, and the nested tree is rebuilt from order plus depth only at submit time.
@@ -131,14 +140,13 @@ title the menu's declared label; the sortable-list card below stays untouched.
 <PageHeader eyebrow="Settings" title={data.menu.label} />
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
-<!-- Mounted unconditionally so a later save still announces (the needs-alt notice's live-region
-     rule, WCAG 4.1.3): a region conditionally mounted with its first content is not reliably
-     observed by assistive tech. Only the visible box moves inside. -->
-<div role="status">
-  {#if data.saved}
-    <div class="alert alert-success mb-4 type-body">Navigation saved.</div>
-  {/if}
-</div>
+<!-- The status region is mounted unconditionally and empty until hydration (WCAG 4.1.3): a region
+     conditionally mounted with its first content is not reliably observed by assistive tech. The
+     visible alert carries no role, so it is not announced a second time. -->
+<div role="status" class="sr-only">{savedAnnouncement}</div>
+{#if data.saved}
+  <div class="alert alert-success mb-4 type-body">Navigation saved.</div>
+{/if}
 {#if lifecycleError}
   <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}

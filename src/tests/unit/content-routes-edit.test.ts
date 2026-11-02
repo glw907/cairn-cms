@@ -92,7 +92,7 @@ describe('editLoad', () => {
     const data = await routes.editLoad(editEvent('2026-05-hello'));
     expect(data).toMatchObject({
       conceptId: 'posts', id: '2026-05-hello', label: 'Posts', title: 'Hello',
-      body: 'The body.', isNew: false, saved: false,
+      body: 'The body.', isNew: false, flash: null,
     });
     expect(data.frontmatter.title).toBe('Hello');
     expect(data.frontmatter.date).toBe('2026-05-01');
@@ -368,30 +368,33 @@ describe('editLoad', () => {
     expect(data.slug).toBe('hello');
   });
 
-  it('reads the saved flag from the query; a crafted ?error= renders nothing at all', async () => {
+  it('a crafted ?error= renders nothing at all', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes({ runtime: runtime() });
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope'));
-    expect(data.saved).toBe(true);
+    expect(data.flash).toBe('saved');
     expect(data).not.toHaveProperty('error');
   });
 
-  it('reads the renamed flag from the query', async () => {
+  it.each([
+    ['?saved=1', 'saved'],
+    ['?renamed=1', 'renamed'],
+    ['?published=1', 'published'],
+    ['?discarded=1', 'discarded'],
+    ['', null],
+    ['?saved=0', null],
+  ] as const)('reads the flash from the query %j', async (query, flash) => {
     editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes({ runtime: runtime() });
-    const data = await routes.editLoad(editEvent('hi', '?renamed=1'));
-    expect(data.renamed).toBe(true);
+    const data = await routes.editLoad(editEvent('hi', query));
+    expect(data.flash).toBe(flash);
   });
 
-  it('reads the published and discarded flashes from the query', async () => {
+  it('settles on one flash when a hand-typed query carries two', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes({ runtime: runtime() });
-    const published = await routes.editLoad(editEvent('hi', '?published=1'));
-    expect(published.publishedFlash).toBe(true);
-    expect(published.discardedFlash).toBe(false);
-    const discarded = await routes.editLoad(editEvent('hi', '?discarded=1'));
-    expect(discarded.publishedFlash).toBe(false);
-    expect(discarded.discardedFlash).toBe(true);
+    const data = await routes.editLoad(editEvent('hi', '?renamed=1&saved=1'));
+    expect(data.flash).toBe('saved');
   });
 });
 

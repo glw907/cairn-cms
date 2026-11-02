@@ -15,7 +15,7 @@ discriminant, not the fields, gates the chrome).
 
 Under a `themeOverride` the shell offers no theme toggle, in the top bar or in `EditPage`'s folded
 overflow control, so nothing flips the theme the host owns. When the streamed pending set is
-non-empty the top bar shows a "Publish site (N)" button; a null set (GitHub unreachable) hides it
+non-empty the top bar shows a "Publish all (N)" button; a null set (GitHub unreachable) hides it
 rather than showing a stale count. A nav entry shows a count badge only for a positive
 `data.attention` count for its `href`, capped at `99+`; a collapsed section's header shows the sum of
 its visible children's counts from that same record. The count rides the link's accessible name, so
@@ -370,16 +370,19 @@ a screen reader announces it once.
   // rather than a synchronous derived (a null resolution hides the action rather than lying).
   let publishAllDialog = $state<HTMLDialogElement>();
 
-  // Group the pending ids under their concept's nav label, in first-seen order. A ref whose concept
-  // is not in the nav (an unconfigured key) falls back to the raw key. Called from the await block
-  // with the resolved list, so the chrome never reads the promise synchronously.
-  function groupPending(pending: { concept: string; id: string }[]): { label: string; ids: string[] }[] {
-    const groups = new Map<string, string[]>();
+  // Group the pending rows under their concept's nav label, in first-seen order. A ref whose concept
+  // is not in the nav (an unconfigured key) falls back to the raw key. Each row keeps its id as the
+  // key and carries the title the list shows. Called from the await block with the resolved list,
+  // so the chrome never reads the promise synchronously.
+  function groupPending(
+    pending: { concept: string; id: string; title: string }[],
+  ): { label: string; rows: { id: string; title: string }[] }[] {
+    const groups = new Map<string, { id: string; title: string }[]>();
     for (const entry of pending) {
       const label = shell?.concepts.find((c) => c.id === entry.concept)?.label ?? entry.concept;
-      groups.set(label, [...(groups.get(label) ?? []), entry.id]);
+      groups.set(label, [...(groups.get(label) ?? []), { id: entry.id, title: entry.title }]);
     }
-    return [...groups.entries()].map(([label, ids]) => ({ label, ids }));
+    return [...groups.entries()].map(([label, rows]) => ({ label, rows }));
   }
 
   // The bare data-theme wrapper is the admin root the dev chrome-guard measures from.
@@ -883,7 +886,7 @@ a screen reader announces it once.
             {#if pending && pending.length > 0}
               <div class="flex-none">
                 <button type="button" class="btn btn-sm btn-soft btn-primary" aria-haspopup="dialog" aria-controls="cairn-shell-publish-all" onclick={() => publishAllDialog?.showModal()}>
-                  Publish site ({pending.length})
+                  Publish all ({pending.length})
                 </button>
               </div>
             {/if}
@@ -1035,8 +1038,8 @@ a screen reader announces it once.
               {#each groups as group, i (group.label)}
                 <p id={`cairn-publish-group-${i}`} class="mt-3 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.label}</p>
                 <ul class="mt-1 type-body" aria-labelledby={`cairn-publish-group-${i}`}>
-                  {#each group.ids as id (id)}
-                    <li>{id}</li>
+                  {#each group.rows as row (row.id)}
+                    <li>{row.title}</li>
                   {/each}
                 </ul>
               {/each}
@@ -1045,7 +1048,7 @@ a screen reader announces it once.
               <form method="POST" action="/admin?/publishAll" class="mt-4 flex justify-end gap-2">
                 <CsrfField token={data.csrf} />
                 <button type="button" class="btn btn-sm" onclick={() => publishAllDialog?.close()}>Cancel</button>
-                <button type="submit" class="btn btn-sm btn-primary">Publish site</button>
+                <button type="submit" class="btn btn-sm btn-primary">Publish all</button>
               </form>
             </div>
             <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>

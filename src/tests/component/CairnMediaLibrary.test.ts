@@ -578,16 +578,13 @@ describe('CairnMediaLibrary detail slide-over', () => {
     expect((form.querySelector('input[name="hash"]') as HTMLInputElement).value).toBe('aaaa111122223333');
     expect((form.querySelector('input[name="displayName"]') as HTMLInputElement).value).toBe('first-light');
     expect((form.querySelector('input[name="slug"]') as HTMLInputElement).value).toBe('first-light');
-    // The alt field rides a hidden input; DESCRIBED_USED has a described alt, so it seeds describe.
-    expect((form.querySelector('input[name="alt"]') as HTMLInputElement).value).toBe('A pair of blue running shoes');
-    // The alt editor groups two NATIVE radios under a fieldset (native radios form their own group
-    // with arrow-key nav, so no role="radiogroup" is added). The legend names it; the radios share a
-    // name so they are one group.
-    const altFieldset = form.querySelector('fieldset')!;
-    expect(altFieldset.querySelector('legend')?.textContent ?? '').toMatch(/alt/i);
-    const altRadios = [...altFieldset.querySelectorAll('input[type="radio"]')] as HTMLInputElement[];
-    expect(altRadios.length).toBe(2);
-    expect(new Set(altRadios.map((r) => r.name)).size).toBe(1);
+    // One Default alt text box posts its own value (no hidden mirror, no mode radios), seeded from
+    // the asset's stored alt, so what the editor sees is what saves.
+    const altBox = form.querySelector('textarea[name="alt"]') as HTMLTextAreaElement;
+    expect(altBox.value).toBe('A pair of blue running shoes');
+    expect(form.querySelector('input[name="alt"]')).toBeNull();
+    expect(form.querySelectorAll('input[type="radio"]').length).toBe(0);
+    expect(form.textContent ?? '').toMatch(/default alt text/i);
     expect(form.textContent ?? '').toMatch(/default for the next time/i);
   });
 
@@ -851,7 +848,7 @@ describe('CairnMediaLibrary Replace entry point and dialog', () => {
     expect(replace).not.toBeNull();
     expect(replace.getAttribute('aria-haspopup')).toBe('dialog');
     expect(replace.textContent ?? '').toMatch(/replace image/i);
-    expect(panel.textContent ?? '').toMatch(/push alt to placements/i);
+    expect(panel.textContent ?? '').toMatch(/apply default alt to entries/i);
   });
 
   it('opens the Replace dialog as an alertdialog on the upload step, Cancel focused', async () => {
@@ -937,7 +934,7 @@ describe('CairnMediaLibrary Replace impact review', () => {
     expect(text).not.toContain('3 in the body');
   });
 
-  it('joins a hero, a body, and a nested count with the serial comma', async () => {
+  it('joins a lead image, a body, and a nested count with the serial comma', async () => {
     const before = 'media:first-light.aaaa111122223333';
     const after = 'media:first-light.b42e0d51aaaa0000';
     const plan: MediaReplacePreviewPlan = {
@@ -963,7 +960,7 @@ describe('CairnMediaLibrary Replace impact review', () => {
     const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) });
     const dialog = await uploadThroughReplace(screen, /first-light/);
     await expect.poll(() => dialog.textContent ?? '').toContain('Every kind of placement');
-    expect(dialog.textContent ?? '').toContain('Hero, 2 in the body, and 1 in a gallery or card');
+    expect(dialog.textContent ?? '').toContain('Lead image, 2 in the body, and 1 in a gallery or card');
   });
 
   it('gates the apply button until the typed slug matches, and posts the replace form fields', async () => {
@@ -1140,7 +1137,7 @@ const ALT_PLAN: MediaAltPreviewPlan = {
   counts: { willFill: 1, customized: 1, decorativeSkipped: 1, nestedSkipped: 0 },
 };
 
-// Open the Push-alt dialog: open the slide-over for an asset, click "Push alt to placements", and wait
+// Open the Push-alt dialog: open the slide-over for an asset, click "Apply default alt to entries", and wait
 // for the dialog to open. Mirrors openReplace.
 async function openPushAlt(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   await openSlideOver(screen, name);
@@ -1209,7 +1206,7 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
     // The will-fill row shows the (no alt) -> default arrow.
     expect(dialog.textContent ?? '').toMatch(/no alt/i);
     // The caveat: a body image cannot record decorative, only a hero can be skipped.
-    expect(dialog.textContent ?? '').toMatch(/only a hero can be skipped/i);
+    expect(dialog.textContent ?? '').toMatch(/only a lead image can be skipped/i);
   });
 
   it('renders the decorative-skipped bucket as listed and muted with no input', async () => {
@@ -2049,7 +2046,7 @@ describe('CairnMediaLibrary Push-alt review live region hoist', () => {
     stubPreviewFetch(failureBody({ error: '' }));
     const screen = await render(CairnMediaLibrary, { data: fixture() });
     const dialog = await openPushAlt(screen, /first-light/);
-    await expect.poll(() => dialog.textContent ?? '').toMatch(/push alt is on hold/i);
+    await expect.poll(() => dialog.textContent ?? '').toMatch(/applying default alt is on hold/i);
     // The region that announced the review step's moving total is still present, just empty, rather
     // than having unmounted along with the review markup (WCAG 4.1.3).
     const live = [...dialog.querySelectorAll('[role="status"][aria-live="polite"]')].find(

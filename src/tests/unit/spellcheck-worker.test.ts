@@ -6,10 +6,12 @@
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { SpellcheckerWasm } from 'spellchecker-wasm/lib/browser/SpellcheckerWasm.js';
 import {
   boundDictionaryChunks,
+  createEngine,
+  createWorkerMessageHandler,
   createSpellcheckHandler,
   type SpellEngine,
   type OutboundMessage,
@@ -273,5 +275,57 @@ describe('dictionary-en-us.txt contraction coverage', () => {
       const occurrences = words.filter((candidate) => candidate === word).length;
       expect(occurrences).toBe(1);
     }
+  });
+});
+
+describe('createWorkerMessageHandler', () => {
+  const init = { type: 'init', wasmUrl: '/w.wasm', dictionaryUrl: '/d.txt' } as const;
+
+  it('replays an addWord sent before the engine resolves, so the first check answers correct', async () => {
+    const posted: OutboundMessage[] = [];
+    let resolveEngine!: (engine: SpellEngine) => void;
+    const receive = createWorkerMessageHandler(
+      () => new Promise<SpellEngine>((resolve) => (resolveEngine = resolve)),
+      (m) => posted.push(m),
+    );
+    receive(init);
+    receive({ type: 'addWord', words: ['Cairnish'] });
+    receive({ type: 'ignoreWord', word: 'Zorp' });
+    receive({ type: 'check', seq: 0, words: [{ id: 1, word: 'x' }] });
+    expect(posted).toEqual([{ type: 'error', detail: 'spellchecker not ready' }]);
+    posted.length = 0;
+    resolveEngine(fakeEngine([]));
+    await vi.waitFor(() => expect(posted).toEqual([{ type: 'ready' }]));
+    receive({
+      type: 'check',
+      seq: 1,
+      words: [
+        { id: 1, word: 'cairnish' },
+        { id: 2, word: 'zorp' },
+        { id: 3, word: 'nope' },
+      ],
+    });
+    expect(posted[1]).toEqual({
+      type: 'checked',
+      seq: 1,
+      results: [
+        { id: 1, correct: true },
+        { id: 2, correct: true },
+        { id: 3, correct: false },
+      ],
+    });
+  });
+
+  it('posts error, never ready, when the dictionary fetch is a 404', async () => {
+    const wasm = new Response('wasm', { status: 200 });
+    const missing = new Response('<html>', { status: 404 });
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => (url === init.wasmUrl ? wasm : missing)));
+    const posted: OutboundMessage[] = [];
+    const receive = createWorkerMessageHandler(createEngine, (m) => posted.push(m));
+    receive(init);
+    await vi.waitFor(() => expect(posted).toHaveLength(1));
+    vi.unstubAllGlobals();
+    expect(posted[0]).toMatchObject({ type: 'error' });
+    expect(posted.some((m) => m.type === 'ready')).toBe(false);
   });
 });

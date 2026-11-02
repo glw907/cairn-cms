@@ -9,6 +9,7 @@ import { isUnsafeFormRequest, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } 
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION, IDENTITY_UNKNOWN_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
+import { localNoRuleMessage } from '../dev-flag.js';
 import { env } from './workers-env.js';
 import { isBuilding } from './building.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
@@ -551,7 +552,7 @@ export function requireAccess(event: CairnEvent, target?: string): Editor {
   if (!ruled || !canReach(access, editor, resolvedTarget)) {
     const reason: AccessRefusedReason = ruled ? 'role' : noRuleReason(access, resolvedTarget);
     log.warn('auth.access.refused', { email: editor.email, role: editor.role, target: resolvedTarget, reason });
-    throw error(403, 'Access denied');
+    throw error(403, localNoRuleMessage(reason, resolvedTarget, event.locals.cairnBackend) ?? 'Access denied');
   }
   return editor;
 }

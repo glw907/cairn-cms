@@ -267,6 +267,8 @@ export function normalizeConcepts(
   return descriptors;
 }
 
+// WATCH: mintPreview and revokePreview authorize the raw string before this lookup, which is sound
+// only while the match is exact. An alias or case fold here would let a denied role mint a link.
 /** Look up a normalized concept by id, or undefined when the site does not enable it. */
 export function findConcept(
   concepts: ConceptDescriptor[],

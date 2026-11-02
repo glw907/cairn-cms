@@ -1,6 +1,6 @@
 # When something goes wrong
 
-This page explains the messages the editor shows when it refuses a request, and what to do next. It covers the sign-in link, saving and publishing, creating an entry, tags, a page that won't delete, and the links inside a draft.
+This page explains the messages the editor shows when it refuses a request, and what to do next. It covers the sign-in link, saving and publishing, creating an entry, tags, an entry that won't delete, and the links inside a draft.
 
 This page doesn't explain how to write, save, or publish. For those, see [Write in the editor](write-in-the-editor.md) and [Publish an entry and review its history](publish-and-history.md). The messages for a refused image upload are in [Manage the media library](manage-the-media-library.md).
 
@@ -57,8 +57,8 @@ The following table lists the messages, what each one means, and what to do.
 | **"Pick a date for this entry."** | The entry needs a date, and the date field is empty. | Choose a date in the date field in the **Details** panel, and then save again. |
 | **"This entry changed since you opened it. Re-read the draft and save again."** | The saved copy of the entry changed while your save was on its way. | Follow the steps in [An edit conflict stops your save](#an-edit-conflict-stops-your-save). |
 | **"Your edits are saved. Publish again."** | The site changed while your publish was running. | Select **Publish** again. |
-| **"Another entry already uses the address /posts/hello. Your edits are saved. Change the address of one of the two, then publish again."** | Another entry already has the address your entry would publish to. Yours may name a different address. Two entries can't share an address, so nothing was published. | Open the other entry and select **Change URL** in its **Details** panel. If that entry has unpublished edits, publish or discard them first. Then select **Publish** again. |
-| **"This page includes a fragment that does not exist: welcome."** | The entry includes a fragment the site doesn't have. The message names the fragment. | Remove the **Include:** chip, or include a fragment that exists. Then save again. |
+| **"Another entry already uses the address /posts/hello. Your edits are saved. Change the address of one of the two, then publish again."** | Another entry already has the address your entry would publish to. Yours may name a different address. Two entries can't share an address, so nothing was published. | Open the other entry and select **Change address** in its **Details** panel. If that entry has unpublished edits, publish or discard them first. Then select **Publish** again. |
+| **"This entry includes a fragment that does not exist: welcome."** | The entry includes a fragment the site doesn't have. The message names the fragment. | Remove the **Include:** chip, or include a fragment that exists. Then save again. |
 | **"An include is missing its fragment. Pick a fragment or remove the include."** | An **Include:** chip in the entry has no fragment chosen. | Remove the chip, or include a fragment again. Then save. |
 
 <!-- vale Microsoft.Contractions = YES -->
@@ -135,9 +135,9 @@ To try again after any of these refusals:
 1. Fix the field that the message names.
 1. Select **Create**.
 
-## A page won't delete
+## An entry won't delete
 
-You can't delete a page while other pages link to it, because those links would lead nowhere. The refusal starts with the following message, where the word after This names the kind of entry:
+You can't delete an entry while other entries link to it, because those links would lead nowhere. The refusal starts with the following message, where the word after This names the kind of entry:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, so a contraction rule cannot rewrite it. -->
@@ -148,21 +148,21 @@ The line under it reads like this, with the number and the words matching what y
 
 <!-- vale Cairn.ProseProcedure = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, and its instruction is the product's wording. -->
-**"3 pages now link to it. Remove or repoint the links listed below, then delete again."**
+**"3 entries now link to it. Remove or repoint the links listed below, then delete again."**
 <!-- vale Cairn.ProseProcedure = YES -->
 
-To delete the page:
+To delete the entry:
 
-1. Select each title in the list to open that page.
+1. Select each title in the list to open that entry.
 1. Remove the link, or change it to point somewhere else.
-1. Save and publish the page. For links in the text, the check looks at the published site, so a change you saved but didn't publish doesn't clear this message.
-1. Open the page you want to delete and delete it again.
+1. Save and publish the entry. For links in the text, the check looks at the published site, so a change you saved but didn't publish doesn't clear this message.
+1. Open the entry you want to delete and delete it again.
 
 ## A draft has a broken link
 
-When a draft links to a page that no longer exists, or to one that has never been published, the editor refuses to save it. It shows this message above the draft:
+When a draft links to an entry that doesn't exist, or to one that has never been published, the editor refuses to save it. It shows this message above the draft:
 
-**"This page links to a page that no longer exists. Remove the broken link and save again."**
+**"This entry links to an entry that doesn't exist. Remove the broken link and save again."**
 
 Under the message, each broken link appears on a separate line with a **Remove link** button. To fix the draft:
 
@@ -170,30 +170,30 @@ Under the message, each broken link appears on a separate line with a **Remove l
 1. Repeat for each line.
 1. Select **Save**.
 
-If you want to keep a link, point it at a page that exists instead.
+If you want to keep a link, point it at an entry that exists instead.
 
-A link to a page that has never been published gets the same refusal, because the live site has no such page yet. Publish that page first, or remove the link. A link to a published page that's marked **Hidden** doesn't stop the save. A warning appears after you save to say the link shows a page-not-found error until you clear **Hidden** on that page and publish it.
+A link to an entry that has never been published gets the same refusal, because the live site has no such page yet. Publish that entry first, or remove the link. A link to a published entry that's marked **Hidden** doesn't stop the save. A warning appears after you save, which reads **Saved. Note: this entry links to an entry that visitors can't reach yet**, followed by the link in parentheses. Visitors see a page-not-found error until you clear **Hidden** on that entry and publish it.
 
 ## A site-wide publish is refused
 
-The **Publish site** button in the top bar publishes every entry that has unpublished changes. If it can't, you land on an entry list with one of these messages:
+The **Publish all** button in the top bar publishes every entry you have access to that has unpublished changes. If it can't, you land on an entry list with one of these messages:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
 - **"Nothing to publish. Every entry is already live."** Nothing was waiting. No action is needed.
-- **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish site** again.
+- **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish all** again.
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, tell your site owner.
-- **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** Two of the waiting entries have the same address. Use the **Pending edits** filter on a list to find them. Change the address of one, and then select **Publish site** again.
+- **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** A waiting entry would take an address that another waiting or live entry holds. Use the **Unpublished changes** filter on a list to find them. Change the address of one, and then select **Publish all** again.
 <!-- vale Microsoft.Contractions = YES -->
 
-## A revert is refused
+## A restore is refused
 
-The **Revert** button on an entry's history saves an older version as a draft, so a refusal means no draft was created. The history screen shows the reason in a message over the list:
+The **Restore as draft** button on an entry's history saves an older version as a draft, so a refusal means no draft was created. The history screen shows the reason in a message over the list:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
-- **"[Name] has a draft in progress, last saved [date]. Publish or discard it before reverting."** Someone has unpublished changes on this entry. Open the entry, then publish or discard the draft, and revert again.
-- **"The history changed since this page loaded. Reload and try again."** Someone published while you had the history open. Reload the history and select **Revert** again.
+- **"[Name] has a draft in progress, last saved [date]. Publish or discard it before restoring."** Someone has unpublished changes on this entry. Open the entry, then publish or discard the draft, and restore again.
+- **"The history changed since this page loaded. Reload and try again."** Someone published while you had the history open. Reload the history and select **Restore as draft** again.
 - **"That version is no longer in the recent list."** The version you picked has dropped out of the list the history shows. Reload the history and pick a version from the new list.
 <!-- vale Microsoft.Contractions = YES -->
 

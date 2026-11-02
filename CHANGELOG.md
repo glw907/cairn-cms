@@ -7,6 +7,39 @@
 
   Consumers must: nothing.
 
+- **A slot's help and a field's bounds show under the control.** `SlotDef.help` renders under the slot in the
+  insert form, and the control is described by it. A text, textarea, or number field with `min`, `max`, or
+  `length` shows the bound (`3 to 80 characters.`) after its help, and keeps the validity mark after the
+  browser's bubble fades. A failed save with an invalid title and an invalid Details field leaves Details
+  closed, so focus stays on the title. Focus returns to **More actions** when the Discard window closes.
+
+  Consumers must: nothing.
+
+- **The reproduction fixtures use a generic site.** The worked site is Field Notes, with a visitor guide,
+  a morning view, and an area map in place of the trailhead set, and the tag vocabulary reads How-To and
+  member-spotlight. The two image fixtures are renamed `morning-view` and `area-map`; their bytes and
+  hashes are unchanged.
+
+  Consumers must: nothing.
+
+- **The admin's words follow the ruled vocabulary.** An editor sees entry and entries where a screen said
+  page and pages. The topbar button reads **Publish all**, **Change URL** reads **Change address**,
+  **Pending edits** reads **Unpublished changes**, the history button reads **Restore as draft**, **Push alt
+  to placements** reads **Apply default alt to entries**, a hero reads lead image, and **Upload an image**
+  reads **Upload image**. The visibility filter's **Shown** reads **All**, and the **Published** filter now
+  counts an edited live entry. The Publish all confirmation lists titles, not ids, so
+  `AdminShellData.pendingEntries` rows gain a `title`. The library's default alt text is one box, not two
+  radios, so what you see saves. A guard's bare `csrf` code never reaches a Replace dialog's screen.
+
+  Consumers must: update any test that quotes a renamed label.
+
+- **A `config.migrations-missing` diagnostic condition (a warning)** names a site whose
+  migrations directory lacks a migration the package ships, which `cairn doctor` now checks. The
+  `auth.role-wiring-missing` text also stops claiming that an unwired guard falls back to the default
+  roles: a `createAuthGuard` call with no runtime raises a `TypeError`.
+
+  Consumers must: nothing.
+
 - **`scripts/checks/api-surface.md` ships in the package.** The snapshot holds the exact signature of
   every export, and `cairn-extending-a-site` now routes a lookup to
   `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md`. `check:package` fails a tarball
@@ -19,6 +52,20 @@
   prerender` in its page, its server page, or a layout at or above it, because that route renders on
   every request. Export `prerender = true`, or `false` to choose per-request rendering on purpose.
   An advisory finding never fails a run.
+
+  Consumers must: nothing.
+
+- **A refused entry delete or rename leaves a log record.** `entry.delete_refused` and
+  `entry.rename_refused` carry `editor`, `concept`, `id`, `reason`, and `count` where the site counts
+  something; `entry.reference_check_failed` marks a fail-closed read fault with `action` and `error`. The
+  `log-events` table lists every `reason`.
+
+  Consumers must: nothing.
+
+- **A local 403 for a missing access rule names the fix.** Under the dev backend, `requireAccess` and
+  `createSectionAction` answer `No access rule for <target>. Add it to the adapter's access map.` ahead of
+  a custom `deniedMessage`; a deployed site's refusal stays generic and its log record is unchanged. The
+  showcase and scaffold `+error.svelte` show that text on a 403.
 
   Consumers must: nothing.
 
@@ -157,6 +204,24 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
+  map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
+  answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one
+  writes no `preview_tokens` row, and a refused editor on that site gets a generic failure.
+
+  Consumers must: nothing.
+
+- **`EditData` carries one `flash` field, and `ContentFormFailure.error` is required.** Each success
+  redirect sets exactly one flash, so `flash` (`'saved' | 'renamed' | 'published' | 'discarded' | null`)
+  replaces the `saved`, `renamed`, `publishedFlash`, and `discardedFlash` booleans. The redirect URLs
+  stay the same. `ContentFormFailure.error` loses its `?`, since every content action failure sets it,
+  and `navSaveAction` now returns that type, which retires the `NavSaveFailure` leak.
+  The settings, vocabulary, and nav `saved` flags are a different shape and stay.
+
+  Consumers must: read data.flash in place of saved, renamed, publishedFlash, and discardedFlash.
+
+  Consumers must: treat ContentFormFailure.error as a required string, and use Partial<ContentFormFailure> for a form prop that also carries a success result.
 
 - **`loadPreview` and `loadHealth` take the event first and an options bag.** They now read
   `loadPreview(event, { runtime, publicRoutes })` and `loadHealth(event, { runtime })`.
@@ -1164,6 +1229,22 @@
   Consumers must: nothing.
 
 ### Fixed
+
+- **Five small client fixes.** The site dictionary now reaches the spellcheck Worker before its first
+  check (the Worker held back an `addWord` that arrived before the engine was ready, #209). A failed
+  spellcheck asset fetch reports `error` instead of loading a 404 page as a dictionary (#210). A double
+  click on the delete confirm sends one POST (#214). `NavTree` announces "Navigation saved." after a
+  full document load, through an always-mounted status region filled after mount (#215). The Style
+  conventions heading and its links stack below `sm` so the copy reads at 320 (#242).
+
+  Consumers must: nothing.
+
+- **A save keeps every collapsed repeatable row.** `RepeatableField` unmounted a collapsed row's
+  controls, so a save that never expanded the row dropped it from the entry. The body now stays
+  mounted and is hidden, so each row's values reach the form, and a required control in a collapsed
+  row opens its row on a failed validation instead of cancelling the save silently (#237).
+
+  Consumers must: nothing.
 
 - **Editor screens drop builder words, and a stale head reads one way.** A save, rename, or delete that
   loses a race says `This entry changed since you opened it.`, the settings and navigation screens say

@@ -207,6 +207,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Import `ComponentContext` from `@glw907/cairn-cms`.** `/render` is gone, and `/sveltekit` no longer carries the type.
 - **Rename `IdentityRefusal` to `IdentityFailure`.** The type is the refusal arm of `IdentityResolver.resolve`'s return, so change it in any resolver you write. Nothing else changed.
 - **Read `runtime.email` in place of `runtime.sender`, and read the renderer, icons, and media from the adapter.** `CairnRuntime` no longer carries `render`, `icons`, or `assets`. Read `adapter.rendering.render`, `adapter.rendering.icons`, and `adapter.media`, or `runtime.media` for the resolved config. A hand-built runtime in a test drops those keys and renames `sender` to `email`.
+- **Read `data.flash` in place of `saved`, `renamed`, `publishedFlash`, and `discardedFlash`.** A hand-built `EditData` sets `flash: null`, or one of `'saved'`, `'renamed'`, `'published'`, or `'discarded'`. The settings, vocabulary, and nav `saved` flags stay.
+- **Treat `ContentFormFailure.error` as a required string.** A hand-built failure sets it, and a `form` prop that also carries a success result uses `Partial<ContentFormFailure>`.
 - **Unwrap `defineFieldset` on each concept.** `fields: defineFieldset({ ... })` becomes `fields: { ... }`, and the import goes. A check `defineFieldset` ran now runs at `defineConcept`.
 - **Move `refine` and `behavior` onto the concept.** Each sits beside `fields` on `defineConcept` in place of `defineFieldset`'s second argument.
 - **Read a concept's `fields` as the plain record.** `posts.fields.fields`, `.validate`, and `.behavior` are gone. Pass `ConceptConfig` the record type, and remove any `FieldsetConfig` import.

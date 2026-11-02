@@ -59,6 +59,8 @@ declare global {
       /** The signed-in editor, set by `createAuthGuard` on a guarded `/admin/**` request; `null` when signed out, absent on a request the guard never touched. */
       cairnEditor?: Editor | null;
       /** The per-request content store the dev-backend handle injects, resolved ahead of the real provider (`locals.cairnBackend ?? runtime.backend.connect(env)`); a production request leaves it unset. */
+      // WATCH: this field is also the dev witness for `localNoRuleMessage`. Setting it in production
+      // would make a 403 name the targets the access map lacks.
       cairnBackend?: Backend;
       /** The site's persistence seam for `createSectionAction`'s audit records, assigned in a hooks handle. Left unassigned, every `ctx.audit` emit still logs `admin.action.audited`. */
       cairnAuditSink?: AdminActionAuditSink;

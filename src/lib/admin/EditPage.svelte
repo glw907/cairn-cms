@@ -5,7 +5,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 `?/save` action. The title field is hoisted above the editor card as the document title; the
 remaining fields group behind the Details slide-over (a fixed panel below the band, toggled from
 the band's Details trigger or Ctrl+.) under Details, Visibility (the draft boolean as the Hidden
-toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
+toggle), and Address (the slug with the Change address trigger). The toolbar's Write/Preview tabs
 swap the editing surface for the rendered preview inside the same card; every visit lands on
 Write. Preview renders inside a sandboxed iframe that links the site's stylesheets (the
 adapter's `preview` knob), takes the full content width (the sidebar hides until Write), and
@@ -46,6 +46,7 @@ island.
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { StatusChip, Tooltip } from '../admin-toolkit/index.js';
   import { useTopbar } from './topbar-context.js';
+  import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -286,7 +287,7 @@ island.
   const bodyDirty = $derived(body !== bodyBaseline);
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
-  const saveState = $derived(dirty ? 'Unsaved changes' : data.saved && !failedInPlace ? 'Saved' : '');
+  const saveState = $derived(dirty ? 'Unsaved changes' : data.flash === 'saved' && !failedInPlace ? 'Saved' : '');
   // Whether Publish has anything to take live: a body/field edit, a held draft branch, or a
   // brand-new entry that has never been saved. Otherwise the button is guarded rather than hidden
   // (the grounding survey: six of eight comparable editors keep Publish permanently visible), so
@@ -342,7 +343,11 @@ island.
   function onFormInvalid(e: Event) {
     const target = e.target as Element | null;
     if (target?.closest('aside')) {
-      if (!detailsOpen) flushSync(() => (detailsOpen = true));
+      // Open Details only for the control the browser is about to focus, the first invalid one in
+      // the form. A title that is also invalid sits earlier and keeps focus, so a narrow screen
+      // is not covered by the panel over the field the report points at.
+      const first = editForm?.querySelector('input:invalid, textarea:invalid, select:invalid');
+      if (first === target && !detailsOpen) flushSync(() => (detailsOpen = true));
       return;
     }
     if (mode === 'write') return;
@@ -472,6 +477,8 @@ island.
   });
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
+  // Where focus returns when the Discard window closes; plain, since nothing renders from it.
+  let discardOrigin: HTMLElement | null = null;
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
   // landing tab. Preview is read-only, so the insert controls the page renders into the toolbar
   // disable with the strip's format buttons; `insertDisabled` below (declared after
@@ -1263,16 +1270,15 @@ island.
     return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
   });
 
-  // The one transient feedback strip under the sticky header. The redirect flags are mutually
-  // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
+  // The one transient feedback strip under the sticky header.
   // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
   const flash = $derived.by(() => {
     if (failedInPlace) return '';
-    if (data.saved && !draftWarning)
+    if (data.flash === 'saved' && !draftWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
-    if (data.publishedFlash) return 'Published. The live site is rebuilding.';
-    if (data.discardedFlash) return 'Changes discarded.';
-    if (data.renamed) return `The URL is now ${data.slug}.`;
+    if (data.flash === 'published') return 'Published. The live site is rebuilding.';
+    if (data.flash === 'discarded') return 'Changes discarded.';
+    if (data.flash === 'renamed') return `The address is now ${data.slug}.`;
     return '';
   });
 
@@ -1282,7 +1288,7 @@ island.
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
   const politeMessage = $derived.by(() => {
-    if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
+    if (draftWarning) return `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
     if (referenceWarning) return referenceNotice;
     return flash;
   });
@@ -1293,12 +1299,12 @@ island.
       const count = deleteRefusedLinks.length;
       const detail = deleteRefusedByInclusion
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
-        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+        : `${count} ${count === 1 ? 'entry links' : 'entries link'} to it.`;
       return `This ${singularNoun.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
-      return `This page links to ${count} missing ${count === 1 ? 'page' : 'pages'}.`;
+      return `This entry links to ${count} missing ${count === 1 ? 'entry' : 'entries'}.`;
     }
     return '';
   });
@@ -1718,7 +1724,10 @@ island.
         {/if}
         {#if data.pending}
           <li role="listitem">
-            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
+            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => {
+              discardOrigin = resolveDialogOrigin(actionsTrigger);
+              discardDialog?.showModal();
+            })}>
               Discard changes
             </button>
           </li>
@@ -1823,8 +1832,8 @@ island.
 {/if}
 <!-- The site's publish-actions next-step links (`publishActions` on `createContentRoutes`):
      quiet links beside the publish-success strip, never their alert. They render only alongside
-     publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
-{#if !failedInPlace && data.publishedFlash && data.publishActions.length}
+     the published flash, so a mid-edit reload of a previously published entry never shows a stale set. -->
+{#if !failedInPlace && data.flash === 'published' && data.publishActions.length}
   <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
     {#each data.publishActions as action (action.label)}
       <a class="link link-primary" href={action.href}>{action.label}</a>
@@ -1849,7 +1858,7 @@ island.
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
-      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry' : 'entries'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
@@ -1862,7 +1871,7 @@ island.
 {/if}
 {#if visibleBrokenLinks.length && !failureNotice}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
+    <p>This entry links to {visibleBrokenLinks.length === 1 ? 'an entry' : 'entries'} that {visibleBrokenLinks.length === 1 ? "doesn't" : "don't"} exist. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul role="list" class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
         <li class="flex items-center justify-between gap-2" role="listitem">
@@ -1956,7 +1965,7 @@ island.
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
+    Saved. Note: this entry links to {draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet ({draftWarning}).
   </div>
 {/if}
 {#if referenceWarning}
@@ -2472,7 +2481,7 @@ island.
             aria-haspopup="dialog"
             onclick={() => renameDialog?.open()}
           >
-            {data.routable ? 'Change URL' : 'Rename'}
+            {data.routable ? 'Change address' : 'Rename'}
           </button>
         </div>
       </fieldset>
@@ -2764,7 +2773,7 @@ island.
 />
 
 {#if data.pending}
-  <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog}>
+  <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog} onclose={() => (discardOrigin = refocusDialogOrigin(discardOrigin))}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">
         <h2 id="cairn-discard-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Discard the unpublished changes?</h2>

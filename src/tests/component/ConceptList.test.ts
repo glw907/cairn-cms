@@ -264,7 +264,7 @@ describe('ConceptList', () => {
 
   it('retargets a refused-load dialog: another row confirms, the refused row shows its blockers', async () => {
     const form = {
-      error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+      error: 'Cannot delete 2026-05-01-post-1: 1 entry links to it.',
       id: '2026-05-01-post-1',
       inboundLinks: [{ concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' }],
     };
@@ -307,20 +307,29 @@ describe('ConceptList', () => {
   it('the triage shows exact counts per state', async () => {
     const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published-status).
-    // Hidden is orthogonal: the hidden-but-published row counts in BOTH Published and Hidden.
-    await expect.element(screen.getByRole('radio', { name: /^all/i })).toHaveTextContent('5');
-    await expect.element(screen.getByRole('radio', { name: /^pending edits/i })).toHaveTextContent('2');
-    await expect.element(screen.getByRole('radio', { name: /^published/i })).toHaveTextContent('3');
+    // Published is every live entry, so the edited row counts in BOTH Unpublished changes and
+    // Published. Hidden is orthogonal: the hidden-but-published row counts in BOTH Published and Hidden.
+    await expect.element(screen.getByRole('radio', { name: /^all\d/i })).toHaveTextContent('5');
+    await expect.element(screen.getByRole('radio', { name: /^unpublished changes/i })).toHaveTextContent('2');
+    await expect.element(screen.getByRole('radio', { name: /^published/i })).toHaveTextContent('4');
     await expect.element(screen.getByRole('radio', { name: /^hidden/i })).toHaveTextContent('1');
   });
 
-  it('Pending edits filters to new and edited rows', async () => {
+  it('Unpublished changes filters to new and edited rows', async () => {
     const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
-    await screen.getByRole('radio', { name: /^pending edits/i }).click();
+    await screen.getByRole('radio', { name: /^unpublished changes/i }).click();
     await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'New One' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Published One' })).not.toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Published Two' })).not.toBeInTheDocument();
+  });
+
+  it('Published includes an edited live entry and leaves out a never-published one', async () => {
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
+    await screen.getByRole('radio', { name: /^published/i }).click();
+    await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Published One' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'New One' })).not.toBeInTheDocument();
   });
 
   it('Hidden composes with the partition (Published + Hidden = published and hidden)', async () => {
@@ -340,21 +349,21 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'pub-1', title: 'Apple Published', date: '2026-05-10', draft: false, status: 'published' as const, summary: null },
       { id: 'pub-2', title: 'Banana Published', date: '2026-05-09', draft: false, status: 'published' as const, summary: null },
-      { id: 'edit-1', title: 'Apple Edited', date: '2026-05-08', draft: false, status: 'edited' as const, summary: null },
+      { id: 'new-1', title: 'Apple New', date: '2026-05-08', draft: false, status: 'new' as const, summary: null },
     ];
     const screen = await render(ConceptList, { data: data({ entries }) });
     await screen.getByRole('radio', { name: /^published/i }).click();
     await screen.getByRole('searchbox', { name: /search/i }).fill('Apple');
     await expect.element(screen.getByRole('link', { name: 'Apple Published' })).toBeInTheDocument();
     // Filtered out by the publish state, even though it matches the query.
-    await expect.element(screen.getByRole('link', { name: 'Apple Edited' })).not.toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Apple New' })).not.toBeInTheDocument();
     // Filtered out by the query, even though it matches the publish state.
     await expect.element(screen.getByRole('link', { name: 'Banana Published' })).not.toBeInTheDocument();
   });
 
   it('All is the default and shows every row', async () => {
     const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
-    const all = screen.getByRole('radio', { name: /^all/i });
+    const all = screen.getByRole('radio', { name: /^all\d/i });
     await expect.element(all).toHaveAttribute('aria-checked', 'true');
     await expect.element(screen.getByRole('link', { name: 'Published One' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
@@ -364,7 +373,7 @@ describe('ConceptList', () => {
 
   it('surfaces a refused delete from the flat action result', async () => {
     const form = {
-      error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+      error: 'Cannot delete 2026-05-01-post-1: 1 entry links to it.',
       id: '2026-05-01-post-1',
       inboundLinks: [
         { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
@@ -457,7 +466,7 @@ describe('ConceptList', () => {
     await expect.element(published).toHaveAttribute('aria-checked', 'true');
     expect(published.element().querySelector('svg')).not.toBeNull();
     // An inactive segment carries no check glyph (its state is not color alone, it has no svg).
-    const all = screen.getByRole('radio', { name: /^all/i });
+    const all = screen.getByRole('radio', { name: /^all\d/i });
     expect(all.element().querySelector('svg')).toBeNull();
   });
 
@@ -593,11 +602,11 @@ describe('ConceptList', () => {
       expect(input.getBoundingClientRect().width).toBeGreaterThan(200);
     });
 
-    it('keeps the Pending edits filter chip on one line', async () => {
+    it('keeps the Unpublished changes filter chip on one line', async () => {
       await page.viewport(320, 700);
       const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
       pad320(screen.container);
-      const pending = screen.getByRole('radio', { name: /^pending edits/i });
+      const pending = screen.getByRole('radio', { name: /^unpublished changes/i });
       const rect = (await pending.element()).getBoundingClientRect();
       // The toolkit's segmented option is a real btn-sm, sized by the shared --size-field step
       // every other toolbar/pagination button already uses, taller than the old bespoke pill; a
@@ -612,7 +621,7 @@ describe('ConceptList', () => {
     it('spans the refused-delete banner body across the alert width at 320, not a crushed column', async () => {
       await page.viewport(320, 700);
       const form = {
-        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        error: 'Cannot delete 2026-05-01-post-1: 1 entry links to it.',
         id: '2026-05-01-post-1',
         inboundLinks: [
           { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
@@ -635,7 +644,7 @@ describe('ConceptList', () => {
     // the grid's own gap as the only space between them.
     it('carries no margin on the refused-delete banner\'s stacked title and body paragraphs', async () => {
       const form = {
-        error: 'Cannot delete 2026-05-01-post-1: 1 page links to it.',
+        error: 'Cannot delete 2026-05-01-post-1: 1 entry links to it.',
         id: '2026-05-01-post-1',
         inboundLinks: [
           { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },

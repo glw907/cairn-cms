@@ -78,6 +78,11 @@ func Catalogue() []string {
 		tmplNoReferrerPass,
 		adminMountGuidance,
 		passAdminMountWired,
+		skipConfigMigrationsNoAuthDB,
+		uncheckedConfigMigrationsPackage,
+		uncheckedConfigMigrationsUnreadable,
+		tmplConfigMigrationsMissing,
+		tmplConfigMigrationsPass,
 		factsAbsentDetail,
 		skipConfigMediaBucketNone,
 		tmplConfigMediaBucketFail,
@@ -135,7 +140,7 @@ func (c Check) lineTitle(status Status) string {
 	return c.label()
 }
 
-// checks is the complete doctor check set cairn doctor runs, in report order: the eight
+// checks is the complete doctor check set cairn doctor runs, in report order: the nine
 // file-only checks followed by the three facts-dependent checks.
 var checks = []Check{
 	configBindings,
@@ -146,6 +151,7 @@ var checks = []Check{
 	configPublicOrigin,
 	configNoReferrerBlanket,
 	adminMountShape,
+	configMigrations,
 	configDependencyFloors,
 	authRoleWiring,
 	aiPostureEffective,

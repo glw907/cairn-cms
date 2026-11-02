@@ -70,11 +70,12 @@ export type PreviewMintOutcome =
  *
  * Minting converts one editor's read on a concept into an unauthenticated public read for anyone
  * holding the URL, so authorization runs FIRST and short-circuits, in the engine's order:
- * `requireEditor` (the session the admin guard resolved), the concept lookup,
- * `requireEngineAccess` against `runtime.access`, the id shape rule, and only then the draft
- * check. A refusal therefore never reports whether an entry or its draft exists to a session that
- * was not allowed to ask. The `target` is the argument's, never the route's: this reads no route
- * param.
+ * `requireEditor` (the session the admin guard resolved), `requireEngineAccess`
+ * against `runtime.access` for the target's concept key, the concept lookup, the id shape rule, and
+ * only then the draft check. Access runs before the lookup so a role denied a key gets the refusal
+ * whether or not the key names a concept. A refusal therefore never reports whether an entry or
+ * its draft exists to a session that was not allowed to ask. The `target` is the argument's, never
+ * the route's: this reads no route param.
  *
  * The editor is the guard-resolved session's and cannot be supplied by the caller. The stored
  * `editor` column is that session's `email`, already normalized by the `editor`-table select, so
@@ -91,9 +92,9 @@ export async function mintPreview(
   target: { concept: string; entryId: string },
 ): Promise<PreviewMintOutcome> {
   const editor = requireEditor(event);
+  requireEngineAccess(runtime.access, editor, target.concept);
   const concept = findConcept(runtime.concepts, target.concept);
   if (!concept) return { outcome: 'unknown-concept' };
-  requireEngineAccess(runtime.access, editor, concept.id);
   if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
 
   // A missing AUTH_DB answers before any network read: it is site setup, not entry state, so it
@@ -141,9 +142,10 @@ export type PreviewRevokeOutcome =
  * Mirrors {@link mintPreview}'s authorization sequence exactly, since revoking is the same
  * authority-scoped act minting is (an entry-scoped credential the site's access map governs), so
  * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
- * guard-resolved session), the concept lookup, `requireEngineAccess` against `runtime.access`,
- * then the id shape rule. A refusal therefore never reaches the delete, and the `target` is the
- * argument's, never the route's, the same way `mintPreview` takes it.
+ * guard-resolved session), `requireEngineAccess` against `runtime.access` for the target's
+ * concept key, the concept lookup, then the id shape rule. A refusal therefore never reaches the
+ * delete, and the `target` is the argument's, never the route's, the same way `mintPreview` takes
+ * it.
  *
  * Logs `preview.token.revoked` on success, from inside this function; never called on a
  * refusal.
@@ -156,9 +158,9 @@ export async function revokePreview(
   target: { concept: string; entryId: string },
 ): Promise<PreviewRevokeOutcome> {
   const editor = requireEditor(event);
+  requireEngineAccess(runtime.access, editor, target.concept);
   const concept = findConcept(runtime.concepts, target.concept);
   if (!concept) return { outcome: 'unknown-concept' };
-  requireEngineAccess(runtime.access, editor, concept.id);
   if (!isValidId(target.entryId)) return { outcome: 'invalid-id' };
 
   const db = requireDb(env);

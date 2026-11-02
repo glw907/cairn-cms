@@ -5,7 +5,7 @@ The Media Library's upload dialog: a standard modal `<dialog>`, NO light dismiss
 nothing, and only Escape or the Cancel button closes it. It hosts `MediaCaptureCard` on a
 chosen or dropped file; a typed ingest/upload failure or an expired session shows the Replace
 flow's retry-card treatment without losing the file. It relies on the native `<dialog>` role
-and `aria-labelledby`, with no redundant role or `aria-modal`, matching the Push-alt and
+and `aria-labelledby`, with no redundant role or `aria-modal`, matching the Apply-default-alt and
 orphan-scan dialogs.
 
 Three trigger sites open it: the host's header and empty-state Upload buttons call the
@@ -219,7 +219,7 @@ the new asset appears.
   type="file"
   accept="image/*"
   class="sr-only"
-  aria-label="Upload an image"
+  aria-label="Upload image"
   tabindex="-1"
   aria-hidden="true"
   onchange={onUploadFileChosen}
@@ -241,7 +241,7 @@ the new asset appears.
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-upload-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
-            Upload an image
+            Upload image
           </h2>
           <p id="cairn-ml-upload-sub" class="mt-1 type-meta leading-relaxed text-muted">
             Name it and, if you like, describe it. You can add the description later.

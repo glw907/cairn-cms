@@ -117,11 +117,12 @@ describe('condition registry', () => {
     // own remediation), minus auth.csrf-origin-mismatch and config.csrf-disable-missing (the
     // framework's own Origin check now covers every route, so neither has a cairn-side failure
     // to name), plus config.csrf-trusted-origins-wildcard for the doctor's trustedOrigins check,
-    // plus auth.store-roles-unmigrated for the role write a pre-0001 AUTH_DB refuses.
+    // plus auth.store-roles-unmigrated for the role write a pre-0001 AUTH_DB refuses,
+    // plus config.migrations-missing for the doctor's uncopied-migration check.
     // minus config.tidy-key-missing and admin.login-probe-failed, retired with the tidy-key
     // probe and the live login probe (their docs anchors stay in shipped-anchors.json).
     // Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(23);
+    expect(allConditions()).toHaveLength(24);
   });
 
   it('resolves the trusted-origins condition with its exposure text and anchor', () => {
@@ -176,8 +177,9 @@ describe('condition registry', () => {
     const c = condition('auth.role-wiring-missing');
     expect(c.severity).toBe('warning');
     expect(c.why).toMatch(/createAuthGuard/);
-    expect(c.why).toMatch(/none capability/i);
-    expect(c.remediation).toMatch(/createAuthGuard\(\{ roles \}\)/);
+    expect(c.why).toMatch(/TypeError/);
+    expect(c.why).not.toMatch(/falls back/i);
+    expect(c.remediation).toMatch(/createAuthGuard\(\{ runtime \}\)/);
     expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
     expect(c.logEvent).toBe('auth.role.unknown');
   });

@@ -2,7 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 
 // A failure inside /admin renders in the admin shell and its theme wrapper, never the public
 // site's chrome. The fixture route throws a 403 (the dev handle always mints an owner session, so
-// no access-map refusal is reachable otherwise); an unknown path under /admin is the 404 case.
+// no role refusal is reachable; its no-rule case reaches the one access refusal that is); an
+// unknown path under /admin is the 404 case.
 
 /** Asserts the page's one h1 sits inside the shell's theme wrapper and the public header is absent. */
 async function expectAdminErrorPage(page: Page, heading: string, body: string) {
@@ -26,6 +27,16 @@ test('a refused admin page renders the 403 copy inside the admin theme wrapper',
     page,
     "You don't have access to this page.",
     "Your role doesn't include this page. Ask the site owner if you need access.",
+  );
+});
+
+test('a missing access rule names the fix under the dev backend', async ({ page }) => {
+  const response = await page.goto('/admin/error-fixture?case=no-rule');
+  expect(response?.status()).toBe(403);
+  await expectAdminErrorPage(
+    page,
+    "You don't have access to this page.",
+    "No access rule for /admin/no-such-rule-target. Add it to the adapter's access map.",
   );
 });
 

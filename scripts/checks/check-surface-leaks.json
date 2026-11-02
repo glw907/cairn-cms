@@ -139,12 +139,6 @@
       "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-retires-move-record.md (the 18-row sanction table) and https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-navpageoption."
     },
     {
-      "name": "NavSaveFailure",
-      "subpath": "/sveltekit",
-      "model": "type-checker",
-      "sanctioned-by": "https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md#audit-sveltekit-navsavefailure (retire, 4b conformance Task 1), whose close text states the accepted NavIcon-class leak directly."
-    },
-    {
       "name": "PublishActionLink",
       "subpath": "/sveltekit",
       "model": "type-checker",

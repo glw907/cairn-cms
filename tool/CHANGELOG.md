@@ -8,6 +8,19 @@ every route. No `tool/v2.0.0` tag exists yet.
 
 ### Added
 
+- **The `config.migrations` check** reports an `AUTH_DB` migrations directory that lacks a migration
+  the installed package ships, under the new condition `config.migrations-missing` (a warning). It
+  lists `node_modules/@glw907/cairn-cms/migrations`, treats every `.sql` file there as required
+  except `0001_roles.sql`, `0002_audit.sql`, and `0003_preview.sql`, and reads the folder that the
+  `AUTH_DB` entry's `migrations_dir` names, `migrations` by default. It reads file names only, so a
+  PASS means the files were copied, not applied. A missing package folder, a `file:` install whose
+  symlink leaves the directory, or a `migrations_dir` outside the directory or that isn't a readable
+  folder reports `UNCHECKED`.
+  Its docs anchor, `is-it-working.md#provision-the-auth-store`, was already on the shipped list.
+  `cairn doctor` now runs twelve checks.
+
+  Consumers must: nothing.
+
 - **The `auth.store-roles-unmigrated` condition id** (a warning) names the fault of an `AUTH_DB`
   that lacks the engine's `0001_roles.sql`: a write naming a role beyond `owner` and `editor`
   fails on the old role constraint. The condition is public; a reader that matches on the
@@ -23,6 +36,13 @@ every route. No `tool/v2.0.0` tag exists yet.
   `is-it-working.md#keep-sveltekits-origin-check-on`, joins the shipped-anchor list.
 
 ### Changed
+
+- **The `auth.role-wiring` fail detail no longer says the guard falls back to owner and editor.** An
+  engine at this version raises a `TypeError` on a `createAuthGuard` call with no runtime, so the
+  text now says the guard cannot read the site's roles. The `auth.role-wiring-missing` condition's
+  text changes the same way.
+
+  Consumers must: nothing.
 
 - **`cairn --help`, `cairn doctor --help`, and `cairn health --help` print no documentation URL, and the JSON schemas move to `schema/`.** The help text no longer links the removed reference pages, so a released binary's old links stop resolving. The schemas move from `docs/reference/schema/` to `schema/` in the engine package, each `$id` unchanged.
 - **A `cairn doctor` SKIP line prints the check's skip title.** A skipped check read as a failure

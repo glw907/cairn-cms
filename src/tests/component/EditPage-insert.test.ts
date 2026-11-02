@@ -15,9 +15,9 @@ const registry = defineRegistry({ components: [callout] });
 
 const data: EditData & { siteName: string } = {
   conceptId: 'posts', id: 'hello', label: 'Post', singular: 'Post', fields: [], frontmatter: {}, body: 'Start.',
-  title: 'Hello', isNew: false, saved: false, renamed: false, slug: 'hello', linkTargets: [], fragmentTargets: null,
+  title: 'Hello', isNew: false, flash: null, slug: 'hello', linkTargets: [], fragmentTargets: null,
   routable: true, mediaTargets: {}, mediaLibrary: {}, inboundLinks: [], pending: false, published: true,
-  publishedFlash: false, publishActions: [], discardedFlash: false, preview: null,
+  publishActions: [], preview: null,
   spellcheckDictionary: 'dictionary-en-us.txt', siteDictionary: [], siteName: 'Demo',
   tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
   advisories: [], orphanTags: [],

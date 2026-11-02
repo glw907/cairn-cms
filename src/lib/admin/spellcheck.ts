@@ -655,9 +655,9 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     // check/suggest. The Worker answers `error` on a check that lands before ready, so the not-ready
     // early return in the lint source keeps a check from ever racing the init.
     worker.postMessage({ type: 'init', ...assetUrls });
-    // Seed the personal layer from the committed site dictionary. The Worker merges addWord into its
-    // in-memory personal set regardless of ready state (it touches no engine), so a site word answers
-    // correct from the first lint without waiting for the dialect stream.
+    // Seed the personal layer from the committed site dictionary. The Worker holds an addWord that
+    // lands before the engine is ready and replays it ahead of `ready`, so a site word answers
+    // correct from the first lint.
     if (siteWords.length > 0) worker.postMessage({ type: 'addWord', words: siteWords });
     return worker;
   }

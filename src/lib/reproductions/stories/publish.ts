@@ -71,13 +71,14 @@ const REFUSAL_INBOUND_LINKS: EntryRef[] = fixtureEntries
  * open draft ({@link HISTORY_ENTRY}, `status: 'edited'`) plus one published entry, so the group
  * reads as more than a single row.
  */
-const PENDING_IDS: { concept: string; id: string }[] = [HISTORY_ENTRY, fixtureEntries[1]!].map((entry) => ({
+const PENDING_IDS: { concept: string; id: string; title: string }[] = [HISTORY_ENTRY, fixtureEntries[1]!].map((entry) => ({
   concept: entry.concept,
   id: entry.id,
+  title: entry.title,
 }));
 
 /**
- * The topbar's "Publish site (N)" confirm, posed open (`publish/pending-list`). Sweep finding 15:
+ * The topbar's "Publish all (N)" confirm, posed open (`publish/pending-list`). Sweep finding 15:
  * the trigger and the dialog both live inside `CairnAdminShell`'s awaited-then block over
  * `data.pendingEntries`, with no pending branch, so neither exists in the very first render even
  * though the fixture's promise is already resolved; the pose's wait for the trigger
@@ -93,7 +94,7 @@ const pendingList: ReproStory = {
     // The command-palette trigger also carries `aria-haspopup="dialog"`, so the bare attribute
     // selector no longer picks out this button alone; `aria-controls` naming the confirm dialog
     // does.
-    await clickWhenPresent(root, 'button[aria-controls="cairn-shell-publish-all"]', 'the "Publish site" trigger');
+    await clickWhenPresent(root, 'button[aria-controls="cairn-shell-publish-all"]', 'the "Publish all" trigger');
     await waitFor(root, 'dialog[aria-labelledby="cairn-shell-publish-all-title"][open]', 'the opened publish confirm');
   },
 };

@@ -3,6 +3,7 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { env, withEnv } from 'cloudflare:workers';
 import { devBackendHandle } from './handle.js';
 import { env as engineEnv } from '../../../src/lib/sveltekit/workers-env.js';
+import { requireAccess } from '../../../src/lib/sveltekit/guard.js';
 import { setFakeEnv, setFakeEnvThrowing } from '../../../src/tests/helpers/cloudflare-workers-fake.js';
 import { __setBuilding } from '../../../src/tests/_app-env.js';
 
@@ -238,4 +239,30 @@ test('with the dev flag set on localhost, the handle still mounts the dev backen
 
   expect(event.locals.cairnEditor?.capability).toBe('owner');
   expect(seen.AUTH_DB).toBeTruthy();
+});
+
+test('a missing access rule names the fix under the dev handle even with a deployed PUBLIC_ORIGIN and no flag', async () => {
+  // The audit's scenario: a real site's PUBLIC_ORIGIN forces the deployed verdict on localhost
+  // and `npm run dev` leaves the flag out of the Worker env, so only locals.cairnBackend witnesses.
+  setFakeEnv({ PUBLIC_ORIGIN: 'https://site.example' });
+  const handle = devBackendHandle({ runtime: {} });
+  const event = { ...eventFor('/admin/unmapped'), route: { id: '/admin/unmapped' } } as any;
+  let thrown: unknown;
+
+  await handle({
+    event,
+    resolve: async () => {
+      try {
+        requireAccess(event, '/admin/unmapped');
+      } catch (err) {
+        thrown = err;
+      }
+      return new Response('ok');
+    },
+  });
+
+  expect(thrown).toMatchObject({
+    status: 403,
+    body: { message: "No access rule for /admin/unmapped. Add it to the adapter's access map." },
+  });
 });

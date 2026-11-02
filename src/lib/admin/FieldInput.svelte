@@ -197,6 +197,26 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
         kind satisfies never;
     }
   }
+
+  /**
+   * A field's bounds as hint text: `At least 3 characters.`, `At most 80 characters.`,
+   * `3 to 80 characters.`, or `Exactly 5 characters.`. A number passes no unit and reads the same
+   * shapes bare. Undefined when the field sets no bound. `length` wins over `min` and `max`, as it
+   * does on the control.
+   */
+  function boundsHint(b: { length?: number; min?: number; max?: number }, unit?: string): string | undefined {
+    const u = (n: number) => (unit ? ` ${unit}${n === 1 ? '' : 's'}` : '');
+    if (b.length !== undefined) return `Exactly ${b.length}${u(b.length)}.`;
+    if (b.min !== undefined && b.max !== undefined) return `${b.min} to ${b.max}${u(b.max)}.`;
+    if (b.min !== undefined) return `At least ${b.min}${u(b.min)}.`;
+    if (b.max !== undefined) return `At most ${b.max}${u(b.max)}.`;
+    return undefined;
+  }
+
+  /** The one hint paragraph's text: the field's help, then its bound. */
+  function hintText(help: string | undefined, bound: string | undefined): string | undefined {
+    return [help, bound].filter(Boolean).join(' ') || undefined;
+  }
 </script>
 
 {#snippet fieldHint(hintName: string, text: string)}
@@ -207,31 +227,33 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 
 {#if field.type === 'textarea'}
   {@const f = field as NamedField & TextareaField}
+  {@const hint = hintText(f.help, boundsHint(f, 'character'))}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} minlength={f.length ?? f.min} maxlength={f.length ?? f.max}>{str(frontmatter[f.name])}</textarea>
-    {#if f.help}
-      {@render fieldHint(hintBase, f.help)}
+    <textarea class="textarea textarea-sm validator" {name} aria-label={f.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} minlength={f.length ?? f.min} maxlength={f.length ?? f.max}>{str(frontmatter[f.name])}</textarea>
+    {#if hint}
+      {@render fieldHint(hintBase, hint)}
     {/if}
   </label>
 {:else if field.type === 'number'}
   {@const f = field as NamedField & NumberField}
+  {@const hint = hintText(f.help, boundsHint(f))}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{f.label}</span>
     <input
-      class="input input-sm"
+      class="input input-sm validator"
       type="number"
       {name}
       aria-label={f.label}
-      aria-describedby={f.help ? `${hintBase}-hint` : undefined}
+      aria-describedby={hint ? `${hintBase}-hint` : undefined}
       min={f.min}
       max={f.max}
       step={f.integer ? 1 : undefined}
       value={str(frontmatter[f.name])}
       required={f.required}
     />
-    {#if f.help}
-      {@render fieldHint(hintBase, f.help)}
+    {#if hint}
+      {@render fieldHint(hintBase, hint)}
     {/if}
   </label>
 {:else if field.type === 'select'}
@@ -366,11 +388,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   <!-- The plain single-line text input arm: url, text, and an icon field with no icon set. They
        differ in the input type, and only text carries length bounds. -->
   {@const bounds = field.type === 'text' ? field : undefined}
+  {@const hint = hintText(field.help, bounds ? boundsHint(bounds, 'character') : undefined)}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>
-    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={bounds?.length ?? bounds?.min} maxlength={bounds?.length ?? bounds?.max} />
-    {#if field.help}
-      {@render fieldHint(hintBase, field.help)}
+    <input class="input input-sm validator" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={bounds?.length ?? bounds?.min} maxlength={bounds?.length ?? bounds?.max} />
+    {#if hint}
+      {@render fieldHint(hintBase, hint)}
     {/if}
   </label>
 {/if}

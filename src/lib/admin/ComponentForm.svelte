@@ -11,7 +11,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { previewValues, type ComponentDef, type ComponentValues } from '../render/registry.js';
+  import { previewValues, type ComponentDef, type ComponentValues, type SlotDef } from '../render/registry.js';
   import { buildComponentInsert } from '../render/component-insert.js';
   import type { IconSet } from '../render/glyph.js';
   import type { FieldDescriptor } from '../content/fields.js';
@@ -121,6 +121,13 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   function asBool(key: string): boolean {
     return working.attributes[key] === true;
   }
+  // The ids a slot's control is described by: its error and its help, neither dropped when both
+  // show, or undefined when neither does.
+  function slotDescribedBy(slot: SlotDef): string | undefined {
+    const ids = [errors[slot.name] ? `err-${slot.name}` : '', slot.help ? `hint-${slot.name}` : ''].filter(Boolean);
+    return ids.length ? ids.join(' ') : undefined;
+  }
+
   function slotString(name: string): string {
     const v = working.slots[name];
     return typeof v === 'string' ? v : '';
@@ -325,7 +332,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="textarea"
           aria-required={slot.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[slot.name])}
-          aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
+          aria-describedby={slotDescribedBy(slot)}
           rows={3}
           value={slotString(slot.name)}
           oninput={(e) => {
@@ -342,7 +349,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="input"
           aria-required={slot.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[slot.name])}
-          aria-describedby={errors[slot.name] ? `err-${slot.name}` : undefined}
+          aria-describedby={slotDescribedBy(slot)}
           value={slotString(slot.name)}
           oninput={(e) => {
             working.slots[slot.name] = e.currentTarget.value;
@@ -352,13 +359,14 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
+    {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
     {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
   {/each}
 
   {#each repeatableSlots as slot (slot.name)}
     {@const items = slotItems(slot.name)}
     {@const ids = slotIds(slot.name)}
-    <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2">
+    <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2" aria-describedby={slotDescribedBy(slot)}>
       <legend class="type-body font-medium px-1">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. The visible row tag derives from itemLabel, falling back to the indexed label. -->
       {#each ids as id, i (id)}
@@ -374,6 +382,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
+      {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
       {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}

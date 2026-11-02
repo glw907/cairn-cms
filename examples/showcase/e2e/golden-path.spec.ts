@@ -256,7 +256,7 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
   await expect(row.getByText('Published', { exact: true })).toBeVisible();
 });
 
-test('the office triage: the publish-state filters carry counts, Pending edits narrows, and a row shows its summary', async ({
+test('the office triage: the publish-state filters carry counts, Unpublished changes narrows, and a row shows its summary', async ({
   page,
 }) => {
   // The list reads through the GitHub double's main tree. The seeded post (2026-06-hello) is on
@@ -271,12 +271,12 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   const triage = page.getByRole('radiogroup', { name: 'Filter by publish state' });
   await expect(triage).toBeVisible();
   const allFilter = triage.getByRole('radio', { name: /^All/ });
-  const pendingFilter = triage.getByRole('radio', { name: /^Pending edits/ });
+  const pendingFilter = triage.getByRole('radio', { name: /^Unpublished changes/ });
   const publishedFilter = triage.getByRole('radio', { name: /^Published/ });
   // Each filter names a numeric count (the exact totals shift with prior tests, so match the shape,
   // not a brittle literal). All defaults checked.
   await expect(allFilter).toHaveText(/All\s*\d+/);
-  await expect(pendingFilter).toHaveText(/Pending edits\s*\d+/);
+  await expect(pendingFilter).toHaveText(/Unpublished changes\s*\d+/);
   await expect(publishedFilter).toHaveText(/Published\s*\d+/);
   await expect(allFilter).toHaveAttribute('aria-checked', 'true');
 
@@ -308,11 +308,11 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
-  // Back on the list, Pending edits narrows to the unpublished entries: the new draft shows, and
+  // Back on the list, Unpublished changes narrows to the unpublished entries: the new draft shows, and
   // its New badge confirms it sits in the pending partition.
   await page.goto('/admin/posts');
   const draftRow = page.locator('tr', { has: page.locator(`a[href="/admin/posts/${id}"]`) });
-  await page.getByRole('radio', { name: /^Pending edits/ }).click();
+  await page.getByRole('radio', { name: /^Unpublished changes/ }).click();
   await expect(draftRow).toBeVisible();
   await expect(draftRow.getByText('New', { exact: true })).toBeVisible();
   // One-line rows (the density ruling): no summary node renders on the list.
@@ -759,9 +759,9 @@ test('reference fields round-trip through the editor, commit their edges, and re
 // lives in custom-screen.spec.ts's Signups test, which proves the stronger case: a custom admin
 // screen reading identity and writing its D1 binding, registered through the same navLayout seam.
 
-// At 320px the publish-state segmented join (All / Pending edits / Published,
+// At 320px the publish-state segmented join (All / Unpublished changes / Published,
 // each carrying a count) used to wrap onto two lines, orphaning "Published 5" below "All" and
-// "Pending edits". The join now scrolls horizontally inside its container instead of
+// "Unpublished changes". The join now scrolls horizontally inside its container instead of
 // wrapping, so its three options stay on one row and the page itself never scrolls sideways.
 test('at 320px the posts publish-state join keeps its options on one row with no page overflow', async ({
   page,

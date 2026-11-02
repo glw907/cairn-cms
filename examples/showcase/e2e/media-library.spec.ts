@@ -169,9 +169,8 @@ test('edit the default alt and the name: the mediaUpdate commit lands the new sl
   const newSlug = 'sunset-reworked';
   await panel.locator('input[name="displayName"]').fill(newName);
   await panel.locator('input[name="slug"]').fill(newSlug);
-  // Set a described default alt through the radiogroup plus the alt field.
-  await panel.getByText('Describe it').click();
-  await panel.getByLabel('Alt text description').fill('A reworked sunset');
+  // Set a default alt through the one Default alt text box.
+  await panel.getByLabel('Default alt text').fill('A reworked sunset');
   await panel.getByRole('button', { name: 'Save', exact: true }).click();
 
   // The action commits the merged media.json on main; the orphan's row now carries the new slug and
@@ -286,19 +285,19 @@ test('direct upload: the header Upload button opens the capture dialog, and the 
   await page.goto('/admin/media');
 
   // The header Upload button. A file input carries an implicit ARIA "button" role too (the hidden
-  // input behind it, accessible name "Upload an image"), so match the header button's name exactly.
+  // input behind it, accessible name "Upload image"), so match the header button's name exactly.
   await page.getByRole('button', { name: 'Upload', exact: true }).click();
 
   // The click opens the OS file chooser via the hidden input behind both Upload buttons; hand it the
   // fixture directly rather than driving a native file dialog.
   await page
-    .locator('input[type="file"][aria-label="Upload an image"]')
+    .locator('input[type="file"][aria-label="Upload image"]')
     .setInputFiles({ name: 'teal-checker.png', mimeType: 'image/png', buffer: UPLOAD_PNG_BUFFER });
 
   // The capture dialog opens over the chosen file.
   const dialog = page.getByTestId('cairn-library-upload-dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('heading', { name: 'Upload an image' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Upload image' })).toBeVisible();
 
   // Name it and submit. The Library passes MediaCaptureCard submitLabel="Upload image" (the shared
   // card defaults to "Insert image" for the editor insert flow).

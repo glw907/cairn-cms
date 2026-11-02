@@ -11,6 +11,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createGithubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { CommitConflictError } from '../../lib/github/types.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
@@ -110,6 +111,7 @@ describe('deleteEntry: cross-branch reference refusal (Task 13)', () => {
   const TARGET_PATH = 'src/content/posts/target.md';
 
   it('refuses (409) when a MAIN entry references the target', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // The linker references the target post via `related` (which points at the posts concept), so the
     // edge pair is (posts, target), which the delete of posts/target matches.
     const manifest = JSON.stringify({
@@ -131,6 +133,7 @@ describe('deleteEntry: cross-branch reference refusal (Task 13)', () => {
     expect(out.status).toBe(409);
     expect(out.data?.error).toContain('target');
     expect(out.data?.inboundLinks?.some((l) => l.id === 'linker')).toBe(true);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.delete_refused', editor: 'ed@t', concept: 'posts', id: 'target', reason: 'inbound_references', count: 1 }));
     // No commit landed: the target file still exists.
     expect(gh.read('main', TARGET_PATH)).toContain('title: Target');
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
@@ -153,7 +156,40 @@ describe('deleteEntry: cross-branch reference refusal (Task 13)', () => {
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
   });
 
+  it('refuses (409) and logs inbound_links when a body link points at the target', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [
+        entry('posts', 'target'),
+        { ...entry('posts', 'linker'), links: [{ concept: 'posts', id: 'target' }] },
+      ],
+    });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' } });
+    gh.install();
+    const out = await del('target');
+    expect(out.status).toBe(409);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.delete_refused', editor: 'ed@t', concept: 'posts', id: 'target', reason: 'inbound_links', count: 1 }));
+  });
+
+  it('logs no refused record when the commit conflicts: that is commit.failed, not a policy refusal', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' } });
+    gh.install();
+    const conflicting = { ...backend, commit: async () => { throw new CommitConflictError(TARGET_PATH); } };
+    const base = deleteEvent('target');
+    const event = { ...base, locals: { ...base.locals, cairnBackend: conflicting } };
+    const result = (await createContentRoutes({ runtime: runtime() }).deleteAction(event)) as unknown as { status: number };
+    expect(result.status).toBe(409);
+    const events = warn.mock.calls.map((c) => (c[0] as { event: string }).event);
+    expect(events).toContain('commit.failed');
+    expect(events).not.toContain('entry.delete_refused');
+    expect(events).not.toContain('entry.reference_check_failed');
+  });
+
   it('refuses (503) and runs NEITHER commit NOR removeEntry when a branch read throws (fail-closed)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
     const gh = new GithubDouble({
       main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' },
@@ -174,6 +210,7 @@ describe('deleteEntry: cross-branch reference refusal (Task 13)', () => {
     const out = await del('target');
     expect(out.status).toBe(503);
     expect(out.data?.error).toMatch(/could not verify/i);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.reference_check_failed', editor: 'ed@t', concept: 'posts', id: 'target', action: 'delete' }));
     // The fail-closed proof: the target file is untouched and NO tree commit ran.
     expect(gh.read('main', TARGET_PATH)).toContain('title: Target');
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);

@@ -43,7 +43,7 @@ function data(
     theme: 'cairn-admin' as const,
     collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
-    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string; title: string }[] | null>,
     attention,
   };
 }
@@ -112,7 +112,7 @@ function dataWithLayout(
     theme: 'cairn-admin' as const,
     collapsedNav: overrides.collapsedNav ?? null,
     csrf: 'test-csrf-token',
-    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string; title: string }[] | null>,
     attention: overrides.attention ?? {},
   };
 }
@@ -512,7 +512,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('stands down the palette trigger and the site Publish button on a desk route', async () => {
-    const pending = [{ concept: 'posts', id: '2026-05-hello' }];
+    const pending = [{ concept: 'posts', id: '2026-05-hello', title: 'Hello' }];
     const screen = await render(CairnAdminShellDeskHarness, {
       data: { ...data(true, null, '/admin/posts/2026-05-hello'), pendingEntries: Promise.resolve(pending) },
     });
@@ -522,7 +522,7 @@ describe('CairnAdminShell', () => {
     await expect.element(screen.getByTestId('desk-control')).toBeInTheDocument();
     const navbar = screen.container.querySelector('.navbar')!;
     expect(navbar.textContent ?? '').not.toContain('Search or jump to');
-    expect(navbar.textContent ?? '').not.toContain('Publish site');
+    expect(navbar.textContent ?? '').not.toContain('Publish all');
   });
 
   it('keeps the palette trigger and band as is on a list route (the office is unchanged)', async () => {
@@ -579,26 +579,26 @@ describe('CairnAdminShell', () => {
     expect(errors.join(' ')).not.toContain('rendering inside host chrome');
   });
 
-  it('shows the publish-site trigger with the pending count', async () => {
+  it('shows the publish-all trigger with the pending count', async () => {
     const pending = [
-      { concept: 'posts', id: '2026-05-01-a' },
-      { concept: 'posts', id: '2026-05-02-b' },
-      { concept: 'pages', id: 'about' },
-      { concept: 'widgets', id: 'w1' },
+      { concept: 'posts', id: '2026-05-01-a', title: 'First post' },
+      { concept: 'posts', id: '2026-05-02-b', title: 'Second post' },
+      { concept: 'pages', id: 'about', title: 'About us' },
+      { concept: 'widgets', id: 'w1', title: 'Widget one' },
     ];
     const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
-    await expect.element(screen.getByRole('button', { name: 'Publish site (4)' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Publish all (4)' })).toBeInTheDocument();
   });
 
-  it('confirms a publish-all with the pending ids grouped by concept label', async () => {
+  it('confirms a publish-all with the pending titles grouped by concept label', async () => {
     const pending = [
-      { concept: 'posts', id: '2026-05-01-a' },
-      { concept: 'posts', id: '2026-05-02-b' },
-      { concept: 'pages', id: 'about' },
-      { concept: 'widgets', id: 'w1' },
+      { concept: 'posts', id: '2026-05-01-a', title: 'First post' },
+      { concept: 'posts', id: '2026-05-02-b', title: 'Second post' },
+      { concept: 'pages', id: 'about', title: 'About us' },
+      { concept: 'widgets', id: 'w1', title: 'Widget one' },
     ];
     const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
-    await screen.getByRole('button', { name: 'Publish site (4)' }).click();
+    await screen.getByRole('button', { name: 'Publish all (4)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     const text = dialog.textContent ?? '';
@@ -606,10 +606,13 @@ describe('CairnAdminShell', () => {
     expect(text).toContain('Posts');
     expect(text).toContain('Pages');
     expect(text).toContain('widgets');
-    expect(text).toContain('2026-05-01-a');
-    expect(text).toContain('2026-05-02-b');
-    expect(text).toContain('about');
-    expect(text).toContain('w1');
+    // Each row shows its title, not its id.
+    expect(text).toContain('First post');
+    expect(text).toContain('Second post');
+    expect(text).toContain('About us');
+    expect(text).toContain('Widget one');
+    expect(text).not.toContain('2026-05-01-a');
+    expect(text).not.toContain('about');
     // The confirm posts the named action to the absolute catch-all with the CSRF field.
     const form = dialog.querySelector('form[action="/admin?/publishAll"]');
     expect(form).not.toBeNull();
@@ -617,9 +620,9 @@ describe('CairnAdminShell', () => {
   });
 
   it('closes the publish-all dialog once a navigation lands', async () => {
-    const pending = [{ concept: 'posts', id: '2026-05-01-a' }];
+    const pending = [{ concept: 'posts', id: '2026-05-01-a', title: 'First post' }];
     const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
-    await screen.getByRole('button', { name: 'Publish site (1)' }).click();
+    await screen.getByRole('button', { name: 'Publish all (1)' }).click();
     const dialog = () =>
       screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
     expect(dialog().open).toBe(true);
@@ -627,24 +630,24 @@ describe('CairnAdminShell', () => {
     expect(dialog().open).toBe(false);
   });
 
-  it('shows the publish-site trigger even when no concepts are configured', async () => {
+  it('shows the publish-all trigger even when no concepts are configured', async () => {
     // The confirm posts the named ?/publishAll action to the current page, so a stray pending
     // ref with zero configured concepts no longer reads data.concepts[0].
     const screen = await render(CairnAdminShell, {
-      data: { ...data(true), concepts: [], pendingEntries: Promise.resolve([{ concept: 'posts', id: 'a' }]) },
+      data: { ...data(true), concepts: [], pendingEntries: Promise.resolve([{ concept: 'posts', id: 'a', title: 'Title of a' }]) },
       children: child,
     });
-    await expect.element(screen.getByRole('button', { name: /publish site/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /publish all/i })).toBeInTheDocument();
     expect(screen.container.querySelector('form[action="/admin?/publishAll"]')).not.toBeNull();
   });
 
   it('associates each pending group list with its eyebrow label', async () => {
     const pending = [
-      { concept: 'posts', id: '2026-05-01-a' },
-      { concept: 'pages', id: 'about' },
+      { concept: 'posts', id: '2026-05-01-a', title: 'First post' },
+      { concept: 'pages', id: 'about', title: 'About us' },
     ];
     const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
-    await screen.getByRole('button', { name: 'Publish site (2)' }).click();
+    await screen.getByRole('button', { name: 'Publish all (2)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]')!;
     const lists = Array.from(dialog.querySelectorAll('ul[aria-labelledby]'));
     expect(lists.length).toBe(2);
@@ -654,11 +657,11 @@ describe('CairnAdminShell', () => {
     expect(labelTexts).toEqual(['Posts', 'Pages']);
   });
 
-  it('hides the publish-site trigger when nothing is pending', async () => {
+  it('hides the publish-all trigger when nothing is pending', async () => {
     const nullScreen = await render(CairnAdminShell, { data: data(true), children: child });
-    await expect.element(nullScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+    await expect.element(nullScreen.getByRole('button', { name: /publish all/i })).not.toBeInTheDocument();
     const emptyScreen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve([]) }, children: child });
-    await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
+    await expect.element(emptyScreen.getByRole('button', { name: /publish all/i })).not.toBeInTheDocument();
   });
 
   it('recedes the nav drawer to the xl breakpoint on a desk route (SSR markup, no flash)', async () => {

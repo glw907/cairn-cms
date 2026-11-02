@@ -28,9 +28,13 @@ test('a section with no resolveDb runs its handler rather than refusing', async 
   await expect(region(page)).toHaveText('Allowed.');
 });
 
-test('an unmapped target answers the shared denial copy', async ({ page }) => {
+// The dev backend names the fix. A deployed site answers the shared denial copy, which
+// section-action.test.ts pins.
+test('an unmapped target names the missing access rule under the dev backend', async ({ page }) => {
   await page.getByRole('button', { name: 'Unmapped' }).click();
-  await expect(region(page)).toHaveText('You do not have access to this action.');
+  await expect(region(page)).toHaveText(
+    "No access rule for /admin/no-such-rule. Add it to the adapter's access map.",
+  );
 });
 
 test('a limited action answers the rate-limit copy', async ({ page }) => {

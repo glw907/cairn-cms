@@ -115,7 +115,7 @@ describe('CairnHistory', () => {
     expect(rows[2].textContent).not.toContain('Current');
   });
 
-  it('gives every Revert button a distinct accessible name naming its own row', async () => {
+  it('gives every Restore as draft button a distinct accessible name naming its own row', async () => {
     const screen = await render(CairnHistory, {
       data: data({
         entries: [
@@ -125,14 +125,14 @@ describe('CairnHistory', () => {
       }),
     });
     const buttons = Array.from(screen.container.querySelectorAll('button[type="submit"]')).filter(
-      (b) => b.textContent?.trim() === 'Revert',
+      (b) => b.textContent?.trim() === 'Restore as draft',
     );
     expect(buttons).toHaveLength(2);
     const names = buttons.map((b) => b.getAttribute('aria-label'));
     expect(new Set(names).size).toBe(2);
     expect(names[0]).toContain('Editor One');
     expect(names[1]).toContain('Editor Two');
-    for (const name of names) expect(name).toMatch(/^Revert to the version from/);
+    for (const name of names) expect(name).toMatch(/^Restore the version from .* as a draft$/);
   });
 
   it('stacks the date under the editor name below sm, keeping the separate Date column at sm and up', async () => {

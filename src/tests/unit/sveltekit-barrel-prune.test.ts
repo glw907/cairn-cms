@@ -26,7 +26,7 @@ const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'Advisory
 
 // The five core arm shapes ContentFormFailure's Partial<> intersection once carried, retired from
 // every barrel and subpath by the conventions pass, Task 5 (`audit-sveltekit-contentformfailure`'s
-// prescribed flatten): every field folded into the flat, all-optional ContentFormFailure, which
+// prescribed flatten): every field folded into the flat ContentFormFailure, which
 // stays in KEPT below. DeleteFailure (renamed from DeleteRefusal per the Refusal-suffix retirement)
 // survives structurally as ContentFormFailure's inboundLinks/inboundKind/id fields, the same
 // F-1-class leak the six names above already establish.

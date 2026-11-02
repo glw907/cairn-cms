@@ -15,7 +15,7 @@ alt: Reproduction of the admin sidebar beside the Posts list, with a New Post bu
 caption: The list shows each entry's title, its date when the type has one, and a status chip. An entry with changes that aren't published yet carries the Edited chip.
 ```
 
-Select an entry's title to open it. The list has a search box and two sets of filters. **All**, **Pending edits**, and **Published** filter by publish state, and **Shown** and **Hidden** filter by visibility. The status column uses the chips **New**, **Edited**, and **Published**. [Publish an entry and review its history](publish-and-history.md) explains what each one means.
+Select an entry's title to open it. The list has a search box and two sets of filters. **All**, **Unpublished changes**, and **Published** filter by publish state, and **All** and **Hidden** filter by visibility. The status column uses the chips **New**, **Edited**, and **Published**. [Publish an entry and review its history](publish-and-history.md) explains what each one means.
 
 To start a new entry, follow these steps:
 
@@ -114,7 +114,7 @@ You can also type `[[` followed by a few letters of the title. A list of matchin
 
 The editor writes a link to page as `cairn:` followed by the entry's type and name. The link follows the entry, so it keeps working if you later change that entry's address. If other entries link to an entry, the editor refuses to delete it until you remove those links.
 
-If you link to an entry that no longer exists, or one that has never been published, the editor refuses the save. It lists the broken links and puts a **Remove link** button beside each one. If you link to a published entry that's marked **Hidden**, the save goes through with a warning. The warning says the link shows a page-not-found error until you clear **Hidden** on that entry and publish it.
+If you link to an entry that no longer exists, or one that has never been published, the editor refuses the save. It lists the broken links and puts a **Remove link** button beside each one. If you link to a published entry that's marked **Hidden**, the save goes through with a warning. The warning says visitors can't reach the entry yet, and they see a page-not-found error until you clear **Hidden** on that entry and publish it.
 
 ## Add images and figures
 
@@ -246,10 +246,10 @@ The following table describes the panel's groups, from the settings you change m
 |---|---|
 | The boxes at the top | Settings your site defines, such as a date, tags, or the lead image. Your site decides which boxes appear. |
 | **Visibility** | The **Hidden** checkbox. A hidden entry stays off the site's lists and feeds, even after you publish it. |
-| **Address** | The entry's address and a **Change URL** button. Links from other entries update automatically. The button reads **Rename** for a type that has no public address. |
+| **Address** | The entry's address and a **Change address** button. Links from other entries update automatically. The button reads **Rename** for a type that has no public address. |
 | **Share preview** | **Share preview link** creates a private link that lets someone who isn't an editor read your saved draft before it's published. **Revoke all links** turns off every link for the entry. |
 
-**Change URL** needs an entry with no unpublished edits. If the entry has some, the editor tells you to publish or discard them, and then rename. **Share preview link** needs a saved draft.
+**Change address** needs an entry with no unpublished edits. If the entry has some, the editor tells you to publish or discard them, and then rename. **Share preview link** needs a saved draft.
 
 ## Use the writing controls
 

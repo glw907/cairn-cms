@@ -52,7 +52,7 @@ what moved, and an unexpected failure falls back to its bare message.
     if (!form || !('outcome' in form)) return null;
     if (form.outcome === 'draft-exists') {
       const lastSaved = form.draftLastSavedAt ? `, last saved ${formatTimestamp(form.draftLastSavedAt)}` : '';
-      return `${form.draftEditor} has a draft in progress${lastSaved}. Publish or discard it before reverting.`;
+      return `${form.draftEditor} has a draft in progress${lastSaved}. Publish or discard it before restoring.`;
     }
     if (form.outcome === 'history-stale') {
       return 'The history changed since this page loaded. Reload and try again.';
@@ -138,9 +138,9 @@ what moved, and an unexpected failure falls back to its bare message.
                   <button
                     type="submit"
                     class="btn btn-ghost btn-xs"
-                    aria-label={`Revert to the version from ${formatTimestamp(entry.date)} by ${entry.editor}`}
+                    aria-label={`Restore the version from ${formatTimestamp(entry.date)} by ${entry.editor} as a draft`}
                   >
-                    Revert
+                    Restore as draft
                   </button>
                 </form>
               </td>

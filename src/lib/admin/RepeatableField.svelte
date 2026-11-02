@@ -17,7 +17,7 @@ form's `oninput`; a leaf edit inside a row does not, because the row inputs sit 
 whose `oninput` bubbles. An always-mounted polite live region announces add and remove.
 -->
 <script lang="ts">
-  import { tick, untrack } from 'svelte';
+  import { flushSync, tick, untrack } from 'svelte';
   import { sortItems } from '@rodrigodagostino/svelte-sortable-list';
   import FieldInput from './FieldInput.svelte';
   import ObjectGroupField from './ObjectGroupField.svelte';
@@ -215,6 +215,12 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
           class="rounded-field border border-[var(--color-base-300)]"
           data-cairn-row={row.id}
           oninput={(e) => onRowInput(row, i, e)}
+          oninvalidcapture={() => {
+            // A required control in a collapsed row is hidden and unfocusable, so the browser would
+            // cancel the save silently. Reveal the row inside the event so the report lands on a
+            // visible control.
+            if (!expanded[row.id]) flushSync(() => (expanded = { ...expanded, [row.id]: true }));
+          }}
         >
           <div class="flex items-center gap-1 p-1">
             <button
@@ -261,7 +267,8 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
               <Trash2Icon class="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          {#if expanded[row.id]}
+          <!-- Classless on purpose: the body's flex class would beat the hidden attribute. -->
+          <div hidden={!expanded[row.id]}>
             <div data-cairn-row-body class="flex flex-col gap-3 border-t border-[var(--color-base-300)] p-3">
               {#if field.item.type === 'object'}
                 <ObjectGroupField
@@ -295,7 +302,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
                 />
               {/if}
             </div>
-          {/if}
+          </div>
         </li>
       {/each}
     </ul>

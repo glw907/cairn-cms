@@ -126,6 +126,48 @@ describe('requireAccess', () => {
     vi.restoreAllMocks();
   });
 
+  describe('the 403 message', () => {
+    const backend = {} as NonNullable<CairnEvent['locals']['cairnBackend']>;
+    const message = (locals: CairnEvent['locals'], url: string, target?: string): unknown => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        requireAccess(event(locals, new URL(url)), target);
+      } catch (err) {
+        return (err as { body: { message: string } }).body.message;
+      } finally {
+        vi.restoreAllMocks();
+      }
+      return undefined;
+    };
+
+    it('is generic without cairnBackend, even for a missing rule', () => {
+      expect(message({ cairnEditor: publisher, cairnAccess: access }, 'https://x.test/admin/unmapped')).toBe('Access denied');
+    });
+
+    it('names the missing rule when cairnBackend is set and the reason is no_rule', () => {
+      expect(
+        message({ cairnEditor: publisher, cairnAccess: access, cairnBackend: backend }, 'https://x.test/admin/unmapped'),
+      ).toBe("No access rule for /admin/unmapped. Add it to the adapter's access map.");
+    });
+
+    it('stays generic under cairnBackend for a role refusal', () => {
+      expect(
+        message({ cairnEditor: webmaster, cairnAccess: access, cairnBackend: backend }, 'https://x.test/admin/money'),
+      ).toBe('Access denied');
+    });
+
+    it('stays generic under cairnBackend for a shadowed rule', () => {
+      const deep: AccessMap = { '/admin/money': ['publisher'], '/admin/money/payroll': ['publisher'] };
+      expect(
+        message(
+          { cairnEditor: publisher, cairnAccess: deep, cairnBackend: backend },
+          'https://x.test/admin/money',
+          '/admin/money/[report]',
+        ),
+      ).toBe('Access denied');
+    });
+  });
+
   it('403s an unmatched route id for every session, editor and owner alike, and emits the event', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };

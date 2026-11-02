@@ -27,7 +27,7 @@ const (
 	infoRoleWiringIndirect = "createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles"
 	// tmplRoleWiringUnwired is auth.role-wiring's fail detail template, filled with the joined
 	// custom role names and the hooks path read.
-	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime } (or { roles } on an older engine); the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)"
+	tmplRoleWiringUnwired = "the adapter declares custom roles (%s) but createAuthGuard in %s is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)"
 	// passRoleWiringWired is auth.role-wiring's pass detail.
 	passRoleWiringWired = "createAuthGuard is passed the declared role vocabulary (heuristic text read)"
 )
@@ -56,8 +56,8 @@ func customRoleNames(roles []string) []string {
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
 // wiringWordPattern matches a bare `runtime` or `roles` word in createAuthGuard's argument list,
-// the wiring signal an object literal carries: `{ runtime }` on this engine, which resolves the
-// roles from the runtime, and `{ roles }` on an older one.
+// the wiring signal an object literal carries. `{ runtime }` is the wiring this engine reads;
+// `{ roles }` also reads as wired, though this engine raises a TypeError on it at startup.
 var wiringWordPattern = regexp.MustCompile(`\b(?:runtime|roles)\b`)
 
 // guardWiring is guardRoleWiring's four-value result.
@@ -67,8 +67,8 @@ type guardWiring int
 const (
 	// guardWiringAbsent means no createAuthGuard call was found in the text at all.
 	guardWiringAbsent guardWiring = iota
-	// guardWiringUnwired means createAuthGuard was called with no runtime or roles argument: the running
-	// guard falls back to owner/editor, the one outcome this check fails.
+	// guardWiringUnwired means createAuthGuard was called with no runtime or roles argument: the
+	// guard cannot read the site's roles, the one outcome this check fails.
 	guardWiringUnwired
 	// guardWiringIndirect means createAuthGuard's argument is a bare identifier the doctor
 	// cannot read into, such as createAuthGuard(guardOpts).

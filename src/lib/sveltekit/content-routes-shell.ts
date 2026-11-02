@@ -7,7 +7,7 @@ import { redirect, error } from '@sveltejs/kit';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../admin/markdown-reference.js';
 import { PENDING_PREFIX } from '../content/pending.js';
-import { emptyManifest } from '../content/manifest.js';
+import { emptyManifest, type Manifest } from '../content/manifest.js';
 import { log } from '../log/index.js';
 import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { canReach } from '../auth/access.js';
@@ -15,7 +15,7 @@ import { resolveNavLayout, type ResolvedNavLayout, type ResolvedLayoutChild } fr
 import { resolveRefusalCode, type RefusalCode } from './refusal-codes.js';
 import { roleHome, type Capability } from '../auth/roles.js';
 import { issueCsrfToken } from './csrf.js';
-import { pendingEntryOf } from './content-routes-shared.js';
+import { pendingEntryOf, manifestRow } from './content-routes-shared.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
 
@@ -68,11 +68,12 @@ export type AdminShellData =
       /** The session's CSRF double-submit token, handed to descendant forms through context. */
       csrf: string;
       /**
-       * Every entry with unpublished edits (a `cairn/` ref), streamed so the shell never blocks on
-       *  GitHub. Resolves to null when GitHub is unreachable, so the topbar hides the publish-all
+       * Every entry with unpublished edits (a `cairn/` ref), each with the title the Publish all
+       *  confirmation shows (its id when the manifest has no row or cannot be read), streamed so the
+       *  shell never blocks on GitHub. Resolves to null when GitHub is unreachable, so the topbar hides the publish-all
        *  action rather than lying.
        */
-      pendingEntries: Promise<{ concept: string; id: string }[] | null>;
+      pendingEntries: Promise<{ concept: string; id: string; title: string }[] | null>;
       /**
        * Present only while the dev backend serves the site's content from memory (its backend
        *  sets `ephemeral`), so the shell can say edits are discarded when the dev server stops.
@@ -151,7 +152,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
         ? null
         : cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean);
     // A none-capability session sees no publish surface (every engine content route already 403s
-    // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
+    // it, and the shell's "Publish all (N)" action has nothing for it to act on), so the count is
     // not theirs to read: skip the backend listing entirely rather than streaming a real pending
     // count into a dead button. resolveBackend can throw synchronously (the token mint), which a
     // bare `.catch()` would miss; deferring the resolve into a Promise.resolve().then turns a sync
@@ -159,20 +160,34 @@ export function createShellActions(ctx: ContentRoutesContext) {
     // or network failure hides the publish-all action rather than throwing the whole shell.
     const pendingEntries =
       editor.capability === 'none'
-        ? Promise.resolve([] as { concept: string; id: string }[])
+        ? Promise.resolve([] as { concept: string; id: string; title: string }[])
         : Promise.resolve()
-            .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
-            .then((names) =>
+            .then(async () => {
+              const backend = ctx.resolveBackend(event);
+              const names = await backend.listBranches(PENDING_PREFIX);
               // Filter by canReach, the same access authority publishAllAction applies to its
-              // batch, so a restricted role never receives a denied id and the "Publish site (N)"
+              // batch, so a restricted role never receives a denied id and the "Publish all (N)"
               // count never counts an entry publishAllAction would skip.
-              names.flatMap((name) => {
+              const rows = names.flatMap((name) => {
                 const entry = pendingEntryOf(runtime, name);
                 if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
                 return [{ concept: entry.concept.id, id: entry.id }];
-              }),
-            )
-            .catch((err): { concept: string; id: string }[] | null => {
+              });
+              if (!rows.length) return [] as { concept: string; id: string; title: string }[];
+              // One manifest read titles the confirm list. Its own failure keeps the rows with
+              // their ids: the branch list succeeded, so Publish all still works.
+              let manifest: Manifest | null = null;
+              try {
+                manifest = await ctx.readManifest(backend);
+              } catch (err) {
+                log.warn('github.unreachable', { scope: 'shell', error: String(err) });
+              }
+              return rows.map((row) => ({
+                ...row,
+                title: (manifest && manifestRow(manifest, row.concept, row.id)?.title) || row.id,
+              }));
+            })
+            .catch((err): { concept: string; id: string; title: string }[] | null => {
               log.warn('github.unreachable', { scope: 'shell', error: String(err) });
               return null;
             });

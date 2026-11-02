@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fillTitleWhenHydrated } from './editor-helpers';
+import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers';
 
 // A publish submitted from the edit page while a personal-dictionary word is still pending. The
 // page commits the word to main first and only then posts the publish, and publish reads the
@@ -29,9 +29,7 @@ test('a publish with a pending dictionary word lands without a conflict and comm
   const slug = `pending-word-${Date.now()}`;
 
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
-  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
-  await expect(createDialog).toBeVisible();
+  const createDialog = await openCreateDialog(page);
   await createDialog.locator('input[name="title"]').fill('Pending Word');
   await createDialog.locator('input[name="slug"]').fill(slug);
   await createDialog.getByRole('button', { name: 'Create' }).click();

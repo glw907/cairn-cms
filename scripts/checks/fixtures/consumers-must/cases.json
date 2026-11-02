@@ -14,5 +14,9 @@
   { "name": "a body that starts with nothingness", "section": "Consumers must: nothingness is gone, so rename Foo.", "valid": true, "actionable": true },
   { "name": "nothing jammed against the next bullet", "section": "- A bullet.\n  Consumers must: nothing.\n- Next bullet.", "valid": false, "actionable": false },
   { "name": "a tab indent", "section": "\tConsumers must: nothing.", "valid": false, "actionable": false },
-  { "name": "two lines where the second is actionable", "section": "Consumers must: nothing.\n\nConsumers must: rename `Foo`.", "valid": true, "actionable": true }
+  { "name": "two lines where the second is actionable", "section": "Consumers must: nothing.\n\nConsumers must: rename `Foo`.", "valid": true, "actionable": true },
+  { "name": "a CRLF nothing", "section": "Consumers must: nothing.\r\n", "valid": true, "actionable": false },
+  { "name": "a bare CR nothing with no newline", "section": "Consumers must: nothing.\r", "valid": true, "actionable": false },
+  { "name": "a CRLF action", "section": "Consumers must: rename it.\r\n", "valid": true, "actionable": true },
+  { "name": "a no-break space leads the body", "section": "Consumers must: \u00a0rename it.", "valid": true, "actionable": true }
 ]

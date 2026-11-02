@@ -30,17 +30,17 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#265** Make the fast lane see run-time file reads from a `src/` code edit `#improvement` `#cairn-cms` *(2026-11-02)*
+  `vitest related` follows the import graph, and 38 unit test files read non-test `src/` files at run time, so an edit to such a file selects none of them. CI carries them. Fix candidates: a map from `src/` path to reader test, built by grep, or run the unit project whole for a `src/` edit that a reader names. Found by `tool-fixes` T1.
+  Placement: Cleanup round.
+- [ ] **#266** Stop `componentPlan` running the whole component project when nothing reaches `src/` `#improvement` `#cairn-cms` *(2026-11-02)*
+  `gate-tier.mjs:480` returns `mode: 'full'` when no path reaches `src/`, so `lane:fast` starts the longest local browser leg on a range of only scripts, workflows, or docs. Found by `tool-fixes` T1.
+  Placement: Cleanup round.
+- [ ] **#267** Run the npm checks that read `tool/testdata/` when a diff touches only `tool/` `#improvement` `#cairn-cms` *(2026-11-02)*
+  `check-symbols.mjs:412` and `:430` read `tool/testdata/flags.json`, and a tool-only diff has no `npmPaths`, so the check does not run. It is #241 in reverse. Found by `tool-fixes` T1.
+  Placement: Cleanup round.
 - [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
-  Placement: Cleanup round.
-- [ ] **#253** Close two edge gaps the `tool-gates` review found in the new readers `#improvement` `#cairn-cms` *(2026-11-01)*
-  The JS and Go `Consumers must:` readers differ on CRLF and NBSP input (Go's `.` matches `\r` and `\S` matches NBSP; JS's do neither), and `cairn-guidance check` ignores `@import "tailwindcss" source("<base>")` moving the scan base, so a site that points auto-detection at `src` would get a false FIX. Neither is live: `CHANGELOG.md` is LF with no NBSP, and no scaffolded site sets a source base (`scripts/checks/check-consumers-must.mjs:17`, `tool/internal/health/check_engine.go:424`, `src/lib/guidance/check.ts:61`).
-  Placement: Cleanup round.
-- [ ] **#251** Correct the stale `test.yml` comment that calls `prepack` unrunnable `#bug` `#cairn-cms` *(2026-11-01)*
-  The comment at `.github/workflows/test.yml:76-81` says the bake's default path is unrunnable until `@glw907/cairn-cms-dev` publishes. `npm --prefix packages/create-cairn-site run prepack` ran clean at `0.98.0`, and setup now runs it. Left alone in `tool-gates` because no task was on that hunk.
-  Placement: Cleanup round.
-- [ ] **#252** Make the fast lane's related-unit selection catch a count pinned in a test of a script it changed `#improvement` `#cairn-cms` *(2026-11-01)*
-  T1 added a close-prebuilt component, and `close-prebuilt.test.ts` pins the component count (35 to 36). The implementer's own fast lane reported green and the miss surfaced only on the session's rerun, so a dispatch trusting the agent's lane would have pushed a red. Read from this run, not traced to the selection rule.
   Placement: Cleanup round.
 - [ ] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01)*
   The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
@@ -54,9 +54,6 @@
 - [ ] **#257** Check whether a bare `csrf` error reaches an editor's screen from media replace or the dictionary `#bug` `#cairn-cms` *(2026-11-01)*
   `content-routes-media-metadata.ts:249` and `content-routes-dictionary.ts:106` return `{ error: 'csrf' }`. `tidy-controller.svelte.ts:185` and `ShareLinkPanel.svelte:68` filter that value, but `MediaReplaceDialog.svelte` stores `failure.error` unfiltered (`:265`) and may render it. Read from source, not run: a stale form token on a replace could show the word `csrf` to an editor. Fix by filtering as the two components do, or by returning editor copy.
   Placement: Pass 5.
-- [ ] **#258** Make the fast lane catch a test that reads a file list or directory at run time `#improvement` `#cairn-cms` *(2026-11-01)*
-  Two reds on PR #181 came from tests the related-unit selection never ran. `check-leaks.test.ts` reads `package.json` `files` and needs a scan profile for each packed path, and `gate-tier.test.ts` lists `examples/showcase/e2e` and needs every spec mapped in `gate-table.json`. Both implementers' lanes were green, and a plain `npx vitest run --project unit` caught each. Fix candidate: add those two tests to the lane when `package.json` `files`, `examples/showcase/e2e/`, or `gate-table.json` changes. Same family as #252.
-  Placement: Cleanup round.
 - [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
   Placement: Cleanup round.
@@ -83,9 +80,6 @@
 - [ ] **#214** Stop a double submit on the delete confirm `#bug` `#cairn-cms` *(2026-11-01)*
   The submit in `src/lib/admin/DeleteDialog.svelte` stays live while `deleteEntry` makes several GitHub calls, so a double click sends two POSTs and the second can land on an entry that's already gone. The old row form had the same gap. Fix candidate: disable the button from the form's `onsubmit`, as the create dialog does with `creating`. Found by PR #177's review.
   Placement: Pass 5.
-- [ ] **#241** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `TestEventVocabularyMatchesEngine` (`tool/internal/logs/events_test.go`) compares `tool/internal/logs/events.go` with `src/lib/log/events.ts`, but `scripts/checks/gate-tier.mjs` selects `make -C tool check` only when `tool/**` changed. A diff that adds an engine log event clears the fast lane and goes red on three CI runners. Fix candidate: select the tool gate on `src/lib/log/events*.ts`. Found by PR #177.
-  Placement: Cleanup round.
 - [ ] **#242** Keep the tidy Style conventions copy readable at 320 `#bug` `#cairn-cms` *(2026-11-01)*
   The Style conventions header in `src/lib/admin/CairnTidySettings.svelte` is a flex row of a `min-w-0 flex-1` text column beside a `flex-none` group of Turn all on, Turn all off, and Reset links. At 320 the links take the width, so the paragraph wraps at about one word per line in both themes. It predates PR #177, whose render read found it. Fix candidate: stack the row below `sm`.
   Placement: Pass 5.
@@ -98,6 +92,7 @@
 - [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
   The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
   Placement: Cleanup round.
+  `tool-fixes` T5 added `openCreateDialog` (`examples/showcase/e2e/editor-helpers.ts`), which re-clicks until the dialog opens, swapped it into all 14 sites, and logs `[create-dialog-trace] attempt=<n> handler=<bool> opened=<bool>`. Six `e2e` runs on that code (cf0ba888a x3, fb1b263a7, 024f96bc7, fbf5da68a) logged 120 clicks: 118 `attempt=1 handler=true opened=true` and 2 `handler=false opened=true` (a click that raced hydration and still opened). No `opened=false`, no `cairn-create-dialog-title` failure. The pre-hydration cause is not proven: the base rate was 7 of 13 runs, so the helper may have masked it or the cause may not have fired. The trace stays in the helper. Open work: more runs, or read the log lines in a run that fails. The conductor refused a third `workflow_dispatch` (auto mode), so the sample stopped at six. The `admin-visual` command palette (dark, 768 and 2560) and `golden-path` retries repeated across heads and remain uninvestigated.
 - [ ] **#209** Queue a seed `addWord` posted before the spellcheck worker is ready `#bug` `#cairn-cms` *(2026-11-01)*
   A seed `addWord` sent before `ready` reaches `!handler` in the worker and is dropped, which contradicts the comment at `src/lib/admin/spellcheck.ts:658`. Read from the code, not reproduced.
   Placement: Pass 5.
@@ -107,10 +102,6 @@
 
 - [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-01)*
   The regression and capability cases in `.claude/skills/cairn-writing-docs/evals/evals.json` that edited a technical docs page left with those tracks. Once PR #159 merges and `docs/editors/` holds pages, write the equivalent cases against editor pages so the chain is graded on the track it still covers.
-  Placement: Cleanup round.
-
-- [ ] **#166** Run the skill form check in the fast lane for a `.claude/skills` or CLAUDE.md change `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-01)*
-  `gate-tier.mjs` selects only `check` and `test:emit` for a change confined to `.claude/skills/**` or `CLAUDE.md`, so `check-skill-budget` runs only in CI. Found by agent-first pass 1's whole-branch review.
   Placement: Cleanup round.
 
 - [ ] **#207** Re-cut the Evaluate bar and grade it blind `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
@@ -153,9 +144,6 @@
   The highlighter's module comment calls Shiki "SERVER/BUILD-ONLY" and says it runs "only inside the async pipeline, at render/prerender and in the Worker SSR", and says the pipeline "ships no client highlighter", but the edit page runs the site's `render` in the editor's browser and `rehypeCairnHighlight` has no browser guard, so previewing a body that holds a fenced block loads Shiki's async chunk in the admin's browser. Public pages ship no highlighter; the admin preview does. Fix candidates: correct the comment to say the dynamic import keeps Shiki out of the static client graph rather than out of the browser, or measure the chunk and decide whether the preview should highlight (`src/lib/render/highlight.ts:29-31,179,241-243`; found while writing the write-a-markdown-component page, 2026-10-12).
   Sweep 2026-10-31: Both comments claim a browser boundary that does not exist. Shiki in the preview is what makes it match the public page. `src/lib/render/highlight.ts:29-31`, `pipeline.ts:127-128`.
   Placement: Final engine batch, small API. Friction entry 87 (`extender`), boundary test class3, page none.
-- [ ] **#86** Stop the CI Playwright installs failing on apt `#bug` `#cairn-cms` *(2026-10-26)* *(swept 2026-11-01)*
-  `playwright install --with-deps chromium` in `e2e.yml:68`, `design.yml:62`, and `test.yml:47` runs apt through `bounded-install`, whose retry (`action.yml:41-45`) comes at once. It exited 100 four times on 2026-10-26, failing `25fb80fa3`, `c8a1eeb09`, `f17bb8aed`, and PR #147, and each rerun passed. In run 40365078288 only the two `norms` jobs failed, and pass 1b removes those, but the same step stays in the three workflows above. Fix: retry with a backoff, or cache the browser and its system deps.
-  Placement: Cleanup round.
 - [ ] **#32** Remove `RoutingRule.inFeeds` `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-22)* *(swept 2026-11-01)*
   `src/lib/content/types.ts:398` declares it and `concepts.ts:34-36` writes it; nothing in `src/lib` reads it. Wiring it would contradict feed membership being the site's choice. Remove it with a `Consumers must:` line.
   Placement: Final engine batch.
@@ -177,14 +165,8 @@
 - [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
   Session ids are stored raw in D1 (`src/lib/auth/store.ts:241`), an earlier session row isn't deleted on re-login (`src/lib/sveltekit/auth-routes.ts:359-360`), `confirmLoad` embeds the raw token in the HTML (`auth-routes.ts:288`), and the CSP is only `frame-ancestors`, with no `script-src`. A stolen database or an injected script reaches a live session or link. Found by the pass 1a security read.
   Placement: Cleanup round.
-- [ ] **#244** Trace a worktree cross-read in `sveltekit-mount-contract-reshape.test.ts` `#bug` `#cairn-cms` *(2026-11-01)*
-  In one fast lane the test failed to load `dist/sveltekit/index.d.ts` from another worktree's path (`agent-a44abf19e72fe71b6`), then passed alone and on a full rerun. The cause is not traced; a shared cache across worktrees is the first thing to check. Found by pass 1a.
-  Placement: Cleanup round.
 - [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)*
   `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
-  Placement: Cleanup round.
-- [ ] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01)*
-  On #176 T1's implementer reported three skill files edited that weren't in its commit, and its "about 40 minutes" was 9.5. The fast lane passed because no check reads those files, and the session caught it only by reading the merge's diffstat. `.claude/agents/cairn-implementer.md`'s report step could require `git show --stat HEAD` and a recorded start time. Worded into each dispatch on #176 afterward, with no repeat.
   Placement: Cleanup round.
 - [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
@@ -205,7 +187,7 @@
   `src/tests/unit/delivery-media-vite-barrel-prune.test.ts` still lists `variantUrl`, which no longer exists anywhere, so the list asserts nothing about it. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#235** Add `npm` to `CLI_INVOCATION_PREFIXES` in the skill-references test `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `src/tests/unit/skill-references-compile.test.ts` lacks `npm` in `CLI_INVOCATION_PREFIXES`, so a prose span such as `npm run check` in a skill reference fails CI. `gate-tier.mjs`'s fast lane selects that test for no `skills/` edit, so the failure reaches CI first. Add the prefix, and select the test in the fast lane for a `skills/` change. Found by the wiring-core pass (T7).
+  `src/tests/unit/skill-references-compile.test.ts` lacks `npm` in `CLI_INVOCATION_PREFIXES`, so a prose span such as `npm run check` in a skill reference fails CI. Add the prefix. Its selection half closed in `tool-fixes`: a `skills/` path is outside `unitSelectable`, so the unit leg runs whole. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
   A fresh worktree has an empty `packages/create-cairn-site/template`, so six workspace tests fail until `npm run prepack -w packages/create-cairn-site` runs, and the setup command in the skill does not say so. Found by the wiring-core pass (T7).
@@ -304,6 +286,42 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#86** Stop the CI Playwright installs failing on apt `#bug` `#cairn-cms` *(2026-10-26 → 2026-11-02)* *(swept 2026-11-01)*
+  `playwright install --with-deps chromium` in `e2e.yml:68`, `design.yml:62`, and `test.yml:47` runs apt through `bounded-install`, whose retry (`action.yml:41-45`) comes at once. It exited 100 four times on 2026-10-26, failing `25fb80fa3`, `c8a1eeb09`, `f17bb8aed`, and PR #147, and each rerun passed. In run 40365078288 only the two `norms` jobs failed, and pass 1b removes those, but the same step stays in the three workflows above. Fix: retry with a backoff, or cache the browser and its system deps.
+  Placement: Cleanup round.
+  Done: 1c7b9a25f: `bounded-install` waits 60 seconds before the second attempt.
+- [x] **#166** Run the skill form check in the fast lane for a `.claude/skills` or CLAUDE.md change `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  `gate-tier.mjs` selects only `check` and `test:emit` for a change confined to `.claude/skills/**` or `CLAUDE.md`, so `check-skill-budget` runs only in CI. Found by agent-first pass 1's whole-branch review.
+  Placement: Cleanup round.
+
+  Done: eb6a3fe50: a `.claude/` path is outside `unitSelectable`, so the unit leg runs whole and `check-skill-form.test.ts` reads the real tree.
+- [x] **#241** Run the tool gate when the engine's log vocabulary changes `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  `TestEventVocabularyMatchesEngine` (`tool/internal/logs/events_test.go`) compares `tool/internal/logs/events.go` with `src/lib/log/events.ts`, but `scripts/checks/gate-tier.mjs` selects `make -C tool check` only when `tool/**` changed. A diff that adds an engine log event clears the fast lane and goes red on three CI runners. Fix candidate: select the tool gate on `src/lib/log/events*.ts`. Found by PR #177.
+  Placement: Cleanup round.
+  Done: eb6a3fe50: `toolInputs` in `gate-table.json` lists what the Go tests read outside `tool/`, and `decideFastGate` and `decideGate` run the tool gate on any such path, `src/lib/log/events.ts` among them.
+- [x] **#244** Keep implementers' lane logs off a shared `/tmp` name `#bug` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  Pass 1a's implementer read `cannot load .../agent-a44abf19e72fe71b6/dist/sveltekit/index.d.ts` out of `/tmp/lane.log`, which `agent-a44abf19e72fe71b6` was writing at the same moment from two overlapping lanes in its worktree. The test and the caches are innocent. Fix: `cairn-implementer` keeps lane logs in its worktree and runs one lane at a time.
+  Placement: `tool-fixes`.
+  Done: 2fecf19d2: `cairn-implementer` says a lane's log stays in the worktree and never goes to a fixed `/tmp` name, and `durable-gotchas.md` records the shared-`/tmp` cost.
+- [x] **#251** Correct the stale `test.yml` comment that calls `prepack` unrunnable `#bug` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The comment at `.github/workflows/test.yml:76-81` says the bake's default path is unrunnable until `@glw907/cairn-cms-dev` publishes. `npm --prefix packages/create-cairn-site run prepack` ran clean at `0.98.0`, and setup now runs it. Left alone in `tool-gates` because no task was on that hunk.
+  Placement: Cleanup round.
+  Done: 1c7b9a25f: the `test.yml` and `create-site.yml` comments say what the bake step does and no longer call `prepack` unrunnable.
+- [x] **#252** Stop a red fast-lane leg hiding the legs after it, and an implementer's pipe hiding the red `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  T1 of `tool-gates` added a close-prebuilt component, and `close-prebuilt.test.ts` pins the count (35 to 36). `vitest related` selects that test on T1's paths. The implementer never reached it: `check:close` was red, line 1's `&&` chain stopped there (`gate-tier.mjs:717`), and `| tail -4` hid the exit code. Fix: line 1 runs every leg and then fails, and `cairn-implementer` reports the lane's exit code.
+  Placement: `tool-fixes`.
+  Done: eb6a3fe50 and 2fecf19d2: `sequentially` runs every leg of line 1 and fails at the end, and `cairn-implementer` reports the lane's range and exit code and never pipes it into `tail`.
+- [x] **#253** Close two edge gaps the `tool-gates` review found in the new readers `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The JS and Go `Consumers must:` readers differ on CRLF and NBSP input (Go's `.` matches `\r` and `\S` matches NBSP; JS's do neither), and `cairn-guidance check` ignores `@import "tailwindcss" source("<base>")` moving the scan base, so a site that points auto-detection at `src` would get a false FIX. Neither is live: `CHANGELOG.md` is LF with no NBSP, and no scaffolded site sets a source base (`scripts/checks/check-consumers-must.mjs:17`, `tool/internal/health/check_engine.go:424`, `src/lib/guidance/check.ts:61`).
+  Placement: Cleanup round.
+  Done: d9f4edbb4: both `Consumers must:` readers take a CRLF line as its LF twin and a NBSP-led body as a body, four corpus cases pin it, and `isEntry` skips an import whose `source("<base>")` leaves the repo root.
+- [x] **#258** Make the fast lane catch a test that reads a file list or directory at run time `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  Two reds on PR #181 came from tests the related-unit selection never ran. `check-leaks.test.ts` reads `package.json` `files` and needs a scan profile for each packed path, and `gate-tier.test.ts` lists `examples/showcase/e2e` and needs every spec mapped in `gate-table.json`. Both implementers' lanes were green, and a plain `npx vitest run --project unit` caught each. Fix candidate: add those two tests to the lane when `package.json` `files`, `examples/showcase/e2e/`, or `gate-table.json` changes. Same family as #252.
+  Placement: Cleanup round.
+  Done: eb6a3fe50: a live npm path outside `unitSelectable` (`package.json`, `examples/showcase/e2e/`, `scripts/`, `.github/`) runs `npx vitest run --project unit`. A `src/` code edit still keeps `vitest related`, and #265 holds that gap.
+- [x] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-01)* *(swept 2026-11-01)*
+  On #176 T1's implementer reported three skill files edited that weren't in its commit, and its "about 40 minutes" was 9.5. The fast lane passed because no check reads those files, and the session caught it only by reading the merge's diffstat. `.claude/agents/cairn-implementer.md`'s report step could require `git show --stat HEAD` and a recorded start time. Worded into each dispatch on #176 afterward, with no repeat.
+  Done: 8f23f7643, whose "Report" step requires the files changed as `git show --name-only --format= <sha>` lists them. The start-time half stays unrecorded, and no run has needed it.
 - [x] **#107** Reject a leading or trailing slash in ConceptConfig.dir `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)* *(swept 2026-11-01)*
   `ConceptConfig.dir` is never validated, though every path the engine builds is the verbatim `${dir}/${id}.md`, so a leading or trailing slash, or entries in subfolders, fails at runtime away from the declaration rather than at `defineConcept`, which already validates the URL policy at module load. Fix: normalize or reject `dir` in `validateUrlPolicy`'s neighborhood at declaration (`src/lib/content/concepts.ts#normalizeConcepts`, `src/lib/content/cross-branch-index.ts#buildCrossBranchIndex.perBranch`; found while writing the content-model page, 2026-10-12).
   Sweep 2026-10-31: A three-line declaration throw fits `defineConcept`. Subfolders stay out, since a concept's shape is flat. `src/lib/content/concepts.ts:67-75`, `:190-206`.

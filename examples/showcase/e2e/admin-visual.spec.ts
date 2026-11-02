@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 // The five-viewport responsive bar (320, 390, 768, 1440, 2560), in both color schemes. Signups
 // (the consumer's custom admin screen, the in-repo proof that a developer's route built on
@@ -581,6 +581,111 @@ for (const width of [1440, 390]) {
     await expect(page).toHaveScreenshot(`admin-theme-kit-dark-${width}.png`, { fullPage: true });
   });
 }
+
+// The eight resting screens at the narrowest and widest bar, in both themes. Each test reuses its
+// screen's own steps above and asserts the heading, so a broken harness cannot record the wrong
+// screen. `image` is the baseline name a screenshot of this test takes; `mask` is the selector that
+// screenshot hides (the live editor content, as the edit page pair above does).
+const EIGHT_SCREENS: {
+  screen: string;
+  path: string;
+  heading: string | RegExp;
+  mask?: string;
+  open?: (page: Page) => Promise<void>;
+}[] = [
+  { screen: 'office', path: '/admin/posts', heading: 'Posts' },
+  { screen: 'tags', path: '/admin/vocabulary', heading: 'Tags' },
+  { screen: 'sign-in', path: '/admin/login', heading: /^Sign in to/ },
+  { screen: 'confirm', path: '/admin/auth/confirm?token=preview-token', heading: 'Almost there' },
+  { screen: 'editors', path: '/admin/editors', heading: 'Editors' },
+  {
+    screen: 'edit-page',
+    path: '/admin/posts/2026-06-hello',
+    heading: 'Hello',
+    mask: '.cm-content',
+  },
+  { screen: 'media', path: '/admin/media', heading: 'Media library' },
+  {
+    screen: 'media-detail',
+    path: '/admin/media',
+    heading: 'Media library',
+    open: async (page) => {
+      await page.getByRole('option').first().click();
+      await expect(page.getByRole('region', { name: /details$/ })).toBeVisible();
+    },
+  },
+];
+const THEMES = [
+  { theme: 'light', cookie: 'cairn-admin' },
+  { theme: 'dark', cookie: 'cairn-admin-dark' },
+] as const;
+for (const { screen, path, heading, open } of EIGHT_SCREENS) {
+  for (const { theme, cookie } of THEMES) {
+    for (const width of [320, 2560]) {
+      const image = `admin-${screen}-${theme}-${width}.png`;
+      test(`${image} holds`, async ({ page, context, baseURL }) => {
+        await context.addCookies([{ name: 'cairn-admin-theme', value: cookie, url: baseURL! }]);
+        await page.emulateMedia({ colorScheme: theme });
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+        await open?.(page);
+      });
+    }
+  }
+}
+
+// Below sm the editors table stacks Email and Role under the name, so the row's Actions stay in view.
+test('editors table fits at 320', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/admin/editors');
+  await expect(page.getByRole('heading', { level: 1, name: 'Editors' })).toBeVisible();
+  const wrap = page.locator('.toolkit-admin-table-wrap');
+  const sizes = await wrap.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+  expect(sizes.scroll).toBe(sizes.client);
+  const row = page.locator('tbody tr').first();
+  for (const target of [
+    row.locator('.badge:visible'),
+    row.getByRole('button', { name: /^Remove/ }),
+  ]) {
+    const box = await target.first().boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+  }
+});
+
+// The segmented filter scrolls inside its box below sm; the ::after cue marks the clipped edge.
+test('publish filter shows its cue at 320', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/admin/posts');
+  await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+  const group = page.getByRole('radiogroup', { name: 'Filter by publish state' });
+  const cue = (el: Element) => {
+    const style = getComputedStyle(el, '::after');
+    return { position: style.position, content: style.content };
+  };
+  expect((await group.evaluate(cue)).position).toBe('sticky');
+
+  await group.locator('[aria-checked="true"]').focus();
+  await page.keyboard.press('End');
+  await expect(group.getByRole('radio').last()).toBeFocused();
+  // The cue's start is the group's right edge less the cue's width; the last option must end at or before it.
+  const edges = await group.evaluate((el) => {
+    const last = el.querySelector('[role="radio"]:last-of-type')!.getBoundingClientRect();
+    return {
+      lastRight: last.right,
+      cueStart:
+        el.getBoundingClientRect().right - parseFloat(getComputedStyle(el, '::after').width),
+    };
+  });
+  expect(edges.lastRight).toBeLessThanOrEqual(edges.cueStart + 0.5);
+
+  await page.setViewportSize({ width: 768, height: 900 });
+  expect((await group.evaluate(cue)).content).toBe('none');
+});
 
 // The second webServer entry (playwright.config.ts) serves the same build with no content, two
 // ports above the default. The port is read here because test.use needs it at describe time.

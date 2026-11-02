@@ -53,6 +53,11 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
     return data.vocabulary.find((entry) => entry.role === role)?.capability ?? 'none';
   }
 
+  /** The role badge's register: the owner capability reads primary, every other role quiet. */
+  function roleBadge(role: string): string {
+    return capabilityFor(role) === 'owner' ? 'badge-primary' : 'cairn-chip-quiet';
+  }
+
   /** A role option's label: the bare name, or the name with its capability alongside when the
    *  two differ (the default pair's capability already equals its name, so it stays unlabeled). */
   function roleOptionLabel(entry: { role: string; capability: Capability }): string {
@@ -115,8 +120,8 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
   <AdminTable density="sm" rowCount={data.editors.length}>
     {#snippet header()}
       <th scope="col" class="{col} pl-6">Name</th>
-      <th scope="col" class={col}>Email</th>
-      <th scope="col" class={col}>Role</th>
+      <th scope="col" class="{col} hidden sm:table-cell">Email</th>
+      <th scope="col" class="{col} hidden sm:table-cell">Role</th>
       <th scope="col"><span class="sr-only">Actions</span></th>
     {/snippet}
     {#snippet children()}
@@ -126,12 +131,19 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
           <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
                primary identifying cell, so it alone carries type-subtitle at font-medium; the
                other cells stay at the table's type. -->
-          <td class="pl-6 py-2 type-subtitle font-medium">{editor.displayName}</td>
-          <td>{editor.email}</td>
-          <td>
-            <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'cairn-chip-quiet'}">{editor.role}</span>
+          <td class="pl-6 py-2 type-subtitle font-medium">
+            {editor.displayName}
+            <!-- Below sm the Email and Role columns hide, so both stack under the name instead of
+                 dropping off the row (ConceptList's date column does the same). -->
+            <span class="block break-all type-meta font-normal text-muted sm:hidden">{editor.email}</span>
+            <span class="badge mt-1 sm:hidden {roleBadge(editor.role)}">{editor.role}</span>
           </td>
-          <td class="flex justify-end gap-2">
+          <td class="hidden sm:table-cell">{editor.email}</td>
+          <td class="hidden sm:table-cell">
+            <span class="badge {roleBadge(editor.role)}">{editor.role}</span>
+          </td>
+          <td>
+           <div class="flex flex-wrap justify-end gap-2">
             {#if isDefaultVocabulary}
               <form method="POST" action="?/editorSetRole" use:enhance={submitRole}>
                 <CsrfField />
@@ -165,6 +177,7 @@ form-semantic primary action. The role badge stays a plain daisy `badge` (by des
                 Remove
               </button>
             </form>
+           </div>
           </td>
         </tr>
       {/each}

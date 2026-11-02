@@ -188,9 +188,7 @@ day, since no session holds npm credentials or the account's 2FA:
    from it.
 
 The package version must equal the root's at every cut: `publish-create-site` fails a mismatch rather
-than move `latest` to `0.0.0`. Once the package publishes, retire the template repository's pre-release
-notice in the same change: the opening of `packages/create-cairn-site/template-repo/README.md` and the
-`WATCH` comment on it.
+than move `latest` to `0.0.0`.
 
 ## 7. Verify the publish
 

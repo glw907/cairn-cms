@@ -35,7 +35,7 @@ The library shows **Image uploaded.** when the upload finishes. [Add an image](a
 
 ## Check which images the library accepts
 
-The admin accepts JPEG, PNG, WebP, and GIF files. An animated GIF stays animated. The admin also accepts HEIC photos, the format many phones use. The admin converts a HEIC photo to WebP in your browser before it uploads, so you don't convert it yourself.
+The admin accepts JPEG, PNG, WebP, AVIF, and GIF files. If your browser can't open an AVIF file, the admin refuses it with the "not supported" message below. An animated GIF stays animated. The admin also accepts HEIC photos, the format many phones use. The admin converts a HEIC photo to WebP in your browser before it uploads, so you don't convert it yourself.
 
 The admin doesn't accept SVG files. Your site also sets a size limit for each file. Unless your site owner has changed it, the limit is 25 MB.
 

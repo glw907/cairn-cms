@@ -470,7 +470,7 @@ function main() {
   }
 
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), the channel migration packed in its own directory, ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the migration notes and schemas packed, the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

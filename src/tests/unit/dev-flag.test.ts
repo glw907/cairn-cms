@@ -1,5 +1,18 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { readPublicOrigin } from '../../lib/dev-flag.js';
+import { isDevBackendFlagSet, readPublicOrigin } from '../../lib/dev-flag.js';
+
+describe('isDevBackendFlagSet', () => {
+  it('counts only the string "1" and boolean true as set', () => {
+    expect(isDevBackendFlagSet('1')).toBe(true);
+    expect(isDevBackendFlagSet(true)).toBe(true);
+  });
+
+  it('treats near-misses and absence as unset', () => {
+    for (const raw of ['true', 'yes', '0', '', 1, false, undefined]) {
+      expect(isDevBackendFlagSet(raw)).toBe(false);
+    }
+  });
+});
 
 describe('readPublicOrigin reads the module env alone', () => {
   afterEach(() => {

@@ -188,6 +188,9 @@
 - [ ] **#236** Say in the `cairn-running-passes` setup that a fresh worktree needs `prepack` for the scaffold template `#improvement` `#cairn-cms` *(2026-11-01)*
   A fresh worktree has an empty `packages/create-cairn-site/template`, so six workspace tests fail until `npm run prepack -w packages/create-cairn-site` runs, and the setup command in the skill does not say so. Found by the wiring-core pass (T7).
   Placement: Pass 8.
+- [ ] **#242** Have `check:symbols` flag a removed name in `## Unreleased` prose `#improvement` `#cairn-cms` *(2026-11-01)*
+  Pass 1a removed `/auth-channel` and `auth.branding`, and `check:symbols` stayed green while `CHANGELOG.md` and `MIGRATION-NOTES.md` still taught both as live under `## Unreleased`. Only the whole-branch review caught them, over two rounds, since the second round's lines named "the auth channel" in plain words. Fail a name the surface diff removed when an unreleased entry states it outside a removal note. Found by pass 1a.
+  Placement: `tool-gates` slice.
 - [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
   `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
   Placement: After the release.

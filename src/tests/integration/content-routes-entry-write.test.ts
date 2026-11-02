@@ -134,4 +134,22 @@ describe('saveAction: the server decides what is prior', () => {
     expect(records[0]).toMatchObject({ concept: 'posts', id: 'my-post', error: 'network down' });
     warn.mockRestore();
   });
+
+  it('caps the logged prior-read error at 300 characters', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    double();
+    const real = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input instanceof Request ? input.url : input).includes('/contents/src/content/posts/my-post.md')) {
+        throw new Error('x'.repeat(2000));
+      }
+      return real(input, init);
+    }));
+    const routes = createContentRoutes({ runtime: runtime() });
+    await routes.saveAction(newSaveEvent('New title'));
+    const records = warn.mock.calls.map((c) => c[0]).filter((r) => r?.event === 'entry.prior_read_failed');
+    expect(records).toHaveLength(1);
+    expect((records[0] as { error: string }).error).toHaveLength(300);
+    warn.mockRestore();
+  });
 });

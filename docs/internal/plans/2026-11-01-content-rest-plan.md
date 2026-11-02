@@ -385,8 +385,7 @@ flashes, and `:38`'s "JPEG, PNG, WebP, and GIF files" gains AVIF. Test pins that
 `examples/showcase/e2e/media-pass-b.spec.ts:182`, plus any test the grep below finds.
 
 **Acceptance:** `git grep -n -E 'Minting…|will flag|This file changed|media manifest changed|site config changed|Not referenced|Orphans purged|Assets? (uploaded|deleted|replaced)' -- src/lib src/tests examples/showcase/e2e docs/editors`
-prints nothing but `sveltekit/preview.ts:112`'s "Minting" doc comment if the pattern is relaxed. `npm run
-check:editor-quotes`, `check:docs-gate`, and `check:vale` pass. `/changed since you opened/i` keeps matching.
+prints nothing. `npm run check:editor-quotes`, `check:docs-gate`, and `check:vale` pass. `/changed since you opened/i` keeps matching.
 `CairnMediaLibrary.test.ts:121` asserts `No references`. `MediaHeroField`'s and `MediaReplaceDialog`'s formats
 line names each type `ALLOWED_TYPES` at `media/config.ts:18` holds, and a component test pins it. A fresh
 `docs-fact-checker` reads the three pages at this commit, and a wrong claim is fixed.

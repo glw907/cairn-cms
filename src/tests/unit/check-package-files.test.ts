@@ -10,6 +10,7 @@ import {
   checkWorkerCondition,
   checkRuleReachability,
   checkNoToolPathPacked,
+  checkApiSurfacePacked,
   parseRelativeImportSpecifiers,
   walkModuleGraph,
   parsePackFilePaths
@@ -275,6 +276,21 @@ describe('checkNoToolPathPacked', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('tool/cmd/cairn/main.go');
+  });
+});
+
+// The skill points a consumer at the snapshot inside node_modules, so the tarball must carry it.
+describe('checkApiSurfacePacked', () => {
+  it('passes when the snapshot is packed', () => {
+    expect(checkApiSurfacePacked(['dist/index.js', 'scripts/checks/api-surface.md'])).toEqual({ ok: true });
+  });
+
+  it('fails naming the path when the snapshot is not packed', () => {
+    const result = checkApiSurfacePacked(['dist/index.js', 'CHANGELOG.md']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('scripts/checks/api-surface.md');
+    expect(result.error).toContain('files');
   });
 });
 

@@ -351,9 +351,18 @@ describe('EditPage', () => {
     appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/team&refs=pages/about');
     try {
       const screen = await render(EditPage, postProps({ flash: 'saved' }));
-      const live = screen.container.querySelector('[aria-live="polite"]')?.textContent ?? '';
+      const live = screen.container.querySelector('div.sr-only[aria-live="polite"]')?.textContent ?? '';
       expect(live).toContain('pages/team');
       expect(live).toContain('pages/about');
+      // One "Saved." leads the combined announcement, and each clause matches the visible banner's
+      // singular wording for a single target.
+      expect(live.match(/Saved\./g)).toHaveLength(1);
+      expect(live).toContain('links to an entry that visitors');
+      expect(live).toContain('references an entry (pages/about)');
+      const alerts = [...screen.container.querySelectorAll('.alert-warning')].map((a) => a.textContent?.trim() ?? '');
+      expect(alerts).toHaveLength(2);
+      expect(alerts[0]).toMatch(/^Saved\./);
+      expect(alerts[1]).not.toMatch(/^Saved\./);
     } finally {
       appPage.url = originalUrl;
     }
@@ -3205,10 +3214,8 @@ describe('EditPage', () => {
 
     function editControl(screen: { container: HTMLElement }) {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
-      // one whose aria-label speaks to editing (the label varies by state, so match the verb).
-      return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label="Edit block"], button[aria-label="Edit the block at the cursor"]',
-      );
+      // one named "Edit block" in every state; only its tooltip description varies.
+      return screen.container.querySelector<HTMLButtonElement>('button[aria-label="Edit block"]');
     }
 
     async function clickLine(screen: { container: HTMLElement }, text: string) {
@@ -3258,7 +3265,9 @@ describe('EditPage', () => {
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
-      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the block at the cursor');
+      // The name never flips; the action text rides in the tooltip description.
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit block');
+      expect(tooltipText(editControl(screen)!)).toBe('Edit the block at the cursor');
     });
 
     it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {

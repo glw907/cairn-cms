@@ -303,7 +303,7 @@ const tidyReview: ReproStory = {
     changes: fixtureTidyReview.changes,
     original: fixtureTidyReview.original,
     conventions: fixtureTidyReview.conventions,
-    model: 'claude-sonnet-5',
+    model: 'claude-sonnet-5-5',
     title: ENTRY.title,
     api: inertTidyApi,
     onclose: () => {},

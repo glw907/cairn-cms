@@ -14,6 +14,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   import type { ContentFormFailure, EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
+  import { tick } from 'svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import {
@@ -51,6 +52,20 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       ? { id: form.id, inboundLinks: form.inboundLinks, inboundKind: form.inboundKind ?? 'link' }
       : null,
   );
+
+  // One DeleteDialog serves every row. Its entry is the row the editor picked, else the refused
+  // row; the dialog carries the CSRF field and posts `concept` and `id` itself.
+  let deleteDialog = $state<ReturnType<typeof DeleteDialog> | null>(null);
+  let pickedId = $state<string | null>(null);
+  const deleteTarget = $derived(
+    data.entries.find((e) => e.id === pickedId) ?? data.entries.find((e) => e.id === deleteRefused?.id),
+  );
+  const targetRefused = $derived(deleteRefused !== null && deleteRefused.id === deleteTarget?.id);
+  async function openDelete(id: string) {
+    pickedId = id;
+    await tick();
+    deleteDialog?.open();
+  }
 
   type SortKey = 'title' | 'date';
   // The triage runs on two independent axes. A pick-one publish-state partition (`all` passes
@@ -441,16 +456,14 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             </td>
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}
-                <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                <DeleteDialog conceptId={data.conceptId} id={entry.id} singular={data.singular ?? data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
+                <!-- A prior delete was refused: the shared dialog names the blockers and offers no confirm. -->
+                <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={() => openDelete(entry.id)}>
+                  Delete
+                </button>
               {:else}
-                <form method="POST" action="?/delete">
-                  <CsrfField />
-                  <input type="hidden" name="id" value={entry.id} />
-                  <button type="submit" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
-                    <Trash2Icon class="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </form>
+                <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-haspopup="dialog" aria-label="Delete {entry.title}" onclick={() => openDelete(entry.id)}>
+                  <Trash2Icon class="h-4 w-4" aria-hidden="true" />
+                </button>
               {/if}
             </td>
           </tr>
@@ -471,6 +484,16 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       {/snippet}
     </AdminTable>
   </div>
+  <DeleteDialog
+    bind:this={deleteDialog}
+    trigger={false}
+    conceptId={data.conceptId}
+    id={deleteTarget?.id ?? ''}
+    singular={data.singular ?? data.label}
+    inboundLinks={targetRefused && deleteRefused ? deleteRefused.inboundLinks : []}
+    inboundKind={targetRefused && deleteRefused ? deleteRefused.inboundKind : 'link'}
+    pending={deleteTarget ? deleteTarget.status !== 'published' : false}
+  />
   <div class="mb-4">
     <Pagination
       page={page}

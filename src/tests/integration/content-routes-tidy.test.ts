@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
-import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
+import { keyKnownUnhealthy, markKeyUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { supportsEffort } from '../../lib/sveltekit/content-routes-tidy.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -421,6 +421,40 @@ describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3
 
     expect(res.corrected).toBe('the cat');
     expect(tidyFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('tidy action: a reply cut off at the output cap', () => {
+  afterEach(() => {
+    vi.doUnmock('@anthropic-ai/sdk');
+    vi.resetModules();
+  });
+
+  it('refuses fail(413) with the too-long copy, logs truncated, clears the unhealthy mark, and returns no corrected text', async () => {
+    // The default client's wire shape: a capped reply carries a text block (a thinking block may
+    // precede it) and a usage record, with stop_reason max_tokens.
+    const create = vi.fn(async () => ({
+      model: 'claude-sonnet-5-5',
+      stop_reason: 'max_tokens',
+      content: [
+        { type: 'thinking', thinking: 'weighing the edits' },
+        { type: 'text', text: 'A partial documen' },
+      ],
+      usage: { input_tokens: 4000, output_tokens: 16000 },
+    }));
+    vi.doMock('@anthropic-ai/sdk', () => ({ default: class { messages = { create }; } }));
+    markKeyUnhealthy();
+    expect(keyKnownUnhealthy()).toBe(true);
+    const routes = createContentRoutes({ runtime: runtime() });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await runTidy(routes, tidyEvent())) as TidyResult;
+
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(413);
+    expect(res.data?.error).toBe('This is too long to tidy at once. Select a passage and tidy that instead.');
+    expect(res).not.toHaveProperty('corrected');
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'truncated' }));
+    expect(keyKnownUnhealthy()).toBe(false);
   });
 });
 

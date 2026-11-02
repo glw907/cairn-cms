@@ -19,7 +19,7 @@ const data: EditData & { siteName: string } = {
   routable: true, mediaTargets: {}, mediaLibrary: {}, inboundLinks: [], pending: false, published: true,
   publishedFlash: false, publishActions: [], discardedFlash: false, preview: null,
   spellcheckDictionary: 'dictionary-en-us.txt', siteDictionary: [], siteName: 'Demo',
-  tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
+  tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false } },
   advisories: [], orphanTags: [],
 };
 

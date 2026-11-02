@@ -73,22 +73,22 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
 describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   it('renders its header and the section-count pills through the admin toolkit', async () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
-    // PageHeader; the Fixes and Style conventions counts render through StatusChip (a `status`
-    // dot, never a bespoke rounded-full pill), each still inside its own live region.
+    // PageHeader; the Style conventions count renders through StatusChip (a `status`
+    // dot, never a bespoke rounded-full pill), still inside its own live region.
     const screen = await render(CairnTidySettings, { data: data() });
     expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
-    const fixesPill = screen.container.querySelector('[role="status"] .status-chip');
-    expect(fixesPill).not.toBeNull();
-    expect(fixesPill?.closest('[role="status"][aria-live="polite"]')).not.toBeNull();
+    const countPill = screen.container.querySelector('[role="status"] .status-chip');
+    expect(countPill).not.toBeNull();
+    expect(countPill?.closest('[role="status"][aria-live="polite"]')).not.toBeNull();
   });
 
   // S3 Q11: the "sm" size's 5rem width floor, kept deliberately for a longer generic label
   // elsewhere, read as a wide, mostly-empty gray bar next to a two-or-three-character "On"/"2 on"
   // heading pill. "xs" carries no floor of its own, sizing the pill to its own short content.
-  it('sizes the Fixes and Style heading pills to their content, not the sm floor', async () => {
+  it('sizes the Style heading pill to its content, not the sm floor', async () => {
     const screen = await render(CairnTidySettings, { data: data() });
     const pills = screen.container.querySelectorAll('h2 .status-chip');
-    expect(pills.length).toBe(2);
+    expect(pills.length).toBe(1);
     for (const pill of pills) {
       expect(pill.classList.contains('status-chip-xs')).toBe(true);
       expect(pill.classList.contains('badge-sm')).toBe(false);
@@ -108,18 +108,19 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
 
   it('renders the check-and-tint toggles and the style rows at rest', async () => {
     const screen = await render(CairnTidySettings, { data: data() });
-    // The Fixes group toggle is on (aria-pressed true).
-    await expect.element(screen.getByRole('button', { name: 'Fixes' })).toHaveAttribute('aria-pressed', 'true');
+    // The objective fixes carry no control: tidy always applies them.
+    expect(screen.container.querySelector('[aria-label="Fixes"]')).toBeNull();
     // A style row toggle is off at rest.
     await expect.element(screen.getByRole('button', { name: 'Oxford comma' })).toHaveAttribute('aria-pressed', 'false');
     // No variant chooser is open at rest (every style off).
     expect(screen.container.querySelectorAll('[role="radiogroup"]').length).toBe(0);
     // A pressed on/off toggle carries the neutral pressed pair, never a primary tint (the design
     // arc's accent reservation, 2026-07-15): weight and a neutral wash mark the active state.
-    const fixesButton = screen.container.querySelector('[aria-label="Fixes"]');
-    expect(fixesButton?.className).toContain('bg-base-content/[0.07]');
-    expect(fixesButton?.className).not.toContain('bg-primary');
-    expect(fixesButton?.className).not.toContain('text-primary');
+    await screen.getByRole('button', { name: 'Oxford comma' }).click();
+    const pressed = screen.container.querySelector('[aria-label="Oxford comma"]');
+    expect(pressed?.className).toContain('bg-base-content/[0.07]');
+    expect(pressed?.className).not.toContain('bg-primary');
+    expect(pressed?.className).not.toContain('text-primary');
   });
 
   it('renders the example diff chips colorless: muted strikethrough deletion, semibold insertion', async () => {
@@ -184,15 +185,14 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     });
     await expect.element(screen.getByRole('button', { name: 'Oxford comma' })).toHaveAttribute('aria-pressed', 'true');
     await screen.getByRole('button', { name: /reset to typos only/i }).click();
-    // Fixes back on, every style and advanced toggle off.
-    await expect.element(screen.getByRole('button', { name: 'Fixes' })).toHaveAttribute('aria-pressed', 'true');
+    // Every style and advanced toggle off.
     await expect.element(screen.getByRole('button', { name: 'Oxford comma' })).toHaveAttribute('aria-pressed', 'false');
     await expect.element(screen.getByRole('button', { name: 'Time format' })).toHaveAttribute('aria-pressed', 'false');
     // The reset collapses every variant chooser too.
     expect(screen.container.querySelectorAll('[role="radiogroup"]').length).toBe(0);
     // The committed payload reflects the reset.
     const field = screen.container.querySelector<HTMLInputElement>('input[name="conventions"]')!;
-    expect(JSON.parse(field.value)).toEqual({ fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false });
+    expect(JSON.parse(field.value)).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false });
   });
 
   it('posts the live conventions in the hidden field', async () => {

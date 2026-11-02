@@ -136,31 +136,25 @@ export interface VocabularyEntry {
 export interface TidyConfig {
   /** Master switch. Default false; tidy is opt-in. */
   enabled?: boolean;
-  /** The model id. Default `claude-sonnet-5`; the alternative is `claude-haiku-4-5`. */
+  /** The model id. Default `claude-sonnet-5-5`; the alternative is `claude-haiku-5-5`. */
   model?: string;
   /** The per-convention toggles that build the prompt's CONVENTIONS section. */
   conventions?: Partial<TidyConventions>;
 }
 
-/** The default tidy model when a site sets none: Sonnet 5, the judgment floor for a light copy-edit. */
-export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
+/** The default tidy model when a site sets none: Sonnet 5.5, the judgment floor for a light copy-edit. */
+export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5-5';
 
 /**
  * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt
  * builder consumes. Every field carries a concrete value; `resolveTidyConventions` fills the defaults
  * from a partial config. The Settings screen validates a saved block against the same sets, and a
- * value outside its set throws. The Fixes group is the objective fixes (default on, governed by the always-on
- * core); the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
+ * value outside its set throws. The objective fixes are not a convention: the always-on core
+ * applies them; the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
  * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
  * @public
  */
 export interface TidyConventions {
-  /**
-   * The objective Fixes group (spelling, grammar, doubled words, whitespace, capitals, terminal
-   *  punctuation). Default on. Only the Settings toggle reads it: the tidy prompt always applies the
-   *  objective fixes, so `false` does not stop them from running.
-   */
-  fixes: boolean;
   /** Oxford comma position. Off when undefined; `always` | `complex-only` (AP) | `never`. */
   oxfordComma?: 'always' | 'complex-only' | 'never';
   /**
@@ -186,21 +180,20 @@ export interface TidyConventions {
   brandCaps: boolean;
 }
 
-/** The resting tidy convention set: Fixes on, every style and advanced toggle off. */
+/** The resting tidy convention set: Every style and advanced toggle off. */
 export function defaultTidyConventions(): TidyConventions {
-  return { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false };
+  return { enDashRanges: false, smartQuotes: false, brandCaps: false };
 }
 
 /**
  * Resolve a partial conventions config (from the YAML) into the concrete TidyConventions the prompt
- * builder consumes. An absent field falls to its default: Fixes on, the style and advanced toggles
+ * builder consumes. An absent field falls to its default: the style and advanced toggles
  * off. A multi-position toggle stays undefined (off) unless the config names a variant.
  */
 export function resolveTidyConventions(partial: Partial<TidyConventions> | undefined): TidyConventions {
   const base = defaultTidyConventions();
   if (partial === undefined) return base;
   return {
-    fixes: partial.fixes ?? base.fixes,
     oxfordComma: partial.oxfordComma,
     numberStyle: partial.numberStyle,
     measurements: partial.measurements,
@@ -262,7 +255,6 @@ export function validateTidyConventions(value: unknown): TidyConventions {
   }
 
   return {
-    fixes: bool('fixes', true),
     oxfordComma: variant('oxfordComma', OXFORD_COMMA_VALUES),
     numberStyle: variant('numberStyle', NUMBER_STYLE_VALUES),
     measurements: variant('measurements', MEASUREMENTS_VALUES),

@@ -59,7 +59,7 @@ const SEED_YAML = [
   '  enabled: true',
   '  model: claude-sonnet-4-6',
   '  conventions:',
-  '    fixes: true',
+  '    oxfordComma: always',
   '',
 ].join('\n');
 
@@ -72,7 +72,7 @@ describe('settingsSaveAction', () => {
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: SEED_YAML } });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
-    const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
+    const conventions = JSON.stringify({ oxfordComma: 'always', timeFormat: '5 PM' });
     const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent(conventions)));
     expect(location).toBe('/admin/settings?saved=1');
     // The commit names the session editor as author.
@@ -88,7 +88,6 @@ describe('settingsSaveAction', () => {
     // The boolean toggles (enDashRanges/smartQuotes/brandCaps) are non-optional, so the validator
     // fills their false default; a collapsed multi-position toggle is dropped (none here).
     expect(reparsed.tidy?.conventions).toEqual({
-      fixes: true,
       oxfordComma: 'always',
       timeFormat: '5 PM',
       enDashRanges: false,
@@ -189,7 +188,7 @@ describe('settingsLoad', () => {
     expect(data.keyConfigured).toBe(true);
     expect(data.keyStatus).toBe('valid');
     expect(data.modelLabel).toBe('Claude Sonnet 5');
-    expect(data.conventions.fixes).toBe(true);
+    expect(data.conventions).not.toHaveProperty('fixes');
   });
 
   it('labels a site pinned to claude-sonnet-4-6 with its plain name, not the bare id', async () => {
@@ -199,6 +198,22 @@ describe('settingsLoad', () => {
     });
     const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
     expect(data.modelLabel).toBe('Claude Sonnet 4.6');
+  });
+
+  it('labels the 5.5 family and Haiku 4.5 with their plain names', async () => {
+    const labels: [string, string][] = [
+      ['claude-sonnet-5-5', 'Claude Sonnet 5.5'],
+      ['claude-haiku-5-5', 'Claude Haiku 5.5'],
+      ['claude-haiku-4-5', 'Claude Haiku 4.5'],
+    ];
+    for (const [model, label] of labels) {
+      const routes = createContentRoutes({
+        runtime: runtime({ tidy: { enabled: true, model } }),
+        tidy: { client: fakeTidyClient('valid') },
+      });
+      const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }));
+      expect(data.modelLabel).toBe(label);
+    }
   });
 
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {

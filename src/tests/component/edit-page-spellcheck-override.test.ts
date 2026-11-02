@@ -52,7 +52,7 @@ function props(overrides: Record<string, unknown> = {}) {
       tidy: {
         enabled: false,
         model: 'claude-sonnet-4-6',
-        conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
+        conventions: { enDashRanges: false, smartQuotes: false, brandCaps: false },
       },
       advisories: [],
       orphanTags: [],

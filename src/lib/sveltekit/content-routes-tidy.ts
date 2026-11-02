@@ -8,7 +8,7 @@ import { log } from '../log/index.js';
 import { requireEditor, requireEngineAccess, requireCookieJar } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
-import { tidyClientErrorStatus, TidySdkMissingError } from './content-routes-context.js';
+import { tidyClientErrorStatus, TidySdkMissingError, TidyTruncatedError } from './content-routes-context.js';
 import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
 import type { ContentRoutesContext, TidyClient } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
@@ -32,7 +32,7 @@ export interface TidyResult {
  * key is missing, the optional `@anthropic-ai/sdk` peer is not installed, Anthropic rejects the key
  * outright (401/403, a non-retryable auth failure, distinct from the retryable model errors below),
  * or Anthropic rejects the request itself (400 `invalid_request_error`, typically an unsupported
- * `tidy.model` setting, also non-retryable), `fail(413)` for an over-long body, `fail(502)` for a
+ * `tidy.model` setting, also non-retryable), `fail(413)` for an over-long body or a reply that hit the output cap, `fail(502)` for a
  * deadline overrun, an abort, or a model error (rate limit, overload, 5xx, network; all retryable),
  * `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just the one-line summary; the
  * action commits nothing, so a refusal can never corrupt the entry.
@@ -42,11 +42,11 @@ export interface TidyFailure {
 }
 
 /**
- * The input cap for a single tidy request: 24000 characters (at most about 8,000 under Sonnet 5's
- * tokenizer). A proofread runs at roughly input length, so this stays comfortably inside the 30s
- * deadline; a longer entry refuses with fail(413) and the author tidies a selection instead. The
- * cap is enforced BEFORE the model call, so an over-long body never spends a token or risks the
- * deadline.
+ * The input cap for a single tidy request: 24000 characters. A longer entry refuses with fail(413)
+ * and the author tidies a selection instead. The cap is enforced BEFORE the model call, so an
+ * over-long body never spends a token or risks the deadline. One recorded run (12,935 characters,
+ * a stand-in prompt, `effort: 'low'`) took 20.6s on `claude-sonnet-5-5` and 40.1s on
+ * `claude-sonnet-5`; latency near this cap is unmeasured.
  */
 const MAX_TIDY_CHARS = 24_000;
 
@@ -55,15 +55,16 @@ const MAX_TIDY_CHARS = 24_000;
  * a model with adaptive-thinking effort tiers accepts it. Kept as the one list `supportsEffort`
  * consults, so a newly offered model needs one edit here rather than a scattered check.
  */
-const EFFORT_TIER_PREFIXES = ['claude-sonnet-5', 'claude-opus-5', 'claude-sonnet-4-6'];
+const EFFORT_TIER_PREFIXES = ['claude-sonnet-5', 'claude-opus-5', 'claude-sonnet-4-6', 'claude-haiku-5', 'claude-fable-5'];
 
 /** Matches `claude-opus-4-<n>`, capturing the minor version so `supportsEffort` can floor it at 4.6. */
 const OPUS_4_MODEL = /^claude-opus-4-(\d+)/;
 
 /**
  * Whether `model` supports the effort tier the tidy call sends as `output_config: { effort: 'low' }`.
- * Sonnet 5, Opus 5, Sonnet 4.6, and Opus 4.6 or later run adaptive thinking by default and accept the
- * parameter; `claude-haiku-4-5` and any other model (including an unrecognized or future id) do not,
+ * Sonnet 5, Haiku 5, Fable 5, Opus 5, Sonnet 4.6, and Opus 4.6 or later accept the parameter (the
+ * Sonnet 5 and later families run adaptive thinking by default); `claude-haiku-4-5`, which the Models
+ * API reports no effort support for, and any other model (including an unrecognized or future id) do not,
  * and the Messages API answers `output_config` on one of those with a 400. Matching by prefix keeps a
  * dated snapshot id (for example `claude-sonnet-5-20260115`) resolving the same as its family name.
  */
@@ -103,7 +104,9 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  the site developer and marks the shared key-health cache unhealthy so the next edit
    *  load hides the Tidy button rather than offering a control that will fail again; a missing
    *  `@anthropic-ai/sdk`, where the optional peer was never installed, which returns the install
-   *  command and leaves the cache alone; and a 400 `invalid_request_error`, where Anthropic
+   *  command and leaves the cache alone; a reply cut off at the output cap (`TidyTruncatedError`),
+   *  which answers fail(413) with the too-long copy, marks the key healthy (the call reached
+   *  Anthropic), and logs `reason: 'truncated'`; and a 400 `invalid_request_error`, where Anthropic
    *  rejected the request itself (typically an unsupported `tidy.model` setting), which names the
    *  model in the message and also leaves the key-health cache alone. Everything else (a deadline
    *  overrun, another abort, a model error) stays the retryable "Try again." copy, with the log's
@@ -200,6 +203,13 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         return fail(503, {
           error: 'Tidy is not configured: this site does not have @anthropic-ai/sdk installed. Run npm install @anthropic-ai/sdk.',
         } satisfies TidyFailure);
+      }
+      if (err instanceof TidyTruncatedError) {
+        // The call reached Anthropic and the key worked; only the reply was cut off, and a partial
+        // document must never be offered as a correction. Same copy as the input cap.
+        markKeyHealthy();
+        log.warn('tidy.failed', { editor: editor.email, model, reason: 'truncated' });
+        return fail(413, { error: 'This is too long to tidy at once. Select a passage and tidy that instead.' } satisfies TidyFailure);
       }
       const status = tidyClientErrorStatus(err);
       if (status === 401 || status === 403) {

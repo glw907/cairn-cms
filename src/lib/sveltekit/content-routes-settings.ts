@@ -123,9 +123,11 @@ export interface VocabularySaveFailure {
  *  than a bare id. An unknown id falls back to itself.
  */
 const TIDY_MODEL_LABELS: Record<string, string> = {
+  'claude-sonnet-5-5': 'Claude Sonnet 5.5',
   'claude-sonnet-5': 'Claude Sonnet 5',
   'claude-sonnet-4-6': 'Claude Sonnet 4.6',
-  'claude-haiku-4-5': 'Claude Haiku',
+  'claude-haiku-5-5': 'Claude Haiku 5.5',
+  'claude-haiku-4-5': 'Claude Haiku 4.5',
 };
 
 /** The display label for a tidy model id, falling back to the raw id for an unknown model. */

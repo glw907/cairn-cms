@@ -213,6 +213,23 @@ describe('ConceptList', () => {
     await expect.element(screen.getByRole('button', { name: /delete post 12/i })).toBeInTheDocument();
   });
 
+  it('mounts one shared delete dialog that a row trash opens and a second row retargets', async () => {
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }) });
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
+    expect(screen.container.querySelector('tbody form[action="?/delete"]')).toBeNull();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.open).toBe(false);
+    await screen.getByRole('button', { name: 'Delete Post 12' }).click();
+    await expect.poll(() => dialog.open).toBe(true);
+    expect(dialog.querySelector('h2')?.textContent).toBe('Delete this post?');
+    const id = () => (dialog.querySelector('input[name="id"]') as HTMLInputElement).value;
+    expect(id()).toBe('2026-05-12-post-12');
+    dialog.close();
+    await screen.getByRole('button', { name: 'Delete Post 11' }).click();
+    await expect.poll(() => id()).toBe('2026-05-11-post-11');
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
+  });
+
   // The triage layer: counts per state and the filter that narrows the rows. The filter logic is
   // the contract here; Task 7 dresses the controls to the mockup.
   function triageEntries() {
@@ -328,9 +345,10 @@ describe('ConceptList', () => {
     expect(banner?.textContent ?? '').not.toMatch(/link to it/i);
     expect(banner?.textContent ?? '').not.toMatch(/repoint/i);
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
-    // The row's own DeleteDialog mount also threads the include kind, so its blocked-view copy
-    // (rendered into the DOM even while the dialog is unopened) matches the banner rather than the
-    // link family's "repoint" wording.
+    // The list's one DeleteDialog also threads the include kind for the refused row, so its
+    // blocked-view copy (rendered into the DOM even while the dialog is unopened) matches the
+    // banner rather than the link family's "repoint" wording.
+    expect(screen.container.querySelectorAll('[id="cairn-delete-dialog-title"]').length).toBe(1);
     const rowDialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]');
     expect(rowDialog?.textContent ?? '').toMatch(/included by 1 entry/i);
     expect(rowDialog?.textContent ?? '').not.toMatch(/repoint/i);

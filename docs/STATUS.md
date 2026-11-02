@@ -26,6 +26,12 @@ packet and rules each of the five held majors. Three bars read unmet by Geoff's 
 and editor sittings, and the docs review of the human pages), and Evaluate is unmet until its re-cut
 (`BACKLOG.md` #207).
 
+**Stop on branch `worktree-wiring-core-run` (PR #179), session `cairn-cms-wiring-core`.** T1 to T7 are
+accepted, and T8's review fix chain is running. PR #179 reads `CONFLICTING` since #175 merged, so
+`pull_request` CI does not fire on `bbc829a11`. The one conflict is `BACKLOG.md`. T8 needs green CI on
+the head, and the run prompt merges `origin/main` only on `cairn-cms-9b`'s word, so the session waits
+for that word. This paragraph leaves when the word comes.
+
 ## Open decisions and watches
 
 - `BACKLOG.md` lists open items by pass, each with a `Placement` line, and `## Won't do` holds Geoff's

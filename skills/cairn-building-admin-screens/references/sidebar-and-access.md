@@ -92,19 +92,30 @@ build and the dev server's start.** Regenerate it with the scaffold's `cairn:man
 | Section | `label`, `children` | `roles`, `collapsed` |
 
 ```ts
-import type { NavLayout } from '@glw907/cairn-cms';
+import { defineAdapter } from '@glw907/cairn-cms';
+import { backend, content, email, rendering } from './cairn.parts.js';
 
-// Pass it on the adapter: defineAdapter({ ..., editor: { navLayout } }).
-export const navLayout: NavLayout = [
-  { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'media' }] },
-  {
-    label: 'Finance',
-    children: [{ label: 'Reports', icon: 'table', href: '/admin/finance/reports' }],
+export const cairn = defineAdapter({
+  backend,
+  content,
+  email,
+  rendering,
+  editor: {
+    navLayout: [
+      { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'media' }] },
+      {
+        label: 'Finance',
+        children: [{ label: 'Reports', icon: 'table', href: '/admin/finance/reports' }],
+      },
+      { screen: 'settings', label: 'Site settings' },
+    ],
   },
-  { screen: 'settings', label: 'Site settings' },
-];
+});
 ```
 
+- Declare the layout inline on `defineAdapter`. `npm run check` then refuses a `screen` that is
+  neither a `content` key nor an engine screen. A separate value annotated `NavLayout` has a wide
+  `screen`, so the adapter refuses it.
 - Listing a screen is the only way a custom route gets a link. The route renders with or without
   one.
 - An engine screen the layout never names still renders, after a divider, in a trailing group.

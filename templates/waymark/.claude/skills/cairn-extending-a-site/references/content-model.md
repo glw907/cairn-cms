@@ -131,7 +131,8 @@ export const events = defineConcept({
   throws). There is no fallback to a field named `tags` (logs `content.field_unmarked`). Once the
   site config's `vocabulary` holds items, a save adds only vocabulary values (lowercase hyphenated);
   existing outside tags stay as orphans.
-- `summaryFields` copies named keys onto `ContentSummary.fields`; an undeclared key throws.
+- `summaryFields` copies named keys onto `ContentSummary.fields`; an undeclared key fails
+  `npm run check`, and compose throws on one that reaches it from an untyped caller.
 - `itemLabel` on an `array` of objects names the sub-field that labels a collapsed row.
 
 ## The manifest

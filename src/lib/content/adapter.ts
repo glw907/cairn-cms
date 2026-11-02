@@ -2,6 +2,7 @@
 // widens each concept's schema type away and breaks typed reads. defineAdapter captures the adapter
 // through a `const` type parameter, so each concept's concrete ConceptSchema<F> survives for the
 // full-auto typed reads in createSiteIndexes, while still checking the adapter against the contract.
+import type { KeyedNavLayout } from '../sveltekit/admin-nav.js';
 import type { CairnAdapter } from './types.js';
 
 // Fail closed on an inconsistent island registry: a hydrate component with no live component, or a
@@ -25,12 +26,24 @@ function assertIslandsConsistent(rendering: CairnAdapter['rendering']): void {
 }
 
 /**
- * Declare a site's adapter while preserving each concept's concrete schema type for typed reads.
+ * Declare a site's adapter while preserving each concept's concrete schema type for typed reads. The
+ * returned type also keeps every optional `CairnAdapter` key the site left unset, so `cairn.aiPosture`
+ * reads as optional with no cast, and `editor.navLayout` checks each `screen` against the declared
+ * concepts and the engine's screens.
  * @throws When a component declares `hydrate` with no `rendering.islands` entry, or `rendering.islands`
  * holds a name no component hydrates.
  * @public
  */
-export function defineAdapter<const A extends CairnAdapter>(adapter: A): A {
+export function defineAdapter<const A extends CairnAdapter>(
+  adapter: A & {
+    /** Admin-experience knobs, narrowed here only to key the sidebar's screens. */
+    editor?: {
+      /** The whole sidebar, with each `screen` checked against this adapter's `content` keys. */
+      navLayout?: KeyedNavLayout<keyof A['content'] & string>;
+    };
+  },
+): A & Omit<CairnAdapter, keyof A> {
   assertIslandsConsistent(adapter.rendering);
-  return adapter;
+  // keyof A is unresolved here, so the compiler cannot see the unset keys are simply absent at runtime.
+  return adapter as A & Omit<CairnAdapter, keyof A>;
 }

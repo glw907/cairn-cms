@@ -117,8 +117,8 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   datePrefix?: DatePrefix;
   /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
-   *  field without a per-entry detail read. Defaults to none. Compose throws when a key is not a
-   *  declared field.
+   *  field without a per-entry detail read. Defaults to none. `defineConcept` keys this list to the
+   *  declared fields, and compose throws when a key from an untyped caller is not one.
    */
   summaryFields?: string[];
 }
@@ -367,7 +367,8 @@ export interface CairnAdapter {
      * The whole sidebar, arranged as one ordered tree mixing the engine's screens with the
      *  site's entries (a concept id or a fixed utility-screen name as an engine reference, a
      *  developer's labeled `/admin/` link, or a one-level section of either). Absent leaves the
-     *  sidebar to the default arrangement (today's built-in shape).
+     *  sidebar to the default arrangement (today's built-in shape). `defineAdapter` keys each
+     *  `screen` to the adapter's concepts and the engine's screens.
      */
     navLayout?: NavLayout;
     /**

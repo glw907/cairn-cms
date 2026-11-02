@@ -33,9 +33,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `defineAccess`: <const A extends AccessMap>(roles: RolesDeclaration | undefined, map: A) => A
-- `defineAdapter`: <const A extends CairnAdapter>(adapter: A) => A
+- `defineAdapter`: <const A extends CairnAdapter>(adapter: A & { editor?: { navLayout?: KeyedNavLayout<keyof A["content"] & string> } }) => A & Omit<CairnAdapter, keyof A>
 - `defineComponent`: <const D extends ComponentDef>(def: D) => D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
-- `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
+- `defineConcept`: <const C extends ConceptConfig>(concept: C & { summaryFields?: readonly (keyof C["fields"]["fields"] & string)[] }) => C
 - `defineFieldset`: <const R extends Record<string, FieldDescriptor>>(record: R, config?: FieldsetConfig) => Fieldset<R>
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
@@ -70,8 +70,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
 - `NavLayout`: (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[]
-- `NavLayoutEngineRef`: { screen: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {}); label?: string; hidden?: boolean; icon?: "image" | "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench" }
-- `NavLayoutEntry`: { label: string; icon: "image" | "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean; roles?: string[] }
+- `NavLayoutEngineRef`: { screen: "help" | "media" | "settings" | "vocabulary" | "nav" | "editors" | (string & {}); label?: string; hidden?: boolean; icon?: "anchor" | "image" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench" }
+- `NavLayoutEntry`: { label: string; icon: "anchor" | "image" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean; roles?: string[] }
 - `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: string[]; collapsed?: boolean }
 - `NavMenuConfig`: { menuName: string; label: string; maxDepth?: number }
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }

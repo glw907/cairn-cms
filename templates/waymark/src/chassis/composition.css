@@ -72,7 +72,7 @@
   }
 
   /* Hero: an introductory block with a large display heading over a recessed sub-line, the shape
-     this site's home masthead and the styleguide both hand-roll today in scoped `<style>`
+     this site's home masthead and the showcase styleguide both hand-roll today in scoped `<style>`
      blocks. A theme adopts .cairn-hero to get the same rhythm without repeating the declarations. */
   .cairn-hero {
     --cairn-hero-gap: var(--spacing-s);

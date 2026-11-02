@@ -77,8 +77,11 @@ const SITE_ENV = { ...process.env, VITE_CAIRN_E2E: '1' };
 const SENTINEL_CLASS = 'decoration-card-border';
 const SENTINEL_FILE = 'zz-fixture-sentinel.svelte';
 
-/** The pages every build is smoke-loaded through. */
-const PAGES = ['/', '/posts/the-reading-surface', '/styleguide'];
+/**
+ * The pages the template arm smoke-loads each build through. The emitted template ships no
+ * `/styleguide`, which the showcase arm's spec exercises instead.
+ */
+const PAGES = ['/', '/posts/the-reading-surface'];
 
 /** Every child process a run started that still runs, killed on exit. @type {Set<import('node:child_process').ChildProcess>} */
 const servers = new Set();

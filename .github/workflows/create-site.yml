@@ -114,7 +114,7 @@ jobs:
             const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
             assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
 
-            for (const leftover of ["e2e", "playwright.config.ts", "src/routes/probe-craft"]) {
+            for (const leftover of ["e2e", "playwright.config.ts", "src/routes/probe-craft", "src/routes/(site)/styleguide"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
             }
 

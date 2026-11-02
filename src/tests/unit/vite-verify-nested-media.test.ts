@@ -39,7 +39,7 @@ export const cairn = defineAdapter({
 export const siteConfig = parseSiteConfig('siteName: Test\\n');
 `;
 
-const GALLERY_ADAPTER = adapter("gallery: fields.array(fields.image({ label: 'Image' })),");
+const GALLERY_ADAPTER = adapter("gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Items' }),");
 const HERO_ADAPTER = adapter("hero: fields.image({ label: 'Hero' }),");
 
 const GALLERY_POST =

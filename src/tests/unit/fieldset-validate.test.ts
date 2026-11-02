@@ -163,8 +163,7 @@ describe('fieldset image field (v1 parity)', () => {
 describe('fieldset reference and array(reference)', () => {
   const fs = defineFieldset({
     author: fields.reference({ concept: 'pages', label: 'Author', required: true }),
-    related: fields.array(fields.reference({ concept: 'posts', label: 'Post' }), { label: 'Related' }),
-  });
+    related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Post' }), label: 'Related' }) });
 
   it('validates reference and array(reference) ids', () => {
     expect(fs.validate({ author: 'jane-doe', related: ['a-post', 'b-post'] }, '')).toEqual({
@@ -197,8 +196,7 @@ describe('fieldset reference and array(reference)', () => {
 describe('fieldset.validate nested containers', () => {
   it('reports a nested required error with a multi-segment path', () => {
     const fs = defineFieldset({
-      faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Question', required: true }), a: fields.textarea({ label: 'Answer' }) } }), { label: 'FAQ' }),
-    });
+      faq: fields.array({ item: fields.object({ fields: { q: fields.text({ label: 'Question', required: true }), a: fields.textarea({ label: 'Answer' }) } }), label: 'FAQ' }) });
     const r = fs.validate({ faq: [{ q: '', a: 'an answer' }] }, '');
     expect(r.ok).toBe(false);
     if (!r.ok) {
@@ -208,7 +206,7 @@ describe('fieldset.validate nested containers', () => {
   });
 
   it('validates and stores a clean array of objects', () => {
-    const fs = defineFieldset({ faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } })) });
+    const fs = defineFieldset({ faq: fields.array({ item: fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } }), label: 'Items' }) });
     const r = fs.validate({ faq: [{ q: 'one', a: 'two' }, { q: 'three' }] }, '');
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data.faq).toEqual([{ q: 'one', a: 'two' }, { q: 'three' }]);
@@ -222,7 +220,7 @@ describe('fieldset.validate nested containers', () => {
   });
 
   it('reports an array-of-leaf element error with an index path', () => {
-    const fs = defineFieldset({ links: fields.array(fields.url({ label: 'Link' })) });
+    const fs = defineFieldset({ links: fields.array({ item: fields.url({ label: 'Link' }), label: 'Items' }) });
     const r = fs.validate({ links: ['https://ok.example', 'not-a-url'] }, '');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues).toEqual([{ path: ['links', 1], message: 'Link is not a valid URL' }]);

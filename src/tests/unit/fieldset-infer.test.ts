@@ -52,8 +52,7 @@ describe('Infer', () => {
   it('infers a reference as string and an array(reference) as an optional string[]', () => {
     const withRefs = defineFieldset({
       author: fields.reference({ concept: 'pages', label: 'Author', required: true }),
-      related: fields.array(fields.reference({ concept: 'posts', label: 'Post' }), { label: 'Related' }),
-    });
+      related: fields.array({ item: fields.reference({ concept: 'posts', label: 'Post' }), label: 'Related' }) });
     expectTypeOf<InferFieldset<typeof withRefs>>().toEqualTypeOf<{
       author: string;
       related?: string[];
@@ -69,14 +68,25 @@ describe('Infer', () => {
 
   it('infers an array of flat objects', () => {
     const fs = defineFieldset({
-      faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } }), { label: 'FAQ' }),
-    });
+      faq: fields.array({ item: fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } }), label: 'FAQ' }) });
     expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ faq?: { q: string; a?: string }[] }>();
   });
 
   it('infers an array of a non-reference leaf', () => {
-    const fs = defineFieldset({ aliases: fields.array(fields.text({ label: 'Alias' }), { label: 'Aliases' }) });
+    const fs = defineFieldset({ aliases: fields.array({ item: fields.text({ label: 'Alias' }), label: 'Aliases' }) });
     expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ aliases?: string[] }>();
+  });
+
+  it('infers an array bag over a number item as number[]', () => {
+    const fs = defineFieldset({ n: fields.array({ item: fields.number({ label: 'N' }), label: 'L' }) });
+    expectTypeOf<InferFieldset<typeof fs>>().toEqualTypeOf<{ n?: number[] }>();
+  });
+
+  it('rejects a default whose type does not match the field', () => {
+    // @ts-expect-error a number field takes a number default
+    fields.number({ label: 'N', default: '5' });
+    // @ts-expect-error an image has no default
+    fields.image({ label: 'I', default: 'x' });
   });
 
   it('preserves a nested literal option union and a top-level object label', () => {

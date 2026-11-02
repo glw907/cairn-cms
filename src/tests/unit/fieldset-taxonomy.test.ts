@@ -50,7 +50,7 @@ describe('fieldset taxonomy-marker guard', () => {
 
   it('forbids a taxonomy marker inside an array', () => {
     expect(() =>
-      defineFieldset({ rows: fields.array(fields.multiselect({ label: 'Topics', taxonomy: true })) }),
+      defineFieldset({ rows: fields.array({ item: fields.multiselect({ label: 'Topics', taxonomy: true }), label: 'Items' }) }),
     ).toThrow(/taxonomy/i);
   });
 });

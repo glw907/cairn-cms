@@ -273,7 +273,7 @@ describe('normalizeConcepts URL policy', () => {
           dir: 'p',
           fields: {
             title: fields.text({ label: 'Title' }),
-            related: fields.array(fields.reference({ concept: 'nope', label: 'Post' }), { label: 'Related' }),
+            related: fields.array({ item: fields.reference({ concept: 'nope', label: 'Post' }), label: 'Related' }),
           },
         },
       }),

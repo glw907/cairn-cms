@@ -47,7 +47,7 @@ describe('fieldset SEO-image guard', () => {
   });
 
   it('forbids an seo image inside an array', () => {
-    expect(() => defineFieldset({ gallery: fields.array(fields.image({ label: 'Shot', seo: true })) })).toThrow(/seo/i);
+    expect(() => defineFieldset({ gallery: fields.array({ item: fields.image({ label: 'Shot', seo: true }), label: 'Items' }) })).toThrow(/seo/i);
   });
 });
 
@@ -59,7 +59,7 @@ describe('fieldset container-nesting guard', () => {
   });
 
   it('rejects an array of arrays', () => {
-    expect(() => defineFieldset({ a: fields.array(fields.array(fields.text({ label: 'T' }))) })).toThrow(/leaf or a flat object/i);
+    expect(() => defineFieldset({ a: fields.array({ item: fields.array({ item: fields.text({ label: 'T' }), label: 'Items' }), label: 'Items' }) })).toThrow(/leaf or a flat object/i);
   });
 
   it('rejects a reference inside an object (deferred this phase)', () => {
@@ -73,6 +73,6 @@ describe('fieldset container-nesting guard', () => {
   });
 
   it('still accepts a top-level array of references', () => {
-    expect(() => defineFieldset({ related: fields.array(fields.reference({ concept: 'posts', label: '' })) })).not.toThrow();
+    expect(() => defineFieldset({ related: fields.array({ item: fields.reference({ concept: 'posts', label: '' }), label: 'Items' }) })).not.toThrow();
   });
 });

@@ -523,7 +523,7 @@ export function initialValues(fieldset: Fieldset, now?: Date): Record<string, un
   const values: Record<string, unknown> = {};
   for (const [key, field] of Object.entries(fieldset.fields)) {
     const value = field.default;
-    if (value === undefined || value === '' || value === false) continue;
+    if (value === undefined || value === '' || value === false || (Array.isArray(value) && value.length === 0)) continue;
     if (field.type === 'date' && value === 'today') {
       if (now) values[key] = now.toISOString().slice(0, 10);
       continue;

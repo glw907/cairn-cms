@@ -27,11 +27,10 @@ const adapterWith = (extra: Record<string, FieldDescriptor>) => ({
   },
 });
 
-const gallery = adapterWith({ gallery: fields.array(fields.image({ label: 'Image' })) });
+const gallery = adapterWith({ gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Items' }) });
 const card = adapterWith({ card: fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }) });
 const cards = adapterWith({
-  cards: fields.array(fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }), { label: 'Cards' }),
-});
+  cards: fields.array({ item: fields.object({ label: 'Card', fields: { image: fields.image({ label: 'Image' }) } }), label: 'Cards' }) });
 const topLevelOnly = adapterWith({ hero: fields.image({ label: 'Hero' }) });
 
 const HERO = '00112233445566aa';

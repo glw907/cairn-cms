@@ -132,7 +132,7 @@ describe('MediaInsertPopover routing', () => {
     });
     (screen.component as unknown as { open: (s: string, f?: File) => void }).open('chooser');
     await tick();
-    await expect.element(screen.getByRole('button', { name: /upload an image/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /upload image/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('combobox')).toBeInTheDocument();
   });
 

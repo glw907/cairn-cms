@@ -80,7 +80,7 @@ describe('saveAction on the pending branch', () => {
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
-    expect(result.data.error).toMatch(/1 missing page/i);
+    expect(result.data.error).toMatch(/1 missing entry/i);
     expect(result.data.brokenLinks).toContain('cairn:pages/gone');
 
     // The guard fires before the branch ensure: no ref was created.

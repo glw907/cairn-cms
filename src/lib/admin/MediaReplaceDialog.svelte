@@ -263,7 +263,9 @@ full-page POST to `?/mediaReplace` navigates away.
       // body all route to the blocked step. A parsed failure carries the branch-naming error when the
       // server returned one; a transport miss carries the empty error (the generic honest line stands in).
       const failure = outcome.data as MediaReplaceFailure | undefined;
-      replaceFailure = failure ?? { error: '', hash, usage: [], foundIn: 0 };
+      // A bare 'csrf' is the guard's diagnostic code, not copy for an editor, so it is stored as the
+      // empty error and the blocked step's generic line stands in (as the tidy and share panels do).
+      replaceFailure = failure ? { ...failure, error: failure.error === 'csrf' ? '' : failure.error } : { error: '', hash, usage: [], foundIn: 0 };
       replacePlan = null;
       replaceStep = 'blocked';
       void tick().then(() => replaceTitle?.focus());
@@ -314,9 +316,9 @@ full-page POST to `?/mediaReplace` navigates away.
       : '',
   );
 
-  // The where-used summary line for one affected entry, derived from its repointed placements: a hero
+  // The where-used summary line for one affected entry, derived from its repointed placements: a lead image
   // count, a body count, and a nested count (an image in a gallery or card), folded into a plain phrase
-  // ("Hero and 2 in the body", "2 in a gallery or card").
+  // ("Lead image and 2 in the body", "2 in a gallery or card").
   function replaceWhereUsed(entry: MediaReplacePreviewEntry): string {
     let hero = 0;
     let body = 0;
@@ -327,7 +329,7 @@ full-page POST to `?/mediaReplace` navigates away.
       else body += 1;
     }
     const parts: string[] = [];
-    if (hero > 0) parts.push(hero === 1 ? 'Hero' : `${hero} heroes`);
+    if (hero > 0) parts.push(hero === 1 ? 'Lead image' : `${hero} lead images`);
     if (body > 0) parts.push(`${body} in the body`);
     if (nested > 0) parts.push(`${nested} in a gallery or card`);
     if (parts.length === 0) return 'Used in this entry';
@@ -357,7 +359,7 @@ full-page POST to `?/mediaReplace` navigates away.
   <!-- The polite live region renders unconditionally (present and empty from mount), so when the
        review step's impact sentence first appears it is announced; a region conditionally mounted
        WITH its first content is not reliably observed by assistive tech (WCAG 4.1.3). role="status"
-       matches the Push-alt live region: the stronger, more portable form. -->
+       matches the Apply-default-alt live region: the stronger, more portable form. -->
   <div class="sr-only" role="status" aria-live="polite">
     {#if replaceAsset && replaceStep === 'review'}
       Replace {replaceAsset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}.{replaceBranchNote}

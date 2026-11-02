@@ -236,7 +236,7 @@ describe('publishAction', () => {
       actionEvent('2026-05-01-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }),
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
     expect(result.status).toBe(400);
-    expect(result.data.error).toMatch(/1 missing page/i);
+    expect(result.data.error).toMatch(/1 missing entry/i);
     expect(result.data.brokenLinks).toContain('cairn:pages/gone');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
     expect([...gh.branches.keys()]).toEqual(['main']);

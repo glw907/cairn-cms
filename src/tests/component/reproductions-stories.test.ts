@@ -717,9 +717,9 @@ describe('publish/history-list', () => {
     await expect.element(screen.getByRole('heading', { name: 'Recent versions' })).toBeInTheDocument();
     // The synthetic draft row pins on top, credits the editor mid-save, and carries no revert
     // affordance of its own, since it is not itself a publish.
-    await expect.element(screen.getByText('Draft')).toBeInTheDocument();
+    await expect.element(screen.getByText('Draft', { exact: true })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('Jamie Torres');
-    const revertButtons = screen.container.querySelectorAll('button[aria-label^="Revert to the version"]');
+    const revertButtons = screen.container.querySelectorAll('button[aria-label^="Restore the version"]');
     expect(revertButtons).toHaveLength(2);
   });
 });
@@ -730,11 +730,13 @@ describe('publish/pending-list', () => {
 
     const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-shell-publish-all-title"]');
     expect(dialog?.open).toBe(true);
-    await expect.element(screen.getByRole('button', { name: /Publish site \(2\)/ })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /Publish all \(2\)/ })).toBeInTheDocument();
     // The grouped list, under the concept's own nav label.
     expect(dialog?.textContent).toContain('Posts');
-    expect(dialog?.textContent).toContain('2026-06-24-spring-newsletter');
-    expect(dialog?.textContent).toContain('2026-06-10-welcome-to-trailhead');
+    // Each row shows the entry's title, not its id.
+    expect(dialog?.textContent).toContain('Spring Newsletter');
+    expect(dialog?.textContent).toContain('Welcome to Trailhead');
+    expect(dialog?.textContent).not.toContain('2026-06-24-spring-newsletter');
   });
 });
 
@@ -774,7 +776,7 @@ describe('media/insert-panel', () => {
     const srcs = expectMediaBaseSrcs(screen.container);
     expect(srcs.length).toBeGreaterThan(0);
 
-    await expect.element(screen.getByRole('button', { name: 'Upload an image' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Upload image' })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('or reuse an image');
     // The reuse picker's own listbox, populated from the fixture library.
     await expect.element(screen.getByRole('option', { name: /Trailhead View/ })).toBeInTheDocument();
@@ -916,7 +918,7 @@ describe('tags/screen', () => {
     await expect.element(screen.getByRole('heading', { name: 'Your tags' })).toBeInTheDocument();
     // The stored-form line under the Add field is the one contracted detail the audit says is not
     // in the resting render (it appears as the author types), so this row asserts no pose for it.
-    expect(screen.container.textContent).toContain('Editors see the name; entries keep a short slug.');
+    expect(screen.container.textContent).toContain('Editors see the name; entries keep a short stored form.');
 
     // The trash icon versus the use count: an in-use tag's delete is guarded (aria-disabled), the
     // fixture's zero-usage tag's own delete stays the active, ungated control.

@@ -5,7 +5,7 @@ markdown editor and a live, design-accurate preview. The whole surface is one fo
 `?/save` action. The title field is hoisted above the editor card as the document title; the
 remaining fields group behind the Details slide-over (a fixed panel below the band, toggled from
 the band's Details trigger or Ctrl+.) under Details, Visibility (the draft boolean as the Hidden
-toggle), and Address (the slug with the Change URL trigger). The toolbar's Write/Preview tabs
+toggle), and Address (the slug with the Change address trigger). The toolbar's Write/Preview tabs
 swap the editing surface for the rendered preview inside the same card; every visit lands on
 Write. Preview renders inside a sandboxed iframe that links the site's stylesheets (the
 adapter's `preview` knob), takes the full content width (the sidebar hides until Write), and
@@ -1263,7 +1263,7 @@ island.
       return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.flash === 'published') return 'Published. The live site is rebuilding.';
     if (data.flash === 'discarded') return 'Changes discarded.';
-    if (data.flash === 'renamed') return `The URL is now ${data.slug}.`;
+    if (data.flash === 'renamed') return `The address is now ${data.slug}.`;
     return '';
   });
 
@@ -1273,8 +1273,8 @@ island.
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
   const politeMessage = $derived.by(() => {
-    if (draftWarning) return `Saved. This page links to unpublished pages: ${draftWarning}.`;
-    if (referenceWarning) return `Saved. This page references unpublished entries: ${referenceWarning}.`;
+    if (draftWarning) return `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
+    if (referenceWarning) return `Saved. This entry references unpublished entries: ${referenceWarning}.`;
     return flash;
   });
   const assertiveMessage = $derived.by(() => {
@@ -1284,12 +1284,12 @@ island.
       const count = deleteRefusedLinks.length;
       const detail = deleteRefusedByInclusion
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
-        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+        : `${count} ${count === 1 ? 'entry links' : 'entries link'} to it.`;
       return `This ${singularNoun.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
-      return `This page links to ${count} missing ${count === 1 ? 'page' : 'pages'}.`;
+      return `This entry links to ${count} missing ${count === 1 ? 'entry' : 'entries'}.`;
     }
     return '';
   });
@@ -1840,7 +1840,7 @@ island.
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
-      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry' : 'entries'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
@@ -1853,7 +1853,7 @@ island.
 {/if}
 {#if visibleBrokenLinks.length && !failureNotice}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
+    <p>This entry links to {visibleBrokenLinks.length === 1 ? 'an entry' : 'entries'} that {visibleBrokenLinks.length === 1 ? "doesn't" : "don't"} exist. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul role="list" class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
         <li class="flex items-center justify-between gap-2" role="listitem">
@@ -1947,12 +1947,12 @@ island.
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
+    Saved. Note: this entry links to {draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet ({draftWarning}).
   </div>
 {/if}
 {#if referenceWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this page references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
+    Saved. Note: this entry references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
   </div>
 {/if}
 
@@ -2463,7 +2463,7 @@ island.
             aria-haspopup="dialog"
             onclick={() => renameDialog?.open()}
           >
-            {data.routable ? 'Change URL' : 'Rename'}
+            {data.routable ? 'Change address' : 'Rename'}
           </button>
         </div>
       </fieldset>

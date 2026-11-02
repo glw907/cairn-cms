@@ -277,9 +277,9 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
       else if (target.draft) draftLinks.push(formatCairnToken(ref));
     }
     if (absent.length) {
-      const noun = absent.length === 1 ? 'page' : 'pages';
+      const noun = absent.length === 1 ? 'entry' : 'entries';
       return fail(400, {
-        error: `This page links to ${absent.length} missing ${noun}.`,
+        error: `This entry links to ${absent.length} missing ${noun}.`,
         brokenLinks: absent,
         body,
       } satisfies SaveFailure);
@@ -294,7 +294,7 @@ export function createEntryWriteActions(ctx: ContentRoutesContext) {
     }
     const unknownFragments = extractIncludes(body).filter((fid) => !byKey.has(`${FRAGMENTS_CONCEPT_ID}/${fid}`));
     if (unknownFragments.length) {
-      return fail(400, saveRefusal(`This page includes a fragment that does not exist: ${unknownFragments.join(', ')}.`, body));
+      return fail(400, saveRefusal(`This entry includes a fragment that does not exist: ${unknownFragments.join(', ')}.`, body));
     }
 
     // Frontmatter reference warning: classify each typed reference edge against the same upserted

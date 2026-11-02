@@ -25,8 +25,8 @@ The library finds an image only where a page's text or fields point to it. An im
 
 ## Add an image to the library
 
-1. Select **Upload**. In an empty library, the screen also offers **Upload an image**. You can also drop a file anywhere on the page.
-1. Choose the file. The **Upload an image** window opens with a preview.
+1. Select **Upload**. In an empty library, the screen also offers **Upload image**. You can also drop a file anywhere on the page.
+1. Choose the file. The **Upload image** window opens with a preview.
 1. In the **Name** field, type a name you'd recognize later.
 1. Under **Alt text**, select **Write a description** and type a short description, or select **Mark as decorative**. You can add the description later.
 1. Select **Upload image**.
@@ -59,23 +59,21 @@ To see an image's details, follow these steps:
 ```repro
 story: media/details-panel
 alt: Reproduction of the details panel for one image, with a preview, Name and Address fields, default alt text, and a Where used list.
-caption: The details panel for Team Photo. The default alt text note says the default applies the next time the image is placed and leaves alt text on existing pages alone. Where used lists the entry that uses the image, and its title opens that entry in the editor.
+caption: The details panel for Team Photo. The default alt text note says the default applies the next time the image is placed and leaves alt text on existing entries alone. Where used lists the entry that uses the image, and its title opens that entry in the editor.
 ```
 
 The panel holds the following:
 
 - A preview of the image and its name.
 - The **Name** field and the **Address** field. The address is the short name in the image's web address, in lowercase letters, numbers, and hyphens.
-- **Default alt text**, with the choices **Describe it** and **Decorative**.
+- **Default alt text**, one box where you type the alt text for the image. Leave it empty to save the image with no default.
 - **Where used**, which lists the entries that use the image.
 - **Details**, which gives the dimensions, size, type, and date added.
-- **Replace image**, **Push alt to placements**, and **Delete**.
+- **Replace image**, **Apply default alt to entries**, and **Delete**.
 
 To change the name, address, or default alt text, edit the field and select **Save**. **Changes saved.** confirms it.
 
-The library doesn't remember a **Decorative** choice. After you choose it, the image still shows **Needs alt** and stays in the **Needs alt** filter. The choice leaves the default alt text empty, which tells a screen reader to skip the image.
-
-The default alt text applies the next time someone places the image. Changing it doesn't change alt text already set on pages that use the image. To fill in the default on published pages where the image has no alt text, select **Push alt to placements**. The window it opens lets you choose whether to overwrite alt text that pages already have.
+The default alt text applies the next time someone places the image. Changing it doesn't change alt text already set on entries that use the image. To fill in the default on published entries where the image has no alt text, select **Apply default alt to entries**. The window it opens lets you choose whether to overwrite alt text that entries already have.
 
 ## Replace an image
 

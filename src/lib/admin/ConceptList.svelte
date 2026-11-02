@@ -88,13 +88,14 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   let page = $state(1);
 
   // Triage counts over the full loaded set, each axis counted independently. Pending is new +
-  // edited (status !== 'published'); Published is live-as-is (status === 'published'); Hidden is
-  // the draft rows. The axes overlap: a published-but-hidden entry counts in BOTH Published and
+  // edited (status !== 'published'); Published is every entry that is live, edited or not
+  // (status !== 'new'); Hidden is the draft rows. The axes overlap: an edited live entry counts in
+  // BOTH Pending and Published, and a published-but-hidden entry counts in BOTH Published and
   // Hidden. All is the unconditional total.
   const counts = $derived({
     all: data.entries.length,
     pending: data.entries.filter((e) => e.status !== 'published').length,
-    published: data.entries.filter((e) => e.status === 'published').length,
+    published: data.entries.filter((e) => e.status !== 'new').length,
     hidden: data.entries.filter((e) => e.draft).length,
   });
 
@@ -102,7 +103,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // and the count axis it shows; the toolbar's segmented filter loops these as its options.
   const segments: { value: Partition; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => counts.all },
-    { value: 'pending', label: 'Pending edits', count: () => counts.pending },
+    { value: 'pending', label: 'Unpublished changes', count: () => counts.pending },
     { value: 'published', label: 'Published', count: () => counts.published },
   ];
 
@@ -111,7 +112,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       case 'pending':
         return entry.status !== 'published';
       case 'published':
-        return entry.status === 'published';
+        return entry.status !== 'new';
       default:
         return true;
     }
@@ -161,7 +162,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     label: 'Filter by visibility',
     display: 'segmented',
     options: [
-      { value: 'all', label: 'Shown' },
+      { value: 'all', label: 'All' },
       { value: 'hidden', label: 'Hidden', count: counts.hidden },
     ],
     value: hiddenOnly ? 'hidden' : 'all',
@@ -279,7 +280,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     const blocker =
       deleteRefused.inboundKind === 'include'
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
-        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+        : `${count} ${count === 1 ? 'entry links' : 'entries link'} to it.`;
     return `This ${refusedNoun} could not be deleted. ${blocker}`;
   });
 
@@ -356,7 +357,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     {#if deleteRefused.inboundKind === 'include'}
       <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
-      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+      <p class="m-0">{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry' : 'entries'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
     {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefused.inboundLinks as link (link.concept + '/' + link.id)}

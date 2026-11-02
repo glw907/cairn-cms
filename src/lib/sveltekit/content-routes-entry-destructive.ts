@@ -156,7 +156,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     if (inbound.length) {
       logRefused('entry.delete_refused', editor, concept, id, 'inbound_links', inbound.length);
       return fail(409, {
-        error: `Cannot delete ${id}: ${inbound.length} ${inbound.length === 1 ? 'page links' : 'pages link'} to it.`,
+        error: `Cannot delete ${id}: ${inbound.length} ${inbound.length === 1 ? 'entry links' : 'entries link'} to it.`,
         inboundLinks: inbound,
         id,
       } satisfies DeleteFailure);

@@ -121,7 +121,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
   const { frontmatter, body } = parseMarkdown(file.raw);
   const { id, date, permalink } = entryIdentity(descriptor, file.path, frontmatter);
   // Set mediaRefs only when non-empty, so an image-free entry's row stays byte-identical to before
-  // (matching the optional-spread for date and summary).
+  // (matching the optional-spread for date and excerpt).
   const mediaRefs = extractMediaRefs(frontmatter, body, descriptor.fields);
   // Set references only when non-empty, mirroring mediaRefs, so a reference-free entry's row stays
   // byte-identical to a manifest committed before this field.

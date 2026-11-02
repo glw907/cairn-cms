@@ -1255,11 +1255,11 @@ island.
   // save; the build's verifyReferences is the integrity authority, so this only advises.
   const referenceWarning = $derived(failedInPlace ? '' : redirectFlagList('refs'));
 
-  // The banner and the polite live region read this one string. "Remove" covers an absent target,
-  // which has nothing to publish.
+  // The banner and the polite live region read this one string. Removing the reference covers an
+  // absent target, which has nothing to publish.
   const referenceNotice = $derived.by(() => {
     const many = referenceWarning.includes(',');
-    return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish or remove ${many ? 'them' : 'it'} before you publish this entry.`;
+    return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
   });
 
   // The one transient feedback strip under the sticky header. The redirect flags are mutually

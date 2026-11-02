@@ -208,6 +208,6 @@ and a `rename.address_collided` record.
 | `cairn: <n> invalid entries:` then `<concept>/<id>: <field>: <message>` | Fix each line: the field, the filename, or the `cairn:` link. A draft is exempt |
 | `content link is dangling` | Fix or remove the body link, or restore its target |
 | `content manifest is stale` | The content is valid and the manifest is behind: `npx cairn-manifest`, commit |
-| Manifest has no rows for the concept | Put its `dir` under `src/content`, or fix invalid entries, then regenerate |
+| Manifest has no rows for the concept | Add an entry file directly in its `dir`, or fix invalid entries, then regenerate |
 | `cairn: <n> invalid frontmatter field(s):` | Fix the field or mark the entry `draft: true` |
 | Server error or build failure from `refine` | Make `refine` return a map instead of throwing |

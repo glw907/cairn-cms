@@ -326,8 +326,8 @@ describe('EditPage', () => {
   });
 
   it.each([
-    ['refs=pages/about', 'an entry (pages/about) not yet published. Publish or remove it before'],
-    ['refs=pages/about,pages/team', 'entries (pages/about, pages/team) not yet published. Publish or remove them before'],
+    ['refs=pages/about', 'an entry (pages/about) not yet published. Publish it or remove the reference before'],
+    ['refs=pages/about,pages/team', 'entries (pages/about, pages/team) not yet published. Publish them or remove the references before'],
   ])('tells the banner and the live region the same reference warning for %s', async (query, expected) => {
     const originalUrl = appPage.url;
     appPage.url = new URL(`http://localhost/admin/posts/2026-05-hello?${query}`);

@@ -1092,8 +1092,7 @@
   loses a race says `This entry changed since you opened it.`, the settings and navigation screens say
   `These settings changed since you opened them.`, and the media screens say
   `The media library changed since you opened it.` A share link shows `Creating…` while it's made, and a
-  reference to an unpublished or missing entry says to publish or remove it, in the banner and to a
-  screen reader alike.
+  reference to an unpublished or missing entry says to publish it or remove the reference.
 
   Consumers must: nothing.
 

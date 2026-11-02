@@ -29,8 +29,8 @@ TSDoc carries its stability tier: `@public` is the Extension API, `@scaffold` th
 
 2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
    `CHANGELOG.md` ships in the package (`node_modules/@glw907/cairn-cms/CHANGELOG.md`, or the
-   repository itself) and carries one section per released version, each stating what a
-   consumer must do or explicitly stating nothing. A caret range admits only its minor, so a
+   repository itself) and carries the section for the release you install, stating what a
+   consumer must do. The sections of earlier releases live in their git tags. A caret range admits only its minor, so a
    site more than one minor behind crosses several of these lists in one jump, and each applies in
    order. [The per-version notes](#per-version-notes) below carry the steps a changelog line
    leaves out.
@@ -80,7 +80,7 @@ reference walks them.
 
 ## Per-version notes
 
-A version not listed here stated no step beyond its changelog section.
+Only the release in this file has notes here. The notes of earlier releases live in their git tags.
 
 ## Unreleased
 
@@ -95,7 +95,7 @@ and behavior that changed. The steps below are the ones that fall on whoever dep
   resolver that returns a Workers rate-limit binding, keyed `login:<CF-Connecting-IP>`. With none, sign-in
   requests are not limited.
 - **Apply migrations by hand.** A rebuilt site carries `0000_auth.sql`, `0001_roles.sql`,
-  `0003_preview.sql`, and `0004_login_nonce.sql`; run `npx wrangler d1 migrations apply APP_DB --remote`
+  `0003_preview.sql`, and `0004_login_nonce.sql`; run `npx wrangler d1 migrations apply AUTH_DB --remote`
   for a database that predates them. A Workers Builds deploy applies none.
 - **Grant the GitHub App Contents read and write,** and set `repo` to the repository's current name.
   `/healthz?live=1` reports a refusal as `token_request_refused`.

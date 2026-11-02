@@ -65,18 +65,17 @@ Each tag you add moves into **Your tags**, with a name made from its stored form
 
 ## Recover when Save changes is refused
 
-If the site's configuration changes while you work on the list, **Save changes** refuses and shows this message:
+If the site changes while your save is in progress, **Save changes** refuses and shows this message:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded message is quoted exactly as the product shows it, so a contraction rule cannot rewrite it. -->
-**These settings changed since you opened them. Reload and reapply your edits.**
+**Someone else changed these settings. Saving again replaces their change. To see it, reload, which drops your edits.**
 <!-- vale Microsoft.Contractions = YES -->
 
-To recover:
+Your edits stay on the screen, and the message takes focus. Choose one of these:
 
-1. Reload the screen to see the current list.
-1. Make your changes again.
-1. Select **Save changes**.
+- To keep your list, select **Save changes** again. Your list replaces the current tags, and the site's other settings stay as they are.
+- To see their change first, reload the screen, which drops your edits. Make your changes again, and then select **Save changes**.
 
 ## Where to go next
 

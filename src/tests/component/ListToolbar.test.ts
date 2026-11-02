@@ -754,9 +754,12 @@ describe('ListToolbar', () => {
     expect(onChange).toHaveBeenCalledWith('draft');
     await expect.poll(() => document.activeElement).toBe(radios()[1]);
 
+    // The key also scrolls the target into view, since focus alone leaves a partly visible option clipped.
+    const scrolled = vi.spyOn(radios()[2], 'scrollIntoView');
     radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     expect(onChange).toHaveBeenCalledWith('published');
     await expect.poll(() => document.activeElement).toBe(radios()[2]);
+    expect(scrolled).toHaveBeenCalledWith({ inline: 'nearest', block: 'nearest' });
 
     radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
     expect(onChange).toHaveBeenCalledWith('all');

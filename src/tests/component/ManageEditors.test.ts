@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ManageEditors from '../../lib/admin/ManageEditors.svelte';
+import { FAILURE_NOTICE } from '../../lib/admin/refusal.js';
+import { enhanceRuns, resetEnhance, settleEnhance } from './_app-forms.js';
 import type { Capability } from '../../lib/auth/roles.js';
 
 const DEFAULT_VOCABULARY: { role: string; capability: Capability }[] = [
@@ -28,6 +30,8 @@ function data() {
   };
 }
 
+beforeEach(resetEnhance);
+
 describe('ManageEditors', () => {
   it('renders its header and table through the admin toolkit', async () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band and the editor
@@ -53,6 +57,19 @@ describe('ManageEditors', () => {
     const editorBadge = badges.find((badge) => badge.textContent?.trim() === 'editor');
     expect(editorBadge?.classList.contains('cairn-chip-quiet')).toBe(true);
     expect(editorBadge?.classList.contains('cairn-chip-outline')).toBe(false);
+  });
+
+  it('hides the Email and Role columns below sm and stacks both under the name', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const headers = [...screen.container.querySelectorAll('th')];
+    const hidden = (label: string) =>
+      headers.find((th) => th.textContent?.trim() === label)?.classList.contains('hidden');
+    expect(hidden('Email')).toBe(true);
+    expect(hidden('Role')).toBe(true);
+    const nameCell = screen.container.querySelector('tbody tr td')!;
+    const stacked = [...nameCell.querySelectorAll('.sm\\:hidden')].map((el) => el.textContent?.trim());
+    // Each stacked value carries a screen-reader-only name, standing in for its hidden column header.
+    expect(stacked).toEqual(['Email: owner@t', 'Role: owner']);
   });
 
   it('disables the remove control for the acting owner (anti-lockout affordance)', async () => {
@@ -90,11 +107,10 @@ describe('ManageEditors', () => {
     const screen = await render(ManageEditors, { data: data(), form: { error: 'That editor already exists' } });
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('That editor already exists');
-    // The visible alert carries the message with no role of its own; a persistent polite live
-    // region announces it instead (the ConceptList discipline).
+    // The visible alert has no role of its own; a refusal answers in place and takes focus on mount.
     expect(alert?.getAttribute('role')).toBeNull();
-    const region = screen.container.querySelector('[aria-live="polite"]');
-    expect(region?.textContent ?? '').toContain('That editor already exists');
+    expect(alert?.getAttribute('tabindex')).toBe('-1');
+    await expect.poll(() => document.activeElement).toBe(alert);
   });
 
   it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
@@ -200,5 +216,73 @@ describe('ManageEditors vocabulary-driven role control', () => {
     const badges = [...screen.container.querySelectorAll('.badge')];
     const presidentBadge = badges.find((badge) => badge.textContent?.trim() === 'president');
     expect(presidentBadge?.classList.contains('badge-primary')).toBe(true);
+  });
+
+  it('submits all of its forms through the enhanced path', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const forms = [...screen.container.querySelectorAll<HTMLFormElement>('form[method="POST"]')];
+    const actions = new Set(forms.map((f) => f.getAttribute('action')));
+    expect(actions).toEqual(new Set(['?/editorSetRole', '?/editorRemove', '?/editorAdd']));
+    const add = screen.container.querySelector<HTMLFormElement>('form[action="?/editorAdd"]')!;
+    add.querySelector<HTMLInputElement>('input[name="name"]')!.value = 'New One';
+    add.querySelector<HTMLInputElement>('input[name="email"]')!.value = 'new@t';
+    add.requestSubmit();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    expect(enhanceRuns[0].action).toBe('?/editorAdd');
+  });
+
+  it('disables every control while one request is in flight, then reads the list as updated', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const edToggle = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Toggle role for Ed Two"]')!;
+    const add = screen.container.querySelector<HTMLButtonElement>('form[action="?/editorAdd"] button[type="submit"]')!;
+    edToggle.click();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    expect(edToggle.disabled).toBe(true);
+    expect(add.disabled).toBe(true);
+    expect(add.getAttribute('aria-busy')).toBe('true');
+
+    settleEnhance({ type: 'success', status: 200, data: { ok: true } });
+    await screen.rerender({ data: data(), form: { ok: true } });
+    await expect.poll(() => screen.container.querySelector('[role="status"]')?.textContent).toContain('The editor list is updated.');
+    expect(edToggle.disabled).toBe(false);
+    expect(add.disabled).toBe(false);
+  });
+
+  it('shows the failure notice for an error result and keeps the typed Name and Email', async () => {
+    const screen = await render(ManageEditors, { data: data(), form: null });
+    const add = screen.container.querySelector<HTMLFormElement>('form[action="?/editorAdd"]')!;
+    const name = add.querySelector<HTMLInputElement>('input[name="name"]')!;
+    const email = add.querySelector<HTMLInputElement>('input[name="email"]')!;
+    name.value = 'New One';
+    email.value = 'new@t';
+    add.requestSubmit();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    settleEnhance({ type: 'error', error: new Error('boom') });
+    await expect.poll(() => screen.container.querySelector('.alert-error')?.textContent).toContain(FAILURE_NOTICE);
+    expect(name.value).toBe('New One');
+    expect(email.value).toBe('new@t');
+  });
+
+  it("returns a custom vocabulary select to the row's role after a refused role change", async () => {
+    const owner = data().editors[0];
+    const webmaster = { email: 'wm@t', displayName: 'Web Master', role: 'webmaster' as const, capability: 'editor' as const };
+    const props = (editors: Array<typeof owner | typeof webmaster>, form: { error?: string; ok?: boolean } | null) => ({
+      data: { editors, self: 'owner@t', vocabulary: ASC_VOCABULARY },
+      form,
+    });
+    const screen = await render(ManageEditors, props([owner], null));
+    // The row arrives after mount, so its options are created on the client.
+    await screen.rerender(props([owner, webmaster], null));
+    const select = screen.container.querySelector('select[aria-label="Change role for Web Master"]') as unknown as HTMLSelectElement;
+    expect(select.value).toBe('webmaster');
+    select.value = 'staff';
+    select.closest('form')!.requestSubmit();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    expect(select.value).toBe('staff');
+
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Choose a valid role' } });
+    await screen.rerender(props([owner, webmaster], { error: 'Choose a valid role' }));
+    await expect.poll(() => select.value).toBe('webmaster');
+    expect(screen.container.querySelector('.alert-error')?.textContent).toContain('Choose a valid role');
   });
 });

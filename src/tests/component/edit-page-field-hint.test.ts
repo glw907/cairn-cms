@@ -102,18 +102,23 @@ describe('edit-page field hint', () => {
     await expect.element(page.getByText('Custom date help.')).toBeInTheDocument();
   });
 
-  it('renders a bounded title as maxlength on the hoisted title input', async () => {
+  it('warns on a bounded title while typing instead of capping it with maxlength', async () => {
     const base = props();
     const page = await render(EditPage, {
       ...base,
-      data: { ...base.data, fields: [{ name: 'title', label: 'Title', type: 'text', max: 60 }] as NamedField[] },
+      data: { ...base.data, fields: [{ name: 'title', label: 'Title', type: 'text', max: 6 }] as NamedField[] },
     });
     const title = page.getByRole('textbox', { name: 'Title' });
-    await expect.element(title).toHaveAttribute('maxlength', '60');
+    await expect.element(title).not.toHaveAttribute('maxlength');
     await expect.element(title).not.toHaveAttribute('minlength');
+    const el = title.element() as HTMLInputElement;
+    el.value = 'far too long';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(el.value).toBe('far too long');
+    expect(el.validationMessage).toBe('Title must be at most 6 characters');
   });
 
-  it('lets length set both bounds on a textarea title, over min and max', async () => {
+  it('warns on an exact-length textarea title', async () => {
     const base = props();
     const page = await render(EditPage, {
       ...base,
@@ -122,8 +127,9 @@ describe('edit-page field hint', () => {
         fields: [{ name: 'title', label: 'Title', type: 'textarea', length: 5, min: 2, max: 9 }] as NamedField[],
       },
     });
-    const title = page.getByRole('textbox', { name: 'Title' });
-    await expect.element(title).toHaveAttribute('minlength', '5');
-    await expect.element(title).toHaveAttribute('maxlength', '5');
+    const el = page.getByRole('textbox', { name: 'Title' }).element() as HTMLInputElement;
+    el.value = 'abc';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(el.validationMessage).toBe('Title must be exactly 5 characters');
   });
 });

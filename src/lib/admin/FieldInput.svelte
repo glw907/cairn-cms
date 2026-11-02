@@ -15,6 +15,25 @@ An `object` field renders a labeled `ObjectGroupField`, and a non-reference `arr
 one-level nesting cap (the declaration guard) bounds so the recursion terminates. An
 `array(reference)` stays on `ReferenceField`.
 -->
+<script module lang="ts">
+  import { stringLengthError } from '../content/field-rules.js';
+
+  /**
+   * Input handler for a length-bounded text control: the trimmed value is checked with the rule the
+   *  save enforces, and the message goes to `setCustomValidity` so a paste stays whole while Save is
+   *  blocked. An empty value clears it, since `required` owns emptiness and an absent optional field
+   *  is never length-checked.
+   */
+  export function warnLength(
+    el: HTMLInputElement | HTMLTextAreaElement,
+    bounds: { min?: number; max?: number; length?: number },
+    label: string,
+  ): void {
+    const trimmed = el.value.trim();
+    el.setCustomValidity(trimmed === '' ? '' : (stringLengthError(trimmed, bounds, label) ?? ''));
+  }
+</script>
+
 <script lang="ts">
   import MediaHeroField from './MediaHeroField.svelte';
   import ReferenceField from './ReferenceField.svelte';
@@ -230,7 +249,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const hint = hintText(f.help, boundsHint(f, 'character'))}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm validator" {name} aria-label={f.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} minlength={f.length ?? f.min} maxlength={f.length ?? f.max}>{str(frontmatter[f.name])}</textarea>
+    <textarea class="textarea textarea-sm validator" {name} aria-label={f.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} oninput={(e) => warnLength(e.currentTarget, f, f.label)}>{str(frontmatter[f.name])}</textarea>
     {#if hint}
       {@render fieldHint(hintBase, hint)}
     {/if}
@@ -391,7 +410,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const hint = hintText(field.help, bounds ? boundsHint(bounds, 'character') : undefined)}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>
-    <input class="input input-sm validator" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={bounds?.length ?? bounds?.min} maxlength={bounds?.length ?? bounds?.max} />
+    <input class="input input-sm validator" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={hint ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} oninput={bounds ? (e) => warnLength(e.currentTarget, bounds, field.label) : undefined} />
     {#if hint}
       {@render fieldHint(hintBase, hint)}
     {/if}

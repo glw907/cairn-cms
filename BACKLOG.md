@@ -12,21 +12,48 @@
 - [ ] **#261** Keep a publish stamp when a dev start drops an invalid entry's row `#bug` `#cairn-cms` *(2026-11-01)*
   `applyManifest` (`src/lib/vite/internal.ts`) writes the regenerated manifest, and `carryPublishStamps` carries a stamp only onto a row the rebuild produces. A validator failure drops the row, so a `vite dev` start over a published entry that's invalid writes `index.json` without its `publishedAt`. Fixed and regenerated, its row returns unstamped and `stampFirstPublish` leaves it unstamped for good, so the first-publish date is lost and the entry never reads as new. Published while the row is missing, it takes a fresh stamp and reads as a first publish. The diff shows it and git restores it, but `vite dev` now writes unasked. `cairn-manifest` does the same, and it runs on request and exits 1. Keeping the committed row would put an invalid entry back in the admin list, so the better fix is a stamp map that outlives the row, or no write under dev while a row would drop. Found by the `content-rest` close review.
   Placement: Cleanup round.
-- [ ] **#262** Stop nesting the media tile's checkbox inside `role="option"` `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#262** Stop nesting the media tile's checkbox inside `role="option"` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `CairnMediaLibrary.svelte` puts an interactive checkbox inside a tile with `role="option"`, and an ARIA `option` has presentational children, so assistive tech can flatten the checkbox's role and state (WCAG 4.1.2). The tile already sets `aria-selected`, so drop the nested checkbox or move it outside the option. Found by the `content-rest` close review, and not caused by that pass.
   Placement: Cleanup round.
-- [ ] **#263** Show one saved notice when a save carries a reference warning `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#263** Show one saved notice when a save carries a reference warning `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `flash` in `EditPage.svelte` yields to `draftWarning` alone, so a save with a reference warning shows both the `Saved.` strip and the `Saved. Note:` banner. Add `&& !referenceWarning`. `politeMessage` has the matching gap: it returns the draft notice first, so a save with both flags shows the reference banner and never announces it. Found by the `content-rest` close review, and not caused by that pass.
   Placement: Cleanup round.
 - [ ] **#264** Walk attributes when `scanBody` reads raw HTML `#bug` `#cairn-cms` *(2026-11-01)*
   `HTML_CAIRN_HREF` in `src/lib/content/body-scan.ts` reads a tag as one string, and a node probe confirmed two misses. `<a title="a>b" href="cairn:posts/one">` matches nothing, so a dead link ships. `<a title="see href=cairn:x">` matches, so a harmless attribute value fails the build. Both are rare. Parse each tag's attributes in place of the single regex. Found by the `content-rest` close review.
   Placement: Cleanup round.
 
-- [ ] **#203** Tell an owner to narrow the App's installation after the first run `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#203** Tell an owner to narrow the App's installation after the first run `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pass 1a scoped the minted token to the one repository and `contents: write` (`src/lib/github/signing.ts`), but the install prompt and the `installation-not-covering-repo` remedy still steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), and a leaked App key can still mint unscoped tokens for every repository the installation covers. Add a closing-block line telling the owner to narrow the installation to the one repository after the first run (`docs/admin/create-your-site.md:88` already says to).
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#298** Say where a create refusal goes when its dialog closed mid-request `#bug` `#cairn-cms` *(2026-11-02)*
+  A refusal that arrives after the editor pressed Esc or Cancel now shows in the list's page banner, but that banner has no focus move and sits outside the list's polite region, so a screen reader announces it nowhere. An `error` result that lands after the close shows nothing at all, because it never reaches `form`. Block closing while the request runs, or route both to the polite region (`ConceptList.svelte`). Found by the `p2-p4` fold.
+  Placement: Pass 8.
+- [ ] **#297** Close the small focus and announcement gaps the `p2-p4` reviews left `#improvement` `#cairn-cms` *(2026-11-02)*
+  Removing the last row on Navigation or Tags drops focus to `<body>`, and `EmptyState` could take it (`NavTree.svelte` `removeRow`, `VocabularyAdmin.svelte` `remove`). A successful Editors row action drops focus to `<body>` too, since `update()` runs `applyAction` (`ManageEditors.svelte`). `warnLength` runs on `input` only, so a stored value already out of bounds, or one an accepted Tidy suggestion wrote, gets no message until it is edited (`FieldInput.svelte`, `EditPage.svelte`). The title input is not a `.validator`, so a refused title shows only focus. A pending Save shows a dimmed button with no "Saving…" text, and `aria-busy` on a button is not announced. The Tags empty state keeps `min-h-[56vh]`, which pushes the seed section and the Save footer below the fold. Found by the `p2-p4` close reviews.
+  Placement: Pass 8.
+- [ ] **#296** Stop the filter row's scroll cue from taking width when nothing scrolls `#improvement` `#cairn-cms` *(2026-11-02)*
+  Below `sm` the `::after` cue in `ListToolbar.svelte` is a `flex: 0 0 2rem` item, so a filter row that fits within 2rem of its width now overflows, and the gradient fades to `base-200`, which shows as a smudge on a `base-100` surface. It has no cue at the start once the row is scrolled to the end. A `background-attachment: local` scroll shadow on the container would avoid all three. The eight screens show no harm in the baselines. Found by the `p2-p4` close reviews.
+  Placement: Pass 8.
+- [ ] **#295** Tidy the small cosmetic finds from the `p2-p4` visual read `#improvement` `#cairn-cms` *(2026-11-02)*
+  About 80px of dead space sits above the Add a tag card on Tags, from the reserved status line (`VocabularyAdmin.svelte:182-195`). The `used 1` badge on a media tile renders as `use d 1`. A long mono tag such as `weather-notes` wraps at the hyphen at 320. The edit page's `…` overflow button measures 2.55:1 against its background in the light theme. The scroll cue's fade ends about 4px before the clipped edge, so a sliver of the last letter shows. Found by the `p2-p4` close reviews.
+  Placement: Pass 8.
+- [ ] **#294** Fix the Tidy settings "Not yet available" rows at 320 `#bug` `#cairn-cms` *(2026-11-02)*
+  At 320 the rows squeeze into a narrow column beside their label. The screen is not one of the eight the viewport bar holds, so the `p2-p4` pass read it and left it. Found by the `p2-p4` render probe.
+  Placement: Pass 8.
+- [ ] **#293** Load the settings head at page load so a kept working copy can't overwrite a newer save `#improvement` `#cairn-cms` *(2026-11-02)*
+  A refused settings save now keeps the editor's working copy, so a second Save reads the current head and replaces another editor's change. The conflict sentence says so (`Someone else changed these settings. Saving again replaces their change.`), but the screen offers the overwrite one click after naming the conflict. Carry the head the editor opened with in the form and refuse a save against a newer one. A stale tab could already do this, so the pass added no new class of overwrite. Found by the `p2-p4` pass.
+  Placement: Pass 8.
+- [ ] **#292** Check that a scoped class never shares a DaisyUI component's name `#improvement` `#cairn-cms` *(2026-11-02)*
+  `HelpHome`'s `.steps` and `.step` shared DaisyUI's Steps names, which set `grid-auto-flow: column` and `content: counter(step)` on `li.step::after`, and the first-steps panel was broken at every width from the day it shipped. No gate saw it. `filter`, `card`, `kbd`, and `label` share component names too, in `HelpHome.svelte` and `ListToolbar.svelte`, and render correctly today. A check that compares each scoped `<style>` class against DaisyUI's component roots would have caught it. Found by the `p2-p4` render probe.
+  Placement: Pass 8.
+- [ ] **#291** Regenerate a new baseline in any spec, not only two `#improvement` `#cairn-cms` *(2026-11-02)*
+  `.github/workflows/e2e.yml:163` regenerates baselines by naming `admin-visual.spec.ts` and `site-visual.spec.ts`, so a baseline added in any other spec never regenerates, and its first CI run fails with no retry. The `p2-p4` pass kept every new image in `admin-visual.spec.ts` for that reason. Found by the `p2-p4` plan.
+  Placement: Pass 8.
+- [ ] **#290** Walk sign-in, edit-and-save, and publish with a screen reader (Orca) `#improvement` `#cairn-cms` *(2026-11-02)*
+  `keyboard-walk.spec.ts` proves the keyboard path and the focus ring, not what a screen reader announces. This pass removed the polite `aria-live` regions from the Nav, Tags, Tidy, Create, and Editors screens, because the move of focus to the alert or the refused field replaces them; only a screen reader shows whether the refusal, the saved flash, and the publish result are still heard. The focused alert is a `div` with `tabindex="-1"` and no role (`focusOnMount`), so whether each screen reader speaks its text on focus is unproven; add `role="alert"` or a labelled group if one stays silent. The `ConceptList` screen keeps one polite region for a delete refusal, a publish-all bounce, and a load error, since none of those takes a focus move. Walk the three journeys in Orca with Firefox and with Chromium, and file what is not announced.
+  Placement: site work, ahead of the beta gate.
 - [ ] **#289** Keep the admin's accessible names honest in a disabled or Preview state `#improvement` `#cairn-cms` *(2026-11-02)*
   The close accessibility review left four items that predate the pass. `EditPage.svelte:939-946` uses the disabled reason as the control's name, so "Switch to Write to edit this block" reads as an action on an `aria-disabled` control; a stable "Edit block" with the reason in the tooltip gives voice users one phrase. `EditPage.svelte:945` tells a Preview user to place a cursor Preview hides. `ComponentInsertDialog.svelte:428-430` reads "12 blocks match" with an empty query and "0 blocks match" beside a visible "No blocks match". `editor-highlight.ts:57,66` puts "Edit the text between these lines" on a one-line leaf directive. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
@@ -63,13 +90,10 @@
 - [ ] **#278** Retire the `R4` exemption from `check-idioms` `#improvement` `#cairn-cms` *(2026-11-02)*
   `scripts/checks/check-idioms.mjs:27,252` exempts `R4 re-export` and `R4 closure` by name for the canonical-home re-export pattern, which `cleanup-one-import-path` retired. No comment in `src/lib` uses the phrase now, so the exemption, its test at `check-idioms.test.ts:137`, and `fixtures/idioms/process-reference.ts` guard nothing and would pass a real round marker. Found by the `small-api` pass, PR #184.
   Placement: Pass 8.
-- [ ] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02)*
-  The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue, or let the row wrap. Found by the `admin-rest` baseline read.
-  Placement: Cleanup round.
-- [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   Each row in a repeatable field shows a list marker in the left gutter, because `RepeatableField.svelte:211`'s `<ul>` sets no `list-none`. The marker eats width in a narrow Details pane and reads as a stray dot. Found by the `admin-rest` render read, on code that pass didn't change.
   Placement: Cleanup round.
-- [ ] **#268** Stop a double submit on the Discard and Rename forms `#bug` `#cairn-cms` *(2026-11-02)*
+- [ ] **#268** Stop a double submit on the Discard and Rename forms `#bug` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `admin-rest` guarded the delete confirm (#214), but the Discard form (`EditPage.svelte:2786`) and the Rename form (`RenameDialog.svelte:81`) have no in-flight guard, so a double click sends a second POST that races the first. If left, the editor can see a refusal for a change that worked. Use `DeleteDialog`'s `deleting` shape. Found by T4.
   Placement: Cleanup round.
 - [ ] **#269** Render a block attribute's help text `#bug` `#cairn-cms` *(2026-11-02)*
@@ -81,7 +105,7 @@
 - [ ] **#271** Refuse a prototype-named target in `canReach` `#bug` `#cairn-cms` *(2026-11-02)*
   `access[target]` at `src/lib/auth/access.ts:198-199` returns an inherited value for `constructor` or `__proto__`, and `.includes` throws `TypeError: admitted.includes is not a function`. It fails closed with a 500 and a stack in the logs. `admin-rest` moved `requireEngineAccess` ahead of the concept lookup, so a hand-mounted preview route now reaches this, as hand-mounted tidy and dictionary routes already did. The standard mount validates the concept first. Read the map as `hasAccessRule` does (`Object.hasOwn`), with a test. The path is `auth-data`, so it's its own change. Found by the close security read.
   Placement: Cleanup round, as an `auth-data` change.
-- [ ] **#272** Add `guard.ts` and `preview.ts` to the `auth-data` map `#improvement` `#cairn-cms` *(2026-11-02)*
+- [ ] **#272** Add `guard.ts` and `preview.ts` to the `auth-data` map `#improvement` `#cairn-cms` *(2026-11-02)* *(swept 2026-11-02)*
   `.claude/skills/cairn-running-passes/SKILL.md:30` leaves out `src/lib/sveltekit/guard.ts` (`requireAccess`, `requireEngineAccess`) and `src/lib/sveltekit/preview.ts`, which mints bearer tokens. `admin-rest` reordered access checks in both, and they reached a security reader only because the plan asked. Found by the close security read.
   Placement: Cleanup round.
 - [ ] **#273** Add this pass's traps to the durable gotchas `#improvement` `#cairn-cms` *(2026-11-02)*
@@ -102,36 +126,27 @@
 - [ ] **#250** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
   Placement: Cleanup round.
-- [ ] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01)*
-  The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
-  Placement: Pass 7.
-- [ ] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01)*
-  The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
-  Placement: Pass 7.
 - [ ] **#277** Decide whether `createNavRoutes` stays public `#improvement` `#cairn-cms` *(2026-11-02)*
   The other per-route factories left the barrels, but `createNavRoutes` stayed public and outside that ruling, and no site mounts it. Decide whether to hide it the same way.
   Placement: Pass 8.
 - [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
   Placement: Cleanup round.
-- [ ] **#248** Rate limit the sign-in endpoints by client address `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#248** Rate limit the sign-in endpoints by client address `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Pre-existing. The engine's request and confirm endpoints have no per-address limit, and `throttled` is a membership oracle (`src/lib/sveltekit/auth-routes.ts:177-252`, `:206`, a posture its comment calls deliberate): posting one address twice within 60 seconds returns `throttled` for an editor and `sent` for anyone else. An attacker can send one email per minute per editor indefinitely, and each new issue deletes the editor's live link (`issueToken`, `src/lib/auth/store.ts:107`). Add an optional `RateLimitLike` binding on request and confirm, keyed on client address. That limit doesn't close the `throttled` oracle, since the probe is two requests, so whether the oracle stays accepted is a separate decision for that pass. Found by the pass 1a security read.
-  Placement: Pass 7, sign-in messages.
+  Placement: Cleanup round, as an `auth-data` change. It needs a new option through `cairn-admin.ts`, a new `LoginRequestOutcome` arm, and a decision on the `throttled` oracle, and the sheet's pass 7 scope doesn't include it (moved by the `p2-p4` sweep).
 - [ ] **#245** Confirm a publish through the scoped token on the real install `#improvement` `#cairn-cms` *(2026-11-01)*
   The rc.2 install proves only a scaffolded App, which holds `contents`, `administration`, and `workflows`, while the App `adopt-cairn.md` teaches holds Contents alone. At the sitting, publish an entry through the token `installationToken` now mints (`repositories` plus `contents: write`). A ref write refused for workflows stops for Geoff, who is at that sitting, with the cause in hand; no fallback is written now. Found by pass 1a.
   Placement: Release, real install.
-- [ ] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
-  `admin-rest` shows a field's bounds under the control, marks it with `validator`, and keeps Details closed over a focused title. A server refusal still shows `.alert-error` with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. Whether to trim or warn is a product question.
-  Placement: Pass 7.
 
-- [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#239** Refuse contradictory bounds at declaration `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Nothing in the concept's field declaration refuses `min > max`, `length` beside a conflicting `min` or `max`, or a non-calendar date bound. With `{ length: 5, max: 3 }` the form invites 5 characters and the save refuses every value (`field-rules.ts:21-23`), and `min > max` now reaches the markup as `minlength` above `maxlength`, which HTML forbids. A malformed date `min` is ignored by the browser while the save still compares it. Found by the field-values close review (#176).
   Placement: Cleanup round.
 
 - [ ] **#211** Measure tidy's latency on real entries against the deadline and the cap `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
   `DEFAULT_TIDY_TIMEOUT_MS` is 30s (`src/lib/sveltekit/content-routes-context.ts`) and `MAX_TIDY_CHARS` is 24,000 (`src/lib/sveltekit/content-routes-tidy.ts`). The only record is one run per model with a stand-in prompt: at 12,935 characters, `claude-sonnet-5-5` took 20.6s and `claude-sonnet-5` took 40.1s. If a real proofread near the cap passes the deadline, an editor gets a timeout on text the cap allowed, and the retryable 502's "try again" copy will fail the same way. Measure real entries, then keep or change either number and correct both doc comments. Found by PR #177, whose planned proofread was set aside.
   Placement: Cleanup round.
-- [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)*
+- [ ] **#208** Trace the `createDialog` e2e flake `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The create dialog stayed hidden after 5s in 6 of 10 `e2e` runs, including runs before #172, at `golden-path.spec.ts:185` and `public-preview-tokens.spec.ts:141`, and once in `publish-pending-word.spec.ts` beside a `lane:fast` run. Pre-hydration is unproven: 150 of 150 unloaded clicks opened it. A workerd connection reset does not correlate. The `admin-visual` command palette and media-selected flakes and the `preview.spec` flakes in runs 41337975192 and 41272060298 are not investigated.
   Placement: Cleanup round.
   `tool-fixes` T5 added `openCreateDialog` (`examples/showcase/e2e/editor-helpers.ts`), which re-clicks until the dialog opens, swapped it into all 14 sites, and logs `[create-dialog-trace] attempt=<n> handler=<bool> opened=<bool>`. Six `e2e` runs on that code (cf0ba888a x3, fb1b263a7, 024f96bc7, fbf5da68a) logged 120 clicks: 118 `attempt=1 handler=true opened=true` and 2 `handler=false opened=true` (a click that raced hydration and still opened). No `opened=false`, no `cairn-create-dialog-title` failure. The pre-hydration cause is not proven: the base rate was 7 of 13 runs, so the helper may have masked it or the cause may not have fired. The trace stays in the helper. Open work: more runs, or read the log lines in a run that fails. The conductor refused a third `workflow_dispatch` (auto mode), so the sample stopped at six. The `admin-visual` command palette (dark, 768 and 2560) and `golden-path` retries repeated across heads and remain uninvestigated. On the `small-api` pass, PR #184, the palette retried on 7 of 15 heads, at every width and in both themes, and `container-fields.spec.ts` retried on 5, mostly "an answer edited then collapsed still saves". Every retry was in e2e shard 1.
@@ -151,24 +166,24 @@
   After the human arms land, check that every packaged skill and `claude/CLAUDE.md` route cites a finished target and every target is reachable (the agent-first pattern's pass 4). The `admin-design-system` link at `skills/cairn-extending-a-site/SKILL.md:24` is fixed in pass 1.
   Placement: Cleanup round.
 
-- [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#199** Decide a save's "new" on the server, not from the posted `new=1` `#bug` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `saveToBranch` skips the prior-file read when the form posts `new=1` (`content-routes-entry-write.ts:152,166`), so an existing entry saved with that flag loses its undeclared keys, such as a hand-written `draft: true`. `EditPage.svelte:1970` sends it only for a new entry, so the normal flow is safe; a stale or hand-edited `?new=1` URL is the risk. Always read the prior file and keep `isNew` for the create-only checks. Found by the media and publish pass's close review.
   Placement: Cleanup round.
-- [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#200** Log a failed prior read in a save, and align the rename and delete statuses for an unverifiable include `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   The prior-read `catch` in `saveToBranch` (`content-routes-entry-write.ts:172`) answers 503 with no log record, so a persistent read failure is invisible; the event vocabulary needs a row with it. A fragment rename answers an unverifiable include read with 409 (`content-routes-entry-destructive.ts:357`; `:331` answers the same for references) while delete answers 503. Fragment delete and rename also build two strict cross-branch indexes in a row, and one save now calls `branchHead` twice (`:169`, `:316`): one pass would halve the subrequests. Found by the close review.
   Placement: Pass 8.
 
 ## Low
-- [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)*
+- [ ] **#247** Weigh the session residuals in `AUTH_DB` and the confirm page `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Session ids are stored raw in D1 (`src/lib/auth/store.ts:241`), an earlier session row isn't deleted on re-login (`src/lib/sveltekit/auth-routes.ts:359-360`), `confirmLoad` embeds the raw token in the HTML (`auth-routes.ts:288`), and the CSP is only `frame-ancestors`, with no `script-src`. A stolen database or an injected script reaches a live session or link. Found by the pass 1a security read.
   Placement: Cleanup round.
-- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#243** Drop the owner-guard helpers `/auth-store` left behind `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   `removeOwnerIfNotLast`, `demoteOwnerIfNotLast`, and `OwnerGuardOutcome` in `src/lib/auth/store.ts` have no production reader since `/auth-store` left: only tests and `packages/cairn-cms-dev/src/fake-auth-db.ts` reach them. `@public` tags remain on names no longer on any public subpath (`store.ts` and `src/lib/auth/roles.ts:125`), and `check-tiers.mjs` walks exports only, so it passes them. Found by pass 1a.
   Placement: Cleanup round.
 - [ ] **#240** Handle a BOM in the media rewriters `#bug` `#cairn-cms` *(2026-11-01)*
   `repointMediaRef` (`src/lib/content/media-rewrite.ts:321`) and `fillAltForHash` (`:572`) call `splitFrontmatter` with no BOM strip, so a BOM file gets no frontmatter edit, while `parseMarkdown` and `references.ts` both strip it. A repoint then leaves the old hash in the hero `src`. Found by the field-values close review (#176); it predates that PR.
   Placement: Cleanup round.
-- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-01)*
+- [ ] **#232** Narrow `content.entry_invalid`'s `scope` field `#improvement` `#cairn-cms` *(2026-11-01)* *(swept 2026-11-02)*
   Since `createSiteResolver` always validates, the event's `scope` has one value, `manifest`, so the field carries nothing. Drop it, or keep it and say why in `log-events.md`. Found by the wiring-core pass (T7).
   Placement: Pass 8.
 - [ ] **#234** Drop `variantUrl` from `MEDIA_DEMOTED` `#improvement` `#cairn-cms` *(2026-11-01)*
@@ -205,12 +220,6 @@
 - [ ] **#168** Hand cairn.pub its routing contract with the release `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   cairn.pub renders the doc arms from the installed engine, so the one release owes it three things, from the 2026-09-22 handoff (kept at the `pre-agent-first` tag, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-09-22-cairn-pub-docs-handoff.md`). Keep the `https://cairn.pub/docs/<arm>/<page>` shape the `cairn` binary prints, with no extension, and redirect rather than move. Redirect every retired path to its successor, regenerating the table from the final page set. Before the `tool/v1.1.0` successor tag, confirm each `https://cairn.pub/docs/admin/<page>` URL a failure block prints resolves on the deployed site. Decide whether the `--json` schemas removed in db5ffdf7a still get a published home at `/schema/`. The three CLI reference pages left with the technical tracks and are out. The `0.98.0` pin ceiling stays until that release.
   Placement: After the release.
-- [ ] **#180** Correct editor screens whose wording misstates what happens `#bug` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  A refused new entry closes the create dialog and drops the typed values (`ConceptList.svelte`). The other four claims closed in `admin-rest`.
-  Placement: Pass 7.
-- [ ] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
-  One sign-in problem reads as several messages, with one fix, and some omit "in this browser" (`src/lib/admin/LoginPage.svelte:166,170`, `src/lib/admin/ConfirmPage.svelte:70,75`, `src/lib/sveltekit/refusal-codes.ts:21`). It includes the spent or expired link: re-clicking one says "This browser has no pending sign-in. Request a new link below and open it in this browser." because `confirmAction` gives every cookie-less refusal that message, deliberately (`src/lib/sveltekit/auth-routes.ts:378-383`, comment at `:372-377`). Requesting a new link in this browser does fix a spent link, so the work is one wording that names the cause and the fix for each case. An `auth-data` path, so batched and not made by a docs pass. Found by the admin arm (pass 4, 2026-10-31).
-  Placement: Pass 7.
 - [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-11-01)*
   The setup transcript is recaptured at the one release's real install, with a neutral scratch path and host, not in a separate run. `packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt` (lines 323-324) holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL, and `01d-resume.txt` is gone. List the stale transcript blocks the scaffold-setup PR names. No page quotes the path lines, and the package's `files` does not ship `test/`. Found by the pass 4 close review, 2026-10-31.
   Placement: The one release.
@@ -264,6 +273,24 @@
 - **#116** Validate preview.ttlMs when the admin is constructed: `cleanup-custom-recipes` retired the preview lifetime option. (Geoff, 2026-11-01)
 
 ## Done
+- [x] **#276** Show that the list filter row scrolls at 320 `#improvement` `#cairn-cms` *(2026-11-02 → 2026-11-02)* *(swept 2026-11-02)*
+  The publish-state filter scrolls inside its container at 320 by design (`golden-path.spec.ts:764-790`). With `Unpublished changes` the row now rests on `All 7 | Unpublished changes 2 | Pub`, and nothing signals that more sits to the right, so an editor at that width can miss **Published**. Add a scroll cue. Wrapping is ruled out: `ListToolbar.svelte:489-493` explains why and `golden-path.spec.ts:785` pins it. Found by the `admin-rest` baseline read.
+  Placement: Cleanup round.
+- [x] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
+  Placement: Pass 7.
+- [x] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
+  The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
+  Placement: Pass 7.
+- [x] **#238** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)* *(swept 2026-11-01)*
+  `admin-rest` shows a field's bounds under the control, marks it with `validator`, and keeps Details closed over a focused title. A server refusal still shows `.alert-error` with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. Whether to trim or warn is a product question.
+  Placement: Pass 7.
+- [x] **#180** Correct editor screens whose wording misstates what happens `#bug` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  A refused new entry closes the create dialog and drops the typed values (`ConceptList.svelte`). The other four claims closed in `admin-rest`.
+  Placement: Pass 7.
+- [x] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-02)* *(swept 2026-11-01)*
+  One sign-in problem reads as several messages, with one fix, and some omit "in this browser" (`src/lib/admin/LoginPage.svelte:166,170`, `src/lib/admin/ConfirmPage.svelte:70,75`, `src/lib/sveltekit/refusal-codes.ts:21`). It includes the spent or expired link: re-clicking one says "This browser has no pending sign-in. Request a new link below and open it in this browser." because `confirmAction` gives every cookie-less refusal that message, deliberately (`src/lib/sveltekit/auth-routes.ts:378-383`, comment at `:372-377`). Requesting a new link in this browser does fix a spent link, so the work is one wording that names the cause and the fix for each case. An `auth-data` path, so batched and not made by a docs pass. Found by the admin arm (pass 4, 2026-10-31).
+  Placement: Pass 7.
 - [x] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01 → 2026-11-02)*
   The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
   Placement: Pass 3.

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import VocabularyAdmin from '../../lib/admin/VocabularyAdmin.svelte';
+import { enhanceRuns, resetEnhance, settleEnhance } from './_app-forms.js';
 import type { VocabularyData } from '../../lib/sveltekit/content-routes.js';
 
 // SAFE_TAG_VALUE is the engine's slug shape; the screen derives the same value on add.
@@ -203,9 +204,55 @@ describe('VocabularyAdmin', () => {
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.
     const screen = await render(VocabularyAdmin, {
       data: data(),
-      form: { error: 'These settings changed since you opened them.' },
+      form: { error: 'Someone else changed these settings. Saving again replaces their change.' },
     });
     const alert = screen.container.querySelector('.alert-error');
-    expect(alert?.textContent).toContain('These settings changed since you opened them.');
+    expect(alert?.textContent).toContain('Someone else changed these settings. Saving again replaces their change.');
+  });
+
+  it('answers a refused save in place: the renamed tag survives and the alert takes focus', async () => {
+    resetEnhance();
+    const screen = await render(VocabularyAdmin, { data: data(), form: null });
+    const name = screen.getByRole('textbox', { name: 'Tag name (gear)' });
+    await name.fill('');
+    const save = screen.container.querySelector<HTMLButtonElement>('form button[type="submit"]')!;
+    save.click();
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    expect(save.disabled).toBe(true);
+
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Each vocabulary entry needs a non-empty label' } });
+    await screen.rerender({ data: data(), form: { error: 'Each vocabulary entry needs a non-empty label' } });
+    const alert = screen.container.querySelector<HTMLElement>('.alert-error')!;
+    await expect.poll(() => document.activeElement).toBe(alert);
+    await expect.element(name).toHaveValue('');
+    expect(postedVocabulary(screen.container).map((e) => e.label)).toEqual(['Snow report', '']);
+    await expect.poll(() => save.disabled).toBe(false);
+  });
+
+  it('shows the empty state with no tags, and the seed hint when candidates exist', async () => {
+    const bare = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    await expect.element(bare.getByText('No tags yet')).toBeInTheDocument();
+    await expect.element(bare.getByText('Add your first tag above, and every editor can pick it.')).toBeInTheDocument();
+    expect(bare.container.textContent).not.toContain('Your tags');
+    bare.unmount();
+
+    const seeded = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {} }) });
+    await expect
+      .element(seeded.getByText('Add your first tag above, or seed from tags already on your entries.'))
+      .toBeInTheDocument();
+  });
+
+  it('offers Save only while tags exist or a saved list exists', async () => {
+    const fresh = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    expect(fresh.container.querySelector('button[type="submit"]')).toBeNull();
+    fresh.unmount();
+
+    const saved = await render(VocabularyAdmin, {
+      data: data({ vocabulary: [{ value: 'gear', label: 'Gear' }], usage: { gear: 0 }, unlisted: [] }),
+    });
+    await userEvent.click(saved.getByRole('button', { name: 'Remove Gear' }));
+    await expect.element(saved.getByText('No tags yet')).toBeInTheDocument();
+    expect(saved.container.querySelector('button[type="submit"]')).not.toBeNull();
+    expect(postedVocabulary(saved.container)).toEqual([]);
   });
 });

@@ -5,8 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { resolveRefusalCode, refusalMessage } from '../../lib/sveltekit/refusal-codes.js';
 
 describe('resolveRefusalCode', () => {
-  it('recognizes each of the five closed codes', () => {
-    expect(resolveRefusalCode('expired')).toBe('expired');
+  it('recognizes each of the four closed codes', () => {
     expect(resolveRefusalCode('nothing_to_publish')).toBe('nothing_to_publish');
     expect(resolveRefusalCode('publish_conflict')).toBe('publish_conflict');
     expect(resolveRefusalCode('publish_failed')).toBe('publish_failed');
@@ -16,6 +15,7 @@ describe('resolveRefusalCode', () => {
   it('rejects a crafted free-text value, an unknown code, and a null query', () => {
     expect(resolveRefusalCode('You have been signed out. Sign in again.')).toBeNull();
     expect(resolveRefusalCode('nothing-to-publish')).toBeNull();
+    expect(resolveRefusalCode('expired')).toBeNull();
     expect(resolveRefusalCode('')).toBeNull();
     expect(resolveRefusalCode(null)).toBeNull();
   });
@@ -30,7 +30,6 @@ describe('refusalMessage', () => {
   it('resolves each code to its own engine copy', () => {
     expect(refusalMessage('nothing_to_publish')).toBe('Nothing to publish. Every entry is already live.');
     expect(refusalMessage('publish_conflict')).toBe('The site changed while publishing. Reload and try again.');
-    expect(refusalMessage('expired')).toBe('That link expired. Request a new one below.');
     expect(refusalMessage('publish_failed')).toMatch(/did not publish/i);
     expect(refusalMessage('address_collision')).toMatch(/share one address/);
   });

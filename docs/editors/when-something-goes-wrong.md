@@ -30,21 +30,19 @@ Two other messages can appear on the sign-in page when you ask for a link:
 
 The **Check your email** screen says to open the link within 10 minutes. The link works only in the browser where you asked for it. If you ask on a computer and open the email on your phone, the link fails.
 
-Depending on what went wrong, you see one of these messages:
+You see this message on the sign-in page, or on the confirm page after you select a link:
 
-- **"That link expired. Request a new link below and open it in this browser."**
-- **"This browser has no pending sign-in. Request a new link below and open it in this browser."**
-- **"This sign-in link is invalid or expired."**
+- **"That sign-in link didn’t work. A link works once, for 10 minutes, in the browser that requested it. Request a new link below and open it in this browser."**
 
-All three have the same fix:
+The fix is the same whatever the cause:
 
-1. Go to the sign-in page. If you see **This sign-in link is invalid or expired.**, select **Request a new link**.
+1. Go to the sign-in page. If you're on the confirm page, select **Request a new link**.
 1. Enter your email address and select **Send sign-in link**.
 1. Open the new email in the same browser where you asked for the link.
 
 ## A save or publish is refused
 
-When you select **Save** or **Publish** and the editor refuses, a message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it.
+When you select **Save** or **Publish** and the editor refuses, a message appears above your draft. The refusal doesn't discard your work. Your text stays in the editor exactly as you left it. When a message names a field with one visible box, the editor moves the cursor there, opening the **Details** panel first if needed.
 
 The following table lists the messages, what each one means, and what to do.
 
@@ -116,7 +114,7 @@ The **Tags** screen appears only for people your site allows to change the list.
 
 ## A new entry is refused
 
-The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New post**. The dialog closes, and a message appears above the list.
+The refusals in this section come from the **New** dialog, which opens when you select the button at the top of an entry list, such as **New post**. The dialog stays open with what you typed, and the message appears at the top of the dialog.
 
 Three messages cover date and address problems:
 
@@ -131,9 +129,10 @@ Two messages cover an address that's already taken:
 
 To try again after any of these refusals:
 
-1. Select the same button at the top of the list.
 1. Fix the field that the message names.
 1. Select **Create**.
+
+If you close the dialog, select the same button at the top of the list to open it again.
 
 ## An entry won't delete
 

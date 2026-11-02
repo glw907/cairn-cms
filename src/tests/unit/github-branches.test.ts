@@ -59,3 +59,26 @@ describe('branches transport', () => {
     expect(names[129]).toBe('cairn/posts/p129');
   });
 });
+
+describe('branches failure text', () => {
+  it('names the owner next step before the raw body on a plain failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('raw-body', { status: 500 }));
+    const err = await branchHeadSha(repo, 'main', 't').catch((e: Error) => e);
+    const msg = (err as Error).message;
+    expect(msg).toContain('GitHub ref main failed: 500');
+    expect(msg).toMatch(/GitHub App's install on the repo/);
+    expect(msg).toMatch(/status page/);
+    expect(msg).toMatch(/403 or 429/);
+    expect(msg.indexOf('install on the repo')).toBeLessThan(msg.indexOf('raw-body'));
+  });
+
+  it('gives a 422 that is not a collision its own text', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Reference name is invalid', { status: 422 }));
+    const err = await createBranch(repo, 'bad..name', 'abc', 't').catch((e: Error) => e);
+    const msg = (err as Error).message;
+    expect(msg).toContain('GitHub branch create bad..name failed: 422');
+    expect(msg).toMatch(/branch name or source commit/);
+    expect(msg).not.toMatch(/GitHub App's install/);
+    expect(msg).toContain('Reference name is invalid');
+  });
+});

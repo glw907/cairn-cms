@@ -1,6 +1,9 @@
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { devBackendOptIn } from '#chassis/dev-gate.js';
+// cairn-template:exclude-start
+import { devBackendContent } from '#chassis/dev-gate.js';
+// cairn-template:exclude-end
 import { runtime } from '#chassis/cairn.server.js';
 
 // createSectionAction's session and CSRF refusals (see the SvelteKit reference's "Refusal channels")
@@ -20,10 +23,11 @@ if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   handle = devBackendHandle({
     runtime,
     // cairn-template:exclude-start
-    // This example site serves the package's seeded fixtures: its e2e runs under `wrangler dev`,
+    // This example site serves the package's seeded fixtures (or an empty site when
+    // `CAIRN_DEV_CONTENT` is `empty`, for the first-run screens): its e2e runs under `wrangler dev`,
     // whose workerd cannot read the working tree, and its specs assert the fixture content. A new
     // site takes the default, which serves its content from the working tree.
-    content: 'fixtures',
+    content: devBackendContent(),
     // cairn-template:exclude-end
   });
 } else {

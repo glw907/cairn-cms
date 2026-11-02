@@ -111,8 +111,8 @@ export { NO_PENDING_REQUEST_ERROR };
  * {@link TOKEN_TTL_MS}. The cookie holds an opaque nonce whose only meaning is the `nonce_hash`
  * on a live token row, and a row dies with its ten-minute TTL, so a cookie that outlives it
  * grants nothing. What the longer life buys is the ordinary case: an editor who clicks a link
- * after the token expired arrives WITH their cookie and reads "that link expired" rather than the
- * false "different browser" message a cookie-less arrival produces.
+ * after the token expired arrives WITH their cookie and takes the `expired` redirect rather than the
+ * `no-pending-request` one a cookie-less arrival takes.
  */
 const PENDING_COOKIE_TTL_MULTIPLE = 6;
 
@@ -341,12 +341,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // or stale attempt into a lockout: the next click would refuse for the absent cookie instead,
     // and the editor would have to notice they must request the link again from this browser.
     //
-    // Which refusal the editor reads is decided here, after the consume, since only the consume's
+    // Which code the redirect carries is decided here, after the consume, since only the consume's
     // predicate knows whether the row was bound. A cookie-less browser whose confirm failed gets
     // the distinct no-pending-request code, whatever the cause (a row bound to another browser,
-    // an expired, unknown, or spent token), because "request a new one" is the exact advice that
-    // reproduces the failure on a second device; a browser that carries a cookie, including a
-    // present-but-wrong nonce, reads as expired.
+    // an expired, unknown, or spent token); a browser that carries a cookie, including a
+    // present-but-wrong nonce, gets expired. The login page words both the same.
     if (!email) {
       if (!nonce) {
         log.warn('auth.link.refused', { reason: 'no_pending_cookie' });

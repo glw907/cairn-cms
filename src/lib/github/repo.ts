@@ -4,6 +4,7 @@
 // the authenticated rate limit and unlocks private repos; ecnordic's repo is public, 907's
 // is not.
 import { idFromFilename } from '../content/ids.js';
+import { GITHUB_NEXT_STEP } from './branches.js';
 import { CommitConflictError } from './types.js';
 import type { BackendCommit, CommitAuthor, RepoFile, RepoRef } from './types.js';
 
@@ -62,7 +63,7 @@ export function markdownFilesIn(dir: string, tree: TreeEntry[]): RepoFile[] {
  */
 export async function listMarkdown(repo: RepoRef, dir: string, token?: string): Promise<RepoFile[]> {
   const res = await fetch(treeUrl(repo), { headers: ghHeaders('application/vnd.github+json', token) });
-  if (!res.ok) throw new Error(`GitHub tree ${repo.branch} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`GitHub tree ${repo.branch} failed: ${res.status}. ${GITHUB_NEXT_STEP}`);
   const body = (await res.json()) as { tree: TreeEntry[]; truncated: boolean };
   if (body.truncated) throw new Error(`GitHub tree ${repo.branch} is truncated; ${dir} exceeds the listing cap`);
   return markdownFilesIn(dir, body.tree);
@@ -82,7 +83,7 @@ export function contentsUrl(repo: RepoRef, path: string): string {
 export async function readRaw(repo: RepoRef, path: string, token?: string): Promise<string | null> {
   const res = await fetch(contentsUrl(repo, path), { headers: ghHeaders('application/vnd.github.raw', token) });
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`GitHub read ${path} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`GitHub read ${path} failed: ${res.status}. ${GITHUB_NEXT_STEP}`);
   return res.text();
 }
 
@@ -135,7 +136,7 @@ export async function fetchCommitLog(
     await res.body?.cancel();
     return [];
   }
-  if (!res.ok) throw new Error(`GitHub commits ${path} failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`GitHub commits ${path} failed: ${res.status}. ${GITHUB_NEXT_STEP} ${await res.text()}`);
   const body = (await res.json()) as CommitLogEntry[];
   return body.map((entry) => ({
     ref: entry.sha,
@@ -172,7 +173,7 @@ async function headCommitSha(repo: RepoRef, token: string): Promise<string> {
   const res = await fetch(gitUrl(repo, `ref/heads/${encodeURIComponent(repo.branch)}`), {
     headers: ghHeaders('application/vnd.github+json', token),
   });
-  if (!res.ok) throw new Error(`GitHub ref ${repo.branch} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`GitHub ref ${repo.branch} failed: ${res.status}. ${GITHUB_NEXT_STEP}`);
   return ((await res.json()) as { object: { sha: string } }).object.sha;
 }
 
@@ -181,7 +182,7 @@ async function commitTreeSha(repo: RepoRef, commitSha: string, token: string): P
   const res = await fetch(gitUrl(repo, `commits/${commitSha}`), {
     headers: ghHeaders('application/vnd.github+json', token),
   });
-  if (!res.ok) throw new Error(`GitHub commit ${commitSha} failed: ${res.status}`);
+  if (!res.ok) throw new Error(`GitHub commit ${commitSha} failed: ${res.status}. ${GITHUB_NEXT_STEP}`);
   return ((await res.json()) as { tree: { sha: string } }).tree.sha;
 }
 
@@ -223,7 +224,7 @@ async function commitOnTree(
     // the same non-fast-forward conflict the ref PATCH surfaces, so the caller fails safe with the
     // reload-and-retry path instead of a raw 500.
     if (treeRes.status === 422) throw new CommitConflictError(`${repo.branch} (tree create)`);
-    throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+    throw new Error(`GitHub tree create failed: ${treeRes.status}. ${GITHUB_NEXT_STEP} ${await treeRes.text()}`);
   }
   const newTree = ((await treeRes.json()) as { sha: string }).sha;
 
@@ -232,7 +233,7 @@ async function commitOnTree(
     headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
   });
-  if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
+  if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status}. ${GITHUB_NEXT_STEP} ${await commitRes.text()}`);
   const newCommit = ((await commitRes.json()) as { sha: string }).sha;
 
   const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
@@ -243,7 +244,7 @@ async function commitOnTree(
   if (refRes.ok) return { sha: newCommit };
   // A non-fast-forward means the branch moved; the caller decides whether to retry or fail closed.
   // Any other failure is not a race, so surface it.
-  if (refRes.status !== 422) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
+  if (refRes.status !== 422) throw new Error(`GitHub ref update failed: ${refRes.status}. ${GITHUB_NEXT_STEP} ${await refRes.text()}`);
   return { conflict: true };
 }
 

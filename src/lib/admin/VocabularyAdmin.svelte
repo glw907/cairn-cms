@@ -31,6 +31,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 -->
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
+  import { enhance } from '$app/forms';
   import CsrfField from './CsrfField.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
   import TagIcon from '@lucide/svelte/icons/tag';
@@ -38,7 +39,8 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import type { VocabularyData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
-  import { PageHeader, Tooltip } from '../admin-toolkit/index.js';
+  import { PageHeader, Tooltip, EmptyState } from '../admin-toolkit/index.js';
+  import { FAILURE_NOTICE, focusOnMount, refusalSubmit } from './refusal.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
@@ -127,33 +129,21 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   // The card recipe shared by the add and list cards.
   const cardClass = 'card-shell card-shadow';
 
-  // The one lifecycle error to announce: a rejected save's fail(). Every vocabulary-save refusal
-  // now answers in place, so this load carries no `?error=` bounce.
-  const lifecycleError = $derived(form?.error ?? '');
-
-  // The polite live region's text re-announces only when it changes, so a repeated identical error
-  // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again; this is
-  // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
-  // fresh-inserted role element announces inconsistently and would clobber a repeat).
-  let announceNonce = $state(0);
-  function errorNonce(): string {
-    return announceNonce % 2 === 0 ? '' : '​';
-  }
-  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
-  // submit or load, keyed to that identity rather than to a string change the live region would
-  // swallow.
-  let lastSubmit: unknown;
-  $effect(() => {
-    const submit = form ?? data;
-    if (submit !== lastSubmit) {
-      lastSubmit = submit;
-      if (lifecycleError) announceNonce++;
-    }
+  // Raised from submit until the result lands, so a second click cannot send a second save.
+  let saving = $state(false);
+  // The notice for a request that failed outright (no refusal came back to show). A fresh object
+  // per failure keys the alert below, so a repeat failure takes focus again.
+  let notice = $state<{ text: string } | null>(null);
+  const submitSave = refusalSubmit({
+    isPending: () => saving,
+    setPending: (pending) => (saving = pending),
+    onResult: (result) => {
+      notice = result.type === 'error' ? { text: FAILURE_NOTICE } : null;
+    },
   });
-  const liveError = $derived(lifecycleError ? `${lifecycleError}${errorNonce()}` : '');
+  // A refusal the server sent back, or the notice for a request that failed outright. The save
+  // answers in place, so the working copy survives it.
+  const lifecycleError = $derived(notice?.text ?? form?.error ?? '');
 
   // The saved message for the sr-only status region. It fills only after mount, so it is a mutation
   // an assistive technology voices, and it clears when a same-route navigation drops the flag.
@@ -171,11 +161,14 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     meta="A tag groups related entries. This list is shared across the site, so every editor picks from the same names. Add one, rename it, or remove a tag nothing uses."
   />
 
-  <div class="sr-only" aria-live="polite">{liveError}</div>
-  {#if lifecycleError}
-    <div class="alert alert-error mt-3 type-body">{lifecycleError}</div>
-  {/if}
-  <!-- The save is a native POST that redirects, so the page loads with `data.saved` already true
+  <!-- A refusal answers in place, so it takes focus on mount; the key remounts it for each fresh
+       result. -->
+  {#key notice ?? form}
+    {#if lifecycleError}
+      <div class="alert alert-error mt-3 type-body" tabindex="-1" use:focusOnMount>{lifecycleError}</div>
+    {/if}
+  {/key}
+  <!-- A save that goes through redirects into a document load, so the page loads with `data.saved` already true
        and the visible alert arrives server-rendered; an alert present at parse is not announced.
        The sr-only region is empty in the server HTML and filled after hydration, so its text is
        a real mutation the screen reader can voice. -->
@@ -244,24 +237,25 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   <!-- THE LIST: a count chip and a ledger of Name (rename), Stored as (immutable slug), In use
        (count), and a trailing delete. -->
-  <section class="mt-5">
-    <div class="mb-2.5 flex items-center gap-2 px-0.5">
-      <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
-        Your tags
-        <span
-          class="rounded-selector bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
-          >{working.length}</span
-        >
-      </h2>
-    </div>
-    <div class="overflow-hidden {cardClass}">
-      {#if working.length === 0}
-        <div class="p-6 text-center type-subtitle text-muted">
-          No tags yet. Add your first one above{seedCandidates.length
-            ? ', or seed from tags already on your entries'
-            : ''}.
-        </div>
-      {:else}
+  {#if working.length === 0}
+    <EmptyState
+      heading="No tags yet"
+      message={seedCandidates.length
+        ? 'Add your first tag above, or seed from tags already on your entries.'
+        : 'Add your first tag above, and every editor can pick it.'}
+    />
+  {:else}
+    <section class="mt-5">
+      <div class="mb-2.5 flex items-center gap-2 px-0.5">
+        <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
+          Your tags
+          <span
+            class="rounded-selector bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
+            >{working.length}</span
+          >
+        </h2>
+      </div>
+      <div class="overflow-hidden {cardClass}">
         <!-- Below sm the ledger stacks (each row's slug and count move under its input), so the
              header keeps only Name; the meta line labels itself. At sm+ the four-track grid and
              its full header return. -->
@@ -337,9 +331,9 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             {/if}
           </div>
         {/each}
-      {/if}
-    </div>
-  </section>
+      </div>
+    </section>
+  {/if}
 
   <!-- THE SEED SECTION: tags in use but not in the list, each with an Add-to-list control. Rendered
        only when there is a real candidate. A UX affordance, not a safety gate. -->
@@ -382,12 +376,14 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {/if}
 
   <!-- THE SAVE FOOTER: the hidden-JSON post with the CSRF field, plus a one-line reassurance. -->
-  <form method="POST" action="?/vocabularySave" class="mt-6 flex items-center gap-3 pt-4">
+  <form method="POST" action="?/vocabularySave" class="mt-6 flex items-center gap-3 pt-4" use:enhance={submitSave}>
     <CsrfField />
     <input type="hidden" name="vocabulary" value={vocabularyJson} />
     <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
       Saving commits your tag list to the site config, so every editor shares it.
     </span>
-    <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+    {#if working.length > 0 || data.vocabulary.length > 0}
+      <button type="submit" class="btn btn-primary btn-sm" disabled={saving} aria-busy={saving}>Save changes</button>
+    {/if}
   </form>
 </div>

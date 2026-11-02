@@ -56,6 +56,8 @@ export interface ContentFormFailure {
   usage?: UsageEntry[];
   /** The distinct-entry count behind a media refusal, set by a blocked media delete or replace action. */
   foundIn?: number;
+  /** The key of the frontmatter field a blocked `saveAction`/`publishAction` refused, so the editor focuses its control. */
+  field?: string;
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */

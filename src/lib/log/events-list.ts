@@ -14,6 +14,7 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
   'auth.link.requested',
   'auth.link.refused',
   'auth.link.send_failed',
+  'auth.link.sent',
   'auth.token.minted',
   'auth.token.rebound',
   'auth.token.confirmed',

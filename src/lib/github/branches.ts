@@ -7,6 +7,13 @@ import type { RepoRef } from './types.js';
 
 const API = 'https://api.github.com';
 
+/**
+ * The owner-facing next step appended to a GitHub failure. Conditional so it holds for every
+ * status: a one-off failure needs nothing, a repeating one points at the install, then GitHub.
+ */
+export const GITHUB_NEXT_STEP =
+  "If this keeps happening, check the GitHub App's install on the repo, then GitHub's status page. A 403 or 429 can be a rate limit.";
+
 function headers(token: string): Record<string, string> {
   return {
     Accept: 'application/vnd.github+json',
@@ -30,7 +37,7 @@ export async function branchHeadSha(repo: RepoRef, branch: string, token: string
     await res.body?.cancel();
     return null;
   }
-  if (!res.ok) throw new Error(`GitHub ref ${branch} failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`GitHub ref ${branch} failed: ${res.status}. ${GITHUB_NEXT_STEP} ${await res.text()}`);
   return ((await res.json()) as { object: { sha: string } }).object.sha;
 }
 
@@ -51,9 +58,9 @@ export async function createBranch(repo: RepoRef, branch: string, fromSha: strin
     // already-exists message becomes the typed collision; anything else stays a plain failure.
     const body = await res.text();
     if (/already exists/i.test(body)) throw new BranchExistsError(branch);
-    throw new Error(`GitHub branch create ${branch} failed: 422 ${body}`);
+    throw new Error(`GitHub branch create ${branch} failed: 422. GitHub rejected the request, so check the branch name or source commit it was given. ${body}`);
   }
-  if (!res.ok) throw new Error(`GitHub branch create ${branch} failed: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`GitHub branch create ${branch} failed: ${res.status}. ${GITHUB_NEXT_STEP} ${await res.text()}`);
   await res.body?.cancel();
 }
 
@@ -64,7 +71,7 @@ export async function deleteBranch(repo: RepoRef, branch: string, token: string)
     headers: headers(token),
   });
   if (!res.ok && res.status !== 404) {
-    throw new Error(`GitHub branch delete ${branch} failed: ${res.status} ${await res.text()}`);
+    throw new Error(`GitHub branch delete ${branch} failed: ${res.status}. ${GITHUB_NEXT_STEP} ${await res.text()}`);
   }
   await res.body?.cancel();
 }
@@ -89,7 +96,7 @@ export async function listBranches(repo: RepoRef, prefix: string, token: string)
   let url: string | null = `${gitUrl(repo, `matching-refs/heads/${prefix}`)}?per_page=100`;
   while (url) {
     const res: Response = await fetch(url, { headers: headers(token) });
-    if (!res.ok) throw new Error(`GitHub matching-refs ${prefix} failed: ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(`GitHub matching-refs ${prefix} failed: ${res.status}. ${GITHUB_NEXT_STEP} ${await res.text()}`);
     const refs = (await res.json()) as { ref: string }[];
     names.push(...refs.map((r) => r.ref.replace(/^refs\/heads\//, '')));
     url = nextPageUrl(res.headers.get('Link'));

@@ -224,7 +224,7 @@ describe('publishAction', () => {
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
     // conventions pass, Task 5: publishAction now declares ActionFailure<ContentFormFailure> (the
     // flattened type); this holds the key set a SaveFailure carried.
-    expect(Object.keys(result.data).sort()).toEqual(['body', 'brokenLinks', 'error']);
+    expect(Object.keys(result.data).sort()).toEqual(['body', 'brokenLinks', 'error', 'field']);
   });
 
   it('returns the broken-link fail like save, with no commit anywhere', async () => {

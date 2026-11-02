@@ -16,6 +16,7 @@ import type { Backend, CairnRuntime } from '@glw907/cairn-cms';
 import { createLogger, type CairnLogEvent } from '@glw907/cairn-cms/log';
 import {
   createDevBackend,
+  seedEmptySite,
   seedMediaLibrary,
   seedVocabulary,
   seedFragments,
@@ -67,8 +68,10 @@ export interface DevBackendConfig {
    * written to disk. It needs a filesystem, so it throws under `wrangler dev`'s workerd. `'fixtures'`
    * serves the package's seeded in-memory repo (sample posts, media, fragments, and a vocabulary)
    * and runs anywhere, which is what a site's end-to-end suite and a `wrangler dev` session use.
+   * `'empty'` serves the same in-memory repo holding only a `site.config.yaml` with a `siteName`,
+   * so every concept lists nothing: the first-run state, which also runs under workerd.
    */
-  content?: 'repository' | 'fixtures';
+  content?: 'repository' | 'fixtures' | 'empty';
   /**
    * The runtime `composeRuntime` returned for the site's adapter, the same one the production
    * guard takes. Its `access` is attached to `event.locals.cairnAccess` on every /admin request
@@ -91,13 +94,18 @@ export interface DevBackendConfig {
  * to a non-local host, it refuses every path with a 503 and logs `guard.refused`, the same record
  * the engine guard writes for the same condition.
  * @param config - {@link DevBackendConfig}; `runtime` carries the site's access map, attached to
- * `locals.cairnAccess` beside the minted editor, and `content` picks the working tree or the seeded
- * fixtures.
+ * `locals.cairnAccess` beside the minted editor, and `content` picks the working tree, the seeded
+ * fixtures, or an empty site.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  * @throws when `content` is `'repository'` (the default) under workerd, naming `content: 'fixtures'`.
  */
 export function devBackendHandle(config: DevBackendConfig): Handle {
   const content = config.content ?? 'repository';
+  if (content !== 'repository' && content !== 'fixtures' && content !== 'empty') {
+    throw new Error(
+      `cairn-cms-dev: unknown content mode ${JSON.stringify(content)}. Use 'repository' | 'fixtures' | 'empty'.`,
+    );
+  }
   if (content === 'repository' && underWorkerd()) {
     throw new Error(
       "cairn-cms-dev: the dev backend's default content mode reads the working tree, which workerd cannot. " +
@@ -128,11 +136,12 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
     // same reason seedFragments and seedVocabulary do.
     seedPreviewTwin();
   }
+  if (content === 'empty') seedEmptySite();
 
   // One dev Backend, built at handle-build time so every request shares the same store (a commit on
   // one request is visible on the next). Fixtures mode shares the module-level in-memory repo, so
   // the recorder route sees its commits; repository mode keeps its overlay in its closure.
-  const backend = content === 'fixtures' ? createDevBackend() : createRepositoryBackend(process.cwd());
+  const backend = content === 'repository' ? createRepositoryBackend(process.cwd()) : createDevBackend();
 
   // One instance each for the server's lifetime, like the in-memory repo, so editors added through
   // /admin/editors and an asset uploaded through /admin persist across requests.

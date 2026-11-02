@@ -77,6 +77,46 @@ describe('FieldInput hint id uniqueness across a shared local name', () => {
   });
 });
 
+describe('FieldInput length warning while typing', () => {
+  async function mount(type: 'text' | 'textarea', bounds: { min?: number; max?: number }) {
+    const field = { type, name: 'q', label: 'Q', ...bounds } as NamedField;
+    await render(FieldInput, { field, name: 'q', frontmatter: { q: '' }, ...shared() });
+    return document.querySelector<HTMLInputElement | HTMLTextAreaElement>('[name="q"]')!;
+  }
+
+  function enter(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  for (const kind of ['text', 'textarea'] as const) {
+    it(`${kind}: keeps a too-long paste whole and reports the server's message`, async () => {
+      const el = await mount(kind, { max: 10 });
+      expect(el.hasAttribute('maxlength')).toBe(false);
+      enter(el, '123456789012');
+      expect(el.value).toBe('123456789012');
+      expect(el.validationMessage).toBe('Q must be at most 10 characters');
+    });
+
+    it(`${kind}: checks the trimmed value, not the raw one`, async () => {
+      const el = await mount(kind, { min: 3 });
+      expect(el.hasAttribute('minlength')).toBe(false);
+      enter(el, '  ab  ');
+      expect(el.validationMessage).toBe('Q must be at least 3 characters');
+      enter(el, '  abc  ');
+      expect(el.validationMessage).toBe('');
+    });
+
+    it(`${kind}: clears the message when an optional field is emptied`, async () => {
+      const el = await mount(kind, { min: 3 });
+      enter(el, 'ab');
+      expect(el.validationMessage).not.toBe('');
+      enter(el, '');
+      expect(el.validationMessage).toBe('');
+    });
+  }
+});
+
 describe('FieldInput required attribute', () => {
   it('renders required on a required textarea', async () => {
     const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary', required: true };
@@ -305,49 +345,20 @@ describe('FieldInput renders length and date bounds as input attributes', () => 
     return document.querySelector<HTMLElement>(selector)!;
   }
 
-  it('sets maxlength from a text field max', async () => {
-    const el = await control({ type: 'text', name: 'a', label: 'A', max: 12 }, 'input[name="a"]');
-    expect(el.getAttribute('maxlength')).toBe('12');
-    expect(el.hasAttribute('minlength')).toBe(false);
-  });
-
-  it('sets both lengths from a text field length', async () => {
-    const el = await control({ type: 'text', name: 'b', label: 'B', length: 5 }, 'input[name="b"]');
-    expect(el.getAttribute('minlength')).toBe('5');
-    expect(el.getAttribute('maxlength')).toBe('5');
-  });
-
-  it('sets minlength from a textarea min', async () => {
-    const el = await control({ type: 'textarea', name: 'c', label: 'C', min: 3 }, 'textarea[name="c"]');
-    expect(el.getAttribute('minlength')).toBe('3');
-    expect(el.hasAttribute('maxlength')).toBe(false);
-  });
-
-  it('sets minlength from a text field min', async () => {
-    const el = await control({ type: 'text', name: 'f', label: 'F', min: 2 }, 'input[name="f"]');
-    expect(el.getAttribute('minlength')).toBe('2');
-    expect(el.hasAttribute('maxlength')).toBe(false);
-  });
-
-  it('sets maxlength from a textarea max', async () => {
-    const el = await control({ type: 'textarea', name: 'g', label: 'G', max: 9 }, 'textarea[name="g"]');
-    expect(el.getAttribute('maxlength')).toBe('9');
-    expect(el.hasAttribute('minlength')).toBe(false);
-  });
-
-  it('sets both lengths from a textarea length', async () => {
-    const el = await control({ type: 'textarea', name: 'h', label: 'H', length: 5 }, 'textarea[name="h"]');
-    expect(el.getAttribute('minlength')).toBe('5');
-    expect(el.getAttribute('maxlength')).toBe('5');
-  });
-
-  it('lets length win over min and max', async () => {
+  it('renders no length attribute on a text input or textarea, whatever the bounds', async () => {
     const t = await control({ type: 'textarea', name: 'i', label: 'I', length: 5, min: 2, max: 9 }, 'textarea[name="i"]');
-    expect(t.getAttribute('minlength')).toBe('5');
-    expect(t.getAttribute('maxlength')).toBe('5');
     const i = await control({ type: 'text', name: 'j', label: 'J', length: 5, min: 2, max: 9 }, 'input[name="j"]');
-    expect(i.getAttribute('minlength')).toBe('5');
-    expect(i.getAttribute('maxlength')).toBe('5');
+    for (const el of [t, i]) {
+      expect(el.hasAttribute('minlength')).toBe(false);
+      expect(el.hasAttribute('maxlength')).toBe(false);
+    }
+  });
+
+  it('warns on an exact length while typing', async () => {
+    const el = (await control({ type: 'text', name: 'b', label: 'B', length: 5 }, 'input[name="b"]')) as HTMLInputElement;
+    el.value = 'abc';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(el.validationMessage).toBe('B must be exactly 5 characters');
   });
 
   it('sets min and max on a date input', async () => {

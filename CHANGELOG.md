@@ -2,6 +2,19 @@
 
 ### Added
 
+- **The dev backend serves an empty site.** `devBackendHandle` accepts `content: 'empty'`, an in-memory
+  repo holding only a `site.config.yaml` with a `siteName`, so every concept lists nothing and the
+  first-run screens render under `wrangler dev`. The showcase starts a second server for it, selected
+  by the `CAIRN_DEV_CONTENT` Worker var.
+
+  Consumers must: nothing.
+
+- **The default Cloudflare sender logs `auth.link.sent`.** The record carries the `email` and the
+  `messageId` Cloudflare returned, so an owner can follow a sign-in email past the engine. A custom
+  `send` logs for itself.
+
+  Consumers must: nothing.
+
 - **`serializeMarkdown` is exported from the package root.** It is the write half of `parseMarkdown`:
   it reassembles frontmatter and a body into the file shape the editor commits.
 
@@ -204,6 +217,68 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **A refused settings form keeps what you typed.** Navigation, Tags, Tidy, the create dialog, and Editors
+  answer a refusal in place: the rows, tags, toggles, and typed values stay, and the refusal takes focus.
+  The create dialog stays open and shows the refusal inside it. The hidden `aria-live` region these
+  screens used is gone, since the focus move announces the refusal. The list screens keep one polite
+  region for a refused delete, a publish-all bounce, and a load error, since none of those takes a
+  focus move. A save that goes through still loads a
+  fresh page, and a request that fails outright shows `That did not go through. Your text is still here;
+  please try again.` Each Save button disables while its request runs, so a double click sends one request.
+  The Editors screen updates its table without a page load and reads `The editor list is updated.` The
+  settings conflict message now reads `Someone else changed these settings. Saving again replaces their
+  change. To see it, reload, which drops your edits.`, which matches the kept working copy.
+
+  Consumers must: match `Someone else changed these settings.` in any test that asserts the old settings conflict message.
+
+- **Navigation, Tags, and Help have designed zero states.** With no menu items or tags, the screens show
+  the shared empty state, and Save appears once there is something to save. Adding the first menu item
+  moves focus to its label field. The Help getting-started list uses `.start-steps` and `.start-step`, so
+  DaisyUI's Steps styles no longer break the panel.
+
+  Consumers must: nothing.
+
+- **A refused save points at its field.** `ContentFormFailure` gains `field?: string`, the name of the
+  first field the server refused. The edit page moves focus to that control, opening Details or leaving
+  Preview first, and marks it `aria-invalid` and described by the error banner until the next input. A refusal with no single visible
+  control moves focus to the error banner.
+
+  Consumers must: nothing.
+
+- **Text fields warn about length while typing and never cut a paste.** The title, text, and textarea
+  inputs no longer render `minlength` or `maxlength`. The form checks the trimmed length as an editor
+  types, shows the save's message, and blocks Save. A pasted value over the limit stays whole.
+
+  Consumers must: nothing.
+
+- **The editors table fits at 320 and the publish filter shows a scroll cue.** Below the `sm`
+  breakpoint the table stacks Email and Role under the name, with screen-reader labels, and keeps the
+  actions in view. The segmented filter fades its clipped edge, and arrow, Home, and End keys scroll the
+  selected option clear of the fade. The media detail panel's image preview keeps its height instead of
+  collapsing to a line.
+
+  Consumers must: nothing.
+
+- **A failed sign-in link reads the same on the sign-in and confirm pages.** `?error=expired` and
+  `?error=no-pending-request` show one sentence and one page title: a link works once, for 10 minutes, in
+  the browser that requested it. The confirm page's no-token state uses the same sentence. Both redirect
+  codes stay, and `expired` no longer resolves to a message on `/admin`, where it was never emitted.
+
+  Consumers must: match `That sign-in link didn’t work` in any test that asserts the old sign-in strings.
+
+- **Thrown GitHub and `defineRoles` errors name the next step.** A GitHub failure keeps its operation and
+  status, then tells the site owner to check the GitHub App's install on the repo, then GitHub's status
+  page. A `defineRoles` error names its fix, such as the capabilities a role may map to.
+
+  Consumers must: match a thrown GitHub error on its prefix, not the whole string, if a test compares it exactly.
+
+- **The sign-in email has a new layout.** It shows the site's name, a **Sign in** button, the link
+  written out, the expiry, and an ignore line, with a matching plain-text part. The subject is unchanged.
+
+  Consumers must: nothing.
+
+- **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
 
 - **The `:::` content unit is a block in the API and the admin.** `defineComponent` is `defineBlock`;
   `ComponentDef`, `ComponentRegistry`, and `ComponentContext` are `BlockDef`, `BlockRegistry`, and

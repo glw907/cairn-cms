@@ -55,6 +55,22 @@ describe('defineRoles validation', () => {
   });
 });
 
+describe('defineRoles fix text', () => {
+  const cases: [string, () => unknown, RegExp][] = [
+    ['unknown bare capability', () => defineRoles({ owner: 'owner', x: 'admin' as never }), /owner, editor, or none/], // idioms-allow: as-never  feeds the runtime guard a capability string outside the vocabulary
+    ['non-object declaration', () => defineRoles({ owner: 'owner', x: 3 as never }), /capability string or an object/], // idioms-allow: as-never  feeds the runtime guard a non-string, non-object value
+    ['missing capability', () => defineRoles({ owner: 'owner', x: {} as never }), /owner, editor, or none/], // idioms-allow: as-never  feeds the runtime guard an object missing a valid capability
+    ['bad home', () => defineRoles({ owner: 'owner', x: { capability: 'editor', home: '/dashboard' } }), /start home with \/admin/],
+    ['empty vocabulary', () => defineRoles({}), /add an owner role/],
+    ['empty role name', () => defineRoles({ owner: 'owner', '': 'editor' }), /non-empty string key/],
+    ['missing owner', () => defineRoles({ editor: 'editor' }), /add owner: 'owner'/],
+    ['owner not owner', () => defineRoles({ owner: 'editor' }), /change it to 'owner'/],
+  ];
+  it.each(cases)('names the fix for %s', (_label, run, fix) => {
+    expect(run).toThrow(fix);
+  });
+});
+
 describe('resolveCapability', () => {
   const custom = defineRoles({
     owner: 'owner',

@@ -2858,6 +2858,27 @@ describe('EditPage', () => {
     await expect.poll(() => previewSrcdoc(screen)).toContain('entry B html');
   });
 
+  it('warns on the title length while typing without cutting a paste', async () => {
+    const screen = await render(
+      EditPage,
+      postProps({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true, min: 3, max: 10 }] satisfies NamedField[] }),
+    );
+    const title = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+    expect(title.hasAttribute('maxlength')).toBe(false);
+    expect(title.hasAttribute('minlength')).toBe(false);
+    const enter = (value: string) => {
+      title.value = value;
+      title.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    enter('123456789012');
+    expect(title.value).toBe('123456789012');
+    expect(title.validationMessage).toBe('Title must be at most 10 characters');
+    enter('  ab  ');
+    expect(title.validationMessage).toBe('Title must be at least 3 characters');
+    enter('');
+    expect(title.validity.customError).toBe(false);
+  });
+
   it('flips Preview back to Write when an invalid control sits in the write pane', async () => {
     // The write pane hides under Preview, so a required control there cannot take the browser's
     // validation report. The capture-phase invalid handler flips back to Write so the report

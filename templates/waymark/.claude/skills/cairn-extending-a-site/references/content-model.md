@@ -92,8 +92,10 @@ the option union.
   `content.field_behavior_failed` and the field counts as valid. A key naming an undeclared field
   throws.
 
-A refused save shows one banner with the first message, beside no field, so write each message as
-a complete sentence an editor can act on.
+A refused save shows one banner with the first message. The form also moves focus to the field
+that message names, when the form holds one visible control for it, and marks it `aria-invalid`.
+Otherwise focus lands on the banner, so write each message as a complete sentence an editor can
+act on.
 
 ```ts
 import { defineConcept, fields } from '@glw907/cairn-cms';

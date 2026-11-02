@@ -35,13 +35,13 @@ Filter by the event name that a section below gives you. The [log events table](
 
 The ordinary "check your inbox" message is the same whether or not the address is on the list, so it can't tell you which case you're in. Two other messages can. `You requested a link recently. Check your inbox, or wait a minute and try again.` and `We’re having trouble sending sign-in links right now. Please contact the site owner.` both appear only for an address that is on the list. If a person quotes either one, the list isn't the problem. Move on to the sending domain and the sign-in database.
 
-A third message points somewhere else. `This browser has no pending sign-in` means the browser that opened the link isn't the browser that asked for it. That happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The same message also appears when a link has already been used. In every case the fix is the same: request a new link and open it in the browser that asked.
+A third message points somewhere else. `That sign-in link didn’t work` covers every failed link: one that expired, one that was already used, and one opened in a different browser from the one that asked. The page words them the same because one fix works for all of them. The browser mismatch happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The fix is to request a new link and open it in the browser that asked. The redirect carries `no-pending-request` when the opening browser held no pending sign-in, and `expired` otherwise, even for a browser holding its own different request. It doesn't separate an expired link from a used one.
 
-The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.token.minted` record with no `auth.link.send_failed` after it. The site has no signal past that point. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
+The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.link.sent` record, which carries the ID Cloudflare returned, and no `auth.link.send_failed` after it. The site has no signal past that point. The default Cloudflare sender writes that record; a custom `send` logs for itself. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
 
 An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
 
-**The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, and `auth.link.refused`.
+**The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.sent`, `auth.link.send_failed`, and `auth.link.refused`.
 
 ## A form is refused the moment someone uses it
 

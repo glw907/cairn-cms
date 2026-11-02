@@ -107,3 +107,14 @@ describe('readRaw', () => {
     expect(headers.get('Authorization')).toBe('Bearer tok123');
   });
 });
+
+describe('repo failure text', () => {
+  it('keeps the status and names the owner next step', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('rate limited', { status: 403 }));
+    const err = await listMarkdown(REPO, 'd').catch((e: Error) => e);
+    const msg = (err as Error).message;
+    expect(msg).toContain('GitHub tree main failed: 403');
+    expect(msg).toMatch(/GitHub App's install on the repo/);
+    expect(msg).toMatch(/status page/);
+  });
+});

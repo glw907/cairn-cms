@@ -104,4 +104,11 @@ describe('HelpHome', () => {
       .element(page.getByRole('columnheader', { name: 'What it makes' }).first())
       .toBeInTheDocument();
   });
+
+  it('names the steps list start-steps, never the bare DaisyUI Steps names', async () => {
+    const screen = await render(HelpHome, { data: fixture() });
+    expect(screen.container.querySelector('ol.start-steps')).not.toBeNull();
+    expect(screen.container.querySelectorAll('li.start-step').length).toBe(3);
+    expect(screen.container.querySelector('.steps, li.step')).toBeNull();
+  });
 });

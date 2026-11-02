@@ -38,6 +38,7 @@ bespoke: a single-use control, not a repeated device.
 -->
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
+  import { enhance } from '$app/forms';
   import CsrfField from './CsrfField.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
   import CircleIcon from '@lucide/svelte/icons/circle';
@@ -53,6 +54,7 @@ bespoke: a single-use control, not a repeated device.
   import type { TidyConventions } from '../nav/site-config.js';
   import { segmentTintClass } from './segmented-control.js';
   import { PageHeader, StatusChip } from '../admin-toolkit/index.js';
+  import { FAILURE_NOTICE, focusOnMount, refusalSubmit } from './refusal.js';
 
   interface Props {
     /** The two-tier settings load: the read-only developer facts, the truthful gate flag, and the
@@ -65,33 +67,21 @@ bespoke: a single-use control, not a repeated device.
 
   let { data, form = null }: Props = $props();
 
-  // The one lifecycle error to announce: a rejected save's fail(). Every settings-save refusal
-  // now answers in place, so this load carries no `?error=` bounce.
-  const lifecycleError = $derived(form?.error ?? '');
-
-  // The polite live region's text re-announces only when it changes, so a repeated identical error
-  // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
-  // every fresh error so the region text always mutates and the screen reader speaks again; this is
-  // one of seven admin screens that hand-roll the identical idiom rather than share it (ConceptList's
-  // comment names the full set). The nonce is a zero-width space, never voiced, so the heard
-  // sentence is unchanged; the visible alert below keeps its styling and drops the `role` (a
-  // fresh-inserted role element announces inconsistently and would clobber a repeat).
-  let announceNonce = $state(0);
-  function nonce(): string {
-    return announceNonce % 2 === 0 ? '' : '​';
-  }
-  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
-  // submit or load, keyed to that identity rather than to a string change the live region would
-  // swallow.
-  let lastSubmit: unknown;
-  $effect(() => {
-    const submit = form ?? data;
-    if (submit !== lastSubmit) {
-      lastSubmit = submit;
-      if (lifecycleError) announceNonce++;
-    }
+  // Raised from submit until the result lands, so a second click cannot send a second save.
+  let saving = $state(false);
+  // The notice for a request that failed outright (no refusal came back to show). A fresh object
+  // per failure keys the alert below, so a repeat failure takes focus again.
+  let notice = $state<{ text: string } | null>(null);
+  const submitSave = refusalSubmit({
+    isPending: () => saving,
+    setPending: (pending) => (saving = pending),
+    onResult: (result) => {
+      notice = result.type === 'error' ? { text: FAILURE_NOTICE } : null;
+    },
   });
-  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
+  // A refusal the server sent back, or the notice for a request that failed outright. The save
+  // answers in place, so the working copy survives it.
+  const lifecycleError = $derived(notice?.text ?? form?.error ?? '');
 
   // The saved message for the sr-only status region. It fills only after mount, so it is a mutation
   // an assistive technology voices, and it clears when a same-route navigation drops the flag.
@@ -344,8 +334,7 @@ bespoke: a single-use control, not a repeated device.
     meta="A light copy-edit from Claude. Choose what tidy is allowed to change. You always review every change as a diff before accepting it."
   />
 
-  <div class="sr-only" aria-live="polite">{liveError}</div>
-  <!-- The save is a native POST that redirects, so the page loads with `data.saved` already true
+  <!-- A save that goes through redirects into a document load, so the page loads with `data.saved` already true
        and the visible alert arrives server-rendered; an alert present at parse is not announced.
        The sr-only region is empty in the server HTML and filled after hydration, so its text is
        a real mutation the screen reader can voice. -->
@@ -353,9 +342,13 @@ bespoke: a single-use control, not a repeated device.
   {#if data.saved}
     <div class="alert alert-success mt-4 type-body">Tidy settings saved. They apply after your site's next deploy.</div>
   {/if}
-  {#if lifecycleError}
-    <div class="alert alert-error mt-4 type-body">{lifecycleError}</div>
-  {/if}
+  <!-- A refusal answers in place, so it takes focus on mount; the key remounts it for each fresh
+       result. -->
+  {#key notice ?? form}
+    {#if lifecycleError}
+      <div class="alert alert-error mt-4 type-body" tabindex="-1" use:focusOnMount>{lifecycleError}</div>
+    {/if}
+  {/key}
 
   <!-- DEVELOPER TIER, read-only: the three deploy-time facts the editor depends on, model included as
        a stated fact (never an editable control). Shown in both the enabled and gate states. -->
@@ -424,7 +417,7 @@ bespoke: a single-use control, not a repeated device.
       </div>
     </div>
 
-    <form method="POST" action="?/settingsSave">
+    <form method="POST" action="?/settingsSave" use:enhance={submitSave}>
       <CsrfField />
       <input type="hidden" name="conventions" value={conventionsJson} />
 
@@ -588,7 +581,7 @@ bespoke: a single-use control, not a repeated device.
         <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
           <ArrowRightIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Saving applies your choices for every editor on this site.
         </span>
-        <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+        <button type="submit" class="btn btn-primary btn-sm" disabled={saving} aria-busy={saving}>Save changes</button>
       </div>
     </form>
   {:else if data.keyStatus === 'invalid'}

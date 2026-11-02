@@ -51,6 +51,7 @@ the Worker env with `withEnv`, so the admin runs with no GitHub App and no D1.
 | --- | --- |
 | `'repository'` (the default) | Your site's files. Each branch is an in-memory overlay over the working tree. |
 | `'fixtures'` | The package's seeded in-memory repo: sample posts, media, fragments, and a tag vocabulary. |
+| `'empty'` | The same in-memory repo holding only a `site.config.yaml` with a `siteName`, so every concept lists nothing. It runs under `wrangler dev`, and it shows the first-run state. |
 
 In `'repository'` mode a read answers the overlay first and the disk second, so the admin lists the
 entries in your `src/content`, your manifest, your site config, and your media record. A save,

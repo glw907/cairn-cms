@@ -46,18 +46,18 @@ function declaredCapability(decl: RoleDeclaration): Capability {
 function validateDeclaration(name: string, decl: RoleDeclaration): void {
   if (typeof decl === 'string') {
     if (!CAPABILITIES.has(decl)) {
-      throw new Error(`defineRoles: role '${name}' maps to unknown capability '${decl}'`);
+      throw new Error(`defineRoles: role '${name}' maps to unknown capability '${decl}'; a role may map to owner, editor, or none`);
     }
     return;
   }
   if (decl === null || typeof decl !== 'object') {
-    throw new Error(`defineRoles: role '${name}' has a malformed declaration`);
+    throw new Error(`defineRoles: role '${name}' has a malformed declaration; declare it as a capability string or an object with a capability`);
   }
   if (!CAPABILITIES.has(decl.capability)) {
-    throw new Error(`defineRoles: role '${name}' has an unknown or missing capability`);
+    throw new Error(`defineRoles: role '${name}' has an unknown or missing capability; set capability to owner, editor, or none`);
   }
   if (decl.home !== undefined && (typeof decl.home !== 'string' || !decl.home.startsWith('/admin'))) {
-    throw new Error(`defineRoles: role '${name}' home must be an absolute /admin-prefixed path`);
+    throw new Error(`defineRoles: role '${name}' home must be an absolute /admin-prefixed path; start home with /admin, such as /admin/posts`);
   }
 }
 
@@ -76,19 +76,19 @@ function validateDeclaration(name: string, decl: RoleDeclaration): void {
 export function defineRoles<const R extends RolesDeclaration>(roles: R): R {
   const names = Object.keys(roles);
   if (names.length === 0) {
-    throw new Error('defineRoles: the vocabulary must declare at least one role');
+    throw new Error('defineRoles: the vocabulary must declare at least one role; add an owner role such as { owner: \'owner\' }');
   }
   for (const name of names) {
     if (name.trim() === '') {
-      throw new Error('defineRoles: role names must be non-empty');
+      throw new Error('defineRoles: role names must be non-empty; use a non-empty string key for each role');
     }
     validateDeclaration(name, roles[name]);
   }
   if (!Object.hasOwn(roles, 'owner')) {
-    throw new Error("defineRoles: the reserved 'owner' role must be declared");
+    throw new Error("defineRoles: the reserved 'owner' role must be declared; add owner: 'owner' to the vocabulary");
   }
   if (declaredCapability(roles.owner) !== 'owner') {
-    throw new Error("defineRoles: 'owner' must map to owner capability");
+    throw new Error("defineRoles: 'owner' must map to owner capability; change it to 'owner'");
   }
   return roles;
 }

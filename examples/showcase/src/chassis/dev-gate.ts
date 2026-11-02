@@ -36,6 +36,21 @@ export function devBackendOptIn(): boolean {
   );
 }
 
+// cairn-template:exclude-start
+/**
+ * Which in-memory content the dev backend serves: `'empty'` when the Worker var
+ * `CAIRN_DEV_CONTENT` is `empty` (the first-run e2e server), `'fixtures'` otherwise. Read the way
+ * the opt-in flag is, so it is a `--var` on `wrangler dev` and never wrangler.jsonc.
+ */
+export function devBackendContent(): 'empty' | 'fixtures' {
+  try {
+    return env.CAIRN_DEV_CONTENT === 'empty' ? 'empty' : 'fixtures';
+  } catch {
+    return 'fixtures';
+  }
+}
+
+// cairn-template:exclude-end
 /**
  * The flag as the Worker env carries it, or undefined while a build prerenders, when the adapter's
  * stand-in for `cloudflare:workers` throws on every read.

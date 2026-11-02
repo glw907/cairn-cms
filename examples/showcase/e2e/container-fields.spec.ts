@@ -198,6 +198,19 @@ async function freshPost(page: import('@playwright/test').Page, title: string): 
 const saveButton = (page: import('@playwright/test').Page) =>
   page.locator('.navbar').getByRole('button', { name: 'Save', exact: true });
 
+/**
+ * Discard a never-published post from its edit page. The e2e run shares one in-memory corpus, and
+ * the admin list shows ten rows, so a leaked post can push another spec's post off the first page.
+ */
+async function discardFreshPost(page: import('@playwright/test').Page): Promise<void> {
+  await page.locator('.navbar').getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('button', { name: 'Discard changes' }).click();
+  const dialog = page.locator('dialog[aria-labelledby="cairn-discard-dialog-title"]');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Discard', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/posts$/, { timeout: 10_000 });
+}
+
 test('collapsed FAQ rows survive a save that only changes the title', async ({ page }) => {
   const id = await freshPost(page, 'Collapsed FAQ');
   await page.getByRole('button', { name: 'Details', exact: true }).click();
@@ -228,6 +241,7 @@ test('collapsed FAQ rows survive a save that only changes the title', async ({ p
   await expect(page.locator('textarea[name="faq.0.answer"]')).toHaveValue('A markdown-first CMS.');
   await expect(page.locator('input[name="faq.1.question"]')).toHaveValue('Who is it for?');
   await expect(page.locator('textarea[name="faq.1.answer"]')).toHaveValue('Small calm sites.');
+  await discardFreshPost(page);
 });
 
 test('a collapsed gallery image survives a save that only changes the title', async ({ page }) => {
@@ -261,6 +275,7 @@ test('a collapsed gallery image survives a save that only changes the title', as
   await page.locator('[data-cairn-row-toggle]').first().click();
   await expect(page.locator('input[name="gallery.0.src"]')).toHaveValue(reference);
   await expect(page.locator('input[name="gallery.0.alt"]')).toHaveValue(GALLERY_ALT);
+  await discardFreshPost(page);
 });
 
 test('an answer edited then collapsed still saves (collapsed edit)', async ({ page }) => {
@@ -285,4 +300,5 @@ test('an answer edited then collapsed still saves (collapsed edit)', async ({ pa
   await page.getByRole('button', { name: 'Details', exact: true }).click();
   await page.locator('[data-cairn-row-toggle]').first().click();
   await expect(page.locator('textarea[name="faq.0.answer"]')).toHaveValue('New answer.');
+  await discardFreshPost(page);
 });

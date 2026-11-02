@@ -68,7 +68,7 @@ describe('reproduction fixtures', () => {
     const base = '/repro-assets';
     const onDisk = new Set(fixtureMediaFiles);
     for (const asset of fixtureMediaLibrary.assets) {
-      const url = publicPath(asset.slug, asset.hash, asset.ext, 'slug', base);
+      const url = publicPath(asset.slug, asset.hash, asset.ext, base);
       expect(url.startsWith(`${base}/`), url).toBe(true);
       const filename = url.slice(base.length + 1);
       expect(onDisk.has(filename), `${filename} is a served fixture file`).toBe(true);

@@ -1,15 +1,17 @@
 // cairn-cms: the cross-concept site resolver (dated-slug design). It unions every concept's
 // per-concept index into one resolver: a single byPermalink map a catch-all route matches a
-// request path against, one entries() list the prerenderer walks, and the per-concept indexes
+// request path against, one paths() list the prerenderer walks, and the per-concept indexes
 // for concept-scoped feed loaders. A duplicate permalink throws at build.
 // createLinkResolver lives here too, since it closes over the resolver.
-import type { ConceptDescriptor } from '../content/types.js';
+import type { CairnAdapter, ConceptConfig, ConceptDescriptor } from '../content/types.js';
+import type { InferFieldset } from '../content/fieldset.js';
+import { createContentIndex, fromGlob } from './content-index.js';
 import type { ContentEntry, ContentIndex, ContentSummary } from './content-index.js';
+import { bucketConceptFiles } from './site-descriptors.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve } from '../render/resolve-include.js';
 import { extractReferenceEdges, type ReferenceEdge } from '../content/references.js';
 import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
-import { log } from '../log/index.js';
 
 /** One concept's descriptor paired with its built index. */
 export interface ConceptIndex {
@@ -18,16 +20,15 @@ export interface ConceptIndex {
 }
 
 /**
- * The cross-concept query surface a catch-all route and the sitemap read.
+ * The cross-concept query surface a catch-all route and the sitemap read, with no adapter to type
+ * it. A helper that takes any site's resolver names this through the default `SiteResolver`.
  * @public
  */
-export interface SiteResolver {
+export interface UntypedSiteResolver {
   /** Resolve a request path (with or without a trailing slash) to its entry, or undefined. */
   byPermalink(path: string): ContentEntry | undefined;
-  /** Newer/older neighbors within the entry's concept, for prev/next links. */
-  adjacent(entry: ContentSummary): { newer?: ContentSummary; older?: ContentSummary };
   /** Every entry permalink across concepts, leading slash stripped, for SvelteKit `[...path]`. */
-  entries(): { path: string }[];
+  paths(): { path: string }[];
   /** One concept's index, for its archive and feed loaders. */
   concept(id: string): ContentIndex | undefined;
   /**
@@ -43,6 +44,31 @@ export interface SiteResolver {
    */
   routable(id: string): boolean;
 }
+
+/**
+ * The site resolver `createSiteResolver` returns for a declared adapter. It differs from
+ * `UntypedSiteResolver` in `concept`, which takes only a declared id, never returns undefined, and
+ * types each entry's frontmatter from that concept's fieldset.
+ * @public
+ */
+export interface TypedSiteResolver<A extends CairnAdapter> extends Omit<UntypedSiteResolver, 'concept'> {
+  /** One declared concept's index, with frontmatter typed from its fieldset. */
+  concept<K extends keyof A['content'] & string>(
+    id: K,
+  ): ContentIndex<
+    NonNullable<A['content'][K]> extends ConceptConfig<infer S> ? InferFieldset<S> : Record<string, unknown>
+  >;
+}
+
+/**
+ * The site resolver: typed by a declared adapter's concepts, or, with no argument, the form any
+ * site's resolver assigns to. It is a conditional over two interfaces because one generic interface
+ * whose `concept` return depends on `A` does not assign to its own default.
+ * @public
+ */
+export type SiteResolver<A extends CairnAdapter = CairnAdapter> = string extends keyof A['content']
+  ? UntypedSiteResolver
+  : TypedSiteResolver<A>;
 
 /** Strip a trailing slash from a path, keeping the root "/" intact. */
 function normalizePath(path: string): string {
@@ -64,29 +90,14 @@ function siteProblems(concepts: ConceptIndex[]): string[] {
 }
 
 /**
- * Union per-concept indexes into a site-level resolver. Throws on a duplicate permalink and,
- * unless `validate` is `false`, on any non-draft entry whose frontmatter fails its concept's
- * validator, so malformed content fails the build instead of shipping.
+ * Union per-concept indexes into a site-level resolver. Throws on a duplicate permalink and on any
+ * non-draft entry whose frontmatter fails its concept's validator, so malformed content fails the
+ * build instead of shipping.
  */
-export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: boolean } = {}): SiteResolver {
-  if (opts.validate !== false) {
-    const problems = siteProblems(concepts);
-    if (problems.length > 0) {
-      throw new Error(`cairn: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
-    }
-  } else {
-    // The index still leaves an invalid entry out, so name each one rather than let it vanish.
-    for (const { descriptor, index } of concepts) {
-      for (const problem of index.problems()) {
-        log.warn('content.entry_invalid', {
-          scope: 'index',
-          concept: descriptor.id,
-          id: problem.id,
-          draft: problem.draft,
-          errors: problem.errors,
-        });
-      }
-    }
+export function buildSiteResolver(concepts: ConceptIndex[]): UntypedSiteResolver {
+  const problems = siteProblems(concepts);
+  if (problems.length > 0) {
+    throw new Error(`cairn: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
   }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
   const byId = new Map<string, ContentIndex>();
@@ -114,11 +125,7 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
       const hit = byPath.get(normalizePath(path));
       return hit ? hit.index.byId(hit.id) : undefined;
     },
-    adjacent(entry) {
-      const hit = byPath.get(entry.permalink);
-      return hit ? hit.index.adjacent(entry.id) : {};
-    },
-    entries() {
+    paths() {
       return [...byPath.keys()].map((p) => ({ path: p.replace(/^\//, '') }));
     },
     concept(id) {
@@ -134,6 +141,29 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
       return routableById.get(id) ?? true;
     },
   };
+}
+
+/**
+ * Build a site's resolver from its adapter and one eager `?raw` glob of every markdown file under
+ * `/src/content`, keyed by app-root-absolute path, which is the absolute form Vite gives a pattern
+ * that starts with `/`. Vite needs the literal glob at the call site, so the engine cannot glob on the
+ * site's behalf. Each file joins the concept whose `dir` is its parent directory, and a concept with
+ * no files is an empty index.
+ * @throws When a concept's `dir` sits outside `src/content`, when a file sits under no concept's
+ * `dir`, when two routable non-draft entries resolve to one permalink, or when a non-draft entry
+ * fails its concept's validator.
+ * @public
+ */
+export function createSiteResolver<const A extends CairnAdapter>(
+  adapter: A,
+  files: Record<string, string>,
+): SiteResolver<A> {
+  const concepts = bucketConceptFiles(adapter, files).map(({ descriptor, files: record }) => ({
+    descriptor,
+    index: createContentIndex(fromGlob(record), descriptor),
+  }));
+  // The conditional cannot resolve while `A` is open, and every declared key has an index here.
+  return buildSiteResolver(concepts) as unknown as SiteResolver<A>;
 }
 
 /**

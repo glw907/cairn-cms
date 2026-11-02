@@ -19,21 +19,16 @@ import { formatManifest, manifestEntryFromFile, parseManifest, verifyManifest, t
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { formatMediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
 
-const MEDIA_ON: ResolvedAssetConfig = {
+const MEDIA_ON: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/jpeg'],
-  transformations: false,
 };
 
 function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
@@ -49,7 +44,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     ],
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
-    resolvedAssets: MEDIA_ON,
+    media: MEDIA_ON,
     ...over,
   });
 }
@@ -503,7 +498,7 @@ describe('mediaReplaceApply', () => {
   it('returns fail(503) when media is disabled, committing nothing', async () => {
     const gh = freshRepo();
     gh.install();
-    const routes = createContentRoutesInternal({ runtime: runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }) });
+    const routes = createContentRoutesInternal({ runtime: runtime({ media: { ...MEDIA_ON, enabled: false } }) });
     const result = await routes.mediaReplaceAction(
       applyEvent({ oldHash: OLD_HASH, newHash: NEW_HASH, confirmSlug: 'old-photo', media: [mediaEntry(NEW_HASH, 'new-photo')] }),
     );

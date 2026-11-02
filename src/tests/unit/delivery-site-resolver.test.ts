@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createSiteResolver, resolveReferences, createFragmentResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver, resolveReferences, createFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
@@ -17,13 +17,13 @@ const [posts] = normalizeConcepts({
 const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({}) } });
 
 function site() {
-  return createSiteResolver([
+  return buildSiteResolver([
     { descriptor: posts, index: createContentIndex([{ path: '/p/2026-05-31-snowball.md', raw: '---\ntitle: S\ndate: 2026-05-31\n---\n\nPost body.' }], posts) },
     { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], pages) },
   ]);
 }
 
-describe('createSiteResolver', () => {
+describe('buildSiteResolver', () => {
   it('resolves a dated Posts URL and a flat Pages URL through one byPermalink', () => {
     const s = site();
     expect(s.byPermalink('/2026/05/31/snowball')?.body.trim()).toBe('Post body.');
@@ -34,51 +34,16 @@ describe('createSiteResolver', () => {
     expect(site().byPermalink('/about/')?.id).toBe('about');
   });
 
-  it('with validate: false, warns once per invalid entry and still leaves it out', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const s = createSiteResolver(
-        [
-          {
-            descriptor: posts,
-            index: createContentIndex(
-              [
-                { path: '/p/2026-05-31-snowball.md', raw: '---\ntitle: S\n---\n\nNo date.' },
-                { path: '/p/2026-06-01-ok.md', raw: '---\ntitle: OK\ndate: 2026-06-01\n---\n\nFine.' },
-              ],
-              posts,
-            ),
-          },
-        ],
-        { validate: false },
-      );
-      expect(s.concept('posts')?.all().map((e) => e.id)).toEqual(['2026-06-01-ok']);
-      const records = warn.mock.calls
-        .map(([record]) => record as Record<string, unknown>)
-        .filter((record) => record.event === 'content.entry_invalid');
-      expect(records).toHaveLength(1);
-      expect(records[0]).toMatchObject({ scope: 'index', concept: 'posts', id: '2026-05-31-snowball', draft: false });
-    } finally {
-      warn.mockRestore();
-    }
-  });
-
   it('returns undefined for an unmatched path', () => {
     expect(site().byPermalink('/nope')).toBeUndefined();
   });
 
   it('enumerates every entry path across concepts for prerender, without a leading slash', () => {
-    expect(site().entries().map((e) => e.path).sort()).toEqual(['2026/05/31/snowball', 'about']);
+    expect(site().paths().map((e) => e.path).sort()).toEqual(['2026/05/31/snowball', 'about']);
   });
 
   it('exposes a concept index for per-concept loaders', () => {
     expect(site().concept('posts')?.all()[0].id).toBe('2026-05-31-snowball');
-  });
-
-  it('returns adjacency within the entry own concept', () => {
-    const s = site();
-    const about = s.byPermalink('/about')!;
-    expect(s.adjacent(about)).toEqual({});
   });
 
   it('resolves reference and array(reference) edges to their target identities across concepts', () => {
@@ -98,7 +63,7 @@ describe('createSiteResolver', () => {
       },
       pages: { dir: 'g', fields: defineFieldset({}) },
     });
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       {
         descriptor: postsRef,
         index: createContentIndex(
@@ -143,7 +108,7 @@ describe('createSiteResolver', () => {
       },
       pages: { dir: 'g', fields: defineFieldset({}) },
     });
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       {
         descriptor: postsRef,
         index: createContentIndex(
@@ -178,7 +143,7 @@ describe('createSiteResolver', () => {
       },
       pages: { dir: 'g', fields: defineFieldset({}) },
     });
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: postsRef, index: createContentIndex([], postsRef) },
       {
         descriptor: pagesRef,
@@ -206,7 +171,7 @@ describe('createSiteResolver', () => {
         fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
       },
     });
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], pages) },
       {
         descriptor: fragments,
@@ -215,7 +180,7 @@ describe('createSiteResolver', () => {
     ]);
 
     expect(s.byPermalink('/fragments/address')).toBeUndefined();
-    expect(s.entries().map((e) => e.path).sort()).toEqual(['about']);
+    expect(s.paths().map((e) => e.path).sort()).toEqual(['about']);
     expect(s.concept('fragments')?.byId('address')?.body.trim()).toBe('Fragment body.');
     // all() feeds the site-wide sitemap, so the gate has to cover enumeration as well as
     // resolution. A fragment listed here would advertise a permalink byPermalink refuses above.
@@ -228,7 +193,7 @@ describe('createSiteResolver', () => {
       posts: { dir: 'p', routing: 'feed', permalink: '/dup', fields: defineFieldset({}) },
     });
     expect(() =>
-      createSiteResolver([
+      buildSiteResolver([
         { descriptor: p2, index: createContentIndex([{ path: '/g/a.md', raw: '---\ntitle: A\n---\n' }], p2) },
         { descriptor: q2, index: createContentIndex([{ path: '/p/b.md', raw: '---\ntitle: B\ndate: 2026-01-01\n---\n' }], q2) },
       ]),
@@ -246,7 +211,7 @@ describe('createFragmentResolver', () => {
   });
 
   it('returns the raw markdown body for a published fragment', () => {
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
     ]);
     const resolve = createFragmentResolver(s);
@@ -254,7 +219,7 @@ describe('createFragmentResolver', () => {
   });
 
   it('throws an id-naming message on an unknown fragment id', () => {
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
     ]);
     const resolve = createFragmentResolver(s);
@@ -262,7 +227,7 @@ describe('createFragmentResolver', () => {
   });
 
   it('throws when the site declares no fragments concept', () => {
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
     ]);
     const resolve = createFragmentResolver(s);
@@ -271,7 +236,7 @@ describe('createFragmentResolver', () => {
   });
 
   it('keeps the unknown-id message distinct from the no-concept message', () => {
-    const s = createSiteResolver([
+    const s = buildSiteResolver([
       { descriptor: fragments, index: createContentIndex([], fragments) },
     ]);
     expect(() => createFragmentResolver(s)('address')).toThrow(/fragment "address" not found/);

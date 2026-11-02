@@ -76,7 +76,12 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * unrecognized.
  * @public
  */
-export function defineConcept<const C extends ConceptConfig>(concept: C): C {
+export function defineConcept<const C extends ConceptConfig>(
+  concept: C & {
+    /** Frontmatter keys to surface on each `ContentSummary.fields`, each one a key of this concept's `fields`. */
+    summaryFields?: readonly (keyof C['fields']['fields'] & string)[];
+  },
+): C {
   const id = concept.label ?? concept.dir;
   validateUrlPolicy(
     id,

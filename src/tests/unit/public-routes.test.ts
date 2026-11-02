@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createPublicRoutes, composeEntryData } from '../../lib/delivery/public-routes.js';
-import { log } from '../../lib/log/index.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
@@ -21,7 +20,7 @@ const [posts] = normalizeConcepts({
 });
 const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({}) } });
 
-const site = createSiteResolver([
+const site = buildSiteResolver([
   { descriptor: posts, index: createContentIndex([
     { path: '/p/2026-02-01-a.md', raw: '---\ntitle: A\ndate: 2026-02-01\ntags: [x]\n---\n\nBody A.' },
     { path: '/p/2026-01-01-b.md', raw: '---\ntitle: B\ndate: 2026-01-01\ntags: [y]\n---\n\nBody B.' },
@@ -29,7 +28,7 @@ const site = createSiteResolver([
   { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
 ]);
 
-const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.', resolveMedia: null });
 
 describe('createPublicRoutes entryLoad', () => {
   it('resolves a dated Posts URL to its entry by pathname', async () => {
@@ -77,7 +76,7 @@ describe('createPublicRoutes entryLoad', () => {
     const [heroPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
-    const heroSite = createSiteResolver([
+    const heroSite = buildSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
         { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n  caption: y\n---\n\nHero body.' },
       ], heroPages) },
@@ -114,7 +113,7 @@ describe('createPublicRoutes entryLoad', () => {
 
     // Resolver present but the hash does not resolve: no throw, undefined projection.
     const unresolved = createPublicRoutes({
-      site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
+      site: buildSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
       render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
@@ -124,23 +123,25 @@ describe('createPublicRoutes entryLoad', () => {
     const a = await unresolved.entryLoad({ url: new URL('https://example.com/hero') });
     expect(a.heroImage).toBeUndefined();
 
-    // Media off: no resolveMedia dep at all, still undefined and no throw.
+    // Media off: a null resolveMedia derives no hero and the entry still renders.
     const off = createPublicRoutes({
-      site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
+      site: buildSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
       render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
     const b = await off.entryLoad({ url: new URL('https://example.com/hero') });
     expect(b.heroImage).toBeUndefined();
+    expect(b.html).toBe('<r>Hero body.</r>');
   });
 
   it('emits og:image from a resolved structured hero plus twitter:image:alt', async () => {
     const [heroPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
-    const heroSite = createSiteResolver([
+    const heroSite = buildSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
         { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: A hero photo\n---\n\nHero body.' },
       ], heroPages) },
@@ -165,7 +166,7 @@ describe('createPublicRoutes entryLoad', () => {
     const [stringPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ image: fields.text({ label: 'Social image' }) }) },
     });
-    const stringSite = createSiteResolver([
+    const stringSite = buildSiteResolver([
       { descriptor: stringPages, index: createContentIndex([
         { path: '/g/legacy.md', raw: '---\ntitle: Legacy\nimage: /og/legacy.png\n---\n\nLegacy body.' },
       ], stringPages) },
@@ -176,6 +177,7 @@ describe('createPublicRoutes entryLoad', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     const data = await stringRoutes.entryLoad({ url: new URL('https://example.com/legacy') });
@@ -187,7 +189,7 @@ describe('createPublicRoutes entryLoad', () => {
     const [coverPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ cover: fields.image({ label: 'Cover' }) }) },
     });
-    const coverSite = createSiteResolver([
+    const coverSite = buildSiteResolver([
       { descriptor: coverPages, index: createContentIndex([
         { path: '/g/cover.md', raw: '---\ntitle: Cover\ncover:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nCover body.' },
       ], coverPages) },
@@ -210,7 +212,7 @@ describe('createPublicRoutes entryLoad', () => {
     const [heroPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
-    const heroSite = createSiteResolver([
+    const heroSite = buildSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
         { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
       ], heroPages) },
@@ -229,15 +231,15 @@ describe('createPublicRoutes entryLoad', () => {
   });
 
   it('resolves cairn links and fails the build on a dangling token', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     function linkRoutes(body: string) {
-      const linkSite = createSiteResolver([
+      const linkSite = buildSiteResolver([
         { descriptor: pages, index: createContentIndex([
           { path: '/g/home.md', raw: `---\ntitle: Home\n---\n\n${body}` },
           { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },
         ], pages) },
       ]);
-      return createPublicRoutes({ site: linkSite, render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+      return createPublicRoutes({ site: linkSite, render: ({ body, resolveLink, resolveMedia }) => render({ body, resolveLink, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.', resolveMedia: null });
     }
 
     const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
@@ -246,11 +248,61 @@ describe('createPublicRoutes entryLoad', () => {
     await expect(linkRoutes('[gone](cairn:pages/missing)').entryLoad({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
   });
 
+  describe('neighbors', () => {
+    const [fragments] = normalizeConcepts({
+      fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ date: fields.date({ label: 'Date' }) }) },
+    });
+    const neighborSite = buildSiteResolver([
+      { descriptor: posts, index: createContentIndex([
+        { path: '/p/2026-02-01-a.md', raw: '---\ntitle: A\ndate: 2026-02-01\n---\n\nBody A.' },
+        { path: '/p/2026-01-01-b.md', raw: '---\ntitle: B\ndate: 2026-01-01\n---\n\nBody B.' },
+      ], posts) },
+      { descriptor: fragments, index: createContentIndex([
+        { path: '/f/first.md', raw: '---\ntitle: First\ndate: 2026-02-01\n---\n\nFirst.' },
+        { path: '/f/second.md', raw: '---\ntitle: Second\ndate: 2026-01-01\n---\n\nSecond.' },
+      ], fragments) },
+    ]);
+    const config = {
+      site: neighborSite,
+      render: ({ body }: { body: string }) => Promise.resolve(body),
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      resolveMedia: null,
+    };
+
+    it('gives a routable entry its neighbors within the concept', async () => {
+      const entry = neighborSite.concept('posts')!.byId('2026-01-01-b')!;
+      const data = await composeEntryData(config, entry);
+      expect(data.newer?.id).toBe('2026-02-01-a');
+    });
+
+    it('gives a fragment-concept entry no neighbors, though its index has them', async () => {
+      const fragmentIndex = neighborSite.concept('fragments')!;
+      expect(fragmentIndex.adjacent('second').newer?.id).toBe('first');
+      const data = await composeEntryData(config, fragmentIndex.byId('second')!);
+      expect(data.newer).toBeUndefined();
+      expect(data.older).toBeUndefined();
+    });
+
+    it('gives an entry of a concept the site lacks no neighbors', async () => {
+      const entry = { ...neighborSite.concept('posts')!.byId('2026-01-01-b')!, concept: 'absent' };
+      const data = await composeEntryData(config, entry);
+      expect(data.newer).toBeUndefined();
+    });
+
+    it('finds neighbors by id, so a preview whose permalink changed still gets them', async () => {
+      const entry = { ...neighborSite.concept('posts')!.byId('2026-01-01-b')!, permalink: '/moved' };
+      const data = await composeEntryData(config, entry);
+      expect(data.newer?.id).toBe('2026-02-01-a');
+    });
+  });
+
   it('passes a build-backed resolveFragment through to the render call', async () => {
     const [fragments] = normalizeConcepts({
       fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
-    const fragmentSite = createSiteResolver([
+    const fragmentSite = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
       { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nAddress body.' }], fragments) },
     ]);
@@ -264,6 +316,7 @@ describe('createPublicRoutes entryLoad', () => {
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     await recordingRoutes.entryLoad({ url: new URL('https://example.com/about') });
@@ -274,11 +327,11 @@ describe('createPublicRoutes entryLoad', () => {
     // createFragmentResolver never sets previewTitle (only EditPage's client-side resolver does), so
     // the same entry through the real render pipeline must come back byte-identical to a splice
     // with no boundary wrapper: this is the provable public-path half of the preview-only cue.
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     const [fragments] = normalizeConcepts({
       fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
-    const fragmentSite = createSiteResolver([
+    const fragmentSite = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([
         { path: '/g/about.md', raw: '---\ntitle: About\n---\n\n::include{fragment="address"}' },
       ], pages) },
@@ -286,10 +339,11 @@ describe('createPublicRoutes entryLoad', () => {
     ]);
     const fragmentRoutes = createPublicRoutes({
       site: fragmentSite,
-      render: ({ body, resolveFragment }) => renderMarkdown(body, { resolveFragment }),
+      render: ({ body, resolveFragment }) => render({ body, resolveFragment }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     });
 
     const data = await fragmentRoutes.entryLoad({ url: new URL('https://example.com/about') });
@@ -306,6 +360,7 @@ describe('composeEntryData', () => {
     origin: 'https://example.com',
     siteName: 'Test',
     description: 'Test description.',
+    resolveMedia: null,
   };
 
   it('produces output identical to entryLoad when called with no overrides', async () => {
@@ -317,19 +372,20 @@ describe('composeEntryData', () => {
   });
 
   it('substitutes the link resolver override in place of the build-backed resolver', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
-    const linkSite = createSiteResolver([
+    const { render } = createRenderer();
+    const linkSite = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([
         { path: '/g/home.md', raw: '---\ntitle: Home\n---\n\n[about](cairn:pages/about)' },
       ], pages) },
     ]);
     const linkConfig = {
       site: linkSite,
-      render: ({ body, resolve, resolveMedia }: { body: string; resolve?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: MediaResolve }) =>
-        renderMarkdown(body, { resolve, resolveMedia }),
+      render: ({ body, resolveLink, resolveMedia }: { body: string; resolveLink?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: MediaResolve }) =>
+        render({ body, resolveLink, resolveMedia }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     };
     const home = linkSite.byPermalink('/home')!;
 
@@ -341,11 +397,11 @@ describe('composeEntryData', () => {
   });
 
   it('substitutes the fragment resolver override in place of the build-backed resolver', async () => {
-    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const { render } = createRenderer();
     const [fragments] = normalizeConcepts({
       fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
-    const fragmentSite = createSiteResolver([
+    const fragmentSite = buildSiteResolver([
       { descriptor: pages, index: createContentIndex([
         { path: '/g/about.md', raw: '---\ntitle: About\n---\n\n::include{fragment="address"}' },
       ], pages) },
@@ -354,10 +410,11 @@ describe('composeEntryData', () => {
     const fragmentConfig = {
       site: fragmentSite,
       render: ({ body, resolveFragment }: { body: string; resolveFragment?: (id: string) => string | undefined }) =>
-        renderMarkdown(body, { resolveFragment }),
+        render({ body, resolveFragment }),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
+      resolveMedia: null,
     };
     const about = fragmentSite.byPermalink('/about')!;
 
@@ -371,7 +428,7 @@ describe('composeEntryData', () => {
     const [heroPages] = normalizeConcepts({
       pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
-    const heroSite = createSiteResolver([
+    const heroSite = buildSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
         { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
       ], heroPages) },
@@ -392,45 +449,5 @@ describe('composeEntryData', () => {
         ref.hash === '0123456789abcdef' ? '/media/overridden.webp' : undefined,
     });
     expect(data.heroImage?.url).toBe('/media/overridden.webp');
-  });
-});
-
-describe('createPublicRoutes media.resolver_absent', () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  function build(deps: { assetsEnabled?: boolean; withResolver?: boolean }) {
-    return createPublicRoutes({
-      site,
-      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
-      origin: 'https://example.com',
-      siteName: 'Test',
-      description: 'Test description.',
-      ...(deps.assetsEnabled !== undefined ? { assetsEnabled: deps.assetsEnabled } : {}),
-      ...(deps.withResolver ? { resolveMedia: () => undefined } : {}),
-    });
-  }
-
-  it('warns once at construction when media is on but no resolver was wired', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: true });
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    const [event, fields] = warnSpy.mock.calls[0];
-    expect(event).toBe('media.resolver_absent');
-    // The event's own existence is the whole diagnostic: it fires only in the misconfigured
-    // case, so a field that can hold one value would say nothing the record does not.
-    expect(fields).toBeUndefined();
-  });
-
-  it('does not warn when a resolver is wired (the correctly configured case)', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: true, withResolver: true });
-    expect(warnSpy).not.toHaveBeenCalled();
-  });
-
-  it('does not warn when media is off (assetsEnabled false or absent)', () => {
-    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
-    build({ assetsEnabled: false });
-    build({});
-    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

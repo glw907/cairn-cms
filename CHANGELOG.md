@@ -49,10 +49,9 @@
 
   Consumers may: read an export's doc comment in `node_modules/@glw907/cairn-cms/dist/` before a page.
 
-- **A `content.entry_invalid` log event.** `createSiteIndexes` with `validate: false` logs one warning
-  per entry it leaves out as invalid (`scope: 'index'`), and `buildSiteManifest` logs one per entry it
-  skips, a draft included (`scope: 'manifest'`). Both used to drop the entry with no signal, so a
-  migrated draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
+- **A `content.entry_invalid` log event.** `buildSiteManifest` logs one warning per entry it skips,
+  a draft included (`scope: 'manifest'`). It used to drop the entry with no signal, so a migrated
+  draft with an invalid field vanished from the admin's concept list. `CairnLogEvent` and
   `CAIRN_LOG_EVENTS` gain the member, and the `cairn-extending-a-site` skill's event table its row.
 
   Consumers may: read the build output for `content.entry_invalid` to find what a build left out.
@@ -130,6 +129,104 @@
 
 ### Changed
 
+- **`defineAdapter` keeps unset optional keys readable and checks two config keys at the type level.**
+  `(cairn as CairnAdapter).aiPosture` needs no cast when the adapter leaves it unset. A
+  `summaryFields` entry is keyed to its concept's fields, and a `navLayout` item's `screen` is one of
+  the engine's six ids or a `content` key, so a misspelled one fails the type check. A `navLayout`
+  built apart from `defineAdapter` and annotated `NavLayout` is refused, because its `screen` is wide.
+
+  Consumers must: declare `navLayout` inline on `defineAdapter` instead of in a separate constant
+  annotated `NavLayout`.
+
+  Consumers must: correct any `summaryFields` key that is not a field of its concept and any
+  `navLayout` `screen` that is neither an engine screen id nor a `content` key.
+
+  Consumers may: drop a cast around `cairn.aiPosture`.
+
+- **`createRenderer` takes one config bag and returns one `render`.** `createRenderer(registry,
+  options)` becomes `createRenderer({ components, resolveMedia, ... })`. `renderMarkdown(md, opts)`
+  becomes `render({ body: md, ...opts })`, and `renderDocument` takes the same input, now named
+  `RenderInput`. The returned `remarkPlugins` and `rehypePlugins` are gone, though the options stay.
+  `ResolveOptions` and `SiteRender` name the link resolver `resolveLink` where they named it `resolve`.
+
+  Consumers must: pass `createRenderer` one object with `components` and `resolveMedia` keys.
+
+  Consumers must: call `render({ body, ...opts })` where you called `renderMarkdown(md, opts)`, and
+  pass the same input to `renderDocument`.
+
+  Consumers must: stop reading `remarkPlugins` and `rehypePlugins` off the renderer.
+
+  Consumers must: rename `resolve` to `resolveLink` on any `ResolveOptions` or `SiteRender` you write.
+
+  Consumers must: write `render: renderer.render` in the adapter's `rendering` group.
+
+- **`AssetConfig` is `MediaConfig`, and it holds `bucketBinding` alone.** `publicBase`, `urlForm`,
+  `maxUploadBytes`, `allowedTypes`, and `transformations` are gone, with `srcset`, `sizes`, and
+  `transform-url.ts`. The upload cap is fixed at 25 MB and the types at the five web image types.
+  `createMediaResolver(media, manifest, { strict })` is the new argument order and normalizes inside.
+  `normalizeAssets` and `ResolvedAssetConfig` leave `/media`, `runtime.resolvedAssets` is
+  `runtime.media`, and `publicPath` loses its `urlForm` argument. `PublicRoutesConfig.resolveMedia`
+  is required as `MediaResolve | null`, `assetsEnabled` is gone, and `data.mediaBase` with it. The
+  `media.resolver_absent` log event is gone.
+
+  Consumers must: rename the `AssetConfig` type to `MediaConfig` and reduce the value to `{ bucketBinding }`.
+
+  Consumers must: delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and
+  `transformations` from the media config, and retire a media route mounted at a `publicBase` other
+  than `/media`, and any `srcset` or `sizes` use.
+
+  Consumers must: call `createMediaResolver(media, manifest, { strict })` in that order and drop any
+  `normalizeAssets` call, and drop any `ResolvedAssetConfig` import.
+
+  Consumers must: read `runtime.media` where you read `runtime.resolvedAssets`.
+
+  Consumers must: pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop
+  `assetsEnabled`.
+
+  Consumers must: stop reading `data.mediaBase` and drop the `urlForm` argument from any `publicPath` call.
+
+  Consumers must: stop querying logs for `media.resolver_absent`.
+
+- **`createSiteResolver(adapter, files)` replaces `createSiteIndexes`.** It takes the adapter and one
+  eager `?raw` glob of `/src/content/**/*.md`, buckets each file into the concept whose `dir` is its
+  parent, and always validates. `cairnManifest` takes `configModule` alone: `content`, `manifestPath`,
+  and `siteFactsPath` are gone. `SiteResolver<A>` is typed by the adapter, `site.entries()` is
+  `site.paths()`, and `SiteResolver.adjacent` is gone in favor of `site.concept(id).adjacent(entryId)`.
+  `buildSiteDescriptors` and `buildSiteManifest` lose their config argument. A file under no concept,
+  or a concept `dir` outside `src/content`, now throws. A concept may be named `site`.
+
+  Consumers must: replace `createSiteIndexes(adapter, config, globs, opts)` with
+  `createSiteResolver(adapter, files)` over one `/src/content/**/*.md` glob.
+
+  Consumers must: use the returned value as `site`, read each concept through `site.concept('posts')`
+  where you read `indexes.posts`, and drop any `SiteIndexes` or `SiteGlobs` import.
+
+  Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`, and move
+  a generated file at a custom path to `src/content/.cairn/`.
+
+  Consumers must: remove `validate: false` and fix the entries it hid.
+
+  Consumers must: call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.
+
+  Consumers must: drop the config argument from any `buildSiteDescriptors` or `buildSiteManifest` call.
+
+  Consumers must: move any concept `dir` outside `src/content` under it, and any markdown file under no concept's `dir`.
+
+- **`CairnAdmin` takes one `rendering` prop.** `rendering={cairn.rendering}` replaces `render`,
+  `registry`, and `icons`, so the renderer cannot be wired without the component registry that feeds
+  Insert block. `runtime.registry`, which nothing read, is gone.
+
+  Consumers must: pass `rendering={cairn.rendering}` to `CairnAdmin` and drop `render`, `registry`,
+  and `icons`.
+
+  Consumers must: stop reading `runtime.registry`.
+
+- **The `cairnManifest` plugin owns `ssr.noExternal`.** It adds `@glw907/cairn-cms` and
+  `@glw907/cairn-cms-dev` to the list in the main config and in the nested verify server, merged with
+  any list the site sets.
+
+  Consumers must: delete the `ssr.noExternal` line for the engine from `vite.config.ts`.
+
 - **`buildSitemapView` skips `noindex` entries.** An entry whose `robots` field carries `noindex` no
   longer appears in the sitemap, matching the markdown twin. The check applies only to a concept whose
   fieldset declares `robots`. Feeds still list such entries. The scaffold's sitemap route now calls
@@ -187,7 +284,7 @@
   publishes, and `check:dev-package` now fails on any `exports` target or `files` entry outside
   `dist/`.
 
-  Consumers must: add `@glw907/cairn-cms-dev` to `ssr.noExternal` in `vite.config.ts`, beside the engine, so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node. Nothing else, unless a site imports a file from the package's `src/` directly.
+  The `cairnManifest` plugin adds the package to `ssr.noExternal` (see its entry above), so `vite dev` processes the package's `cloudflare:workers` import instead of handing it to Node, and a site adds no line. A site that imports a file from the package's `src/` directly has more to change.
 
 - **The `sanitizeSchema` callback gets a copy, and a floor holds after it returns.** The callback
   receives a deep copy of cairn's safe base schema. Once it returns, the engine removes `script` from
@@ -773,14 +870,6 @@
   Consumers must: expect `buildNewlyPublished` to omit a renamed entry, and drop any workaround that
   filtered renames by key.
 
-- **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
-  base, so an image in the preview resolves under it instead of `/media`.
-- **`normalizeAssets` throws on an `allowedTypes` entry the upload path cannot store.** The error is
-  `cairn:`-prefixed and names the type. The sniffer's five types stay the only source.
-
-  Consumers must: remove any `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`,
-  `image/gif`, and `image/avif`, since the site now fails at startup on one.
-
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
   error. A site no longer needs its own try/catch around the function.
@@ -795,7 +884,7 @@
   instead of the unknown-id message, which sent the reader looking for a missing file.
 - **`slugify` strips accents before it removes other characters.** A title with `résumé` now derives
   `resume` where it derived `r-sum`. Ids already on disk are unchanged.
-- **The scaffold's media constant is typed `AssetConfig`.** The showcase and the `waymark` template
+- **The scaffold's media constant is typed `MediaConfig`.** The showcase and the `waymark` template
   annotate it, so the `configure-media` page's edits type-check as written.
 
 - **`cairn-guidance check` reads a fresh scaffold as fresh.** A stylesheet whose Tailwind import uses

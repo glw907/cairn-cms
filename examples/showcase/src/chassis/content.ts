@@ -1,35 +1,19 @@
-// This site's one delivery content layer: it globs the markdown and hands the adapter to the
-// full-auto createSiteIndexes, which builds the typed per-concept indexes and the site resolver.
+// This site's one delivery content layer: it globs the markdown and hands the adapter to
+// createSiteResolver, which buckets the files by each concept's dir and builds the typed resolver.
 // The cairnManifest() Vite plugin owns the build-time manifest verify (it runs outside the prerender
 // lifecycle, so a stale manifest fails the build red regardless of the handleHttpError policy).
-import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+import { createSiteResolver } from '@glw907/cairn-cms/delivery';
 import { cairn, siteConfig, publicOrigin } from '#theme/cairn.config.js';
 import { siteName } from '#theme/site-config.js';
 
-const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+const files = import.meta.glob<string>('/src/content/**/*.md', {
   query: '?raw',
   import: 'default',
   eager: true,
-}) as Record<string, string>;
-const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
-const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-}) as Record<string, string>;
-
-const indexes = createSiteIndexes(cairn, siteConfig, {
-  posts: postsRaw,
-  pages: pagesRaw,
-  fragments: fragmentsRaw,
 });
 
-export const site = indexes.site;
-export const posts = indexes.posts;
+export const site = createSiteResolver(cairn, files);
+export const posts = site.concept('posts');
 
 // PublicRoutesConfig.description is required, so a site that sets none in site.config.yaml
 // still gets a real value rather than an empty SEO tag.

@@ -8,6 +8,7 @@
 // descriptors are plain data so a `load` function can hand them across the server-to-client
 // boundary to the editor form.
 import type { ComponentRegistry } from '../render/registry.js';
+import type { RenderInput } from '../render/pipeline.js';
 import type { IconSet } from '../render/glyph.js';
 import type { IslandRegistry } from '../islands/types.js';
 import type { BackendProvider } from '../github/backend.js';
@@ -79,7 +80,8 @@ export type NamedField = FieldDescriptor & { name: string };
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /**
    * Repo-relative content directory, e.g. "src/content/posts": no leading or trailing slash. The
-   *  engine uses it verbatim and never validates it. Entries sit directly in it, never in subfolders.
+   *  engine uses it verbatim, and `createSiteResolver` and `buildSiteManifest` refuse a `dir` outside
+   *  `src/content`. Entries sit directly in it, never in subfolders.
    *  An entry's id is its filename without `.md`, at `${dir}/${id}.md`; an id is lowercase ASCII
    *  letters, digits, and single hyphens. A dated concept's filename also carries a leading date
    *  prefix of the `datePrefix` granularity, which only the URL slug drops: the entry's date comes
@@ -97,8 +99,7 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
    *  `title` (an entry without one falls back to its id), `date`, `updated`, `description`,
    *  `draft`, and the head fields `image`, `robots`, and `author` by literal name, so a site that
    *  wants one to survive declares it as a field. The validator also runs when the site builds its
-   *  content indexes: unless the site passes `validate: false`, a non-draft entry whose frontmatter
-   *  fails it fails the build.
+   *  content indexes: a non-draft entry whose frontmatter fails it fails the build.
    */
   fields: S;
   /**
@@ -117,8 +118,8 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   datePrefix?: DatePrefix;
   /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
-   *  field without a per-entry detail read. Defaults to none. Compose throws when a key is not a
-   *  declared field.
+   *  field without a per-entry detail read. Defaults to none. `defineConcept` keys this list to the
+   *  declared fields, and compose throws when a key from an untyped caller is not one.
    */
   summaryFields?: string[];
 }
@@ -229,57 +230,30 @@ export interface PreviewConfig {
 export type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 
 /**
- * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads,
- *  content-addressed storage, and Cloudflare Images variants. Omitting it leaves media off. The
- *  engine normalizes this into a `ResolvedAssetConfig`.
+ * A site's media configuration (seam 4). A site sets this to turn on R2-backed media: uploads and
+ *  content-addressed storage, served at `/media`. Omitting it leaves media off. The engine
+ *  normalizes this into a `ResolvedMediaConfig`.
  * @public
  */
-export interface AssetConfig {
+export interface MediaConfig {
   /** The R2 bucket binding name on the Worker, e.g. "MEDIA_BUCKET". Required when a site declares media. */
   bucketBinding: string;
-  /** The delivery base path. Defaults to "/media". */
-  publicBase?: string;
-  /**
-   * Whether the public URL carries the slug (`/media/<slug>.<hash>.<ext>`) or stays opaque
-   *  (`/media/<aa>/<hash>.<ext>`). Defaults to "slug".
-   */
-  urlForm?: 'slug' | 'opaque';
-  /** The maximum accepted upload size in bytes. Defaults to 25 MB. */
-  maxUploadBytes?: number;
-  /** The accepted upload MIME types. Defaults to the common web image types. */
-  allowedTypes?: string[];
-  /**
-   * Whether Cloudflare Image Transformations are enabled for the zone (default false). The feature
-   *  is a per-zone setting that the dashboard or API turns on; it cannot be flipped from a Worker. With
-   *  it off, the media resolver serves the bare full-size delivery path, so
-   *  thumbnails stay correct (full-size-but-correct) rather than pointing at a dead /cdn-cgi/image URL.
-   *  It governs only the responsive `srcset` a rendered image gets beside its full-size `src`. Set it
-   *  `true` only after enabling Transformations on the zone.
-   */
-  transformations?: boolean;
 }
 
 /**
  * The site's one renderer (design decision 4): the editor preview and every public page call it.
  *  Entry-aware so a custom renderer can vary output by concept or frontmatter; the default reads only
- *  `body` plus the resolvers. `resolve` rewrites cairn: links to live permalinks (the build passes a
+ *  `body` plus the resolvers. `resolveLink` rewrites cairn: links to live permalinks (the build passes a
  *  site-resolver-backed resolver, the preview a manifest-backed one); `resolveMedia` resolves media:
  *  references the same way. `resolveFragment` resolves an `::include` directive's fragment id to its
  *  raw markdown body, the same way; a site's render need not read it unless it wants to vary
  *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
  *  are absent for the standalone component-insert preview. The render must forward `resolveFragment`
- *  beside `resolve` and `resolveMedia`: one that drops it publishes each `::include` as literal text
+ *  beside `resolveLink` and `resolveMedia`: one that drops it publishes each `::include` as literal text
  *  with no error.
  * @public
  */
-export type SiteRender = (input: {
-  body: string;
-  concept?: string;
-  frontmatter?: Record<string, unknown>;
-  resolve?: LinkResolve;
-  resolveMedia?: import('../render/resolve-media.js').MediaResolve;
-  resolveFragment?: import('../render/resolve-include.js').FragmentResolve;
-}) => Promise<string>;
+export type SiteRender = (input: RenderInput) => Promise<string>;
 
 /**
  * The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`, in six
@@ -312,7 +286,7 @@ export interface CairnAdapter {
   /** The render subsystem: the one renderer, its directive vocabulary, and its icons. */
   rendering: {
     /**
-     * The one renderer the editor preview and every public page call (design decision 4). `resolve`
+     * The one renderer the editor preview and every public page call (design decision 4). `resolveLink`
      *  rewrites cairn: links to live permalinks; the build passes a site-resolver-backed one, the
      *  preview a manifest one. `resolveMedia` resolves media: references the same way.
      */
@@ -331,8 +305,8 @@ export interface CairnAdapter {
      */
     islands?: IslandRegistry;
   };
-  /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
-  media?: AssetConfig;
+  /** R2-backed media (seam 4): the bucket binding. Absent leaves media off. */
+  media?: MediaConfig;
   /**
    * The site's stated stance toward AI training crawlers. Absent (the default) emits nothing: the
    *  engine states no posture the site did not declare. See {@link AiPosture} for what each value
@@ -367,7 +341,8 @@ export interface CairnAdapter {
      * The whole sidebar, arranged as one ordered tree mixing the engine's screens with the
      *  site's entries (a concept id or a fixed utility-screen name as an engine reference, a
      *  developer's labeled `/admin/` link, or a one-level section of either). Absent leaves the
-     *  sidebar to the default arrangement (today's built-in shape).
+     *  sidebar to the default arrangement (today's built-in shape). `defineAdapter` keys each
+     *  `screen` to the adapter's concepts and the engine's screens.
      */
     navLayout?: NavLayout;
     /**
@@ -463,7 +438,7 @@ export interface CairnRuntime {
   supportContact?: string;
   /**
    * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  The build passes a site-resolver-backed `resolve`/`resolveMedia` pair, the preview manifest-backed
+   *  The build passes a site-resolver-backed `resolveLink`/`resolveMedia` pair, the preview manifest-backed
    *  ones.
    */
   render: SiteRender;
@@ -480,11 +455,10 @@ export interface CairnRuntime {
    */
   dictionaryPath?: string;
   /**
-   * The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
-   *  otherwise the filled config the upload, storage, delivery, and resolver paths read.
+   * The adapter's media config resolved once at compose: `{ enabled: false }` for a no-media site,
+   *  otherwise `{ enabled: true, bucketBinding }` for the upload, storage, delivery, and resolver paths.
    */
-  resolvedAssets: import('../media/config.js').ResolvedAssetConfig;
-  registry?: ComponentRegistry;
+  media: import('../media/config.js').ResolvedMediaConfig;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
   icons?: IconSet;
   navMenu?: NavMenuConfig;
@@ -507,7 +481,7 @@ export interface CairnRuntime {
   publishActions?: PublishActionEntry[];
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
-  assets?: AssetConfig;
+  assets?: MediaConfig;
   /**
    * The editor's spellcheck dictionary file, resolved once at compose from the site config's
    *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the

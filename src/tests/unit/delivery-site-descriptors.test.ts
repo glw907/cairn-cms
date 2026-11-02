@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { createGithubApp } from '../../lib/index.js';
 import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
-import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter, ConceptDescriptor } from '../../lib/content/types.js';
 
@@ -16,7 +15,6 @@ const adapter = {
   rendering: { render: ({ body }: { body: string }) => Promise.resolve(body) },
 } as unknown as CairnAdapter;
 
-const config = parseSiteConfig('siteName: Test\n');
 
 /**
  * Descriptors with `validate` nulled out. It is a fresh closure per normalize call (it binds the
@@ -27,6 +25,6 @@ const structural = (cs: ConceptDescriptor[]) => cs.map((c) => ({ ...c, validate:
 
 describe('buildSiteDescriptors', () => {
   it('equals normalizeConcepts over the adapter content (URL policy now declared per concept)', () => {
-    expect(structural(buildSiteDescriptors(adapter, config))).toEqual(structural(normalizeConcepts(adapter.content)));
+    expect(structural(buildSiteDescriptors(adapter))).toEqual(structural(normalizeConcepts(adapter.content)));
   });
 });

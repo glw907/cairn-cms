@@ -352,16 +352,16 @@ async function buildPreviewResolvers(
   }
 
   // Media: createMediaResolver, never manifestMediaResolver (whose hardcoded url form ignores a
-  // site's publicBase, presets, and imageDetail, breaking twin-render equivalence). Branch-first
+  // site's imageDetail, breaking twin-render equivalence). Branch-first
   // then default-branch fallback, so an upload newer than the site's last build still resolves;
   // branch-first is skipped for the ended page (mediaBranch null), whose branch is already gone.
   let resolveMedia: MediaResolve = () => undefined;
-  if (runtime.resolvedAssets.enabled) {
+  if (runtime.media.enabled) {
     const branchRaw = mediaBranch
       ? await backend.readFile(runtime.mediaManifestPath, mediaBranch).catch(() => null)
       : null;
     const raw = branchRaw ?? (await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null));
-    resolveMedia = createMediaResolver(parseMediaManifest(safeParseJson(raw)), runtime.resolvedAssets);
+    resolveMedia = createMediaResolver(runtime.media, parseMediaManifest(safeParseJson(raw)));
   }
 
   return { resolveLink, resolveFragment, resolveMedia };

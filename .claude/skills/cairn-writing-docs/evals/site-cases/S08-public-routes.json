@@ -2,7 +2,7 @@
   "id": "S08-public-routes",
   "suite": "site",
   "fixture": "site",
-  "seam": "createSiteIndexes content index, rssResponse, the site's public route files and menu",
+  "seam": "createSiteResolver content index, rssResponse, the site's public route files and menu",
   "bar": 4,
   "prompt": "The Notes section in the admin already gives each note its own public page, but there is no list of notes and no feed. Add a public page at /notes that lists the published notes, newest first, and link it from the site's main menu. Add an RSS feed at /notes/feed.xml that carries each note's full text with absolute links. A note still marked as a draft must appear on neither. Finish when the site type-checks and builds.",
   "setup": "setups/site/s08-public-routes.mjs",
@@ -17,7 +17,7 @@
     "Verified by building a reference solution against the emitted site: the prerendered notes page and notes/feed.xml list the three published notes, newest first, with https://showcase.test links, and omit the draft."
   ],
   "expectations": [
-    "A route at /notes reads the site's notes index (the concept index createSiteIndexes builds), so drafts are left out and the order is newest first, and the route is prerendered.",
+    "A route at /notes reads the site's notes index (the concept index createSiteResolver builds), so drafts are left out and the order is newest first, and the route is prerendered.",
     "A route at /notes/feed.xml returns rssResponse from @glw907/cairn-cms/delivery with an absolute siteUrl and feedUrl, and items whose url is the site origin plus the permalink.",
     "Each feed item carries the note's rendered body as contentHtml, rendered through the adapter's render with links resolved to absolute URLs.",
     "The main menu in src/theme/site.config.yaml links to /notes.",

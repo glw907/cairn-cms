@@ -8,6 +8,7 @@ import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { formatMediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
+import { MAX_UPLOAD_BYTES, ALLOWED_TYPES } from '../media/config.js';
 import { parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
@@ -92,17 +93,17 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     };
 
     // 1. Media on.
-    const resolved = runtime.resolvedAssets;
+    const resolved = runtime.media;
     if (!resolved.enabled) return refuse(503, 'media_disabled');
 
     // 2. Content-Length before the body is read: an absent or non-positive-integer length is a 411,
     //    an oversize length is a 413. Both refuse before the bytes are buffered. The header is
-    //    client-advisory, so the real DoS bound is the Worker request-size limit, not maxUploadBytes:
+    //    client-advisory, so the real DoS bound is the Worker request-size limit, not MAX_UPLOAD_BYTES:
     //    a lying client still buffers up to the platform ceiling before the post-read recheck (step 5).
     const lengthHeader = event.request.headers.get('content-length');
     const length = lengthHeader === null ? NaN : Number(lengthHeader);
     if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length_required');
-    if (length > resolved.maxUploadBytes) return refuse(413, 'too_large');
+    if (length > MAX_UPLOAD_BYTES) return refuse(413, 'too_large');
 
     // 3. CSRF from the X-Cairn-CSRF header (no body clone): the action is the CSRF authority for the
     //    raw-body upload, since the guard runs its form-CSRF only on form content types. An untyped
@@ -130,12 +131,12 @@ export function createMediaIngestActions(ctx: ContentRoutesContext) {
     // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
     //    than it declared; recheck the real size against the cap after the read.
     const bytes = new Uint8Array(await event.request.arrayBuffer());
-    if (bytes.length > resolved.maxUploadBytes) return refuse(413, 'too_large');
+    if (bytes.length > MAX_UPLOAD_BYTES) return refuse(413, 'too_large');
 
     // 6. Server re-derivation: trust nothing the client declared.
     const declaredType = event.request.headers.get('content-type') ?? undefined;
     const sniffed = sniffMediaType(bytes);
-    if (isDeniedUpload(bytes, declaredType) || sniffed === null || !resolved.allowedTypes.includes(sniffed)) {
+    if (isDeniedUpload(bytes, declaredType) || sniffed === null || !ALLOWED_TYPES.includes(sniffed)) {
       return refuse(415, 'unsupported_type');
     }
     const ext = extForMediaType(sniffed);

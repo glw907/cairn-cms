@@ -84,7 +84,6 @@ packaged `createD1AuditSink` failing (its `detail` is the only copy of the lost 
 | `content.field_unmarked` | Tag-like multiselect, no `taxonomy: true` | Mark the field |
 | `content.field_behavior_failed` | `behavior.validate` threw; value saved unchecked | Fix the validator named by `field` and `owner` |
 | `config.invalid` | Committed site config broken (`scope` names where) | Fix the file from the message in `error` |
-| `media.resolver_absent` | Public routes built with `assetsEnabled` and no `resolveMedia` | Pass `resolveMedia` to `createPublicRoutes` |
 | Startup error naming a concept, a field, and an undeclared target | A reference field's `concept` names no concept | Fix the name or declare the concept |
 | Build error naming a source entry, field, and missing target | A published reference points at a deleted entry | Pick another target or restore it |
 | `cairn: fragment "<id>" not found` | Include names no file in the fragments dir | Use the fragment's filename without `.md` |

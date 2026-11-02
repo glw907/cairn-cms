@@ -1,78 +1,36 @@
-// cairn-cms: media config normalization. A site declares its media setup as an AssetConfig on the
+// cairn-cms: media config normalization. A site declares its media setup as a MediaConfig on the
 // adapter; this module validates that block and resolves it into the engine-internal
-// ResolvedAssetConfig the upload, storage, and delivery paths read. An absent block means media is
-// off, so the resolved value carries an `enabled` discriminant rather than throwing. A site cannot
-// declare transform presets (the `variants` field had zero reachable runtime consumers). This
-// module is engine-internal; later phases call normalizeAssets, but the contract surface stays
-// AssetConfig.
-import type { AssetConfig } from '../content/types.js';
-import { extForMediaType } from './sniff.js';
+// ResolvedMediaConfig the upload, storage, and delivery paths read. An absent block means media is
+// off, so the resolved value carries an `enabled` discriminant rather than throwing. The one site
+// setting is the R2 binding; the size cap, the stored types, and the `/media` base are fixed.
+import type { MediaConfig } from '../content/types.js';
 
 /**
- * The resolved media config the engine serves from. When a site declares no assets block, media is
- *  off and the value is `{ enabled: false }`; otherwise every field is filled from the AssetConfig
- *  or its default.
+ * The resolved media config the engine serves from. When a site declares no media block, media is
+ *  off and the value is `{ enabled: false }`; otherwise it carries the R2 binding name.
  * @public
  */
-export type ResolvedAssetConfig =
-  | { enabled: false }
-  | {
-      enabled: true;
-      bucketBinding: string;
-      publicBase: string;
-      urlForm: 'slug' | 'opaque';
-      maxUploadBytes: number;
-      allowedTypes: string[];
-      /**
-       * Whether Cloudflare Image Transformations are enabled for the zone. With it false, the media
-       *  resolver serves the bare full-size delivery path and builds no transform URL.
-       */
-      transformations: boolean;
-    };
+export type ResolvedMediaConfig = { enabled: false } | { enabled: true; bucketBinding: string };
 
-/** The default delivery base path when the AssetConfig omits one. */
-const DEFAULT_PUBLIC_BASE = '/media';
-/** The default maximum upload size, 25 MB. */
-const DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-/** The default accepted upload MIME types: the common web image formats. */
-const DEFAULT_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+/** The maximum accepted upload size, 25 MB. */
+export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+/** The upload MIME types the engine stores: the common web image formats. */
+export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 /**
- * Validate a site's AssetConfig and resolve it into a ResolvedAssetConfig. An undefined block leaves
+ * Validate a site's MediaConfig and resolve it into a ResolvedMediaConfig. An undefined block leaves
  *  media off and returns `{ enabled: false }` rather than throwing. A declared block must name its R2
- *  bucket and carry a known urlForm; each failure throws a cairn:-prefixed error.
+ *  bucket; the failure throws a cairn:-prefixed error.
  * @remarks
- * Hoist the media block once and pass the same object here and to the adapter's `media` member, so
- * the binding name lives in one place. The engine itself normalizes the adapter's block once at
- * compose time into `CairnRuntime.resolvedAssets`. There are no named transform presets: a site
- * needing another size builds a URL against Cloudflare's `/cdn-cgi/image/<options>/<path>` format
- * directly. An `allowedTypes` entry the upload path cannot store (one `extForMediaType` answers
- * null for) throws, since the type could never match a sniffed upload.
- * @public
+ * The engine normalizes the adapter's block once at compose time into `CairnRuntime.media`, and
+ * `createMediaResolver` normalizes the block it is handed the same way.
  */
-export function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig {
-  if (assets === undefined) return { enabled: false };
+export function normalizeMedia(media: MediaConfig | undefined): ResolvedMediaConfig {
+  if (media === undefined) return { enabled: false };
 
-  if (!assets.bucketBinding) {
-    throw new Error('cairn: a media assets block must name its R2 bucket binding');
-  }
-  if (assets.urlForm !== undefined && assets.urlForm !== 'slug' && assets.urlForm !== 'opaque') {
-    throw new Error(`cairn: media urlForm must be "slug" or "opaque", got "${assets.urlForm}"`);
+  if (!media.bucketBinding) {
+    throw new Error('cairn: a media block must name its R2 bucket binding');
   }
 
-  for (const type of assets.allowedTypes ?? []) {
-    if (extForMediaType(type) === null) {
-      throw new Error(`cairn: media allowedTypes entry "${type}" is not a type the upload path stores`);
-    }
-  }
-
-  return {
-    enabled: true,
-    bucketBinding: assets.bucketBinding,
-    publicBase: assets.publicBase ?? DEFAULT_PUBLIC_BASE,
-    urlForm: assets.urlForm ?? 'slug',
-    maxUploadBytes: assets.maxUploadBytes ?? DEFAULT_MAX_UPLOAD_BYTES,
-    allowedTypes: assets.allowedTypes ?? DEFAULT_ALLOWED_TYPES,
-    transformations: assets.transformations ?? false,
-  };
+  return { enabled: true, bucketBinding: media.bucketBinding };
 }

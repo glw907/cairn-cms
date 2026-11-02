@@ -1,27 +1,24 @@
 // cairn-cms: the build-side manifest builder (content-graph design). buildSiteManifest mirrors
-// createSiteIndexes: it maps the site descriptors over the per-concept globs and projects each
-// file to a manifest row. The build-time cairn: link resolver lives beside the site resolver in
+// createSiteResolver: it buckets the site's one content glob by concept and projects each file to
+// a manifest row. The build-time cairn: link resolver lives beside the site resolver in
 // site-resolver.ts; the admin preview uses manifestLinkResolver instead.
-import { buildSiteDescriptors } from './site-descriptors.js';
+import { bucketConceptFiles } from './site-descriptors.js';
 import { fromGlob } from './content-index.js';
 import { parseMarkdown } from '../content/frontmatter.js';
 import { log } from '../log/index.js';
 import { emptyManifest, manifestEntryFromFile } from '../content/manifest.js';
 import type { Manifest, ManifestEntry } from '../content/manifest.js';
-import type { SiteConfig } from '../nav/site-config.js';
 import type { CairnAdapter } from '../content/types.js';
-import type { SiteGlobs } from './site-indexes.js';
 
 /**
- * Build the whole-corpus manifest from a site's adapter, config, and per-concept globs. Drafts are
+ * Build the whole-corpus manifest from a site's adapter and its one content glob. Drafts are
  *  included and flagged, so the admin picker and the guards see the full graph.
+ * @throws When a concept's `dir` sits outside `src/content`, or a file sits under no concept's `dir`.
  * @public
  */
-export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>): Manifest {
-  const globRecord = globs as Record<string, Record<string, string> | undefined>;
+export function buildSiteManifest(adapter: CairnAdapter, files: Record<string, string>): Manifest {
   const manifest = emptyManifest();
-  for (const descriptor of buildSiteDescriptors(adapter, config)) {
-    const record = globRecord[descriptor.id] ?? {};
+  for (const { descriptor, files: record } of bucketConceptFiles(adapter, files)) {
     const declared = new Set(descriptor.fields.map((f) => f.name));
     const undeclared = new Set<string>();
     for (const file of fromGlob(record)) {

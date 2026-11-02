@@ -303,7 +303,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       backend.branchHead(branch),
       backend.readFile(path, backend.defaultBranch),
       backend.readFile(runtime.manifestPath, backend.defaultBranch),
-      runtime.resolvedAssets.enabled
+      runtime.media.enabled
         ? backend.readFile(runtime.mediaManifestPath, backend.defaultBranch).catch(() => null)
         : Promise.resolve(null),
       backend.readFile(ctx.dictionaryFilePath(), backend.defaultBranch).catch(() => null),

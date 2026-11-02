@@ -59,7 +59,7 @@ interface MediaImageMatch {
 class MediaChipWidget extends WidgetType {
   constructor(
     readonly match: MediaImageMatch,
-    readonly publicBase: string,
+    readonly mediaBase: string,
   ) {
     super();
   }
@@ -72,7 +72,7 @@ class MediaChipWidget extends WidgetType {
     // identity (its slug/ext/hash drive the thumbnail src and the name). Comparing those keeps the
     // widget stable across a rebuild that did not change the chip.
     return (
-      this.publicBase === other.publicBase &&
+      this.mediaBase === other.mediaBase &&
       a.token === b.token &&
       a.alt === b.alt &&
       a.figureRole === b.figureRole &&
@@ -91,7 +91,7 @@ class MediaChipWidget extends WidgetType {
     if (entry) {
       const img = document.createElement('img');
       img.className = 'cm-cairn-media-thumb';
-      img.src = publicPath(entry.slug, entry.hash, entry.ext, 'slug', this.publicBase);
+      img.src = publicPath(entry.slug, entry.hash, entry.ext, this.mediaBase);
       img.alt = '';
       img.setAttribute('aria-hidden', 'true');
       chip.appendChild(img);
@@ -212,14 +212,14 @@ function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatc
 function buildMediaDecorations(
   view: EditorView,
   library: MediaLibrary,
-  publicBase: string,
+  mediaBase: string,
 ): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const match of visibleMatches(view, library)) {
     builder.add(
       match.from,
       match.to,
-      Decoration.replace({ widget: new MediaChipWidget(match, publicBase) }),
+      Decoration.replace({ widget: new MediaChipWidget(match, mediaBase) }),
     );
   }
   return builder.finish();
@@ -253,21 +253,21 @@ function buildAtomicRanges(view: EditorView, library: MediaLibrary): DecorationS
  */
 export function cairnMediaDecorations(
   library: MediaLibrary,
-  publicBase = DEFAULT_MEDIA_BASE,
+  mediaBase = DEFAULT_MEDIA_BASE,
 ): Extension {
   const plugin = ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
       atomic: DecorationSet;
       constructor(view: EditorView) {
-        this.decorations = buildMediaDecorations(view, library, publicBase);
+        this.decorations = buildMediaDecorations(view, library, mediaBase);
         this.atomic = buildAtomicRanges(view, library);
       }
       update(update: ViewUpdate) {
         // A doc edit changes the tokens; a viewport change brings new lines into view. A caret move
         // alone changes neither, so it is not a rebuild trigger here.
         if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildMediaDecorations(update.view, library, publicBase);
+          this.decorations = buildMediaDecorations(update.view, library, mediaBase);
           this.atomic = buildAtomicRanges(update.view, library);
         }
       }

@@ -23,7 +23,7 @@ the mechanism.
 
 | File | What it is |
 | --- | --- |
-| `content.ts` | The delivery content layer: globs the markdown, builds the site/posts indexes through `createSiteIndexes`. |
+| `content.ts` | The delivery content layer: globs the markdown, builds the typed site resolver through `createSiteResolver`. |
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
 | `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, the preview route, and the home page's SEO head so their rendering config can never drift apart. |
 | `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |
@@ -153,7 +153,7 @@ engine's emitted-classes registry (the `cairn-styling-public-pages` skill's styl
 straight quotes into curly ones, `--`/`---` into en/em dashes, and `...` into a real ellipsis. It
 runs over the mdast tree, so it only ever visits text nodes; inline code, fenced code blocks, and
 link URLs stay untouched structurally, with no allowlist or escaping needed. `cairn.config.ts`
-wires it once, at its one `createRenderer(registry, { remarkPlugins: proseTypography })` call, so
+wires it once, at its one `createRenderer({ components, remarkPlugins: proseTypography, ... })` call, so
 both the public render and the editor's live preview inherit it.
 
 **The theme-toggle mechanism (`theme-toggle.ts`).** `resolveTheme`/`applyTheme`/`toggleTheme` know

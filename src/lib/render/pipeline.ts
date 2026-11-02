@@ -29,21 +29,68 @@ import type { LinkResolve } from '../content/links.js';
 export type { DocHeading } from './collect-headings.js';
 
 /**
- * The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto
+ * The per-call resolver hooks `render` and `renderDocument` both accept, threaded onto
  * the VFile's data so the cairn: link, media:, and ::include steps read them at process time.
  * @public
  */
 export type ResolveOptions = {
-  resolve?: LinkResolve;
+  /** Rewrites `cairn:` links to live permalinks. Absent, a `cairn:` link is left unresolved. */
+  resolveLink?: LinkResolve;
+  /** Resolves `media:` references. Absent, the renderer's `resolveMedia` default applies. */
   resolveMedia?: MediaResolve;
+  /** Resolves an `::include` fragment id to its raw markdown body. Absent, the directive stays literal text. */
   resolveFragment?: FragmentResolve;
 };
 
 /**
- * The render options `createRenderer` takes beside the component registry.
+ * The one input `render`, `renderDocument`, and `SiteRender` share: the entry's body, the entry
+ * context a custom renderer may vary output by, and the per-call resolvers.
+ * @public
+ */
+export type RenderInput = ResolveOptions & {
+  /** The markdown to render. */
+  body: string;
+  /** The entry's concept id. Absent for the standalone component-insert preview. */
+  concept?: string;
+  /** The entry's frontmatter. Absent for the standalone component-insert preview. */
+  frontmatter?: Record<string, unknown>;
+};
+
+/**
+ * The render pipeline `createRenderer` returns.
+ * @public
+ */
+export interface Renderer {
+  /**
+   * Render an input to sanitized HTML. It is a standalone function, so a site passes
+   * `renderer.render` straight as `rendering.render` with every resolver in `RenderInput`
+   * forwarded.
+   * @returns The rendered HTML string.
+   */
+  render(input: RenderInput): Promise<string>;
+  /**
+   * Render an input and also collect its headings.
+   * @returns The HTML plus the document's `headings` in document order, collected from the final
+   * rehype tree after `rehypeSlug` and any site `rehypePlugins` have run.
+   */
+  renderDocument(input: RenderInput): Promise<{ html: string; headings: DocHeading[] }>;
+}
+
+/**
+ * The options `createRenderer` takes.
  * @public
  */
 export interface RendererConfig {
+  /**
+   * The site's component registry, from `defineRegistry`. Absent, the renderer knows no
+   *  components and renders plain markdown.
+   */
+  components?: ComponentRegistry;
+  /**
+   * The default `media:` resolver, used when an input carries no `resolveMedia` of its own. An
+   *  input's own resolver always wins.
+   */
+  resolveMedia?: MediaResolve;
   /**
    * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
    *  directive markers and the common benign tags) and returns the schema to use. Add to the
@@ -98,19 +145,14 @@ export interface RendererConfig {
 }
 
 /**
- * Compose a site's render pipeline from its component registry: directive syntax to
- *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the fully composed
- *  remark/rehype plugin arrays, including any `RendererConfig.remarkPlugins`/`rehypePlugins`
- *  a site supplied, so the admin editor preview can reuse the exact same set. `renderDocument`
- *  takes the same options and additionally returns the document's `headings`, collected from the
- *  final rehype tree (after `rehypeSlug` and any site `rehypePlugins` have run), in document
- *  order.
+ * Compose a site's render pipeline from its config: directive syntax to stamped markers to
+ *  registry-built hast. Returns a `Renderer` whose `render` and `renderDocument` take one
+ *  `RenderInput`, so `render: renderer.render` forwards every resolver.
  * @public
  */
-export function createRenderer(
-  registry: ComponentRegistry = defineRegistry({ components: [] }),
-  options: RendererConfig = {},
-) {
+export function createRenderer(config: RendererConfig = {}): Renderer {
+  const options = config;
+  const registry = config.components ?? defineRegistry({ components: [] });
   const remarkPlugins: PluggableList = [
     remarkDirective,
     // Must run before remarkDirectiveStamp, which unconditionally restores every leaf/text
@@ -155,9 +197,8 @@ export function createRenderer(
   if (options.tableScroll !== false) rehypePlugins.push(rehypeTableScroll);
   // A site's rehype plugins run last of all, over the already-wrapped tree.
   rehypePlugins.push(...(options.rehypePlugins ?? []));
-  // Build the processor with an optional trailing rehype step, so renderMarkdown and
-  // renderDocument share every stage up to that point without either mutating the `rehypePlugins`
-  // array this function returns (the editor preview reuses that exact array).
+  // Build the processor with an optional trailing rehype step, so render and renderDocument
+  // share every stage up to that point without either mutating the `rehypePlugins` array.
   const buildProcessor = (extraRehype: PluggableList) =>
     unified()
       .use(remarkParse)
@@ -169,39 +210,26 @@ export function createRenderer(
       .use(rehypeStringify);
   const processor = buildProcessor([]);
   // The heading-collector processor is built lazily, on renderDocument's first call, not here: every
-  // current consumer only ever calls renderMarkdown, so building it eagerly would double the
+  // current consumer only ever calls render, so building it eagerly would double the
   // attacher setup cost on every Worker cold start for a site that never calls renderDocument.
   let documentProcessor: ReturnType<typeof buildProcessor> | undefined;
-  const makeFile = (content: string, opts: ResolveOptions) =>
+  const makeFile = (input: RenderInput) =>
     new VFile({
-      value: content,
+      value: input.body,
       data: {
-        [CAIRN_RESOLVE]: opts.resolve,
-        [MEDIA_RESOLVE]: opts.resolveMedia,
-        [FRAGMENT_RESOLVE]: opts.resolveFragment,
+        [CAIRN_RESOLVE]: input.resolveLink,
+        [MEDIA_RESOLVE]: input.resolveMedia ?? config.resolveMedia,
+        [FRAGMENT_RESOLVE]: input.resolveFragment,
       },
     });
   return {
-    remarkPlugins,
-    rehypePlugins,
-    renderMarkdown: async (content: string, opts: ResolveOptions = {}): Promise<string> => {
-      return String(await processor.process(makeFile(content, opts)));
-    },
-    renderDocument: async (
-      content: string,
-      opts: ResolveOptions = {},
-    ): Promise<{ html: string; headings: DocHeading[] }> => {
+    render: async (input) => String(await processor.process(makeFile(input))),
+    renderDocument: async (input) => {
       // The heading-collector plugin runs after rehypePlugins (which already carries the site's
       // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
       documentProcessor ??= buildProcessor([rehypeCollectHeadings]);
-      const file = await documentProcessor.process(makeFile(content, opts));
+      const file = await documentProcessor.process(makeFile(input));
       return { html: String(file), headings: (file.data[DOC_HEADINGS] as DocHeading[] | undefined) ?? [] };
     },
   };
 }
-
-/**
- * What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`.
- * @public
- */
-export type Renderer = ReturnType<typeof createRenderer>;

@@ -3,7 +3,7 @@
 // and `CairnManifestOptions`); it is the plugin's implementation plus the lower-level functions
 // the cairn-manifest bin and its unit tests import by relative path, unreachable
 // from the package's `@glw907/cairn-cms/vite` subpath. It owns a virtual module that runs
-// import.meta.glob over the content dirs inside the app's Vite graph, builds the manifest with
+// import.meta.glob over src/content inside the app's Vite graph, builds the manifest with
 // the engine builder, and verifies it against the committed file. The verify runs in the plugin's
 // buildStart hook, so a drift throws there and fails the build (or the dev server's start) as a hard
 // error, outside the prerender request lifecycle (where handleHttpError could downgrade it). Under
@@ -32,23 +32,12 @@ const CAIRN_OPTIONS = Symbol.for('cairn-cms.manifest-options');
 type CairnManifestPlugin = Plugin & { [CAIRN_OPTIONS]?: CairnManifestOptions };
 
 /**
- * Options for {@link cairnManifest}. Paths are app-root-absolute (the form `import.meta.glob` wants),
- *  so they match the build's resolution.
+ * Options for {@link cairnManifest}.
  * @public
  */
 export interface CairnManifestOptions {
-  /** The module exporting the `cairn` adapter and the parsed `siteConfig`, app-root-absolute. */
+  /** The module exporting the `cairn` adapter, app-root-absolute. */
   configModule: string;
-  /**
-   * Per-concept content globs, keyed by concept id, app-root-absolute. A concept with no entry here
-   *  gets no manifest rows, and the plugin neither throws nor warns, so give every concept a glob,
-   *  the reserved `fragments` concept included, the same one `createSiteIndexes` receives.
-   */
-  content: Record<string, string>;
-  /** The committed manifest path, app-root-absolute. Defaults to `/src/content/.cairn/index.json`. */
-  manifestPath?: string;
-  /** The committed site-facts path, app-root-absolute. Defaults to `/src/content/.cairn/site-facts.json`. */
-  siteFactsPath?: string;
 }
 
 const VIRTUAL_ID = 'virtual:cairn-manifest';
@@ -58,11 +47,14 @@ const RESOLVED_ID = '\0' + VIRTUAL_ID;
 const ADAPTER_FACTS_VIRTUAL_ID = 'virtual:cairn-manifest/adapter-facts';
 const ADAPTER_FACTS_RESOLVED_ID = '\0' + ADAPTER_FACTS_VIRTUAL_ID;
 
-/** The default committed manifest path, app-root-absolute. */
+/** The committed manifest path, app-root-absolute. */
 const DEFAULT_MANIFEST_PATH = '/src/content/.cairn/index.json';
 
-/** The default committed site-facts path, app-root-absolute. */
+/** The committed site-facts path, app-root-absolute. */
 const DEFAULT_SITE_FACTS_PATH = '/src/content/.cairn/site-facts.json';
+
+/** The committed site-facts path, app-root-relative, the form a join and a message read. */
+const SITE_FACTS_REL_PATH = DEFAULT_SITE_FACTS_PATH.replace(/^\//, '');
 
 /**
  * Build the virtual module source. In verify mode it throws on drift; in write mode it exports the
@@ -70,15 +62,8 @@ const DEFAULT_SITE_FACTS_PATH = '/src/content/.cairn/site-facts.json';
  *  package, and `?raw` resolution is the build's.
  */
 function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): string {
-  const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
-  const globEntries = Object.entries(opts.content)
-    .map(
-      ([id, pattern]) =>
-        `  ${JSON.stringify(id)}: import.meta.glob(${JSON.stringify(pattern)}, { query: '?raw', import: 'default', eager: true }),`,
-    )
-    .join('\n');
   // In write mode the committed file may not exist yet, so do not import it.
-  const committedImport = mode === 'verify' ? `import committed from ${JSON.stringify(manifestPath + '?raw')};` : '';
+  const committedImport = mode === 'verify' ? `import committed from ${JSON.stringify(DEFAULT_MANIFEST_PATH + '?raw')};` : '';
   // In verify mode, run verifyReferences after verifyManifest, inside the generated source where the
   // built manifest is in scope. References have no prerender backstop, so this build gate is their only
   // integrity authority; it cannot move to the verifyManifestFromVite TS call site, where `built` does
@@ -90,12 +75,10 @@ function virtualSource(opts: CairnManifestOptions, mode: 'verify' | 'write'): st
   return `
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
 import { formatManifest, verifyManifest, verifyReferences } from '@glw907/cairn-cms';
-import { cairn, siteConfig } from ${JSON.stringify(opts.configModule)};
+import { cairn } from ${JSON.stringify(opts.configModule)};
 ${committedImport}
-const globs = {
-${globEntries}
-};
-const built = buildSiteManifest(cairn, siteConfig, globs);
+const files = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true });
+const built = buildSiteManifest(cairn, files);
 export const result = ${resultExpr};
 `;
 }
@@ -186,7 +169,7 @@ export function resolveConsumerVite(root: string): string {
  */
 // WATCH: stripping 'cairn-manifest' also drops its `config` hook, so the nested server does not
 // define __CAIRN_DEV_BUILD__. That is harmless while nothing in the config module's graph reads the
-// global; revisit if one does.
+// global; revisit if one does. The `ssr.noExternal` half of the hook is restored by cairnVirtualOnly.
 const NESTED_SERVER_STRIPPED = new Set([
   'cairn-manifest',
   'vite-plugin-sveltekit-adapter-cloudflare-virtual-workers-module',
@@ -241,10 +224,15 @@ export async function buildManifestFromVite(opts: CairnManifestOptions, root: st
   return evalVirtual(virtualSource(opts, 'write'), root);
 }
 
-/** The configured site-facts path, app-root-relative (no leading slash), for joining and display. */
-function siteFactsRelPath(opts: CairnManifestOptions): string {
-  return (opts.siteFactsPath ?? DEFAULT_SITE_FACTS_PATH).replace(/^\//, '');
-}
+/**
+ * The packages Vite must process rather than externalize: the engine ships `.svelte` and TS source,
+ *  and the dev backend ships JavaScript importing `cloudflare:workers`, a scheme Node's loader
+ *  rejects. Vite's `mergeConfig` concatenates array values, so a site's own list is kept.
+ */
+const CAIRN_NO_EXTERNAL = ['@glw907/cairn-cms', '@glw907/cairn-cms-dev'];
+
+/** The config both the plugin and the nested verify server contribute. */
+const CAIRN_SSR_CONFIG = { ssr: { noExternal: CAIRN_NO_EXTERNAL } };
 
 /** The global the dev-backend gate reads at every call site, defined by the plugin's `config` hook. */
 const DEV_BUILD_DEFINE = '__CAIRN_DEV_BUILD__';
@@ -272,7 +260,8 @@ async function e2eFlagSet(mode: string): Promise<boolean> {
  * Its `config` hook defines `__CAIRN_DEV_BUILD__`: `true` under `vite dev` and in a build with
  * `VITE_CAIRN_E2E=1` (read from the process env and the working directory's `.env` files), `false`
  * otherwise, so a guarded dev-backend branch folds out of a deployed Worker. A `define` the site
- * already sets for the name wins.
+ * already sets for the name wins. The hook also adds `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`
+ * to `ssr.noExternal`, merged with any list the site sets, so a site's config names neither.
  *
  * Beside the content manifest it verifies `site-facts.json` in `buildStart`, on every build. The
  * file carries `version` (always `1`) and, omitted when the adapter declares none, `mediaBucketBinding`
@@ -300,12 +289,12 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
     // mints owner sessions must never compile into a deployed Worker). Vite substitutes the name as
     // a literal into each module that reads it, so each guarded branch folds where it is written.
     // A define the site already set wins in either plugin order: Vite merges a hook's result over
-    // the config so far, so the hook returns nothing once the name is present. The hook starts no
+    // the config so far, so the hook leaves the define out once the name is present. The hook starts no
     // nested server, only reads the flag through the site's `loadEnv`.
     async config(config, { command, mode }) {
-      if (config.define && DEV_BUILD_DEFINE in config.define) return;
+      if (config.define && DEV_BUILD_DEFINE in config.define) return CAIRN_SSR_CONFIG;
       const flagged = command === 'serve' || (await e2eFlagSet(mode));
-      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) } };
+      return { define: { [DEV_BUILD_DEFINE]: JSON.stringify(flagged) }, ...CAIRN_SSR_CONFIG };
     },
     configResolved(config) {
       // Capture the resolved app root so the nested server loads the same config the build did.
@@ -331,7 +320,7 @@ export function cairnManifest(opts: CairnManifestOptions): Plugin {
         : await (buildChecks ??= runStartChecks(opts, root));
       if ('manifestError' in checks) this.error(checks.manifestError);
       if (checks.siteFacts.status === 'absent') {
-        this.warn(siteFactsAbsentWarning(siteFactsRelPath(opts)));
+        this.warn(siteFactsAbsentWarning(SITE_FACTS_REL_PATH));
       } else if (checks.siteFacts.status === 'skipped') {
         this.warn(checks.siteFacts.message);
       } else if (checks.siteFacts.status === 'stale') {
@@ -390,17 +379,16 @@ async function loadCairnBuild(cwd: string): Promise<{ opts: CairnManifestOptions
 
 /**
  * Regenerate the committed manifest from the consumer's corpus and write it to the configured
- *  manifestPath under the Vite root {@link loadCairnBuild} derives, evaluating the write-mode
+ *  manifest path under the Vite root {@link loadCairnBuild} derives, evaluating the write-mode
  *  virtual module through the build's resolution. The cairn-manifest bin calls this; it is
  *  exported so the write logic is testable apart from the CLI shell.
  */
 export async function writeManifest(cwd: string = process.cwd()): Promise<void> {
   const { opts, root } = await loadCairnBuild(cwd);
   const serialized = await buildManifestFromVite(opts, root);
-  const manifestPath = opts.manifestPath ?? DEFAULT_MANIFEST_PATH;
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
   // against the Vite root, not the filesystem root or the config-search cwd.
-  const outPath = join(root, manifestPath.replace(/^\//, ''));
+  const outPath = join(root, DEFAULT_MANIFEST_PATH.replace(/^\//, ''));
   // The rebuild derives every row from a content file, and publishedAt is manifest-owned, so merge
   // the committed stamps back in before writing. Without this, regenerating would clear every one.
   const committed = await readFile(outPath, 'utf8').catch(() => null);
@@ -410,13 +398,13 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
 
 /**
  * Regenerate the committed `site-facts.json` from the consumer's adapter and write it to the
- *  configured siteFactsPath, sharing the manifest bin's config discovery and root derivation so
+ *  default site-facts path, sharing the manifest bin's config discovery and root derivation so
  *  the file always tracks the exact adapter the build verifies against.
  */
 export async function writeSiteFacts(cwd: string = process.cwd()): Promise<void> {
   const { opts, root } = await loadCairnBuild(cwd);
   const serialized = await buildSiteFactsFromVite(opts, root);
-  const outPath = join(root, siteFactsRelPath(opts));
+  const outPath = join(root, SITE_FACTS_REL_PATH);
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, serialized);
 }
@@ -481,6 +469,8 @@ function findCairnOptions(plugins: unknown): CairnManifestOptions | null {
 function cairnVirtualOnly(source: string): Plugin {
   return {
     name: 'cairn-manifest-virtual',
+    // The stripped cairnManifest plugin took its config hook with it; Vite merges this the same way.
+    config: () => CAIRN_SSR_CONFIG,
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID;
     },
@@ -609,7 +599,7 @@ export async function buildSiteFactsFromVite(
 
 /**
  * Build the build-log warning `checkSiteFacts` reports once when the committed file at `path` (the
- *  configured `siteFactsPath`, app-root-relative for display) does not exist yet.
+ *  default site-facts path, app-root-relative for display) does not exist yet.
  */
 export function siteFactsAbsentWarning(path: string): string {
   return `cairn-cms: ${path} is missing. Run \`npx cairn-manifest\` to create it.`;
@@ -652,7 +642,7 @@ export async function checkSiteFacts(
   root: string,
   server?: ViteDevServer,
 ): Promise<SiteFactsCheck> {
-  const relPath = siteFactsRelPath(opts);
+  const relPath = SITE_FACTS_REL_PATH;
   const committed = await readFile(join(root, relPath), 'utf8').catch(() => null);
   if (committed === null) return { status: 'absent' };
   let expected: string;

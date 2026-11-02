@@ -9,7 +9,7 @@ describe('delivery data split', { timeout: 20_000 }, () => {
   it('exposes the pure projections from the data barrel', async () => {
     const data = await import('../../lib/delivery/data.js');
     expect(typeof data.buildSiteManifest).toBe('function');
-    expect(typeof data.createSiteIndexes).toBe('function');
+    expect(typeof data.createSiteResolver).toBe('function');
     expect(typeof data.buildRssFeed).toBe('function');
   });
 

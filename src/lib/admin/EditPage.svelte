@@ -1369,8 +1369,8 @@ island.
       uploadedRecords.map((r) => [r.hash, { slug: r.slug, ext: r.ext, contentType: r.contentType }]),
     ),
   });
-  // The site's delivery base, provided by CairnAdminShell; a bare mount (a test, the reproductions
-  // module) falls back to the /media default, as MediaPicker does. The slug form matches the
+  // The delivery base; only the reproductions module provides it, and every other mount uses the
+  // /media default, as MediaPicker does. The slug form matches the
   // picker, since the delivery route reads hash and extension from the last path segment.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
   const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets, mediaBase));
@@ -1486,7 +1486,7 @@ island.
           body: md,
           concept: data.conceptId,
           frontmatter: data.frontmatter,
-          resolve,
+          resolveLink: resolve,
           resolveMedia: resolveMediaRef,
           resolveFragment: resolveFragmentRef,
         });

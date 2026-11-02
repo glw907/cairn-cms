@@ -17,21 +17,16 @@ import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type Media
 import { parseMediaToken } from '../../lib/media/reference.js';
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { ResolvedAssetConfig } from '../../lib/media/config.js';
+import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { Backend } from '../../lib/github/backend.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
 
-const MEDIA_ON: ResolvedAssetConfig = {
+const MEDIA_ON: ResolvedMediaConfig = {
   enabled: true,
   bucketBinding: 'MEDIA_BUCKET',
-  publicBase: '/media',
-  urlForm: 'slug',
-  maxUploadBytes: 25 * 1024 * 1024,
-  allowedTypes: ['image/jpeg'],
-  transformations: false,
 };
 
 function runtime(): CairnRuntime {
@@ -47,7 +42,7 @@ function runtime(): CairnRuntime {
     ],
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
-    resolvedAssets: MEDIA_ON,
+    media: MEDIA_ON,
   });
 }
 

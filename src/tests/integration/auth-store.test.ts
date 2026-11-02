@@ -16,6 +16,7 @@ import {
   setEditorRole,
 } from '../../lib/auth/store.js';
 import { insertPreviewToken, findPreviewToken } from '../../lib/auth/preview-store.js';
+import { hashToken } from '../../lib/auth/crypto.js';
 import { CairnError } from '../../lib/diagnostics/error.js';
 import type { D1Database } from '@cloudflare/workers-types';
 
@@ -270,6 +271,33 @@ describe('sessions (server-side, role read live)', () => {
 
   it('returns null when no session row matched, so the caller can skip its record', async () => {
     expect(await deleteSession(db, 'sid-never-existed')).toBeNull();
+  });
+
+  it('stores only the id digest: the raw id selects no row, while resolveSession on it still answers', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-raw', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    expect(await db.prepare('SELECT 1 FROM session WHERE id = ?').bind('sid-raw').first()).toBeNull();
+    expect(await db.prepare('SELECT 1 FROM session WHERE id = ?').bind(await hashToken('sid-raw')).first()).not.toBeNull();
+    expect((await resolveSession(db, 'sid-raw', Date.now()))?.email).toBe('ed@x.dev');
+  });
+
+  it('deleteSession on the raw id removes the digest row', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-out', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await deleteSession(db, 'sid-out');
+    expect(await db.prepare('SELECT 1 FROM session WHERE id = ?').bind(await hashToken('sid-out')).first()).toBeNull();
+  });
+
+  it('a prior id passed to createSession is deleted with the insert, and another session survives', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const future = Date.now() + 10_000;
+    await createSession(db, 'sid-this-browser', 'ed@x.dev', future, Date.now());
+    await createSession(db, 'sid-other-device', 'ed@x.dev', future, Date.now());
+    await createSession(db, 'sid-this-browser-again', 'ed@x.dev', future, Date.now(), 'sid-this-browser');
+    expect(await resolveSession(db, 'sid-this-browser', Date.now())).toBeNull();
+    expect(await resolveSession(db, 'sid-other-device', Date.now())).not.toBeNull();
+    expect(await resolveSession(db, 'sid-this-browser-again', Date.now())).not.toBeNull();
+    expect(await countRows('session')).toBe(2);
   });
 });
 

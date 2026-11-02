@@ -10,6 +10,7 @@
 // counts toward the last-owner guards.
 import type { D1Database, D1PreparedStatement, D1Result } from '@cloudflare/workers-types';
 import { CairnError } from '../diagnostics/error.js';
+import { hashToken } from './crypto.js';
 import type { Editor } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: string };
@@ -215,14 +216,25 @@ export async function consumeToken(
   }
 }
 
-/** Create a session row. */
+/**
+ * Create a session row. The row stores the id's digest, never the id, the same exposure rule
+ * `magic_token` follows for its token, so a read of the table yields nothing a browser can
+ * present. `priorId` is the session id this browser already held, if any; its row goes in the
+ * same batch as the insert, so a re-login leaves one row per browser while another device's
+ * session survives.
+ */
 export async function createSession(
   db: D1Database,
   id: string,
   email: string,
   expiresAt: number,
   now: number,
+  priorId?: string,
 ): Promise<void> {
+  const prior =
+    priorId === undefined
+      ? []
+      : [db.prepare('DELETE FROM session WHERE id = ?').bind(await hashToken(priorId))];
   await db.batch([
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
     // issueToken's sweep (above) runs the identical unindexed idiom against magic_token, and
@@ -235,15 +247,17 @@ export async function createSession(
     // expires_at-sweep idiom for preview_tokens instead, the deliberate counter-example this
     // ruling does not extend to. Reopen if editor rosters stop being small.
     db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
+    ...prior,
     db
       .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(id, normalizeEmail(email), expiresAt, now),
+      .bind(await hashToken(id), normalizeEmail(email), expiresAt, now),
   ]);
 }
 
 /**
  * Resolve a session to its editor, joining `editor` so the role is read live. An expired
- * session or a removed editor resolves to null, which revokes access on the next request.
+ * session or a removed editor resolves to null, which revokes access on the next request. `id`
+ * is the raw cookie value; the lookup is by its digest.
  */
 export async function resolveSession(db: D1Database, id: string, now: number): Promise<UnresolvedEditor | null> {
   const row = await db
@@ -252,7 +266,7 @@ export async function resolveSession(db: D1Database, id: string, now: number): P
        FROM session s JOIN editor e ON e.email = s.email
        WHERE s.id = ? AND s.expires_at > ?`,
     )
-    .bind(id, now)
+    .bind(await hashToken(id), now)
     .first<EditorCols>();
   return row ? toEditor(row) : null;
 }
@@ -266,12 +280,13 @@ export type DeletedSession = { email: string; expiresAt: number };
  * gives the logout record a subject the caller has no other way to reach: logout is a public
  * admin path, so the guard never resolves an editor onto it. The delete is unconditional, an
  * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
- * `now` to decide whether the row was still live before emitting a destroyed record.
+ * `now` to decide whether the row was still live before emitting a destroyed record. `id` is the
+ * raw cookie value; the delete matches its digest.
  */
 export async function deleteSession(db: D1Database, id: string): Promise<DeletedSession | null> {
   const row = await db
     .prepare('DELETE FROM session WHERE id = ? RETURNING email, expires_at')
-    .bind(id)
+    .bind(await hashToken(id))
     .first<{ email: string; expires_at: number }>();
   return row ? { email: row.email, expiresAt: row.expires_at } : null;
 }

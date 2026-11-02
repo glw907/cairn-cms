@@ -9,6 +9,7 @@ import type { Backend } from '../../lib/github/backend.js';
 import { defineFieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
 import { log } from '../../lib/log/index.js';
+import { hashToken } from '../../lib/auth/crypto.js';
 import { testEvent } from '../helpers/test-event.js';
 import { setFakeEnv } from '../helpers/cloudflare-workers-fake.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -226,7 +227,9 @@ describe('auth actions', () => {
       cookies: { '__Host-cairn_session': 'sid' },
     });
     await expectRedirect(admin.actions.logout(event), '/admin/login');
-    expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
+    // The store matches the cookie's digest, never the raw id.
+    const digest = await hashToken('sid');
+    expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === digest)).toBe(true);
     // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
     // token cannot survive sign-out. Both cookie-name forms delete for both cookies (Task 6,
     // belt-and-braces N1), so a PUBLIC_ORIGIN change between login and logout cannot strand a

@@ -532,6 +532,14 @@ describe('sign-in rate limit', () => {
     expect(JSON.stringify(record)).not.toContain('203.0.113.7');
     expect(JSON.stringify(record)).not.toContain('%32%30');
   });
+
+  it('logs a name set to the address as a non-error throw', async () => {
+    const record = await failedRecord(() => ({
+      limit: () => Promise.reject(Object.assign(new Error('x'), { name: 'login:203.0.113.7' })),
+    }));
+    expect(record.error).toBe('non-error throw');
+    expect(JSON.stringify(record)).not.toContain('203.0.113.7');
+  });
 });
 
 describe('first-owner seeding', () => {

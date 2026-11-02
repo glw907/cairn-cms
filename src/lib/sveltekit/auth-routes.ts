@@ -158,13 +158,15 @@ function mintOrReusePendingNonce(event: CairnEvent): string {
 
 /**
  * The loggable form of a limiter failure: the error's name and a fixed message, capped at 300
- * characters. Limiter-supplied text is never logged, since a limiter may echo its key in any
- * encoding and no masking of the literal address would catch every form. A thrown value with no
- * string name (a SvelteKit `redirect()` or `error()` object included) logs as `non-error throw`.
+ * characters. A limiter's message is never logged, since a limiter may echo its key in any
+ * encoding and no masking of the literal address would catch every form. A name is logged only
+ * when it is a plain identifier (letters and digits, at most 40), so a name set to the key cannot
+ * carry it. A thrown value with no such name (a SvelteKit `redirect()` or `error()` object
+ * included) logs as `non-error throw`.
  */
 function describeLimiterFailure(error: unknown): string {
   const name = (error as { name?: unknown } | null)?.name;
-  const label = typeof name === 'string' && name ? name : 'non-error throw';
+  const label = typeof name === 'string' && /^[A-Za-z][A-Za-z0-9]{0,39}$/.test(name) ? name : 'non-error throw';
   return label === 'non-error throw' ? label : `${label}: rate limit call failed`.slice(0, 300);
 }
 

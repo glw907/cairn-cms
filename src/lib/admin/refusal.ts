@@ -18,7 +18,7 @@ export interface RefusalOptions {
    * Runs for every result that is not a redirect, once `update()` has applied it and the flag has
    * cleared, so a screen keyed on its own state never remounts an alert for the previous `form`. An
    * `error` result arrives here and nowhere else, since it is never applied to the page, and so does
-   * an `update()` that rejects, as an `error` result carrying the rejection.
+   * an `update()` that rejects, as an `error` result carrying the rejection's message.
    */
   onResult?: (result: SettledResult, formElement: HTMLFormElement) => void;
   /** Refresh every load after a refusal, for a screen whose data decides who can act. */
@@ -59,7 +59,7 @@ export function refusalSubmit(options: RefusalOptions): SubmitFunction {
         try {
           await update(options.refreshAllOnFailure && result.type === 'failure' ? { refreshAll: true } : undefined);
         } catch (error) {
-          settled = { type: 'error', error };
+          settled = { type: 'error', error: { status: 500, message: error instanceof Error ? error.message : String(error) } };
         }
       }
       options.setPending(false);

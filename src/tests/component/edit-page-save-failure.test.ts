@@ -489,7 +489,7 @@ describe('EditPage refusal points at its field', () => {
     const screen = await mountRefused('stray');
     const stray = document.createElement('input');
     stray.id = 'stray';
-    screen.container.querySelector('form#cairn-edit-form')!.append(stray);
+    screen.container.querySelector('form#cairn-edit-form')!.appendChild(stray);
     await submitSave(screen);
     settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field: 'stray' } });
     await expect.poll(() => document.activeElement === banner(screen)).toBe(true);

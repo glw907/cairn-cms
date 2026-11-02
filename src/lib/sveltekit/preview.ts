@@ -389,8 +389,8 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
 /**
  * Serve a public preview link: verify the token, then render the shared draft (or, once the
  *  branch is gone, the ended page) through the site's public composition, so a preview and a
- *  published page can never structurally drift. `config` is the site's `PublicRoutesConfig`,
- *  the literal object it hands `createPublicRoutes`.
+ *  published page can never structurally drift. `publicRoutes` is the site's
+ *  `PublicRoutesConfig`, the literal object it hands `createPublicRoutes`.
  *
  * The verification chain runs strictly in this order, cheapest first: the token's shape (a 404
  *  with no D1 read or log for spray traffic), the `AUTH_DB` binding, the row lookup by hash, the
@@ -432,7 +432,10 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  prerendered.
  * @scaffold
  */
-export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
+export async function loadPreview(
+  event: CairnEvent,
+  { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig },
+): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
   if (await isBuilding()) {
@@ -499,7 +502,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
     if (!publishedEntry) rejectPreview('branch_gone', { concept: concept.id, id: row.entryId });
 
     const resolvers = await buildPreviewResolvers(runtime, backend, manifest, concept, row.entryId, null);
-    const data = await composeEntryData(config, publishedEntry, resolvers);
+    const data = await composeEntryData(publicRoutes, publishedEntry, resolvers);
     return {
       ...data,
       seo: stripPreviewSeo(data.seo),
@@ -517,7 +520,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
   const draftRow = manifestEntryFromFile(concept, { path, raw: draftRaw });
   const upsertedManifest = upsertEntry(manifest, draftRow);
   const resolvers = await buildPreviewResolvers(runtime, backend, upsertedManifest, concept, row.entryId, branch);
-  const data = await composeEntryData(config, draftEntry, resolvers);
+  const data = await composeEntryData(publicRoutes, draftEntry, resolvers);
   return {
     ...data,
     seo: stripPreviewSeo(data.seo),

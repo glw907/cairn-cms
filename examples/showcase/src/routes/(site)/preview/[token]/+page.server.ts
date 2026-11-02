@@ -17,4 +17,4 @@ import { withReferences } from '#chassis/entry-data.js';
 export const prerender = false;
 
 export const load: PageServerLoad = (event) =>
-  loadPreview(runtime, publicRoutesConfig, event).then(withReferences);
+  loadPreview(event, { runtime, publicRoutes: publicRoutesConfig }).then(withReferences);

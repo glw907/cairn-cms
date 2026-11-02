@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, rm, writeFile, chmod } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -167,7 +167,7 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
   // Stopping before chapter 2 must not cost this run its closing block, which every other
   // already-live run prints.
   assert.ok(
-    result.stdout.includes('Your site is live on GitHub:'),
+    result.stdout.includes('Your private repository on GitHub:'),
     `expected the closing block's repo line, got: ${result.stdout}`,
   );
   assert.ok(
@@ -237,6 +237,11 @@ test('bin.mjs resumes a pushed record and notes an --owner-email override in the
   await writeFile(
     path.join(dir, 'wrangler.jsonc'),
     JSON.stringify({ name: 'alpine-club', vars: { PUBLIC_ORIGIN: 'http://localhost:4173' } }, null, 2),
+  );
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'src/theme/cairn.config.ts'),
+    "export const publicOrigin = 'https://showcase.test';\n",
   );
 
   const fake = await makeFakeBin('resume-pushed-override');

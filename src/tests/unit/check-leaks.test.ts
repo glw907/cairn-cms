@@ -470,6 +470,18 @@ describe('runLeakCheck over a tree', () => {
     expect(runLeakCheck(leaked).findings.map((finding) => finding.cls)).toEqual(['C1']);
   });
 
+  it('scans the create-cairn-site package source at T2, and skips its test files', () => {
+    const pkg = 'packages/create-cairn-site';
+    for (const path of [`${pkg}/bin.mjs`, `${pkg}/src/x.mjs`, `${pkg}/README.md`]) {
+      const { findings } = runLeakCheck(tree({ [path]: 'Modeled on 907.life.\n' }));
+      expect(findings.map((finding) => finding.cls), path).toEqual(['C1']);
+    }
+    const tested = runLeakCheck(tree({ [`${pkg}/src/x.test.mjs`]: 'Modeled on 907.life.\n' }));
+    expect(tested.findings).toEqual([]);
+    expect(profileFor(`${pkg}/src/x.test.mjs`)).toBeNull();
+    expect(profileFor(`${pkg}/src/x.mjs`)).toEqual({ tier: 'T2', classes: ['C1', 'C2', 'C3', 'C4'], mode: 'whole' });
+  });
+
   it('formats errors first and folds released-CHANGELOG warnings into one count line', () => {
     const root = tree({
       'docs/editors/a.md': 'ecxc-ski\n',

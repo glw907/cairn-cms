@@ -23,7 +23,8 @@ const MINIMAL_WRANGLER_JSONC = JSON.stringify(
  * writeEmailFrom targets, shaped exactly like the real template's placeholder so the pattern
  * match (and its re-parse) exercise the real production shape rather than a stand-in.
  */
-const MINIMAL_CAIRN_CONFIG_TS = "export default {\n  email: { from: 'cms@showcase.test' },\n};\n";
+const MINIMAL_CAIRN_CONFIG_TS =
+  "export const publicOrigin = 'https://showcase.test';\nexport default {\n  email: { from: 'cms@showcase.test' },\n};\n";
 
 const WORKERS_DEV_URL = 'https://cairn-domain-site.glw907.workers.dev';
 
@@ -490,6 +491,77 @@ test('admission: --yes --domain proceeds fully unattended, with no prompt ever c
   assert.equal(state.step, 'paid-plan-declined');
   assert.equal(state.cloudflare.domain, 'unattended-domain.example');
 });
+
+// The origin the cutover writes is checked against the normalized form of itself, so a mixed-case
+// or Unicode name typed by the owner must reach the cutover already lowercased and punycoded.
+for (const [typed, normalized] of [
+  ['Mixed-Case.example', 'mixed-case.example'],
+  ['b\u00fccher.example', 'xn--bcher-kva.example'],
+]) {
+  test(`admission: --domain ${typed} is normalized before it is saved and reaches a cutover with a bare origin`, async (t) => {
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+    await setupCloudflare(t, { zoneStatus: 'active' });
+    await setupWrangler(t);
+    await seedLiveSite('site-normalized', dir);
+
+    const { runChapter2 } = await import('./chapter2.mjs');
+    const outcome = await runChapter2({
+      openBrowser: neverOpensBrowser,
+      siteId: 'site-normalized',
+      record: await loadSite('site-normalized'),
+      dir,
+      args: { yes: true, domain: typed },
+      log: () => {},
+      dryRun: false,
+      confirm: mustNotBeCalled('confirm'),
+      text: mustNotBeCalled('text'),
+      env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+      argv: [],
+      resolve: authoritativeResolve(normalized),
+      fetchImpl: alwaysMatchingFetch(),
+    });
+
+    assert.equal(outcome.outcome, 'paid-plan-declined');
+    const state = await loadSite('site-normalized');
+    assert.equal(state.cloudflare.domain, normalized);
+    const wrangler = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+    assert.ok(wrangler.includes(`https://${normalized}`), wrangler);
+  });
+}
+
+// A host with credentials is not a bare host, so it stays as typed (trimmed) for Cloudflare's own
+// invalid-domain answer rather than silently losing the credentials.
+for (const typed of ['user:pw@example.com', ':pw@example.com']) {
+  test(`admission: --domain ${typed} keeps its credentials as typed instead of normalizing to a bare host`, async (t) => {
+    await freshStateDir(t);
+    const dir = await fixtureScaffoldDir(t);
+    await setupCloudflare(t, { zoneStatus: 'active' });
+    await setupWrangler(t);
+    await seedLiveSite('site-creds', dir);
+
+    const { runChapter2 } = await import('./chapter2.mjs');
+    await runChapter2({
+      openBrowser: neverOpensBrowser,
+      siteId: 'site-creds',
+      record: await loadSite('site-creds'),
+      dir,
+      args: { yes: true, domain: ` ${typed} ` },
+      log: () => {},
+      dryRun: false,
+      confirm: mustNotBeCalled('confirm'),
+      text: mustNotBeCalled('text'),
+      env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+      argv: [],
+      resolve: authoritativeResolve(typed),
+      fetchImpl: alwaysMatchingFetch(),
+    }).catch(() => {});
+
+    const saved = await loadSite('site-creds');
+    assert.notEqual(saved.cloudflare.domain, 'example.com', 'the credentials are not silently dropped');
+    assert.equal(saved.cloudflare.domain, typed);
+  });
+}
 
 // The refusal this pins is the whole reason readCurrentRecords carries a confidence flag. A
 // recursive resolver can answer "no such record" from a cache that has not expired, so an
@@ -1904,6 +1976,41 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
   assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
   assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');
+});
+
+test('email admission and closing copy: the prompt warns of the domain-wide p=reject policy, and the close names no sender list', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-email-dmarc-copy', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-dmarc-copy',
+    record: await loadSite('site-email-dmarc-copy'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+  assert.equal(outcome.outcome, 'email-live');
+
+  const admission = logs.find((line) => line.includes('Turning this on onboards'));
+  assert.ok(admission, 'expected the admission detail to print');
+  assert.match(admission, /p=reject/);
+  assert.match(admission, /whole domain/);
+  assert.match(admission, /every sender/);
+  assert.doesNotMatch(admission, /replace|overwrit|existing/i, 'must not claim what happens to an existing record');
+
+  const closing = logs.find((line) => line.includes('cairn adopt'));
+  assert.ok(closing, 'expected the closing message');
+  assert.doesNotMatch(closing, /add it to that record/, 'a p=reject record has no sender list to add to');
+  assert.match(closing, /authenticat/, 'must tell the owner to authenticate each new service against the domain');
 });
 
 // --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------

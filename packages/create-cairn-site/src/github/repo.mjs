@@ -84,6 +84,9 @@ export async function createRepo(token, { name, ownerType, org, dir, appName }) 
   );
 }
 
+/** The page size `verifyInstallationCovers` asks for: GitHub's maximum for this list. */
+const INSTALLATION_REPOS_PER_PAGE = 100;
+
 /**
  * @typedef {object} VerifyInstallationCoversInput
  * @property {number | string} installationId the installation to check
@@ -104,12 +107,24 @@ export async function createRepo(token, { name, ownerType, org, dir, appName }) 
  * @returns {Promise<void>} resolves when the installation covers the repository
  */
 export async function verifyInstallationCovers(token, { installationId, owner, repo, dir }) {
-  const { json } = await githubRequest('GET', `/user/installations/${installationId}/repositories`, { token });
-  const repositories = Array.isArray(json?.repositories) ? json.repositories : [];
-  const covered = repositories.some((candidate) => {
+  const matches = (candidate) => {
     if (candidate.name !== repo) return false;
     return candidate.owner?.login ? candidate.owner.login === owner : true;
-  });
+  };
+  // GitHub pages this list (30 by default, 100 at most), and an "All repositories" install on a
+  // busy account lists the new repository well past the first page. Every page is read until one
+  // comes back short, so a covered repository is never reported as uncovered.
+  let covered = false;
+  for (let page = 1; !covered; page += 1) {
+    const { json } = await githubRequest(
+      'GET',
+      `/user/installations/${installationId}/repositories?per_page=${INSTALLATION_REPOS_PER_PAGE}&page=${page}`,
+      { token },
+    );
+    const repositories = Array.isArray(json?.repositories) ? json.repositories : [];
+    covered = repositories.some(matches);
+    if (repositories.length < INSTALLATION_REPOS_PER_PAGE) break;
+  }
   if (!covered) {
     throw chapterError('installation-not-covering-repo', { repo, dir, webBase: webBase() });
   }

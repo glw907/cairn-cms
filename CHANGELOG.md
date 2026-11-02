@@ -567,6 +567,73 @@
   now declares a `PassTitle` ("Wrangler bindings are declared"), and the other statuses keep the
   registry title. Anything that matches the text of a PASS line needs changing.
 
+- **A scaffolded site's real origin reaches every prerendered file.** `create-cairn-site` writes the
+  site's `workers.dev` address (and later its custom domain) into `src/theme/cairn.config.ts` as
+  `publicOrigin`, beside `wrangler.jsonc`'s `PUBLIC_ORIGIN`, and runs `npm run build` before the second
+  deploy and the domain cutover's deploy, because the value is bundled. The sitemap, `robots.txt`, feed,
+  and canonical links no longer point at `showcase.test`. In the showcase and the template, the
+  `ORIGIN` constant in `content.ts` is now an import of `publicOrigin` from `cairn.config.ts`.
+
+  Consumers may: import `publicOrigin` from your `cairn.config.ts` in place of a hand-kept origin
+  constant.
+
+- **The GitHub install step names "All repositories" and a re-run resumes at `repo-created`.** The
+  prompt says to choose "All repositories" so the repository the run creates is covered, the
+  `installation-not-covering-repo` remedy says the same, and a run that stops after the repository
+  exists saves `repo-created` so a re-run continues instead of stopping on `repo-name-collision`.
+
+- **The App trip warns against GitHub's own form.** The setup prints "use this link, not GitHub's own
+  form" beside the App link, and the abandon message names a profile-free way to open it.
+
+- **A declined sign-in email is offered again on a re-run, until Workers Builds is connected.** A
+  re-run at a recorded email decline, including after a declined Workers Builds step, asks the
+  question again and settles back where it was. Once Builds is connected (a saved trigger, or
+  `builds-live`), the question is not asked again, because turning email on ends in a local build
+  and deploy that would replace the site Builds deploys from the repository; a re-run there prints
+  the Builds closing block and a line saying the offer has ended. A run that cannot ask (`--yes`
+  with no `--email`, or no terminal on stdin or stdout) stays a decline, and `--sign-in` still
+  skips the question. `README.md`, the setup recovery page, and the domain page now match.
+
+- **The installation coverage check reads every page.** The check that the GitHub App's
+  installation covers the new repository read only GitHub's first page of 30, so an "All
+  repositories" install on an account with more could fail on every resume. It now reads 100 per
+  page until the list ends.
+
+- **The site origin is validated before it is written.** `create-cairn-site` refuses an origin that
+  is not a bare `scheme://host` (a path, a quote, a trailing slash) before it touches
+  `wrangler.jsonc` or `src/theme/cairn.config.ts`, and names the value.
+
+- **A failed domain cutover restores the origin even when the first write fails.** A failure while
+  writing the domain origin now restores both files the way a failed build or deploy does. When the
+  restore also fails, the error keeps the original cause and says the files may still name the
+  domain, instead of claiming they were restored.
+
+- **The email prompt names what DMARC `p=reject` does.** It says the policy covers every sender on the
+  domain, and the closing copy no longer tells the owner to add a service to a record that has no
+  sender list; it says to authenticate each new service instead.
+
+- **Setup output copy is corrected.** The private repository is no longer called "live on GitHub", the
+  hand-over says the run offers to create the repository and deploy, the default App name no longer
+  doubles "cairn", a sign-in page is announced only when one opened, a non-interactive `--sign-in`
+  withholds the link and says to re-run the same command with `--sign-in` from an interactive
+  terminal, and the cost preamble opens with the costs.
+
+- **`create-cairn-site` is ready to publish.** Its manifest carries `repository` with `directory`, the
+  `bin` shape `npm pkg fix` writes, and a `files` list that leaves the `*.test.mjs` files out of the
+  tarball. `check:dev-package` reads this manifest too, and `check:leaks` now scans the package.
+
+- **A `publish-create-site` job in `publish.yml`.** It runs after `publish` and `publish-dev`, bakes
+  with the root version for both specs, packs with `--ignore-scripts`, fails when the package version
+  differs from the root's, skips with a notice on E404 before the first hand publish, and publishes
+  with provenance. It has not run: the first publish is by hand.
+
+- **CI asserts the scaffold's origin.** `create-site.yml` writes a `workers.dev` origin into a packed
+  scaffold, builds it, checks that the sitemap, `robots.txt`, feed, and a canonical link carry it and no
+  prerendered text file holds `showcase.test`, and checks the tarball ships `template/`, no test files,
+  and a `repository`.
+
+  Consumers must: nothing.
+
 ### Removed
 
 - **`FieldBehavior.itemLabel`.** A field's `behavior` table carries only `validate`. An array row's

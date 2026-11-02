@@ -1,5 +1,5 @@
 // The rollback-safe cutover: attach the admin's domain to the already-deployed Worker, confirm
-// it actually serves this site, then move the site's recorded origin over and redeploy.
+// it actually serves this site, then move the site's recorded origin over, rebuild, and redeploy.
 // Every finding below traces to the T4a domain spike (https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-11-t4a-domain-spike.md),
 // particularly its Step 4 and "Addendum 2: the scratch domain".
 //
@@ -58,7 +58,7 @@
 // GET /zones/:id/ssl/certificate_packs and GET /zones/:id/ssl/verification returned 9109
 // Unauthorized even with SSL and Certificates Edit granted at Zone scope. Progress is observed
 // by probing the hostname itself, which is exactly what confirmHostname does.
-import { deployWorker } from './deploy.mjs';
+import { buildSite, deployWorker } from './deploy.mjs';
 import { writePublicOrigin } from './config.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { readAuthoritativeAndRecursive } from './dns.mjs';
@@ -324,15 +324,18 @@ function stripNestedNext(message) {
 
 /**
  * Cut the admin's domain over to the already-deployed Worker: attach the Custom Domain, confirm
- * the existing deployment answers there, then move the site's recorded origin and redeploy once.
- * A confirm failure that means the site is simply not there yet (still propagating, or the
- * certificate has not issued) is returned as a wait outcome; a confirm failure that means
+ * the existing deployment answers there, then move the site's recorded origin, rebuild, and
+ * redeploy once. A confirm failure that means the site is simply not there yet (still
+ * propagating, or the certificate has not issued) is returned as a wait outcome; a confirm
+ * failure that means
  * something else is answering there (`hostname-not-serving`) is thrown, the same as the attach
- * itself failing (`custom-domain-failed`) or the redeploy failing (`cutover-deploy-failed`).
+ * itself failing (`custom-domain-failed`) or the rebuild or redeploy failing
+ * (`cutover-deploy-failed`).
  *
- * A redeploy failure restores the origin on disk to the pre-cutover workers.dev URL before
- * throwing, so a failed cutover never leaves the site's config pointing at an origin the
- * Worker was never redeployed under.
+ * A failure writing the new origin, rebuilding, or redeploying restores the origin on disk to the
+ * pre-cutover workers.dev URL before throwing, so a failed cutover does not leave the site's
+ * config pointing at an origin the Worker was never redeployed under. When that restore fails
+ * too, the thrown row keeps the original cause and says the files may still name the domain.
  * @param {object} args
  * @param {object} args.record the site's in-memory state record; reads `record.dir` and
  *  `record.cloudflare.{domain,zoneId,workerName,accountId,url}`
@@ -348,9 +351,19 @@ function stripNestedNext(message) {
  *  The re-check after the redeploy stays one-shot on purpose: a completed redeploy has already
  *  proven this hostname serves the site once, so a park there is both rare and terminal, and
  *  holding on it would keep a console up over a wait nothing is expected to clear.
+ * @param {typeof writePublicOrigin} [args.writePublicOriginFn] writes the origin pair; a test seam
+ *  defaulting to config.mjs's `writePublicOrigin`
  * @returns {Promise<CutOverResult>} the outcome
  */
-export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns, waitForClear }) {
+export async function cutOverHostname({
+  record,
+  api,
+  fetchImpl = fetch,
+  log,
+  dns,
+  waitForClear,
+  writePublicOriginFn = writePublicOrigin,
+}) {
   const { dir } = record;
   const { domain, zoneId, workerName, accountId, url: workersDevUrl } = record.cloudflare;
 
@@ -360,16 +373,32 @@ export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns
   const beforeRedeploy = await confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear });
   if (beforeRedeploy !== 'live') return { outcome: beforeRedeploy };
 
-  await writePublicOrigin(dir, `https://${domain}`);
-
+  const domainOrigin = originFor(domain);
   try {
+    // The forward write sits inside the try too: it writes two files, and a failure after the
+    // first lands must restore the pair like any later failure. The origin in cairn.config.ts is
+    // baked into the prerendered pages, so the rebuild is inside it for the same reason.
+    await writePublicOriginFn(dir, domainOrigin);
+    await buildSite({ dir, log });
     await deployWorker({ dir, log, accountId });
   } catch (err) {
-    // The site is still live and working on its workers.dev address; the redeploy under its new
-    // origin is what failed, so the origin on disk is restored rather than left pointing at a
-    // Worker that was never actually redeployed to serve it.
-    await writePublicOrigin(dir, workersDevUrl);
-    throw cloudflareError('cutover-deploy-failed', { dir, detail: stripNestedNext(err.message) });
+    // The site is still live and working on its workers.dev address; the rebuild or redeploy
+    // under its new origin is what failed, so the origin on disk is restored rather than left
+    // pointing at a Worker that was never actually redeployed to serve it.
+    const detail = stripNestedNext(err.message);
+    try {
+      await writePublicOriginFn(dir, workersDevUrl);
+    } catch (restoreErr) {
+      // The original failure stays the headline; the row then says the files may still name the
+      // domain instead of claiming a restore that did not happen.
+      throw cloudflareError('cutover-deploy-failed', {
+        dir,
+        detail,
+        restoreFailed: stripNestedNext(restoreErr.message),
+        domainOrigin,
+      });
+    }
+    throw cloudflareError('cutover-deploy-failed', { dir, detail });
   }
 
   log(`Re-checking ${domain} after redeploying.`);
@@ -378,4 +407,18 @@ export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns
 
   log(`${domain} is live.`);
   return { outcome: 'live' };
+}
+
+/**
+ * Build the public origin for a stored domain. The URL parser's host lowercases and punycodes it,
+ * so a record that predates normalization still cuts over to the bare form the checks expect.
+ * @param {string} domain the domain on the record
+ * @returns {string} the `https://` origin, falling back to a lowercased copy when the parse throws
+ */
+function originFor(domain) {
+  try {
+    return `https://${new URL(`https://${domain}`).hostname}`;
+  } catch {
+    return `https://${domain.toLowerCase()}`;
+  }
 }

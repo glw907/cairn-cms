@@ -126,3 +126,84 @@ jobs:
           fi
           echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
           npm publish --access public --tag "$TAG" --provenance
+
+  # create-cairn-site publishes after the engine and the dev backend, because the scaffold it bakes
+  # pins both at the root's version and a site installed from it must resolve them. It is a sibling
+  # job in this file, not its own workflow, so the trusted publisher's `publish.yml` name covers it.
+  #
+  # The first publish is done by hand, like the dev backend's was: npm cannot bind a trusted
+  # publisher to a package that does not exist, so until the owner has published it and run
+  # `npm trust`, the package probe finds E404 and the job ends green with a notice rather than
+  # failing the whole release. The cairn-releasing skill carries those owner steps.
+  #
+  # Three guards run before the bake, in this order. A missing package is a notice, and any other
+  # probe failure fails the job. A package version that differs from the root's fails, because a
+  # forgotten bump would publish 0.0.0 and move `latest`; the order lets a cut before the first
+  # publish stay green while the package sits at 0.0.0. A version already on the registry skips,
+  # as the siblings do, so re-running a release recovers the half that failed. `npm view` exits 1
+  # with `code E404` for both a missing package and a missing version, so the two probes are told
+  # apart by which one ran. Each capture sits in an `if !` because the step runs under `bash -e`,
+  # which would abort on a bare failed capture before the code could be read.
+  #
+  # One `run:` block holds all of it, since a guard's `exit 0` ends only its own step.
+  publish-create-site:
+    needs: [publish, publish-dev]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Same npm pin as the engine job above; see its WATCH comment.
+      - run: npm install -g npm@11
+      - uses: ./.github/actions/bounded-install
+        timeout-minutes: 22
+        with:
+          command: npm ci --no-audit --no-fund
+          clean: node_modules
+      - name: Publish create-cairn-site to npm
+        working-directory: packages/create-cairn-site
+        run: |
+          VERSION=$(node -p "require('../../package.json').version")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in
+            *-*) TAG=next ;;
+            *)   TAG=latest ;;
+          esac
+          if ! out=$(npm view create-cairn-site version 2>&1); then
+            if printf '%s\n' "$out" | grep -q 'code E404'; then
+              echo "::notice::create-cairn-site is not on the registry yet; publish it by hand first (see the cairn-releasing skill). Skipping."
+              exit 0
+            fi
+            printf '%s\n' "$out"
+            echo "::error::could not read create-cairn-site from the registry"
+            exit 1
+          fi
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::error::packages/create-cairn-site is at $PKG_VERSION but the root package is at $VERSION; bump it before the cut"
+            exit 1
+          fi
+          if out=$(npm view "create-cairn-site@$VERSION" version 2>&1); then
+            if [ "$out" = "$VERSION" ]; then
+              echo "create-cairn-site@$VERSION is already on the registry; skipping"
+              exit 0
+            elif [ -n "$out" ]; then
+              printf '%s\n' "$out"
+              echo "::error::npm view create-cairn-site@$VERSION printed something other than $VERSION"
+              exit 1
+            fi
+          elif ! printf '%s\n' "$out" | grep -q 'code E404'; then
+            printf '%s\n' "$out"
+            echo "::error::could not read create-cairn-site@$VERSION from the registry"
+            exit 1
+          fi
+          # The bake refuses a 0.0.0 version and a file: spec, so `prepack`'s default path cannot
+          # run; bake with the root's version for both specs and pack with --ignore-scripts, the
+          # same two commands create-site.yml proves on every pull request.
+          node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
+          TGZ="$PWD/$(npm pack --ignore-scripts --silent | tail -n1)"
+          [ -f "$TGZ" ] || { echo "::error::pack produced no tarball"; exit 1; }
+          echo "publishing create-cairn-site@$VERSION to the '$TAG' dist-tag"
+          npm publish "$TGZ" --access public --tag "$TAG" --provenance

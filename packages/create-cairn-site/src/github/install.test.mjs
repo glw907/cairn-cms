@@ -121,6 +121,14 @@ test('installAndAuthorize: the callback path installs, exchanges the code, and r
   assert.match(opened[0], /\/installations\/new$/);
   assert.equal(result.userToken, 'fake-user-token');
   assert.equal(result.installationId, 99);
+  assert.ok(
+    logs.some((line) => line.includes('choose "All repositories"')),
+    'the install prompt must name the All repositories choice',
+  );
+  assert.ok(
+    logs.every((line) => !/GitHub's own form/.test(line)),
+    "the install trip's output must not carry the App trip's wrong-form warning",
+  );
 });
 
 test('installAndAuthorize: an org owner with no installation ever appearing raises org-approval-pending', async (t) => {

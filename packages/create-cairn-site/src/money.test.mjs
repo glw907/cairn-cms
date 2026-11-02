@@ -159,7 +159,7 @@ test('bin.mjs prints the cost preamble before the site-name prompt on a fresh dr
   );
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
-  const preambleIndex = result.stdout.indexOf('Before you start, the honest cost picture.');
+  const preambleIndex = result.stdout.indexOf('Before you start, here is what this costs.');
   // Two leading spaces distinguish clack's intro banner ("<box char>  create-cairn-site",
   // collectAnswers's first line) from the preflight finding that also names the tool
   // ("...that create-cairn-site requires."), which is preceded by a single space.
@@ -206,7 +206,7 @@ test('bin.mjs does not print the cost preamble on a resume', async (t) => {
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
   assert.equal(
-    result.stdout.includes('Before you start, the honest cost picture.'),
+    result.stdout.includes('Before you start, here is what this costs.'),
     false,
     `expected no cost preamble on a resume, got: ${result.stdout}`,
   );

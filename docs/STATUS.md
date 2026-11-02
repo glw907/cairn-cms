@@ -21,15 +21,15 @@ passes land on `main` and never release.
 
 ## Immediate next action
 
-The media and publish pass has landed (PR #172, `ordinary`, merged by its executor on Geoff's 2026-11-01
-approval): ten backlog items (#74, #106, #31, #137, #49, #48, #127, #128, #129, #111) are Done, the
-`CHANGELOG.md` entry sits under `## Unreleased`, and nothing is bumped or published. The next pass is
-the scaffold pass, then the final engine batch (`BACKLOG.md` lists each item's pass), a cleanup round,
-the one release, then each site's migration. The release needs `create-cairn-site` published first
-(`BACKLOG.md` #195). Three bars read unmet by Geoff's choice (the install and editor sittings, and the
-docs review of the human pages), and Evaluate reads unmet after one structural fix. Prerelease
-`0.98.1-rc.2` is on npm `next`; `latest` is `0.98.0`. The full backlog triage of 2026-11-01 waits in
-the Approval Queue; its decision lands in
+The scaffold setup pass (PR #173) is at close, awaiting conductor merge. Session
+`cairn-cms-scaffold-setup`, id `0f7503ff`, under `conductor-cairn-cms`. The next action is the
+conductor's merge of #173, then the release act: publish `create-cairn-site` by hand first
+(`BACKLOG.md` #195), then the final engine batch (`BACKLOG.md` lists each item's pass), a cleanup
+round, the one release, and each site's migration. The template pass (#171) and the media and
+publish pass (#172) have landed. Three bars read unmet by Geoff's choice (the install and editor
+sittings, and the docs review of the human pages), and Evaluate reads unmet after one structural fix.
+Prerelease `0.98.1-rc.2` is on npm `next`; `latest` is `0.98.0`. The full backlog triage of
+2026-11-01 waits in the Approval Queue; its decision lands in
 `~/.local/state/cairn-agent-first/2026-11-01-backlog-triage.decision.json`.
 
 ## Open decisions and watches

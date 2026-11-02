@@ -124,7 +124,9 @@ test('browser-step-abandoned (step=manifest) matches the exact specified text', 
       'GitHub page saying the App name is already taken, that is the cause.\n' +
       'Next: re-run npx create-cairn-site --dir ./alpine (add --app-name <a-new-name> if the ' +
       'name was taken). If an App named Alpine Club CMS now exists at ' +
-      'https://github.com/settings/apps, delete it there first.'
+      'https://github.com/settings/apps, delete it there first. ' +
+      'If no browser window reached you, copy the link this run printed into the window you ' +
+      'work in.'
   );
 });
 

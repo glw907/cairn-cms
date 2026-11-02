@@ -25,9 +25,11 @@
 // by an explicit whole-record rebuild and save, since state.mjs's updateSite merge can never
 // express removing a key. T4a implemented the rule and its keep half (domain-live keeps the
 // token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
-// and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
-// (this module's top-of-function short-circuit) re-offers with the row's reoffered copy
-// rather than returning silently, since a decline is a choice an owner can still reconsider. The
+// and deletes the token at the moment it happens, and a LATER re-entry on a record with an open
+// decline (hasOpenEmailDecline) asks the email question again before any token hop, since a
+// decline is a choice an owner can still reconsider until Workers Builds is connected. A no, or a
+// run that cannot ask, prints the
+// row's reoffered copy and leaves the step; a yes continues as a resume at `domain-live`. The
 // step name stays `paid-plan-declined`, a stable contract the Go tool mirrors
 // (tool/internal/spine/step.go) and existing site records already carry, even though Workers Paid
 // itself is no longer a choice made here: chapter 1's consent confirms it before the first
@@ -85,7 +87,8 @@ const STEP_ORDER = [
  * declined email sign-in for the domain, with Workers Paid already on, which is also a clean
  * stop; the name predates that framing and stays put, since it is a stable contract the Go tool
  * mirrors and existing site records already carry). Neither name appears in STEP_ORDER, since
- * reaching one short-circuits this function before any `hasReached` check ever runs against it.
+ * `stepIndex` would read an unlisted step as `live`: `email-live` returns before any `hasReached`
+ * check, and an open decline either returns or resumes under `domain-live` as the effective step.
  * @type {string[]}
  */
 export const TERMINAL_STEPS = ['email-live', 'paid-plan-declined'];
@@ -111,6 +114,49 @@ function hasReached(step, target) {
 /** True once a step names a fully finished chapter, per TERMINAL_STEPS. */
 function isTerminalStep(step) {
   return TERMINAL_STEPS.includes(step);
+}
+
+/**
+ * True once Workers Builds is connected for a record: a saved `cloudflare.buildsTriggerUuid`, or a
+ * record at `builds-live`, which is only ever reached after the trigger is saved. From then on
+ * editors publish to the repository and Builds deploys from it, so the owner's local tree can lag
+ * the live site, and nothing in chapter 2 may build or deploy from it again.
+ * @param {{ step?: string, cloudflare?: { buildsTriggerUuid?: string } } | null | undefined} record
+ *  the site's state record
+ * @returns {boolean}
+ */
+export function isBuildsConnected(record) {
+  return Boolean(record?.cloudflare?.buildsTriggerUuid) || record?.step === 'builds-live';
+}
+
+/**
+ * True for a record whose owner declined email sign-in, has not turned it on since, and has not
+ * connected Workers Builds: no `cloudflare.emailOnboardedAt`, no Builds connection
+ * (`isBuildsConnected`), and either `paid-plan-declined` (whatever its other fields) or
+ * `builds-connect-declined` still carrying `cloudflare.emailDeclinedAt`. Chapter 3 overwrites
+ * `step`, so at `builds-connect-declined` the timestamp is the only surviving trace of the decline.
+ * A connected record is never open: turning email on ends in a local build and deploy, which would
+ * replace a site Builds deploys from the repository with the owner's possibly older checkout.
+ * @param {{ step?: string, cloudflare?: { emailOnboardedAt?: string, emailDeclinedAt?: string,
+ *  buildsTriggerUuid?: string } } | null | undefined} record the site's state record
+ * @returns {boolean}
+ */
+export function hasOpenEmailDecline(record) {
+  if (!record || record.cloudflare?.emailOnboardedAt || isBuildsConnected(record)) return false;
+  if (record.step === 'paid-plan-declined') return true;
+  return record.step === 'builds-connect-declined' && Boolean(record.cloudflare?.emailDeclinedAt);
+}
+
+/**
+ * The same record with any saved `cloudflare.apiToken` withheld, so nothing in a run reuses a
+ * token this run has just deleted. Never writes.
+ * @param {object} record the site's in-memory state record
+ * @returns {object} the record without a saved token
+ */
+function withoutSavedToken(record) {
+  if (!record.cloudflare || !('apiToken' in record.cloudflare)) return record;
+  const { apiToken: _withheld, ...cloudflare } = record.cloudflare;
+  return { ...record, cloudflare };
 }
 
 /**
@@ -151,12 +197,28 @@ export async function deleteApiToken(siteId) {
 }
 
 /**
+ * Save a token chapter 2 collected under `cloudflare.apiToken` and drop
+ * `cloudflare.buildsTokenSavedAt` in the same write. That marker tells chapter 3 the saved token
+ * is its own eight-key one; left beside chapter 2's narrower token, chapter 3 would adopt it, skip
+ * its consent and prefill, and fail at its first Builds call. `updateSite` cannot remove a key, so
+ * this rebuilds the freshly loaded record and saves it whole, as `deleteApiToken` does.
+ * @param {string} siteId the site id to save under
+ * @param {string} token the token chapter 2 now holds
+ * @returns {Promise<void>}
+ */
+async function saveChapter2Token(siteId, token) {
+  const current = (await loadSite(siteId)) ?? {};
+  const { buildsTokenSavedAt: _chapter3Marker, ...cloudflare } = current.cloudflare ?? {};
+  await saveSite(siteId, { ...current, cloudflare: { ...cloudflare, apiToken: token } });
+}
+
+/**
  * Ask for the domain until a non-empty answer comes back, the interactive counterpart of
  * `--domain`. An empty submit is nudged rather than accepted, since every hop after this one keys
  * off the name.
  * @param {typeof clackText} text the free-text prompt to ask through
  * @param {(line: string) => void} log receives the nudge printed after an empty submit
- * @returns {Promise<string>} the trimmed domain the admin entered
+ * @returns {Promise<string>} the normalized domain the admin entered
  */
 async function askForDomain(text, log) {
   for (;;) {
@@ -165,8 +227,27 @@ async function askForDomain(text, log) {
     });
     if (isCancel(answer)) exitOnCancel();
     const entered = (answer ?? '').trim();
-    if (entered) return entered;
+    if (entered) return normalizeDomain(entered);
     log('Please enter a domain name.');
+  }
+}
+
+/**
+ * Reduce a typed domain to the form every later hop and the public origin use: lowercase, with a
+ * Unicode name punycoded, by way of the URL parser's host. Anything the parser refuses, or that
+ * carries more than a bare host (a port, path, or credentials), stays as typed so Cloudflare's own
+ * invalid-domain answer reports it.
+ * @param {string} raw the domain as typed or passed to `--domain`
+ * @returns {string} the normalized domain, or the trimmed input when it is not a bare host
+ */
+function normalizeDomain(raw) {
+  const trimmed = String(raw).trim();
+  try {
+    const url = new URL(`https://${trimmed}`);
+    const bare = url.host === url.hostname && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password;
+    return bare && url.hostname ? url.hostname : trimmed;
+  } catch {
+    return trimmed;
   }
 }
 
@@ -197,7 +278,8 @@ const EMAIL_ADMISSION_DETAIL =
   "Cloudflare's Workers Paid plan, already on for this account since your first deploy, is what " +
   "sends this site's sign-in email. Turning this on onboards your domain for Cloudflare Email " +
   'Sending, then sends a real test message to your sign-in address to prove it works before ' +
-  'it hands the feature to anyone else.';
+  'it hands the feature to anyone else. Onboarding also writes a p=reject DMARC policy for your ' +
+  'whole domain. That policy governs every sender that mails as your domain, not only cairn.';
 
 /**
  * @typedef {object} RunChapter2Input
@@ -237,6 +319,8 @@ const EMAIL_ADMISSION_DETAIL =
  *  token; defaults to `process.argv.slice(2)`
  * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
  *  whether the cutover may hold; defaults to `process.stdout.isTTY`
+ * @property {boolean} [stdinIsTTY] whether stdin is a terminal, read with `isTTY` to decide
+ *  whether the email re-offer can ask at all; defaults to `process.stdin.isTTY`
  * @property {typeof createWaitForClear} [createWaitForClearFn] builds the cutover's hold seam; a
  *  test seam defaulting to hold-loop.mjs's `createWaitForClear`
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
@@ -334,17 +418,92 @@ export async function runChapter2({
   env = process.env,
   argv = process.argv.slice(2),
   isTTY = Boolean(process.stdout.isTTY),
+  stdinIsTTY = Boolean(process.stdin.isTTY),
   createWaitForClearFn = createWaitForClear,
   createConsoleServerFn = createConsoleServer,
 }) {
   const frame = { dryRun, log };
 
-  if (!dryRun && isTerminalStep(record?.step)) {
+  /**
+   * Run the email question as its own hop and report whether the owner said yes. `--yes` answers
+   * for itself (yes only with `--email`); anything else asks through `confirm`.
+   * @returns {Promise<boolean>}
+   */
+  async function askEmailAdmission() {
+    let consented = false;
+    await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
+      log(EMAIL_ADMISSION_DETAIL);
+      if (args.yes && !args.email) {
+        log(
+          'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+            'it on unattended, or without --yes to be asked.',
+        );
+        return;
+      }
+      if (args.yes && args.email) {
+        consented = true;
+        return;
+      }
+      const answer = await confirm({
+        message: 'Turn on email sign-in for your domain now?',
+      });
+      if (isCancel(answer)) exitOnCancel();
+      consented = Boolean(answer);
+    });
+    return consented;
+  }
+
+  // `step` is the effective step for every hop below. It equals the record's step except after an
+  // accepted re-offer, which resumes the record as if it were at `domain-live`; `record` is stale
+  // by then, so no hop reads `record.step` directly.
+  let step = record?.step;
+  let emailAdmitted = false;
+
+  if (!dryRun && hasOpenEmailDecline(record)) {
+    // The saved token goes first, and the rest of the run works from a copy without it, so a
+    // decline cannot leave a credential behind and a yes cannot reuse the deleted one.
     await deleteApiToken(siteId);
-    // A re-entry at a recorded decline is not silently ignored: the owner can still change their
-    // mind, and this is the one place that later re-run would ever be told so. `email-live`
-    // prints nothing here, since its completion hop already said everything once, on the run
-    // that reached it; bin.mjs's closing print covers a later re-entry there.
+    record = withoutSavedToken(record);
+
+    // A run that cannot ask declines for the owner. confirm reads stdin and draws on stdout, and
+    // never settles on a closed stdin, so it is called only when both are terminals.
+    const cannotAsk = args.yes ? !args.email : !(isTTY && stdinIsTTY);
+    if (cannotAsk) {
+      log(
+        args.yes
+          ? 'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+              'it on unattended, or without --yes to be asked.'
+          : 'Skipping email sign-in: this run cannot ask. Re-run with --email and --yes to turn ' +
+              'it on unattended, or from a terminal to be asked.',
+      );
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
+      return { outcome: 'paid-plan-declined' };
+    }
+    if (!(await askEmailAdmission())) {
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
+      return { outcome: 'paid-plan-declined' };
+    }
+
+    // Saved before the token hop, so a crash after it resumes at `domain-live` under the normal
+    // rules. Leaving a Builds decline this way records it, since the step that held it is gone,
+    // unless a later `--connect` already consented: a chapter 3 token marker or a connection
+    // means the owner said yes to Builds after the decline, and that answer stands.
+    const buildsDeclineStands =
+      record.step === 'builds-connect-declined' &&
+      !record.cloudflare?.buildsTokenSavedAt &&
+      !record.cloudflare?.buildsConnectionUuid;
+    await updateSite(siteId, {
+      step: 'domain-live',
+      ...(buildsDeclineStands ? { cloudflare: { buildsDeclinedAt: new Date().toISOString() } } : {}),
+    });
+    step = 'domain-live';
+    emailAdmitted = true;
+  } else if (!dryRun && isTerminalStep(record?.step)) {
+    await deleteApiToken(siteId);
+    // `email-live` prints nothing here, since its completion hop already said everything once, on
+    // the run that reached it; bin.mjs's closing print covers a later re-entry there. A decline
+    // that is not open (its onboarding is somehow done) cannot be asked again, so it prints the
+    // re-offered decline copy and stops.
     if (record.step === 'paid-plan-declined') {
       log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
     }
@@ -361,7 +520,7 @@ export async function runChapter2({
 
   // --- Admission: consent, then the domain itself. Only asked from `live`; a resumed record past
   // it already answered both, and re-asking would repeat a browser-adjacent decision for nothing.
-  if (!hasReached(record?.step, 'zone-created')) {
+  if (!hasReached(step, 'zone-created')) {
     let consented = false;
     await runStep(frame, 'Connect your domain', ADMISSION_DETAIL, async () => {
       log(ADMISSION_DETAIL);
@@ -376,7 +535,7 @@ export async function runChapter2({
       }
       if (args.yes && args.domain) {
         consented = true;
-        domain = args.domain;
+        domain = normalizeDomain(args.domain);
         return;
       }
       const answer = await confirm({ message: 'Connect a domain you own to this site now? (Free.)' });
@@ -387,7 +546,7 @@ export async function runChapter2({
         return;
       }
       consented = true;
-      domain = args.domain || (await askForDomain(text, log));
+      domain = args.domain ? normalizeDomain(args.domain) : await askForDomain(text, log);
     });
     if (!dryRun && !consented) {
       return { outcome: 'admission-declined' };
@@ -425,7 +584,7 @@ export async function runChapter2({
       async () => {
         token = await ensureApiToken({ record, log, openBrowser, yes: args.yes, promptSecretFn, env, argv });
         if (!dryRun && token !== record?.cloudflare?.apiToken) {
-          await updateSite(siteId, { cloudflare: { apiToken: token } });
+          await saveChapter2Token(siteId, token);
         }
       },
     );
@@ -434,7 +593,7 @@ export async function runChapter2({
 
     // --- Zone create: only from `live`/pre-`zone-created`; a resumed record already carries
     // zoneId/nameServers.
-    if (!hasReached(record?.step, 'zone-created')) {
+    if (!hasReached(step, 'zone-created')) {
       await runStep(
         frame,
         'Create your Cloudflare zone',
@@ -461,7 +620,7 @@ export async function runChapter2({
     // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
     // (its guard: a probe would read this tool's writes), so this skips both the read and
     // the gate entirely rather than letting that refusal surface as a developer-facing exception.
-    if (!hasReached(record?.step, 'records-carried')) {
+    if (!hasReached(step, 'records-carried')) {
       let declined = false;
       // carryOver.outcome is 'carried' when records were copied, or 'not-needed' when the zone
       // arrived already active. A decline leaves this undefined: that path returns before reaching
@@ -525,7 +684,7 @@ export async function runChapter2({
 
     // --- Delegation: only from `records-carried`. Pending or still-propagating parks with the
     // instructions printed; wrong nameservers is an act row, thrown; only `active` advances.
-    if (!hasReached(record?.step, 'delegated')) {
+    if (!hasReached(step, 'delegated')) {
       let delegationOutcome;
       let waitError;
       await runStep(
@@ -586,13 +745,13 @@ export async function runChapter2({
 
     // --- Cutover: only from `delegated`. Still-propagating or certificate-pending parks; anything
     // else that is not `live` (resolved-but-wrong-site, the attach itself, the redeploy) throws.
-    if (!hasReached(record?.step, 'domain-live')) {
+    if (!hasReached(step, 'domain-live')) {
       let cutoverOutcome;
       await runStep(
         frame,
         'Connect your domain to your site',
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
-          "switches your site's address over and redeploys once.",
+          "switches your site's address over, rebuilds it, and redeploys once.",
         async () => {
           const waitForClear = composeCutoverWaitForClear({
             runArgs: args,
@@ -661,32 +820,12 @@ export async function runChapter2({
     // --- Email admission: Workers Paid is already on (chapter 1's consent confirmed it
     // before the first deploy), so this asks only about turning on email sign-in itself. Only
     // asked while step has not yet reached email-onboarded; once onboarding has actually
-    // succeeded, this is never re-asked. A decline writes the terminal step directly (rather than
-    // going through TERMINAL_STEPS' short-circuit, which only fires on a LATER re-entry) and
-    // deletes the token at the point it happens, per the terminal-state token rule.
-    if (!hasReached(record?.step, 'email-onboarded')) {
-      let emailConsented = false;
+    // succeeded, this is never re-asked. A decline writes the terminal step directly and deletes the
+    // token at the point it happens, per the terminal-state token rule. A later re-entry at that
+    // step is handled at the top of this function by the open-decline re-offer.
+    if (!hasReached(step, 'email-onboarded') && !emailAdmitted) {
       const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
-      await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
-        log(EMAIL_ADMISSION_DETAIL);
-        if (args.yes && !args.email) {
-          log(
-            'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
-              'it on unattended, or without --yes to be asked.',
-          );
-          emailConsented = false;
-          return;
-        }
-        if (args.yes && args.email) {
-          emailConsented = true;
-          return;
-        }
-        const answer = await confirm({
-          message: 'Turn on email sign-in for your domain now?',
-        });
-        if (isCancel(answer)) exitOnCancel();
-        emailConsented = Boolean(answer);
-      });
+      const emailConsented = await askEmailAdmission();
       if (!dryRun && !emailConsented) {
         const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
         log(declineErr.message);
@@ -702,7 +841,7 @@ export async function runChapter2({
     // --- Onboard the sending domain, then poll once. Only from before email-onboarded; a resumed
     // record past it already carries emailOnboardedAt, read below regardless of which run set it.
     let onboardedAt = record?.cloudflare?.emailOnboardedAt;
-    if (!hasReached(record?.step, 'email-onboarded')) {
+    if (!hasReached(step, 'email-onboarded')) {
       let onboardEnabled = false;
       await runStep(
         frame,
@@ -768,9 +907,7 @@ export async function runChapter2({
     }
 
     // --- Sender address, then one deploy. Both skip when the address is already correct, so a
-    // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
-    // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
-    // fresh build first.
+    // park-and-resume never buys a second deploy; the redeploy needs a fresh build first.
     let addressChanged = false;
     await runStep(
       frame,
@@ -803,10 +940,12 @@ export async function runChapter2({
             'providers can take a while to trust it enough to deliver its first messages. That ' +
             'trust builds on its own as the domain keeps sending. If a sign-in link does not ' +
             'arrive yet, this warm-up period is the usual reason.\n' +
-            `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
-            "isn't from Cloudflare's sending infrastructure. That record stays in place even " +
-            'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
-            'to this domain later, add it to that record too, or its mail will be rejected.\n' +
+            `Onboarding also wrote a p=reject DMARC policy at _dmarc.${domain}, which asks ` +
+            'receivers to reject mail that claims to come from your domain without ' +
+            'authenticating. That record covers every sender on the domain and stays in place ' +
+            'even if you turn Email Sending off again, so authenticate each new service you add ' +
+            "later, such as a newsletter tool or mailing list, against the domain's mail " +
+            'records, or its mail will be rejected.\n' +
             'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
             'install it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or ' +
             'from the release page at https://github.com/glw907/cairn-cms/releases. Run ' +

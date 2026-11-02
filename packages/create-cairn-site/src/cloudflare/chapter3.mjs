@@ -20,7 +20,8 @@
 // terminal steps, so a record parked at `domain-live` or `email-onboarded` still carries a
 // five-key chapter-2 token when `--connect` runs, and adopting that one skips the eight-key
 // prefill and 403s at the first Builds call. `cloudflare.buildsTokenSavedAt` is the chapter-3-owned
-// marker recording that this chapter's token hop saved the token now on the record. Its
+// marker recording that this chapter's token hop saved the token now on the record; chapter 2
+// drops it whenever it saves a token of its own over this one. Its
 // presence is also what lets a re-run skip admission after a connect or trigger park (neither
 // advances `step`, so `step` alone cannot carry that signal the way it carries "connect and
 // trigger both finished", CHAPTER3_RESUMABLE_STEPS below), and it can only ever be written after
@@ -975,7 +976,8 @@ export async function runChapter3({
     await runStep(
       frame,
       'Get a fresh Cloudflare API token',
-      "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
+      'Uses the token this chapter saved on an earlier run, if there is one. Otherwise it opens ' +
+        "Cloudflare's create-token page with the permissions this chapter needs already " +
         'filled in (the same five chapter 2 already asked for, plus the Workers Builds ones), ' +
         'and asks you to paste the token back.',
       async () => {

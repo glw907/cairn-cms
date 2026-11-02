@@ -115,8 +115,9 @@ export async function runCloudflareChapter({
       '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
       "account rather than once per site: a cairn site runs on it from its first deploy. Turn it " +
       "on first if it is not already, then the tool installs your site's dependencies, builds " +
-      `it, and deploys it to your account: one Worker named ${workerName} (deploying again ` +
-      `later updates it), one database (${workerName}-auth), and one ` +
+      `it, and deploys it to your account: one Worker named ${workerName} (this replaces any ` +
+      'Worker of that name already in your account; deploying again later updates it), one ' +
+      `database (${workerName}-auth), and one ` +
       `storage bucket (${workerName}-media). One browser trip to sign in to Cloudflare if you ` +
       'are not already, then one click to sign in to your site.';
 
@@ -235,12 +236,15 @@ export async function runCloudflareChapter({
     await runStep(
       frame,
       'Deploy to workers.dev',
-      "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies the database's migrations, " +
-        'then deploys again so the running site carries its real origin.',
+      "Deploys the Worker, writes its URL as the site's origin, applies the database's " +
+        'migrations, rebuilds so the pages carry that origin, then deploys again.',
       async () => {
         const first = await deployWorker({ dir, log, accountId });
         await writePublicOrigin(dir, first.url);
         await applyMigrations({ dir, log, accountId });
+        // The origin in cairn.config.ts is baked into the prerendered pages, so only a rebuild
+        // carries it into the second deploy.
+        await buildSite({ dir, log });
         const second = await deployWorker({ dir, log, accountId });
         if (second.url !== first.url) {
           throw new Error(
@@ -266,7 +270,7 @@ export async function runCloudflareChapter({
     frame,
     'Sign you in',
     'Writes your owner row and a ten-minute sign-in link straight into the deployed database, ' +
-      'then opens it.',
+      'then tries to open it in your browser.',
     async () => {
       const { confirmPath } = await seedOwnerAndToken({ dir, email: ownerEmail, log, accountId });
       await openBrowser(`${deployUrl}${confirmPath}`, log, { secret: true });

@@ -158,7 +158,7 @@ export async function runGithubChapter({
   // which for an org-owned App is the org itself. Without this fallback ctx.org stays undefined
   // and every later request (the membership check, createRepo) hits /orgs/undefined/... forever.
   const ctx = {
-    appName: flags.appName ?? `cairn-${slug}`,
+    appName: flags.appName ?? (slug.startsWith('cairn-') ? slug : `cairn-${slug}`),
     repoName: flags.repoName ?? slug,
     ownerType,
     org: resuming && ownerType === 'org' ? (flags.org ?? savedGithub.owner) : flags.org,
@@ -331,7 +331,8 @@ export async function runGithubChapter({
           await updateSite(siteId, { step, github: { installationId: result.installationId } });
         } catch (err) {
           if (err.catalogue?.code === 'org-approval-pending') {
-            await updateSite(siteId, { step: 'awaiting-org-approval' });
+            // Like the write above, never backward: a resume at repo-created keeps that step.
+            if (resumeStep !== 'repo-created') await updateSite(siteId, { step: 'awaiting-org-approval' });
             log(err.message);
             parked = true;
             return;
@@ -399,14 +400,16 @@ export async function runGithubChapter({
           dir,
           appName: ctx.appName,
         });
+        // Saved before the coverage check: if the installation misses the new repository, the
+        // re-run must resume at repo-created rather than collide with the repository it just made.
+        ctx.repo = created;
+        await updateSite(siteId, { step: 'repo-created', github: { repo: created } });
         await verifyInstallationCovers(ctx.userToken, {
           installationId: ctx.installationId,
           owner: created.owner,
           repo: created.repo,
           dir,
         });
-        ctx.repo = created;
-        await updateSite(siteId, { step: 'repo-created', github: { repo: created } });
       },
     );
   }

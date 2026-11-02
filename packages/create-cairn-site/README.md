@@ -259,14 +259,16 @@ only turns on sign-in email for your domain; it does not ask about Workers Paid 
 
 ### Declining costs you nothing
 
-If you say no, the run stops there and exits `0`. Your site keeps serving on your domain, and you
-keep editing and publishing as its owner. What you cannot do is invite anyone else, since there is
-no way to send them a link.
+If you say no, the email chapter stops there, and the run goes on to offer the Builds chapter.
+Your site keeps serving on your domain, and you keep editing and publishing as its owner. What you
+cannot do is invite anyone else, since there is no way to send them a link.
 
 Your way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
 link straight into your site's database without touching email. Each one lasts 30 days, so nothing
 expires out from under you while you decide. Running the command again re-offers turning on email
-sign-in.
+sign-in until you connect Workers Builds. Once Builds is connected, the command no longer offers
+it, so turn sign-in email on first. `--yes` consents to the Builds chapter, so a `--yes` run
+without `--email` declines email and connects Builds in the same run.
 
 ### What it does
 
@@ -288,8 +290,8 @@ command to run again. A later run picks up where it stopped and does not redo th
 
 Onboarding writes a DMARC record for your domain set to `p=reject`, which asks receivers to reject
 mail from your domain that does not pass authentication. If you later add another service that
-sends as your domain, a newsletter tool for instance, add it to that record or its mail is
-rejected. Turning Email Sending off again does not remove the record.
+sends as your domain, a newsletter tool for instance, authenticate it against your domain's
+mail records or its mail is rejected. Turning Email Sending off again does not remove the record.
 
 ### Flags
 
@@ -379,7 +381,7 @@ Each hop is saved as it completes, the same as every earlier chapter. A park res
 re-run; the connection and trigger are adopted rather than re-created if they already exist. Once
 your site is live on Workers Builds, running `--connect` again re-checks your deploy config and
 commits anything that has drifted on your machine since, such as a `PUBLIC_ORIGIN` your machine
-last deployed but never pushed. With `--yes`, a run that finds local drift stops and asks you to
+last deployed but never pushed, or the `publicOrigin` in `src/theme/cairn.config.ts`. With `--yes`, a run that finds local drift stops and asks you to
 re-run interactively: committing the change needs the sign-in click above, and `--yes` never opens
 a browser.
 

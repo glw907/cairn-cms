@@ -21,30 +21,48 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const TSCONFIG = 'packages/cairn-cms-dev/tsconfig.json';
 const ESLINT_PATH = 'packages/cairn-cms-dev/src';
 const MANIFEST = 'packages/cairn-cms-dev/package.json';
+const SCAFFOLD_MANIFEST = 'packages/create-cairn-site/package.json';
 const EXPECTED_REPOSITORY_URL = 'git+https://github.com/glw907/cairn-cms.git';
 
 /**
- * Check the dev-package manifest for the fields its OIDC publish depends on. npm validates a
- * provenance bundle against the manifest's `repository.url` and rejects the publish with a 422
- * when the two disagree, which is invisible to every other gate because nothing else reads the
- * field. The 0.95.0 cut is why this exists: the dev backend's first publish was done by hand, so
- * the OIDC path had never run against this manifest, and the release published the engine while
- * this half failed.
- * @returns {boolean} true when the manifest carries a repository URL matching the engine's
+ * Check one manifest's `repository.url` against the engine repository's. npm validates a
+ * provenance bundle against that field and rejects the publish with a 422 when the two disagree,
+ * which is invisible to every other gate because nothing else reads the field.
+ * @param {{ repository?: { url?: string } }} manifest the parsed package manifest
+ * @param {string} path the manifest's repo-relative path, named in the error
+ * @returns {{ ok: true } | { ok: false, error: string }}
  */
-function checkManifest() {
-  console.log('== dev-package manifest (the fields provenance validation reads) ==');
-  const manifest = JSON.parse(readFileSync(resolve(ROOT, MANIFEST), 'utf8'));
+export function checkRepository(manifest, path) {
   const url = manifest.repository?.url;
   if (url !== EXPECTED_REPOSITORY_URL) {
-    console.log(
-      `${MANIFEST}: repository.url is ${JSON.stringify(url)}, expected ${JSON.stringify(EXPECTED_REPOSITORY_URL)}.`
-    );
-    console.log('An OIDC publish fails with a 422 when provenance and the manifest disagree.');
-    return false;
+    return {
+      ok: false,
+      error: `${path}: repository.url is ${JSON.stringify(url)}, expected ${JSON.stringify(EXPECTED_REPOSITORY_URL)}.`
+    };
   }
-  console.log('repository.url matches the engine repository');
-  return true;
+  return { ok: true };
+}
+
+/**
+ * Check both workspace manifests for the fields their OIDC publishes depend on, namely the
+ * repository URL. The 0.95.0 cut is why this exists: the dev backend's first publish was done by
+ * hand, so the OIDC path had never run against this manifest, and the release published the
+ * engine while this half failed. The create-cairn-site manifest publishes the same way.
+ * @returns {boolean} true when every manifest carries a repository URL matching the engine's
+ */
+function checkManifest() {
+  console.log('== package manifests (the fields provenance validation reads) ==');
+  let ok = true;
+  for (const path of [MANIFEST, SCAFFOLD_MANIFEST]) {
+    const result = checkRepository(JSON.parse(readFileSync(resolve(ROOT, path), 'utf8')), path);
+    if (!result.ok) {
+      console.log(result.error);
+      console.log('An OIDC publish fails with a 422 when provenance and the manifest disagree.');
+      ok = false;
+    }
+  }
+  if (ok) console.log('repository.url matches the engine repository in both manifests');
+  return ok;
 }
 
 /**

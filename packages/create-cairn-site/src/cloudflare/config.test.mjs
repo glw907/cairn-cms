@@ -144,21 +144,123 @@ test('a doctored fixture missing a target throws naming the file and the string'
   );
 });
 
-test('writePublicOrigin replaces the localhost placeholder', async (t) => {
-  const dir = await fixtureDir(t);
+const SHOWCASE_PUBLIC_ORIGIN = "export const publicOrigin = 'https://showcase.test';\n";
+
+/**
+ * Make a scaffold directory holding both files `writePublicOrigin` owns.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @param {{ wrangler?: string, config?: string }} [files] content overrides
+ * @returns {Promise<string>} the directory's absolute path
+ */
+async function originFixtureDir(t, { wrangler, config } = {}) {
+  const dir = await fixtureDir(t, wrangler);
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'src/theme/cairn.config.ts'),
+    config ?? `import { x } from 'y';\n${SHOWCASE_PUBLIC_ORIGIN}export const z = 1;\n`,
+  );
+  return dir;
+}
+
+test('writePublicOrigin replaces the localhost placeholder and the showcase literal together', async (t) => {
+  const dir = await originFixtureDir(t);
   await writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev');
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
   assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club.my-account.workers.dev"'));
   assert.ok(!content.includes('http://localhost:4173'));
+  const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.ok(config.includes("export const publicOrigin = 'https://alpine-club.my-account.workers.dev';"));
+  assert.ok(!config.includes('showcase.test'));
+  assert.ok(config.includes('export const z = 1;'), 'the rest of the file must survive');
 });
 
 test('writePublicOrigin replaces a previous workers.dev value on a resumed run', async (t) => {
-  const dir = await fixtureDir(t);
+  const dir = await originFixtureDir(t);
   await writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev');
   await writePublicOrigin(dir, 'https://alpine-club-2.my-account.workers.dev');
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
   assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club-2.my-account.workers.dev"'));
   assert.ok(!content.includes('alpine-club.my-account.workers.dev"'));
+  const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.ok(config.includes("publicOrigin = 'https://alpine-club-2.my-account.workers.dev';"));
+  assert.ok(!config.includes('alpine-club.my-account.workers.dev'));
+});
+
+test('writePublicOrigin rewrites the real baked template cairn.config.ts', async (t) => {
+  const templatePath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../template',
+    'src/theme/cairn.config.ts',
+  );
+  const dir = await originFixtureDir(t, { config: await readFile(templatePath, 'utf8') });
+  await writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev');
+  const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.match(config, /export const publicOrigin = 'https:\/\/alpine-club\.my-account\.workers\.dev';/);
+  assert.ok(!config.includes('https://showcase.test'), 'no stale placeholder origin may remain');
+});
+
+test('writePublicOrigin throws naming cairn.config.ts when its literal is missing, and writes neither file', async (t) => {
+  const dir = await originFixtureDir(t, { config: "export const other = 'x';\n" });
+  const wranglerBefore = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+  const configBefore = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+
+  await assert.rejects(
+    () => writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev'),
+    (err) => {
+      assert.match(err.message, /cairn\.config\.ts/);
+      assert.match(err.message, /publicOrigin/);
+      return true;
+    },
+  );
+
+  assert.equal(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'), wranglerBefore);
+  assert.equal(await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8'), configBefore);
+});
+
+for (const [label, url] of [
+  ['a quote', "https://evil.example';import('x');'"],
+  ['a quote in the host', "https://a'b.example"],
+  ['a path', 'https://example.com/admin'],
+  ['a trailing slash', 'https://example.com/'],
+  ['no scheme', 'example.com'],
+]) {
+  test(`writePublicOrigin refuses an origin with ${label}, naming it, and writes neither file`, async (t) => {
+    const dir = await originFixtureDir(t);
+    const wranglerBefore = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+    const configBefore = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+
+    await assert.rejects(
+      () => writePublicOrigin(dir, url),
+      (err) => {
+        assert.ok(err.message.includes(JSON.stringify(url)), `expected the value named, got: ${err.message}`);
+        return true;
+      },
+    );
+
+    assert.equal(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'), wranglerBefore);
+    assert.equal(await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8'), configBefore);
+  });
+}
+
+for (const url of ['https://alpine-club.my-account.workers.dev', 'https://www.alpine-club.example']) {
+  test(`writePublicOrigin accepts the origin ${url}`, async (t) => {
+    const dir = await originFixtureDir(t);
+    await writePublicOrigin(dir, url);
+    const config = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+    assert.ok(config.includes(`export const publicOrigin = '${url}';`));
+  });
+}
+
+test('writePublicOrigin throws naming wrangler.jsonc when its key is missing, and writes neither file', async (t) => {
+  const dir = await originFixtureDir(t, { wrangler: '{ "name": "x" }\n' });
+  const configBefore = await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8');
+
+  await assert.rejects(
+    () => writePublicOrigin(dir, 'https://alpine-club.my-account.workers.dev'),
+    /wrangler\.jsonc/,
+  );
+
+  assert.equal(await readFile(path.join(dir, 'src/theme/cairn.config.ts'), 'utf8'), configBefore);
 });
 
 test('workerNameFor slugs the name with the cairn-site fallback, matching scaffold.mjs and the GitHub chapter', () => {

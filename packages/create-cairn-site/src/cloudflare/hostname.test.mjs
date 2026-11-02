@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { EventEmitter } from 'node:events';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
 import { makeApi } from './api.mjs';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
+import { makeSiteBin } from '../../test/fake-site-bin.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import {
   PROPAGATION_BUDGET_MS,
@@ -53,12 +54,29 @@ async function setupWrangler(t, deployReply = { code: 0, stdout: DEPLOY_STDOUT_S
   return fake;
 }
 
-/** A scaffold root carrying just enough wrangler.jsonc for writePublicOrigin to rewrite. */
+/**
+ * A scaffold root carrying just enough wrangler.jsonc and cairn.config.ts for writePublicOrigin
+ * to rewrite. It also points CAIRN_NPM_BIN at a fake npm, since the cutover builds before it
+ * redeploys.
+ */
 async function setupDir(t, origin = WORKERS_DEV_URL) {
   const dir = await mkdtemp(join(tmpdir(), 'cairn-hostname-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await writeFile(join(dir, 'wrangler.jsonc'), `{\n  "vars": {\n    "PUBLIC_ORIGIN": "${origin}"\n  }\n}\n`);
+  await mkdir(join(dir, 'src/theme'), { recursive: true });
+  await writeFile(join(dir, 'src/theme/cairn.config.ts'), `export const publicOrigin = '${origin}';\n`);
+  const npm = await makeFakeBin('npm');
+  t.after(() => npm.close());
+  process.env.CAIRN_NPM_BIN = npm.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_NPM_BIN;
+  });
   return dir;
+}
+
+/** Read the scaffold's cairn.config.ts back off disk. */
+function readConfig(dir) {
+  return readFile(join(dir, 'src/theme/cairn.config.ts'), 'utf8');
 }
 
 /** Read the scaffold's wrangler.jsonc back off disk, the load-bearing way to check the origin. */
@@ -436,7 +454,7 @@ test('redeploy failure maps to cutover-deploy-failed and restores the workers.de
       // deploy-failed row's, which embedding the inner message whole would produce instead.
       assert.equal(
         err.catalogue.next,
-        `fix what wrangler reported above, then re-run npx create-cairn-site --dir ${dir}.`,
+        `fix what was reported above, then re-run npx create-cairn-site --dir ${dir}.`,
       );
       return true;
     },
@@ -446,6 +464,160 @@ test('redeploy failure maps to cutover-deploy-failed and restores the workers.de
   const content = await readOrigin(dir);
   assert.ok(content.includes(WORKERS_DEV_URL));
   assert.ok(!content.includes(`https://${record.cloudflare.domain}`));
+});
+
+test('a mixed-case domain on the record still cuts over to a lowercase bare origin', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir, domain: 'Carin-Test.org' });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  const result = await cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} });
+
+  assert.equal(result.outcome, 'live');
+  assert.ok((await readOrigin(dir)).includes('https://carin-test.org'));
+});
+
+test('a Unicode domain on the record cuts over to its punycode bare origin', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir, domain: 'b\u00fccher.example' });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} });
+
+  assert.deepEqual(await bin.lines(), [
+    'run build | https://xn--bcher-kva.example',
+    'deploy | https://xn--bcher-kva.example',
+  ]);
+  assert.ok((await readOrigin(dir)).includes('https://xn--bcher-kva.example'));
+});
+
+test('the cutover builds under the new origin before its deploy', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  const result = await cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} });
+
+  assert.equal(result.outcome, 'live');
+  assert.deepEqual(await bin.lines(), [
+    `run build | https://${record.cloudflare.domain}`,
+    `deploy | https://${record.cloudflare.domain}`,
+  ]);
+});
+
+test('a failed build in the cutover restores both origin files and says the rebuild failed', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  await bin.failBuild();
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+  });
+  const record = await buildRecord({ api, dir });
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await assert.rejects(
+    () => cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {} }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'cutover-deploy-failed');
+      assert.match(err.message, /Rebuilding and redeploying/);
+      assert.match(err.message, /build exploded/);
+      return true;
+    },
+  );
+
+  assert.ok((await readOrigin(dir)).includes(WORKERS_DEV_URL));
+  assert.ok((await readConfig(dir)).includes(`'${WORKERS_DEV_URL}'`));
+  assert.ok(!(await readConfig(dir)).includes(record.cloudflare.domain));
+  assert.ok(!(await bin.lines()).some((l) => l.startsWith('deploy')), 'no deploy after a failed build');
+});
+
+test('a failure partway through the forward origin write still restores both files', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  const fake = await setupWrangler(t);
+  const record = await buildRecord({ api, dir });
+  const { writePublicOrigin } = await import('./config.mjs');
+  const writes = [];
+  // The forward write lands its first file and then fails, the way a second file that cannot be
+  // written would leave the pair.
+  const writePublicOriginFn = async (target, url) => {
+    writes.push(url);
+    await writePublicOrigin(target, url);
+    if (writes.length === 1) throw new Error('EACCES: permission denied, open cairn.config.ts');
+  };
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await assert.rejects(
+    () => cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {}, writePublicOriginFn }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'cutover-deploy-failed');
+      assert.match(err.message, /EACCES/);
+      assert.match(err.message, /already restored/);
+      return true;
+    },
+  );
+
+  assert.deepEqual(writes, [`https://${record.cloudflare.domain}`, WORKERS_DEV_URL]);
+  assert.ok((await readOrigin(dir)).includes(WORKERS_DEV_URL));
+  assert.ok((await readConfig(dir)).includes(`'${WORKERS_DEV_URL}'`));
+  assert.deepEqual(await fake.invocations(), [], 'nothing builds or deploys after a failed write');
+});
+
+test('a restore that fails too keeps the original cause and says the origin is left on the domain', async (t) => {
+  const { api } = await setupCloudflare(t);
+  const dir = await setupDir(t);
+  await setupWrangler(t, { code: 1, stderr: 'ERROR: script size limit exceeded' });
+  const record = await buildRecord({ api, dir });
+  const { writePublicOrigin } = await import('./config.mjs');
+  let calls = 0;
+  const writePublicOriginFn = async (target, url) => {
+    calls += 1;
+    if (calls === 2) throw new Error('EROFS: read-only file system');
+    await writePublicOrigin(target, url);
+  };
+
+  const { cutOverHostname } = await import('./hostname.mjs');
+  await assert.rejects(
+    () => cutOverHostname({ record, api, fetchImpl: alwaysMatchingFetch(), log: () => {}, writePublicOriginFn }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'cutover-deploy-failed');
+      assert.match(err.message, /script size limit exceeded/, 'the original failure is still named');
+      assert.match(err.message, /EROFS/, 'the restore failure is named');
+      assert.ok(err.message.includes(`https://${record.cloudflare.domain}`), `got: ${err.message}`);
+      assert.equal(/already restored/.test(err.message), false, 'no claim of a restore that did not happen');
+      return true;
+    },
+  );
+
+  assert.ok((await readOrigin(dir)).includes(`https://${record.cloudflare.domain}`));
 });
 
 // --- The hold seam (Task 4a): the pre-redeploy confirm, held ------------------------------------

@@ -410,6 +410,8 @@ test('cutover-deploy-failed says the site is still working on workers.dev with n
   assert.match(err.message, /workers\.dev/);
   assert.match(err.message, /restored/);
   assert.match(err.message, /still working/);
+  assert.match(err.message, /Rebuilding and redeploying/);
+  assert.match(err.message, /The build or wrangler reported/, 'a build failure must not read as wrangler\'s');
 });
 
 test('carry-over-declined now reports the declined kind', () => {
@@ -444,6 +446,13 @@ test('paid-plan-declined differs between its first and re-offered forms', () => 
   const reoffered = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered: true });
   assert.notEqual(first.message, reoffered.message);
   assert.match(reoffered.message, /Next:/);
+});
+
+test('paid-plan-declined, in both forms, says the offer ends once Workers Builds is connected', () => {
+  for (const reoffered of [false, true]) {
+    const err = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered });
+    assert.match(err.message, /before you connect Workers Builds/);
+  }
 });
 
 test('paid-plan-missing deep-links the plan page and states the price', () => {

@@ -32,6 +32,13 @@ import { components } from './markdown-components.js';
 import themeCss from './theme.css?url';
 import siteCss from './site.css?url';
 
+/**
+ * The site's public origin as a literal: the feed, sitemap, robots.txt, and canonical links read
+ * it at build time. `PUBLIC_ORIGIN` in `wrangler.jsonc` is the Worker's runtime value for the same
+ * host, so a hand change to the domain edits both. Setup rewrites both together, then rebuilds.
+ */
+export const publicOrigin = 'https://showcase.test';
+
 const registry = defineRegistry({ components });
 
 // The real render path: parse markdown through the engine so registered components render. The
@@ -180,7 +187,7 @@ export const cairn = defineAdapter({
     '/admin/theme-kit': ['owner'],
   }),
   // cairn-template:exclude-end
-  // A verified sender literal, not derived from ORIGIN or any other URL host: Cloudflare Email
+  // A verified sender literal, not derived from publicOrigin or any other URL host: Cloudflare Email
   // Routing verifies a sender address, not a domain owned by inference, so deriving one from a
   // URL host is exactly what E_SENDER_NOT_VERIFIED punishes on send.
   email: { from: 'cms@showcase.test' },

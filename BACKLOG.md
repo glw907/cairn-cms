@@ -3,12 +3,15 @@
 > Project issue tracker. Managed by `/log-issue`.
 
 ## High
-- [ ] **#42** Give a scaffolded site one public origin `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)* *(swept 2026-10-31)*
-  A scaffolded site keeps `ORIGIN = 'https://showcase.test'` (`templates/waymark/src/chassis/content.ts:36`), so its sitemap, robots `Sitemap:` line, and feed URLs point at a placeholder host after deploy; `writePublicOrigin` (`packages/create-cairn-site/src/cloudflare/config.mjs:133`) rewrites only `wrangler.jsonc`. Give setup one origin source, written when `PUBLIC_ORIGIN` is, with a test.
-  Placement: Scaffold pass.
-  Friction entry 81 (2b close, page build-the-public-routes): A site's public origin has two homes that nothing ties together. The prerendered routes read the `ORIGIN` literal in the content module, which the build writes into every canonical URL, `og:url`, feed, and sitemap `loc`, while the Worker reads `PUBLIC_ORIGIN` from `wrangler.jsonc` for sign-in and preview links. The scaffold ships them different (`'https://showcase.test'` and `http://localhost:4173`), and no build check or `cairn-audit` rule compares them, so a site that deploys after setting only `PUBLIC_ORIGIN` publishes a placeholder origin in every prerendered file. build-the-public-routes has to tell the developer to edit both before the production build. Fix candidates: have the `cairnManifest` plugin or `cairn doctor` compare the literal against `PUBLIC_ORIGIN`, or derive the literal from one committed value both read (`templates/waymark/src/chassis/content.ts:34-53`, `templates/waymark/wrangler.jsonc:43`; found while writing the build-the-public-routes page, 2026-10-12).
+- [ ] **#203** Scope the App's installation and its minted token to the one repository `#improvement` `#cairn-cms` *(2026-11-01)*
+  The install prompt and the `installation-not-covering-repo` remedy steer a first run to "All repositories" (`packages/create-cairn-site/src/github/install.mjs:237`, `packages/create-cairn-site/src/github/catalogue.mjs:132-134`), while the App holds `contents: write`, `administration: write`, and `workflows: write` (`packages/create-cairn-site/src/github/manifest.mjs:58-62`) and the engine mints unscoped installation tokens (`src/lib/github/signing.ts:87` POSTs `/access_tokens` with no `repositories` or `permissions` body). A token minted for one site can then write, administer, and change workflows on every repository the owner's account holds. Options: scope the minted token to the one repository and `contents: write`, and/or keep "Only select repositories" as the default advice, and add a closing-block line telling the owner to narrow the installation (`docs/admin/create-your-site.md:88` already says to). An `auth-data` engine change and a product and security call. Found by the scaffold-setup pass's security review (H1).
+  Placement: Needs Geoff's decision before the release.
 
 ## Medium
+- [ ] **#202** Redeploy after a crash between `writeEmailFrom` and its deploy `#bug` `#cairn-cms` *(2026-11-01)*
+  `packages/create-cairn-site/src/cloudflare/chapter2.mjs` writes the sender into `src/theme/cairn.config.ts` and then builds and deploys in one step (search `writeEmailFrom`). A crash after the write and before the deploy leaves the sender written but undeployed, and the resume sees `writeEmailFrom` return false (the address is already correct) and skips the build and deploy, so the running site keeps the placeholder sender and sign-in email fails or sends from the wrong address. Fix candidate: save a marker before the write and clear it after the deploy, or compare the deployed config. Found by the scaffold-setup pass's review.
+  Placement: After the release.
+
 - [ ] **#188** Re-add the cairn-writing-docs eval cases on editor pages `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-10-31)* *(swept 2026-11-01)*
   The regression and capability cases in `.claude/skills/cairn-writing-docs/evals/evals.json` that edited a technical docs page left with those tracks. Once PR #159 merges and `docs/editors/` holds pages, write the equivalent cases against editor pages so the chain is graded on the track it still covers.
   Placement: Cleanup round.
@@ -20,9 +23,6 @@
 - [ ] **#70** Audit the shipped agent guidance's routes to the docs once the arms are complete `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-25)* *(swept 2026-10-31)*
   After the human arms land, check that every packaged skill and `claude/CLAUDE.md` route cites a finished target and every target is reachable (the agent-first pattern's pass 4). The `admin-design-system` link at `skills/cairn-extending-a-site/SKILL.md:24` is fixed in pass 1.
   Placement: Agent-first pass 4.
-- [ ] **#97** Fix the first-run install remedy and the resume after a created repository `#bug` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
-  The `installation-not-covering-repo` remedy sends the reader to "Only select repositories" (`packages/create-cairn-site/src/github/catalogue.mjs:131`), the option that left a first run without the repository it was about to create. A resume after `createRepo` also stops with `repo-name-collision` (`src/github/repo.mjs:70`) instead of adopting a repository the tool made. Fix candidates: name "All repositories" for a first run, and adopt an empty repository the run itself created. Found writing the capture runbook, 2026-10-31.
-  Placement: Scaffold pass.
 - [ ] **#100** Render length and date bounds as input attributes `#improvement` `#cairn-cms` *(2026-10-31)* *(swept 2026-10-31)*
   Field constraints reach the form unevenly: `NumberField`'s `min`, `max`, and `integer` render as input attributes, but `TextField`/`TextareaField` `min`, `max`, `length`, and `pattern` and `DateField` `min`/`max` do not, so the browser accepts a value the save then refuses with one banner. Fix: render the matching HTML attributes (`maxlength`, `minlength`, `pattern`, a date input's `min`/`max`) on every constrained leaf (`src/lib/admin/FieldInput.svelte:218,227-237,264`; found while writing the content-model page, 2026-10-12).
   Sweep 2026-10-31: Cheap feedback on the editor's core form. `pattern` stays out, because the browser anchors it. `src/lib/admin/FieldInput.svelte:218,264,376`.
@@ -148,6 +148,18 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#206** Make `--dry-run` at a decline or Builds terminal step print only the hops left `#bug` `#cairn-cms` *(2026-11-01)*
+  `stepIndex` in `packages/create-cairn-site/src/cloudflare/chapter2.mjs` reads any step missing from `STEP_ORDER` as `live`, and `STEP_ORDER` omits `paid-plan-declined` and chapter 3's steps, so `runChapter2` under `dryRun` with a record at one of those steps passes every `hasReached` check (the admission and the zone, carry-over, delegation, and cutover hops) and prints zone, carry-over, and cutover hops for a domain that is already finished. bin.mjs passes `record: null` under `--dry-run` today, so the symptom needs a caller that hands a dry run its record. Fix candidate: map the terminal and chapter 3 steps to their effective position before the `hasReached` calls. Found by the scaffold-setup pass's review.
+  Placement: After the release.
+
+- [ ] **#205** Narrow `publish.yml`'s OIDC permission to the publish steps `#improvement` `#cairn-cms` *(2026-11-01)*
+  `.github/workflows/publish.yml:20` grants `id-token: write` workflow-wide, and each job runs `npm ci` and the template bake with install scripts enabled under it, the same as the sibling jobs, so a compromised dependency's install script could mint a publish token. The actions are pinned to tags, and `npm install -g npm@11` floats. Fix candidate: job-level permissions, or split build and publish into separate jobs, and pin the actions and npm. Found by the scaffold-setup pass's security review (L7).
+  Placement: After the release.
+
+- [ ] **#204** Keep an env token out of the state file, and write the state file atomically `#improvement` `#cairn-cms` *(2026-11-01)*
+  `runChapter2`'s token hop (`packages/create-cairn-site/src/cloudflare/chapter2.mjs`, search `saveChapter2Token`) copies a `CAIRN_CF_API_TOKEN` env token into the state file, including on the email re-offer, so a token the owner meant to keep only in the environment lands on disk until a terminal step deletes it. `saveSite` (`packages/create-cairn-site/src/state.mjs:60`) also writes in place without a temp file and rename, so a crash mid-write can truncate the record. Fix candidate: hold an env token in memory only, and write through a temp file and `rename`. Found by the scaffold-setup pass's security review (L3).
+  Placement: After the release.
+
 - [ ] **#197** Refuse a rename onto an address another entry holds `#bug` `#cairn-cms` *(2026-11-01)*
   `renameAction`'s collision check (`src/lib/sveltekit/content-routes-entry-destructive.ts:265`) reads only the new file path in the same concept, so a rename that lands on a live entry's permalink in another concept commits to main. `createSiteResolver`'s duplicate throw (`src/lib/delivery/site-resolver.ts:104`) then fails every later deploy until someone moves an entry. The media and publish pass closes this for publish (#31) and leaves rename. Found while planning that pass, 2026-11-01.
   Placement: Final engine batch, content rules.
@@ -182,26 +194,9 @@
 - [ ] **#173** Rename the live reproduction fixtures generically `#improvement` `#cairn-cms` *(2026-10-31)*
   The live reproduction fixtures carry outdoor-club names (`trailhead-view`, `trail-guide`, `volunteer-spotlight`, `src/lib/reproductions/`), and the media and tags captions repeat them. Geoff ruled on 2026-10-31 to rename them generically in the final engine batch; the captions follow.
   Placement: Final engine batch, admin and tidy.
-- [ ] **#174** Make the setup App trip surface a failed browser open and a wrong-form start `#improvement` `#cairn-cms` *(2026-10-31)*
-  The setup run's App trip fails in two quiet ways. `xdg-open` fires detached and swallows its own failure (`packages/create-cairn-site/src/github/open.mjs:52`), so on a machine whose last-used browser profile is not the one the reader works in, no window reaches them; the capture's first run lost an attempt this way, and the cause (Chromium's last-used profile) is likely and unproven. A reader who goes to GitHub directly instead of the printed link gets a blank Homepage URL form, and the App made there never reports back. Nothing printed warns against it, and the only signal is `browser-step-abandoned` after the ten-minute wait (`github/loopback.mjs:84`). Fix candidates: print "use this link, not GitHub's own form" beside the link, and name a profile-free fallback. Found by the live capture (pass 4, 2026-10-31).
-  Placement: Scaffold pass.
-- [ ] **#175** Name the "All repositories" choice in the GitHub install prompt `#improvement` `#cairn-cms` *(2026-10-31)*
-  The install prompt says only "choose where to install it and approve" (`packages/create-cairn-site/src/github/install.mjs:235`), while a first run needs "All repositories" (the capture runbook, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-10-30-capture-runbook.md`, step 2.4; #97 holds the remedy-text half). Fix candidate: the prompt names the choice. Found by the admin arm (pass 4, 2026-10-31).
-  Placement: Scaffold pass.
 - [ ] **#176** Give a spent or expired sign-in link advice that fixes it `#bug` `#cairn-cms` *(2026-10-31)*
   Re-clicking a spent sign-in link says "This browser has no pending sign-in. Request a new link below and open it in this browser." `confirmAction` gives every cookie-less refusal that message (`src/lib/sveltekit/auth-routes.ts:363`, `src/lib/admin/ConfirmPage.svelte:67`), so a used or expired link gets advice that does not fix it. This is an `auth-data` path, so the fix is batched and not made by a docs pass. The "four failure messages, one fix" item shares this cause. Found by the admin arm (pass 4, 2026-10-31).
   Placement: Final engine batch, admin and tidy.
-- [ ] **#177** Fix the setup output copy that misstates or reads oddly `#improvement` `#cairn-cms` *(2026-10-31)*
-  Setup output copy that misstates or reads oddly, all in `packages/create-cairn-site`:
-  - "Your site is live on GitHub:" labels a private repository (`bin.mjs:87`).
-  - The step title "Sign you in" reads oddly among the others (`src/cloudflare/chapter.mjs:267`).
-  - The default App name doubles the prefix for a site with "cairn" in its name, `cairn-cairn-docs-capture-2` (`src/github/chapter.mjs:161`).
-  - "A sign-in page just opened; click Sign in there." prints whether or not a page opened (`src/cloudflare/bootstrap.mjs:29`).
-  - A non-interactive `--sign-in` prints the literal placeholder `--dir <dir>` and says a page opened while it withholds the link (`src/github/open.mjs:69`).
-  - The scaffold step ends with "This scaffold is local only ... Those steps arrive with the next release" (`src/scaffold.mjs:260`), and the same run then continues to GitHub and Cloudflare.
-  - The cost preamble opens "Before you start, the honest cost picture." (`src/money.mjs:30`).
-  Found by the live capture (pass 4, 2026-10-31).
-  Placement: Scaffold pass.
 - [ ] **#178** Give the doctor's SKIP line its own title, as PASS has `#improvement` `#cairn-cms` *(2026-10-31)*
   The doctor's SKIP line keeps a failure-phrased title: "Guard is missing the declared role vocabulary" (`src/lib/diagnostics/conditions.ts:172`) reports a skip because no custom roles are declared (`tool/internal/doctor/testdata/golden/all-clean.txt:10`, `04-doctor-report.txt`). The 2b-close engine pass fixed the PASS titles only. Fix candidate: give SKIP its own title, as PASS has.
   Placement: Final engine batch.
@@ -217,15 +212,9 @@
 - [ ] **#182** Give the one sign-in problem one message with one fix `#improvement` `#cairn-cms` *(2026-10-31)*
   Four failure messages for one sign-in problem, with one fix, one of which omits "in this browser" (`LoginPage.svelte:150-170`, `ConfirmPage.svelte:67-75`, `src/lib/sveltekit/refusal-codes.ts:21`). Shares its cause with the spent-link item above.
   Placement: Final engine batch, content rules.
-- [ ] **#183** Re-offer email sign-in on a re-entry after a decline `#bug` `#cairn-cms` *(2026-10-31)*
-  A declined sign-in email is never re-offered. `packages/create-cairn-site/README.md` ("Declining costs you nothing") and `bin.mjs:479` both promise a re-run asks again, but a re-entry at the `paid-plan-declined` step prints the decline and returns (`src/cloudflare/chapter2.mjs:342`), so an owner who said no has no way to turn it on. `docs/admin/own-your-domain.md` states what the code does today. Found by the fact check, 2026-10-31, from the code, not a live run. Fix candidate: a re-entry at that step asks the question again.
-  Placement: Scaffold pass.
-- [ ] **#184** Tell the owner what the DMARC `p=reject` record does before onboarding writes it `#improvement` `#cairn-cms` *(2026-10-31)*
-  Email onboarding writes `p=reject` on the whole domain's DMARC record (`src/cloudflare/chapter2.mjs:806`), which governs every sender and not only cairn's. The completion message warns only about services added later. Fix candidate: the domain prompt names the effect before it asks, and says whether an existing `_dmarc` record is replaced (unverified).
-  Placement: Scaffold pass.
 - [ ] **#185** Re-capture the setup transcript with a neutral scratch path and host `#improvement` `#cairn-cms` *(2026-10-31)*
-  The recaptured `01-create-cairn-site.txt` still holds the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL. No page quotes the path lines, and the package's `files` does not ship `test/`. Fixing it needs a recapture with a neutral scratch path. Found by the pass 4 close review, 2026-10-31. Verification note: this tree's `01-create-cairn-site.txt` lacks both strings; the same strings sit in `packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt:69-70,678,825,918,934`, so confirm which fixture the recapture changed before work starts.
-  Placement: Scaffold pass.
+  The recapture belongs in the one release's real install, not a separate run. `packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt` holds nine matches of the maintainer's home path (`/var/home/...`, from wrangler's asset-directory line) and the `glw907.workers.dev` URL, and `01d-resume.txt` is gone. Recapture with a neutral scratch path and host, then list the stale transcript blocks the scaffold-setup PR names. No page quotes the path lines, and the package's `files` does not ship `test/`. Found by the pass 4 close review, 2026-10-31.
+  Placement: The one release.
 - [ ] **#41** Say publish, not save, in `manifest.ts`'s comments `#bug` `#cairn-cms` `#initiative:docs-system` *(2026-10-24)* *(swept 2026-11-01)*
   `src/lib/content/manifest.ts:3-4` and `:430` say the save path patches the manifest; only publish commits it (`content-routes-entry-write.ts:368,506`).
   Placement: Final engine batch.
@@ -248,9 +237,9 @@
   `src/lib/admin/MediaBulkDeleteDialog.svelte:255` says "Every removal is one revertible commit you can undo", then says a developer reverts it. The single delete window and `docs/editors/manage-the-media-library.md` both say an editor cannot undo a delete. Drop "you can undo" from the string.
   Placement: Final engine batch, admin and tidy slice.
 
-- [ ] **#195** Publish `create-cairn-site` before the one release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)* *(swept 2026-11-01)*
-  `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `publish.yml` has no step for it, while `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`. The command does not work from a registry until the package is published. This is a prerequisite of the one release: the release cuts the engine and the dev package, bakes the template against them (`node scripts/bake-template.mjs --engine-spec '^<version>' --dev-spec '^<version>'`), and publishes the setup package from `npm pack --ignore-scripts`, since `prepack` would rebake with default specs.
-  Placement: Split: the scaffold pass adds the `publish.yml` job and the `cairn-releasing` steps, which land unrun; the one release does the bump, the bake against released versions, and the publish. npm cannot bind a trusted publisher to a package that does not exist, so the first publish is by hand.
+- [ ] **#195** Publish `create-cairn-site` before the one release `#improvement` `#cairn-cms` `#initiative:shared-standards` *(2026-11-01)*
+  `packages/create-cairn-site` is `0.0.0` in the repository, `npm view create-cairn-site` answers E404, and `docs/admin/create-your-site.md` and the root `README.md` open with `npx create-cairn-site`, so the command does not work from a registry until the package is published. The manifest, tarball contents, leak scan, and the `publish-create-site` job in `publish.yml` have landed; the job has never run. What remains is the release act: publish the first version by hand, set up npm trusted publishing for the package, watch the first OIDC run of `publish-create-site`, and run the real install.
+  Placement: The one release.
 
 - [ ] **#198** Refresh the stale `buildSitemapView` entry in the self-use allowlist `#improvement` `#cairn-cms` *(2026-11-01)*
   `scripts/checks/check-self-use-allowlist.json:86` keeps `buildSitemapView` on the allowlist as an export the showcase did not call. The showcase's sitemap route now calls it, so the entry may be removable. The path is on the `runner` map, so the scaffold template pass left it.
@@ -290,6 +279,43 @@
 - **#165** A dated filename whose prefix does not match the concept's `datePrefix` keeps date digits in its public...: Migration-only, cosmetic, and visible at the first URL check. The entry still works. (Geoff, 2026-10-31)
 
 ## Done
+- [x] **#42** Give a scaffolded site one public origin `#improvement` `#cairn-cms` `#initiative:docs-system` *(2026-10-24 → 2026-11-01)*
+  A scaffolded site keeps `ORIGIN = 'https://showcase.test'` (`templates/waymark/src/chassis/content.ts:36`), so its sitemap, robots `Sitemap:` line, and feed URLs point at a placeholder host after deploy; `writePublicOrigin` (`packages/create-cairn-site/src/cloudflare/config.mjs:133`) rewrites only `wrangler.jsonc`. Give setup one origin source, written when `PUBLIC_ORIGIN` is, with a test.
+  Placement: Scaffold pass.
+  Friction entry 81 (2b close, page build-the-public-routes): A site's public origin has two homes that nothing ties together. The prerendered routes read the `ORIGIN` literal in the content module, which the build writes into every canonical URL, `og:url`, feed, and sitemap `loc`, while the Worker reads `PUBLIC_ORIGIN` from `wrangler.jsonc` for sign-in and preview links. The scaffold ships them different (`'https://showcase.test'` and `http://localhost:4173`), and no build check or `cairn-audit` rule compares them, so a site that deploys after setting only `PUBLIC_ORIGIN` publishes a placeholder origin in every prerendered file. build-the-public-routes has to tell the developer to edit both before the production build. Fix candidates: have the `cairnManifest` plugin or `cairn doctor` compare the literal against `PUBLIC_ORIGIN`, or derive the literal from one committed value both read (`templates/waymark/src/chassis/content.ts:34-53`, `templates/waymark/wrangler.jsonc:43`; found while writing the build-the-public-routes page, 2026-10-12).
+  Done: setup writes the site's real origin to `publicOrigin` in `src/theme/cairn.config.ts` (`ORIGIN` in `content.ts` now imports it) and rebuilds before the second deploy and the domain cutover's deploy; CI asserts it on the packed scaffold.
+- [x] **#97** Fix the first-run install remedy and the resume after a created repository `#bug` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  The `installation-not-covering-repo` remedy sends the reader to "Only select repositories" (`packages/create-cairn-site/src/github/catalogue.mjs:131`), the option that left a first run without the repository it was about to create. A resume after `createRepo` also stops with `repo-name-collision` (`src/github/repo.mjs:70`) instead of adopting a repository the tool made. Fix candidates: name "All repositories" for a first run, and adopt an empty repository the run itself created. Found writing the capture runbook, 2026-10-31.
+  Placement: Scaffold pass.
+  Done: the remedy and the install prompt name "All repositories", and `repo-created` is saved before the coverage check, so a re-run resumes instead of stopping on `repo-name-collision`.
+- [x] **#174** Make the setup App trip surface a failed browser open and a wrong-form start `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  The setup run's App trip fails in two quiet ways. `xdg-open` fires detached and swallows its own failure (`packages/create-cairn-site/src/github/open.mjs:52`), so on a machine whose last-used browser profile is not the one the reader works in, no window reaches them; the capture's first run lost an attempt this way, and the cause (Chromium's last-used profile) is likely and unproven. A reader who goes to GitHub directly instead of the printed link gets a blank Homepage URL form, and the App made there never reports back. Nothing printed warns against it, and the only signal is `browser-step-abandoned` after the ten-minute wait (`github/loopback.mjs:84`). Fix candidates: print "use this link, not GitHub's own form" beside the link, and name a profile-free fallback. Found by the live capture (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+  Done: the App trip prints "use this link, not GitHub's own form" beside the link, and the abandon message names a profile-free fallback.
+- [x] **#175** Name the "All repositories" choice in the GitHub install prompt `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  The install prompt says only "choose where to install it and approve" (`packages/create-cairn-site/src/github/install.mjs:235`), while a first run needs "All repositories" (the capture runbook, `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-10-30-capture-runbook.md`, step 2.4; #97 holds the remedy-text half). Fix candidate: the prompt names the choice. Found by the admin arm (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+  Done: the install prompt names the "All repositories" choice (`src/github/install.mjs`).
+- [x] **#177** Fix the setup output copy that misstates or reads oddly `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  Setup output copy that misstates or reads oddly, all in `packages/create-cairn-site`:
+  - "Your site is live on GitHub:" labels a private repository (`bin.mjs:87`).
+  - The step title "Sign you in" reads oddly among the others (`src/cloudflare/chapter.mjs:267`).
+  - The default App name doubles the prefix for a site with "cairn" in its name, `cairn-cairn-docs-capture-2` (`src/github/chapter.mjs:161`).
+  - "A sign-in page just opened; click Sign in there." prints whether or not a page opened (`src/cloudflare/bootstrap.mjs:29`).
+  - A non-interactive `--sign-in` prints the literal placeholder `--dir <dir>` and says a page opened while it withholds the link (`src/github/open.mjs:69`).
+  - The scaffold step ends with "This scaffold is local only ... Those steps arrive with the next release" (`src/scaffold.mjs:260`), and the same run then continues to GitHub and Cloudflare.
+  - The cost preamble opens "Before you start, the honest cost picture." (`src/money.mjs:30`).
+  Found by the live capture (pass 4, 2026-10-31).
+  Placement: Scaffold pass.
+  Done: the listed lines are corrected, the hand-over says the run offers the repository and deploy, and the consent step carries the alike-names warning.
+- [x] **#183** Re-offer email sign-in on a re-entry after a decline `#bug` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  A declined sign-in email is never re-offered. `packages/create-cairn-site/README.md` ("Declining costs you nothing") and `bin.mjs:479` both promise a re-run asks again, but a re-entry at the `paid-plan-declined` step prints the decline and returns (`src/cloudflare/chapter2.mjs:342`), so an owner who said no has no way to turn it on. `docs/admin/own-your-domain.md` states what the code does today. Found by the fact check, 2026-10-31, from the code, not a live run. Fix candidate: a re-entry at that step asks the question again.
+  Placement: Scaffold pass.
+  Done: a re-run at a recorded email decline, including after a Builds step, asks the question again and settles back on the step; `--yes` without `--email` stays a decline.
+- [x] **#184** Tell the owner what the DMARC `p=reject` record does before onboarding writes it `#improvement` `#cairn-cms` *(2026-10-31 → 2026-11-01)*
+  Email onboarding writes `p=reject` on the whole domain's DMARC record (`src/cloudflare/chapter2.mjs:806`), which governs every sender and not only cairn's. The completion message warns only about services added later. Fix candidate: the domain prompt names the effect before it asks, and says whether an existing `_dmarc` record is replaced (unverified).
+  Placement: Scaffold pass.
+  Done: the email prompt names the domain-wide `p=reject` policy, and the closing copy tells the owner to authenticate each new service instead of adding it to the record.
 - [x] **#74** Make a media replace update the content manifest `#bug` `#cairn-cms` *(2026-10-25)* *(swept 2026-10-31)* *(→ 2026-11-01)*
   The replace commit carries each rewritten entry and `media.json` but no content manifest row (`src/lib/sveltekit/content-routes-media-metadata.ts:403-404`); delete and rename both write it (`content-routes-entry-destructive.ts:178,388`). Any replace that rewrites an entry leaves committed `mediaRefs` on the old hash, so `verifyManifest` (`src/lib/content/manifest.ts:320-403`, run at `buildStart`) fails the next build and every later deploy until `cairn-manifest` runs, and the usage index keeps the old hash until then. Alt propagation (`:574`) also skips the manifest; its hash holds, but a `]` in a default alt can leak into `summary` and fail the same way. Rebuild each rewritten row in the same commit, in both paths, with tests. Found by the Architecture page's fact-check, 2026-10-25.
   Placement: Media and publish pass.

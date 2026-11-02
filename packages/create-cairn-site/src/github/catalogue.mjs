@@ -57,7 +57,8 @@ const ROWS = {
         'GitHub page saying the App name is already taken, that is the cause.\n' +
         `Next: re-run npx create-cairn-site --dir ${params.dir} (add --app-name <a-new-name> if ` +
         `the name was taken). If an App named ${params.appName} now exists at ` +
-        `${params.webBase}/settings/apps, delete it there first.`
+        `${params.webBase}/settings/apps, delete it there first. If no browser window reached ` +
+        'you, copy the link this run printed into the window you work in.'
       );
     }
   },
@@ -128,8 +129,9 @@ const ROWS = {
       return (
         `The App's installation does not include ${params.repo}, so it has no permission to ` +
         'commit there.\n' +
-        `Next: open ${params.webBase}/settings/installations, choose "Only select ` +
-        `repositories", add ${params.repo}, then re-run npx create-cairn-site --dir ${params.dir}.`
+        `Next: open ${params.webBase}/settings/installations, set the App's repository access ` +
+        `to "All repositories" (or, under "Only select repositories", add ${params.repo}), then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
   },

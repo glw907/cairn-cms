@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, readdir, chmod, rm } from 'node:fs
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
+import { makeSiteBin } from '../../test/fake-site-bin.mjs';
 import { runCloudflareChapter } from './chapter.mjs';
 import { saveSite, loadSite } from '../state.mjs';
 
@@ -35,7 +36,8 @@ async function freshStateDir(t) {
 
 /**
  * Build a fixture scaffold directory carrying just enough for writePublicOrigin to find its
- * target: a real wrangler.jsonc with a PUBLIC_ORIGIN var.
+ * targets: a real wrangler.jsonc with a PUBLIC_ORIGIN var and a cairn.config.ts with the
+ * `publicOrigin` literal.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -43,6 +45,11 @@ async function fixtureScaffoldDir(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-cf-chapter-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await writeFile(path.join(dir, 'wrangler.jsonc'), MINIMAL_WRANGLER_JSONC);
+  await mkdir(path.join(dir, 'src', 'theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'src', 'theme', 'cairn.config.ts'),
+    "export const publicOrigin = 'https://showcase.test';\n",
+  );
   return dir;
 }
 
@@ -266,6 +273,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
     'run build',
     'deploy',
     'd1 migrations',
+    'run build',
     'deploy',
     'secret put',
     'd1 execute',
@@ -279,14 +287,15 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
       ['run', 'build'],
       ['deploy'],
       ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
+      ['run', 'build'],
       ['deploy'],
       ['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'],
-      invocations[8].argv,
+      invocations[9].argv,
     ],
   );
-  assert.deepEqual(invocations[8].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
-  assert.equal(invocations[8].argv[4], '--command');
-  assert.match(invocations[8].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+  assert.deepEqual(invocations[9].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
+  assert.equal(invocations[9].argv[4], '--command');
+  assert.match(invocations[9].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
 
   // Every wrangler call made after the account was resolved must carry it as
   // CLOUDFLARE_ACCOUNT_ID: both deploys, the migration, the secret put, and the seed. install
@@ -315,6 +324,44 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   const pemBase64Prefix = Buffer.from(FAKE_PEM).toString('base64').slice(0, 24);
   const leaked = await findLeakedSecret([dir, stateDir], ['PRIVATE KEY', pemBase64Prefix, rawToken]);
   assert.equal(leaked, null, `expected no secret under the scaffold or state directories, found: ${leaked}`);
+});
+
+test('runCloudflareChapter: the last deploy follows a build that saw the real origin', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-order', dir);
+
+  const bin = await makeSiteBin();
+  t.after(() => bin.close());
+  process.env.CAIRN_WRANGLER_BIN = bin.binPath;
+  process.env.CAIRN_NPM_BIN = bin.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-order',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true, ownerEmail: 'owner@example.com' },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async () => {},
+  });
+  assert.equal(outcome, 'live');
+
+  const lines = await bin.lines();
+  const real = 'https://alpine-club.glw907.workers.dev';
+  const builds = lines.filter((l) => l.startsWith('run build'));
+  assert.deepEqual(builds, ['run build | https://showcase.test', `run build | ${real}`]);
+  const lastBuild = lines.lastIndexOf(`run build | ${real}`);
+  const lastDeploy = lines.findLastIndex((l) => l.startsWith('deploy'));
+  assert.ok(lastBuild < lastDeploy, 'the last deploy must follow the build that saw the new origin');
+  assert.ok(
+    lines.findIndex((l) => l.startsWith('d1 migrations')) < lastBuild,
+    'the rebuild sits between the migrations and the second deploy',
+  );
 });
 
 test('findLeakedSecret: a doctored file containing PRIVATE KEY is caught, proving the sweep can fail', async (t) => {
@@ -580,6 +627,38 @@ test('runCloudflareChapter: a dry run makes zero fake-bin invocations and prints
   assert.ok(logs.some((line) => line.includes('Deploy to workers.dev')));
   assert.ok(logs.some((line) => line.includes("Protect your site's App key")));
   assert.ok(logs.some((line) => line.includes('Sign you in')));
+});
+
+/**
+ * Run the chapter under --dry-run and return everything it printed, titles and details.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the printed lines joined by newlines
+ */
+async function dryRunPrinted(t) {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const logs = [];
+  await runCloudflareChapter({
+    siteId: 'alpine-club-copy',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true, ownerEmail: 'owner@example.com' },
+    log: (line) => logs.push(line),
+    dryRun: true,
+    openBrowser: async () => {},
+  });
+  return logs.join('\n');
+}
+
+test('the "Sign you in" detail holds when no browser can open', async (t) => {
+  const printed = await dryRunPrinted(t);
+  assert.match(printed, /then tries to open it in your browser/);
+  assert.doesNotMatch(printed, /then opens it\./);
+});
+
+test('the deploy consent warns that a Worker already carrying the name is replaced', async (t) => {
+  const printed = await dryRunPrinted(t);
+  assert.match(printed, /replaces any Worker of that name already in your account/);
 });
 
 test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-run re-enters at the install action', async (t) => {

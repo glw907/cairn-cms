@@ -12,7 +12,7 @@ import { collectAnswers } from './src/prompts.mjs';
 import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
-import { runChapter2, TERMINAL_STEPS } from './src/cloudflare/chapter2.mjs';
+import { runChapter2, hasOpenEmailDecline, isBuildsConnected, TERMINAL_STEPS } from './src/cloudflare/chapter2.mjs';
 import {
   runChapter3,
   CHAPTER3_TERMINAL_STEPS,
@@ -84,7 +84,7 @@ function closingInfoLines(state) {
   const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
   const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
   return {
-    repoLines: [`Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
+    repoLines: [`Your private repository on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
     doctorLine:
       'Run `cairn doctor` any time to check what is set up and what is still missing. Install ' +
       'it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the ' +
@@ -113,10 +113,16 @@ async function printLiveInfo(siteId) {
       '',
       "What exists now: one Worker, one database, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
-      '',
-      `Connect your domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
-        'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
     );
+    // A saved domain means a run is already partway through connecting one (a park, an email
+    // step), and that run printed its own next step; offering to start over would contradict it.
+    if (!state.cloudflare.domain) {
+      lines.push(
+        '',
+        `Connect your domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
+          'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
+      );
+    }
   } else {
     lines.push('', 'Deploying it to the internet arrives with the next chapter.');
   }
@@ -200,7 +206,10 @@ async function printDeclinedInfo(siteId) {
  * `CHAPTER3_TERMINAL_STEPS`: the shared repo/App and doctor lines, plus one line naming whether
  * Workers Builds is actually connected. Shared by a plain re-entry at either step (which never
  * calls `runChapter3` at all) and `runChapter3AndReport`'s post-run print (for a run that just
- * reached one of these steps), so both ways of arriving here print identically.
+ * reached one of these steps), so both ways of arriving here print identically. A connected site
+ * whose owner declined email sign-in also hears that the offer is over, since `hasOpenEmailDecline`
+ * stops re-offering it once Builds is connected and the decline row's "re-run to turn it on" no
+ * longer holds.
  * @param {string} siteId the site's state-store id, already at `builds-live` or
  *  `builds-connect-declined`
  * @param {string} step the step just printed for, `'builds-live'` or `'builds-connect-declined'`
@@ -214,7 +223,15 @@ async function printBuildsChapterInfo(siteId, step) {
       ? 'Every commit to your default branch now builds and deploys itself through Workers Builds.'
       : 'Workers Builds is not connected, so deploys still go through this CLI. Re-run with ' +
         '--connect any time to connect it.';
-  console.log(['', ...repoLines, '', note, '', doctorLine].join('\n'));
+  const lines = ['', ...repoLines, '', note];
+  if (state.cloudflare?.emailDeclinedAt && !state.cloudflare?.emailOnboardedAt && isBuildsConnected(state)) {
+    lines.push(
+      '',
+      'Email sign-in is off. This tool offers to turn it on only until Workers Builds is ' +
+        'connected, so it will not ask again. Use --sign-in any time to open a fresh sign-in link.',
+    );
+  }
+  console.log([...lines, '', doctorLine].join('\n'));
 }
 
 /**
@@ -242,18 +259,24 @@ async function runChapter3AndReport({ siteId, dir, flags, log, dryRun }) {
  * already saw chapter 2's completion hop print the domain, the admin sign-in URL, and (for
  * `email-live`) the sending address, so this adds only what that hop did not already say, the
  * repo/App links and the doctor reminder, rather than repeating `printEmailLiveInfo` or
- * `printDeclinedInfo`'s whole block on top of it; a later resumed run at either of those steps
- * takes bin.mjs's dedicated terminal branch instead, which never reaches this function at all
- * (its dedicated blocks carry the domain and email lines this run's hop already printed).
+ * `printDeclinedInfo`'s whole block on top of it. A later resumed run at `email-live` takes
+ * bin.mjs's dedicated terminal branch and never reaches this function. A later resumed run at a
+ * decline does reach it, so chapter 2 can ask the email question again.
  * Shared by the `live`-branch reopening and the fresh/resumed chapter-1-to-2 handoff in
  * `runCloudflareAndReport`, so the two paths cannot diverge on what "continuing into chapter 2"
  * means.
  *
- * Reaching one of chapter 2's `TERMINAL_STEPS` is also chapter 3's entry point (T4c): once
- * chapter 2 settles there, this continues straight into `runChapter3AndReport` in the same call,
- * under a real record or (when `dryRun`) `record: null`, the same "one dry run prints every hop
- * across every chapter" precedent `runCloudflareAndReport` already established for chapter 1 into
+ * Reaching one of chapter 2's `TERMINAL_STEPS` is also chapter 3's entry point: once chapter 2
+ * settles there, this continues straight into `runChapter3AndReport` in the same call, under a
+ * real record or (when `dryRun`) `record: null`, the same "one dry run prints every hop across
+ * every chapter" precedent `runCloudflareAndReport` already established for chapter 1 into
  * chapter 2.
+ *
+ * A record whose owner declined Workers Builds earlier settles back there: a saved
+ * `buildsDeclinedAt` restores `builds-connect-declined` and skips chapter 3, so that decline stands.
+ * A record with Builds connected never reaches this function: chapter 3 saves its trigger in the
+ * same write that moves `step` to `builds-connected`, so no chapter 2 step carries one, and at
+ * chapter 3's own steps `hasOpenEmailDecline` is false for it.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
  * @returns {Promise<{ outcome: string }>} chapter 2's outcome
  */
@@ -262,6 +285,20 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
   const outcome = await runChapter2({ siteId, record, dir, args: flags, log, dryRun });
   if (!dryRun) {
     if (TERMINAL_STEPS.includes(outcome.outcome)) {
+      const settled = await loadSite(siteId);
+      const builds = settled?.cloudflare ?? {};
+      const declined = outcome.outcome !== 'email-live';
+      if (builds.buildsDeclinedAt) {
+        await updateSite(siteId, { step: 'builds-connect-declined' });
+        await printBuildsChapterInfo(siteId, 'builds-connect-declined');
+        return outcome;
+      }
+      // A decline from a Builds terminal step left that step in place: its closing block is the
+      // whole answer, and chapter 3 has nothing to do.
+      if (declined && CHAPTER3_TERMINAL_STEPS.includes(settled?.step)) {
+        await printBuildsChapterInfo(siteId, settled.step);
+        return outcome;
+      }
       const { repoLines, doctorLine } = closingInfoLines(record);
       console.log(['', ...repoLines, '', doctorLine].join('\n'));
       await runChapter3AndReport({ siteId, dir, flags, log, dryRun });
@@ -478,8 +515,8 @@ async function main() {
 
       // A recorded decline is terminal for the TOKEN (deleted) and for the EXIT CODE (0, because
       // nothing is wrong), and deliberately NOT terminal for re-entry. Both decline rows tell the
-      // owner in as many words to re-run when they are ready, and chapter 2's admission re-offers
-      // with its `reoffered` copy. Returning here instead would make that promise unreachable
+      // owner in as many words to re-run when they are ready, and chapter 2 asks the email
+      // question again at entry. Returning here instead would make that promise unreachable
       // and, since --start-over refuses at this step too, would leave an owner who declined no way
       // to turn email on at all. This branch is what keeps the decline a choice rather than a trap.
       console.log(`Resuming ${priorRecord.data.name} after declining email sign-in.`);
@@ -562,11 +599,26 @@ async function main() {
     }
 
     // A plain re-run at one of chapter 3's terminal steps (builds-live,
-    // builds-connect-declined) never calls runChapter3 again on its own: builds-live's only
-    // further work is the re-reconcile path (--connect, handled above), and builds-connect-declined
-    // names --connect as its way back in (the catalogue row's copy). This is the terminal
-    // branch that keeps a plain re-run here from falling through to the scaffolder.
+    // builds-connect-declined) never calls runChapter3 on its own: builds-live's only further work
+    // is the re-reconcile path (--connect, handled above), and builds-connect-declined names
+    // --connect as its way back in (the catalogue row's copy). At builds-connect-declined it does
+    // re-offer email sign-in when the owner declined it earlier and never turned it on: chapter 2
+    // asks again, and the run settles back on this step. At builds-live it never does
+    // (hasOpenEmailDecline), and the closing block says the offer is over. Without --sign-in, this
+    // is also the terminal branch that keeps a plain re-run here from falling through to the
+    // scaffolder.
     if (priorRecord && CHAPTER3_TERMINAL_STEPS.includes(priorRecord.data.step)) {
+      if (!flags.signIn && hasOpenEmailDecline(priorRecord.data)) {
+        console.log(`Resuming ${priorRecord.data.name} after declining email sign-in.`);
+        await continueIntoChapter2({
+          siteId: priorRecord.id,
+          dir: priorRecord.data.dir,
+          flags,
+          log,
+          dryRun: flags.dryRun,
+        });
+        return;
+      }
       // --sign-in reseeds a bootstrap token and reopens the confirm page first; either way this
       // step's closing block is what prints.
       if (flags.signIn) {

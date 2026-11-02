@@ -232,7 +232,10 @@ export async function installAndAuthorize({
   const loopback = givenLoopback ?? (await startLoopback());
   const ownsLoopback = !givenLoopback;
   try {
-    log(`Your browser will open GitHub's install page for ${appName}; choose where to install it and approve.`);
+    log(
+      `Your browser will open GitHub's install page for ${appName}; choose where to install it, ` +
+        'choose "All repositories" so the repository this run creates is covered, and approve.',
+    );
     await openBrowser(installUrl(appSlug), log);
     log(
       `Waiting for the browser step to finish installing and authorizing ${appName}... keep the ` +

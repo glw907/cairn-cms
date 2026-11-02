@@ -506,19 +506,33 @@ const ROWS = {
   'cutover-deploy-failed': {
     kind: 'act',
     build(params) {
+      if (params.restoreFailed) {
+        return (
+          'Rebuilding and redeploying your site after pointing it at your domain did not ' +
+          'finish. The build or wrangler reported:\n' +
+          `${params.detail}\n` +
+          "The tool then could not put your site's address on disk back to its workers.dev one:\n" +
+          `${params.restoreFailed}\n` +
+          'So wrangler.jsonc and src/theme/cairn.config.ts may still name ' +
+          `${params.domainOrigin}. Your site is still working at its workers.dev address, since ` +
+          'it was never redeployed, and a re-run writes both files again.\n' +
+          `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +
+          `${params.dir}.`
+        );
+      }
       if (params.detail) {
         return (
-          'Redeploying your site after pointing it at your domain did not finish. wrangler ' +
-          'reported:\n' +
+          'Rebuilding and redeploying your site after pointing it at your domain did not ' +
+          'finish. The build or wrangler reported:\n' +
           `${params.detail}\n` +
           "The tool already restored your site's address on disk back to its workers.dev one, " +
           'so your site is still working there and nothing is half-changed.\n' +
-          `Next: fix what wrangler reported above, then re-run npx create-cairn-site --dir ` +
+          `Next: fix what was reported above, then re-run npx create-cairn-site --dir ` +
           `${params.dir}.`
         );
       }
       return (
-        'Redeploying your site after pointing it at your domain did not finish.\n' +
+        'Rebuilding and redeploying your site after pointing it at your domain did not finish.\n' +
         "The tool already restored your site's address on disk back to its workers.dev one, " +
         'so your site is still working there and nothing is half-changed.\n' +
         `Next: re-run npx create-cairn-site --dir ${params.dir}.`
@@ -559,7 +573,8 @@ const ROWS = {
           `Your way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
           'each sign-in it writes lasts 30 days.\n' +
           'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-          `${params.dir} to do it.`
+          `${params.dir} to do it, before you connect Workers Builds: once Builds is ` +
+          'connected, this tool no longer offers it.'
         );
       }
       return (
@@ -571,7 +586,8 @@ const ROWS = {
         "writes a fresh sign-in link straight into the site's database without touching email. " +
         'Your current sign-in lasts 30 days.\n' +
         'Next: turn on email sign-in. Re-run npx create-cairn-site --dir ' +
-        `${params.dir} when you are ready.`
+        `${params.dir} when you are ready, before you connect Workers Builds: once Builds is ` +
+        'connected, this tool no longer offers it.'
       );
     }
   },

@@ -32,7 +32,8 @@ The following table lists where a run can stop on its way to GitHub, what each s
 | Waiting on an organization owner | You're creating the App under an organization, and GitHub needs an owner's approval to install it. GitHub has already emailed the owners. | **Ask an organization owner:** once they approve, run the command again. |
 | The organization enforces single sign-on | GitHub blocked the request until the App is authorized for the organization. | **Ask an organization owner:** have them authorize the App under the organization's settings. Then run the command again. |
 | The App is installed, but the push was interrupted | Nothing is lost or duplicated. | **Act:** run the command again. The push resumes. |
-| The App's installation doesn't cover your repository | The install page's repository choice left it out. | **Act:** on [GitHub's installations page](https://github.com/settings/installations), open the App, choose **Only select repositories**, add your repository, then run the command again. |
+| The App's installation doesn't cover your repository | The install page's repository choice left it out. The repository exists, and the next run reuses it. | **Act:** on [GitHub's installations page](https://github.com/settings/installations), open the App, set the repository access to **All repositories** (or, under **Only select repositories**, add your repository), then run the command again. |
+| No browser window reached you | The command opened the browser, but the window never appeared, or it opened somewhere you aren't working. | **Act:** copy the link the command printed into the browser you work in, and use that link rather than GitHub's own "New GitHub App" form, because an App made there never reports back. |
 
 ## Get your site onto Cloudflare
 
@@ -68,7 +69,7 @@ The following table lists where the sign-in email steps can stop, what each stop
 
 | Where you stopped | What it means | What to do |
 | --- | --- | --- |
-| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run prints the decline again and does not ask again. |
+| You declined sign-in email | Nothing is wrong. You keep signing in as the owner. | **Wait:** nothing needs fixing. A later run from a terminal asks again, until you connect Workers Builds. After that, the command no longer offers it. For an unattended run, pass `--email` and `--yes`. |
 | The account isn't on Workers Paid | The command stopped when it tried to onboard sending. | **Act:** turn on the plan in Cloudflare's dashboard, then run the command again. |
 | The sending records are still spreading | A test send before the records settle fails. This is normal. | **Wait:** run the command again in a few minutes. It doesn't repeat the onboarding. |
 | The test send failed for another reason | Cloudflare refused the send, or the daily limit was reached. | **Act, or wait:** the command prints the cause. Fix it or wait for the limit to reset, then run the command again. |

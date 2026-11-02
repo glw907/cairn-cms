@@ -90,8 +90,6 @@ const KEPT = [
   'CairnEvent',
   'CookieJar',
   'HandleInput',
-  'CairnEnv',
-  'EmailSender',
 ];
 
 const DTS = resolve(

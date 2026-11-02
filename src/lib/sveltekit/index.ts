@@ -34,11 +34,8 @@ export type {
   ContentRoutesConfig,
   AttentionItem,
   ContentFormFailure,
-  // Every type a route factory's return type names, down to its nested shapes, is importable
-  // from this subpath.
   TidyClient,
   TidyEffort,
-  MediaLibraryEntry,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes, type NavRoutesConfig } from './nav-routes.js';
 export type { NavData } from './nav-routes.js';
@@ -65,12 +62,9 @@ export {
   type AdminActionContext,
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
-// `RateLimitLike`'s canonical home is `/cloudflare`; a recorded R4 re-export here because
-// `SectionActionConfig`'s budget field names it.
 export {
   createSectionAction,
   type PlainSectionAction,
-  type RateLimitLike,
   type SectionAction,
   type SectionActionConfig,
   type SectionActionOptions,
@@ -87,74 +81,5 @@ export type {
   HistoryData,
   RevertOutcome,
 } from './types.js';
-// Re-exported here, not just from root, beside the event and binding types it describes.
-export type { CairnEnv } from '../env.js';
-// `MagicLinkMessage`, `SendMagicLink`, and `EmailSender` keep canonical home `.`.
-export type { MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
-// The binding-shaped types a site's generated `Env` satisfies; /sveltekit is their canonical home.
+// The binding-shaped types a site's generated `Env` satisfies; they import from here.
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';
-
-// Every remaining type a factory or wrapper's signature names is re-exported here so a site
-// importing only from this subpath can still name the value it holds, except two documented
-// cross-subpath exceptions that stay on `/delivery` alone: `PublicRoutesConfig`, which
-// `loadPreview`'s options bag names, and `EntryData`, which `PreviewData` extends.
-// `CairnRuntime`'s structural body in turn names most of the rest below it, the same
-// recursive closure `/delivery` and root carry.
-//
-// Canonical home for everything below this line is the root barrel `.`, except `MediaRef`
-// (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above). Each is a recorded
-// R4 re-export, not a second home (canonical-home rule); the full set with its
-// per-name reason is `scripts/checks/check-surface-reexports.json`, and
-// `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
-// `ContentRoutes` was narrowed and this closure re-derived without shrinking the list: the
-// narrowing was necessary for the media-janitorial retires, not sufficient, since
-// `createCairnAdmin` still named every one of those types. `CairnAdminRoutes` needs the same
-// narrowing as the remaining precondition; the retire itself (the list actually shrinking) is
-// still open, tracked at the re-derivation record
-// (`https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-30-r4-rederivation.md`).
-export type { AccessMap } from '../auth/access.js';
-export type { Backend, BackendProvider } from '../github/backend.js';
-export type {
-  CairnRuntime,
-  NamedField,
-  ConceptDescriptor,
-  SenderConfig,
-  NavMenuConfig,
-  MediaConfig,
-  PreviewConfig,
-  RoutingRule,
-  ValidationResult,
-  ValidationIssue,
-} from '../content/types.js';
-export type { FieldDescriptor } from '../content/fields.js';
-// `FieldDescriptor`'s union names each of its fifteen arms.
-export type {
-  TextField,
-  TextareaField,
-  NumberField,
-  SelectField,
-  MultiselectField,
-  UrlField,
-  DateField,
-  BooleanField,
-  IconField,
-  ImageField,
-  ObjectField,
-  ReferenceField,
-  ArrayField,
-} from '../content/fields.js';
-export type { Fieldset, BehaviorTable, FieldBehavior } from '../content/fieldset.js';
-export type { CairnRef } from '../content/links.js';
-export type { MediaRef } from '../media/reference.js';
-export type { Capability, RolesDeclaration, RoleDeclaration } from '../auth/roles.js';
-export type { Editor } from '../auth/types.js';
-export type { EntryRef } from '../content/manifest.js';
-export type { NavNode, VocabularyEntry, TidyConventions, TidyConfig } from '../nav/site-config.js';
-export type { RepoFile, CommitAuthor } from '../github/types.js';
-export type { FileChange } from '../github/repo.js';
-export type { ComponentRegistry, ComponentDef, SlotDef } from '../render/registry.js';
-export type { IconSet } from '../render/glyph.js';
-export type { FragmentResolve } from '../render/resolve-include.js';
-export type { LinkResolve } from '../content/links.js';
-export type { MediaResolve } from '../render/resolve-media.js';
-export type { EmailAttachment, EmailRecipient } from '../auth/types.js';

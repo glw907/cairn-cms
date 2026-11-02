@@ -7,11 +7,8 @@
 // even though a site's adapter config also feeds both: this barrel carries no server route, no
 // Svelte component, and no per-request framework binding.
 //
-// The canonical-home rule (ratified foundations A, `canonical-home-rule` in the rulings ledger)
-// governs every barrel: each name has exactly one declaring subpath, and any other barrel that
-// publishes it does so as a recorded R4 re-export naming that home and the signature that requires
-// it. A name below whose home is another subpath carries that note on its export line; every
-// other name here is at home. `check:surface` fails an unrecorded duplicate.
+// Every public name imports from one subpath, across all the barrels, even where a signature on
+// another subpath names the type. `check:surface` fails a name exported from two subpaths.
 export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their role names onto the three
@@ -43,8 +40,7 @@ export type {
   SiteRender,
   // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these.
   RoutingRule,
-  // `CairnAdapter.aiPosture` names this, so it reaches root the way every other adapter member
-  // type does. `/delivery` exports it too, since that is where `robotsResponse` reads it.
+  // `CairnAdapter.aiPosture` names this, and `robotsResponse` on `/delivery` reads it.
   AiPosture,
 } from './content/types.js';
 export { defineConcept } from './content/concepts.js';
@@ -102,12 +98,9 @@ export type { RendererConfig, Renderer, RenderInput, DocHeading, ResolveOptions 
 // The `::include` fragment resolver type: `RenderInput.resolveFragment` and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';
-// `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their `resolveMedia` option;
-// `MediaResolve`'s parameter names `MediaRef`.
+// `SiteRender` names `MediaResolve` in its `resolveMedia` option. `MediaResolve`'s parameter names
+// `MediaRef`, which imports from `/media`.
 export type { MediaResolve } from './render/resolve-media.js';
-// Canonical home `/media`; a recorded R4 re-export here because `MediaResolve`'s parameter
-// names it and `MediaResolve` reaches this barrel through `SiteRender`.
-export type { MediaRef } from './media/reference.js';
 // `Manifest.entries[].references` names `ReferenceEdge`.
 export type { ReferenceEdge } from './content/references.js';
 
@@ -123,14 +116,3 @@ export type { FileChange } from './github/repo.js';
 export { parseSiteConfig, readMenu, readVocabulary, SiteConfigError } from './nav/site-config.js';
 // `CairnRuntime.tidy` names `TidyConfig`, whose `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
-// Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`
-// names `NavLayout`, whose union names its three member shapes in turn. Type-only imports, so
-// no `/sveltekit` module ever executes here.
-export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
-// Canonical home `/sveltekit`; a recorded R4 re-export here because
-// `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name it directly as
-// `PublishActionEntry[]`.
-export type { PublishActionEntry } from './sveltekit/publish-actions.js';
-// Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
-// names it.
-export type { IslandRegistry } from './islands/types.js';

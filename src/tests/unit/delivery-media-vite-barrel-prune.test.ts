@@ -87,7 +87,6 @@ const MEDIA_DEMOTED = [
 // `VariantSpec` retired outright by the conformance pass (Task 14, ruling 4): the `variants` field
 // it typed had no reachable runtime consumer, so it no longer publishes anywhere.
 const MEDIA_KEPT = [
-  'MediaConfig',
   'readCommittedManifest',
   'MediaEntry',
   'MediaManifest',
@@ -95,7 +94,6 @@ const MEDIA_KEPT = [
   'formatMediaToken',
   'MediaRef',
   'createMediaResolver',
-  'MediaResolve',
 ];
 
 // The six names the pass demotes from the /vite barrel; only `cairnManifest` and

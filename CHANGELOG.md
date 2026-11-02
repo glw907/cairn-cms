@@ -996,6 +996,10 @@
 
 ### Removed
 
+- **Each public name imports from one subpath.** The 107 re-exports are gone. `/delivery`, `/sveltekit`, and `/media` no longer carry the root's content-model, adapter, and backend types, and root no longer carries `MediaRef`, the `NavLayout` family, `PublishActionEntry`, or `IslandRegistry`. A type a signature names on one subpath may import from another. `check:surface` fails any name on two subpaths, `scripts/checks/check-surface-reexports.json` is deleted, so no record can excuse one, and the leak gate's per-subpath renderer model is retired.
+
+  Consumers must: import each name from its one subpath.
+
 - **The per-route factories, the preview mint pair, and `buildNewlyPublished` leave the public surface.**
   `/sveltekit` drops `createContentRoutes`, `createAuthRoutes`, `createEditorRoutes`, `mintPreview`, and
   `revokePreview`, with the `ContentRoutes`, `AuthRoutes`, `EditorRoutes`, `EditorRoutesConfig`,

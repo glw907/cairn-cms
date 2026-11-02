@@ -69,7 +69,6 @@ describe('the table', () => {
     ['exportSurface', 'src/lib/**/index.ts', 'src/lib/log/index.ts'],
     ['exportSurface', 'package.json', 'package.json'],
     ['exportSurface', 'scripts/checks/check-surface-leaks.json', 'scripts/checks/check-surface-leaks.json'],
-    ['exportSurface', 'scripts/checks/check-surface-reexports.json', 'scripts/checks/check-surface-reexports.json'],
     ['exportSurface', 'scripts/checks/check-self-use-allowlist.json', 'scripts/checks/check-self-use-allowlist.json'],
     ['exportSurface', 'scripts/checks/check-symbols-allowlist.mjs', 'scripts/checks/check-symbols-allowlist.mjs'],
     ['exportSurface', 'scripts/checks/api-surface.md', 'scripts/checks/api-surface.md'],

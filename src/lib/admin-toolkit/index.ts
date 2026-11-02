@@ -46,8 +46,7 @@ export { default as ExpandableRow } from './ExpandableRow.svelte';
 // (`media/reference`, `media/naming`, the shell's media-base context), and it publishes from here
 // because this is the barrel a site building its admin screen reads. `MediaLibraryEntry`
 // publishes beside it for the same reason `ItemLabel` publishes beside `Pagination`: it sits in the
-// component's prop signature, so a consumer typing that prop needs the name. `/sveltekit` keeps
-// its re-export of the type as R4 closure over `MediaLibraryData.assets`.
+// component's prop signature, so a consumer typing that prop needs the name.
 export {
   default as MediaPicker,
   type MediaLibraryEntry,

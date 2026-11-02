@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { moduleExports } from '../../../scripts/checks/dts-exports.mjs';
-import { diffSurface, findHomeViolations, renderExport, surfaceSubpaths } from '../../../scripts/checks/check-surface.mjs';
+import { diffSurface, findHomeViolations, formatHomeViolations, renderExport, surfaceSubpaths } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(
   fileURLToPath(new URL('../../../scripts/checks/api-surface.md', import.meta.url)),
@@ -191,77 +191,35 @@ describe('surfaceSubpaths', () => {
   });
 });
 
-// The canonical-home rule (ratified foundations A). A name published from two subpaths is a
-// duplicate unless the second publication is recorded with its home and the signature that requires
-// it; the record is `scripts/checks/check-surface-reexports.json`. These drive the pure core with a
-// crafted model so the rule is proven in both directions, not only by the committed record passing.
+// The one-path rule: a name on two subpaths fails, with no record to excuse it. These drive the pure
+// core with a crafted model so the rule is proven in both directions.
 describe('findHomeViolations', () => {
-  const record = {
-    reexports: [{ name: 'NavLayout', subpath: '.', home: '/sveltekit', reason: 'CairnAdapter names it.' }],
-  };
-
   it('passes a name published from one subpath only', () => {
     const model = { '.': { fields: '{ text: F }' }, '/sveltekit': { requireOwner: '(e) => E' } };
-    expect(findHomeViolations(model, { reexports: [] })).toEqual({
-      unrecorded: [],
-      stale: [],
-      misfiled: [],
-    });
+    expect(findHomeViolations(model)).toEqual([]);
   });
 
-  it('passes a duplicate whose second publication is recorded', () => {
-    const model = { '.': { NavLayout: 'N[]' }, '/sveltekit': { NavLayout: 'N[]' } };
-    expect(findHomeViolations(model, record).unrecorded).toEqual([]);
-  });
-
-  it('fails an unrecorded duplicate, naming both open subpaths', () => {
+  it('reports a name on two subpaths, naming both', () => {
     const model = { '.': { SiteRender: '(i) => P' }, '/media': { SiteRender: '(i) => P' } };
-    expect(findHomeViolations(model, record).unrecorded).toEqual([
-      { name: 'SiteRender', subpaths: ['.', '/media'] },
-    ]);
+    expect(findHomeViolations(model)).toEqual([{ name: 'SiteRender', subpaths: ['.', '/media'] }]);
   });
 
-  it('fails a third publication of an already-recorded name', () => {
+  it('names every subpath of a name on three', () => {
     const model = {
       '.': { NavLayout: 'N[]' },
       '/media': { NavLayout: 'N[]' },
       '/sveltekit': { NavLayout: 'N[]' },
     };
-    expect(findHomeViolations(model, record).unrecorded).toEqual([
-      { name: 'NavLayout', subpaths: ['/media', '/sveltekit'] },
+    expect(findHomeViolations(model)).toEqual([
+      { name: 'NavLayout', subpaths: ['.', '/media', '/sveltekit'] },
     ]);
   });
+});
 
-  // The record shrinks as foundations B narrows `/sveltekit`; an entry that outlives its
-  // publication is drift the gate reports rather than carrying forever.
-  it('reports a record entry the surface no longer carries', () => {
-    const model = { '/sveltekit': { NavLayout: 'N[]' } };
-    expect(findHomeViolations(model, record).stale).toEqual([{ name: 'NavLayout', subpath: '.' }]);
-  });
-
-  // The record's `home` field is a claim about the surface, not a comment. Without this check a
-  // wrong home string reads as settled while pointing at a subpath that declares nothing.
-  it('reports a record entry whose stated home the surface does not declare', () => {
-    const model = { '.': { NavLayout: 'N[]' }, '/media': { NavLayout: 'N[]' } };
-    expect(findHomeViolations(model, record).misfiled).toEqual([
-      { name: 'NavLayout', home: '/sveltekit', open: ['/media'] },
-    ]);
-  });
-
-  // Every publication recorded means no publication declares the name: the duplicate check counts
-  // open subpaths, so this shape slips past it with nothing left to be the home.
-  it('reports a name whose every publication is recorded', () => {
-    const model = { '.': { NavLayout: 'N[]' } };
-    expect(findHomeViolations(model, record).misfiled).toEqual([
-      { name: 'NavLayout', home: '/sveltekit', open: [] },
-    ]);
-  });
-
-  // A name the surface dropped entirely is stale, once, and not also a missing home.
-  it('does not report a home for a name the surface no longer exports at all', () => {
-    const model = { '/media': { glyph: '(n) => E' } };
-    const result = findHomeViolations(model, record);
-    expect(result.stale).toEqual([{ name: 'NavLayout', subpath: '.' }]);
-    expect(result.misfiled).toEqual([]);
+describe('formatHomeViolations', () => {
+  it('names the duplicate and its subpaths', () => {
+    const message = formatHomeViolations([{ name: 'SiteRender', subpaths: ['.', '/media'] }]);
+    expect(message).toContain('SiteRender');
+    expect(message).toContain('., /media');
   });
 });

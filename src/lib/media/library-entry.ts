@@ -10,10 +10,9 @@
 // editor-media.ts (it pulls @codemirror), so the shared type cannot be sourced from there; this
 // module is its neutral home.
 //
-// The two halves have different visibility. The `MediaLibraryEntry` TYPE is public: its canonical
-// home is `/admin-toolkit`, beside MediaPicker, whose prop signature names it, and `/sveltekit`
-// re-exports it as R4 closure over `MediaLibraryData.assets`. Both entries are documented on those
-// subpaths' reference pages. The `mediaLibraryEntry` FUNCTION and the `MediaLibrary` alias stay
+// The two halves have different visibility. The `MediaLibraryEntry` TYPE is public: it imports from
+// `/admin-toolkit`, beside MediaPicker, whose prop signature names it, and `MediaLibraryData.assets`
+// on `/sveltekit` names the same type. The `mediaLibraryEntry` FUNCTION and the `MediaLibrary` alias stay
 // internal, exported from no package subpath: a site holds the loader's array and projects it
 // inline where it needs a hash lookup.
 import type { MediaEntry } from './manifest.js';

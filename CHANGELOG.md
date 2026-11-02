@@ -203,7 +203,7 @@
 - **`mintPreview` and `revokePreview` check access before they look up the concept.** A role the access
   map denies a key gets the 403 whether or not the key names a concept; an unmapped nonexistent id still
   answers `unknown-concept`. The mint action reads `PUBLIC_ORIGIN` before it mints, so a site without one
-  writes no `preview_tokens` row, and a refused editor on that site sees the misconfiguration.
+  writes no `preview_tokens` row, and a refused editor on that site gets a generic failure.
 
   Consumers must: nothing.
 

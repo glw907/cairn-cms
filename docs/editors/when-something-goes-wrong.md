@@ -186,13 +186,13 @@ The **Publish all** button in the top bar publishes every entry you have access 
 - **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** A waiting entry would take an address that another waiting or live entry holds. Use the **Unpublished changes** filter on a list to find them. Change the address of one, and then select **Publish all** again.
 <!-- vale Microsoft.Contractions = YES -->
 
-## A revert is refused
+## A restore is refused
 
 The **Restore as draft** button on an entry's history saves an older version as a draft, so a refusal means no draft was created. The history screen shows the reason in a message over the list:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
-- **"[Name] has a draft in progress, last saved [date]. Publish or discard it before reverting."** Someone has unpublished changes on this entry. Open the entry, then publish or discard the draft, and revert again.
+- **"[Name] has a draft in progress, last saved [date]. Publish or discard it before restoring."** Someone has unpublished changes on this entry. Open the entry, then publish or discard the draft, and restore again.
 - **"The history changed since this page loaded. Reload and try again."** Someone published while you had the history open. Reload the history and select **Restore as draft** again.
 - **"That version is no longer in the recent list."** The version you picked has dropped out of the list the history shows. Reload the history and pick a version from the new list.
 <!-- vale Microsoft.Contractions = YES -->

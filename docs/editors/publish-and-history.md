@@ -144,7 +144,7 @@ The following table describes the columns in the list.
 
 The list shows up to the 25 most recent published versions. When more exist, the page says **Showing the most recent 25 versions.** The list also reaches back only to the last time the entry's address changed. If you used **Change address** on the entry, versions published before that change don't appear.
 
-If the entry already has a saved draft, even one of yours, the editor refuses to revert and names the person who saved the draft and when. Publish or discard that draft first.
+If the entry already has a saved draft, even one of yours, the editor refuses to restore and names the person who saved the draft and when. Publish or discard that draft first.
 
 To bring back an earlier version, follow these steps:
 
@@ -155,4 +155,4 @@ To bring back an earlier version, follow these steps:
 
 ## Where to go next
 
-If a save, a publish, or a revert shows an error, see [When something goes wrong](when-something-goes-wrong.md). To keep writing, return to [Write in the editor](write-in-the-editor.md).
+If a save, a publish, or a restore shows an error, see [When something goes wrong](when-something-goes-wrong.md). To keep writing, return to [Write in the editor](write-in-the-editor.md).

@@ -18,9 +18,9 @@ const (
 	// package's migrations folder cannot be listed: it is absent, or a file: install's symlink
 	// resolves outside the directory.
 	uncheckedConfigMigrationsPackage = "the installed package's migrations folder could not be read, so the site's copies were not compared"
-	// uncheckedConfigMigrationsEscapes is config.migrations's unchecked detail when
-	// migrations_dir resolves outside the site directory.
-	uncheckedConfigMigrationsEscapes = "AUTH_DB's migrations_dir points outside the site directory, so it was not read"
+	// uncheckedConfigMigrationsUnreadable is config.migrations's unchecked detail when
+	// migrations_dir resolves outside the site directory, or is not a folder doctor can list.
+	uncheckedConfigMigrationsUnreadable = "AUTH_DB's migrations_dir is outside the site directory or is not a readable folder, so it was not read"
 	// tmplConfigMigrationsMissing is config.migrations's fail detail template, filled with the
 	// site's migrations directory and the joined missing file names.
 	tmplConfigMigrationsMissing = "the migrations directory %s is missing %s from the package"
@@ -60,7 +60,7 @@ var configMigrations = Check{
 			siteDir = "migrations" // wrangler's default when migrations_dir is absent
 		}
 		if filepath.IsAbs(siteDir) {
-			return uncheckedResult(uncheckedConfigMigrationsEscapes)
+			return uncheckedResult(uncheckedConfigMigrationsUnreadable)
 		}
 		siteDir = path.Clean(filepath.ToSlash(siteDir))
 
@@ -77,7 +77,7 @@ var configMigrations = Check{
 
 		have, _, err := listUnder(s.Dir, siteDir)
 		if err != nil {
-			return uncheckedResult(uncheckedConfigMigrationsEscapes)
+			return uncheckedResult(uncheckedConfigMigrationsUnreadable)
 		}
 		var missing []string
 		for _, name := range required {

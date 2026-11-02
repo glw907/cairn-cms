@@ -66,7 +66,13 @@ func TestConfigMigrations(t *testing.T) {
 			name:       "unchecked: migrations_dir escapes the directory",
 			files:      withPkg(map[string]string{"wrangler.jsonc": `{"d1_databases": [{"binding": "AUTH_DB", "migrations_dir": "../elsewhere"}]}`}),
 			wantStatus: StatusUnchecked,
-			wantDetail: uncheckedConfigMigrationsEscapes,
+			wantDetail: uncheckedConfigMigrationsUnreadable,
+		},
+		{
+			name:       "unchecked: migrations is a file",
+			files:      withPkg(map[string]string{"wrangler.jsonc": authWrangler, "migrations": "--"}),
+			wantStatus: StatusUnchecked,
+			wantDetail: uncheckedConfigMigrationsUnreadable,
 		},
 		{
 			name:       "fail: site folder absent names every required file",
@@ -177,6 +183,30 @@ func TestConfigMigrationsSymlinkedPackageIsUnchecked(t *testing.T) {
 	result := configMigrations.Run(Snapshot{Dir: dir})
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsPackage {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsPackage)
+	}
+}
+
+// TestConfigMigrationsAbsoluteDirIsUnchecked builds the path from a temp dir, since a rooted
+// literal such as /etc is not absolute on Windows.
+func TestConfigMigrationsAbsoluteDirIsUnchecked(t *testing.T) {
+	abs := filepath.ToSlash(t.TempDir())
+	cfg := `{"d1_databases": [{"binding": "AUTH_DB", "migrations_dir": "` + abs + `"}]}`
+	result := configMigrations.Run(snapshotWithFiles(t, withPkg(map[string]string{"wrangler.jsonc": cfg})))
+	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
+		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
+	}
+}
+
+// TestConfigMigrationsSymlinkedSiteFolderIsUnchecked proves a site folder that leaves the directory
+// only through a symlink is refused, not listed.
+func TestConfigMigrationsSymlinkedSiteFolderIsUnchecked(t *testing.T) {
+	snap := snapshotWithFiles(t, withPkg(map[string]string{"wrangler.jsonc": authWrangler}))
+	if err := os.Symlink(t.TempDir(), filepath.Join(snap.Dir, "migrations")); err != nil {
+		t.Fatal(err)
+	}
+	result := configMigrations.Run(snap)
+	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
+		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
 	}
 }
 

@@ -359,7 +359,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted">{slot.help}</p>{/if}
+    {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
     {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
   {/each}
 
@@ -382,7 +382,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
-      {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted">{slot.help}</p>{/if}
+      {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
       {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}

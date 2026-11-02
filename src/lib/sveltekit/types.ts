@@ -74,6 +74,7 @@ export interface CairnEvent {
   // its only writer.
   locals: {
     cairnEditor?: Editor | null;
+    // WATCH: also the dev witness for `localNoRuleMessage`; see the note in `ambient.ts`.
     cairnBackend?: Backend;
     cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;

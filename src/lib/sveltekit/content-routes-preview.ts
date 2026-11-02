@@ -60,9 +60,10 @@ export function createPreviewActions(ctx: ContentRoutesContext) {
 
     // requireOrigin runs before mintPreview, so a site with no PUBLIC_ORIGIN writes no
     // preview-token row: the row would sit unreachable (no URL could be returned to share it)
-    // until its TTL expired it. The cost: a refused editor on a misconfigured site now sees the
-    // misconfiguration instead of the access refusal, since the origin check precedes mintPreview's
-    // authorization.
+    // until its TTL expired it. The cost: on a misconfigured site a refused editor gets a generic
+    // failure in place of the access refusal, with no `auth.access.refused` record, because the
+    // origin check precedes mintPreview's authorization. A site calling mintPreview directly has
+    // no such check and can still strand a row.
     const origin = requireOrigin(env);
 
     let result: PreviewMintOutcome;

@@ -80,7 +80,7 @@ func Catalogue() []string {
 		passAdminMountWired,
 		skipConfigMigrationsNoAuthDB,
 		uncheckedConfigMigrationsPackage,
-		uncheckedConfigMigrationsEscapes,
+		uncheckedConfigMigrationsUnreadable,
 		tmplConfigMigrationsMissing,
 		tmplConfigMigrationsPass,
 		factsAbsentDetail,

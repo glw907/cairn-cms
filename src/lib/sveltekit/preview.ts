@@ -114,10 +114,10 @@ export type PreviewMintOutcome =
  * `requireEditor` (the session the admin guard resolved), `requireEngineAccess`
  * against `runtime.access` for the target's concept key, the concept lookup, the id shape rule, and
  * only then the draft check. Access runs before the lookup so a role denied a key gets the refusal
- * whether or not the key names a concept. A refusal therefore never reports whether an entry or its draft exists to a session that
- * was not allowed to ask. The `target` is the argument's, never the route's: this reads no route
- * param, so a site's workflow route (an editorial queue emailing a reviewer on submit) mints
- * from anywhere the guard has run.
+ * whether or not the key names a concept. A refusal therefore never reports whether an entry or
+ * its draft exists to a session that was not allowed to ask. The `target` is the argument's, never
+ * the route's: this reads no route param, so a site's workflow route (an editorial queue emailing
+ * a reviewer on submit) mints from anywhere the guard has run.
  *
  * The editor is the guard-resolved session's and cannot be supplied by the caller. The stored
  * `editor` column is that session's `email`, already normalized by the `editor`-table select, so
@@ -191,9 +191,9 @@ export type PreviewRevokeOutcome =
  * authority-scoped act minting is (an entry-scoped credential the site's access map governs), so
  * the auth outcome reaches the caller FIRST and short-circuits: `requireEditor` (the
  * guard-resolved session), `requireEngineAccess` against `runtime.access` for the target's
- * concept key, the concept lookup, then the id shape rule. A refusal therefore never reaches the delete, and the `target` is the
- * argument's, never the route's, so a site's workflow route revokes from anywhere the guard
- * has run, the same way `mintPreview` mints from anywhere.
+ * concept key, the concept lookup, then the id shape rule. A refusal therefore never reaches the
+ * delete, and the `target` is the argument's, never the route's, so a site's workflow route
+ * revokes from anywhere the guard has run, the same way `mintPreview` mints from anywhere.
  *
  * Logs `preview.token.revoked` on success, from inside this function, so the engine's route
  * and a site's workflow route both leave the identical record; never called on a refusal.

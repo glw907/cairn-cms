@@ -1015,13 +1015,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
         <!-- The default alt box. Alt is debt: Save is never gated on it, and a blank box posts an
              empty alt. The box posts its own value, so what the editor sees is what saves. -->
-        <label class="flex flex-col gap-label">
-          <span class="type-meta font-medium">Default alt text</span>
+        <div class="flex flex-col gap-label">
+          <label for="cairn-ml-alt" class="type-meta font-medium">Default alt text</label>
           <span id="cairn-ml-alt-note" class="type-meta text-muted">
             The default for the next time this image is placed. It does not change the alt on entries that already use it. You can save without it and add it later.
           </span>
-          <textarea class="textarea textarea-sm w-full" name="alt" aria-describedby="cairn-ml-alt-note" rows="2" bind:value={altText}></textarea>
-        </label>
+          <textarea id="cairn-ml-alt" class="textarea textarea-sm w-full" name="alt" aria-describedby="cairn-ml-alt-note" rows="2" bind:value={altText}></textarea>
+        </div>
 
         {#if updateError}
           <p role="alert" class="type-meta text-[var(--cairn-error-ink)]">{updateError}</p>

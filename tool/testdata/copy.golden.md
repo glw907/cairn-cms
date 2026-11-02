@@ -365,7 +365,7 @@ Name the check that entry holds
 - , along with a Content-Signal directive cairn did not write
 - ; %s is plain http, so it also admits a network attacker on that origin
 - AUTH_DB (d1_databases)
-- AUTH_DB's migrations_dir points outside the site directory, so it was not read
+- AUTH_DB's migrations_dir is outside the site directory or is not a readable folder, so it was not read
 - EMAIL (send_email)
 - EMAIL and AUTH_DB are declared
 - PUBLIC_ORIGIN is %s (%s)

@@ -281,6 +281,8 @@ island.
   // document without flipping busy, so without this the leave guard would fire mid-discard while
   // the page is still dirty, which is the primary discard scenario.
   let leaving = $state(false);
+  // Set when the Discard form submits so a double click sends one POST; pageshow clears it.
+  let discarding = $state(false);
 
   // Dirty tracking. The body compares against the text the page loaded with (or the edited body a
   // full-page blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip
@@ -506,12 +508,13 @@ island.
     };
     // A page the browser restores from its back-forward cache comes back exactly as it left, mid
     // navigation: a successful save kept Save and Publish disabled and the leave guard off for the
-    // reload it started. A restored page is editable again, so clear all three.
+    // reload it started. A restored page is editable again, so clear them all.
     const onPageShow = (e: PageTransitionEvent) => {
       if (!e.persisted) return;
       saving = false;
       publishing = false;
       leaving = false;
+      discarding = false;
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pageshow', onPageShow);
@@ -1226,6 +1229,7 @@ island.
       failureNotice = '';
       signInHref = '';
       leaving = false;
+      discarding = false;
       fieldsDirty = false;
       mode = 'write';
       detailsOpen = false;
@@ -2832,10 +2836,15 @@ island.
       {:else}
         <p class="mb-3 type-body">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
       {/if}
-      <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => (leaving = true)}>
+      <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => {
+        leaving = true;
+        discarding = true;
+      }}>
         <CsrfField />
         <button type="button" class="btn btn-sm" onclick={() => discardDialog?.close()}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-error">Discard</button>
+        <button type="submit" class="btn btn-sm btn-error" disabled={discarding}>
+          {#if discarding}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Discarding…{:else}Discard{/if}
+        </button>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">

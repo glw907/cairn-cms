@@ -50,6 +50,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
   /** Open the dialog with a fresh prefill. Exported so a `trigger={false}` host can drive it. */
   export function open() {
     nextSlug = slug;
+    renaming = false;
     dialog?.showModal();
     // showModal() lands focus on the first focusable element (the header Close button), so move
     // it to the slug input the dialog exists for, and select the prefill so the author can replace
@@ -62,7 +63,13 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
   function close() {
     dialog?.close();
   }
+
+  // Set when the form submits so a double click sends one POST. open() and a bfcache restore
+  // (pageshow) clear it, so a back navigation does not leave the button dead.
+  let renaming = $state(false);
 </script>
+
+<svelte:window onpageshow={() => (renaming = false)} />
 
 {#if trigger}
   <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>
@@ -78,7 +85,10 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
       </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
-    <form method="POST" action="?/rename" class="flex flex-col gap-3" onsubmit={() => onsubmitting?.()}>
+    <form method="POST" action="?/rename" class="flex flex-col gap-3" onsubmit={() => {
+      renaming = true;
+      onsubmitting?.();
+    }}>
       <CsrfField />
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
@@ -97,7 +107,9 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
       </p>
       <div class="flex justify-end gap-2">
         <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-primary">{routable ? 'Change address' : 'Rename'}</button>
+        <button type="submit" class="btn btn-sm btn-primary" disabled={renaming}>
+          {#if renaming}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> {routable ? 'Changing…' : 'Renaming…'}{:else}{routable ? 'Change address' : 'Rename'}{/if}
+        </button>
       </div>
     </form>
   </div>

@@ -2790,6 +2790,24 @@ describe('EditPage', () => {
     expect(figureButton()?.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('disables Discard after a submit and re-enables it on pageshow', async () => {
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
+    await screen.getByRole('button', { name: 'More actions' }).click();
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const submit = screen.container.querySelector<HTMLButtonElement>('form[action="?/discard"] button[type="submit"]')!;
+    expect(submit.disabled).toBe(false);
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      submit.click();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+    await expect.poll(() => submit.disabled).toBe(true);
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await expect.poll(() => submit.disabled).toBe(false);
+  });
+
   it('lets a discard submission through the leave guard', async () => {
     // Capture the beforeunload handler the component registers (a real dispatch on window would
     // unload the test page), the recipe the beforeunload test above uses.

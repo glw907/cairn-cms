@@ -42,7 +42,7 @@ describe('CairnTidySettings: the saved status region', () => {
       data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing', saved: true }),
     });
     const status = screen.container.querySelector('[role="status"]');
-    expect(status?.textContent).toContain('Tidy settings saved.');
+    expect(status?.textContent).toContain("Tidy settings saved. They apply after your site's next deploy.");
   });
 });
 

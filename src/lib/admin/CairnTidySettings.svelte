@@ -343,7 +343,7 @@ bespoke: a single-use control, not a repeated device.
        observed by assistive tech. Only the visible box moves inside. -->
   <div role="status">
     {#if data.saved}
-      <div class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
+      <div class="alert alert-success mt-4 type-body">Tidy settings saved. They apply after your site's next deploy.</div>
     {/if}
   </div>
   {#if lifecycleError}

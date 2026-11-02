@@ -257,6 +257,7 @@ export const fixtureVocabulary: VocabularyData = {
   ],
   usage: { 'trail-guide': 2, gear: 0, 'community-news': 1 },
   unlisted: [{ value: 'volunteer-spotlight', count: 3 }],
+  saved: false,
 };
 
 /**

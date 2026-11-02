@@ -167,6 +167,13 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {#if lifecycleError}
     <div class="alert alert-error mt-3 type-body">{lifecycleError}</div>
   {/if}
+  <!-- Mounted unconditionally so a later save still announces (WCAG 4.1.3): only the visible box
+       moves inside. -->
+  <div role="status">
+    {#if data.saved}
+      <div class="alert alert-success mt-3 type-body">Tags saved.</div>
+    {/if}
+  </div>
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and
        seed. Empty at rest. -->

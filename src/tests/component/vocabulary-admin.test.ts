@@ -18,6 +18,7 @@ function data(over: Partial<VocabularyData> = {}): VocabularyData {
     usage: { 'snow-report': 8, gear: 0 },
     unlisted: [{ value: 'trip-reports', count: 3 }],
     ...over,
+    saved: over.saved ?? false,
   };
 }
 

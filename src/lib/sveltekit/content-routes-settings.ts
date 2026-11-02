@@ -22,7 +22,7 @@ import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
-import { cachedProbeResult } from './tidy-key-health.js';
+import { cachedProbeResult, tidyKeyPresent } from './tidy-key-health.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
 import { env } from './workers-env.js';
@@ -73,7 +73,8 @@ export interface SettingsData {
   modelLabel: string;
   /**
    * The resolved editor-tier conventions: every field concrete, the screen's initial control state.
-   *  Present only when the gate is open; the gate state needs no conventions.
+   *  Read from the site config committed on the default branch when the gate is open, falling back to
+   *  the runtime config's values; the gate state needs no conventions.
    */
   conventions: TidyConventions;
   /** The success flash a redirected save carries (`?saved=1`). */
@@ -93,6 +94,8 @@ export interface VocabularyData {
   usage: Record<string, number>;
   /** Tags in use but absent from the vocabulary, with their count, sorted: the seed candidates. */
   unlisted: { value: string; count: number }[];
+  /** The success flash a redirected save carries (`?saved=1`). */
+  saved: boolean;
 }
 
 /**
@@ -162,13 +165,10 @@ const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Re
  *  copy rather than the parser's message, which can echo a misplaced key or value straight
  *  from the committed file; the actionable detail stays in the log record below, for the site's
  *  operator. Any other error propagates unchanged. `scope` names the calling screen (`'settings'`
- *  or `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in
- *  this module emits `config.invalid` with `scope: 'settings'`. It is not enough for the
- *  vocabulary caller: vocabularyLoad's degrade-path emit also carries `scope: 'vocabulary'`
- *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
- *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
- *  See the `config.invalid` entry in `src/lib/log/events.ts`, which documents this collision
- *  directly.
+ *  or `'vocabulary'`). It is not enough on its own for either caller: settingsLoad's and
+ *  vocabularyLoad's degrade-path emits carry the same `scope` and `conditionId`, so the record
+ *  alone cannot tell this refusal path from a load's degrade path; only the reference doc's prose
+ *  (a load degrades, a save refuses) does.
  */
 function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {
   try {
@@ -197,22 +197,16 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Read whether the Anthropic API key secret is present in the load's env. A presence flag for the
-   *  truthful visibility gate, never the key itself: the key is a Worker secret, so this only reports
-   *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server.
-   */
-  function keyConfigured(event: CairnEvent): boolean {
-    return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
-  }
-
-  /**
    * Load the two-tier tidy settings. The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
    *  `enabled` flag is true only when `tidy.enabled` is set, the key is present, AND the key is not
    *  confirmed invalid, so the screen renders the convention list only then. No secret is returned: only
-   *  a presence flag and the probe verdict for the key. The conventions come straight from the runtime
-   *  config (the same source the tidy action's prompt reads), so the screen and the prompt can never
-   *  diverge.
+   *  a presence flag and the probe verdict for the key. When the gate is open the conventions are read
+   *  from the committed site config on the default branch, so the screen shows what a save wrote. The
+   *  tidy action's prompt reads the runtime config, which holds the values the Worker deployed with, so
+   *  the two differ between a save and its deploy; the save message says so. A missing file, a failed
+   *  read, or a config with no conventions falls back to the runtime value; a file that fails to parse
+   *  falls back too, and logs the operator fault.
    *
    *  The active key probe (save-500-honest-errors) runs only when tidy is on and the key is
    *  present, since it would otherwise spend a network round trip proving nothing the screen can use.
@@ -232,7 +226,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     requireEngineAccess(runtime.access, editor, 'settings');
     const tidy = runtime.tidy;
     const tidyEnabled = tidy?.enabled === true;
-    const keyPresent = keyConfigured(event);
+    const keyPresent = tidyKeyPresent();
     const model = tidy?.model || DEFAULT_TIDY_MODEL;
     let keyStatus: SettingsData['keyStatus'] = keyPresent ? 'unknown' : 'missing';
     if (tidyEnabled && keyPresent) {
@@ -244,14 +238,35 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         keyStatus = await probeTidyKey(ctx.anthropicClient({ apiKey }), ctx.tidyTimeoutMs);
       }
     }
+    const enabled = tidyEnabled && keyPresent && keyStatus !== 'invalid';
+    let conventions: TidyConventions = resolveTidyConventions(tidy?.conventions);
+    if (enabled) {
+      let raw: string | null = null;
+      try {
+        const backend = ctx.resolveBackend(event);
+        raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+        const committed = raw === null ? undefined : parseSiteConfig(raw).tidy?.conventions;
+        if (committed) conventions = resolveTidyConventions(committed);
+      } catch (err) {
+        // A read failure (raw still null) degrades silently: an outage is not a config fault. A throw
+        // after the read is a parse failure, named in the log for the site's operator.
+        if (raw !== null) {
+          log.error('config.invalid', {
+            scope: 'settings',
+            conditionId: 'config.site-config-invalid',
+            error: String(err),
+          });
+        }
+      }
+    }
     return {
-      enabled: tidyEnabled && keyPresent && keyStatus !== 'invalid',
+      enabled,
       tidyEnabled,
       keyConfigured: keyPresent,
       keyStatus,
       model,
       modelLabel: tidyModelLabel(model),
-      conventions: resolveTidyConventions(tidy?.conventions),
+      conventions,
       saved: event.url.searchParams.get('saved') === '1',
     };
   }
@@ -369,7 +384,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       unlisted = [];
     }
 
-    return { vocabulary, usage, unlisted };
+    return { vocabulary, usage, unlisted, saved: event.url.searchParams.get('saved') === '1' };
   }
 
   /**

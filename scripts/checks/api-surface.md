@@ -584,7 +584,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VocabularyData`: { vocabulary: VocabularyEntry[]; usage: { [x: string]: number }; unlisted: { value: string; count: number }[] }
+- `VocabularyData`: { vocabulary: VocabularyEntry[]; usage: { [x: string]: number }; unlisted: { value: string; count: number }[]; saved: boolean }
 - `VocabularyEntry`: { value: string; label: string }
 - `WelcomeData`: { displayName: string; siteName: string }
 

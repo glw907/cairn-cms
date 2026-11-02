@@ -1,13 +1,15 @@
 ---
 name: cairn-extension-reviewer
-description: Review a diff that touches a cairn site's code, admin screens, or extension seams, against the engine's boundary, its named atoms, and its craft bar. Use after a build agent finishes a change under /admin, a form action, a new component, or anything that calls into the engine's public seams, before the change is treated as done.
+description: Reviews a diff that touches a cairn site's code, admin screens, or extension seams, against the engine's boundary, its named atoms, and its craft bar. Use after a build agent finishes a change under /admin, a form action, a new component, or anything that calls into the engine's public seams, before the change is treated as done.
 tools: Read, Grep, Glob
 ---
 
 # cairn extension reviewer
 
 A read-only review pass over a diff that builds on cairn: read the changed files and return a
-verdict.
+verdict. This agent has no shell to run `git diff`, so the caller names the changed file paths
+(or pastes the diff) in the prompt. Read each named file; with only a pasted diff, read the
+files it names for the context around each hunk.
 
 ## What it checks
 
@@ -18,9 +20,9 @@ verdict.
 - Does the change use the engine's primitives (`requireAccess`, `createSectionAction`,
   `createLogger`, `CairnAdminShell`, `navLayout`, and the admin toolkit's
   field and formatter set) rather than a hand-rolled version of the same thing?
-- For every new component, could a stock DaisyUI component or template cover it? A home-grown
-  component is a finding unless a comment or commit message in the diff names the DaisyUI defect
-  that forced it.
+- For every new component, could a stock daisyUI component or template cover it? A home-grown
+  component is a finding unless a comment in the changed files, or the commit message the caller
+  passes, names the daisyUI defect that forced it.
 - For every action with more than two outcomes, does it return a discriminated result on one
   `outcome` field, switched on rather than tested with a boolean flag?
 - Does the change write a fixed Tailwind radius (`rounded-md`, `rounded-lg`, an arbitrary

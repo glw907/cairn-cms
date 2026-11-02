@@ -56,15 +56,18 @@ import { error } from '@sveltejs/kit';
 import { requireAccess } from '@glw907/cairn-cms/sveltekit';
 
 export const load: PageServerLoad = async (event) => {
-  requireAccess(event);
+  const editor = requireAccess(event);
   const db = env.APP_DB;
   if (!db) error(500, 'This screen is not configured.');
   const { results } = await db
     .prepare('SELECT id, name FROM items ORDER BY id DESC')
     .all<{ id: number; name: string }>();
-  return { items: results };
+  return { items: results, isOwner: editor.capability === 'owner' };
 };
 ```
+
+`requireAccess` returns the signed-in `Editor`; the load passes `isOwner` to the page so it can
+show the owner-only control.
 
 ```ts
 // src/routes/admin/items/+page.server.ts, the actions
@@ -121,11 +124,13 @@ target: an empty map refuses everyone, owner included.
         <tr>
           <td>{item.name}</td>
           <td>
-            <form method="POST" action="?/remove" use:enhance>
-              <CsrfField />
-              <input type="hidden" name="id" value={item.id} />
-              <button class="btn btn-ghost btn-xs" aria-label={`Delete ${item.name}`}>Delete</button>
-            </form>
+            {#if data.isOwner}
+              <form method="POST" action="?/remove" use:enhance>
+                <CsrfField />
+                <input type="hidden" name="id" value={item.id} />
+                <button class="btn btn-ghost btn-xs" aria-label={`Delete ${item.name}`}>Delete</button>
+              </form>
+            {/if}
           </td>
         </tr>
       {/each}
@@ -133,6 +138,9 @@ target: an empty map refuses everyone, owner included.
   </AdminTable>
 </div>
 ```
+
+The `{#if data.isOwner}` only hides the control; `ownerOnly: true` on the action is what refuses a
+non-owner's POST.
 
 `AdminTable` owns the horizontal scroll, so the wrapping card carries `overflow-hidden` and never
 `overflow-x-auto`. Keep the status region mounted empty so a screen reader announces the change.

@@ -1,9 +1,9 @@
 ---
 name: cairn-building-admin-screens
-description: Build, gate, arrange, or review a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, requireAccess, the adapter's access map or roles, editor.navLayout, editor.publishActions, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
+description: Guides building, gating, arranging, or reviewing a screen inside a cairn site's /admin. Load before touching anything under src/routes/admin or src/lib/admin, the admin-toolkit or CsrfField, createSectionAction, requireAccess, the adapter's access map or roles, editor.navLayout, editor.publishActions, navFilter, attention badges, the /admin mount or root layout, or when npm run check:cairn or cairn-audit reports a finding on an admin screen.
 ---
 
-# cairn admin screens
+# cairn-building-admin-screens
 
 A custom admin screen is a SvelteKit route under `src/routes/admin/` that renders inside
 `CairnAdminShell`. The engine's TSDoc carries each export's contract; this skill carries the
@@ -13,6 +13,7 @@ recipes, the orderings, and the traps between exports. Open the reference for th
 |---|---|
 | Add a screen over your data or a tool with no data: gate, actions, audit, CSRF, dialog, row detail, fetch action | `references/custom-screen.md` |
 | Put a screen in the sidebar, add a role, hide a section by role, deny a route, `navFilter`, badges, next-step links after a publish | `references/sidebar-and-access.md` |
+| Gate a custom screen or action: `requireAccess`, `createSectionAction`, the access map, the refusal shape, the audit table | `../../cairn-extending-a-site/references/admin-access.md` |
 | Wire or repair the `/admin` mount, the chrome-free root layout, hooks order, `/healthz` | `references/admin-mount.md` |
 | Fix a `cairn-audit` finding, configure the audit | `references/audit-rules.md` |
 | Lay out a list screen (table, toolbar, chips, expandable rows, pagination) | `references/exemplar-list.md` |
@@ -34,7 +35,7 @@ Each rule's trigger and fix is in `references/audit-rules.md`.
 `stripe-trim-parity`, `unlayered-font-clobber`, `list-role`, `log-event-grammar`,
 `log-secret-field`.
 
-**Static, advisory tier:** `radius-scale` (promoted to error at 0.99.0), and three rules that
+**Static, advisory tier:** `radius-scale`, and three rules that
 read the site's public files and stay advisory for a consumer: `public-literals`,
 `theme-conformance`, `theme-contrast`. A fifth, `public-route-prerender`, flags a public
 route page that no prerender export reaches.
@@ -94,9 +95,14 @@ The audit cannot judge these, because each needs to know what the screen is for:
 A screen is done, in order, only after:
 
 1. **The static audit passes**: `npm run check:cairn` (it compiles the admin sheet first) or
-   `npx cairn-audit`.
+   `npx cairn-audit`. If `cairn` is on `PATH`, run `cairn doctor` too.
 2. **For a derivation or a composition the toolkit does not cover**, the grader prompt
    (`references/grader-prompt.md`) passes against your captures.
+3. **The new route answers at run time.** Start `npm run dev -- --port 4173 --strictPort --host 127.0.0.1`
+   in the background (it signs you in as owner), then
+   `curl -sL -o /dev/null -w '%{http_code} %{url_effective}' http://127.0.0.1:4173/admin/<route>`.
+   Expect a final `200` that is not `/admin/login`. A refusal or a login landing usually means the
+   screen's access-map rule is missing. Stop the server afterward.
 
 Run the static audit before the first edit and again after the fix. In the report, name each rule
 id that fired (`list-role`, not "list semantics"), what it required, and the final exit code.

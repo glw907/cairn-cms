@@ -1,9 +1,9 @@
 ---
 name: cairn-consulting-the-engine
-description: Write a consultation brief when you have worked around a cairn engine behavior twice, or want something the documented seams do not reach at all. Load instead of a third hand-roll; either files the brief against the engine repo or hands it to you to send yourself.
+description: Writes a consultation brief when a site has worked around a cairn engine behavior twice, or wants something the documented seams do not reach at all. Load instead of a third hand-roll; either files the brief against the engine repo or hands it to the developer to send.
 ---
 
-# cairn consult
+# cairn-consulting-the-engine
 
 Write the brief cairn's maintainers need to weigh the any-site case against your own. Never
 edit a cairn-cms checkout, even if one happens to be on disk.

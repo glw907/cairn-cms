@@ -52,8 +52,9 @@ These are reversible calls inside the approved scope. Each goes under the PR's `
    reversed ruling with a live entry, and it is rewritten in place.
 9. **The run sheet's overlap line is out of date.** 1b touches neither `gate-table.json` nor
    `api-surface.md`. It does overlap 1a in `claude/CLAUDE.md`, `check-package-files.mjs`, `BACKLOG.md`,
-   `CHANGELOG.md`, `MIGRATION-NOTES.md`, and `templates/waymark/`, in different hunks. The sheet's
-   second-of-two-PRs step covers all of them.
+   `CHANGELOG.md`, `MIGRATION-NOTES.md`, and `templates/waymark/`, in different hunks, and in
+   `durable-gotchas.md`, on 1a's clean-up list in design.md. 1a has no plan yet, so its hunks there are
+   unread. The sheet's second-of-two-PRs step covers all of them.
 
 ## Files
 

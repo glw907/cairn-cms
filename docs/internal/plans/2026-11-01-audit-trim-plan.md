@@ -1,11 +1,11 @@
 # Audit trim: task plan
 
 Pass 1b, slug `audit-trim`, class `ordinary` plus `runner`. Initiative: `shared-standards`.
-Base: `d71e4401e`, then `2d256f484` (the sweep verdicts). Design note:
+`<base>` is `2d256f484` (the sweep verdicts), moved to the merge commit after a 1a merge. Design note:
 `docs/internal/plans/2026-11-01-audit-trim-design.md`. Source of the calls: design.md's twelve Decide
 blocks, ledger entry "cleanup design 20261101T122027-138291 approved with all 12 recommendations".
 
-Path: 195 minutes against a design estimate of 150 and a ceiling of 300. No cut is needed.
+Path: 215 minutes against a design estimate of 150 and a ceiling of 300. No cut is needed.
 
 ## Pre-flight
 
@@ -50,7 +50,15 @@ The run sheet's standing answers apply to every task. These are this pass's own.
 - **A pair merge conflicts:** the pairs are disjoint, so a conflict means a task left its file list.
   Resolve toward the plan, then rerun the fast lane.
 - **Pass 1a merges first:** `git merge origin/main`, keep both `## Unreleased` entries, run
-  `npm run emit:template` and `npm run check:surface -- --update`, rerun the fast lane.
+  `npm run package && npm run emit:template` and `npm run check:surface -- --update`, move `<base>` to
+  the merge commit, rerun the fast lane.
+- **Gates:** every leg goes through `cairn-run-gate`, per `cairn-pass` "Gate" and "Fast lane". `node
+  scripts/checks/gate-tier.mjs --fast --range <base>..HEAD` prints the legs. Run them in order, each as
+  `CAIRN_GATE_LANE=<lane> cairn-run-gate '<rest>'`. A Node-only workspace suite such as `npm test -w
+  packages/create-cairn-site` is light, and the engine's root `npm test` is never light. A gate command
+  written bare below, `npm run lane:fast` included, runs this way. A lone failure with another
+  worktree's process in `ps aux | grep -E 'vitest|npm test'` reruns alone once and is listed as flake
+  evidence.
 - **Questions:** none is expected. A stop goes to `docs/STATUS.md` for `cairn-cms-9b`, per the prompt.
 
 ## Tasks
@@ -61,29 +69,32 @@ each task. Keep T3 ahead of T4, so no pushed head has `norms.yml` calling a remo
 ### T1. Write the 12 calls into the rulings ledger (25 min, ordinary)
 
 **Outcome:** `docs/internal/engine-rulings.md` records all twelve calls, including the auth ones pass 1a
-executes. Pass 1a leaves this file to this task.
+executes. Pass 1a's prompt leaves this file to this task, except a ruling only 1a can word.
 
 **Files:** `docs/internal/engine-rulings.md`, `BACKLOG.md`.
 
 Append the eleven `cleanup-*` entries after the last entry, in the table's order. Each heading ends
 `  (<verdict>, 2026-11-01, cleanup design 20261101T122027-138291)`, two spaces first. Each entry has a
 one-sentence `- **Verdict:**` line drawn from its Decide block's recommendation, the `- **Reopens on:**`
-line below verbatim, and, where the Reverses column isn't "nothing", a `- **Record:**` line naming each
-slug, with the tag URL from the file's header. No other text.
+line below verbatim, and, where the Reverses column isn't "nothing", a `- **Record:**` line carrying that
+cell's words, each slug with its tag verdict, and the tag URL from the file's header. No other text.
+`engine-rulings.md:19` makes a live `retire` entry a heading and its `Reopens on:` line, so the extra
+lines pass the gate but depart from it. List that under `## Decisions`, with the count in call 1: the
+design says "three tag-era keeps", and the entries below are nine keeps and three reshapes.
 
 | Call | Slug: item | Verdict | Reverses | Reopens on |
 |---|---|---|---|---|
-| 1 | `cleanup-rendered-audit`: the browser half of `cairn-audit` and its norms lookup | retire | The 2026-08-08 charter line that the audit "ships whole"; tag `audit-cli-cairn-audit-rendered-harness-base-url-dynamic-playwright-bot`, `audit-cli-cairn-audit-norms-subcommand-and-the-shipped-norms-manifest`, `audit-cli-rendered-allowlist-and-rule-declared-exemptions`, and the rendered rule keeps | A site rebuild misses the audit. The `pre-agent-first` tag preserves it. |
+| 1 | `cleanup-rendered-audit`: the browser half of `cairn-audit` and its norms lookup | retire | The 2026-08-08 charter line that the audit "ships whole"; tag keeps `audit-cli-cairn-audit-rendered-harness-base-url-dynamic-playwright-bot`, `audit-cli-cairn-audit-norms-subcommand-and-the-shipped-norms-manifest`, `audit-cli-rendered-allowlist-and-rule-declared-exemptions`, `audit-cli-the-post-hydration-page-identity-guard`, `audit-cli-cairn-audit-cookies-environment-seam`, `audit-cli-one-filled-action-focus-renders-interactive-contrast-viewpor`, `audit-cli-touch-targets-rendered-rule`, `audit-cli-border-contrast-weight-budget-screen-anatomy-relational-spac`, `audit-cli-container-inset-asymmetry-and-field-edge-alignment-rendered-`; tag reshapes `audit-cli-chip-ground-collision-rendered-rule`, `audit-cli-form-font-parity-rendered-rule`, and, in part, `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles` | A site rebuild misses the audit. The `pre-agent-first` tag preserves it. |
 | 2 | `cleanup-starter-template`: `templates/waymark` stays committed, and `/styleguide` leaves the scaffold's production build | keep | nothing | The Deploy button leaves `ROADMAP.md`, so nothing points at the subdirectory. |
 | 3 | `cleanup-history-reset`: the changelog, migration notes, roadmap history, and the Go tool's mockups reset | accept | nothing | A site must upgrade across a reset entry. The `pre-agent-first` tag keeps every line. |
 | 5 | `cleanup-live-figures`: `/reproductions` stays for the editor docs | keep | nothing; the 2026-08-15 and 2026-10-31 (#173) rulings stand | cairn.pub's rebuild ships its editor docs without live figures. |
 | 6 | `cleanup-visual-baselines`: the baselines and the five-viewport bar stay | keep | nothing | A measurement shows no dark-only width has caught a defect. |
-| 7 | `cleanup-one-import-path`: each public name imports from its one declaring subpath, with no re-export | retire | Tag `canonical-home-rule` (re-exports as "not a second home") and part of `f1-return-position-leak-sanction` | The leak gate cannot follow a type across subpaths once the re-exports go. |
-| 8 | `cleanup-hide-internals`: about 40 names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction` | retire | Tag keeps `audit-sveltekit-adminaction`, `audit-admin-listtoolbar`, `audit-adapter-verifymanifest`, `audit-sveltekit-requireeditor`, `audit-delivery-composeentrydata`, `audit-admin-formattimestamp`, `polish-formattimestamp-domain`, `audit-delivery-buildrssfeed`, `audit-delivery-buildjsonfeed`, `audit-delivery-buildsitemap`, the `audit-auth-*` keeps on `/auth-store`, and the `cairn-media-seed` keeps | A site needs a hidden name, shown in code it has built. `tooltip-primitive` stands. |
-| 9 | `cleanup-unset-options`: options and field kinds no site sets are removed | retire | Won't-do #126 and #139; tag keeps `audit-adapter-assetconfig`, `audit-adapter-navmenuconfig`, `audit-sveltekit-authguardoptions`, `audit-admin-formatcivildateoptions`, `audit-log-editor-bootstrapped` | A site sets the option, shown in code it has built. Adding one back isn't a break. |
-| 10 | `cleanup-custom-recipes`: the hand-mount factories, preview token verbs, preview lifetime, and newly-published recipe are removed | retire | Tag `audit-sveltekit-mintpreviewtoken`, `audit-sveltekit-createauthroutes`, `audit-sveltekit-createeditorroutes`, `audit-sveltekit-createcontentroutes`, `audit-delivery-newlypublishedentries`; closes #115 and #116 | A site needs its own preview screen or a publish hook, shown in code it has built. |
+| 7 | `cleanup-one-import-path`: each public name imports from its one declaring subpath, with no re-export | retire | Tag accepts `canonical-home-rule` (re-exports as "not a second home") and part of `f1-return-position-leak-sanction` | The leak gate cannot follow a type across subpaths once the re-exports go. |
+| 8 | `cleanup-hide-internals`: about 40 names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction` | retire | Tag keeps `audit-sveltekit-adminaction`, `audit-adapter-verifymanifest`, `audit-sveltekit-requireeditor`, `audit-delivery-composeentrydata`, `audit-delivery-buildrssfeed`, `audit-delivery-buildjsonfeed`, `audit-delivery-buildsitemap`, `audit-auth-listeditors`, `audit-auth-inserteditor`, `audit-auth-editorrow` (now `UnresolvedEditor`), `audit-cli-cairn-media-seed-header-repeatable`, `audit-cli-cairn-media-seed-bucket-and-the-wrangler-r2-buckets-resoluti`, `audit-cli-cairn-media-seed-command-exit-contract-content-addressed-wri`; tag reshapes `audit-admin-listtoolbar`, `audit-admin-formattimestamp`, `audit-auth-seteditorrole`, `audit-auth-deleteeditor`, `audit-auth-demoteownerifnotlast`, `audit-auth-removeownerifnotlast`; tag accept `polish-formattimestamp-domain`. `tooltip-primitive` stands. | A site needs a hidden name, shown in code it has built. |
+| 9 | `cleanup-unset-options`: options and field kinds no site sets are removed | retire | Won't-do #126 and #139; tag keeps, each in part, `audit-adapter-assetconfig`, `audit-adapter-navmenuconfig`, `audit-sveltekit-authguardoptions`, `audit-admin-formatcivildateoptions` | A site sets the option, shown in code it has built. Adding one back isn't a break. |
+| 10 | `cleanup-custom-recipes`: the hand-mount factories, preview token verbs, preview lifetime, and newly-published recipe are removed | retire | Tag reshape `audit-sveltekit-mintpreviewtoken`; tag keeps `audit-sveltekit-createauthroutes`, `audit-sveltekit-createeditorroutes`, `audit-sveltekit-createcontentroutes`, `audit-delivery-newlypublishedentries`; closes #115 and #116 | A site needs its own preview screen or a publish hook, shown in code it has built. |
 | 11 | `cleanup-one-validate-hook`: one fail-closed `validate` replaces `refine` and `behavior` | retire | Won't-do #138; tag keeps `audit-adapter-behaviortable`, `audit-adapter-fieldbehavior`, `audit-adapter-standardinput` | A site needs a hook that fails open on a save, shown in code it has built. |
-| 12 | `cleanup-wiring-reshapes`: the seven wiring reshapes and `vite dev`'s manifest regeneration | reshape | Tag keeps `audit-adapter-renderer`, `audit-adapter-resolveoptions`, `audit-delivery-siteglobs`, `audit-media-resolvedassetconfig`, `audit-delivery-siteindexes`, `audit-sveltekit-authroutesconfig`, `audit-delivery-resolvedreference`, `audit-adapter-fieldset`; "locked decision 1" at `src/lib/vite/internal.ts:14` | A rebuilt site can't express a case the old shape met. `audit-adapter-createrenderer` is honored. |
+| 12 | `cleanup-wiring-reshapes`: the seven wiring reshapes and `vite dev`'s manifest regeneration | reshape | Reshapes that honor the kept case, tag keeps `audit-adapter-createrenderer`, `audit-adapter-renderer`, `audit-adapter-resolveoptions`, `audit-delivery-siteglobs`, `audit-media-resolvedassetconfig`, `audit-delivery-siteindexes`, `audit-sveltekit-authroutesconfig`, `audit-delivery-resolvedreference`, `audit-adapter-fieldset`; overrides "locked decision 1" at `src/lib/vite/internal.ts:14` | A rebuilt site can't express a case the old shape met. |
 
 Call 4 updates its existing entry. In `audit-auth-createauthchannel` (line 316), the heading becomes
 `## audit-auth-createauthchannel: `createAuthChannel`  (retire, 2026-11-01, cleanup design
@@ -98,7 +109,7 @@ Call 4 updates its existing entry. In `audit-auth-createauthchannel` (line 316),
 
 Two other live lines change, and nothing else does:
 
-- `audit-rule-advisory-first-tier`, lines 381-382, quoted: "`cairn-audit` static or\n  rendered rule
+- `audit-rule-advisory-first-tier`, lines 380-381, quoted: "`cairn-audit` static or\n  rendered rule
   reaching a consumer's own tree". Drop "or rendered".
 - `BACKLOG.md`, Won't-do #126, #138, and #139: append ` Reversed by \`cleanup-unset-options\`` (or
   `cleanup-one-validate-hook` for #138) ` (Geoff, 2026-11-01).` They stay in the section.
@@ -112,19 +123,20 @@ prints nothing.
 
 **Test:** none. The format gate is the test. Push and open the draft PR here.
 
-### T2. Move the tests off the code E1 deletes (30 min, ordinary; pair with T3)
+### T2. Move the tests off the code E1 deletes (35 min, ordinary; pair with T3)
 
 **Outcome:** nothing outside `src/lib/audit` and the tests T4 deletes imports `rendered`, `norms`, or
-`color`. The palette, recipe, and vertical-alignment proofs still run.
+`color`. The palette, recipe, token-attestation, and vertical-alignment proofs still run.
 
 **Files:** new `src/tests/unit/_canvas-color.ts`; `src/tests/unit/{badge-tier-legibility,
 interactive-control-edge-contrast,status-chip-register-tuning,guidance-recipes-sync}.test.ts`;
 `src/tests/component/BtnActiveDarkGround.test.ts`; `src/tests/lab/vertical-metrics{,.test}.ts`.
 
 - `_canvas-color.ts` takes `Rgba`, `composite`, `relativeLuminance`, and `contrastRatio` from
-  `src/lib/audit/color.ts`, plus `resolveColors` and its in-page function from
-  `src/lib/audit/rendered/page-surface.ts:81-96`, moved as they stand. Its page parameter is a local
-  `{ evaluate }` type. Repoint the imports quoted below. `BtnActiveDarkGround.test.ts:58`'s comment
+  `src/lib/audit/color.ts`, plus `resolveColors` (`src/lib/audit/rendered/page-surface.ts:81-90`) and
+  `resolveColorsInPage` (`:96-136`), moved as they stand. It exports `type RenderedPage` with the one
+  `evaluate` signature from `src/lib/audit/rendered/types.ts:46`, so the casts in the three tests stay.
+  Repoint the imports quoted below. `BtnActiveDarkGround.test.ts:58`'s comment
   cites `src/lib/audit/color.ts`, so point it at the helper.
   - `import { composite, contrastRatio, type Rgba } from '../../lib/audit/color.js';`
   - `import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';`
@@ -132,18 +144,22 @@ interactive-control-edge-contrast,status-chip-register-tuning,guidance-recipes-s
 - `guidance-recipes-sync.test.ts:16` reads `import { RATIFIED_NORMS, RECIPE_MODEL, ROLE_RECIPES } from
   '../../lib/audit/norms.js';`. Move `RECIPE_MODEL` (`norms.ts:302`) and `ROLE_RECIPES` (`norms.ts:317`)
   into the test as local data, dropping the `role` field and `RoleRecipe`'s link to the ratified table.
-  Delete `checkRoleRows` and the test that calls it, which had `RATIFIED_NORMS` as its other side. List
-  that under `## Decisions`.
+  Delete `checkRoleRows` (line 152) and the tests at lines 179 and 244, which had `RATIFIED_NORMS` as
+  their other side, and rewrite header comment lines 3-6. List that under `## Decisions`.
+- Move `src/tests/unit/audit/norms.test.ts:544`, "attests every Write token against the admin sheet
+  inventory or the theme-kit fixture source", into `guidance-recipes-sync.test.ts`, reading
+  `src/tests/unit/fixtures/admin-sheet-inventory.txt` and the file's `FIXTURE`. T4 deletes its source,
+  and nothing else keeps a hand-typed row honest.
 - `vertical-metrics.ts:364-366` reads the helpers from `globalThis.__cairnAudit`. Replace them with
   local `signature` and `isVisible` copied from `page-surface.ts:163-215`, inside the in-page
   function, and delete `import { ensurePageHelpers } from '../../lib/audit/rendered.js';`, the
   `import type` at line 72, and the `await ensurePageHelpers(page);` in `measureVerticalMetrics`.
-  Declare a local `RenderedPage` with the two methods it uses, exported for `vertical-metrics.test.ts:33`.
+  With `ensurePageHelpers` gone, the file calls only `page.evaluate` (line 1566), so declare a local
+  `RenderedPage` with that one method, exported for `vertical-metrics.test.ts:33`.
 
 **Acceptance:** `grep -rlE "audit/(rendered|norms|color)" src/tests scripts` lists only
 `src/tests/unit/audit/{rendered,norms,color}.test.ts`, `src/tests/unit/audit/rules/rendered/**`, and the
 scripts T4 deletes. `npx vitest run --project unit src/tests/unit/guidance-recipes-sync.test.ts` passes.
-A deliberately removed row from a guidance copy still fails that test.
 
 **Test:** the moved tests. Run the fast lane with the component project, since a component test moved.
 
@@ -161,16 +177,19 @@ A deliberately removed row from a guidance copy still fails that test.
 - `.github/ci-green.json:14`: delete `".github/workflows/norms.yml",`.
 - `workflow-yaml.test.ts:108-119`: delete the test "reads a reusable-workflow call through the jobs of
   the workflow it calls". No caller remains, so remove the `job.uses` branch in `jobsWithoutTimeout`
-  (lines 88-95) and its doc comment lines too. List it under `## Decisions`.
+  (lines 89-97), the `seen` parameter (line 86), and the exemption sentence in its doc comment (lines
+  83-84). List it under `## Decisions`.
 
 **Acceptance:** `grep -n 'needs:' .github/workflows/publish.yml` prints only line-150's
-`needs: [publish, publish-dev]`, and `grep -rn 'norms' .github .github/ci-green.json` prints nothing.
-After the merged commit is pushed, `node scripts/checks/gate-tier.mjs --range <base>..HEAD --protected`
-prints `ciWait`, so run `ci-green <sha> --pr <n> --wait` and start T4 only on green.
+`needs: [publish, publish-dev]`, and `grep -rn 'norms' .github` prints nothing. After the merged commit
+is pushed, `node scripts/checks/gate-tier.mjs --range <pair-base>..HEAD --protected`, where `<pair-base>`
+is the head the T2 and T3 pair branched from, prints `ciWait`, so run `ci-green <sha> --pr <n> --wait`
+and start T4 only on green. Run `--protected` on this range only: a later range would print `ciWait`
+from these same files, and no later task waits.
 
 **Test:** `npx vitest run --project unit src/tests/unit/workflow-yaml.test.ts`.
 
-### T4. Remove the rendered half and norms (45 min, runner)
+### T4. Remove the rendered half and norms (50 min, runner)
 
 **Outcome:** `cairn-audit` is static. `--rendered` and `norms` are unknown arguments.
 
@@ -185,19 +204,20 @@ prints `ciWait`, so run `ci-green <sha> --pr <n> --wait` and start T4 only on gr
   `norms:generate`, `norms:check`.
 - `src/lib/audit/bin.ts`: remove the `formatNormsQuery, loadNormsManifest, queryNorms, renderedRules,
   runRendered, unknownTermMessage` imports, `norms()`, the `args.command === 'norms'` branch, and the
-  header lines 4-5. Replace `const report = args.rendered ? await runRendered(config,
-  selectRules(renderedRules(), args.rule)) : runStatic(config, selectRules(staticRules(), args.rule));`
-  with the static call.
+  header lines 4-5. Replace the three-line `const report = args.rendered` statement with
+  `const report = runStatic(config, selectRules(staticRules(), args.rule));`. Lines 64-69: drop the
+  rendered sentence and "either mode's".
 - `src/lib/audit/index.ts`: remove the re-exports from `./norms.js`, `./rendered.js`,
   `./rules/rendered/index.js`, `./color.js`, plus `DEFAULT_RENDERED_PAGES` and `RenderedAllowlistEntry`.
-  Keep `contrast.js`, `import-chain`, `peers`, `schemes`, and `theme-contrast`.
+  Keep `contrast.js`, `import-chain`, `peers`, `schemes`, and `theme-contrast`. Line 1's "the two
+  substrates" goes.
 - `src/lib/audit/config.ts`: remove `DEFAULT_RENDERED_PAGES`, `RenderedAllowlistEntry`, `renderedPages`,
   `renderedAllowlist`, `asAllowlist`, `const renderedSection = asRecord(file.rendered, 'rendered');` and
   what reads it. In `USAGE`, remove `[--rendered]`, the `cairn-audit norms <selector-or-role>` line, the
   `--rendered` and `norms` blocks, ", no server, no browser", and the last two lines' "Rendered mode
   exempts through rendered.allowlist in the config, and only an advisory rule can exempt itself."
-  `AuditArgs` becomes one object type, and `parseArgs` drops `term`, `if (rest[0] === 'norms')`, and the
-  `--rendered` branch. A `rendered` key in an old config is ignored, as any unknown key is.
+  `AuditArgs` becomes `AuditFlags` without `rendered`, so the `command` key goes too, and `parseArgs`
+  drops `term`, `if (rest[0] === 'norms')`, and the `--rendered` branch. A `rendered` key in an old config is ignored, as any unknown key is.
 - Comments and messages:
   - `src/lib/audit/run.ts:179` "Generic over both rule shapes (static and rendered)".
   - `src/lib/audit/report.ts:17`, both "rendered" clauses.
@@ -210,36 +230,46 @@ prints `ciWait`, so run `ci-green <sha> --pr <n> --wait` and start T4 only on gr
   - `rules/static/stripe-trim-parity.ts:12`: the `container-inset-asymmetry` precedent. Drop the clause.
 - `scripts/checks/check-package-files.mjs`: remove the `rendered:` row of `RULE_REGISTRIES` (line 270),
   `reachableRenderedBasenames`, and `reachable.rendered`, so the reachability check takes the static
-  set alone. Its test `src/tests/unit/check-package-files.test.ts:340-360,407-408` moves its fixture to a
-  static rule name. Keep the file's `vertical-metrics` worked-example comment true: it describes
+  set alone. That reaches the comments at lines 265 and 338, the `@param` at 344, the error text at 370
+  (it names `rules/rendered/index.ts`), and the return types at 381 and 399. Its test
+  `src/tests/unit/check-package-files.test.ts:340-360,407-408` moves its fixture to a static rule name
+  and takes the new arity. Keep the file's `vertical-metrics` worked-example comment true: it describes
   history, so leave it.
+- `scripts/checks/check-symbols-allowlist.mjs`: add `'env-var:CAIRN_AUDIT_COOKIES', //
+  MIGRATION-NOTES.md history; the reader was removed in 1b; R1's reset drops this line`.
+  `MIGRATION-NOTES.md:466` names the token, and T4 deletes its only readers. Without the entry
+  `check:symbols` goes red at this commit, which a scratch copy with these deletions confirmed.
 - `scripts/checks/check-skill-budget.mjs`: remove the rows `{ label: 'Rendered, error tier', ...}` and
-  `{ label: 'Rendered, advisory tier', ...}`, `renderedModule`, and the `mode` typedef's rendered arm.
-  Its test `src/tests/unit/check-skill-budget.test.ts:18,141,150,151` follows.
-- Tests that pin old behavior: `src/tests/unit/audit/config.test.ts` (rendered lines 61, 77-78, 100-116,
-  149-178, 339-398) and `src/tests/unit/audit/fail-on.test.ts:44-45` (`rendered: false` goes). Its
-  `:58` case keeps `--rendered` as a flag-shaped value, which `--fail-on needs a value` still rejects,
+  `{ label: 'Rendered, advisory tier', ...}`, `renderedModule`, and the `mode` typedef's rendered arm,
+  and fix the comments at lines 10-11 and 237. Its test
+  `src/tests/unit/check-skill-budget.test.ts:18,141,150,151` follows, and the wrong-tier case at
+  `:176,181` moves from `chip-ground-collision` to the static advisory rule `radius-scale`.
+- Tests that pin old behavior: `src/tests/unit/audit/config.test.ts` (the import at line 12, the block
+  at line 60, and rendered lines 77-78, 100-116, 149-178, 339-398, with the `toEqual`s at
+  339, 348, 378, 383, and 391 losing `command` and `rendered`) and
+  `src/tests/unit/audit/fail-on.test.ts:44-45` (the same two keys go). Its `:58` case keeps `--rendered` as a flag-shaped value, which `--fail-on needs a value` still rejects,
   so change the fixture to `--config`. Add one case to `config.test.ts`: `parseArgs(['--rendered'])` and
   `parseArgs(['norms', 'x'])` each throw `unknown argument`.
 
 **Acceptance:** `npm run package` then `node dist/audit/bin.js --rendered` and `node dist/audit/bin.js
 norms button-primary` each exit 2 and print `unknown argument`. `npm run check:audit-pack` passes.
-`npm run check:package` passes, with no `rendered` path in `dist/audit`. `npm run check:skill-budget`
-passes. `grep -rnE "from '.*(rendered|norms|color)\.js'" src/lib src/tests scripts` prints nothing
-except the unrelated `*-rendered*` names, if any, each read and listed.
+`npm run check:package` and `npm run check:symbols` pass. `find dist/audit \( -path '*rendered*' -o -name
+'norms*' -o -name color.js \)` prints nothing. `grep -rnE "from '.*/(rendered|norms|color)\.js'" src/lib
+src/tests scripts` prints nothing.
 
 **Test:** the new parse case, plus the suites above. Before deleting, the new case fails against the
 old `parseArgs`.
 
-### T5. Clean the packaged skills (40 min, ordinary with one runner file; pair with T6)
+### T5. Clean the packaged skills (50 min, ordinary with one runner file; pair with T6)
 
 **Outcome:** no packaged guidance teaches `--rendered` or `norms`. Design guidance a rule used to
 enforce stays as guidance, and a value the norms query used to print is reached through the skill's
 "Write this, get this" table, `references/exemplar-kit.md`, and `references/form-anatomy.md`.
 
 **Files:** `skills/cairn-building-admin-screens/SKILL.md` and its `references/{audit-rules,
-extension-grammar,exemplar-list,exemplar-detail,form-anatomy}.md`;
-`skills/cairn-extending-a-site/references/{audit,daisyui-first}.md`; `claude/CLAUDE.md`;
+extension-grammar,exemplar-list,exemplar-detail,form-anatomy,grader-prompt}.md`;
+`skills/cairn-extending-a-site/references/{audit,daisyui-first,preflight}.md`;
+`skills/cairn-styling-public-pages/references/checking-a-theme.md`; `claude/CLAUDE.md`;
 `scripts/checks/check-symbols-allowlist.mjs`; `src/tests/unit/check-symbols.test.ts`;
 `src/tests/unit/skill-references-compile.test.ts`; generated `templates/waymark/.claude/**`.
 
@@ -249,16 +279,20 @@ extension-grammar,exemplar-list,exemplar-detail,form-anatomy}.md`;
   inventing a height or a padding, run `npx cairn-audit norms <role>`." point at the "Write this, get
   this" table. Register rules that cite `one-filled-action` and `chip-ground-collision` keep the rule
   of thumb and drop the id. Delete done-gate item 2 "**The rendered audit passes**", renumbering.
-- `references/audit-rules.md`: remove the contents lines 9-12, the rendered text at lines 20 and 22, the
-  config rows at lines 104-106, and the sections "Rendered mode", "Rendered rules", "The rendered
+  `references/grader-prompt.md:14` "step 3 of the done-gate" becomes step 2.
+- `references/audit-rules.md`: remove the contents lines 9-12, the rendered text at lines 20, 22, and
+  89 ("caught only by the rendered `list-role`"), the config rows at lines 104-106, and the sections "Rendered mode", "Rendered rules", "The rendered
   allowlist", and "The norms query". The exit-code text loses "no server, no browser".
-- `references/extension-grammar.md`: lines 4, 9, 16-17, 21, 28, and 39, and the "Audit" worked-example
-  bullet, name static rules only.
+- `references/extension-grammar.md`: lines 4, 9, 16-17, 21, 28, 35, and 39, and the "Audit" worked-example
+  bullet (lines 40-43), name static rules only.
 - `references/exemplar-list.md:34,40`, `exemplar-detail.md:28,120`, `form-anatomy.md:40`: each rule
   mention goes, and the design statement stays.
-- `skills/cairn-extending-a-site/references/audit.md`: delete the contents lines and sections "## The
-  rendered pass" (lines 123-134 hold the Playwright, `BASE_URL`, and `CAIRN_AUDIT_COOKIES` text) and fix
-  "## Exit code 2". `references/daisyui-first.md:83-84` "`npx cairn-audit norms <role>`\nprints the
+- `skills/cairn-extending-a-site/references/audit.md`: delete the contents line and section "## The
+  rendered pass" (lines 123-134 hold the Playwright, `BASE_URL`, and `CAIRN_AUDIT_COOKIES` text), fix
+  "## Exit code 2", and drop line 38's "the rendered pass catches a parent selector" clause.
+  `references/preflight.md:49`: "(the static and rendered `cairn-audit` passes)" names the static pass
+  only. `skills/cairn-styling-public-pages/references/checking-a-theme.md:4`: drop ", the rendered
+  check" from the contents line. `references/daisyui-first.md:83-84` "`npx cairn-audit norms <role>`\nprints the
   measured values." points at the same table.
 - `claude/CLAUDE.md:33-34`: delete "`cairn-audit --rendered` runs the same audit against a running dev
   server on\nboth themes; run it by hand when you need it." Pass 1a edits lines 25-26, so the hunks differ.
@@ -267,13 +301,20 @@ extension-grammar,exemplar-list,exemplar-detail,form-anatomy}.md`;
   create-cairn-site's`. `check-symbols.test.ts:108,110`: change the fixture to `npx cairn-audit --rule
   list-role`. `skill-references-compile.test.ts:89`: the comment's `` `cairn-audit norms destination` ``
   example becomes `` `cairn-audit --rule list-role` ``.
-- Run `npm run emit:template`. Commit its output with this task.
+- Run `npm run package && npm run emit:template`, since the bake reads `dist`. Commit its output with
+  this task.
 
-**Acceptance:** `grep -rnE -- "--rendered|cairn-audit norms|CAIRN_AUDIT_COOKIES|rendered\.(allowlist|extraPages)"
-skills claude templates/waymark/.claude` prints nothing. `npm run check:skill-budget`, `npm run
-check:symbols`, `npm run check:public-skill`, and `npx vitest run --project unit
+**Acceptance:** both commands print nothing.
+
+```bash
+grep -rnE -- "--rendered|cairn-audit norms|CAIRN_AUDIT_COOKIES|rendered\.[a-z]|rendered \`|rendered (pass|mode|audit|check)|step 3 of the done-gate" skills claude templates/waymark/.claude
+grep -rnE "\`(one-filled-action|focus-renders|interactive-contrast|touch-targets|viewport-overflow|panel-width|chip-ground-collision|border-contrast|weight-budget|norms-bands|screen-anatomy|relational-spacing|form-font-parity|field-edge-alignment|container-inset-asymmetry|motion-reduced-delay)\`" skills claude
+```
+
+`npm run package && node scripts/checks/check-skill-budget.mjs`, `npm run check:symbols`,
+`npm run check:public-skill`, and `npx vitest run --project unit
 src/tests/unit/guidance-recipes-sync.test.ts src/tests/unit/skill-references-compile.test.ts` pass.
-`grep -n 'admin-design-system' -r skills claude` prints nothing new: the file doesn't ship.
+`grep -n 'admin-design-system' -r skills claude` prints nothing: the file doesn't ship.
 
 **Test:** the gates above. No new test.
 
@@ -293,15 +334,15 @@ through the bake unchanged in content.
   (lines 24-29), `pruneShowcaseOnlyAuditConfig` (lines 153-171), and the regeneration block (lines
   313-322). `bake-template.test.mjs:223,238` drop the entry from their fixtures.
 
-**Acceptance:** `npm test -w packages/create-cairn-site` and `npm run test:emit` pass. `npm run
-emit:template` then `git status --short templates/waymark/cairn-audit.config.json templates/waymark/package.json`
+**Acceptance:** `npm test -w packages/create-cairn-site` and `npm run test:emit` pass. `npm run package
+&& npm run emit:template` then `git status --short templates/waymark/cairn-audit.config.json templates/waymark/package.json`
 prints nothing, which proves the copied file equals the old pruned output. On this file the check was
 probed at `d71e4401e`: the showcase config minus `rendered`, at two-space indent with a trailing
 newline, is byte-identical to the template's.
 
 **Test:** the bake suite above.
 
-### T7. Fix the inbound references (20 min, ordinary)
+### T7. Fix the inbound references (25 min, ordinary)
 
 **Outcome:** no engine doc, internal skill, or comment names a removed rule, file, or flag as live.
 
@@ -311,7 +352,7 @@ newline, is byte-identical to the template's.
   "**`cairn-audit` ships whole, as consumer product.**" paragraph. Keep the reasoning that the admin is
   the product being audited, and say the static audit ships, with twenty-one rules, and the browser half
   retired on 2026-11-01 (`cleanup-rendered-audit`).
-- `.claude/skills/cairn-following-admin-design/references/admin-design-system.md:620,638,664,880-881`:
+- `.claude/skills/cairn-following-admin-design/references/admin-design-system.md:620,636,638,664,880-881`:
   "the audit's own" floors become the system's floors. Lines 880-881 cite `src/lib/audit/norms.ts` and
   `src/lib/audit/rules/rendered/screen-anatomy.ts`, so drop that clause. Line 1336 stays until pass 8.
 - `.claude/skills/cairn-writing-engine-code/references/durable-gotchas.md:194,204`: both cite
@@ -325,9 +366,13 @@ newline, is byte-identical to the template's.
 - `src/lib/admin/ConceptList.svelte:225`, `VocabularyAdmin.svelte:207`, `src/lib/admin/cairn-admin.css:1726,1728`.
 - `src/lib/admin-toolkit/StatusChip.svelte:16,74,76,122`: a public doc comment, so the floors stay as
   cairn's and the file citations `chip-ground-collision.ts` go.
+- Test comments: `src/tests/unit/packaging-guidance.test.ts:94-95`,
+  `src/tests/unit/status-chip-register-tuning.test.ts:13-14,48`, `src/tests/unit/audit/run.test.ts:578`,
+  `src/tests/component/BtnActiveDarkGround.test.ts:7,193`, and
+  `src/tests/lab/vertical-metrics.ts:1548,1554`.
 
-**Acceptance:** `grep -rnE "chip-ground-collision|one-filled-action|rendered mode|rendered audit|rules/rendered|norms\.ts|norms:check|touch-targets" src/lib skills claude
-.claude/skills CONTRIBUTING.md examples/showcase/e2e` prints only lines read and kept, each listed in the
+**Acceptance:** `grep -rnE "chip-ground-collision|one-filled-action|rendered mode|rendered audit|rules/rendered|norms\.ts|norms:check|touch-targets" src/lib src/tests skills
+claude .claude/skills CONTRIBUTING.md examples/showcase/e2e` prints only lines read and kept, each listed in the
 PR. `npm run check:comments` and `npm run check:options` pass.
 
 **Test:** the fast lane, with the component project for the `.svelte` files.
@@ -336,14 +381,15 @@ PR. `npm run check:comments` and `npm run check:options` pass.
 
 **Outcome:** the pass is ready for the conductor.
 
-**Files:** `CHANGELOG.md`, `MIGRATION-NOTES.md`, `BACKLOG.md`, `docs/STATUS.md`, and the deletion of
-this plan, its design note, review files, and prompt files.
+**Files:** `CHANGELOG.md`, `MIGRATION-NOTES.md`, `BACKLOG.md`, and the deletion of this plan, its design note, review files, and prompt files.
 
 - `CHANGELOG.md`, `## Unreleased`, `### Removed`, and `MIGRATION-NOTES.md`, `## Unreleased`: one entry
   each. `Consumers must:` lines: drop `cairn-audit --rendered`, `cairn-audit norms`, and any
   `check:cairn:rendered` script; delete a `rendered` section from `cairn-audit.config.json`; remove
-  Playwright if the audit was its only use.
-- `BACKLOG.md`: #120 moves to `## Done` as `done: dissolved by pass 1b's removal of src/lib/audit/rendered.ts`.
+  Playwright if the audit was its only use. Keep `--rendered` out of a shell fence: T5 removes its
+  allowlist entry, and `check:symbols` scans `MIGRATION-NOTES.md` fences.
+- `BACKLOG.md`: #120 moves to `## Done` as a `- [x]` item with the line `Done: dissolved by pass 1b's
+  removal of src/lib/audit/rendered.ts.`
 - No docs page changes: `grep -rlE "cairn-audit" docs/admin docs/editors docs/why-cairn.md README.md`
   prints nothing. Show that command in the PR. `npm run check:surface` passes unchanged.
 - Dispatch `standards:diff-reviewer` at whole-branch scope against the design note and this plan.

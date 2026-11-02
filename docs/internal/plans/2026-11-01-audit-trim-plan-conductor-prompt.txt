@@ -1,0 +1,26 @@
+Conductor hand-over: cairn-cms pass 1b, Audit trim (slug `audit-trim`, class `ordinary` plus `runner`).
+
+Plan: docs/internal/plans/2026-11-01-audit-trim-plan.md on branch `audit-trim`, pushed to glw907/cairn-cms. Path 215 minutes against a ceiling of 300. Absolute copy of each file, in the planner's worktree:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/audit-trim/docs/internal/plans/
+
+Pre-launch checks (run sheet "Sequence and launch"):
+
+- In the main checkout /var/home/glw907/Projects/cairn-cms: on `main`, `git fetch`, and `git rev-list --count HEAD..origin/main` prints 0.
+- `pgrep -f .claude/worktrees/audit-trim-run` is empty and `git status` is clean, with no warm uncommitted code.
+- No open brief in docs/internal/consultations/.
+- The plan's pre-flight has no step for Geoff, and it adds no item outside the sheet. Auto-mode writes it names: `claude/CLAUDE.md`, `templates/waymark/.claude/**`, and three files under `.claude/skills/`.
+- If 1a's plan has landed, confirm it still leaves `docs/internal/engine-rulings.md` to 1b's T1, apart from a ruling only 1a can word. At hand-over no 1a plan existed, and `auth-removal` sat at `d71e4401e`.
+
+Executor launch, from the main checkout:
+
+cd /var/home/glw907/Projects/cairn-cms && claude --bg --model sonnet --effort medium --name cairn-cms-audit-trim "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/audit-trim/docs/internal/plans/2026-11-01-audit-trim-executor-prompt.txt)"
+
+Prompt file: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/audit-trim/docs/internal/plans/2026-11-01-audit-trim-executor-prompt.txt
+
+The executor names `cairn-cms-9b` as its one instruction source. It works in a worktree it enters as `audit-trim-run`, fast-forwarded from `origin/audit-trim`, and it ends at PR-ready.
+
+Merge conditions, under Geoff's merge word in the sheet's Brief: green CI on the head and a folded whole-branch review with no open finding, record packet first. The conductor merges. Confirm both conditions yourself, then queue one record packet in the background and merge once the queue accepts it: `gh pr merge <n> --merge --match-head-commit <head>`. Lists go in the packet's Background. If the queue is down, write the packet to the state dir, notify Geoff, and merge. If pass 1a merged first, the executor does the sheet's second-of-two-PRs step before the merge.
+
+The packet's Background carries: the twelve rulings written, including the auth ones 1a executes; #86 stays open, reworded, because `e2e.yml:76`, `design.yml:62`, and `test.yml:47` share the failing step; #120 dissolves; `color.ts` leaves with E1; the design's "admin design system" pointer means the packaged carriers, since `admin-design-system.md` doesn't ship; and every entry in the PR's `## Decisions` and `## Planning misses`.
+
+After the merge: pull the checkout per `pass-core`, delete the branches `audit-trim` and `audit-trim-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

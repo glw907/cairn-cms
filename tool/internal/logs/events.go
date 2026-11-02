@@ -15,6 +15,8 @@ var eventVocabulary = []string{
 	"auth.session.created",
 	"auth.session.destroyed",
 	"auth.session.destroy_failed",
+	"auth.rate_limited",
+	"auth.rate_limit_failed",
 	"commit.succeeded",
 	"commit.failed",
 	"commit.reverted",

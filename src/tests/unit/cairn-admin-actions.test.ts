@@ -82,6 +82,7 @@ function actionEvent(
     editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
     env?: Record<string, unknown>;
     cookies?: Record<string, string>;
+    headers?: Record<string, string>;
   } = {},
 ) {
   const cookieSets: { name: string; value: string }[] = [];
@@ -92,6 +93,7 @@ function actionEvent(
     url: `https://t.example${pathname}`,
     route: '/admin/[...path]',
     body: new URLSearchParams(opts.form ?? {}),
+    headers: opts.headers,
     locals: {
       cairnEditor:
         opts.editor === undefined
@@ -177,6 +179,24 @@ describe('auth actions', () => {
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
     await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
+  });
+
+  it('request reaches the auth rate limit through createCairnAdmin, resolved off the Worker env', async () => {
+    const { db } = fakeD1();
+    const keys: string[] = [];
+    const limiter = { limit: async ({ key }: { key: string }) => (keys.push(key), { success: false }) };
+    const admin = createCairnAdmin({
+      runtime: runtime(),
+      auth: { rateLimit: (env) => env.LOGIN_LIMITER as typeof limiter | undefined },
+    });
+    const event = actionEvent('/admin/login', {
+      editor: null,
+      form: { email: 'who@t' },
+      env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db, LOGIN_LIMITER: limiter },
+      headers: { 'cf-connecting-ip': '198.51.100.4' },
+    });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'throttled' });
+    expect(keys).toEqual(['login:198.51.100.4']);
   });
 
   it('the mail carries the runtime site name, email sender, and reply-to', async () => {

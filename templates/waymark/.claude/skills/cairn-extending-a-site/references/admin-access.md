@@ -42,6 +42,12 @@ export const actions = admin.actions;
 renders `CairnAdminShell` (`@glw907/cairn-cms/admin`) over `data.shell`. The root layout above
 `/admin` must carry no chrome (header, footer, width cap).
 
+To rate limit sign-in link requests, bind a Workers `RateLimit` in `wrangler.jsonc` and pass
+`auth: { rateLimit: (env) => env.LOGIN_LIMITER as RateLimitLike | undefined }`. The limit keys on
+the requester's `CF-Connecting-IP` address, so everyone behind one shared address draws on one
+budget; set it generously. A limited request reads `throttled`, the same answer as the send
+cooldown, and logs `auth.rate_limited`. An absent binding or header lets every request through.
+
 ## Gate a custom screen
 
 The guard admits any signed-in session to `/admin/**` and decides no per-route authorization.

@@ -383,6 +383,113 @@ describe('login nonce cookie (same-browser binding)', () => {
   });
 });
 
+describe('sign-in rate limit', () => {
+  const url = 'https://test.dev/admin/auth/request';
+  const pending = '__Host-cairn_login_pending';
+  const address = '203.0.113.7';
+  const headers = { 'cf-connecting-ip': address };
+  // A fixed pending cookie, so the reused nonce makes two answers' Set-Cookie bytes comparable.
+  const fixedNonce = 'a-fixed-pending-nonce-for-byte-comparison';
+
+  /** A limiter double that answers `success` and records every key it is asked about. */
+  function limiter(success: boolean) {
+    const keys: string[] = [];
+    return { keys, binding: { limit: async ({ key }: { key: string }) => (keys.push(key), { success }) } };
+  }
+
+  function routesLimitedBy(rateLimit: Parameters<typeof createAuthRoutes>[0]['rateLimit']) {
+    const sent: MagicLinkMessage[] = [];
+    const routes = createAuthRoutes({ runtime: rt, send: async (_env, message) => void sent.push(message), rateLimit });
+    return { routes, sent };
+  }
+
+  /** The serialized result and Set-Cookie list of one request under the fixed pending cookie. */
+  async function answer(routes: ReturnType<typeof createAuthRoutes>, email: string): Promise<string> {
+    const jar = makeRecordingCookies({ [pending]: fixedNonce });
+    const result = await routes.requestAction(makeEvent({ url, form: { email }, cookies: jar, headers }));
+    return JSON.stringify({ result, sets: jar.sets });
+  }
+
+  it('answers a limited request exactly as a throttled one, for an editor and a non-editor alike', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes: open } = routesWithSink();
+    await open.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
+    const throttled = await answer(open, 'ed@x.dev');
+    expect(JSON.parse(throttled).result).toEqual({ outcome: 'throttled' });
+
+    const { keys, binding } = limiter(false);
+    const { routes, sent } = routesLimitedBy(() => binding);
+    expect(await answer(routes, 'ed@x.dev')).toBe(throttled);
+    expect(await answer(routes, 'stranger@x.dev')).toBe(throttled);
+    expect(keys).toEqual([`login:${address}`, `login:${address}`]);
+    expect(sent).toHaveLength(0);
+  });
+
+  it('exits before the token write and logs auth.rate_limited with its scope and no address', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { binding } = limiter(false);
+    const { routes } = routesLimitedBy(() => binding);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, headers }));
+    const record = warnSpy.mock.calls.map((c) => c[0] as Record<string, unknown>).find((r) => r.event === 'auth.rate_limited');
+    vi.restoreAllMocks();
+    expect(record).toMatchObject({ level: 'warn', scope: 'login' });
+    expect(Object.keys(record!).sort()).toEqual(['event', 'level', 'scope', 'timestamp']);
+    expect(await countRows('magic_token')).toBe(0);
+  });
+
+  it('lets an allowed request through to the ordinary send', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { binding } = limiter(true);
+    const { routes, sent } = routesLimitedBy(() => binding);
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, headers }))).toEqual({ outcome: 'sent' });
+    expect(sent).toHaveLength(1);
+  });
+
+  it('skips the limiter when the request carries no CF-Connecting-IP header', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { keys, binding } = limiter(false);
+    const { routes, sent } = routesLimitedBy(() => binding);
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }))).toEqual({ outcome: 'sent' });
+    expect(keys).toEqual([]);
+    expect(sent).toHaveLength(1);
+  });
+
+  it('lets the request through when the resolver finds no binding', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesLimitedBy(() => undefined);
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, headers }))).toEqual({ outcome: 'sent' });
+    expect(sent).toHaveLength(1);
+  });
+
+  it.each([
+    {
+      name: 'a limiter whose call throws',
+      resolve: () => ({ limit: () => Promise.reject(new Error(`limiter down for login:${address}`)) }),
+    },
+    {
+      name: 'a resolver that throws',
+      resolve: () => {
+        throw new Error(`no binding for ${address}`);
+      },
+    },
+  ])('lets the request through and logs auth.rate_limit_failed for $name, with no address', async ({ resolve }) => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesLimitedBy(resolve);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, headers }));
+    const records = warnSpy.mock.calls.map((c) => c[0] as Record<string, unknown>);
+    vi.restoreAllMocks();
+    expect(result).toEqual({ outcome: 'sent' });
+    expect(sent).toHaveLength(1);
+    const failed = records.filter((r) => r.event === 'auth.rate_limit_failed');
+    expect(failed).toHaveLength(1);
+    expect(failed[0]).toMatchObject({ level: 'warn', scope: 'login' });
+    expect(Object.keys(failed[0]).sort()).toEqual(['error', 'event', 'level', 'scope', 'timestamp']);
+    expect(JSON.stringify(failed[0])).not.toContain(address);
+  });
+});
+
 describe('first-owner seeding', () => {
   const url = 'https://test.dev/admin/auth/request';
 

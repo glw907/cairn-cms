@@ -28,6 +28,7 @@ import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { isSafeLogoutUrl } from './guard.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
+import { resolveRateLimit, type RateLimitLike } from '../cloudflare/rate-limit.js';
 import { env } from './workers-env.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
@@ -41,14 +42,26 @@ export interface AuthRoutesConfig {
   runtime: CairnRuntime;
   /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
+  /**
+   * Resolves an optional Workers `RateLimit` binding off the Worker env, for the sign-in request
+   * (`?/request`) only. It is keyed by the requester's `CF-Connecting-IP` address, so everyone
+   * behind one shared address (an office, a campus, a carrier NAT) draws on one budget: set a
+   * generous limit, well above what a full roster signing in at once would use. A limited request
+   * answers `throttled`, the same answer as the send cooldown. Degrade-to-open: an unresolved
+   * binding, a request with no `CF-Connecting-IP` header, or a limiter that fails lets the
+   * request through. Read the binding by name, as in
+   * `(env) => env.LOGIN_LIMITER as RateLimitLike | undefined`.
+   */
+  rateLimit?: (env: Readonly<Record<string, unknown>>) => RateLimitLike | undefined;
 }
 
 /**
  * The request-action result, discriminated on `outcome`. The neutral and send-ok paths return
  * the identical `{ outcome: 'sent' }`, so the common case never leaks allowlist
  * membership. `requestAction` awaits the send, so the outcome reflects it: `send-error` means the
- * email could not be sent, and `throttled` means the same address asked again inside the send
- * cooldown, a signal that does reveal membership.
+ * email could not be sent, and `throttled` means either that the same address asked again inside
+ * the send cooldown, a signal that does reveal membership, or that the site's sign-in rate limit
+ * refused the request, which a non-editor can read too.
  * @beta
  */
 export type LoginRequestOutcome =
@@ -143,6 +156,37 @@ function mintOrReusePendingNonce(event: CairnEvent): string {
 }
 
 /**
+ * Whether the site's sign-in rate limit refuses this request. Degrade-to-open throughout: no
+ * resolver, no `CF-Connecting-IP` header, no binding, a throwing resolver, or a failed limiter
+ * call answers false. An absent header skips the limiter rather than keying on a fallback, so a
+ * missing address can never become one bucket every such request shares. Neither record carries
+ * the address, and a failure's error text has it masked, since a limiter may echo its key.
+ */
+async function signInRateLimited(
+  event: CairnEvent,
+  resolve: AuthRoutesConfig['rateLimit'],
+): Promise<boolean> {
+  if (!resolve) return false;
+  const address = event.request.headers.get('cf-connecting-ip');
+  if (!address) return false;
+  let error: unknown;
+  try {
+    const result = await resolveRateLimit(resolve(env), `login:${address}`);
+    if (result.outcome === 'limited') {
+      log.warn('auth.rate_limited', { scope: 'login' });
+      return true;
+    }
+    if (result.outcome !== 'failed') return false;
+    error = result.error;
+  } catch (err) {
+    error = err;
+  }
+  const message = (error instanceof Error ? error.message : String(error)).split(address).join('[address]');
+  log.warn('auth.rate_limit_failed', { scope: 'login', error: message.slice(0, 300) });
+  return false;
+}
+
+/**
  * The loggable form of a send failure. The engine's senders throw clean errors, but `send` is
  * an injection seam, and a custom sender's thrown error may embed the failed message and with it
  * the magic link. Scrub any token query value and cap the length, so the documented "records never
@@ -186,13 +230,19 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 
     const now = Date.now();
     // The pending-login nonce, set BEFORE anything branches on whether this email is an editor,
-    // so all four exits below (send-ok, the non-editor neutral answer, throttled, and
-    // send-failed) carry one byte-identical Set-Cookie. A cookie emitted only on the editor path
+    // so all five exits below (rate-limited, send-ok, the non-editor neutral answer, throttled,
+    // and send-failed) carry one byte-identical Set-Cookie. A cookie emitted only on the editor path
     // would be a one-request allowlist oracle sitting in the response headers, which is exactly
     // the leak the neutral answer exists to close. Only the server-side binding rides token issue.
     // `loginLoad` already ran this for any browser that rendered the sign-in form, so the usual
     // case here is a reuse, not a mint.
     const nonce = mintOrReusePendingNonce(event);
+
+    // The sign-in rate limit runs here, after the pending cookie and before anything reads the
+    // allowlist, so a limited answer is byte-identical to a throttled one for an editor and a
+    // non-editor alike. A limited editor exits before the rebind below, so a requester sharing
+    // that address can pause the anti-lockout recovery for the limiter's window, an accepted cost.
+    if (await signInRateLimited(event, config.rateLimit)) return { outcome: 'throttled' };
 
     const editor = email ? await findEditor(db, email) : null;
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
@@ -202,6 +252,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
+    // The rate limit above answers the same `throttled`, which blurs that signal only a little,
+    // since a non-editor reads it only once the limit trips.
     if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {
       // Rebind the live token to THIS browser before answering, deliberately, with no new email
       // sent. Without it the same-browser binding is a lockout: an attacker POSTing this form

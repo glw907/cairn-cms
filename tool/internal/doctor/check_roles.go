@@ -55,10 +55,10 @@ func customRoleNames(roles []string) []string {
 // second call later in the file does not widen the capture.
 var createAuthGuardCallPattern = regexp.MustCompile(`createAuthGuard\s*\(([\s\S]*?)\)`)
 
-// wiringWordPattern matches a bare `runtime` or `roles` word in createAuthGuard's argument list,
-// the wiring signal an object literal carries. `{ runtime }` is the wiring this engine reads;
-// `{ roles }` also reads as wired, though this engine raises a TypeError on it at startup.
-var wiringWordPattern = regexp.MustCompile(`\b(?:runtime|roles)\b`)
+// wiringWordPattern matches a bare `runtime` word in createAuthGuard's argument list, the
+// wiring signal an object literal carries. `{ runtime }` is the wiring this engine reads; a
+// `{ roles }` argument is not wiring, since this engine raises a TypeError on it at startup.
+var wiringWordPattern = regexp.MustCompile(`\bruntime\b`)
 
 // guardWiring is guardRoleWiring's four-value result.
 type guardWiring int
@@ -67,18 +67,18 @@ type guardWiring int
 const (
 	// guardWiringAbsent means no createAuthGuard call was found in the text at all.
 	guardWiringAbsent guardWiring = iota
-	// guardWiringUnwired means createAuthGuard was called with no runtime or roles argument: the
+	// guardWiringUnwired means createAuthGuard was called with no runtime argument: the
 	// guard cannot read the site's roles, the one outcome this check fails.
 	guardWiringUnwired
 	// guardWiringIndirect means createAuthGuard's argument is a bare identifier the doctor
 	// cannot read into, such as createAuthGuard(guardOpts).
 	guardWiringIndirect
-	// guardWiringWired means the call's argument list mentions runtime or roles.
+	// guardWiringWired means the call's argument list mentions runtime.
 	guardWiringWired
 )
 
 // guardRoleWiring reads the createAuthGuard call in text and reports whether it is passed a runtime
-// or roles argument. absent and indirect are both reported as info rather than fail, since a wrapped or
+// argument. absent and indirect are both reported as info rather than fail, since a wrapped or
 // dynamically built guard reading either way is not a high-confidence positive: a positive fail
 // should never be a false red.
 func guardRoleWiring(text string) guardWiring {

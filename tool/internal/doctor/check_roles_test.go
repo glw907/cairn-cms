@@ -62,13 +62,13 @@ func TestAuthRoleWiring(t *testing.T) {
 			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)",
 		},
 		{
-			name: "pass: wired, called with a roles argument",
+			name: "fail: unwired, called with a roles argument",
 			files: map[string]string{
 				"src/content/.cairn/site-facts.json": factsCustomRole,
 				"src/hooks.server.ts":                `export const handle = createAuthGuard({ roles });`,
 			},
-			wantStatus: StatusPass,
-			wantDetail: passRoleWiringWired,
+			wantStatus: StatusFail,
+			wantDetail: "the adapter declares custom roles (contributor) but createAuthGuard in src/hooks.server.ts is not passed { runtime }; this engine raises a TypeError on a missing runtime, so the guard cannot read the site's roles (heuristic text read)",
 		},
 	}
 	for _, tt := range tests {
@@ -187,8 +187,8 @@ func TestGuardRoleWiring(t *testing.T) {
 		{"bare identifier argument", `createAuthGuard(guardOpts)`, guardWiringIndirect},
 		{"empty argument list", `createAuthGuard()`, guardWiringUnwired},
 		{"object literal with no roles key", `createAuthGuard({ from: 'x' })`, guardWiringUnwired},
-		{"object literal naming roles", `createAuthGuard({ roles })`, guardWiringWired},
-		{"object literal naming roles as a value", `createAuthGuard({ roles: siteRoles })`, guardWiringWired},
+		{"object literal naming roles", `createAuthGuard({ roles })`, guardWiringUnwired},
+		{"object literal naming roles as a value", `createAuthGuard({ roles: siteRoles })`, guardWiringUnwired},
 		{"runtime shorthand", `createAuthGuard({ runtime })`, guardWiringWired},
 		{"runtime as a value", `createAuthGuard({ runtime: cairn })`, guardWiringWired},
 		{"runtime beside identity", `createAuthGuard({ runtime, identity })`, guardWiringWired},

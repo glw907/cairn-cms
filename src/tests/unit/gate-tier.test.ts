@@ -645,6 +645,17 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
     ['npm run test:component -- --no-file-parallelism'],
   // The same suite, reached by workspace flag instead of `--prefix`.
   'npm --prefix packages/create-cairn-site test': ['npm test -w packages/create-cairn-site'],
+  // CI builds once and calls these checks' scripts directly; the local gate runs each through its
+  // npm script, which builds first.
+  'node scripts/checks/check-audit-pack.mjs': ['npm run check:audit-pack'],
+  'node scripts/checks/check-surface-leaks.mjs': ['npm run check:surface'],
+  'node scripts/checks/check-surface.mjs': ['npm run check:surface'],
+  'node scripts/checks/check-self-use.mjs': ['npm run check:self-use'],
+  'node scripts/checks/check-custom-surface.mjs': ['npm run check:custom-surface'],
+  'node scripts/checks/check-invisible-craft.mjs': ['npm run check:invisible-craft'],
+  'node scripts/checks/check-admin-css-classes.mjs': ['npm run check:admin-css-classes'],
+  'node scripts/checks/check-consumers.mjs': ['npm run check:consumers'],
+  'node scripts/checks/check-public-skill.mjs': ['npm run check:public-skill'],
 };
 
 // A CI step with no local gate command, each with the reason it stays out of the tier.

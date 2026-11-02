@@ -49,9 +49,8 @@ jobs:
       # dist/ to run their gate against. `npm ci` above already triggers this through the
       # `prepare` life cycle script, but that is an implicit dependency on a hook a future
       # refactor could drop; a step named for its own purpose here is the explicit guarantee.
-      # `npm run package` is otherwise idempotent (svelte-package is a full rebuild every time),
-      # so running it again ahead of the later check:package/check:options/etc. steps (which
-      # each call it themselves) costs a rebuild, not a correctness risk.
+      # The later gate steps that read dist call their scripts directly, so this is the one build
+      # they share; `check:package` alone still rebuilds, since its shell chain starts with it.
       - run: npm run package
       # `npm test` is its two Vitest runs spelled out, one step each, so each can write its own retry
       # report: the node projects, then the component project. The retries step below reads both. Naming
@@ -87,15 +86,16 @@ jobs:
       - run: npm run check:package
       # The cairn-audit pack smoke test: a real install of the packed engine in an empty directory,
       # with the optional daisyUI and Tailwind peers absent and then present. Needs the registry.
-      - run: npm run check:audit-pack
-      - run: npm run check:surface
-      - run: npm run check:self-use
-      - run: npm run check:custom-surface
+      - run: node scripts/checks/check-audit-pack.mjs
+      - run: node scripts/checks/check-surface-leaks.mjs
+      - run: node scripts/checks/check-surface.mjs
+      - run: node scripts/checks/check-self-use.mjs
+      - run: node scripts/checks/check-custom-surface.mjs
       - run: npm run check:chassis-boundary
       - run: npm run check:cm-internals
       - run: npm run check:idioms
-      - run: npm run check:invisible-craft
-      - run: npm run check:admin-css-classes
+      - run: node scripts/checks/check-invisible-craft.mjs
+      - run: node scripts/checks/check-admin-css-classes.mjs
       - run: npm run check:rulings-format
       - run: npm run check:consumers-must
       - run: npm run check:prose
@@ -112,7 +112,7 @@ jobs:
         with:
           command: npm ci --prefix examples/showcase
           clean: examples/showcase/node_modules
-      - run: npm run check:consumers
+      - run: node scripts/checks/check-consumers.mjs
       # The showcase's own svelte-check: it sits outside tsconfig.json's `include`, so the root
       # `npm run check` never reaches it. A consumer-facing type error (a facade action's success
       # payload colliding with another action's failure field inside SvelteKit's generated
@@ -124,7 +124,7 @@ jobs:
       # The cairn-styling-public-pages skill's coverage gate: every public piece has a catalogue page, every snippet
       # class compiles in the showcase's public sheet, and every named token resolves. It compiles with
       # the showcase's own Tailwind, so it runs after the showcase install.
-      - run: npm run check:public-skill
+      - run: node scripts/checks/check-public-skill.mjs
       - name: Install Vale 3.23.0
         run: |
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.23.0/vale_3.23.0_Linux_64-bit.tar.gz \

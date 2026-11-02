@@ -103,4 +103,26 @@ describe('NavTree', () => {
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('These settings changed since you opened them.');
   });
+
+  it('shows the empty state with no rows, and its action adds the first row and focuses its label', async () => {
+    const screen = await render(NavTree, { data: data({ tree: [], pages: [] }) });
+    await expect.element(screen.getByText('No menu items yet')).toBeInTheDocument();
+    await expect
+      .element(screen.getByText('Add your first item and it will show up in your site’s menu.'))
+      .toBeInTheDocument();
+    expect(screen.container.querySelector('button[type="submit"]')).toBeNull();
+    await screen.getByRole('button', { name: /add item/i }).click();
+    const label = screen.getByLabelText('Label').nth(0);
+    await expect.element(label).toHaveValue('New item');
+    await expect.element(label).toHaveFocus();
+    expect(screen.container.querySelector('button[type="submit"]')).not.toBeNull();
+  });
+
+  it('keeps Save after the last row of a saved tree is removed', async () => {
+    const screen = await render(NavTree, { data: data({ tree: [{ label: 'Home', url: '/' }] }) });
+    await screen.getByRole('button', { name: 'Remove Home' }).click();
+    await expect.element(screen.getByText('No menu items yet')).toBeInTheDocument();
+    expect(screen.container.querySelector('button[type="submit"]')).not.toBeNull();
+    expect(treeFromForm(screen.container)).toEqual([]);
+  });
 });

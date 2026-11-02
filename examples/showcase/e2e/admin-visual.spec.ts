@@ -594,4 +594,39 @@ test.describe('empty first-run server', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
     await expect(page.getByText('No posts yet')).toBeVisible();
   });
+
+  // The zero state of each screen at the narrowest and widest bar, light. Each test asserts the
+  // zero-state text first so a broken harness cannot record a populated screen. The screenshot
+  // calls are not here yet: a missing baseline fails with no retry, so they land with the baselines.
+  const ZERO_SCREENS = [
+    { screen: 'posts', path: '/admin/posts', text: 'No posts yet' },
+    { screen: 'tags', path: '/admin/vocabulary', text: 'No tags yet' },
+    { screen: 'nav', path: '/admin/nav', text: 'No menu items yet' },
+    { screen: 'media', path: '/admin/media', text: 'No media yet' },
+    { screen: 'help', path: '/admin/help', text: 'Your first steps' },
+  ];
+  for (const { screen, path, text } of ZERO_SCREENS) {
+    for (const width of [320, 2560]) {
+      test(`admin-zero-${screen}-${width}`, async ({ page, context, baseURL }) => {
+        await context.addCookies([
+          { name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! },
+        ]);
+        await page.emulateMedia({ colorScheme: 'light' });
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await expect(page.getByText(text, { exact: true }).first()).toBeVisible();
+        if (screen === 'help') {
+          // The design's own evidence: DaisyUI's Steps rules must not reach the start list.
+          const list = page.locator('ol.start-steps');
+          await expect(list).toBeVisible();
+          expect(await list.evaluate((el) => getComputedStyle(el).gridAutoFlow)).not.toBe('column');
+          const contents = await list
+            .locator('li.start-step')
+            .evaluateAll((els) => els.map((el) => getComputedStyle(el, '::after').content));
+          expect(contents.length).toBeGreaterThan(0);
+          for (const content of contents) expect(content).toBe('none');
+        }
+      });
+    }
+  }
 });

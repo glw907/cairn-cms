@@ -156,9 +156,9 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
               </div>
             </div>
 
-            <ol role="list" class="steps">
+            <ol role="list" class="start-steps">
               {#each steps as step (step.title)}
-                <li class="step" class:is-done={step.done}>
+                <li class="start-step" class:is-done={step.done}>
                   <span class="step-box" aria-hidden="true">
                     {#if step.done}
                       <svg
@@ -491,15 +491,18 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
     background: color-mix(in oklab, var(--color-base-content) 22%, transparent);
   }
 
-  /* the steps: quiet rows inside the single card, never nested cards */
-  .steps {
+  /* the steps: quiet rows inside the single card, never nested cards. The list and row classes carry
+     the start- prefix because the bare names `steps` and `step` are DaisyUI's Steps component, which
+     sets grid-auto-flow: column and content: counter(step) on li.step::after and breaks this panel.
+     Do not rename them back. */
+  .start-steps {
     list-style: none;
     margin: 18px 0 0;
     padding: 0;
     display: grid;
     gap: 8px;
   }
-  .step {
+  .start-step {
     display: flex;
     align-items: center;
     gap: 13px;
@@ -584,15 +587,15 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
   /* the done state. The cue reaches three ways and never by color alone (WCAG 1.4.1): the filled
      glyph box, a visible "Done" tag, and the open step's sr-only "not done". A done step keeps a
      quiet "Open it" so every row carries an affordance. */
-  .step.is-done {
+  .start-step.is-done {
     background: color-mix(in oklab, var(--color-positive-ink) 4%, var(--color-base-100));
   }
-  .step.is-done .step-box {
+  .start-step.is-done .step-box {
     background: var(--color-positive-ink);
     border-color: var(--color-positive-ink);
     color: var(--color-primary-content);
   }
-  .step.is-done .step-title {
+  .start-step.is-done .step-title {
     color: var(--color-muted);
   }
   .step-done-tag {
@@ -833,7 +836,7 @@ eyebrow-plus-display sections that stay their hand-written recipe this wave.
       min-width: 0;
       width: 100%;
     }
-    .step {
+    .start-step {
       flex-wrap: wrap;
     }
     .step-act,

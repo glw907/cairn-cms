@@ -38,7 +38,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import type { VocabularyData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
-  import { PageHeader, Tooltip } from '../admin-toolkit/index.js';
+  import { PageHeader, Tooltip, EmptyState } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
@@ -244,24 +244,25 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   <!-- THE LIST: a count chip and a ledger of Name (rename), Stored as (immutable slug), In use
        (count), and a trailing delete. -->
-  <section class="mt-5">
-    <div class="mb-2.5 flex items-center gap-2 px-0.5">
-      <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
-        Your tags
-        <span
-          class="rounded-selector bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
-          >{working.length}</span
-        >
-      </h2>
-    </div>
-    <div class="overflow-hidden {cardClass}">
-      {#if working.length === 0}
-        <div class="p-6 text-center type-subtitle text-muted">
-          No tags yet. Add your first one above{seedCandidates.length
-            ? ', or seed from tags already on your entries'
-            : ''}.
-        </div>
-      {:else}
+  {#if working.length === 0}
+    <EmptyState
+      heading="No tags yet"
+      message={seedCandidates.length
+        ? 'Add your first tag above, or seed from tags already on your entries.'
+        : 'Add your first tag above, and every editor can pick it.'}
+    />
+  {:else}
+    <section class="mt-5">
+      <div class="mb-2.5 flex items-center gap-2 px-0.5">
+        <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
+          Your tags
+          <span
+            class="rounded-selector bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
+            >{working.length}</span
+          >
+        </h2>
+      </div>
+      <div class="overflow-hidden {cardClass}">
         <!-- Below sm the ledger stacks (each row's slug and count move under its input), so the
              header keeps only Name; the meta line labels itself. At sm+ the four-track grid and
              its full header return. -->
@@ -337,9 +338,9 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             {/if}
           </div>
         {/each}
-      {/if}
-    </div>
-  </section>
+      </div>
+    </section>
+  {/if}
 
   <!-- THE SEED SECTION: tags in use but not in the list, each with an Add-to-list control. Rendered
        only when there is a real candidate. A UX affordance, not a safety gate. -->
@@ -388,6 +389,8 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
       Saving commits your tag list to the site config, so every editor shares it.
     </span>
-    <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+    {#if working.length > 0 || data.vocabulary.length > 0}
+      <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+    {/if}
   </form>
 </div>

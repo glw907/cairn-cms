@@ -11,7 +11,7 @@ title the menu's declared label; the sortable-list card below stays untouched.
 @beta
 -->
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import { SortableList, sortItems } from '@rodrigodagostino/svelte-sortable-list';
   import type { SortableList as SortableListNS } from '@rodrigodagostino/svelte-sortable-list';
@@ -19,7 +19,7 @@ title the menu's declared label; the sortable-list card below stays untouched.
   import type { NavData } from '../sveltekit/nav-routes.js';
   import type { NavNode } from '../nav/site-config.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
-  import { PageHeader } from '../admin-toolkit/index.js';
+  import { PageHeader, EmptyState } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The nav load's data: the menu meta, the current tree, page options, and flags. */
@@ -85,8 +85,17 @@ title the menu's declared label; the sortable-list card below stays untouched.
 
   const treeJson = $derived(JSON.stringify(toTree(rows)));
 
-  function addRow() {
+  let formEl: HTMLFormElement | undefined = $state();
+
+  async function addRow() {
+    const first = rows.length === 0;
     rows = [...rows, { id: `row-${nextId++}`, depth: 0, label: 'New item', url: '' }];
+    // The empty state's action unmounts with the click, taking focus with it, so the first row's
+    // label input receives it.
+    if (first) {
+      await tick();
+      formEl?.querySelector<HTMLInputElement>('input[aria-label="Label"]')?.focus();
+    }
   }
   function removeRow(id: string) {
     rows = rows.filter((r) => r.id !== id);
@@ -151,35 +160,48 @@ title the menu's declared label; the sortable-list card below stays untouched.
   <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}
 
-<form method="POST" action="?/save">
+{#snippet emptyAction()}
+  <button type="button" class="btn btn-primary btn-sm" onclick={addRow}>Add item</button>
+{/snippet}
+
+<form method="POST" action="?/save" bind:this={formEl}>
   <CsrfField />
   <input type="hidden" name="tree" value={treeJson} />
 
-  <div class="mb-2">
-    <button type="button" class="btn btn-sm" onclick={addRow}>Add item</button>
-  </div>
+  {#if rows.length === 0}
+    <EmptyState
+      heading="No menu items yet"
+      message="Add your first item and it will show up in your site’s menu."
+      action={emptyAction}
+    />
+  {:else}
+    <div class="mb-2">
+      <button type="button" class="btn btn-sm" onclick={addRow}>Add item</button>
+    </div>
 
-  <div class="card-shell p-2 card-shadow" style="min-height:2.5rem">
-    <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
-      {#each rows as row, index (row.id)}
-        <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>
-          <div class="flex items-center gap-2 p-2" style={`margin-left:${row.depth * 1.5}rem`}>
-            <input class="input input-sm flex-1" placeholder="Label" aria-label="Label" bind:value={row.label} />
-            <input
-              class="input input-sm flex-1"
-              placeholder="/path or https://example.com"
-              list="cairn-nav-pages"
-              aria-label="URL"
-              bind:value={row.url}
-            />
-            <button type="button" class="btn btn-xs btn-ghost" onclick={() => outdent(index)} aria-label="Outdent">&larr;</button>
-            <button type="button" class="btn btn-xs btn-ghost" onclick={() => indent(index)} aria-label="Indent">&rarr;</button>
-            <button type="button" class="btn btn-xs btn-ghost text-error" onclick={() => removeRow(row.id)} aria-label={`Remove ${row.label}`}>&times;</button>
-          </div>
-        </SortableList.Item>
-      {/each}
-    </SortableList.Root>
-  </div>
+    <div class="card-shell p-2 card-shadow" style="min-height:2.5rem">
+      <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
+        {#each rows as row, index (row.id)}
+          <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>
+            <div class="flex items-center gap-2 p-2" style={`margin-left:${row.depth * 1.5}rem`}>
+              <input class="input input-sm flex-1" placeholder="Label" aria-label="Label" bind:value={row.label} />
+              <input
+                class="input input-sm flex-1"
+                placeholder="/path or https://example.com"
+                list="cairn-nav-pages"
+                aria-label="URL"
+                bind:value={row.url}
+              />
+              <button type="button" class="btn btn-xs btn-ghost" onclick={() => outdent(index)} aria-label="Outdent">&larr;</button>
+              <button type="button" class="btn btn-xs btn-ghost" onclick={() => indent(index)} aria-label="Indent">&rarr;</button>
+              <button type="button" class="btn btn-xs btn-ghost text-error" onclick={() => removeRow(row.id)} aria-label={`Remove ${row.label}`}>&times;</button>
+            </div>
+          </SortableList.Item>
+        {/each}
+      </SortableList.Root>
+    </div>
+
+  {/if}
 
   <datalist id="cairn-nav-pages">
     {#each data.pages as p (p.url)}
@@ -187,7 +209,9 @@ title the menu's declared label; the sortable-list card below stays untouched.
     {/each}
   </datalist>
 
-  <div class="mt-4">
-    <button type="submit" class="btn btn-primary btn-sm">Save navigation</button>
-  </div>
+  {#if rows.length > 0 || data.tree.length > 0}
+    <div class="mt-4">
+      <button type="submit" class="btn btn-primary btn-sm">Save navigation</button>
+    </div>
+  {/if}
 </form>

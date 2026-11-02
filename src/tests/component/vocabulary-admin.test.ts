@@ -208,4 +208,31 @@ describe('VocabularyAdmin', () => {
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('These settings changed since you opened them.');
   });
+
+  it('shows the empty state with no tags, and the seed hint when candidates exist', async () => {
+    const bare = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    await expect.element(bare.getByText('No tags yet')).toBeInTheDocument();
+    await expect.element(bare.getByText('Add your first tag above, and every editor can pick it.')).toBeInTheDocument();
+    expect(bare.container.textContent).not.toContain('Your tags');
+    bare.unmount();
+
+    const seeded = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {} }) });
+    await expect
+      .element(seeded.getByText('Add your first tag above, or seed from tags already on your entries.'))
+      .toBeInTheDocument();
+  });
+
+  it('offers Save only while tags exist or a saved list exists', async () => {
+    const fresh = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    expect(fresh.container.querySelector('button[type="submit"]')).toBeNull();
+    fresh.unmount();
+
+    const saved = await render(VocabularyAdmin, {
+      data: data({ vocabulary: [{ value: 'gear', label: 'Gear' }], usage: { gear: 0 }, unlisted: [] }),
+    });
+    await userEvent.click(saved.getByRole('button', { name: 'Remove Gear' }));
+    await expect.element(saved.getByText('No tags yet')).toBeInTheDocument();
+    expect(saved.container.querySelector('button[type="submit"]')).not.toBeNull();
+    expect(postedVocabulary(saved.container)).toEqual([]);
+  });
 });

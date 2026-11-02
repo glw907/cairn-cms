@@ -30,6 +30,9 @@ declare global {
       // a worker only through `wrangler dev --var CAIRN_DEV_BACKEND:1`, never wrangler.jsonc.
       // The declaration only types the reads; it does not make the flag production configuration.
       CAIRN_DEV_BACKEND?: string;
+      // cairn-template:exclude-start
+      CAIRN_DEV_CONTENT?: string;
+      // cairn-template:exclude-end
     }
   }
 }

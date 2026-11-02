@@ -266,3 +266,14 @@ test('a missing access rule names the fix under the dev handle even with a deplo
     body: { message: "No access rule for /admin/unmapped. Add it to the adapter's access map." },
   });
 });
+
+test("content: 'empty' serves an in-memory repo with no entries and a site config", async () => {
+  const handle = devBackendHandle({ content: 'empty', runtime: {} });
+  const event = eventFor('/admin') as any;
+
+  await envSeenByRoute(handle, event);
+  const backend = event.locals.cairnBackend;
+
+  expect(await backend.readEntries('src/content/posts', 'main')).toEqual([]);
+  expect(await backend.readFile('src/theme/site.config.yaml', 'main')).toMatch(/^siteName: \S/);
+});

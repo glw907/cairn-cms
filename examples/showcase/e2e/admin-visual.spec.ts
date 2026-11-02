@@ -581,3 +581,17 @@ for (const width of [1440, 390]) {
     await expect(page).toHaveScreenshot(`admin-theme-kit-dark-${width}.png`, { fullPage: true });
   });
 }
+
+// The second webServer entry (playwright.config.ts) serves the same build with no content, two
+// ports above the default. The port is read here because test.use needs it at describe time.
+const EMPTY_PORT = Number(process.env.E2E_PORT ?? '4173') + 2;
+
+test.describe('empty first-run server', () => {
+  test.use({ baseURL: `http://localhost:${EMPTY_PORT}` });
+
+  test('the posts list reads as a first run', async ({ page }) => {
+    await page.goto('/admin/posts');
+    await expect(page.getByRole('heading', { level: 1, name: 'Posts' })).toBeVisible();
+    await expect(page.getByText('No posts yet')).toBeVisible();
+  });
+});

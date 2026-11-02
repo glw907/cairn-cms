@@ -16,6 +16,7 @@ import type { Backend, CairnRuntime } from '@glw907/cairn-cms';
 import { createLogger, type CairnLogEvent } from '@glw907/cairn-cms/log';
 import {
   createDevBackend,
+  seedEmptySite,
   seedMediaLibrary,
   seedVocabulary,
   seedFragments,
@@ -67,8 +68,10 @@ export interface DevBackendConfig {
    * written to disk. It needs a filesystem, so it throws under `wrangler dev`'s workerd. `'fixtures'`
    * serves the package's seeded in-memory repo (sample posts, media, fragments, and a vocabulary)
    * and runs anywhere, which is what a site's end-to-end suite and a `wrangler dev` session use.
+   * `'empty'` serves the same in-memory repo holding only a `site.config.yaml` with a `siteName`,
+   * so every concept lists nothing: the first-run state, which also runs under workerd.
    */
-  content?: 'repository' | 'fixtures';
+  content?: 'repository' | 'fixtures' | 'empty';
   /**
    * The runtime `composeRuntime` returned for the site's adapter, the same one the production
    * guard takes. Its `access` is attached to `event.locals.cairnAccess` on every /admin request
@@ -128,11 +131,12 @@ export function devBackendHandle(config: DevBackendConfig): Handle {
     // same reason seedFragments and seedVocabulary do.
     seedPreviewTwin();
   }
+  if (content === 'empty') seedEmptySite();
 
   // One dev Backend, built at handle-build time so every request shares the same store (a commit on
   // one request is visible on the next). Fixtures mode shares the module-level in-memory repo, so
   // the recorder route sees its commits; repository mode keeps its overlay in its closure.
-  const backend = content === 'fixtures' ? createDevBackend() : createRepositoryBackend(process.cwd());
+  const backend = content === 'repository' ? createRepositoryBackend(process.cwd()) : createDevBackend();
 
   // One instance each for the server's lifetime, like the in-memory repo, so editors added through
   // /admin/editors and an asset uploaded through /admin persist across requests.

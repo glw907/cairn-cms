@@ -25,6 +25,15 @@ every route. No `tool/v2.0.0` tag exists yet.
 ### Changed
 
 - **`cairn --help`, `cairn doctor --help`, and `cairn health --help` print no documentation URL, and the JSON schemas move to `schema/`.** The help text no longer links the removed reference pages, so a released binary's old links stop resolving. The schemas move from `docs/reference/schema/` to `schema/` in the engine package, each `$id` unchanged.
+- **A `cairn doctor` SKIP line prints the check's skip title.** A skipped check read as a failure
+  ("SKIP  Media bucket binding is missing"). Each check now declares a `SkipTitle` that names its
+  subject with no verdict, such as "SKIP  Media bucket binding: no media assets configured". The
+  `--json` output is unchanged.
+- **`cairn health` reads the changelog's `Consumers must:` line by one grammar.** Only a bare
+  `Consumers must:` line at column 0 or two spaces counts, and a section is actionable when any such
+  line says something other than `nothing.`. A bold or mid-paragraph lead, and a hedged "nothing,
+  unless", are no longer read as a clause. The engine changelog's gate holds new lines to the same
+  grammar.
 - **A `cairn doctor` PASS line prints the check's pass title.** The plain-text report keyed every
   line to the condition's registry title, which names the failure, so a passing check read "PASS
   Wrangler bindings are missing". Each check now declares a `PassTitle`, and the other statuses keep

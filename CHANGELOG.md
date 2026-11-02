@@ -2,6 +2,15 @@
 
 ### Added
 
+- **A `Consumers must:` line has one grammar, and a gate holds new lines to it.** The line sits alone
+  on one physical line, at column 0 or two spaces, and reads `Consumers must: nothing.` or
+  `Consumers must: <action>.` with no bold, no backticks, and no hedge. `npm run check:consumers-must`
+  fails a new `## Unreleased` line off that grammar, and `cairn health` reads the same grammar from the
+  shared fixture `scripts/checks/fixtures/consumers-must/cases.json`. Lines already off grammar sit in
+  `scripts/checks/consumers-must-baseline.json` until the release reset removes them.
+
+  Consumers must: nothing.
+
 - **`actions.mediaLibraryUpload` is typed on `CairnAdminRoutes`,** so a custom media screen reaches the
   upload action, which records its manifest row, with no cast. The admin routes still omit nine of
   `ContentRoutes`'s media actions.
@@ -145,6 +154,15 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
+  or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
+  `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so the
+  sailing club's `src/theme/theme.css` layout passes and the advised line is computed from the entry's
+  depth. Each of the seven lines starts `PASS` or `FIX`, the last line counts them, and `--strict`
+  exits 1 on any `FIX`. The `unknown` exclusion state is gone: with no entry, nothing scans `.claude/`.
+
+  Consumers must: fix every FIX line before running cairn-guidance check --strict in CI.
 
 - **`buildSitemapView` skips `noindex` entries.** An entry whose `robots` field carries `noindex` no
   longer appears in the sitemap, matching the markdown twin. The check applies only to a concept whose

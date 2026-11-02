@@ -235,15 +235,16 @@ island.
       saving = false;
       publishing = false;
       failedInPlace = true;
+      const failure = result.type === 'failure' ? (result.data as ContentFormFailure | undefined) : undefined;
       // Focus returns only when it was left on nothing at settle time (the read-only surface dropped
-      // it), so an author who moved to another field while the request ran keeps it there.
-      if (editorHadFocus && (document.activeElement === document.body || document.activeElement === null)) {
+      // it), so an author who moved to another field while the request ran keeps it there. A refusal
+      // that names a field moves focus there instead, so the editor does not take it first.
+      if (!failure?.field && editorHadFocus && (document.activeElement === document.body || document.activeElement === null)) {
         // Wait for the surface to take edits again before focusing it.
         await tick();
         editor?.focus();
       }
       if (result.type === 'failure') {
-        const failure = result.data as ContentFormFailure | undefined;
         if (!failure?.error && !failure?.brokenLinks?.length) failureNotice = FAILURE_NOTICE;
         // Applies the failure's data as `form` without running a load.
         await applyAction(result);
@@ -359,14 +360,17 @@ island.
 
   // The error banner, which takes focus when a refusal names a field that has no single visible control.
   let errorBanner = $state<HTMLElement | null>(null);
+  const ERROR_BANNER_ID = 'cairn-edit-error';
 
-  // Points the author at the field the server refused. The control is looked up on the form by
-  // name, so no name needs escaping; it counts only when the name resolves to exactly one
-  // non-hidden control. It is revealed the way onFormInvalid reveals one, marked invalid until the
-  // next input, and focused. With no such control (a hero's hidden inputs, a media field, a
-  // checkbox group, a nested key) the banner takes focus instead.
+  // Points the author at the field the server refused. The control is looked up among the form's
+  // controls by `name` alone (`namedItem` would also match an `id`), so no name needs escaping; it
+  // counts only when the name resolves to exactly one non-hidden control. It is revealed the way
+  // onFormInvalid reveals one, then focused, and until the next input it is marked invalid and
+  // described by the banner, so the reason is read with the field. With no such control (a hero's
+  // hidden inputs, a media field, a checkbox group, a nested key) the banner takes focus instead.
   function pointAtRefusedField(field: string) {
-    const found = editForm?.elements.namedItem(field);
+    const named = editForm ? [...editForm.elements].filter((el) => (el as HTMLInputElement).name === field) : [];
+    const found = named.length === 1 ? named[0] : null;
     const control =
       found instanceof HTMLInputElement || found instanceof HTMLTextAreaElement || found instanceof HTMLSelectElement
         ? found
@@ -380,8 +384,20 @@ island.
     } else if (mode !== 'write') {
       flushSync(() => (mode = 'write'));
     }
+    const otherDescriptions = () =>
+      (control.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((id) => id && id !== ERROR_BANNER_ID);
     control.setAttribute('aria-invalid', 'true');
-    control.addEventListener('input', () => control.removeAttribute('aria-invalid'), { once: true });
+    control.setAttribute('aria-describedby', [...otherDescriptions(), ERROR_BANNER_ID].join(' '));
+    control.addEventListener(
+      'input',
+      () => {
+        control.removeAttribute('aria-invalid');
+        const rest = otherDescriptions();
+        if (rest.length) control.setAttribute('aria-describedby', rest.join(' '));
+        else control.removeAttribute('aria-describedby');
+      },
+      { once: true },
+    );
     control.focus();
   }
 
@@ -1881,7 +1897,7 @@ island.
     {/if}
   </div>
 {:else if formError}
-  <div bind:this={errorBanner} tabindex="-1" class="alert alert-error mb-4 type-body">{formError}</div>
+  <div bind:this={errorBanner} id={ERROR_BANNER_ID} tabindex="-1" class="alert alert-error mb-4 type-body">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start type-body">

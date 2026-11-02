@@ -445,9 +445,55 @@ describe('EditPage refusal points at its field', () => {
     expect(author.getAttribute('aria-invalid')).toBe('true');
     expect(author.value).toBe('toolong');
     expect(document.activeElement).not.toBe(banner(screen));
+    // The banner describes the field, beside any description the field already had.
+    const descriptions = () => (author.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+    expect(banner(screen).id).not.toBe('');
+    expect(descriptions()).toContain(banner(screen).id);
 
     author.dispatchEvent(new Event('input', { bubbles: true }));
     expect(author.hasAttribute('aria-invalid')).toBe(false);
+    expect(descriptions()).not.toContain(banner(screen).id);
+  });
+
+  it('keeps an existing description on the refused field and drops only its own', async () => {
+    const screen = await mountRefused('author');
+    const author = screen.container.querySelector<HTMLInputElement>('input[name="author"]')!;
+    author.setAttribute('aria-describedby', 'author-help');
+    await submitSave(screen);
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field: 'author' } });
+    await expect.poll(() => document.activeElement === author).toBe(true);
+    expect(author.getAttribute('aria-describedby')).toBe(`author-help ${banner(screen).id}`);
+
+    author.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(author.getAttribute('aria-describedby')).toBe('author-help');
+  });
+
+  it('moves focus to the refused field, never through the editor, after a keyboard save', async () => {
+    const screen = await mountRefused('author');
+    await makeDirty(screen);
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true }));
+    await expect.poll(() => enhanceRuns.length).toBe(1);
+    await expect.poll(() => content.contains(document.activeElement)).toBe(false);
+    let editorFocused = false;
+    content.addEventListener('focusin', () => (editorFocused = true));
+
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field: 'author' } });
+    const author = screen.container.querySelector<HTMLInputElement>('input[name="author"]')!;
+    await expect.poll(() => document.activeElement === author).toBe(true);
+    expect(editorFocused).toBe(false);
+  });
+
+  it('matches the refused field by name only, never by a control id', async () => {
+    const screen = await mountRefused('stray');
+    const stray = document.createElement('input');
+    stray.id = 'stray';
+    screen.container.querySelector('form#cairn-edit-form')!.append(stray);
+    await submitSave(screen);
+    settleEnhance({ type: 'failure', status: 400, data: { error: 'Author must be at most 3 characters', field: 'stray' } });
+    await expect.poll(() => document.activeElement === banner(screen)).toBe(true);
+    expect(stray.hasAttribute('aria-invalid')).toBe(false);
   });
 
   it('flips Preview back to Write for a refused title', async () => {

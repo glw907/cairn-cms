@@ -19,8 +19,9 @@ it. Engine passes land on `main` and never release.
 
 ## Immediate next action
 
-The `small-api` slice (pass 3 plus pass 2's shape 8) is PR-ready in PR #184, from session
-`cairn-cms-small-api`, and merges last of its group. The conductor acting for this run is session
+The `small-api` slice (pass 3 plus pass 2's shape 8) is merged (PR #184). The `p2-p4` slice (pass 7)
+is PR-ready in PR #186, from session `cairn-cms-p2-p4`; its `auth-data` items carry the security
+read and live smoke, so the conductor merges it. The conductor acting for this run is session
 `cairn-cms-9b`, and its planners report to it. The remaining passes follow in order, each planned
 just before it runs. The run stops at the release sitting, where Geoff reads the release
 packet and rules each of the five held majors. Three bars read unmet by Geoff's choice (the install

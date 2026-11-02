@@ -15,7 +15,12 @@ import { loadHealth, type HealthData } from '../../lib/sveltekit/health.js';
 import { createAdminAction } from '../../lib/sveltekit/admin-action.js';
 import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-shell.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
+import { loadPreview, type PreviewData } from '../../lib/sveltekit/preview.js';
+import { fields } from '../../lib/content/fields.js';
+import { defineConcept } from '../../lib/content/concepts.js';
+import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import type { EntryData, PublicRoutesConfig } from '../../lib/delivery/public-routes.js';
+import type { CairnAdapter, CairnRuntime } from '../../lib/content/types.js';
 import type { RequestEvent, ServerLoadEvent } from '@sveltejs/kit';
 
 // The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no
@@ -141,6 +146,27 @@ function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime
   loadHealth(siteEvent, { runtime }) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;
+
+// loadPreview: generic over the site resolver, so a typed `publicRoutes` config types the preview
+// data the way `createPublicRoutes` types `entryLoad`. A site's template then narrows on `concept`
+// through the preview route with no cast; the default `EntryData` this returned before would fail
+// the assertions below.
+async function typeOnlyLoadPreviewNarrowing(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): Promise<void> {
+  const posts = defineConcept({
+    dir: 'src/content/posts',
+    label: 'Posts',
+    routing: 'dated',
+    fields: { title: fields.text({ label: 'Title', required: true }) },
+  });
+  const site = createSiteResolver({ ...({} as Omit<CairnAdapter, 'content'>), content: { posts } }, {});
+  const publicRoutes = {} as PublicRoutesConfig<typeof site>;
+  const data = await loadPreview(siteEvent, { runtime, publicRoutes });
+  data satisfies PreviewData<typeof site>;
+  data satisfies EntryData<typeof site>;
+  const title: string = data.entry.frontmatter.title;
+  void title;
+}
+void typeOnlyLoadPreviewNarrowing;
 
 // createMediaRoute: excluded from the sweep proper (its public signature is kit's own
 // RequestHandler, not a cairn-declared type), so this closes the coverage gap with the same

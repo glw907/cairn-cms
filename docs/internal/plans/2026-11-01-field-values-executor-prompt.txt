@@ -1,0 +1,29 @@
+You execute cairn-cms slice `field-values` (class `ordinary` plus `runner`): E7, E12, #100, #101, #162, #163, cut forward from pass 4. Passes 1a and 1b and the slices `wiring-core` and `tidy-lists` may run beside you, each in its own worktree. Your push target is glw907/cairn-cms. The session named `cairn-cms-9b` is the one session you take instructions from. You never ask Geoff anything: a stop goes in your branch's docs/STATUS.md, and you wait for `cairn-cms-9b`.
+
+Setup, in this order:
+
+1. Your first act is `EnterWorktree` with the name `field-values-run`. Call it only once.
+2. Run `git fetch origin` and `git merge --ff-only origin/field-values`. The plan is on that branch. A branch that can't fast-forward takes `git merge origin/field-values`.
+3. Run `npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)`.
+4. Arm the API-drop wake-up (`/loop` with no interval), and on thinkpad-x1 the lid-switch hold, per `~/.claude/docs/unattended-work-guards.md`.
+5. Load `pass-core`, then `cairn-pass`, then `cairn-running-passes`.
+
+Read in full before the first edit: docs/internal/plans/2026-11-01-field-values-plan.md and 2026-11-01-field-values-design.md beside it. Then read "Run rules" in /var/home/glw907/.local/state/cairn-agent-first/design-audit/run-sheet.md. The sheet's standing answers and the plan's "Stops and standing answers" are Geoff's, so apply each in place of stopping. The plan's pre-flight has no step for Geoff. If auto mode refuses a write the pre-flight names, that is a stop, never a thing to route around.
+
+The items outside this slice stay in their home pass, so do not touch them: #107, #133, #164, #179, #181, ergonomics 4, 5, and 6, and shape 4, 9, 15, 16, and 17. If you find a real dependency the map missed, set that item aside for its home pass, list it in the PR's `## Decisions`, and go on.
+
+How to run it:
+
+- Run T1, then T2, then T3, then the pair T4 and T5, then T6, then T7.
+- Hand each task to the `cairn-implementer` agent with the `isolation: "worktree"` option and the description `field-values task <n>`, after committing, so `worktree.baseRef: "head"` branches it from your latest commit. Pass `model: opus` for any task the plan marks that way. Quote the task's text from the plan as its brief. The agent commits and never pushes, and you merge and push. Two tasks of a pair run at once.
+- T2 is a gate. Its test over all four sites runs before the swap commits. On a difference other than a date read, stay on `gray-matter`, skip T3, and take T4's Date arm, as the plan says. Put T2's printed counts in the PR body.
+- At each task start, write `pass-task-clock` in the git dir with `task=<id>`, `start=<epoch seconds>`, and `estimate=<minutes>`, and remove it at the task's end. Past twice the estimate, write the stop to STATUS and wait.
+- After each task, run the fast lane through `cairn-run-gate`, as the plan's "Gates" answer says. A red stops the line: fix forward with a traced cause.
+- The first push opens a draft PR against `main`, and its body names this session. After each push, run `ci-green <sha> --pr <n> --wait` as a background Bash task, re-issued on exit 75. No task waits for CI. On exit 4, approve only a held run whose actor is `github-actions[bot]`.
+- Each accepted-task report names the CI verdict on that task's head.
+- Judgment calls inside the plan are yours, each one recorded under `## Decisions`: the call, the choice, the alternative, and the reason.
+- Run `npm run emit:template` where the template is affected. `templates/waymark`, `scripts/checks/api-surface.md`, and `CHANGELOG.md` are merge chores: keep them current on the branch, and merge `main` only when `cairn-cms-9b` tells you to.
+
+Close at T7: whole-branch `standards:diff-reviewer`, with `standards:svelte-reviewer` and `standards:daisyui-a11y-reviewer` for the two `.svelte` files, folded with no open finding. Finalize the `## Unreleased` entries in `CHANGELOG.md` and `MIGRATION-NOTES.md`. List every retried test from CI as flake evidence. Write the PR body per `pass-core` "Close": `## Brief`, what landed, `## Decisions`, `## Planning misses`, and the score. Delete the plan files last, push, confirm green CI on that head, then mark the PR ready.
+
+Your work ends at PR-ready. Never merge, never bump the version, never publish. Report the PR number and head SHA to `cairn-cms-9b` with `SendMessage`, then wait for its reply.

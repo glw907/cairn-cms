@@ -38,11 +38,11 @@ interface FieldBase {
  */
 export interface TextField extends FieldBase {
   type: 'text';
-  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
   max?: number;
-  /** The exact character count the trimmed value must hold. The first failing length rule reports. */
+  /** The exact character count the trimmed value must hold. The first failing length rule reports. An entry's form renders it as both `minlength` and `maxlength`. */
   length?: number;
   /**
    * A regular-expression source string the value must match, tested unanchored and with no flags,
@@ -60,11 +60,11 @@ export interface TextareaField extends FieldBase {
   type: 'textarea';
   /** The input's height in text rows. Defaults to 3. */
   rows?: number;
-  /** The fewest characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The fewest characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `minlength` (unless `length` is set). */
   min?: number;
-  /** The most characters the trimmed value may hold. Enforced at the save, never rendered as an input attribute. */
+  /** The most characters the trimmed value may hold. Enforced at the save, and an entry's form renders it as `maxlength` (unless `length` is set). */
   max?: number;
-  /** The exact character count the trimmed value must hold. */
+  /** The exact character count the trimmed value must hold. An entry's form renders it as both `minlength` and `maxlength`. */
   length?: number;
   /** A regular-expression source string; same unanchored, flagless match and declaration-time throw as `TextField.pattern`. */
   pattern?: string;
@@ -135,9 +135,9 @@ export interface UrlField extends FieldBase {
  */
 export interface DateField extends FieldBase {
   type: 'date';
-  /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
+  /** Earliest allowed date as YYYY-MM-DD. Enforced at the save, and an entry's form renders it as the input's `min`. */
   min?: string;
-  /** Latest allowed date as YYYY-MM-DD. Enforced at the save, never rendered on the input. */
+  /** Latest allowed date as YYYY-MM-DD. Enforced at the save, and an entry's form renders it as the input's `max`. */
   max?: string;
 }
 /**

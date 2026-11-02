@@ -209,7 +209,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const f = field as NamedField & TextareaField}
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
+    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required} minlength={f.length ?? f.min} maxlength={f.length ?? f.max}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
       {@render fieldHint(hintBase, f.help)}
     {/if}
@@ -255,7 +255,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     <span class="type-body font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
-    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} min={field.min} max={field.max} />
     {@render fieldHint(hintBase, field.help || DATE_PUBLISH_HINT)}
   </label>
 {:else if field.type === 'boolean'}
@@ -367,7 +367,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
        one shape and differ only in the input type inputType() resolves. -->
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">{field.label}</span>
-    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} minlength={field.type === 'text' ? (field.length ?? field.min) : undefined} maxlength={field.type === 'text' ? (field.length ?? field.max) : undefined} />
     {#if field.help}
       {@render fieldHint(hintBase, field.help)}
     {/if}

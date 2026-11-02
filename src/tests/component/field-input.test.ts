@@ -298,3 +298,40 @@ describe('FieldInput arm dispatch (characterization: every FieldDescriptor arm)'
     await expect.poll(() => document.querySelector<HTMLInputElement>('input[name="aliases.0"]')?.value).toBe('x');
   });
 });
+
+describe('FieldInput renders length and date bounds as input attributes', () => {
+  async function control(field: NamedField, selector: string, value = '') {
+    await render(FieldInput, { field, name: field.name, frontmatter: { [field.name]: value }, ...shared() });
+    return document.querySelector<HTMLElement>(selector)!;
+  }
+
+  it('sets maxlength from a text field max', async () => {
+    const el = await control({ type: 'text', name: 'a', label: 'A', max: 12 }, 'input[name="a"]');
+    expect(el.getAttribute('maxlength')).toBe('12');
+    expect(el.hasAttribute('minlength')).toBe(false);
+  });
+
+  it('sets both lengths from a text field length', async () => {
+    const el = await control({ type: 'text', name: 'b', label: 'B', length: 5 }, 'input[name="b"]');
+    expect(el.getAttribute('minlength')).toBe('5');
+    expect(el.getAttribute('maxlength')).toBe('5');
+  });
+
+  it('sets minlength from a textarea min', async () => {
+    const el = await control({ type: 'textarea', name: 'c', label: 'C', min: 3 }, 'textarea[name="c"]');
+    expect(el.getAttribute('minlength')).toBe('3');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+  });
+
+  it('sets min and max on a date input', async () => {
+    const el = await control({ type: 'date', name: 'd', label: 'D', min: '2026-01-01', max: '2026-12-31' }, 'input[name="d"]');
+    expect(el.getAttribute('min')).toBe('2026-01-01');
+    expect(el.getAttribute('max')).toBe('2026-12-31');
+  });
+
+  it('carries no maxlength on a url field', async () => {
+    const el = await control({ type: 'url', name: 'e', label: 'E' }, 'input[name="e"]');
+    expect(el.hasAttribute('maxlength')).toBe(false);
+    expect(el.hasAttribute('minlength')).toBe(false);
+  });
+});

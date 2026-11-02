@@ -179,8 +179,8 @@ describe('fieldset reference and array(reference)', () => {
     });
   });
 
-  it('coerces a YAML-parsed Date element to its canonical id, never TZ-shifted garbage', () => {
-    expect(fs.validate({ author: 'jane-doe', related: [new Date('2026-01-02T00:00:00Z')] }, '')).toEqual({
+  it('keeps a date-shaped id element as the string it was written', () => {
+    expect(fs.validate({ author: 'jane-doe', related: ['2026-01-02'] }, '')).toEqual({
       ok: true,
       data: { author: 'jane-doe', related: ['2026-01-02'] },
     });

@@ -5,7 +5,7 @@
 // "replace" action: the same bytes pointed at a new asset, with the surrounding entry left exact.
 //
 // The output is byte-for-byte identical to the input except for the `media:` token substrings that
-// are replaced. The transform never round-trips through gray-matter or a markdown serializer (those
+// are replaced. The transform never round-trips through the frontmatter parser or a markdown serializer (those
 // reformat YAML and are not byte stable); it splices strings by source offset. The match keys on the
 // parsed hash, the immutable truth, never the cosmetic slug, so a bare `media:<hash>` and a
 // `media:<slug>.<hash>` for the same bytes both repoint. A malformed or non-matching token is left
@@ -15,7 +15,7 @@
 // (remark-parse + gfm + directive), so a `media:` token inside a code span or fence is not an image
 // node and is correctly never matched, matching extractMediaRefs. It also lets the arm classify an
 // image inside a `:::figure` as a 'figure' placement.
-import matter from 'gray-matter';
+import { parseMarkdown } from './frontmatter.js';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
@@ -188,7 +188,7 @@ function isImageOf(value: unknown, hash: string): value is Record<string, unknow
  *  shape extractMediaRefs reads, so a token in a plain-text value is never treated as a reference). A
  *  key is nested when an image sits one level inside it, in the four shapes `defineFieldset` admits:
  *  an object holding an image, an array of images, or an array of objects holding an image. The
- *  bucket-classifying data comes from gray-matter (which handles every quoting form); the byte edit
+ *  bucket-classifying data comes from the frontmatter parser (which handles every quoting form); the byte edit
  *  is located structurally by the caller, keyed back to this key name.
  */
 function imageFieldKeys(data: Record<string, unknown>, hash: string): ImageKeyHit[] {
@@ -214,7 +214,7 @@ function imageFieldKeys(data: Record<string, unknown>, hash: string): ImageKeyHi
 
 /**
  * Collect image src-token edits inside the frontmatter block. Only an image `src:` line is rewritten:
- *  the structure is read via gray-matter (image-bearing keys), and every matching `src:` line is
+ *  the structure is read via parseMarkdown (image-bearing keys), and every matching `src:` line is
  *  located structurally within that key's block, so an asset that appears in several rows of an array
  *  is repointed everywhere. A `media:` token sitting in a plain-text value (a `title:` or
  *  `description:`) is on no `src:` line, so it is left untouched, keeping the byte-exact contract and
@@ -222,7 +222,7 @@ function imageFieldKeys(data: Record<string, unknown>, hash: string): ImageKeyHi
  */
 function frontmatterEdits(markdown: string, fmBlock: string, oldHash: string): Edit[] {
   if (fmBlock === '') return [];
-  const data = matter(markdown).data as Record<string, unknown>;
+  const data = parseMarkdown(markdown).frontmatter;
   const lines = fmLines(fmBlock);
   const edits: Edit[] = [];
   for (const { key, nested } of imageFieldKeys(data, oldHash)) {
@@ -308,7 +308,7 @@ function bodyEdits(body: string, blockLength: number, oldHash: string): Edit[] {
 /**
  * Rewrite every reference to `oldHash` in one entry's raw markdown to `newToken`, and return the
  * rewritten markdown plus a per-placement diff. Only an image-field `src:` line is rewritten in the
- * frontmatter: the image-like keys are read via gray-matter and each key's `src:` line is located
+ * frontmatter: the image-like keys are read via parseMarkdown and each key's `src:` line is located
  * structurally within its block, so a `media:` token that merely appears in a plain-text value (a
  * `title:` or `description:`) is left untouched, matching extractMediaRefs. Body and figure images are
  * matched by mdast offset over the body slice. The output is byte-for-byte identical to the input
@@ -472,7 +472,7 @@ function findSiblingKeyValue(
 
 /**
  * Collect the hero alt edits inside the frontmatter block. The image-field objects (and their
- *  decorative and alt values) are read via gray-matter to classify the bucket robustly across quoting
+ *  decorative and alt values) are read via parseMarkdown to classify the bucket robustly across quoting
  *  forms; the byte edit is then located structurally, scoped to each field's mapping block, keyed
  *  back by the top-level field name. Iterating the fields in source order keeps the hero placements in
  *  document order. A decorative hero is reported and never edited; an empty alt is filled; a custom
@@ -480,7 +480,7 @@ function findSiblingKeyValue(
  *  blank line or a nested child) has its value replaced; an absent one is inserted right after the
  *  `src:` line at the same indent. The new value is a JSON-quoted scalar, valid YAML that handles a
  *  colon, a quote, or an empty string. A flow-style hero (`image: { ... }`, no `src:` line) is
- *  unanchorable, so it is reported from the gray-matter read but never spliced. An image nested in a
+ *  unanchorable, so it is reported from the parseMarkdown read but never spliced. An image nested in a
  *  container field is reported with kind `nested` and never spliced either.
  */
 function heroAltEdits(
@@ -491,7 +491,7 @@ function heroAltEdits(
   overwrite: boolean,
 ): AltEdit[] {
   if (fmBlock === '') return [];
-  const data = matter(markdown).data as Record<string, unknown>;
+  const data = parseMarkdown(markdown).frontmatter;
   const lines = fmLines(fmBlock);
   const edits: AltEdit[] = [];
   const quoted = JSON.stringify(defaultAlt);
@@ -555,8 +555,8 @@ function heroAltEdits(
  * A body or figure image has no decorative slot, so its empty alt is always will-fill.
  *
  * The output is byte-for-byte identical to the input apart from the alt text it actually changes. The
- * hero alt is edited inside the frontmatter block by string splice (no gray-matter serialize round
- * trip, which would reformat the YAML); the structure read uses gray-matter only to classify buckets
+ * hero alt is edited inside the frontmatter block by string splice (no serializer round
+ * trip, which would reformat the YAML); the structure read uses parseMarkdown only to classify buckets
  * and read the hero alt and decorative flag. A body alt is written escaped (the way insertImage
  * escapes it) so a `]` in the alt cannot break the image; a hero alt is written as a JSON-quoted YAML
  * scalar so a colon, a quote, or an empty value is robust. Placements read in document order (hero

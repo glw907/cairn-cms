@@ -270,9 +270,6 @@ describe('decodeField default-arm absorption (nested; every arm not explicitly c
 });
 
 describe('dateInputValue', () => {
-  it('formats a Date as YYYY-MM-DD with no timezone shift', () => {
-    expect(dateInputValue(new Date('2026-05-14T00:00:00.000Z'))).toBe('2026-05-14');
-  });
   it('slices an ISO datetime string to the date', () => {
     expect(dateInputValue('2026-05-14T10:30:00Z')).toBe('2026-05-14');
   });
@@ -283,7 +280,6 @@ describe('dateInputValue', () => {
     expect(dateInputValue(undefined)).toBe('');
     expect(dateInputValue(null)).toBe('');
     expect(dateInputValue(42)).toBe('');
-    expect(dateInputValue(new Date('nonsense'))).toBe('');
     expect(dateInputValue('not a date')).toBe('');
   });
 });
@@ -421,7 +417,7 @@ describe('formValues', () => {
     ];
     const frontmatter = {
       title: 'First Snow',
-      date: new Date('2026-01-05T00:00:00.000Z'),
+      date: '2026-01-05',
       draft: true,
       tags: ['training', 'racing'],
       image: { src: 'media:a.0123456789abcdef', alt: 'A ridge' },

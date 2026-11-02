@@ -25,9 +25,8 @@ export function asString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
-/** A YYYY-MM-DD date. An unquoted YAML date parses as a JS Date; a string is sliced to its date head. */
+/** A YYYY-MM-DD date. An unquoted YAML date reads as text; a string is sliced to its date head. */
 export function asDate(value: unknown): string | undefined {
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? undefined : value.toISOString().slice(0, 10);
   if (typeof value === 'string') return value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
   return undefined;
 }

@@ -248,7 +248,6 @@
     "@types/mdast": "^4.0.4",
     "culori": "^4.0.2",
     "esm-env": "^1.2.2",
-    "gray-matter": "^4.0.3",
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-string": "^3.0.1",
     "hastscript": "^9.0.1",

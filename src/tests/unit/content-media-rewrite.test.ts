@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
 import type { Image } from 'mdast';
 import { fillAltForHash, repointMediaRef } from '../../lib/content/media-rewrite.js';
-import { parseMarkdown } from '../../lib/content/frontmatter.js';
+import { parseMarkdown, serializeMarkdown } from '../../lib/content/frontmatter.js';
 import { parseMediaToken } from '../../lib/media/reference.js';
 
 const OLD = 'aaaa1111aaaa1111';
@@ -140,6 +140,20 @@ describe('repointMediaRef', () => {
 });
 
 const DEFAULT_ALT = 'A summit at dawn';
+
+describe('serializeMarkdown output', () => {
+  // serializeMarkdown writes `src: media:<hash>` plain, so the byte rewriters must anchor an
+  // unquoted token, not only a quoted one.
+  it('repoints and fills the alt of an unquoted hero src it just wrote', () => {
+    const md = serializeMarkdown({ title: 'T', image: { src: `media:${OLD}`, alt: '' } }, 'Body.\n');
+    expect(md).toContain(`src: media:${OLD}\n`);
+    const repointed = repointMediaRef(md, OLD, NEW_TOKEN);
+    expect(repointed.placements).toHaveLength(1);
+    expect(parseMarkdown(repointed.markdown).frontmatter.image).toEqual({ src: NEW_TOKEN, alt: '' });
+    const filled = fillAltForHash(md, OLD, DEFAULT_ALT, { overwrite: false });
+    expect(parseMarkdown(filled.markdown).frontmatter.image).toEqual({ src: `media:${OLD}`, alt: DEFAULT_ALT });
+  });
+});
 
 describe('fillAltForHash', () => {
   it('fills an empty body alt and reports a will-fill body placement, byte-exact', () => {
@@ -329,7 +343,7 @@ describe('fillAltForHash', () => {
     ]);
   });
 
-  // Bug 1c: a flow-style hero has no `src:` line to anchor on, so it is reported from the gray-matter
+  // Bug 1c: a flow-style hero has no `src:` line to anchor on, so it is reported from the parseMarkdown
   // read but never spliced. The old insert branch appended a spurious top-level alt and corrupted it.
   it('reports a flow-style hero but does not corrupt it (unanchorable shape)', () => {
     const md =

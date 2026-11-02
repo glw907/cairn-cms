@@ -199,12 +199,8 @@ export function frontmatterFromForm(
 /**
  * Coerce a frontmatter date value to the `YYYY-MM-DD` an `<input type="date">` wants.
  * An unquoted YAML date reads as the text it was written, so the leading day is the value.
- * A Date is sliced from its ISO string, which avoids a local-timezone shift.
  */
 export function dateInputValue(value: unknown): string {
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? '' : value.toISOString().slice(0, 10);
-  }
   if (typeof value === 'string') {
     const match = value.match(/^\d{4}-\d{2}-\d{2}/);
     return match ? match[0] : '';
@@ -234,13 +230,11 @@ export function isCalendarDate(s: string): boolean {
 }
 
 /**
- * Canonicalize one raw reference value to its target id. A Date (a YAML-parsed unquoted date-shaped id)
- * becomes its UTC-sliced `YYYY-MM-DD` string, so a stored id never depends on the reader's timezone; a
- * string is trimmed; anything else is the empty string. `validate`, `extractReferenceEdges`, and
+ * Canonicalize one raw reference value to its target id. A string is trimmed; anything else is the
+ * empty string (a date-shaped id reads as the string it was written, so it needs no special case). `validate`, `extractReferenceEdges`, and
  * `formValues` all read through this, so a hand-edited or rewriter-emitted value canonicalizes identically.
  */
 export function referenceIdFromValue(value: unknown): string {
-  if (value instanceof Date) return dateInputValue(value);
   if (typeof value === 'string') return value.trim();
   return '';
 }
@@ -302,8 +296,8 @@ export function formValues(
       case 'image':
         out[field.name] = value !== null && typeof value === 'object' ? value : undefined;
         break;
-      // A reference canonicalizes through the shared coercer: a YAML-parsed Date becomes its
-      // UTC-sliced id, never String(Date) timezone garbage.
+      // A reference canonicalizes through the shared coercer: a date-shaped id stays the
+      // string it was written as.
       case 'reference':
         out[field.name] = referenceIdFromValue(value);
         break;
@@ -315,7 +309,7 @@ export function formValues(
       }
       case 'array': {
         // An array(reference) canonicalizes through the shared coercer: a lone scalar becomes a
-        // single-element list rather than dropping to [], and each element is UTC-sliced.
+        // single-element list rather than dropping to [], and each element is trimmed.
         if (field.item.type === 'reference') out[field.name] = referenceIdsFromValue(value);
         else {
           const elements = Array.isArray(value) ? value : [];

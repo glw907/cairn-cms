@@ -6,7 +6,7 @@
 import type { FieldDescriptor, ImageValue } from './fields.js';
 import type { ValidationIssue, ValidationResult } from './types.js';
 import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
-import { dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
+import { isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
 import { log } from '../log/index.js';
@@ -121,11 +121,9 @@ type InferRecord<RR extends Record<string, FieldDescriptor>, R = RemoveIndex<RR>
 export type InferFieldset<S> = S extends Fieldset<infer R> ? InferRecord<R> : never;
 
 // Coerce a raw value to the trimmed string the empty check and constraints run on. A parsed value may
-// arrive from parseMarkdown, not only a form string: a Date on a date field, a JS number on
-// a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
+// arrive from parseMarkdown, not only a form string: a JS number on a number field. A finite 0 coerces to '0', never read as empty, since 0 is a real number a YAML scalar
 // carries; a NaN or non-finite number stays '' and routes to the number error in validateField.
 function coerceToText(type: FieldDescriptor['type'], value: unknown): string {
-  if (type === 'date' && value instanceof Date) return dateInputValue(value);
   if (type === 'number' && typeof value === 'number' && Number.isFinite(value)) return String(value);
   if (typeof value === 'string') return value.trim();
   return '';
@@ -182,7 +180,7 @@ function validateField(
     if (field.item.type === 'reference') {
       // array(reference): coerceToText returns '' for an array, so the empty-first drop below would
       // silently lose an optional list or falsely error a required one. The canonicalizer coerces a
-      // lone scalar to one element and a Date element to its id. Each element must pass isValidId (the
+      // lone scalar to one element. Each element must pass isValidId (the
       // item's reference rule); a required empty list errors; the value is set only when the
       // list is non-empty.
       const list = referenceIdsFromValue(value);
@@ -258,8 +256,8 @@ function validateField(
   }
 
   // Every other type is "not provided when empty" first, then coerced. `coerceToText` turns a parsed
-  // value into its string form BEFORE the empty check, so a real parsed value (a Date on a date
-  // field, a number on a number field) is not read as empty.
+  // value into its string form BEFORE the empty check, so a real parsed value (a number on a
+  // number field) is not read as empty.
   const text = coerceToText(field.type, value);
   if (text === '') {
     return field.required ? { issues: [{ path, message: `${label} is required` }] } : { issues: [] };
@@ -423,8 +421,8 @@ function checkContainerNesting(record: Record<string, FieldDescriptor>): void {
  *  server-derived validator that coerces per type and returns field-keyed errors or normalized data,
  *  and the Standard Schema conformance property whose issues map each error to a single-segment path.
  * @remarks
- * The validator reads a parsed value as well as a form string (a numeric `number`, a `Date` on a
- * `date` field, a lone scalar on a `multiselect`), recurses one level into an `object` and an
+ * The validator reads a parsed value as well as a form string (a numeric `number`, a lone scalar
+ * on a `multiselect`), recurses one level into an `object` and an
  * `array`, and on failure returns the flat `errors` map keyed by top-level field plus `issues` located
  * by multi-segment path. `config.refine` runs only after every per-field rule passes. A leaf declared
  * `required: true` is a required key in the inferred type.

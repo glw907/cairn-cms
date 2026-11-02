@@ -48,15 +48,7 @@ export default defineConfig({
         },
       },
     }),
-    cairnManifest({
-      configModule: '/src/theme/cairn.config.ts',
-      content: {
-        posts: '/src/content/posts/*.md',
-        pages: '/src/content/pages/*.md',
-        fragments: '/src/content/fragments/*.md',
-      },
-      manifestPath: '/src/content/.cairn/index.json',
-    }),
+    cairnManifest({ configModule: '/src/theme/cairn.config.ts' }),
   ],
   // The engine ships Svelte and TS source inside dist through its `svelte` export condition; let Vite
   // process it. The dev backend ships built JavaScript that imports `cloudflare:workers`, a scheme

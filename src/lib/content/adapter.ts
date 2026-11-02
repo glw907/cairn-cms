@@ -1,7 +1,7 @@
 // cairn-cms: the adapter-authoring helper. A plain `const adapter: CairnAdapter = {...}` annotation
 // widens each concept's schema type away and breaks typed reads. defineAdapter captures the adapter
 // through a `const` type parameter, so each concept's concrete ConceptSchema<F> survives for the
-// full-auto typed reads in createSiteIndexes, while still checking the adapter against the contract.
+// full-auto typed reads in createSiteResolver, while still checking the adapter against the contract.
 import type { KeyedNavLayout } from '../sveltekit/admin-nav.js';
 import type { CairnAdapter } from './types.js';
 

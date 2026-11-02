@@ -80,7 +80,8 @@ export type NamedField = FieldDescriptor & { name: string };
 export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /**
    * Repo-relative content directory, e.g. "src/content/posts": no leading or trailing slash. The
-   *  engine uses it verbatim and never validates it. Entries sit directly in it, never in subfolders.
+   *  engine uses it verbatim, and `createSiteResolver` and `buildSiteManifest` refuse a `dir` outside
+   *  `src/content`. Entries sit directly in it, never in subfolders.
    *  An entry's id is its filename without `.md`, at `${dir}/${id}.md`; an id is lowercase ASCII
    *  letters, digits, and single hyphens. A dated concept's filename also carries a leading date
    *  prefix of the `datePrefix` granularity, which only the URL slug drops: the entry's date comes
@@ -98,8 +99,7 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
    *  `title` (an entry without one falls back to its id), `date`, `updated`, `description`,
    *  `draft`, and the head fields `image`, `robots`, and `author` by literal name, so a site that
    *  wants one to survive declares it as a field. The validator also runs when the site builds its
-   *  content indexes: unless the site passes `validate: false`, a non-draft entry whose frontmatter
-   *  fails it fails the build.
+   *  content indexes: a non-draft entry whose frontmatter fails it fails the build.
    */
   fields: S;
   /**

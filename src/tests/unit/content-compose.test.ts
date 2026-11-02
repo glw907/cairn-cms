@@ -85,7 +85,7 @@ describe('composeRuntime URL policy', () => {
 
   it('derives the same concepts as the delivery path', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    const delivered = buildSiteDescriptors(testAdapter, testSiteConfig);
+    const delivered = buildSiteDescriptors(testAdapter);
     // `validate` is a fresh closure per normalize call (it binds the concept id as the
     // field-behavior owner label), so the two paths agree in behavior under different function
     // identities: compare the data structurally, then the validator by what it answers.

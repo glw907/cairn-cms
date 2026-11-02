@@ -17,9 +17,6 @@ const WORKTREE = process.cwd();
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
-  siteFactsPath: '/src/content/.cairn/site-facts.json',
 };
 
 /** The global the fake `vite` package bumps on every createServer call. */

@@ -16,8 +16,9 @@ Contents:
 
 ## Shared inputs
 
-- One `createSiteIndexes(cairn, siteConfig, globs)` call in the content module
-  (`references/content-model.md` has the glob shape). It returns one index per concept plus `site`.
+- One `createSiteResolver(cairn, files)` call in the content module
+  (`references/content-model.md` has the glob shape). It returns `site`, and `site.concept(id)` is
+  one concept's index.
   `all()` and `byTag()` omit drafts unless `{ includeDrafts: true }`; `allTags()` and `adjacent()`
   always do; `byId` returns drafts, so check `draft` there.
 - One origin string, no trailing slash, set to the deployed origin before a production build. It is
@@ -48,7 +49,7 @@ The page renders `CairnHead` (`@glw907/cairn-cms/delivery/head`) with `seo={data
 
 To show reference fields, return `references` from the same load:
 `resolveReferences(site, descriptor, data.entry.frontmatter)` with the descriptor from
-`buildSiteDescriptors(cairn, siteConfig)` matched on `data.concept`. A scaffold's `withReferences`
+`buildSiteDescriptors(cairn)` matched on `data.concept`. A scaffold's `withReferences`
 in `src/chassis/entry-data.ts` already does this on the entry and preview routes. Missing and draft
 targets are dropped, so guard absent keys.
 
@@ -67,7 +68,7 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
 - Feeds: map `posts.all()` to `FeedItem`s (render bodies with an origin-prefixing link resolver from
   `createLinkResolver(site)`), return `rssResponse(channel, items)` or `jsonFeedResponse`, and set
   `feeds` in the config so entry heads link them.
-- Sitemap: `sitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn, siteConfig), origin, extraRoutes)`
+- Sitemap: `sitemapResponse(urls)`; `buildSitemapView(site, buildSiteDescriptors(cairn), origin, extraRoutes)`
   takes `lastmod` from `updated` then `date`, skips `noindex` entries, and adds non-entry pages.
 - Robots: `robotsResponse({ sitemapUrl, disallow: ['/admin'], posture })`. Pass the adapter's
   `aiPosture` as `posture` (`references/tidy-and-ai-posture.md`).

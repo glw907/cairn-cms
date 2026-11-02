@@ -23,7 +23,7 @@ the mechanism.
 
 | File | What it is |
 | --- | --- |
-| `content.ts` | The delivery content layer: globs the markdown, builds the site/posts indexes through `createSiteIndexes`. |
+| `content.ts` | The delivery content layer: globs the markdown, builds the typed site resolver through `createSiteResolver`. |
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
 | `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route, the raw-markdown route, the preview route, and the home page's SEO head so their rendering config can never drift apart. |
 | `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |

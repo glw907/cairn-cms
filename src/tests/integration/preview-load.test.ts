@@ -12,7 +12,7 @@ import { insertPreviewToken } from '../../lib/auth/preview-store.js';
 import { generateToken, hashToken } from '../../lib/auth/crypto.js';
 import { formatManifest } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
-import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
+import { buildSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { EntryData, PublicRoutesConfig } from '../../lib/delivery/public-routes.js';
 import type { ResolvedMediaConfig } from '../../lib/media/config.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
@@ -63,7 +63,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
 
 function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
   return {
-    site: createSiteResolver([]),
+    site: buildSiteResolver([]),
     // Resolves every `cairn:<concept>/<id>` token in the body against the injected resolver,
     // marking a miss rather than throwing, so the test proves loadPreview wired a non-throwing
     // resolver in without exercising the real markdown pipeline (covered elsewhere).
@@ -86,7 +86,7 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
 function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
   const { render } = createRenderer();
   return {
-    site: createSiteResolver([]),
+    site: buildSiteResolver([]),
     render,
     origin: ORIGIN,
     siteName: 'Test',

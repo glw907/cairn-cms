@@ -114,13 +114,13 @@
       "name": "ConceptConfig",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `ConceptDescriptor`, `SiteIndexes` name it on this subpath."
+      "reason": "R4 closure: `ConceptDescriptor`, `TypedSiteResolver` name it on this subpath."
     },
     {
       "name": "ConceptDescriptor",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `resolveReferences`, `siteDescriptors` name it on this subpath."
+      "reason": "R4 closure: `resolveReferences`, `buildSiteDescriptors` name it on this subpath."
     },
     {
       "name": "DateField",
@@ -186,7 +186,7 @@
       "name": "InferFieldset",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `SiteIndexes` names it on this subpath."
+      "reason": "R4 closure: `TypedSiteResolver` names it on this subpath."
     },
     {
       "name": "LinkResolve",
@@ -264,7 +264,7 @@
       "name": "SiteConfig",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `createSiteIndexes`, `siteDescriptors`, `buildSiteManifest` name it on this subpath."
+      "reason": "R4: kept for a site that types its parsed config from this subpath. No export here names it since `createSiteResolver` and `buildSiteManifest` dropped the config parameter."
     },
     {
       "name": "TextareaField",

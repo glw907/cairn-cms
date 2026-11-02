@@ -27,9 +27,6 @@ const VITE_ARM = resolve(WORKTREE, 'src/lib/vite/index.ts');
 
 const OPTS = {
   configModule: '/src/lib/cairn.config.ts',
-  content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
-  manifestPath: '/src/content/.cairn/index.json',
-  siteFactsPath: '/src/content/.cairn/site-facts.json',
 };
 
 const VITE_CONFIG = `import { cairnManifest } from ${JSON.stringify(VITE_ARM)};

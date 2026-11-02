@@ -22,7 +22,7 @@ import { parseMediaToken } from '../media/reference.js';
  * @public
  */
 export interface PublicRoutesConfig {
-  /** The site resolver `createSiteIndexes` returns, which the loaders look each path up in. */
+  /** The site resolver `createSiteResolver` returns, which the loaders look each path up in. */
   site: SiteResolver;
   /** The site's render function, applied to each entry's body. */
   render: SiteRender;
@@ -155,7 +155,10 @@ export async function composeEntryData(
 ): Promise<EntryData> {
   const { site, render, origin, siteName, description, feeds, defaultImage } = config;
   const resolveMedia = overrides?.resolveMedia ?? config.resolveMedia ?? undefined;
-  const { newer, older } = site.adjacent(entry);
+  // A non-routable concept's entry (a fragment) has no public neighbors to link.
+  const { newer, older } = site.routable(entry.concept)
+    ? (site.concept(entry.concept)?.adjacent(entry.id) ?? {})
+    : {};
   const canonicalUrl = origin + entry.permalink;
   const fields = readSeoFields(entry.frontmatter);
   const heroImage = deriveHeroImage(entry.frontmatter, resolveMedia, origin);
@@ -225,7 +228,7 @@ export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */
   function entries(): { path: string }[] {
-    return site.entries();
+    return site.paths();
   }
 
   /** Whether an entry's frontmatter `robots` field asks search engines not to index it. */

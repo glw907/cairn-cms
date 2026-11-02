@@ -36,9 +36,10 @@ Contents:
    `createGithubApp({ owner, repo, branch, appId, installationId })`; until production these are
    placeholders (`appId: '0'`). `email: { from }` likewise. `rendering.render` is
    `createRenderer({ components }).render`, which forwards `resolveLink`, `resolveMedia`, and `resolveFragment`.
-3. `src/lib/content.ts`: one literal eager `?raw` glob per concept into `createSiteIndexes`, with
-   validation left on; export `site` and an `origin` constant.
-4. `vite.config.ts`: `cairnManifest({ configModule: '/src/lib/cairn.config.ts', content: { posts: '/src/content/posts/*.md' } })`
+3. `src/lib/content.ts`: one literal eager `?raw` glob in the absolute form `/src/content/**/*.md`
+   into `createSiteResolver(cairn, files)`; export `site` and an `origin` constant. A relative
+   glob's `../content/...` keys are refused.
+4. `vite.config.ts`: `cairnManifest({ configModule: '/src/lib/cairn.config.ts' })`
    after `sveltekit()`.
 5. `npx cairn-manifest`, then commit `src/content/.cairn/index.json` and `site-facts.json`. Every
    build fails on a stale manifest.

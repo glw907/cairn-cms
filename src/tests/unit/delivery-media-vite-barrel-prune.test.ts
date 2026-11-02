@@ -9,7 +9,7 @@ import { enumerateExports } from '../../../scripts/checks/dts-exports.mjs';
 // `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
 // than demoted; `buildSitemapView` is frozen and unaffected.
 const DELIVERY_DEMOTED = [
-  'createSiteResolver',
+  'buildSiteResolver',
   'ConceptIndex',
   'createContentIndex',
   'RawFile',
@@ -22,10 +22,10 @@ const DELIVERY_DEMOTED = [
 // The /delivery/data keep list, from the audit verdicts doc's
 // `## ./delivery + ./delivery/head + ./delivery/data` section, minus the seven demotions above.
 const DATA_KEPT = [
-  'createSiteIndexes',
-  'SiteGlobs',
-  'SiteIndexes',
+  'createSiteResolver',
   'SiteResolver',
+  'TypedSiteResolver',
+  'UntypedSiteResolver',
   'ContentSummary',
   'ContentEntry',
   'ContentProblem',

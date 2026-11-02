@@ -307,7 +307,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
    * Append a resolved refusal code to a redirect target as `error=`, merging into any query the
    *  target already carries (a declared `home` may have one, e.g. `/admin/dash?tab=1`) rather than
    *  appending a second bare `?`, which would parse into the existing key's value and swallow the
-   *  code (`/admin/dash?tab=1?error=expired` reads as `tab=1?error=expired`, not two params).
+   *  code (`/admin/dash?tab=1?error=nothing_to_publish` reads as `tab=1?error=expired`, not two params).
    */
   function withRefusalCode(path: string, code: RefusalCode | null): string {
     if (!code) return path;

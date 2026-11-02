@@ -341,12 +341,11 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // or stale attempt into a lockout: the next click would refuse for the absent cookie instead,
     // and the editor would have to notice they must request the link again from this browser.
     //
-    // Which refusal the editor reads is decided here, after the consume, since only the consume's
+    // Which code the redirect carries is decided here, after the consume, since only the consume's
     // predicate knows whether the row was bound. A cookie-less browser whose confirm failed gets
     // the distinct no-pending-request code, whatever the cause (a row bound to another browser,
-    // an expired, unknown, or spent token), because "request a new one" is the exact advice that
-    // reproduces the failure on a second device; a browser that carries a cookie, including a
-    // present-but-wrong nonce, reads as expired.
+    // an expired, unknown, or spent token); a browser that carries a cookie, including a
+    // present-but-wrong nonce, gets expired. The login page words both the same.
     if (!email) {
       if (!nonce) {
         log.warn('auth.link.refused', { reason: 'no_pending_cookie' });

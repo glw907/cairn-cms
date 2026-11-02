@@ -10,7 +10,6 @@ const API = 'https://api.github.com';
 /**
  * The owner-facing next step appended to a GitHub failure. Conditional so it holds for every
  * status: a one-off failure needs nothing, a repeating one points at the install, then GitHub.
- * @internal
  */
 export const GITHUB_NEXT_STEP =
   "If this keeps happening, check the GitHub App's install on the repo, then GitHub's status page. A 403 or 429 can be a rate limit.";

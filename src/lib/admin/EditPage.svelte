@@ -793,7 +793,10 @@ island.
   // drives editComponent(def, values, range) on it, beyond the shared open().
   let insertDialog = $state<ComponentInsertDialog | null>(null);
   // The lifecycle dialogs, opened from the header's overflow menu.
-  let deleteDialog = $state<DialogHandle | null>(null);
+  let deleteDialog = $state<{ open: (origin?: HTMLElement | null) => void } | null>(null);
+  // The More actions button: the delete dialog restores focus here, since the menu item that opened
+  // it is gone once the popover closes.
+  let actionsTrigger = $state<HTMLButtonElement | null>(null);
   let renameDialog = $state<DialogHandle | null>(null);
   // The Markdown cheat sheet, opened from the editor card's footer.
   let helpDialog = $state<DialogHandle | null>(null);
@@ -1228,7 +1231,7 @@ island.
   //
   // RESET_EXEMPT: editForm, publishButton, discardDialog, editorCard, actionsMenu, detailsTrigger,
   // detailsClose, mediaPopover, webLinkDialog, linkPicker, fragmentPicker, insertDialog,
-  // deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
+  // actionsTrigger, deleteDialog, renameDialog, helpDialog, shortcutsDialog, figureDialog, tidyWorkingDialog,
   // tidyNoopDialog, tidyMessageDialog, detailsPanel,
   // heroNeedsAlt, actionsOpen, narrow, device, assertiveNonce,
   // diagnosticsCounts, chipMounted
@@ -1647,6 +1650,7 @@ island.
           aria-label="More actions"
           aria-expanded={actionsOpen}
           popovertarget="cairn-edit-actions-menu"
+          bind:this={actionsTrigger}
           style="anchor-name:--cairn-edit-actions"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -1708,7 +1712,7 @@ island.
           </li>
         {/if}
         <li role="listitem">
-          <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open())}>
+          <button type="button" class="text-error" aria-haspopup="dialog" onclick={() => pickAction(() => deleteDialog?.open(actionsTrigger))}>
             Delete
           </button>
         </li>

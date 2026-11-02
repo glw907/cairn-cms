@@ -251,7 +251,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         if (committed != null) conventions = resolveTidyConventions(validateTidyConventions(committed));
       } catch (err) {
         // A read failure (raw still null) degrades silently: an outage is not a config fault. A throw
-        // after the read is a parse failure, named in the log for the site's operator.
+        // after the read is a parse or validation failure, named in the log for the site's operator.
         if (raw !== null) {
           log.error('config.invalid', {
             scope: 'settings',

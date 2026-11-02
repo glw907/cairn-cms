@@ -93,15 +93,17 @@ bespoke: a single-use control, not a repeated device.
   });
   const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 
-  // The saved message for the sr-only status region, set after mount so it is a mutation.
-  let savedAnnouncement = $state('');
+  // The saved message for the sr-only status region. It fills only after mount, so it is a mutation
+  // an assistive technology voices, and it clears when a same-route navigation drops the flag.
+  let mounted = $state(false);
   onMount(() => {
-    if (data.saved) savedAnnouncement = "Tidy settings saved. They apply after your site's next deploy.";
+    mounted = true;
   });
+  const savedAnnouncement = $derived(mounted && data.saved ? "Tidy settings saved. They apply after your site's next deploy." : '');
 
   // The working copy of the editor-tier conventions: every control binds to this, and the save posts
   // it. Seeded once from the load's resolved conventions, so the resting state IS the committed state.
-  // A fresh load remounts the screen (the route key), so seeding from the initial prop is correct.
+  // Only a document load remounts the screen, so seeding from the initial prop is correct.
   let conv = $state<TidyConventions>(untrack(() => ({ ...data.conventions })));
 
   // A multi-position style row: its config key, label, the variants (value + short label), and the

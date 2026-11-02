@@ -228,7 +228,7 @@ export class TidyConventionsError extends CairnError {
 }
 
 /**
- * Validate and normalize an untrusted conventions object (from the settings form) into a concrete
+ * Validate and normalize an untrusted conventions object (from the settings form or the committed block) into a concrete
  * TidyConventions. This input is committed to the repo, so every field is bounded to its known set:
  * a boolean toggle must be a boolean, and a multi-position toggle must be one of its listed variants
  * or absent (off). An unknown key is dropped rather than carried, so the committed block can never

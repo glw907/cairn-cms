@@ -283,3 +283,43 @@ describe('ComponentForm attribute-arm dispatch (characterization: every FieldDes
     }
   });
 });
+
+describe('ComponentForm slot help', () => {
+  const helped = defineComponent({
+    ...base, name: 'helped', label: 'Helped',
+    slots: [
+      { name: 'title', label: 'Title', kind: 'inline', required: true, help: 'Keep it short.' },
+      { name: 'body', label: 'Body', kind: 'markdown', help: 'Plain markdown.' },
+      { name: 'plain', label: 'Plain', kind: 'inline' },
+      { name: 'points', label: 'Points', kind: 'repeatable', help: 'One per line.', itemFields: { text: fields.text({ label: 'Item' }) } },
+    ],
+  });
+
+  it('shows help under a flat slot and describes the control by it', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const el = screen.getByRole('textbox', { name: 'Body' }).element() as HTMLElement;
+    const hint = document.getElementById(el.getAttribute('aria-describedby')!);
+    expect(hint?.textContent?.trim()).toBe('Plain markdown.');
+  });
+
+  it('describes a repeatable slot by its help', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const fs = screen.container.querySelector('fieldset')!;
+    expect(document.getElementById(fs.getAttribute('aria-describedby')!)?.textContent?.trim()).toBe('One per line.');
+  });
+
+  it('lists the error and the hint together when both show', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const el = screen.getByRole('textbox', { name: 'Title' }).element() as HTMLInputElement;
+    el.focus();
+    el.blur();
+    await expect.poll(() => el.getAttribute('aria-describedby')).toBe('err-title hint-title');
+  });
+
+  it('adds no description and no hint element for a slot without help', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const plain = screen.getByRole('textbox', { name: 'Plain' }).element() as HTMLElement;
+    expect(plain.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.getElementById('hint-plain')).toBeNull();
+  });
+});

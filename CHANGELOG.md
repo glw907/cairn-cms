@@ -2,6 +2,14 @@
 
 ### Added
 
+- **A slot's help and a field's bounds show under the control.** `SlotDef.help` renders under the slot in the
+  insert form, and the control is described by it. A text, textarea, or number field with `min`, `max`, or
+  `length` shows the bound (`3 to 80 characters.`) after its help, and keeps the validity mark after the
+  browser's bubble fades. A failed save with an invalid title and an invalid Details field leaves Details
+  closed, so focus stays on the title. Focus returns to **More actions** when the Discard window closes.
+
+  Consumers must: nothing.
+
 - **The admin's words follow the ruled vocabulary.** An editor sees entry and entries where a screen said
   page and pages. The topbar button reads **Publish all**, **Change URL** reads **Change address**,
   **Pending edits** reads **Unpublished changes**, the history button reads **Restore as draft**, **Push alt

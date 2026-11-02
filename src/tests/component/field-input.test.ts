@@ -362,3 +362,42 @@ describe('FieldInput renders length and date bounds as input attributes', () => 
     expect(el.hasAttribute('minlength')).toBe(false);
   });
 });
+
+describe('FieldInput bound hints', () => {
+  async function hintFor(field: NamedField) {
+    await render(FieldInput, { field, name: field.name, frontmatter: {}, ...shared() });
+    const control = document.querySelector<HTMLElement>(`[name="${field.name}"]`)!;
+    const id = control.getAttribute('aria-describedby');
+    const hint = id ? document.getElementById(id) : null;
+    return { control, hint };
+  }
+
+  it.each([
+    [{ type: 'text', name: 'a', label: 'A', min: 3 }, 'At least 3 characters.'],
+    [{ type: 'text', name: 'a', label: 'A', max: 80 }, 'At most 80 characters.'],
+    [{ type: 'text', name: 'a', label: 'A', min: 3, max: 80 }, '3 to 80 characters.'],
+    [{ type: 'text', name: 'a', label: 'A', length: 5 }, 'Exactly 5 characters.'],
+    [{ type: 'textarea', name: 'a', label: 'A', min: 3, max: 80 }, '3 to 80 characters.'],
+    [{ type: 'textarea', name: 'a', label: 'A', length: 5 }, 'Exactly 5 characters.'],
+    [{ type: 'number', name: 'a', label: 'A', min: 3 }, 'At least 3.'],
+    [{ type: 'number', name: 'a', label: 'A', max: 80 }, 'At most 80.'],
+    [{ type: 'number', name: 'a', label: 'A', min: 3, max: 80 }, '3 to 80.'],
+  ] as [NamedField, string][])('renders and links the hint for %j', async (field, text) => {
+    const { control, hint } = await hintFor(field);
+    expect(hint?.textContent?.trim()).toBe(text);
+    expect(control.classList.contains('validator')).toBe(true);
+  });
+
+  it('shows the help, then the bound, in the one linked hint', async () => {
+    const { hint, control } = await hintFor({ type: 'text', name: 'a', label: 'A', help: 'Shown in search.', max: 60 });
+    expect(hint?.textContent?.trim()).toBe('Shown in search. At most 60 characters.');
+    expect(control.getAttribute('aria-describedby')).toBe(hint?.id);
+  });
+
+  it('renders no hint and no link for a bound-free control', async () => {
+    const { control, hint } = await hintFor({ type: 'text', name: 'a', label: 'A' });
+    expect(hint).toBeNull();
+    expect(control.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.querySelector('p[id$="-hint"]')).toBeNull();
+  });
+});

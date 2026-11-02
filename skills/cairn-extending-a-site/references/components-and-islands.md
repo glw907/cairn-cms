@@ -27,7 +27,7 @@ registry from its exported `components` list. Adding one takes two edits there: 
   `date`, `boolean`, `icon`); others throw at load.
 - `slots`: `title` is the bracketed label, `body` the unmarked content, any other name a nested
   `:::name` region. `kind` is `inline`, `markdown`, or `repeatable`. `required` affects only the
-  insert form.
+  insert form. `help` shows under the slot's control in the insert form, and the control is described by it.
 - `build` is synchronous, imports nothing server-only (it runs in the editor's browser), and needs no
   entrance motion (`data-rise` is stamped for you). Avoid class names daisyUI generates (`card-body`).
 

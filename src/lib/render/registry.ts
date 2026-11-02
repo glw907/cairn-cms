@@ -28,6 +28,7 @@ export interface SlotDef {
    *  so a hand-typed directive without the slot still renders.
    */
   required?: boolean;
+  /** Help text the insert form shows under the slot's control; the control is described by it. */
   help?: string;
   /**
    * For `kind: 'repeatable'`: the fields composing each list item. The insert form reads only the

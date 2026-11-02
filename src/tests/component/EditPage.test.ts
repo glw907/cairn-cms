@@ -1911,6 +1911,27 @@ describe('EditPage', () => {
     expect(author.validity.valueMissing).toBe(true);
   });
 
+  it('leaves Details closed while an earlier title is also invalid, and opens it once the title is filled', async () => {
+    const props = postProps({
+      isNew: true,
+      fields: [
+        { type: 'text', name: 'title', label: 'Title', required: true },
+        { type: 'text', name: 'author', label: 'Author', required: true },
+      ] satisfies NamedField[],
+      frontmatter: { title: '', author: '' },
+    });
+    const screen = await render(EditPage, { ...props });
+    const aside = screen.container.querySelector('aside')!;
+    const title = screen.container.querySelector<HTMLInputElement>('input[name="title"]')!;
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => document.activeElement === title).toBe(true);
+    expect(aside.hasAttribute('hidden')).toBe(true);
+    title.value = 'Hello';
+    title.dispatchEvent(new Event('input', { bubbles: true }));
+    await screen.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect.poll(() => aside.hasAttribute('hidden')).toBe(false);
+  });
+
   it('adds Discard changes to the overflow menu while pending', async () => {
     const screen = await render(EditPage, postProps({ pending: true }));
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
@@ -1937,6 +1958,21 @@ describe('EditPage', () => {
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-delete-dialog-title"]',
+    )!;
+    expect(dialog.open).toBe(true);
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => dialog.open).toBe(false);
+    const el = trigger.element() as HTMLElement;
+    await expect.poll(() => document.activeElement === el).toBe(true);
+  });
+
+  it('returns focus to More actions when the discard confirm closes', async () => {
+    const screen = await render(EditPage, postProps({ pending: true }));
+    const trigger = screen.getByRole('button', { name: 'More actions' });
+    await trigger.click();
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const dialog = screen.container.querySelector<HTMLDialogElement>(
+      'dialog[aria-labelledby="cairn-discard-dialog-title"]',
     )!;
     expect(dialog.open).toBe(true);
     await userEvent.keyboard('{Escape}');

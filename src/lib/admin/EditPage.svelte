@@ -46,6 +46,7 @@ island.
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { StatusChip, Tooltip } from '../admin-toolkit/index.js';
   import { useTopbar } from './topbar-context.js';
+  import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor, { type EditorApi } from './MarkdownEditor.svelte';
   import EditorToolbar from './EditorToolbar.svelte';
@@ -341,7 +342,11 @@ island.
   function onFormInvalid(e: Event) {
     const target = e.target as Element | null;
     if (target?.closest('aside')) {
-      if (!detailsOpen) flushSync(() => (detailsOpen = true));
+      // Open Details only for the control the browser is about to focus, the first invalid one in
+      // the form. A title that is also invalid sits earlier and keeps focus, so a narrow screen
+      // is not covered by the panel over the field the report points at.
+      const first = editForm?.querySelector('input:invalid, textarea:invalid, select:invalid');
+      if (first === target && !detailsOpen) flushSync(() => (detailsOpen = true));
       return;
     }
     if (mode === 'write') return;
@@ -471,6 +476,8 @@ island.
   });
   // The discard confirm, on the DeleteDialog pattern: a native <dialog> holding the POST form.
   let discardDialog = $state<HTMLDialogElement | null>(null);
+  // Where focus returns when the Discard window closes; plain, since nothing renders from it.
+  let discardOrigin: HTMLElement | null = null;
   // Which pane the editor card shows. The toolbar's tablist drives it; Write is always the
   // landing tab. Preview is read-only, so the insert controls the page renders into the toolbar
   // disable with the strip's format buttons; `insertDisabled` below (declared after
@@ -1709,7 +1716,10 @@ island.
         {/if}
         {#if data.pending}
           <li role="listitem">
-            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
+            <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => {
+              discardOrigin = resolveDialogOrigin(actionsTrigger);
+              discardDialog?.showModal();
+            })}>
               Discard changes
             </button>
           </li>
@@ -2755,7 +2765,7 @@ island.
 />
 
 {#if data.pending}
-  <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog}>
+  <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog} onclose={() => (discardOrigin = refocusDialogOrigin(discardOrigin))}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">
         <h2 id="cairn-discard-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Discard the unpublished changes?</h2>

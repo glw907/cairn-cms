@@ -199,7 +199,6 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Expect an admin save to keep keys your fieldset does not declare.** A key dropped from a fieldset now stays in old files, so remove it from the file by hand when you mean to delete it. A bare YAML date such as `updated: 2026-01-01` is written back as `2026-01-01T00:00:00.000Z`. A save also fails closed with a 503 when the prior file cannot be read or parsed.
 - **Expect a publish onto a live entry's address to be refused.** Move one of the two entries first. A log query on `publish.address_collided` reads `heldByConcept` and `heldById` now.
 - **Expect `buildNewlyPublished` to omit a renamed entry.** Newness is stamp membership, so a rename that carries its stamp no longer reads as a first publish. Drop any workaround that filtered renames by key.
-- **Remove an `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`, `image/gif`, and `image/avif`.** `normalizeAssets` now throws at startup on one, naming it.
 - **Use `createMediaResolver(..., { strict: true })` to fail a build on a missing asset.** It replaces a hand-written throwing wrapper, and the typed `actions.mediaLibraryUpload` replaces a cast.
 - **Expect `buildSitemapView` to drop `noindex` entries.** A concept whose fieldset declares `robots` no longer lists an entry marked `noindex` in the sitemap. A site that wants one listed anyway builds that row into `extraRoutes`. A site built from the scaffold can copy the new `src/routes/sitemap.xml/+server.ts`, which uses `buildSitemapView` and takes `lastmod` from `updated`.
 - **Declare `navLayout` inline on `defineAdapter`.** A `navLayout` built in a separate constant annotated `NavLayout` is refused, because its `screen` is wide.
@@ -211,12 +210,13 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 - **Write `render: renderer.render` in the adapter's `rendering` group.**
 - **Rename `AssetConfig` to `MediaConfig` and reduce the value to `{ bucketBinding }`.**
 - **Delete `publicBase`, `urlForm`, `maxUploadBytes`, `allowedTypes`, and `transformations` from the media config.** The cap is fixed at 25 MB and the types at the five web image types. Retire a media route mounted anywhere but `/media`, and any `srcset` or `sizes` use.
-- **Call `createMediaResolver(media, manifest, { strict })` in that order.** It normalizes inside, so drop any `normalizeAssets` call.
+- **Call `createMediaResolver(media, manifest, { strict })` in that order.** It normalizes inside, so drop any `normalizeAssets` call and any `ResolvedAssetConfig` import.
 - **Read `runtime.media` where you read `runtime.resolvedAssets`.**
 - **Pass `resolveMedia` to `createPublicRoutes` as a resolver or `null`, and drop `assetsEnabled`.**
 - **Stop reading `data.mediaBase`, and drop the `urlForm` argument from any `publicPath` call.**
 - **Stop querying logs for the media resolver-absent event.** `CHANGELOG.md` names it, and it is gone.
 - **Replace `createSiteIndexes(adapter, config, globs, opts)` with `createSiteResolver(adapter, files)`.** Pass one `import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true })`.
+- **Use the returned value as `site`, and read each concept through `site.concept('posts')` where you read `indexes.posts`.** Drop any `SiteIndexes` or `SiteGlobs` import.
 - **Drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.** It takes `configModule` alone.
 - **Remove `validate: false` and fix the entries it hid.** The resolver always validates.
 - **Call `site.paths()` where you called `site.entries()`, and `site.concept(id).adjacent(entryId)` where you called `site.adjacent`.**

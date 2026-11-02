@@ -286,7 +286,7 @@ export interface CairnAdapter {
   /** The render subsystem: the one renderer, its directive vocabulary, and its icons. */
   rendering: {
     /**
-     * The one renderer the editor preview and every public page call (design decision 4). `resolve`
+     * The one renderer the editor preview and every public page call (design decision 4). `resolveLink`
      *  rewrites cairn: links to live permalinks; the build passes a site-resolver-backed one, the
      *  preview a manifest one. `resolveMedia` resolves media: references the same way.
      */
@@ -305,7 +305,7 @@ export interface CairnAdapter {
      */
     islands?: IslandRegistry;
   };
-  /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
+  /** R2-backed media (seam 4): the bucket binding. Absent leaves media off. */
   media?: MediaConfig;
   /**
    * The site's stated stance toward AI training crawlers. Absent (the default) emits nothing: the
@@ -455,8 +455,8 @@ export interface CairnRuntime {
    */
   dictionaryPath?: string;
   /**
-   * The adapter's asset config resolved once at compose: `{ enabled: false }` for a no-media site,
-   *  otherwise the filled config the upload, storage, delivery, and resolver paths read.
+   * The adapter's media config resolved once at compose: `{ enabled: false }` for a no-media site,
+   *  otherwise `{ enabled: true, bucketBinding }` for the upload, storage, delivery, and resolver paths.
    */
   media: import('../media/config.js').ResolvedMediaConfig;
   /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */

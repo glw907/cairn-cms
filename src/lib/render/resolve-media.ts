@@ -110,7 +110,7 @@ export function createMediaResolver(
  *  (`<base>/<slug>.<hash>.<ext>`); a miss returns undefined, so the render step marks the image
  *  broken rather than throwing. Pure over the projection, with no manifest and no config, so the
  *  edit page reaches it with the data it actually has. The base defaults to the engine's
- *  `/media`; the edit page passes the site's resolved base so the preview matches delivery.
+ *  `/media`, and only the reproductions context changes it.
  */
 export function manifestMediaResolver(
   targets: Record<string, { slug: string; ext: string; contentType: string }>,

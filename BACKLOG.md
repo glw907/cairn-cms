@@ -8,6 +8,9 @@
   Placement: Pass 1a.
 
 ## Medium
+- [ ] **#216** Return focus after the entry screen's Discard window closes `#bug` `#cairn-cms` *(2026-11-01)*
+  The **Discard changes** item at `src/lib/admin/EditPage.svelte:1705` calls `showModal()` from inside the More actions popover, which is hidden by the time the window closes, so a keyboard user's focus lands on nothing (WCAG 2.4.3). PR #177 fixed the same shape on Delete by passing the More actions button as the origin, and a close review's Chromium probe of that order showed the bare restore does nothing. This item is inferred from that probe and hasn't been run against the Discard window itself. Use `resolveDialogOrigin` and `refocusDialogOrigin` from `dialog-origin.ts` on it.
+  Placement: Pass 5.
 - [ ] **#215** Announce the navigation save after hydration `#bug` `#cairn-cms` *(2026-11-01)*
   `src/lib/admin/NavTree.svelte:137` holds **Navigation saved.** in a `role="status"` region, but the save is a full document load, so the text arrives server-rendered, nothing mutates, and a screen reader hears nothing (WCAG 4.1.3). Its comment claims a later save announces. PR #177 fixed the same shape on the Tags and Tidy screens by filling the region after mount; copy that here. Found by that PR's review.
   Placement: Pass 5.

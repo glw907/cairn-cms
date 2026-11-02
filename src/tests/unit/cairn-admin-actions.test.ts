@@ -771,16 +771,21 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   });
 
   it('a throwing tidy action returns fail(500) with the calm copy (save-500-hardening)', async () => {
-    // Force a genuine throw deep inside tidyAction, past its own try/catch: a malformed conventions
-    // block (never produced by the validated settings save, but a stand-in for the class of bug the
-    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy's client
+    // Force a genuine throw deep inside tidyAction, past its own try/catch: a conventions block
+    // whose read throws is a stand-in for the class of bug the wrapper exists to catch. tidy's client
     // posts with `redirect: 'manual'`, so the wrapper's fallback matters most here: a redirect would
     // read as an opaque, status-0 response and show a false "your session expired" message, which is
     // exactly what fail(500) avoids.
     const csrf = 'csrf-token-value-0123456789abcdef';
     const tidyRuntime = {
       ...runtime(),
-      tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
+      tidy: {
+        enabled: true,
+        model: 'claude-test',
+        get conventions(): undefined {
+          throw new Error('unexpected tidy failure');
+        },
+      },
     } as CairnRuntime;
     const admin = createCairnAdmin({ runtime: tidyRuntime, ...deps });
     setFakeEnv({ ANTHROPIC_API_KEY: 'sk-test-key' });

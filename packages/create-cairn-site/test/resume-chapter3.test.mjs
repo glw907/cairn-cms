@@ -256,7 +256,7 @@ for (const [step, expectedNote] of [
 
 // --- The fall-through: reaching a chapter-2 terminal step DURING this run continues into chapter 3
 
-test('bin.mjs: a run that reaches paid-plan-declined during this call falls through into chapter 3', async (t) => {
+test('bin.mjs: a --yes run that reaches paid-plan-declined during this call reaches chapter 3 and skips Builds', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-fallthrough-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -283,13 +283,16 @@ test('bin.mjs: a run that reaches paid-plan-declined during this call falls thro
     fakeOpenerDir,
   });
 
-  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
+  // The decline leaves the email offer open, so a `--yes` run reaches chapter 3's admission and
+  // skips Builds there rather than connecting it: exit 0, no token hop.
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stdout: ${result.stdout}`);
   assert.ok(
     result.stdout.includes("You chose not to turn on email sign-in for your domain"),
     `expected chapter 2's decline row, got: ${result.stdout}`,
   );
-  assertReachedChapter3TokenHop(result.stdout);
-  assert.ok(result.stderr.includes('Next:'), `expected chapter 3's token-hop Next: line, got: ${result.stderr}`);
+  assert.ok(result.stdout.includes(CHAPTER3_ADMISSION_TITLE), `expected chapter 3's admission hop, got: ${result.stdout}`);
+  assert.ok(result.stdout.includes('Skipping Workers Builds'), `expected the skip line, got: ${result.stdout}`);
+  assert.equal(result.stdout.includes(CHAPTER3_TOKEN_TITLE), false, `Builds must not connect, got: ${result.stdout}`);
 
   const state = await loadSite(siteId);
   assert.equal(state.step, 'paid-plan-declined', 'chapter 2 wrote its outcome before chapter 3 began');

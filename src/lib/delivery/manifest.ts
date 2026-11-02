@@ -62,7 +62,6 @@ export function buildSiteManifest(adapter: CairnAdapter, files: Record<string, s
         // The entry gets no manifest row, so the admin's concept list never shows it. Name it,
         // drafts included, since a draft is exempt from the build's own validation failure.
         log.warn('content.entry_invalid', {
-          scope: 'manifest',
           concept: descriptor.id,
           path: file.path,
           draft: frontmatter.draft === true,

@@ -386,13 +386,13 @@ async function runStartChecks(opts: CairnManifestOptions, root: string): Promise
 async function runDevStartChecks(opts: CairnManifestOptions, root: string, server: ViteDevServer): Promise<StartChecks> {
   let report: ManifestReport;
   try {
-    report = await applyManifest(root, await buildManifestFromVite(opts, root, server));
+    report = await applyManifest(root, await buildManifestFromVite(opts, root, server), { hold: true });
   } catch (err) {
     return { manifestError: err instanceof Error ? err.message : String(err) };
   }
   const siteFacts = await checkSiteFacts(opts, root, server);
   if (!report.written && report.problems.length === 0) return { siteFacts };
-  return { siteFacts, regenerated: `cairn-manifest: regenerated ${formatManifestSummary(report)}` };
+  return { siteFacts, regenerated: `cairn-manifest: ${report.held ? 'held' : 'regenerated'} ${formatManifestSummary(report)}` };
 }
 
 /**
@@ -427,14 +427,23 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<Manife
   return applyManifest(root, await buildManifestFromVite(opts, root));
 }
 
-/** Bring the committed manifest up to date with a regenerated one, writing only when the bytes differ. */
-async function applyManifest(root: string, built: BuiltManifest): Promise<ManifestReport> {
+/**
+ * Bring the committed manifest up to date with a regenerated one, writing only when the bytes differ.
+ *  With `hold` set, the write is withheld when a committed row with a publish stamp is absent from the
+ *  rebuild and a problem names it: an invalid entry gets no row, so writing would drop its stamp. A
+ *  bad filename or a dead link keeps its row, so it never holds.
+ */
+async function applyManifest(root: string, built: BuiltManifest, opts: { hold?: boolean } = {}): Promise<ManifestReport> {
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
   // against the Vite root, not the filesystem root or the config-search cwd.
   const outPath = join(root, DEFAULT_MANIFEST_PATH.replace(/^\//, ''));
   const committed = await readFile(outPath, 'utf8').catch(() => null);
   // The rebuild derives every row from a content file, and publishedAt is manifest-owned, so merge
   // the committed stamps back in before writing. Without this, regenerating would clear every one.
+  if (opts.hold && committed !== null && droppedPublished(built, committed)) {
+    const kept = parseManifest(committed);
+    return { entries: kept.entries.length, changed: 0, written: false, problems: built.problems, held: true };
+  }
   const next = carryPublishStamps(built.manifest, committed);
   const written = next !== committed;
   if (written) {
@@ -448,6 +457,20 @@ async function applyManifest(root: string, built: BuiltManifest): Promise<Manife
     written,
     problems: built.problems,
   };
+}
+
+/** Whether a stamped committed row is absent from the rebuild and a problem names it. */
+function droppedPublished(built: BuiltManifest, committedRaw: string): boolean {
+  try {
+    const rebuilt = new Set(parseManifest(built.manifest).entries.map((e) => `${e.concept}/${e.id}`));
+    const named = new Set(built.problems.map((p) => `${p.concept}/${p.id}`));
+    return parseManifest(committedRaw).entries.some((e) => {
+      const key = `${e.concept}/${e.id}`;
+      return e.publishedAt && !rebuilt.has(key) && named.has(key);
+    });
+  } catch {
+    return false;
+  }
 }
 
 /**

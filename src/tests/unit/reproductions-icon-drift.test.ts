@@ -8,7 +8,8 @@
 // exactly the drift a live reproduction exists to prevent.
 //
 // @lucide/svelte ships Svelte components rather than importable data, so the artwork is read off
-// disk: each icon file carries an `iconData` object literal with a `node` array, and every path
+// disk: each icon file carries an `iconData` object literal (`__iconData` since 1.66) with a `node`
+// array, and every path
 // in it must appear verbatim in the story source.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
@@ -23,7 +24,7 @@ const TRANSCRIBED = ['blocks', 'square-pen', 'link', 'file-symlink', 'image', 's
 /** Every `d` attribute in one icon's `iconData.node`, the part a redraw actually changes. */
 function iconPaths(name: string): string[] {
   const file = resolve(LUCIDE_ICONS, `${name}.svelte`);
-  const found = readFileSync(file, 'utf8').match(/const iconData = (\{[\s\S]*?\});/);
+  const found = readFileSync(file, 'utf8').match(/const (?:__iconData|iconData) = (\{[\s\S]*?\});/);
   if (!found) throw new Error(`no iconData in ${name}.svelte; lucide changed its component shape`);
   const { node } = JSON.parse(found[1]) as { node: [string, Record<string, string>][] };
   return node.filter(([, attrs]) => 'd' in attrs).map(([, attrs]) => attrs.d);

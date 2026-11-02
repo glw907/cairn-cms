@@ -5,6 +5,18 @@
 ## High
 
 ## Medium
+- [ ] **#327** Stop `npm update --save` rewriting a workspace's peer ranges `#improvement` `#tooling` *(2026-11-02)*
+  On the root manifest, `npm update --save` rewrote `packages/cairn-cms-dev`'s `peerDependencies` (`"*"` to `file:../..`, `^3` to `^3.1.1`), and a failing `prepare` (`npm run package`) rolled the install back with a SyntaxError and no hint of the cause. `standards:dependency-upgrade` step 4 should say to run `--ignore-scripts` first and to diff every workspace `package.json`.
+  Placement: After the release.
+- [ ] **#326** Make `check:surface` ignore the order of union members `#improvement` `#tooling` *(2026-11-02)*
+  A `@sveltejs/kit` 3.1 bump reordered members of the same unions in `CairnAdminRoutes` and failed the gate with no change in meaning. Compare unions as sets, or sort members when the snapshot is written.
+  Placement: After the release.
+- [ ] **#325** Retire `boundDictionaryChunks` once a real browser confirms spellchecker-wasm 0.4.0 `#improvement` `#cairn-cms` *(2026-11-02)*
+  0.4.0 loads the Chromium read sequence (41127 bytes, then 1068251) that trapped 0.3.3 with `unreachable`, in Node. If the browser spellcheck component tests agree, drop the guard in `src/lib/admin/spellcheck-worker.ts` and its test.
+  Placement: After the release.
+- [ ] **#324** Release the tailwindcss pin when a tailwindcss release stops emitting `@scope (:is(.join))` `#bug` `#cairn-cms` *(2026-11-02)*
+  tailwindcss 4.3.4 flattens daisyUI 5.7.50's `.join{@scope(&){...}}` to `@scope (:is(.join))`, and lightningcss rejects the result with "Invalid empty selector" in the admin stylesheet build and in a Vite build of the showcase. The root, the showcase, and `templates/waymark` pin `tailwindcss` and `@tailwindcss/*` at exactly 4.3.3. Unblock: a tailwindcss release past 4.3.4 whose `npm run package` and showcase build pass, or a daisyUI release that changes the `.join` rule. The root peer `tailwindcss: ^4` still admits 4.3.4, so a consumer with daisyUI 5.7.50 can hit it.
+  Placement: Before the release (decide whether to narrow the peer range).
 - [ ] **#323** Rename the `entry.prior_read_failed` log event `#improvement` `#cairn-cms` *(2026-11-02)*
   The name reads as a read failure on an existing entry; it logs a save that could not read the prior file. Decide whether `entry.save_prior_read_failed` says it better before the vocabulary freezes.
   Placement: After the release.

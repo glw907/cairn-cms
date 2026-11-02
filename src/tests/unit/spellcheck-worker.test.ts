@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, vi } from 'vitest';
-import { SpellcheckerWasm } from 'spellchecker-wasm/lib/browser/SpellcheckerWasm.js';
+import { SpellcheckerWasm } from 'spellchecker-wasm';
 import {
   boundDictionaryChunks,
   createEngine,
@@ -206,16 +206,15 @@ describe('boundDictionaryChunks', () => {
     });
   }
 
-  it('loads the real engine from the browser read sequence that traps it unbounded', async () => {
-    // A sequence captured from Chromium: 41127 bytes, then a read past the library's 1MiB cap.
+  it('loads the real engine from the browser read sequence that once trapped it unbounded', async () => {
+    // A sequence captured from Chromium: 41127 bytes, then a read past the library's old 1MiB cap.
+    // spellchecker-wasm 0.3.3 trapped with `unreachable` on it; 0.4.0 no longer does, so this pins
+    // that the bounded stream loads and `boundDictionaryChunks` stays a harmless guard until its
+    // retirement is confirmed in a real browser (BACKLOG).
     const sequence = [41127, 1068251];
     const dictionary = asset('dictionary-en-us.txt');
     const wasm = (): Response =>
       new Response(asset('spellchecker-wasm.wasm'), { headers: { 'content-type': 'application/wasm' } });
-
-    await expect(
-      new SpellcheckerWasm(() => {}).prepareSpellchecker(wasm(), new Response(reads(dictionary, sequence))),
-    ).rejects.toThrow('unreachable');
 
     const bounded = new Response(boundDictionaryChunks(reads(dictionary, sequence)));
     await expect(new SpellcheckerWasm(() => {}).prepareSpellchecker(wasm(), bounded)).resolves.toBeUndefined();

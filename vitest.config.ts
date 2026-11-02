@@ -190,7 +190,7 @@ export default defineConfig({
         // reloading", which orphans every in-flight browser test; a warm local cache never hits
         // this, so the failure looked CI-only.
         optimizeDeps: {
-          include: ['spellchecker-wasm/lib/browser/SpellcheckerWasm.js'],
+          include: ['spellchecker-wasm'],
         },
         test: {
           name: 'component',

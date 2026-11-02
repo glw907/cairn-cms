@@ -70,7 +70,7 @@ so a draft that shows no button on a site with `enabled: true` points at the key
 | Refusal message | Cause | Fix |
 |---|---|---|
 | `Tidy is not enabled for this site.` | Deployed config lacks `enabled: true` | Set it, deploy |
-| `...the Anthropic API key is missing.` | No secret bound (the edit screen hides the button when the key is absent, so a direct request is the only way to see this) | `wrangler secret put` |
+| `...the Anthropic API key is missing.` | No secret bound (the edit screen hides the button when the key is absent, so this shows only on a screen loaded before the key was removed, or on a direct request) | `wrangler secret put` |
 | `This is too long to tidy at once...` | Over about 24,000 characters, or a proofread that hit the output cap | Editor tidies a selection |
 | Mentions `npm install @anthropic-ai/sdk` | SDK not installed | Install, deploy |
 | Tells the editor to contact the developer | Key rejected (`auth`); Tidy hides for 10 minutes | Bind a working key |

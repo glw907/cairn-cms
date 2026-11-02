@@ -64,7 +64,6 @@ export type CairnLogEvent =
   | 'editor.added'
   | 'editor.removed'
   | 'editor.role_changed'
-  | 'editor.bootstrapped'
   | 'auth.role.unknown'
   | 'auth.identity.unknown'
   | 'auth.access.refused'

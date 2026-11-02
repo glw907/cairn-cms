@@ -156,10 +156,6 @@
       "types": "./dist/reproductions/manifest.d.ts",
       "default": "./dist/reproductions/manifest.js"
     },
-    "./auth-store": {
-      "types": "./dist/auth-store/index.d.ts",
-      "default": "./dist/auth-store/index.js"
-    },
     "./auth-crypto": {
       "types": "./dist/auth-crypto/index.d.ts",
       "worker": "./dist/auth-crypto/index.js",

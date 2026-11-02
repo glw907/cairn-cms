@@ -58,7 +58,6 @@ export const CAIRN_LOG_EVENTS = Object.freeze([
   'editor.added',
   'editor.removed',
   'editor.role_changed',
-  'editor.bootstrapped',
   'auth.role.unknown',
   'auth.identity.unknown',
   'auth.access.refused',

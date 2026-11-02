@@ -96,7 +96,7 @@ export type AdminData =
  * and validating its view before delegating), and a separate `shellLoad` for
  * `/admin/+layout.server.ts`'s shared chrome. `config.runtime` is the composed runtime the bundle
  * closes over; `config`'s other members override only the seams a site actually needs (auth
- * send/bootstrap, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
+ * send, tidy, `navFilter`, `attention`), and everything else derives from `runtime`.
  *
  * This is the WIDE shape, mirroring the foundations-B `createContentRoutesInternal` precedent:
  *  reachable from no package subpath, so its `actions` record is free to carry every one of the
@@ -115,7 +115,7 @@ export function createCairnAdminInternal(config: CairnAdminConfig) {
     from: override?.from ?? runtime.sender.from,
     replyTo: override?.replyTo ?? runtime.sender.replyTo,
   };
-  const auth = createAuthRoutes({ branding, send: config.auth?.send, bootstrapOwner: config.auth?.bootstrapOwner });
+  const auth = createAuthRoutes({ branding, send: config.auth?.send });
   const content = createContentRoutesInternal({
     runtime,
     tidy: config.tidy,

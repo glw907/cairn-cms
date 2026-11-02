@@ -102,7 +102,6 @@ Contents:
 | `editor.added` | info | `owner`, `target`, `role`, `capability` | Owner added an editor. |
 | `editor.removed` | info | `owner`, `target` | Owner removed an editor. |
 | `editor.role_changed` | info | `owner`, `target`, `role`, `capability` | Owner changed a role. |
-| `editor.bootstrapped` | info | `email` | The `bootstrapOwner` request inserted the first owner row. |
 
 ## Dictionary and tidy
 

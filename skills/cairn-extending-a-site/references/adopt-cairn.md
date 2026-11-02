@@ -56,7 +56,7 @@ Done when `npm run check` and `npm run build` pass. A build failure table is in
 ## Dev backend admin
 
 1. `src/lib/cairn.server.ts`: `runtime = composeRuntime({ adapter: cairn, siteConfig })` and
-   `admin = createCairnAdmin({ runtime, auth: { bootstrapOwner: { email, displayName } } })`.
+   `admin = createCairnAdmin({ runtime })`.
 2. Mount the catch-all and layout (`references/admin-access.md`).
 3. `npm install -D @glw907/cairn-cms-dev @types/node`; add `@glw907/cairn-cms-dev` to
    `ssr.noExternal` (without it `/admin` answers 500 under `vite dev`).
@@ -97,19 +97,26 @@ missing** (`config.bindings-missing`).
    `0004_login_nonce.sql` from `node_modules/@glw907/cairn-cms/migrations/` into `migrations/`; bind
    as `AUTH_DB` with `migrations_dir: "migrations"`; `npx wrangler d1 migrations apply <db> --remote`
    (and `--local` for `wrangler dev`). Other migrations are opt-in: `0001_roles`, `0002_audit` (own
-   database), `0003_preview`.
+   database), `0003_preview`. Then seed the first owner row, since no sign-in creates one:
+
+   ```sh
+   npx wrangler d1 execute <auth-db> --remote --command "INSERT INTO editor (email, display_name, role, created_at) VALUES (lower(trim('you@example.com')), 'Your Name', 'owner', unixepoch() * 1000)"
+   ```
+
+   Double any `'` in the name, and use `--local` in place of `--remote` for `wrangler dev`.
 3. Email: `npx wrangler email sending enable <domain>`; `send_email: [{ name: "EMAIL" }]`; a custom
    domain route; `vars.PUBLIC_ORIGIN` (the https origin, also the content module's `origin`);
    `observability.enabled: true`; `email.from` on the domain.
 4. `cairn doctor` (passes `config.bindings`), commit, push, `npm run build`, `npx wrangler deploy`.
-5. Sign in with the `bootstrapOwner` email (logs `editor.bootstrapped`), publish an edit, confirm the
+5. Sign in with the seeded owner email, publish an edit, confirm the
    commit on `main`, pull, rebuild, redeploy.
 
 | Symptom | Fix |
 |---|---|
 | **Wrangler bindings are missing** | Declare `AUTH_DB` and `EMAIL`, redeploy |
 | `config.public-origin-invalid` | Set `PUBLIC_ORIGIN` to the https origin |
-| No sign-in email | Onboard the domain for Email Sending |
+| No sign-in email, with an `auth.link.send_failed` record | Onboard the domain for Email Sending |
+| No sign-in email, with no `auth.link.send_failed` record | No `editor` row exists for that address: run `SELECT email FROM editor` and seed the owner |
 | Store error naming `0004_login_nonce.sql` | Copy and apply it `--remote` |
 | Publish fails, `github.app-unreachable` | Check App permission, installation, and the key secret |
 
@@ -121,5 +128,5 @@ message.
 
 When stopping before production, list each placeholder still in the code and each piece unwired:
 the `createGithubApp` values and the App itself, `GITHUB_APP_PRIVATE_KEY_B64`, `email.from`,
-`bootstrapOwner`, the `origin` constant and `PUBLIC_ORIGIN`, the admin mount and hooks, `AUTH_DB`
+the seeded owner row, the `origin` constant and `PUBLIC_ORIGIN`, the admin mount and hooks, `AUTH_DB`
 and its migrations, the `EMAIL` binding and domain.

@@ -22,7 +22,6 @@ import {
   deleteSession,
   recentlyIssued,
   rebindToken,
-  insertOwnerIfEmpty,
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
@@ -41,22 +40,6 @@ export interface AuthRoutesConfig {
   branding: AuthBranding;
   /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
-  /**
-   * A site-declared owner to seed the allowlist through the request action, in place of a
-   * hand-run `wrangler d1 execute` INSERT. Grants nothing once any editor row exists; the email
-   * is compared trimmed and lowercased, matching the normalization every write path already
-   * applies. Inert under identity mode: `requestAction`, its only call site, 404s before ever
-   * reaching this check, so the first owner must be seeded out of band before `identity` is
-   * enabled. On a matching request against an empty `editor` table, `requestAction` inserts the
-   * owner in one atomic `INSERT ... WHERE NOT EXISTS` before the normal magic-link flow and logs
-   * `editor.bootstrapped`; a non-matching email on an empty table is treated as an unknown email.
-   */
-  bootstrapOwner?: {
-    /** The owner's email address, compared trimmed and lowercased. */
-    email: string;
-    /** The owner's display name on the seeded row. */
-    displayName: string;
-  };
 }
 
 /**
@@ -176,9 +159,7 @@ function scrubSendError(err: unknown): string {
  * and logout actions, the handlers a site's sign-in routes call directly or `createCairnAdmin`
  * composes into its dispatch. The guard serves exactly two public admin paths, `/admin/login`
  * and `/admin/auth/confirm`; every other path under `/admin/auth/` sits behind the session gate.
- * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport;
- * `config.bootstrapOwner` seeds the very first owner row through the request action, in place of
- * a hand-run D1 insert.
+ * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport.
  * @beta
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
@@ -213,15 +194,6 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // `loginLoad` already ran this for any browser that rendered the sign-in form, so the usual
     // case here is a reuse, not a mint.
     const nonce = mintOrReusePendingNonce(event);
-
-    // Bootstrap: an empty allowlist plus a matching configured owner inserts the owner row
-    // atomically, before the lookup below, so the normal flow finds it and proceeds exactly as
-    // it would for any other allow-listed editor. A non-matching email or a non-empty table
-    // grants nothing, so this encodes exactly the trust the hand-seed SQL already encodes.
-    if (config.bootstrapOwner && email && email === config.bootstrapOwner.email.trim().toLowerCase()) {
-      const inserted = await insertOwnerIfEmpty(db, email, config.bootstrapOwner.displayName, now);
-      if (inserted) log.info('editor.bootstrapped', { email });
-    }
 
     const editor = email ? await findEditor(db, email) : null;
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks

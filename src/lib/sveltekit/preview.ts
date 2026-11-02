@@ -451,7 +451,7 @@ export async function loadPreview(runtime: CairnRuntime, config: PublicRoutesCon
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') {
       log.warn('preview.refused', { reason: 'bindings_missing', binding: 'AUTH_DB' });
-      throw error(503, 'Service unavailable');
+      throw error(503, "This preview can't be opened right now. Try again later, or ask the person who shared it.");
     }
     throw err;
   }

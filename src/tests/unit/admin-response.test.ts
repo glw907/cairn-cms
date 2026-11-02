@@ -33,6 +33,13 @@ describe('admin-response helpers', () => {
     expect(headers.get('Cache-Control')).toBe('private, no-store');
   });
 
+  it('tells crawlers not to index or follow an admin response', () => {
+    const headers = new Headers();
+    applySecurityHeaders(headers);
+    expect(headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(brandedAdminPage(400, 'x').headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+  });
+
   it('omits Strict-Transport-Security entirely when asked, keeping the other headers', () => {
     const headers = new Headers();
     applySecurityHeaders(headers, { omitHsts: true });

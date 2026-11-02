@@ -36,7 +36,8 @@ export interface SecurityHeaderOptions {
  * subdomain directive; `opts.omitHsts` drops the header entirely. The `Cache-Control` header
  * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every
  * admin response this runs against embeds the CSRF token and the signed-in editor's identity,
- * and a shared cache must never hold either.
+ * and a shared cache must never hold either. `X-Robots-Tag: noindex, nofollow` is likewise
+ * unconditional, so the admin shell and every admin response keep crawlers out.
  */
 export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptions = {}): void {
   headers.set('X-Content-Type-Options', 'nosniff');
@@ -51,6 +52,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
   }
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   headers.set('Cache-Control', 'private, no-store');
+  headers.set('X-Robots-Tag', 'noindex, nofollow');
 }
 
 /**

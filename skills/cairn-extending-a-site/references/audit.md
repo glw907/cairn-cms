@@ -70,6 +70,7 @@ Error tier unless marked advisory. For the admin design register behind them, lo
 | `list-role` | See above |
 | `log-event-grammar` | See below |
 | `log-secret-field` | See below |
+| `public-route-prerender` (advisory) | A public `+page.svelte` with no `prerender` export in its page file or a layout above it |
 | `public-literals` (advisory) | A color literal or absolute font size in a public file |
 | `theme-conformance` (advisory) | A public theme block missing keys, or a `var()` that resolves nowhere |
 | `theme-contrast` (advisory) | A public text pair under 4.5:1 or a focus ring under 3:1 |

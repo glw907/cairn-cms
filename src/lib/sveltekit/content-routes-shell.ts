@@ -320,7 +320,7 @@ export function createShellActions(ctx: ContentRoutesContext) {
       // The first concept the session can reach, not the site-wide first: a role mapped away
       // from that one would otherwise land on a 403 dead-end.
       const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
-      if (!first) throw error(404, 'No content types configured');
+      if (!first) throw error(404, 'This site declares no content types. Add one to the adapter\'s concepts.');
       throw redirect(307, withRefusalCode(`/admin/${first.id}`, bounced));
     }
     return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };

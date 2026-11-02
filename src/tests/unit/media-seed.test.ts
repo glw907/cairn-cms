@@ -301,9 +301,9 @@ describe('readR2Buckets', () => {
     ]);
   });
 
-  it('throws a clean message on an unparseable jsonc file', async () => {
+  it('names the next step when a jsonc file does not parse', async () => {
     await expect(readR2Buckets(readFileFrom({ 'wrangler.jsonc': '{ not json' }))).rejects.toThrow(
-      /did not parse/
+      /did not parse.*Fix the file and run it again\./s
     );
   });
 });
@@ -478,7 +478,7 @@ describe('seedMedia', () => {
     const result = await seedMedia(items, 'https://example.com', {}, 'site-media', deps);
     expect(result.ok).toBe(1);
     expect(result.failed).toBe(1);
-    expect(result.failures).toEqual([{ slug: 'sunset', message: 'HTTP 404' }]);
+    expect(result.failures).toEqual([{ slug: 'sunset', message: `HTTP 404 for asset ${items[0].hash}.${items[0].ext}` }]);
     expect(deps.cleaned).toBe(true);
   });
 

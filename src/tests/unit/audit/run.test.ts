@@ -71,7 +71,7 @@ describe('the static rule registry', () => {
   // log-event-grammar and log-secret-field, radius-scale, and the public scope's public-literals,
   // theme-conformance, and theme-contrast are the modules that have registered since, without
   // touching run.ts.
-  it('carries the twenty-one static rules registered since Task 7', () => {
+  it('carries the twenty-two static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -96,6 +96,7 @@ describe('the static rule registry', () => {
         'log-event-grammar',
         'log-secret-field',
         'public-literals',
+        'public-route-prerender',
         'theme-conformance',
         'theme-contrast',
       ].sort(),
@@ -173,13 +174,13 @@ describe('runStatic', () => {
     const report = runStatic(loadConfig(root), adminRules());
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
     // registry minus its public-scope rule (this fixture tree holds admin files only) wires up as
-    // the eighteen admin rules. The new
+    // the nineteen admin rules. The new
     // `src/lib/admin/AdminWidget.svelte` fixture carries no class and no CSS, so it trips
     // nothing beyond the two no-uncompiled-class findings the tree already carried; none of the
     // fixture components carries a log call, so log-event-grammar and log-secret-field raise
     // nothing here either, and none carries a rounded token, so radius-scale raises nothing here
     // either.
-    expect(report.ruleIds).toHaveLength(18);
+    expect(report.ruleIds).toHaveLength(19);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });

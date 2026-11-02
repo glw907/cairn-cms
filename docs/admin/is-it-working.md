@@ -179,7 +179,7 @@ A PASS covers only those two files. It says nothing about a policy set in a modu
 
 **`ai.posture-not-effective`, a warning.** The site states a position on AI crawlers, but the `robots.txt` it serves carries nothing consistent with that position, so crawlers read a different position than the one the site states.
 
-**Act, or ask a developer:** if the served file doesn't match, something ahead of the site is probably rewriting it, usually a managed `robots.txt` on your Cloudflare zone. Check the zone's settings on Cloudflare's [managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/) page. If the served file matches what the site declares and the position is still wrong, a developer has to fix it. The [tidy and AI posture guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes how a site declares one.
+**Act, or ask a developer:** if the served file doesn't match, something ahead of the site is probably adding to it, usually a managed `robots.txt` on your Cloudflare zone. That layer prepends its rules to the site's file and serves both as one response, so it adds to the site's file and doesn't replace it. Check the zone's settings on Cloudflare's [managed `robots.txt`](https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/) page. If the served file matches what the site declares and the position is still wrong, a developer has to fix it. The [tidy and AI posture guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes how a site declares one.
 
 ## Provision the auth store
 

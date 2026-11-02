@@ -34,6 +34,9 @@ export class GithubDouble {
   /** Pending tree-create payloads keyed by their returned sha, applied at ref PATCH time. */
   private stagedTrees = new Map<string, { base: string; changes: { path: string; content?: string; sha?: null }[] }>();
   private stagedCommits = new Map<string, string>();
+  /** The parent sha staged at commit-create time; the ref PATCH fast-forward check compares it to the head. */
+  private stagedParents = new Map<string, string>();
+  private beforeRefPatchHook: (() => void) | null = null;
   /** Author and message staged at commit-create time, applied to the `history` row at ref PATCH. */
   private stagedCommitMeta = new Map<string, { author: { name: string; email: string }; message: string }>();
   /**
@@ -76,6 +79,12 @@ export class GithubDouble {
     if (!tree) throw new Error(`github-double: no branch ${branch}`);
     tree[path] = content;
     this.shas.set(branch, this.nextSha());
+  }
+
+  /** Run `fn` once, just before the next ref PATCH is evaluated, so a test can land a racing
+   *  `commit()` inside the window between a commit create and its ref update. */
+  beforeNextRefPatch(fn: () => void): void {
+    this.beforeRefPatchHook = fn;
   }
 
   install(): void {
@@ -212,6 +221,7 @@ export class GithubDouble {
     if (/\/git\/commits$/.test(path) && method === 'POST') {
       const sha = this.nextSha();
       this.stagedCommits.set(sha, String(body?.tree ?? ''));
+      this.stagedParents.set(sha, String(((body?.parents as unknown[] | undefined) ?? [])[0] ?? ''));
       this.stagedCommitMeta.set(sha, {
         author: (body?.author as { name: string; email: string } | undefined) ?? { name: '', email: '' },
         message: String(body?.message ?? ''),
@@ -222,10 +232,17 @@ export class GithubDouble {
     // Ref update (the atomic-commit landing): PATCH /repos/o/r/git/refs/heads/<branch>
     if (refWrite && method === 'PATCH') {
       const branch = decodeURIComponent(refWrite[1]);
+      const hook = this.beforeRefPatchHook;
+      this.beforeRefPatchHook = null;
+      hook?.();
       const tree = this.branches.get(branch);
       const commitSha = String(body?.sha ?? '');
       const staged = this.stagedTrees.get(this.stagedCommits.get(commitSha) ?? '');
       if (!tree || !staged) return new Response('Unprocessable', { status: 422 });
+      // Like GitHub with force:false, a commit whose parent is not the branch head cannot land.
+      if (this.stagedParents.get(commitSha) !== this.headSha(branch)) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
       const contentByPath: Record<string, string | null> = {};
       for (const change of staged.changes) {
         if (change.sha === null) {

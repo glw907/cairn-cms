@@ -416,7 +416,7 @@ async function loadCairnBuild(cwd: string): Promise<{ opts: CairnManifestOptions
   const { loadConfigFromFile } = await import('vite');
   const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, undefined, cwd);
   if (!loaded) {
-    throw new Error(`cairn-manifest: no Vite config found in ${cwd}`);
+    throw new Error(`cairn-manifest: no Vite config found in ${cwd}. Run it from the project root.`);
   }
   const opts = findCairnOptions(loaded.config.plugins);
   if (!opts) {

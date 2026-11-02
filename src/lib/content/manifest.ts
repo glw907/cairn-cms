@@ -192,6 +192,9 @@ export function formatManifest(manifest: Manifest): string {
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
 
+/** The next step appended to every malformed-manifest error. */
+const REGEN = " The manifest is generated: run npx cairn-manifest, and don't edit it by hand.";
+
 /**
  * Parse a committed manifest. Throws on malformed JSON, a wrong version, or a malformed entry, so
  *  every reader (the save guard, the delete path, the preview) sees a well-formed graph or a clear
@@ -202,14 +205,14 @@ export function formatManifest(manifest: Manifest): string {
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
   if (!data || typeof data !== 'object') {
-    throw new Error('cairn: content manifest file is malformed, expected { version, entries: [] }');
+    throw new Error(`cairn: content manifest file is malformed, expected { version, entries: [] }.${REGEN}`);
   }
   const obj = data as { version?: unknown; entries?: unknown };
   if (obj.version !== 1) {
     throw new Error(`cairn: content manifest version ${String(obj.version)} is unsupported, expected 1`);
   }
   if (!Array.isArray(obj.entries)) {
-    throw new Error('cairn: content manifest file is malformed, expected { version, entries: [] }');
+    throw new Error(`cairn: content manifest file is malformed, expected { version, entries: [] }.${REGEN}`);
   }
   for (const entry of obj.entries) {
     const e = entry as Record<string, unknown>;
@@ -229,7 +232,7 @@ export function parseManifest(raw: string): Manifest {
       (e.publishedAt === undefined || typeof e.publishedAt === 'string') &&
       Array.isArray(e.links);
     if (!ok) {
-      throw new Error(`cairn: content manifest entry ${JSON.stringify(e)} is malformed`);
+      throw new Error(`cairn: content manifest entry ${JSON.stringify(e)} is malformed.${REGEN}`);
     }
     // mediaRefs is additive and optional: an entry without it parses (the field reads as absent),
     // so a manifest committed before this field still builds. When present, validate each element
@@ -237,7 +240,7 @@ export function parseManifest(raw: string): Manifest {
     if (e.mediaRefs !== undefined) {
       for (const hash of e.mediaRefs as unknown[]) {
         if (typeof hash !== 'string') {
-          throw new Error(`cairn: content manifest mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)} is malformed`);
+          throw new Error(`cairn: content manifest mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)} is malformed.${REGEN}`);
         }
       }
     }
@@ -249,7 +252,7 @@ export function parseManifest(raw: string): Manifest {
       for (const edge of e.references as unknown[]) {
         const r = edge as Record<string, unknown> | null;
         if (!r || typeof r !== 'object' || typeof r.field !== 'string' || typeof r.concept !== 'string' || typeof r.id !== 'string') {
-          throw new Error(`cairn: content manifest reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)} is malformed`);
+          throw new Error(`cairn: content manifest reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)} is malformed.${REGEN}`);
         }
       }
     }
@@ -259,7 +262,7 @@ export function parseManifest(raw: string): Manifest {
     if (e.tags !== undefined) {
       for (const tag of e.tags as unknown[]) {
         if (typeof tag !== 'string') {
-          throw new Error(`cairn: content manifest tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)} is malformed`);
+          throw new Error(`cairn: content manifest tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)} is malformed.${REGEN}`);
         }
       }
     }
@@ -269,7 +272,7 @@ export function parseManifest(raw: string): Manifest {
     if (e.includes !== undefined) {
       for (const id of e.includes as unknown[]) {
         if (typeof id !== 'string') {
-          throw new Error(`cairn: content manifest includes element ${JSON.stringify(id)} in entry ${JSON.stringify(e)} is malformed`);
+          throw new Error(`cairn: content manifest includes element ${JSON.stringify(id)} in entry ${JSON.stringify(e)} is malformed.${REGEN}`);
         }
       }
     }
@@ -279,7 +282,7 @@ export function parseManifest(raw: string): Manifest {
     for (const link of e.links as unknown[]) {
       const l = link as Record<string, unknown> | null;
       if (!l || typeof l !== 'object' || typeof l.concept !== 'string' || typeof l.id !== 'string') {
-        throw new Error(`cairn: content manifest link ${JSON.stringify(link)} in entry ${JSON.stringify(e)} is malformed`);
+        throw new Error(`cairn: content manifest link ${JSON.stringify(link)} in entry ${JSON.stringify(e)} is malformed.${REGEN}`);
       }
     }
   }

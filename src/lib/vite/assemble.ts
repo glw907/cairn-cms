@@ -42,6 +42,12 @@ export interface ManifestReport {
   written: boolean;
   /** The entries the build found wrong, in build order. */
   problems: ManifestProblem[];
+  /**
+   * Set when a dev start withheld the write because a published entry went invalid and its row would
+   *  have been dropped, which loses its publish stamp. Then `entries` and `changed` count the
+   *  committed file as it stays. Only a dev start holds; `cairn-manifest` always writes.
+   */
+  held?: true;
 }
 
 /** One problem as `concept/id: field: message`, naming its first error. */
@@ -69,6 +75,7 @@ export function formatManifestSummary(report: ManifestReport, factsChanged?: boo
   if (factsChanged !== undefined) clauses.push(`site-facts.json ${factsChanged ? 'changed' : 'unchanged'}`);
   const live = problems.filter((p) => !p.draft);
   const drafts = problems.filter((p) => p.draft);
+  if (report.held) clauses.push('held, not written: a published entry is invalid (fix it; cairn-manifest still writes)');
   if (live.length > 0) clauses.push(problemClause(live, 'invalid', 'invalid'));
   if (drafts.length > 0) clauses.push(problemClause(drafts, 'invalid draft', 'invalid drafts'));
   return clauses.join('; ');

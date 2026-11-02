@@ -265,6 +265,60 @@ describe('cairnManifest under vite dev', () => {
     ]);
   });
 
+  describe('an invalid published entry', () => {
+    const STAMP = '2026-08-01T12:00:00.000Z';
+    const stamped = (): string =>
+      formatManifest({
+        version: 1,
+        entries: [entry({ publishedAt: STAMP }), entry({ id: 'other', permalink: '/posts/other', publishedAt: STAMP })],
+      });
+    const builtWithout = formatManifest({ version: 1, entries: [entry({ id: 'other', permalink: '/posts/other' })] });
+
+    it('holds the write, leaves index.json byte-identical, and reports held', async () => {
+      const dir = tempSite();
+      writeFileSync(manifestPath(dir), stamped());
+      const mtime = backdate(dir);
+      const ctx = fakeContext();
+
+      await serve(dir, regenerating(builtWithout, [problem()]).server, ctx);
+
+      expect(readFileSync(manifestPath(dir), 'utf8')).toBe(stamped());
+      expect(statSync(manifestPath(dir)).mtimeMs).toBe(mtime);
+      expect(ctx.warnings).toHaveLength(1);
+      expect(ctx.warnings[0]).toMatch(/^cairn-manifest: held index\.json: 2 entries, 0 changed; held, not written: a published entry is invalid/);
+      expect(ctx.warnings[0]).toContain('posts/hello');
+    });
+
+    it('still writes when the published entry has a dead link and so keeps its row', async () => {
+      const dir = tempSite();
+      writeFileSync(manifestPath(dir), stamped());
+      const built = formatManifest({
+        version: 1,
+        entries: [entry({ title: 'Renamed' }), entry({ id: 'other', permalink: '/posts/other' })],
+      });
+
+      await serve(dir, regenerating(built, [problem({ errors: { body: "cairn: link can't resolve: cairn:x" } })]).server, fakeContext());
+
+      expect(readFileSync(manifestPath(dir), 'utf8')).toContain('Renamed');
+    });
+
+    it('still writes when the dropped invalid entry was never published', async () => {
+      const dir = tempSite();
+      writeFileSync(
+        manifestPath(dir),
+        formatManifest({ version: 1, entries: [entry({ id: 'other', permalink: '/posts/other', publishedAt: STAMP })] }),
+      );
+      const ctx = fakeContext();
+
+      await serve(dir, regenerating(builtWithout, [problem()]).server, ctx);
+
+      expect(readFileSync(manifestPath(dir), 'utf8')).toBe(
+        formatManifest({ version: 1, entries: [entry({ id: 'other', permalink: '/posts/other', publishedAt: STAMP })] }),
+      );
+      expect(ctx.warnings[0]).toMatch(/^cairn-manifest: regenerated /);
+    });
+  });
+
   it('counts a committed stamped entry as unchanged and keeps its bytes', async () => {
     const dir = tempSite();
     const stamped = formatManifest({ version: 1, entries: [entry({ publishedAt: '2026-08-01T12:00:00.000Z' })] });

@@ -116,6 +116,6 @@ that the code agrees with whoever wrote the fixture.
 
 The second run, the same day, found the defect item 9 now exists for: all five sites carried three
 or four rows that were the tool's gaps rather than facts about the site, so no site could ever
-read `OK` and every scheduled run would have exited 3. `CHANGELOG.md` lists each one. The lasting
+read `OK` and every scheduled run would have exited 3. The git history at the time lists each one. The lasting
 change is item 9 itself: reading the verdict word is not enough, and every `skip` and `unknown` row
 gets read for whose fault it names.

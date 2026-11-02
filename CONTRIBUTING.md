@@ -95,30 +95,15 @@ and `test.yml` carries most of them; derive the list from those files rather tha
 Locally, `npm test` and `npm run check` catch most failures, and each `check:*` target in
 `package.json` runs a gate script from `scripts/checks/`.
 
-### CHANGELOG.md and the legacy-path map
+### CHANGELOG.md and retired docs links
 
 `check:docs` (`scripts/checks/docs-links.mjs`) walks every published docs page plus the root
 project files and fails on a broken relative link or a `#anchor` that resolves to no heading.
-`CHANGELOG.md` is the one exception. It is an immutable record, and a past entry's links point
-at paths that were real when that entry shipped. Pass D's docs reset deleted `docs/guides/`,
-`docs/tutorial/`, and `docs/explanation/`, so without an exception every old CHANGELOG link to
-one of those paths would go dead the moment the pass merged, forever.
-
-The script carries a `LEGACY_PATH_MAP`, a table from each retired path to the page that
-inherited its job, consulted for `CHANGELOG.md` links alone; a dead path written anywhere else
-still fails the gate. Only the path half is translated, since a legacy anchor named a heading
-the fold did not preserve.
-
-The map carries three self-checks, run on every `check:docs` invocation, so it cannot quietly
-rot into a rule that answers for nothing. If a run reports one of these, it is telling you
-which invariant broke, not that the gate is wrong:
-
-- A map value must name a file that exists. If it doesn't, the replacement page moved again;
-  repoint the entry at whatever carries that job now.
-- A map key must NOT name a file that exists. If it does, someone recreated a page at the old
-  path; drop the entry so its links are checked like any other link again.
-- Every map key must still be cited by a real `CHANGELOG.md` link. If one isn't, the entry
-  answers for nothing; delete it rather than carrying a rule nothing reaches.
+`CHANGELOG.md` is the one exception, and only for links into `docs/`. It is a dated record, and a
+past entry's links point at pages that were real when that entry shipped, so `isDatedRecord`
+accepts a changelog link to a `docs/` page that no longer exists. Any other dead link in the
+changelog fails, and the same dead link anywhere else fails too. When a docs page is deleted or
+renamed, repair its links in live pages; leave the changelog's alone.
 
 ## How the docs stay true
 

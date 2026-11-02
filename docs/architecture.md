@@ -41,7 +41,7 @@ Every export's doc comment carries one of three tags.
 | `@scaffold` | Scaffold | cairn means to hold the wiring a scaffolded site copies frozen |
 | `@beta` | Unstable | Stays importable, with no promise across minor versions |
 
-cairn is pre-1.0, so the freeze is a goal and a break to the Extension tier can still ship in a minor release. Each break is listed in the changelog's `Consumers must:` lines and in the [migration notes](../MIGRATION-NOTES.md), and the `check:surface` snapshot gate fails on any change to an export's declared shape until a maintainer records it. From 1.0, breaking the Extension or Scaffold tier is a major-version event.
+cairn is pre-1.0, so the freeze is a goal and a break to the Extension tier can still ship in a minor release. The changelog names each break, with the action a release asks in its `Consumers must:` line, and the [migration notes](../MIGRATION-NOTES.md) carry the steps. The `check:surface` snapshot gate fails on any change to an export's declared shape until a maintainer records it. From 1.0, breaking the Extension or Scaffold tier is a major-version event.
 
 ## The security model
 

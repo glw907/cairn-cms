@@ -66,7 +66,7 @@ These checks hold names, tags, samples, and links to the code. None of them read
 
 ## Where cairn stands
 
-The engine is pre-1.0 and changes often. Its seams form a narrow, versioned public surface, and the tiers and snapshot gate above detect and disclose every break in the changelog's `Consumers must:` list and in the migration notes. Before 1.0, a break can arrive in a minor release. From 1.0, breaking the surface is a major-version event.
+The engine is pre-1.0 and changes often. Its seams form a narrow, versioned public surface, and the tiers and snapshot gate above detect and disclose every break in the changelog, with the action a release asks in its `Consumers must:` line, and in the migration notes. Before 1.0, a break can arrive in a minor release. From 1.0, breaking the surface is a major-version event.
 
 The content stays yours. Every entry is a markdown file in your repository and every image is in your R2 bucket, so leaving cairn means cloning the repository and copying the bucket's contents from your Cloudflare account. Blocks, `cairn:` links, and `media:` references mean nothing to another markdown tool, so a move also means converting those. The accounts that hold the site are yours too.
 

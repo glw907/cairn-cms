@@ -1,13 +1,15 @@
 // Unit tests for the spellcheck worker's merged-set logic, driving the handler factory with a fake
-// engine and a capturing post. The real wasm engine and the dictionary streaming are not loaded here:
-// that path is proven by the Task 1 spike E2E and re-proven in Task 16. These tests exercise the pure
-// merged-set layering (dialect engine, then personal/site, then session ignore), the protocol shapes,
-// and the curly-apostrophe normalization applied at the handler boundary.
+// engine and a capturing post. These tests exercise the pure merged-set layering (dialect engine,
+// then personal/site, then session ignore), the protocol shapes, and the curly-apostrophe
+// normalization applied at the handler boundary. The real wasm loads only for the dictionary chunk
+// bound; the whole Worker path is proven by the spellcheck E2E.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
+import { SpellcheckerWasm } from 'spellchecker-wasm/lib/browser/SpellcheckerWasm.js';
 import {
+  boundDictionaryChunks,
   createSpellcheckHandler,
   type SpellEngine,
   type OutboundMessage,
@@ -180,6 +182,41 @@ describe('createSpellcheckHandler', () => {
       word: 'don’t',
       suggestions: ['do not'],
     });
+  });
+});
+
+describe('boundDictionaryChunks', () => {
+  const asset = (name: string): Uint8Array<ArrayBuffer> =>
+    new Uint8Array(readFileSync(fileURLToPath(new URL(`../../lib/admin/spellcheck-assets/${name}`, import.meta.url))));
+
+  /** A stream that delivers the bytes in reads of the given sizes, then the rest in one read. */
+  function reads(bytes: Uint8Array, sizes: ReadonlyArray<number>): ReadableStream<Uint8Array> {
+    let at = 0;
+    return new ReadableStream({
+      start(controller) {
+        for (const size of sizes) {
+          controller.enqueue(bytes.slice(at, at + size));
+          at += size;
+        }
+        controller.enqueue(bytes.slice(at));
+        controller.close();
+      },
+    });
+  }
+
+  it('loads the real engine from the browser read sequence that traps it unbounded', async () => {
+    // A sequence captured from Chromium: 41127 bytes, then a read past the library's 1MiB cap.
+    const sequence = [41127, 1068251];
+    const dictionary = asset('dictionary-en-us.txt');
+    const wasm = (): Response =>
+      new Response(asset('spellchecker-wasm.wasm'), { headers: { 'content-type': 'application/wasm' } });
+
+    await expect(
+      new SpellcheckerWasm(() => {}).prepareSpellchecker(wasm(), new Response(reads(dictionary, sequence))),
+    ).rejects.toThrow('unreachable');
+
+    const bounded = new Response(boundDictionaryChunks(reads(dictionary, sequence)));
+    await expect(new SpellcheckerWasm(() => {}).prepareSpellchecker(wasm(), bounded)).resolves.toBeUndefined();
   });
 });
 

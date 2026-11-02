@@ -82,7 +82,9 @@ re-check existing pages whose code changed.
   scaffold's emitted-template diff (`templates/`), and the changelog's `Consumers must:` and behavior
   lines. One module or one surface per agent context, never a per-file window (the `v0.97.0..v0.98.0`
   window alone spanned about 192 files). Independent verifiers confirm, correct, or refute each finding
-  against source at `main`; a finder never verifies its own finding.
+  against source at `main`; a finder never verifies its own finding. For the first sweep after the changelog
+  reset only, the changelog input is `git show c074feff5d32ad790bbf1272c0c41dfacccc1258:CHANGELOG.md`,
+  since the reset consolidated `## Unreleased`.
 - **Filing.** Fix a verified gap on the page it affects, through the `cairn-writing-docs` skill, in a docs PR
   reviewed as a `docs` review; the cut never waits on it. A gap with no page home becomes a
   `BACKLOG.md` item, never a new page. A code defect is a `BACKLOG.md` item, never a page fix.

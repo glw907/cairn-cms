@@ -59,6 +59,6 @@ describe('RenameDialog', () => {
     await screen.getByRole('button', { name: /change address/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     const heading = dialog.querySelector('#cairn-rename-dialog-title')!;
-    expect(heading.textContent).toBe('Change this post address');
+    expect(heading.textContent).toBe("Change this post's address");
   });
 });

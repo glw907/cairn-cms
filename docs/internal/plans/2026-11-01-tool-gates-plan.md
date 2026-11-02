@@ -2,7 +2,9 @@
 
 - **Slice:** `tool-gates`, class `ordinary` plus `runner`. Design: `2026-11-01-tool-gates-design.md`.
 - **Base:** `main` at `23f70fb40`. **Branch:** `worktree-tool-gates`, pushed to `glw907/cairn-cms`.
-- **Estimate:** design 150, ceiling 300, plan path **215**.
+- **Estimate:** design 150, ceiling 300, plan path **230**.
+- **Review:** mechanics lens, `2026-11-01-tool-gates-review-mechanics.md`; folded in
+  `2026-11-01-tool-gates-fold-record.md`.
 - **Merge:** conductor (`cairn-cms-9b`) under the merge word, record packet first. The executor stops
   at PR-ready, finalizes its `## Unreleased` entry, never bumps or publishes, and merges `main` only
   when told.
@@ -37,6 +39,7 @@ No owner step, no credential, no sitting. Every item below was read from the tas
 | `.github/workflows/{test,tool}.yml` edits and push | T1, T2 | Pass 1b pushed workflow edits and merged in #175. Each such task prints `ciWait`. |
 | `claude -p` from the worktree | T5 | Ran three times here with `--model haiku --max-turns 3`. It spends a few cents and takes no secret. |
 | Heavy lane for the component project | T6 | Shared. `RUN_GATE_IF_BUSY=defer` is allowed on this pass, but T6's trace runs need the local run, so T6 waits for the lock. |
+| `git rm` of 65 tracked files; `rm -rf packages/create-cairn-site/template`, a gitignored build output | T4, T5 | Not probed. Both undo from git or from the setup line. A refusal of either is a stop like any other. |
 
 `CLAUDE.md` is deliberately untouched: `.claude/rules/evals-docs-process.md` would make it run both
 eval suites. The `.claude/rules/` files are untouched too. A refusal of any write in this table is a
@@ -49,14 +52,18 @@ The sheet's "Standing answers for every pass" all apply. For this slice:
 - **`#212` may set aside** if its cause isn't traced inside T6, with the evidence filed on the item.
 - **May not set aside:** #213, the implementer fix, P9's grammar, the gate, the Go reader. The prompt
   and the sheet name these.
-- **Cut order if over the ceiling:** #212, nothing else. Path is 215, so no cut is planned.
+- **Cut order if over the ceiling:** #212, nothing else. Path is 230, so no cut is planned.
 - **A real dependency found:** set the item aside for its home pass, list it in `## Decisions`, go on.
 - **A retried test:** list it as flake evidence. T6's own test counts.
 - **`Stale transcript block`:** `docs/admin/is-it-working.md:30` and
   `packages/create-cairn-site/test/fixtures/transcripts/04*.txt` quote the old SKIP title. Leave both
   and list them for the recapture.
-- **After `main` merges in:** sibling entries that landed off grammar are legacy. Run
-  `npm run check:consumers-must -- --update` and commit the baseline. Don't rewrite their text.
+- **After `main` merges in:** a sibling entry that landed before this slice is legacy. Run
+  `npm run check:consumers-must -- --update`, read the entries it prints, and commit the baseline. Don't
+  rewrite their text. Then, in `tool/`, run `go test ./internal/doctor -run TestGolden -update` and reread
+  the golden diff, since 1a touches `one-warning-failure.txt`.
+- **A sibling landing after this slice:** its executor puts its line on grammar. `--update` is only for
+  a legacy line changed or removed, and the conductor reads the baseline diff before each merge.
 - **New BACKLOG item:** next free number on `main` at merge. BACKLOG numbers collide across branches.
 - **Run git as a plain single command** from the worktree. The worktree guard refuses a compound or
   `cd`-prefixed form, and that refusal is not a stop.
@@ -68,9 +75,13 @@ The sheet's "Standing answers for every pass" all apply. For this slice:
 | 1 | T1 | 50 |
 | 2 | Pair: T2, T3 | 60 |
 | 3 | Pair: T4, T5 | 30 |
-| 4 | T6 | 45 |
+| 4 | T6 | 60 |
 | 5 | T7 | 30 |
-| | **Path** | **215** |
+| | **Path** | **230** |
+
+The first push, after T1, opens a draft PR against `main`. After each push, run
+`ci-green <sha> --pr <n> --wait` as a background Bash task, re-issued on exit 75. A red stops the line.
+Each accepted-task report names the head SHA and the CI verdict on it, or says it is pending.
 
 Each pair's files are disjoint. Dispatches name `cairn-implementer`, whose setup line is still the old
 one until T5 merges, so each dispatch adds `npm --prefix packages/create-cairn-site run prepack`, and
@@ -87,26 +98,40 @@ under `## Unreleased`.
 **Files.** New: `scripts/checks/check-consumers-must.mjs`, `scripts/checks/consumers-must-baseline.json`,
 `scripts/checks/fixtures/consumers-must/cases.json`, `src/tests/unit/check-consumers-must.test.ts`.
 Edit: `package.json` (beside `"check:rulings-format": "node scripts/checks/check-rulings-format.mjs",`),
-`scripts/checks/gate-table.json` (`"check:consumers-must": ["docs"]`, beside
+`scripts/checks/gate-table.json` (`"check:consumers-must": ["docs", "scripts"]`, beside
 `"check:rulings-format": ["docs"],`), `scripts/checks/gate-tier.mjs` and
 `scripts/checks/close-prebuilt.mjs` (each beside `'npm run check:rulings-format',`),
-`.github/workflows/test.yml` (beside `- run: npm run check:rulings-format`), `CONTRIBUTING.md`,
-`.claude/skills/cairn-running-passes/SKILL.md`, `ROADMAP.md`.
+`scripts/checks/check-version.mjs` (export `unreleasedWindow`), `.github/workflows/test.yml` (beside
+`- run: npm run check:rulings-format`), `CONTRIBUTING.md`, `.claude/skills/cairn-running-passes/SKILL.md`,
+`.claude/skills/cairn-running-passes/references/pass-gate-tiers.md` (its `full` row's string names the
+check), `ROADMAP.md`.
 
 **Mechanism.** Design "P9: the grammar" is the spec. Model the script on `check-rulings-format.mjs`:
 pure exports and a main guarded on `import.meta.url`. Export `findOffGrammarLines(text)` returning
-`{ line, text, reason }[]` for one section's text, and `isActionable(text)` for the reader's rule, so
-the fixture test exercises both. Main reads `CHANGELOG.md`, cuts `## Unreleased` to the next
-`## <version>` heading, compares against the baseline, and with `--update` rewrites the baseline
-sorted and deduplicated. A failure prints `CHANGELOG.md:<n>: <reason>` and the line.
+`{ line, text, reason }[]` for one section's text, `isActionable(text)` for the reader's rule, and
+`compareBaseline(lines, baseline)` returning `{ added, stale }`, so the tests exercise all three.
+
+Main reads `CHANGELOG.md` and takes the window with `check-version.mjs`'s `unreleasedWindow`, which
+cuts at the next `## ` heading of any kind and returns null at a cut. Null reads as an empty section, so
+a non-empty baseline then fails as stale. The baseline keeps duplicates and compares as a multiset:
+`  Consumers must: nothing.` is off grammar twice today (`CHANGELOG.md:802,812`, jammed against the next
+bullet) and on grammar twice, so a deduplicated baseline would let a new jammed line through. A missing
+or unparseable baseline exits 1 naming the file.
+
+A new line fails with `CHANGELOG.md:<n>: <reason>`, the line, and "put the line on grammar; `--update`
+is for a legacy line changed or removed". `--update` rewrites the baseline sorted, and prints each
+entry it added and removed.
 
 `cases.json` is an array of `{ "name", "section", "valid", "actionable" }`. Cover at least: bare
 `nothing.`; an action; a two-space-indented action; `  Consumers must: rebuild the site from a fresh
 scaffold.`; hedged `nothing, unless a script matches.` (invalid, actionable); `Nothing.` (invalid,
 actionable); bold lead (invalid, not actionable); mid-paragraph lead (invalid, not actionable); a
 clause wrapped onto a second line (invalid, actionable); no terminal period (invalid, actionable); a
-code-span mention in prose (valid, not actionable); two lines where the second is actionable (valid,
-actionable).
+code-span mention in prose (valid, not actionable); a code span holding the whole line,
+`` `Consumers must: nothing.` `` (valid, not actionable); `nothingness is gone, so rename Foo.` (valid,
+actionable, proving rule 3 tests the word); `  Consumers must: nothing.` with the next bullet on the
+following line (invalid, not actionable); a tab indent (invalid, not actionable); two lines where the
+second is actionable (valid, actionable).
 
 Rewrite `CONTRIBUTING.md`'s line that reads "with a `Consumers must:` line when upgrading requires
 action" to state the grammar in one sentence. In `cairn-running-passes`, "A breaking change carries
@@ -115,14 +140,15 @@ mark P9's contract landed and record the ruling (contract only, forward-only, no
 `migrate` wording to pass 8's R9.
 
 **Acceptance.** `npm run check:consumers-must` passes on the branch. Adding an off-grammar line under
-`## Unreleased` makes it exit 1 naming `CHANGELOG.md:<n>`. Deleting one legacy line makes it exit 1
-naming the stale baseline entry. `--update` then passes. Print each of those three runs in the report,
-then restore `CHANGELOG.md`.
+`## Unreleased` makes it exit 1 naming `CHANGELOG.md:<n>`. Adding a third `  Consumers must: nothing.`
+jammed against the next bullet also exits 1. Deleting the unique legacy line at `CHANGELOG.md:129` makes
+it exit 1 naming the stale baseline entry. `--update` then passes and prints the removal. Print each of
+those runs in the report, then restore `CHANGELOG.md` and the baseline.
 
-**Test.** `check-consumers-must.test.ts` drives every `cases.json` row through both exports, and covers
-the baseline comparison with an in-memory section (new line fails, stale entry fails, equal passes).
-Add a gate-tier row beside the existing `check:rulings-format` expectations if the table test
-enumerates them.
+**Test.** `check-consumers-must.test.ts` drives every `cases.json` row through the first two exports, and
+covers `compareBaseline`: a new line fails, a third copy of a line the baseline holds twice fails, a stale
+entry fails, equal passes. No gate-tier row is needed: `gate-tier.test.ts` derives its checks from
+`gate-table.json`, `close-prebuilt.mjs`, and `test.yml`.
 
 ### T2: the Go reader on the grammar (25, `ordinary`, plus `runner` for `tool.yml`)
 
@@ -156,9 +182,12 @@ test and the Vitest suite. Restore it. `git grep consumersMustLead tool` prints 
 with a count. `--strict` fails on any `FIX`.
 
 **Files.** `src/lib/guidance/check.ts`, `src/lib/guidance/bin.ts`, `src/tests/unit/guidance/check.test.ts`,
-`skills/cairn-extending-a-site/references/preflight.md`, regenerated `templates/waymark`.
+`src/tests/unit/guidance/bin.test.ts`, `skills/cairn-extending-a-site/references/preflight.md`,
+`claude/CLAUDE.md`, regenerated `templates/waymark`.
 
-**Mechanism.** Design "#75 and ergonomics 22" is the spec. In `check.ts`:
+**Mechanism.** Design "#75 and ergonomics 22" is the spec. The entry match takes either quote and any
+text before `;`: all four sites write `@import 'tailwindcss';`, and `templates/waymark/src/admin.css:3`
+puts `layer(utilities)` between the path and `source(none)`. In `check.ts`:
 
 - `judgeSourceExclusion(readFile, cssPaths)` replaces `judgeSourceExclusion(readFile)`, and
   `runGuidanceCheck(readFile, packaged, cssPaths)` passes the list through. `node:path`'s `posix` does
@@ -172,30 +201,40 @@ with a count. `--strict` fails on any `FIX`.
 In `bin.ts`, list with `readdir(join(cwd, 'src'), { recursive: true })`, treating `ENOENT` as `[]`, keep
 the `.css` paths as `src/<rel>`, and read each through `readFileUnderCwd`. Update `USAGE`: `--strict`
 now reads "exit 1 when any line reports FIX", and "check reports seven lines, none of which fails the
-run except the tree freshness under --strict" changes to match. `check.ts`'s header comment and the
-`TreeStatus` comment go with it.
+run except the tree freshness under --strict" changes to match. `bin.ts`'s header comment ("it exits 0
+unless --strict is given and the guidance tree is stale or missing"), `check.ts`'s header comment, and
+the `TreeStatus` comment go with it.
 
 Add one sentence to `preflight.md` after "it prints the snippet to add when one is missing": each line
-reads `PASS` or `FIX`, and the last line counts them. Then run `npm run emit:template`, and commit the
-regenerated `templates/waymark` hunks with this task.
+reads `PASS` or `FIX`, and the last line counts them. In `claude/CLAUDE.md`, "`--strict` exits 1 when the
+tree is stale" becomes "`--strict` exits 1 on any `FIX` line". Then run `npm run emit:template`, and commit
+the regenerated `templates/waymark` hunks with this task.
 
-**Acceptance.**
+**Acceptance.** Run `npm run package` first, because the worktree's `dist/` is otherwise stale. Use the
+`env -C <dir> node <worktree>/dist/guidance/bin.js check --strict` form: a `cd` prefix can hit the
+worktree guard.
 
 1. In a temp directory with `src/admin.css` carrying `@import "tailwindcss";` and
-   `@source not "./.claude";`, `node <worktree>/dist/guidance/bin.js check --strict` prints a `FIX` line
-   holding `@source not "../.claude";` and exits 1.
+   `@source not "./.claude";`, the bin prints a `FIX` line holding `@source not "../.claude";` and exits 1.
 2. The same directory with that line changed to `@source not "../.claude";` prints `PASS` on the Tailwind
    line.
-3. From `templates/waymark`, the built bin prints `PASS` on the Tailwind line, proving the
-   `src/chassis/tokens.css` path resolves.
-4. `grep -c '^FIX' ` over the output equals the `to fix` count in the last line.
+3. From `templates/waymark`, the bin prints `PASS` on all seven lines and exits 0.
+4. In a temp copy of the template with `@source not "../../.claude";` removed from
+   `src/chassis/tokens.css`, the bin prints a `FIX` holding that line. Step 3 alone would pass on an entry
+   match that missed the file.
+5. `grep -c '^FIX'` over the output equals the `to fix` count in the last line.
 
 **Test.** Rewrite the `judgeSourceExclusion`, `isStaleUnderStrict`, and format cases. Add: `./.claude` in
 `src/admin.css` fails; `../.claude` in `src/admin.css` passes; `../../.claude` in
-`src/chassis/tokens.css` passes; an exclusion in `src/theme/theme.css` covers an entry in
-`src/chassis/tokens.css`; `source(none)` needs no exclusion; `tailwindcss/theme.css` alone is not an
-entry; a `@source not` inside a CSS comment doesn't count; no entries passes; a `.orig` makes `hasFixes`
-true.
+`src/chassis/tokens.css` passes; `@import 'tailwindcss';` in `src/chassis/tokens.css` with no exclusion
+fails and names `@source not "../../.claude";`; an exclusion in `src/theme/theme.css` covers an entry in
+`src/chassis/tokens.css`; `@import "tailwindcss/utilities.css" layer(utilities) source(none);` needs no
+exclusion; `tailwindcss/theme.css` alone is not an entry; a `@source not` inside a CSS comment doesn't
+count; no entries passes; a `.orig` makes `hasFixes` true.
+
+`bin.test.ts:121-126` asserts `check --strict` exits 0 after `install` in an empty directory, which has
+no import line or gate wiring. Change it to assert exit 1 and a `PASS` on the tree line, and add a spawn
+from `templates/waymark` asserting exit 0. List the changed test under `## Decisions`.
 
 ### T4: #178 and slim R3 (30, `ordinary`)
 
@@ -215,26 +254,25 @@ subject, with no verdict:
 | `config.media-bucket` | `Media bucket binding` |
 | `config.observability` | `Workers Logs sink` |
 | `config.public-origin` | `PUBLIC_ORIGIN` |
-| floors | `Framework dependency floors` |
-| roles | `Guard role vocabulary` |
-| referrer | `Site-wide Referrer-Policy` |
-| the other four | same form, a noun phrase with no verdict |
+| `config.dependency-floors` | `Framework dependency floors` |
+| `auth.role-wiring` | `Guard role vocabulary` |
+| `config.no-referrer-blanket` | `Site-wide Referrer-Policy` |
+| `config.csrf-trusted-origins`, `config.site-config`, `admin.mount-shape`, `ai.posture-effective` | same form, a noun phrase with no verdict |
 
 Regenerate with `go test ./internal/doctor -run TestGolden -update`, run in `tool/`, and read the diff:
-only SKIP titles move.
+only SKIP titles move. `copy.golden.md` holds no pass titles, so `SkipTitle` doesn't move it.
 
 For R3, delete every tracked file under `tool/docs/design/render-reference/` except `measurements.txt`,
 65 files. In `tool/docs/design/README.md`, the bullet that opens "[`render-reference/`](render-reference/)
 is iteration 3 of the mockups" and the section `## The render reference` shrink to what remains: the
 frames live at the `pre-agent-first` tag, `measurements.txt` stays because `glyph.go`, `glyph_test.go`,
 and `width.go` cite it, and the goldens in `tool/internal/render/testdata` are the acceptance record.
-Repoint `fixtures.go:6`, whose comment names "tool/docs/design/render-reference's frames", to the tag
-or drop the clause.
+Drop the clause in `fixtures.go:6`'s comment that names "tool/docs/design/render-reference's frames".
 
 **Acceptance.** `make -C tool check` passes. `all-clean.txt` reads `SKIP  Media bucket binding: no media
-assets configured`. No golden line outside a SKIP title changes in `git diff --stat`'s reading.
-`git ls-files tool/docs/design/render-reference` prints one path. `git grep -n 'render-reference' tool`
-prints only `measurements.txt` citations and the README.
+assets configured`. `git diff -U0 tool/internal/doctor/testdata/golden` shows no changed line outside a
+SKIP title. `git ls-files tool/docs/design/render-reference` prints one path.
+`git grep -n 'render-reference' tool` prints only `measurements.txt` citations and the README.
 
 **Test.** Add `TestEveryCheckDeclaresASkipTitle` beside `TestEveryCheckDeclaresAPassTitle`, asserting
 `SkipTitle` is non-empty and `lineTitle(StatusSkip)` returns it. It fails on any check left out, and it
@@ -277,15 +315,16 @@ claude -p --model haiku --max-turns 3 --tools Skill --output-format text 'Call t
 ```
 
 prints that skill's `# ` heading, not `Unknown skill`. The same call with `--agent cairn-implementer`
-prints the heading for `cairn-following-admin-design`. In a fresh `git worktree`-free check, removing
-`packages/create-cairn-site/template` and running the new setup's last clause recreates it.
+prints the heading for `cairn-following-admin-design`. Removing `packages/create-cairn-site/template`
+and running the setup line's last clause recreates it.
 
 **Test.** `agent-skill-names.test.ts` collects every `cairn-*` skill name in backticks in
-`.claude/agents/*.md` and `.claude/rules/*.md` that has a directory under `.claude/skills/`, and asserts
-its `SKILL.md` frontmatter has no `paths:` key. Restoring one `paths:` block fails it. A skill name with
-no directory is ignored, since packaged skills live under `skills/`.
+`.claude/agents/*.md` and `.claude/rules/*.md` that has a directory under `.claude/skills/`, asserts the
+collected set contains the three names above, and asserts each `SKILL.md` frontmatter has no `paths:`
+key. Restoring one `paths:` block fails it. A skill name with no directory is ignored, since packaged
+skills live under `skills/`.
 
-### T6: #212, the tab sizing retry (45, `ordinary`, may set aside)
+### T6: #212, the tab sizing retry (60, `ordinary`, may set aside)
 
 **Outcome.** The cause is traced and the test no longer retries, or the item carries the evidence.
 
@@ -299,19 +338,23 @@ IBM Plex, under `font-display:swap` (design "#212").
 1. Probe on a throwaway edit: in the test, after `writeWidthSelected`, record
    `document.fonts.check('14px "IBM Plex Sans Variable"')`, then
    `await document.fonts.load('14px "IBM Plex Sans Variable"')`, then measure again, and print both widths.
-2. Run the file alone, with no retry, on the heavy lane:
-   `npx vitest run --project component --retry=0 src/tests/component/EditorToolbar.test.ts`, three times
-   from a cold browser. If the widths differ by more than 0.5px before and after the load, the cause is
-   proved.
-3. Proved: in that describe's `beforeAll`, `await document.fonts.load(...)` for the face before any
+2. Run the file alone, with no retry, three times from a cold browser:
+   `CAIRN_GATE_LANE=heavy cairn-run-gate 'npx vitest run --project component --retry=0 src/tests/component/EditorToolbar.test.ts'`.
+   `--retry=0` overrides the project's `retry: 2`. If the widths differ by more than 0.5px before and after
+   the load, the cause is proved. A `document.fonts.load` rejection, such as a font URL 404, is evidence too.
+3. No change locally is not a verdict: the 10 of 23 is all CI, and an earlier themed describe may have
+   warmed the font. Push the probe once with `console.log` widths, read that run's log, and revert it.
+4. Proved: in that describe's `beforeAll`, `await document.fonts.load(...)` for the face before any
    measurement, with a comment stating why `document.fonts.ready` isn't enough. Remove the probe.
-4. Not proved: try the next traced lead once (the `rerender` flush, a transition on the box). If the
+5. Not proved: try the next traced lead once (the `rerender` flush, a transition on the box). If the
    cause is still open, remove the probe, reword #212 in `BACKLOG.md` with what the runs showed, leave
    its `Placement` for the conductor, and list it under `## Decisions` as set aside. That ends the task.
 
-**Acceptance.** Proved path: the three `--retry=0` runs pass, and the PR's last five CI runs carry no
-`EditorToolbar` entry in their `retries` notice. At 10 of 23 unfixed, five clean runs would happen by
-chance about 7 percent of the time, and the PR says so. Set-aside path: the evidence is on the item.
+**Acceptance.** Proved path: the measured width change is in the PR, the three `--retry=0` runs pass, and
+every CI run after T6 carries no `EditorToolbar` entry in its `retries` notice. The PR states that count
+and the chance it was luck, (13/23)^n at the 10-of-23 rate, so 3 runs is 18 percent. The trace is the proof
+and the clean runs are support, so spend no reruns to raise the count. Set-aside path: the evidence is on
+the item.
 
 **Test.** The existing test with its `beforeAll`. No new test.
 
@@ -334,9 +377,8 @@ chance about 7 percent of the time, and the PR says so. Set-aside path: the evid
   commands, the stale `test.yml:76-81` comment if T5 left it, and anything `## Tooling` turns up.
 - `docs`: run the `.claude/rules/docs-with-code.md` search for `cairn-guidance check` and the doctor's
   SKIP lines across `docs/`, `skills/`, and `claude/`. Show the command. Stale transcript blocks follow the
-  standing answer.
-- Open the draft PR on first push (T1), run `ci-green <sha> --pr <n> --wait` as a background task after each
-  push. A red stops the line.
+  standing answer. If this edits `skills/` or `claude/`, rerun `npm run emit:template` in the same commit.
+  After the last docs edit, run `npm run check:docs-gate` and put its result in the report.
 - `standards:diff-reviewer` at whole-branch scope, with `standards:go-conventions` for `tool/**` and
   `standards:svelte-reviewer` only if T6 touched the component. Fold it, then delete the plan files in a
   final commit.
@@ -350,6 +392,7 @@ report-from-memory fix; the worktree guard; the `cases.json` shared corpus as th
 skill, agent, gate, or hook that failed, misled, or was missing during the run, with its fix or backlog number.
 
 **Acceptance.** CI green on the head, review accepted with no open finding, `## Unreleased` finalized,
-`npm run check:consumers-must` green. Report PR-ready to `cairn-cms-9b` and stop.
+`npm run check:consumers-must` and `npm run check:docs-gate` green. Report PR-ready to `cairn-cms-9b` and
+stop.
 
 **Test.** CI.

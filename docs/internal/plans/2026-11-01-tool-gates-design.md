@@ -43,9 +43,11 @@ ruling says no backfill. `check:consumers-must` reads `## Unreleased` and compar
 lines against `scripts/checks/consumers-must-baseline.json`, a snapshot of today's lines. A new
 off-grammar line fails, naming `CHANGELOG.md:<n>`. A baseline entry no longer in Unreleased also
 fails, so pass 8's R1 reset can't leave the file stale: `--update` rewrites it, and after the reset
-it is `[]`. That is the sheet's "starting at the reset" as a ratchet that already bites. The
+it is `[]`. The comparison is a multiset, since the same text can be legacy twice and still be new a
+third time. That is the sheet's "starting at the reset" as a ratchet that already bites. The
 repository's own form for this is `custom-surface-budget.json` and
-`check-self-use-allowlist.json`.
+`check-self-use-allowlist.json`. `--update` can launder a new line, so it prints what it changed and
+the conductor reads the baseline diff before each merge.
 
 A git-range check was the alternative. It needs a base ref in every caller, and CI's depth-1
 checkout has none. A marker line can't work, because Unreleased is split by `###` subsections and a
@@ -70,8 +72,8 @@ sailing club's exclusion sits in a different file, `src/theme/theme.css:46`.
 
 - `bin.ts` lists `src/**/*.css` and hands the paths to `runGuidanceCheck` beside `readFile`. The fixed
   `SOURCE_CSS_CANDIDATES` list and `SOURCE_EXCLUSION_LINE` go.
-- An entry is a file that imports `tailwindcss` or `tailwindcss/utilities[.css]` with no
-  `source(none)`, after CSS comments are stripped.
+- An entry is a file that imports `tailwindcss` or `tailwindcss/utilities[.css]`, in either quote form,
+  with no `source(none)`, after CSS comments are stripped.
 - `.claude/` counts as excluded when `.gitignore` ignores it, when there is no such entry, or when any
   listed file carries a `@source not` that resolves against that file to the root `.claude`.
 - Otherwise the line is a `FIX` naming the first entry and the exact line for it, computed from the

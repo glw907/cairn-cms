@@ -11,6 +11,9 @@
 - [ ] **#214** Let a worktree-isolated session run compound shell commands that touch no git `#improvement` `#cairn-cms` *(2026-11-01)*
   The worktree guard refused `cmd && cat file`, `sed -i`, a heredoc script that mentioned git in its text, `cairn-run-gate 'bash <script>'`, and a write to the pass clock file under the git dir, in the `tool-gates` run and in all four `cairn-implementer` dispatches, with "cannot be shown not to be git". Each recovered by splitting the command or using the Edit tool. The guard's wording gives no hint which part tripped it. Fix candidate: name the matching token in the refusal, or allow a command whose text carries no `git` word and no path under the git dir.
   Placement: Cleanup round.
+- [ ] **#217** Close two edge gaps the `tool-gates` review found in the new readers `#improvement` `#cairn-cms` *(2026-11-01)*
+  The JS and Go `Consumers must:` readers differ on CRLF and NBSP input (Go's `.` matches `\r` and `\S` matches NBSP; JS's do neither), and `cairn-guidance check` ignores `@import "tailwindcss" source("<base>")` moving the scan base, so a site that points auto-detection at `src` would get a false FIX. Neither is live: `CHANGELOG.md` is LF with no NBSP, and no scaffolded site sets a source base (`scripts/checks/check-consumers-must.mjs:17`, `tool/internal/health/check_engine.go:424`, `src/lib/guidance/check.ts:61`).
+  Placement: Cleanup round.
 - [ ] **#215** Correct the stale `test.yml` comment that calls `prepack` unrunnable `#bug` `#cairn-cms` *(2026-11-01)*
   The comment at `.github/workflows/test.yml:76-81` says the bake's default path is unrunnable until `@glw907/cairn-cms-dev` publishes. `npm --prefix packages/create-cairn-site run prepack` ran clean at `0.98.0`, and setup now runs it. Left alone in `tool-gates` because no task was on that hunk.
   Placement: Cleanup round.

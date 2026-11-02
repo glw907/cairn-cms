@@ -210,7 +210,7 @@ What the old series carried, as it stands:
     can read it. It is scoped forward-only with no backfill of the historical entries, which is why it
     has to land before the release rather than after. **Contract landed** (tool-gates): the
     grammar and `check:consumers-must` are in, ruled contract only, forward-only, and no verb; the
-    `migrate` wording is left to pass 8's R9; and the admin design items P2 the zero-state
+    `migrate` wording is left to pass 8's R9. The release also carries the admin design items P2 the zero-state
     pass, P3 the admin at the viewport extremes, and P4 the sign-in touchpoints with the
     keyboard-and-screen-reader walkthrough (the release is now the forcing function the public beta
     was). The editors arm's screenshots show the zero states and the sign-in screens, so stage 4's

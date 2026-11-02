@@ -31,8 +31,8 @@ every route. No `tool/v2.0.0` tag exists yet.
   `--json` output is unchanged.
 - **`cairn health` reads the changelog's `Consumers must:` line by one grammar.** Only a bare
   `Consumers must:` line at column 0 or two spaces counts, and a section is actionable when any such
-  line says something other than `nothing.`. A bold or mid-paragraph lead, and a hedged "nothing,
-  unless", are no longer read as a clause. The engine changelog's gate holds new lines to the same
+  line says something other than `nothing.`. A bold or mid-paragraph lead is no longer read as a
+  clause, and a hedged "nothing, unless" now reads as actionable. The engine changelog's gate holds new lines to the same
   grammar.
 - **A `cairn doctor` PASS line prints the check's pass title.** The plain-text report keyed every
   line to the condition's registry title, which names the failure, so a passing check read "PASS

@@ -5,8 +5,8 @@
 - **A `Consumers must:` line has one grammar, and a gate holds new lines to it.** The line sits alone
   on one physical line, at column 0 or two spaces, and reads `Consumers must: nothing.` or
   `Consumers must: <action>.` with no bold, no backticks, and no hedge. `npm run check:consumers-must`
-  fails a new `## Unreleased` line off that grammar, and `cairn health` reads the same grammar from the
-  shared fixture `scripts/checks/fixtures/consumers-must/cases.json`. Lines already off grammar sit in
+  fails a new `## Unreleased` line off that grammar, and `cairn health` reads the same grammar. A shared
+  fixture, `scripts/checks/fixtures/consumers-must/cases.json`, holds the two readers to it. Lines already off grammar sit in
   `scripts/checks/consumers-must-baseline.json` until the release reset removes them.
 
   Consumers must: nothing.

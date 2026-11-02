@@ -1,0 +1,42 @@
+Conductor hand-over: cairn-cms pass 1a, Auth removal (slug `auth-removal`, class `auth-data` plus `runner`).
+
+Plan: docs/internal/plans/2026-11-01-auth-removal-plan.md on branch `auth-removal`, pushed to glw907/cairn-cms. Path 420 minutes against a ceiling of 480, with no cut applied. Design estimate 240; #203 joined after it, and the review added the rest. Absolute copy of each file, in the planner's worktree:
+/var/home/glw907/Projects/cairn-cms/.claude/worktrees/auth-removal/docs/internal/plans/
+
+Pre-launch checks (run sheet "Sequence and launch"):
+
+- In the main checkout /var/home/glw907/Projects/cairn-cms: on `main`, `git fetch`, and `git rev-list --count HEAD..origin/main` prints 0.
+- `pgrep -f .claude/worktrees/auth-removal-run` is empty and `git status` is clean, with no warm uncommitted code.
+- No open brief in docs/internal/consultations/.
+- The e2e flake in the ledger's `## Conductor state` is fixed or filed with evidence. This hold is yours; the executor does nothing about it.
+- The plan's pre-flight has no step for Geoff and no item outside the sheet. Auto-mode writes it names: `claude/CLAUDE.md`, `.claude/skills/cairn-running-passes/**`, `.claude/skills/cairn-writing-engine-code/references/durable-gotchas.md`, `.claude/skills/cairn-writing-docs/**`, and `templates/waymark/.claude/**`, plus `wrangler d1 --local`, stopping the session's own `wrangler dev`, the smoke script under `~/.local/state`, its copy under `$CLAUDE_JOB_DIR/tmp`, and an `update_snapshots` dispatch if a visual diff calls for one.
+- One path sits outside workstation#192's text: `claude/agents/cairn-extension-reviewer.md` and its copy under `templates/waymark/.claude/agents/`. Exercise a write on both before launch. Neither is a live agent definition. If the write is refused, launch anyway: the plan's standing answer records the owed one-line edit in STATUS, and you land it.
+
+Executor launch, from the main checkout:
+
+cd /var/home/glw907/Projects/cairn-cms && claude --bg --model claude-opus-5-5 --effort high --name cairn-cms-auth-removal "$(cat /var/home/glw907/Projects/cairn-cms/.claude/worktrees/auth-removal/docs/internal/plans/2026-11-01-auth-removal-executor-prompt.txt)"
+
+Prompt file: /var/home/glw907/Projects/cairn-cms/.claude/worktrees/auth-removal/docs/internal/plans/2026-11-01-auth-removal-executor-prompt.txt
+
+The executor names `cairn-cms-9b` as its one instruction source. It works in a worktree it enters as `auth-removal-run`, fast-forwarded from `origin/auth-removal`, and it ends at PR-ready.
+
+Merge order: the ledger orders 1b first, and either order works. If 1b merged first, the executor's T9 merges `main` and regenerates, per the plan's "Overlap with 1b". If 1a merges first, 1b takes the sheet's second-of-two-PRs step before its merge. Pass 1b records the 12 cleanup calls and each reversed ruling; this pass leaves docs/internal/engine-rulings.md alone apart from a ruling only it can word.
+
+Merge conditions, Geoff's word: green CI on the head, a folded `standards:web-auth-security-reviewer` read with no open finding, and the live admin smoke, record packet first. The conductor merges. Confirm the three yourself from the PR body, then queue one record packet in the background and merge once the queue accepts it: `gh pr merge <n> --merge --match-head-commit <head>`. Lists go in the packet's Background. If the queue is down, write the packet to the state dir, notify Geoff, and merge. An open High finding is not "no open finding", and an `escalate` verdict stops the line: each goes to Geoff, and nothing merges. The smoke's one known `no-pending-request` FAIL counts as a pass with a note, only as the plan's "Smoke" stop defines it.
+
+Standing answers beyond the sheet:
+
+- A ref write refused for workflows at the real install (pass 9, rc.2) stops for Geoff, who is at that sitting, with the cause in hand. No fallback is written now. `workflows: 'write'` is not a one-line fix: the App `adopt-cairn.md` teaches holds Contents alone, and asking for a permission the App lacks would refuse every mint on an adopted site.
+- The executor's stops arrive in its branch's docs/STATUS.md. The plan's "May be escalated" line names which ones reach you.
+
+The packet's Background carries:
+
+- What is not proved. The scoped mint has never run against GitHub. A read-only planning probe was refused by the harness and was not worked around, and the smoke's placeholder key never mints. The 422 and the Contents-only ref writes come from GitHub's docs, and the first live proof is the rc.2 install, on a scaffolded App only.
+- The `/admin/signups` route and its baselines stay. The sheet's line says those baselines leave with the members code, but the route has no members code, `custom-screen.spec.ts` drives it, and pass 6 builds on it.
+- `card` stays enabled in `tokens.css` with no route rendering it, for a later pass to take.
+- Removed beyond the named items, each with no caller left: `insertOwnerIfEmpty`, `originMatches`, `isDeployedHost`, and `src/lib/log.ts` from the template. `token_request_refused` is a new `/healthz` class inside #203.
+- A stale `repo` value that follows GitHub's redirect today now fails the mint, so a site that renamed its repository sees an outage until `repo` is corrected. The `Consumers must:` line says so.
+- #203's `packages/` half stays open, reworded, by Geoff's ruling that the advice stays "All repositories".
+- Every entry in the PR's `## Decisions` and `## Planning misses`.
+
+After the merge: pull the checkout per `pass-core`, delete the branches `auth-removal` and `auth-removal-run` and both worktrees, and update STATUS in a batch. No bump and no publish.

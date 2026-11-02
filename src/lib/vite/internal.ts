@@ -224,9 +224,6 @@ export async function buildManifestFromVite(opts: CairnManifestOptions, root: st
   return evalVirtual(virtualSource(opts, 'write'), root);
 }
 
-/** The configured site-facts path, app-root-relative (no leading slash), for joining and display. */
-
-
 /**
  * The packages Vite must process rather than externalize: the engine ships `.svelte` and TS source,
  *  and the dev backend ships JavaScript importing `cloudflare:workers`, a scheme Node's loader

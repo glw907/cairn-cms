@@ -192,7 +192,7 @@
   than `/media`.
 
   Consumers must: call `createMediaResolver(media, manifest, { strict })` in that order and drop any
-  `normalizeAssets` call.
+  `normalizeAssets` call, and drop any `ResolvedAssetConfig` import.
 
   Consumers must: read `runtime.media` where you read `runtime.resolvedAssets`.
 
@@ -213,6 +213,9 @@
 
   Consumers must: replace `createSiteIndexes(adapter, config, globs, opts)` with
   `createSiteResolver(adapter, files)` over one `/src/content/**/*.md` glob.
+
+  Consumers must: use the returned value as `site`, read each concept through `site.concept('posts')`
+  where you read `indexes.posts`, and drop any `SiteIndexes` or `SiteGlobs` import.
 
   Consumers must: drop `content`, `manifestPath`, and `siteFactsPath` from `cairnManifest()`.
 
@@ -797,12 +800,6 @@
 
 - **The editor preview honors a moved media path.** `manifestMediaResolver` takes the site's media
   base, so an image in the preview resolves under it instead of `/media`.
-- **`normalizeAssets` throws on an `allowedTypes` entry the upload path cannot store.** The error is
-  `cairn:`-prefixed and names the type. The sniffer's five types stay the only source.
-
-  Consumers must: remove any `allowedTypes` entry outside `image/jpeg`, `image/png`, `image/webp`,
-  `image/gif`, and `image/avif`, since the site now fails at startup on one.
-
 - **A throwing `attention` function no longer fails the admin shell load.** The shell catches the
   throw or rejection, renders no badges for that request, and logs `admin.attention_failed` with the
   error. A site no longer needs its own try/catch around the function.

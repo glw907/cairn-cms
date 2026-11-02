@@ -45,7 +45,7 @@ Contents:
 ## Render entries
 
 `src/routes/[...path]/+page.server.ts` with `prerender = true`, `entries`, and `load` from
-`createPublicRoutes({ site, render: cairn.rendering.render, origin, siteName, description })`;
+`createPublicRoutes({ site, render: cairn.rendering.render, origin, siteName, description, resolveMedia: null })`;
 `+page.svelte` renders `{@html data.html}`. Shape and head: `references/public-routes.md`. A posts
 concept with default routing serves each entry at `/posts/<slug>`.
 

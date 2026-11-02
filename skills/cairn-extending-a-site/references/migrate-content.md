@@ -31,8 +31,9 @@ Contents:
 - **Dates.** A `date` field takes `YYYY-MM-DD`. A value with a time of day fails the build, naming
   the file and the day as written, so write the date alone. Take the day from the filename when it
   carries one, and only fall back to the frontmatter.
-- **Drafts.** Only boolean `true` or `false` is valid. `draft: 'true'` and `draft: yes` fail the
-  build, while `published: false` still reads as published, so map each old marker to `draft: true`.
+- **Drafts.** Only boolean `true` or `false` is valid, whatever field kind declares `draft`.
+  `draft: 'true'` and `draft: yes` fail the build, while `published: false` still reads as published,
+  so map each old marker to `draft: true`. Every declared `boolean` field follows the same rule.
 - **Tags.** Slug each (`Travel Notes` → `travel-notes`) under the taxonomy field's key.
 - **Text fields.** Text-type fields read a number or boolean as empty; stringify them.
 - **Body.** Rewrite each shortcode as a container directive of a registered component (`:::note`).

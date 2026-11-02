@@ -658,8 +658,8 @@
 - **A `date` field refuses a value with a time of day.** A text such as `2024-03-15 20:00:00 -08:00`
   or `2024-03-15T20:00:00Z` fails with `has a time of day. Write the date alone: 2024-03-15`, naming the
   day as written. Before, a negative offset late in the day validated as the next day with no warning.
-  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with one
-  `content.entry_invalid` log line, and the build fails on it unless it is a draft. The edit route still
+  An entry refused here leaves the manifest, so the admin's concept list stops showing it, with a
+  `content.entry_invalid` log record, and the build fails on it unless it is a draft. The edit route still
   opens it by URL on the written day, and a save writes the date alone.
 
   Consumers must: write the date alone in every `date` field, taking the day from the filename when it
@@ -670,12 +670,13 @@
   such as `draft: "true"` or `draft: yes`, fails with `Draft must be true or false`. Before, the engine
   read only the boolean `true` as a draft, so a mistyped marker published the entry. A concept that
   declares no `draft` field runs the raw key through the same rule, and `draft` must be boolean whatever
-  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's boolean attribute is
-  unaffected, since it is already a real boolean. Jekyll's `published: false` is still not read.
+  kind the concept declares it as: a `fields.text` draft holding `"true"` is refused too. A directive's
+  boolean attribute is unaffected, since it is already a real boolean. Jekyll's `published: false` is
+  still not read.
 
   Consumers must: fix each `draft` and each value of a declared `boolean` field that is not `true`,
   `false`, or empty, such as `featured: "true"` or `pinned: yes`; the build names the file, and such an
-  entry leaves the manifest and the admin's concept list with one `content.entry_invalid` log line, as in
+  entry leaves the manifest and the admin's concept list with a `content.entry_invalid` log record, as in
   the entry above. Map any other draft marker to `draft: true`. If you call `validate` by hand, pass a
   real boolean or an empty value: a raw form string such as `'on'` is now refused where it used to read
   as unset.
@@ -905,7 +906,7 @@
   (`^6.5.2`), `@codemirror/language` (`^6.13.1`), `@codemirror/view` (`^6.43.14`), `@lucide/svelte`
   (`^1.52.0`), `@rodrigodagostino/svelte-sortable-list` (`^2.2.6`), `heic-to` (`^1.6.5`, libheif
   1.23.5), `mdast-util-directive` (`^3.1.1`), `shiki` (`^4.5.0`), and the `@types/hast`,
-  `gray-matter`, `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
+  `remark-gfm`, and `yaml` floors. The peer ranges do not move. The scaffold's
   `package.json` takes `wrangler` `^4.148.0`, `@sveltejs/kit` `^3.0.1`, `svelte` `^5.57.2`, `vite`
   `^8.3.3`, and `@cloudflare/workers-types` `^5.20261007.1`. The Workers test project moves to
   `@cloudflare/vitest-plugin` (the renamed `@cloudflare/vitest-pool-workers`, which is deprecated),

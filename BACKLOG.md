@@ -13,7 +13,7 @@
 
 ## Medium
 - [ ] **#212** Tell an entry form's editor a field's bounds and keep the error on screen `#improvement` `#cairn-cms` *(2026-11-01)*
-  `FieldInput.svelte` renders `minlength`, `maxlength`, `min`, and `max`, but no hint states a bound, so an editor learns it by hitting it, and `aria-describedby` is unset when `help` is. A native bubble is the only report: it fades, and nothing marks the control afterward. A server refusal shows `.alert-error` (`EditPage.svelte:1828`) with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:130`), so each side can refuse what the other accepts. `ComponentForm.svelte:317` already has the `aria-invalid` shape, and DaisyUI's `validator` and `validator-hint` are unused here. Two controls invalid at once open the details aside over a focused title at 320 and 390 wide (`EditPage.svelte:341`). Found by the field-values close review (#176), WCAG 3.3.1, 3.3.2, and 4.1.3.
+  `FieldInput.svelte` renders `minlength`, `maxlength`, `min`, and `max`, but no hint states a bound, so an editor learns it by hitting it, and `aria-describedby` is unset when `help` is. A native bubble is the only report: it fades, and nothing marks the control afterward. A server refusal shows `.alert-error` (`EditPage.svelte:1833`) with no focus move or `aria-invalid`. `maxlength` truncates a paste silently, and the browser counts untrimmed text where the save counts trimmed (`fieldset.ts:129`), so each side can refuse what the other accepts. `ComponentForm.svelte:306` already has the `aria-invalid` shape, and DaisyUI's `validator` and `validator-hint` are unused here. Two controls invalid at once open the details aside over a focused title at 320 and 390 wide (`EditPage.svelte:341`). Found by the field-values close review (#176), WCAG 3.3.1, 3.3.2, and 4.1.3.
   Placement: Pass 5.
 
 - [ ] **#213** Refuse contradictory bounds at `defineFieldset` `#bug` `#cairn-cms` *(2026-11-01)*
@@ -149,6 +149,10 @@
   Placement: Final engine batch, small API slice.
 
 ## Low
+- [ ] **#217** Have `cairn-implementer` report from its commit's file list `#improvement` `#cairn-cms` *(2026-11-01)*
+  On #176 T1's implementer reported three skill files edited that weren't in its commit, and its "about 40 minutes" was 9.5. The fast lane passed because no check reads those files, and the session caught it only by reading the merge's diffstat. `.claude/agents/cairn-implementer.md`'s report step could require `git show --stat HEAD` and a recorded start time. Worded into each dispatch on #176 afterward, with no repeat.
+  Placement: Cleanup round.
+
 - [ ] **#216** Trace the EditorToolbar tab sizing retry `#bug` `#cairn-cms` *(2026-11-01)*
   `EditorToolbar > Write/Preview tab sizing (design ratchet D3 item 6) > keeps each tab its own width across the selected/unselected swap` retried in `test` on all six task heads of #176, including the first, which touched no toolbar code. A test that needs a retry on every run hides a real regression in the tab width. Not traced.
   Placement: Cleanup round.

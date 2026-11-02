@@ -115,4 +115,18 @@ describe('edit-page field hint', () => {
     await expect.element(title).toHaveAttribute('maxlength', '60');
     await expect.element(title).not.toHaveAttribute('minlength');
   });
+
+  it('lets length set both bounds on a textarea title, over min and max', async () => {
+    const base = props();
+    const page = await render(EditPage, {
+      ...base,
+      data: {
+        ...base.data,
+        fields: [{ name: 'title', label: 'Title', type: 'textarea', length: 5, min: 2, max: 9 }] as NamedField[],
+      },
+    });
+    const title = page.getByRole('textbox', { name: 'Title' });
+    await expect.element(title).toHaveAttribute('minlength', '5');
+    await expect.element(title).toHaveAttribute('maxlength', '5');
+  });
 });

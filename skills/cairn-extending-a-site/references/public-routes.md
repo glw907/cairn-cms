@@ -87,6 +87,40 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
   `Content-Type` comes from Cloudflare's asset layer, which derives it from the file extension and
   documents no charset ([static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)).
 
+A second concept in the feed: the scaffold's `feedItemsFrom` reads `posts` only, takes no concept option,
+and throws when `posts` is absent. To feed another routable concept, such as `guides`, map it by hand into
+the same `FeedItem` shape in `chassis/feed.ts` and merge the lists:
+
+<!-- snippet-check-skip: continues the scaffold's feed module, which imports site, siteMeta, render, and resolveMedia -->
+```ts
+export async function buildFeedItems(): Promise<FeedItem[]> {
+  const source = { site, origin: siteMeta.origin, render: cairn.rendering.render, resolveMedia };
+  const guides = site.concept('guides');
+  const toPermalink = createLinkResolver(site);
+  const absoluteMedia: MediaResolve = (ref) => {
+    const url = resolveMedia(ref);
+    return url === undefined ? undefined : new URL(url, siteMeta.origin).href;
+  };
+  const guideItems: FeedItem[] = await Promise.all(
+    guides.all().map(async (g) => ({
+      title: g.title,
+      url: siteMeta.origin + g.permalink,
+      date: g.date,
+      summary: g.excerpt,
+      contentHtml: await source.render({
+        body: guides.byId(g.id)!.body,
+        resolveLink: (ref) => siteMeta.origin + toPermalink(ref),
+        resolveMedia: absoluteMedia,
+        resolveFragment: createFragmentResolver(site),
+      }),
+      tags: g.tags,
+    })),
+  );
+  const items = [...(await feedItemsFrom(source)), ...guideItems];
+  return items.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+}
+```
+
 ## Archive, tag pages, other heads
 
 - Archive: `all()` is already sorted (dated newest first). A paginated route whose `entries` can be

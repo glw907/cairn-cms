@@ -48,6 +48,17 @@ and `npm run lane:fast` replaces the lane they name.
 - [A rename sweep edits the living docs only](#a-rename-sweep-edits-the-living-docs-only)
 - [`git commit -- <path>` commits unstaged hunks too](#git-commit----path-commits-unstaged-hunks-too)
 - [Do not import `content/types` from `email.ts` or `platform-bindings`](#do-not-import-contenttypes-from-emailts-or-platform-bindings)
+- [A barrel grep misses the `CairnAdminConfig` member pins](#a-barrel-grep-misses-the-cairnadminconfig-member-pins)
+- [The dev handle imports the engine from `dist`](#the-dev-handle-imports-the-engine-from-dist)
+- [A skill edit fails `guidance/bin.test.ts` until `emit:template`](#a-skill-edit-fails-guidancebintestts-until-emittemplate)
+- [`packages/create-cairn-site/template` goes stale after a showcase comment change](#packagescreate-cairn-sitetemplate-goes-stale-after-a-showcase-comment-change)
+- [`packages/cairn-cms-dev`'s `dist` builds only through the root `package` script](#packagescairn-cms-devs-dist-builds-only-through-the-root-package-script)
+- [A line-based dead-name grep misses a phrase wrapped across a comment line](#a-line-based-dead-name-grep-misses-a-phrase-wrapped-across-a-comment-line)
+- [Tightening a shared failure type can break a `viewAction` delegate](#tightening-a-shared-failure-type-can-break-a-viewaction-delegate)
+- [`lane:fast --range` fails on an empty range](#lanefast---range-fails-on-an-empty-range)
+- [A renamed label trips the editor-quotes gate](#a-renamed-label-trips-the-editor-quotes-gate)
+- [A component test reading a compiled admin class needs the theme root](#a-component-test-reading-a-compiled-admin-class-needs-the-theme-root)
+- [Cast `.element()` to `HTMLElement` in a component test, not `HTMLSelectElement`](#cast-element-to-htmlelement-in-a-component-test-not-htmlselectelement)
 
 
 Detail moved out of `CLAUDE.md` to keep that file inside its context budget. The first five
@@ -628,3 +639,73 @@ Do not import `content/types` from `src/lib/email.ts` or `src/lib/sveltekit/plat
 without the mdast-to-hast augmentation, so `npm run check` fails on `resolve-include.ts` with
 `'hName' does not exist in type 'ParagraphData'`. Spell the type structurally, or import it from a
 leaf module that does not reach `content/types`.
+
+## A barrel grep misses the `CairnAdminConfig` member pins
+
+`src/tests/unit/sveltekit-mount-contract-reshape.test.ts` pins the member names of `CairnAdminConfig`
+and the bindings types by reading the packaged `dist/sveltekit/index.d.ts`. A grep for a renamed or
+removed member across the barrel files never reaches it, so the test fails only when `npm test` runs
+against a fresh `dist`. Grep the member name across `src/tests` as well as `src/lib` before changing
+a config or bindings member, then run `npm run package` and the test.
+
+## The dev handle imports the engine from `dist`
+
+`packages/cairn-cms-dev` imports the engine from `dist`, not from `src/lib`. A change to a sink under
+`src/lib` that the dev handle exercises reaches it only after `npm run package`, so a dev-handle test
+that passes before the rebuild and fails after is reading the new engine.
+
+## A skill edit fails `guidance/bin.test.ts` until `emit:template`
+
+The packaged skills are baked into the template, and `src/tests/unit/guidance/bin.test.ts` checks
+the installed guidance against them. Editing a file under `skills/` fails that test until
+`npm run emit:template` re-emits the template tree; commit the emitted tree in the same commit.
+
+## `packages/create-cairn-site/template` goes stale after a showcase comment change
+
+The template is generated from `examples/showcase`, so a comment-only change in the showcase leaves
+the committed template stale, and `npm run check:template` fails on it. Run `npm run emit:template`
+after any showcase edit, comments included, and commit the result with the edit.
+
+## `packages/cairn-cms-dev`'s `dist` builds only through the root `package` script
+
+The dev package's `dist` is produced by the `tsc -p packages/cairn-cms-dev/tsconfig.build.json` step
+inside the root `npm run package`. Running `tsc` or a build inside the package alone does not
+reproduce it, so a test that reads that `dist` needs the root script.
+
+## A line-based dead-name grep misses a phrase wrapped across a comment line
+
+A rename sweep that greps one line at a time misses a phrase a comment wraps across two lines:
+"Edit the component at / the cursor" survived a script that searched for the whole sentence. Search
+for a distinctive fragment of each half, or join the lines before matching, then read each hit.
+
+## Tightening a shared failure type can break a `viewAction` delegate
+
+Narrowing a failure type that several actions share can make the inferred union of a `viewAction`
+delegate reduce to the supertype, or fail declaration emit. `npm run check` stays green; only
+`npm run package` or `npm run check:surface` shows it. Run one of them after changing a shared
+failure type.
+
+## `lane:fast --range` fails on an empty range
+
+`npm run lane:fast -- --range <base>..HEAD` exits non-zero when the range holds no commit, which is
+the state before a task's first commit. Commit the task's work first, then run the lane, or run the
+targeted tests while the range is empty.
+
+## A renamed label trips the editor-quotes gate
+
+`npm run check:editor-quotes` requires every bolded quote on `docs/editors/when-something-goes-wrong.md`
+to match a shipped string under `src/lib`. Renaming a label, button, or message that the page quotes
+strands the quote and fails the gate. Grep `docs/editors` for the old text and update the page in
+the same commit.
+
+## A component test reading a compiled admin class needs the theme root
+
+A component test that reads `getComputedStyle` for a class from the compiled admin sheet needs both
+the injected sheet and `data-theme="cairn-admin"` on `document.documentElement`. Without the theme
+root the scoped rules do not apply, and the computed value reads as the browser default.
+
+## Cast `.element()` to `HTMLElement` in a component test, not `HTMLSelectElement`
+
+In `src/tests/component`, casting a locator's `.element()` to `HTMLSelectElement`, or calling
+`querySelector<HTMLSelectElement>`, fails `svelte-check`. Cast to `HTMLElement` and read the
+property through it.

@@ -25,13 +25,12 @@ describe('composeRuntime preview pass-through', () => {
     // with a per-concept wrapper override (the ecxc shape: posts wrap differently from pages).
     const preview: PreviewConfig = {
       stylesheets: ['/_app/immutable/assets/app.B3xJk2.css'],
-      bodyClass: 'bg-base-100',
       containerClass: 'prose mx-auto',
-      byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
+      byConcept: { posts: { containerClass: 'post-module' } },
     };
     const runtime = composeRuntime({ adapter: { ...adapter(), editor: { preview } }, siteConfig: testSiteConfig });
     expect(runtime.preview).toBe(preview);
-    expect(runtime.preview?.byConcept).toEqual({ posts: { bodyClass: 'post-body', containerClass: 'post-module' } });
+    expect(runtime.preview?.byConcept).toEqual({ posts: { containerClass: 'post-module' } });
   });
 
   it('leaves preview undefined when the adapter omits it', () => {
@@ -103,13 +102,8 @@ describe('composeRuntime manifestPath', () => {
 });
 
 describe('composeRuntime spellcheckDictionary', () => {
-  it('defaults to the US English dictionary when the site config sets no dialect', () => {
+  it('is the US English dictionary, the one that ships', () => {
     const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig });
-    expect(runtime.spellcheckDictionary).toBe('dictionary-en-us.txt');
-  });
-
-  it('falls back to the default dictionary for an unknown configured dialect', () => {
-    const runtime = composeRuntime({ adapter: adapter(), siteConfig: { ...testSiteConfig, spellcheck: { dialect: 'xx-ZZ' } } });
     expect(runtime.spellcheckDictionary).toBe('dictionary-en-us.txt');
   });
 });

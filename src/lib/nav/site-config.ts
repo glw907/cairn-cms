@@ -94,15 +94,6 @@ export interface SiteConfig {
   /** Named navigation menus, each a NavNode[] (normalized by readMenu). */
   menus?: Record<string, unknown>;
   /**
-   * The editor spellcheck settings. The dialect is declared once per site, so a British
-   *  site loads the British word list and "colour" reads as correct. Today only US English ships, so an
-   *  unset or unknown dialect resolves to it.
-   */
-  spellcheck?: {
-    /** The word-list dialect; an unset or unknown value resolves to US English, the one that ships. */
-    dialect?: string;
-  };
-  /**
    * The editor tidy (LLM copy-edit) settings. Opt-in at the site level: tidy is a remote,
    *  costly model call, so the whole block is optional and `enabled` defaults false. The model is a
    *  developer-tier fact; the `conventions` block is the editor-tier per-convention config that builds
@@ -152,7 +143,7 @@ export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5-5';
  * from a partial config. The Settings screen validates a saved block against the same sets, and a
  * value outside its set throws. The objective fixes are not a convention: the always-on core
  * applies them; the style tier defaults off (a falsy variant means off); the advanced tier defaults off.
- * Sentence spacing is dropped on purpose and regional spelling is `spellcheck.dialect`, not a toggle.
+ * Sentence spacing is dropped on purpose and regional spelling is not a toggle.
  * @public
  */
 export interface TidyConventions {
@@ -271,26 +262,8 @@ export function validateTidyConventions(value: unknown): TidyConventions {
   };
 }
 
-/** The dialect string when a site sets none: US English, the only dictionary that ships today. */
-export const DEFAULT_DIALECT = 'en-US';
-
-// The dialect-to-dictionary map. Only US English ships now; a new locale adds one entry here and one
-// committed dictionary file under spellcheck-assets, and the rest of the chain (the main-thread URL
-// resolution, the worker fetch) needs no change. An unknown or unset dialect falls back to the default
-// rather than throwing, so a typo or a future-locale config never breaks the editor.
-const DICTIONARY_BY_DIALECT: Record<string, string> = {
-  'en-US': 'dictionary-en-us.txt',
-};
-
-/**
- * The dictionary asset file for a site's configured dialect, defaulting to US English. The main thread
- * resolves this filename to a real URL (the spike's out-of-bundle asset) and hands it to the Worker in
- * the `init` message; the Worker never reads config. An unknown dialect falls back to the default file.
- */
-export function dictionaryFileForDialect(dialect: string | undefined): string {
-  const key = dialect ?? DEFAULT_DIALECT;
-  return DICTIONARY_BY_DIALECT[key] ?? DICTIONARY_BY_DIALECT[DEFAULT_DIALECT]!;
-}
+/** The editor's spellcheck dictionary file: US English, the one dictionary that ships. */
+export const DEFAULT_DICTIONARY_FILE = 'dictionary-en-us.txt';
 
 /**
  * Thrown by parseSiteConfig and the nav/tidy/vocabulary writers on a malformed site.config.yaml.
@@ -311,7 +284,6 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   'author',
   'locale',
   'menus',
-  'spellcheck',
   'tidy',
   'vocabulary',
 ]);
@@ -336,11 +308,9 @@ const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
  * @remarks
  * It enforces the boundary between `site.config.yaml` and `cairn.config.ts`: every top-level key
  * must be one the engine reads from the YAML (`siteName`, `description`, `author`, `locale`,
- * `menus`, `spellcheck`, `tidy`, `vocabulary`). A key that belongs on the adapter (`content`,
+ * `menus`, `tidy`, `vocabulary`). A key that belongs on the adapter (`content`,
  * `backend`, `email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as
- * its home, and any other unrecognized key throws listing the known keys. It does not check
- * `spellcheck.dialect`: the editor resolves any other or unset dialect to the one shipped
- * dictionary, American English, with no error.
+ * its home, and any other unrecognized key throws listing the known keys.
  * @public
  */
 export function parseSiteConfig(raw: string): SiteConfig {

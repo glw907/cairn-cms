@@ -3,14 +3,26 @@ import { h } from 'hastscript';
 import { defaultSchema } from 'hast-util-sanitize';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import { buildSanitizeSchema } from '../../lib/render/sanitize-schema.js';
 import { fields } from '../../lib/content/fields.js';
 import { manifestMediaResolver } from '../../lib/render/resolve-media.js';
-import type { Schema } from 'hast-util-sanitize';
+import type { Element, Root } from 'hast';
+import { visit } from 'unist-util-visit';
 
 const plain = () => createRenderer();
 
 describe('render sanitize floor', () => {
+  it('has one pipeline path: the removed switches are not options, and a script is removed', async () => {
+    // @ts-expect-error unsafeDisableSanitize is no longer an option
+    const off = createRenderer({ unsafeDisableSanitize: true });
+    // @ts-expect-error sanitizeSchema is no longer an option
+    const extended = createRenderer({ sanitizeSchema: (s: unknown) => s });
+    for (const r of [off, extended]) {
+      const html = await r.render({ body: 'ok\n\n<script>alert(1)<\/script>\n\n<img src=x onerror="alert(2)">' });
+      expect(html).not.toContain('<script');
+      expect(html).not.toContain('alert');
+    }
+  });
+
   it('strips a script element from author HTML', async () => {
     const html = await plain().render({ body: 'ok\n\n<script>alert(1)<\/script>' });
     expect(html).not.toContain('alert');
@@ -50,15 +62,14 @@ describe('render sanitize floor', () => {
     expect(html).toContain('rel="noopener noreferrer"');
   });
 
-  it('applies a custom anchorRel value', async () => {
-    const r = createRenderer({ anchorRel: 'nofollow' });
-    const html = await r.render({ body: '<a href="https://x.test" target="_blank">x</a>' });
-    expect(html).toContain('rel="nofollow"');
-  });
-
-  it('omits rel when anchorRel is false', async () => {
-    const r = createRenderer({ anchorRel: false });
-    const html = await r.render({ body: '<a href="https://x.test" target="_blank">x</a>' });
+  it('runs the rel step before a site rehype plugin, so a plugin-built blank anchor gets none', async () => {
+    const addBlank = () => (tree: Root) => {
+      visit(tree, 'element', (node: Element) => {
+        if (node.tagName === 'a') node.properties.target = '_blank';
+      });
+    };
+    const html = await createRenderer({ rehypePlugins: [addBlank] }).render({ body: '[x](https://x.test)' });
+    expect(html).toContain('target="_blank"');
     expect(html).not.toContain('rel=');
   });
 
@@ -83,70 +94,8 @@ describe('render sanitize floor', () => {
     expect(html).toContain('content');
   });
 
-  it('a sanitizeSchema extension admits a tag while the core strip still removes a script', async () => {
-    const extend = (s: Schema): Schema => ({ ...s, tagNames: [...(s.tagNames ?? []), 'figure'] });
-    const r = createRenderer({ sanitizeSchema: extend });
-    const html = await r.render({ body: '<figure>cap</figure>\n\n<script>alert(1)<\/script>' });
-    expect(html).toContain('<figure>');
-    expect(html).not.toContain('alert');
-  });
-
-  it('keeps the floor when a callback admits script and empties strip in place', async () => {
-    const extend = (s: Schema): Schema => {
-      s.tagNames?.push('script');
-      s.strip?.splice(0);
-      return s;
-    };
-    const r = createRenderer({ sanitizeSchema: extend });
-    const html = await r.render({ body: 'ok\n\n<script>alert("floor-body")<\/script>' });
-    expect(html).not.toContain('<script');
-    expect(html).not.toContain('floor-body');
-  });
-
-  it('hands the callback a copy, so a nested mutation never reaches a later build', () => {
-    const registry = defineRegistry({ components: [] });
-    buildSanitizeSchema(registry, (s) => {
-      s.protocols?.src?.push('cairn-test-scheme');
-      return s;
-    });
-    expect(buildSanitizeSchema(registry).protocols?.src).not.toContain('cairn-test-scheme');
-    expect(defaultSchema.protocols?.src).not.toContain('cairn-test-scheme');
-  });
-
-  it('keeps a strip entry the callback adds', async () => {
-    const extend = (s: Schema): Schema => ({ ...s, strip: [...(s.strip ?? []), 'marquee'] });
-    const r = createRenderer({ sanitizeSchema: extend });
-    const html = await r.render({ body: 'ok\n\n<marquee>marquee-body</marquee>' });
-    expect(html).not.toContain('marquee-body');
-  });
-
-  it.each([
-    ['an undefined tagNames', (s: Schema): Schema => ({ ...s, tagNames: undefined })],
-    ['a null tagNames', (s: Schema): Schema => ({ ...s, tagNames: null })],
-    ['no schema at all', (() => undefined) as unknown as (s: Schema) => Schema],
-  ])('throws at construction, naming sanitizeSchema, on %s', (_label, extend) => {
-    expect(() => createRenderer({ sanitizeSchema: extend })).toThrow(
-      /sanitizeSchema/,
-    );
-  });
-
-  it('unsafeDisableSanitize lets raw HTML through (developer-only hatch)', async () => {
-    const r = createRenderer({ unsafeDisableSanitize: true });
-    const html = await r.render({ body: '<img src=x onerror="alert(1)">' });
-    expect(html).toContain('onerror');
-  });
-
   it('keeps a captioned placed figure on the base floor with no consumer override', async () => {
     const html = await plain().render({ body: '<figure class="cairn-place-wide"><figcaption>cap</figcaption></figure>' });
-    expect(html).toContain('<figure class="cairn-place-wide">');
-    expect(html).toContain('<figcaption>cap</figcaption>');
-  });
-
-  it('keeps the figure tags when a consumer extend adds an unrelated tag', async () => {
-    const extend = (s: Schema): Schema => ({ ...s, tagNames: [...(s.tagNames ?? []), 'aside'] });
-    const r = createRenderer({ sanitizeSchema: extend });
-    const html = await r.render({ body: '<aside>note</aside>\n\n<figure class="cairn-place-wide"><figcaption>cap</figcaption></figure>' });
-    expect(html).toContain('<aside>');
     expect(html).toContain('<figure class="cairn-place-wide">');
     expect(html).toContain('<figcaption>cap</figcaption>');
   });
@@ -214,10 +163,5 @@ describe('render sink guard (post-dispatch)', () => {
     const html = await createRenderer({ components: sinkRegistry() }).render({ body: ':::sink{url="https://ok.test/x" img="https://ok.test/i.png"}\nbody\n:::' });
     expect(html).toContain('href="https://ok.test/x"');
     expect(html).toContain('src="https://ok.test/i.png"');
-  });
-
-  it('unsafeDisableSanitize lets a build-routed javascript: url through (developer-only hatch)', async () => {
-    const html = await createRenderer({ components: sinkRegistry(), unsafeDisableSanitize: true }).render({ body: ':::sink{url="javascript:alert(1)"}\nbody\n:::' });
-    expect(html).toContain('javascript:');
   });
 });

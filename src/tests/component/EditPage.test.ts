@@ -380,7 +380,7 @@ describe('EditPage', () => {
     const props = {
       ...postProps({
         body: 'Styled body',
-        preview: { stylesheets: ['/assets/site.css'], bodyClass: 'site-body', containerClass: 'prose' },
+        preview: { stylesheets: ['/assets/site.css'], containerClass: 'prose' },
       }),
       render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`),
     };
@@ -389,7 +389,7 @@ describe('EditPage', () => {
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Styled body</p>');
     const doc = previewSrcdoc(screen);
     expect(doc).toContain('<link rel="stylesheet" href="/assets/site.css">');
-    expect(doc).toContain('<body class="site-body">');
+    expect(doc).toContain('<body>');
     expect(doc).toContain('<div class="prose">');
   });
 

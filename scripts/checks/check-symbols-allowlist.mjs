@@ -72,7 +72,7 @@ export const ALLOWLIST = new Set([
   // One of three spots `cairn doctor` looks for a site config; cairn doctor looks there by
   // convention, so no repo carries the path and nothing can resolve it.
   'file-path:src/site.config.yaml',
-  'file-path:src/theme/site.config.yaml', // the scaffolded site's site-config file, the engine's default for editor.siteConfigPath (templates/waymark/src/theme/site.config.yaml)
+  'file-path:src/theme/site.config.yaml', // the scaffolded site's site-config file, the engine's fixed site-config path (templates/waymark/src/theme/site.config.yaml)
   'file-path:src/access.ts', // MIGRATION-NOTES.md's scaffolded site's access map (templates/waymark/src/access.ts)
   'file-path:src/content/.cairn/index.json', // a site's generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's generated media manifest, by convention

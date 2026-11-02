@@ -73,7 +73,6 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
   const links = (preview?.stylesheets ?? [])
     .map((href) => `<link rel="stylesheet" href="${escapeHtml(href)}">`)
     .join('\n');
-  const bodyAttrs = preview?.bodyClass ? ` class="${escapeHtml(preview.bodyClass)}"` : '';
   const content = preview?.containerClass
     ? `<div class="${escapeHtml(preview.containerClass)}">${html}</div>`
     : html;
@@ -106,7 +105,7 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
     FRAGMENT_BOUNDARY_STYLE,
     links,
     '</head>',
-    `<body${bodyAttrs}>`,
+    '<body>',
     content,
     '</body>',
     '</html>',

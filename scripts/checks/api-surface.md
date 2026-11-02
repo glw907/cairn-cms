@@ -11,7 +11,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: boolean }
 - `BranchExistsError`: typeof BranchExistsError
-- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Record<string, FieldDescriptor>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: MediaConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; siteConfigPath?: string; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
+- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Record<string, FieldDescriptor>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: MediaConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[] } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; supportContact?: string; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; media: { enabled: false } | { enabled: true; bucketBinding: string }; navMenu?: NavMenuConfig; siteConfigPath: string; navLayout?: NavLayout; publishActions?: PublishActionEntry[]; preview?: PreviewConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
@@ -68,14 +68,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ObjectField`: { type: "object"; label?: string; default?: undefined; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean }
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
-- `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
+- `PreviewConfig`: { stylesheets: string[]; containerClass?: string; byConcept?: Record<string, { containerClass?: string }> }
 - `previewMarkdown`: (def: ComponentDef) => string | undefined
 - `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string }
 - `Renderer`: { render: (input: RenderInput) => Promise<string>; renderDocument: (input: RenderInput) => Promise<{ html: string; headings: DocHeading[] }> }
-- `RendererConfig`: { components?: ComponentRegistry; resolveMedia?: MediaResolve; sanitizeSchema?: ((defaults: Schema) => Schema); unsafeDisableSanitize?: boolean; anchorRel?: string | false; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
+- `RendererConfig`: { components?: ComponentRegistry; resolveMedia?: MediaResolve; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
 - `renderGlyph`: (name: string, icons: IconSet) => Element
 - `RenderInput`: ResolveOptions & { body: string; concept?: string; frontmatter?: Record<string, unknown> }
 - `RepoFile`: { id: string; name: string; path: string }
@@ -87,7 +87,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SenderConfig`: { from: string; replyTo?: string }
 - `SendMagicLink`: (env: CairnEnv, message: MagicLinkMessage) => Promise<void>
 - `serializeMarkdown`: (frontmatter: object, body: string) => string
-- `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
+- `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
 - `SiteConfigError`: typeof SiteConfigError
 - `SiteRender`: (input: RenderInput) => Promise<string>
 - `SlotDef`: { name: string; label: string; kind: "inline" | "markdown" | "repeatable"; required?: boolean; help?: string; itemFields?: Record<string, FieldDescriptor>; itemLabel?: ((item: Record<string, string | boolean>, index: number) => string) }
@@ -115,7 +115,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ExpandableRow`: $$IsomorphicComponent
 - `FieldLabel`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
-- `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
+- `FormatCivilDateOptions`: { fallback?: string; locale?: string }
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string; fallback?: string }
 - `ItemLabel`: { one: string; many: string }
 - `ListToolbar`: Component<Props, {}, "">
@@ -246,7 +246,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminData`: { view: "login"; page: LoginData } | { view: "confirm"; page: ConfirmData } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "history"; page: HistoryData } | { view: "editors"; page: EditorsData } | { view: "nav"; page: NavData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string; title: string }[] | null>; contentEphemeral?: true; attention: Record<string, { count: number; label: string }> }
 - `AttentionItem`: { href: string; count: number; label?: string }
-- `AuthGuardConfig`: { runtime: { roles?: RolesDeclaration; access?: AccessMap }; includeSubDomains?: boolean; identity?: IdentityResolver }
+- `AuthGuardConfig`: { runtime: { roles?: RolesDeclaration; access?: AccessMap }; identity?: IdentityResolver }
 - `AuthRoutesConfig`: { runtime: CairnRuntime; send?: SendMagicLink }
 - `CairnAdminConfig`: { runtime: CairnRuntime; auth?: Pick<AuthRoutesConfig, "send">; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] | Promise<AttentionItem[]>) }
 - `CairnAdminRoutes`: { load: (event: CairnEvent) => Promise<AdminData>; shellLoad: (event: CairnEvent) => Promise<{ shell: AdminShellData }>; actions: { tidy: (event: CairnEvent) => Promise<TidyResult | ActionFailure<TidyFailure> | ActionFailure<{ error: string }>>; request: (event: CairnEvent) => Promise<LoginRequestOutcome | ActionFailure<{ error: string }>>; confirm: (event: CairnEvent) => Promise<ActionFailure<{ error: string }>>; logout: (event: CairnEvent) => Promise<ActionFailure<{ error: string }>>; create: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; save: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; settingsSave: (event: CairnEvent) => Promise<ActionFailure<SettingsSaveFailure> | ActionFailure<{ error: string }>>; vocabularySave: (event: CairnEvent) => Promise<ActionFailure<VocabularySaveFailure> | ActionFailure<{ error: string }>>; upload: (event: CairnEvent) => Promise<UploadResult | ActionFailure<MediaUploadFailure> | ActionFailure<{ error: string }>>; publish: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; discard: (event: CairnEvent) => Promise<ActionFailure<{ error: string }>>; rename: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; previewMint: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number } | ActionFailure<{ error: string }>>; previewRevoke: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | { count: number } | ActionFailure<{ error: string }>>; revert: (event: CairnEvent) => Promise<ActionFailure<RevertOutcome> | ActionFailure<{ error: string }>>; dictionaryAdd: (event: CairnEvent) => Promise<DictionaryAddResult | ActionFailure<DictionaryAddFailure> | ActionFailure<{ error: string }>>; delete: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure> | ActionFailure<{ error: string }>>; mediaUpload: (event: CairnEvent) => Promise<UploadResult | ActionFailure<MediaUploadFailure> | ActionFailure<{ error: string }>>; mediaLibraryUpload: (event: CairnEvent) => Promise<UploadResult | ActionFailure<MediaUploadFailure> | ActionFailure<{ error: string }>>; publishAll: (event: CairnEvent) => Promise<ActionFailure<{ error: string }>>; editorAdd: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure> | ActionFailure<{ error: string }>>; editorRemove: (event: CairnEvent) => Promise<ActionFailure<EditorActionFailure> | { ok: true } | ActionFailure<{ error: string }>>; editorSetRole: (event: CairnEvent) => Promise<ActionFailure<EditorActionFailure> | { ok: true } | ActionFailure<{ error: string }>> } }

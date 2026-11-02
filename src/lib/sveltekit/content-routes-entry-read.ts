@@ -16,7 +16,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId } from '
 import { pendingBranch } from '../content/pending.js';
 import { parseManifest, inboundLinks, inboundIncludes, type LinkTarget, type EntryRef } from '../content/manifest.js';
 import { log } from '../log/index.js';
-import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
+import { DEFAULT_DICTIONARY_FILE, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy, tidyKeyPresent } from './tidy-key-health.js';
 import { parseMediaManifest } from '../media/manifest.js';
@@ -193,7 +193,6 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
   const override = preview.byConcept?.[conceptId];
   return {
     stylesheets: preview.stylesheets,
-    bodyClass: override?.bodyClass ?? preview.bodyClass,
     containerClass: override?.containerClass ?? preview.containerClass,
   };
 }
@@ -498,7 +497,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       preview: resolvePreview(runtime.preview, concept.id),
       // composeRuntime always resolves this from the site config's dialect; default a hand-built
       // runtime that omits it to the US English dictionary so the editor always has a real filename.
-      spellcheckDictionary: runtime.spellcheckDictionary ?? dictionaryFileForDialect(undefined),
+      spellcheckDictionary: runtime.spellcheckDictionary ?? DEFAULT_DICTIONARY_FILE,
       // The committed personal-dictionary words, normalized to the canonical sorted, deduplicated set
       // so the editor seeds the Worker's personal layer with a clean list. A missing or unreadable file
       // is an empty list (the dialect-only fallback).

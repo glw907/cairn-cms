@@ -85,9 +85,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     AdminTable,
     StatusChip,
     EmptyState,
-    formatCivilDate,
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
+  import { formatShortMonthDay } from '../admin-toolkit/format.js';
 
   interface Props {
     /** The media library load's data: the unioned assets, the per-hash usage overlay, and a
@@ -879,7 +879,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   <StatusChip register="warning" label="no references found" size="xs" />
                 {/if}
               </td>
-              <td class="w-24 text-right type-body tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
+              <td class="w-24 text-right type-body tabular-nums text-muted">{formatShortMonthDay(asset.createdAt)}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4" aria-hidden="true" />
@@ -1100,7 +1100,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <dt class="text-muted">Type</dt>
           <dd class="m-0 text-right">{typeLabel(asset)}</dd>
           <dt class="text-muted">Added</dt>
-          <dd class="m-0 text-right tabular-nums">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</dd>
+          <dd class="m-0 text-right tabular-nums">{formatShortMonthDay(asset.createdAt)}</dd>
         </dl>
       </div>
 

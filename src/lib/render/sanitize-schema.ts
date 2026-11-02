@@ -12,11 +12,6 @@ import { dataAttrProp, type ComponentRegistry } from './registry.js';
 // attributes, never a script vector, and must survive the floor so the dispatch still runs.
 const FIXED_MARKERS = ['dataPrimitive', 'dataSlot', 'dataRole', 'dataRise'];
 
-// The floor a site's `sanitizeSchema` callback cannot lower. Both are copied at module load, so
-// neither reads the shared defaultSchema object when a schema is built.
-const FLOOR_TAGS: readonly string[] = Object.freeze(['script']);
-const CORE_STRIP: readonly string[] = Object.freeze([...(defaultSchema.strip ?? [])]);
-
 /**
  * Build the delivery sanitize schema. Starts from hast-util-sanitize's defaultSchema, the
  * GitHub-lineage allowlist that strips scripts, inline event handlers, and javascript:/data: URLs,
@@ -24,22 +19,9 @@ const CORE_STRIP: readonly string[] = Object.freeze([...(defaultSchema.strip ?? 
  * dataAttr<Key> markers derived from the registry) survive so the dispatch reads its stamps after
  * the floor. The benign author tags real content uses (nav, details, summary) and class/target/rel
  * on anchors are admitted. figure/figcaption join the base so the engine's placed figure survives
- * the floor on every site, including one that supplies its `sanitizeSchema` extension.
- *
- * A site extends the result through `extend`, which receives a fresh deep copy of this safe base, so
- * no mutation it makes reaches the module default or a later build. After it returns, the engine
- * reapplies a fixed floor: `script` is removed from `tagNames`, and `strip` becomes the union of the
- * core list and the callback's own. That floor is exactly `script` plus the core `strip` entries.
- * Attributes and protocols stay the callback's responsibility: a callback that admits an unsafe
- * attribute or URL scheme gets it.
- * @throws When `extend` returns a schema with no `tagNames` array. hast-util-sanitize reads an
- *  absent allowlist as every element allowed, and applies `strip` only to a disallowed element, so
- *  no floor holds without one. `unsafeDisableSanitize` is the way to turn the floor off.
+ * the floor on every site.
  */
-export function buildSanitizeSchema(
-  registry: ComponentRegistry,
-  extend?: (defaults: Schema) => Schema,
-): Schema {
+export function buildSanitizeSchema(registry: ComponentRegistry): Schema {
   const attrMarkers = registry.defs.flatMap((d) => Object.keys(d.attributes ?? {}).map((key) => dataAttrProp(key)));
   const markers = [...FIXED_MARKERS, ...attrMarkers];
   const attributes = defaultSchema.attributes ?? {};
@@ -58,7 +40,7 @@ export function buildSanitizeSchema(
   // survives the floor in its inert token form (a visible unresolved-link signal), never as an
   // executable vector. The dangerous-protocol strip (javascript:, data:) is preserved.
   const protocols = defaultSchema.protocols ?? {};
-  const schema: Schema = {
+  return {
     ...defaultSchema,
     tagNames: [...(defaultSchema.tagNames ?? []), 'nav', 'details', 'summary', 'figure', 'figcaption'],
     attributes: {
@@ -72,33 +54,18 @@ export function buildSanitizeSchema(
       href: [...(protocols.href ?? []), 'cairn'],
     },
   };
-  if (!extend) return schema;
-  const result: unknown = extend(structuredClone(schema));
-  const tagNames = (result as Schema | undefined)?.tagNames;
-  if (!Array.isArray(tagNames)) {
-    throw new Error(
-      'cairn-cms: the renderer sanitizeSchema callback must return a schema with a tagNames array. ' +
-        'Start from the schema it receives and add to it; use unsafeDisableSanitize to turn the floor off.',
-    );
-  }
-  const extended = result as Schema;
-  const strip = Array.isArray(extended.strip) ? extended.strip : [];
-  return {
-    ...extended,
-    tagNames: tagNames.filter((tag) => !FLOOR_TAGS.includes(tag)),
-    strip: [...new Set([...CORE_STRIP, ...strip])],
-  };
 }
 
 /**
  * Force a `rel` value on every target="_blank" anchor, to prevent reverse-tabnabbing.
  * hast-util-sanitize runs no per-node hook, so this small transform carries the behavior the old
  * DOMPurify preview pass enforced, now on the delivered output as well. The value is the renderer's
- * `anchorRel` option (default `noopener noreferrer`); a site can override it or disable it entirely.
+ fixed `noopener noreferrer`. It runs after the component dispatch, so it covers a component-built
+ * anchor, but before the site's own `rehypePlugins`, which a trusted site owns.
  */
-export function rehypeAnchorRel(rel: string) {
+export function rehypeAnchorRel() {
   // hast models `rel` as a token list; the serializer joins it back with spaces.
-  const tokens = rel.split(/\s+/).filter(Boolean);
+  const tokens = ['noopener', 'noreferrer'];
   return (tree: Root) => {
     visit(tree, 'element', (node: Element) => {
       if (node.tagName === 'a' && node.properties?.target === '_blank') {
@@ -211,8 +178,7 @@ function isSafeUrlProp(key: string, value: unknown): boolean {
  * attribute value into a sink. This guard runs last and neutralizes those sinks on every element
  * no matter which plugin or which build() produced it: an unsafe URL scheme in a URL-bearing
  * attribute, an inline on* event handler, or an inline style (stripped wholesale, matching the
- * floor and cairn's class-driven styling). It is gated by the same unsafeDisableSanitize switch as
- * the floor.
+ * floor and cairn's class-driven styling).
  *
  * The guard's boundary is the URL scheme check plus the on* and style strip. It does not remove a
  * build()-emitted raw script, style, or iframe srcdoc element node. A build() that emits those is

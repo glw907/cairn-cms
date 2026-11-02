@@ -4,7 +4,6 @@ import type { PreviewConfig } from '../../lib/content/types.js';
 
 const preview: PreviewConfig = {
   stylesheets: ['/assets/site.css', 'https://cdn.example/theme.css'],
-  bodyClass: 'site-body',
   containerClass: 'prose mx-auto',
 };
 
@@ -69,13 +68,13 @@ describe('buildPreviewDoc', () => {
     expect(buildPreviewDoc('<p>hi</p>', null)).toContain('<base target="_blank">');
   });
 
-  it('applies bodyClass to the body and wraps the html in the container class', () => {
+  it('keeps a plain body and wraps the html in the container class', () => {
     const doc = buildPreviewDoc('<p>hi</p>', preview);
-    expect(doc).toContain('<body class="site-body">');
+    expect(doc).toContain('<body>');
     expect(doc).toContain('<div class="prose mx-auto"><p>hi</p></div>');
   });
 
-  it('renders the html bare without a containerClass and a plain body without a bodyClass', () => {
+  it('renders the html bare without a containerClass', () => {
     const doc = buildPreviewDoc('<p>hi</p>', { stylesheets: ['/site.css'] });
     expect(doc).toContain('<body>');
     expect(doc).toContain('<p>hi</p>');
@@ -92,14 +91,28 @@ describe('buildPreviewDoc', () => {
   it('escapes attribute values without touching the already-sanitized html', () => {
     const doc = buildPreviewDoc('<p class="keep">"quotes" stay</p>', {
       stylesheets: ['/a.css?x="y"&z=1'],
-      bodyClass: 'a"b',
       containerClass: 'c<d',
     });
     expect(doc).toContain('href="/a.css?x=&quot;y&quot;&amp;z=1"');
-    expect(doc).toContain('class="a&quot;b"');
     expect(doc).toContain('class="c&lt;d"');
     // The rendered html comes from the floored pipeline already sanitized; it embeds as-is.
     expect(doc).toContain('<p class="keep">"quotes" stay</p>');
+  });
+});
+
+describe('PreviewConfig', () => {
+  it('has no bodyClass, top-level or per concept', () => {
+    const top: PreviewConfig = {
+      stylesheets: [],
+      // @ts-expect-error bodyClass is no longer an option
+      bodyClass: 'x',
+    };
+    const perConcept: PreviewConfig = {
+      stylesheets: [],
+      // @ts-expect-error bodyClass is no longer a per-concept option
+      byConcept: { posts: { bodyClass: 'x' } },
+    };
+    expect([top, perConcept]).toHaveLength(2);
   });
 });
 

@@ -172,7 +172,7 @@ export interface SenderConfig {
 }
 
 /**
- * A menu in the site-config YAML (the file `editor.siteConfigPath` names) that this site's nav
+ * A menu in the site-config YAML (the scaffold's `src/theme/site.config.yaml`) that this site's nav
  *  editor manages.
  * @public
  */
@@ -209,23 +209,18 @@ export interface PreviewConfig {
    *  preview document. A Vite `?url` import of the site's CSS resolves the hashed asset URL.
    */
   stylesheets: string[];
-  /** Class list applied to the preview document's body, for theme or typography roots. */
-  bodyClass?: string;
   /**
    * Class list for a wrapper element around the rendered content, reproducing the site's
    *  content container (a prose or measure class). Omitted renders the content bare.
    */
   containerClass?: string;
   /**
-   * Per-concept overrides of bodyClass and containerClass, keyed by concept id. An entry's
-   *  preview resolves the override for its concept over the top-level values; stylesheets are
-   *  always shared.
+   * Per-concept overrides of containerClass, keyed by concept id. An entry's preview resolves
+   *  the override for its concept over the top-level value; stylesheets are always shared.
    */
   byConcept?: Record<
     string,
     {
-      /** This concept's body class list, in place of the top-level `bodyClass`. */
-      bodyClass?: string;
       /** This concept's content wrapper class list, in place of the top-level `containerClass`. */
       containerClass?: string;
     }
@@ -331,12 +326,6 @@ export interface CairnAdapter {
     preview?: PreviewConfig;
     /** Which menu in the site-config YAML the nav editor manages. */
     nav?: NavMenuConfig;
-    /**
-     * The repo-relative path of the committed site-config YAML, which the nav editor, Settings,
-     *  and the tag vocabulary all read and write. Unset, it defaults to the scaffold's
-     *  `src/theme/site.config.yaml`.
-     */
-    siteConfigPath?: string;
     /**
      * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
      *  or a name and instruction). Unset, `composeRuntime` defaults it to cairn's hosted help
@@ -466,7 +455,7 @@ export interface CairnRuntime {
   navMenu?: NavMenuConfig;
   /**
    * The repo-relative path of the site-config YAML the nav editor, Settings, and Tags read and
-   *  write, resolved once at compose from `editor.siteConfigPath`.
+   *  write, fixed at compose to the scaffold's `src/theme/site.config.yaml`.
    */
   siteConfigPath: string;
   /**
@@ -484,8 +473,8 @@ export interface CairnRuntime {
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   /**
-   * The editor's spellcheck dictionary file, resolved once at compose from the site config's
-   *  `spellcheck.dialect` (defaulting to US English). The edit load threads it onto EditData and the
+   * The editor's spellcheck dictionary file, set once at compose to the US English dictionary,
+   *  the one that ships. The edit load threads it onto EditData and the
    *  editor resolves it to a real asset URL on the main thread, so the Worker receives the URL and
    *  never reads config. Just the filename, e.g. "dictionary-en-us.txt". Optional on the runtime so a
    *  hand-built runtime need not set it; composeRuntime always fills it, and the edit load defaults a

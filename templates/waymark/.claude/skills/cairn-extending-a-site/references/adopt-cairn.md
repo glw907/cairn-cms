@@ -25,9 +25,8 @@ Contents:
 
 ## Site config, adapter, content
 
-1. `src/lib/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
-   Set the adapter's `editor.siteConfigPath` to this path; it defaults to the scaffold's
-   `src/theme/site.config.yaml`.
+1. `src/theme/site.config.yaml` with a non-empty `siteName` (unknown top-level keys are rejected).
+   The nav editor, Settings, and the tag vocabulary read and write that fixed path.
 2. `src/lib/cairn.config.ts` exports `cairn = defineAdapter({ content, backend, email, rendering, editor })`
    and `siteConfig = parseSiteConfig(siteYaml)` (imported with `?raw`). Declare a field for every
    frontmatter key the content keeps (`references/content-model.md`). `backend` takes

@@ -1217,6 +1217,23 @@
 
   Consumers must: delete `src/lib/log.ts` from a site scaffolded earlier if nothing else imports it.
 
+- **Options no site sets are gone.** `RendererConfig` drops `sanitizeSchema`, `unsafeDisableSanitize`, and
+  `anchorRel`: one pipeline path remains, a `<script>` is removed from every render, and the `rel` forced on a
+  `target="_blank"` anchor is always `noopener noreferrer`. It runs after the component dispatch and before
+  the site's own `rehypePlugins`, so an anchor a site plugin adds gets no `rel`. `CairnAdapter.editor` drops
+  `siteConfigPath`, and the site config is always `src/theme/site.config.yaml`. `PreviewConfig` drops
+  `bodyClass`, top level and per concept. `AuthGuardConfig` drops `includeSubDomains`, so the admin's
+  `Strict-Transport-Security` header is `max-age=63072000` alone and subdomain pinning belongs at the zone.
+  `FormatCivilDateOptions` drops `intlOptions`; the Media Library's date still reads month and day.
+
+  Consumers must: delete `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `bodyClass`, and `includeSubDomains` from your config, and pin subdomains to HTTPS at the zone.
+
+- **`spellcheck:` leaves `site.config.yaml`.** The dialect block configured a dictionary list that held one
+  entry, so the editor always uses US English. A site config that still carries the key now fails with
+  "unrecognized key".
+
+  Consumers must: delete the `spellcheck:` block from `site.config.yaml`.
+
 ### Security
 
 - **Every admin response carries `X-Robots-Tag: noindex, nofollow`.** `applySecurityHeaders` sets it

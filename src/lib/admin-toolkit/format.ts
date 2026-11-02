@@ -23,12 +23,6 @@ export interface FormatCivilDateOptions {
   fallback?: string;
   /** A BCP 47 locale tag. Defaults to `'en-US'`. */
   locale?: string;
-  /**
-   * A passthrough overriding the default `{ year: 'numeric', month: 'short', day: 'numeric' }`
-   * shape, for a screen that renders only part of the date (a month/day list) or a longer form (a
-   * full month name).
-   */
-  intlOptions?: Intl.DateTimeFormatOptions;
 }
 
 /**
@@ -41,13 +35,29 @@ export interface FormatCivilDateOptions {
  * @public
  */
 export function formatCivilDate(iso: string | null | undefined, options: FormatCivilDateOptions = {}): string {
-  const { fallback = '', locale = 'en-US', intlOptions = { year: 'numeric', month: 'short', day: 'numeric' } } =
-    options;
+  return formatCivil(iso, options, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/**
+ * Format a civil date as a short month and day with no year ("Jun 14"), for the Media Library's
+ * Added column and details panel. Internal: it is not on the barrel, and shares
+ * {@link formatCivilDate}'s parse and fallback.
+ */
+export function formatShortMonthDay(iso: string | null | undefined, options: FormatCivilDateOptions = {}): string {
+  return formatCivil(iso, options, { month: 'short', day: 'numeric' });
+}
+
+function formatCivil(
+  iso: string | null | undefined,
+  options: FormatCivilDateOptions,
+  shape: Intl.DateTimeFormatOptions,
+): string {
+  const { fallback = '', locale = 'en-US' } = options;
   if (!iso) return fallback;
   const civil = iso.slice(0, 10);
   const parsed = new Date(`${civil}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return iso;
-  return new Intl.DateTimeFormat(locale, intlOptions).format(parsed);
+  return new Intl.DateTimeFormat(locale, shape).format(parsed);
 }
 
 /**

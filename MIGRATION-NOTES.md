@@ -404,7 +404,7 @@ The setup tool's changes ask nothing of an existing site. In the showcase and th
 the `ORIGIN` constant in `content.ts` became an import of `publicOrigin` from
 `src/theme/cairn.config.ts`, which `create-cairn-site` now writes with the site's real address. A site
 that keeps its own origin constant still builds, and it can adopt the import when it likes.
-
+- **Delete the options that are gone.** Remove `spellcheck:` from `site.config.yaml`, which now fails with "unrecognized key", and remove `sanitizeSchema`, `unsafeDisableSanitize`, `anchorRel`, `editor.siteConfigPath`, `preview.bodyClass`, `byConcept[...].bodyClass`, and `includeSubDomains` wherever your config sets them. Move a site config that lived elsewhere to `src/theme/site.config.yaml`. The admin's HSTS header is `max-age=63072000` alone, so pin subdomains at the zone.
 See [`CHANGELOG.md`](./CHANGELOG.md#unreleased).
 
 ## 0.98.0

@@ -404,9 +404,8 @@ const DICTIONARY_URLS: Record<string, () => string> = {
 
 /**
  * The real dictionary asset URL for a dictionary filename, resolved module-relative. The caller
- *  passes the dialect-resolved filename (default `dictionary-en-us.txt`). `dictionaryFileForDialect`
- *  already collapses an unknown dialect to the default, so an unmapped name falls back the same way
- *  rather than pointing at an asset that does not ship.
+ *  passes the composed filename (default `dictionary-en-us.txt`). An unmapped name falls back to
+ *  the default rather than pointing at an asset that does not ship.
  */
 export function resolveDictionaryUrl(dictionaryFile: string): string {
   const resolve = DICTIONARY_URLS[dictionaryFile] ?? DICTIONARY_URLS['dictionary-en-us.txt'];

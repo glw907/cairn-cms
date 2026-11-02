@@ -61,20 +61,6 @@ export interface AuthGuardConfig {
    */
   runtime: Pick<CairnRuntime, 'roles' | 'access'>;
   /**
-   * Pin every sibling subdomain to HTTPS along with the admin host itself, on the
-   * Strict-Transport-Security header the guard attaches to each admin response it returns.
-   * Omitted or false, that header carries only `max-age`, so a zero-config site sees no behavior
-   * change. `max-age` is sent either way: the admin surface is the one place the engine has
-   * standing to insist on HTTPS, while pinning every sibling subdomain the engine knows nothing
-   * about is a decision that belongs to whoever owns the domain, so it stays off unless the site
-   * opts in.
-   *
-   * A rejection page and the login redirect carry no such header at all, deliberately: neither
-   * receives this option, and a weaker header would replace a pinned policy rather than restate
-   * it (see {@link applySecurityHeaders} and `brandedAdminPage`).
-   */
-  includeSubDomains?: boolean;
-  /**
    * Replace magic-link session resolution with the site's identity gate (Cloudflare Access
    * or any other reverse proxy that authenticates the request before it reaches this Worker).
    * Omitted, the guard resolves the session cookie exactly as today.
@@ -225,7 +211,7 @@ export function isSafeLogoutUrl(logoutUrl: string): boolean {
 // WATCH: check:tool-heuristics greps this exact signature for the Go tool's auth.role-wiring
 // heuristic, which reads a site's createAuthGuard call for its argument shape.
 export function createAuthGuard(config: AuthGuardConfig): Handle {
-  const { runtime, includeSubDomains, identity } = config;
+  const { runtime, identity } = config;
   const vocabulary: RolesDeclaration = runtime.roles ?? DEFAULT_ROLES;
   const access: AccessMap | undefined = runtime.access;
   // Validated once, at construction, not per request: an invalid logoutUrl is a site
@@ -424,7 +410,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       delete event.locals.cairnEditor;
     }
     const response = await resolve(event);
-    applySecurityHeaders(response.headers, { includeSubDomains });
+    applySecurityHeaders(response.headers);
     return response;
   };
 }

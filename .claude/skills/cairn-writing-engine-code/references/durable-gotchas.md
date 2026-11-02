@@ -353,7 +353,10 @@ strings out of any scanned root, or exclude the directory.
 
 ## `/tmp` is a size-limited tmpfs
 
-On this workstation `/tmp` is a tmpfs of about 8 GB shared with every other session. A Go link step
+On this workstation `/tmp` is a tmpfs of about 8 GB shared with every other session, and shared
+means one fixed name is one file for every implementer. Two implementers wrote `/tmp/lane.log`, and
+one read the other's `cannot load .../dist/sveltekit/index.d.ts` as its own red lane. Log inside the
+worktree (`node_modules/.lane.log`). A Go link step
 that fails with a quota error is the machine, not the code: check `df -h /tmp` before reading it as
 a build break. The theme fixture's template arm installs a whole site under `os.tmpdir()`, so set
 `TMPDIR` to a directory on disk (`TMPDIR=$HOME/.cache/cairn-tmp`) before running it

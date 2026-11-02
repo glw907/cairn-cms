@@ -21,10 +21,16 @@ pointed at.
 
 Done means the task's acceptance check passes and the fast lane is green:
 `npm run lane:fast -- --range <base>..HEAD` runs the legs `node scripts/checks/gate-tier.mjs
---fast --range <base>..HEAD` selects and fails on the first red leg. A passing targeted test is
+--fast --range <base>..HEAD` selects. A line runs all its legs and fails at its end, and a red line
+stops the lines after it. A passing targeted test is
 necessary and never sufficient: a browser component test can pass while `svelte-check` fails, and
 the full run can exit non-zero on an unhandled rejection. Paste the evidence. If you cannot get a
 green lane, report BLOCKED with the exact failing output instead of committing a red one.
+
+A lane's result is its exit code. Run one lane at a time in a worktree, bare or with its log at
+`node_modules/.lane.log` inside the worktree. Never pipe it into `tail`, which drops the exit code,
+and never write its log to a fixed name such as `/tmp/lane.log`: sibling implementers share `/tmp`, and one reads the
+other's log. A red lane is never green, whatever caused it.
 
 ## Workflow
 
@@ -85,7 +91,7 @@ files it there; never task state.
 ## Report
 
 Return the status (DONE, DONE_WITH_CONCERNS, BLOCKED, or NEEDS_CONTEXT), what you implemented,
-the fast lane's evidence, the commit SHA, the files changed as `git show --name-only --format= <sha>` lists them, and any deviation or concern.
+the lane's range and exit code, the commit SHA, the files changed as `git show --name-only --format= <sha>` lists them, and any deviation or concern.
 
 ## DaisyUI
 

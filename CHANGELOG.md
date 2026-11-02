@@ -2,6 +2,21 @@
 
 ### Added
 
+- **`scripts/checks/api-surface.md` ships in the package.** The snapshot holds the exact signature of
+  every export, and `cairn-extending-a-site` now routes a lookup to
+  `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md`. `check:package` fails a tarball
+  without the file, and `check:leaks` scans it.
+
+  Consumers must: nothing.
+
+- **`cairn-audit` reports a public route that never chooses how it renders.** The new advisory rule
+  `public-route-prerender` flags a `+page.svelte` outside `src/routes/admin` with no `export const
+  prerender` in its page, its server page, or a layout at or above it, because that route renders on
+  every request. Export `prerender = true`, or `false` to choose per-request rendering on purpose.
+  An advisory finding never fails a run.
+
+  Consumers must: nothing.
+
 - **A `Consumers must:` line has one grammar, and a gate holds new lines to it.** The line sits alone
   on one physical line, at column 0 or two spaces, and reads `Consumers must: nothing.` or
   `Consumers must: <action>.` with no bold, no backticks, and no hedge. `npm run check:consumers-must`
@@ -148,6 +163,24 @@
   Consumers must: read data.flash in place of saved, renamed, publishedFlash, and discardedFlash.
 
   Consumers must: treat ContentFormFailure.error as a required string, and use Partial<ContentFormFailure> for a form prop that also carries a success result.
+
+- **`buildSitemap` throws past 50,000 URLs.** The sitemaps.org limit for one file is 50,000 URLs, and
+  the error names the count: `cairn: the sitemap has <n> URLs, and a sitemap file may list 50,000.
+  List fewer URLs in this route.` A site under the limit sees no change.
+
+  Consumers must: nothing.
+
+- **Error messages name the next step.** The default-branch read failure, no content types
+  configured, an unavailable preview, an unavailable section, a failed tidy, replace, or dictionary
+  request, a malformed manifest entry, a missing Vite config, a failed media-seed download or
+  `wrangler.jsonc` parse, an ambiguous permalink, a broken link target or fragment, an entry with no
+  valid date, and a media block with no bucket binding each end with what to do about it. Most
+  messages keep their opening text, so a log search on the old phrase still finds them. Four are
+  replaced outright: the default-branch read failure, no content types configured, the unavailable
+  preview, and the media block's missing bucket binding. A test that pins one of them by exact text
+  needs the new text.
+
+  Consumers must: nothing.
 
 - **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
   or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
@@ -953,6 +986,19 @@
 
 ### Security
 
+- **Every admin response carries `X-Robots-Tag: noindex, nofollow`.** `applySecurityHeaders` sets it
+  beside `Cache-Control: private, no-store`, so the shell and each screen stay out of a search index
+  even where a page has no robots meta. The guard's sign-in redirect still carries no headers, and a
+  new test pins that under `admin-headers-scope`.
+
+  Consumers must: nothing.
+
+- **The admin shell's theme and sidebar cookies carry `Secure` over HTTPS.** `cairn-admin-theme` and
+  `cairn-admin-nav-collapsed` keep their names and `path=/admin`, with no `__Host-` prefix, which needs
+  `Path=/`.
+
+  Consumers must: nothing.
+
 - **The minted installation token is scoped to one repository and Contents write.** `installationToken`
   now sends `repositories: [repo]` and `permissions: { contents: 'write' }`, so a token minted for one
   site can no longer write to, administer, or change workflows on the account's other repositories.
@@ -1064,6 +1110,15 @@
   non-local host now gets the guard's 503 and its `guard.refused` record.
 
 ### Documentation
+
+- **The pages state what cairn can't see.** `docs/architecture.md` gains the response headers an admin
+  response carries and every cookie and `localStorage` key an editor's browser holds. Own your domain
+  says the running site reads none of SPF, DKIM, or DMARC and that `cairn doctor` probes them, and that
+  the zone's Minimum TLS Version is the owner's to set. Debug your site says the logs stop at
+  Cloudflare's acceptance, and Is it working says a managed `robots.txt` adds to the site's file.
+  `public-routes.md` explains the `Content-Type` of a prerendered route, the 307 and 308 on a
+  trailing-slash miss, and the render-per-request fallback. The `charset` doc comments on the feed and
+  sitemap helpers now say they hold on a Worker-rendered route.
 
 - **Two pages fold into Content model.** The pages Link
   content with references and Reuse content across entries are now the Reference fields and Fragments

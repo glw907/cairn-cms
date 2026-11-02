@@ -30,14 +30,14 @@ export async function readR2Buckets(
   return null;
 }
 
-// Parse a wrangler.jsonc body, stripping comments first. V8's SyntaxError embeds a source
-// snippet, which would land verbatim in the report; a file that exists but does not parse
-// fails with this clean message instead.
+// Parse a wrangler.jsonc body, stripping comments first. A file that exists but does not
+// parse fails with the parse error's own text, so the report says where to look.
 function parseJsonc(text: string): Record<string, unknown> {
   try {
     return JSON.parse(stripJsonc(text)) as Record<string, unknown>;
-  } catch {
-    throw new Error('wrangler.jsonc did not parse');
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(`wrangler.jsonc did not parse: ${reason}. Fix the file and run it again.`);
   }
 }
 

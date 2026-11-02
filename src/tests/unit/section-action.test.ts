@@ -249,7 +249,7 @@ describe('createSectionAction: database not bound', () => {
     expect(handler).not.toHaveBeenCalled();
     const failure = refusal(result);
     expect(failure.status).toBe(500);
-    expect(failure.data).toEqual({ error: 'This section is not available.' });
+    expect(failure.data).toEqual({ error: 'This section is not available. Let your site developer know.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: database not bound' })]);
   });
 
@@ -262,7 +262,7 @@ describe('createSectionAction: database not bound', () => {
     expect(handler).not.toHaveBeenCalled();
     const failure = refusal(result);
     expect(failure.status).toBe(500);
-    expect(failure.data).toEqual({ error: 'This section is not available.' });
+    expect(failure.data).toEqual({ error: 'This section is not available. Let your site developer know.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: database not bound' })]);
   });
 });
@@ -275,7 +275,7 @@ describe('createSectionAction: access map not attached', () => {
     expect(handler).not.toHaveBeenCalled();
     const failure = refusal(result);
     expect(failure.status).toBe(500);
-    expect(failure.data).toEqual({ error: 'This section is not available.' });
+    expect(failure.data).toEqual({ error: 'This section is not available. Let your site developer know.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: access map not attached' })]);
   });
 });

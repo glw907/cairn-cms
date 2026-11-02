@@ -31,6 +31,7 @@ a screen reader announces it once.
   import { provideTopbar, type TopbarHolder } from './topbar-context.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
+  import { adminCookie } from './admin-cookie.js';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
@@ -80,7 +81,7 @@ a screen reader announces it once.
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's pages.
   function writeAdminCookie(name: string, value: string) {
-    document.cookie = `${name}=${value}; path=/admin; max-age=31536000; samesite=lax`;
+    document.cookie = adminCookie(name, value, location.protocol === 'https:');
   }
 
   // A nav entry: a labeled, icon-bearing link.

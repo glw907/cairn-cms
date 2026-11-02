@@ -5,6 +5,7 @@
     "src/routes/admin/theme-kit",
     "src/routes/admin/signups",
     "src/routes/admin/error-fixture",
+    "src/routes/admin/section-refusals",
     "migrations-app",
     "src/routes/(site)/+layout.server.ts",
     "src/lib/env-check.ts",

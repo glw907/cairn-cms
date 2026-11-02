@@ -194,6 +194,7 @@
     "skills",
     "claude",
     "guidance-hashes.json",
+    "scripts/checks/api-surface.md",
     "CHANGELOG.md",
     "MIGRATION-NOTES.md",
     "docs/why-cairn.md",

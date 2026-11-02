@@ -37,6 +37,8 @@ The ordinary "check your inbox" message is the same whether or not the address i
 
 A third message points somewhere else. `This browser has no pending sign-in` means the browser that opened the link isn't the browser that asked for it. That happens when someone asks on a laptop and opens the mail on a phone, or when a mail app opens links in its own viewer. The same message also appears when a link has already been used. In every case the fix is the same: request a new link and open it in the browser that asked.
 
+The logs stop at Cloudflare's acceptance. A link that Cloudflare accepted and then dropped or filtered looks like a success: an `auth.token.minted` record with no `auth.link.send_failed` after it. The site has no signal past that point. If a person reports no link and the logs show one sent, ask them to check spam, and check the sending domain as the preceding list says.
+
 An owner who is locked out can get a fresh link from the computer that created the site, as [Sign in again](./create-your-site.md#sign-in-again) describes. Without that computer, a developer can add a recovery link directly in the `AUTH_DB` database. A row seeded that way confirms from any browser.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, and `auth.link.refused`.

@@ -181,6 +181,8 @@ export const cairn = defineAdapter({
     // (navLayout below never mentions it): it is a CSS proof for the theme-kit e2e specs, not a
     // screen an editor should ever land on.
     '/admin/theme-kit': ['owner'],
+    // The section-refusals fixture is owner-only and has no nav entry, like theme-kit.
+    '/admin/section-refusals': ['owner'],
   }),
   // cairn-template:exclude-end
   // A verified sender literal, not derived from publicOrigin or any other URL host: Cloudflare Email

@@ -61,7 +61,7 @@ export async function seedMedia(
       // runs, not merely before deps.writeTempFile.
       const key = r2Key(item.hash, item.ext);
       const res = await deps.fetch(downloadUrl(from, item), { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} for asset ${item.hash}.${item.ext}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       const file = deps.writeTempFile(`${item.hash}.${item.ext}`, bytes);
       deps.putObject(bucket, key, file, contentTypeForExt(item.ext));

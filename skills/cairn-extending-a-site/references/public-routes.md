@@ -74,6 +74,9 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
   `aiPosture` as `posture` (`references/tidy-and-ai-posture.md`).
 - `noindex` entries stay out of the sitemap but still appear in feeds; filter feed items with
   `readSeoFields`.
+- The helpers' `; charset=utf-8` holds only on a Worker-rendered route. A prerendered route's
+  `Content-Type` comes from Cloudflare's asset layer, which derives it from the file extension and
+  documents no charset ([static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)).
 
 ## Archive, tag pages, other heads
 
@@ -102,6 +105,15 @@ add the menu under `menus.<menuName>` in the site config, and read it in a serve
 | `cairn: link target "cairn:<concept>/<id>" not found` | Fix or remove the body link |
 | Unseen prerenderable route | Exempt it in `handleUnseenRoutes` |
 | `NavValidationError` | Fix the menu node |
+
+A route that exports no `prerender` renders on every request, and `cairn-audit` reports it with the
+advisory rule `public-route-prerender`. Export `prerender = true`, or `false` to choose per-request
+rendering on purpose.
+
+A request that misses a prerendered page's trailing slash answers 307 from Cloudflare's asset layer,
+because the default `assets.html_handling` is `auto-trailing-slash`
+([HTML handling](https://developers.cloudflare.com/workers/static-assets/routing/advanced/html-handling/)).
+A Worker-rendered route answers SvelteKit's 308 instead.
 
 Serve the build with `npm run preview` or `wrangler dev` (`vite preview` cannot serve adapter 8
 output) and check that sitemap `loc`s, feed URLs, and canonicals carry the deployed origin.

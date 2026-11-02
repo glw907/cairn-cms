@@ -4,6 +4,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -65,12 +66,6 @@ func TestConfigMigrations(t *testing.T) {
 		{
 			name:       "unchecked: migrations_dir escapes the directory",
 			files:      withPkg(map[string]string{"wrangler.jsonc": `{"d1_databases": [{"binding": "AUTH_DB", "migrations_dir": "../elsewhere"}]}`}),
-			wantStatus: StatusUnchecked,
-			wantDetail: uncheckedConfigMigrationsUnreadable,
-		},
-		{
-			name:       "unchecked: migrations is a file",
-			files:      withPkg(map[string]string{"wrangler.jsonc": authWrangler, "migrations": "--"}),
 			wantStatus: StatusUnchecked,
 			wantDetail: uncheckedConfigMigrationsUnreadable,
 		},
@@ -183,6 +178,19 @@ func TestConfigMigrationsSymlinkedPackageIsUnchecked(t *testing.T) {
 	result := configMigrations.Run(Snapshot{Dir: dir})
 	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsPackage {
 		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsPackage)
+	}
+}
+
+// TestConfigMigrationsFileAsFolderIsUnchecked skips Windows, where listing a file reports not-exist
+// and the check names the missing files instead, which is also true.
+func TestConfigMigrationsFileAsFolderIsUnchecked(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("os.ReadDir on a file reports not-exist on Windows")
+	}
+	files := withPkg(map[string]string{"wrangler.jsonc": authWrangler, "migrations": "--"})
+	result := configMigrations.Run(snapshotWithFiles(t, files))
+	if result.Status != StatusUnchecked || result.Detail != uncheckedConfigMigrationsUnreadable {
+		t.Errorf("result = %v %q, want unchecked %q", result.Status, result.Detail, uncheckedConfigMigrationsUnreadable)
 	}
 }
 

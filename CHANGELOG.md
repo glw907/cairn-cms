@@ -138,6 +138,17 @@
 
 ### Changed
 
+- **`EditData` carries one `flash` field, and `ContentFormFailure.error` is required.** Each success
+  redirect sets exactly one flash, so `flash` (`'saved' | 'renamed' | 'published' | 'discarded' | null`)
+  replaces the `saved`, `renamed`, `publishedFlash`, and `discardedFlash` booleans. The redirect URLs
+  stay the same. `ContentFormFailure.error` loses its `?`, since every content action failure sets it,
+  and `navSaveAction` now returns that type, which retires the `NavSaveFailure` leak.
+  The settings, vocabulary, and nav `saved` flags are a different shape and stay.
+
+  Consumers must: read data.flash in place of saved, renamed, publishedFlash, and discardedFlash.
+
+  Consumers must: treat ContentFormFailure.error as a required string, and use Partial<ContentFormFailure> for a form prop that also carries a success result.
+
 - **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
   or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
   `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so an

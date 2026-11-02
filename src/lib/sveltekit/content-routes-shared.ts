@@ -29,17 +29,17 @@ import { env } from './workers-env.js';
 
 /**
  * What a route's single `form` export presents to a view component: whichever content action
- *  last failed, merged with every field optional. `error` is always set on a failure; the richer
- *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
- *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
- *  refusal without a second type. One flat interface (`audit-sveltekit-contentformfailure`):
- *  every field optional, replacing the earlier
- *  `Partial<>` intersection over the eleven now-module-internal arm shapes.
+ *  last failed, merged into one shape. `error` is required, since every failure sets it; the
+ *  optional keys identify which guard refused. The media refusals ride here too, so the Media
+ *  Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or
+ *  `?/mediaAltPropagate` refusal without a second type. One flat interface
+ *  (`audit-sveltekit-contentformfailure`), replacing the earlier `Partial<>` intersection over the
+ *  eleven now-module-internal arm shapes.
  * @beta
  */
 export interface ContentFormFailure {
   /** The one-line human summary every content action failure carries. */
-  error?: string;
+  error: string;
   /** The cairn tokens that resolve to no entry, set by a blocked `saveAction`/`publishAction`. */
   brokenLinks?: string[];
   /** The author's edited markdown, set by a blocked `saveAction`/`publishAction` so the editor reseeds with the unsaved work. */

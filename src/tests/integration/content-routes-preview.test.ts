@@ -334,7 +334,7 @@ describe('previewMintAction', () => {
     expect(result.status).toBe(400);
     expect(result.data.error).toMatch(/no unpublished draft/i);
     // conventions pass, Task 5: previewMintAction now declares ActionFailure<ContentFormFailure>
-    // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+    // (the flattened type); this holds the key set a PreviewMintFailure carried.
     expect(Object.keys(result.data)).toEqual(['error']);
   });
 
@@ -463,7 +463,7 @@ describe('previewRevokeAction', () => {
       expect(result.status).toBe(500);
       expect(result.data.error).toContain('migrations/0003_preview.sql');
       // conventions pass, Task 5: previewRevokeAction now declares ActionFailure<ContentFormFailure>
-      // (the flattened, all-optional type); this holds the key set a PreviewMintFailure carried.
+      // (the flattened type); this holds the key set a PreviewMintFailure carried.
       expect(Object.keys(result.data)).toEqual(['error']);
     } finally {
       await db.exec(

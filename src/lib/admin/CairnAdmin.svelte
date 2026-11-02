@@ -31,15 +31,12 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   interface Props {
     /** The discriminated view data from `createCairnAdmin`'s load. */
     data: AdminData;
-    /** The last action's result, forwarded to whichever view rendered: the shared content-action
-     *  failure family (every failure carries `error`), merged with the auth and editors results,
-     *  so the route's one `form` export covers every view. `RevertOutcome`'s fields fold into
-     *  the same merged bag, composed the same way `ContentFormFailure` itself Partial-merges every
-     *  other action's failure fields, so a real `?/revert` refusal type-carries through this one
-     *  prop; the history view narrows it back to the strict disjoint shape at the point it mounts
-     *  `CairnHistory` below. */
+    /** The last action's result, forwarded to whichever view rendered, so the route's one `form`
+     *  export covers every view. `ContentFormFailure` is `Partial` here because this prop also
+     *  carries results with no `error`: the auth and editors successes, and a `?/revert` refusal.
+     *  Each view narrows it back to the shape it reads at the point it mounts below. */
     form?:
-      | (ContentFormFailure & {
+      | (Partial<ContentFormFailure> & {
           outcome?: 'sent' | 'send-error' | 'throttled' | RevertOutcome['outcome'];
           ok?: boolean;
           draftEditor?: string;
@@ -84,7 +81,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
        concept id keys the list: crossing concepts remounts it and drops the old query,
        sort, page, and dialog state. -->
   {#key data.page.conceptId}
-    <ConceptList data={data.page} {form} />
+    <ConceptList data={data.page} form={form as ContentFormFailure | null} />
   {/key}
 {:else if data.view === 'edit'}
   <!-- siteName rides the shell payload (page.data.shell), an authed member at every edit route. -->
@@ -93,7 +90,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     render={rendering?.render}
     registry={rendering?.components}
     icons={rendering?.icons}
-    {form}
+    form={form as ContentFormFailure | null}
     {previewMint}
   />
 {:else if data.view === 'history'}
@@ -104,13 +101,13 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}
-  <NavTree data={data.page} {form} />
+  <NavTree data={data.page} form={form as ContentFormFailure | null} />
 {:else if data.view === 'media'}
-  <CairnMediaLibrary data={data.page} {form} />
+  <CairnMediaLibrary data={data.page} form={form as ContentFormFailure | null} />
 {:else if data.view === 'settings'}
-  <CairnTidySettings data={data.page} {form} />
+  <CairnTidySettings data={data.page} form={form as ContentFormFailure | null} />
 {:else if data.view === 'vocabulary'}
-  <VocabularyAdmin data={data.page} {form} />
+  <VocabularyAdmin data={data.page} form={form as ContentFormFailure | null} />
 {:else if data.view === 'help'}
   <HelpHome data={data.page} />
 {:else if data.view === 'welcome'}

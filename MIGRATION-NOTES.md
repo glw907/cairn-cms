@@ -196,6 +196,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Read `data.flash` in place of `saved`, `renamed`, `publishedFlash`, and `discardedFlash`.** A hand-built `EditData` sets `flash: null`, or one of `'saved'`, `'renamed'`, `'published'`, or `'discarded'`. The settings, vocabulary, and nav `saved` flags stay.
+- **Treat `ContentFormFailure.error` as a required string.** A hand-built failure sets it, and a `form` prop that also carries a success result uses `Partial<ContentFormFailure>`.
 - **Fix every FIX line before running `cairn-guidance check --strict` in CI.** The check now reports `PASS` or `FIX` on each of its seven lines, judges the `.claude/` Tailwind exclusion by the path it resolves to, and exits 1 under `--strict` on any `FIX`. A site whose `@source not` line sits in a different stylesheet than its `tailwindcss` import now passes.
 - **Remove `fixes` from any `TidyConventions` you build in code.** The key is gone, because tidy always makes the objective fixes. A `fixes:` key in `site.config.yaml` is ignored, so delete it when convenient. If it was the only key under `conventions:`, delete the empty key too.
 - **Expect tidy to run on `claude-sonnet-5-5` when `tidy.model` is unset.** Set `tidy.model: claude-sonnet-5` to stay on the old model. A site that passes its own `tidy.client` handles a reply cut off at the output cap itself; the default client answers it with the too-long message.

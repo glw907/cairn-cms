@@ -87,8 +87,7 @@ function postProps(over = {}) {
       body: 'The body.',
       title: 'Hello',
       isNew: false,
-      saved: false,
-      renamed: false,
+      flash: null,
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
@@ -99,9 +98,7 @@ function postProps(over = {}) {
       inboundLinks: [],
       pending: false,
       published: true,
-      publishedFlash: false,
       publishActions: [],
-      discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
@@ -306,7 +303,7 @@ describe('EditPage', () => {
   });
 
   it('shows a saved confirmation', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/saved/i);
   });
@@ -315,7 +312,7 @@ describe('EditPage', () => {
     const originalUrl = appPage.url;
     appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = await render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
       const warning = screen.container.querySelector('.alert-warning');
       expect(warning?.textContent ?? '').toContain('pages/about');
       // The saved flash yields to the draft warning, so one strip shows.
@@ -326,7 +323,7 @@ describe('EditPage', () => {
   });
 
   it('shows no draft-link warning without the drafts flag', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();
     expect(screen.container.querySelector('.alert-success')).not.toBeNull();
   });
@@ -336,7 +333,7 @@ describe('EditPage', () => {
     __setBuilding(true);
     __setPrerenderingUrl('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = await render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
       // A component that reads page.url.searchParams unconditionally during prerendering throws
       // (SvelteKit's real "Cannot access url.searchParams on a page with prerendering enabled"
       // guard); rendering without throwing is the proof the guard fires.
@@ -751,20 +748,20 @@ describe('EditPage', () => {
   });
 
   it('announces a rename success naming the new slug through the polite live region', async () => {
-    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ flash: 'renamed', slug: 'new-slug' }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('shows a rename success banner', async () => {
-    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ flash: 'renamed', slug: 'new-slug' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('announces a saved message through a persistent live region', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/saved/i);
@@ -1042,7 +1039,7 @@ describe('EditPage', () => {
   });
 
   it('shows a published confirmation strip', async () => {
-    const screen = await render(EditPage, postProps({ publishedFlash: true }));
+    const screen = await render(EditPage, postProps({ flash: 'published' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/published/i);
   });
@@ -1051,7 +1048,7 @@ describe('EditPage', () => {
     const screen = await render(
       EditPage,
       postProps({
-        publishedFlash: true,
+        flash: 'published',
         publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
@@ -1060,7 +1057,7 @@ describe('EditPage', () => {
   });
 
   it('renders no publish-action links when the site declares none (absent-config no-op)', async () => {
-    const screen = await render(EditPage, postProps({ publishedFlash: true, publishActions: [] }));
+    const screen = await render(EditPage, postProps({ flash: 'published', publishActions: [] }));
     expect(screen.container.querySelector('a.link-primary')).toBeNull();
   });
 
@@ -1068,7 +1065,7 @@ describe('EditPage', () => {
     const screen = await render(
       EditPage,
       postProps({
-        publishedFlash: false,
+        flash: null,
         publishActions: [{ label: 'Announce', href: '/admin/team/announce?post=2026-05-hello' }],
       }),
     );
@@ -1076,7 +1073,7 @@ describe('EditPage', () => {
   });
 
   it('shows a discarded confirmation strip', async () => {
-    const screen = await render(EditPage, postProps({ discardedFlash: true }));
+    const screen = await render(EditPage, postProps({ flash: 'discarded' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/discarded/i);
   });
@@ -1370,7 +1367,7 @@ describe('EditPage', () => {
   });
 
   it('shows Saved after a save lands with nothing edited', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     await expect
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('Saved');
@@ -1823,7 +1820,7 @@ describe('EditPage', () => {
   });
 
   it('renders the feedback strip directly under the band', async () => {
-    const screen = await render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ flash: 'saved' }));
     const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
     const flash = screen.container.querySelector('.cairn-feedback')!;
     expect(flash).not.toBeNull();
@@ -2184,12 +2181,12 @@ describe('EditPage', () => {
   const flashCases = [
     {
       name: 'saved',
-      over: { saved: true },
+      over: { flash: 'saved' as const },
       message: 'Saved. Your site keeps showing the published version until you publish.',
     },
-    { name: 'published', over: { publishedFlash: true }, message: 'Published. The live site is rebuilding.' },
-    { name: 'discarded', over: { discardedFlash: true }, message: 'Changes discarded.' },
-    { name: 'renamed', over: { renamed: true, slug: 'new-slug' }, message: 'The URL is now new-slug.' },
+    { name: 'published', over: { flash: 'published' as const }, message: 'Published. The live site is rebuilding.' },
+    { name: 'discarded', over: { flash: 'discarded' as const }, message: 'Changes discarded.' },
+    { name: 'renamed', over: { flash: 'renamed' as const, slug: 'new-slug' }, message: 'The URL is now new-slug.' },
   ];
   for (const { name, over, message } of flashCases) {
     it(`renders the ${name} flash as the one feedback strip`, async () => {
@@ -2205,14 +2202,6 @@ describe('EditPage', () => {
       expect(leaves.some((el) => el.closest('[aria-live="polite"]'))).toBe(true);
     });
   }
-
-  it('shows one strip even when several flash flags arrive together', async () => {
-    const screen = await render(EditPage, postProps({ saved: true, renamed: true }));
-    expect(screen.container.querySelectorAll('.alert-success').length).toBe(1);
-    expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe(
-      'Saved. Your site keeps showing the published version until you publish.',
-    );
-  });
 
   it('shows the word count in the editor card footer', async () => {
     const screen = await render(EditPage, postProps({ body: '' }));

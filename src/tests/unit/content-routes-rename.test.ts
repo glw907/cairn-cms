@@ -182,7 +182,7 @@ describe('renameAction', () => {
     expect(result.data.error).toMatch(/already exists/i);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
     // conventions pass, Task 5: renameAction now declares ActionFailure<ContentFormFailure> (the
-    // flattened, all-optional type); this holds the key set a RenameFailure carried.
+    // flattened type); this holds the key set a RenameFailure carried.
     expect(Object.keys(result.data)).toEqual(['error']);
   });
 

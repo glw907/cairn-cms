@@ -66,9 +66,12 @@ export interface EditData {
   body: string;
   title: string;
   isNew: boolean;
-  saved: boolean;
-  /** True after a successful rename redirect (`?renamed=1`), to confirm the new URL to the author. */
-  renamed: boolean;
+  /**
+   * The confirmation the success redirect that landed here asks for: `?saved=1`, `?renamed=1`,
+   *  `?published=1`, or `?discarded=1`. `null` on an ordinary load. Each redirect sets one parameter,
+   *  so one field holds them all.
+   */
+  flash: 'saved' | 'renamed' | 'published' | 'discarded' | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
   /**
@@ -110,17 +113,13 @@ export interface EditData {
   pending: boolean;
   /** True when the entry file exists on the default branch (the live site shows it). */
   published: boolean;
-  /** True after a publish redirect (`?published=1`), for the confirmation strip. */
-  publishedFlash: boolean;
   /**
    * The site's publish-actions config, resolved for this entry: filtered to this concept and
    *  templated with this entry's id. Rendered as quiet next-step links only alongside
-   *  `publishedFlash`; empty when the site declares no `publishActions` (today's rendering,
+   *  the `'published'` flash; empty when the site declares no `publishActions` (today's rendering,
    *  unchanged).
    */
   publishActions: PublishActionLink[];
-  /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
-  discardedFlash: boolean;
   /**
    * The adapter's preview knob resolved for this entry's concept (its `byConcept` override,
    *  when one exists, applied over the top-level values); null when the site sets none, which
@@ -171,6 +170,17 @@ export interface EditData {
 interface CreateFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
+}
+
+/**
+ * Read the success redirect's flash off the query. A real redirect sets one parameter; a hand-typed
+ *  URL with several settles on the first match here.
+ */
+function editFlash(params: URLSearchParams): EditData['flash'] {
+  for (const flash of ['saved', 'published', 'discarded', 'renamed'] as const) {
+    if (params.get(flash) === '1') return flash;
+  }
+  return null;
 }
 
 /**
@@ -474,8 +484,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       body: parsed.body,
       title,
       isNew,
-      saved: event.url.searchParams.get('saved') === '1',
-      renamed: event.url.searchParams.get('renamed') === '1',
+      flash: editFlash(event.url.searchParams),
       slug: slugFromId(id, datePrefix),
       linkTargets,
       fragmentTargets,
@@ -485,9 +494,7 @@ export function createEntryReadActions(ctx: ContentRoutesContext) {
       inboundLinks: inbound,
       pending,
       published,
-      publishedFlash: event.url.searchParams.get('published') === '1',
       publishActions: resolvePublishActions(ctx.publishActions, { concept: concept.id, id }),
-      discardedFlash: event.url.searchParams.get('discarded') === '1',
       preview: resolvePreview(runtime.preview, concept.id),
       // composeRuntime always resolves this from the site config's dialect; default a hand-built
       // runtime that omits it to the US English dictionary so the editor always has a real filename.

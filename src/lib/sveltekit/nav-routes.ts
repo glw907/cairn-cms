@@ -7,6 +7,7 @@ import { log } from '../log/index.js';
 import { parseSiteConfig, readMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { commitFailure } from './commit-log.js';
+import type { ContentFormFailure } from './content-routes-shared.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
 import type { CairnEvent } from './types.js';
@@ -31,15 +32,6 @@ export interface NavData {
   tree: NavNode[];
   pages: NavPageOption[];
   saved: boolean;
-}
-
-/**
- * A refused nav save: `fail(400)` on an invalid posted tree, `fail(409)` when the config's head
- *  moved since the editor opened the page. Retired from the public surface; survives
- *  structurally inside `NavRoutes.navSaveAction`'s return type, the sanctioned leak.
- */
-interface NavSaveFailure {
-  error: string;
 }
 
 /**
@@ -125,8 +117,13 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     };
   }
 
-  /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
-  async function navSaveAction(event: CairnEvent): Promise<ActionFailure<NavSaveFailure>> {
+  /**
+   * Save the nav tree: validate, then read-modify-commit the one menu with the session editor as
+   *  author. Refuses `fail(400)` on an invalid posted tree and `fail(409)` when the config's head
+   *  moved since the editor opened the page. The nav view shares the edit view's `save` action, so
+   *  a refusal is a {@link ContentFormFailure}.
+   */
+  async function navSaveAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const navMenu = runtime.navMenu;
@@ -143,10 +140,10 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
       // content into the alert; NavValidationError's messages are all engine-authored fixed
       // strings, safe to surface directly.
       if (err instanceof SyntaxError) {
-        return fail(400, { error: 'That navigation could not be read. Reload and try again.' } satisfies NavSaveFailure);
+        return fail(400, { error: 'That navigation could not be read. Reload and try again.' } satisfies ContentFormFailure);
       }
       const message = err instanceof Error ? err.message : 'Invalid navigation';
-      return fail(400, { error: message } satisfies NavSaveFailure);
+      return fail(400, { error: message } satisfies ContentFormFailure);
     }
 
     const backend = resolveBackend(event);
@@ -171,7 +168,7 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
     } catch (err) {
       return commitFailure(commitFields, err, {
         error: 'The site config changed since you opened it. Re-read the config and reapply your edits.',
-      } satisfies NavSaveFailure);
+      } satisfies ContentFormFailure);
     }
 
     throw redirect(303, '/admin/nav?saved=1');
@@ -186,5 +183,5 @@ export function createNavRoutes(config: NavRoutesConfig): NavRoutes {
  */
 export interface NavRoutes {
   navLoad: (event: CairnEvent) => Promise<NavData>;
-  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
+  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<ContentFormFailure>>;
 }

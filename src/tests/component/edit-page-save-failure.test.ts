@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EditPage from './_EditPageDesk.svelte';
 import type { NamedField } from '../../lib/content/types.js';
+import type { EditData } from '../../lib/sveltekit/content-routes.js';
 import { applyActionCalls, enhanceRuns, resetEnhance, settleEnhance } from './_app-forms.js';
 
 // The edit form submits through the enhanced path, so a failed save answers in place instead of
@@ -25,8 +26,7 @@ function props(over = {}) {
       body: 'The body.',
       title: 'Hello',
       isNew: false,
-      saved: true,
-      renamed: false,
+      flash: 'saved' as EditData['flash'],
       error: null,
       slug: 'hello',
       linkTargets: [],
@@ -37,9 +37,7 @@ function props(over = {}) {
       inboundLinks: [],
       pending: false,
       published: true,
-      publishedFlash: false,
       publishActions: [],
-      discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
       siteDictionary: [],
@@ -321,9 +319,9 @@ describe('EditPage failed submit', () => {
   });
 
   it.each([
-    ['publishedFlash', { saved: false, publishedFlash: true }],
-    ['discardedFlash', { saved: false, discardedFlash: true }],
-    ['renamed', { saved: false, renamed: true }],
+    ['published', { flash: 'published' as const }],
+    ['discarded', { flash: 'discarded' as const }],
+    ['renamed', { flash: 'renamed' as const }],
   ])('drops the %s strip from the original load after a failure in place', async (_flag, over) => {
     const screen = await render(EditPage, props(over));
     // Precondition: the strip the page loaded with is up.
@@ -337,7 +335,7 @@ describe('EditPage failed submit', () => {
   it('drops the publish-actions links after a failure in place', async () => {
     const screen = await render(
       EditPage,
-      props({ saved: false, publishedFlash: true, publishActions: [{ label: 'View', href: '/x' }] }),
+      props({ flash: 'published', publishActions: [{ label: 'View', href: '/x' }] }),
     );
     const links = () => screen.container.querySelectorAll('a[href="/x"]');
     // Precondition: the next-step link renders beside the publish-success strip.
@@ -407,7 +405,7 @@ describe('EditPage failed submit', () => {
   });
 
   it('flags the Publish working state for a new entry whose action carries &new=1', async () => {
-    const screen = await render(EditPage, props({ isNew: true, saved: false }));
+    const screen = await render(EditPage, props({ isNew: true, flash: null }));
     publishButton(screen).click();
     await expect.poll(() => enhanceRuns.length).toBe(1);
     expect(enhanceRuns[0].action).toBe('?/publish&new=1');

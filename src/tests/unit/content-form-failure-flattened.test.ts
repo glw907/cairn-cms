@@ -30,7 +30,7 @@ describe('content-form-failure-flattened: the flat ContentFormFailure (conventio
 
 // The eleven arm shapes ContentFormFailure's Partial<> intersection used to compose, restated
 // structurally (never by importing the five retired names, which no longer exist as exports).
-// Each must be assignable into the flat, all-optional ContentFormFailure with no cast.
+// Each must be assignable into the flat ContentFormFailure with no cast.
 function typeOnlyArmAssignability(): void {
   const createFailure: { error: string } = { error: 'bad slug' };
   const renameFailure: { error: string } = { error: 'bad slug' };

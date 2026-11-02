@@ -177,8 +177,7 @@ export function editPageProps(): Record<string, unknown> {
     body: FIXTURE_BODY,
     title: ENTRY.title,
     isNew: false,
-    saved: false,
-    renamed: false,
+    flash: null,
     // The Address group shows the date-stripped id, the way a dated concept's edit load composes
     // it, so the pictured URL cannot drift from the entry the story opens.
     slug: ENTRY.id.replace(/^\d{4}-\d{2}-\d{2}-/, ''),
@@ -190,9 +189,7 @@ export function editPageProps(): Record<string, unknown> {
     inboundLinks: [],
     pending: false,
     published: true,
-    publishedFlash: false,
     publishActions: [],
-    discardedFlash: false,
     // Non-null with no stylesheets: the frame links nothing (a docs page fetches no site CSS), and
     // the "preview shows unstyled markup" hint an unset knob renders stays off a reader's screen.
     preview: { stylesheets: [] },

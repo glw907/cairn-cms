@@ -285,7 +285,7 @@ island.
   const bodyDirty = $derived(body !== bodyBaseline);
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
-  const saveState = $derived(dirty ? 'Unsaved changes' : data.saved && !failedInPlace ? 'Saved' : '');
+  const saveState = $derived(dirty ? 'Unsaved changes' : data.flash === 'saved' && !failedInPlace ? 'Saved' : '');
   // Whether Publish has anything to take live: a body/field edit, a held draft branch, or a
   // brand-new entry that has never been saved. Otherwise the button is guarded rather than hidden
   // (the grounding survey: six of eight comparable editors keep Publish permanently visible), so
@@ -1255,16 +1255,15 @@ island.
   // save; the build's verifyReferences is the integrity authority, so this is informational only.
   const referenceWarning = $derived(failedInPlace ? '' : redirectFlagList('refs'));
 
-  // The one transient feedback strip under the sticky header. The redirect flags are mutually
-  // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.
+  // The one transient feedback strip under the sticky header.
   // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
   const flash = $derived.by(() => {
     if (failedInPlace) return '';
-    if (data.saved && !draftWarning)
+    if (data.flash === 'saved' && !draftWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
-    if (data.publishedFlash) return 'Published. The live site is rebuilding.';
-    if (data.discardedFlash) return 'Changes discarded.';
-    if (data.renamed) return `The URL is now ${data.slug}.`;
+    if (data.flash === 'published') return 'Published. The live site is rebuilding.';
+    if (data.flash === 'discarded') return 'Changes discarded.';
+    if (data.flash === 'renamed') return `The URL is now ${data.slug}.`;
     return '';
   });
 
@@ -1815,8 +1814,8 @@ island.
 {/if}
 <!-- The site's publish-actions next-step links (`publishActions` on `createContentRoutes`):
      quiet links beside the publish-success strip, never their alert. They render only alongside
-     publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
-{#if !failedInPlace && data.publishedFlash && data.publishActions.length}
+     the published flash, so a mid-edit reload of a previously published entry never shows a stale set. -->
+{#if !failedInPlace && data.flash === 'published' && data.publishActions.length}
   <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
     {#each data.publishActions as action (action.label)}
       <a class="link link-primary" href={action.href}>{action.label}</a>

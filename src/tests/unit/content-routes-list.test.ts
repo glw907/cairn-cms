@@ -492,7 +492,7 @@ describe('createAction', () => {
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
     // conventions pass, Task 5: createAction now declares ActionFailure<ContentFormFailure> (the
-    // flattened, all-optional type); this holds the key set a CreateFailure carried.
+    // flattened type); this holds the key set a CreateFailure carried.
     expect(Object.keys(result.data)).toEqual(['error']);
   });
 
@@ -601,7 +601,7 @@ describe('listDeleteAction', () => {
     // Block-until-clean: no commit when links exist.
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
     // conventions pass, Task 5: listDeleteAction now declares ActionFailure<ContentFormFailure>
-    // (the flattened, all-optional type); this holds the key set a DeleteRefusal carried.
+    // (the flattened type); this holds the key set a DeleteRefusal carried.
     expect(Object.keys(result.data).sort()).toEqual(['error', 'id', 'inboundLinks']);
   });
 

@@ -116,7 +116,7 @@ void typeOnlyNavRoutesAssignability;
 // createAuthRoutes: every handler reads a CairnEvent, the event shape a site's
 // /admin/auth/* route shims assign from their own SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
-  const auth = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
+  const auth = createAuthRoutes({ runtime: {} as CairnRuntime });
   auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestOutcome>;
   auth.loginLoad satisfies (event: SiteRequestEvent) => unknown;
   auth.confirmLoad satisfies (event: SiteRequestEvent) => unknown;

@@ -1,6 +1,6 @@
 // The SvelteKit handlers for the magic-link flow, consumed by a site's thin route shims.
-// The factory takes per-site branding and an injected send, so tests run the real handlers
-// against a sink.
+// The factory takes the composed runtime, which carries the site name and sender, and an
+// injected send, so tests run the real handlers against a sink.
 import { error, redirect } from '@sveltejs/kit';
 import { requireOrigin, requireDb } from '../env.js';
 import {
@@ -23,21 +23,22 @@ import {
   recentlyIssued,
   rebindToken,
 } from '../auth/store.js';
-import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
+import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { isSafeLogoutUrl } from './guard.js';
 import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
 import { env } from './workers-env.js';
+import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 
 /**
- * The config `createAuthRoutes` takes: the magic-link branding, the sender, and the bootstrap owner.
+ * The config `createAuthRoutes` takes: the composed runtime and an optional send.
  * @beta
  */
 export interface AuthRoutesConfig {
-  /** The site name and sender identity the magic-link email carries. */
-  branding: AuthBranding;
+  /** The composed runtime; its `siteName` and `sender` are the identity the magic-link email carries. */
+  runtime: CairnRuntime;
   /** Sends the built magic-link message, in place of the default Cloudflare Email sender. */
   send?: SendMagicLink;
 }
@@ -237,7 +238,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // confirm the link went out before telling an editor to check their inbox. The cost is one
     // email-API round trip on the login POST, the right trade for a login flow.
     try {
-      await send(env, buildMagicLinkMessage({ to: email, branding: config.branding, link }));
+      await send(env, buildMagicLinkMessage({ to: email, siteName: config.runtime.siteName, sender: config.runtime.sender, link }));
     } catch (err) {
       // Map the binding failure to its registered condition (carried as a CairnError with the
       // original as cause), and log the greppable code plus the conditionId so the next onboarding
@@ -266,7 +267,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     if (event.locals.cairnIdentity) return { identity: { label: event.locals.cairnIdentity.label } };
     mintOrReusePendingNonce(event);
     return {
-      siteName: config.branding.siteName,
+      siteName: config.runtime.siteName,
       error: event.url.searchParams.get('error'),
       csrf: issueCsrfToken(event),
     };
@@ -286,7 +287,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.setHeaders({ 'Referrer-Policy': 'strict-origin' });
     return {
       token: event.url.searchParams.get('token') ?? '',
-      siteName: config.branding.siteName,
+      siteName: config.runtime.siteName,
       error: event.url.searchParams.get('error'),
       csrf: issueCsrfToken(event),
     };

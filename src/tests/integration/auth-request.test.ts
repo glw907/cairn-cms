@@ -4,6 +4,7 @@ import { seedEditor, makeEvent, makeRecordingCookies, countRows, expectRedirect 
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { hashToken } from '../../lib/auth/crypto.js';
 import type { MagicLinkMessage } from '../../lib/email.js';
+import { runtime } from '../unit/_content-harness.js';
 
 const db = env.AUTH_DB;
 
@@ -11,12 +12,12 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
-const branding = { siteName: 'Test', from: 'noreply@test.dev' };
+const rt = runtime({ siteName: 'Test', sender: { from: 'noreply@test.dev' } });
 
 function routesWithSink() {
   const sent: MagicLinkMessage[] = [];
   const routes = createAuthRoutes({
-    branding,
+    runtime: rt,
     send: async (_env, message) => void sent.push(message),
   });
   return { routes, sent };
@@ -25,7 +26,7 @@ function routesWithSink() {
 // A sender that fails the way an un-onboarded Cloudflare binding does.
 function routesWithFailingSend() {
   return createAuthRoutes({
-    branding,
+    runtime: rt,
     send: async () => {
       throw Object.assign(new Error('not verified'), { code: 'E_SENDER_NOT_VERIFIED' });
     },
@@ -98,7 +99,7 @@ describe('request hardening (Unit 4)', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     let finished = false;
     const routes = createAuthRoutes({
-      branding,
+      runtime: rt,
       send: async () => {
         await Promise.resolve();
         finished = true;
@@ -391,7 +392,7 @@ describe('first-owner seeding', () => {
 
   it('never inserts an owner or sends a link for a requester on an empty table', async () => {
     const sent: MagicLinkMessage[] = [];
-    const routes = createAuthRoutes({ branding, send: async (_e, m) => void sent.push(m) });
+    const routes = createAuthRoutes({ runtime: rt, send: async (_e, m) => void sent.push(m) });
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
     expect(result).toEqual({ outcome: 'sent', sent: true });
     expect(await countRows('editor')).toBe(0);
@@ -444,7 +445,7 @@ describe('request logging', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const routes = createAuthRoutes({
-      branding,
+      runtime: rt,
       send: async (_env, message) => {
         throw new Error(`delivery failed for ${message.html}\n${'x'.repeat(1000)}`);
       },

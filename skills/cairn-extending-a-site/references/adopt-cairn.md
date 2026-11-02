@@ -120,9 +120,8 @@ missing** (`config.bindings-missing`).
 | Store error naming `0004_login_nonce.sql` | Copy and apply it `--remote` |
 | Publish fails, `github.app-unreachable` | Check App permission, installation, and the key secret |
 
-Sign-in email: `auth.branding` (`siteName`, `from`, `replyTo`) overrides members; a custom
-`auth.send` (`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown
-message.
+Sign-in email: the site name and sender come from the runtime; a custom `auth.send`
+(`SendMagicLink`) replaces the sender, and must never put the body or link in a thrown message.
 
 ## Report what is left
 

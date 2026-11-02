@@ -179,7 +179,7 @@
     "severity": "blocker",
     "title": "Email sending domain is not onboarded",
     "why": "The from-address domain has no enabled Cloudflare sending subdomain, so env.EMAIL.send has no aligned sender and the magic-link send throws E_SENDER_NOT_VERIFIED. No editor can sign in.",
-    "remediation": "Onboard the sending domain with `wrangler email sending enable <domain>`, then re-deploy. The domain must match branding.from.",
+    "remediation": "Onboard the sending domain with `wrangler email sending enable <domain>`, then re-deploy. The domain must match email.from.",
     "docsAnchor": "is-it-working.md#onboard-the-sending-domain",
     "logEvent": "auth.link.send_failed"
   },

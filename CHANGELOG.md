@@ -673,6 +673,9 @@
 
 ### Fixed
 
+- **Spellcheck no longer dies silently on some page loads.** A large dictionary read could trap the
+  spellchecker's wasm, which left that page with no underlines until a reload. The worker now feeds
+  the dictionary in writes of at most 64KB.
 - **A media replace or an alt push keeps the content manifest in step.** Both actions now commit each
   rewritten entry's rebuilt manifest row in the same commit, so the next build's `verifyManifest`
   passes. Before, the first deploy after a replace failed on a stale `mediaRefs`.

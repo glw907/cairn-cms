@@ -239,6 +239,27 @@ function createWasmEngine(instance: SpellcheckerWasm, latest: { items: Suggested
   };
 }
 
+/** The largest dictionary write the engine takes, the top of the 32-64KB spellchecker-wasm advises. */
+const DICTIONARY_CHUNK_BYTES = 64 * 1024;
+
+/**
+ * Split a dictionary body into writes of at most {@link DICTIONARY_CHUNK_BYTES}. The library caps a
+ * write at 1MiB, yet a full 1MiB write after a short first read traps the engine (`unreachable`).
+ * The dictionary buffers while the wasm instantiates, so that read size depends on timing. A trapped
+ * engine paints no underlines for the life of the page.
+ */
+export function boundDictionaryChunks(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  return body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        for (let at = 0; at < chunk.byteLength; at += DICTIONARY_CHUNK_BYTES) {
+          controller.enqueue(chunk.subarray(at, at + DICTIONARY_CHUNK_BYTES));
+        }
+      },
+    }),
+  );
+}
+
 async function createEngine(message: InitMessage): Promise<SpellEngine> {
   // The browser class accepts fetch Responses for both assets and streams the dictionary into wasm
   // memory in chunks, so the 1.5MB corpus is never held as one JS string. Import the class module
@@ -256,7 +277,7 @@ async function createEngine(message: InitMessage): Promise<SpellEngine> {
     fetch(message.wasmUrl),
     fetch(message.dictionaryUrl),
   ]);
-  await instance.prepareSpellchecker(wasmResponse, dictionaryResponse);
+  await instance.prepareSpellchecker(wasmResponse, new Response(boundDictionaryChunks(dictionaryResponse.body!)));
   return createWasmEngine(instance, latest);
 }
 

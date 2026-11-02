@@ -13,12 +13,17 @@ Consumers must: rebuild the site from `create-cairn-site`; this release has no u
 - **Every editor signs in again once.** Session ids are now stored as a SHA-256 digest, so a session row
   written before this release holds a raw id that no longer resolves. Each editor requests a new
   sign-in link after the first deploy. A script that inserts `session` rows by hand must insert the
-  lowercase-hex SHA-256 of the id it hands the browser.
+  lowercase-hex SHA-256 of the id it hands the browser. Deploy at a 100 percent cut-over: under a
+  gradual deployment a session made by one version does not resolve on the other, so editors bounce
+  between signed in and signed out until the rollout finishes. Rows left from before hold a raw id and
+  never match again, and `DELETE FROM session WHERE length(id) != 64` clears them early.
 - **Sign-in requests are rate limited.** `createCairnAdmin` takes `auth.rateLimit` (and
   `AuthRoutesConfig.rateLimit` on the lower-level routes): a resolver keyed `login:<CF-Connecting-IP>`
   that returns a Workers rate-limit binding. A limited request answers the same `throttled` outcome as
   a repeat request for one address. With no binding the limiter is open, and a binding that throws logs
   `auth.rate_limit_failed` and lets the request through. A limited request logs `auth.rate_limited`.
+  The key is capped at 64 characters, and the failure record carries the error's name and a fixed
+  message, never text the limiter supplied.
 - **A successful sign-in from a browser that already holds a session replaces that browser's session
   row.** Before, the old row stayed until it expired.
 - **The GitHub App needs Contents read and write.** The engine mints its installation token for one

@@ -1019,8 +1019,9 @@ describe('the fast lane', () => {
       expect(subset, path).not.toContain('check');
       // The type check follows the close runner in the same serial group, so the rebuild has finished.
       const at = line1.indexOf('npm run check:close -- ');
-      expect(line1.indexOf('npm run check', at + 1), path).toBeGreaterThan(at);
-      expect(line1.slice(at, line1.search(/npm run check(?![:\w-])/)), path).not.toContain('& pids=');
+      const typeCheck = line1.search(/npm run check(?![:\w-])/);
+      expect(typeCheck, path).toBeGreaterThan(at);
+      expect(line1.slice(at, typeCheck), path).not.toContain('& pids=');
     }
   });
 

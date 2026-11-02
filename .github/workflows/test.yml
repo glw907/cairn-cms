@@ -76,8 +76,8 @@ jobs:
       # Two of the create-cairn-site tests read the baked `template/`, which is gitignored and
       # produced by `prepack`. Bake it first, or those two fail on a clean checkout while passing
       # on any machine that has run the CLI. The step names the engine's version for both specs,
-      # as create-site.yml does. The bake's defaults (`prepack`) resolve to the same caret specs
-      # from the repo's package versions, so this is the same bake spelled out.
+      # as create-site.yml does. The bake's defaults (`prepack`) take caret specs from each
+      # package's own version, which match the engine's while the packages share a version.
       - name: Bake the create-cairn-site template
         working-directory: packages/create-cairn-site
         run: |

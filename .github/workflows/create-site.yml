@@ -53,7 +53,7 @@ jobs:
         # The bake refuses a `file:` spec and refuses a 0.0.0 version, by design: both name something
         # no registry can install, and a published tarball carrying either would be broken on
         # arrival. This step bakes with the engine's version as both specs, which `prepack`'s
-        # defaults resolve to as well, and packs with --ignore-scripts so the bake runs once. The
+        # defaults match while the packages share a version, and packs with --ignore-scripts so the bake runs once. The
         # specs a published bake writes are covered by the bake's own unit
         # tests; what this job proves is that the scaffolded tree builds, and the rewrite below
         # points it at the freshly packed tarballs anyway.

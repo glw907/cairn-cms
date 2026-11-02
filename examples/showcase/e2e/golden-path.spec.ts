@@ -506,9 +506,7 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   // With the caret on the plain prose line (not on any component), the Edit-block control carries
   // its disabled label and is disabled.
   await editor.locator('.cm-line', { hasText: 'A plain prose line.' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Place the cursor in an editable block to edit it' }),
-  ).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Edit block' })).toBeDisabled();
 
   // Put the text cursor inside the callout block by clicking its opener line.
   await editor.locator('.cm-line', { hasText: '::::callout[A worked example]' }).click();

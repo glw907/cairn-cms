@@ -49,6 +49,20 @@ function dirtyCounter() {
 }
 
 describe('RepeatableField', () => {
+  it('lays its rows out as a bullet-free list that keeps its list role', async () => {
+    await render(RepeatableField, { field: faq, name: 'faq', rows: [{ q: 'first', a: '' }], ...shared() });
+    const list = document.querySelector('fieldset ul')!;
+    expect(list.getAttribute('role')).toBe('list');
+    // The compiled sheet scopes every rule under the admin theme root.
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    try {
+      const style = getComputedStyle(list);
+      expect(style.listStyleType).toBe('none');
+      expect(style.paddingLeft).toBe('0px');
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  });
   it('keeps an edited row and its focus when an earlier row is removed (B1)', async () => {
     await render(RepeatableField, {
       field: faq,

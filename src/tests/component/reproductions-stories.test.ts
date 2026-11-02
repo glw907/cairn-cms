@@ -524,7 +524,7 @@ describe('editor/toolbar', () => {
     );
     expect(insertNames).toEqual([
       'Insert block',
-      'Place the cursor in an editable block to edit it',
+      'Edit block',
       'Web link (Ctrl+K)',
       'Link to page',
       'Insert image',

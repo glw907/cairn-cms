@@ -46,7 +46,7 @@ with `auth.store-roles-unmigrated` means `0001_roles.sql` is not applied.
 ## Rolling your own flow with /auth-crypto
 
 `@glw907/cairn-cms/auth-crypto` supplies stateless primitives only (`generateToken`, `hashToken`,
-`tokensMatch`, and `buildCookieName` for a `__Host-` name). The audience semantics, the store schema, and
+`compareTokens`, and `buildCookieName` for a `__Host-` name). The audience semantics, the store schema, and
 keeping that store separate from the engine's stay site-owned. A flow built on them follows this
 discipline:
 
@@ -68,7 +68,7 @@ discipline:
 - Send tokens in a POST body, never a URL (logs, history, `Referer`).
 - Set `Referrer-Policy: strict-origin` on the landing page (the engine's own pages use it; `same-origin` would send the token-bearing landing URL as `Referer` on every same-origin request). The engine's security headers cover only
   `/admin`; a second group's routes set their own.
-- Use `generateToken` with `tokensMatch` for double-submit CSRF on the group's forms, and name the
+- Use `generateToken` with `compareTokens` for double-submit CSRF on the group's forms, and name the
   CSRF cookie through `buildCookieName` so it takes `__Host-` too.
 - Rate limit by email and by IP.
 - Normalize the contact the same way on every path: request, confirm, lookup, and removal. For an

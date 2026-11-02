@@ -180,7 +180,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildCookieName`: (base: string, secure: boolean) => string
 - `generateToken`: () => string
 - `hashToken`: (token: string) => Promise<string>
-- `tokensMatch`: (a: string, b: string) => boolean
+- `compareTokens`: (a: string, b: string) => boolean
 
 ## `/cloudflare`
 

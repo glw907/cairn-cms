@@ -1,7 +1,7 @@
 // SvelteKit's Origin check runs on every route ahead of any handle; cairn adds the admin's
 // double-submit token on top. These helpers back the guard's token check and the loads that
 // issue the token.
-import { csrfCookieName, generateCsrfToken, tokensMatch, SESSION_TTL_MS } from '../auth/crypto.js';
+import { csrfCookieName, generateCsrfToken, compareTokens, SESSION_TTL_MS } from '../auth/crypto.js';
 import { isLocalHost, readPublicOrigin } from '../dev-flag.js';
 import { env } from './workers-env.js';
 import type { CairnEvent, CookieJar } from './types.js';
@@ -135,7 +135,7 @@ export interface CsrfVerdict {
 function verdictFromWitness(cookie: string | undefined, submitted: string | undefined): CsrfVerdict {
   if (!cookie) return { ok: false, detail: 'no-cookie' };
   if (submitted === undefined) return { ok: false, detail: 'no-witness' };
-  return tokensMatch(submitted, cookie) ? { ok: true } : { ok: false, detail: 'mismatch' };
+  return compareTokens(submitted, cookie) ? { ok: true } : { ok: false, detail: 'mismatch' };
 }
 
 /**

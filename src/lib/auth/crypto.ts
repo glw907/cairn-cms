@@ -85,7 +85,7 @@ function randomBase64Url(byteLength = 32): string {
  * A fresh 256-bit magic-link token, url-safe, drawn from `crypto.getRandomValues`.
  * @remarks
  * The one exported generator for every CSPRNG secret: a magic-link token, an offer token, a session id, or
- * a double-submit CSRF token, which pairs with {@link tokensMatch} on the submitted copy.
+ * a double-submit CSRF token, which pairs with {@link compareTokens} on the submitted copy.
  * @public
  */
 export function generateToken(): string {
@@ -126,7 +126,7 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * A length-checked constant-time compare, so a token check leaks no timing beyond length.
  *
  * Three properties a caller must know: it leaks length (a mismatch on length is a cheap,
- * non-constant-time reject, since length is not a secret); `tokensMatch('', '')` is
+ * non-constant-time reject, since length is not a secret); `compareTokens('', '')` is
  * deliberately false, so an unset expected value can never accept an unset submitted one; and
  * it is meant only for fixed-length CSPRNG tokens and hex hashes, never for a password or
  * anything an attacker can enumerate. `TextEncoder` maps an unpaired surrogate to the
@@ -135,7 +135,7 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * is for, which is exactly why this precondition is stated rather than guarded against.
  * @public
  */
-export function tokensMatch(a: string, b: string): boolean {
+export function compareTokens(a: string, b: string): boolean {
   const aBytes = new TextEncoder().encode(a);
   const bBytes = new TextEncoder().encode(b);
   if (aBytes.length === 0 || aBytes.length !== bBytes.length) return false;

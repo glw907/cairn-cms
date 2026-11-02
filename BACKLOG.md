@@ -24,6 +24,21 @@
 - [ ] **#252** Make the fast lane's related-unit selection catch a count pinned in a test of a script it changed `#improvement` `#cairn-cms` *(2026-11-01)*
   T1 added a close-prebuilt component, and `close-prebuilt.test.ts` pins the component count (35 to 36). The implementer's own fast lane reported green and the miss surfaced only on the session's rerun, so a dispatch trusting the agent's lane would have pushed a red. Read from this run, not traced to the selection rule.
   Placement: Cleanup round.
+- [ ] **#254** Add a section-refusals action for a `createSectionAction` with `resolveDb` omitted `#improvement` `#cairn-cms` *(2026-11-01)*
+  The refusal fixture route (`examples/showcase/src/routes/admin/section-refusals`) covers a `resolveDb` that returns undefined, but not an action built with the option omitted, because the option turns optional in Pass 3 (E4). Add the action and its spec row once that lands.
+  Placement: Pass 3.
+- [ ] **#255** Put the sign-in email's `messageId` in the sign-in log record `#improvement` `#cairn-cms` *(2026-11-01)*
+  The logs stop at Cloudflare's acceptance, and a dropped link is invisible past it (`docs/admin/troubleshooting.md`, "Nobody can sign in"). Logging the send binding's message id on the `auth.token.minted` or send record would let an owner match a delivery report to a sign-in. It needs a new field in `src/lib/sveltekit/auth-routes.ts`, an `auth-data` path, so it takes the one security read in Pass 7.
+  Placement: Pass 7.
+- [ ] **#256** Give the GitHub failure and `defineRoles` error strings a next step `#improvement` `#cairn-cms` *(2026-11-01)*
+  The p1-p8 error sweep left 13 lines under `src/lib/github/**` and the `defineRoles` strings in `src/lib/auth/roles.ts` alone, because both paths are `auth-data` and a change costs a security read and a live smoke. Each already names the operation and status; none says what to do next.
+  Placement: Pass 7.
+- [ ] **#257** Check whether a bare `csrf` error reaches an editor's screen from media replace or the dictionary `#bug` `#cairn-cms` *(2026-11-01)*
+  `content-routes-media-metadata.ts:249` and `content-routes-dictionary.ts:106` return `{ error: 'csrf' }`. `tidy-controller.svelte.ts:185` and `ShareLinkPanel.svelte:68` filter that value, but `MediaReplaceDialog.svelte` stores `failure.error` unfiltered (`:265`) and may render it. Read from source, not run: a stale form token on a replace could show the word `csrf` to an editor. Fix by filtering as the two components do, or by returning editor copy.
+  Placement: Pass 5.
+- [ ] **#258** Make the fast lane catch a test that reads a file list or directory at run time `#improvement` `#cairn-cms` *(2026-11-01)*
+  Two reds on PR #181 came from tests the related-unit selection never ran. `check-leaks.test.ts` reads `package.json` `files` and needs a scan profile for each packed path, and `gate-tier.test.ts` lists `examples/showcase/e2e` and needs every spec mapped in `gate-table.json`. Both implementers' lanes were green, and a plain `npx vitest run --project unit` caught each. Fix candidate: add those two tests to the lane when `package.json` `files`, `examples/showcase/e2e/`, or `gate-table.json` changes. Same family as #252.
+  Placement: Cleanup round.
 - [ ] **#246** Decide whether a long-lived Worker key should keep admin permissions `#improvement` `#cairn-cms` *(2026-11-01)*
   The Worker still holds a key for an App with `administration: write` and `workflows: write`, and the setup tool tells the user to choose "All repositories". A stolen `GITHUB_APP_PRIVATE_KEY_B64` can mint an unscoped token that reaches every repository in the installation, including repository deletion. Decide whether the Worker's key keeps those permissions or setup uses a separate App. Geoff's ruling keeps "All repositories" at `packages/create-cairn-site/src/github/install.mjs:237`; #203 tells the owner to narrow the installation afterward. Found by the pass 1a security read.
   Placement: Cleanup round.

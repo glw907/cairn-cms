@@ -14,7 +14,7 @@ function entry(date: string | undefined, id: string): ContentSummary {
     excerpt: '',
     wordCount: 0,
     draft: false,
-    fields: {},
+    summaryFields: {},
   };
 }
 

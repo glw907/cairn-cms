@@ -52,9 +52,9 @@ jobs:
         working-directory: packages/create-cairn-site
         # The bake refuses a `file:` spec and refuses a 0.0.0 version, by design: both name something
         # no registry can install, and a published tarball carrying either would be broken on
-        # arrival. That makes `prepack`'s own default path unrunnable until @glw907/cairn-cms-dev
-        # publishes, so bake here with the engine's real version standing in for both specs and pack
-        # with --ignore-scripts. The specs a published bake writes are covered by the bake's own unit
+        # arrival. This step bakes with the engine's version as both specs, which `prepack`'s
+        # defaults resolve to as well, and packs with --ignore-scripts so the bake runs once. The
+        # specs a published bake writes are covered by the bake's own unit
         # tests; what this job proves is that the scaffolded tree builds, and the rewrite below
         # points it at the freshly packed tarballs anyway.
         run: |

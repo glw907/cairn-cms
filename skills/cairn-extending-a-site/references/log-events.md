@@ -159,7 +159,7 @@ These never carry document content or an API key.
 
 | Event | Level | Fields | Meaning |
 |---|---|---|---|
-| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `unreachable`. |
+| `github.unreachable` | warn | `scope` (`shell`, `help`, `publish_advisories`, `health`), `error` (not on `health`), `reason` (`health` only) | A best-effort GitHub read failed and the screen degraded. On `health`: `key_refused` (401), `installation_not_found` (404), `installation_suspended` (403), `token_request_refused` (422: the repository is not in the installation, the App lacks Contents write, `repo` is stale, or GitHub throttled the request), `unreachable`. |
 | `health.failed` | error | `error` | `loadHealth` threw; the route answers 503 while this keeps the message. |
 | `turnstile.verify_failed` | warn | `reason`; `tokenLength`, `error`, `status`, `codes`, `expected`/`actual` per reason | `missing_secret` (blank secret, checked first), `invalid_input` (no or bad token), `request_failed`, `bad_status`, `unparseable`, `rejected` (non-routine error code: rotated or wrong secret), `hostname_mismatch`, `action_mismatch`. A routine bot rejection logs nothing. |
 

@@ -8,11 +8,11 @@ import type { AppCredentials } from './types.js';
 
 /**
  * Assemble the `AppCredentials` the signer needs from the GitHub App's identity (app id,
- * installation) and the Worker's private-key secret. Throws a CairnError naming
+ * installation, repository) and the Worker's private-key secret. Throws a CairnError naming
  * `github.app-unreachable` when the secret is unset, since the App cannot authenticate without it.
  */
 export function appCredentials(
-  identity: { appId: string; installationId: string },
+  identity: { appId: string; installationId: string; repo: string },
   env: CairnEnv,
 ): AppCredentials {
   const privateKeyB64 = env.GITHUB_APP_PRIVATE_KEY_B64;
@@ -21,5 +21,5 @@ export function appCredentials(
       message: 'GITHUB_APP_PRIVATE_KEY_B64 is not configured',
     });
   }
-  return { appId: identity.appId, installationId: identity.installationId, privateKeyB64 };
+  return { appId: identity.appId, installationId: identity.installationId, repo: identity.repo, privateKeyB64 };
 }

@@ -45,10 +45,12 @@ export interface BackendCommit {
   date: string;
 }
 
-/** What the App signer needs: the app id, the installation, and the base64 PEM secret. */
+/** What the App signer needs: the app id, the installation, the repository, and the base64 PEM secret. */
 export interface AppCredentials {
   appId: string;
   installationId: string;
+  /** The content repository's name, the one repository every minted token reaches. */
+  repo: string;
   /** The stored `GITHUB_APP_PRIVATE_KEY_B64`: base64 of the PEM, single line. */
   privateKeyB64: string;
 }

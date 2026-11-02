@@ -14,10 +14,10 @@ State lives in `docs/STATUS.md` (the rolling now, with the next action), `BACKLO
 Cut a worktree off `main` for the pass, then run:
 
 ```sh
-npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync)
+npm ci && npm ci --prefix examples/showcase && (cd examples/showcase && npx svelte-kit sync) && npm --prefix packages/create-cairn-site run prepack
 ```
 
-The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
+The prepack bakes the gitignored template that most `packages/create-cairn-site` tests read. The second install keeps the worktree's showcase off the main checkout's engine. The sync writes the `$app/tsconfig` that `check:public-skill` needs. `references/durable-gotchas.md` under `cairn-writing-engine-code` explains why.
 
 ## Gates
 
@@ -41,7 +41,7 @@ The close review loads `standards:svelte-reviewer` for `**/*.svelte` and load, a
 
 - **Live admin smoke** on `auth-data`, against a real Worker (`wrangler dev`) with a session minted by inserting a D1 row, then the magic-link round trip in headless Chromium, reading the link from wrangler's local `send_email` output. Follow `references/admin-smoke-test.md`.
 - **Documentation is a pass dimension.** Fix every doc the change touched, inbound references included. A change to documented behavior fixes its page in the same commit (the `cairn-writing-docs` skill). Grep a removed or renamed symbol across `docs/`, `skills/`, `claude/`, and `README.md` and repoint every hit.
-- **Changelog and version records.** A behavior change updates `CHANGELOG.md` under `## Unreleased` and the per-version record in `MIGRATION-NOTES.md`. A breaking change carries one `Consumers must:` line per consumer action.
+- **Changelog and version records.** A behavior change updates `CHANGELOG.md` under `## Unreleased` and the per-version record in `MIGRATION-NOTES.md`. A breaking change carries one `Consumers must:` line per consumer action, in the shape `CONTRIBUTING.md` states and `npm run check:consumers-must` enforces.
 - **Public surface.** An intended change runs `npm run check:surface -- --update` and commits `scripts/checks/api-surface.md`.
 - **Rulings.** A ruling on a consultation item updates `docs/internal/engine-rulings.md`.
 - **Friction.** A finding goes to `BACKLOG.md` through `/standards:log-issue`, with a `Placement` line, or is fixed in the pass that meets it. An engine change reads `engine-rulings.md` and runs the charter's premise test (`cairn-judging-scope`) first.

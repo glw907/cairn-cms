@@ -2,9 +2,7 @@
 // named constructor per scenario, never a JSON file, so a change to health.Report's shape fails
 // the build rather than silently rotting a golden into a lie.
 //
-// The scenarios are the corpus both halves of the render work share. A fixture's numbers and
-// prose are the ones tool/docs/design/render-reference's frames were drawn from, so a frame
-// cut here can be read beside the reference captures.
+// The scenarios are the corpus both halves of the render work share.
 package fixtures
 
 import (

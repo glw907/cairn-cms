@@ -2,6 +2,15 @@
 
 ### Added
 
+- **A `Consumers must:` line has one grammar, and a gate holds new lines to it.** The line sits alone
+  on one physical line, at column 0 or two spaces, and reads `Consumers must: nothing.` or
+  `Consumers must: <action>.` with no bold, no backticks, and no hedge. `npm run check:consumers-must`
+  fails a new `## Unreleased` line off that grammar, and `cairn health` reads the same grammar. A shared
+  fixture, `scripts/checks/fixtures/consumers-must/cases.json`, holds the two readers to it. Lines already off grammar sit in
+  `scripts/checks/consumers-must-baseline.json` until the release reset removes them.
+
+  Consumers must: nothing.
+
 - **`actions.mediaLibraryUpload` is typed on `CairnAdminRoutes`,** so a custom media screen reaches the
   upload action, which records its manifest row, with no cast. The admin routes still omit nine of
   `ContentRoutes`'s media actions.
@@ -128,6 +137,15 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **`cairn-guidance check` judges the `.claude/` Tailwind exclusion by resolved path and reports `PASS`
+  or `FIX`.** It lists every `.css` file under `src/`, finds the files that import `tailwindcss` or
+  `tailwindcss/utilities`, and accepts any `@source not` that resolves to the root `.claude`, so an
+  exclusion kept in a different stylesheet than the import passes and the advised line is computed from
+  the entry's depth. Each of the seven lines starts `PASS` or `FIX`, the last line counts them, and `--strict`
+  exits 1 on any `FIX`. The `unknown` exclusion state is gone: with no entry, nothing scans `.claude/`.
+
+  Consumers must: fix every FIX line before running cairn-guidance check --strict in CI.
 
 - **`TidyConventions` drops `fixes`.** Tidy always makes the objective fixes, so the key and the
   Settings screen's On/Off control are gone. The screen's Fixes section now states what tidy always

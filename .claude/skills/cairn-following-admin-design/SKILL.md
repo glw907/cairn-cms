@@ -1,10 +1,6 @@
 ---
 name: cairn-following-admin-design
 description: Follows cairn's admin design system when you create or change anything on the /admin interface: the Warm Stone tokens, type, component recipes, voice, and the DaisyUI-first rule. Use when editing src/lib/admin, src/lib/admin-toolkit, cairn-admin.css, or an admin screen in a site built on cairn.
-paths:
-  - "src/lib/admin/**"
-  - "src/lib/admin-toolkit/**"
-  - "scripts/build/admin-css*"
 ---
 
 # Following the admin design

@@ -63,6 +63,7 @@ func validatePublicOrigin(origin string) (failDetail string, ok bool) {
 var configPublicOrigin = Check{
 	ID:        "config.public-origin",
 	PassTitle: "PUBLIC_ORIGIN is set and valid",
+	SkipTitle: "PUBLIC_ORIGIN",
 	Condition: spine.ConditionConfigPublicOriginInvalid,
 	Run: func(s Snapshot) Result {
 		_, found, err := ReadWranglerConfig(s)

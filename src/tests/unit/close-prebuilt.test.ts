@@ -80,9 +80,9 @@ describe('closeSteps', () => {
 describe('the exported component list', () => {
   const steps = closeSteps(PACKAGE_JSON.scripts);
 
-  it('holds 35 components with no duplicate label', () => {
-    expect(CLOSE_COMPONENTS).toHaveLength(35);
-    expect(new Set(steps.map((step) => step.label)).size).toBe(35);
+  it('holds 36 components with no duplicate label', () => {
+    expect(CLOSE_COMPONENTS).toHaveLength(36);
+    expect(new Set(steps.map((step) => step.label)).size).toBe(36);
   });
 
   it('makes check:close the runner, no longer a chain', () => {

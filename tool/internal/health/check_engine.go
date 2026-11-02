@@ -28,17 +28,11 @@ const (
 // which carries no version to key a section by.
 var changelogHeading = regexp.MustCompile(`(?m)^##\s+([0-9][^\s]*)\s*$`)
 
-// consumersMustLead matches one "Consumers must:" clause's lead-in, optionally wrapped in
-// Markdown bold, with two optional single-backtick groups: one immediately before "Consumers" and
-// one immediately after the colon. Both groups matching means the lead-in itself sits inside a
-// code span, a prose MENTION of the convention ("carries every `Consumers must:` line from here
-// on") rather than an actual clause, so sectionHasActionableConsumersMust skips it.
-var consumersMustLead = regexp.MustCompile("(`)?\\*{0,2}Consumers must:\\*{0,2}(`)?")
-
-// blankLine splits a changelog section into its paragraphs and list items: engineRepo's
-// CHANGELOG.md separates each bullet by a blank line and wraps a bullet's text across
-// multiple indented lines, so a clause's true end is the next blank line, not the next newline.
-var blankLine = regexp.MustCompile(`\n\s*\n`)
+// consumersMustLine matches one grammar line of a changelog section: "Consumers must: " at the
+// start of a line, optionally indented two spaces (a list item's continuation), followed by a
+// body. Group 1 is the body. The same pattern drives scripts/checks/check-consumers-must.mjs, and
+// scripts/checks/fixtures/consumers-must/cases.json pins both readers to it.
+var consumersMustLine = regexp.MustCompile(`(?m)^(?:  )?Consumers must: (\S.*)$`)
 
 // FieldEngineInstalledVersion names the installed engine version on the engine check's Outcome.
 // A renderer reads it by key: the version also appears inside the check's prose Detail, and
@@ -56,7 +50,7 @@ type engineDetail struct {
 	// range has not yet taken, up to and including the latest.
 	ReleasesBehind int
 	// ConsumersMust reports whether any skipped release's changelog section carries an actionable
-	// "Consumers must:" line, one whose text does not read "nothing".
+	// "Consumers must:" line, one whose body is not exactly "nothing.".
 	ConsumersMust bool
 }
 
@@ -135,54 +129,15 @@ func changelogSections(changelog []byte) map[string]string {
 }
 
 // sectionHasActionableConsumersMust reports whether section carries an actionable "Consumers
-// must:" clause: one whose text, trimmed of whitespace and compared case-insensitively, does
-// not begin with the whole word "nothing" (the sole non-actionable case; "nothing." and "nothing;
-// a site already on the old name keeps working." both count as non-actionable, while a clause
-// that merely starts elsewhere, "rename X to Y." or "run the migration, nothing else changes.",
-// is actionable). A section may carry more than one "Consumers must:" clause, one per bullet or
-// paragraph; each clause is bounded at the next lead-in (or the paragraph's end), so two clauses
-// sharing one paragraph are judged separately, and any single actionable one is enough. A lead-in
-// itself wrapped in a code span (`Consumers must:` quoted in running prose) is a mention of the
-// convention, not a clause, and is skipped.
+// must:" line: any consumersMustLine match whose body is not exactly "nothing.". Text that does
+// not sit on a grammar line (a mid-paragraph mention, a bold or code-span lead) is not a clause.
 func sectionHasActionableConsumersMust(section string) bool {
-	for _, para := range blankLine.Split(section, -1) {
-		normalized := strings.Join(strings.Fields(para), " ")
-		leads := consumersMustLead.FindAllStringSubmatchIndex(normalized, -1)
-		for i, m := range leads {
-			if m[2] != -1 && m[4] != -1 {
-				// Both backtick groups matched: the lead-in is quoted in prose, not a clause.
-				continue
-			}
-			end := len(normalized)
-			if i+1 < len(leads) {
-				end = leads[i+1][0]
-			}
-			remainder := strings.TrimSpace(normalized[m[1]:end])
-			if remainder == "" {
-				continue
-			}
-			if !clauseIsNonActionableNothing(remainder) {
-				return true
-			}
+	for _, m := range consumersMustLine.FindAllStringSubmatch(section, -1) {
+		if m[1] != "nothing." {
+			return true
 		}
 	}
 	return false
-}
-
-// clauseIsNonActionableNothing reports whether remainder, a "Consumers must:" clause's text,
-// begins with the whole word "nothing": case-insensitively, and followed by end of text or a
-// non-letter character (a period, semicolon, comma, space, or parenthesis), never a word like
-// "nothingness" that merely starts the same letters.
-func clauseIsNonActionableNothing(remainder string) bool {
-	lower := strings.ToLower(remainder)
-	if !strings.HasPrefix(lower, "nothing") {
-		return false
-	}
-	if len(lower) == len("nothing") {
-		return true
-	}
-	next := lower[len("nothing")]
-	return next < 'a' || next > 'z'
 }
 
 // skippedVersions returns the versions strictly after siteVersion up to and including latest, in

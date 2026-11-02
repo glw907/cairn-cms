@@ -29,8 +29,8 @@ copy.
     <h3 class="site-entry__title">
       <a href={post.permalink} class="cairn-focus-ring">{post.title}</a>
     </h3>
-    {#if post.fields.description}
-      <p class="site-entry__excerpt">{post.fields.description}</p>
+    {#if post.summaryFields.description}
+      <p class="site-entry__excerpt">{post.summaryFields.description}</p>
     {/if}
   </div>
 </article>

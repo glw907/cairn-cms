@@ -46,7 +46,7 @@ describe('buildSiteManifest', () => {
     const manifest = buildSiteManifest(adapter, files);
     const about = manifest.entries.find((e) => e.id === 'about');
     // No description, so the summary is the body excerpt.
-    expect(about?.summary).toBe('Hi.');
+    expect(about?.excerpt).toBe('Hi.');
   });
 
   it('excludes a file whose frontmatter fails validation', () => {

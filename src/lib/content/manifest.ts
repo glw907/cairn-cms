@@ -24,7 +24,7 @@ export interface ManifestEntry {
   title: string;
   date?: string;
   permalink: string;
-  summary?: string;
+  excerpt?: string;
   draft: boolean;
   links: CairnRef[];
   /**
@@ -110,9 +110,9 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     title: asString(frontmatter.title) ?? id,
     date,
     permalink,
-    // Coalesce an empty excerpt to undefined, so an empty-body entry carries no summary key at all
+    // Coalesce an empty excerpt to undefined, so an empty-body entry carries no excerpt key at all
     // (matching serialize's optional-spread) and the in-memory and serialized shapes agree.
-    summary: buildExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
+    excerpt: buildExcerpt(body, { description: asString(frontmatter.description) }) || undefined,
     draft: frontmatter.draft === true,
     links: extractCairnLinks(body),
     ...(mediaRefs.length ? { mediaRefs } : {}),
@@ -147,7 +147,7 @@ export function formatManifest(manifest: Manifest): string {
     title: e.title,
     ...(e.date ? { date: e.date } : {}),
     permalink: e.permalink,
-    ...(e.summary ? { summary: e.summary } : {}),
+    ...(e.excerpt ? { excerpt: e.excerpt } : {}),
     draft: e.draft,
     // Set publishedAt only when stamped, so an unpublished or pre-upgrade entry's row stays
     // byte-identical to a manifest committed before this field (matching mediaRefs and includes).
@@ -192,7 +192,7 @@ export function parseManifest(raw: string): Manifest {
       typeof e.permalink === 'string' &&
       typeof e.draft === 'boolean' &&
       (e.date === undefined || typeof e.date === 'string') &&
-      (e.summary === undefined || typeof e.summary === 'string') &&
+      (e.excerpt === undefined || typeof e.excerpt === 'string') &&
       (e.mediaRefs === undefined || Array.isArray(e.mediaRefs)) &&
       (e.references === undefined || Array.isArray(e.references)) &&
       (e.tags === undefined || Array.isArray(e.tags)) &&
@@ -480,14 +480,17 @@ export function removeEntry(manifest: Manifest, concept: string, id: string): Ma
 }
 
 /**
- * One inbound linker: enough to name it and link to its edit page in the delete guard.
- * @beta
+ * One entry named by identity: enough to link to its page or edit screen. The delete guard lists
+ *  inbound linkers as these, and `resolveReferences` returns one per reference edge, with `excerpt`
+ *  set from the target's indexed excerpt when it has one.
+ * @public
  */
-export interface InboundLink {
+export interface EntryRef {
   concept: string;
   id: string;
   title: string;
   permalink: string;
+  excerpt?: string;
 }
 
 /**
@@ -495,7 +498,7 @@ export interface InboundLink {
  *  guard reads this to name "what links here"; the backlinks panel will reuse it. Pure over the
  *  manifest, so the request-time delete path and a unit test call it the same way.
  */
-export function inboundLinks(manifest: Manifest, concept: string, id: string): InboundLink[] {
+export function inboundLinks(manifest: Manifest, concept: string, id: string): EntryRef[] {
   return manifest.entries
     .filter((e) => !(e.concept === concept && e.id === id))
     .filter((e) => e.links.some((l) => l.concept === concept && l.id === id))
@@ -509,7 +512,7 @@ export function inboundLinks(manifest: Manifest, concept: string, id: string): I
  *  still in use; the fragment's edit screen reads it for usage visibility. Pure over the
  *  manifest, so the request-time delete path and a unit test call it the same way.
  */
-export function inboundIncludes(manifest: Manifest, id: string): InboundLink[] {
+export function inboundIncludes(manifest: Manifest, id: string): EntryRef[] {
   return manifest.entries
     .filter((e) => e.includes?.includes(id))
     .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));

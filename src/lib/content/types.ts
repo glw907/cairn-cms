@@ -126,7 +126,7 @@ export interface ConceptConfig<R extends Record<string, FieldDescriptor> = Recor
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
   datePrefix?: DatePrefix;
   /**
-   * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
+   * Frontmatter keys to surface on each `ContentSummary.summaryFields`, so a list card reads an authored
    *  field without a per-entry detail read. Defaults to none. `defineConcept` keys this list to the
    *  declared fields, and compose throws when a key from an untyped caller is not one.
    */
@@ -414,7 +414,7 @@ export interface ConceptDescriptor {
    */
   schema: Fieldset;
   /**
-   * Frontmatter keys the index copies onto each summary's `fields` record. `normalizeConcepts`
+   * Frontmatter keys the index copies onto each summary's `summaryFields` record. `normalizeConcepts`
    *  resolves it to `[]` when a concept omits `summaryFields`.
    */
   summaryFields: string[];

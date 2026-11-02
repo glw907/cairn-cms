@@ -4,7 +4,7 @@
 import {
   resolveReferences,
   buildSiteDescriptors,
-  type ResolvedReference,
+  type EntryRef,
 } from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
 import { cairn } from '#theme/cairn.config.js';
@@ -29,9 +29,9 @@ interface WithConceptAndEntry {
  */
 export function withReferences<T extends WithConceptAndEntry>(
   data: T,
-): T & { references: Record<string, ResolvedReference | ResolvedReference[]> } {
+): T & { references: Record<string, EntryRef | EntryRef[]> } {
   const descriptor = descriptorById.get(data.concept);
-  const references: Record<string, ResolvedReference | ResolvedReference[]> = descriptor
+  const references: Record<string, EntryRef | EntryRef[]> = descriptor
     ? resolveReferences(site, descriptor, data.entry.frontmatter)
     : {};
   return { ...data, references };

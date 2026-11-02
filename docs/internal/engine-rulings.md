@@ -313,57 +313,11 @@ artifact directory; each entry links its subsystem's ranking file. Reshape and r
 verdicts are pending execution via the ROADMAP remediation entry; their entries close
 when the remediation pass lands.
 
-## audit-auth-createauthchannel: `createAuthChannel`  (reshape, 2026-08-26, any-site audit; REOPENED 2026-08-30, conventions-pass sitting)
+## audit-auth-createauthchannel: `createAuthChannel`  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
 
-- **Verdict:** reshape, KEPT. The 2026-08-26 shrink-to-recipe shape is overturned, in Geoff's own
-  ruling at the 2026-08-30 conventions-pass sitting: *"`/auth-channel` is KEPT, reopened on
-  evidence (Geoff, 2026-08-30). The 2026-08-26 shrink-to-recipe shape is overturned:
-  xcathletes-org now runs its member login on `createAuthChannel`
-  (`xcathletes-org/src/lib/server/auth/channel.ts`, tests included, citing
-  `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/extend/add-a-second-audience.md` Path B), so the 'no consumer anywhere has built against
-  it' premise no longer holds. Ground for keeping: adoption evidence plus the
-  high-consequence-hand-roll argument (enumeration oracle, unbounded guessing, identity-keyed
-  throttle), NOT any-site breadth; the leanness boundary is held by the opt-in subpath. The
-  factory folds onto the engine's one auth grammar (Task 8)."*
-- **Overturned premise, with evidence:** the original 2026-08-26 verdict's own provenance line
-  read *"no consumer anywhere has built against it"* and its right-form argument was to "shrink to
-  what both filed asks actually requested": drop the factory to `/auth-crypto`'s primitives plus a
-  documented recipe (`rank-auth-family.md`, item 15). The interim `verify-auth-family.md` pass
-  already refuted the narrower claim that "the requesting site cannot adopt it unchanged" (item
-  15: "stands; premise refuted"), citing xcathletes having built the factory with Turnstile plus
-  Twilio/Cloudflare Email, but that pass still left the shrink-vs-fold shape question open,
-  leaning toward parameterizing the engine's own magic-link login by audience. The 2026-08-30
-  sitting closes that remaining question on stronger evidence than "built": xcathletes now RUNS
-  its member login on `createAuthChannel` in production, with tests, following the documented
-  `add-a-second-audience.md` Path B seam. The overturning evidence is this adoption fact, not a
-  reargued premise.
-- **Shape:** Folds onto the engine's one auth grammar (Task 8 of the conventions pass, which
-  re-authors this shape and closes all eight open `/auth-channel` family entries against it):
-  `CHANNEL_SCHEMA_SQL` retires as an export in favor of a packaged `migrations-channel/0000_channel.sql`
-  (idempotent DDL, a sibling directory never under `migrations/`); the channel's three cookie
-  deletes gain their setter's `secure` flag; `AuthChannelEvent` retires in favor of `CairnEvent`
-  (a breaking rename for xcathletes, stated honestly rather than claimed structurally compatible);
-  `revokeSessions(db, subject)` keeps its event-free signature as a recorded, doc-commented
-  exception (the one member callable outside a request, per `convention-internal-sibling-comment`);
-  `AuthChannelConfig`'s nine-knob `ttl` bag re-derives by what a site actually tunes together, and
-  `lookup`/`verify` gain a narrow `{ env }` context rather than the full event (the no-roster-leak
-  and session-integrity properties depend on neither callback reading request-shaped data);
-  `DeliverContext`, `ChannelRequestResult`, `ChannelConfirmResult` keep with the factory, shapes
-  per their own entries.
-- **Reopens on:** closed. The 2026-08-30 sitting's adoption-evidence ruling stands unless a later
-  round shows the xcathletes usage itself retired, and the fold shape above is executed by Task 8 of
-  the conventions pass, which closed all eight open `/auth-channel` family entries against it. Two
-  places the execution went beyond the shape as written, both recorded at their own entries:
-  `logout` and `resolveSubject` take the bare `CairnEvent` (no `getClientAddress`), since neither
-  derives a requester bucket and the narrower parameter is what lets a consumer's session helper
-  declare `(event: CairnEvent<Env>)`; and `AuthChannelConfig`'s `kind?: 'code'` sub-objection is
-  explicitly NOT executed, left as the one residual on `audit-auth-authchannelconfig`.
-- **Record:** [rank-auth-family.md](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-26-any-site-audit/rank-auth-family.md), rank 15;
-  [verify-auth-family.md](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-26-any-site-audit/verify-auth-family.md), item 15;
-  [2026-08-30-conventions-pass.md](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-08-30-conventions-pass.md), ratified
-  ruling 8, Task 1, and Task 8.
-- **Verified:** [verify-auth-family.md](https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/record/2026-08-26-any-site-audit/verify-auth-family.md)
-  (premise refuted there, verdict stands; shape further reopened by the 2026-08-30 sitting above).
+- **Verdict:** retire. xcathletes, the factory's one reason to exist, is retired (dotfiles `cf4c26b`, PR #181), so the entry's own reopen condition is met, and the second ground stands: hand-rolled sign-in is high-consequence, so #189's recipe on `/auth-crypto` comes first.
+- **Reopens on:** a site's member sign-in built from the #189 recipe meets a defect the factory would have prevented.
+- **Record:** the prior reshape and its 2026-08-30 reopening, at `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
 
 ## guidance-layer: the `cairn-guidance` bin, the packaged `claude/` tree, and the trust boundary that gates it  (accept, 2026-09-20, extend-2)
 - **Reopens on:** Claude Code change to CLAUDE.md @-import documentation reopens fragment install shape.
@@ -377,8 +331,8 @@ when the remediation pass lands.
 
 ## audit-rule-advisory-first-tier: a new consumer-facing audit rule and finding enters at advisory tier for one minor  (accept, 2026-09-19, extend-1)
 
-- **Verdict:** accept. Ratified as the standing rule for every new `cairn-audit` static or
-  rendered rule reaching a consumer's own tree: it registers at `advisory` tier for one minor and
+- **Verdict:** accept. Ratified as the standing rule for every new `cairn-audit` static
+  rule reaching a consumer's own tree: it registers at `advisory` tier for one minor and
   its message names the promotion version, so a consumer upgrading across that minor sees the
   finding printed before it can fail their build, and gets one release to act on it. The class
   it retires (`stock-default-hazards`'s `cairn-btn-guarded` arm) is the same shape read backward:
@@ -503,3 +457,65 @@ when the remediation pass lands.
 
 ## media-library-type-facet: a hidden Images/Documents filter in `CairnMediaLibrary`  (decline, 2026-07-20, admin-toolkit review-fixes round)
 - **Reopens on:** A second stored asset type ships; `ListToolbarFilter`'s `promoted: false` seam covers the hidden-until-needed shape.
+
+## cleanup-rendered-audit: the browser half of `cairn-audit` and its norms lookup  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. The browser half of `cairn-audit` and its norms lookup are removed, because the static rules cover the code a site writes.
+- **Reopens on:** A site rebuild misses the audit. The `pre-agent-first` tag preserves it.
+- **Record:** Reverses the 2026-08-08 charter line that the audit "ships whole". Tag verdicts: `audit-cli-cairn-audit-rendered-harness-base-url-dynamic-playwright-bot` (keep), `audit-cli-cairn-audit-norms-subcommand-and-the-shipped-norms-manifest` (keep), `audit-cli-rendered-allowlist-and-rule-declared-exemptions` (keep), `audit-cli-the-post-hydration-page-identity-guard` (keep), `audit-cli-cairn-audit-cookies-environment-seam` (keep), `audit-cli-one-filled-action-focus-renders-interactive-contrast-viewpor` (keep), `audit-cli-touch-targets-rendered-rule` (keep), `audit-cli-border-contrast-weight-budget-screen-anatomy-relational-spac` (keep), `audit-cli-container-inset-asymmetry-and-field-edge-alignment-rendered-` (keep); `audit-cli-chip-ground-collision-rendered-rule` (reshape), `audit-cli-form-font-parity-rendered-rule` (reshape), and, in part, `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles` (reshape). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-starter-template: `templates/waymark` stays committed, and `/styleguide` leaves the scaffold's production build  (keep, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** keep. `templates/waymark` stays committed as the scaffold's source, and its `/styleguide` route stays out of the production build.
+- **Reopens on:** The Deploy button leaves `ROADMAP.md`, so nothing points at the subdirectory.
+
+## cleanup-history-reset: the changelog, migration notes, roadmap history, and the Go tool's mockups reset  (accept, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** accept. The changelog, migration notes, roadmap history, and the Go tool's mockups reset to a fresh start, with the old lines kept at the tag.
+- **Reopens on:** A site must upgrade across a reset entry. The `pre-agent-first` tag keeps every line.
+
+## cleanup-live-figures: `/reproductions` stays for the editor docs  (keep, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** keep. `/reproductions` stays because the editor docs still render their figures from it.
+- **Reopens on:** cairn.pub's rebuild ships its editor docs without live figures.
+
+## cleanup-visual-baselines: the baselines and the five-viewport bar stay  (keep, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** keep. The visual baselines and the five-viewport bar stay until a measurement shows a width that has caught nothing.
+- **Reopens on:** A measurement shows no dark-only width has caught a defect.
+
+## cleanup-one-import-path: each public name imports from its one declaring subpath, with no re-export  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. Each public name imports from its one declaring subpath and the re-exports are removed.
+- **Reopens on:** The leak gate cannot follow a type across subpaths once the re-exports go.
+- **Record:** Reverses tag accepts `canonical-home-rule` (accept; re-exports as "not a second home") and part of `f1-return-position-leak-sanction` (accept). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-hide-internals: about 40 names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction`  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. About 40 internal names leave the public surface, `/auth-store` goes, `cairn-media-seed` moves to the dev package, and `resolveDb` turns optional on `createSectionAction`.
+- **Reopens on:** A site needs a hidden name, shown in code it has built.
+- **Record:** Reverses tag verdicts: `audit-sveltekit-adminaction` (keep), `audit-adapter-verifymanifest` (keep), `audit-sveltekit-requireeditor` (keep), `audit-delivery-composeentrydata` (keep), `audit-delivery-buildrssfeed` (keep), `audit-delivery-buildjsonfeed` (keep), `audit-delivery-buildsitemap` (keep), `audit-auth-listeditors` (keep), `audit-auth-inserteditor` (keep), `audit-auth-editorrow` (keep) (`audit-auth-editorrow` is now `UnresolvedEditor`), `audit-cli-cairn-media-seed-header-repeatable` (keep), `audit-cli-cairn-media-seed-bucket-and-the-wrangler-r2-buckets-resoluti` (keep), `audit-cli-cairn-media-seed-command-exit-contract-content-addressed-wri` (keep); `audit-admin-listtoolbar` (reshape), `audit-admin-formattimestamp` (reshape), `audit-auth-seteditorrole` (reshape), `audit-auth-deleteeditor` (reshape), `audit-auth-demoteownerifnotlast` (reshape), `audit-auth-removeownerifnotlast` (reshape); `polish-formattimestamp-domain` (accept). `tooltip-primitive` stands. The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-unset-options: options and field kinds no site sets are removed  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. Options and field kinds that no site sets are removed.
+- **Reopens on:** A site sets the option, shown in code it has built. Adding one back isn't a break.
+- **Record:** Reverses Won't-do #126 and #139 in `BACKLOG.md`, and, each in part, tag keeps `audit-adapter-assetconfig` (keep), `audit-adapter-navmenuconfig` (keep), `audit-sveltekit-authguardoptions` (keep), `audit-admin-formatcivildateoptions` (keep). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-custom-recipes: the hand-mount factories, preview token verbs, preview lifetime, and newly-published recipe are removed  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. The hand-mount factories, the preview token verbs, the preview lifetime option, and the newly-published recipe are removed.
+- **Reopens on:** A site needs its own preview screen or a publish hook, shown in code it has built.
+- **Record:** Reverses tag reshape `audit-sveltekit-mintpreviewtoken` (reshape) and tag keeps `audit-sveltekit-createauthroutes` (keep), `audit-sveltekit-createeditorroutes` (keep), `audit-sveltekit-createcontentroutes` (keep), `audit-delivery-newlypublishedentries` (keep); closes #115 and #116 in `BACKLOG.md`. The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-one-validate-hook: one fail-closed `validate` replaces `refine` and `behavior`  (retire, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** retire. One fail-closed `validate` hook replaces `refine` and `behavior`.
+- **Reopens on:** A site needs a hook that fails open on a save, shown in code it has built.
+- **Record:** Reverses Won't-do #138 in `BACKLOG.md` and tag keeps `audit-adapter-behaviortable` (keep), `audit-adapter-fieldbehavior` (keep), `audit-adapter-standardinput` (keep). The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.
+
+## cleanup-wiring-reshapes: the seven wiring reshapes and `vite dev`'s manifest regeneration  (reshape, 2026-11-01, cleanup design 20261101T122027-138291)
+
+- **Verdict:** reshape. The seven wiring reshapes and `vite dev`'s manifest regeneration land in shapes that honor the kept case.
+- **Reopens on:** A rebuilt site can't express a case the old shape met.
+- **Record:** Reshapes that honor the kept case, tag keeps `audit-adapter-createrenderer` (keep), `audit-adapter-renderer` (keep), `audit-adapter-resolveoptions` (keep), `audit-delivery-siteglobs` (keep), `audit-media-resolvedassetconfig` (keep), `audit-delivery-siteindexes` (keep), `audit-sveltekit-authroutesconfig` (keep), `audit-delivery-resolvedreference` (keep), `audit-adapter-fieldset` (keep); overrides "locked decision 1" at `src/lib/vite/internal.ts:14`. The tag preserves them: `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/engine-rulings.md`.

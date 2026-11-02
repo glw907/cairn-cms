@@ -197,6 +197,8 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 ## Unreleased
 
 - **Match `Someone else changed these settings.` in a test of the settings conflict message.** The Navigation, Tags, and Tidy saves return that sentence in place of `These settings changed since you opened them. Reload and reapply your edits.`
+- **Stop keying on `minlength` and `maxlength` on a text field.** The title, text, and textarea inputs warn through `setCustomValidity` instead, and a paste over the limit stays whole. A site test or style that selected those attributes selects `:invalid` or the validity message.
+- **Expect `field` on a refused `ContentFormFailure`.** Nothing to change. A hand-built failure may set it to the refused field's name.
 - **Match `That sign-in link didn’t work` in a test of the sign-in strings.** The sign-in and confirm pages show one sentence for a failed link, and the old strings (`That link expired`, `This browser has no pending sign-in`, `This sign-in link is invalid or expired`) are gone.
 - **Match a thrown GitHub error on its prefix.** The text gains a next step after the status, so compare `GitHub ref <branch> failed: <status>` and not the whole string.
 - **Expect `auth.link.sent` from the default Cloudflare sender.** Log queries that used `auth.token.minted` to mean the email went out should use `auth.link.sent`. A custom `send` writes no such record and logs for itself.

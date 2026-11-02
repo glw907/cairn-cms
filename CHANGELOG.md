@@ -231,6 +231,26 @@
 
   Consumers must: nothing.
 
+- **A refused save points at its field.** `ContentFormFailure` gains `field?: string`, the name of the
+  first field the server refused. The edit page moves focus to that control, opening Details or leaving
+  Preview first, and marks it `aria-invalid` until the next input. A refusal with no single visible
+  control moves focus to the error banner.
+
+  Consumers must: nothing.
+
+- **Text fields warn about length while typing and never cut a paste.** The title, text, and textarea
+  inputs no longer render `minlength` or `maxlength`. The form checks the trimmed length as an editor
+  types, shows the save's message, and blocks Save. A pasted value over the limit stays whole.
+
+  Consumers must: nothing.
+
+- **The editors table fits at 320 and the publish filter shows a scroll cue.** Below the `sm`
+  breakpoint the table stacks Email and Role under the name and keeps the actions in view. The segmented
+  filter fades its clipped edge, and arrow, Home, and End keys scroll the selected option clear of the
+  fade.
+
+  Consumers must: nothing.
+
 - **A failed sign-in link reads the same on the sign-in and confirm pages.** `?error=expired` and
   `?error=no-pending-request` show one sentence and one page title: a link works once, for 10 minutes, in
   the browser that requested it. The confirm page's no-token state uses the same sentence. Both redirect

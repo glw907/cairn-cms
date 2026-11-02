@@ -102,6 +102,18 @@ describe('judgeSourceExclusion', () => {
     expect(result.status).toBe('excluded');
   });
 
+  it.each([
+    ['@import "tailwindcss" source("../src");', 'excluded'],
+    ["@import 'tailwindcss' source('../src');", 'excluded'],
+    ['@import "tailwindcss" source("../../x");', 'excluded'],
+    ['@import "tailwindcss" source("..");', 'not-excluded'],
+    ['@import "tailwindcss" source("../..");', 'not-excluded'],
+    ['@import "tailwindcss" source(none);\n@import "tailwindcss/utilities" layer(utilities);', 'not-excluded'],
+  ])('judges %j as %s from src/app.css', async (css, status) => {
+    const result = await judgeSourceExclusion(readFileFrom({ 'src/app.css': `${css}\n` }), ['src/app.css']);
+    expect(result.status).toBe(status);
+  });
+
   it('fails a single-quoted import with no exclusion and names the line for its depth', async () => {
     const result = await judgeSourceExclusion(
       readFileFrom({ 'src/chassis/tokens.css': "@import 'tailwindcss';\n" }),

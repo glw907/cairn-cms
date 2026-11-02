@@ -49,6 +49,7 @@ Contents:
 | `entry.discarded` | info | `concept`, `id`, `editor` | A pending branch was deleted. |
 | `publish.failed` | warn or error | `concept`, `id`, `editor`, `reason` or `error` | Same shape as `commit.failed`. A failed publish-all logs one per entry. |
 | `publish.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A publish was refused because a live entry already holds the address. Nothing committed to `main`. |
+| `rename.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A rename was refused because the new address belongs to a live entry in any concept. Nothing committed. |
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |

@@ -154,10 +154,10 @@ the agent never sees. The `stop_hook_active` guard ends the loop on the continua
 finding the agent cannot fix does not block forever. The command reads its payload with `node`,
 which means it needs no `jq`.
 
-**DaisyUI tooling.** Install the published DaisyUI skill
+**daisyUI tooling.** Install the published daisyUI skill
 (`npx skills add saadeghi/daisyui --agent claude-code`) for the component reference. A free
 documentation MCP server is available at `https://gitmcp.io/saadeghi/daisyui`. Blueprint is the
-paid option, a rules enforcer and quality inspector for DaisyUI markup:
+paid option, a rules enforcer and quality inspector for daisyUI markup:
 https://daisyui.com/blueprint/.
 
 ## Report what is left

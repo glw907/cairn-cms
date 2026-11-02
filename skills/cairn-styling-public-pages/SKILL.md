@@ -1,9 +1,9 @@
 ---
 name: cairn-styling-public-pages
-description: Restyle or extend the public side of a cairn site, the pages a visitor reads. Load before editing theme.css, prose.css, composition.css, a directive's rules, or a public component, and before choosing a color, face, or corner for the site. Gives the retheme recipe, the job-to-token table, the stylesheet contract, how to audit a theme, and one catalogue page per public piece cairn ships. Defers to the official daisyUI skill for component classes.
+description: Guides restyling or extending the public side of a cairn site, the pages a visitor reads. Load before editing theme.css, prose.css, composition.css, a directive's rules, or a public component, and before choosing a color, face, or corner for the site. Gives the retheme recipe, the job-to-token table, the stylesheet contract, how to audit a theme, and one catalogue page per public piece cairn ships. Defers to the official daisyUI skill for component classes.
 ---
 
-# cairn public
+# cairn-styling-public-pages
 
 This skill teaches an agent to restyle the public side of a cairn site: the reading surface, the
 chrome, and every piece cairn writes into public markup. It stops at the public side. Anything

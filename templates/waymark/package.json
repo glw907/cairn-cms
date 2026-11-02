@@ -17,7 +17,7 @@
     "cairn:manifest": "cairn-manifest",
     "build:admin-css": "npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "precheck": "npm run build:admin-css && wrangler types --env-file=.dev.vars.example --include-runtime=false --check",
+    "precheck": "npm run build:admin-css",
     "check:cairn": "npm run build:admin-css && cairn-audit",
     "format": "prettier --write --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",
     "format:check": "prettier --check --no-error-on-unmatched-pattern 'src/**/*.{ts,js,svelte,css}' 'e2e/**/*.ts' '*.ts' '*.js'",

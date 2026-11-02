@@ -77,7 +77,7 @@ discipline:
 
   Without it, an attacker who requests once a minute keeps the link bound to their own browser
   while the cooldown stops the member getting a new one. Never rebind a code row, which would hand
-  the attacker the row and its attempts.
+  the attacker the row and its attempts. For a code, key the cooldown on the nonce, never the contact.
 - An emailed link has to carry its token in a URL, so make that URL consume nothing. The link's GET
   renders a form with the token in a hidden field, and only the POST consumes. A scanner that
   fetches the link then burns nothing. A scanner that submits forms is stopped only by the nonce
@@ -103,7 +103,7 @@ discipline:
   and eventually consistent, and `resolveRateLimit` degrades to open: an absent binding answers
   `no-binding` and a thrown call answers `failed`, and neither blocks unless you branch on it. A
   limit that must hold lives in D1.
-- Normalize the contact the same way on every path: request, confirm, lookup, and removal. For an
+- Normalize the contact the same way on every path: request, lookup, and removal. For an
   email, trim and lowercase.
 - Verify a human with `verifyTurnstile` from `/cloudflare`, passing `hostname`, `action`, and `ip`.
   Without the first two, a token solved on another widget with the same sitekey replays against this
@@ -122,7 +122,7 @@ discipline:
   as a wrong code or link. A check before the consume answers an unknown contact differently from a
   wrong guess, a one-request roster oracle. The late check also catches a person removed between
   request and confirm.
-- Give a short code a ten-minute expiry and an attempt cap. The `token_hash = ?` consume can't count
+- Give a short code at least 8 digits, a ten-minute expiry, and an attempt cap. The `token_hash = ?` consume can't count
   attempts, so hold one row per requester's nonce, raise the count in its own atomic statement before
   you compare, and treat no returned row as a refusal:
 
@@ -132,10 +132,10 @@ discipline:
   RETURNING attempts
   ```
 
-  Read no contact at confirm. A statement keyed on a contact from the form lets an attacker spend a
+  Take no contact from the form at confirm. A statement keyed on a contact from the form lets an attacker spend a
   victim's cap with wrong guesses and kill their live code. A read-then-write cap lets parallel
   guesses through. A cap per nonce still allows one guess each across many requests, so also count
-  failed confirms by client address and escalate to Turnstile.
+  failed confirms by client address and by the row's contact, and escalate either to Turnstile.
 - Generate a short code from `crypto.getRandomValues`, rejecting any value past the largest multiple
   of the code's range, since a plain `%` is biased. `generateToken` makes no numeric code, and
   `hashToken`'s digest of one falls to an offline search, so only the expiry and deleting the row on

@@ -60,6 +60,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; excerpt?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
 - `MediaConfig`: { bucketBinding: string }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
@@ -107,6 +108,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
+- `verifyEntries`: (problems: ManifestProblem[]) => void
 - `verifyManifest`: (built: Manifest, committedRaw: string, adapter?: Pick<CairnAdapter, "content">) => void
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
@@ -199,7 +201,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteDescriptors`: (adapter: CairnAdapter) => ConceptDescriptor[]
-- `buildSiteManifest`: (adapter: CairnAdapter, files: Record<string, string>) => Manifest
+- `buildSiteManifest`: (adapter: CairnAdapter, files: Record<string, string>) => SiteManifestBuild
 - `buildSitemap`: (urls: SitemapUrl[]) => string
 - `buildSitemapView`: (site: UntypedSiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
@@ -232,6 +234,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; excerpt?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
 - `markdownResponse`: (opts: { body: string }) => Response
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
@@ -256,6 +259,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
+- `SiteManifestBuild`: { manifest: Manifest; problems: ManifestProblem[] }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `SiteRender`: (input: RenderInput) => Promise<string>
@@ -284,7 +288,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteDescriptors`: (adapter: CairnAdapter) => ConceptDescriptor[]
-- `buildSiteManifest`: (adapter: CairnAdapter, files: Record<string, string>) => Manifest
+- `buildSiteManifest`: (adapter: CairnAdapter, files: Record<string, string>) => SiteManifestBuild
 - `buildSitemap`: (urls: SitemapUrl[]) => string
 - `buildSitemapView`: (site: UntypedSiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
@@ -313,6 +317,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; excerpt?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `ManifestProblem`: { concept: string; id: string; path: string; draft: boolean; errors: { [x: string]: string } }
 - `markdownResponse`: (opts: { body: string }) => Response
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: readonly string[] }
 - `NamedField`: FieldDescriptor & { name: string }
@@ -333,6 +338,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
+- `SiteManifestBuild`: { manifest: Manifest; problems: ManifestProblem[] }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `SiteResolver`: string extends keyof A["content"] ? UntypedSiteResolver : TypedSiteResolver<A>
@@ -358,8 +364,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/log`
 
-- `CAIRN_LOG_EVENTS`: readonly ["auth.link.requested", "auth.link.refused", "auth.link.send_failed", "auth.token.minted", "auth.token.rebound", "auth.token.confirmed", "auth.session.created", "auth.session.destroyed", "auth.session.destroy_failed", "commit.succeeded", "commit.failed", "commit.reverted", "config.invalid", "config.access_unmapped", "content.field_behavior_failed", "content.field_unmarked", "content.field_undeclared", "content.entry_invalid", "entry.published", "entry.discarded", "preview.token.minted", "preview.token.revoked", "preview.cleanup_failed", "preview.refused", "publish.failed", "publish.address_collided", "rename.address_collided", "github.unreachable", "health.failed", "guard.refused", "media.uploaded", "media.upload_failed", "media.delivery_failed", "media.orphans_reconciled", "media.resolve_missing", "include.missing", "include.read_failed", "media.deleted", "media.delete_refused", "media.bulk_deleted", "media.orphans_purged", "media.replaced", "media.replace_refused", "media.alt_propagated", "editor.added", "editor.removed", "editor.role_changed", "auth.role.unknown", "auth.identity.unknown", "auth.access.refused", "dictionary.added", "dictionary.add_conflict", "tidy.succeeded", "tidy.failed", "tidy.refused", "tidy.empty", "admin.attention_failed", "admin.action.audited", "admin.action.unaudited", "admin.action.session_absent", "admin.action.csrf_refused", "admin.action.failed", "admin.action.rate_limit_absent", "admin.action.rate_limit_failed", "admin.action.rate_limited", "admin.action.misconfigured", "audit.sink.call_failed", "turnstile.verify_failed", "audit.sink.write_failed"]
-- `CairnLogEvent`: "auth.link.requested" | "auth.link.refused" | "auth.link.send_failed" | "auth.token.minted" | "auth.token.rebound" | "auth.token.confirmed" | "auth.session.created" | "auth.session.destroyed" | "auth.session.destroy_failed" | "commit.succeeded" | "commit.failed" | "commit.reverted" | "config.invalid" | "config.access_unmapped" | "content.field_behavior_failed" | "content.field_unmarked" | "content.field_undeclared" | "content.entry_invalid" | "entry.published" | "entry.discarded" | "preview.token.minted" | "preview.token.revoked" | "preview.cleanup_failed" | "preview.refused" | "publish.failed" | "publish.address_collided" | "rename.address_collided" | "github.unreachable" | "health.failed" | "guard.refused" | "media.uploaded" | "media.upload_failed" | "media.delivery_failed" | "media.orphans_reconciled" | "media.resolve_missing" | "include.missing" | "include.read_failed" | "media.deleted" | "media.delete_refused" | "media.bulk_deleted" | "media.orphans_purged" | "media.replaced" | "media.replace_refused" | "media.alt_propagated" | "editor.added" | "editor.removed" | "editor.role_changed" | "auth.role.unknown" | "auth.identity.unknown" | "auth.access.refused" | "dictionary.added" | "dictionary.add_conflict" | "tidy.succeeded" | "tidy.failed" | "tidy.refused" | "tidy.empty" | "admin.attention_failed" | "admin.action.audited" | "admin.action.unaudited" | "admin.action.session_absent" | "admin.action.csrf_refused" | "admin.action.failed" | "admin.action.rate_limit_absent" | "admin.action.rate_limit_failed" | "admin.action.rate_limited" | "admin.action.misconfigured" | "audit.sink.call_failed" | "turnstile.verify_failed" | "audit.sink.write_failed"
+- `CAIRN_LOG_EVENTS`: readonly ["auth.link.requested", "auth.link.refused", "auth.link.send_failed", "auth.token.minted", "auth.token.rebound", "auth.token.confirmed", "auth.session.created", "auth.session.destroyed", "auth.session.destroy_failed", "commit.succeeded", "commit.failed", "commit.reverted", "config.invalid", "config.access_unmapped", "content.field_behavior_failed", "content.field_unmarked", "content.field_undeclared", "content.entry_invalid", "content.directive_unknown", "entry.published", "entry.discarded", "preview.token.minted", "preview.token.revoked", "preview.cleanup_failed", "preview.refused", "publish.failed", "publish.address_collided", "rename.address_collided", "github.unreachable", "health.failed", "guard.refused", "media.uploaded", "media.upload_failed", "media.delivery_failed", "media.orphans_reconciled", "media.resolve_missing", "include.missing", "include.read_failed", "media.deleted", "media.delete_refused", "media.bulk_deleted", "media.orphans_purged", "media.replaced", "media.replace_refused", "media.alt_propagated", "editor.added", "editor.removed", "editor.role_changed", "auth.role.unknown", "auth.identity.unknown", "auth.access.refused", "dictionary.added", "dictionary.add_conflict", "tidy.succeeded", "tidy.failed", "tidy.refused", "tidy.empty", "admin.attention_failed", "admin.action.audited", "admin.action.unaudited", "admin.action.session_absent", "admin.action.csrf_refused", "admin.action.failed", "admin.action.rate_limit_absent", "admin.action.rate_limit_failed", "admin.action.rate_limited", "admin.action.misconfigured", "audit.sink.call_failed", "turnstile.verify_failed", "audit.sink.write_failed"]
+- `CairnLogEvent`: "auth.link.requested" | "auth.link.refused" | "auth.link.send_failed" | "auth.token.minted" | "auth.token.rebound" | "auth.token.confirmed" | "auth.session.created" | "auth.session.destroyed" | "auth.session.destroy_failed" | "commit.succeeded" | "commit.failed" | "commit.reverted" | "config.invalid" | "config.access_unmapped" | "content.field_behavior_failed" | "content.field_unmarked" | "content.field_undeclared" | "content.entry_invalid" | "content.directive_unknown" | "entry.published" | "entry.discarded" | "preview.token.minted" | "preview.token.revoked" | "preview.cleanup_failed" | "preview.refused" | "publish.failed" | "publish.address_collided" | "rename.address_collided" | "github.unreachable" | "health.failed" | "guard.refused" | "media.uploaded" | "media.upload_failed" | "media.delivery_failed" | "media.orphans_reconciled" | "media.resolve_missing" | "include.missing" | "include.read_failed" | "media.deleted" | "media.delete_refused" | "media.bulk_deleted" | "media.orphans_purged" | "media.replaced" | "media.replace_refused" | "media.alt_propagated" | "editor.added" | "editor.removed" | "editor.role_changed" | "auth.role.unknown" | "auth.identity.unknown" | "auth.access.refused" | "dictionary.added" | "dictionary.add_conflict" | "tidy.succeeded" | "tidy.failed" | "tidy.refused" | "tidy.empty" | "admin.attention_failed" | "admin.action.audited" | "admin.action.unaudited" | "admin.action.session_absent" | "admin.action.csrf_refused" | "admin.action.failed" | "admin.action.rate_limit_absent" | "admin.action.rate_limit_failed" | "admin.action.rate_limited" | "admin.action.misconfigured" | "audit.sink.call_failed" | "turnstile.verify_failed" | "audit.sink.write_failed"
 - `createLogger`: <Event extends string>(options?: { redactKeys?: readonly string[] }) => { info(event: Event, fields?: Record<string, unknown>): void; warn(event: Event, fields?: Record<string, unknown>): void; error(event: Event, fields?: Record<string, unknown>): void }
 - `REDACTED_LOG_KEYS`: readonly string[]
 

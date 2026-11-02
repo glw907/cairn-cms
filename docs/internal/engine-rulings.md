@@ -445,6 +445,7 @@ when the remediation pass lands.
 
 ## dev-flag-strict-read: `isDevBackendFlagSet` accepts exactly `'1'` or `true`  (decline, 2026-10-09, engine pass before stage 2b, pass A)
 - **Reopens on:** A scaffold path delivers the flag through a shell.
+- **Update (2026-11-01):** `scripts/dev.mjs` delivers the flag through a shell, so the reopen condition has fired, and the ruling stands because the strict read is unchanged: the local 403 text reads `locals.cairnBackend`, not the flag.
 
 ## token-cache-no-401-eviction: a 401 does not evict the shared installation-token cache  (decline, 2026-10-09, engine pass before stage 2b, pass A)
 - **Reopens on:** A recorded publish failure from a cached token after a completed rotation.

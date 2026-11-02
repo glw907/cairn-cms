@@ -78,6 +78,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
   it('refuses (409) with inclusion-naming copy when a published entry includes the fragment', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes({ runtime: runtime() });
@@ -106,6 +107,7 @@ describe('deleteEntry: fragments inclusion guard (Task 4)', () => {
     // The refusal names its own gate, so the admin copy cannot blame the wrong blocker. The links
     // gate runs first and leaves this unset, and a fragment can trip either gate.
     expect(out.data?.inboundKind).toBe('include');
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.delete_refused', editor: 'ed@t', concept: 'fragments', id: 'welcome', reason: 'inbound_includes', count: 1 }));
     // No commit landed: the fragment file still exists on main.
     expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
   });
@@ -153,15 +155,18 @@ describe('deleteEntry: the pending-branch include gate (#137)', () => {
 
   it('refuses (409) when only a pending branch includes the fragment', async () => {
     const { gh, routes } = await pendingIncluder();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = await del(routes, 'fragments', 'welcome');
     expect(out.status).toBe(409);
     expect(out.data?.inboundKind).toBe('include');
     expect(out.data?.inboundLinks?.some((l) => l.id === '2026-05-hi')).toBe(true);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.delete_refused', editor: 'ed@t', concept: 'fragments', id: 'welcome', reason: 'pending_includes', count: 1 }));
     expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
   });
 
   it('refuses (503) when a branch read throws', async () => {
     const { gh, routes } = await pendingIncluder();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const real = globalThis.fetch as typeof fetch;
     vi.stubGlobal(
       'fetch',
@@ -174,6 +179,7 @@ describe('deleteEntry: the pending-branch include gate (#137)', () => {
     );
     const out = await del(routes, 'fragments', 'welcome');
     expect(out.status).toBe(503);
+    expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.reference_check_failed', editor: 'ed@t', concept: 'fragments', id: 'welcome', action: 'delete' }));
     expect(gh.read('main', 'src/content/fragments/welcome.md')).toContain('title: Welcome');
   });
 });

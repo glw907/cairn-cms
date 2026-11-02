@@ -172,18 +172,18 @@ Under the message, each broken link appears on a separate line with a **Remove l
 
 If you want to keep a link, point it at an entry that exists instead.
 
-A link to an entry that has never been published gets the same refusal, because the live site has no such page yet. Publish that entry first, or remove the link. A link to a published entry that's marked **Hidden** doesn't stop the save. A warning appears after you save, which reads **Saved. Note: this entry links to an entry that visitors can't reach yet**, followed by the entry's name. Visitors see a page-not-found error until you clear **Hidden** on that entry and publish it.
+A link to an entry that has never been published gets the same refusal, because the live site has no such page yet. Publish that entry first, or remove the link. A link to a published entry that's marked **Hidden** doesn't stop the save. A warning appears after you save, which reads **Saved. Note: this entry links to an entry that visitors can't reach yet**, followed by the link in parentheses. Visitors see a page-not-found error until you clear **Hidden** on that entry and publish it.
 
 ## A site-wide publish is refused
 
-The **Publish all** button in the top bar publishes every entry that has unpublished changes. If it can't, you land on an entry list with one of these messages:
+The **Publish all** button in the top bar publishes every entry you have access to that has unpublished changes. If it can't, you land on an entry list with one of these messages:
 
 <!-- vale Microsoft.Contractions = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, so a contraction rule cannot rewrite them. -->
 - **"Nothing to publish. Every entry is already live."** Nothing was waiting. No action is needed.
 - **"The site changed while publishing. Reload and try again."** Reload the page and select **Publish all** again.
 - **"Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know."** Try again once. If it fails again, tell your site owner.
-- **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** Two of the waiting entries have the same address. Use the **Unpublished changes** filter on a list to find them. Change the address of one, and then select **Publish all** again.
+- **"Nothing was published. Two entries would share one address. Open the pending entries, change the address of one of the two, and publish again."** A waiting entry would take an address that another waiting or live entry holds. Use the **Unpublished changes** filter on a list to find them. Change the address of one, and then select **Publish all** again.
 <!-- vale Microsoft.Contractions = YES -->
 
 ## A revert is refused

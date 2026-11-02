@@ -91,12 +91,12 @@ If a publish doesn't finish, the editor keeps your edits and shows **Your edits 
 
 ## Publish several entries at once
 
-On a screen outside an open entry, such as a list, the **Publish all** button publishes every entry that has a saved draft in one step. The button shows how many entries are waiting, for example **Publish all (2)**. It appears only when entries are waiting.
+On a screen outside an open entry, such as a list, the **Publish all** button publishes every saved draft you have access to in one step. The button shows how many entries are waiting, for example **Publish all (2)**. It appears only when entries are waiting.
 
 To publish everything that's waiting, follow these steps:
 
 1. On a list screen, select **Publish all**.
-2. In the **Publish the whole site?** window, read the list, which names each waiting entry by its title under a heading for its content type. It includes every waiting entry you have access to, whoever saved it.
+2. In the **Publish the whole site?** window, read the list, which names each waiting entry under a heading for its content type. An entry shows its title, or its address if it's never been published. It includes every waiting entry you have access to, whoever saved it.
 3. Select **Publish all**. To back out, select **Cancel**.
 
 The list then shows a message that reads **Published** followed by the number of entries.
@@ -116,7 +116,7 @@ To delete an entry, follow these steps:
 3. Read the warning that you can't undo the deletion. If the entry has unpublished edits, the warning adds that they go with it.
 4. Select the delete button, which repeats the title, for example **Delete this post**.
 
-If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal. So does a fragment that appears in another editor's unpublished edits. In that case, ask that editor to remove the include or discard those edits first. **Change address** on a fragment follows the same rule for unpublished includes. The editor updates published includes to the new name.
+If other entries link to the one you're deleting, the window refuses the delete instead. It names how many entries link to it, lists them, and asks you to remove or repoint those links first. A fragment that other entries include gets the same refusal. So does a fragment that appears in another editor's unpublished edits. In that case, ask that editor to remove the include or discard those edits first. **Rename** on a fragment follows the same rule for unpublished includes. The editor updates published includes to the new name.
 
 On a list, the trash button beside an entry opens the same window, with the same refusal when other entries link to it. The list's confirm also names the entry, for example **“Snow report” will be deleted.**
 

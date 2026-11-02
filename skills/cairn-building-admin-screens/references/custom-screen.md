@@ -171,6 +171,9 @@ none, and the dev backend never does.
 2. In `src/hooks.server.ts`, add a handle that sets the sink, and compose it before the guard in
    the production branch: `handle = sequence(wireAuditSink, createAuthGuard({ runtime }))`. The
    guard runs last and never reads the sink; `createAdminAction` does, when the action runs.
+   A handle ahead of the guard must call `resolve` on every path: one that returns early skips the
+   guard for that request, the dev-backend refusal included. It also runs before the guard's CSRF and
+   session checks, so it can't trust the request or treat it as signed in.
 
 <!-- snippet-check-skip: an excerpt of the scaffold's hooks module; reads env.AUDIT_DB, which only the site's generated Env declares -->
 ```ts

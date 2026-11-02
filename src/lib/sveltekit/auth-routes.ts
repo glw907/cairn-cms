@@ -44,18 +44,17 @@ export interface AuthRoutesConfig {
 }
 
 /**
- * The request-action result. `outcome` is the discriminant; `sent` is kept for a site rendering
- * its form against `form.sent`, so the field is additive. The neutral and send-ok paths return
- * the identical `{ outcome: 'sent', sent: true }`, so the common case never leaks allowlist
+ * The request-action result, discriminated on `outcome`. The neutral and send-ok paths return
+ * the identical `{ outcome: 'sent' }`, so the common case never leaks allowlist
  * membership. `requestAction` awaits the send, so the outcome reflects it: `send-error` means the
  * email could not be sent, and `throttled` means the same address asked again inside the send
  * cooldown, a signal that does reveal membership.
  * @beta
  */
-export type RequestOutcome =
-  | { outcome: 'sent'; sent: true }
-  | { outcome: 'send-error'; sent: false }
-  | { outcome: 'throttled'; sent: false };
+export type LoginRequestOutcome =
+  | { outcome: 'sent' }
+  | { outcome: 'send-error' }
+  | { outcome: 'throttled' };
 
 /**
  * The magic-link login page's data: the site name, a resolved `?error` code, and the CSRF
@@ -175,7 +174,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    * before any cookie write: the organization's gate is the only sign-in surface, and this
    * action mints nothing.
    */
-  async function requestAction(event: CairnEvent): Promise<RequestOutcome> {
+  async function requestAction(event: CairnEvent): Promise<LoginRequestOutcome> {
     if (event.locals.cairnIdentity) throw error(404, 'Not found');
     const origin = requireOrigin(env);
     const db = requireDb(env);
@@ -200,7 +199,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
     // membership. Response timing still differs (the editor path awaits the send), the side-channel
     // the design accepts as strictly weaker than the explicit throttled signal below.
-    if (!editor) return { outcome: 'sent', sent: true };
+    if (!editor) return { outcome: 'sent' };
 
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
@@ -226,7 +225,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       // never the nonce or its hash, which are the credential this whole binding turns on.
       const rebind = await rebindToken(db, email, await hashToken(nonce), now);
       if (rebind.outcome === 'rebound') log.info('auth.token.rebound', { email });
-      return { outcome: 'throttled', sent: false };
+      return { outcome: 'throttled' };
     }
 
     const token = generateToken();
@@ -247,9 +246,9 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       log.error('auth.link.send_failed', { email, error: scrubSendError(err), code: errorCode(err), conditionId: failure.conditionId });
       // A plain 200 with a status field, not fail(): the result stays one uniform union for the
       // page, and the failure is already observable through the error-level log record.
-      return { outcome: 'send-error', sent: false };
+      return { outcome: 'send-error' };
     }
-    return { outcome: 'sent', sent: true };
+    return { outcome: 'sent' };
   }
 
   /**
@@ -489,8 +488,8 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
 export interface AuthRoutes {
   /** The `/admin/login` load; under identity mode it returns the hand-off shape and mints no nonce or CSRF token. */
   loginLoad: (event: CairnEvent) => LoginData;
-  /** The `?/request` action on `/admin/login`: awaits the send and resolves a {@link RequestOutcome}; 404s under identity mode. */
-  requestAction: (event: CairnEvent) => Promise<RequestOutcome>;
+  /** The `?/request` action on `/admin/login`: awaits the send and resolves a {@link LoginRequestOutcome}; 404s under identity mode. */
+  requestAction: (event: CairnEvent) => Promise<LoginRequestOutcome>;
   /** The `/admin/auth/confirm` load: renders the confirm form and consumes nothing; 404s under identity mode. */
   confirmLoad: (event: CairnEvent) => ConfirmData;
   /** The `?/confirm` action: consumes the token, starts a session, and redirects to `/admin`; a failed confirm redirects to the login page with an `?error=` code; 404s under identity mode. */

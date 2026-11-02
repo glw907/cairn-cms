@@ -18,7 +18,7 @@ export {
   createAuthRoutes,
   NO_PENDING_REQUEST_ERROR,
   type AuthRoutesConfig,
-  type RequestOutcome,
+  type LoginRequestOutcome,
   type AuthRoutes,
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesConfig, type EditorRoutes } from './editors-routes.js';

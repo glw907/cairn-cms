@@ -207,7 +207,7 @@ describe('CairnAdmin', () => {
   });
 
   it('forwards the action result to the rendered view', async () => {
-    const screen = await render(CairnAdmin, { data: loginData(), form: { sent: true } });
+    const screen = await render(CairnAdmin, { data: loginData(), form: { outcome: 'sent' } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 

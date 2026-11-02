@@ -38,7 +38,7 @@ describe('request a link (scenarios 1, 2)', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const { routes, sent } = routesWithSink();
     const result = await routes.requestAction(makeEvent({ url: 'https://test.dev/admin/auth/request', form: { email: 'ed@x.dev' } }));
-    expect(result).toEqual({ outcome: 'sent', sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(1);
     expect(sent[0].to).toBe('ed@x.dev');
     expect(sent[0].html).toContain('https://test.dev/admin/auth/confirm?token=');
@@ -48,7 +48,7 @@ describe('request a link (scenarios 1, 2)', () => {
   it('returns the same response and sends nothing for a non-allow-listed email', async () => {
     const { routes, sent } = routesWithSink();
     const result = await routes.requestAction(makeEvent({ url: 'https://test.dev/admin/auth/request', form: { email: 'stranger@x.dev' } }));
-    expect(result).toEqual({ outcome: 'sent', sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(sent).toHaveLength(0);
     expect(await countRows('magic_token')).toBe(0);
   });
@@ -63,7 +63,7 @@ describe('request a link (scenarios 1, 2)', () => {
     const editorResult = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     const strangerResult = await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' } }));
     expect(editorResult).toEqual(strangerResult);
-    expect(editorResult).toEqual({ outcome: 'sent', sent: true });
+    expect(editorResult).toEqual({ outcome: 'sent' });
     // toEqual is key-order-insensitive; the serialized comparison pins true byte-identity.
     expect(JSON.stringify(editorResult)).toBe(JSON.stringify(strangerResult));
   });
@@ -77,8 +77,8 @@ describe('request hardening (Unit 4)', () => {
     const { routes, sent } = routesWithSink();
     const first = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     const second = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
-    expect(first).toEqual({ outcome: 'sent', sent: true });
-    expect(second).toEqual({ outcome: 'throttled', sent: false });
+    expect(first).toEqual({ outcome: 'sent' });
+    expect(second).toEqual({ outcome: 'throttled' });
     expect(sent).toHaveLength(1);
     expect(await countRows('magic_token')).toBe(1);
   });
@@ -107,14 +107,14 @@ describe('request hardening (Unit 4)', () => {
     });
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(finished).toBe(true); // the send completed before requestAction returned
-    expect(result).toEqual({ outcome: 'sent', sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
   });
 
   it('returns send-error when the send rejects, after awaiting it', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const routes = routesWithFailingSend();
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
-    expect(result).toEqual({ outcome: 'send-error', sent: false });
+    expect(result).toEqual({ outcome: 'send-error' });
     expect(await countRows('magic_token')).toBe(1); // the token row was written before the send threw
   });
 });
@@ -165,23 +165,19 @@ describe('login nonce cookie (same-browser binding)', () => {
     const sendOk = makeRecordingCookies();
     expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: sendOk }))).toEqual({
       outcome: 'sent',
-      sent: true,
     });
     const throttled = makeRecordingCookies();
     expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: throttled }))).toEqual({
       outcome: 'throttled',
-      sent: false,
     });
     const neutral = makeRecordingCookies();
     expect(await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' }, cookies: neutral }))).toEqual({
       outcome: 'sent',
-      sent: true,
     });
     await seedEditor('ed2@x.dev', 'Ed2', 'editor');
     const sendFailed = makeRecordingCookies();
     expect(await failing.requestAction(makeEvent({ url, form: { email: 'ed2@x.dev' }, cookies: sendFailed }))).toEqual({
       outcome: 'send-error',
-      sent: false,
     });
 
     for (const jar of [sendOk, throttled, neutral, sendFailed]) {
@@ -217,7 +213,7 @@ describe('login nonce cookie (same-browser binding)', () => {
     await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
     const first = cookies.sets.filter((s) => s.name === pending);
     const resend = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
-    expect(resend).toEqual({ outcome: 'throttled', sent: false });
+    expect(resend).toEqual({ outcome: 'throttled' });
     const both = cookies.sets.filter((s) => s.name === pending);
     expect(both).toHaveLength(2);
     expect(both[1].value).toBe(first[0].value);
@@ -247,7 +243,7 @@ describe('login nonce cookie (same-browser binding)', () => {
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const throttled = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: editor }));
     // No new token, no second email, and the cooldown window is untouched.
-    expect(throttled).toEqual({ outcome: 'throttled', sent: false });
+    expect(throttled).toEqual({ outcome: 'throttled' });
     expect(sent).toHaveLength(1);
     expect(await countRows('magic_token')).toBe(1);
 
@@ -290,7 +286,7 @@ describe('login nonce cookie (same-browser binding)', () => {
 
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const resend = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
-    expect(resend).toEqual({ outcome: 'throttled', sent: false });
+    expect(resend).toEqual({ outcome: 'throttled' });
     expect(await tokenRow()).toEqual(before);
     // Silent on the not-eligible arm: a record here would report a write that never happened.
     const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
@@ -310,7 +306,7 @@ describe('login nonce cookie (same-browser binding)', () => {
     const throttled = await routes.requestAction(
       makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: makeRecordingCookies() }),
     );
-    expect(throttled).toEqual({ outcome: 'throttled', sent: false });
+    expect(throttled).toEqual({ outcome: 'throttled' });
     const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events).not.toContain('auth.token.rebound');
     vi.restoreAllMocks();
@@ -332,7 +328,7 @@ describe('login nonce cookie (same-browser binding)', () => {
     const withoutRebind = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: sameNonce }));
     const withRebind = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: otherNonce }));
 
-    expect(withoutRebind).toEqual({ outcome: 'throttled', sent: false });
+    expect(withoutRebind).toEqual({ outcome: 'throttled' });
     expect(withRebind).toEqual(withoutRebind);
     expect(headerShape(otherNonce)).toBe(headerShape(sameNonce));
   });
@@ -394,7 +390,7 @@ describe('first-owner seeding', () => {
     const sent: MagicLinkMessage[] = [];
     const routes = createAuthRoutes({ runtime: rt, send: async (_e, m) => void sent.push(m) });
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
-    expect(result).toEqual({ outcome: 'sent', sent: true });
+    expect(result).toEqual({ outcome: 'sent' });
     expect(await countRows('editor')).toBe(0);
     expect(sent).toHaveLength(0);
   });

@@ -176,7 +176,7 @@ describe('auth actions', () => {
       form: { email: 'who@t' },
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
-    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
   });
 
   it('the mail carries the runtime site name, sender, and reply-to', async () => {
@@ -196,7 +196,7 @@ describe('auth actions', () => {
       form: { email: 'ed@t' },
       env: { PUBLIC_ORIGIN: 'https://t.example', AUTH_DB: db },
     });
-    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent', sent: true });
+    await expect(admin.actions.request(event)).resolves.toEqual({ outcome: 'sent' });
     expect(sent).toEqual([{ from: 'cms@test', replyTo: 'help@test', subject: 'Sign in to Renamed Site' }]);
   });
 

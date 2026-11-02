@@ -6,7 +6,7 @@ import { enumerateExports, moduleExports } from '../../../scripts/checks/dts-exp
 
 // The four names the surface-pruning pass demotes from the /sveltekit barrel (Task 2), verbatim
 // from `https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/plans/2026-07-01-surface-pruning-pass.md`.
-const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesDeps', 'AuthBranding'];
+const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesDeps', 'AuthBranding', 'RequestOutcome'];
 
 // Six names this list once kept, retired from the /sveltekit barrel by the retires pass, Task 2:
 // sanctioned NavIcon-class closure leaks (the F-1 hybrid ruling, r4-rederivation section 7). Each
@@ -45,7 +45,7 @@ const KEPT = [
   'requireOwner',
   'createAuthRoutes',
   'AuthRoutesConfig',
-  'RequestOutcome',
+  'LoginRequestOutcome',
   'createEditorRoutes',
   'createContentRoutes',
   'createMediaRoute',

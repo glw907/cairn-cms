@@ -19,35 +19,35 @@ describe('LoginPage', () => {
   });
 
   it('shows a neutral success message after a request', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
   it('carries no role="status" on the confirmation block, since it never observes its own first content', async () => {
     // The block mounts fresh on the branch switch to "sent", so a live region on it would never
     // announce; the "Check your email" heading carries the announcement instead.
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     expect(screen.container.querySelector('[role="status"]')).toBeNull();
   });
 
   it('guides an editor whose link never arrives without leaking allowlist membership', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     await expect.element(screen.getByText(/check your spam folder/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/match the one your site owner added/i)).toBeInTheDocument();
   });
 
   it('returns to the email form when a mistyped address is corrected', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     await screen.getByRole('button', { name: /use a different email/i }).click();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
 
   it('dismisses the confirmation panel for the full engine result shape', async () => {
-    // Pins the dismissed-banner branch ((form?.outcome === 'sent' || form?.sent) && !dismissed);
+    // Pins the dismissed-banner branch (form?.outcome === 'sent' && !dismissed);
     // see src/tests/unit/peer-deps.test.ts for the correctness floor this shape guards.
     const screen = await render(LoginPage, {
       data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
-      form: { sent: true, outcome: 'sent' },
+      form: { outcome: 'sent' },
     });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
     await screen.getByRole('button', { name: /use a different email/i }).click();
@@ -56,12 +56,21 @@ describe('LoginPage', () => {
   });
 
   it('shows the success panel for the engine result shape', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent', sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
+  it('keeps the email form for a result that carries only a sent flag, since outcome is the one discriminant', async () => {
+    const screen = await render(LoginPage, {
+      data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
+      form: { sent: true } as { error?: string },
+    });
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+    expect(screen.container.textContent ?? '').not.toMatch(/check your email/i);
+  });
+
   it('lets a fresh action result supersede a stale expired-link error', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { outcome: 'throttled', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' }, form: { outcome: 'throttled' } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
     expect(screen.container.textContent).not.toMatch(/that link expired/i);
   });
@@ -104,7 +113,7 @@ describe('LoginPage', () => {
   });
 
   it('shows a send-error warning and keeps the form available', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'send-error', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'send-error' } });
     await expect.element(screen.getByRole('alert')).toBeInTheDocument();
     await expect.element(screen.getByText(/trouble sending sign-in links/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
@@ -115,8 +124,8 @@ describe('LoginPage', () => {
     // the action-result panels are pinned here alongside the load-time ones the landing-signal
     // case covers. A partial application is what this replaced.
     for (const form of [
-      { outcome: 'send-error' as const, sent: false },
-      { outcome: 'throttled' as const, sent: false },
+      { outcome: 'send-error' as const },
+      { outcome: 'throttled' as const },
       { error: 'Something went wrong.' },
     ]) {
       const screen = await render(LoginPage, {
@@ -130,7 +139,7 @@ describe('LoginPage', () => {
   });
 
   it('shows a throttled hint and keeps the form available', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'throttled', sent: false } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'throttled' } });
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
@@ -178,7 +187,7 @@ describe('LoginPage', () => {
   });
 
   it('paints the confirmation mark with the on-surface success ink token', async () => {
-    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { sent: true } });
+    const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { outcome: 'sent' } });
     const mark = screen.container.querySelector('.rounded-field');
     expect(mark).toHaveClass('cairn-text-success');
   });

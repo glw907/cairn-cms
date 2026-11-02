@@ -254,7 +254,7 @@ describe('ComponentForm attribute help', () => {
 
   it('lists the error and the hint together on an attribute', async () => {
     const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
-    const el = screen.getByRole('combobox', { name: /tone/i }).element() as HTMLSelectElement;
+    const el = screen.getByRole('combobox', { name: /tone/i }).element() as HTMLElement;
     el.focus();
     el.blur();
     await expect.poll(() => el.getAttribute('aria-describedby')).toBe('err-tone hint-tone');

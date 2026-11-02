@@ -89,7 +89,8 @@ placeholder key means the smoke never mints.
 
 - The 422 for an uncovered repository, a missing permission, or a stale name is inferred from the docs.
   If GitHub answers 404 or 403, the check reads `installation_not_found` or `installation_suspended`,
-  which point near the right fix.
+  which point near the right fix, and a `github.unreachable` record with either status reaches the same
+  recovery step, since only a 401 goes to the key.
 - Whether `POST` and `PATCH` on `git/refs` work without `workflows: write`. GitHub's table marks
   both with "additional permissions" and lists them under the Workflows heading too, so a ref move that
   carries a workflow-file change can be refused. The engine's commits carry none, and `createBranch`

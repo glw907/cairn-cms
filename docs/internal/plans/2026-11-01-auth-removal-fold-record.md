@@ -124,3 +124,26 @@ No erratum is owed on a ratified document. The sheet's line that `admin-signups`
 members code stays contradicted by the design note's call, which `## Decisions` carries, and 1a's overlap
 line in the sheet and in `design.md` is narrower than 1b's real list. Both are planner-known and recorded
 here only.
+
+## Verification
+
+The read of `0cd71cb8e` is in `2026-11-01-auth-removal-fold-verification.md`. Each finding was checked
+against the source, nine applied, none refused. No estimate moved: the path stays 420 against 480.
+
+1. Applied, T3: `'env-var:CHANNEL_SCHEMA_SQL'`. `MIGRATION-NOTES.md:518` holds it, and `grep -rl` finds only
+   the four files T3 removes or cuts.
+2. Applied, T8: the diff and the loop are split, under `$CLAUDE_JOB_DIR/tmp/`, not `/tmp`, by the
+   coordinator's note. `<base>` is stated. Probed: the harness refused `git diff ... > "$CLAUDE_JOB_DIR/..."`
+   and took the same command with the path written out, so T8 says to write it out. The loop ran with the
+   variable.
+3. Applied, T2: old step 3 covers 401 alone, the new step covers every other status on the record and the
+   `detail` `token_request_refused`, and the acceptance follows. The design's "What is not proved" gained a
+   clause, since its "near the right fix" needed the record path to be true.
+4. Applied, T9 step 7 and acceptance: the rule uses the three named paths, plus `tool` only if the merge
+   changed it, by the coordinator's note.
+5. Applied, T8: `'auth\.channel\.'`. Probed: it doesn't match `/auth-channel`.
+6. Applied, plan "Stops", the escalation item.
+7. Applied, T3: `wrangler.jsonc:25-26` verified, and `templates/waymark/wrangler.jsonc` carries the same line.
+8. Applied, T9 step 5 and Pre-flight, with the copy under `$CLAUDE_JOB_DIR/tmp/`. The `sed` copy and
+   `ss -ltn 'sport = :8788'` ran here.
+9. Applied, T5: `--local` in place of `--remote`.

@@ -29,8 +29,11 @@ Every task was read for owner steps and auto-mode gaps.
     packaged content and the second is template output. The conductor's pre-launch write check
     exercises both paths. A refusal during the run takes the standing answer below.
 - **`wrangler d1 --local`, stopping the session's own `wrangler dev`, and running
-  `~/.local/state/cairn-agent-first/smoke-pass3.mjs`, a script outside the worktree:** T9, under the same
-  change.
+  `~/.local/state/cairn-agent-first/smoke-pass3.mjs`, a script outside the worktree, or its `sed` copy at
+  `$CLAUDE_JOB_DIR/tmp/smoke-pass3-8788.mjs`:** T9, under the same change. The conductor's pre-launch write
+  check exercises that `sed` redirect.
+- **`$CLAUDE_JOB_DIR/tmp/auth-removal-changelog.diff`:** T8's scratch file. Neither scratch file sits in
+  `/tmp`, which parallel jobs share.
 - **`e2e.yml`'s `update_snapshots` dispatch on the branch:** only if a CI visual diff calls for it, per the
   sheet.
 - **Live accounts:** none beyond pushing the pass branch, its draft PR, and that dispatch. Nothing touches
@@ -97,7 +100,7 @@ The sheet's standing answers apply to every task. These are this pass's.
 - **May be escalated to `cairn-cms-9b`:** an `escalate` verdict, an open High, a smoke failure that isn't
   setup, a cause that can't be traced or that returns after one structural fix, and a refusal other than
   the one above. T6's `LoginRequestOutcome` half and T7 may be set aside instead of holding the line.
-  Nothing else may.
+  Nothing else may. A set-aside item's terms leave T6's and T8's checks, and T9's verdict line says so.
 - **Questions:** none is expected. A stop goes to `docs/STATUS.md` for `cairn-cms-9b`, per the prompt.
 
 ## Tasks
@@ -206,18 +209,20 @@ Then change the code:
   says GitHub refused the mint's request (a 422), not the key.
 - `log-events.md:162`: add `token_request_refused` (422) to the `health` list, with its causes.
 - `rotate-the-github-app-key.md`: line 74 sends a failing `/healthz?live=1` to Recover, and Recover's step 3
-  sends any `<status>` to a rollback or a third key. Add a step ahead of it, and narrow it to a status other
-  than 422. The new step covers a `detail` of `token_request_refused` and a `github.unreachable` record
-  carrying `GitHub installation token failed: 422`. It says the key is not at fault and not to replace it,
-  then has the owner compare the adapter's `repo` with the repository's current name, confirm the App's
+  sends any `<status>` to a rollback or a third key. Narrow that step to status 401, the one status that
+  blames the key, and add a step after it. The new step covers every other status on that
+  `github.unreachable` record and a `detail` of `token_request_refused`. `health.ts:84-85` already reads a
+  404 and a 403 as installation faults, and the 422 itself is inferred, so GitHub may answer either for a
+  stale or uncovered `repo`. The step says the key is not at fault and not to replace it, then has the
+  owner compare the adapter's `repo` with the repository's current name, confirm the App's
   installation includes that repository, and confirm the App holds Contents read and write. A plain
   `/healthz` stays `ok: true` here, since that check never mints. Load `cairn-writing-docs` case A. Search
   `docs/admin`, `docs/editors`, and `skills/` for `installation`, and confirm `create-your-site.md:88` stays
   true.
 
 **Acceptance:** the new tests fail on the base and pass after. `npm run check:docs-gate` passes. In
-`rotate-the-github-app-key.md`, no step that covers a 422 links to `#roll-back-to-the-old-key` or
-`#generate-a-third-key`.
+`rotate-the-github-app-key.md`, no step that covers a status other than 401 links to
+`#roll-back-to-the-old-key` or `#generate-a-third-key`.
 
 **Test:** the four above.
 
@@ -289,7 +294,9 @@ result in the commit body: the base must not answer `ERR_PACKAGE_PATH_NOT_EXPORT
   case holds.
 - `scripts/checks/check-symbols-allowlist.mjs`: add a `file-path:` row with a reason for
   `node_modules/@glw907/cairn-cms/migrations-channel/0000_channel.sql`. `MIGRATION-NOTES.md:517` cites it,
-  and `pathExists` strips the prefix and looks for a repo path this task deletes.
+  and `pathExists` strips the prefix and looks for a repo path this task deletes. Add
+  `'env-var:CHANNEL_SCHEMA_SQL'` with a reason too: `MIGRATION-NOTES.md:518` names it in code voice, and
+  this task removes the four files that carry it.
 - `scripts/checks/check-self-use-allowlist.json:8,9,17,18,19,25`.
 - `scripts/checks/check-surface-reexports.json:54-65`.
 - `scripts/checks/gate-table.json:29,185,232,273`, `src/tests/unit/gate-tier.test.ts:64`, and
@@ -298,7 +305,9 @@ result in the commit body: the base must not answer `ERR_PACKAGE_PATH_NOT_EXPORT
 
 **Edit the showcase:**
 
-- `wrangler.jsonc`: the `MEMBER_DB` block and its exclude markers. `worker-configuration.d.ts:7`.
+- `wrangler.jsonc`: the `MEMBER_DB` block and its exclude markers. `:25-26`: "a channel database sharing the
+  default migrations/" becomes "a second database sharing the default migrations/", since the comment ships
+  to every scaffold. `worker-configuration.d.ts:7`.
 - `playwright.config.ts:47` (`'npx wrangler d1 migrations apply MEMBER_DB --local',`) and the sentence
   at `:36-37`.
 - `e2e/csrf-origin.spec.ts:10-40`: `gate-table.json:109` puts this spec on the `authData` list, and its
@@ -438,7 +447,7 @@ when no `bootstrapOwner` is set:
   becomes `createCairnAdmin({ runtime })`. `:124`: drop `bootstrapOwner` from the list. `:105`: "Sign in
   with the `bootstrapOwner` email (logs `editor.bootstrapped`)" becomes a sign-in with the seeded email.
   In step 2, after the migrations command, teach this one statement, with a note to double any `'` and to
-  add `--local` for `wrangler dev`:
+  use `--local` in place of `--remote` for `wrangler dev`:
 
   ```sh
   npx wrangler d1 execute <auth-db> --remote --command "INSERT INTO editor (email, display_name, role, created_at) VALUES (lower(trim('you@example.com')), 'Your Name', 'owner', unixepoch() * 1000)"
@@ -579,10 +588,18 @@ prints nothing. The existing `auth-crypto.test.ts` block passes under the new na
 prints nothing:
 
 ```sh
-for t in auth-channel createChannelDb auth-store resolveOwnerLevelRoles bootstrapOwner AuthBranding RequestOutcome tokensMatch auth.channel editor.bootstrapped src/lib/log.ts token_request_refused createAuthRoutes; do git diff <base> -- CHANGELOG.md | grep '^+' | grep -q -- "$t" || echo "missing: $t"; done
+git diff <base> -- CHANGELOG.md > "$CLAUDE_JOB_DIR/tmp/auth-removal-changelog.diff"
 ```
 
-It reads added lines only, since `## Unreleased` already names five of these.
+```sh
+for t in auth-channel createChannelDb auth-store resolveOwnerLevelRoles bootstrapOwner AuthBranding RequestOutcome tokensMatch 'auth\.channel\.' editor.bootstrapped src/lib/log.ts token_request_refused createAuthRoutes; do grep '^+' "$CLAUDE_JOB_DIR/tmp/auth-removal-changelog.diff" | grep -q -- "$t" || echo "missing: $t"; done
+```
+
+Run them apart: the harness refuses `git diff` inside a `for`. It also refuses a variable in that `git`
+redirect, so write `$CLAUDE_JOB_DIR` out as its absolute path in the first command. They read added lines only, since
+`## Unreleased` already names five of these. `<base>` is the commit the pass started from, or the merge
+commit if "Overlap with 1b" moved it: no task before T8 writes `CHANGELOG.md`, so a moved base loses
+nothing, and it keeps 1b's merged entry out of the added lines.
 
 `BACKLOG.md` shows #189 and #167 under `## Done`.
 
@@ -604,9 +621,11 @@ Any new commit reruns CI.
    fixes. No open finding. An open High goes to `cairn-cms-9b`.
 5. Live admin smoke, from this worktree after the setup command, on the head the fixes left. Check the port
    first: `ss -ltn 'sport = :8787'` must print no listener row. If another session holds it, stop nothing:
-   use 8788 for `wrangler dev`, add `--inspector-port 8789`, and run a copy of the script made with
-   `sed 's/localhost:8787/localhost:8788/' ~/.local/state/cairn-agent-first/smoke-pass3.mjs > /tmp/smoke-pass3-8788.mjs`,
-   since `BASE` at its `:22` is the only address it uses. At the root run `npm run package`. Then from
+   check 8788 with `ss` too, use `--port 8788 --inspector-port 8789` for `wrangler dev`, confirm
+   `Ready on http://localhost:8788`, and run a copy of the script made with
+   `sed 's/localhost:8787/localhost:8788/' ~/.local/state/cairn-agent-first/smoke-pass3.mjs > "$CLAUDE_JOB_DIR/tmp/smoke-pass3-8788.mjs"`,
+   since `BASE` at its `:22` is the only address it uses. The copy's first step label still says 8787, so
+   note that in the PR. At the root run `npm run package`. Then from
    `examples/showcase`:
 
    ```sh
@@ -621,9 +640,12 @@ Any new commit reruns CI.
    `node ~/.local/state/cairn-agent-first/smoke-pass3.mjs <worktree>`, which requests `smoke4@example.com`.
    Record `git rev-parse HEAD` above the output in the PR. Stop only the `wrangler dev` this session started.
 6. `npm run check:docs-gate`.
-7. `git fetch origin` again. If `origin/main` moved, follow "Overlap with 1b". Then delete the plan files
-   under `docs/internal/plans/` in the last commit, so CI runs on the tree that merges. That commit touches
-   no code, so the smoke's commit may be its parent, and the PR body says so.
+7. `git fetch origin` again. If `origin/main` moved, follow "Overlap with 1b". After that merge, if
+   `git diff --name-only <smoke-sha> HEAD` lists anything under `src/lib`, `examples/showcase`, or
+   `migrations`, or under `tool` if the merge changed it, rerun step 5. Otherwise the PR body names the
+   smoked commit and says the merge left those paths alone. Then delete the plan files under
+   `docs/internal/plans/` in the last commit, so CI runs on the tree that merges. That commit touches no
+   code, so the smoke's commit may be its parent, and the PR body says so.
 8. Full-suite home: `ci-green <sha> --pr <n> --wait` on that head, per `cairn-pass`. List every retried test.
 9. Mark the PR ready. The body opens with `## Brief` per `~/.claude/docs/voice/approval-brief.md`, then
    what landed, the security read as one row per finding with its severity, fix commit, and reread verdict,
@@ -631,4 +653,5 @@ Any new commit reruns CI.
    tests, the smoke's commit and output, and the score. Stop there. `cairn-cms-9b` merges.
 
 **Acceptance:** CI green on the final head, the security read with no open finding, and the smoke at the known
-result on that head or its parent, all three named in the PR body.
+result on that head, its parent, or an ancestor whose diff to the head touches none of step 7's paths, all
+three named in the PR body.

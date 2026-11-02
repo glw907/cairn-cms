@@ -14,7 +14,8 @@ every route. No `tool/v2.0.0` tag exists yet.
   except `0001_roles.sql`, `0002_audit.sql`, and `0003_preview.sql`, and reads the folder that the
   `AUTH_DB` entry's `migrations_dir` names, `migrations` by default. It reads file names only, so a
   PASS means the files were copied, not applied. A missing package folder, a `file:` install whose
-  symlink leaves the directory, or a `migrations_dir` outside the directory reports `UNCHECKED`.
+  symlink leaves the directory, or a `migrations_dir` outside the directory or that isn't a readable
+  folder reports `UNCHECKED`.
   Its docs anchor, `is-it-working.md#provision-the-auth-store`, was already on the shipped list.
   `cairn doctor` now runs twelve checks.
 

@@ -27,6 +27,9 @@
   Placement: Cleanup round.
 
 ## Medium
+- [ ] **#275** Remove the list bullets beside repeatable rows `#bug` `#cairn-cms` *(2026-11-02)*
+  Each row in a repeatable field shows a list marker in the left gutter, because `RepeatableField.svelte:211`'s `<ul>` sets no `list-none`. The marker eats width in a narrow Details pane and reads as a stray dot. Found by the `admin-rest` render read, on code that pass didn't change.
+  Placement: Cleanup round.
 - [ ] **#268** Stop a double submit on the Discard and Rename forms `#bug` `#cairn-cms` *(2026-11-02)*
   `admin-rest` guarded the delete confirm (#214), but the Discard form (`EditPage.svelte:2786`) and the Rename form (`RenameDialog.svelte:81`) have no in-flight guard, so a double click sends a second POST that races the first. If left, the editor can see a refusal for a change that worked. Use `DeleteDialog`'s `deleting` shape. Found by T4.
   Placement: Cleanup round.

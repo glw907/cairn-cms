@@ -2549,7 +2549,7 @@ island.
             <p class="type-meta text-muted">
               Included in {data.inboundLinks.length} {data.inboundLinks.length === 1 ? 'entry' : 'entries'}.
             </p>
-            <ul class="flex flex-col gap-1">
+            <ul role="list" class="flex list-none flex-col gap-1 p-0">
               {#each data.inboundLinks as link (link.concept + '/' + link.id)}
                 <li>
                   <a class="link type-meta" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>

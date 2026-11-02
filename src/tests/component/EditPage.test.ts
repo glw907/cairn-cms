@@ -2109,6 +2109,19 @@ describe('EditPage', () => {
     )!;
     expect(includedIn.textContent ?? '').toMatch(/included in 2 entries/i);
     expect(includedIn.querySelector('a[href="/admin/posts/a"]')?.textContent).toBe('Post A');
+    const list = includedIn.querySelector('ul')!;
+    expect(list.getAttribute('role')).toBe('list');
+    // The compiled sheet scopes every rule under the admin theme root.
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    const sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
+    try {
+      expect(getComputedStyle(list).listStyleType).toBe('none');
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    }
     expect(includedIn.querySelector('a[href="/admin/pages/b"]')?.textContent).toBe('Page B');
   });
 

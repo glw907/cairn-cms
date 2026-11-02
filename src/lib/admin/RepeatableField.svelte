@@ -208,7 +208,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
   <legend class="type-body font-medium">{rowLabel}</legend>
 
   {#if rows.length}
-    <ul class="flex flex-col gap-2">
+    <ul role="list" class="flex list-none flex-col gap-2 p-0">
       {#each rows as row, i (row.id)}
         {@const rowSummary = summaryFor(row.value, i, row.id)}
         <li

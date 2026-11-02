@@ -120,6 +120,9 @@ export function r2Key(shortHash: string, ext: string): string {
   return `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
 }
 
+/** The delivery base every media surface composes URLs under when none is supplied. */
+export const DEFAULT_MEDIA_BASE = '/media';
+
 /**
  * The public delivery URL path, with a leading slash, under the delivery base (default `/media`):
  *  `<base>/<slug>.<shortHash>.<ext>`, or `<base>/<shortHash>.<ext>` when the slug is null.
@@ -128,7 +131,7 @@ export function publicPath(
   slug: string | null,
   shortHash: string,
   ext: string,
-  base = '/media',
+  base = DEFAULT_MEDIA_BASE,
 ): string {
   return slug === null ? `${base}/${shortHash}.${ext}` : `${base}/${slug}.${shortHash}.${ext}`;
 }

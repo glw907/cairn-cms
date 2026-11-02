@@ -12,7 +12,7 @@ export {
   type AuthGuardConfig,
   type IdentityResolver,
   type ResolvedIdentity,
-  type IdentityRefusal,
+  type IdentityFailure,
 } from './guard.js';
 export {
   createAuthRoutes,

@@ -84,7 +84,8 @@ island.
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
+  import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
   import { postFormAction } from './client-action.js';
   import { arbitrateChecked } from './spellcheck.js';
   import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';

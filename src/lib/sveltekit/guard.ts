@@ -89,7 +89,7 @@ export interface AuthGuardConfig {
  */
 export interface IdentityResolver {
   /** Prove who is making this request, or say why it could not be proven. */
-  resolve(event: CairnEvent): Promise<ResolvedIdentity | IdentityRefusal>;
+  resolve(event: CairnEvent): Promise<ResolvedIdentity | IdentityFailure>;
   /**
    * Where the shell's logout sends the editor: a root-relative path or an `https:` URL,
    * validated at {@link createAuthGuard}'s construction. The gate owns the session; cairn only
@@ -120,7 +120,7 @@ export interface ResolvedIdentity {
  * A request the site's identity gate could not authenticate.
  * @beta
  */
-export interface IdentityRefusal {
+export interface IdentityFailure {
   ok: false;
   /**
    * For the log only, never rendered: `'missing'`, `'invalid'`, `'audience'`, `'issuer'`,
@@ -352,7 +352,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
       // called, and the site's gate proves who is asking. A throw from resolve() is an
       // operator fault (a misbehaving gate), never a 500: log it and refuse the same as any
       // other identity refusal.
-      let resolved: ResolvedIdentity | IdentityRefusal;
+      let resolved: ResolvedIdentity | IdentityFailure;
       try {
         resolved = await identity.resolve(event);
       } catch (err) {
@@ -360,7 +360,7 @@ export function createAuthGuard(config: AuthGuardConfig): Handle {
         return refuseIdentity('error', 'error', message);
       }
       if (!resolved.ok) {
-        // Coerced rather than trusted verbatim: IdentityRefusal declares reason a string, but a
+        // Coerced rather than trusted verbatim: IdentityFailure declares reason a string, but a
         // resolver outside the type system (plain JS, a mistyped ambient) can hand back null or
         // undefined, which would otherwise reach the log record and the Set lookup untyped.
         const reason = String(resolved.reason ?? 'invalid');

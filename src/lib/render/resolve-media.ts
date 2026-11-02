@@ -11,7 +11,7 @@ import { publicPath } from '../media/naming.js';
 import { normalizeMedia } from '../media/config.js';
 import type { MediaConfig } from '../content/types.js';
 import { log } from '../log/index.js';
-import { DEFAULT_MEDIA_BASE } from '../admin/media-base-context.js';
+import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
 import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
 
 /** The VFile data key the renderer sets the per-call media resolver under. */

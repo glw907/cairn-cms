@@ -51,7 +51,7 @@ export type {
 export { defineConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';
 export type { ComposeInput } from './content/compose.js';
-export { parseMarkdown } from './content/frontmatter.js';
+export { parseMarkdown, serializeMarkdown } from './content/frontmatter.js';
 export { defineAdapter } from './content/adapter.js';
 export type { StandardInput } from './content/standard-schema.js';
 // The Contract v2 field vocabulary: the one live field system.

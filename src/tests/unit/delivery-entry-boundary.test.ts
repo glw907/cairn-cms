@@ -49,6 +49,20 @@ describe('/delivery backend-free boundary', () => {
     }
   });
 
+  // The render pipeline runs in the public Worker and at prerender, so it must not reach into the
+  // admin tree (its components and editor-only modules would ride into a public bundle).
+  it('keeps render/ free of admin/ imports', () => {
+    const renderFiles = readdirSync('src/lib/render')
+      .filter((f) => f.endsWith('.ts') || f.endsWith('.svelte'))
+      .map((f) => `src/lib/render/${f}`);
+    expect(renderFiles.length).toBeGreaterThan(0);
+    for (const file of renderFiles) {
+      expect(readFileSync(file, 'utf8'), `${file} must not import from admin/`).not.toMatch(
+        /from '\.\.\/admin\//,
+      );
+    }
+  });
+
   // delivery/index.ts and delivery/public-routes.ts import @sveltejs/kit by design; neither is
   // reachable from data.ts, so the walk proves the kit-free claim without special-casing them.
   it('keeps the /delivery/data graph free of @sveltejs/kit and .svelte imports', () => {

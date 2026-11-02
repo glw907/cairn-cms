@@ -184,7 +184,8 @@ Swapping the editor stays a one-file change.
   import { padInsertedBlock, paddedInsertSpan } from './insert-padding.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
-  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY } from './media-base-context.js';
+  import { DEFAULT_MEDIA_BASE } from '../media/naming.js';
 
   interface Props extends StableEditorProps, UnstableEditorProps {}
 

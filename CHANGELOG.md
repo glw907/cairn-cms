@@ -2,6 +2,11 @@
 
 ### Added
 
+- **`serializeMarkdown` is exported from the package root.** It is the write half of `parseMarkdown`:
+  it reassembles frontmatter and a body into the file shape the editor commits.
+
+  Consumers must: nothing.
+
 - **`scripts/checks/api-surface.md` ships in the package.** The snapshot holds the exact signature of
   every export, and `cairn-extending-a-site` now routes a lookup to
   `node_modules/@glw907/cairn-cms/scripts/checks/api-surface.md`. `check:package` fails a tarball
@@ -152,6 +157,11 @@
   unmigrated `AUTH_DB`, say.
 
 ### Changed
+
+- **`IdentityRefusal` is now `IdentityFailure`.** The identity seam's refusal arm follows the
+  `*Failure` suffix the other failure types use. Only the name changes.
+
+  Consumers must: rename `IdentityRefusal` to `IdentityFailure` in any `IdentityResolver` you write.
 
 - **`CairnRuntime` stops copying what the adapter already holds.** `composeRuntime` no longer sets
   `render`, `icons`, or `assets`, and `sender` is now `email`, matching the adapter member it carries.

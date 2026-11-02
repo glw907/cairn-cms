@@ -98,6 +98,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `SenderConfig`: { from: string; replyTo?: string }
 - `SendMagicLink`: (env: CairnEnv, message: MagicLinkMessage) => Promise<void>
+- `serializeMarkdown`: (frontmatter: object, body: string) => string
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
 - `SiteConfigError`: typeof SiteConfigError
 - `SiteRender`: (input: RenderInput) => Promise<string>
@@ -469,8 +470,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `HistoryData`: { entries: HistoryEntry[]; draft: { editor: string; lastSavedAt: string } | null; truncated: boolean; head: string | null }
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `IconSet`: { [x: string]: string }
-- `IdentityRefusal`: { ok: false; reason: string }
-- `IdentityResolver`: { resolve: (event: CairnEvent) => Promise<ResolvedIdentity | IdentityRefusal>; logoutUrl: string; label?: string }
+- `IdentityFailure`: { ok: false; reason: string }
+- `IdentityResolver`: { resolve: (event: CairnEvent) => Promise<ResolvedIdentity | IdentityFailure>; logoutUrl: string; label?: string }
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `InboundLink`: { concept: string; id: string; title: string; permalink: string }
 - `LinkResolve`: (ref: CairnRef) => string | undefined

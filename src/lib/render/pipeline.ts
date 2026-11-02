@@ -180,11 +180,11 @@ export function createRenderer(config: RendererConfig = {}): Renderer {
     // does not allow aria-label) so the added attribute survives, and is content-not-sink, so it is
     // not gated by unsafeDisableSanitize.
     rehypeTaskListA11y,
-    // Build-time syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
+    // Syntax highlighting. It emits class-only output (the cairn-tok-* ramp, no inline
     // style), so it is class-driven like the rest of the pipeline and needs no special placement
     // relative to the sanitize floor or the sink guard: the token classes survive the floor because
     // `className` is already allowed on `*`. It runs unconditionally (a code fence is content, not a
-    // sink) and ships no client highlighter (Shiki is build-only behind a dynamic import).
+    // sink) and adds nothing to the static client graph (Shiki sits behind a dynamic import).
     rehypeCairnHighlight,
   ];
   if (rel !== false) rehypePlugins.push([rehypeAnchorRel, rel]);

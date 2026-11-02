@@ -196,6 +196,7 @@ this file carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+- **Rename `IdentityRefusal` to `IdentityFailure`.** The type is the refusal arm of `IdentityResolver.resolve`'s return, so change it in any resolver you write. Nothing else changed.
 - **Read `runtime.email` in place of `runtime.sender`, and read the renderer, icons, and media from the adapter.** `CairnRuntime` no longer carries `render`, `icons`, or `assets`. Read `adapter.rendering.render`, `adapter.rendering.icons`, and `adapter.media`, or `runtime.media` for the resolved config. A hand-built runtime in a test drops those keys and renames `sender` to `email`.
 - **Expect `X-Robots-Tag: noindex, nofollow` on every admin response, and `Secure` on the shell's two cookies over HTTPS.** Nothing to change. A test that compares an admin response's full header set gains the one header.
 - **Expect `buildSitemap` to throw past 50,000 URLs.** A site under the limit sees no change. Split a larger list across routes.

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // TestResultCheckVerdictContributesTheDecidedTable is table-driven over all five doctor

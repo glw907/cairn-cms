@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // fixtureRoundTripper serves one fixed status and body for every request, standing in for

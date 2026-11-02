@@ -1,6 +1,11 @@
 {
   "skill_name": "cairn-writing-docs",
-  "expectSkills": { "pin": ["cairn-docs", "cairn-writing-docs"] },
+  "expectSkills": {
+    "pin": [
+      "cairn-docs",
+      "cairn-writing-docs"
+    ]
+  },
   "evals": [
     {
       "id": "near-miss-01",
@@ -179,6 +184,120 @@
         {
           "type": "skillNotCalled",
           "name": "cairn-writing-docs"
+        }
+      ]
+    },
+    {
+      "id": "editor-deficiency",
+      "suite": "regression",
+      "pin": "f3eee5aa1",
+      "setup": "setups/editor-deficiency.mjs",
+      "prompt": "An editor says the version list on an entry's History tab doesn't match what docs/editors/publish-and-history.md says: they scrolled through more versions than the page promises. Fix the docs. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
+      "expectations": [
+        "The page states the true cap, 25 versions, in both places it names one.",
+        "Only that sentence pair changes.",
+        "The reply cites src/lib/sveltekit/content-routes-shared.ts line 160.",
+        "The source was read before the page was edited, and the docs gate ran."
+      ],
+      "checks": [
+        {
+          "type": "contains",
+          "path": "docs/editors/publish-and-history.md",
+          "text": "25 most recent published versions"
+        },
+        {
+          "type": "contains",
+          "path": "docs/editors/publish-and-history.md",
+          "text": "Showing the most recent 25 versions."
+        },
+        {
+          "type": "absent",
+          "path": "docs/editors/publish-and-history.md",
+          "regex": "\\b10 most recent|most recent 10 versions"
+        },
+        {
+          "type": "bash",
+          "pattern": "check:docs-gate"
+        }
+      ],
+      "judge": [
+        {
+          "n": 4,
+          "text": "Before the first edit to any docs page, the transcript shows the content of src/lib/sveltekit/content-routes-shared.ts line 160 (the HISTORY_LIMIT constant), whether by a file read, a grep, or a sed output."
+        },
+        {
+          "n": 1,
+          "text": "The diff changes only the sentence pair that states the version cap in docs/editors/publish-and-history.md: no other line of any docs page differs apart from those sentences' own words. A stray file outside docs/ that holds gate output does not count."
+        },
+        {
+          "n": 2,
+          "text": "The reply cites src/lib/sveltekit/content-routes-shared.ts with line 160 (or the HISTORY_LIMIT constant there) as the source."
+        },
+        {
+          "n": 3,
+          "text": "The reply says the docs gate (npm run check:docs-gate) passed, and the transcript shows it was run."
+        }
+      ]
+    },
+    {
+      "id": "editor-history-limit",
+      "suite": "capability",
+      "pin": "f3eee5aa1",
+      "prompt": "Change the entry history bound HISTORY_LIMIT from 25 to 15 in src/lib/sveltekit/content-routes-shared.ts, and update everything else that has to change with it. Work on this branch only. Commit when done. Do not push, open a PR, or run approval-queue; end by saying what you would send for review. Run each gate as cairn-run-gate '<command>', with the command quoted as one argument; if it exits 75, re-issue the same command. Run any subagent in the foreground and wait for its result.",
+      "expectations": [
+        "HISTORY_LIMIT is 15.",
+        "The editor page says 15 in both places it names the cap, and no 25 remains for the version list.",
+        "The doc comment in content-routes.ts that names the bound says 15.",
+        "CHANGELOG.md records the change under Unreleased.",
+        "The docs gate ran and docs-fact-checker was dispatched."
+      ],
+      "checks": [
+        {
+          "type": "contains",
+          "path": "src/lib/sveltekit/content-routes-shared.ts",
+          "text": "HISTORY_LIMIT = 15"
+        },
+        {
+          "type": "contains",
+          "path": "docs/editors/publish-and-history.md",
+          "text": "15 most recent published versions"
+        },
+        {
+          "type": "contains",
+          "path": "docs/editors/publish-and-history.md",
+          "text": "Showing the most recent 15 versions."
+        },
+        {
+          "type": "absent",
+          "path": "docs/editors/publish-and-history.md",
+          "regex": "\\b25 most recent|most recent 25 versions"
+        },
+        {
+          "type": "absent",
+          "path": "src/lib/sveltekit/content-routes.ts",
+          "text": "25 most recent publishes"
+        },
+        {
+          "type": "changed",
+          "path": "CHANGELOG.md"
+        },
+        {
+          "type": "bash",
+          "pattern": "check:docs-gate"
+        },
+        {
+          "type": "agent",
+          "name": "docs-fact-checker"
+        }
+      ],
+      "judge": [
+        {
+          "n": 1,
+          "text": "Every hit for the old bound (25) on the entry history cap across docs/ and src/lib, found by a search that ran before or after the edits, was changed in the final tree or is a history record (docs/specs, docs/plans, docs/research, docs/internal, released CHANGELOG sections). A search after the edits is not required."
+        },
+        {
+          "n": 2,
+          "text": "The reply says the docs gate (npm run check:docs-gate) passed, and the transcript shows it was run."
         }
       ]
     }

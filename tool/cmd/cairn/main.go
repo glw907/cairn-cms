@@ -12,9 +12,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/glw907/cairn-cms/tool/internal/logx"
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/logx"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // processStdout returns the stdout handle render's terminal detection probes. It is the

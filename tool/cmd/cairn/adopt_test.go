@@ -9,7 +9,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/glw907/cairn-cms/tool/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
 )
 
 // adoptRoutes returns the Cloudflare routes adopt.Discover reads for one Worker with no custom

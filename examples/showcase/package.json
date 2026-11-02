@@ -11,7 +11,7 @@
     "dev": "vite dev",
     "predev": "npm run build:admin-css",
     "dev:admin-css": "npx --no-install @tailwindcss/cli -i src/admin.css -o .cairn/admin.css --watch",
-    "build": "vite build",
+    "build": "vite build --logLevel warn",
     "prebuild": "npm run build:admin-css",
     "preview": "wrangler dev",
     "cairn:manifest": "cairn-manifest",

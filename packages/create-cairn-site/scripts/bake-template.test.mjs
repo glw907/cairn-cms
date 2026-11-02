@@ -199,6 +199,8 @@ test('bake writes a site README that is not the showcase README', async (t) => {
   const readme = await readFile(path.join(to, 'README.md'), 'utf8');
   assert.ok(!readme.includes('cairn showcase'));
   assert.ok(!readme.includes('../../docs'));
+  assert.match(readme, /## Make it yours/);
+  assert.match(readme, /references\/make-it-yours\.md/);
 });
 
 // The scaffold's dev script now sets CAIRN_DEV_BACKEND at runtime (scripts/dev.mjs), so the
@@ -261,6 +263,12 @@ test("bake writes the template's root CLAUDE.md with the import line and a site 
   const claudeMd = await readFile(path.join(to, 'CLAUDE.md'), 'utf8');
   assert.match(claudeMd, /^@\.claude\/cairn\/CLAUDE\.md$/m);
   assert.match(claudeMd, /# Your site/);
+  assert.match(claudeMd, /not `\$lib`/);
+  for (const alias of ['#theme/*', '#chassis/*', '#lib/*']) assert.ok(claudeMd.includes(alias), alias);
+  for (const dir of ['src/theme', 'src/chassis', 'src/routes', 'src/content']) assert.ok(claudeMd.includes(`\`${dir}\``), dir);
+  for (const command of ['npm run check`', 'npm run build`', 'npm run check:cairn`', 'npx cairn-manifest`']) {
+    assert.ok(claudeMd.includes(command), command);
+  }
 });
 
 test('bake excludes .claude from the site\'s Tailwind build', async (t) => {

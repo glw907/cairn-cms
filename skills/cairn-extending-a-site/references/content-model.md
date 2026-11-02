@@ -21,7 +21,7 @@ A concept is its adapter entry, plus a manifest run when its directory already h
    reads **New Events**. `dir` sits under `src/content`, and each entry sits directly in it.
 2. **Manifest**: if the directory already holds entries, run `npx cairn-manifest` (scaffold script
    `cairn:manifest`) and commit `src/content/.cairn/index.json`. Never hand-write manifest rows. An
-   entry that fails validation is skipped (logs `content.entry_invalid` `scope: manifest`), and the
+   entry that fails validation is skipped (logs `content.entry_invalid`), and the
    bin exits 1 unless the entry is a draft.
 
 The content module's one glob and the `cairnManifest` plugin both read `/src/content/**/*.md`, so
@@ -184,11 +184,12 @@ Delete checks, in order:
 4. Inbound reference edges: 409 `Cannot delete <id>: N entries reference it.`, listing each
    referencing entry's concept, id, title, and permalink.
 
-A rename refuses with 409 when the new id collides, the entry has unpublished edits, another open
-branch holds an inbound reference (naming the blockers), or the reference index cannot be built. A
-fragment rename also refuses while an open branch includes it, or when the branches cannot be read.
-Otherwise it rewrites each referencing entry's stored id and no other frontmatter byte. These
-refusals leave no log record; the editor's banner is the trace.
+A rename refuses with 409 when the new id collides, the entry has unpublished edits, or another
+open branch holds an inbound reference (naming the blockers). A fragment rename also refuses with
+409 while an open branch includes it. A rename answers 503 when the reference index cannot be
+built, and a fragment rename answers 503 when the branches cannot be read; both log
+`entry.reference_check_failed`. Otherwise it rewrites each referencing entry's stored id and no
+other frontmatter byte. The 409 refusals leave no log record; the editor's banner is the trace.
 
 Address collisions: two published routable entries on one permalink fail the build, so a publish
 onto an address a live entry holds is refused. The edit page shows an `address-collision` advisory

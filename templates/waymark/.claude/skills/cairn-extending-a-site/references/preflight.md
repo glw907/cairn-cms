@@ -12,9 +12,9 @@ cairn's job or yours. If it reads like cairn's job, that is the signal to reach 
 `cairn-consulting-the-engine` instead of building it yourself or patching `node_modules`: see
 step 4.
 
-## 2. The DaisyUI question, again
+## 2. The daisyUI question, again
 
-Re-ask it at the end, not only at the start: does what got built read as a stock DaisyUI
+Re-ask it at the end, not only at the start: does what got built read as a stock daisyUI
 component wearing custom classes, or a genuinely new shape? `references/daisyui-first.md` is the
 current answer for the cases cairn's admin has already worked through.
 
@@ -41,12 +41,14 @@ against your own.
 
 `cairn-guidance install` writes only under `.claude/skills`, `.claude/agents`, and
 `.claude/cairn`; it wires no hook or script by itself. Run `npx cairn-guidance check` to see
-whether this site's `check:cairn` script and `Stop` hook are wired; it prints the snippet to
-add when one is missing. Each line reads `PASS` or `FIX`, and the last line counts them. If the `Stop` hook is wired (a developer pasted the printed snippet into
-`.claude/settings.json`), it runs `npm run check:cairn --if-present` at the end of every session;
-let it run rather than skipping past a failure. If the change
+whether this site's `check:cairn` script, audit config, and workflow are wired; it prints the
+snippet to add when one is missing. Each line reads `PASS` or `FIX`, and the last line counts them.
+It does not inspect the `Stop` hook. If a developer added the hook from `references/adopt-cairn.md`
+to `.claude/settings.json`, it runs `npm run check:cairn --if-present` at the end of every session
+and blocks the stop on a finding; let it run rather than skipping past a failure. If the change
 touched anything under `/admin`, load the `cairn-building-admin-screens` skill and run its done-gate
-(the static `cairn-audit` pass) before calling the screen finished. If
+(the static `cairn-audit` pass, plus `cairn doctor` when `cairn` is on `PATH`) before calling the
+screen finished. If
 `.claude/agents/cairn-extension-reviewer.md` is installed, run it over the diff: it is read-only,
-asks whether a new component could have been a stock DaisyUI one and whether an action with more
+asks whether a new component could have been a stock daisyUI one and whether an action with more
 than two outcomes uses the `outcome` grammar, and returns accept, fix, or escalate.

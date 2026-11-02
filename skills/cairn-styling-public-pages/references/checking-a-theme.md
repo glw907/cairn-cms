@@ -110,8 +110,9 @@ unmeasured.
 The audit reads values and never replaces the page. Also start the dev server with
 `CAIRN_DEV_BACKEND=1` (the scaffold's `npm run dev` sets it, and `/admin` opens as an owner with no
 sign-in email), open an entry in the editor, and confirm the preview renders in the theme's styles
-on the `--color-base-100` ground of the OS scheme. `/styleguide` on a scaffolded site renders the
-type scale and each directive against the current `theme.css`.
+on the `--color-base-100` ground of the OS scheme. A scaffolded site carries no
+`/styleguide`; open `/posts/the-reading-surface`, which renders the type scale and each directive
+against the current `theme.css`.
 
 To build-check a theme directory without touching a site, from the cairn-cms repository run
 `node scripts/lab/theme-fixture.mjs --build-only --theme-dir <dir>`. It overlays the directory onto

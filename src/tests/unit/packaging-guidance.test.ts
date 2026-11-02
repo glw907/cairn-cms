@@ -7,7 +7,8 @@
 // package.json's `files`, and the snippets byte-match (or parse-equal) their in-repo counterparts,
 // so neither can drift silently.
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { IMPORT_LINE } from '../../lib/guidance/check.js';
@@ -17,6 +18,21 @@ import { parsePackFilePaths } from '../../../scripts/checks/check-package-files.
 const ROOT = resolve(process.cwd());
 const CLAUDE_ROOT = resolveSourceRoot('claude');
 const BUILT = existsSync(resolve(ROOT, 'dist/index.js'));
+
+function snippetText(): string {
+  return readFileSync(join(CLAUDE_ROOT, 'snippets/settings-hook.json'), 'utf8').trim();
+}
+
+/** The first fenced json block of adopt-cairn.md, which owns the Stop hook text. */
+function adoptHookBlock(): string {
+  const adopt = readFileSync(
+    resolve(ROOT, 'skills/cairn-extending-a-site/references/adopt-cairn.md'),
+    'utf8'
+  );
+  const fenced = adopt.match(/```json\n([\s\S]*?)\n```/);
+  if (!fenced) throw new Error('adopt-cairn.md carries no fenced json hook block');
+  return fenced[1];
+}
 
 describe('packed tarball (needs dist/index.js; run npm run package to unskip)', () => {
   it.skipIf(!BUILT)('npm pack --dry-run lists every file under claude/', () => {
@@ -111,12 +127,46 @@ describe('claude/snippets/* against their in-repo counterparts', () => {
     expect(snippet).toBe(IMPORT_LINE);
   });
 
-  it("settings-hook.json is byte-identical to the fragment's own hook block", () => {
-    const snippet = readFileSync(join(CLAUDE_ROOT, 'snippets/settings-hook.json'), 'utf8').trim();
+  it("settings-hook.json is byte-identical to adopt-cairn.md's hook block", () => {
+    expect(adoptHookBlock()).toBe(snippetText());
+  });
+
+  it('claude/CLAUDE.md, imported into every session, carries no hook block', () => {
     const fragment = readFileSync(join(CLAUDE_ROOT, 'CLAUDE.md'), 'utf8');
-    const fenced = fragment.match(/```json\n([\s\S]*?)\n```/);
-    if (!fenced) throw new Error('claude/CLAUDE.md carries no fenced json hook block');
-    expect(fenced[1]).toBe(snippet);
+    expect(fragment).not.toContain('"Stop"');
+  });
+});
+
+describe('the Stop hook command', () => {
+  const command: string = JSON.parse(snippetText()).hooks.Stop[0].hooks[0].command;
+
+  function run(payload: object, checkScript: string) {
+    const cwd = mkdtempSync(join(tmpdir(), 'cairn-stop-hook-'));
+    try {
+      writeFileSync(
+        join(cwd, 'package.json'),
+        JSON.stringify({ name: 'site', scripts: { 'check:cairn': checkScript } })
+      );
+      return spawnSync('sh', ['-c', command], { cwd, input: JSON.stringify(payload), encoding: 'utf8' });
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  }
+
+  it('exits 0 without running the audit when stop_hook_active is true', () => {
+    const out = run({ stop_hook_active: true }, 'echo FINDING >&2; exit 1');
+    expect(out.status).toBe(0);
+    expect(out.stderr).not.toContain('FINDING');
+  });
+
+  it('exits 2 with the finding on stderr when the audit fails', () => {
+    const out = run({ stop_hook_active: false }, 'echo FINDING >&2; exit 1');
+    expect(out.status).toBe(2);
+    expect(out.stderr).toContain('FINDING');
+  });
+
+  it('exits 0 when the audit passes', () => {
+    expect(run({ stop_hook_active: false }, 'exit 0').status).toBe(0);
   });
 });
 

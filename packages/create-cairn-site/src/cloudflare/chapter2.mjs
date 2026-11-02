@@ -947,7 +947,7 @@ export async function runChapter2({
             "later, such as a newsletter tool or mailing list, against the domain's mail " +
             'records, or its mail will be rejected.\n' +
             'Run `cairn doctor` any time to check what is set up and what is still missing; ' +
-            'install it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or ' +
+            'install it with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` or ' +
             'from the release page at https://github.com/glw907/cairn-cms/releases. Run ' +
             '`cairn adopt` then `cairn health` against this site any time to check its https ' +
             'and email setup live, without running this installer again.\n' +

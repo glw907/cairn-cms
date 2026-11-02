@@ -35,6 +35,7 @@ import {
 import { parseMarkdown } from '../content/frontmatter.js';
 import { createContentIndex } from '../delivery/content-index.js';
 import { composeEntryData, type PublicRoutesConfig, type EntryData } from '../delivery/public-routes.js';
+import type { SiteResolver } from '../delivery/site-resolver.js';
 import type { SeoMeta } from '../delivery/seo.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve, MarkedFragmentResolve } from '../render/resolve-include.js';
@@ -176,7 +177,7 @@ export async function revokePreview(
  *  `EntryData` field breaks this build rather than a consuming site's.
  * @public
  */
-export type PreviewData = EntryData & {
+export type PreviewData<S extends SiteResolver = SiteResolver> = EntryData<S> & {
   preview: {
     /** `'draft'` while the shared branch is still open; `'published'` once it is gone. */
     state: 'draft' | 'published';
@@ -384,11 +385,18 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  prerendered.
  * @scaffold
  */
-export async function loadPreview(
+export async function loadPreview<S extends SiteResolver>(
   event: CairnEvent,
-  { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig },
-): Promise<PreviewData> {
+  { runtime, publicRoutes }: { runtime: CairnRuntime; publicRoutes: PublicRoutesConfig<S> },
+): Promise<PreviewData<S>> {
   event.setHeaders(PREVIEW_HEADERS);
+
+  // The one boundary cast: `composeEntryData` composes the untyped `EntryData`, and the conditional
+  // `EntryData<S>` cannot resolve while `S` is open. The entry is validated against
+  // `runtime.concepts`, but `EntryData<S>` takes its type from `publicRoutes.site`, and nothing ties
+  // the two together. The cast assumes the runtime and the site resolver describe the same concepts.
+  const withPreview = (data: EntryData, preview: PreviewData['preview']): PreviewData<S> =>
+    ({ ...data, seo: stripPreviewSeo(data.seo), preview }) as unknown as PreviewData<S>;
 
   if (await isBuilding()) {
     throw new Error(
@@ -455,15 +463,11 @@ export async function loadPreview(
 
     const resolvers = await buildPreviewResolvers(runtime, backend, manifest, concept, row.entryId, null);
     const data = await composeEntryData(publicRoutes, publishedEntry, resolvers);
-    return {
-      ...data,
-      seo: stripPreviewSeo(data.seo),
-      preview: {
-        state: 'published',
-        expiresAt: new Date(row.expiresAt).toISOString(),
-        published: { permalink: publishedEntry.permalink },
-      },
-    };
+    return withPreview(data, {
+      state: 'published',
+      expiresAt: new Date(row.expiresAt).toISOString(),
+      published: { permalink: publishedEntry.permalink },
+    });
   }
 
   const draftEntry = createContentIndex([{ path, raw: draftRaw }], concept).byId(row.entryId);
@@ -473,13 +477,9 @@ export async function loadPreview(
   const upsertedManifest = upsertEntry(manifest, draftRow);
   const resolvers = await buildPreviewResolvers(runtime, backend, upsertedManifest, concept, row.entryId, branch);
   const data = await composeEntryData(publicRoutes, draftEntry, resolvers);
-  return {
-    ...data,
-    seo: stripPreviewSeo(data.seo),
-    preview: {
-      state: 'draft',
-      expiresAt: new Date(row.expiresAt).toISOString(),
-      published: null,
-    },
-  };
+  return withPreview(data, {
+    state: 'draft',
+    expiresAt: new Date(row.expiresAt).toISOString(),
+    published: null,
+  });
 }

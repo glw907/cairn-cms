@@ -30,7 +30,6 @@ describe('profileFor', () => {
   it('puts published docs in T1 with all four classes', () => {
     for (const path of [
       'README.md',
-      'docs/README.md',
       'docs/why-cairn.md',
       'examples/showcase/README.md',
       'MIGRATION-NOTES.md',

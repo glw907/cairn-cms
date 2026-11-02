@@ -18,9 +18,10 @@ acknowledgement within a few days.
 ## Security posture
 
 cairn-cms owns its editor authentication. A magic-link login issues an atomic single-use
-token, confirms it over POST, and stores opaque session rows in Cloudflare D1. Sessions ride a
-`__Host-` cookie over HTTPS. Editor access is an allowlist with two roles, `owner` and
-`editor`, and an anti-lockout rule keeps at least one owner in place.
+token, confirms it over POST, and stores session rows in Cloudflare D1 that keep only a digest of
+the session id, never the id itself. Sessions ride a `__Host-` cookie over HTTPS. Editor access
+is an allowlist with two roles, `owner` and `editor`, and an anti-lockout rule keeps at least one
+owner in place.
 
 The render path applies a rehype-sanitize floor by default. Author markdown cannot inject raw
 HTML or a `javascript:` URL unless a site explicitly opts out. The doc comments on `createAuthGuard` and the render exports carry

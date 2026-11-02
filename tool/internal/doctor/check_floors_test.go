@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // enginePackageJSONFixture is a minimal installed @glw907/cairn-cms/package.json, its peer ranges

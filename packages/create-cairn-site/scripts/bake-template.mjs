@@ -43,6 +43,18 @@ npm run dev
 This runs a local admin stand-in. Open the printed URL and visit \`/admin\`. The stand-in signs you
 in without an email loop, and nothing you write there touches GitHub or sends real email.
 
+## Make it yours
+
+Work down this list once:
+
+- Set \`siteName\` and \`description\` in \`src/theme/site.config.yaml\`. The home page intro reads \`description\`.
+- Set \`publicOrigin\` in \`src/theme/cairn.config.ts\` to the address your site will live at.
+- Replace the sample posts in \`src/content/posts\` and the pages in \`src/content/pages\` with your own.
+- Edit the menus and tags in \`src/theme/site.config.yaml\`.
+- Run \`npx cairn-manifest\` after adding, removing, or renaming a content file.
+
+The full list is in \`.claude/skills/cairn-extending-a-site/references/make-it-yours.md\`.
+
 ## Build it
 
 \`\`\`
@@ -151,6 +163,22 @@ const TEMPLATE_CLAUDE_MD = `@.claude/cairn/CLAUDE.md
 # Your site
 
 Add your project-specific guidance here; \`cairn-guidance install\` only ever refreshes the imported fragment above, never this file.
+
+## Where things live
+
+Imports use the aliases in \`package.json\`: \`#theme/*\`, \`#chassis/*\`, and \`#lib/*\`, not \`$lib\`.
+
+- \`src/theme\`: the site's config (\`site.config.yaml\`, \`cairn.config.ts\`), its components, and its look (\`theme.css\`).
+- \`src/chassis\`: the public reading layer (tokens, prose styles, content readers, feeds). Change it last.
+- \`src/routes\`: the public pages and the mounted \`/admin\`.
+- \`src/content\`: your markdown, one folder per content type.
+
+## Commands
+
+- \`npm run check\`: type-check the site.
+- \`npm run build\`: build the deployable Worker.
+- \`npm run check:cairn\`: check the site against cairn's conventions.
+- \`npx cairn-manifest\`: rebuild the content manifest after adding, removing, or renaming a content file.
 `;
 
 /**

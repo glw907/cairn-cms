@@ -168,7 +168,7 @@ describe('renameAction: reference repoint and cross-branch refusal (Task 12)', (
     expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.rename_refused', editor: 'ed@t', concept: 'posts', id: 'target', reason: 'pending_edits' }));
   });
 
-  it('refuses (409) and logs reference_check_failed when a branch read throws', async () => {
+  it('refuses (503) and logs reference_check_failed when a branch read throws', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const manifest = JSON.stringify({ version: 1, entries: [entry('posts', 'target')] });
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifest, [TARGET_PATH]: '---\ntitle: Target\n---\nbody' } });
@@ -183,7 +183,7 @@ describe('renameAction: reference repoint and cross-branch refusal (Task 12)', (
     }));
     const routes = createContentRoutes({ runtime: runtime() });
     const result = (await routes.renameAction(renameEvent('target', 'renamed'))) as unknown as { status: number };
-    expect(result.status).toBe(409);
+    expect(result.status).toBe(503);
     expect(warn.mock.calls.map((c) => c[0])).toContainEqual(expect.objectContaining({ event: 'entry.reference_check_failed', editor: 'ed@t', concept: 'posts', id: 'target', action: 'rename' }));
     expect(warn.mock.calls.map((c) => (c[0] as { event: string }).event)).not.toContain('entry.rename_refused');
   });

@@ -90,9 +90,10 @@ export default defineConfig({
           name: 'unit',
           unstubGlobals: true,
           setupFiles: [CLOUDFLARE_WORKERS_FAKE_SETUP],
+          // Warns once when `dist` is older than `src/lib`; it never fails a run.
+          globalSetup: ['./src/tests/_unit-global-setup.ts'],
           include: [
             'src/tests/unit/**/*.test.ts',
-            'src/tests/lab/**/*.test.ts',
             'packages/cairn-cms-dev/src/**/*.test.ts'
           ],
           // These specs spawn a child process (npm pack, a plain Node resolver probe) against the

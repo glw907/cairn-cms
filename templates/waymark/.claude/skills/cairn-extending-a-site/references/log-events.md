@@ -39,6 +39,8 @@ Contents:
 | `auth.session.created` | info | `email` | Session row created after a confirm. |
 | `auth.session.destroyed` | info | `email` | Logout deleted a row that was still live. A stale or expired cookie leaves no record, so this undercounts sign-outs. |
 | `auth.session.destroy_failed` | error | `error` | Logout's row delete failed (D1). The cookie is already cleared. |
+| `auth.rate_limited` | warn | `scope` (`login`) | The site's sign-in rate limit (`auth.rateLimit`) refused a link request, keyed by the requester's address, which the record never carries. The requester read `throttled`. A run of them is a request flood from one address, or a limit set too low for a shared address. |
+| `auth.rate_limit_failed` | warn | `scope` (`login`), `error` | The sign-in rate limit's resolver or limiter call threw or failed, so the request went through unlimited. `error` is the thrown error's name and a fixed message, never text the limiter supplied, so it can't carry the address. |
 | `auth.identity.unknown` | warn | `email`, `path` | Identity mode: the gate proved an email that matches no roster row. Fix the roster row to carry this exact address. |
 | `auth.role.unknown` | warn | `email`, `role` | Session role is outside the declared vocabulary; it authenticates at `none`. Add the role to `defineRoles`. |
 | `auth.access.refused` | warn | `email`, `role`, `target`, `reason` | The access map denied a request. `no_rule`: no key for the target. `shadowed`: a dynamic segment hides the rule behind a deeper key (declare `target`). `role`: the rule omits the role, the `editors` floor, `none` capability, or `ownerOnly`. |
@@ -57,11 +59,12 @@ Contents:
 | `rename.address_collided` | warn | `editor`, `address`, `heldByConcept`, `heldById` | A rename was refused because the new address belongs to a live entry in any concept. Nothing committed. |
 | `entry.delete_refused` | warn | `editor`, `concept`, `id`, `reason`, `count` | A delete was refused by policy and nothing committed. `reason`: `inbound_links`, `inbound_includes`, `pending_includes` (an open draft includes the fragment), `inbound_references`. `count` is how many entries block it. |
 | `entry.rename_refused` | warn | `editor`, `concept`, `id`, `reason`, `count` | A rename was refused by policy and nothing committed. `reason`: `pending_edits` (the entry has its own open draft), `address_taken` (a file already sits at the new path), `branch_references`, `branch_includes` (another editor's draft blocks it). `count` is absent on the first two. A permalink collision logs `rename.address_collided` instead. |
-| `entry.reference_check_failed` | warn | `editor`, `concept`, `id`, `action`, `error` | The branch read behind a delete or rename guard failed, so the action refused rather than proceed unchecked. `action`: `delete` (503) or `rename` (409). Retry; a repeat points at GitHub. |
+| `entry.reference_check_failed` | warn | `editor`, `concept`, `id`, `action`, `error` | The branch read behind a delete or rename guard failed, so the action refused rather than proceed unchecked. `action`: `delete` or `rename`, both answered 503. Retry; a repeat points at GitHub. |
+| `entry.prior_read_failed` | warn | `editor`, `concept`, `id`, `branch`, `error` | A save could not read the entry's current file, so it answered 503 and kept the editor's text rather than save over keys it could not see. Retry; a repeat points at GitHub. |
 | `content.field_behavior_failed` | warn | `field`, `owner`, `error` | A `behavior.validate` threw; the field counted as valid and the save went through. `owner` is the concept id or directive name. Fix the validator. |
 | `content.field_unmarked` | warn | `concept`, `field` | A multiselect named `tags`, `freetags`, or `categories` and no `taxonomy: true` field, so the tag index is empty. Mark the field. |
 | `content.field_undeclared` | warn | `concept`, `keys` | Manifest build found frontmatter keys the concept does not declare. Validation drops them; a save or publish keeps them in the file. |
-| `content.entry_invalid` | warn | `scope`, `concept`, `path`, `draft`, `errors` | `scope: manifest`: the manifest skipped it (drafts too), so the admin list omits it. |
+| `content.entry_invalid` | warn | `concept`, `path`, `draft`, `errors` | The manifest skipped it (drafts too), so the admin list omits it. |
 | `content.directive_unknown` | warn | `concept`, `path`, `name` | Manifest build found a block directive that no registered component or slot names, and neither `include` nor `figure`. A typo, usually. The build goes on. |
 
 ## Config

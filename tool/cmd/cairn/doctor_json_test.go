@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // decodeDoctorPayload parses one cairn doctor --json payload, failing the test when stdout does

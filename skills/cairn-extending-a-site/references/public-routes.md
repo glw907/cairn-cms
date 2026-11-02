@@ -51,9 +51,10 @@ The page renders `CairnHead` (`@glw907/cairn-cms/public`) with `seo={data.seo}`,
 `data.concept` types `data.entry.frontmatter` from that concept's fields: inside
 `if (data.concept === 'posts')`, `data.entry.frontmatter.image` is the posts field's value.
 
-A `PublicRoutesConfig` with no type argument gives the untyped `EntryData`, where `concept` is a
-string and the frontmatter a record. Every typed value assigns to it, and `loadPreview` returns that
-untyped form, so a template shared with the preview route takes `EntryData` as its prop type.
+`loadPreview` infers the same type from the config you pass it, so a template shared with the preview
+route takes `EntryData<typeof site>` as its prop type. A `PublicRoutesConfig` with no type argument gives
+the untyped `EntryData`, where `concept` is a string and the frontmatter a record. Every typed value
+assigns to it.
 
 To show reference fields, return `references` from the same load:
 `resolveReferences(site, descriptor, data.entry.frontmatter)` with the descriptor from
@@ -85,6 +86,40 @@ Markdown twin: an `md` matcher in `src/params.ts`, a `[...path=md]/+server.ts` w
 - The helpers' `; charset=utf-8` holds only on a Worker-rendered route. A prerendered route's
   `Content-Type` comes from Cloudflare's asset layer, which derives it from the file extension and
   documents no charset ([static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)).
+
+A second concept in the feed: the scaffold's `feedItemsFrom` reads `posts` only, takes no concept option,
+and throws when `posts` is absent. To feed another routable concept, such as `guides`, map it by hand into
+the same `FeedItem` shape in `chassis/feed.ts` and merge the lists:
+
+<!-- snippet-check-skip: continues the scaffold's feed module, which imports site, siteMeta, render, and resolveMedia -->
+```ts
+export async function buildFeedItems(): Promise<FeedItem[]> {
+  const source = { site, origin: siteMeta.origin, render: cairn.rendering.render, resolveMedia };
+  const guides = site.concept('guides');
+  const toPermalink = createLinkResolver(site);
+  const absoluteMedia: MediaResolve = (ref) => {
+    const url = resolveMedia(ref);
+    return url === undefined ? undefined : new URL(url, siteMeta.origin).href;
+  };
+  const guideItems: FeedItem[] = await Promise.all(
+    guides.all().map(async (g) => ({
+      title: g.title,
+      url: siteMeta.origin + g.permalink,
+      date: g.date,
+      summary: g.excerpt,
+      contentHtml: await source.render({
+        body: guides.byId(g.id)!.body,
+        resolveLink: (ref) => siteMeta.origin + toPermalink(ref),
+        resolveMedia: absoluteMedia,
+        resolveFragment: createFragmentResolver(site),
+      }),
+      tags: g.tags,
+    })),
+  );
+  const items = [...(await feedItemsFrom(source)), ...guideItems];
+  return items.sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+}
+```
 
 ## Archive, tag pages, other heads
 

@@ -17,7 +17,8 @@ The named primitives a site builds on. Each export's full contract is the doc co
 declaration in `node_modules/@glw907/cairn-cms/dist/`, and the installed skills carry the recipes.
 
 - `requireAccess`, `createSectionAction`, `locals.cairnEditor`: the auth guard and the per-route
-  factories. The `cairn-extending-a-site` skill's admin-access reference covers them.
+  factories. The `cairn-building-admin-screens` skill routes to the admin-access reference that
+  covers them.
 - `CairnAdminShell`, `navLayout`: the shared admin frame and its declared navigation. The
   `cairn-building-admin-screens` skill covers them.
 - The field, screen-scaffold, and formatter primitives a custom `/admin/` screen composes. The
@@ -30,51 +31,19 @@ declaration in `node_modules/@glw907/cairn-cms/dist/`, and the installed skills 
 A scaffolded site's `package.json` carries `check:cairn` (the design-language audit against the
 static admin markup). Run `npx cairn-guidance check` to see whether your repo still has these wired
 up, the `CLAUDE.md` import line intact, and the guidance tree itself up to date; `--strict` exits
-1 on any `FIX` line.
+1 on any `FIX` line. The optional Stop hook that runs the audit when a session ends is in the
+`cairn-extending-a-site` skill's `adopt-cairn.md`, under "Agent tooling".
 
-## The DaisyUI-first rule
+## The daisyUI-first rule
 
-Before building a new admin component by hand, ask whether a stock DaisyUI component or template
+Before building a new admin component by hand, ask whether a stock daisyUI component or template
 already covers it. The `cairn-extending-a-site` skill opens with the question of whose job a thing is, and its
 `daisyui-first.md` reference names the seam and the recipe; reach for it before writing new markup
 under `/admin`.
 
-## The Stop hook
-
-Add this to `.claude/settings.json` to run the audit whenever an agent session stops working on
-your site, so a drifted admin screen surfaces before you commit it:
-
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "npm run check:cairn --if-present"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-It runs on `Stop`, not `PostToolUse`, because the audit is worth a full run once a session
-settles on a result, not after every single tool call inside it.
-
-## DaisyUI tooling
-
-Install the published DaisyUI skill (`npx skills add saadeghi/daisyui --agent claude-code`) for
-the component reference. A free documentation MCP server is available at
-`https://gitmcp.io/saadeghi/daisyui`. Blueprint is the paid option, a rules enforcer and quality
-inspector for DaisyUI markup: https://daisyui.com/blueprint/.
-
 ## Where the docs are
 
 Start from the installed skills: `cairn-extending-a-site` routes every site job to its reference.
-Each export's contract is its doc comment in `node_modules/@glw907/cairn-cms/dist/`, and
-`node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md` carries the upgrade procedure and the
-per-version record.
+Public theme work goes to `cairn-styling-public-pages`. Each export's contract is its doc comment
+in `node_modules/@glw907/cairn-cms/dist/`, and `node_modules/@glw907/cairn-cms/MIGRATION-NOTES.md`
+carries the upgrade procedure and the per-version record.

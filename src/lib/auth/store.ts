@@ -10,6 +10,7 @@
 // counts toward the last-owner guards.
 import type { D1Database, D1PreparedStatement, D1Result } from '@cloudflare/workers-types';
 import { CairnError } from '../diagnostics/error.js';
+import { hashToken } from './crypto.js';
 import type { Editor } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: string };
@@ -67,7 +68,6 @@ function normalizeEmail(email: string): string {
  * An allowlist row as the store reads it, `Editor` minus `capability`. The store has no access to
  * the site's declared vocabulary, so it can never resolve that field; a caller that needs a full
  * `Editor` (the guard, `editorsLoad`) resolves capability itself and spreads it onto this shape.
- * @public
  */
 export type UnresolvedEditor = Omit<Editor, 'capability'>;
 
@@ -120,9 +120,8 @@ export async function issueToken(
  * What {@link rebindToken} returns: the live token now answers to the requesting browser, or no
  * row was eligible for the move.
  *
- * `not-eligible` (never a set of finer reasons) for the same reason {@link OwnerGuardOutcome}
- * carries that arm: four situations produce `changes === 0` on the one conditional statement, and
- * the statement cannot tell them apart. No token row at all, an expired row, an unbound row, and a
+ * `not-eligible` (never a set of finer reasons) because four situations produce `changes === 0` on
+ * the one conditional statement, and the statement cannot tell them apart. No token row at all, an expired row, an unbound row, and a
  * row already carrying this exact nonce all land here. Naming any of them would mean a second read
  * that could disagree with the write it claims to explain, so the discriminant names only what the
  * predicate knows.
@@ -217,14 +216,24 @@ export async function consumeToken(
   }
 }
 
-/** Create a session row. */
+/**
+ * Create a session row. The row stores the id's digest, never the id, the same exposure rule
+ * `magic_token` follows for its token, so a read of the table yields nothing a browser can
+ * present. `priorIds` are the session ids this browser already held (one per cookie-name form);
+ * their rows go in the same batch as the insert, so a re-login leaves one row per browser while
+ * another device's session survives.
+ */
 export async function createSession(
   db: D1Database,
   id: string,
   email: string,
   expiresAt: number,
   now: number,
+  priorIds: readonly string[] = [],
 ): Promise<void> {
+  const prior = await Promise.all(
+    priorIds.map(async (priorId) => db.prepare('DELETE FROM session WHERE id = ?').bind(await hashToken(priorId))),
+  );
   await db.batch([
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
     // issueToken's sweep (above) runs the identical unindexed idiom against magic_token, and
@@ -237,15 +246,17 @@ export async function createSession(
     // expires_at-sweep idiom for preview_tokens instead, the deliberate counter-example this
     // ruling does not extend to. Reopen if editor rosters stop being small.
     db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
+    ...prior,
     db
       .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(id, normalizeEmail(email), expiresAt, now),
+      .bind(await hashToken(id), normalizeEmail(email), expiresAt, now),
   ]);
 }
 
 /**
  * Resolve a session to its editor, joining `editor` so the role is read live. An expired
- * session or a removed editor resolves to null, which revokes access on the next request.
+ * session or a removed editor resolves to null, which revokes access on the next request. `id`
+ * is the raw cookie value; the lookup is by its digest.
  */
 export async function resolveSession(db: D1Database, id: string, now: number): Promise<UnresolvedEditor | null> {
   const row = await db
@@ -254,7 +265,7 @@ export async function resolveSession(db: D1Database, id: string, now: number): P
        FROM session s JOIN editor e ON e.email = s.email
        WHERE s.id = ? AND s.expires_at > ?`,
     )
-    .bind(id, now)
+    .bind(await hashToken(id), now)
     .first<EditorCols>();
   return row ? toEditor(row) : null;
 }
@@ -268,12 +279,13 @@ export type DeletedSession = { email: string; expiresAt: number };
  * gives the logout record a subject the caller has no other way to reach: logout is a public
  * admin path, so the guard never resolves an editor onto it. The delete is unconditional, an
  * expired row is still safe to remove, so the caller reads the returned `expiresAt` against its
- * `now` to decide whether the row was still live before emitting a destroyed record.
+ * `now` to decide whether the row was still live before emitting a destroyed record. `id` is the
+ * raw cookie value; the delete matches its digest.
  */
 export async function deleteSession(db: D1Database, id: string): Promise<DeletedSession | null> {
   const row = await db
     .prepare('DELETE FROM session WHERE id = ? RETURNING email, expires_at')
-    .bind(id)
+    .bind(await hashToken(id))
     .first<{ email: string; expires_at: number }>();
   return row ? { email: row.email, expiresAt: row.expires_at } : null;
 }
@@ -284,7 +296,6 @@ export async function deleteSession(db: D1Database, id: string): Promise<Deleted
  * Every row carries the trimmed, lowercased email the store writes, so compare it against an
  * address from elsewhere (a user record in the site's database, say) only after lowercasing
  * both sides.
- * @public
  */
 export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
   const { results } = await db
@@ -308,7 +319,6 @@ export async function listEditors(db: D1Database): Promise<UnresolvedEditor[]> {
  * this store, which lowercases every email.
  * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
  * `AUTH_DB` lacks `migrations/0001_roles.sql` and `role` is neither `owner` nor `editor`.
- * @public
  */
 export async function insertEditor(
   db: D1Database,
@@ -326,7 +336,6 @@ export async function insertEditor(
 
 /**
  * What {@link deleteEditor} returns: removed, refused as the last owner-capability row, or no such editor.
- * @public
  */
 export type DeleteEditorOutcome =
   | { outcome: 'removed' }
@@ -335,7 +344,6 @@ export type DeleteEditorOutcome =
 
 /**
  * What {@link setEditorRole} returns: changed, refused as a last-owner demotion, or no such editor.
- * @public
  */
 export type SetEditorRoleOutcome =
   | { outcome: 'ok' }
@@ -343,22 +351,8 @@ export type SetEditorRoleOutcome =
   | { outcome: 'not-found' };
 
 /**
- * What {@link removeOwnerIfNotLast} and {@link demoteOwnerIfNotLast} return: the guarded write
- * landed, it is refused because this is the last owner-capability row, or the row is not eligible
- * for this guard at all. `not-eligible` (never `not-found`) because the atomic write's `WHERE`
- * only matches owner-capability rows, so a `changes === 0` result cannot tell an absent row apart
- * from a present, non-owner one; the discriminant names only what the predicate knows.
- * @public
- */
-export type OwnerGuardOutcome =
-  | { outcome: 'ok' }
-  | { outcome: 'last-owner' }
-  | { outcome: 'not-eligible' };
-
-/**
  * The removal cascade's preview-token leg: every link one removed editor minted, keyed by their
- * already-normalized address. Both {@link deleteEditor} and {@link removeOwnerIfNotLast} call it
- * after their session/magic-token batch.
+ * already-normalized address. {@link deleteEditor} calls it after its session/magic-token batch.
  *
  * It runs as a separate statement, deliberately outside that batch: `preview_tokens` is additive
  * (migrations/0003_preview.sql), and every site with `AUTH_DB` wired but that migration unapplied
@@ -379,9 +373,7 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
 
 /**
  * Whether the row a guarded write left untouched is still there, the read every `changes === 0`
- * branch below runs to tell a refusal apart from a plain miss. `ownerRoles`, when given, narrows
- * the read to owner-capability rows, matching the two owner-only guards whose `WHERE` never
- * admitted a non-owner row in the first place.
+ * branch below runs to tell a refusal apart from a plain miss.
  *
  * It runs after the atomic write and cannot change that write's outcome; it only names which of
  * the two things happened, so it stays outside the conditional statement the guard depends on.
@@ -390,20 +382,8 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
  * the reverse). That is a message-only error: the guarded write itself already refused correctly,
  * and no caller acts on the discriminant beyond choosing which sentence to show.
  */
-async function editorRowStillPresent(
-  db: D1Database,
-  normalizedEmail: string,
-  ownerRoles?: string[],
-): Promise<boolean> {
-  if (ownerRoles === undefined) {
-    const row = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(normalizedEmail).first();
-    return Boolean(row);
-  }
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  const row = await db
-    .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
-    .bind(normalizedEmail, ...ownerRoles)
-    .first();
+async function editorRowStillPresent(db: D1Database, normalizedEmail: string): Promise<boolean> {
+  const row = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(normalizedEmail).first();
   return Boolean(row);
 }
 
@@ -418,12 +398,9 @@ async function editorRowStillPresent(
  * `ownerRoles` (the vocabulary's owner-capability name set, see `resolveOwnerLevelRoles`) is
  * folded into the same atomic `DELETE`: a non-owner row is removed unconditionally, and an
  * owner-capability row is refused when it is the last one. This is the one call a caller needs
- * for "remove this editor" regardless of role, so it no longer pre-fetches the target's role and
- * dispatches between this function and {@link removeOwnerIfNotLast}. On a `changes === 0` result
- * the only follow-up is a read that classifies the refusal (the row is present and is the last
- * owner) from a plain miss (no such editor); that read cannot change the outcome, it only names
- * which of the two happened. `removeOwnerIfNotLast` survives alongside this as the narrower
- * owner-only guard.
+ * for "remove this editor" regardless of role. On a `changes === 0` result the only follow-up is a
+ * read that classifies the refusal (the row is present and is the last owner) from a plain miss (no
+ * such editor); that read cannot change the outcome, it only names which of the two happened.
  *
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, there is no last-owner row to protect, so
@@ -449,7 +426,6 @@ async function editorRowStillPresent(
  * an unsafe one when the omitted name sits on the target row.
  * @returns `removed` on success; `last-owner` when the row is the last owner-capability row, with
  * nothing written; `not-found` when no row matched the email.
- * @public
  */
 export async function deleteEditor(
   db: D1Database,
@@ -484,63 +460,15 @@ export async function deleteEditor(
 }
 
 /**
- * Remove an owner-capability editor only if another owner-capability row remains. The count is
- * part of the DELETE, so two concurrent removals cannot both pass a separate check and strand the
- * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
- * `resolveOwnerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
- * role name stays safe. The narrower, owner-only twin of {@link deleteEditor}: its `WHERE`
- * matches only an owner-capability row, so it refuses outright (`not-eligible`) on a row that is
- * not owner-capability at all, rather than removing it. On success the editor's sessions, pending
- * token, and minted preview links all go too, the same cascade {@link deleteEditor} runs.
- * @param db - The site's `AUTH_DB` binding.
- * @param email - Trimmed and lowercased before it matches.
- * @param ownerRoles - The site's owner-capability role names, from `resolveOwnerLevelRoles`; an
- * empty list answers `not-eligible` without a write.
- * @returns `ok` on success; `last-owner` when this is the last owner-capability row;
- * `not-eligible` when no owner-capability row matched the email. Either refusal writes nothing.
- * @public
- */
-export async function removeOwnerIfNotLast(
-  db: D1Database,
-  email: string,
-  ownerRoles: string[],
-): Promise<OwnerGuardOutcome> {
-  if (ownerRoles.length === 0) return { outcome: 'not-eligible' };
-  const key = normalizeEmail(email);
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  const res = await db
-    .prepare(
-      `DELETE FROM editor
-       WHERE email = ? AND role IN (${placeholders})
-         AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
-    )
-    .bind(key, ...ownerRoles, ...ownerRoles)
-    .run();
-  if (res.meta.changes === 0) {
-    return (await editorRowStillPresent(db, key, ownerRoles))
-      ? { outcome: 'last-owner' }
-      : { outcome: 'not-eligible' };
-  }
-  await db.batch([
-    db.prepare('DELETE FROM session WHERE email = ?').bind(key),
-    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
-  ]);
-  await deleteEditorPreviewTokens(db, key);
-  return { outcome: 'ok' };
-}
-
-/**
  * Change an editor's role. The guard reads the new role on the next request.
  *
  * `ownerRoles` (the vocabulary's owner-capability name set, see `resolveOwnerLevelRoles`) is
  * folded into the same atomic `UPDATE`: the write is refused only when it would demote the last
  * owner-capability row out of owner capability, never for any other role change. This is the one
- * call a caller needs for "change this editor's role", so it no longer pre-fetches the target's
- * current role and dispatches between this function and {@link demoteOwnerIfNotLast}. On a
- * `changes === 0` result the only follow-up is a read that classifies the refusal (the row is
- * present and this was a last-owner demotion) from a plain miss (no such editor); that read
- * cannot change the outcome, it only names which of the two happened.
- * `demoteOwnerIfNotLast` survives alongside this as the narrower owner-only guard.
+ * call a caller needs for "change this editor's role". On a `changes === 0` result the only
+ * follow-up is a read that classifies the refusal (the row is present and this was a last-owner
+ * demotion) from a plain miss (no such editor); that read cannot change the outcome, it only names
+ * which of the two happened.
  *
  * An EMPTY `ownerRoles` means the caller declares no owner-capability vocabulary at all, and the
  * write is then unguarded: with no role names to count, no change can demote a last owner, so the
@@ -556,7 +484,6 @@ export async function removeOwnerIfNotLast(
  * would demote it, with nothing written; `not-found` when no row matched the email.
  * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
  * `AUTH_DB` lacks `migrations/0001_roles.sql` and `role` is neither `owner` nor `editor`.
- * @public
  */
 export async function setEditorRole(
   db: D1Database,
@@ -584,50 +511,6 @@ export async function setEditorRole(
         );
   if (res.meta.changes === 0) {
     return (await editorRowStillPresent(db, key)) ? { outcome: 'last-owner' } : { outcome: 'not-found' };
-  }
-  return { outcome: 'ok' };
-}
-
-/**
- * Demote an owner-capability editor to `newRole` only if another owner-capability row remains,
- * in one atomic statement (see `removeOwnerIfNotLast`). `ownerRoles` is the vocabulary's
- * owner-capability name set, so a site with more than one owner-level role name stays safe. The
- * narrower, owner-only twin of {@link setEditorRole}: its `WHERE` matches only an
- * owner-capability row, so it refuses outright (`not-eligible`) on a row that is not
- * owner-capability at all, rather than changing it.
- * @param db - The site's `AUTH_DB` binding.
- * @param email - Trimmed and lowercased before it matches.
- * @param ownerRoles - The site's owner-capability role names, from `resolveOwnerLevelRoles`; an
- * empty list answers `not-eligible` without a write.
- * @param newRole - The role the owner moves to, from the site's declared vocabulary.
- * @returns `ok` on success; `last-owner` when this is the last owner-capability row;
- * `not-eligible` when no owner-capability row matched the email. Either refusal writes nothing.
- * @throws `CairnError` with condition `auth.store-roles-unmigrated`, as a rejection, when
- * `AUTH_DB` lacks `migrations/0001_roles.sql` and `newRole` is neither `owner` nor `editor`.
- * @public
- */
-export async function demoteOwnerIfNotLast(
-  db: D1Database,
-  email: string,
-  ownerRoles: string[],
-  newRole: string,
-): Promise<OwnerGuardOutcome> {
-  if (ownerRoles.length === 0) return { outcome: 'not-eligible' };
-  const key = normalizeEmail(email);
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  const res = await runRoleWrite(
-    db
-      .prepare(
-        `UPDATE editor SET role = ?
-         WHERE email = ? AND role IN (${placeholders})
-           AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
-      )
-      .bind(newRole, key, ...ownerRoles, ...ownerRoles),
-  );
-  if (res.meta.changes === 0) {
-    return (await editorRowStillPresent(db, key, ownerRoles))
-      ? { outcome: 'last-owner' }
-      : { outcome: 'not-eligible' };
   }
   return { outcome: 'ok' };
 }

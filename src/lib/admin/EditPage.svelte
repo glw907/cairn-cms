@@ -281,6 +281,8 @@ island.
   // document without flipping busy, so without this the leave guard would fire mid-discard while
   // the page is still dirty, which is the primary discard scenario.
   let leaving = $state(false);
+  // Set when the Discard form submits so a double click sends one POST; pageshow clears it.
+  let discarding = $state(false);
 
   // Dirty tracking. The body compares against the text the page loaded with (or the edited body a
   // full-page blocked save returned, which seeded the editor); the uncontrolled sidebar fields flip
@@ -506,12 +508,13 @@ island.
     };
     // A page the browser restores from its back-forward cache comes back exactly as it left, mid
     // navigation: a successful save kept Save and Publish disabled and the leave guard off for the
-    // reload it started. A restored page is editable again, so clear all three.
+    // reload it started. A restored page is editable again, so clear them all.
     const onPageShow = (e: PageTransitionEvent) => {
       if (!e.persisted) return;
       saving = false;
       publishing = false;
       leaving = false;
+      discarding = false;
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     window.addEventListener('pageshow', onPageShow);
@@ -975,22 +978,23 @@ island.
       editableArbiter.next();
     };
   });
-  // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
-  // names the action; every disabled reason is honest about why, including when Preview hides the
-  // Write surface. The Write pane stays mounted under Preview, so editable survives the tab switch;
-  // without the insertDisabled branch below, the label would keep claiming "Edit the block at
-  // the cursor" over a click Preview has made inert (a mouse user's tooltip and a screen reader's
-  // announcement both read that promise). editReason, driven purely by the caret, is unaffected by
-  // Preview: an unsafe block stays unsafe, and switching to Write would not change that, so its
-  // reason is left as-is rather than folded into the Preview branch.
-  const editBlockLabel = $derived(
+  // The Edit-block control's tooltip. The accessible name is always "Edit block"; this text, enabled
+  // or not, rides in the tooltip, which Tooltip points aria-describedby at, so the name never
+  // changes under a screen-reader user and every state's text is still announced. The reasons are honest about why, including when Preview hides
+  // the Write surface (the Write pane stays mounted under Preview, so editable survives the tab
+  // switch, and the reason must not promise an action Preview has made inert). editReason, driven
+  // purely by the caret, is unaffected by Preview: an unsafe block stays unsafe, and switching to
+  // Write would not change that, so its reason is left as-is.
+  const editBlockReason = $derived(
     editable
       ? insertDisabled
         ? 'Switch to Write to edit this block'
         : 'Edit the block at the cursor'
       : editReason === 'unsafe'
         ? 'This block can’t be edited in the form. Edit it as markdown.'
-        : 'Place the cursor in an editable block to edit it',
+        : insertDisabled
+          ? 'Switch to Write and place the cursor in an editable block to edit it'
+          : 'Place the cursor in an editable block to edit it',
   );
   // Whether the Edit-block control is unavailable: either Preview hides the Write surface, or the
   // caret is not on a safe, schema-bearing component. The control stays focusable and announced in
@@ -1226,6 +1230,7 @@ island.
       failureNotice = '';
       signInHref = '';
       leaving = false;
+      discarding = false;
       fieldsDirty = false;
       mode = 'write';
       detailsOpen = false;
@@ -1312,16 +1317,21 @@ island.
 
   // The banner and the polite live region read this one string. Removing the reference covers an
   // absent target, which has nothing to publish.
-  const referenceNotice = $derived.by(() => {
+  const referenceBody = $derived.by(() => {
     const many = referenceWarning.includes(',');
-    return `Saved. Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
+    return `Note: this entry references ${many ? 'entries' : 'an entry'} (${referenceWarning}) not yet published. Publish ${many ? 'them' : 'it'} or remove the ${many ? 'references' : 'reference'} before you publish this entry.`;
   });
+  const referenceNotice = $derived(`Saved. ${referenceBody}`);
+  // The draft clause, shared by the banner and the announcement, singular or plural by target count.
+  const draftBody = $derived(
+    `Note: this entry links to ${draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet (${draftWarning}).`,
+  );
 
   // The one transient feedback strip under the sticky header.
-  // A saved flash with a draft warning yields to the warning alert below, the prior behavior.
+  // A saved flash with a draft or reference warning yields to the warning alert below.
   const flash = $derived.by(() => {
     if (failedInPlace) return '';
-    if (data.flash === 'saved' && !draftWarning)
+    if (data.flash === 'saved' && !draftWarning && !referenceWarning)
       return 'Saved. Your site keeps showing the published version until you publish.';
     if (data.flash === 'published') return 'Published. The live site is rebuilding.';
     if (data.flash === 'discarded') return 'Changes discarded.';
@@ -1335,7 +1345,8 @@ island.
   // the errors. The visible banners below keep their styling but drop their roles, so a message
   // is announced once.
   const politeMessage = $derived.by(() => {
-    if (draftWarning) return `Saved. This entry links to entries that visitors can't reach yet: ${draftWarning}.`;
+    if (draftWarning && referenceWarning) return `Saved. ${draftBody} ${referenceBody}`;
+    if (draftWarning) return `Saved. ${draftBody}`;
     if (referenceWarning) return referenceNotice;
     return flash;
   });
@@ -2012,12 +2023,12 @@ island.
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 type-body">
-    Saved. Note: this entry links to {draftWarning.includes(',') ? 'entries' : 'an entry'} that visitors can't reach yet ({draftWarning}).
+    Saved. {draftBody}
   </div>
 {/if}
 {#if referenceWarning}
   <div class="alert alert-warning mb-4 type-body">
-    {referenceNotice}
+    {draftWarning ? referenceBody : referenceNotice}
   </div>
 {/if}
 
@@ -2118,13 +2129,13 @@ island.
                  give the dimmed look (the Figure control's pattern below), never .btn-disabled, which
                  sets pointer-events: none and would suppress the tooltip a mouse user reads for the
                  why. That reason text is the wrapping Tooltip's, never a native title attribute. -->
-            <Tooltip text={editBlockLabel}>
+            <Tooltip text={editBlockReason}>
               <button
                 type="button"
                 class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
                 class:cursor-not-allowed={editBlockUnavailable}
                 aria-haspopup="dialog"
-                aria-label={editBlockLabel}
+                aria-label="Edit block"
                 aria-disabled={editBlockUnavailable}
                 onclick={editBlock}
               >
@@ -2543,7 +2554,7 @@ island.
             <p class="type-meta text-muted">
               Included in {data.inboundLinks.length} {data.inboundLinks.length === 1 ? 'entry' : 'entries'}.
             </p>
-            <ul class="flex flex-col gap-1">
+            <ul role="list" class="flex list-none flex-col gap-1 p-0">
               {#each data.inboundLinks as link (link.concept + '/' + link.id)}
                 <li>
                   <a class="link type-meta" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
@@ -2830,10 +2841,15 @@ island.
       {:else}
         <p class="mb-3 type-body">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
       {/if}
-      <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => (leaving = true)}>
+      <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => {
+        leaving = true;
+        discarding = true;
+      }}>
         <CsrfField />
         <button type="button" class="btn btn-sm" onclick={() => discardDialog?.close()}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-error">Discard</button>
+        <button type="submit" class="btn btn-sm btn-error" disabled={discarding}>
+          {#if discarding}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Discarding…{:else}Discard{/if}
+        </button>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">

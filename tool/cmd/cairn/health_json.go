@@ -7,9 +7,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // writeSiteJSON writes the single-site payload, which carries the run's exit code: for a

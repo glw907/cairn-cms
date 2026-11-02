@@ -84,10 +84,15 @@ function closingInfoLines(state) {
   const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
   const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
   return {
-    repoLines: [`Your private repository on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
+    repoLines: [
+      `Your private repository on GitHub: ${repoUrl}`,
+      `The App that publishes for you: ${appUrl}`,
+      'To narrow which repositories the App can reach, edit its installation at ' +
+        `${webBase()}/settings/installations.`,
+    ],
     doctorLine:
       'Run `cairn doctor` any time to check what is set up and what is still missing. Install ' +
-      'it with `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` or from the ' +
+      'it with `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` or from the ' +
       'release page at https://github.com/glw907/cairn-cms/releases.',
   };
 }

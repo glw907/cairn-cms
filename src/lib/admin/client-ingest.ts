@@ -282,7 +282,7 @@ class IngestError extends Error {
 }
 
 /**
- * The three-tier ingest route for one file. Web-native types (JPEG, PNG, WebP) pass through with
+ * The three-tier ingest route for one file. Web-native types (JPEG, PNG, WebP, AVIF) pass through with
  * dimensions from `createImageBitmap`; GIF passes through with dimensions from `gifDimensions` (no
  * canvas, so the animation survives); HEIC routes through the lazy-loaded heic-to decoder, is decoded
  * to a PNG, then re-encoded to WebP through the canvas budget. Any forced re-encode targets WebP. This
@@ -298,7 +298,7 @@ export async function ingestFile(file: File): Promise<IngestResult> {
     return { blob: file, contentType: 'image/gif', width: dims?.width ?? null, height: dims?.height ?? null };
   }
 
-  if (sniffed === 'image/jpeg' || sniffed === 'image/png' || sniffed === 'image/webp') {
+  if (sniffed === 'image/jpeg' || sniffed === 'image/png' || sniffed === 'image/webp' || sniffed === 'image/avif') {
     // Web-native passthrough: read the real pixel dimensions with the embedded orientation applied.
     let bitmap: ImageBitmap;
     try {

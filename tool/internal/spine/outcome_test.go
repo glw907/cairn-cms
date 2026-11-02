@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // internalPackagePrefix is this module's internal import root, the prefix every check
 // against spine's dependency boundary strips before comparing.
-const internalPackagePrefix = "github.com/glw907/cairn-cms/tool/internal/"
+const internalPackagePrefix = "github.com/glw907/cairn-cms/tool/v2/internal/"
 
 // TestSpineImportsOnlyProviders asserts every file in this package imports at most one internal
 // package, tool/internal/providers, and never tool/internal/record: the module's downward

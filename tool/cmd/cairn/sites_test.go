@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 )
 
 // writeTestRecord saves one adopted site into d's registry directory, through record and

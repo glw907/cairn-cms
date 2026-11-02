@@ -45,6 +45,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     initial,
     submitLabel = 'Insert',
   }: Props = $props();
+  // Scopes the hint and error ids so two mounted forms never share one.
+  const uid = $props.id();
 
   // Working values, seeded once from `initial` in edit mode, otherwise from the schema and any
   // declared preview sample. $state makes the nested records deeply reactive. untrack marks the
@@ -121,11 +123,14 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   function asBool(key: string): boolean {
     return working.attributes[key] === true;
   }
-  // The ids a slot's control is described by: its error and its help, neither dropped when both
-  // show, or undefined when neither does.
-  function slotDescribedBy(slot: SlotDef): string | undefined {
-    const ids = [errors[slot.name] ? `err-${slot.name}` : '', slot.help ? `hint-${slot.name}` : ''].filter(Boolean);
+  // The ids a control is described by: its error and its help, neither dropped when both show, or
+  // undefined when neither does. Slots and attributes share the shape.
+  function describedBy(name: string, help: string | undefined): string | undefined {
+    const ids = [errors[name] ? `${uid}-err-${name}` : '', help ? `${uid}-hint-${name}` : ''].filter(Boolean);
     return ids.length ? ids.join(' ') : undefined;
+  }
+  function slotDescribedBy(slot: SlotDef): string | undefined {
+    return describedBy(slot.name, slot.help);
   }
 
   function slotString(name: string): string {
@@ -267,7 +272,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="checkbox checkbox-sm"
           type="checkbox"
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           checked={asBool(name)}
           onchange={(e) => (working.attributes[name] = e.currentTarget.checked)}
         />
@@ -280,7 +285,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           class="select"
           aria-required={field.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           value={asString(name)}
           onchange={(e) => {
             working.attributes[name] = e.currentTarget.value;
@@ -300,6 +305,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           label={field.label}
           value={asString(name)}
           required={field.required ?? false}
+          describedby={describedBy(name, field.help)}
           onChange={(glyph) => (working.attributes[name] = glyph)}
         />
       </div>
@@ -311,7 +317,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           type={inputType(field.type)}
           aria-required={field.required ? 'true' : undefined}
           aria-invalid={Boolean(errors[name])}
-          aria-describedby={errors[name] ? `err-${name}` : undefined}
+          aria-describedby={describedBy(name, field.help)}
           value={asString(name)}
           oninput={(e) => {
             working.attributes[name] = e.currentTarget.value;
@@ -321,7 +327,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error type-meta">{errors[name]}</span>{/if}
+    {#if field.help}<p id={`${uid}-hint-${name}`} class="type-body text-muted mt-1">{field.help}</p>{/if}
+    {#if errors[name]}<span id={`${uid}-err-${name}`} role="alert" class="text-error type-meta">{errors[name]}</span>{/if}
   {/each}
 
   {#each flatSlots as slot (slot.name)}
@@ -359,8 +366,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
-    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
+    {#if slot.help}<p id={`${uid}-hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
+    {#if errors[slot.name]}<span id={`${uid}-err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
   {/each}
 
   {#each repeatableSlots as slot (slot.name)}
@@ -382,8 +389,8 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
-      {#if slot.help}<p id={`hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
-      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
+      {#if slot.help}<p id={`${uid}-hint-${slot.name}`} class="type-body text-muted mt-1">{slot.help}</p>{/if}
+      {#if errors[slot.name]}<span id={`${uid}-err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}
 

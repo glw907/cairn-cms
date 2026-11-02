@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/glw907/cairn-cms/tool/internal/doctor"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 	"github.com/spf13/cobra"
 )
 

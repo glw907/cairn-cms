@@ -338,6 +338,36 @@ describe('EditPage', () => {
     }
   });
 
+  it('shows one notice for a save with a reference warning, and announces both warnings when both are set', async () => {
+    const originalUrl = appPage.url;
+    appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?refs=pages/about');
+    try {
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
+      expect(screen.container.querySelector('.alert-success')).toBeNull();
+      expect(screen.container.querySelectorAll('.alert-warning, .alert-success')).toHaveLength(1);
+    } finally {
+      appPage.url = originalUrl;
+    }
+    appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/team&refs=pages/about');
+    try {
+      const screen = await render(EditPage, postProps({ flash: 'saved' }));
+      const live = screen.container.querySelector('div.sr-only[aria-live="polite"]')?.textContent ?? '';
+      expect(live).toContain('pages/team');
+      expect(live).toContain('pages/about');
+      // One "Saved." leads the combined announcement, and each clause matches the visible banner's
+      // singular wording for a single target.
+      expect(live.match(/Saved\./g)).toHaveLength(1);
+      expect(live).toContain('links to an entry that visitors');
+      expect(live).toContain('references an entry (pages/about)');
+      const alerts = [...screen.container.querySelectorAll('.alert-warning')].map((a) => a.textContent?.trim() ?? '');
+      expect(alerts).toHaveLength(2);
+      expect(alerts[0]).toMatch(/^Saved\./);
+      expect(alerts[1]).not.toMatch(/^Saved\./);
+    } finally {
+      appPage.url = originalUrl;
+    }
+  });
+
   it('shows no draft-link warning without the drafts flag', async () => {
     const screen = await render(EditPage, postProps({ flash: 'saved' }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();
@@ -2088,6 +2118,19 @@ describe('EditPage', () => {
     )!;
     expect(includedIn.textContent ?? '').toMatch(/included in 2 entries/i);
     expect(includedIn.querySelector('a[href="/admin/posts/a"]')?.textContent).toBe('Post A');
+    const list = includedIn.querySelector('ul')!;
+    expect(list.getAttribute('role')).toBe('list');
+    // The compiled sheet scopes every rule under the admin theme root.
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    const sheet = document.createElement('style');
+    sheet.textContent = compiledAdminCss;
+    document.head.appendChild(sheet);
+    try {
+      expect(getComputedStyle(list).listStyleType).toBe('none');
+    } finally {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    }
     expect(includedIn.querySelector('a[href="/admin/pages/b"]')?.textContent).toBe('Page B');
   });
 
@@ -2769,6 +2812,24 @@ describe('EditPage', () => {
     expect(figureButton()?.getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('disables Discard after a submit and re-enables it on pageshow', async () => {
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
+    await screen.getByRole('button', { name: 'More actions' }).click();
+    await screen.getByRole('button', { name: 'Discard changes' }).click();
+    const submit = screen.container.querySelector<HTMLButtonElement>('form[action="?/discard"] button[type="submit"]')!;
+    expect(submit.disabled).toBe(false);
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      submit.click();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+    await expect.poll(() => submit.disabled).toBe(true);
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await expect.poll(() => submit.disabled).toBe(false);
+  });
+
   it('lets a discard submission through the leave guard', async () => {
     // Capture the beforeunload handler the component registers (a real dispatch on window would
     // unload the test page), the recipe the beforeunload test above uses.
@@ -3153,10 +3214,8 @@ describe('EditPage', () => {
 
     function editControl(screen: { container: HTMLElement }) {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
-      // one whose aria-label speaks to editing (the label varies by state, so match the verb).
-      return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Edit the block"], button[aria-label*="cursor in an editable block"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
-      );
+      // one named "Edit block" in every state; only its tooltip description varies.
+      return screen.container.querySelector<HTMLButtonElement>('button[aria-label="Edit block"]');
     }
 
     async function clickLine(screen: { container: HTMLElement }, text: string) {
@@ -3184,7 +3243,7 @@ describe('EditPage', () => {
       // an assistive-technology user can read why it is unavailable.
       expect(control.getAttribute('aria-disabled')).toBe('true');
       expect(control.disabled).toBe(false);
-      expect(control.getAttribute('aria-label')).toBe('Place the cursor in an editable block to edit it');
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
       expect(tooltipText(control)).toBe('Place the cursor in an editable block to edit it');
     });
 
@@ -3206,7 +3265,9 @@ describe('EditPage', () => {
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
-      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the block at the cursor');
+      // The name never flips; the action text rides in the tooltip description.
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit block');
+      expect(tooltipText(editControl(screen)!)).toBe('Edit the block at the cursor');
     });
 
     it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
@@ -3222,8 +3283,18 @@ describe('EditPage', () => {
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
       const control = editControl(screen)!;
       expect(control.getAttribute('aria-label')).not.toBe('Edit the block at the cursor');
-      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this block');
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
       expect(tooltipText(control)).toBe('Switch to Write to edit this block');
+    });
+
+    it('gives the Preview reason, not a cursor instruction, when Preview is open and the caret is outside a block', async () => {
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
+      const control = editControl(screen)!;
+      expect(control.getAttribute('aria-label')).toBe('Edit block');
+      expect(tooltipText(control)).toBe('Switch to Write and place the cursor in an editable block to edit it');
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
@@ -3232,9 +3303,8 @@ describe('EditPage', () => {
       await clickLine(screen, ':::callout[Heads up]');
       // The block carries an undeclared attribute key, so the gate refuses it. The control stays
       // unavailable (aria-disabled) and the tooltip points the editor at markdown.
-      await expect
-        .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can’t be edited in the form. Edit it as markdown.");
+      await expect.poll(() => tooltipText(editControl(screen)!)).toBe("This block can’t be edited in the form. Edit it as markdown.");
+      expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit block');
       expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
       expect(editControl(screen)!.disabled).toBe(false);
     });
@@ -3300,10 +3370,10 @@ describe('EditPage', () => {
       // override the current position's own outcome.
       resolvers[1]({ safe: false, reason: 'unknown-attribute' });
       await expect
-        .poll(() => editControl(screen)?.getAttribute('aria-label'))
+        .poll(() => tooltipText(editControl(screen)!))
         .toBe("This block can’t be edited in the form. Edit it as markdown.");
       resolvers[0]({ safe: true });
-      expect(editControl(screen)?.getAttribute('aria-label')).toBe(
+      expect(tooltipText(editControl(screen)!)).toBe(
         "This block can’t be edited in the form. Edit it as markdown.",
       );
     });

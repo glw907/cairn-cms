@@ -47,6 +47,7 @@ describe('the table', () => {
     ['docs', '.tellgrader.json', '.tellgrader.json'],
     ['docs', 'skills/', 'skills/cairn-consulting-the-engine/SKILL.md'],
     ['docs', 'claude/', 'claude/CLAUDE.md'],
+    ['toolTestdata', 'tool/testdata/flags.json', 'tool/testdata/flags.json'],
     ['scripts', 'scripts/', 'scripts/checks/check-idioms.mjs'],
     ['scripts', 'src/tests/', 'src/tests/unit/gate-tier.test.ts'],
     ['scripts', '.github/', '.github/workflows/test.yml'],
@@ -280,7 +281,7 @@ describe('the component leg', () => {
   });
 
   it('runs a path in docs and another bucket through the ordinary rule', () => {
-    expect(plan(['skills/cairn-consulting-the-engine/SKILL.md']).mode).not.toBe('skip');
+    expect(plan(['skills/cairn-consulting-the-engine/SKILL.md']).reason).toBe('nothing under src/ to select from');
   });
 
   it('runs the whole project when the selection is empty or was not computed', () => {
@@ -292,8 +293,11 @@ describe('the component leg', () => {
     }
   });
 
-  it('runs the whole project for a diff with nothing under src/ to select from', () => {
-    expect(plan(['scripts/checks/check-idioms.mjs']).mode).toBe('full');
+  it('skips the project for a diff with nothing under src/ to select from, and still runs it whole for a rerun trigger', () => {
+    expect(plan(['scripts/checks/check-idioms.mjs']).mode).toBe('skip');
+    expect(plan(['scripts/checks/check-idioms.mjs', 'package.json']).mode).toBe('full');
+    expect(plan(['vitest.config.ts']).mode).toBe('full');
+    expect(plan(['package-lock.json']).mode).toBe('full');
   });
 
   it('runs the selected files, with the trigger switch, when the selection is not empty', () => {
@@ -456,7 +460,9 @@ describe('the e2e leg', () => {
 
 describe('decideGate', () => {
   it('orders the legs: package, static checks, node projects, component, scaffold suite, e2e', () => {
-    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte'], { selected: ['a.test.ts'] }).gate;
+    const gate = decideGate(['examples/showcase/src/routes/(site)/+page.svelte', 'src/lib/log/index.ts'], {
+      selected: ['a.test.ts'],
+    }).gate;
     const marks = [
       'npm run package',
       'npm run check:close',
@@ -639,6 +645,17 @@ const CI_EQUIVALENTS: Record<string, string[]> = {
     ['npm run test:component -- --no-file-parallelism'],
   // The same suite, reached by workspace flag instead of `--prefix`.
   'npm --prefix packages/create-cairn-site test': ['npm test -w packages/create-cairn-site'],
+  // CI builds once and calls these checks' scripts directly; the local gate runs each through its
+  // npm script, which builds first.
+  'node scripts/checks/check-audit-pack.mjs': ['npm run check:audit-pack'],
+  'node scripts/checks/check-surface-leaks.mjs': ['npm run check:surface'],
+  'node scripts/checks/check-surface.mjs': ['npm run check:surface'],
+  'node scripts/checks/check-self-use.mjs': ['npm run check:self-use'],
+  'node scripts/checks/check-custom-surface.mjs': ['npm run check:custom-surface'],
+  'node scripts/checks/check-invisible-craft.mjs': ['npm run check:invisible-craft'],
+  'node scripts/checks/check-admin-css-classes.mjs': ['npm run check:admin-css-classes'],
+  'node scripts/checks/check-consumers.mjs': ['npm run check:consumers'],
+  'node scripts/checks/check-public-skill.mjs': ['npm run check:public-skill'],
 };
 
 // A CI step with no local gate command, each with the reason it stays out of the tier.
@@ -920,6 +937,39 @@ describe('the fast lane', () => {
     expect(lines).toHaveLength(2);
     expect(lines[0]).toContain(`npx vitest related --run --passWithNoTests --project unit ${SRC_PATH}`);
     expect(lines[1]).toBe('CAIRN_RELATED_RUN=1 npm run test:component -- --no-file-parallelism src/tests/component/a.test.ts');
+  });
+
+  it('prints no component leg for a scripts-only diff', () => {
+    const { lines, notes } = decideFastGate(['scripts/checks/check-idioms.mjs'], { selected: null });
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).not.toContain('test:component');
+    expect(notes.join('\n')).toMatch(/component tests skipped/);
+  });
+
+  it('adds the unit tests whose text names a changed src path, beyond the import graph', () => {
+    const path = 'src/lib/admin/tidy-controller.svelte.ts';
+    const [line1] = decideFastGate([path], { selected: [] }).lines;
+    expect(line1).toContain('src/tests/unit/edit-page-state-reset-coverage.test.ts');
+    const [other] = decideFastGate(['src/lib/log/index.ts'], { selected: [] }).lines;
+    expect(other).not.toContain('edit-page-state-reset-coverage');
+  });
+
+  it('keeps tool/testdata/flags.json in the npm checks and maps it to check:symbols', () => {
+    const { lines } = decideFastGate(['tool/testdata/flags.json'], { selected: [] });
+    expect(lines[0]).toContain('check:symbols');
+    expect(lines[0]).toContain('make -C tool check');
+    expect(decideGate(['tool/testdata/flags.json'], { selected: [] }).gate).toContain('check:symbols');
+    expect(labelsFor('tool/testdata/flags.json')).toContain('check:symbols');
+    expect(decideFastGate(['tool/internal/spine/chapter.go'], { selected: [] }).lines).toEqual(['make -C tool check']);
+  });
+
+  it('runs unit-dist-spawn after the unit leg when src/lib/internal.ts changes, and not otherwise', () => {
+    const spawn = 'npx vitest run --project unit-dist-spawn';
+    const [line1] = decideFastGate(['src/lib/internal.ts'], { selected: [] }).lines;
+    expect(line1).toContain(spawn);
+    expect(line1.indexOf(spawn)).toBeGreaterThan(line1.indexOf('--project unit '));
+    expect(line1.indexOf(spawn)).toBeGreaterThan(line1.indexOf('npm run check:close -- '));
+    expect(decideFastGate([SRC_PATH], { selected: [] }).lines[0]).not.toContain(spawn);
   });
 
   it('prints no second line when no component test relates to the diff, and the whole project when the selection failed', () => {

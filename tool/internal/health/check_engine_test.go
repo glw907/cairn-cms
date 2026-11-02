@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // engineFile pairs a GitHub Contents API path substring with the raw file body a
@@ -127,6 +127,24 @@ func TestEngineCheckBehindWithNoConsumersMustIsOK(t *testing.T) {
 	}
 	if state := fieldValue[bool](t, got.Fields, "consumersMust"); state {
 		t.Error("consumersMust field is true, want false: no skipped release carries an actionable Consumers must: line")
+	}
+}
+
+func TestEngineCheckResetChangelogShapeIsOK(t *testing.T) {
+	changelog := "## Unreleased\n\nConsumers must: rebuild the site from `create-cairn-site`; this release has no upgrade path from an earlier version.\n\n## 0.98.0\n\nThe changelog from this version back lives in the tag.\n"
+	c := engineClients(
+		engineFile{path: "package.json", body: enginePackageJSON("^0.95.0")},
+		engineFile{path: "CHANGELOG.md", body: changelog},
+	)
+	got := (engineCheck{}).Run(context.Background(), engineRecord(), c, Options{})
+	if got.State != spine.OK {
+		t.Errorf("State = %v, want OK: the skipped releases have no section in the reset changelog", got.State)
+	}
+	if behind := fieldValue[int](t, got.Fields, "releasesBehind"); behind != 2 {
+		t.Errorf("releasesBehind field = %d, want 2", behind)
+	}
+	if state := fieldValue[bool](t, got.Fields, "consumersMust"); state {
+		t.Error("consumersMust field is true, want false")
 	}
 }
 

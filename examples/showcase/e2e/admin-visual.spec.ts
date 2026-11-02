@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { awaitClickHandler, clickWhenHydrated } from './editor-helpers.js';
 
 // The five-viewport responsive bar (320, 390, 768, 1440, 2560), in both color schemes. Signups
 // (the consumer's custom admin screen, the in-repo proof that a developer's route built on
@@ -416,7 +417,7 @@ for (const width of WIDTH_BAR) {
     await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/admin/posts');
-    await page.getByRole('button', { name: /Search or jump to/ }).click();
+    await clickWhenHydrated(page.getByRole('button', { name: /Search or jump to/ }));
     await expect(page.getByRole('dialog', { name: 'Commands' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-command-palette-light-${width}.png`, {
       fullPage: true,
@@ -430,7 +431,7 @@ for (const width of WIDTH_BAR) {
     ]);
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/admin/posts');
-    await page.getByRole('button', { name: /Search or jump to/ }).click();
+    await clickWhenHydrated(page.getByRole('button', { name: /Search or jump to/ }));
     await expect(page.getByRole('dialog', { name: 'Commands' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-command-palette-dark-${width}.png`, {
       fullPage: true,
@@ -448,7 +449,9 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/admin/media');
     await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
-    await page.getByRole('checkbox').first().check();
+    const pick = page.getByRole('option').first().locator('input[type="checkbox"]');
+    await awaitClickHandler(pick);
+    await pick.check();
     await expect(page.getByRole('region', { name: 'Selection actions' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-media-selected-light-${width}.png`, {
       fullPage: true,
@@ -463,7 +466,9 @@ for (const width of WIDTH_BAR) {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/admin/media');
     await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
-    await page.getByRole('checkbox').first().check();
+    const pick = page.getByRole('option').first().locator('input[type="checkbox"]');
+    await awaitClickHandler(pick);
+    await pick.check();
     await expect(page.getByRole('region', { name: 'Selection actions' })).toBeVisible();
     await expect(page).toHaveScreenshot(`admin-media-selected-dark-${width}.png`, {
       fullPage: true,

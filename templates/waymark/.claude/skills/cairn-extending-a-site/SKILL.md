@@ -1,9 +1,9 @@
 ---
 name: cairn-extending-a-site
-description: Build or change a cairn site's own code against the engine's seams. Load before adding cairn to an app, migrating content, adding a concept or field, writing a markdown component or island, building public routes, configuring media, previews, tidy, roles, a second sign-in group, Cloudflare Access, a post-deploy job, a custom admin action, or before debugging a cairn site or fixing a cairn-audit finding. Routes each job to a reference with the exact registration points.
+description: Guides building or changing a cairn site's own code against the engine's seams. Load before adding cairn to an app, migrating content, adding a concept or field, writing a markdown component or island, building public routes, configuring media, previews, tidy, a second sign-in group, Cloudflare Access, a post-deploy job, or before debugging a cairn site or fixing a cairn-audit finding. Routes each job to a reference with the exact registration points.
 ---
 
-# Extending a cairn site
+# cairn-extending-a-site
 
 ## First: whose job is it?
 
@@ -15,12 +15,13 @@ Before writing code, decide where the change belongs:
 - **The engine.** Never patch `node_modules` or copy engine internals. If the documented seams do
   not reach what the site needs, or you have worked around the engine twice, stop and load
   `cairn-consulting-the-engine`, which writes the brief for the maintainers.
-- **Not this skill.** Admin screen markup and register: `cairn-building-admin-screens`. Public theme,
+- **Not this skill.** The `/admin` mount, gating a custom screen or action, the roles and access
+  map, and admin screen markup and register: `cairn-building-admin-screens`. Public theme,
   `prose.css`, directive styles, public components: `cairn-styling-public-pages`.
 
-Before writing admin markup, ask whether DaisyUI already ships the component; a home-grown one needs a
-dated ruling in cairn's rulings ledger. `references/daisyui-first.md` lists where cairn's admin
-diverges from stock and why.
+Before writing admin markup, ask whether daisyUI already ships the component. A home-grown one
+needs a comment or commit message that names the daisyUI defect that forced it.
+`references/daisyui-first.md` lists where cairn's admin diverges from stock and why.
 
 ## Router
 
@@ -36,13 +37,13 @@ Read only the reference for the job at hand.
 | Entry pages, head, feeds, sitemap, robots, archive, tags, menu | `references/public-routes.md` |
 | Share a draft preview link | `references/draft-preview.md` |
 | Media upload limits, image URLs, media route | `references/media.md` |
-| Mount the admin, gate a custom screen or action, roles and access map, refusal shape, audit table | `references/admin-access.md` |
 | A second audience: a role, or a token flow of your own on `/auth-crypto` | `references/second-sign-in-group.md` |
 | Replace magic links with Cloudflare Access | `references/cloudflare-access.md` |
 | Turn on tidy; set the AI training posture | `references/tidy-and-ai-posture.md` |
 | Run `cairn-audit` and fix its findings | `references/audit.md` |
 | Diagnose a failure: logs first | `references/debug.md` |
 | Look up a log event, its level, fields, and reasons | `references/log-events.md` |
+| Replace a scaffolded site's sample content and identity | `references/make-it-yours.md` |
 | Check work before calling it done | `references/preflight.md` |
 
 ## Habits that hold everywhere

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // This file is the messages table tool/docs/design/copy-standard.md section 4.1 requires: every

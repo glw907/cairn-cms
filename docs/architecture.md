@@ -41,11 +41,11 @@ Every export's doc comment carries one of three tags.
 | `@scaffold` | Scaffold | cairn means to hold the wiring a scaffolded site copies frozen |
 | `@beta` | Unstable | Stays importable, with no promise across minor versions |
 
-cairn is pre-1.0, so the freeze is a goal and a break to the Extension tier can still ship in a minor release. Each break is listed in the changelog's `Consumers must:` lines and in the [migration notes](../MIGRATION-NOTES.md), and the `check:surface` snapshot gate fails on any change to an export's declared shape until a maintainer records it. From 1.0, breaking the Extension or Scaffold tier is a major-version event.
+cairn is pre-1.0, so the freeze is a goal and a break to the Extension tier can still ship in a minor release. The changelog names each break, with the action a release asks in its `Consumers must:` line, and the [migration notes](../MIGRATION-NOTES.md) carry the steps. The `check:surface` snapshot gate fails on any change to an export's declared shape until a maintainer records it. From 1.0, breaking the Extension or Scaffold tier is a major-version event.
 
 ## The security model
 
-This section is where the security model is documented. The design assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing under `/admin` except the sign-in form and the confirm page the emailed link opens.
+The design assumes the likeliest attacker holds an editor's account, through a stolen or phished sign-in link. An anonymous visitor reaches nothing under `/admin` except the sign-in form and the confirm page the emailed link opens.
 
 - **Sign-in.** A link carries a 256-bit single-use token. The engine sends it only to an address on the roster, it lives 10 minutes, and the database holds only its SHA-256 hash. The sign-in completes only in the browser that asked for it, so a link opened in another browser, or followed by a mail scanner, does nothing. A session lasts 30 days in a `__Host-` cookie over HTTPS.
 - **Forged requests.** SvelteKit's origin check and the guard's double-submit token both run on every unsafe admin form post. Admin responses carry `Referrer-Policy: strict-origin`, so a sign-in token never leaves in a referrer.

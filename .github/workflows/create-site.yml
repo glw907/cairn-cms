@@ -1,8 +1,7 @@
 name: create-site
 
 # The create-cairn-site rot gate: prove the CLI's OUTPUT builds, from packed artifacts, on a clean
-# checkout. scaffold.yml proves the same for the emitter it wraps; this workflow proves the path a
-# real user takes, which is a different path. It packs the CLI, installs that tarball into a scratch
+# checkout, the path a real user takes. It packs the CLI, installs that tarball into a scratch
 # directory, runs the command, and then installs, typechecks, and builds the site it produced.
 #
 # It also exercises the substitution pass against the REAL template rather than a test fixture. The
@@ -25,7 +24,8 @@ permissions:
 jobs:
   create-site:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Thirty minutes: the job also runs the two dev-fold steps folded in from the retired scaffold workflow.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -79,8 +79,8 @@ jobs:
           npx create-cairn-site --yes --name "CI Site" --description "Built by CI" \
             --brand-color "#2f6fdb" --dir /tmp/ci-site
       - name: Point the scaffolded site at the packed tarballs
-        # The same substitution scaffold.yml performs through the emitter's arguments, applied after
-        # the fact here because the CLI bakes its specs at pack time.
+        # The emitter's arguments substitute these specs in a direct emit; here the CLI bakes its
+        # specs at pack time, so the substitution is applied after the fact.
         env:
           ENGINE: ${{ steps.pack.outputs.engine }}
           DEV: ${{ steps.pack.outputs.dev }}
@@ -114,7 +114,7 @@ jobs:
             const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
             assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
 
-            for (const leftover of ["e2e", "playwright.config.ts", "src/routes/probe-craft"]) {
+            for (const leftover of ["e2e", "playwright.config.ts", "src/routes/probe-craft", "src/routes/(site)/styleguide"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
             }
 
@@ -400,5 +400,39 @@ jobs:
           process.exit(failed ? 1 : 0);
           PROBE_EOF
           node /tmp/builds-console-probe.mjs
+      # The two dev-fold steps run last: the flagged rebuild below leaves /tmp/ci-site flagged, and
+      # the negative assertion needs the default build the origin step above produced.
+      - name: Assert the dev backend is eliminated from the scaffolded Worker's deployable bundle
+        # adapter-cloudflare 7 does not bundle: .svelte-kit/cloudflare/_worker.js is a loader that
+        # imports ../output/server/index.js by relative path, so the server code wrangler actually
+        # bundles and deploys is invisible to a grep over .svelte-kit/cloudflare. `wrangler deploy
+        # --dry-run` produces the artifact Cloudflare receives without needing credentials; grep that.
+        # The grep covers the executable bundle only (--exclude='*.map'): SvelteKit 3 emits server
+        # sourcemaps by default, and a map's sourcesContent holds authored source, including the
+        # import lines the fold removes from the code. A Worker bundle is never served publicly, and
+        # wrangler uploads a map only with upload_source_maps, so a map is not a deployed artifact.
+        working-directory: /tmp/ci-site
+        run: |
+          rm -rf /tmp/dev-fold-default
+          npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-default
+          if grep -rlF --exclude='*.map' -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
+            echo "FAIL: dev-backend artifact in the scaffolded Worker"; exit 1
+          fi
+          echo "OK: no dev-backend artifact in the scaffolded Worker"
+      - name: "Gate self-test: the markers ARE present in a flagged scaffolded build's deployable bundle"
+        # A grep that can never match again is how this gate rotted before: adapter-cloudflare 7
+        # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so
+        # the negative check above passed vacuously on every build, flagged or not. This positive
+        # control proves the grep still finds real matches when the dev backend is actually present.
+        # It keeps the same --exclude='*.map', so the match has to come from the executable bundle.
+        working-directory: /tmp/ci-site
+        run: |
+          rm -rf /tmp/dev-fold-flagged
+          VITE_CAIRN_E2E=1 npm run build
+          npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-flagged
+          if ! grep -rlF --exclude='*.map' -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
+            echo "FAIL: gate self-test: no dev-fold marker matched a flagged scaffolded build's deployable bundle"; exit 1
+          fi
+          echo "OK: gate self-test: markers present in the flagged scaffolded build's deployable bundle"
       - if: failure() || cancelled()
         uses: ./.github/actions/install-diagnostics

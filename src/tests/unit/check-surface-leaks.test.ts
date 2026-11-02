@@ -92,6 +92,27 @@ describe('collectReachableNames (the type-checker model)', () => {
     const names = collectReachableNames(checker, [wideType, shallowType], dir);
     expect(names.has('DeepPayload')).toBe(true);
   });
+
+  it('walks both arms of a deferred conditional type, including a name behind an infer', () => {
+    // A generic alias stays a deferred conditional until a site instantiates it, so neither arm is
+    // a union member nor a property; only the conditional's own type nodes name `TrueArmLeak`
+    // and `FalseArmLeak`.
+    const { dir, dtsPath } = compileFixture(
+      [
+        'export type Deferred<S> = S extends Box<infer A> ? { [K in keyof A & string]: TrueArmLeak<A, K> }[keyof A & string] : FalseArmLeak;',
+        'interface Box<A> { value: A }',
+        'type TrueArmLeak<A, K extends keyof A> = { key: K; inner: A[K] };',
+        'interface FalseArmLeak { note: string }',
+      ].join('\n'),
+    );
+    const { checker, symbols } = moduleExports(dtsPath);
+    const deferred = symbols.find((s) => s.name === 'Deferred');
+    expect(deferred).toBeDefined();
+    const rootType = checker.getDeclaredTypeOfSymbol(deferred!);
+    const names = collectReachableNames(checker, [rootType], dir);
+    expect(names.has('FalseArmLeak')).toBe(true);
+    expect(names.has('TrueArmLeak')).toBe(true);
+  });
 });
 
 // F-1's `/admin` clause (Task 9, internals-C): whether a barrel export is a plain type

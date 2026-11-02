@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
 )
 
 // ErrUnsafePerms reports that a directory or file the store touched is a

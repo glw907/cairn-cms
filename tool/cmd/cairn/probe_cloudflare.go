@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // cloudflareProbe returns the call cairn auth check runs to confirm one Cloudflare permission

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/doctor"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/doctor"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // namedVerdicts returns every verdict spine names, walking codes upward from zero until one

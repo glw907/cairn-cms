@@ -55,6 +55,8 @@ export function cairnHighlightStyle(): HighlightStyle {
 // The machinery lines explain themselves on hover, so an editor who has never seen ::: syntax
 // learns what the line is without leaving the page.
 const MACHINERY_HINT = 'Block marker. Edit the text between these lines and leave this line as it is.';
+// A leaf directive has no body between lines, so the fence hint would point at text that is not there.
+const LEAF_HINT = 'Block marker. This line places the block; leave it as it is.';
 
 // Nesting deeper than three steps shares the third visual step; the depth model itself is unbounded.
 const DEPTH_STEPS = [1, 2, 3];
@@ -63,7 +65,7 @@ const fenceLines = DEPTH_STEPS.map((d) =>
   Decoration.line({ class: `cm-cairn-directive-fence cm-cairn-depth-${d}`, attributes: { title: MACHINERY_HINT } }),
 );
 const contentLines = DEPTH_STEPS.map((d) => Decoration.line({ class: `cm-cairn-directive-content cm-cairn-depth-${d}` }));
-const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: MACHINERY_HINT } });
+const leafLine = Decoration.line({ class: 'cm-cairn-directive-leaf', attributes: { title: LEAF_HINT } });
 const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 // Within a fence line, machinery (colons, brackets, braces) dims to the marker tone while the
 // directive name and label keep a depth-stepped ink: meaning over machinery.

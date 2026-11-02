@@ -66,12 +66,15 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
   (no `VITE_CAIRN_E2E`), apply the migration, and seed two editors: an `owner` for the minted
   session and an `editor` for the magic-link request. A link request for an address with no
   `editor` row sends nothing, so the round trip needs the second row. The session id for the
-  sole-owner mint is `smoke-owner`. `INSERT OR REPLACE` lets the seed run twice on one local D1.
+  sole-owner mint is `smoke-owner`. The `session` table stores the id's SHA-256 digest in lowercase
+  hex, never the id, so the row carries `printf %s smoke-owner | sha256sum`, which prints
+  `2f835475beb44a1ef7d2dd3493edfe329861904f6b53987c26220fd6404db2bf`. `INSERT OR REPLACE` lets the
+  seed run twice on one local D1.
   ```bash
   npm run build
   npx wrangler d1 migrations apply AUTH_DB --local
   npx wrangler d1 execute cairn-showcase-auth --local --command "INSERT OR REPLACE INTO editor (email, display_name, role, created_at) VALUES ('smoke-owner@example.com', 'Smoke Owner', 'owner', 0), ('smoke4@example.com', 'Smoke Editor', 'editor', 0);"
-  npx wrangler d1 execute cairn-showcase-auth --local --command "INSERT OR REPLACE INTO session (id, email, expires_at, created_at) VALUES ('smoke-owner', 'smoke-owner@example.com', 4070908800000, 0);"
+  npx wrangler d1 execute cairn-showcase-auth --local --command "INSERT OR REPLACE INTO session (id, email, expires_at, created_at) VALUES ('2f835475beb44a1ef7d2dd3493edfe329861904f6b53987c26220fd6404db2bf', 'smoke-owner@example.com', 4070908800000, 0);"
   npx wrangler dev --port 8787
   ```
 - After changing the adapter's `roles`, rerun the content manifest with `npx cairn-manifest`.
@@ -87,19 +90,22 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    ```
    Wait until the new server's log says `Ready on http://localhost:8787`.
 
-2. **Mint a session row** for the seeded editor. Pick any `id` you can recognize later, and set
-   `expires_at` well into the future. This example uses the year 2099 in epoch milliseconds:
+2. **Mint a session row** for the seeded editor. Pick any id you can recognize later, and set
+   `expires_at` well into the future. The row stores the id's lowercase-hex SHA-256 digest, never
+   the id, and the cookie carries the id itself. This example uses the id `smoke-owner` and the
+   year 2099 in epoch milliseconds:
    ```bash
+   printf %s smoke-owner | sha256sum   # 2f835475beb44a1ef7d2dd3493edfe329861904f6b53987c26220fd6404db2bf
    npx wrangler d1 execute <db> --local --command \
      "INSERT INTO session (id, email, expires_at, created_at) \
-      VALUES ('smoke-owner', 'you@example.com', 4070908800000, 0);"
+      VALUES ('2f835475beb44a1ef7d2dd3493edfe329861904f6b53987c26220fd6404db2bf', 'you@example.com', 4070908800000, 0);"
    ```
    Because the local Worker speaks http, the cookie header drops the `__Host-` prefix:
    ```bash
    CK="Cookie: cairn_session=smoke-owner"
    ```
    To smoke an editor-role session, seed an editor-role row in `editor` and mint a second
-   `session` row pointing at that email.
+   `session` row pointing at that email, under the digest of a second id.
 
 3. **Run the checklist.** Anon checks need no cookie; authed checks pass `-H "$CK"`. Expected
    results in parentheses.
@@ -129,9 +135,10 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
    form always posts over a stable https `Origin`. The admin track's
    [Force HTTPS at the edge](../../../../docs/admin/is-it-working.md#force-https-at-the-edge) section covers the fix.
 
-4. **Clean up.**
+4. **Clean up.** The `session` row holds only a digest, so clean up by the seeded email
+   (`smoke-owner@example.com` on the showcase path):
    ```bash
-   npx wrangler d1 execute <db> --local --command "DELETE FROM session WHERE id LIKE 'smoke%';"
+   npx wrangler d1 execute <db> --local --command "DELETE FROM session WHERE email = 'you@example.com';"
    ```
    Stop the Worker. Every `wrangler d1 execute --local` spawns its own `workerd`, so after a
    smoke run there can be stray `workerd` processes. Stop only the PIDs this session started

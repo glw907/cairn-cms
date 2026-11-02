@@ -3,7 +3,6 @@
 // this pass judged the tradeoff not worth it.
 // A named-sweep parenthetical (env-genericity sweep) cites its work session.
 // A bare round marker C2 names an unexempted pass round.
-// A recorded R4 re-export names durable rulings vocabulary, not a pass.
 // Cloudflare's R2 binding and the C0 control character are not markers at all.
 // Wired here but proven live at Phase 2b and on a site.
 // The chosen path (Pass B is upload-new-only) never falls back to a URL.

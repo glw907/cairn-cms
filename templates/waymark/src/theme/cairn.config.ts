@@ -65,9 +65,8 @@ export const cairn = defineAdapter({
     posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
-      // The create affordances read in the singular ("New post"); an omitted `singular` would
-      // fall back to `label` and read "New Posts" instead (ConceptList.svelte's documented
-      // fallback, exercised deliberately without one in the engine's component tests).
+      // The create buttons read in the singular ("New post"); without `singular` they would fall
+      // back to `label` and read "New Posts".
       singular: 'post',
       summaryFields: ['description'],
       routing: 'dated',
@@ -80,11 +79,10 @@ export const cairn = defineAdapter({
         image: fields.image({ label: 'Hero image', seo: true }),
         // A single reference to a pages entry: the typed frontmatter author edge. The editor picks
         // it from the pages concept, the build verifies it resolves, and the public route renders the
-        // resolved page title linked to its permalink (the reference e2e pins the round-trip and the
-        // resolved render end to end).
+        // resolved page title linked to its permalink.
         author: fields.reference({ concept: 'pages', label: 'Author' }),
-        // A many reference to other posts: array(reference) exercising the chip-list editor arm and
-        // the multi-edge extractor, delivered as a list of resolved targets.
+        // A many reference to other posts: an array of references, edited as a chip list and
+        // delivered as a list of resolved targets.
         related: fields.array({
           item: fields.reference({ concept: 'posts', label: 'Related post' }),
           label: 'Related posts',
@@ -93,16 +91,14 @@ export const cairn = defineAdapter({
         // ContentSummary.tags and feed categories. cairn ships no public tag pages; a site filters its
         // archive over this data (the size-gated template filter), so the marker carries no routing.
         topics: fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }),
-        // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
-        // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
+        // A closed select: the editor renders a <select> over a fixed set of options.
         status: fields.select({
           label: 'Status',
           options: ['draft', 'published'],
           default: 'draft',
         }),
-        // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
-        // object carries no label (the array labels the group, itemLabel summarizes a row),
-        // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
+        // A repeatable flat object: the editor adds, reorders, and removes rows. The object carries
+        // no label (the array labels the group, and itemLabel summarizes a row).
         faq: fields.array({
           item: fields.object({
             fields: {
@@ -113,8 +109,7 @@ export const cairn = defineAdapter({
           label: 'FAQ',
           itemLabel: 'question',
         }),
-        // A repeatable image: array(image) exercising the leaf-array editor arm, each row a hero-style
-        // image field whose structured value round-trips through save and reload.
+        // A repeatable image: each row is a hero-style image field.
         gallery: fields.array({ item: fields.image({ label: 'Image' }), label: 'Gallery' }),
       },
     }),
@@ -146,7 +141,6 @@ export const cairn = defineAdapter({
       },
     }),
   },
-  // finalize.mjs matches this line character for character (TEMPLATE_GITHUB_APP_LITERAL)
   // prettier-ignore
   backend: createGithubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   // A verified sender literal, not derived from publicOrigin or any other URL host: Cloudflare Email

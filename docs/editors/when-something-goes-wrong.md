@@ -22,7 +22,7 @@ Two other messages can appear on the sign-in page when you ask for a link:
 
 <!-- vale Microsoft.We = NO -->
 <!-- The bolded messages are quoted exactly as the product shows them, including its first-person plural. -->
-- **"You requested a link recently. Check your inbox, or wait a minute and try again."** A link is already on its way. Look for it before you ask again.
+- **"You requested a link recently. Check your inbox, or wait a minute and try again."** A link is already on its way, or too many people have asked from your network in a short time. Look for the link first. If none arrives after a few minutes, ask again.
 - **"We're having trouble sending sign-in links right now. Please contact the site owner."** The site couldn't send the email. Waiting doesn't fix this. Tell your site owner.
 <!-- vale Microsoft.We = YES -->
 

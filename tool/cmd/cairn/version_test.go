@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/version"
+	"github.com/glw907/cairn-cms/tool/v2/internal/version"
 )
 
 // TestVersionReportsFourParts asserts --version and -V both print the tool version, the commit,

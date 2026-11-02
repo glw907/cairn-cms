@@ -20,6 +20,7 @@
       "wrangler.test.jsonc"
     ],
     "harness": [".claude/"],
+    "toolTestdata": ["tool/testdata/flags.json"],
     "showcase": ["examples/showcase/", "templates/", "packages/create-cairn-site/"],
     "engine": [
       "src/lib/",
@@ -96,7 +97,7 @@
     "check:leaks": ["docs", "engine", "showcase"],
     "check:visuals": ["docs", "engine"],
     "check:transcripts": ["docs", "showcase"],
-    "check:symbols": ["docs", "engine", "showcase"],
+    "check:symbols": ["docs", "engine", "showcase", "toolTestdata"],
     "check:snippets": ["docs", "engine"],
     "check:prose": ["engine"],
     "check:version": ["docs", "engine"],

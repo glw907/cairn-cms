@@ -100,7 +100,8 @@ describe('saveAction', () => {
   });
 
   it('bounces invalid frontmatter back to the form and never commits', async () => {
-    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    // The entry does not exist yet, so the prior-file read finds nothing.
+    const fetchMock = vi.fn(async () => new Response('Not Found', { status: 404 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes({ runtime: runtime(() => ({ ok: false, errors: { title: 'Title is required' } })) });
     const result = (await routes.saveAction(
@@ -111,7 +112,9 @@ describe('saveAction', () => {
     // The submitted body rides the failure, so the page reseeds the editor.
     expect(result.data.body).toBe('b');
     expect(result.data.brokenLinks).toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
+    // The prior-file read is a GET; nothing writes.
+    const writes = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).filter(([, init]) => (init?.method ?? 'GET') !== 'GET');
+    expect(writes).toEqual([]);
     // conventions pass, Task 5: saveAction now declares ActionFailure<ContentFormFailure> (the
     // flattened type); this holds the key set a SaveFailure carried.
     expect(Object.keys(result.data).sort()).toEqual(['body', 'brokenLinks', 'error', 'field']);

@@ -81,6 +81,9 @@ function dropOverlappingEdits<T extends { start: number; end: number }>(edits: T
  */
 const MEDIA_TOKEN_SCAN = /media:[A-Za-z0-9._-]+/g;
 
+/** A leading byte order mark, held aside so every offset indexes the text after it. */
+const BOM = '﻿';
+
 /**
  * Parse a doc with the figure-aware pipeline, so the body arm agrees with what remarkFigure renders
  *  and can see the enclosing `:::figure` container. Mirrors parseFigureDoc in markdown-format.ts.
@@ -317,13 +320,16 @@ function bodyEdits(body: string, blockLength: number, oldHash: string): Edit[] {
  * the markdown unchanged with an empty placement list; a malformed `media:` reference is left
  * untouched. Pure and node-safe.
  */
-export function repointMediaRef(markdown: string, oldHash: string, newToken: string): RepointResult {
+export function repointMediaRef(source: string, oldHash: string, newToken: string): RepointResult {
+  // Every offset below indexes the text without its BOM, so the BOM is held aside and restored.
+  const hasBom = source.startsWith(BOM);
+  const markdown = hasBom ? source.slice(BOM.length) : source;
   const { fmBlock, body } = splitFrontmatter(markdown);
 
   const heroEdits = frontmatterEdits(markdown, fmBlock, oldHash);
   const bodyEditList = bodyEdits(body, fmBlock.length, oldHash);
   const edits = dropOverlappingEdits([...heroEdits, ...bodyEditList]);
-  if (edits.length === 0) return { markdown, placements: [] };
+  if (edits.length === 0) return { markdown: source, placements: [] };
 
   // placements read in document order (frontmatter first, then body in source order, which is the
   // order each arm already emits). The diff lists each changed reference once.
@@ -340,7 +346,7 @@ export function repointMediaRef(markdown: string, oldHash: string, newToken: str
     out = out.slice(0, e.start) + newToken + out.slice(e.end);
   }
 
-  return { markdown: out, placements };
+  return { markdown: hasBom ? BOM + out : out, placements };
 }
 
 /**
@@ -564,16 +570,18 @@ function heroAltEdits(
  * placement list. Pure and node-safe.
  */
 export function fillAltForHash(
-  markdown: string,
+  source: string,
   hash: string,
   defaultAlt: string,
   opts: { overwrite: boolean },
 ): AltFillResult {
+  const hasBom = source.startsWith(BOM);
+  const markdown = hasBom ? source.slice(BOM.length) : source;
   const { fmBlock, body } = splitFrontmatter(markdown);
   const heroEditList = heroAltEdits(markdown, fmBlock, hash, defaultAlt, opts.overwrite);
   const bodyEditList = bodyAltEdits(body, fmBlock.length, hash, defaultAlt, opts.overwrite);
   const edits = [...heroEditList, ...bodyEditList];
-  if (edits.length === 0) return { markdown, placements: [] };
+  if (edits.length === 0) return { markdown: source, placements: [] };
 
   const placements = edits.map((e) => e.placement);
 
@@ -588,5 +596,5 @@ export function fillAltForHash(
     out = out.slice(0, e.start) + e.text + out.slice(e.end);
   }
 
-  return { markdown: out, placements };
+  return { markdown: hasBom ? BOM + out : out, placements };
 }

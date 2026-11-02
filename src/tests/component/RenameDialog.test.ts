@@ -61,4 +61,25 @@ describe('RenameDialog', () => {
     const heading = dialog.querySelector('#cairn-rename-dialog-title')!;
     expect(heading.textContent).toBe("Change this post's address");
   });
+
+  it('disables the submit button after a submit and re-enables it only on a persisted pageshow', async () => {
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
+    await screen.getByRole('button', { name: /change address/i }).click();
+    const submit = screen.container.querySelector<HTMLButtonElement>('form[action="?/rename"] button[type="submit"]')!;
+    expect(submit.disabled).toBe(false);
+    const stop = (e: Event) => e.preventDefault();
+    document.addEventListener('submit', stop, true);
+    try {
+      submit.click();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+    await expect.poll(() => submit.disabled).toBe(true);
+    // A first-load pageshow (not from the back-forward cache) leaves the in-flight guard alone.
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(submit.disabled).toBe(true);
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    await expect.poll(() => submit.disabled).toBe(false);
+  });
 });

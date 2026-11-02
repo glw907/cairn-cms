@@ -89,7 +89,7 @@ export const alert = defineBlock({
   icon: 'alert',
   defaultIconByRole: { caution: 'leaf' },
   // A caution sample: it exercises the role-defaulted icon and the warning tone, the alert's
-  // distinctive state. The editor palette and the styleguide both render it.
+  // distinctive state. The editor palette and the showcase styleguide both render it.
   preview: {
     attributes: { role: 'caution' },
     slots: {
@@ -231,7 +231,7 @@ export const pullQuote = defineBlock({
 });
 
 // A single restrained link-button. The fuller marketing-panel CTA (title, sub-copy, a card ground)
-// the styleguide already demonstrates (`.sg-cta`) is a bigger design call, left to a site owner; this
+// the showcase styleguide already demonstrates (`.sg-cta`) is a bigger design call, left to a site owner; this
 // component stays a label-plus-link so a post can point at one next step without pre-empting that
 // question. `variant` is a closed two-value choice for the same reason.
 export const cta = defineBlock({

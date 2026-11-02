@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 )
 
 // registryDirAndSource is the one place store.Dir's three arguments are assembled, so

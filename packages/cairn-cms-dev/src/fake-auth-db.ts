@@ -95,6 +95,9 @@ export function createFakeAuthDb(): FakeAuthDb {
     // The fake db grants nothing on its own; the owner identity is minted by devBackendHandle's
     // locals.cairnEditor write, not by this null session lookup.
     if (sql.includes('FROM session s JOIN editor e')) return none;
+    // WATCH: createSession (the expired-session sweep, the prior-row delete, the insert) is not
+    // modeled here. Dev never reaches confirm, so no caller needs it; a future dev-confirm path
+    // will fail with "unhandled SQL" until these statements are added.
 
     // findEditor
     if (sql.includes('SELECT email, display_name, role FROM editor WHERE email = ?')) {
@@ -114,21 +117,8 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: 1 };
     }
 
-    // deleteEditor / setEditorRole's changes===0 classification read, the owner-only-guard
-    // variant removeOwnerIfNotLast/demoteOwnerIfNotLast use ("is this row still eligible for the
-    // guard at all"): `SELECT 1 FROM editor WHERE email = ? AND role IN (...)`, bound
-    // (email, ...ownerRoles). Checked before the plain classification read below, since this
-    // statement's SQL is a superset of that one's (same ordering concern as the guarded
-    // delete/update pair).
-    if (sql.includes('SELECT 1 FROM editor WHERE email = ?') && sql.includes('role IN (')) {
-      const email = String(args[0]);
-      const ownerRoles = args.slice(1).map(String);
-      const target = editors.get(email);
-      return { ...none, row: target && ownerRoles.includes(target.role) ? { one: 1 } : null };
-    }
-
-    // deleteEditor / setEditorRole's changes===0 classification read, the generalized-dispatch
-    // variant ("is this row still there at all"): `SELECT 1 FROM editor WHERE email = ?`.
+    // deleteEditor / setEditorRole's changes===0 classification read ("is this row still there at
+    // all"): `SELECT 1 FROM editor WHERE email = ?`.
     if (sql.includes('SELECT 1 FROM editor WHERE email = ?')) {
       return { ...none, row: editors.has(String(args[0])) ? { one: 1 } : null };
     }
@@ -136,11 +126,9 @@ export function createFakeAuthDb(): FakeAuthDb {
     // deleteEditor's generalized guarded delete (ownerRoles.length > 0): a non-owner row is
     // removed unconditionally (`role NOT IN (...)`), an owner-capability row only when another
     // owner-capability row remains (the COUNT(*) subquery), bound
-    // (email, ...ownerRoles, ...ownerRoles). The `role NOT IN (` marker is unique to this shape
-    // and to setEditorRole's UPDATE twin below; it distinguishes both from the narrower
-    // owner-only guards (removeOwnerIfNotLast/demoteOwnerIfNotLast), which have no NOT-IN branch
-    // and refuse a non-owner row outright. Checked before the owner-only guard below because that
-    // check's `role IN (` / `COUNT(*)` markers both also appear here (the subquery text).
+    // (email, ...ownerRoles, ...ownerRoles). Checked before the plain editor delete below because
+    // its SQL contains that statement's substring too; the `role NOT IN (` marker distinguishes
+    // the guarded shape.
     if (sql.startsWith('DELETE FROM editor') && sql.includes('role NOT IN (')) {
       const email = String(args[0]);
       const rest = args.slice(1).map(String);
@@ -153,19 +141,6 @@ export function createFakeAuthDb(): FakeAuthDb {
         return { ...none, changes: 1 };
       }
       return none;
-    }
-
-    // removeOwnerIfNotLast's guarded delete: a set-based `role IN (...)` membership test plus a
-    // COUNT(*) subquery over that same set, bound (email, ...ownerRoles, ...ownerRoles). Checked
-    // before the plain editor delete below because its SQL contains that statement's substring
-    // too; the `role IN (` marker distinguishes the guarded shape.
-    if (sql.startsWith('DELETE FROM editor') && sql.includes('role IN (') && sql.includes('COUNT(*)')) {
-      const email = String(args[0]);
-      const ownerRoles = args.slice(1, 1 + (args.length - 1) / 2).map(String);
-      const target = editors.get(email);
-      if (!target || !ownerRoles.includes(target.role) || ownerCount(ownerRoles) <= 1) return none;
-      editors.delete(target.email);
-      return { ...none, changes: 1 };
     }
 
     // deleteEditor's ownerRoles-empty path: the unguarded editor row delete.
@@ -193,19 +168,6 @@ export function createFakeAuthDb(): FakeAuthDb {
       return none;
     }
 
-    // demoteOwnerIfNotLast's guarded update: the same set-based membership plus COUNT(*) shape,
-    // bound (newRole, email, ...ownerRoles, ...ownerRoles). Checked before the plain role update
-    // below for the same reason as the guarded delete above.
-    if (sql.startsWith('UPDATE editor SET role = ?') && sql.includes('role IN (') && sql.includes('COUNT(*)')) {
-      const newRole = String(args[0]);
-      const email = String(args[1]);
-      const ownerRoles = args.slice(2, 2 + (args.length - 2) / 2).map(String);
-      const target = editors.get(email);
-      if (!target || !ownerRoles.includes(target.role) || ownerCount(ownerRoles) <= 1) return none;
-      target.role = newRole;
-      return { ...none, changes: 1 };
-    }
-
     // setEditorRole's ownerRoles-empty path: the unguarded role update (args: role, email).
     if (sql.includes('UPDATE editor SET role = ? WHERE email = ?')) {
       const target = editors.get(String(args[1]));
@@ -219,7 +181,7 @@ export function createFakeAuthDb(): FakeAuthDb {
     // exactly the signal logout reads to skip its auth.session.destroyed record.
     if (sql.includes('DELETE FROM session WHERE id = ? RETURNING email, expires_at')) return none;
 
-    // deleteEditor / removeOwnerIfNotLast batch cleanup: no sessions or tokens exist in dev.
+    // deleteEditor's batch cleanup: no sessions or tokens exist in dev.
     if (sql.includes('DELETE FROM session WHERE email = ?')) return none;
     if (sql.includes('DELETE FROM magic_token WHERE email = ?')) return none;
 
@@ -265,7 +227,7 @@ export function createFakeAuthDb(): FakeAuthDb {
       };
     }
 
-    // The editor-removal cascade's third statement (deleteEditor/removeOwnerIfNotLast, store.ts):
+    // The editor-removal cascade's third statement (deleteEditor, store.ts):
     // every preview link the removed editor minted.
     if (sql.includes('DELETE FROM preview_tokens WHERE editor = ?')) {
       const editor = String(args[0]);

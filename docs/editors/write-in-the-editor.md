@@ -247,7 +247,7 @@ The following table describes the panel's groups, from the settings you change m
 | The boxes at the top | Settings your site defines, such as a date, tags, or the lead image. Your site decides which boxes appear. |
 | **Visibility** | The **Hidden** checkbox. A hidden entry stays off the site's lists and feeds, even after you publish it. |
 | **Address** | The entry's address and a **Change address** button. Links from other entries update automatically. The button reads **Rename** for a type that has no public address. |
-| **Share preview** | **Share preview link** creates a private link that lets someone who isn't an editor read your saved draft before it's published. **Revoke all links** turns off every link for the entry. |
+| **Share preview** | **Share preview link** creates a private link that lets someone who isn't an editor read your saved draft before it's published. The link shows the entry's latest saved draft, later drafts included, until it expires, you revoke it, or the draft is published or discarded. **Revoke all links** turns off every link for the entry. |
 
 **Change address** needs an entry with no unpublished edits. If the entry has some, the editor tells you to publish or discard them, and then rename. **Share preview link** needs a saved draft.
 

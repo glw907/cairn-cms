@@ -2,6 +2,7 @@
   "exclude": [
     "src/routes/test",
     "src/routes/probe-craft",
+    "src/routes/(site)/styleguide",
     "src/routes/admin/theme-kit",
     "src/routes/admin/signups",
     "src/routes/admin/error-fixture",

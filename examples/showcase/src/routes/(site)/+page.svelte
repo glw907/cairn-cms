@@ -50,9 +50,7 @@
     Notes, stacked one stone at a time.
   </h1>
   <p class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted">
-    The cairn showcase. You write in markdown and publish a static page that reads the way a
-    publication should. Every entry below is the markdown you type, rendered by the surface your
-    readers see.
+    {data.description}
   </p>
 </section>
 

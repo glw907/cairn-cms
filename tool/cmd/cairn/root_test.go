@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/health"
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/render"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
-	"github.com/glw907/cairn-cms/tool/internal/store"
+	"github.com/glw907/cairn-cms/tool/v2/internal/health"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/render"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/store"
 	"github.com/spf13/cobra"
 )
 
@@ -341,7 +341,7 @@ func TestOnlyMainNamesTheProcessStreams(t *testing.T) {
 // streams. A package under internal that wrapped its output in it would scrub twice and buffer
 // a second time, and the architecture's downward order puts logx at the top.
 func TestOnlyCmdCairnImportsLogx(t *testing.T) {
-	const path = "github.com/glw907/cairn-cms/tool/internal/logx"
+	const path = "github.com/glw907/cairn-cms/tool/v2/internal/logx"
 
 	for _, rel := range toolGoFiles(t) {
 		if strings.HasPrefix(rel, "cmd/cairn/") || strings.HasPrefix(rel, "internal/logx/") {

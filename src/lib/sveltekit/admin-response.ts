@@ -25,7 +25,9 @@ export interface SecurityHeaderOptions {
  * otherwise lock every editor out, and the browser takes the last-processed meta. Only an
  * `app.html` meta placed after `%sveltekit.head%` overrides cairn's.
  * Strict-Transport-Security carries `max-age` alone, so the engine pins no subdomains;
- * `opts.omitHsts` drops the header entirely. The `Cache-Control` header
+ * `opts.omitHsts` drops the header entirely. A Cloudflare zone's own HSTS setting overrides
+ * this header: three sites on older engines were seen returning their zone's value in place of
+ * `max-age=63072000`. The repository cannot show that a current engine behaves the same. The `Cache-Control` header
  * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every
  * admin response this runs against embeds the CSRF token and the signed-in editor's identity,
  * and a shared cache must never hold either. `X-Robots-Tag: noindex, nofollow` is likewise

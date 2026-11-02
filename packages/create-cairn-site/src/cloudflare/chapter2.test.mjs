@@ -1975,7 +1975,10 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /reject/i, 'must name the record\'s policy');
   assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
   assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
-  assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');
+  assert.match(closing, /cairn adopt.*cairn health/, 'must name adopt then health as the live https/email re-proof step');  assert.ok(
+    closing.includes('go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest'),
+    'must print the go install path of the tool/v2 module',
+  );
 });
 
 test('email admission and closing copy: the prompt warns of the domain-wide p=reject policy, and the close names no sender list', async (t) => {

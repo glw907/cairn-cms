@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
-	"github.com/glw907/cairn-cms/tool/internal/secrets"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/secrets"
 )
 
 // osEnviron reads the process environment. Every command that needs a

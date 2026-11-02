@@ -51,8 +51,9 @@ test('bulk-delete round-trip: the unreferenced asset is deleted, the in-use one 
   await expect(grid).toBeVisible();
 
   // Select the unreferenced tile and the in-use tile by their per-tile select checkbox.
-  await grid.getByRole('checkbox', { name: `Select ${UNREF.name}` }).check();
-  await grid.getByRole('checkbox', { name: `Select ${USED.name}` }).check();
+  // The tile's checkbox is aria-hidden (the option carries the state), so reach it through its option.
+  await grid.getByRole('option', { name: UNREF.name }).locator('input[type="checkbox"]').check();
+  await grid.getByRole('option', { name: USED.name }).locator('input[type="checkbox"]').check();
 
   // The sticky selection bar appears; its Delete button opens the skip-and-report alertdialog.
   const bar = page.getByRole('region', { name: 'Selection actions' });

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/exe"
+	"github.com/glw907/cairn-cms/tool/v2/internal/exe"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )

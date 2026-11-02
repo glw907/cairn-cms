@@ -195,7 +195,7 @@ export function canReach(access: AccessMap | undefined, editor: Editor, target: 
     const key = matchHrefKey(access, target);
     return key === undefined ? true : access[key].includes(editor.role);
   }
-  const admitted = access[target];
+  const admitted = Object.hasOwn(access, target) ? access[target] : undefined;
   return admitted === undefined ? true : admitted.includes(editor.role);
 }
 

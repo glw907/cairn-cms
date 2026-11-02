@@ -217,12 +217,12 @@ export function defineRegistry({ blocks }: {
   for (const c of blocks) {
     if (RESERVED_DIRECTIVE_NAMES.has(c.name)) {
       throw new Error(
-        `cairn: component "${c.name}" uses "${c.name}", a reserved directive name handled by the engine render step: remove it if the engine's built-in ${c.name} now covers your use, or rename it otherwise`,
+        `cairn: block "${c.name}" uses "${c.name}", a reserved directive name handled by the engine render step: remove it if the engine's built-in ${c.name} now covers your use, or rename it otherwise`,
       );
     }
     if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0 && !findIconField(c)) {
       throw new Error(
-        `cairn: component "${c.name}" sets defaultIconByRole but declares no type:'icon' attribute, so the default icon can never render`,
+        `cairn: block "${c.name}" sets defaultIconByRole but declares no type:'icon' attribute, so the default icon can never render`,
       );
     }
   }
@@ -295,7 +295,7 @@ function checkComponentAttributes(name: string, attributes: Record<string, Field
   for (const [key, field] of Object.entries(attributes)) {
     if (!ATTRIBUTE_TYPES.has(field.type)) {
       throw new Error(
-        `cairn: component "${name}" attribute "${key}" is type "${field.type}"; a directive attribute must be a single-value scalar (text, textarea, number, select, url, date, boolean, or icon).`,
+        `cairn: block "${name}" attribute "${key}" is type "${field.type}"; a directive attribute must be a single-value scalar (text, textarea, number, select, url, date, boolean, or icon).`,
       );
     }
   }

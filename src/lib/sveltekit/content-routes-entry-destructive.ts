@@ -360,7 +360,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
       refIndex = await buildReferenceIndex(backend, runtime.concepts, manifest, { strict: true });
     } catch (err) {
       logCheckFailed(editor, concept, id, 'rename', err);
-      return fail(409, { error: 'Could not verify references. Try again.' } satisfies RenameFailure);
+      return fail(503, { error: 'Could not verify references. Try again.' } satisfies RenameFailure);
     }
 
     // Refuse when a THIRD-PARTY open branch holds an inbound reference (symmetric with the pending-edits
@@ -388,7 +388,7 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
         pending = await pendingIncluders(backend, runtime.concepts, id);
       } catch (err) {
         logCheckFailed(editor, concept, id, 'rename', err);
-        return fail(409, { error: 'Could not verify includes. Try again.' } satisfies RenameFailure);
+        return fail(503, { error: 'Could not verify includes. Try again.' } satisfies RenameFailure);
       }
       if (pending.length) {
         const names = [...new Set(pending.map((r) => `${r.concept}/${r.id}`))].join(', ');

@@ -233,6 +233,62 @@ describe('ComponentForm submit label', () => {
 // never reach a real component attribute (checkComponentAttributes rejects them at defineBlock),
 // so those five bypass defineBlock to exercise the same generic fallback the type checker still
 // has to cover.
+describe('ComponentForm attribute help', () => {
+  const helped = defineBlock({
+    ...base, name: 'attrhelp', label: 'Attr help',
+    attributes: {
+      tone: fields.select({ label: 'Tone', required: true, options: ['note', 'warning'], help: 'Sets the colour.' }),
+      pinned: fields.boolean({ label: 'Pinned', help: 'Keeps it at the top.' }),
+      site: fields.url({ label: 'Site', help: 'Full address.' }),
+      plain: fields.text({ label: 'Plain' }),
+    },
+  });
+
+  it('renders each attribute help after its control and describes the control by it', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const describedBy = (el: HTMLElement) => document.getElementById(el.getAttribute('aria-describedby')!)?.textContent?.trim();
+    expect(describedBy(screen.getByRole('combobox', { name: /tone/i }).element() as HTMLElement)).toBe('Sets the colour.');
+    expect(describedBy(screen.getByRole('checkbox', { name: /pinned/i }).element() as HTMLElement)).toBe('Keeps it at the top.');
+    expect(describedBy(screen.getByLabelText('Site').element() as HTMLElement)).toBe('Full address.');
+  });
+
+  it('lists the error and the hint together on an attribute', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const el = screen.getByRole('combobox', { name: /tone/i }).element() as HTMLElement;
+    el.focus();
+    el.blur();
+    await expect.poll(() => el.getAttribute('aria-describedby')).toMatch(/^\S+-err-tone \S+-hint-tone$/);
+  });
+
+  it('describes an icon attribute by its help, on the radiogroup', async () => {
+    const iconDef = defineBlock({
+      ...base, name: 'iconhelp', label: 'Icon help',
+      attributes: { glyph: fields.icon({ label: 'Glyph', help: 'Pick a glyph.' }) },
+    });
+    const screen = await render(ComponentForm, { def: iconDef, icons: { leaf: 'M1 1h2' }, onInsert: () => {} });
+    const group = screen.getByRole('radiogroup').element() as HTMLElement;
+    expect(document.getElementById(group.getAttribute('aria-describedby')!)?.textContent?.trim()).toBe('Pick a glyph.');
+  });
+
+  it('scopes hint ids per mounted form so two forms never share an id', async () => {
+    await render(ComponentForm, { def: helped, onInsert: () => {} });
+    await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const ids = [...document.querySelectorAll('[id$="hint-tone"]')].map((n) => n.id);
+    expect(ids.length).toBe(2);
+    expect(new Set(ids).size).toBe(2);
+    for (const el of document.querySelectorAll('select[aria-describedby]')) {
+      expect(document.getElementById(el.getAttribute('aria-describedby')!.split(' ').pop()!)).not.toBeNull();
+    }
+  });
+
+  it('adds no hint element for an attribute without help', async () => {
+    const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
+    const plain = screen.getByLabelText('Plain').element() as HTMLElement;
+    expect(plain.hasAttribute('aria-describedby')).toBe(false);
+    expect(document.querySelector('[id$="hint-plain"]')).toBeNull();
+  });
+});
+
 describe('ComponentForm attribute-arm dispatch (characterization: every FieldDescriptor arm)', () => {
   it('renders the generic fallback input for text, number, url, and date, each with its matching HTML input type', async () => {
     const def = defineBlock({
@@ -313,13 +369,13 @@ describe('ComponentForm slot help', () => {
     const el = screen.getByRole('textbox', { name: 'Title' }).element() as HTMLInputElement;
     el.focus();
     el.blur();
-    await expect.poll(() => el.getAttribute('aria-describedby')).toBe('err-title hint-title');
+    await expect.poll(() => el.getAttribute('aria-describedby')).toMatch(/^\S+-err-title \S+-hint-title$/);
   });
 
   it('adds no description and no hint element for a slot without help', async () => {
     const screen = await render(ComponentForm, { def: helped, onInsert: () => {} });
     const plain = screen.getByRole('textbox', { name: 'Plain' }).element() as HTMLElement;
     expect(plain.hasAttribute('aria-describedby')).toBe(false);
-    expect(document.getElementById('hint-plain')).toBeNull();
+    expect(document.querySelector('[id$="hint-plain"]')).toBeNull();
   });
 });

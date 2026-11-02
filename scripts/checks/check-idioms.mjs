@@ -24,10 +24,8 @@
 //      the moment the session is over; the fix is always to keep the rationale and drop the
 //      session label. Domain vocabulary is deliberately NOT this shape: "a validation pass", "the
 //      constraints pass", `db.batch()`, and "did not pass" carry no numeric or letter suffix, so
-//      none of these patterns fire on them. `R4 re-export`/`R4 closure` are exempted BY NAME: they
-//      are rulings-ledger vocabulary for the canonical-home re-export pattern
-//      (`docs/internal/engine-rulings.md`), not a pass citation, and Cloudflare's `R2` binding and
-//      the `C0`/DEL control-character pair are exempted because they are not round markers at all.
+//      none of these patterns fire on them. Cloudflare's `R2` binding and the `C0`/DEL
+//      control-character pair are exempted because they are not round markers at all.
 //   6. A consumer-site hostname is banned in src/lib, matched BY SHAPE (a bare
 //      `label.tld`-shaped literal over a short list of real TLDs), never by enumerating
 //      the private hostnames a consumer's site carries: this file is public, and printing a
@@ -246,43 +244,28 @@ const PROCESS_REF_LABEL_PATTERNS = [
 ];
 
 /**
- * Whether the round marker `letter+digits+suffix`, matched at `matchEnd` in `line` with `nextLine`
- * (a wrapped comment's continuation, or `''` past the last line) available for the case where the
- * exempting word wraps onto the next line, is one of the three ruled exceptions: Cloudflare's `R2`
- * binding, the `C0`/DEL control-character pair, and `R4 re-export`/`R4 closure`, the
- * rulings-ledger vocabulary for the canonical-home re-export pattern (see the header note above).
+ * Whether the round marker `letter+digits+suffix` is one of the two ruled exceptions: Cloudflare's
+ * `R2` binding and the `C0`/DEL control-character pair (see the header note above).
  * @param {string} letter
  * @param {string} digits
  * @param {string} suffix
- * @param {string} line
- * @param {number} matchEnd
- * @param {string} nextLine
  * @returns {boolean}
  */
-function isExemptRoundMarker(letter, digits, suffix, line, matchEnd, nextLine) {
+function isExemptRoundMarker(letter, digits, suffix) {
   const token = `${letter}${digits}${suffix}`;
-  if (token === 'R2' || token === 'C0') return true;
-  if (token === 'R4') {
-    const rest = line.slice(matchEnd);
-    if (/^\s+(?:re-export|closure)\b/.test(rest)) return true;
-    // The exempting word wrapped to the next comment line: nothing but whitespace/comment
-    // markers follows on this line, and the next line opens with it.
-    return /^[\s/*]*$/.test(rest) && /^\s*(?:\/\/|\*)?\s*(?:re-export|closure)\b/.test(nextLine);
-  }
-  return false;
+  return token === 'R2' || token === 'C0';
 }
 
 /**
  * Whether `line` carries a round marker that {@link isExemptRoundMarker} does not excuse.
  * @param {string} line
- * @param {string} nextLine
  * @returns {boolean}
  */
-function hasUnexemptRoundMarker(line, nextLine) {
+function hasUnexemptRoundMarker(line) {
   ROUND_MARKER_PATTERN.lastIndex = 0;
   let m;
   while ((m = ROUND_MARKER_PATTERN.exec(line))) {
-    if (!isExemptRoundMarker(m[1], m[2], m[3], line, m.index + m[0].length, nextLine)) return true;
+    if (!isExemptRoundMarker(m[1], m[2], m[3])) return true;
   }
   return false;
 }
@@ -295,12 +278,12 @@ function hasUnexemptRoundMarker(line, nextLine) {
 export function findProcessReferenceLines(source) {
   return findLines(
     source,
-    (line, i, lines) =>
+    (line) =>
       PROCESS_REF_LABEL_PATTERNS.some((pattern) => pattern.test(line)) ||
       THIS_PASS_OR_PHASE_PATTERN.test(line) ||
       NAMED_SWEEP_PATTERN.test(line) ||
       (T_MARKER_PATTERN.test(line) && T_MARKER_CONTEXT_PATTERN.test(line)) ||
-      hasUnexemptRoundMarker(line, lines[i + 1] ?? ''),
+      hasUnexemptRoundMarker(line),
   );
 }
 

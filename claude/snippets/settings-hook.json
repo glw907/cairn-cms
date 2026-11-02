@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm run check:cairn --if-present"
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{let a=false;try{a=JSON.parse(d).stop_hook_active===true}catch{}if(a)process.exit(0);const r=require('child_process').spawnSync('npm',['run','check:cairn','--if-present'],{encoding:'utf8'});if(r.status===0)process.exit(0);process.stderr.write((r.stdout||'')+(r.stderr||'')+(r.error||''));process.exit(2)})\""
           }
         ]
       }

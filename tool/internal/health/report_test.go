@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // reportJSON marshals r the way a marshal boundary does: through ForRender, the one visibility

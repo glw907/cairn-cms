@@ -80,8 +80,8 @@ describe('the GitHub-slug contract', () => {
     },
     {
       // Nothing but digits and periods: every period drops and no separator replaces it.
-      markdown: '## 0.94.0',
-      id: '0940',
+      markdown: '## 0.98.0',
+      id: '0980',
       source: 'MIGRATION-NOTES.md',
     },
     {

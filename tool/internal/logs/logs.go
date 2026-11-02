@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/providers"
+	"github.com/glw907/cairn-cms/tool/v2/internal/providers"
 )
 
 // Query is one Workers Logs telemetry read: worker's events over the trailing Since window,

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
+import { userEvent } from 'vitest/browser';
 import { stringify as devalueStringify } from 'devalue';
 import CairnMediaLibrary from '../../lib/admin/CairnMediaLibrary.svelte';
 // The compiled sheet's real DaisyUI sizing, injected only for the tile-title-width suite below,
@@ -1635,12 +1636,33 @@ describe('CairnMediaLibrary multi-select', () => {
     const box = opt.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     expect(box).toBeTruthy();
     expect(box.getAttribute('aria-label') ?? '').toMatch(/^select /i);
+    // The option owns the selected state, so the checkbox inside it is a pointer target only:
+    // out of the tab order and the accessibility tree (a listbox's option has no checkbox child).
+    expect(box.getAttribute('aria-hidden')).toBe('true');
+    expect(box.getAttribute('tabindex')).toBe('-1');
 
     box.click();
     await expect.poll(() => options(screen)[0].getAttribute('aria-selected')).toBe('true');
     expect(box.checked).toBe(true);
     // Clicking the checkbox never opens the detail region.
     expect(screen.container.querySelector('[role="region"][aria-label$="details"]')).toBeNull();
+  });
+
+  it('a pointer click on a tile checkbox moves roving focus to that tile and never focuses the checkbox', async () => {
+    const screen = await render(CairnMediaLibrary, { data: fixture() });
+    const opts = options(screen);
+    const box = opts[1].querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    expect(opts[0].getAttribute('tabindex')).toBe('0');
+    await userEvent.click(box);
+    await expect.poll(() => options(screen)[1].getAttribute('aria-selected')).toBe('true');
+    // The aria-hidden checkbox never holds focus; the option does, and it is the roving tabstop.
+    expect(document.activeElement).not.toBe(box);
+    expect(document.activeElement).toBe(options(screen)[1]);
+    expect(options(screen)[1].getAttribute('tabindex')).toBe('0');
+    expect(options(screen)[0].getAttribute('tabindex')).toBe('-1');
+    // Space on the focused option still toggles exactly once.
+    document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    await expect.poll(() => options(screen)[1].getAttribute('aria-selected')).toBe('false');
   });
 
   it('carries the selection into the table with a leading native checkbox column', async () => {

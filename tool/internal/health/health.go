@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/glw907/cairn-cms/tool/internal/record"
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/record"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // Tier names which provider credential a Check needs before Run will call it.

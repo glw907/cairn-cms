@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
+import { clickWhenHydrated, fillTitleWhenHydrated, openCreateDialog } from './editor-helpers.js';
 
 // The v2 container fields (posts.faq = array(object), posts.gallery = array(image)) end to end against
 // the running showcase behind the fake backend (the fake-github recorder plus the fake R2 double on
@@ -171,7 +171,7 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
 async function freshPost(page: import('@playwright/test').Page, title: string): Promise<string> {
   const slug = `collapsed-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New post' }).click();
+  await clickWhenHydrated(page.locator('header').getByRole('button', { name: 'New post' }));
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill(title);

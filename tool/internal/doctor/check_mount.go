@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/glw907/cairn-cms/tool/internal/spine"
+	"github.com/glw907/cairn-cms/tool/v2/internal/spine"
 )
 
 // adminMountPaths are the candidate files of the four-file /admin mount. There is no directory

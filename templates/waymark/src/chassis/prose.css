@@ -146,7 +146,7 @@
   .prose a:active {
     color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
   }
-  /* The reading-surface focus ring, matching the chrome and the styleguide (2px primary, 2px offset).
+  /* The reading-surface focus ring, matching the chrome and the showcase styleguide (2px primary, 2px offset).
      A tinted callout ground shares the primary hue, so the same-hue ring can wash out against it; a
      4px page-coloured halo under the ring keeps it readable on every ground (the focus-visible
      criterion). */
@@ -678,9 +678,9 @@
     content: "\2014\0020";
   }
 
-  /* CTA: a restrained button-link, not the fuller marketing panel the styleguide's `.sg-cta` shows.
+  /* CTA: a restrained button-link, not the fuller marketing panel the showcase styleguide's `.sg-cta` shows.
      Primary reuses the site's accent-button pair, the same `--color-primary` treatment the
-     styleguide's `.btn-primary` and every other on-page call-to-action use; secondary is a bordered
+     showcase styleguide's `.btn-primary` and every other on-page call-to-action use; secondary is a bordered
      ghost variant. Primary does NOT reuse `--cairn-cta-btn-bg`/`-btn-content`: that pair is tuned to
      sit on top of the `--cairn-cta-bg` panel (see `.sg-cta`), a backdrop this inline link never gets.
      In light mode `--cairn-cta-btn-bg` resolves to `--color-base-100`, the page's paper, so a

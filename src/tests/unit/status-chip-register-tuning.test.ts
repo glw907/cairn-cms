@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
-import { composite, contrastRatio, relativeLuminance, type Rgba } from '../../lib/audit/color.js';
-import { resolveColors, type RenderedPage } from '../../lib/audit/rendered.js';
+import { composite, contrastRatio, relativeLuminance, resolveColors, type Rgba, type RenderedPage } from './_canvas-color.js';
 
 // CONTRACT (second-generation chip registers, https://github.com/glw907/cairn-cms/blob/pre-agent-first/docs/internal/probes/2026-08-26-chip-registers-v2.md):
 // every tinted fill (`quiet`, `warning`) holds a 1.16-1.47:1 contrast band against its own row

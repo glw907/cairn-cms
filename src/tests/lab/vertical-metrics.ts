@@ -68,8 +68,11 @@
 // serializes an evaluated function by source, so it can reference nothing outside its own body,
 // and a module that computed the class in-page would have to keep a second copy of the rules.
 // Keeping the judgment on the Node side keeps it single, and unit-testable without a browser.
-import { ensurePageHelpers } from '../../lib/audit/rendered.js';
-import type { RenderedPage } from '../../lib/audit/rendered.js';
+
+/** The one method of a Playwright page this module calls. */
+export interface RenderedPage {
+  evaluate<T, Arg = undefined>(fn: (arg: Arg) => T, arg?: Arg): Promise<T>;
+}
 
 /** The delta magnitude a pair must exceed, in its own metric, to be worth reporting at all. */
 export const VERTICAL_REPORTING_BAR_PX = 2;
@@ -361,9 +364,58 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   // turn the walk quadratic. Well past any real row; a member needing more is not a row member.
   const MAX_TEXT_RUNS_PER_MEMBER = 200;
 
-  const helpers = globalThis.__cairnAudit;
-  const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
-  const isVisible = (el: Element) => (helpers ? helpers.isVisible(el) : true);
+  function escapeIdentifier(value: string): string {
+    return typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value;
+  }
+
+  function signature(el: Element): string {
+    const tag = el.tagName.toLowerCase();
+    const id = el.id ? `#${escapeIdentifier(el.id)}` : '';
+    const classes = Array.from(el.classList)
+      .slice(0, 4)
+      .map((name) => `.${escapeIdentifier(name)}`)
+      .join('');
+    return `${tag}${id}${classes}`;
+  }
+
+  function isScreenReaderOnly(el: Element): boolean {
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      const tiny = rect.width <= 1.5 && rect.height <= 1.5;
+      if (!tiny) continue;
+      // The visually-hidden recipe in every form the ecosystem ships it: a clipped 1px
+      // absolutely-positioned box, or the older `clip-path: inset(50%)` variant.
+      const clipped =
+        style.clip === 'rect(0px, 0px, 0px, 0px)' ||
+        style.clipPath.startsWith('inset(50%') ||
+        (style.overflow === 'hidden' && (style.position === 'absolute' || style.position === 'fixed'));
+      if (clipped) return true;
+    }
+    return false;
+  }
+
+  function isVisible(el: Element): boolean {
+    let cumulativeOpacity = 1;
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+      if (style.contentVisibility === 'hidden') return false;
+      const opacity = Number(style.opacity);
+      cumulativeOpacity *= Number.isFinite(opacity) ? opacity : 1;
+      if (cumulativeOpacity <= 0) return false;
+    }
+    if (isScreenReaderOnly(el)) return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return true;
+    // A `display: contents` box and a bare inline both report a zero own-rect while their text
+    // paints normally, so the fallback measures the content itself rather than the element's box.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const contents = range.getBoundingClientRect();
+    range.detach();
+    return contents.width > 0 && contents.height > 0;
+  }
   const paint = document.createElement('canvas').getContext('2d');
   const capHeightByFont = new Map<string, number>();
   // Nested row containers mean the same member is asked for its principal run several times over
@@ -1545,19 +1597,13 @@ export function calibrationMiss(fixture: VerticalCalibrationFixture, pairs: Meas
 }
 
 /**
- * Measure every candidate pair on `page`: install the shared audit helpers, run the in-page walk,
- * then classify and take each delta on the Node side. This is the entry point both the inventory
- * probe and the rendered rule call, so neither owns a copy of the traps or the metric split.
- *
- * The helpers are installed here rather than trusted from the runner, the same reasoning
- * `field-edge-alignment` follows: a caller driving this directly from a unit test then behaves
- * exactly like a caller driving it under `runRendered`.
+ * Measure every candidate pair on `page`: run the in-page walk, then classify and take each delta on
+ * the Node side, so the traps and the metric split live in one place.
  */
 export async function measureVerticalMetrics(
   page: RenderedPage,
   args: VerticalMetricsArgs = {}
 ): Promise<{ pairs: MeasuredPair[]; diagnostics: VerticalMetricsDiagnostics }> {
-  await ensurePageHelpers(page);
   const resolved: Required<VerticalMetricsArgs> = {
     rootSelector: args.rootSelector ?? 'body',
     maxItemHeightPx: args.maxItemHeightPx ?? DEFAULT_ROW_ITEM_MAX_HEIGHT_PX,

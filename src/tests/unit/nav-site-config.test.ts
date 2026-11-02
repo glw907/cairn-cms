@@ -11,6 +11,8 @@ import {
   readVocabulary,
   setVocabulary,
   dictionaryFileForDialect,
+  resolveTidyConventions,
+  defaultTidyConventions,
   DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
 import { condition, CairnError } from '../../lib/diagnostics/index.js';
@@ -232,10 +234,10 @@ describe('setTidy', () => {
       '  enabled: true',
       '  model: claude-sonnet-4-6',
       '  conventions:',
-      '    fixes: true',
+      '    oxfordComma: always',
       '',
     ].join('\n');
-    const out = setTidy(raw, { fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
+    const out = setTidy(raw, { oxfordComma: 'always', timeFormat: '5 PM' });
     // The comments and the developer-tier facts round-trip; only conventions changed.
     expect(out).toContain('# the site config');
     expect(out).toContain('# the developer-tier facts');
@@ -248,31 +250,42 @@ describe('setTidy', () => {
     expect(reparsed.description).toBe('keep me');
     expect(reparsed.tidy?.enabled).toBe(true);
     expect(reparsed.tidy?.model).toBe('claude-sonnet-4-6');
-    expect(reparsed.tidy?.conventions).toEqual({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
+    expect(reparsed.tidy?.conventions).toEqual({ oxfordComma: 'always', timeFormat: '5 PM' });
   });
 
   it('drops a collapsed (undefined) multi-position toggle so the YAML carries only on toggles', () => {
     const out = setTidy('siteName: S\ntidy:\n  enabled: true\n', {
-      fixes: true,
       oxfordComma: undefined,
       enDashRanges: false,
       smartQuotes: false,
       brandCaps: false,
     });
     const reparsed = parseSiteConfig(out);
-    expect(reparsed.tidy?.conventions).toEqual({ fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false });
+    expect(reparsed.tidy?.conventions).toEqual({ enDashRanges: false, smartQuotes: false, brandCaps: false });
     expect(reparsed.tidy?.conventions).not.toHaveProperty('oxfordComma');
   });
 
   it('creates the tidy block when the file has none yet, leaving other keys intact', () => {
-    const out = setTidy('siteName: S\ndescription: x\n', { fixes: false });
+    const out = setTidy('siteName: S\ndescription: x\n', { oxfordComma: 'always' });
     const reparsed = parseSiteConfig(out);
     expect(reparsed.description).toBe('x');
-    expect(reparsed.tidy?.conventions).toEqual({ fixes: false });
+    expect(reparsed.tidy?.conventions).toEqual({ oxfordComma: 'always' });
+  });
+
+  it('resolves a stale fixes key out of the conventions', () => {
+    const parsed = parseSiteConfig('siteName: S\ntidy:\n  enabled: true\n  conventions:\n    fixes: false\n    oxfordComma: always\n');
+    const resolved = resolveTidyConventions(parsed.tidy?.conventions);
+    expect(resolved).not.toHaveProperty('fixes');
+    expect(resolved.oxfordComma).toBe('always');
+  });
+
+  it('resolves an empty `conventions:` key (null) to the defaults without throwing', () => {
+    const parsed = parseSiteConfig('siteName: S\ntidy:\n  enabled: true\n  conventions:\n');
+    expect(resolveTidyConventions(parsed.tidy?.conventions)).toEqual(defaultTidyConventions());
   });
 
   it('throws when the root has no siteName', () => {
-    expect(() => setTidy('description: x\n', { fixes: true })).toThrow(SiteConfigError);
+    expect(() => setTidy('description: x\n', { oxfordComma: 'always' })).toThrow(SiteConfigError);
   });
 });
 

@@ -10,6 +10,7 @@ import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { rewriteIncludeDirective, extractIncludes } from '../content/includes.js';
+import { heldAddress } from '../content/advisories.js';
 import { buildCrossBranchIndex } from '../content/cross-branch-index.js';
 import type { Backend } from '../github/backend.js';
 import { rewriteFrontmatterReference } from '../content/references.js';
@@ -387,6 +388,19 @@ export function createEntryDestructiveActions(ctx: ContentRoutesContext) {
     let next = removeEntry(manifest, concept.id, id);
     const movedRow = manifestEntryFromFile(concept, { path: newPath, raw: movedRaw });
     next = upsertEntry(next, priorPublishedAt ? { ...movedRow, publishedAt: priorPublishedAt } : movedRow);
+
+    // The path guard above sees one file. Two live routable entries on one permalink fail the build,
+    // so a rename onto an address any live entry holds refuses before anything commits.
+    const held = heldAddress(next, runtime.concepts, movedRow);
+    if (held) {
+      log.warn('rename.address_collided', {
+        editor: editor.email,
+        address: movedRow.permalink,
+        heldByConcept: held.concept,
+        heldById: held.id,
+      });
+      return fail(409, { error: 'An entry with that address already exists.' } satisfies RenameFailure);
+    }
 
     // Repoint every inbound linker so its outbound edges point at the new id, both body `cairn:` links
     // and frontmatter reference fields. One entry can hold BOTH kinds at the same target, and the Git

@@ -9,6 +9,7 @@
 // A second, separate slot (save-500-hardening) holds the settings screen's last active-probe
 // verdict: `settingsLoad` reaches Anthropic only when this record is absent or stale, so a run of
 // settings navigations within the TTL costs no repeated live round trip.
+import { env } from './workers-env.js';
 
 /**
  * How long a marked-unhealthy key stays hidden before the next edit load tries showing the
@@ -69,4 +70,13 @@ export function cachedProbeResult(now: number = Date.now()): TidyKeyProbeResult 
 export function resetKeyHealthForTest(): void {
   unhealthyUntil = null;
   lastProbe = null;
+}
+
+/**
+ * Whether the Anthropic API key secret is present in the Worker env: a non-empty
+ *  `ANTHROPIC_API_KEY`. A presence flag for the truthful visibility gates, never the key itself,
+ *  which does not leave the server.
+ */
+export function tidyKeyPresent(): boolean {
+  return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
 }

@@ -17,7 +17,7 @@ Two tiers with a truthful visibility gate:
     probe surface) fails soft and keeps the editor tier open rather than punishing an unproven
     state. No teasing disabled controls sit in the tab order in either gated state.
 
-The resting state is the safe default: Fixes on, every style convention off, every variant collapsed.
+The resting state is the safe default: every style convention off, every variant collapsed.
 Each binary toggle is the shipped check-and-tint aria-pressed button; each variant chooser is the
 shipped pick-one recipe (role="radiogroup" over role="radio" with aria-checked, roving tabindex, the
 check glyph as the non-color cue), never aria-pressed for a pick-one. A generated summary line and the
@@ -29,15 +29,15 @@ home), diffable and shared across editors.
 
 The header band is `PageHeader`, its `meta`
 line carrying the lede this screen already stated; Save stays in the form's foot, the screen's
-form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
+form-semantic primary action. The section-count pills (the Style conventions on-count)
 re-express on `StatusChip` at a neutral tone (a Tidy pill never
-reaches past neutral/warning), each still wrapped in its `role="status" aria-live="polite"`
+reaches past neutral/warning), the pill still wrapped in its `role="status" aria-live="polite"`
 region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
 bespoke: a single-use control, not a repeated device.
 @beta
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import CsrfField from './CsrfField.svelte';
   import CheckIcon from '@lucide/svelte/icons/check';
   import CircleIcon from '@lucide/svelte/icons/circle';
@@ -93,9 +93,17 @@ bespoke: a single-use control, not a repeated device.
   });
   const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 
+  // The saved message for the sr-only status region. It fills only after mount, so it is a mutation
+  // an assistive technology voices, and it clears when a same-route navigation drops the flag.
+  let mounted = $state(false);
+  onMount(() => {
+    mounted = true;
+  });
+  const savedAnnouncement = $derived(mounted && data.saved ? "Tidy settings saved. They apply after your site's next deploy." : '');
+
   // The working copy of the editor-tier conventions: every control binds to this, and the save posts
   // it. Seeded once from the load's resolved conventions, so the resting state IS the committed state.
-  // A fresh load remounts the screen (the route key), so seeding from the initial prop is correct.
+  // Only a document load remounts the screen, so seeding from the initial prop is correct.
   let conv = $state<TidyConventions>(untrack(() => ({ ...data.conventions })));
 
   // A multi-position style row: its config key, label, the variants (value + short label), and the
@@ -244,8 +252,7 @@ bespoke: a single-use control, not a repeated device.
   // alone" clause names what stays untouched. Both are generated from the live config, so the line is
   // always true for any combination.
   const summaryFixes = $derived.by(() => {
-    const parts: string[] = [];
-    if (conv.fixes) parts.push('spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation');
+    const parts: string[] = ['spelling', 'grammar', 'doubled words', 'spacing', 'capitals', 'end punctuation'];
     if (rowOn('oxfordComma')) parts.push('commas');
     if (rowOn('timeFormat')) parts.push('time format');
     if (rowOn('numberStyle')) parts.push('number style');
@@ -255,7 +262,7 @@ bespoke: a single-use control, not a repeated device.
     if (rowOn('ellipsis')) parts.push('ellipses');
     if (rowOn('smartQuotes')) parts.push('quotes');
     if (rowOn('brandCaps')) parts.push('brand names');
-    return parts.length ? joinList(parts) : 'nothing yet';
+    return joinList(parts);
   });
   const summaryLeaves = $derived.by(() => {
     const parts: string[] = [];
@@ -284,16 +291,10 @@ bespoke: a single-use control, not a repeated device.
     for (const row of styleRows) (conv[row.key] as unknown) = row.variants ? undefined : false;
     for (const row of advancedRows) (conv[row.key] as unknown) = false;
   }
-  function fixesAllOff() {
-    conv.fixes = false;
-  }
-  function fixesAllOn() {
-    conv.fixes = true;
-  }
-  // Reset to the safe resting default: Fixes on, every style and advanced toggle off, every variant
+  // Reset to the safe resting default: every style and advanced toggle off, every variant
   // collapsed. Never named a house style.
   function resetSafeDefault() {
-    conv = { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false };
+    conv = { enDashRanges: false, smartQuotes: false, brandCaps: false };
   }
 
   // --- the radiogroup roving-tabindex handler, the CairnMediaLibrary triage recipe ---
@@ -344,14 +345,14 @@ bespoke: a single-use control, not a repeated device.
   />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
-  <!-- Mounted unconditionally so a later save still announces (the needs-alt notice's live-region
-       rule, WCAG 4.1.3): a region conditionally mounted with its first content is not reliably
-       observed by assistive tech. Only the visible box moves inside. -->
-  <div role="status">
-    {#if data.saved}
-      <div class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
-    {/if}
-  </div>
+  <!-- The save is a native POST that redirects, so the page loads with `data.saved` already true
+       and the visible alert arrives server-rendered; an alert present at parse is not announced.
+       The sr-only region is empty in the server HTML and filled after hydration, so its text is
+       a real mutation the screen reader can voice. -->
+  <div role="status" class="sr-only">{savedAnnouncement}</div>
+  {#if data.saved}
+    <div class="alert alert-success mt-4 type-body">Tidy settings saved. They apply after your site's next deploy.</div>
+  {/if}
   {#if lifecycleError}
     <div class="alert alert-error mt-4 type-body">{lifecycleError}</div>
   {/if}
@@ -399,7 +400,7 @@ bespoke: a single-use control, not a repeated device.
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
           <div class="mt-1 type-meta leading-relaxed text-muted">
-            Tidy is on (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-4-5</code> for a cheaper, faster run.
+            Tidy is on (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">{data.model}</code>. Switch to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 font-mono">claude-haiku-5-5</code> for a cheaper, faster run.
           </div>
         </div>
       </div>
@@ -427,27 +428,16 @@ bespoke: a single-use control, not a repeated device.
       <CsrfField />
       <input type="hidden" name="conventions" value={conventionsJson} />
 
-      <!-- SECTION: FIXES (the objective errors, one group toggle) -->
+      <!-- SECTION: FIXES (the objective errors, always on) -->
       <section class="mb-6">
-        <div class="mb-3 flex items-end gap-3 px-0.5">
-          <div class="min-w-0 flex-1">
-            <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
-              Fixes
-              <span role="status" aria-live="polite">
-                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="xs" />
-                <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
-              </span>
-            </h2>
-            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
-          </div>
-          <div class="flex flex-none items-center gap-1">
-            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
-          </div>
+        <div class="mb-3 px-0.5">
+          <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Fixes</h2>
+          <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. Tidy always fixes these.</p>
         </div>
         <div class="overflow-hidden card-shell card-shadow">
-          <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
+          <div class="flex items-center gap-4 p-3.5">
             <div class="min-w-0 flex-1">
-              <div class="type-subtitle font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
+              <div class="type-subtitle font-semibold leading-snug">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
               <!-- the colorless diff (the design arc's accent reservation, 2026-07-15): a deletion
                    is muted strikethrough, an insertion is semibold ink, both on a neutral wash -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
@@ -465,11 +455,6 @@ bespoke: a single-use control, not a repeated device.
                 <span class="type-label text-muted">as written, following your site's English</span>
               </div>
             </div>
-            <span class="flex-none">
-              <button type="button" class={onoffClass(conv.fixes)} aria-pressed={conv.fixes} aria-label="Fixes" onclick={() => toggleBool('fixes')}>
-                {#if conv.fixes}<CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />On{:else}<CircleIcon class="h-3 w-3 opacity-60" aria-hidden="true" />Off{/if}
-              </button>
-            </span>
           </div>
         </div>
       </section>

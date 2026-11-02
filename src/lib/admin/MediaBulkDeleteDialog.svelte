@@ -252,7 +252,7 @@ moment so a background re-render never shifts the dry-run.
         <!-- The recoverability reassurance: a git-tracked removal is reversible. -->
         <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 type-meta leading-relaxed">
           <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
-          <span><b class="font-semibold">Every removal is one revertible commit you can undo.</b> The deletes are one commit to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>, so a developer can revert it and the images come back.</span>
+          <span><b class="font-semibold">Every removal is one revertible commit.</b> The deletes are one commit to <code class="rounded-selector bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] type-meta">main</code>, so a developer can revert it and the images come back.</span>
         </div>
 
         <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">

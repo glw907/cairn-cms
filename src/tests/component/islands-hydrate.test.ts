@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { hydrateIslands } from '../../lib/islands/index.js';
 import Echo from './islands/_Echo.svelte';
+import Throws from './islands/_Throws.svelte';
 
 // Build one island boundary in the document and return it. The fallback is a <span> so we can assert it is
 // replaced by the mounted component.
@@ -35,8 +36,28 @@ describe('hydrateIslands', () => {
   it('leaves the fallback when props are malformed', () => {
     const el = boundary({});
     el.setAttribute('data-cairn-props', '{not json');
-    hydrateIslands({ echo: Echo });
-    expect(document.querySelector('[data-testid="fallback"]')?.textContent).toBe('fallback');
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      hydrateIslands({ echo: Echo });
+      expect(document.querySelector('[data-testid="fallback"]')?.textContent).toBe('fallback');
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(String(spy.mock.calls[0][0])).toContain('echo');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('restores the fallback and reports when a component throws on mount', () => {
+    boundary({}, { name: 'throws' });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      hydrateIslands({ throws: Throws });
+      expect(document.querySelector('[data-testid="fallback"]')?.textContent).toBe('fallback');
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(String(spy.mock.calls[0][0])).toContain('throws');
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('renders a markup-bearing prop as literal text, never as HTML', () => {

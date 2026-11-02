@@ -33,6 +33,5 @@ spellcheck:
 tidy:
   enabled: true
   conventions:
-    fixes: true
     oxfordComma: always
     smartQuotes: true

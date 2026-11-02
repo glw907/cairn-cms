@@ -212,6 +212,7 @@ test.describe('preview surfaces read the theme tokens', () => {
     const remove = page.getByRole('button', { name: `Delete ${title}`, exact: true });
     if ((await remove.count()) > 0) {
       await remove.click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete this post' }).click();
       await expect(page.getByRole('link', { name: title, exact: true })).toHaveCount(0);
     }
   });

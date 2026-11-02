@@ -8,6 +8,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
+  import { refocusDialogOrigin, resolveDialogOrigin } from './dialog-origin.js';
   import type { InboundLink } from '../content/manifest.js';
 
   interface Props {
@@ -25,6 +26,9 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     /** Which copy family the blocked view renders: "link" for an entry other entries link to,
      *  "include" for a fragment the listed entries include. */
     inboundKind?: 'link' | 'include';
+    /** The entry's title, named in the confirm ("“Title” will be deleted."). Omitted, the confirm
+     *  does not name the entry. */
+    entryTitle?: string;
     /** True when the entry has unpublished edits, which the delete discards along with it. */
     pending?: boolean;
     /** Render the built-in Delete trigger. False mounts only the dialog, for a host that supplies
@@ -35,7 +39,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     onsubmitting?: () => void;
   }
 
-  let { conceptId, id, singular, inboundLinks, inboundKind = 'link', pending = false, trigger = true, onsubmitting }: Props = $props();
+  let { conceptId, id, singular, inboundLinks, inboundKind = 'link', entryTitle, pending = false, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
@@ -54,8 +58,15 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
   // points here.
   const entryNoun = $derived(single ? 'entry' : 'entries');
 
-  /** Open the confirm. Exported so a `trigger={false}` host can drive the dialog itself. */
-  export function open() {
+  let deleteOrigin: HTMLElement | null = null;
+
+  /**
+   * Open the confirm. Exported so a `trigger={false}` host can drive the dialog itself. Pass the
+   * element that opened it so focus returns there on close (Safari does not focus a button on
+   * click, so the active element alone is not enough); omitted, the active element is used.
+   */
+  export function open(origin?: HTMLElement | null) {
+    deleteOrigin = resolveDialogOrigin(origin);
     dialog?.showModal();
   }
   function close() {
@@ -64,12 +75,22 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 </script>
 
 {#if trigger}
-  <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={open}>
+  <button type="button" class="btn btn-sm btn-ghost text-error" aria-haspopup="dialog" onclick={(e) => open(e.currentTarget)}>
     Delete
   </button>
 {/if}
 
-<dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
+<!-- No backdrop form: a destructive alertdialog does not light-dismiss, so a stray click outside
+     cannot close it. Escape, the X, and Cancel still do. -->
+<dialog
+  class="modal"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="cairn-delete-dialog-title"
+  aria-describedby="cairn-delete-dialog-desc"
+  bind:this={dialog}
+  onclose={() => (deleteOrigin = refocusDialogOrigin(deleteOrigin))}
+>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-delete-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete this {noun}?</h2>
@@ -77,7 +98,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     </div>
 
     {#if blocked}
-      <p class="mb-2 type-body">
+      <p id="cairn-delete-dialog-desc" class="mb-2 type-body">
         {#if inboundKind === 'include'}
           This {noun} is included by {inboundLinks.length} {entryNoun}. Remove the include first, then delete
           again.
@@ -99,7 +120,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
         <button type="button" class="btn btn-sm" onclick={close}>Close</button>
       </div>
     {:else}
-      <p class="mb-3 type-body">This cannot be undone.{#if pending} Unpublished edits to this entry are discarded too.{/if}</p>
+      <p id="cairn-delete-dialog-desc" class="mb-3 type-body">{#if entryTitle}“{entryTitle}” will be deleted.{' '}{/if}This cannot be undone.{#if pending}{' '}Unpublished edits to this entry are discarded too.{/if}</p>
       <form method="POST" action="?/delete" class="flex justify-end gap-2" onsubmit={() => onsubmitting?.()}>
         <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />
@@ -109,7 +130,4 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
       </form>
     {/if}
   </div>
-  <form method="dialog" class="modal-backdrop">
-    <button tabindex="-1" aria-label="Close">close</button>
-  </form>
 </dialog>

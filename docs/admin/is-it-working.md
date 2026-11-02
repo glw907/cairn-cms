@@ -229,7 +229,7 @@ An earlier doctor checked that the site had handed form protection from the fram
 
 ## Configure the Tidy API key
 
-An earlier doctor checked for the API key that the optional Tidy feature needs. That check is retired, and no command checks the key now. To test it, run one Tidy suggestion in the admin and see whether it works. A developer sets the key with `wrangler secret put ANTHROPIC_API_KEY`, as the [tidy guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes.
+An earlier doctor checked for the API key that the optional Tidy feature needs. That check is retired, and no command checks the key now. To test it, open `/admin/settings`: the editor settings show when Tidy is on and a key is bound that Anthropic hasn't rejected, and otherwise a setup or broken-key note shows. Then run one Tidy suggestion on a draft. The edit screen hides the Tidy button when no key is bound. A developer sets the key with `wrangler secret put ANTHROPIC_API_KEY`, as the [tidy guide](https://github.com/glw907/cairn-cms/blob/main/skills/cairn-extending-a-site/references/tidy-and-ai-posture.md) describes.
 
 ## Probe the deployed admin
 

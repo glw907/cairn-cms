@@ -168,8 +168,9 @@ none, and the dev backend never does.
 
 1. Copy `node_modules/@glw907/cairn-cms/migrations/0002_audit.sql` into the migrations directory
    of the D1 database the sink writes to, and apply it with `npx wrangler d1 migrations apply`.
-2. In `src/hooks.server.ts`, add a handle that sets the sink, and compose it after the guard in
-   the production branch: `handle = sequence(createAuthGuard({ runtime }), wireAuditSink)`.
+2. In `src/hooks.server.ts`, add a handle that sets the sink, and compose it before the guard in
+   the production branch: `handle = sequence(wireAuditSink, createAuthGuard({ runtime }))`. The
+   guard runs last and never reads the sink; `createAdminAction` does, when the action runs.
 
 <!-- snippet-check-skip: an excerpt of the scaffold's hooks module; reads env.AUDIT_DB, which only the site's generated Env declares -->
 ```ts

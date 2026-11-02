@@ -10,7 +10,7 @@ The following list routes you to the right page for each situation.
 
 ## Run the check
 
-1. Install the `cairn` CLI from the [release page](https://github.com/glw907/cairn-cms/releases). If you already have Go installed, `go install github.com/glw907/cairn-cms/tool/cmd/cairn@latest` also works.
+1. Install the `cairn` CLI from the [release page](https://github.com/glw907/cairn-cms/releases). If you already have Go installed, `go install github.com/glw907/cairn-cms/tool/v2/cmd/cairn@latest` also works.
 2. Open a terminal in the site's folder.
 3. Run the check:
 

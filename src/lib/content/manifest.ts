@@ -73,6 +73,35 @@ export interface Manifest {
   entries: ManifestEntry[];
 }
 
+/**
+ * One entry the manifest build found wrong. A filename or body problem keeps the entry's row; a
+ *  validator failure costs it.
+ * @public
+ */
+export interface ManifestProblem {
+  /** The concept id. */
+  concept: string;
+  /** The entry id, its filename stem. */
+  id: string;
+  /** The content file's path. */
+  path: string;
+  /** Whether the entry is a draft, which the prerender never renders, so `verifyEntries` passes it. */
+  draft: boolean;
+  /** Each message keyed by field, or by `filename` or `body` for what no field holds. */
+  errors: Record<string, string>;
+}
+
+/**
+ * What `buildSiteManifest` returns: the corpus projection and every problem it met on the way.
+ * @public
+ */
+export interface SiteManifestBuild {
+  /** The whole-corpus manifest, drafts included. */
+  manifest: Manifest;
+  /** The entries the build found wrong, in build order. */
+  problems: ManifestProblem[];
+}
+
 /** The minimal entry view the preview resolver and (later) the picker read. */
 export interface LinkTarget {
   concept: string;
@@ -413,12 +442,29 @@ export function verifyManifest(built: Manifest, committedRaw: string, adapter?: 
 }
 
 /**
- * Throw if any entry's reference edge points at a target absent from the corpus. The match is the
- *  `(concept, id)` pair, never id alone, since ids are unique only within a concept. The error names
- *  the source entry, the field the edge was declared on, and the missing target, so a build failure
- *  reads as a content fix. References have no prerender backstop the way body links do, so this build
- *  gate is the only integrity authority; it runs inside the generated virtual-module source (where the
- *  built manifest is in scope), beside `verifyManifest`.
+ * Throw if any non-draft entry has a problem, naming each error on its own line so a build failure
+ *  reads as a content fix. A draft passes because the prerender never renders one. It runs ahead of
+ *  `verifyManifest`, since a manifest regenerated over an invalid entry only hides the invalid entry.
+ * @public
+ */
+export function verifyEntries(problems: ManifestProblem[]): void {
+  const live = problems.filter((p) => !p.draft);
+  if (live.length === 0) return;
+  const lines = live.flatMap((p) =>
+    Object.entries(p.errors).map(([field, message]) => `${p.concept}/${p.id}: ${field}: ${message}`),
+  );
+  throw new Error(`cairn: ${live.length} invalid entries:\n${lines.join('\n')}`);
+}
+
+/**
+ * Throw if any entry's reference edge, or any non-draft entry's `cairn:` body link, points at a target
+ *  absent from the corpus. The match is the `(concept, id)` pair, never id alone, since ids are unique
+ *  only within a concept. The error names the source entry, the field the edge was declared on or the
+ *  link, and the missing target, so a build failure reads as a content fix. References have no
+ *  prerender backstop the way body links do, so this build gate is their only integrity authority.
+ *  A body link is checked here so it fails ahead of the stale verdict. A draft's link is exempt
+ *  because the prerender never renders one. This gate runs inside the generated virtual-module
+ *  source, where the built manifest is in scope, ahead of `verifyManifest`.
  * @public
  */
 export function verifyReferences(manifest: Manifest): void {
@@ -430,6 +476,13 @@ export function verifyReferences(manifest: Manifest): void {
         throw new Error(
           `content reference is dangling: ${entry.concept}/${entry.id} field "${edge.field}" points at ${target}, which does not exist.`,
         );
+      }
+    }
+    if (entry.draft) continue;
+    for (const link of entry.links) {
+      const target = `${link.concept}/${link.id}`;
+      if (!present.has(target)) {
+        throw new Error(`content link is dangling: ${entry.concept}/${entry.id} links to ${target}, which does not exist.`);
       }
     }
   }

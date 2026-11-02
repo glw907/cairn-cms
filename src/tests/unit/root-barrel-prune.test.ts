@@ -134,6 +134,7 @@ const KEPT = [
   'readVocabulary',
   'formatManifest',
   'parseManifest',
+  'verifyEntries',
   'verifyManifest',
   'verifyReferences',
   'CommitConflictError',

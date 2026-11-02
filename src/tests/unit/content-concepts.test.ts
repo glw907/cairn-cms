@@ -296,6 +296,14 @@ describe('normalizeConcepts URL policy', () => {
   });
 });
 
+describe('a concept dir', () => {
+  it.each(['/src/content/posts', 'src/content/posts/'])('refuses %s', (dir) => {
+    const message = `cairn: concept "posts" dir "${dir}" must have no leading or trailing slash`;
+    expect(() => defineConcept({ dir, label: 'posts', fields: {} })).toThrowError(message);
+    expect(() => normalizeConcepts({ posts: { dir, fields: {} } })).toThrowError(message);
+  });
+});
+
 describe('findConcept', () => {
   it('finds a normalized concept by id, undefined when absent', () => {
     const descriptors = normalizeConcepts(testAdapter.content);

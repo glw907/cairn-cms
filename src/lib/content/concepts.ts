@@ -76,7 +76,7 @@ export function resolveRouting(routing: ConceptConfig['routing'], id: string): R
  * `singular` falls back to `label` with no warning, so a plural label reads "New Posts" on the
  * create affordances: declare `singular` on every concept. The concept key `fragments` is
  * reserved for `::include` and must use `routing: 'embedded'`, or compose throws.
- * @throws When `permalink` does not start with `/`, uses an unknown token, or uses a date token on
+ * @throws When `dir` has a leading or trailing slash; when `permalink` does not start with `/`, uses an unknown token, or uses a date token on
  * an undated concept; when `datePrefix` is not `year`, `month`, or `day`; or when `routing` is
  * unrecognized; when a `text` or `textarea` `pattern` is malformed; when containers nest deeper than
  * one level, an `array` item is another `array`, a `reference` or an `seo` image sits inside a
@@ -91,6 +91,7 @@ export function defineConcept<const C extends ConceptConfig>(
   },
 ): C {
   const id = concept.label ?? concept.dir;
+  validateDir(id, concept.dir);
   defineFieldset(concept.fields, { refine: concept.refine, behavior: concept.behavior });
   validateUrlPolicy(
     id,
@@ -134,6 +135,16 @@ function requireDateField(id: string, pattern: string, fields: Record<string, Fi
     );
   }
   date.required = true;
+}
+
+/**
+ * A slash at either end of `dir` would otherwise miss every file key at bucketing, so a concept's
+ * whole corpus reads as sitting under no concept. Fail at the declaration that holds the typo.
+ */
+function validateDir(id: string, dir: string): void {
+  if (dir.startsWith('/') || dir.endsWith('/')) {
+    throw new Error(`cairn: concept "${id}" dir "${dir}" must have no leading or trailing slash`);
+  }
 }
 
 /**
@@ -185,6 +196,7 @@ export function normalizeConcepts(
   );
   for (const [id, config] of Object.entries(content)) {
     if (!config) continue;
+    validateDir(id, config.dir);
     if (RESERVED_VIEW_IDS.has(id)) {
       throw new Error(
         `cairn: concept id "${id}" names an engine view under /admin; choose another id (reserved: ${[...RESERVED_VIEW_IDS].join(', ')})`,

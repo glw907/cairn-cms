@@ -53,7 +53,7 @@ const DATA_KEPT = [
   'buildSiteManifest',
   'createLinkResolver',
   'resolveReferences',
-  'ResolvedReference',
+  'EntryRef',
 ];
 
 // The names /delivery adds on top of the re-exported /delivery/data surface (the route-loader

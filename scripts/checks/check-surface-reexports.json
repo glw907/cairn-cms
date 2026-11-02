@@ -189,6 +189,12 @@
       "reason": "R4 closure: `buildNewlyPublished`, `Manifest` name it on this subpath."
     },
     {
+      "name": "ManifestProblem",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `SiteManifestBuild` names it on this subpath."
+    },
+    {
       "name": "MultiselectField",
       "subpath": "/delivery/data",
       "home": ".",

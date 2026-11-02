@@ -87,9 +87,9 @@ export type { DatePrefix } from './content/ids.js';
 // verify operations stay public, for a build script or a custom regenerate tool. `CairnRef` and
 // `LinkResolve` name `createRenderer`'s link-resolution signature.
 export type { CairnRef, LinkResolve } from './content/links.js';
-export { formatManifest, parseManifest, verifyManifest, verifyReferences } from './content/manifest.js';
-// `Manifest.entries` names `ManifestEntry`.
-export type { Manifest, ManifestEntry } from './content/manifest.js';
+export { formatManifest, parseManifest, verifyEntries, verifyManifest, verifyReferences } from './content/manifest.js';
+// `Manifest.entries` names `ManifestEntry`, and `verifyEntries` takes `ManifestProblem`s.
+export type { Manifest, ManifestEntry, ManifestProblem } from './content/manifest.js';
 // Render engine: generic directive pipeline; sites own the component registry.
 export { defineRegistry, defineComponent } from './render/registry.js';
 export { previewMarkdown } from './render/component-grammar.js';

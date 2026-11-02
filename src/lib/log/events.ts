@@ -35,6 +35,7 @@ export type CairnLogEvent =
   | 'content.field_unmarked'
   | 'content.field_undeclared'
   | 'content.entry_invalid'
+  | 'content.directive_unknown'
   | 'entry.published'
   | 'entry.discarded'
   | 'preview.token.minted'

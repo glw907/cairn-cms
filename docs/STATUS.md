@@ -23,19 +23,17 @@ that file as its changelog input (`cairn-releasing` step 3). The release cut ren
 
 ## Immediate next action
 
-Pass 8, `cleanup`, is PR #188 on branch `worktree-cleanup-run`, PR-ready: the reviews are folded, the
-live smoke passed, and the docs lines are fact-checked. The conductor merges it as a merge commit, so
-the pre-reset SHA above stays reachable. Pass 9, the release, follows the merge; its cut starts
-from every dependency's newest production version and publishes a `tool/v2` tag, which
-`go install ...@latest` needs.
+Pass 8, `cleanup`, is merged at `6dc3fe1e6`. Pass 9, the release, runs per the sheet: the dependency
+sweep `cairn-cms-dep-sweep` is the last merge before the cut, and nothing else runs from it on. The
+conductor then runs the release sweep and cuts the first candidate to `next`.
 
-The release sitting is where Geoff reads the release packet and rules each of the five held majors.
-Three lists wait for it, in the PR body: the ROADMAP bullets kept in doubt, the set-asides (the
-`precheck`, the audit-wrapper fold, the eval deny-list half of #191), and the reviewers' non-blocking
-finds. T13's measurement tables are in the PR body too. Three bars read unmet by Geoff's choice (the
-install and editor sittings, and the docs review of the human pages). Evaluate reads unmet: the
-blind grade of #207 found claim 2 missed by two of three answers and claim 7 by one, and nothing was
-fixed in this pass.
+The release sitting is where Geoff reads the release packet and rules each major on the sweep's
+survey. The lists for it are in #188's body: the ROADMAP bullets kept in doubt, the set-asides (the
+`precheck`, the audit-wrapper fold, the eval deny-list half of #191), the reviewers' non-blocking
+finds, and T13's measurement tables, with the triage in
+`~/.local/state/cairn-agent-first/2026-11-02-backlog-triage.json`. Three bars read unmet by Geoff's
+choice (the install and editor sittings, and the docs review of the human pages). Evaluate reads
+unmet: the blind grade of #207 found claim 2 missed by two of three answers and claim 7 by one.
 
 ## Open decisions and watches
 

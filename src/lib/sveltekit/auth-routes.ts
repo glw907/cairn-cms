@@ -160,7 +160,6 @@ function scrubSendError(err: unknown): string {
  * composes into its dispatch. The guard serves exactly two public admin paths, `/admin/login`
  * and `/admin/auth/confirm`; every other path under `/admin/auth/` sits behind the session gate.
  * `config.send` overrides the default Cloudflare Email sender for tests or a custom transport.
- * @beta
  */
 export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   const send = config.send ?? cloudflareSend;
@@ -482,7 +481,6 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
  * What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. The view
  * components post the named actions `request`, `confirm`, and `logout`; a `default` action never
  * receives a named post.
- * @beta
  */
 export interface AuthRoutes {
   /** The `/admin/login` load; under identity mode it returns the hand-off shape and mints no nonce or CSRF token. */

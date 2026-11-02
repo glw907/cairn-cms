@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   insertEditor,
   setEditorRole,
-  demoteOwnerIfNotLast,
   findEditor,
 } from '../../lib/auth/store.js';
 import { CairnError } from '../../lib/diagnostics/error.js';
@@ -92,10 +91,10 @@ describe('against an AUTH_DB still carrying the owner/editor role CHECK', () => 
     expect(await roleOf('ed@x.dev')).toBe('editor');
   });
 
-  it('names migration 0001 when demoteOwnerIfNotLast demotes to a custom role', async () => {
+  it('names migration 0001 when setEditorRole demotes an owner to a custom role', async () => {
     await seed('a@x.dev', 'owner');
     await seed('b@x.dev', 'owner');
-    await expectRolesUnmigrated(demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'reviewer'));
+    await expectRolesUnmigrated(setEditorRole(db, 'a@x.dev', 'reviewer', ['owner']));
     expect(await roleOf('a@x.dev')).toBe('owner');
   });
 
@@ -114,7 +113,7 @@ describe('against an AUTH_DB still carrying the owner/editor role CHECK', () => 
     await insertEditor(db, 'boss@x.dev', 'Boss', 'owner', 1);
     await insertEditor(db, 'ed@x.dev', 'Ed', 'editor', 1);
     expect(await setEditorRole(db, 'ed@x.dev', 'owner', ['owner'])).toEqual({ outcome: 'ok' });
-    expect(await demoteOwnerIfNotLast(db, 'ed@x.dev', ['owner'], 'editor')).toEqual({ outcome: 'ok' });
+    expect(await setEditorRole(db, 'ed@x.dev', 'editor', ['owner'])).toEqual({ outcome: 'ok' });
   });
 });
 
@@ -132,7 +131,7 @@ describe('after migration 0001', () => {
     expect(await roleOf('new@x.dev')).toBe('reviewer');
     expect(await setEditorRole(db, 'ed@x.dev', 'reviewer', [])).toEqual({ outcome: 'ok' });
     expect(await setEditorRole(db, 'new@x.dev', 'writer', ['owner'])).toEqual({ outcome: 'ok' });
-    expect(await demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'reviewer')).toEqual({ outcome: 'ok' });
+    expect(await setEditorRole(db, 'a@x.dev', 'reviewer', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await roleOf('a@x.dev')).toBe('reviewer');
   });
 });

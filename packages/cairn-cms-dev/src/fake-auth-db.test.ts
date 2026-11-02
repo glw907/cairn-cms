@@ -6,24 +6,11 @@ import { createFakeAuthDb, type FakeAuthDb } from './fake-auth-db.js';
 // the engine's auth store makes (src/lib/auth/store.ts).
 const FIND_EDITOR = 'SELECT email, display_name, role FROM editor WHERE email = ?';
 
-// Mirrors the exact SQL src/lib/auth/store.ts's removeOwnerIfNotLast/demoteOwnerIfNotLast build:
-// a set-based `role IN (...)` membership test plus a COUNT(*) subquery over that same set. The
-// double's whitespace normalization makes the single-line form here equivalent to the store's
-// multi-line literal.
-function guardedDeleteSql(ownerRoles: string[]): string {
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  return `DELETE FROM editor WHERE email = ? AND role IN (${placeholders}) AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`;
-}
-
-function guardedUpdateSql(ownerRoles: string[]): string {
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  return `UPDATE editor SET role = ? WHERE email = ? AND role IN (${placeholders}) AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`;
-}
-
 // Mirrors the exact SQL src/lib/auth/store.ts's deleteEditor/setEditorRole build when
 // ownerRoles.length > 0: the generalized dispatch that removes/changes a non-owner row
 // unconditionally and refuses only a last-owner-capability row, folded into one atomic
-// statement per the outcome idiom's atomicity mandate.
+// statement per the outcome idiom's atomicity mandate. The double's whitespace normalization
+// makes the single-line form here equivalent to the store's multi-line literal.
 function generalizedDeleteSql(ownerRoles: string[]): string {
   const placeholders = ownerRoles.map(() => '?').join(', ');
   return `DELETE FROM editor WHERE email = ? AND ( role NOT IN (${placeholders}) OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1 )`;
@@ -35,10 +22,6 @@ function generalizedUpdateSql(ownerRoles: string[]): string {
 }
 
 const CLASSIFY_STILL_THERE = 'SELECT 1 FROM editor WHERE email = ?';
-function classifyStillEligibleSql(ownerRoles: string[]): string {
-  const placeholders = ownerRoles.map(() => '?').join(', ');
-  return `SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`;
-}
 
 async function insertEditor(db: FakeAuthDb, email: string, displayName: string, role: string): Promise<void> {
   await db.prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)').bind(
@@ -72,28 +55,13 @@ test('an unseeded email resolves to null', async () => {
   expect(row).toBeNull();
 });
 
-test("removeOwnerIfNotLast's guarded delete refuses the sole owner-level row", async () => {
-  const db = createFakeAuthDb();
-  const ownerRoles = ['owner'];
-
-  // Only editor@showcase.test carries an owner-level role; the guard must refuse.
-  const res = await db
-    .prepare(guardedDeleteSql(ownerRoles))
-    .bind('editor@showcase.test', ...ownerRoles, ...ownerRoles)
-    .run();
-
-  expect(res.meta.changes).toBe(0);
-  const row = await db.prepare(FIND_EDITOR).bind('editor@showcase.test').first();
-  expect(row).not.toBeNull();
-});
-
-test("removeOwnerIfNotLast's guarded delete succeeds when another owner-level row remains", async () => {
+test("deleteEditor's generalized delete removes an owner row when another owner-level row remains", async () => {
   const db = createFakeAuthDb();
   await insertEditor(db, 'second-owner@showcase.test', 'Second Owner', 'owner');
   const ownerRoles = ['owner'];
 
   const res = await db
-    .prepare(guardedDeleteSql(ownerRoles))
+    .prepare(generalizedDeleteSql(ownerRoles))
     .bind('second-owner@showcase.test', ...ownerRoles, ...ownerRoles)
     .run();
 
@@ -102,7 +70,7 @@ test("removeOwnerIfNotLast's guarded delete succeeds when another owner-level ro
   expect(row).toBeNull();
 });
 
-test("demoteOwnerIfNotLast's guarded update behaves per the store contract with a two-name owner set", async () => {
+test("setEditorRole's generalized update counts owners across a two-name owner set", async () => {
   const db = createFakeAuthDb();
   await insertEditor(db, 'pres@showcase.test', 'President', 'commodore');
   const ownerRoles = ['owner', 'commodore'];
@@ -110,8 +78,8 @@ test("demoteOwnerIfNotLast's guarded update behaves per the store contract with 
   // Two owner-level rows exist (editor@showcase.test as owner, pres@showcase.test as commodore),
   // so demoting one of them is allowed.
   const first = await db
-    .prepare(guardedUpdateSql(ownerRoles))
-    .bind('editor', 'editor@showcase.test', ...ownerRoles, ...ownerRoles)
+    .prepare(generalizedUpdateSql(ownerRoles))
+    .bind('editor', 'editor@showcase.test', ...ownerRoles, 0, ...ownerRoles)
     .run();
   expect(first.meta.changes).toBe(1);
   const demoted = await db
@@ -122,8 +90,8 @@ test("demoteOwnerIfNotLast's guarded update behaves per the store contract with 
 
   // Only pres@showcase.test now carries an owner-level role; demoting it must be refused.
   const second = await db
-    .prepare(guardedUpdateSql(ownerRoles))
-    .bind('editor', 'pres@showcase.test', ...ownerRoles, ...ownerRoles)
+    .prepare(generalizedUpdateSql(ownerRoles))
+    .bind('editor', 'pres@showcase.test', ...ownerRoles, 0, ...ownerRoles)
     .run();
   expect(second.meta.changes).toBe(0);
   const stillCommodore = await db
@@ -189,7 +157,7 @@ test("setEditorRole's generalized update changes a non-owner row unconditionally
   expect(row?.role).toBe('owner');
 });
 
-test("setEditorRole's generalized update refuses a last-owner demotion, then classifies it still owner-eligible", async () => {
+test("setEditorRole's generalized update refuses a last-owner demotion, then classifies it last-owner", async () => {
   const db = createFakeAuthDb();
   const ownerRoles = ['owner'];
 
@@ -199,11 +167,8 @@ test("setEditorRole's generalized update refuses a last-owner demotion, then cla
     .run();
 
   expect(res.meta.changes).toBe(0);
-  const stillEligible = await db
-    .prepare(classifyStillEligibleSql(ownerRoles))
-    .bind('editor@showcase.test', ...ownerRoles)
-    .first();
-  expect(stillEligible).not.toBeNull();
+  const stillThere = await db.prepare(CLASSIFY_STILL_THERE).bind('editor@showcase.test').first();
+  expect(stillThere).not.toBeNull();
 });
 
 test("setEditorRole's generalized update allows a same-capability role change even as sole owner (the flag escape)", async () => {

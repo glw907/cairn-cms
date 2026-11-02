@@ -97,7 +97,6 @@ export function defineRoles<const R extends RolesDeclaration>(roles: R): R {
  * Resolve a role name to its capability against the given vocabulary. An `undefined` vocabulary
  * uses the default owner/editor pair. A name absent from the vocabulary resolves to `none`, so a
  * pruned config or a hand-edited row fails closed rather than locking the person out of sign-in.
- * @public
  */
 export function resolveCapability(roles: RolesDeclaration | undefined, role: string): Capability {
   const vocabulary: RolesDeclaration = roles ?? DEFAULT_ROLES;
@@ -123,7 +122,6 @@ export function roleHome(roles: RolesDeclaration | undefined, role: string): str
 /**
  * The names in the vocabulary that carry owner capability. The last-owner guard counts rows across
  * this set rather than the literal `owner` string, so a site with two owner-level names is safe.
- * @public
  */
 export function resolveOwnerLevelRoles(roles: RolesDeclaration | undefined): string[] {
   const vocabulary: RolesDeclaration = roles ?? DEFAULT_ROLES;
